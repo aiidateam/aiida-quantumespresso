@@ -1,0 +1,3 @@
+recursive-include quantumespresso_tests/backend/pwtestjobs *
+recursive-include quantumespresso_tests/backend/parser_tests/ *
+
