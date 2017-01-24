@@ -15,7 +15,7 @@ from aiida.common.datastructures import calc_states
 from aiida.common.exceptions import (FeatureNotAvailable, InvalidOperation,
                                      InputValidationError)
 from aiida.common.links import LinkType
-from aiida.tools.codespecific.quantumespresso import pwinputparser
+from aiida_quantumespresso.tools import pwinputparser
 
 
 __copyright__ = u"Copyright (c), This file is part of the AiiDA platform. For further information please visit http://www.aiida.net/. All rights reserved."

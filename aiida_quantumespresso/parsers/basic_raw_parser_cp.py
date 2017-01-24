@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from aiida.parsers.plugins.quantumespresso import QEOutputParsingError
+from aiida_quantumespresso.parsers import QEOutputParsingError
 from xml.dom.minidom import parseString
 from aiida_quantumespresso.parsers.basic_raw_parser_pw import (read_xml_card,
                                                                        parse_xml_child_integer, parse_xml_child_bool,

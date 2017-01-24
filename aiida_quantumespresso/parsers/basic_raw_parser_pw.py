@@ -10,7 +10,7 @@ import xml.dom.minidom
 import os
 import string
 from aiida_quantumespresso.parsers.constants import ry_to_ev, hartree_to_ev, bohr_to_ang, ry_si, bohr_si
-from aiida.parsers.plugins.quantumespresso import QEOutputParsingError
+from aiida_quantumespresso.parsers import QEOutputParsingError
 
 # TODO: it could be possible to use info of the input file to parse output.
 # but atm the output has all the informations needed for the parsing.

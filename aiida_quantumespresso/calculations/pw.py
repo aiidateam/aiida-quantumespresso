@@ -17,7 +17,7 @@ Plugin to create a Quantum Espresso pw.x file.
 import os
 
 from aiida.orm.calculation.job import JobCalculation
-from aiida.orm.calculation.job.quantumespresso import BasePwCpInputGenerator
+from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 from aiida.common.utils import classproperty
 from aiida.orm.data.array.kpoints import KpointsData
 

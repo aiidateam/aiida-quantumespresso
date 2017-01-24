@@ -5,7 +5,7 @@ from aiida_quantumespresso.parsers.basic_raw_parser_pw import (
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.folder import FolderData
 from aiida.parsers.parser import Parser  # , ParserParamManager
-from aiida.parsers.plugins.quantumespresso import convert_qe2aiida_structure
+from aiida_quantumespresso.parsers import convert_qe2aiida_structure
 from aiida.common.datastructures import calc_states
 from aiida.common.exceptions import UniquenessError
 from aiida.orm.data.array import ArrayData

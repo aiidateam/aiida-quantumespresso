@@ -17,7 +17,7 @@ import os
 
 import numpy as np
 
-from aiida.tools.codespecific.quantumespresso import pwinputparser
+from aiida_quantumespresso.tools import pwinputparser
 from aiida.orm.data.structure import StructureData
 from aiida.backends.testbase import AiidaTestCase
 
