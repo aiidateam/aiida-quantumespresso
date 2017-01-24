@@ -9,7 +9,7 @@ TODO: Parse CONSTRAINTS, OCCUPATIONS, ATOMIC_FORCES once they are implemented
 import re
 import os
 import numpy as np
-from aiida.parsers.plugins.quantumespresso.constants import bohr_to_ang
+from aiida_quantumespresso.parsers.constants import bohr_to_ang
 from aiida.common.exceptions import ParsingError
 from aiida.orm.data.structure import StructureData, _valid_symbols
 from aiida.orm.data.array.kpoints import KpointsData
@@ -88,7 +88,7 @@ class PwInputFile(object):
               'gamma' or type = 'automatic')
             * weights: a 1xN list of the kpoint weights (will not be present if
               type = 'gamma' or type = 'automatic')
-            * mesh: a 1x3 list of the number of equally-spaced points in each 
+            * mesh: a 1x3 list of the number of equally-spaced points in each
               direction of the Brillouin zone, as in Monkhorst-Pack grids (only
               present if type = 'automatic')
             * offset: a 1x3 list of the grid offsets in each direction of the
@@ -98,7 +98,7 @@ class PwInputFile(object):
               This differs from the Quantum Espresso convention, where an offset
               value of ``1`` corresponds to a half-grid-step offset, but adheres
               to the current AiiDa convention.
-            
+
 
         Examples: ::
 
@@ -203,16 +203,16 @@ class PwInputFile(object):
     def get_structuredata(self):
         """
         Return a StructureData object based on the data in the input file.
-        
-        This uses all of the data in the input file to do the necessary unit 
+
+        This uses all of the data in the input file to do the necessary unit
         conversion, ect. and then creates an AiiDa StructureData object.
-    
-        All of the names corresponding of the Kind objects composing the 
-        StructureData object will match those found in the ATOMIC_SPECIES 
-        block, so the pseudopotentials can be linked to the calculation using 
-        the kind.name for each specific type of atom (in the event that you 
+
+        All of the names corresponding of the Kind objects composing the
+        StructureData object will match those found in the ATOMIC_SPECIES
+        block, so the pseudopotentials can be linked to the calculation using
+        the kind.name for each specific type of atom (in the event that you
         wish to use different pseudo's for two or more of the same atom).
-    
+
         :return: StructureData object of the structure in the input file
         :rtype: aiida.orm.data.structure.StructureData
         :raises aiida.common.exceptions.ParsingError: if there are issues
@@ -409,7 +409,7 @@ def str2val(valstr):
 def parse_namelists(txt):
     """
     Parse txt to extract a dictionary of the namelist info.
-    
+
     :param txt: A single string containing the QE input text to be parsed.
     :type txt: str
 

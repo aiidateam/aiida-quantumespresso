@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-from aiida.orm.calculation.job.quantumespresso.cp import CpCalculation
-from aiida.parsers.plugins.quantumespresso.raw_parser_cp import (
+from aiida_quantumespresso.calculations.cp import CpCalculation
+from aiida_quantumespresso.parsers.raw_parser_cp import (
     QEOutputParsingError, parse_cp_traj_stanzas, parse_cp_raw_output)
-from aiida.parsers.plugins.quantumespresso.constants import (bohr_to_ang,
-                                                             timeau_to_sec, hartree_to_ev)
+from aiida_quantumespresso.parsers.constants import (bohr_to_ang,
+                                                     timeau_to_sec, hartree_to_ev)
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.folder import FolderData
@@ -26,7 +26,7 @@ class CpParser(Parser):
     def __init__(self, calc):
         """
         Initialize the instance of CpParser
-        
+
         :param calculation: calculation object.
         """
         # check for valid input
@@ -43,7 +43,7 @@ class CpParser(Parser):
         from aiida.common.exceptions import InvalidOperation
         import os, numpy
         from distutils.version import LooseVersion
-        
+
         successful = True
 
         # check if I'm not to overwrite anything
@@ -56,10 +56,10 @@ class CpParser(Parser):
         input_structure = self._calc.inp.structure
 
         # load the input dictionary
-        # TODO: pass this input_dict to the parser. It might need it.            
+        # TODO: pass this input_dict to the parser. It might need it.
         input_dict = self._calc.inp.parameters.get_dict()
 
-        # Check that the retrieved folder is there 
+        # Check that the retrieved folder is there
         try:
             out_folder = retrieved[self._calc._get_linkname_retrieved()]
         except KeyError:
@@ -176,10 +176,10 @@ class CpParser(Parser):
                 matrix.shape[1]
             except IndexError:
                 matrix = numpy.array(numpy.matrix(matrix))
-            
+
             if LooseVersion(out_dict['creator_version']) > LooseVersion("5.1"):
                 # Between version 5.1 and 5.1.1, someone decided to change
-                # the .evp output format, without any way to know that this 
+                # the .evp output format, without any way to know that this
                 # happened... SVN commit 11158.
                 # I here use the version number to parse, plus some
                 # heuristics to check that I'm doing the right thing
@@ -196,7 +196,7 @@ class CpParser(Parser):
                 raw_trajectory['volume']                    = matrix[:,9] * (bohr_to_ang**3) # volume, angstrom^3
                 raw_trajectory['pressure']                  = matrix[:,10]                    # out_press, GPa
             else:
-                #print "Old version"    
+                #print "Old version"
                 raw_trajectory['steps'] = numpy.array(matrix[:,0],dtype=int)
                 raw_trajectory['electronic_kinetic_energy'] = matrix[:,1] * hartree_to_ev    # EKINC, eV
                 raw_trajectory['cell_temperature']          = matrix[:,2]                    # TEMPH, K
@@ -216,7 +216,7 @@ class CpParser(Parser):
             # but I won't do it, as there may be also other columns swapped.
             # Better to stop and ask the user to check what's going on.
             max_time_difference = abs(
-                numpy.array(raw_trajectory['times']) - 
+                numpy.array(raw_trajectory['times']) -
                 numpy.array(raw_trajectory['evp_times'])).max()
             if max_time_difference > 1.e-4: # It is typically ~1.e-7 due to roundoff errors
                 # If there is a large discrepancy, I set successful = False,
@@ -235,13 +235,13 @@ class CpParser(Parser):
                         pass
             # Delete evp_times in any case, it's a duplicate of 'times'
             del raw_trajectory['evp_times']
-            
+
         except Exception as e:
             out_dict['warnings'].append("Error parsing EVP file ({}). Skipping file.".format(e.message))
         except IOError:
             out_dict['warnings'].append("Unable to open the EVP file... skipping.")
 
-        # get the symbols from the input        
+        # get the symbols from the input
         # TODO: I should have kinds in TrajectoryData
         raw_trajectory['symbols'] = numpy.array([str(i.kind_name) for i in input_structure.sites])
 
@@ -261,7 +261,7 @@ class CpParser(Parser):
                 # Some columns may have not been parsed, skip
                 pass
         new_nodes_list = [(self.get_linkname_trajectory(),traj)]
-        
+
         # Remove big dictionaries that would be redundant
         # For atoms and cell, there is a small possibility that nothing is parsed
         # but then probably nothing moved.
@@ -295,7 +295,7 @@ class CpParser(Parser):
             del out_dict['atoms_if_pos_list']
         except KeyError:
             pass
-        # 
+        #
         try:
             del out_dict['ions_positions_force']
         except KeyError:
@@ -316,7 +316,7 @@ class CpParser(Parser):
 
     def _generate_sites_ordering(self, raw_species, raw_atoms):
         """
-        take the positions of xml and from file.pos of the LAST step and compare them 
+        take the positions of xml and from file.pos of the LAST step and compare them
         """
         # Examples in the comments are for species [Ba, O, Ti]
         # and atoms [Ba, Ti, O, O, O]
@@ -347,7 +347,7 @@ class CpParser(Parser):
         # third atom) in the CP output files.
         # Example: [0,2,3,4,1]
         reordering = [_[0] for _ in new_order_tmp]
-        # I now need the inverse reordering, to put back in place 
+        # I now need the inverse reordering, to put back in place
         # from the output ordering to the input one!
         # Example: [0,4,1,2,3]
         # Because in the final list (Ba, O, O, O, Ti)

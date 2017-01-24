@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tests for ``aiida.tools.codespecific.quantumespresso.pwinputparser``.
+Tests for ``aiida_quantumespresso.tools.pwinputparser``.
 
 Since the AiiDa-specific methods of PwInputFile generates (unstored) Node
 objects, this  has to be run with a temporary database.

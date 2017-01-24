@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from aiida.parsers.plugins.quantumespresso import QEOutputParsingError
 from xml.dom.minidom import parseString
-from aiida.parsers.plugins.quantumespresso.basic_raw_parser_pw import (read_xml_card,
+from aiida_quantumespresso.parsers.basic_raw_parser_pw import (read_xml_card,
                                                                        parse_xml_child_integer, parse_xml_child_bool,
                                                                        parse_xml_child_str, parse_xml_child_float,
                                                                        parse_xml_child_attribute_str, xml_card_cell,
@@ -68,7 +68,7 @@ def parse_cp_traj_stanzas(num_elements, splitlines, prepend_name, rescale=1.):
 
 def parse_cp_text_output(data, xml_data):
     """
-    data must be a list of strings, one for each lines, as returned by readlines(). 
+    data must be a list of strings, one for each lines, as returned by readlines().
     On output, a dictionary with parsed values
     """
     # TODO: uniform readlines() and read() usage for passing input to the parser

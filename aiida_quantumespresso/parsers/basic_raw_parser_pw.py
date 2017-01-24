@@ -4,15 +4,15 @@ A collection of function that are used to parse the output of Quantum Espresso P
 The function that needs to be called from outside is parse_raw_output().
 The functions mostly work without aiida specific functionalities.
 The parsing will try to convert whatever it can in some dictionary, which
-by operative decision doesn't have much structure encoded, [the values are simple ] 
+by operative decision doesn't have much structure encoded, [the values are simple ]
 """
 import xml.dom.minidom
 import os
 import string
-from aiida.parsers.plugins.quantumespresso.constants import ry_to_ev, hartree_to_ev, bohr_to_ang, ry_si, bohr_si
+from aiida_quantumespresso.parsers.constants import ry_to_ev, hartree_to_ev, bohr_to_ang, ry_si, bohr_si
 from aiida.parsers.plugins.quantumespresso import QEOutputParsingError
 
-# TODO: it could be possible to use info of the input file to parse output. 
+# TODO: it could be possible to use info of the input file to parse output.
 # but atm the output has all the informations needed for the parsing.
 
 # parameter that will be used later for comparisons
@@ -39,16 +39,16 @@ def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_
     """
     Parses the output of a calculation
     Receives in input the paths to the output file and the xml file.
-    
+
     :param out_file: path to pw std output
     :param input_dict: not used
     :param parser_opts: not used
     :param dir_with_bands: path to directory with all k-points (Kxxxxx) folders
     :param xml_file: path to QE data-file.xml
-    
+
     :returns out_dict: a dictionary with parsed data
     :return successful: a boolean that is False in case of failed calculations
-            
+
     :raises QEOutputParsingError: for errors in the parsing,
     :raises AssertionError: if two keys in the parsed dicts are found to be qual
 
@@ -159,7 +159,7 @@ def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_
     # parameter data will be mapped in ParameterData
     # trajectory_data in ArrayData
     # structure_data in a Structure
-    # bands_data should probably be merged in ArrayData    
+    # bands_data should probably be merged in ArrayData
     return parameter_data, trajectory_data, structure_data, job_successful
 
 
@@ -517,7 +517,7 @@ def xml_card_ions(parsed_data, dom, lattice_vectors, volume):
         raise QEOutputParsingError('Error parsing tag ATOM.# inside %s.' % (target_tags.tagName ))
     # saving data together with cell parameters. Did so for better compatibility with ASE.
 
-    # correct some units that have been converted in 
+    # correct some units that have been converted in
     parsed_data['atomic_positions' + units_suffix] = default_length_units
     parsed_data['direct_lattice_vectors' + units_suffix] = default_length_units
 
@@ -566,14 +566,14 @@ def parse_pw_xml_output(data, dir_with_bands=None):
 def parse_pw_text_output(data, xml_data=None, structure_data=None, input_dict=None):
     """
     Parses the text output of QE-PWscf.
-    
+
     :param data: a string, the file as read by read()
     :param xml_data: the dictionary with the keys read from xml.
     :param structure_data: dictionary, coming from the xml, with info on the structure
-    
-    :return parsed_data: dictionary with key values, referring to quantities 
+
+    :return parsed_data: dictionary with key values, referring to quantities
                          at the last scf step.
-    :return trajectory_data: key,values referring to intermediate scf steps, 
+    :return trajectory_data: key,values referring to intermediate scf steps,
                              as in the case of vc-relax. Empty dictionary if no
                              value is present.
     :return critical_messages: a list with critical messages. If any is found in
@@ -639,11 +639,11 @@ def parse_pw_text_output(data, xml_data=None, structure_data=None, input_dict=No
         if len(parsed_data['warnings']) > 0:
             return parsed_data, trajectory_data, critical_warnings.values()
         else:
-            # did not find any error message -> raise an Error and do not 
+            # did not find any error message -> raise an Error and do not
             # return anything
             raise QEOutputParsingError("Parser can't load basic info.")
 
-    # Save these two quantities in the parsed_data, because they will be 
+    # Save these two quantities in the parsed_data, because they will be
     # useful for queries (maybe), and structure_data will not be stored as a ParameterData
     parsed_data['number_of_atoms'] = nat
     parsed_data['number_of_species'] = ntyp
@@ -668,7 +668,7 @@ def parse_pw_text_output(data, xml_data=None, structure_data=None, input_dict=No
             if message is None:
                 message = line
 
-            # if the run is a molecular dynamics, I ignore that I reached the 
+            # if the run is a molecular dynamics, I ignore that I reached the
             # last iteration step.
             if ('The maximum number of steps has been reached.' in line and
                         'md' in input_dict['CONTROL']['calculation']):
@@ -707,23 +707,23 @@ def parse_pw_text_output(data, xml_data=None, structure_data=None, input_dict=No
     relax_steps = [i.split('\n') for i in relax_steps]
 
 
-    # now I create a bunch of arrays for every step.    
+    # now I create a bunch of arrays for every step.
     for data_step in relax_steps:
         for count, line in enumerate(data_step):
 
             # NOTE: in the above, the chemical symbols are not those of AiiDA
             # since the AiiDA structure is different. So, I assume now that the
-            # order of atoms is the same of the input atomic structure. 
+            # order of atoms is the same of the input atomic structure.
 
             # Computed dipole correction in slab geometries.
             # save dipole in debye units, only at last iteration of scf cycle
 
             # grep energy and eventually, magnetization
-            if '!' in line:                
+            if '!' in line:
                 if 'makov-payne' in line.lower():
                     try:
                         for key in ['total','envir']:
-                            if key in line.lower():                                
+                            if key in line.lower():
                                 En = float(line.split('=')[1].split('Ry')[0]) * ry_to_ev
                                 try:
                                     trajectory_data[key+'_makov-payne'].append(En)
@@ -732,7 +732,7 @@ def parse_pw_text_output(data, xml_data=None, structure_data=None, input_dict=No
                                     parsed_data[key +'_makov-payne'+ units_suffix] = default_energy_units
                     except Exception:
                         parsed_data['warnings'].append('Error while parsing the energy')
-                else:    
+                else:
                     try:
                         for key in ['energy', 'energy_accuracy']:
                             if key not in trajectory_data:

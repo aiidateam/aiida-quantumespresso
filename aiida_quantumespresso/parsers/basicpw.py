@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from aiida.orm.calculation.job.quantumespresso.pw import PwCalculation
-from aiida.parsers.plugins.quantumespresso.basic_raw_parser_pw import (
+from aiida_quantumespresso.calculations.pw import PwCalculation
+from aiida_quantumespresso.parsers.basic_raw_parser_pw import (
     parse_raw_output, QEOutputParsingError)
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.folder import FolderData
@@ -63,10 +63,10 @@ class BasicpwParser(Parser):
             parser_opts = {}
 
         # load the input dictionary
-        # TODO: pass this input_dict to the parser. It might need it.            
+        # TODO: pass this input_dict to the parser. It might need it.
         input_dict = self._calc.inp.parameters.get_dict()
 
-        # Check that the retrieved folder is there 
+        # Check that the retrieved folder is there
         try:
             out_folder = retrieved[self._calc._get_linkname_retrieved()]
         except KeyError:
@@ -167,7 +167,7 @@ class BasicpwParser(Parser):
 
                 symbols = numpy.array([str(i.kind_name) for i in in_struc.sites])
                 stepids = numpy.arange(len(positions))  # a growing integer per step
-                # I will insert time parsing when they fix their issues about time 
+                # I will insert time parsing when they fix their issues about time
                 # printing (logic is broken if restart is on)
 
                 traj = TrajectoryData()
@@ -193,7 +193,7 @@ class BasicpwParser(Parser):
     def get_parser_settings_key(self):
         """
         Return the name of the key to be used in the calculation settings, that
-        contains the dictionary with the parser_options 
+        contains the dictionary with the parser_options
         """
         return 'parser_options'
 

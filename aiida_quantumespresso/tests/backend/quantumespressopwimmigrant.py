@@ -30,10 +30,10 @@ of jobs, in order to test the correct preparation of the PwimmigrantCalculation.
 # TODO: Test exception handling of user errors.
 import os
 
-from aiida.orm.calculation.job.quantumespresso.pwimmigrant import PwimmigrantCalculation
+from aiida_quantumespresso.calculations.pwimmigrant import PwimmigrantCalculation
 from aiida.daemon.execmanager import retrieve_jobs
 from aiida.common.folders import SandboxFolder
-from aiida.tools.codespecific.quantumespresso.pwinputparser import str2val
+from aiida_quantumespresso.tools.pwinputparser import str2val
 from aiida.orm import Code
 from aiida.backends.testbase import AiidaTestCase
 

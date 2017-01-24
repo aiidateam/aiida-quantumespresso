@@ -4,16 +4,16 @@ A collection of function that are used to parse the output of Quantum Espresso P
 The function that needs to be called from outside is parse_raw_output().
 The functions mostly work without aiida specific functionalities.
 The parsing will try to convert whatever it can in some dictionary, which
-by operative decision doesn't have much structure encoded, [the values are simple ] 
+by operative decision doesn't have much structure encoded, [the values are simple ]
 """
 import xml.dom.minidom
 import os
 import string
 import re
-from aiida.parsers.plugins.quantumespresso.constants import ry_to_ev,hartree_to_ev,bohr_to_ang,ry_si,bohr_si
+from aiida_quantumespresso.parsers.constants import ry_to_ev,hartree_to_ev,bohr_to_ang,ry_si,bohr_si
 from aiida.parsers.plugins.quantumespresso import QEOutputParsingError
 
-# TODO: it could be possible to use info of the input file to parse output. 
+# TODO: it could be possible to use info of the input file to parse output.
 # but atm the output has all the informations needed for the parsing.
 
 # parameter that will be used later for comparisons
@@ -35,24 +35,24 @@ default_charge_units = 'e'
 default_force_units = 'ev / angstrom'
 default_stress_units = 'GPascal'
 default_polarization_units = 'C / m^2'
-       
+
 def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_with_bands=None):
     """
     Parses the output of a calculation
     Receives in input the paths to the output file and the xml file.
-    
+
     :param out_file: path to pw std output
     :param input_dict: dictionary with the input parameters
     :param parser_opts: not used
     :param dir_with_bands: path to directory with all k-points (Kxxxxx) folders
     :param xml_file: path to QE data-file.xml
-    
+
     :return parameter_data: a dictionary with parsed parameters
     :return trajectory_data: a dictionary with arrays (for relax & md calcs.)
     :return structure_data: a dictionary with data for the output structure
     :return bands_data: a dictionary with data for bands (for bands calcs.)
     :return job_successful: a boolean that is False in case of failed calculations
-            
+
     :raises QEOutputParsingError: for errors in the parsing,
     :raises AssertionError: if two keys in the parsed dicts are found to be qual
 
@@ -62,11 +62,11 @@ def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_
     """
     import copy
     # TODO: a lot of ifs could be cleaned out
-    
+
     # TODO: input_dict should be used as well
-    
+
     job_successful = True
-    
+
     parser_version = '0.1'
     parser_info = {}
     parser_info['parser_warnings'] = []
@@ -75,7 +75,7 @@ def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_
     # if xml_file is not given in input, skip its parsing
     if xml_file is not None:
         try:
-            with open(xml_file,'r') as f:                
+            with open(xml_file,'r') as f:
                 xml_lines = f.read() # Note: read() and not readlines()
         except IOError:
             raise QEOutputParsingError("Failed to open xml file: {}.".format(xml_file))
@@ -87,7 +87,7 @@ def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_
         xml_data = {}
         bands_data = {}
         structure_data = {}
-    
+
     # load QE out file
     try:
         with open(out_file,'r') as f:
@@ -97,7 +97,7 @@ def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_
 
     if not out_lines: # there is an output file, but it's empty -> crash
         job_successful = False
-     
+
     # check if the job has finished (that doesn't mean without errors)
     finished_run = False
     for line in out_lines.split('\n')[::-1]:
@@ -106,7 +106,7 @@ def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_
             break
     if not finished_run: # error if the job has not finished
         warning = 'QE pw run did not reach the end of the execution.'
-        parser_info['parser_warnings'].append(warning)        
+        parser_info['parser_warnings'].append(warning)
         job_successful = False
 
     # parse
@@ -120,7 +120,7 @@ def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_
             critical_messages = []
         else: # if it was finished and I got error, it's a mistake of the parser
             raise QEOutputParsingError('Error while parsing QE output. Exception message: {}'.format(e.message))
-        
+
     # I add in the out_data all the last elements of trajectory_data values.
     # Safe for some large arrays, that I will likely never query.
     skip_keys = ['forces','atomic_magnetic_moments','atomic_charges',
@@ -163,7 +163,7 @@ def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_
     # parameter data will be mapped in ParameterData
     # trajectory_data in ArrayData
     # structure_data in a Structure
-    # bands_data should probably be merged in ArrayData    
+    # bands_data should probably be merged in ArrayData
     return parameter_data,trajectory_data,structure_data,bands_data,job_successful
 
 
@@ -180,7 +180,7 @@ def cell_volume(a1,a2,a3):
 # the xml file of QE v5.0.x (version below not tested)
 def read_xml_card(dom,cardname):
     try:
-        root_node = [_ for _ in dom.childNodes if 
+        root_node = [_ for _ in dom.childNodes if
                     isinstance(_, xml.dom.minidom.Element)
                         and _.nodeName == "Root"][0]
         the_card = [_ for _ in root_node.childNodes if _.nodeName == cardname][0]
@@ -270,7 +270,7 @@ def grep_energy_from_line(line):
         return float(line.split('=')[1].split('Ry')[0])*ry_to_ev
     except Exception:
         raise QEOutputParsingError('Error while parsing energy')
-        
+
 def convert_qe_time_to_sec(timestr):
     """
     Given the walltime string of Quantum Espresso, converts it in a number of
@@ -303,11 +303,11 @@ def convert_qe_time_to_sec(timestr):
                          .format(timestr, rest))
 
     num_seconds = (
-        float(seconds) + float(minutes) * 60. + 
+        float(seconds) + float(minutes) * 60. +
         float(hours) * 3600. + float(days) * 86400.)
 
     return num_seconds
- 
+
 def convert_list_to_matrix(in_matrix,n_rows,n_columns):
     """
     converts a list into a list of lists (a matrix like) with n_rows and n_columns
@@ -316,10 +316,10 @@ def convert_list_to_matrix(in_matrix,n_rows,n_columns):
 
 def xml_card_cell(parsed_data,dom):
     #CARD CELL of QE output
-    
+
     cardname = 'CELL'
     target_tags = read_xml_card(dom,cardname)
-    
+
     for tagname in ['NON-PERIODIC_CELL_CORRECTION','BRAVAIS_LATTICE']:
         parsed_data[tagname.replace('-','_').lower()] = parse_xml_child_str(tagname,target_tags)
 
@@ -334,9 +334,9 @@ def xml_card_cell(parsed_data,dom):
     if metric == 'bohr':
         value *= bohr_to_ang
     parsed_data[tagname.replace('-','_').lower()] = value
-    
+
     tagname='CELL_DIMENSIONS'
-    try:    
+    try:
         #a=target_tags.getElementsByTagName(tagname)[0]
         a=[_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
         b=a.childNodes[0]
@@ -348,14 +348,14 @@ def xml_card_cell(parsed_data,dom):
 
     tagname = 'DIRECT_LATTICE_VECTORS'
     lattice_vectors = []
-    try: 
+    try:
         second_tagname='UNITS_FOR_DIRECT_LATTICE_VECTORS'
         #a=target_tags.getElementsByTagName(tagname)[0]
         a=[_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
         b=a.getElementsByTagName('UNITS_FOR_DIRECT_LATTICE_VECTORS')[0]
         value=str(b.getAttribute('UNITS')).lower()
         parsed_data[second_tagname.replace('-','_').lower()]=value
-        
+
         metric = value
         if metric not in ['bohr','angstroms']: # REMEMBER TO CHECK THE UNITS AT THE END OF THE FUNCTION
             raise QEOutputParsingError('Error parsing tag {} inside {}: units not supported: {}'
@@ -371,24 +371,24 @@ def xml_card_cell(parsed_data,dom):
             if metric=='bohr':
                 value = [ bohr_to_ang*float(s) for s in value ]
             lattice_vectors.append(value)
-        
+
         volume = cell_volume(lattice_vectors[0],lattice_vectors[1],lattice_vectors[2])
-        
+
     except Exception:
         raise QEOutputParsingError('Error parsing tag {} inside {} inside {}.'
                                    .format(tagname,target_tags.tagName,cardname) )
     # NOTE: lattice_vectors will be saved later together with card IONS.atom
 
     tagname = 'RECIPROCAL_LATTICE_VECTORS'
-    try:    
+    try:
         #a = target_tags.getElementsByTagName(tagname)[0]
         a=[_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
-        
+
         second_tagname = 'UNITS_FOR_RECIPROCAL_LATTICE_VECTORS'
         b = a.getElementsByTagName(second_tagname)[0]
         value = str(b.getAttribute('UNITS')).lower()
         parsed_data[second_tagname.replace('-','_').lower()]=value
-        
+
         metric=value
         # NOTE: output is given in 2 pi / a [ang ^ -1]
         if metric not in ['2 pi / a']:
@@ -406,7 +406,7 @@ def xml_card_cell(parsed_data,dom):
                 value=[ float(s)/parsed_data['lattice_parameter'] for s in value ]
             this_matrix.append(value)
         parsed_data['reciprocal_lattice_vectors'] = this_matrix
-        
+
     except Exception:
         raise QEOutputParsingError('Error parsing tag {} inside {}.'
                                    .format(tagname,target_tags.tagName) )
@@ -415,10 +415,10 @@ def xml_card_cell(parsed_data,dom):
 def xml_card_ions(parsed_data,dom,lattice_vectors,volume):
     cardname='IONS'
     target_tags=read_xml_card(dom,cardname)
-    
+
     for tagname in ['NUMBER_OF_ATOMS','NUMBER_OF_SPECIES']:
         parsed_data[tagname.lower()]=parse_xml_child_integer(tagname,target_tags)
-    
+
     tagname='UNITS_FOR_ATOMIC_MASSES'
     attrname='UNITS'
     parsed_data[tagname.lower()]=parse_xml_child_attribute_str(tagname,attrname,target_tags)
@@ -435,7 +435,7 @@ def xml_card_ions(parsed_data,dom,lattice_vectors,volume):
 
             #a=target_tags.getElementsByTagName(tagname)[0]
             a=[_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
-            
+
             tagname2='ATOM_TYPE'
             parsed_data['species']['type'].append(parse_xml_child_str(tagname2,a))
 
@@ -507,11 +507,11 @@ def xml_card_ions(parsed_data,dom,lattice_vectors,volume):
     except Exception:
         raise QEOutputParsingError('Error parsing tag ATOM.# inside %s.'% (target_tags.tagName ) )
     # saving data together with cell parameters. Did so for better compatibility with ASE.
-    
-    # correct some units that have been converted in 
+
+    # correct some units that have been converted in
     parsed_data['atomic_positions'+units_suffix] = default_length_units
     parsed_data['direct_lattice_vectors'+units_suffix] = default_length_units
-        
+
     return parsed_data
 
 def xml_card_spin(parsed_data,dom):
@@ -528,7 +528,7 @@ def xml_card_spin(parsed_data,dom):
 def xml_card_header(parsed_data,dom):
     cardname='HEADER'
     target_tags=read_xml_card(dom,cardname)
-    
+
     for tagname in ['FORMAT','CREATOR']:
         for attrname in ['NAME','VERSION']:
             parsed_data[(tagname+'_'+attrname).lower()
@@ -539,7 +539,7 @@ def xml_card_header(parsed_data,dom):
 def xml_card_planewaves(parsed_data,dom,calctype):
     if calctype not in ['pw','cp']:
         raise ValueError("Input flag not accepted, must be 'cp' or 'pw'")
-    
+
     cardname='PLANE_WAVES'
     target_tags=read_xml_card(dom,cardname)
 
@@ -555,14 +555,14 @@ def xml_card_planewaves(parsed_data,dom,calctype):
         else:
             conv_fac = ry_to_ev
 
-        tagname='WFC_CUTOFF' 
+        tagname='WFC_CUTOFF'
         parsed_data[tagname.lower()] = parse_xml_child_float(tagname,target_tags)*conv_fac
         parsed_data[tagname.lower()+units_suffix] = default_energy_units
-        
-        tagname='RHO_CUTOFF' 
+
+        tagname='RHO_CUTOFF'
         parsed_data[tagname.lower()] = parse_xml_child_float(tagname,target_tags)*conv_fac
         parsed_data[tagname.lower()+units_suffix] = default_energy_units
-        
+
     for tagname in [ 'FFT_GRID','SMOOTH_FFT_GRID' ]:
         grid = []
         for attrname in ['nr1','nr2','nr3']:
@@ -576,7 +576,7 @@ def xml_card_planewaves(parsed_data,dom,calctype):
         for tagname in ['MAX_NUMBER_OF_GK-VECTORS','GVECT_NUMBER','SMOOTH_GVECT_NUMBER' ]:
             parsed_data[tagname.lower()] = parse_xml_child_integer(tagname,target_tags)
 
-        tagname='GAMMA_ONLY' 
+        tagname='GAMMA_ONLY'
         parsed_data[tagname.lower()] = parse_xml_child_bool(tagname,target_tags)
 
         tagname='SMALLBOX_FFT_GRID'
@@ -584,7 +584,7 @@ def xml_card_planewaves(parsed_data,dom,calctype):
         for attrname in ['nr1b','nr2b','nr3b']:
             fft_grid.append(parse_xml_child_attribute_int(tagname,attrname,target_tags))
         parsed_data[tagname.lower()] = fft_grid
-        
+
     return parsed_data
 
 def xml_card_symmetries(parsed_data,dom):
@@ -594,7 +594,7 @@ def xml_card_symmetries(parsed_data,dom):
     for tagname in ['NUMBER_OF_SYMMETRIES','NUMBER_OF_BRAVAIS_SYMMETRIES']:
         parsed_data[tagname.replace('-','_').lower()] = \
             parse_xml_child_integer(tagname,target_tags)
-                
+
     for tagname in ['INVERSION_SYMMETRY','DO_NOT_USE_TIME_REVERSAL',
                     'TIME_REVERSAL_FLAG','NO_TIME_REV_OPERATIONS']:
         parsed_data[tagname.lower()]=parse_xml_child_bool(tagname,target_tags)
@@ -636,7 +636,7 @@ def xml_card_symmetries(parsed_data,dom):
             b=a.getElementsByTagName(tagname2)[0]
             c=[ int(s) for s in b.childNodes[0].data.split() ]
             current_sym[tagname2.lower()] = convert_list_to_matrix(c,3,3)
-                
+
             for tagname2 in ['FRACTIONAL_TRANSLATION','EQUIVALENT_IONS']: # not always present
                 try:
                     b = a.getElementsByTagName(tagname2)[0]
@@ -651,7 +651,7 @@ def xml_card_symmetries(parsed_data,dom):
             parsed_data['symmetries'].append(current_sym)
         except IndexError: # SYMM.i out of index
             find_sym=False
-                
+
     return parsed_data
 
 def xml_card_exchangecorrelation(parsed_data,dom):
@@ -667,7 +667,7 @@ def xml_card_exchangecorrelation(parsed_data,dom):
         parsed_data[tagname.lower()] = parse_xml_child_bool(tagname,target_tags)
     except Exception:
         parsed_data[tagname.lower()] = False
-    
+
     if parsed_data[tagname.lower()]: # if it is a plus U calculation, I expect more infos
         tagname = 'HUBBARD_L'
         try:
@@ -680,7 +680,7 @@ def xml_card_exchangecorrelation(parsed_data,dom):
         except Exception:
             raise QEOutputParsingError('Error parsing tag '+\
                                        '{} inside {}.'.format(tagname, target_tags.tagName) )
-        
+
         for tagname in ['HUBBARD_U','HUBBARD_ALPHA','HUBBARD_BETA','HUBBARD_J0']:
             try:
                 #a = target_tags.getElementsByTagName(tagname)[0]
@@ -692,7 +692,7 @@ def xml_card_exchangecorrelation(parsed_data,dom):
             except Exception:
                 raise QEOutputParsingError('Error parsing tag '+\
                                            '{} inside {}.'.format(tagname, target_tags.tagName))
-        
+
         tagname = 'LDA_PLUS_U_KIND'
         try:
             parsed_data[tagname.lower()] = parse_xml_child_integer(tagname,target_tags)
@@ -714,7 +714,7 @@ def xml_card_exchangecorrelation(parsed_data,dom):
             parsed_data[tagname.lower()] = convert_list_to_matrix(c,3,3)
         except Exception:
             pass
-    
+
     try:
         tagname='NON_LOCAL_DF'
         parsed_data[tagname.lower()] = parse_xml_child_integer(tagname,target_tags)
@@ -743,21 +743,21 @@ def parse_pw_xml_output(data,dir_with_bands=None):
         dom = xml.dom.minidom.parseString(data)
     except ExpatError:
         return {'xml_warnings':"Error in XML parseString: bad format"},{},{}
-    
+
     parsed_data = {}
-    
+
     parsed_data['xml_warnings'] = []
-    
+
     structure_dict = {}
     # CARD CELL
     structure_dict,lattice_vectors,volume = copy.deepcopy(xml_card_cell(structure_dict,dom))
 
     # CARD IONS
     structure_dict = copy.deepcopy(xml_card_ions(structure_dict,dom,lattice_vectors,volume))
-    
+
     #CARD HEADER
     parsed_data = copy.deepcopy(xml_card_header(parsed_data,dom))
-    
+
     # CARD CONTROL
     cardname='CONTROL'
     target_tags=read_xml_card(dom,cardname)
@@ -775,23 +775,23 @@ def parse_pw_xml_output(data,dir_with_bands=None):
 #
 #    tagname='CELL_FACTOR'
 #    parsed_data[tagname.lower()]=parse_xml_child_float(tagname,target_tags)
-    
+
     # CARD ELECTRIC_FIELD
     cardname='ELECTRIC_FIELD'
     target_tags=read_xml_card(dom,cardname)
     for tagname in ['HAS_ELECTRIC_FIELD','HAS_DIPOLE_CORRECTION']:
         parsed_data[tagname.lower()]=parse_xml_child_bool(tagname,target_tags)
-        
+
     if parsed_data['has_electric_field'] or parsed_data['has_dipole_correction']:
         tagname='FIELD_DIRECTION'
         parsed_data[tagname.lower()]=parse_xml_child_integer(tagname,target_tags)
-        
+
         for tagname in ['MAXIMUM_POSITION','INVERSE_REGION','FIELD_AMPLITUDE']:
             parsed_data[tagname.lower()]=parse_xml_child_float(tagname,target_tags)
 
     # CARD PLANE_WAVES
     parsed_data = copy.deepcopy(xml_card_planewaves(parsed_data,dom,'pw'))
-    
+
     # CARD SPIN
     parsed_data = copy.deepcopy(xml_card_spin(parsed_data,dom))
 
@@ -819,14 +819,14 @@ def parse_pw_xml_output(data,dir_with_bands=None):
         except Exception: # I might not use the monkhorst pack grid
             pass
 
-    
+
     kpoints = []
     kpoints_weights = []
-    
+
     tagname_prefix = 'K-POINT.'
     a_dict={_.nodeName: _ for _ in target_tags.childNodes
             if _.nodeName.startswith(tagname_prefix)}
-    
+
     try:
         import numpy
         for i in range(parsed_data['number_of_k_points']):
@@ -835,11 +835,11 @@ def parse_pw_xml_output(data,dir_with_bands=None):
             a=a_dict[tagname]
             b = a.getAttribute('XYZ').replace('\n','').rsplit()
             value = [ float(s) for s in b ]
-            
+
             metric = k_points_units
             if metric=='2 pi / a':
                 value = [ 2.*numpy.pi*float(s)/structure_dict['lattice_parameter'] for s in value ]
-                weight = float(a.getAttribute('WEIGHT'))                
+                weight = float(a.getAttribute('WEIGHT'))
                 kpoints.append(value)
                 kpoints_weights.append(weight)
         parsed_data['k_points']=kpoints
@@ -850,13 +850,13 @@ def parse_pw_xml_output(data,dir_with_bands=None):
                                    'inside {}.'.format(i+1,target_tags.tagName) )
 
 
-    # I skip this card until someone will have a need for this. 
+    # I skip this card until someone will have a need for this.
 #     try:
 #         tagname='STARTING_K-POINTS'
 #         num_starting_k_points=parse_xml_child_integer(tagname,target_tags)
 #         # raise exception if there is no such a key
 #         parsed_data[tagname.replace('-','_').lower()]=num_starting_k_points
-# 
+#
 #         if parsed_data.get('starting_k_points'):
 #             try:
 #                 kpoints=[]
@@ -868,11 +868,11 @@ def parse_pw_xml_output(data,dir_with_bands=None):
 #                     metric=parsed_data['k_points_units']
 #                     if metric=='2 pi / a':
 #                         value=[ float(s)/parsed_data['lattice_parameter'] for s in value ]
-# 
+#
 #                         weight=float(a.getAttribute('WEIGHT'))
-# 
+#
 #                         kpoints.append([value,weight])
-# 
+#
 #                 parsed_data['k_point_start']=kpoints
 #             except Exception:
 #                 raise QEOutputParsingError('Error parsing tag {}'.format(tagname)+\
@@ -886,7 +886,7 @@ def parse_pw_xml_output(data,dir_with_bands=None):
     # tagname='NORM-OF-Q'
     # TODO: decide if save this parameter
     # parsed_data[tagname.replace('-','_').lower()]=parse_xml_child_float(tagname,target_tags)
-    
+
     # CARD BAND STRUCTURE INFO
     cardname = 'BAND_STRUCTURE_INFO'
     target_tags = read_xml_card(dom,cardname)
@@ -894,7 +894,7 @@ def parse_pw_xml_output(data,dir_with_bands=None):
     for tagname in ['NUMBER_OF_SPIN_COMPONENTS','NUMBER_OF_ATOMIC_WFC','NUMBER_OF_BANDS']:
         parsed_data[tagname.replace('-','_').lower()] = \
             parse_xml_child_integer(tagname,target_tags)
-    
+
     tagname='NON-COLINEAR_CALCULATION'
     parsed_data[tagname.replace('-','_').lower()] = \
         parse_xml_child_bool(tagname,target_tags)
@@ -909,7 +909,7 @@ def parse_pw_xml_output(data,dir_with_bands=None):
     if units not in ['hartree']:
         raise QEOutputParsingError('Expected energy units in Hartree.' + \
                                    'Got instead {}'.format(parsed_data['energy_units']) )
-    
+
     try:
         tagname='TWO_FERMI_ENERGIES'
         parsed_data[tagname.lower()] = parse_xml_child_bool(tagname,target_tags)
@@ -924,13 +924,13 @@ def parse_pw_xml_output(data,dir_with_bands=None):
         tagname = 'FERMI_ENERGY_DOWN'
         parsed_data[tagname.replace('-','_').lower()] = \
             parse_xml_child_float(tagname,target_tags) * hartree_to_ev
-        parsed_data[tagname.lower()+units_suffix] = default_energy_units        
+        parsed_data[tagname.lower()+units_suffix] = default_energy_units
     else:
         tagname = 'FERMI_ENERGY'
         parsed_data[tagname.replace('-','_').lower()] = \
             parse_xml_child_float(tagname,target_tags) * hartree_to_ev
         parsed_data[tagname.lower()+units_suffix] = default_energy_units
-        
+
     #CARD MAGNETIZATION_INIT
     cardname = 'MAGNETIZATION_INIT'
     target_tags = read_xml_card(dom,cardname)
@@ -938,7 +938,7 @@ def parse_pw_xml_output(data,dir_with_bands=None):
     # 0 if false
     tagname='CONSTRAINT_MAG'
     parsed_data[tagname.lower()] = parse_xml_child_integer(tagname,target_tags)
-    
+
     vec1 = []
     vec2 = []
     vec3 = []
@@ -955,13 +955,13 @@ def parse_pw_xml_output(data,dir_with_bands=None):
     parsed_data['starting_magnetization'] = vec1
     parsed_data['magnetization_angle1'] = vec2
     parsed_data['magnetization_angle2'] = vec3
-    
+
     #CARD OCCUPATIONS
     cardname = 'OCCUPATIONS'
     target_tags = read_xml_card(dom,cardname)
     for tagname in ['SMEARING_METHOD','TETRAHEDRON_METHOD','FIXED_OCCUPATIONS']:
         parsed_data[tagname.lower()] = parse_xml_child_bool(tagname,target_tags)
-    
+
     #CARD CHARGE-DENSITY
     cardname='CHARGE-DENSITY'
     target_tags=read_xml_card(dom,cardname)
@@ -972,7 +972,7 @@ def parse_pw_xml_output(data,dir_with_bands=None):
     except Exception:
         raise QEOutputParsingError('Error parsing attribute {},'.format(attrname) + \
                                    ' card {}.'.format(cardname))
-    
+
     #CARD EIGENVALUES
     # Note: if this card is parsed, the dimension of the database grows very much!
     cardname='EIGENVALUES'
@@ -993,9 +993,9 @@ def parse_pw_xml_output(data,dir_with_bands=None):
                     # load the eigenval.xml file
                     with open(eigenval_n,'r') as eigenval_f:
                         f = eigenval_f.read()
-                        
+
                     eig_dom = xml.dom.minidom.parseString(f)
-                    
+
                     tagname = 'UNITS_FOR_ENERGIES'
                     a = eig_dom.getElementsByTagName(tagname)[0]
                     attrname = 'UNITS'
@@ -1003,19 +1003,19 @@ def parse_pw_xml_output(data,dir_with_bands=None):
                     if metric not in ['Hartree']:
                         raise QEOutputParsingError('Error parsing eigenvalues xml file, ' + \
                                                    'units {} not implemented.'.format(metric))
-                    
+
                     tagname='EIGENVALUES'
                     a=eig_dom.getElementsByTagName(tagname)[0]
                     b=a.childNodes[0]
                     value_e = [ float(s)*hartree_to_ev for s in b.data.split() ]
-                    
+
                     tagname='OCCUPATIONS'
                     a = eig_dom.getElementsByTagName(tagname)[0]
                     b = a.childNodes[0]
                     value_o = [ float(s) for s in b.data.split() ]
                     return value_e,value_o
-            
-                # two cases: in cases of magnetic calculations, I have both spins    
+
+                # two cases: in cases of magnetic calculations, I have both spins
                 try:
                     tagname2 = 'DATAFILE'
                     b = a.getElementsByTagName(tagname2)[0]
@@ -1026,7 +1026,7 @@ def parse_pw_xml_output(data,dir_with_bands=None):
                     value_e,value_o = read_bands_and_occupations(eigenval_n)
                     bands1.append(value_e)
                     occupations1.append(value_o)
-                    
+
                 except IndexError:
                     tagname2='DATAFILE.1'
                     b1 = a.getElementsByTagName(tagname2)[0]
@@ -1035,7 +1035,7 @@ def parse_pw_xml_output(data,dir_with_bands=None):
                     attrname = 'iotk_link'
                     value1 = str(b1.getAttribute(attrname)).rstrip().replace('\n','')
                     value2 = str(b2.getAttribute(attrname)).rstrip().replace('\n','')
-                    
+
                     eigenval_n =  os.path.join(dir_with_bands,value1)
                     value_e,value_o = read_bands_and_occupations(eigenval_n)
                     bands1.append(value_e)
@@ -1052,7 +1052,7 @@ def parse_pw_xml_output(data,dir_with_bands=None):
                 occupations.append(occupations2)
             if bands2:
                 bands.append(bands2)
-            
+
             bands_dict['occupations'] = occupations
             bands_dict['bands'] = bands
             bands_dict['bands'+units_suffix] = default_energy_units
@@ -1063,7 +1063,7 @@ def parse_pw_xml_output(data,dir_with_bands=None):
 #         # if there is at least an empty band:
 #         if parsed_data['smearing_method'] or  \
 #            parsed_data['number_of_electrons']/2. < parsed_data['number_of_bands']:
-#             
+#
 #             #TODO: currently I do it only for non magnetic systems
 #             if len(bands_dict['occupations'])==1:
 #             # initialize lumo
@@ -1077,27 +1077,27 @@ def parse_pw_xml_output(data,dir_with_bands=None):
 #                     raise QEOutputParsingError('Error while searching for LUMO.')
 #                 parsed_data['lumo']=lumo
 #                 parsed_data['lumo'+units_suffix] = default_energy_units
-    
+
     # CARD symmetries
     parsed_data = copy.deepcopy(xml_card_symmetries(parsed_data,dom))
-    
+
     # CARD EXCHANGE_CORRELATION
     parsed_data = copy.deepcopy(xml_card_exchangecorrelation(parsed_data,dom))
-    
+
     return parsed_data,structure_dict,bands_dict
 
 def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
     """
     Parses the text output of QE-PWscf.
-    
+
     :param data: a string, the file as read by read()
     :param xml_data: the dictionary with the keys read from xml.
     :param structure_data: dictionary, coming from the xml, with info on the structure
     :param input_dict: dictionary with the input parameters
-    
-    :return parsed_data: dictionary with key values, referring to quantities 
+
+    :return parsed_data: dictionary with key values, referring to quantities
                          at the last scf step.
-    :return trajectory_data: key,values referring to intermediate scf steps, 
+    :return trajectory_data: key,values referring to intermediate scf steps,
                              as in the case of vc-relax. Empty dictionary if no
                              value is present.
     :return critical_messages: a list with critical messages. If any is found in
@@ -1105,12 +1105,12 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
     """
     # Separate the input string into separate lines
     data_lines = data.split('\n')
-    
+
     parsed_data = {}
     parsed_data['warnings'] = []
     vdw_correction = False
     trajectory_data = {}
-    
+
     # critical warnings: if any is found, the calculation status is FAILED
     critical_warnings = {'The maximum number of steps has been reached.':"The maximum step of the ionic/electronic relaxation has been reached.",
                          'convergence NOT achieved after':"The scf cycle did not reach convergence.",
@@ -1119,13 +1119,13 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
                          'Maximum CPU time exceeded':'Maximum CPU time exceeded',
                          '%%%%%%%%%%%%%%':None,
                          }
-    
+
     minor_warnings = {'Warning:':None,
                       'DEPRECATED:':None,
                       'incommensurate with FFT grid':'The FFT is incommensurate: some symmetries may be lost.',
                       'SCF correction compared to forces is too large, reduce conv_thr':"Forces are inaccurate (SCF correction is large): reduce conv_thr.",
                       }
-    
+
     all_warnings = dict(critical_warnings.items() + minor_warnings.items())
 
     # Find some useful quantities.
@@ -1148,10 +1148,10 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
                         # QE counts twice each k-point in spin-polarized calculations
                         nk /= 2
                 elif "Dense  grid" in line:
-                    FFT_grid = [int(g) for g in 
+                    FFT_grid = [int(g) for g in
                                 line.split('(')[1].split(')')[0].split(',')]
                 elif "Smooth grid" in line:
-                    smooth_FFT_grid = [int(g) for g in 
+                    smooth_FFT_grid = [int(g) for g in
                                        line.split('(')[1].split(')')[0].split(',')]
                     break
             alat *= bohr_to_ang
@@ -1170,14 +1170,14 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
             # try to get some error message
             for count,line in enumerate(data.split('\n')):
                 if any( i in line for i in all_warnings):
-                    messages = [ all_warnings[i] if all_warnings[i] is not None 
-                                    else line for i in all_warnings.keys() 
+                    messages = [ all_warnings[i] if all_warnings[i] is not None
+                                    else line for i in all_warnings.keys()
                                     if i in line]
-                                                       
+
                     if '%%%%%%%%%%%%%%' in line:
                         messages = parse_QE_errors(data.split('\n'),count,
-                                                   parsed_data['warnings']) 
-                                
+                                                   parsed_data['warnings'])
+
                     # if it found something, add to log
                     if len(messages)>0:
                         parsed_data['warnings'].extend(messages)
@@ -1185,7 +1185,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
             if len(parsed_data['warnings'])>0:
                 return parsed_data, trajectory_data, critical_warnings.values()
             else:
-                # did not find any error message -> raise an Error and do not 
+                # did not find any error message -> raise an Error and do not
                 # return anything
                 raise QEOutputParsingError("Parser can't load basic info.")
     else:
@@ -1196,22 +1196,22 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
         volume = structure_data['cell']['volume']
     # NOTE: lattice_parameter_xml is the lattice parameter of the xml file
     # in the units used by the code. lattice_parameter instead in angstroms.
-    
-    # Save these two quantities in the parsed_data, because they will be 
+
+    # Save these two quantities in the parsed_data, because they will be
     # useful for queries (maybe), and structure_data will not be stored as a ParameterData
     parsed_data['number_of_atoms'] = nat
     parsed_data['number_of_species'] = ntyp
     parsed_data['volume'] = volume
-    
+
     c_bands_error = False
-    
+
     # now grep quantities that can be considered isolated informations.
     for count,line in enumerate(data_lines):
-        
+
         # to be used for later
         if 'Carrying out vdW-DF run using the following parameters:' in line:
             vdw_correction=True
-            
+
 #        # single information only. To check that is not an info of the input already.
 #        elif 'EXX-fraction' in line:
 #            parsed_data['exx_fraction'] = float( line.split()[-1] )
@@ -1220,13 +1220,13 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
             # this is the part when initial positions and chemical
             # symbols are printed (they do not change during a run)
             i = count+1
-            while i<count+10 and not('site n.' in data_lines[i] and 
+            while i<count+10 and not('site n.' in data_lines[i] and
                                       'atom' in data_lines[i]):
                 i += 1
             if 'site n.' in data_lines[i] and 'atom' in data_lines[i]:
                 trajectory_data['atomic_species_name'] = \
                     [data_lines[i+1+j].split()[1] for j in range(nat)]
-            
+
         # parse the initialization time (take only first occurence)
         elif ('init_wall_time_seconds' not in parsed_data
               and "total cpu time spent up to now is" in line):
@@ -1240,18 +1240,18 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
                 time = line.split('CPU')[1].split('WALL')[0]
                 parsed_data['wall_time'] = time
             except Exception:
-                parsed_data['warnings'].append('Error while parsing wall time.')                
+                parsed_data['warnings'].append('Error while parsing wall time.')
             try:
                 parsed_data['wall_time_seconds'] = convert_qe_time_to_sec(time)
             except ValueError:
                 raise QEOutputParsingError("Unable to convert wall_time in seconds.")
-        
+
         elif 'SUMMARY OF PHASES' in line:
             try:
                 j = 0
                 while True:
                     j+=1
-                    if 'Ionic Phase' in data_lines[count+j]:                        
+                    if 'Ionic Phase' in data_lines[count+j]:
                         value = float(data_lines[count+j].split(':')[1].split('(')[0])
                         mod = int(data_lines[count+j].split('(mod')[1].split(')')[0])
                         if mod != 2:
@@ -1266,7 +1266,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
                             raise QEOutputParsingError("Units for polarization phase not supported")
                         parsed_data['electronic_phase'] = value
                         parsed_data['electronic_phase'+units_suffix] = '2pi'
-                        
+
                     if 'Total Phase' in data_lines[count+j]:
                         value = float(data_lines[count+j].split(':')[1].split('(')[0])
                         mod = int(data_lines[count+j].split('(mod')[1].split(')')[0])
@@ -1279,26 +1279,26 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
                     if "C/m^2" in data_lines[count+j]:
                         value = float(data_lines[count+j].split('=')[1].split('(')[0])
                         mod = float(data_lines[count+j].split('mod')[1].split(')')[0])
-                        units = data_lines[count+j].split(')')[1].strip() 
+                        units = data_lines[count+j].split(')')[1].strip()
                         parsed_data['polarization'] = value
                         parsed_data['polarization_module'] = mod
                         parsed_data['polarization'+units_suffix] = default_polarization_units
                         if 'C / m^2' not in default_polarization_units:
                             raise  QEOutputParsingError("Units for polarization phase not supported")
 
-                    if 'polarization direction' in data_lines[count+j]: 
+                    if 'polarization direction' in data_lines[count+j]:
                         vec = [ float(s) for s in \
                                 data_lines[count+j].split('(')[1].split(')')[0].split(',') ]
                         parsed_data['polarization_direction'] = vec
-                        
+
             except Exception:
                 warning = 'Error while parsing polarization.'
-                parsed_data['warnings'].append(warning)     
+                parsed_data['warnings'].append(warning)
 
         # for later control on relaxation-dynamics convergence
         elif 'nstep' in line and '=' in line:
             max_dynamic_iterations = int(line.split()[2])
-            
+
         elif 'point group' in line:
             if 'k-point group' not in line:
                 try:
@@ -1315,13 +1315,13 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
                 except Exception:
                     warning = "Problem parsing point group, I found: {}".format(line.strip())
                     parsed_data['warnings'].append(warning)
-        
-        # special parsing of c_bands error        
+
+        # special parsing of c_bands error
         elif 'c_bands' in line and 'eigenvalues not converged' in line:
             c_bands_error = True
 
         elif "iteration #" in line:
-            if ( ("Calculation restarted" not in line) and 
+            if ( ("Calculation restarted" not in line) and
                  ("Calculation stopped" not in line) ):
                 try:
                     parsed_data['total_number_of_scf_iterations'] += 1
@@ -1332,19 +1332,19 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
                 # if there is another iteration, c_bands is not necessarily a problem
                 # I put a warning only if c_bands error appears in the last iteration
                 c_bands_error = False
-        
+
         # Parsing of errors
         elif any( i in line for i in all_warnings):
             message = [ all_warnings[i] for i in all_warnings.keys() if i in line][0]
             if message is None:
                 message = line
-                
-            # if the run is a molecular dynamics, I ignore that I reached the 
+
+            # if the run is a molecular dynamics, I ignore that I reached the
             # last iteration step.
-            if ('The maximum number of steps has been reached.' in line and 
+            if ('The maximum number of steps has been reached.' in line and
                 'md' in input_dict.get('CONTROL',{}).get('calculation','')):
                 message = None
-                
+
             if 'iterations completed, stopping' in line:
                 value = message
                 message = None
@@ -1352,13 +1352,13 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
                     dynamic_iterations = int(line.split()[3])
                     if max_dynamic_iterations == dynamic_iterations:
                         message = value
-                        
+
 #             if 'c_bands' and 'eigenvalues not converged' in line:
 #                 # even if some bands are not converged, this is a problem only
 #                 # if it happens at the last scf step
 #                 # start a loop to find the end of scf step
 #                 # if another iteration is found, no warning is needed
-#                 doloop = True  
+#                 doloop = True
 #                 j = 0
 #                 while doloop:
 #                     line2 = data.split('\n')[count+j]
@@ -1369,11 +1369,11 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
 #                         doloop = False # to prevent going until the end of file
 #                     j += 1
 #                     print count+j
-                    
+
             if '%%%%%%%%%%%%%%' in line:
                 message  = None
-                messages = parse_QE_errors(data_lines,count,parsed_data['warnings']) 
-                        
+                messages = parse_QE_errors(data_lines,count,parsed_data['warnings'])
+
             # if it found something, add to log
             try:
                 parsed_data['warnings'].extend(messages)
@@ -1393,12 +1393,12 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
     # Put everything in a trajectory_data dictionary
     relax_steps = data.split('Self-consistent Calculation')[1:]
     relax_steps = [ i.split('\n') for i in relax_steps]
-    
-    
-    # now I create a bunch of arrays for every step.    
+
+
+    # now I create a bunch of arrays for every step.
     for data_step in relax_steps:
         for count,line in enumerate(data_step):
-            
+
             if 'CELL_PARAMETERS' in line:
                 try:
                     a1 = [float(s) for s in data_step[count+1].split()]
@@ -1427,7 +1427,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
                         trajectory_data['lattice_vectors_relax'].append([a1,a2,a3])
                     except KeyError:
                         trajectory_data['lattice_vectors_relax'] = [[a1,a2,a3]]
-                        
+
                 except Exception:
                     parsed_data['warnings'].append('Error while parsing relaxation cell parameters.')
 
@@ -1464,8 +1464,8 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
 
             # NOTE: in the above, the chemical symbols are not those of AiiDA
             # since the AiiDA structure is different. So, I assume now that the
-            # order of atoms is the same of the input atomic structure. 
-            
+            # order of atoms is the same of the input atomic structure.
+
             # Computed dipole correction in slab geometries.
             # save dipole in debye units, only at last iteration of scf cycle
             elif 'Computed dipole along edir' in line:
@@ -1478,11 +1478,11 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
                                                       " Units {} are not supported.".format(units))
                     value = float(line2.split()[-2])
                 except IndexError: # on units
-                    pass   
-                # save only the last dipole correction    
+                    pass
+                # save only the last dipole correction
                 while 'Computed dipole along edir' not in line2:
                     j += 1
-                    try: 
+                    try:
                         line2 = data_step[j]
                     except IndexError: # The dipole is also written at the beginning of a new bfgs iteration
                         break
@@ -1504,7 +1504,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
                         trajectory_data['scf_iterations'] = [scf_iterations]
                 except Exception:
                     parsed_data['warnings'].append('Error while parsing scf iterations.')
-            
+
             elif 'End of self-consistent calculation' in line:
                 # parse energy threshold for diagonalization algorithm
                 try:
@@ -1521,7 +1521,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
                         trajectory_data['energy_threshold'] = [value]
                 except Exception:
                     parsed_data['warnings'].append('Error while parsing ethr.')
-                
+
                 # parse final magnetic moments, if present
                 try:
                     j = 0
@@ -1552,17 +1552,17 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
                     parsed_data['atomic_charges'+units_suffix] = default_charge_units
                 except QEOutputParsingError:
                     pass
-            
+
             # grep energy and possibly, magnetization
             elif '!' in line:
                 try:
                     for key in ['energy','energy_accuracy']:
                         if key not in trajectory_data:
                             trajectory_data[key] = []
-                    
+
                     En = float(line.split('=')[1].split('Ry')[0])*ry_to_ev
                     E_acc = float(data_step[count+2].split('<')[1].split('Ry')[0])*ry_to_ev
-                    
+
                     for key,value in [['energy',En],['energy_accuracy',E_acc]]:
                         trajectory_data[key].append(value)
                         parsed_data[key+units_suffix] = default_energy_units
@@ -1571,7 +1571,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
                     while True:
                         j+=1
                         line2 = data_step[count+j]
-                        
+
                         for string,key in [
                             ['one-electron contribution','energy_one_electron'],
                             ['hartree contribution','energy_hartree'],
@@ -1618,7 +1618,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
                         # exit loop
                         elif 'convergence' in line2:
                             break
-                            
+
                     if vdw_correction:
                         j=0
                         while True:
@@ -1669,9 +1669,9 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
                     parsed_data['forces'+units_suffix] = default_force_units
                 except Exception:
                     parsed_data['warnings'].append('Error while parsing forces.')
-                
+
             # TODO: adding the parsing support for the decomposition of the forces
-            
+
             elif 'Total force =' in line:
                 try: # note that I can't check the units: not written in output!
                     value = float(line.split('=')[1].split('Total')[0])*ry_to_ev/bohr_to_ang
@@ -1682,7 +1682,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
                     parsed_data['total_force'+units_suffix] = default_force_units
                 except Exception:
                     parsed_data['warnings'].append('Error while parsing total force.')
-        
+
             elif 'entering subroutine stress ...' in line:
                 try:
                     stress = []
@@ -1715,7 +1715,7 @@ def parse_QE_errors(lines,count,warnings):
     :param warnings: the warnings already parsed in the file
     :return messages: a list of QE error messages
     """
-    
+
 #    PREVIOUS VERSION
 #    TODO: suppress it when we are sure the new one is working in all cases
 #    # find the indices of the lines with problems
@@ -1736,7 +1736,7 @@ def parse_QE_errors(lines,count,warnings):
 #        for v in prob_list:
 #            if v in irred_list:
 #                #irred_list.pop(v)
-#                message += irred_list.pop(irred_list.index(v)) + '\n'  
+#                message += irred_list.pop(irred_list.index(v)) + '\n'
 #    return [message]
 
     # find the indices of the lines with problems
@@ -1754,6 +1754,6 @@ def parse_QE_errors(lines,count,warnings):
         irred_list = list(set(prob_list))
         for v in prob_list:
             if ( len(v)>0 and (v in irred_list and v not in warnings) ):
-                messages.append(irred_list.pop(irred_list.index(v)))  
+                messages.append(irred_list.pop(irred_list.index(v)))
 
     return messages

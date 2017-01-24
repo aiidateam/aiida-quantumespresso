@@ -5,7 +5,7 @@ Plugin to immigrate a Quantum Espresso pw.x job that was not run using AiiDa.
 # TODO: Document the current limitations (e.g. ibrav == 0)
 import os
 from copy import deepcopy
-from aiida.orm.calculation.job.quantumespresso.pw import PwCalculation
+from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida.orm.calculation.job import _input_subfolder
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.parameter import ParameterData
@@ -28,7 +28,7 @@ class PwimmigrantCalculation(PwCalculation):
     """
     Create a PwCalculation object that can be used to import old jobs.
 
-    This is a sublass of aiida.orm.calculation.quantumespresso.PwCalculation
+    This is a sublass of aiida_quantumespresso.calculations.PwCalculation
     with slight modifications to some of the class variables and additional
     methods that
 

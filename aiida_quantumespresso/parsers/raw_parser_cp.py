@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from aiida.parsers.plugins.quantumespresso import QEOutputParsingError
 from xml.dom.minidom import parseString
-from aiida.parsers.plugins.quantumespresso.raw_parser_pw import (read_xml_card,
+from aiida_quantumespresso.parsers.raw_parser_pw import (read_xml_card,
                    parse_xml_child_integer,xml_card_header,parse_xml_child_bool,
                    parse_xml_child_str,parse_xml_child_float,
                    parse_xml_child_attribute_str,xml_card_cell,xml_card_ions,
@@ -66,14 +66,14 @@ def parse_cp_traj_stanzas(num_elements, splitlines, prepend_name,rescale=1.):
 
 def parse_cp_text_output(data,xml_data):
     """
-    data must be a list of strings, one for each lines, as returned by readlines(). 
+    data must be a list of strings, one for each lines, as returned by readlines().
     On output, a dictionary with parsed values
     """
     # TODO: uniform readlines() and read() usage for passing input to the parser
 
     parsed_data={}
     parsed_data['warnings']=[]
-    
+
     for count,line in enumerate(data):
 
         if 'warning' in line.lower():
@@ -134,7 +134,7 @@ def parse_cp_text_output(data,xml_data):
                 parsed_data['xnhp0'] = [float( this_line.split()[11] )]
             except (ValueError, IndexError):
                 pass
-            
+
     return parsed_data
 
 
@@ -148,13 +148,13 @@ def parse_cp_xml_counter_output(data):
     dom = parseString(data)
     parsed_data={}
     cardname='LAST_SUCCESSFUL_PRINTOUT'
-    
+
     card1 = [ _ for _ in dom.childNodes if _.nodeName=='PRINT_COUNTER'][0]
     card2 = [ _ for _ in card1.childNodes if _.nodeName=='LAST_SUCCESSFUL_PRINTOUT'][0]
-    
+
     tagname='STEP'
     parsed_data[cardname.lower().replace('-','_')] = parse_xml_child_integer(tagname,card2)
-    
+
     return parsed_data
 
 
@@ -170,7 +170,7 @@ def parse_cp_raw_output(out_file,xml_file=None,xml_counter_file=None):
         try:
             with open(xml_file,'r') as f:
                 xml_lines = f.read()
-        except IOError: 
+        except IOError:
             raise QEOutputParsingError("Failed to open xml file: %s."
                                        .format(xml_file) )
         # TODO: this function should probably be the same of pw.
@@ -179,14 +179,14 @@ def parse_cp_raw_output(out_file,xml_file=None,xml_counter_file=None):
     else:
         parser_info['parser_warnings'].append('Skipping the parsing of the xml file.')
         xml_data = {}
-    
-    
+
+
     # analyze the counter file, which keeps info on the steps
     if xml_counter_file is not None:
         try:
             with open(xml_counter_file,'r') as f:
                 xml_counter_lines = f.read()
-        except IOError: 
+        except IOError:
             raise QEOutputParsingError("Failed to open xml counter file: %s."
                                        .format(xml_file) )
         xml_counter_data=parse_cp_xml_counter_output(xml_counter_lines)
@@ -197,7 +197,7 @@ def parse_cp_raw_output(out_file,xml_file=None,xml_counter_file=None):
     try:
         with open(out_file,'r') as f:
             out_lines = f.readlines()
-    except IOError: 
+    except IOError:
         raise QEOutputParsingError("Failed to open output file: %s." % out_file)
 
     # understand if the job ended smoothly
@@ -206,9 +206,9 @@ def parse_cp_raw_output(out_file,xml_file=None,xml_counter_file=None):
         if 'JOB DONE' in line:
             job_successful=True
             break
-    
+
     out_data=parse_cp_text_output(out_lines,xml_data)
-    
+
     for key in out_data.keys():
         if key in xml_data.keys():
             raise AssertionError('%s found in both dictionaries' % key)
@@ -217,7 +217,7 @@ def parse_cp_raw_output(out_file,xml_file=None,xml_counter_file=None):
         # out_data keys take precedence and overwrite xml_data keys,
         # if the same key name is shared by both (but this should not happen!)
     final_data = dict(xml_data.items() + out_data.items() + xml_counter_data.items())
-    
+
     # TODO: parse the trajectory and save them in a reasonable format
 
     return final_data,job_successful
@@ -253,10 +253,10 @@ def parse_cp_xml_output(data):
     parsed_data[tagname.lower()]=parse_xml_child_bool(tagname,target_tags)
 
     # CARD STATUS
-    
+
     cardname = 'STATUS'
     target_tags = read_xml_card(dom,cardname)
-    
+
     tagname = 'STEP'
     attrname = 'ITERATION'
     parsed_data[(tagname+'_'+attrname).lower()]=int(parse_xml_child_attribute_str(tagname,attrname,target_tags))
@@ -268,20 +268,20 @@ def parse_cp_xml_output(data):
     if units not in ['pico-seconds']:
         raise QEOutputParsingError("Units {} are not supported by parser".format(units))
     parsed_data[tagname.lower()]=value
-    
+
     tagname = 'TITLE'
     parsed_data[tagname.lower()]=parse_xml_child_str(tagname,target_tags)
 
     # CARD CELL
     parsed_data,lattice_vectors,volume = copy.deepcopy(xml_card_cell(parsed_data,dom))
-    
+
     # CARD IONS
     parsed_data = copy.deepcopy(xml_card_ions(parsed_data,dom,lattice_vectors,volume))
 
     # CARD PLANE WAVES
 
     parsed_data = copy.deepcopy(xml_card_planewaves(parsed_data,dom,'cp'))
-    
+
     # CARD SPIN
     parsed_data = copy.deepcopy(xml_card_spin(parsed_data,dom))
 
@@ -289,10 +289,10 @@ def parse_cp_xml_output(data):
     parsed_data = copy.deepcopy(xml_card_exchangecorrelation(parsed_data,dom))
 
     # TODO CARD OCCUPATIONS
-    
+
     # CARD BRILLOUIN ZONE
     # TODO: k points are saved for CP... Why?
-    
+
     cardname='BRILLOUIN_ZONE'
     target_tags=read_xml_card(dom,cardname)
 
@@ -330,19 +330,19 @@ def parse_cp_xml_output(data):
             a=target_tags.getElementsByTagName(tagname)[0]
             b=a.getAttribute('XYZ').replace('\n','').rsplit()
             value=[ float(s) for s in b ]
-            
+
             metric=parsed_data['units_for_k_points']
             if metric=='2 pi / a':
                 value=[ float(s)/parsed_data['lattice_parameter'] for s in value ]
 
                 weight=float(a.getAttribute('WEIGHT'))
-                
+
                 kpoints.append([value,weight])
-                
+
         parsed_data['k_point']=kpoints
     except:
         raise QEOutputParsingError('Error parsing tag K-POINT.# inside %s.'% (target_tags.tagName ) )
-    
+
     tagname='NORM-OF-Q'
     # TODO decide if save this parameter
     parsed_data[tagname.replace('-','_').lower()]=parse_xml_child_float(tagname,target_tags)
@@ -387,7 +387,7 @@ def parse_cp_xml_output(data):
     target_tags = read_xml_card(dom,cardname)
 
     for tagname in ['STEP0','STEPM']:
-        try: 
+        try:
             tag = target_tags.getElementsByTagName(tagname)[0]
 
             try:
@@ -614,8 +614,8 @@ def parse_cp_xml_output(data):
     tagname='NUMBER_OF_SPIN_COMPONENTS'
     parsed_data[tagname.lower().replace('-','_')] = parse_xml_child_integer(tagname,target_tags)
 
-    # TODO 
-    # - EIGENVALUES (that actually just contains occupations) 
+    # TODO
+    # - EIGENVALUES (that actually just contains occupations)
     #   Why should I be interested in that, if CP works for insulators only?
     # - EIGENVECTORS
     # - others TODO are written in the function
