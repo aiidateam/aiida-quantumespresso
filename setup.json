@@ -5,6 +5,7 @@
     "license": "MIT License",
     "author": "The AiiDA team",
     "author_email": "developers@aiida.net",
+    "description": "A plugin to run Quantumespresso calculations and workflows",
     "classifiers": [
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 2.7",
