@@ -18,11 +18,6 @@ from aiida_quantumespresso.parsers import QEOutputParsingError
 
 # parameter that will be used later for comparisons
 
-__copyright__ = u"Copyright (c), This file is part of the AiiDA platform. For further information please visit http://www.aiida.net/. All rights reserved."
-__license__ = "MIT license, see LICENSE.txt file."
-__version__ = "0.7.1"
-__authors__ = "The AiiDA team."
-
 lattice_tolerance = 1.e-5
 
 default_energy_units = 'eV'
