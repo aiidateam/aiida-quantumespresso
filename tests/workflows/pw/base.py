@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-from aiida.common.exception import NotExistent
+from aiida.common.exceptions import NotExistent
 from aiida.orm.data.base import Int, Str
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
