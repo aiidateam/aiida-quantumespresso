@@ -28,6 +28,9 @@
         "aiida.tools.dbexporters.tcod_plugins": [
             "quantumespresso.cp = aiida_quantumespresso.dbexport.tcodplugins.cp:CpTcodtranslator",
             "quantumespresso.pw = aiida_quantumespresso.dbexport.tcodplugins.pw:PwTcodtranslator"
+        ],
+        "aiida.workflows": [
+            "quantumespresso.pw.pwbase = aiida_quantumespresso.workflows.pw.base:PwBaseWorkChain"
         ]
     }
 }
