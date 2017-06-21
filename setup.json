@@ -12,7 +12,7 @@
         "Development Status :: 4 - Beta"
     ],
     "install_requires": [
-        "aiida[ssh]"
+        "aiida[ssh, atomic_tools]"
     ],
     "entry_points": {
         "aiida.calculations": [
