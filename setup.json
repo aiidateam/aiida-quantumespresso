@@ -18,11 +18,13 @@
         "aiida.calculations": [
             "quantumespresso.pw = aiida_quantumespresso.calculations.pw:PwCalculation",
             "quantumespresso.cp = aiida_quantumespresso.calculations.cp:CpCalculation",
+            "quantumespresso.ph = aiida_quantumespresso.calculations.ph:PhCalculation",
             "quantumespresso.pwimmigrant = aiida_quantumespresso.calculations:PwimmigrantCalculation"
         ],
         "aiida.parsers": [
             "quantumespresso.basicpw = aiida_quantumespresso.parsers.basicpw:BasicpwParser",
             "quantumespresso.cp = aiida_quantumespresso.parsers.cp:CpParser",
+            "quantumespresso.ph = aiida_quantumespresso.parsers.ph:PhParser",
             "quantumespresso.pw = aiida_quantumespresso.parsers.pw:PwParser"
         ],
         "aiida.tools.dbexporters.tcod_plugins": [
@@ -30,6 +32,7 @@
             "quantumespresso.pw = aiida_quantumespresso.dbexport.tcodplugins.pw:PwTcodtranslator"
         ],
         "aiida.workflows": [
+            "quantumespresso.ph.phbase = aiida_quantumespresso.workflows.ph.base:PhBaseWorkChain"
             "quantumespresso.pw.pwbase = aiida_quantumespresso.workflows.pw.base:PwBaseWorkChain"
         ]
     }
