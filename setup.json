@@ -16,23 +16,34 @@
     ],
     "entry_points": {
         "aiida.calculations": [
-            "quantumespresso.pw = aiida_quantumespresso.calculations.pw:PwCalculation",
             "quantumespresso.cp = aiida_quantumespresso.calculations.cp:CpCalculation",
+            "quantumespresso.dos = aiida_quantumespresso.calculations.dos:DosCalculation",
+            "quantumespresso.matdyn = aiida_quantumespresso.calculations.matdyn:MatdynCalculation",
+            "quantumespresso.namelists = aiida_quantumespresso.calculations.namelists:NamelistsCalculation",
+            "quantumespresso.neb = aiida_quantumespresso.calculations.neb:NebCalculation",
             "quantumespresso.ph = aiida_quantumespresso.calculations.ph:PhCalculation",
+            "quantumespresso.pp = aiida_quantumespresso.calculations.pp:PpCalculation",
+            "quantumespresso.pw = aiida_quantumespresso.calculations.pw:PwCalculation",
+            "quantumespresso.projwfc = aiida_quantumespresso.calculations.projwfc:ProjwfcCalculation",
+            "quantumespresso.q2r = aiida_quantumespresso.calculations.q2r:Q2rCalculation",
             "quantumespresso.pwimmigrant = aiida_quantumespresso.calculations:PwimmigrantCalculation"
         ],
         "aiida.parsers": [
             "quantumespresso.basicpw = aiida_quantumespresso.parsers.basicpw:BasicpwParser",
             "quantumespresso.cp = aiida_quantumespresso.parsers.cp:CpParser",
+            "quantumespresso.dos = aiida_quantumespresso.parsers.dos:DosParser",
+            "quantumespresso.matdyn = aiida_quantumespresso.parsers.matdyn:MatdynParser",
+            "quantumespresso.neb = aiida_quantumespresso.parsers.neb:NebParser",
             "quantumespresso.ph = aiida_quantumespresso.parsers.ph:PhParser",
-            "quantumespresso.pw = aiida_quantumespresso.parsers.pw:PwParser"
+            "quantumespresso.projwfc = aiida_quantumespresso.parsers.projwfc:ProjwfcParser",
+            "quantumespresso.pw = aiida_quantumespresso.parsers.pw:PwParser",
+            "quantumespresso.q2r = aiida_quantumespresso.parsers.q2r:Q2rParser"
         ],
         "aiida.tools.dbexporters.tcod_plugins": [
             "quantumespresso.cp = aiida_quantumespresso.dbexport.tcodplugins.cp:CpTcodtranslator",
             "quantumespresso.pw = aiida_quantumespresso.dbexport.tcodplugins.pw:PwTcodtranslator"
         ],
         "aiida.workflows": [
-            "quantumespresso.ph.phbase = aiida_quantumespresso.workflows.ph.base:PhBaseWorkChain"
             "quantumespresso.pw.pwbase = aiida_quantumespresso.workflows.pw.base:PwBaseWorkChain"
         ]
     }
