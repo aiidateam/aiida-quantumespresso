@@ -28,6 +28,9 @@
             "quantumespresso.q2r = aiida_quantumespresso.calculations.q2r:Q2rCalculation",
             "quantumespresso.pwimmigrant = aiida_quantumespresso.calculations:PwimmigrantCalculation"
         ],
+        "aiida.data": [
+            "quantumespresso.forceconstants = aiida_quantumespresso.data.forceconstants:ForceconstantsData"
+        ],
         "aiida.parsers": [
             "quantumespresso.basicpw = aiida_quantumespresso.parsers.basicpw:BasicpwParser",
             "quantumespresso.cp = aiida_quantumespresso.parsers.cp:CpParser",
