@@ -38,6 +38,7 @@ class PhBaseWorkChain(WorkChain):
                 cls.inspect_ph,
             ),
             cls.run_results,
+            cls.run_clean,
         )
         spec.dynamic_output()
 
@@ -156,13 +157,11 @@ class PhBaseWorkChain(WorkChain):
         self.out('output_parameters', calculation.out.output_parameters)
         self.out('retrieved', calculation.out.retrieved)
 
-    def on_stop(self):
+    def run_clean(self):
         """
         Clean remote folders of the PhCalculations that were run if the clean_workdir parameter was
         set to true in the Workchain inputs
         """
-        super(PhBaseWorkChain, self).on_stop()
-
         if not self.inputs.clean_workdir.value:
             self.report('remote folders will not be cleaned')
             return

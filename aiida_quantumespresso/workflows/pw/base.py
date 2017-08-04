@@ -40,6 +40,7 @@ class PwBaseWorkChain(WorkChain):
                 cls.inspect_pw,
             ),
             cls.run_results,
+            cls.run_clean,
         )
         spec.dynamic_output()
 
@@ -189,6 +190,22 @@ class PwBaseWorkChain(WorkChain):
         if 'output_structure' in self.ctx.restart_calc.out:
             self.out('output_structure', self.ctx.restart_calc.out.output_structure)
 
+    def run_clean(self):
+        """
+        Clean remote folders of the PwCalculations that were run if the clean_workdir parameter was
+        set to true in the Workchain inputs
+        """
+        if not self.inputs.clean_workdir.value:
+            self.report('remote folders will not be cleaned')
+            return
+
+        for calc in self.ctx.calculation:
+            try:
+                calc.out.remote_folder._clean()
+                self.report('cleaned remote folder of {}<{}>'.format(calc.__class__.__name__, calc.pk))
+            except Exception:
+                pass
+
     def _handle_submission_failure(self, calculation):
         """
         The submission of the calculation has failed, if it was the second consecutive failure we
@@ -205,21 +222,3 @@ class PwBaseWorkChain(WorkChain):
         """
         self.abort_nowait('execution failed for the {} in iteration {}, but error handling is not implemented yet'
             .format(PwCalculation.__name__, self.ctx.iteration))
-
-    def on_stop(self):
-        """
-        Clean remote folders of the PwCalculations that were run if the clean_workdir parameter was
-        set to true in the Workchain inputs
-        """
-        super(PwBaseWorkChain, self).on_stop()
-
-        if not self.inputs.clean_workdir.value:
-            self.report('remote folders will not be cleaned')
-            return
-
-        for calc in self.ctx.calculation:
-            try:
-                calc.out.remote_folder._clean()
-                self.report('cleaned remote folder of {}<{}>'.format(calc.__class__.__name__, calc.pk))
-            except Exception:
-                pass
