@@ -12,7 +12,7 @@
         "Development Status :: 4 - Beta"
     ],
     "install_requires": [
-        "aiida[ssh, atomic_tools]"
+        "aiida"
     ],
     "entry_points": {
         "aiida.calculations": [
@@ -47,7 +47,8 @@
             "quantumespresso.pw = aiida_quantumespresso.dbexport.tcodplugins.pw:PwTcodtranslator"
         ],
         "aiida.workflows": [
-            "quantumespresso.pw.pwbase = aiida_quantumespresso.workflows.pw.base:PwBaseWorkChain"
+            "quantumespresso.ph.base = aiida_quantumespresso.workflows.ph.base:PhBaseWorkChain",
+            "quantumespresso.pw.base = aiida_quantumespresso.workflows.pw.base:PwBaseWorkChain"
         ]
     }
 }
