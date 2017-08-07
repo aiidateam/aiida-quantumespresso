@@ -50,6 +50,8 @@ class PwBaseWorkChain(WorkChain):
         """
         self.ctx.max_iterations = self.inputs.max_iterations.value
         self.ctx.restart_calc = None
+        self.ctx.has_calculation_failed = False
+        self.ctx.has_submission_failed = False
         self.ctx.is_finished = False
         self.ctx.iteration = 0
 
@@ -169,6 +171,7 @@ class PwBaseWorkChain(WorkChain):
 
         # Retry: calculation failed, try to salvage or abort
         elif calculation.get_state() in [calc_states.FAILED]:
+            self.ctx.has_submission_failed = False
             self._handle_calculation_failure(calculation)
 
         # Retry: try to convergence restarting from this calculation
@@ -211,8 +214,13 @@ class PwBaseWorkChain(WorkChain):
         The submission of the calculation has failed, if it was the second consecutive failure we
         abort the workchain, else we set the has_submission_failed flag and try again
         """
-        self.abort_nowait('submission failed for the {} in iteration {}, but error handling is not implemented yet'
-            .format(PwCalculation.__name__, self.ctx.iteration))
+        if self.ctx.has_submission_failed:
+            self.abort_nowait('submission for PwCalculation<{}> failed for the second time'.format(
+                calculation.pk))
+        else:
+            self.ctx.has_submission_failed = True
+            self.report('submission for PwCalculation<{}> failed, retrying once more'.format(
+                calculation.pk))
 
     def _handle_calculation_failure(self, calculation):
         """
