@@ -4,11 +4,15 @@ from aiida.orm.data.base import Bool, Float, Int, Str
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
+from aiida.common.exceptions import AiidaException
 from aiida.common.datastructures import calc_states
 from aiida.work.run import submit
 from aiida.work.workchain import WorkChain, ToContext, while_, append_
 from aiida_quantumespresso.calculations.ph import PhCalculation
 from aiida_quantumespresso.calculations.pw import PwCalculation
+
+class UnexpectedFailure(AiidaException):
+    pass
 
 class PhBaseWorkChain(WorkChain):
     """
@@ -48,8 +52,8 @@ class PhBaseWorkChain(WorkChain):
         """
         self.ctx.max_iterations = self.inputs.max_iterations.value
         self.ctx.restart_calc = self.inputs.parent_calc
-        self.ctx.has_calculation_failed = False
-        self.ctx.has_submission_failed = False
+        self.ctx.unexpected_failure = False
+        self.ctx.submission_failure = False
         self.ctx.is_finished = False
         self.ctx.iteration = 0
 
@@ -139,12 +143,18 @@ class PhBaseWorkChain(WorkChain):
         # Retry: submission failed, try to restart or abort
         elif calculation.get_state() in [calc_states.SUBMISSIONFAILED]:
             self._handle_submission_failure(calculation)
-            self.ctx.has_submission_failed = True
+            self.ctx.submission_failure = True
 
         # Retry: calculation failed, try to salvage or abort
         elif calculation.get_state() in [calc_states.FAILED]:
-            self._handle_calculation_failure(calculation)
-            self.ctx.has_submission_failed = False
+            try:
+                self._handle_calculation_failure(calculation)
+            except UnexpectedFailure:
+                self._handle_unexpected_failure(calculation)
+                self.ctx.unexpected_failure = True
+            else:
+                self.ctx.submission_failure = False
+                self.ctx.unexpected_failure = False
 
         return
 
@@ -175,15 +185,29 @@ class PhBaseWorkChain(WorkChain):
 
     def _handle_submission_failure(self, calculation):
         """
-        The submission of the calculation has failed, if it was the second consecutive failure we
-        abort the workchain, else we set the has_submission_failed flag and try again
+        The submission of the calculation has failed. If the submission_failure flag is set to true, this
+        is the second consecutive submission failure and we abort the workchain.
+        Otherwise we restart once more.
         """
-        if self.ctx.has_submission_failed:
-            self.abort_nowait('submission for PhCalculation<{}> failed for the second time'.format(
-                calculation.pk))
+        if self.ctx.submission_failure:
+            self.abort_nowait('submission for PhCalculation<{}> failed for the second consecutive time'
+                .format(calculation.pk))
         else:
-            self.report('submission for PhCalculation<{}> failed, retrying once more'.format(
-                calculation.pk))
+            self.report('submission for PhCalculation<{}> failed, restarting once more'
+                .format(calculation.pk))
+
+    def _handle_unexpected_failure(self, calculation):
+        """
+        The calculation has failed for an unknown reason and could not be handled. If the unexpected_failure
+        flag is true, this is the second consecutive unexpected failure and we abort the workchain.
+        Otherwise we restart once more.
+        """
+        if self.ctx.unexpected_failure:
+            self.abort_nowait('PhCalculation<{}> failed for an unknown case for the second consecutive time'
+                .format(calculation.pk))
+        else:
+            self.report('PhCalculation<{}> failed for an unknown case, restarting once more'
+                .format(calculation.pk))
 
     def _handle_calculation_failure(self, calculation):
         """
@@ -192,7 +216,6 @@ class PhBaseWorkChain(WorkChain):
         restart_calc, in all other cases we do not replace the restart_calc
         """
         if any(['namelist' in w for w in calculation.res.warnings]):
-            self.ctx.has_calculation_failed = False
             warnings = '||'.join([w.strip() for w in calculation.res.warnings])
             self.report('PhCalculation<{}> failed due to incorrect input file'.format(calculation.pk))
             self.report('list of warnings: {}'.format(warnings))
@@ -200,7 +223,6 @@ class PhBaseWorkChain(WorkChain):
 
         elif (('QE ph run did not reach the end of the execution.' in calculation.res.parser_warnings)
             and len(calculation.res.warnings) == 0):
-            self.ctx.has_calculation_failed = False
             max_seconds_old = calculation.inp.parameters.get_dict()['INPUTPH']['max_seconds']
             max_seconds_new = int(0.95 * max_seconds_old)
             self.ctx.inputs['parameters']['INPUTPH']['max_seconds'] = max_seconds_new
@@ -208,7 +230,6 @@ class PhBaseWorkChain(WorkChain):
                 'setting max_seconds to {}'.format(calculation.pk, max_seconds_new))
 
         elif ('Phonon did not reach end of self consistency' in calculation.res.warnings):
-            self.ctx.has_calculation_failed = False
             alpha_mix_old = calculation.inp.parameters.get_dict()['INPUTPH'].get('alpha_mix(1)',
                 self.inputs.alpha_mix.value)
             alpha_mix_new = 0.9 * alpha_mix_old
@@ -218,22 +239,9 @@ class PhBaseWorkChain(WorkChain):
                 'setting alpha_mix to {} and restarting'.format(calculation.pk, alpha_mix_new))
 
         elif 'Maximum CPU time exceeded' in calculation.res.warnings:
-            self.ctx.has_calculation_failed = False
             self.ctx.restart_calc = calculation
             self.report('PhCalculation<{}> terminated because maximum walltime was exceeded, '
                 'restarting'.format(calculation.pk))
 
         else:
-
-            # If has_calculation_failed is set, second unexpected failure in a row, so we abort
-            if self.ctx.has_calculation_failed:
-                warnings = '||'.join([w.strip() for w in calculation.res.warnings])
-                parser_warnings = '||'.join([w.strip() for w in calculation.res.parser_warnings])
-                self.report('PhCalculation<{}> failed unexpectedly'.format(calculation.pk))
-                self.report('list of warnings: {}'.format(warnings))
-                self.report('list of parser warnings: {}'.format(parser_warnings))
-                self.abort_nowait('second unexpected failure in a row'.format(calculation.pk))
-            else:
-                self.ctx.has_calculation_failed = True
-                self.report('PhCalculation<{}> failed unexpectedly, '
-                    'restarting only once more'.format(calculation.pk))
+            raise UnexpectedFailure
