@@ -6,10 +6,17 @@ from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
+from aiida.common.exceptions import AiidaException, NotExistent
 from aiida.common.datastructures import calc_states
 from aiida.work.run import submit
-from aiida.work.workchain import WorkChain, ToContext, while_
+from aiida.work.workchain import WorkChain, ToContext, while_, append_
 from aiida_quantumespresso.calculations.pw import PwCalculation
+
+class UnexpectedFailure(AiidaException):
+    """
+    Raised when a PwCalculation has failed for an unknown reason
+    """
+    pass
 
 class PwBaseWorkChain(WorkChain):
     """
@@ -31,7 +38,7 @@ class PwBaseWorkChain(WorkChain):
         spec.input('settings', valid_type=ParameterData)
         spec.input('options', valid_type=ParameterData)
         spec.input('clean_workdir', valid_type=Bool, default=Bool(False))
-        spec.input('max_iterations', valid_type=Int, default=Int(10))
+        spec.input('max_iterations', valid_type=Int, default=Int(5))
         spec.outline(
             cls.setup,
             cls.validate_pseudo_potentials,
@@ -49,11 +56,16 @@ class PwBaseWorkChain(WorkChain):
         Initialize context variables
         """
         self.ctx.max_iterations = self.inputs.max_iterations.value
+        self.ctx.unexpected_failure = False
+        self.ctx.submission_failure = False
         self.ctx.restart_calc = None
-        self.ctx.has_calculation_failed = False
-        self.ctx.has_submission_failed = False
         self.ctx.is_finished = False
         self.ctx.iteration = 0
+
+        # Default values
+        self.ctx.default = {
+            'diagonalization_scheme': 'david'
+        }
 
         # Define convenience dictionary of inputs for PwCalculation
         self.ctx.inputs = {
@@ -133,7 +145,7 @@ class PwBaseWorkChain(WorkChain):
 
         self.report('launching PwCalculation<{}> iteration #{}'.format(running.pid, self.ctx.iteration))
 
-        return ToContext(calculation=running)
+        return ToContext(calculations=append_(running))
 
     def inspect_pw(self):
         """
@@ -142,8 +154,8 @@ class PwBaseWorkChain(WorkChain):
         restarting, or abort if unrecoverable error was found
         """
         try:
-            calculation = self.ctx.calculation
-        except Exception:
+            calculation = self.ctx.calculations[-1]
+        except IndexError:
             self.abort_nowait('the first iteration finished without returning a PwCalculation')
             return
 
@@ -165,19 +177,33 @@ class PwBaseWorkChain(WorkChain):
             self.abort_nowait('unexpected state ({}) of PwCalculation<{}>'.format(
                 calculation.get_state(), calculation.pk))
 
-        # Retry: submission failed, try to restart or abort
+        # Retry or abort: submission failed, try to restart or abort
         elif calculation.get_state() in [calc_states.SUBMISSIONFAILED]:
             self._handle_submission_failure(calculation)
+            self.ctx.submission_failure = True
 
-        # Retry: calculation failed, try to salvage or abort
-        elif calculation.get_state() in [calc_states.FAILED]:
-            self.ctx.has_submission_failed = False
-            self._handle_calculation_failure(calculation)
+        # Retry or abort: calculation finished or failed
+        elif calculation.get_state() in [calc_states.FINISHED, calc_states.FAILED]:
 
-        # Retry: try to convergence restarting from this calculation
-        else:
-            self.report('calculation did not converge after {} iterations, restarting'.format(self.ctx.iteration))
-            self.ctx.restart_calc = calculation
+            # Calculation was at least submitted successfully, so we reset the flag
+            self.ctx.submission_failure = False
+
+            # Check output for problems independent on calculation state and that do not trigger parser warnings
+            self._handle_calculation_sanity_checks(calculation)
+
+            # Calculation failed, try to salvage it or handle any unexpected failures
+            if calculation.get_state() in [calc_states.FAILED]:
+                try:
+                    self._handle_calculation_failure(calculation)
+                except UnexpectedFailure as exception:
+                    self._handle_unexpected_failure(calculation, exception)
+                    self.ctx.unexpected_failure = True
+
+            # Calculation finished: but did not finish ok, simply try to restart from this calculation
+            else:
+                self.ctx.unexpected_failure = False
+                self.ctx.restart_calc = calculation
+                self.report('calculation did not converge after {} iterations, restarting'.format(self.ctx.iteration))
 
         return
 
@@ -202,7 +228,7 @@ class PwBaseWorkChain(WorkChain):
             self.report('remote folders will not be cleaned')
             return
 
-        for calc in self.ctx.calculation:
+        for calc in self.ctx.calculations:
             try:
                 calc.out.remote_folder._clean()
                 self.report('cleaned remote folder of {}<{}>'.format(calc.__class__.__name__, calc.pk))
@@ -211,16 +237,41 @@ class PwBaseWorkChain(WorkChain):
 
     def _handle_submission_failure(self, calculation):
         """
-        The submission of the calculation has failed, if it was the second consecutive failure we
-        abort the workchain, else we set the has_submission_failed flag and try again
+        The submission of the calculation has failed. If the submission_failure flag is set to true, this
+        is the second consecutive submission failure and we abort the workchain.
+        Otherwise we restart once more.
         """
-        if self.ctx.has_submission_failed:
-            self.abort_nowait('submission for PwCalculation<{}> failed for the second time'.format(
-                calculation.pk))
+        if self.ctx.submission_failure:
+            self.abort_nowait('submission for PwCalculation<{}> failed for the second consecutive time'
+                .format(calculation.pk))
         else:
-            self.ctx.has_submission_failed = True
-            self.report('submission for PwCalculation<{}> failed, retrying once more'.format(
-                calculation.pk))
+            self.report('submission for PwCalculation<{}> failed, restarting once more'
+                .format(calculation.pk))
+
+    def _handle_unexpected_failure(self, calculation, exception=None):
+        """
+        The calculation has failed for an unknown reason and could not be handled. If the unexpected_failure
+        flag is true, this is the second consecutive unexpected failure and we abort the workchain.
+        Otherwise we restart once more.
+        """
+        if exception:
+            self.report('exception: {}'.format(exception))
+
+        if self.ctx.unexpected_failure:
+            self.abort_nowait('PwCalculation<{}> failed for an unknown case for the second consecutive time'
+                .format(calculation.pk))
+        else:
+            self.report('PwCalculation<{}> failed for an unknown case, restarting once more'
+                .format(calculation.pk))
+
+    def _handle_calculation_sanity_checks(self, calculation):
+        """
+        Calculations that run successfully may still have problems that can only be determined when inspecting
+        the output. The same problems may also be the hidden root of a calculation failure. For that reason,
+        after verifying that the calculation ran, regardless of its calculation state, we perform some sanity
+        checks.
+        """
+        return
 
     def _handle_calculation_failure(self, calculation):
         """
@@ -228,5 +279,79 @@ class PwBaseWorkChain(WorkChain):
         for the next calculation. If the calculation failed, but did so cleanly, we set it as the
         restart_calc, in all other cases we do not replace the restart_calc
         """
-        self.abort_nowait('execution failed for the {} in iteration {}, but error handling is not implemented yet'
-            .format(PwCalculation.__name__, self.ctx.iteration))
+        try:
+            input_parameters = calculation.inp.parameters.get_dict()
+            output_parameters = calculation.out.output_parameters.get_dict()
+            warnings = output_parameters['warnings']
+            parser_warnings = output_parameters['parser_warnings']
+        except (NotExistent, AttributeError, KeyError) as exception:
+            raise UnexpectedFailure(exception)
+        else:
+            input_electrons = input_parameters.get('ELECTRONS', {})
+            diagonalization_scheme = input_electrons.get('diagonalization', self.ctx.default['diagonalization_scheme'])
+
+            # Errors during parsing of input files
+            if any(['read_namelists' in w for w in warnings]):
+                self._handle_fatal_error_read_namelists(calculation)
+
+            # Problems with diagonalization
+            elif ((
+                any(['too many bands are not converged' in w for w in warnings]) or
+                any(['eigenvalues not converged' in w for w in warnings])
+            ) and (
+                diagonalization_scheme == 'david'
+            )): 
+                self._handle_error_diagonalization(calculation, diagonalization_scheme)
+
+            # General pw.x errors that are not explicitly handled
+            elif (any(['%%%' in w for w in warnings]) or any(['Error' in w for w in warnings])):
+                raise UnexpectedFailure('PwCalculation<{}> failed due to an unknown reason'.format(calculation.pk))
+
+            # Premature termination by the scheduler
+            elif ('QE pw run did not reach the end of the execution.' in parser_warnings):
+                self._handle_error_premature_termination(calculation)
+
+            # Clean calculation termination due to exceeding maximum allotted walltime
+            elif 'Maximum CPU time exceeded' in calculation.res.warnings:
+                self._handle_error_exceeded_maximum_walltime(calculation)
+
+            # Any other cases count as unexpected failures
+            else:
+                raise UnexpectedFailure('PwCalculation<{}> failed due to an unknown reason'.format(calculation.pk))
+
+    def _handle_fatal_error_read_namelists(self, calculation):
+        """
+        The calculation failed because it could not read the generated input file
+        """
+        self.abort_nowait('PwCalculation<{}> failed because of an invalid input file'
+            .format(calculation.pk))
+
+    def _handle_error_diagonalization(self, calculation, diagonalization_scheme):
+        """
+        Diagonalization failed with current scheme. Try to restart from previous clean calculation with different scheme
+        """
+        new_diagonalization_scheme = 'cg'
+        self.ctx.inputs['parameters']['ELECTRONS']['diagonalization'] = 'cg'
+        self.report('PwCalculation<{}> failed to diagonalize with "{}" scheme'.format(diagonalization_scheme))
+        self.report('Restarting with diagonalization scheme "{}"'.format(new_diagonalization_scheme))
+
+    def _handle_error_premature_termination(self, calculation):
+        """
+        Calculation did not reach the end of execution, probably because it was killed by the scheduler
+        for running out of allotted walltime
+        """
+        input_parameters = calculation.inp.parameters.get_dict()
+        settings = self.ctx.inputs['settings']
+        max_seconds = settings.get('max_seconds', input_parameters['CONTROL']['max_seconds'])
+        max_seconds_reduced = int(0.95 * max_seconds)
+        self.ctx.inputs['parameters']['CONTROL']['max_seconds'] = max_seconds_reduced
+        self.report('PwCalculation<{}> was terminated prematurely, reducing "max_seconds" from {} to {}'
+            .format(calculation.pk, max_seconds, max_seconds_reduced))
+
+    def _handle_error_exceeded_maximum_walltime(self, calculation):
+        """
+        Calculation ended nominally but ran out of allotted wall time
+        """
+        self.ctx.restart_calc = calculation
+        self.report('PhCalculation<{}> terminated because maximum wall time was exceeded, restarting'
+            .format(calculation.pk))
