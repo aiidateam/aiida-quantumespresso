@@ -1642,7 +1642,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
                     parsed_data['warnings'].append('Error while parsing Fermi energy from the output file.')
 
 
-            elif 'Forces acting on atoms (Ry/au):' in line:
+            elif ('Forces acting on atoms (Ry/au):' in line) or ('Forces acting on atoms (cartesian axes, Ry/au):' in line):
                 try:
                     forces = []
                     j = 0
@@ -1678,7 +1678,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
                 except Exception:
                     parsed_data['warnings'].append('Error while parsing total force.')
 
-            elif 'entering subroutine stress ...' in line:
+            elif ('entering subroutine stress ...' in line) or ('Computing stress (Cartesian axis) and pressure' in line):
                 try:
                     stress = []
                     for k in range (10+5*vdw_correction):
