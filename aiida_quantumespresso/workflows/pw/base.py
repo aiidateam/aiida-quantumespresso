@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from collections import OrderedDict, namedtuple
 from aiida.orm import Code
 from aiida.orm.data.base import Bool, Int, Str
 from aiida.orm.data.upf import UpfData, get_pseudos_from_structure
@@ -22,8 +23,20 @@ class PwBaseWorkChain(WorkChain):
     """
     Base Workchain to launch a Quantum Espresso pw.x total energy calculation
     """
+
+    ErrorHandlingReport = namedtuple('ErrorHandlingReport', 'is_handled do_break')
+
     def __init__(self, *args, **kwargs):
         super(PwBaseWorkChain, self).__init__(*args, **kwargs)
+
+        # Define the error handlers that are to be executed, in this specific order, in the case
+        # where a PwCalculation finishes with the FAILED status
+        self.calculation_failure_modes = OrderedDict([
+            ('read_namelists', self._handle_error_read_namelists),
+            ('diagonalization', self._handle_error_diagonalization),
+            ('premature_termination', self._handle_error_premature_termination),
+            ('exceeded_maximum_walltime', self._handle_error_exceeded_maximum_walltime)
+        ])
 
     @classmethod
     def define(cls, spec):
@@ -194,7 +207,7 @@ class PwBaseWorkChain(WorkChain):
             # Calculation failed, try to salvage it or handle any unexpected failures
             if calculation.get_state() in [calc_states.FAILED]:
                 try:
-                    self._handle_calculation_failure(calculation)
+                    handled = self._handle_calculation_failure(calculation)
                 except UnexpectedFailure as exception:
                     self._handle_unexpected_failure(calculation, exception)
                     self.ctx.unexpected_failure = True
@@ -235,11 +248,19 @@ class PwBaseWorkChain(WorkChain):
             except Exception:
                 pass
 
+    def _handle_calculation_sanity_checks(self, calculation):
+        """
+        Calculations that run successfully may still have problems that can only be determined when inspecting
+        the output. The same problems may also be the hidden root of a calculation failure. For that reason,
+        after verifying that the calculation ran, regardless of its calculation state, we perform some sanity
+        checks.
+        """
+        return
+
     def _handle_submission_failure(self, calculation):
         """
         The submission of the calculation has failed. If the submission_failure flag is set to true, this
-        is the second consecutive submission failure and we abort the workchain.
-        Otherwise we restart once more.
+        is the second consecutive submission failure and we abort the workchain Otherwise we restart once more.
         """
         if self.ctx.submission_failure:
             self.abort_nowait('submission for PwCalculation<{}> failed for the second consecutive time'
@@ -264,15 +285,6 @@ class PwBaseWorkChain(WorkChain):
             self.report('PwCalculation<{}> failed for an unknown case, restarting once more'
                 .format(calculation.pk))
 
-    def _handle_calculation_sanity_checks(self, calculation):
-        """
-        Calculations that run successfully may still have problems that can only be determined when inspecting
-        the output. The same problems may also be the hidden root of a calculation failure. For that reason,
-        after verifying that the calculation ran, regardless of its calculation state, we perform some sanity
-        checks.
-        """
-        return
-
     def _handle_calculation_failure(self, calculation):
         """
         The calculation has failed so we try to analyze the reason and change the inputs accordingly
@@ -280,78 +292,79 @@ class PwBaseWorkChain(WorkChain):
         restart_calc, in all other cases we do not replace the restart_calc
         """
         try:
-            input_parameters = calculation.inp.parameters.get_dict()
-            output_parameters = calculation.out.output_parameters.get_dict()
-            warnings = output_parameters['warnings']
-            parser_warnings = output_parameters['parser_warnings']
+            outputs = calculation.out.output_parameters.get_dict()
+            _ = outputs['warnings']
+            _ = outputs['parser_warnings']
         except (NotExistent, AttributeError, KeyError) as exception:
             raise UnexpectedFailure(exception)
-        else:
-            input_electrons = input_parameters.get('ELECTRONS', {})
-            diagonalization_scheme = input_electrons.get('diagonalization', self.ctx.default['diagonalization_scheme'])
 
-            # Errors during parsing of input files
-            if any(['read_namelists' in w for w in warnings]):
-                self._handle_fatal_error_read_namelists(calculation)
+        is_handled = False
 
-            # Problems with diagonalization
-            elif ((
-                any(['too many bands are not converged' in w for w in warnings]) or
-                any(['eigenvalues not converged' in w for w in warnings])
-            ) and (
-                diagonalization_scheme == 'david'
-            )): 
-                self._handle_error_diagonalization(calculation, diagonalization_scheme)
+        for error, handler in self.calculation_failure_modes.iteritems():
+            handler_report = handler(calculation)
 
-            # General pw.x errors that are not explicitly handled
-            elif (any(['%%%' in w for w in warnings]) or any(['Error' in w for w in warnings])):
-                raise UnexpectedFailure('PwCalculation<{}> failed due to an unknown reason'.format(calculation.pk))
+            # If at least one error is handled, we consider the computation failure handled
+            if handler_report and handler_report.is_handled:
+                is_handled = True
 
-            # Premature termination by the scheduler
-            elif ('QE pw run did not reach the end of the execution.' in parser_warnings):
-                self._handle_error_premature_termination(calculation)
+            # After certain error handlers, we may want to skip all other error handling
+            if handler_report and handler_report.do_break:
+                break
 
-            # Clean calculation termination due to exceeding maximum allotted walltime
-            elif 'Maximum CPU time exceeded' in calculation.res.warnings:
-                self._handle_error_exceeded_maximum_walltime(calculation)
+        # If none of the executed error handler reported that they handled an error, the failure reason is unknown
+        if not is_handled:
+            raise UnexpectedFailure('PwCalculation<{}> failed due to an unknown reason'.format(calculation.pk))
 
-            # Any other cases count as unexpected failures
-            else:
-                raise UnexpectedFailure('PwCalculation<{}> failed due to an unknown reason'.format(calculation.pk))
-
-    def _handle_fatal_error_read_namelists(self, calculation):
+    def _handle_error_read_namelists(self, calculation):
         """
         The calculation failed because it could not read the generated input file
         """
-        self.abort_nowait('PwCalculation<{}> failed because of an invalid input file'
-            .format(calculation.pk))
+        if any(['read_namelists' in w for w in calculation.res.warnings]):
+            self.abort_nowait('PwCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
+            return self.ErrorHandlingReport(True, False)
 
-    def _handle_error_diagonalization(self, calculation, diagonalization_scheme):
+    def _handle_error_diagonalization(self, calculation):
         """
         Diagonalization failed with current scheme. Try to restart from previous clean calculation with different scheme
         """
-        new_diagonalization_scheme = 'cg'
-        self.ctx.inputs['parameters']['ELECTRONS']['diagonalization'] = 'cg'
-        self.report('PwCalculation<{}> failed to diagonalize with "{}" scheme'.format(diagonalization_scheme))
-        self.report('Restarting with diagonalization scheme "{}"'.format(new_diagonalization_scheme))
+        input_parameters = calculation.inp.parameters.get_dict()
+        input_electrons = input_parameters.get('ELECTRONS', {})
+        diagonalization_scheme = input_electrons.get('diagonalization', self.ctx.default['diagonalization_scheme'])
+
+        if ((
+            any(['too many bands are not converged' in w for w in calculation.res.warnings]) or
+            any(['eigenvalues not converged' in w for w in calculation.res.warnings])
+        ) and (
+            diagonalization_scheme == 'david'
+        )):
+            new_diagonalization_scheme = 'cg'
+            self.ctx.inputs['parameters']['ELECTRONS']['diagonalization'] = 'cg'
+            self.report('PwCalculation<{}> failed to diagonalize with "{}" scheme'.format(diagonalization_scheme))
+            self.report('Restarting with diagonalization scheme "{}"'.format(new_diagonalization_scheme))
+            return self.ErrorHandlingReport(True, False)
 
     def _handle_error_premature_termination(self, calculation):
         """
         Calculation did not reach the end of execution, probably because it was killed by the scheduler
         for running out of allotted walltime
         """
-        input_parameters = calculation.inp.parameters.get_dict()
-        settings = self.ctx.inputs['settings']
-        max_seconds = settings.get('max_seconds', input_parameters['CONTROL']['max_seconds'])
-        max_seconds_reduced = int(0.95 * max_seconds)
-        self.ctx.inputs['parameters']['CONTROL']['max_seconds'] = max_seconds_reduced
-        self.report('PwCalculation<{}> was terminated prematurely, reducing "max_seconds" from {} to {}'
-            .format(calculation.pk, max_seconds, max_seconds_reduced))
+        warnings = calculation.res.warnings
+        if (any(['%%%' in w for w in warnings]) or any(['Error' in w for w in warnings])):
+            input_parameters = calculation.inp.parameters.get_dict()
+            settings = self.ctx.inputs['settings']
+            max_seconds = settings.get('max_seconds', input_parameters['CONTROL']['max_seconds'])
+            max_seconds_reduced = int(0.95 * max_seconds)
+            self.ctx.inputs['parameters']['CONTROL']['max_seconds'] = max_seconds_reduced
+            self.report('PwCalculation<{}> was terminated prematurely, reducing "max_seconds" from {} to {}'
+                .format(calculation.pk, max_seconds, max_seconds_reduced))
+            return self.ErrorHandlingReport(True, False)
 
     def _handle_error_exceeded_maximum_walltime(self, calculation):
         """
         Calculation ended nominally but ran out of allotted wall time
         """
-        self.ctx.restart_calc = calculation
-        self.report('PhCalculation<{}> terminated because maximum wall time was exceeded, restarting'
-            .format(calculation.pk))
+        if 'Maximum CPU time exceeded' in calculation.res.warnings:
+            self.ctx.restart_calc = calculation
+            self.report('PhCalculation<{}> terminated because maximum wall time was exceeded, restarting'
+                .format(calculation.pk))
+            return self.ErrorHandlingReport(True, False)
