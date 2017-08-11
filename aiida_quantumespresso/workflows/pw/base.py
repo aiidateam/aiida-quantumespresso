@@ -29,6 +29,26 @@ class PwBaseWorkChain(WorkChain):
     def __init__(self, *args, **kwargs):
         super(PwBaseWorkChain, self).__init__(*args, **kwargs)
 
+        # Default values
+        self.defaults = {
+            'qe': {
+                'degauss': 0.,
+                'diagonalization': 'david',
+                'electron_maxstep': 100,
+                'mixing_beta': 0.7,
+                'mixing_mode': 'plain',
+                'mixing_ndim': 8,
+                'noncolin': False,
+                'nspin': 1,
+                'occupations': None,
+                'press': 0.,
+                'press_conv_thr': 0.5,
+                'smearing': '',
+                'startmag': 0.,
+                'wf_collect': False,
+            }
+        }
+
         # Define the error handlers that are to be executed, in this specific order, in the case
         # where a PwCalculation finishes with the FAILED status
         self.calculation_failure_modes = OrderedDict([
@@ -59,8 +79,8 @@ class PwBaseWorkChain(WorkChain):
                 cls.run_pw,
                 cls.inspect_pw,
             ),
-            cls.run_results,
-            cls.run_clean,
+            cls.results,
+            cls.clean,
         )
         spec.dynamic_output()
 
@@ -74,11 +94,6 @@ class PwBaseWorkChain(WorkChain):
         self.ctx.restart_calc = None
         self.ctx.is_finished = False
         self.ctx.iteration = 0
-
-        # Default values
-        self.ctx.default = {
-            'diagonalization_scheme': 'david'
-        }
 
         # Define convenience dictionary of inputs for PwCalculation
         self.ctx.inputs = {
@@ -220,7 +235,7 @@ class PwBaseWorkChain(WorkChain):
 
         return
 
-    def run_results(self):
+    def results(self):
         """
         Attach the output parameters and retrieved folder of the last calculation to the outputs
         """
@@ -232,7 +247,7 @@ class PwBaseWorkChain(WorkChain):
         if 'output_structure' in self.ctx.restart_calc.out:
             self.out('output_structure', self.ctx.restart_calc.out.output_structure)
 
-    def run_clean(self):
+    def clean(self):
         """
         Clean remote folders of the PwCalculations that were run if the clean_workdir parameter was
         set to true in the Workchain inputs
@@ -329,18 +344,18 @@ class PwBaseWorkChain(WorkChain):
         """
         input_parameters = calculation.inp.parameters.get_dict()
         input_electrons = input_parameters.get('ELECTRONS', {})
-        diagonalization_scheme = input_electrons.get('diagonalization', self.ctx.default['diagonalization_scheme'])
+        diagonalization = input_electrons.get('diagonalization', self.defaults['qe']['diagonalization'])
 
         if ((
             any(['too many bands are not converged' in w for w in calculation.res.warnings]) or
             any(['eigenvalues not converged' in w for w in calculation.res.warnings])
         ) and (
-            diagonalization_scheme == 'david'
+            diagonalization == 'david'
         )):
-            new_diagonalization_scheme = 'cg'
+            new_diagonalization = 'cg'
             self.ctx.inputs['parameters']['ELECTRONS']['diagonalization'] = 'cg'
-            self.report('PwCalculation<{}> failed to diagonalize with "{}" scheme'.format(diagonalization_scheme))
-            self.report('Restarting with diagonalization scheme "{}"'.format(new_diagonalization_scheme))
+            self.report('PwCalculation<{}> failed to diagonalize with "{}" scheme'.format(diagonalization))
+            self.report('Restarting with diagonalization scheme "{}"'.format(new_diagonalization))
             return self.ErrorHandlingReport(True, False)
 
     def _handle_error_premature_termination(self, calculation):
@@ -365,6 +380,6 @@ class PwBaseWorkChain(WorkChain):
         """
         if 'Maximum CPU time exceeded' in calculation.res.warnings:
             self.ctx.restart_calc = calculation
-            self.report('PhCalculation<{}> terminated because maximum wall time was exceeded, restarting'
+            self.report('PwCalculation<{}> terminated because maximum wall time was exceeded, restarting'
                 .format(calculation.pk))
             return self.ErrorHandlingReport(True, False)
