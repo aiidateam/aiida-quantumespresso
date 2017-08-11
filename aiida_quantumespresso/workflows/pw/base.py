@@ -54,7 +54,7 @@ class PwBaseWorkChain(WorkChain):
         self.calculation_failure_modes = OrderedDict([
             ('read_namelists', self._handle_error_read_namelists),
             ('diagonalization', self._handle_error_diagonalization),
-            ('premature_termination', self._handle_error_premature_termination),
+            ('unrecognized_by_parser', self._handle_error_unrecognized_by_parser),
             ('exceeded_maximum_walltime', self._handle_error_exceeded_maximum_walltime)
         ])
 
@@ -358,21 +358,14 @@ class PwBaseWorkChain(WorkChain):
             self.report('Restarting with diagonalization scheme "{}"'.format(new_diagonalization))
             return self.ErrorHandlingReport(True, False)
 
-    def _handle_error_premature_termination(self, calculation):
+    def _handle_error_unrecognized_by_parser(self, calculation):
         """
-        Calculation did not reach the end of execution, probably because it was killed by the scheduler
-        for running out of allotted walltime
+        Calculation failed with an error that was not recognized by the parser and was attached
+        wholesale to the warnings. We treat it as an unexpected failure and raise the exception
         """
         warnings = calculation.res.warnings
         if (any(['%%%' in w for w in warnings]) or any(['Error' in w for w in warnings])):
-            input_parameters = calculation.inp.parameters.get_dict()
-            settings = self.ctx.inputs['settings']
-            max_seconds = settings.get('max_seconds', input_parameters['CONTROL']['max_seconds'])
-            max_seconds_reduced = int(0.95 * max_seconds)
-            self.ctx.inputs['parameters']['CONTROL']['max_seconds'] = max_seconds_reduced
-            self.report('PwCalculation<{}> was terminated prematurely, reducing "max_seconds" from {} to {}'
-                .format(calculation.pk, max_seconds, max_seconds_reduced))
-            return self.ErrorHandlingReport(True, False)
+            raise UnexpectedFailure('PwCalculation<{}> failed due to an unknown reason'.format(calculation.pk))
 
     def _handle_error_exceeded_maximum_walltime(self, calculation):
         """
