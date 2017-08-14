@@ -125,19 +125,33 @@ class PwBaseWorkChain(WorkChain):
             return
         elif all([key in self.inputs for key in ['pseudos', 'pseudo_family']]):
             self.report('both explicit pseudos as well as a pseudo_family were specified: using explicit pseudos')
-            self.ctx.inputs['pseudo'] = self.inputs.pseudos
+            pseudos = self.inputs.pseudos
         elif 'pseudos' in self.inputs:
             self.report('only explicit pseudos were specified: using explicit pseudos')
-            self.ctx.inputs['pseudo'] = self.inputs.pseudos
+            pseudos = self.inputs.pseudos
         elif 'pseudo_family' in self.inputs:
             self.report('only a pseudo_family was specified: using pseudos from pseudo_family')
-            self.ctx.inputs['pseudo'] = get_pseudos_from_structure(structure, pseudo_family)
+            pseudos = get_pseudos_from_structure(structure, pseudo_family)
 
         for kind in self.inputs.structure.get_kind_names():
-            if kind not in self.ctx.inputs['pseudo']:
+            if kind not in pseudos:
                 self.abort_nowait('no pseudo available for element {}'.format(kind))
-            elif not isinstance(self.ctx.inputs['pseudo'][kind], UpfData):
+            elif not isinstance(pseudos[kind], UpfData):
                 self.abort_nowait('pseudo for element {} is not of type UpfData'.format(kind))
+
+        # The pseudos dictionary should now be a dictionary of UPF nodes with the kind as linkname
+        # As such, if there are multiple kinds with the same element, there will be duplicate UPF nodes
+        # but multiple links for the same input node are not allowed. Moreover, to couple the UPF nodes
+        # to the Calculation instance, we have to go through the use_pseudo method, which takes the kind
+        # name as an additional parameter. When creating a Calculation through a Process instance, one
+        # cannot call the use methods directly but rather should pass them as keyword arguments. However, 
+        # we can pass the additional parameters by using them as the keys of a dictionary
+        unique_pseudos = {}
+        for kind, pseudo in pseudos.iteritems():
+            unique_pseudos.setdefault(pseudo, []).append(kind)
+
+        for pseudo, kinds in unique_pseudos.iteritems():
+             self.ctx.inputs['pseudo'][tuple(kinds)] = pseudo
 
     def should_run_pw(self):
         """
