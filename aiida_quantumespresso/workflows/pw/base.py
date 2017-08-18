@@ -7,6 +7,7 @@ from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
+from aiida.orm.data.singlefile import SinglefileData
 from aiida.common.exceptions import AiidaException, NotExistent
 from aiida.common.datastructures import calc_states
 from aiida.work.run import submit
@@ -67,6 +68,7 @@ class PwBaseWorkChain(WorkChain):
         spec.input('pseudo_family', valid_type=Str, required=False)
         spec.input('parent_folder', valid_type=RemoteData, required=False)
         spec.input('kpoints', valid_type=KpointsData)
+        spec.input('vdw_table', valid_type=SinglefileData, required=False)
         spec.input('parameters', valid_type=ParameterData)
         spec.input('settings', valid_type=ParameterData)
         spec.input('options', valid_type=ParameterData)
@@ -105,6 +107,10 @@ class PwBaseWorkChain(WorkChain):
             'settings': self.inputs.settings.get_dict(),
             '_options': self.inputs.options.get_dict(),
         }
+
+        # Add the van der Waals kernel table file if specified
+        if 'vdw_table' in self.inputs:
+            self.ctx.inputs['vdw_table'] = self.inputs.vdw_table
 
         # Prevent PwCalculation from being terminated by scheduler
         max_wallclock_seconds = self.ctx.inputs['_options']['max_wallclock_seconds']
