@@ -684,14 +684,12 @@ class BasePwCpInputGenerator(object):
         settings_retrieve_list = settings_dict.pop('ADDITIONAL_RETRIEVE_LIST',
                                                    [])
 
-        if settings_dict.pop('ALSO_BANDS', False):
-            # To retrieve also the bands data
-            settings_retrieve_list.append([os.path.join(self._OUTPUT_SUBFOLDER,
-                                                        self._PREFIX + '.save',
-                                                        'K*[0-9]',
-                                                        'eigenval*.xml'),
-                                           '.',
-                                           2])
+        # If the calculation mode in the input parameters is set to 'bands' or 'also_bands' has
+        # been set in the settings, we want to retrieve the following files to parse the bands
+        calculation_mode = parameters.get_dict().get('CONTROL', {}).get('calculation', {})
+        if settings_dict.pop('ALSO_BANDS', False) or calculation_mode == 'bands':
+            paths = os.path.join(self._OUTPUT_SUBFOLDER, self._PREFIX + '.save', 'K*[0-9]', 'eigenval*.xml')
+            settings_retrieve_list.append([paths, '.', 2])
 
         calcinfo.retrieve_list += settings_retrieve_list
         calcinfo.retrieve_list += self._internal_retrieve_list
