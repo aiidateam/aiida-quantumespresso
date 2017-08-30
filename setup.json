@@ -42,8 +42,8 @@
             "quantumespresso.q2r = aiida_quantumespresso.parsers.q2r:Q2rParser"
         ],
         "aiida.tools.dbexporters.tcod_plugins": [
-            "quantumespresso.cp = aiida_quantumespresso.dbexport.tcod_plugins.cp:CpTcodtranslator",
-            "quantumespresso.pw = aiida_quantumespresso.dbexport.tcod_plugins.pw:PwTcodtranslator"
+            "quantumespresso.cp = aiida_quantumespresso.tools.dbexporters.tcod_plugins.cp:CpTcodtranslator",
+            "quantumespresso.pw = aiida_quantumespresso.tools.dbexporters.tcod_plugins.pw:PwTcodtranslator"
         ],
         "aiida.workflows": [
             "quantumespresso.ph.base = aiida_quantumespresso.workflows.ph.base:PhBaseWorkChain",
