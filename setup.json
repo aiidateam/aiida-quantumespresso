@@ -49,7 +49,8 @@
             "quantumespresso.ph.base = aiida_quantumespresso.workflows.ph.base:PhBaseWorkChain",
             "quantumespresso.pw.base = aiida_quantumespresso.workflows.pw.base:PwBaseWorkChain",
             "quantumespresso.pw.relax = aiida_quantumespresso.workflows.pw.relax:PwRelaxWorkChain",
-            "quantumespresso.pw.bands = aiida_quantumespresso.workflows.pw.bands:PwBandsWorkChain"
+            "quantumespresso.pw.bands = aiida_quantumespresso.workflows.pw.bands:PwBandsWorkChain",
+            "quantumespresso.pw.band_structure = aiida_quantumespresso.workflows.pw.band_structure:PwBandStructureWorkChain"
         ]
     }
 }

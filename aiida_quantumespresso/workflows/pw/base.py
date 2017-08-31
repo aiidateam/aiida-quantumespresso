@@ -136,7 +136,7 @@ class PwBaseWorkChain(WorkChain):
             self.report('only explicit pseudos were specified: using explicit pseudos')
             pseudos = self.inputs.pseudos
         elif 'pseudo_family' in self.inputs:
-            self.report('only a pseudo_family was specified: using pseudos from pseudo_family')
+            self.report('only a pseudo_family was specified: using pseudos from pseudo_family {}'.format(pseudo_family))
             pseudos = get_pseudos_from_structure(structure, pseudo_family)
 
         for kind in self.inputs.structure.get_kind_names():
