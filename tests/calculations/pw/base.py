@@ -67,7 +67,7 @@ def execute(args):
         return
 
     if not isinstance(structure, StructureData):
-        print "The provided pk {} for the structure does not correspond to StructureData, aborting...".format(args.parent_calc)
+        print "The provided pk {} for the structure does not correspond to StructureData, aborting...".format(args.structure)
         return
 
     kpoints = KpointsData()
