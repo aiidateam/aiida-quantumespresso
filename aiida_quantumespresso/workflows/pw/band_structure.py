@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from aiida.orm import Code
-from aiida.orm.data.base import Str, Float
+from aiida.orm.data.base import Str, Float, Bool
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
@@ -220,6 +220,7 @@ class PwBandStructureWorkChain(WorkChain):
             'parameters': ParameterData(dict=parameters),
             'settings': ParameterData(dict=settings),
             'options': ParameterData(dict=options),
+            'meta_convergence': Bool(False),
             'relaxation_scheme': Str('vc-relax'),
             'volume_convergence': Float(0.01)
         }
@@ -237,7 +238,7 @@ class PwBandStructureWorkChain(WorkChain):
         """
         self.report('workchain succesfully completed')
 
-        for link_label in ['band_parameters', 'bandstructure']:
+        for link_label in ['scf_parameters', 'band_parameters', 'bandstructure']:
             if link_label in self.ctx.workchain_bands.out:
                 node = self.ctx.workchain_bands.get_outputs_dict()[link_label]
                 self.out(link_label, node)

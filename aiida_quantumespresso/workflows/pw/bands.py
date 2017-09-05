@@ -148,6 +148,8 @@ class PwBandsWorkChain(WorkChain):
             self.abort_nowait('the scf workchain did not output a remote_folder node')
             return
 
+        self.out('scf_parameters', self.ctx.workchain_scf.out.output_parameters)
+
         inputs = dict(self.ctx.inputs)
         structure = self.ctx.structure_relaxed_primitive
         restart_mode = 'restart'
@@ -157,11 +159,16 @@ class PwBandsWorkChain(WorkChain):
         inputs['parameters']['CONTROL']['restart_mode'] = restart_mode
         inputs['parameters']['CONTROL']['calculation'] = calculation_mode
 
+        # Tell the plugin to retrieve the bands
+        settings = inputs['settings'].get_dict()
+        settings['also_bands'] = True
+
         # Final input preparation, wrapping dictionaries in ParameterData nodes
         inputs['kpoints'] = self.ctx.kpoints_path
         inputs['structure'] = structure
         inputs['parent_folder'] = remote_folder
         inputs['parameters'] = ParameterData(dict=inputs['parameters'])
+        inputs['settings'] = ParameterData(dict=settings)
         inputs['pseudo_family'] = self.inputs.pseudo_family
 
         running = submit(PwBaseWorkChain, **inputs)

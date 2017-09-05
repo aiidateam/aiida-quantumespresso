@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from aiida.orm import Code
-from aiida.orm.data.base import Str, Float
+from aiida.orm.data.base import Str, Float, Bool
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
@@ -29,6 +29,7 @@ class PwRelaxWorkChain(WorkChain):
         spec.input('parameters', valid_type=ParameterData)
         spec.input('settings', valid_type=ParameterData)
         spec.input('options', valid_type=ParameterData)
+        spec.input('meta_converge', valid_type=Bool, default=Bool(True))
         spec.input('relaxation_scheme', valid_type=Str, default=Str('vc-relax'))
         spec.input('volume_convergence', valid_type=Float, default=Float(0.01))
         spec.outline(
@@ -144,6 +145,10 @@ class PwRelaxWorkChain(WorkChain):
         # After first iteration, simply set the cell volume and restart the next base workchain
         if not prev_cell_volume:
             self.ctx.current_cell_volume = curr_cell_volume
+
+            # If meta convergence is switched off we are done
+            if not self.inputs.meta_converge.value:
+                self.ctx.is_converged = True
             return
 
         # Check whether the cell volume is converged
