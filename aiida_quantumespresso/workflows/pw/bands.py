@@ -3,6 +3,7 @@ from aiida.orm import Code
 from aiida.orm.data.base import Str, Float
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
+from aiida.orm.data.array.bands import BandsData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.data.singlefile import SinglefileData
 from aiida.common.links import LinkType
@@ -42,7 +43,11 @@ class PwBandsWorkChain(WorkChain):
             cls.run_bands,
             cls.results,
         )
-        spec.dynamic_output()
+        spec.output('primitive_structure', valid_type=StructureData)
+        spec.output('seekpath_parameters', valid_type=ParameterData)
+        spec.output('scf_parameters', valid_type=ParameterData)
+        spec.output('band_parameters', valid_type=ParameterData)
+        spec.output('band_structure', valid_type=BandsData)
 
     def setup(self):
         """
@@ -104,8 +109,8 @@ class PwBandsWorkChain(WorkChain):
         self.ctx.structure_relaxed_primitive = result['primitive_structure']
         self.ctx.kpoints_path = result['explicit_kpoints_path']
 
-        self.out('final_relax_structure', result['primitive_structure'])
-        self.out('final_seekpath_parameters', result['parameters'])
+        self.out('primitive_structure', result['primitive_structure'])
+        self.out('seekpath_parameters', result['parameters'])
 
     def run_scf(self):
         """
@@ -148,8 +153,6 @@ class PwBandsWorkChain(WorkChain):
             self.abort_nowait('the scf workchain did not output a remote_folder node')
             return
 
-        self.out('scf_parameters', self.ctx.workchain_scf.out.output_parameters)
-
         inputs = dict(self.ctx.inputs)
         structure = self.ctx.structure_relaxed_primitive
         restart_mode = 'restart'
@@ -184,8 +187,9 @@ class PwBandsWorkChain(WorkChain):
         calculation_band = self.ctx.workchain_bands.get_outputs(link_type=LinkType.CALL)[0]
 
         self.report('workchain succesfully completed')
+        self.out('scf_parameters', self.ctx.workchain_scf.out.output_parameters)
         self.out('band_parameters', calculation_band.out.output_parameters)
-        self.out('bandstructure', calculation_band.out.output_band)
+        self.out('band_structure', calculation_band.out.output_band)
 
 
 @workfunction

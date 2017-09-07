@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from aiida.orm import Code
 from aiida.orm.data.base import Str, Float, Bool
+from aiida.orm.data.folder import FolderData
+from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
@@ -40,7 +42,10 @@ class PwRelaxWorkChain(WorkChain):
             ),
             cls.results,
         )
-        spec.dynamic_output()
+        spec.output('output_structure', valid_type=StructureData, required=False)
+        spec.output('output_parameters', valid_type=ParameterData)
+        spec.output('remote_folder', valid_type=RemoteData)
+        spec.output('retrieved', valid_type=FolderData)
 
     def setup(self):
         """
@@ -174,7 +179,7 @@ class PwRelaxWorkChain(WorkChain):
         self.report('workchain completed after {} iterations'.format(self.ctx.iteration))
 
         workchain = self.ctx.workchains[-1]
-        link_labels = ['output_structure', 'output_parameters', 'remote_folder']
+        link_labels = ['output_structure', 'output_parameters', 'remote_folder',  'retrieved']
 
         for link_label in link_labels:
             if link_label in workchain.out:

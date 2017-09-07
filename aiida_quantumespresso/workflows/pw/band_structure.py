@@ -3,6 +3,7 @@ from aiida.orm import Code
 from aiida.orm.data.base import Str, Float, Bool
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
+from aiida.orm.data.array.bands import BandsData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.work.run import submit
 from aiida.work.workchain import WorkChain, ToContext
@@ -30,7 +31,11 @@ class PwBandStructureWorkChain(WorkChain):
             cls.run_bands,
             cls.run_results,
         )
-        spec.dynamic_output()
+        spec.output('primitive_structure', valid_type=StructureData)
+        spec.output('seekpath_parameters', valid_type=ParameterData)
+        spec.output('scf_parameters', valid_type=ParameterData)
+        spec.output('band_parameters', valid_type=ParameterData)
+        spec.output('band_structure', valid_type=BandsData)
 
     def setup_protocol(self):
         """
@@ -238,7 +243,7 @@ class PwBandStructureWorkChain(WorkChain):
         """
         self.report('workchain succesfully completed')
 
-        for link_label in ['scf_parameters', 'band_parameters', 'bandstructure']:
+        for link_label in ['primitive_structure', 'seekpath_parameters', 'scf_parameters', 'band_parameters', 'band_structure']:
             if link_label in self.ctx.workchain_bands.out:
                 node = self.ctx.workchain_bands.get_outputs_dict()[link_label]
                 self.out(link_label, node)

@@ -3,6 +3,7 @@ from collections import OrderedDict, namedtuple
 from aiida.orm import Code
 from aiida.orm.data.base import Bool, Int, Str
 from aiida.orm.data.upf import UpfData, get_pseudos_from_structure
+from aiida.orm.data.folder import FolderData
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
@@ -84,7 +85,10 @@ class PwBaseWorkChain(WorkChain):
             cls.results,
             cls.clean,
         )
-        spec.dynamic_output()
+        spec.output('output_structure', valid_type=StructureData, required=False)
+        spec.output('output_parameters', valid_type=ParameterData)
+        spec.output('remote_folder', valid_type=RemoteData)
+        spec.output('retrieved', valid_type=FolderData)
 
     def setup(self):
         """
