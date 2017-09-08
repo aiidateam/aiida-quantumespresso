@@ -42,7 +42,7 @@ class PwRelaxWorkChain(WorkChain):
             ),
             cls.results,
         )
-        spec.output('output_structure', valid_type=StructureData, required=False)
+        spec.output('output_structure', valid_type=StructureData)
         spec.output('output_parameters', valid_type=ParameterData)
         spec.output('remote_folder', valid_type=RemoteData)
         spec.output('retrieved', valid_type=FolderData)
