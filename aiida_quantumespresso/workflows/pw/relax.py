@@ -10,7 +10,7 @@ from aiida.orm.data.singlefile import SinglefileData
 from aiida.common.exceptions import AiidaException, NotExistent
 from aiida.common.datastructures import calc_states
 from aiida.work.run import submit
-from aiida.work.workchain import WorkChain, ToContext, while_, append_
+from aiida.work.workchain import WorkChain, ToContext, if_, while_, append_
 from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
 
 class PwRelaxWorkChain(WorkChain):
@@ -31,6 +31,7 @@ class PwRelaxWorkChain(WorkChain):
         spec.input('parameters', valid_type=ParameterData)
         spec.input('settings', valid_type=ParameterData)
         spec.input('options', valid_type=ParameterData)
+        spec.input('final_scf', valid_type=Bool, default=Bool(False))
         spec.input('meta_converge', valid_type=Bool, default=Bool(True))
         spec.input('relaxation_scheme', valid_type=Str, default=Str('vc-relax'))
         spec.input('volume_convergence', valid_type=Float, default=Float(0.01))
@@ -39,6 +40,9 @@ class PwRelaxWorkChain(WorkChain):
             while_(cls.should_run_relax)(
                 cls.run_relax,
                 cls.inspect_relax,
+            ),
+            if_(cls.should_run_final_scf)(
+                cls.run_final_scf,
             ),
             cls.results,
         )
@@ -51,6 +55,7 @@ class PwRelaxWorkChain(WorkChain):
         """
         Input validation and context setup
         """
+        self.ctx.current_parent_folder = None
         self.ctx.current_cell_volume = None
         self.ctx.is_converged = False
         self.ctx.iteration = 0
@@ -96,6 +101,12 @@ class PwRelaxWorkChain(WorkChain):
         threshold value.
         """
         return not self.ctx.is_converged
+
+    def should_run_final_scf(self):
+        """
+        Return whether after successful relaxation a final scf calculation should be run
+        """
+        return self.inputs.final_scf.value
 
     def run_relax(self):
         """
@@ -143,6 +154,7 @@ class PwRelaxWorkChain(WorkChain):
         curr_cell_volume = structure.get_cell_volume()
 
         # Set relaxed structure as input structure for next iteration
+        self.ctx.current_parent_folder = workchain.out.remote_folder
         self.ctx.inputs['structure'] = structure
         self.report('after iteration {} cell volume of relaxed structure is {}'
             .format(self.ctx.iteration, curr_cell_volume))
@@ -172,14 +184,50 @@ class PwRelaxWorkChain(WorkChain):
 
         return
 
+    def run_final_scf(self):
+        """
+        Run the PwBaseWorkChain to run a final scf PwCalculation for the relaxed structure
+        """
+        inputs = dict(self.ctx.inputs)
+
+        parameters = inputs['parameters']
+        parameters['CONTROL']['calculation'] = 'scf'
+        parameters['CONTROL']['restart_mode'] = 'restart'
+
+        # Construct a new kpoint mesh on the current structure or pass the static mesh
+        if 'kpoints' not in self.inputs or self.inputs.kpoints == None:
+            kpoints = KpointsData()
+            kpoints.set_cell_from_structure(self.ctx.inputs['structure'])
+            kpoints.set_kpoints_mesh_from_density(self.inputs.kpoints_distance.value, force_parity=True)
+        else:
+            kpoints = self.inputs.kpoints
+
+        inputs.update({
+            'kpoints': kpoints,
+            'parameters': ParameterData(dict=parameters),
+            'parent_folder': self.ctx.current_parent_folder,
+        })
+
+        running = submit(PwBaseWorkChain, **inputs)
+
+        self.report('launching PwBaseWorkChain<{}> for final scf'.format(running.pid))
+
+        return ToContext(workchain_scf=running)
+
     def results(self):
         """
         Attach the output parameters and structure of the last workchain to the outputs
         """
         self.report('workchain completed after {} iterations'.format(self.ctx.iteration))
 
-        workchain = self.ctx.workchains[-1]
-        link_labels = ['output_structure', 'output_parameters', 'remote_folder',  'retrieved']
+        if self.inputs.final_scf.value:
+            workchain = self.ctx.workchain_scf
+            self.out('output_structure', workchain.inp.structure)
+        else:
+            workchain = self.ctx.workchains[-1]
+            self.out('output_structure', workchain.out.output_structure)
+
+        link_labels = ['output_parameters', 'remote_folder',  'retrieved']
 
         for link_label in link_labels:
             if link_label in workchain.out:
