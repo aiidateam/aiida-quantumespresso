@@ -24,6 +24,7 @@
             "quantumespresso.pp = aiida_quantumespresso.calculations.pp:PpCalculation",
             "quantumespresso.pw = aiida_quantumespresso.calculations.pw:PwCalculation",
             "quantumespresso.projwfc = aiida_quantumespresso.calculations.projwfc:ProjwfcCalculation",
+            "quantumespresso.pw2wannier90 = aiida_quantumespresso.calculations.pw2wannier90:Pw2wannier90Calculation",
             "quantumespresso.q2r = aiida_quantumespresso.calculations.q2r:Q2rCalculation",
             "quantumespresso.pwimmigrant = aiida_quantumespresso.calculations:PwimmigrantCalculation"
         ],
