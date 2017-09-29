@@ -51,6 +51,9 @@
             "quantumespresso.pw.relax = aiida_quantumespresso.workflows.pw.relax:PwRelaxWorkChain",
             "quantumespresso.pw.bands = aiida_quantumespresso.workflows.pw.bands:PwBandsWorkChain",
             "quantumespresso.pw.band_structure = aiida_quantumespresso.workflows.pw.band_structure:PwBandStructureWorkChain"
+        ],
+        "aiida_quantumespresso.workflows.error_handlers": [
+            "quantumespresso.pw.base = aiida_quantumespresso.workflows.pw.base:error_handlers"
         ]
     }
 }
