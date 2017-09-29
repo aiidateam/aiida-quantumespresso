@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from collections import OrderedDict, namedtuple
+from collections import namedtuple
 from aiida.orm import Code
 from aiida.orm.data.base import Bool, Int, Str
 from aiida.orm.data.upf import UpfData, get_pseudos_from_structure
@@ -13,7 +13,9 @@ from aiida.common.exceptions import AiidaException, NotExistent
 from aiida.common.datastructures import calc_states
 from aiida.work.run import submit
 from aiida.work.workchain import WorkChain, ToContext, while_, append_
+from aiida_quantumespresso.common.pluginloader import get_plugin, get_plugins
 from aiida_quantumespresso.calculations.pw import PwCalculation
+
 
 class UnexpectedFailure(AiidaException):
     """
@@ -48,17 +50,12 @@ class PwBaseWorkChain(WorkChain):
                 'smearing': '',
                 'startmag': 0.,
                 'wf_collect': False,
-            }
+            },
+            'delta_threshold_degauss': 30,
+            'delta_factor_degauss': 0.1,
+            'delta_factor_mixing_beta': 0.8,
+            'delta_factor_max_seconds': 0.95,
         }
-
-        # Define the error handlers that are to be executed, in this specific order, in the case
-        # where a PwCalculation finishes with the FAILED status
-        self.calculation_failure_modes = OrderedDict([
-            ('read_namelists', self._handle_error_read_namelists),
-            ('diagonalization', self._handle_error_diagonalization),
-            ('unrecognized_by_parser', self._handle_error_unrecognized_by_parser),
-            ('exceeded_maximum_walltime', self._handle_error_exceeded_maximum_walltime)
-        ])
 
     @classmethod
     def define(cls, spec):
@@ -339,8 +336,13 @@ class PwBaseWorkChain(WorkChain):
 
         is_handled = False
 
-        for error, handler in self.calculation_failure_modes.iteritems():
-            handler_report = handler(calculation)
+        error_handlers = []
+        for plugin in get_plugins('aiida_quantumespresso.workflows.error_handlers'):
+            plugin_error_handlers = get_plugin('aiida_quantumespresso.workflows.error_handlers', plugin)()
+            error_handlers.extend(plugin_error_handlers)
+
+        for handler in error_handlers:
+            handler_report = handler(self, calculation)
 
             # If at least one error is handled, we consider the computation failure handled
             if handler_report and handler_report.is_handled:
@@ -354,49 +356,61 @@ class PwBaseWorkChain(WorkChain):
         if not is_handled:
             raise UnexpectedFailure('PwCalculation<{}> failed due to an unknown reason'.format(calculation.pk))
 
-    def _handle_error_read_namelists(self, calculation):
-        """
-        The calculation failed because it could not read the generated input file
-        """
-        if any(['read_namelists' in w for w in calculation.res.warnings]):
-            self.abort_nowait('PwCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
-            return self.ErrorHandlingReport(True, False)
 
-    def _handle_error_diagonalization(self, calculation):
-        """
-        Diagonalization failed with current scheme. Try to restart from previous clean calculation with different scheme
-        """
-        input_parameters = calculation.inp.parameters.get_dict()
-        input_electrons = input_parameters.get('ELECTRONS', {})
-        diagonalization = input_electrons.get('diagonalization', self.defaults['qe']['diagonalization'])
+def get_error_handlers():
+    """
+    Return a list of all the implemented error handlers in the case of a PwCalculation failure
+    """
+    return [
+        _handle_error_read_namelists,
+        _handle_error_diagonalization,
+        _handle_error_unrecognized_by_parser,
+        _handle_error_exceeded_maximum_walltime
+    ]
 
-        if ((
-            any(['too many bands are not converged' in w for w in calculation.res.warnings]) or
-            any(['eigenvalues not converged' in w for w in calculation.res.warnings])
-        ) and (
-            diagonalization == 'david'
-        )):
-            new_diagonalization = 'cg'
-            self.ctx.inputs['parameters']['ELECTRONS']['diagonalization'] = 'cg'
-            self.report('PwCalculation<{}> failed to diagonalize with "{}" scheme'.format(diagonalization))
-            self.report('Restarting with diagonalization scheme "{}"'.format(new_diagonalization))
-            return self.ErrorHandlingReport(True, False)
+def _handle_error_read_namelists(workchain, calculation):
+    """
+    The calculation failed because it could not read the generated input file
+    """
+    if any(['read_namelists' in w for w in calculation.res.warnings]):
+        workchain.abort_nowait('PwCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
+        return workchain.ErrorHandlingReport(True, False)
 
-    def _handle_error_unrecognized_by_parser(self, calculation):
-        """
-        Calculation failed with an error that was not recognized by the parser and was attached
-        wholesale to the warnings. We treat it as an unexpected failure and raise the exception
-        """
-        warnings = calculation.res.warnings
-        if (any(['%%%' in w for w in warnings]) or any(['Error' in w for w in warnings])):
-            raise UnexpectedFailure('PwCalculation<{}> failed due to an unknown reason'.format(calculation.pk))
+def _handle_error_diagonalization(workchain, calculation):
+    """
+    Diagonalization failed with current scheme. Try to restart from previous clean calculation with different scheme
+    """
+    input_parameters = calculation.inp.parameters.get_dict()
+    input_electrons = input_parameters.get('ELECTRONS', {})
+    diagonalization = input_electrons.get('diagonalization', workchain.defaults['qe']['diagonalization'])
 
-    def _handle_error_exceeded_maximum_walltime(self, calculation):
-        """
-        Calculation ended nominally but ran out of allotted wall time
-        """
-        if 'Maximum CPU time exceeded' in calculation.res.warnings:
-            self.ctx.restart_calc = calculation
-            self.report('PwCalculation<{}> terminated because maximum wall time was exceeded, restarting'
-                .format(calculation.pk))
-            return self.ErrorHandlingReport(True, False)
+    if ((
+        any(['too many bands are not converged' in w for w in calculation.res.warnings]) or
+        any(['eigenvalues not converged' in w for w in calculation.res.warnings])
+    ) and (
+        diagonalization == 'david'
+    )):
+        new_diagonalization = 'cg'
+        workchain.ctx.inputs['parameters']['ELECTRONS']['diagonalization'] = 'cg'
+        workchain.report('PwCalculation<{}> failed to diagonalize with "{}" scheme'.format(diagonalization))
+        workchain.report('Restarting with diagonalization scheme "{}"'.format(new_diagonalization))
+        return workchain.ErrorHandlingReport(True, False)
+
+def _handle_error_unrecognized_by_parser(workchain, calculation):
+    """
+    Calculation failed with an error that was not recognized by the parser and was attached
+    wholesale to the warnings. We treat it as an unexpected failure and raise the exception
+    """
+    warnings = calculation.res.warnings
+    if (any(['%%%' in w for w in warnings]) or any(['Error' in w for w in warnings])):
+        raise UnexpectedFailure('PwCalculation<{}> failed due to an unknown reason'.format(calculation.pk))
+
+def _handle_error_exceeded_maximum_walltime(workchain, calculation):
+    """
+    Calculation ended nominally but ran out of allotted wall time
+    """
+    if 'Maximum CPU time exceeded' in calculation.res.warnings:
+        workchain.ctx.restart_calc = calculation
+        workchain.report('PwCalculation<{}> terminated because maximum wall time was exceeded, restarting'
+            .format(calculation.pk))
+        return workchain.ErrorHandlingReport(True, False)
