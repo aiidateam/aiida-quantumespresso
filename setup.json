@@ -53,7 +53,7 @@
             "quantumespresso.pw.band_structure = aiida_quantumespresso.workflows.pw.band_structure:PwBandStructureWorkChain"
         ],
         "aiida_quantumespresso.workflows.error_handlers": [
-            "quantumespresso.pw.base = aiida_quantumespresso.workflows.pw.base:error_handlers"
+            "pw.base = aiida_quantumespresso.workflows.pw.base:get_error_handlers"
         ]
     }
 }

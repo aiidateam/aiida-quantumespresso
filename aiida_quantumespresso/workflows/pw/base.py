@@ -337,8 +337,9 @@ class PwBaseWorkChain(WorkChain):
         is_handled = False
 
         error_handlers = []
-        for plugin in get_plugins("aiida_quantumespresso.workflows.error_handlers"):
-            error_handlers.extend(get_plugin("aiida_quantumespresso.workflows.error_handlers", plugin))
+        for plugin in get_plugins('aiida_quantumespresso.workflows.error_handlers'):
+            plugin_error_handlers = get_plugin('aiida_quantumespresso.workflows.error_handlers', plugin)()
+            error_handlers.extend(plugin_error_handlers)
 
         for handler in error_handlers:
             handler_report = handler(self, calculation)
@@ -356,6 +357,16 @@ class PwBaseWorkChain(WorkChain):
             raise UnexpectedFailure('PwCalculation<{}> failed due to an unknown reason'.format(calculation.pk))
 
 
+def get_error_handlers():
+    """
+    Return a list of all the implemented error handlers in the case of a PwCalculation failure
+    """
+    return [
+        _handle_error_read_namelists,
+        _handle_error_diagonalization,
+        _handle_error_unrecognized_by_parser,
+        _handle_error_exceeded_maximum_walltime
+    ]
 
 def _handle_error_read_namelists(workchain, calculation):
     """
@@ -403,10 +414,3 @@ def _handle_error_exceeded_maximum_walltime(workchain, calculation):
         workchain.report('PwCalculation<{}> terminated because maximum wall time was exceeded, restarting'
             .format(calculation.pk))
         return workchain.ErrorHandlingReport(True, False)
-
-error_handlers = [
-    _handle_error_read_namelists,
-    _handle_error_diagonalization,
-    _handle_error_unrecognized_by_parser,
-    _handle_error_exceeded_maximum_walltime
-]
