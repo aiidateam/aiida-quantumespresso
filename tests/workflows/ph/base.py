@@ -6,9 +6,11 @@ from aiida.common.exceptions import NotExistent
 from aiida.orm.data.base import Bool, Int
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.array.kpoints import KpointsData
+from aiida.orm.utils import CalculationFactory
 from aiida.work.run import run
-from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.workflows.ph.base import PhBaseWorkChain
+
+PwCalculation = CalculationFactory('quantumespresso.pw')
 
 def parser_setup():
     """

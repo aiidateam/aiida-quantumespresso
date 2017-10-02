@@ -6,6 +6,7 @@ from aiida.orm.data.upf import get_pseudos_from_structure
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
+from aiida.orm.utils import CalculationFactory
 from aiida.work.run import run
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
