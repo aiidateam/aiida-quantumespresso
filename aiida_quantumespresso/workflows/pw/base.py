@@ -9,19 +9,14 @@ from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.data.singlefile import SinglefileData
-from aiida.common.exceptions import AiidaException, NotExistent
+from aiida.common.exceptions import NotExistent
 from aiida.common.datastructures import calc_states
 from aiida.work.run import submit
 from aiida.work.workchain import WorkChain, ToContext, while_, append_
+from aiida_quantumespresso.common.exceptions import UnexpectedFailure
 from aiida_quantumespresso.common.pluginloader import get_plugin, get_plugins
 from aiida_quantumespresso.calculations.pw import PwCalculation
 
-
-class UnexpectedFailure(AiidaException):
-    """
-    Raised when a PwCalculation has failed for an unknown reason
-    """
-    pass
 
 class PwBaseWorkChain(WorkChain):
     """

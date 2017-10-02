@@ -4,18 +4,13 @@ from aiida.orm.data.base import Bool, Float, Int, Str
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
-from aiida.common.exceptions import AiidaException, NotExistent
+from aiida.common.exceptions import NotExistent
 from aiida.common.datastructures import calc_states
 from aiida.work.run import submit
 from aiida.work.workchain import WorkChain, ToContext, while_, append_
+from aiida_quantumespresso.common.exceptions import UnexpectedFailure
 from aiida_quantumespresso.calculations.ph import PhCalculation
 from aiida_quantumespresso.calculations.pw import PwCalculation
-
-class UnexpectedFailure(AiidaException):
-    """
-    Raised when a PhCalculation has failed for an unknown reason
-    """
-    pass
 
 class PhBaseWorkChain(WorkChain):
     """
