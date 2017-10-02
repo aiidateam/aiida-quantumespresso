@@ -7,11 +7,13 @@ from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.data.singlefile import SinglefileData
+from aiida.orm.utils import WorkflowFactory
 from aiida.common.exceptions import AiidaException, NotExistent
 from aiida.common.datastructures import calc_states
 from aiida.work.run import submit
 from aiida.work.workchain import WorkChain, ToContext, if_, while_, append_
-from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
+
+PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 
 class PwRelaxWorkChain(WorkChain):
     """

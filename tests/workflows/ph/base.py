@@ -1,16 +1,15 @@
 #!/usr/bin/env runaiida
 # -*- coding: utf-8 -*-
-
 import argparse
 from aiida.common.exceptions import NotExistent
 from aiida.orm.data.base import Bool, Int
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.array.kpoints import KpointsData
-from aiida.orm.utils import CalculationFactory
+from aiida.orm.utils import CalculationFactory, WorkflowFactory
 from aiida.work.run import run
-from aiida_quantumespresso.workflows.ph.base import PhBaseWorkChain
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
+PhBaseWorkChain = WorkflowFactory('quantumespresso.ph.base')
 
 def parser_setup():
     """

@@ -7,8 +7,10 @@ from aiida.orm.data.base import Int, Str
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
+from aiida.orm.utils import WorkflowFactory
 from aiida.work.run import run
-from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
+
+PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 
 def parser_setup():
     """

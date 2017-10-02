@@ -5,9 +5,11 @@ from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.bands import BandsData
 from aiida.orm.data.array.kpoints import KpointsData
+from aiida.orm.utils import WorkflowFactory
 from aiida.work.run import submit
 from aiida.work.workchain import WorkChain, ToContext
-from aiida_quantumespresso.workflows.pw.bands import PwBandsWorkChain
+
+PwBandsWorkChain = WorkflowFactory('quantumespresso.pw.bands')
 
 class PwBandStructureWorkChain(WorkChain):
     """

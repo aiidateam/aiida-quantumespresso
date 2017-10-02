@@ -6,15 +6,17 @@ from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.bands import BandsData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.data.singlefile import SinglefileData
+from aiida.orm.utils import WorkflowFactory
 from aiida.common.links import LinkType
 from aiida.common.exceptions import AiidaException, NotExistent
 from aiida.common.datastructures import calc_states
 from aiida.work.run import submit
 from aiida.work.workchain import WorkChain, ToContext, while_, append_
 from aiida.work.workfunction import workfunction
-from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
-from aiida_quantumespresso.workflows.pw.relax import PwRelaxWorkChain
 from seekpath.aiidawrappers import get_path, get_explicit_k_path
+
+PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
+PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
 
 class PwBandsWorkChain(WorkChain):
     """

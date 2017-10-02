@@ -8,8 +8,10 @@ from aiida.orm.data.upf import UpfData
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
+from aiida.orm.utils import WorkflowFactory
 from aiida.work.run import run
-from aiida_quantumespresso.workflows.pw.band_structure import PwBandStructureWorkChain
+
+PwBandStructureWorkChain = WorkflowFactory('quantumespresso.pw.band_structure')
 
 def parser_setup():
     """
