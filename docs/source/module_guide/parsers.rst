@@ -9,19 +9,19 @@ This section describes the different parsers classes for calculations.
 Quantum ESPRESSO parsers
 ++++++++++++++++++++++++
 
-.. automodule:: aiida.parsers.plugins.quantumespresso
+.. automodule:: aiida_quantumespresso.parsers
    :members:
 
 Pw Parser
 ---------
 
-.. automodule:: aiida.parsers.plugins.quantumespresso.pw
+.. automodule:: aiida_quantumespresso.parsers.pw
    :members:
 
 Raw Pw Parser
 -------------
 
-.. automodule:: aiida.parsers.plugins.quantumespresso.raw_parser_pw
+.. automodule:: aiida_quantumespresso.parsers.raw_parser_pw
    :members:
 
 Basic Raw Pw Parser
@@ -29,19 +29,19 @@ Basic Raw Pw Parser
 
 This is just a minimal parser for basic quantities.
 
-.. automodule:: aiida.parsers.plugins.quantumespresso.basic_raw_parser_pw
+.. automodule:: aiida_quantumespresso.parsers.basic_raw_parser_pw
    :members:
 
 Cp Parser
 ---------
 
-.. automodule:: aiida.parsers.plugins.quantumespresso.cp
+.. automodule:: aiida_quantumespresso.parsers.cp
    :members:
 
 Raw Cp Parser
 -------------
 
-.. automodule:: aiida.parsers.plugins.quantumespresso.raw_parser_cp
+.. automodule:: aiida_quantumespresso.parsers.raw_parser_cp
    :members:
 
 Basic Raw Cp Parser
@@ -49,24 +49,24 @@ Basic Raw Cp Parser
 
 This is just a minimal parser for basic quantities.
 
-.. automodule:: aiida.parsers.plugins.quantumespresso.basic_raw_parser_cp
+.. automodule:: aiida_quantumespresso.parsers.basic_raw_parser_cp
    :members:
 
 
 Constants
 ---------
 
-.. automodule:: aiida.parsers.plugins.quantumespresso.constants
+.. automodule:: aiida_quantumespresso.parsers.constants
    :members:
 
 Dos Parser
 ----------
 
-.. automodule:: aiida.parsers.plugins.quantumespresso.dos
+.. automodule:: aiida_quantumespresso.parsers.dos
    :members:
 
 Projwfc Parser
 --------------
 
-.. automodule:: aiida.parsers.plugins.quantumespresso.projwfc
+.. automodule:: aiida_quantumespresso.parsers.projwfc
    :members:

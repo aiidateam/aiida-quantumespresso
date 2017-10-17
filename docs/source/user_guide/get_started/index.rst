@@ -4,10 +4,11 @@
 Get started
 ===========
 
-Lorem ipsum
+.. toctree::
+   :maxdepth: 4
 
-##########
-Next title
-##########
-
-Content
+   ./examples/pw_tutorial
+   ./examples/ph_tutorial
+   ./examples/cp_tutorial
+   ./examples/projwfc_tutorial
+   ./examples/pwimmigrant_tutorial

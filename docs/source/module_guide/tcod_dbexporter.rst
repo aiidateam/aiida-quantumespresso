@@ -6,7 +6,7 @@ DbExporter documentation
 
 TCOD database exporter
 ----------------------
-.. automodule:: aiida.tools.dbexporters.tcod
+.. automodule:: aiida_quantumespresso.tools.dbexporters.tcod_plugins
    :members:
 
 TCOD parameter translator documentation
@@ -14,10 +14,10 @@ TCOD parameter translator documentation
 
 CP
 ++
-.. automodule:: aiida.tools.dbexporters.tcod_plugins.quantumespresso.cp
+.. automodule:: aiida_quantumespresso.tools.dbexporters.tcod_plugins.cp
    :members:
 
 PW
 ++
-.. automodule:: aiida.tools.dbexporters.tcod_plugins.quantumespresso.pw
+.. automodule:: aiida_quantumespresso.tools.dbexporters.tcod_plugins.pw
    :members:
