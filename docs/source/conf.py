@@ -38,6 +38,7 @@ extensions = [
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/2.7', None),
+    'aiida': ('http://aiida_core.readthedocs.io/en/latest/', None),
 }
 
 nitpick_ignore = [('py:obj', 'module')]
@@ -149,7 +150,7 @@ pygments_style = 'sphinx'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+#html_static_path = ['_static']
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
@@ -325,3 +326,64 @@ else:
 
 
 
+
+# Warnings to ignore when using the -n (nitpicky) option
+# We should ignore any python built-in exception, for instance
+nitpick_ignore = [
+    ('py:exc', 'ArithmeticError'),
+    ('py:exc', 'AssertionError'),
+    ('py:exc', 'AttributeError'),
+    ('py:exc', 'BaseException'),
+    ('py:exc', 'BufferError'),
+    ('py:exc', 'DeprecationWarning'),
+    ('py:exc', 'EOFError'),
+    ('py:exc', 'EnvironmentError'),
+    ('py:exc', 'Exception'),
+    ('py:exc', 'FloatingPointError'),
+    ('py:exc', 'FutureWarning'),
+    ('py:exc', 'GeneratorExit'),
+    ('py:exc', 'IOError'),
+    ('py:exc', 'ImportError'),
+    ('py:exc', 'ImportWarning'),
+    ('py:exc', 'IndentationError'),
+    ('py:exc', 'IndexError'),
+    ('py:exc', 'KeyError'),
+    ('py:exc', 'KeyboardInterrupt'),
+    ('py:exc', 'LookupError'),
+    ('py:exc', 'MemoryError'),
+    ('py:exc', 'NameError'),
+    ('py:exc', 'NotImplementedError'),
+    ('py:exc', 'OSError'),
+    ('py:exc', 'OverflowError'),
+    ('py:exc', 'PendingDeprecationWarning'),
+    ('py:exc', 'ReferenceError'),
+    ('py:exc', 'RuntimeError'),
+    ('py:exc', 'RuntimeWarning'),
+    ('py:exc', 'StandardError'),
+    ('py:exc', 'StopIteration'),
+    ('py:exc', 'SyntaxError'),
+    ('py:exc', 'SyntaxWarning'),
+    ('py:exc', 'SystemError'),
+    ('py:exc', 'SystemExit'),
+    ('py:exc', 'TabError'),
+    ('py:exc', 'TypeError'),
+    ('py:exc', 'UnboundLocalError'),
+    ('py:exc', 'UnicodeDecodeError'),
+    ('py:exc', 'UnicodeEncodeError'),
+    ('py:exc', 'UnicodeError'),
+    ('py:exc', 'UnicodeTranslateError'),
+    ('py:exc', 'UnicodeWarning'),
+    ('py:exc', 'UserWarning'),
+    ('py:exc', 'VMSError'),
+    ('py:exc', 'ValueError'),
+    ('py:exc', 'Warning'),
+    ('py:exc', 'WindowsError'),
+    ('py:exc', 'ZeroDivisionError'),
+    ('py:obj', 'str'),
+    ('py:obj', 'list'),
+    ('py:obj', 'tuple'),
+    ('py:obj', 'int'),
+    ('py:obj', 'float'),
+    ('py:obj', 'bool'),
+    ('py:obj', 'Mapping'),
+]
