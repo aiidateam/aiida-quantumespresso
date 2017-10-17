@@ -79,7 +79,7 @@ All output nodes can be accessed with the ``calculation.out`` method.
 
     .. note:: If you want to quickly find what angular_momentum and magnetic_number is associated with which common orbital name you can
               use the convenience method
-              :py:class:`get_quantum_numbers_from_name <aiida.common.orbital.realhydrogen.RealhydrogenOrbital.get_quantum_numbers_from_name>`
+              :py:meth:`get_quantum_numbers_from_name <aiida.common.orbital.realhydrogen.RealhydrogenOrbital.get_quantum_numbers_from_name>`
 
     * projections, arrays showing the :math:`<g_i|\psi_{nk}>` projections where :math:`|g_i>` will be associated with a specific orbital and :math:`|\psi_{nk}>` are the bloch waves.
       They can be called using::
