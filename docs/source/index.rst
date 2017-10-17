@@ -48,6 +48,14 @@ Modules provided with aiida-quantumespresso (API reference)
 
    module_guide/index
 
+Developer's guide
++++++++++++++++++
+
+.. toctree::
+   :maxdepth: 4
+
+   devel_guide/index
+
 
 Indices and tables
 ==================

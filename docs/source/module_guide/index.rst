@@ -1,5 +1,5 @@
-aiida_quantumespresso module documentation
-==========================================
+Modules provided with aiida-quantumespresso (API reference)
+===========================================================
 
 .. toctree::
     :maxdepth: 3
