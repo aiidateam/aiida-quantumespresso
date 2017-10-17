@@ -1,0 +1,2 @@
+setuptools>34
+aiida-core>0.9.0
