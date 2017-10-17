@@ -14,7 +14,7 @@ case "$TEST_TYPE" in
         #verdi -p test_$TEST_AIIDA_BACKEND devel tests
 
         # Run the daemon tests using docker
-        verdi -p $TEST_AIIDA_BACKEND run ${TRAVIS_BUILD_DIR}/.travis-data/test_daemon.py
+        verdi -p $TEST_AIIDA_BACKEND run ${TRAVIS_BUILD_DIR}/.travis-data/test_pw_with_daemon.py
         ;;
     pre-commit)
         pre-commit run --all-files

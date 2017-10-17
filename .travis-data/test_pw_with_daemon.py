@@ -10,7 +10,7 @@ from aiida.orm import DataFactory
 # If set to True, will ask AiiDA to run in serial mode (i.e., AiiDA will not
 # invoke the mpirun command in the submission script)
 run_in_serial_mode = False
-codename = 'pw@torquessh'
+codename = 'qe-pw@torquessh'
 # If it takes > 5 min, I decide I failed (e.g., no daemon is running)
 timeout_secs = 5*60 
 queue = None

@@ -17,7 +17,7 @@ then
     cat ${TRAVIS_BUILD_DIR}/.travis-data/computer-configure-input.txt | verdi -p $TEST_AIIDA_BACKEND computer configure torquessh
 
     # Configure the 'doubler' code inside torquessh
-    cat ${TRAVIS_BUILD_DIR}/.travis-data/code-setup-input.txt | verdi -p $TEST_AIIDA_BACKEND code setup
+    cat ${TRAVIS_BUILD_DIR}/.travis-data/pwcode-setup-input.txt | verdi -p $TEST_AIIDA_BACKEND code setup
 
     # Make sure that the torquessh (localhost:10022) key is hashed
     # in the known_hosts file
