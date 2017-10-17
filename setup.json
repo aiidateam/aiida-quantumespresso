@@ -54,11 +54,11 @@
   "extras_require": {
     "dev_precommit": [
       "pre-commit"
-    ],
-    'docs': [
-        'Sphinx',
-        'docutils',
-        'sphinx_rtd_theme',
+    ], 
+    "docs": [
+      "Sphinx", 
+      "docutils", 
+      "sphinx_rtd_theme"
     ]
   }, 
   "install_requires": [
