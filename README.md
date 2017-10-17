@@ -3,6 +3,10 @@ This is the official Quantum ESPRESSO plugin for AiiDA that used to be contained
 It is now maintained as a separate package and for AiiDA >= v0.9.0 the new plugin system will ensure that the
 entry points are automatically registered upon installation.
 
+# Documentation
+The documentation for this package can be found on Read the Docs at 
+http://aiida-quantumespresso.readthedocs.io/en/latest/
+
 # Tests
 Currently there are two test scripts included that can be used to test the basic workflows PhBaseWorkChain and PwBaseWorkChain.
 You will find them in the `tests` folder. The scripts can be run directly from the commandline and they define some required
@@ -18,3 +22,7 @@ An example call would something like the following:
 If this successfully converges a PwCalculation, let's say with pk 1002, this can be used to run the PhBaseWorkChain, e.g.:
 
 	./base.py -c ph-v5.4.0 -p 1002
+
+# License
+The aiida-quantumespresso set of plugins are released under a MIT license. See 
+the LICENSE.txt file for more details.

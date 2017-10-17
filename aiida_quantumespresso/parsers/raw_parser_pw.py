@@ -36,6 +36,10 @@ def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_
     Parses the output of a calculation
     Receives in input the paths to the output file and the xml file.
 
+    3 different keys to check in output: parser_warnings, xml_warnings and warnings.
+    On an upper level, these flags MUST be checked.
+    The first two are expected to be empty unless QE failures or unfinished jobs.
+
     :param out_file: path to pw std output
     :param input_dict: dictionary with the input parameters
     :param parser_opts: not used
@@ -48,13 +52,8 @@ def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_
     :return bands_data: a dictionary with data for bands (for bands calcs.)
     :return job_successful: a boolean that is False in case of failed calculations
 
-    :raises QEOutputParsingError: for errors in the parsing,
-    :raises AssertionError: if two keys in the parsed dicts are found to be qual
-
-    3 different keys to check in output: parser_warnings, xml_warnings and warnings.
-    On an upper level, these flags MUST be checked.
-    The first two are expected to be empty unless QE failures or unfinished jobs.
-    """
+    :raises QEOutputParsingError: for errors in the parsing
+    :raises AssertionError: if two keys in the parsed dicts are found to be equal    """
     import copy
     # TODO: a lot of ifs could be cleaned out
 
@@ -163,8 +162,8 @@ def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_
 
 
 def cell_volume(a1,a2,a3):
-    """
-    returns the volume of the primitive cell: |a1.(a2xa3)|
+    r"""
+    returns the volume of the primitive cell: :math:`|\vec a_1\cdot(\vec a_2\cross \vec a_3)|`
     """
     a_mid_0 = a2[1]*a3[2] - a2[2]*a3[1]
     a_mid_1 = a2[2]*a3[0] - a2[0]*a3[2]
@@ -1703,10 +1702,11 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
 def parse_QE_errors(lines,count,warnings):
     """
     Parse QE errors messages (those appearing between some lines with
-    ``'%%%%%%%%'``)
-    :param lines: list of strings, the output text file as read by readlines()
-    or as obtained by data.split('\n') when data is the text file read by read()
-    :param count: the line at which we identified some ``'%%%%%%%%'``
+      ``%%%%%%%%``)
+
+    :param lines: list of strings, the output text file as read by ``readlines()``
+      or as obtained by ``data.split('\\\\n')`` when data is the text file read by ``read()``
+    :param count: the line at which we identified some ``%%%%%%%%``
     :param warnings: the warnings already parsed in the file
     :return messages: a list of QE error messages
     """

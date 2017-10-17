@@ -162,7 +162,7 @@ To see more methods associated to the class StructureData, look at the :ref:`my-
     s.store()
     
 For an extended tutorial about the creation of Structure objects,
-check :doc:`this tutorial <../examples/structure_tutorial>`.
+check :ref:`this tutorial on the AiiDA-core documentation <aiida:structure_tutorial>`.
 
 .. note:: AiiDA supports also ASE structures. Once you created your structure
   with ASE, in an object instance called say ``ase_s``, you can
@@ -243,7 +243,7 @@ You can access this function as follows. First, you define the input dictionary:
                 }}
 
 Then, you can verify if the input is correct by using the 
-:py:func:`~aiida.orm.calculation.job.quantumespresso.helpers.pw_input_helper` function, 
+:py:func:`~aiida_quantumespresso.calculations.helpers.pw_input_helper` function,
 conveniently exposes also as a ``input_helper`` class method of the ``PwCalculation`` class::
 
   resdict = CalculationFactory('quantumespresso.pw').input_helper(test_dict, structure=s)
@@ -540,8 +540,8 @@ file will be prepared in a folder together with all the other files required
 for the execution (pseudopotentials, etc.). It will be then sent on cluster,
 submitted, and after execution automatically retrieved and parsed.
 
-To know how to monitor and check the state of submitted calculations, go to
-:doc:`../state/calculation_state`.
+.. To know how to monitor and check the state of submitted calculations, check the
+   :ref:<AiiDA-core documentation`aiida:calculation_state`>.
 
 To continue the tutorial with the ``ph.x`` phonon code of Quantum ESPRESSO,
 continue here: :ref:`my-ref-to-ph-tutorial`.
@@ -641,9 +641,10 @@ Download: :download:`this example script <pw_short_example.py>`
 
 Exception tolerant code
 -----------------------
-You can find a more sophisticated example, that checks the possible exceptions
-and prints nice error messages inside your AiiDA folder, under
-``examples/submission/quantumespresso/test_pw.py``.
+You can find a more sophisticated example, called ``test_pw.py`` (that checks the possible exceptions
+and prints nice error messages) inside your AiiDA-quantumespresso source folder, in the top
+``examples/submission/`` folder
+(or directly on `GitHub <https://github.com/aiidateam/aiida-quantumespresso/tree/develop/examples/submission>`_).
 
 Advanced features
 -----------------
@@ -653,7 +654,7 @@ to :ref:`this section<pw-advanced-features>`
 in the pw.x input plugin documentation.
 
 Importing previously run Quantum ESPRESSO pw.x calculations: PwImmigrant
-========================================================================
+------------------------------------------------------------------------
 
 Once you start using AiiDA to run simulations, we believe that you will find it
 so convenient that you will use it for all your calculations. 
@@ -661,10 +662,6 @@ so convenient that you will use it for all your calculations.
 At the beginning, however, you may have some calculations that you already have
 run and are sitting in some folders, and that you want to import inside AiiDA.
 
-This can be achieved with the PwImmigrant class described below.
-
-.. toctree::
-   :maxdepth: 2
-   
-   pwimmigrant_tutorial
+This can be achieved with the PwImmigrant class described below,
+for which you can find a tutorial :ref:<here `my-ref-to-pwimmigration-tutorial`>.
 

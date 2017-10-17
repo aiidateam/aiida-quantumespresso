@@ -195,7 +195,7 @@ class QeInputFile(object):
         Return a StructureData object based on the data in the input file.
         
         This uses all of the data in the input file to do the necessary unit 
-        conversion, ect. and then creates an AiiDa StructureData object.
+        conversion, ect. and then creates an AiiDA StructureData object.
     
         All of the names corresponding of the Kind objects composing the 
         StructureData object will match those found in the ATOMIC_SPECIES 
@@ -1035,7 +1035,7 @@ def get_structuredata_from_qeinput(
     Function that receives either
     :param filepath: the filepath storing **or**
     :param text: the string of a standard QE-input file.
-    An instance of :func:`StructureData` is initialized with kinds, positions and cell
+    An instance of :py:class:`~aiida.orm.data.structure.StructureData` is initialized with kinds, positions and cell
     as defined in the input file.
     This function can deal with ibrav being set different from 0 and the cell being defined
     with celldm(n) or A,B,C, cosAB etc.
