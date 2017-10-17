@@ -51,6 +51,11 @@
       "pw.base = aiida_quantumespresso.workflows.pw.base:get_error_handlers"
     ]
   }, 
+  "extras_require": {
+    "dev_precommit": [
+      "pre-commit"
+    ]
+  }, 
   "install_requires": [
     "aiida-core>=0.9.1"
   ], 
