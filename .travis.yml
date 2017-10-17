@@ -1,0 +1,56 @@
+language: python
+
+python:
+    - "2.7"
+
+cache: pip
+
+services:
+    - postgresql
+    - docker
+
+addons:
+    postgresql: "9.4"
+    apt:
+       packages:
+           - texlive-base
+           - texlive-generic-recommended
+           - texlive-fonts-recommended
+           - texlive-latex-base
+           - texlive-latex-recommended
+           - texlive-latex-extra
+           - dvipng
+           - dvidvi
+
+before_install:
+before_install:
+    # This is needed for the SSH tests (being able to ssh to localhost)
+    # And will also be used for the docker test
+    - ssh-keygen -t rsa -N "" -f "${HOME}/.ssh/id_rsa"
+    - cp "${HOME}/.ssh/id_rsa.pub" "${HOME}/.ssh/authorized_keys"
+    - ssh-keyscan -H localhost >> "${HOME}/.ssh/known_hosts"
+
+    # Build the docker image if needed
+    - .travis-data/before_install.sh
+
+install:
+    # Upgrade pip setuptools and wheel to be able to run the next command
+    - pip install -U pip wheel setuptools
+    # Install AiiDA with some optional dependencies
+    - pip install .
+
+env:
+- TEST_TYPE="pre-commit"
+- TEST_AIIDA_BACKEND=django TEST_TYPE="docs"
+- TEST_AIIDA_BACKEND=django TEST_TYPE="tests"
+- TEST_AIIDA_BACKEND=sqlalchemy TEST_TYPE="tests"
+
+
+before_script:
+    - .travis-data/setup_profiles.sh
+    - .travis-data/before_script.sh
+
+script: .travis-data/test_script.sh
+
+git:
+  depth: 3

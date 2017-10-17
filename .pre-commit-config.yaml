@@ -1,0 +1,9 @@
+- repo: local
+  hooks: 
+  - id: version-number
+    name: Check consistency in version number
+    entry: python ./.travis-data/precommit/fix_setup_version.py
+    language: system
+    files: '^(setup.json)'
+    pass_filenames: false
+
