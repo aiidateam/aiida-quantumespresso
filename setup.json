@@ -62,10 +62,10 @@
         ]
     },
     "install_requires": [
-        "aiida-core>=0.10.0"
+        "aiida-core>=0.10.0rc1"
     ],
     "license": "MIT License",
     "name": "aiida_quantumespresso",
     "url": "https://github.com/aiidateam/aiida-quantumespresso",
-    "version": "0.10.0"
+    "version": "1.0.0"
 }
