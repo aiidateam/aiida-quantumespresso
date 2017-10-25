@@ -18,4 +18,4 @@ setup_content['version'] = version
 
 # Rewrite JSON in a 'consistent' way (sorted, indented)
 with open(setup_path, 'w') as f:
-	json.dump(setup_content, f, indent=2, sort_keys=True)
+	json.dump(setup_content, f, indent=4, sort_keys=True)
