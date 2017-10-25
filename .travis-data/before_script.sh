@@ -5,6 +5,9 @@ set -ev
 
 if [[ "$TEST_TYPE" == "tests" ]]
 then
+    # Refresh the entrypoint cache through reentry
+    reentry scan
+
     # start the daemon for the correct profile
     # (actually, for the way it works now, the -p probably does not
     #  have any effect...)
