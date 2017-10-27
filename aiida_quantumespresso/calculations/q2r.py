@@ -26,7 +26,7 @@ class Q2rCalculation(NamelistsCalculation):
         self._OUTPUT_SUBFOLDER = PhCalculation._FOLDER_DYNAMICAL_MATRIX
         
         self._retrieve_singlefile_list = [[self.get_linkname_force_matrix(),
-                                           'forceconstants',
+                                           'quantumespresso.forceconstants',
                                            self._FORCE_CONSTANTS_NAME]]
         
         # Default Q2r output parser provided by AiiDA
