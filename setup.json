@@ -20,7 +20,7 @@
             "quantumespresso.projwfc = aiida_quantumespresso.calculations.projwfc:ProjwfcCalculation", 
             "quantumespresso.pw2wannier90 = aiida_quantumespresso.calculations.pw2wannier90:Pw2wannier90Calculation", 
             "quantumespresso.q2r = aiida_quantumespresso.calculations.q2r:Q2rCalculation", 
-            "quantumespresso.pwimmigrant = aiida_quantumespresso.calculations:PwimmigrantCalculation"
+            "quantumespresso.pwimmigrant = aiida_quantumespresso.calculations.pwimmigrant:PwimmigrantCalculation"
         ], 
         "aiida.data": [
             "quantumespresso.forceconstants = aiida_quantumespresso.data.forceconstants:ForceconstantsData"
@@ -67,5 +67,5 @@
     "license": "MIT License", 
     "name": "aiida_quantumespresso", 
     "url": "https://github.com/aiidateam/aiida-quantumespresso", 
-    "version": "1.0.0"
+    "version": "1.0.1"
 }
