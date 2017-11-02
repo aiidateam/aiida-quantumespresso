@@ -186,12 +186,10 @@ class PwBandsWorkChain(WorkChain):
         """
         Attach the desired output nodes directly as outputs of the workchain
         """
-        calculation_band = self.ctx.workchain_bands.get_outputs(link_type=LinkType.CALL)[0]
-
         self.report('workchain succesfully completed')
         self.out('scf_parameters', self.ctx.workchain_scf.out.output_parameters)
-        self.out('band_parameters', calculation_band.out.output_parameters)
-        self.out('band_structure', calculation_band.out.output_band)
+        self.out('band_parameters', self.ctx.workchain_bands.out.output_parameters)
+        self.out('band_structure', self.ctx.workchain_bands.out.output_band)
 
 
 @workfunction
