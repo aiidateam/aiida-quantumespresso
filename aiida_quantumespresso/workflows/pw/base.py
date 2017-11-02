@@ -7,6 +7,7 @@ from aiida.orm.data.folder import FolderData
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
+from aiida.orm.data.array.bands import BandsData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.data.singlefile import SinglefileData
 from aiida.orm.utils import CalculationFactory
@@ -78,6 +79,7 @@ class PwBaseWorkChain(WorkChain):
             cls.results,
             cls.clean,
         )
+        spec.output('output_band', valid_type=BandsData, required=False)
         spec.output('output_structure', valid_type=StructureData, required=False)
         spec.output('output_parameters', valid_type=ParameterData)
         spec.output('remote_folder', valid_type=RemoteData)
@@ -263,6 +265,9 @@ class PwBaseWorkChain(WorkChain):
 
         if 'output_structure' in self.ctx.restart_calc.out:
             self.out('output_structure', self.ctx.restart_calc.out.output_structure)
+
+        if 'output_band' in self.ctx.restart_calc.out:
+            self.out('output_band', self.ctx.restart_calc.out.output_band)
 
     def clean(self):
         """
