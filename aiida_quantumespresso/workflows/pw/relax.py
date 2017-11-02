@@ -7,6 +7,7 @@ from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.data.singlefile import SinglefileData
+from aiida.orm.group import Group
 from aiida.orm.utils import WorkflowFactory
 from aiida.common.exceptions import AiidaException, NotExistent
 from aiida.common.datastructures import calc_states
@@ -34,6 +35,7 @@ class PwRelaxWorkChain(WorkChain):
         spec.input('settings', valid_type=ParameterData)
         spec.input('options', valid_type=ParameterData)
         spec.input('final_scf', valid_type=Bool, default=Bool(False))
+        spec.input('group', valid_type=Str, required=False)
         spec.input('meta_converge', valid_type=Bool, default=Bool(True))
         spec.input('relaxation_scheme', valid_type=Str, default=Str('vc-relax'))
         spec.input('volume_convergence', valid_type=Float, default=Float(0.01))
@@ -228,6 +230,15 @@ class PwRelaxWorkChain(WorkChain):
         else:
             workchain = self.ctx.workchains[-1]
             self.out('output_structure', workchain.out.output_structure)
+
+        if 'group' in self.inputs:
+            # Retrieve the final successful calculation through its output_parameters
+            # This will need a cleaner way eventually, this is just plain confusing
+            calculation = workchain.out.output_parameters.inp.output_parameters
+            group, _ = Group.get_or_create(name=self.inputs.group.value)
+            group.add_nodes(calculation)
+            self.report("storing the final PwCalculation<{}> in the group '{}'"
+                .format(calculation.pk, self.inputs.group.value))
 
         link_labels = ['output_parameters', 'remote_folder',  'retrieved']
 

@@ -6,6 +6,7 @@ from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.bands import BandsData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.data.singlefile import SinglefileData
+from aiida.orm.group import Group
 from aiida.orm.utils import WorkflowFactory
 from aiida.common.links import LinkType
 from aiida.common.exceptions import AiidaException, NotExistent
@@ -36,6 +37,7 @@ class PwBandsWorkChain(WorkChain):
         spec.input('parameters', valid_type=ParameterData)
         spec.input('settings', valid_type=ParameterData)
         spec.input('options', valid_type=ParameterData)
+        spec.input('group', valid_type=Str, required=False)
         spec.input_group('relax')
         spec.outline(
             cls.setup,
@@ -190,6 +192,13 @@ class PwBandsWorkChain(WorkChain):
         self.out('scf_parameters', self.ctx.workchain_scf.out.output_parameters)
         self.out('band_parameters', self.ctx.workchain_bands.out.output_parameters)
         self.out('band_structure', self.ctx.workchain_bands.out.output_band)
+
+        if 'group' in self.inputs:
+            output_band = self.ctx.workchain_bands.out.output_band
+            group, _ = Group.get_or_create(name=self.inputs.group.value)
+            group.add_nodes(output_band)
+            self.report("storing the output_band<{}> in the group '{}'"
+                .format(output_band.pk, self.inputs.group.value))
 
 
 @workfunction
