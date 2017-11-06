@@ -986,32 +986,31 @@ def get_input_data_text(key, val, mapping=None):
 def _lowercase_dict(d, dict_name):
     from collections import Counter
 
-    if isinstance(d, dict):
-        new_dict = dict((str(k).lower(), v) for k, v in d.iteritems())
-        if len(new_dict) != len(d):
-            num_items = Counter(str(k).lower() for k in d.keys())
-            double_keys = ",".join([k for k, v in num_items if v > 1])
-            raise InputValidationError(
-                "Inside the dictionary '{}' there are the following keys that "
-                "are repeated more than once when compared case-insensitively: {}."
-                "This is not allowed.".format(dict_name, double_keys))
-        return new_dict
-    else:
-        raise TypeError("_lowercase_dict accepts only dictionaries as argument")
+    if not isinstance(d, dict):
+        raise TypeError("_lowercase_dict accepts only dictionaries as argument, while you gave {}".format(d))
+    new_dict = dict((str(k).lower(), v) for k, v in d.iteritems())
+    if len(new_dict) != len(d):
+        num_items = Counter(str(k).lower() for k in d.keys())
+        double_keys = ",".join([k for k, v in num_items if v > 1])
+        raise InputValidationError(
+            "Inside the dictionary '{}' there are the following keys that "
+            "are repeated more than once when compared case-insensitively: {}."
+            "This is not allowed.".format(dict_name, double_keys))
+    return new_dict
 
 
 def _uppercase_dict(d, dict_name):
     from collections import Counter
 
-    if isinstance(d, dict):
-        new_dict = dict((str(k).upper(), v) for k, v in d.iteritems())
-        if len(new_dict) != len(d):
-            num_items = Counter(str(k).upper() for k in d.keys())
-            double_keys = ",".join([k for k, v in num_items if v > 1])
-            raise InputValidationError(
-                "Inside the dictionary '{}' there are the following keys that "
-                "are repeated more than once when compared case-insensitively: {}."
-                "This is not allowed.".format(dict_name, double_keys))
-        return new_dict
-    else:
-        raise TypeError("_lowercase_dict accepts only dictionaries as argument")
+    if not isinstance(d, dict):
+        raise TypeError("_uppercase_dict accepts only dictionaries as argument, while you gave {}".format(d))
+    new_dict = dict((str(k).upper(), v) for k, v in d.iteritems())
+    if len(new_dict) != len(d):
+        num_items = Counter(str(k).upper() for k in d.keys())
+        double_keys = ",".join([k for k, v in num_items if v > 1])
+        raise InputValidationError(
+            "Inside the dictionary '{}' there are the following keys that "
+            "are repeated more than once when compared case-insensitively: {}."
+            "This is not allowed.".format(dict_name, double_keys))
+    return new_dict
+
