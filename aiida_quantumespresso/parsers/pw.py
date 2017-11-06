@@ -19,7 +19,7 @@ class PwParser(Parser):
 
     _setting_key = 'parser_options'
 
-    def __init__(self,calc):
+    def __init__(self, calc):
         """
         Initialize the instance of PwParser
         """
@@ -30,7 +30,7 @@ class PwParser(Parser):
 
         super(PwParser, self).__init__(calc)
 
-    def parse_with_retrieved(self,retrieved):
+    def parse_with_retrieved(self, retrieved):
         """
         Receives in input a dictionary of retrieved nodes.
         Does all the logic here.
@@ -64,47 +64,34 @@ class PwParser(Parser):
             self.logger.error("No retrieved folder found")
             return False, ()
 
+        # Verify that the retrieved_temporary_folder is within the arguments
+        try:
+            temporary_folder = retrieved[self.retrieved_temporary_folder_key]
+        except KeyError:
+            self.logger.error('the {} was not passed as an argument'.format(self.retrieved_temporary_folder_key))
+            return False, ()
 
-        # check what is inside the folder
         list_of_files = out_folder.get_folder_list()
-        # at least the stdout should exist
+
+        # The stdout is required for parsing
         if not self._calc._OUTPUT_FILE_NAME in list_of_files:
-            self.logger.error("Standard output not found")
-            successful = False
-            return successful,()
-        # if there is something more, I note it down, so to call the raw parser
-        # with the right options
-        # look for xml
-        has_xml = False
-        if self._calc._DATAFILE_XML_BASENAME in list_of_files:
-            has_xml = True
-        # look for bands
-        has_bands = False
-        if glob.glob( os.path.join(out_folder.get_abs_path('.'),
-                                   'K*[0-9]')):
-            # Note: assuming format of kpoints subfolder is K*[0-9]
-            has_bands = True
-            # TODO: maybe it can be more general than bands only?
-        out_file = os.path.join( out_folder.get_abs_path('.'),
-                                 self._calc._OUTPUT_FILE_NAME )
-        xml_file = os.path.join( out_folder.get_abs_path('.'),
-                                 self._calc._DATAFILE_XML_BASENAME )
-        dir_with_bands = out_folder.get_abs_path('.')
+            self.logger.error("The standard output file '{}' was not found but is required".format(self._calc._OUTPUT_FILE_NAME))
+            return False, ()
 
-        # call the raw parsing function
-        parsing_args = [out_file,input_dict,parser_opts]
-        if has_xml:
-            parsing_args.append(xml_file)
-        if has_bands:
-            if not has_xml:
-                self.logger.warning("Cannot parse bands if xml file not "
-                                     "found")
-            else:
-                parsing_args.append(dir_with_bands)
+        # The xml file is required for parsing
+        if not self._calc._DATAFILE_XML_BASENAME in list_of_files:
+            self.logger.error("The xml output file '{}' was not found but is required".format(self._calc._DATAFILE_XML_BASENAME))
+            return False, ()
 
-        out_dict,trajectory_data,structure_data,bands_data,raw_successful = parse_raw_output(*parsing_args)
+        out_file = os.path.join(out_folder.get_abs_path('.'), self._calc._OUTPUT_FILE_NAME)
+        xml_file = os.path.join(out_folder.get_abs_path('.'), self._calc._DATAFILE_XML_BASENAME)
+        dir_with_bands = temporary_folder.get_abs_path('.')
 
-        # if calculation was not considered failed already, use the new value
+        # Call the raw parsing function
+        parsing_args = [out_file, input_dict, parser_opts, xml_file, dir_with_bands]
+        out_dict, trajectory_data, structure_data, bands_data, raw_successful = parse_raw_output(*parsing_args)
+
+        # If calculation was not considered failed already, use the new value
         successful = raw_successful if successful else successful
 
         # The symmetry info has large arrays, that occupy most of the database.
@@ -251,7 +238,7 @@ class PwParser(Parser):
                 # return it to the execmanager
                 new_nodes_list.append((self.get_linkname_outarray(),arraydata))
 
-        return successful,new_nodes_list
+        return successful, new_nodes_list
 
     def get_parser_settings_key(self):
         """
