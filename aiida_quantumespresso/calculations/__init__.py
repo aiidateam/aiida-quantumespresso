@@ -681,8 +681,7 @@ class BasePwCpInputGenerator(object):
         calcinfo.retrieve_list = []
         calcinfo.retrieve_list.append(self._OUTPUT_FILE_NAME)
         calcinfo.retrieve_list.append(self._DATAFILE_XML)
-        settings_retrieve_list = settings_dict.pop('ADDITIONAL_RETRIEVE_LIST',
-                                                   [])
+        settings_retrieve_list = settings_dict.pop('ADDITIONAL_RETRIEVE_LIST', [])
 
         # If the calculation mode in the input parameters is set to 'bands' or 'also_bands' has
         # been set in the settings, we want to retrieve the following files to parse the bands
@@ -693,6 +692,9 @@ class BasePwCpInputGenerator(object):
 
         calcinfo.retrieve_list += settings_retrieve_list
         calcinfo.retrieve_list += self._internal_retrieve_list
+
+        # Retrieve the k-point directories with the xml files temporarily to parse the occupations
+        calcinfo.retrieve_temporary_list = [[os.path.join(self._OUTPUT_SUBFOLDER, self._PREFIX + '.save', 'K*[0-9]', 'eigenval*.xml'), '.', 2]]
 
         try:
             Parserclass = self.get_parserclass()
