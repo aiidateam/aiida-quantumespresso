@@ -44,14 +44,15 @@ class PwParser(Parser):
 
         successful = True
 
+        # Load the input dictionary
+        settings = self._calc.inp.settings.get_dict()
+        parameters = self._calc.inp.parameters.get_dict()
+
         # Look for eventual flags of the parser
         try:
-            parser_opts = self._calc.inp.settings.get_dict()[self.get_parser_settings_key()]
-        except (AttributeError,KeyError):
+            parser_opts = settings[self.get_parser_settings_key()]
+        except (AttributeError, KeyError):
             parser_opts = {}
-
-        # Load the input dictionary
-        input_dict = self._calc.inp.parameters.get_dict()
 
         # Check that the retrieved folder is there
         try:
@@ -60,12 +61,16 @@ class PwParser(Parser):
             self.logger.error("No retrieved folder found")
             return False, ()
 
-        # Verify that the retrieved_temporary_folder is within the arguments
-        try:
-            temporary_folder = retrieved[self.retrieved_temporary_folder_key]
-        except KeyError:
-            self.logger.error('the {} was not passed as an argument'.format(self.retrieved_temporary_folder_key))
-            return False, ()
+        # Verify that the retrieved_temporary_folder is within the arguments if temporary files were specified
+        if self._calc._get_retrieve_temporary_list():
+            try:
+                temporary_folder = retrieved[self.retrieved_temporary_folder_key]
+                dir_with_bands = temporary_folder.get_abs_path('.')
+            except KeyError:
+                self.logger.error('the {} was not passed as an argument'.format(self.retrieved_temporary_folder_key))
+                return False, ()
+        else:
+            dir_with_bands = None
 
         list_of_files = out_folder.get_folder_list()
 
@@ -81,10 +86,9 @@ class PwParser(Parser):
 
         out_file = os.path.join(out_folder.get_abs_path('.'), self._calc._OUTPUT_FILE_NAME)
         xml_file = os.path.join(out_folder.get_abs_path('.'), self._calc._DATAFILE_XML_BASENAME)
-        dir_with_bands = temporary_folder.get_abs_path('.')
 
         # Call the raw parsing function
-        parsing_args = [out_file, input_dict, parser_opts, xml_file, dir_with_bands]
+        parsing_args = [out_file, parameters, parser_opts, xml_file, dir_with_bands]
         out_dict, trajectory_data, structure_data, bands_data, raw_successful = parse_raw_output(*parsing_args)
 
         # If calculation was not considered failed already, use the new value
@@ -123,7 +127,7 @@ class PwParser(Parser):
 
         # I eventually save the new structure. structure_data is unnecessary after this
         in_struc = self._calc.get_inputs_dict()['structure']
-        type_calc = input_dict['CONTROL']['calculation']
+        type_calc = parameters['CONTROL']['calculation']
         struc = in_struc
         if type_calc in ['relax', 'vc-relax', 'md', 'vc-md']:
             if 'cell' in structure_data.keys():
