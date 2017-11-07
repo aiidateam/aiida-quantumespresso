@@ -660,15 +660,10 @@ class BasePwCpInputGenerator(object):
         # is replaced by mpirun ... pw.x ... -in aiida.in
         # in the scheduler, _get_run_line, if cmdline_params is empty, it
         # simply uses < calcinfo.stin_name
-        calcinfo.cmdline_params = (list(cmdline_params)
-                                   + ["-in", self._INPUT_FILE_NAME])
-        # calcinfo.stdin_name = self._INPUT_FILE_NAME
-        # calcinfo.stdout_name = self._OUTPUT_FILE_NAME
+        calcinfo.cmdline_params = (list(cmdline_params) + ["-in", self._INPUT_FILE_NAME])
 
         codeinfo = CodeInfo()
-        codeinfo.cmdline_params = (list(cmdline_params)
-                                   + ["-in", self._INPUT_FILE_NAME])
-        # calcinfo.stdin_name = self._INPUT_FILE_NAME
+        codeinfo.cmdline_params = (list(cmdline_params) + ["-in", self._INPUT_FILE_NAME])
         codeinfo.stdout_name = self._OUTPUT_FILE_NAME
         codeinfo.code_uuid = code.uuid
         calcinfo.codes_info = [codeinfo]
@@ -681,20 +676,16 @@ class BasePwCpInputGenerator(object):
         calcinfo.retrieve_list = []
         calcinfo.retrieve_list.append(self._OUTPUT_FILE_NAME)
         calcinfo.retrieve_list.append(self._DATAFILE_XML)
-        settings_retrieve_list = settings_dict.pop('ADDITIONAL_RETRIEVE_LIST', [])
-
-        # If the calculation mode in the input parameters is set to 'bands' or 'also_bands' has
-        # been set in the settings, we want to retrieve the following files to parse the bands
-        calculation_mode = parameters.get_dict().get('CONTROL', {}).get('calculation', {})
-        if settings_dict.pop('ALSO_BANDS', False) or calculation_mode == 'bands':
-            paths = os.path.join(self._OUTPUT_SUBFOLDER, self._PREFIX + '.save', 'K*[0-9]', 'eigenval*.xml')
-            settings_retrieve_list.append([paths, '.', 2])
-
-        calcinfo.retrieve_list += settings_retrieve_list
+        calcinfo.retrieve_list += settings_dict.pop('ADDITIONAL_RETRIEVE_LIST', [])
         calcinfo.retrieve_list += self._internal_retrieve_list
 
-        # Retrieve the k-point directories with the xml files temporarily to parse the occupations
-        calcinfo.retrieve_temporary_list = [[os.path.join(self._OUTPUT_SUBFOLDER, self._PREFIX + '.save', 'K*[0-9]', 'eigenval*.xml'), '.', 2]]
+        # Retrieve the k-point directories with the xml files to the temporary folder
+        # to parse the band eigenvalues and occupations but not to have to save the raw files
+        # if and only if the 'no_bands' key was not set to true in the settings
+        no_bands = settings_dict.pop('NO_BANDS', False)
+        if no_bands is False:
+            xmlpaths = os.path.join(self._OUTPUT_SUBFOLDER, self._PREFIX + '.save', 'K*[0-9]', 'eigenval*.xml')
+            calcinfo.retrieve_temporary_list = [[xmlpaths, '.', 2]]
 
         try:
             Parserclass = self.get_parserclass()
