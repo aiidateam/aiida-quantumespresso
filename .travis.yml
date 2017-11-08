@@ -37,6 +37,7 @@ install:
     - pip install -U pip wheel setuptools reentry
     # Install AiiDA with some optional dependencies
     - pip install .[docs,dev_precommit]
+    - pip install --upgrade git+git://github.com/aiidateam/aiida_core.git@4285881dfaab5c902327d8979167fbf58c6af0de
 
 env:
 - TEST_TYPE="pre-commit"
