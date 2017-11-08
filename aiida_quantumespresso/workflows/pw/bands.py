@@ -168,7 +168,6 @@ class PwBandsWorkChain(WorkChain):
 
         # Tell the plugin to retrieve the bands
         settings = inputs['settings'].get_dict()
-        settings['also_bands'] = True
 
         # Final input preparation, wrapping dictionaries in ParameterData nodes
         inputs['kpoints'] = self.ctx.kpoints_path

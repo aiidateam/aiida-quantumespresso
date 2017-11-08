@@ -64,7 +64,7 @@ kpoints.set_kpoints_mesh([kpoints_mesh, kpoints_mesh, kpoints_mesh])
 
 # to retrieve the bands
 # (the object settings is optional)
-settings_dict = {'also_bands': True}
+settings_dict = {}
 settings = ParameterData(dict=settings_dict)
 
 calc = code.new_calc()
@@ -132,7 +132,7 @@ while time.time() - start_time < timeout_secs:
     print "Output of 'verdi calculation list':"
     try:
         print subprocess.check_output(
-            ["verdi", "calculation", "list"], 
+            ["verdi", "calculation", "list", "-a"], 
             stderr=subprocess.STDOUT,
         )
     except subprocess.CalledProcessError as e:
@@ -148,6 +148,21 @@ if exited_with_timeout:
         timeout_secs)
     sys.exit(2)
 else:
+    try:
+        print subprocess.check_output(
+            ["verdi", "calculation", "logshow", "{}".format(calc.pk)], 
+            stderr=subprocess.STDOUT,
+        )
+    except subprocess.CalledProcessError as e:
+        print "Note: the command failed, message: {}".format(e.message)
+    try:
+        print subprocess.check_output(
+            ["verdi", "calculation", "show", "{}".format(calc.pk)], 
+            stderr=subprocess.STDOUT,
+        )
+    except subprocess.CalledProcessError as e:
+        print "Note: the command failed, message: {}".format(e.message)
+
     if abs(calc.res.energy - expected_energy) < 1.e-3:
         print "OK, energy has the expected value"
         sys.exit(0)

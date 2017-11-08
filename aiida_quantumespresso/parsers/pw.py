@@ -1,61 +1,58 @@
 # -*- coding: utf-8 -*-
-from aiida_quantumespresso.calculations.pw import PwCalculation
-from aiida_quantumespresso.parsers.raw_parser_pw import (
-                            parse_raw_output,QEOutputParsingError)
-from aiida.orm.data.parameter import ParameterData
-from aiida.parsers.parser import Parser#, ParserParamManager
-from aiida_quantumespresso.parsers import convert_qe2aiida_structure
 from aiida.common.datastructures import calc_states
 from aiida.common.exceptions import UniquenessError
 from aiida.orm.data.array.bands import BandsData
-from aiida.orm.data.array.bands import KpointsData
-
-#TODO: I don't like the generic class always returning a name for the link to the output structure
+from aiida.orm.data.array.kpoints import KpointsData
+from aiida.orm.data.parameter import ParameterData
+from aiida.parsers.parser import Parser
+from aiida_quantumespresso.calculations.pw import PwCalculation
+from aiida_quantumespresso.parsers import convert_qe2aiida_structure
+from aiida_quantumespresso.parsers.raw_parser_pw import parse_raw_output, QEOutputParsingError
 
 class PwParser(Parser):
     """
-    This class is the implementation of the Parser class for PWscf.
+    The Parser implementation for the PwCalculation JobCalculation class
     """
 
     _setting_key = 'parser_options'
 
-    def __init__(self,calc):
+    def __init__(self, calc):
         """
-        Initialize the instance of PwParser
+        Initialize the Parser for a PwCalculation
+
+        :param calculation: instance of the PwCalculation
         """
         self._possible_symmetries = self._get_qe_symmetry_list()
-        # check for valid input
-        if not isinstance(calc,PwCalculation):
-            raise QEOutputParsingError("Input calc must be a PwCalculation")
+
+        if not isinstance(calc, PwCalculation):
+            raise QEOutputParsingError('Input calc must be a PwCalculation')
 
         super(PwParser, self).__init__(calc)
 
-    def parse_with_retrieved(self,retrieved):
+    def parse_with_retrieved(self, retrieved):
         """
-        Receives in input a dictionary of retrieved nodes.
-        Does all the logic here.
+        Parse the output nodes for a PwCalculations from a dictionary of retrieved nodes.
+        Two nodes that are expected are the default 'retrieved' FolderData node which will
+        store the retrieved files permanently in the repository. The second required node
+        is the unstored FolderData node with the temporary retrieved files, which should
+        be passed under the key 'retrieved_temporary_folder_key' of the Parser class.
+
+        :param retrieved: a dictionary of retrieved nodes
         """
-        from aiida.common.exceptions import InvalidOperation
         import os
-        import glob
+        import numpy
 
         successful = True
 
-        # check if I'm not to overwrite anything
-        #state = self._calc.get_state()
-        #if state != calc_states.PARSING:
-        #    raise InvalidOperation("Calculation not in {} state"
-        #                           .format(calc_states.PARSING) )
+        # Load the input dictionary
+        settings = self._calc.inp.settings.get_dict()
+        parameters = self._calc.inp.parameters.get_dict()
 
-        # look for eventual flags of the parser
+        # Look for eventual flags of the parser
         try:
-            parser_opts = self._calc.inp.settings.get_dict()[self.get_parser_settings_key()]
-        except (AttributeError,KeyError):
+            parser_opts = settings[self.get_parser_settings_key()]
+        except (AttributeError, KeyError):
             parser_opts = {}
-
-        # load the input dictionary
-        # TODO: pass this input_dict to the parser. It might need it.
-        input_dict = self._calc.inp.parameters.get_dict()
 
         # Check that the retrieved folder is there
         try:
@@ -64,54 +61,44 @@ class PwParser(Parser):
             self.logger.error("No retrieved folder found")
             return False, ()
 
+        # Verify that the retrieved_temporary_folder is within the arguments if temporary files were specified
+        if self._calc._get_retrieve_temporary_list():
+            try:
+                temporary_folder = retrieved[self.retrieved_temporary_folder_key]
+                dir_with_bands = temporary_folder.get_abs_path('.')
+            except KeyError:
+                self.logger.error('the {} was not passed as an argument'.format(self.retrieved_temporary_folder_key))
+                return False, ()
+        else:
+            dir_with_bands = None
 
-        # check what is inside the folder
         list_of_files = out_folder.get_folder_list()
-        # at least the stdout should exist
+
+        # The stdout is required for parsing
         if not self._calc._OUTPUT_FILE_NAME in list_of_files:
-            self.logger.error("Standard output not found")
-            successful = False
-            return successful,()
-        # if there is something more, I note it down, so to call the raw parser
-        # with the right options
-        # look for xml
-        has_xml = False
-        if self._calc._DATAFILE_XML_BASENAME in list_of_files:
-            has_xml = True
-        # look for bands
-        has_bands = False
-        if glob.glob( os.path.join(out_folder.get_abs_path('.'),
-                                   'K*[0-9]')):
-            # Note: assuming format of kpoints subfolder is K*[0-9]
-            has_bands = True
-            # TODO: maybe it can be more general than bands only?
-        out_file = os.path.join( out_folder.get_abs_path('.'),
-                                 self._calc._OUTPUT_FILE_NAME )
-        xml_file = os.path.join( out_folder.get_abs_path('.'),
-                                 self._calc._DATAFILE_XML_BASENAME )
-        dir_with_bands = out_folder.get_abs_path('.')
+            self.logger.error("The standard output file '{}' was not found but is required".format(self._calc._OUTPUT_FILE_NAME))
+            return False, ()
 
-        # call the raw parsing function
-        parsing_args = [out_file,input_dict,parser_opts]
-        if has_xml:
-            parsing_args.append(xml_file)
-        if has_bands:
-            if not has_xml:
-                self.logger.warning("Cannot parse bands if xml file not "
-                                     "found")
-            else:
-                parsing_args.append(dir_with_bands)
+        # The xml file is required for parsing
+        if not self._calc._DATAFILE_XML_BASENAME in list_of_files:
+            self.logger.error("The xml output file '{}' was not found but is required".format(self._calc._DATAFILE_XML_BASENAME))
+            return False, ()
 
-        out_dict,trajectory_data,structure_data,bands_data,raw_successful = parse_raw_output(*parsing_args)
+        out_file = os.path.join(out_folder.get_abs_path('.'), self._calc._OUTPUT_FILE_NAME)
+        xml_file = os.path.join(out_folder.get_abs_path('.'), self._calc._DATAFILE_XML_BASENAME)
 
-        # if calculation was not considered failed already, use the new value
+        # Call the raw parsing function
+        parsing_args = [out_file, parameters, parser_opts, xml_file, dir_with_bands]
+        out_dict, trajectory_data, structure_data, bands_data, raw_successful = parse_raw_output(*parsing_args)
+
+        # If calculation was not considered failed already, use the new value
         successful = raw_successful if successful else successful
 
         # The symmetry info has large arrays, that occupy most of the database.
         # turns out most of this is due to 64 matrices that are repeated over and over again.
         # therefore I map part of the results in a list of dictionaries wrote here once and for all
         # if the parser_opts has a key all_symmetries set to True, I don't reduce it
-        all_symmetries = parser_opts.get('all_symmetries',False)
+        all_symmetries = parser_opts.get('all_symmetries', False)
         if not all_symmetries:
             try:
                 if 'symmetries' in out_dict.keys():
@@ -140,54 +127,49 @@ class PwParser(Parser):
 
         # I eventually save the new structure. structure_data is unnecessary after this
         in_struc = self._calc.get_inputs_dict()['structure']
-        type_calc = input_dict['CONTROL']['calculation']
+        type_calc = parameters['CONTROL']['calculation']
         struc = in_struc
-        if type_calc in ['relax','vc-relax','md','vc-md']:
+        if type_calc in ['relax', 'vc-relax', 'md', 'vc-md']:
             if 'cell' in structure_data.keys():
-                struc = convert_qe2aiida_structure(structure_data,input_structure=in_struc)
-                new_nodes_list.append((self.get_linkname_outstructure(),struc))
+                struc = convert_qe2aiida_structure(structure_data, input_structure=in_struc)
+                new_nodes_list.append((self.get_linkname_outstructure(), struc))
 
-        k_points_list = trajectory_data.pop('k_points',None)
-        k_points_weights_list = trajectory_data.pop('k_points_weights',None)
+        k_points_list = trajectory_data.pop('k_points', None)
+        k_points_weights_list = trajectory_data.pop('k_points_weights', None)
 
         if k_points_list is not None:
 
-            # build the kpoints object
+            # Build the kpoints object
             if out_dict['k_points_units'] not in ['2 pi / Angstrom']:
                 raise QEOutputParsingError('Error in kpoints units (should be cartesian)')
-            # converting bands into a BandsData object (including the kpoints)
 
             kpoints_from_output = KpointsData()
             kpoints_from_output.set_cell_from_structure(struc)
-            kpoints_from_output.set_kpoints(k_points_list, cartesian=True,
-                                            weights = k_points_weights_list)
+            kpoints_from_output.set_kpoints(k_points_list, cartesian=True, weights=k_points_weights_list)
             kpoints_from_input = self._calc.inp.kpoints
 
             if not bands_data:
                 try:
                     kpoints_from_input.get_kpoints()
                 except AttributeError:
-                    new_nodes_list += [(self.get_linkname_out_kpoints(),kpoints_from_output)]
+                    new_nodes_list += [(self.get_linkname_out_kpoints(), kpoints_from_output)]
 
+            # Converting bands into a BandsData object (including the kpoints)
             if bands_data:
-                import numpy
-                # converting bands into a BandsData object (including the kpoints)
-
                 kpoints_for_bands = kpoints_from_output
 
                 try:
                     kpoints_from_input.get_kpoints()
                     kpoints_for_bands.labels = kpoints_from_input.labels
-                except (AttributeError,ValueError,TypeError):
+                except (AttributeError, ValueError, TypeError):
                     # AttributeError: no list of kpoints in input
                     # ValueError: labels from input do not match the output
                     #      list of kpoints (some kpoints are missing)
                     # TypeError: labels are not set, so kpoints_from_input.labels=None
                     pass
 
-                # get the bands occupations.
-                # correct the occupations of QE: if it computes only one component,
-                # it occupies it with half number of electrons
+                # Get the bands occupations and correct the occupations of QE:
+                # If it computes only one component, it occupies it with half number of electrons
                 try:
                     bands_data['occupations'][1]
                     the_occupations = bands_data['occupations']
@@ -206,52 +188,47 @@ class PwParser(Parser):
                                          units = bands_data['bands_units'],
                                          occupations = the_occupations)
 
-                new_nodes_list += [('output_band',the_bands_data)]
+                new_nodes_list += [('output_band', the_bands_data)]
                 out_dict['linknames_band'] = ['output_band']
 
-        # convert the dictionary into an AiiDA object
         output_params = ParameterData(dict=out_dict)
-        # return it to the execmanager
-        new_nodes_list.append((self.get_linkname_outparams(),output_params))
+        new_nodes_list.append((self.get_linkname_outparams(), output_params))
 
         if trajectory_data:
-            import numpy
             from aiida.orm.data.array.trajectory import TrajectoryData
             from aiida.orm.data.array import ArrayData
             try:
-                positions = numpy.array( trajectory_data.pop('atomic_positions_relax') )
+                positions = numpy.array( trajectory_data.pop('atomic_positions_relax'))
                 try:
-                    cells = numpy.array( trajectory_data.pop('lattice_vectors_relax') )
+                    cells = numpy.array( trajectory_data.pop('lattice_vectors_relax'))
                     # if KeyError, the MD was at fixed cell
                 except KeyError:
-                    cells = numpy.array( [in_struc.cell]*len(positions) )
+                    cells = numpy.array([in_struc.cell] * len(positions))
 
-                symbols = numpy.array( [ str(i.kind_name) for i in in_struc.sites ] )
-                stepids = numpy.arange( len(positions) ) # a growing integer per step
+                symbols = numpy.array([str(i.kind_name) for i in in_struc.sites])
+                stepids = numpy.arange(len(positions)) # a growing integer per step
                 # I will insert time parsing when they fix their issues about time
                 # printing (logic is broken if restart is on)
 
                 traj = TrajectoryData()
-                traj.set_trajectory(stepids = stepids,
-                                    cells = cells,
-                                    symbols = symbols,
-                                    positions = positions,
-                                    )
+                traj.set_trajectory(
+                    stepids = stepids,
+                    cells = cells,
+                    symbols = symbols,
+                    positions = positions,
+                )
                 for x in trajectory_data.iteritems():
                     traj.set_array(x[0],numpy.array(x[1]))
-                # return it to the execmanager
                 new_nodes_list.append((self.get_linkname_outtrajectory(),traj))
 
             except KeyError:
-                # forces, atomic charges and atomic mag. moments, in scf
-                # calculation (when outputed)
+                # forces, atomic charges and atomic mag. moments, in scf calculation (when outputed)
                 arraydata = ArrayData()
                 for x in trajectory_data.iteritems():
                     arraydata.set_array(x[0],numpy.array(x[1]))
-                # return it to the execmanager
                 new_nodes_list.append((self.get_linkname_outarray(),arraydata))
 
-        return successful,new_nodes_list
+        return successful, new_nodes_list
 
     def get_parser_settings_key(self):
         """
@@ -292,9 +269,9 @@ class PwParser(Parser):
         """
         Return the extended dictionary of symmetries.
         """
-        datas = self._calc.get_outputs(type=ParameterData,also_labels = True)
-        all_data = [ i[1] for i in datas if i[0]==self.get_linkname_outparams() ]
-        if len(all_data)>1:
+        data = self._calc.get_outputs(type=ParameterData, also_labels=True)
+        all_data = [i[1] for i in data if i[0]==self.get_linkname_outparams()]
+        if len(all_data) > 1:
             raise UniquenessError('More than one output parameterdata found.')
         elif not all_data:
             return []
@@ -329,115 +306,117 @@ class PwParser(Parser):
         mcos3 = -0.5
 
         # 32 rotations that are checked + inversion
-        matrices = [[[1.,  0.,  0.],  [0.,  1.,  0.],  [0.,  0.,  1.]],
-                [[-1., 0.,  0.],  [0., -1.,  0.],  [0.,  0.,  1.]],
-                [[-1., 0.,  0.],  [0.,  1.,  0.],  [0.,  0., -1.]],
-                [[1.,  0.,  0.],  [0., -1.,  0.],  [0.,  0., -1.]],
-                [[0.,  1.,  0.],  [1.,  0.,  0.],  [0.,  0., -1.]],
-                [[0., -1.,  0.], [-1.,  0.,  0.],  [0.,  0., -1.]],
-                [[0., -1.,  0.],  [1.,  0.,  0.],  [0.,  0.,  1.]],
-                [[0.,  1.,  0.], [-1.,  0.,  0.],  [0.,  0.,  1.]],
-                [[0.,  0.,  1.],  [0., -1.,  0.],  [1.,  0.,  0.]],
-                [[0.,  0., -1.],  [0., -1.,  0.], [-1.,  0.,  0.]],
-                [[0.,  0., -1.],  [0.,  1.,  0.],  [1.,  0.,  0.]],
-                [[0.,  0.,  1.],  [0.,  1.,  0.], [-1.,  0.,  0.]],
-                [[-1., 0.,  0.],  [0.,  0.,  1.],  [0.,  1.,  0.]],
-                [[-1., 0.,  0.],  [0.,  0., -1.],  [0., -1.,  0.]],
-                [[1.,  0.,  0.],  [0.,  0., -1.],  [0.,  1.,  0.]],
-                [[1.,  0.,  0.],  [0.,  0.,  1.],  [0., -1.,  0.]],
-                [[0.,  0.,  1.],  [1.,  0.,  0.],  [0.,  1.,  0.]],
-                [[0.,  0., -1.], [-1.,  0.,  0.],  [0.,  1.,  0.]],
-                [[0.,  0., -1.],  [1.,  0.,  0.],  [0., -1.,  0.]],
-                [[0.,  0.,  1.], [-1.,  0.,  0.],  [0., -1.,  0.]],
-                [[0.,  1.,  0.],  [0.,  0.,  1.],  [1.,  0.,  0.]],
-                [[0., -1.,  0.],  [0.,  0., -1.],  [1.,  0.,  0.]],
-                [[0., -1.,  0.],  [0.,  0.,  1.], [-1.,  0.,  0.]],
-                [[0.,  1.,  0.],  [0.,  0., -1.], [-1.,  0.,  0.]],
-                [[ cos3,  sin3, 0.], [msin3,  cos3, 0.], [0., 0.,  1.]],
-                [[ cos3, msin3, 0.],  [sin3,  cos3, 0.], [0., 0.,  1.]],
-                [[mcos3,  sin3, 0.], [msin3, mcos3, 0.], [0., 0.,  1.]],
-                [[mcos3, msin3, 0.],  [sin3, mcos3, 0.], [0., 0.,  1.]],
-                [[ cos3, msin3, 0.], [msin3, mcos3, 0.], [0., 0., -1.]],
-                [[ cos3,  sin3, 0.],  [sin3, mcos3, 0.], [0., 0., -1.]],
-                [[mcos3, msin3, 0.], [msin3,  cos3, 0.], [0., 0., -1.]],
-                [[mcos3,  sin3, 0.],  [sin3,  cos3, 0.], [0., 0., -1.]],
-               ]
+        matrices = [
+            [[1.,  0.,  0.],  [0.,  1.,  0.],  [0.,  0.,  1.]],
+            [[-1., 0.,  0.],  [0., -1.,  0.],  [0.,  0.,  1.]],
+            [[-1., 0.,  0.],  [0.,  1.,  0.],  [0.,  0., -1.]],
+            [[1.,  0.,  0.],  [0., -1.,  0.],  [0.,  0., -1.]],
+            [[0.,  1.,  0.],  [1.,  0.,  0.],  [0.,  0., -1.]],
+            [[0., -1.,  0.], [-1.,  0.,  0.],  [0.,  0., -1.]],
+            [[0., -1.,  0.],  [1.,  0.,  0.],  [0.,  0.,  1.]],
+            [[0.,  1.,  0.], [-1.,  0.,  0.],  [0.,  0.,  1.]],
+            [[0.,  0.,  1.],  [0., -1.,  0.],  [1.,  0.,  0.]],
+            [[0.,  0., -1.],  [0., -1.,  0.], [-1.,  0.,  0.]],
+            [[0.,  0., -1.],  [0.,  1.,  0.],  [1.,  0.,  0.]],
+            [[0.,  0.,  1.],  [0.,  1.,  0.], [-1.,  0.,  0.]],
+            [[-1., 0.,  0.],  [0.,  0.,  1.],  [0.,  1.,  0.]],
+            [[-1., 0.,  0.],  [0.,  0., -1.],  [0., -1.,  0.]],
+            [[1.,  0.,  0.],  [0.,  0., -1.],  [0.,  1.,  0.]],
+            [[1.,  0.,  0.],  [0.,  0.,  1.],  [0., -1.,  0.]],
+            [[0.,  0.,  1.],  [1.,  0.,  0.],  [0.,  1.,  0.]],
+            [[0.,  0., -1.], [-1.,  0.,  0.],  [0.,  1.,  0.]],
+            [[0.,  0., -1.],  [1.,  0.,  0.],  [0., -1.,  0.]],
+            [[0.,  0.,  1.], [-1.,  0.,  0.],  [0., -1.,  0.]],
+            [[0.,  1.,  0.],  [0.,  0.,  1.],  [1.,  0.,  0.]],
+            [[0., -1.,  0.],  [0.,  0., -1.],  [1.,  0.,  0.]],
+            [[0., -1.,  0.],  [0.,  0.,  1.], [-1.,  0.,  0.]],
+            [[0.,  1.,  0.],  [0.,  0., -1.], [-1.,  0.,  0.]],
+            [[ cos3,  sin3, 0.], [msin3,  cos3, 0.], [0., 0.,  1.]],
+            [[ cos3, msin3, 0.],  [sin3,  cos3, 0.], [0., 0.,  1.]],
+            [[mcos3,  sin3, 0.], [msin3, mcos3, 0.], [0., 0.,  1.]],
+            [[mcos3, msin3, 0.],  [sin3, mcos3, 0.], [0., 0.,  1.]],
+            [[ cos3, msin3, 0.], [msin3, mcos3, 0.], [0., 0., -1.]],
+            [[ cos3,  sin3, 0.],  [sin3, mcos3, 0.], [0., 0., -1.]],
+            [[mcos3, msin3, 0.], [msin3,  cos3, 0.], [0., 0., -1.]],
+            [[mcos3,  sin3, 0.],  [sin3,  cos3, 0.], [0., 0., -1.]],
+        ]
 
-        # names for the 32 matrices, with and without inversion
-        matrices_name = ['identity                                     ',
-                    '180 deg rotation - cart. axis [0,0,1]        ',
-                    '180 deg rotation - cart. axis [0,1,0]        ',
-                    '180 deg rotation - cart. axis [1,0,0]        ',
-                    '180 deg rotation - cart. axis [1,1,0]        ',
-                    '180 deg rotation - cart. axis [1,-1,0]       ',
-                    ' 90 deg rotation - cart. axis [0,0,-1]       ',
-                    ' 90 deg rotation - cart. axis [0,0,1]        ',
-                    '180 deg rotation - cart. axis [1,0,1]        ',
-                    '180 deg rotation - cart. axis [-1,0,1]       ',
-                    ' 90 deg rotation - cart. axis [0,1,0]        ',
-                    ' 90 deg rotation - cart. axis [0,-1,0]       ',
-                    '180 deg rotation - cart. axis [0,1,1]        ',
-                    '180 deg rotation - cart. axis [0,1,-1]       ',
-                    ' 90 deg rotation - cart. axis [-1,0,0]       ',
-                    ' 90 deg rotation - cart. axis [1,0,0]        ',
-                    '120 deg rotation - cart. axis [-1,-1,-1]     ',
-                    '120 deg rotation - cart. axis [-1,1,1]       ',
-                    '120 deg rotation - cart. axis [1,1,-1]       ',
-                    '120 deg rotation - cart. axis [1,-1,1]       ',
-                    '120 deg rotation - cart. axis [1,1,1]        ',
-                    '120 deg rotation - cart. axis [-1,1,-1]      ',
-                    '120 deg rotation - cart. axis [1,-1,-1]      ',
-                    '120 deg rotation - cart. axis [-1,-1,1]      ',
-                    ' 60 deg rotation - cryst. axis [0,0,1]       ',
-                    ' 60 deg rotation - cryst. axis [0,0,-1]      ',
-                    '120 deg rotation - cryst. axis [0,0,1]       ',
-                    '120 deg rotation - cryst. axis [0,0,-1]      ',
-                    '180 deg rotation - cryst. axis [1,-1,0]      ',
-                    '180 deg rotation - cryst. axis [2,1,0]       ',
-                    '180 deg rotation - cryst. axis [0,1,0]       ',
-                    '180 deg rotation - cryst. axis [1,1,0]       ',
-                    'inversion                                    ',
-                    'inv. 180 deg rotation - cart. axis [0,0,1]   ',
-                    'inv. 180 deg rotation - cart. axis [0,1,0]   ',
-                    'inv. 180 deg rotation - cart. axis [1,0,0]   ',
-                    'inv. 180 deg rotation - cart. axis [1,1,0]   ',
-                    'inv. 180 deg rotation - cart. axis [1,-1,0]  ',
-                    'inv.  90 deg rotation - cart. axis [0,0,-1]  ',
-                    'inv.  90 deg rotation - cart. axis [0,0,1]   ',
-                    'inv. 180 deg rotation - cart. axis [1,0,1]   ',
-                    'inv. 180 deg rotation - cart. axis [-1,0,1]  ',
-                    'inv.  90 deg rotation - cart. axis [0,1,0]   ',
-                    'inv.  90 deg rotation - cart. axis [0,-1,0]  ',
-                    'inv. 180 deg rotation - cart. axis [0,1,1]   ',
-                    'inv. 180 deg rotation - cart. axis [0,1,-1]  ',
-                    'inv.  90 deg rotation - cart. axis [-1,0,0]  ',
-                    'inv.  90 deg rotation - cart. axis [1,0,0]   ',
-                    'inv. 120 deg rotation - cart. axis [-1,-1,-1]',
-                    'inv. 120 deg rotation - cart. axis [-1,1,1]  ',
-                    'inv. 120 deg rotation - cart. axis [1,1,-1]  ',
-                    'inv. 120 deg rotation - cart. axis [1,-1,1]  ',
-                    'inv. 120 deg rotation - cart. axis [1,1,1]   ',
-                    'inv. 120 deg rotation - cart. axis [-1,1,-1] ',
-                    'inv. 120 deg rotation - cart. axis [1,-1,-1] ',
-                    'inv. 120 deg rotation - cart. axis [-1,-1,1] ',
-                    'inv.  60 deg rotation - cryst. axis [0,0,1]  ',
-                    'inv.  60 deg rotation - cryst. axis [0,0,-1] ',
-                    'inv. 120 deg rotation - cryst. axis [0,0,1]  ',
-                    'inv. 120 deg rotation - cryst. axis [0,0,-1] ',
-                    'inv. 180 deg rotation - cryst. axis [1,-1,0] ',
-                    'inv. 180 deg rotation - cryst. axis [2,1,0]  ',
-                    'inv. 180 deg rotation - cryst. axis [0,1,0]  ',
-                    'inv. 180 deg rotation - cryst. axis [1,1,0]  ']
+        # Names for the 32 matrices, with and without inversion
+        matrices_name = [
+            'identity                                     ',
+            '180 deg rotation - cart. axis [0,0,1]        ',
+            '180 deg rotation - cart. axis [0,1,0]        ',
+            '180 deg rotation - cart. axis [1,0,0]        ',
+            '180 deg rotation - cart. axis [1,1,0]        ',
+            '180 deg rotation - cart. axis [1,-1,0]       ',
+            ' 90 deg rotation - cart. axis [0,0,-1]       ',
+            ' 90 deg rotation - cart. axis [0,0,1]        ',
+            '180 deg rotation - cart. axis [1,0,1]        ',
+            '180 deg rotation - cart. axis [-1,0,1]       ',
+            ' 90 deg rotation - cart. axis [0,1,0]        ',
+            ' 90 deg rotation - cart. axis [0,-1,0]       ',
+            '180 deg rotation - cart. axis [0,1,1]        ',
+            '180 deg rotation - cart. axis [0,1,-1]       ',
+            ' 90 deg rotation - cart. axis [-1,0,0]       ',
+            ' 90 deg rotation - cart. axis [1,0,0]        ',
+            '120 deg rotation - cart. axis [-1,-1,-1]     ',
+            '120 deg rotation - cart. axis [-1,1,1]       ',
+            '120 deg rotation - cart. axis [1,1,-1]       ',
+            '120 deg rotation - cart. axis [1,-1,1]       ',
+            '120 deg rotation - cart. axis [1,1,1]        ',
+            '120 deg rotation - cart. axis [-1,1,-1]      ',
+            '120 deg rotation - cart. axis [1,-1,-1]      ',
+            '120 deg rotation - cart. axis [-1,-1,1]      ',
+            ' 60 deg rotation - cryst. axis [0,0,1]       ',
+            ' 60 deg rotation - cryst. axis [0,0,-1]      ',
+            '120 deg rotation - cryst. axis [0,0,1]       ',
+            '120 deg rotation - cryst. axis [0,0,-1]      ',
+            '180 deg rotation - cryst. axis [1,-1,0]      ',
+            '180 deg rotation - cryst. axis [2,1,0]       ',
+            '180 deg rotation - cryst. axis [0,1,0]       ',
+            '180 deg rotation - cryst. axis [1,1,0]       ',
+            'inversion                                    ',
+            'inv. 180 deg rotation - cart. axis [0,0,1]   ',
+            'inv. 180 deg rotation - cart. axis [0,1,0]   ',
+            'inv. 180 deg rotation - cart. axis [1,0,0]   ',
+            'inv. 180 deg rotation - cart. axis [1,1,0]   ',
+            'inv. 180 deg rotation - cart. axis [1,-1,0]  ',
+            'inv.  90 deg rotation - cart. axis [0,0,-1]  ',
+            'inv.  90 deg rotation - cart. axis [0,0,1]   ',
+            'inv. 180 deg rotation - cart. axis [1,0,1]   ',
+            'inv. 180 deg rotation - cart. axis [-1,0,1]  ',
+            'inv.  90 deg rotation - cart. axis [0,1,0]   ',
+            'inv.  90 deg rotation - cart. axis [0,-1,0]  ',
+            'inv. 180 deg rotation - cart. axis [0,1,1]   ',
+            'inv. 180 deg rotation - cart. axis [0,1,-1]  ',
+            'inv.  90 deg rotation - cart. axis [-1,0,0]  ',
+            'inv.  90 deg rotation - cart. axis [1,0,0]   ',
+            'inv. 120 deg rotation - cart. axis [-1,-1,-1]',
+            'inv. 120 deg rotation - cart. axis [-1,1,1]  ',
+            'inv. 120 deg rotation - cart. axis [1,1,-1]  ',
+            'inv. 120 deg rotation - cart. axis [1,-1,1]  ',
+            'inv. 120 deg rotation - cart. axis [1,1,1]   ',
+            'inv. 120 deg rotation - cart. axis [-1,1,-1] ',
+            'inv. 120 deg rotation - cart. axis [1,-1,-1] ',
+            'inv. 120 deg rotation - cart. axis [-1,-1,1] ',
+            'inv.  60 deg rotation - cryst. axis [0,0,1]  ',
+            'inv.  60 deg rotation - cryst. axis [0,0,-1] ',
+            'inv. 120 deg rotation - cryst. axis [0,0,1]  ',
+            'inv. 120 deg rotation - cryst. axis [0,0,-1] ',
+            'inv. 180 deg rotation - cryst. axis [1,-1,0] ',
+            'inv. 180 deg rotation - cryst. axis [2,1,0]  ',
+            'inv. 180 deg rotation - cryst. axis [0,1,0]  ',
+            'inv. 180 deg rotation - cryst. axis [1,1,0]  '
+        ]
 
-        # unfortunately, the naming is done in a rather fortran-style way
+        # Unfortunately, the naming is done in a rather fortran-style way
         rotations = []
         x=0
-        for key,value in zip(matrices_name[:len(matrices)],matrices):
-            rotations.append({'name':key,'matrix':value,'inversion':False})
+        for key, value in zip(matrices_name[:len(matrices)], matrices):
+            rotations.append({'name': key, 'matrix': value, 'inversion': False})
             x += 1
-        for key,value in zip(matrices_name[len(matrices):],matrices):
-            rotations.append({'name':key,'matrix':value,'inversion':True})
+        for key, value in zip(matrices_name[len(matrices):], matrices):
+            rotations.append({'name': key, 'matrix': value, 'inversion': True})
             x += 1
 
         return rotations
-
