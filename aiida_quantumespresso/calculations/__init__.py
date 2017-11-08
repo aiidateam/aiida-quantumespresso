@@ -15,7 +15,6 @@ from aiida.orm.data.remote import RemoteData
 from aiida.common.datastructures import CodeInfo
 from aiida.common.links import LinkType
 
-
 class BasePwCpInputGenerator(object):
     """
     Baseclass for the common things between CP and PW of Quantum ESPRESSO.
@@ -469,8 +468,7 @@ class BasePwCpInputGenerator(object):
 
         return inputfile, local_copy_list_to_append
 
-    def _prepare_for_submission(self, tempfolder,
-                                inputdict):
+    def _prepare_for_submission(self, tempfolder, inputdict):
         """
         This is the routine to be called when you want to create
         the input files and related stuff with a plugin.
@@ -649,6 +647,20 @@ class BasePwCpInputGenerator(object):
                     environ_infile.write(
                         get_input_data_text(k, v, mapping=mapping_species))
                 environ_infile.write("/\n")
+
+        # Check for the deprecated 'ALSO_BANDS' setting and if present fire a deprecation log message
+        also_bands = settings_dict.pop('ALSO_BANDS', None)
+        if also_bands:
+            import logging
+            from aiida.utils.logger import get_dblogger_extra
+
+            logger = logging.LoggerAdapter(logger=self.logger, extra=get_dblogger_extra(self))
+            logger.warning(
+                "The '{}' setting is deprecated as bands are now parsed by default. "
+                "If you do not want the bands to be parsed set the '{}' to True {}. "
+                "Note that the eigenvalue.xml files are also no longer stored in the repository"
+                .format('also_bands', 'no_bands', type(self))
+            )
 
         calcinfo = CalcInfo()
 
