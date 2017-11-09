@@ -39,7 +39,7 @@ class Pw2wannier90Parser(Parser):
         with open(filpath,'r') as fil:
             lines = fil.read()
 
-        successful_raw, out_dict = parse_qe_simple(lines)
+        successful_raw, out_dict = parse_qe_simple(lines, codename="PW2WANNIER")
         # If any failed, it's failed
         successful = successful and successful_raw
 
