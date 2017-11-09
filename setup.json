@@ -6,6 +6,9 @@
         "Programming Language :: Python :: 2.7", 
         "Development Status :: 4 - Beta"
     ], 
+    "dependency_links": [
+        "git+https://github.com/aiidateam/aiida_core.git@release_v0.10.0rc3#egg=aiida_core"
+    ], 
     "description": "The official AiiDA plugin for Quantum ESPRESSO", 
     "entry_points": {
         "aiida.calculations": [
@@ -62,7 +65,7 @@
         ]
     }, 
     "install_requires": [
-        "aiida-core>=0.10.0rc1"
+        "aiida_core"
     ], 
     "license": "MIT License", 
     "name": "aiida_quantumespresso", 
