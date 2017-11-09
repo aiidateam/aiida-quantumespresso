@@ -18,10 +18,10 @@ from aiida.work.workchain import WorkChain, ToContext, if_, while_, append_
 from aiida_quantumespresso.common.exceptions import UnexpectedFailure
 from aiida_quantumespresso.common.pluginloader import get_plugin, get_plugins
 from aiida_quantumespresso.workflows.utils.mapping import update_mapping
-from aiida_quantumespresso.workflows.utils.resources import build_options
 from aiida_quantumespresso.workflows.utils.resources import get_default_options
 from aiida_quantumespresso.workflows.utils.resources import get_pw_parallelization_parameters
 from aiida_quantumespresso.workflows.utils.resources import cmdline_remove_npools
+from aiida_quantumespresso.workflows.utils.resources import create_scheduler_resources
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
 
@@ -70,7 +70,7 @@ class PwBaseWorkChain(WorkChain):
         spec.input('kpoints', valid_type=KpointsData)
         spec.input('vdw_table', valid_type=SinglefileData, required=False)
         spec.input('parameters', valid_type=ParameterData)
-        spec.input('settings', valid_type=ParameterData)
+        spec.input('settings', valid_type=ParameterData, required=False)
         spec.input('options', valid_type=ParameterData, required=False)
         spec.input('automatic_parallelization', valid_type=ParameterData, required=False)
         spec.input('clean_workdir', valid_type=Bool, default=Bool(False))
@@ -114,16 +114,19 @@ class PwBaseWorkChain(WorkChain):
             'structure': self.inputs.structure,
             'pseudo': {},
             'kpoints': self.inputs.kpoints,
-            'parameters': self.inputs.parameters.get_dict(),
-            'settings': self.inputs.settings.get_dict()
+            'parameters': self.inputs.parameters.get_dict()
         }
+
+        if 'settings' in self.inputs:
+            self.ctx.inputs['settings'] = self.inputs.settings.get_dict()
+        else:
+            self.ctx.inputs['settings'] = {}
 
         if 'options' in self.inputs:
             self.ctx.inputs['_options'] = self.inputs.options.get_dict()
         else:
             self.ctx.inputs['_options'] = get_default_options()
 
-        # Add the van der Waals kernel table file if specified
         if 'vdw_table' in self.inputs:
             self.ctx.inputs['vdw_table'] = self.inputs.vdw_table
 
@@ -247,35 +250,37 @@ class PwBaseWorkChain(WorkChain):
         Use the initialization PwCalculation to determine the required resource settings for the
         requested calculation based on the settings in the automatic_parallelization input
         """
-        self.report('start of inspect_init')
         calculation = self.ctx.calculation_init
-        automatic_parallelization = self.inputs.automatic_parallelization.get_dict()
 
         if not calculation.has_finished_ok():
             self.abort_nowait('the initialization calculation did not finish successfully')
             return
 
-        max_num_machines = automatic_parallelization['max_num_machines']
-        target_time_seconds = automatic_parallelization['target_time_seconds']
-        max_wall_time_seconds = automatic_parallelization['max_wall_time_seconds']
         calculation_mode = calculation.inp.parameters.get_dict()['CONTROL']['calculation']
+        automatic_parallelization = self.inputs.automatic_parallelization.get_dict()
+        automatic_parallelization['calculation_mode'] = calculation_mode
 
-        resources = get_pw_parallelization_parameters(
-            calculation, max_num_machines, target_time_seconds, max_wall_time_seconds, calculation_mode
-        )
+        # Get automated parallelization settings
+        parallelization = get_pw_parallelization_parameters(calculation, **automatic_parallelization)
 
         self.report('Determined the following resource settings from automatic_parallelization input: {}'
-            .format(resources))
+            .format(parallelization))
+
+        options = self.ctx.inputs['_options']
+        base_resources = options.get('resources', {})
+        goal_resources = parallelization['resources']
+
+        scheduler = calculation.get_computer().get_scheduler()
+        resources = create_scheduler_resources(scheduler, base_resources, goal_resources)
 
         cmdline = self.ctx.inputs['settings'].get('cmdline', [])
         cmdline = cmdline_remove_npools(cmdline)
-        cmdline.extend(['-nk', str(resources['npools'])])
+        cmdline.extend(['-nk', str(parallelization['npools'])])
 
-        options = build_options(**resources)
         self.ctx.inputs['settings']['cmdline'] = cmdline
-        self.ctx.inputs['_options'] = update_mapping(self.ctx.inputs['_options'], options)
+        self.ctx.inputs['_options'] = update_mapping(options, {'resources': resources})
 
-        self.report('The new Calculation options: {}'.format(self.ctx.inputs['_options']))
+        self.report('using options: {}'.format(self.ctx.inputs['_options']))
 
         return
 

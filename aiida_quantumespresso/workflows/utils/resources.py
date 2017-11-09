@@ -3,6 +3,38 @@ import numpy as np
 from math import exp, ceil
 from aiida_quantumespresso.workflows.utils.defaults.calculation import pw as pw_defaults
 
+def create_scheduler_resources(scheduler, base, goal):
+    """
+    This function will take a dictionary 'base', which contains scheduler resource
+    settings that can be set for the 'resources' key in the 'options' input of a
+    JobCalculation, and update it with target scheduler resource value from the
+    dictionary 'goal', checking that the resource settings are allowed for the
+    specific scheduler implementation. The function should than return a dictionary
+    that can be used directly in the 'options' input of the JobCalculation.
+    Any keys in either 'base' or 'goal' that are not recognized as valid resource keys
+    by the scheduler class, will be removed and will be kept otherwise. For settings that
+    appear both in 'base' and 'goal', the value in 'goal' will be used.
+
+    :param scheduler: instance of the Scheduler class
+    :param base: dictionary with base scheduler resource settings
+    :param goal: dictionary with target scheduler resource settings
+    :returns: dictionary that can be used for the 'resources' key in the 'options'
+        dictionary of a JobCalculation
+    """
+    base.update(goal)
+
+    resources = {}
+    for key, value in base.iteritems():
+        if key in scheduler._job_resource_class.get_valid_keys():
+            resources[key] = value
+
+    try:
+        job_resource = scheduler.create_job_resource(**resources)
+    except TypeError as exception:
+        raise ValueError('failed to create job resources for the {} scheduler: {}'
+            .format(scheduler.__class__, exception.message))
+
+    return {key: value for key, value in job_resource.iteritems() if value is not None}
 
 def cmdline_remove_npools(cmdline):
     """
@@ -22,37 +54,20 @@ def cmdline_remove_npools(cmdline):
              if (e not in ('-npools','-npool','-nk') 
                  and cmdline[i-1] not in ('-npools','-npool','-nk'))]
 
-def build_options(num_machines, max_wallclock_seconds, num_mpiprocs_per_machine=None, **kwargs):
-    """
-    Build the options dictionary that can be passed an unstorable input to a JobCalculation
-    process instance, with at least the minimally required parameters. Any other provided inputs
-    will be added accordingly
-
-    :param num_machines: set the number of nodes
-    :param max_wallclock_seconds: set the maximum number of wallclock seconds
-    :param num_mpiprocs_per_machine: set the number of mpiprocs per machine
-    """
-    options = {
-        'resources': {
-            'num_machines': int(num_machines)
-        },
-        'max_wallclock_seconds': int(max_wallclock_seconds),
-    }
-
-    if num_mpiprocs_per_machine is not None:
-        options['resources']['num_mpiprocs_per_machine'] = int(num_mpiprocs_per_machine)
-
-    return options
-
 def get_default_options(num_machines=1, max_wallclock_seconds=1800):
-	"""
+    """
     Return an instance of the options dictionary with the minimally required parameters
     for a JobCalculation and set to default values unless overriden
 
     :param num_machines: set the number of nodes, default=1
     :param max_wallclock_seconds: set the maximum number of wallclock seconds, default=1800
-	"""
-	return build_options(num_machines, max_wallclock_seconds)
+    """
+    return {
+        'resources': {
+            'num_machines': int(num_machines)
+        },
+        'max_wallclock_seconds': int(max_wallclock_seconds),
+    }
 
 def get_pw_parallelization_parameters(calculation, max_num_machines, target_time_seconds, max_wall_time_seconds,
     calculation_mode='scf', round_interval=1800, scaling_law=(exp(-16.1951988), 1.22535849)):
@@ -153,12 +168,15 @@ def get_pw_parallelization_parameters(calculation, max_num_machines, target_time
     estimated_time = time_single_cpu/(num_mpiprocs_per_machine * num_machines)
     max_wallclock_seconds = ceil(estimated_time / round_interval) * round_interval
     
-    resources = {
-        'npools': npools,
-        'num_machines': num_machines,
-        'num_mpiprocs_per_machine': num_mpiprocs_per_machine,
+    result = {
+        'resources': {
+            'num_machines': num_machines,
+            'num_mpiprocs_per_machine': num_mpiprocs_per_machine,
+            'tot_num_mpiprocs': num_machines * num_mpiprocs_per_machine,
+        },
+        'max_wallclock_seconds': max_wallclock_seconds,
         'estimated_time': estimated_time,
-        'max_wallclock_seconds': max_wallclock_seconds
+        'npools': npools,
     }
 
-    return resources
+    return result

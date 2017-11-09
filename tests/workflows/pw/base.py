@@ -1,9 +1,8 @@
 #!/usr/bin/env runaiida
 # -*- coding: utf-8 -*-
-
 import argparse
 from aiida.common.exceptions import NotExistent
-from aiida.orm.data.base import Int, Str
+from aiida.orm.data.base import Str
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
@@ -21,16 +20,12 @@ def parser_setup():
         description='Run the PwBaseWorkChain for a given input structure',
     )
     parser.add_argument(
-        '-m', type=int, default=5, dest='max_iterations',
-        help='the maximum number of iterations to allow for each SCF cycle for a single k-point. (default: %(default)d)'
-    )
-    parser.add_argument(
-        '-k', nargs=3, type=int, default=[2, 2, 2], dest='kpoints', metavar='Q',
-        help='define the q-points mesh. (default: %(default)s)'
-    )
-    parser.add_argument(
         '-c', type=str, required=True, dest='codename',
         help='the name of the AiiDA code that references QE pw.x'
+    )
+    parser.add_argument(
+        '-k', nargs=3, type=int, default=[2, 2, 2], dest='kpoints', metavar='K',
+        help='define the k-points mesh. (default: %(default)s)'
     )
     parser.add_argument(
         '-p', type=str, required=True, dest='pseudo_family',
@@ -39,6 +34,10 @@ def parser_setup():
     parser.add_argument(
         '-s', type=int, required=True, dest='structure',
         help='the node id of the structure'
+    )
+    parser.add_argument(
+        '-m', type=int, default=1, dest='max_num_machines',
+        help='the maximum number of machines (nodes) to use for the calculations. (default: %(default)d)'
     )
     parser.add_argument(
         '-w', type=int, default=1800, dest='max_wallclock_seconds',
@@ -88,18 +87,11 @@ def execute(args):
             'conv_thr': 1.e-10,
         }
     }
-    settings = {}
-    options  = {
-        'resources': {
-            'num_machines': 1
-        },
-        'max_wallclock_seconds': args.max_wallclock_seconds,
-    }
     
     automatic_parallelization = {
-        'max_num_machines': 1,
-        'target_time_seconds': 1800,
-        'max_wall_time_seconds': 4*3600
+        'max_num_machines': args.max_num_machines,
+        'target_time_seconds': 0.5 * args.max_wallclock_seconds,
+        'max_wall_time_seconds': args.max_wallclock_seconds
     }
 
     run(
@@ -109,10 +101,7 @@ def execute(args):
         pseudo_family=Str(args.pseudo_family),
         kpoints=kpoints,
         parameters=ParameterData(dict=parameters),
-        settings=ParameterData(dict=settings),
-        options=ParameterData(dict=options),
-        automatic_parallelization=ParameterData(dict=automatic_parallelization),
-        max_iterations=Int(args.max_iterations),
+        automatic_parallelization=ParameterData(dict=automatic_parallelization)
     )
 
 
@@ -121,7 +110,7 @@ def main():
     Setup the parser to retrieve the command line arguments and pass them to the main execution function.
     """
     parser = parser_setup()
-    args   = parser.parse_args()
+    args = parser.parse_args()
     result = execute(args)
 
 
