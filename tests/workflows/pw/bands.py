@@ -94,6 +94,12 @@ def execute(args):
         'settings': ParameterData(dict=settings),
         'options': ParameterData(dict=options)
     }
+    
+    automatic_parallelization = {
+        'max_num_machines': 1,
+        'target_time_seconds': 1800,
+        'max_wall_time_seconds': 4*3600
+    }
 
     run(
         PwBandsWorkChain,
@@ -104,6 +110,7 @@ def execute(args):
         parameters=ParameterData(dict=parameters),
         settings=ParameterData(dict=settings),
         options=ParameterData(dict=options),
+        automatic_parallelization=ParameterData(dict=automatic_parallelization),
         relax=relax_inputs
     )
 

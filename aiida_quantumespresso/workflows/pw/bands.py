@@ -36,10 +36,12 @@ class PwBandsWorkChain(WorkChain):
         spec.input('vdw_table', valid_type=SinglefileData, required=False)
         spec.input('parameters', valid_type=ParameterData)
         spec.input('settings', valid_type=ParameterData)
-        spec.input('options', valid_type=ParameterData)
+        spec.input('options', valid_type=ParameterData, required=False)
+        spec.input('automatic_parallelization', valid_type=ParameterData, required=False)
         spec.input('group', valid_type=Str, required=False)
         spec.input_group('relax')
         spec.outline(
+            cls.validate_inputs,
             cls.setup,
             cls.run_relax,
             cls.run_seekpath,
@@ -60,8 +62,7 @@ class PwBandsWorkChain(WorkChain):
         self.ctx.inputs = {
             'code': self.inputs.code,
             'parameters': self.inputs.parameters.get_dict(),
-            'settings': self.inputs.settings,
-            'options': self.inputs.options,
+            'settings': self.inputs.settings
         }
 
         # We expect either a KpointsData with given mesh or a desired distance between k-points
@@ -78,7 +79,23 @@ class PwBandsWorkChain(WorkChain):
         if 'CONTROL' not in self.ctx.inputs['parameters']:
             self.ctx.inputs['parameters']['CONTROL'] = {}
 
+        # If options set, add it to the default inputs
+        if 'options' in self.inputs:
+            self.ctx.inputs['options'] = self.inputs.options
+
+        # If automatic parallelization was set, add it to the default inputs
+        if 'automatic_parallelization' in self.inputs:
+            self.ctx.inputs['automatic_parallelization'] = self.inputs.automatic_parallelization
+
         return
+
+    def validate_inputs(self):
+        """
+        Validate inputs that may depend on each other
+        """
+        if not any([key in self.inputs for key in ['options', 'automatic_parallelization']]):
+            self.abort_nowait('you have to specify either the options or automatic_parallelization input')
+            return
 
     def run_relax(self):
         """
@@ -90,6 +107,14 @@ class PwBandsWorkChain(WorkChain):
             'structure': self.inputs.structure,
             'pseudo_family': self.inputs.pseudo_family,
         })
+
+        # If options set, add it to the default inputs
+        if 'options' in self.inputs:
+            inputs['options'] = self.inputs.options
+
+        # If automatic parallelization was set, add it to the default inputs
+        if 'automatic_parallelization' in self.inputs:
+            inputs['automatic_parallelization'] = self.inputs.automatic_parallelization
 
         running = submit(PwRelaxWorkChain, **inputs)
 
