@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from copy import deepcopy
 from collections import namedtuple
 from aiida.orm import Code
 from aiida.orm.data.base import Bool, Int, Str
@@ -117,6 +118,13 @@ class PwBaseWorkChain(WorkChain):
             'parameters': self.inputs.parameters.get_dict()
         }
 
+        if 'parent_folder' in self.inputs:
+            self.ctx.inputs['parent_folder'] = self.inputs.parent_folder
+            self.ctx.inputs['parameters']['CONTROL']['restart_mode'] = 'restart'
+        else:
+            self.ctx.inputs['parent_folder'] = None
+            self.ctx.inputs['parameters']['CONTROL']['restart_mode'] = 'from_scratch'
+
         if 'settings' in self.inputs:
             self.ctx.inputs['settings'] = self.inputs.settings.get_dict()
         else:
@@ -231,7 +239,7 @@ class PwBaseWorkChain(WorkChain):
         point it will have generated some general output pertaining to the dimensions of the
         calculation which we can use to distribute available computational resources
         """
-        inputs = dict(self.ctx.inputs)
+        inputs = deepcopy(self.ctx.inputs)
 
         inputs['settings']['ONLY_INITIALIZATION'] = True
         inputs['settings'] = ParameterData(dict=inputs['settings'])
@@ -291,16 +299,11 @@ class PwBaseWorkChain(WorkChain):
         self.ctx.iteration += 1
 
         # Create local copy of general inputs stored in the context and adapt for next calculation
-        inputs = dict(self.ctx.inputs)
+        inputs = deepcopy(self.ctx.inputs)
 
-        if self.ctx.iteration == 1 and 'parent_folder' in self.inputs:
-            inputs['parameters']['CONTROL']['restart_mode'] = 'restart'
-            inputs['parent_folder'] = self.inputs.parent_folder
-        elif self.ctx.restart_calc:
+        if self.ctx.restart_calc:
             inputs['parameters']['CONTROL']['restart_mode'] = 'restart'
             inputs['parent_folder'] = self.ctx.restart_calc.out.remote_folder
-        else:
-            inputs['parameters']['CONTROL']['restart_mode'] = 'from_scratch'
 
         inputs['parameters'] = ParameterData(dict=inputs['parameters'])
         inputs['settings'] = ParameterData(dict=inputs['settings'])
