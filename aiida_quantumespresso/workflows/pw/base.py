@@ -97,36 +97,36 @@ class PwBaseWorkChain(WorkChain):
         self.ctx.iteration = 0
 
         # Define convenience dictionary of inputs for PwCalculation
-        self.ctx.inputs = {
+        self.ctx.inputs = AttributeDict({
             'code': self.inputs.code,
             'structure': self.inputs.structure,
             'pseudo': {},
             'kpoints': self.inputs.kpoints,
             'parameters': self.inputs.parameters.get_dict()
-        }
+        })
 
         # Make sure the parameters dictionary has a CONTROL dictionary
-        self.ctx.inputs['parameters'].setdefault('CONTROL', {})
+        self.ctx.inputs.parameters.setdefault('CONTROL', {})
 
         if 'parent_folder' in self.inputs:
-            self.ctx.inputs['parent_folder'] = self.inputs.parent_folder
-            self.ctx.inputs['parameters']['CONTROL']['restart_mode'] = 'restart'
+            self.ctx.inputs.parent_folder = self.inputs.parent_folder
+            self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'restart'
         else:
-            self.ctx.inputs['parent_folder'] = None
-            self.ctx.inputs['parameters']['CONTROL']['restart_mode'] = 'from_scratch'
+            self.ctx.inputs.parent_folder = None
+            self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'from_scratch'
 
         if 'settings' in self.inputs:
-            self.ctx.inputs['settings'] = self.inputs.settings.get_dict()
+            self.ctx.inputs.settings = self.inputs.settings.get_dict()
         else:
-            self.ctx.inputs['settings'] = {}
+            self.ctx.inputs.settings = {}
 
         if 'options' in self.inputs:
-            self.ctx.inputs['_options'] = self.inputs.options.get_dict()
+            self.ctx.inputs._options = self.inputs.options.get_dict()
         else:
-            self.ctx.inputs['_options'] = {}
+            self.ctx.inputs._options = {}
 
         if 'vdw_table' in self.inputs:
-            self.ctx.inputs['vdw_table'] = self.inputs.vdw_table
+            self.ctx.inputs.vdw_table = self.inputs.vdw_table
 
         return
 
@@ -186,7 +186,7 @@ class PwBaseWorkChain(WorkChain):
             unique_pseudos.setdefault(pseudo, []).append(kind)
 
         for pseudo, kinds in unique_pseudos.iteritems():
-             self.ctx.inputs['pseudo'][tuple(kinds)] = pseudo
+             self.ctx.inputs.pseudo[tuple(kinds)] = pseudo
 
     def should_run_init(self):
         """
@@ -228,8 +228,8 @@ class PwBaseWorkChain(WorkChain):
             'calculation_mode': self.inputs.parameters.get_dict()['CONTROL']['calculation']
         }
 
-        self.ctx.inputs['_options'].setdefault('resources', {})['num_machines'] = automatic_parallelization['max_num_machines']
-        self.ctx.inputs['_options']['max_wallclock_seconds'] = automatic_parallelization['max_wallclock_seconds']
+        self.ctx.inputs._options.setdefault('resources', {})['num_machines'] = automatic_parallelization['max_num_machines']
+        self.ctx.inputs._options['max_wallclock_seconds'] = automatic_parallelization['max_wallclock_seconds']
 
     def run_init(self):
         """
@@ -269,20 +269,20 @@ class PwBaseWorkChain(WorkChain):
         self.report('Determined the following resource settings from automatic_parallelization input: {}'
             .format(parallelization))
 
-        options = self.ctx.inputs['_options']
+        options = self.ctx.inputs._options
         base_resources = options.get('resources', {})
         goal_resources = parallelization['resources']
 
         scheduler = calculation.get_computer().get_scheduler()
         resources = create_scheduler_resources(scheduler, base_resources, goal_resources)
 
-        cmdline = self.ctx.inputs['settings'].get('cmdline', [])
+        cmdline = self.ctx.inputs.settings.get('cmdline', [])
         cmdline = cmdline_remove_npools(cmdline)
         cmdline.extend(['-nk', str(parallelization['npools'])])
 
         # Set the new cmdline setting and resource options
-        self.ctx.inputs['settings']['cmdline'] = cmdline
-        self.ctx.inputs['_options'] = update_mapping(options, {'resources': resources})
+        self.ctx.inputs.settings['cmdline'] = cmdline
+        self.ctx.inputs._options = update_mapping(options, {'resources': resources})
 
         return
 
@@ -343,8 +343,8 @@ class PwBaseWorkChain(WorkChain):
 
         # Abort: unexpected state of last calculation
         elif calculation.get_state() not in expected_states:
-            self.abort_nowait('unexpected state ({}) of PwCalculation<{}>'.format(
-                calculation.get_state(), calculation.pk))
+            self.abort_nowait('unexpected state ({}) of PwCalculation<{}>'
+                .format(calculation.get_state(), calculation.pk))
 
         # Retry or abort: submission failed, try to restart or abort
         elif calculation.get_state() in [calc_states.SUBMISSIONFAILED]:
