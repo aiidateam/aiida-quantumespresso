@@ -3,7 +3,6 @@ from copy import deepcopy
 from collections import namedtuple
 from aiida.orm import Code
 from aiida.orm.data.base import Bool, Int, Str
-from aiida.orm.data.upf import UpfData, get_pseudos_from_structure
 from aiida.orm.data.folder import FolderData
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.parameter import ParameterData
@@ -21,6 +20,7 @@ from aiida_quantumespresso.common.exceptions import UnexpectedFailure
 from aiida_quantumespresso.common.pluginloader import get_plugin, get_plugins
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 from aiida_quantumespresso.utils.mapping import update_mapping
+from aiida_quantumespresso.utils.pseudopotential import validate_and_prepare_pseudos_inputs
 from aiida_quantumespresso.utils.resources import get_default_options
 from aiida_quantumespresso.utils.resources import get_pw_parallelization_parameters
 from aiida_quantumespresso.utils.resources import cmdline_remove_npools
@@ -52,12 +52,12 @@ class PwBaseWorkChain(WorkChain):
         super(PwBaseWorkChain, cls).define(spec)
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
+        spec.input('kpoints', valid_type=KpointsData)
+        spec.input('parameters', valid_type=ParameterData)
         spec.input_group('pseudos', required=False)
         spec.input('pseudo_family', valid_type=Str, required=False)
         spec.input('parent_folder', valid_type=RemoteData, required=False)
-        spec.input('kpoints', valid_type=KpointsData)
         spec.input('vdw_table', valid_type=SinglefileData, required=False)
-        spec.input('parameters', valid_type=ParameterData)
         spec.input('settings', valid_type=ParameterData, required=False)
         spec.input('options', valid_type=ParameterData, required=False)
         spec.input('automatic_parallelization', valid_type=ParameterData, required=False)
@@ -66,7 +66,6 @@ class PwBaseWorkChain(WorkChain):
         spec.outline(
             cls.setup,
             cls.validate_inputs,
-            cls.validate_pseudo_potentials,
             if_(cls.should_run_init)(
                 cls.validate_init_inputs,
                 cls.run_init,
@@ -87,7 +86,9 @@ class PwBaseWorkChain(WorkChain):
 
     def setup(self):
         """
-        Initialize context variables
+        Initialize context variables and define convenience dictionary of inputs for PwCalculation. Only the required inputs
+        are added here as the non required ones will have to be validated first in the next step of the outline. ParameterData
+        nodes that may need to be update during the workchain are unpacked into their dictionary for convenience.
         """
         self.ctx.max_iterations = self.inputs.max_iterations.value
         self.ctx.unexpected_failure = False
@@ -96,18 +97,19 @@ class PwBaseWorkChain(WorkChain):
         self.ctx.is_finished = False
         self.ctx.iteration = 0
 
-        # Define convenience dictionary of inputs for PwCalculation
         self.ctx.inputs = AttributeDict({
             'code': self.inputs.code,
             'structure': self.inputs.structure,
-            'pseudo': {},
             'kpoints': self.inputs.kpoints,
             'parameters': self.inputs.parameters.get_dict()
         })
 
-        # Make sure the parameters dictionary has a CONTROL dictionary
-        self.ctx.inputs.parameters.setdefault('CONTROL', {})
+        return
 
+    def validate_inputs(self):
+        """
+        Validate inputs that may depend on each other
+        """
         if 'parent_folder' in self.inputs:
             self.ctx.inputs.parent_folder = self.inputs.parent_folder
             self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'restart'
@@ -128,12 +130,7 @@ class PwBaseWorkChain(WorkChain):
         if 'vdw_table' in self.inputs:
             self.ctx.inputs.vdw_table = self.inputs.vdw_table
 
-        return
-
-    def validate_inputs(self):
-        """
-        Validate inputs that may depend on each other
-        """
+        # Either automatic_parallelization or options has to be specified
         if not any([key in self.inputs for key in ['options', 'automatic_parallelization']]):
             self.abort_nowait('you have to specify either the options or automatic_parallelization input')
             return
@@ -147,46 +144,15 @@ class PwBaseWorkChain(WorkChain):
                 self.abort_nowait("no automatic_parallelization requested, but the options do not specify both '{}' and '{}'"
                     .format('num_machines', 'max_wallclock_seconds'))
 
-    def validate_pseudo_potentials(self):
-        """
-        Validate the inputs related to pseudopotentials to check that we have the minimum required
-        amount of information to be able to run a PwCalculation
-        """
+        # Validate the inputs related to pseudopotentials
         structure = self.inputs.structure
-        pseudo_family = self.inputs.pseudo_family.value
+        pseudos = self.inputs.get('pseudos', None)
+        pseudo_family = self.inputs.get('pseudo_family', None)
 
-        if all([key not in self.inputs for key in ['pseudos', 'pseudo_family']]):
-            self.abort_nowait('neither explicit pseudos nor a pseudo_family was specified in the inputs')
-            return
-        elif all([key in self.inputs for key in ['pseudos', 'pseudo_family']]):
-            self.report('both explicit pseudos as well as a pseudo_family were specified: using explicit pseudos')
-            pseudos = self.inputs.pseudos
-        elif 'pseudos' in self.inputs:
-            self.report('only explicit pseudos were specified: using explicit pseudos')
-            pseudos = self.inputs.pseudos
-        elif 'pseudo_family' in self.inputs:
-            self.report('only a pseudo_family was specified: using pseudos from pseudo_family {}'.format(pseudo_family))
-            pseudos = get_pseudos_from_structure(structure, pseudo_family)
-
-        for kind in self.inputs.structure.get_kind_names():
-            if kind not in pseudos:
-                self.abort_nowait('no pseudo available for element {}'.format(kind))
-            elif not isinstance(pseudos[kind], UpfData):
-                self.abort_nowait('pseudo for element {} is not of type UpfData'.format(kind))
-
-        # The pseudos dictionary should now be a dictionary of UPF nodes with the kind as linkname
-        # As such, if there are multiple kinds with the same element, there will be duplicate UPF nodes
-        # but multiple links for the same input node are not allowed. Moreover, to couple the UPF nodes
-        # to the Calculation instance, we have to go through the use_pseudo method, which takes the kind
-        # name as an additional parameter. When creating a Calculation through a Process instance, one
-        # cannot call the use methods directly but rather should pass them as keyword arguments. However, 
-        # we can pass the additional parameters by using them as the keys of a dictionary
-        unique_pseudos = {}
-        for kind, pseudo in pseudos.iteritems():
-            unique_pseudos.setdefault(pseudo, []).append(kind)
-
-        for pseudo, kinds in unique_pseudos.iteritems():
-             self.ctx.inputs.pseudo[tuple(kinds)] = pseudo
+        try:
+            self.ctx.inputs.pseudo = validate_and_prepare_pseudos_inputs(structure, pseudos, pseudo_family)
+        except ValueError as exception:
+            self.abort_nowait('{}'.format(exception))
 
     def should_run_init(self):
         """
@@ -225,7 +191,7 @@ class PwBaseWorkChain(WorkChain):
             'max_wallclock_seconds': automatic_parallelization['max_wallclock_seconds'],
             'target_time_seconds': automatic_parallelization['target_time_seconds'],
             'max_num_machines': automatic_parallelization['max_num_machines'],
-            'calculation_mode': self.inputs.parameters.get_dict()['CONTROL']['calculation']
+            'calculation_mode': self.ctx.inputs.parameters['CONTROL']['calculation']
         }
 
         self.ctx.inputs._options.setdefault('resources', {})['num_machines'] = automatic_parallelization['max_num_machines']
