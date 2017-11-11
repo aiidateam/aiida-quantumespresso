@@ -12,12 +12,14 @@ from aiida.orm.data.array.bands import BandsData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.data.singlefile import SinglefileData
 from aiida.orm.utils import CalculationFactory
+from aiida.common.extendeddicts import AttributeDict
 from aiida.common.exceptions import NotExistent
 from aiida.common.datastructures import calc_states
 from aiida.work.run import submit
 from aiida.work.workchain import WorkChain, ToContext, if_, while_, append_
 from aiida_quantumespresso.common.exceptions import UnexpectedFailure
 from aiida_quantumespresso.common.pluginloader import get_plugin, get_plugins
+from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 from aiida_quantumespresso.utils.mapping import update_mapping
 from aiida_quantumespresso.utils.resources import get_default_options
 from aiida_quantumespresso.utils.resources import get_pw_parallelization_parameters
@@ -37,28 +39,13 @@ class PwBaseWorkChain(WorkChain):
         super(PwBaseWorkChain, self).__init__(*args, **kwargs)
 
         # Default values
-        self.defaults = {
-            'qe': {
-                'degauss': 0.,
-                'diagonalization': 'david',
-                'electron_maxstep': 100,
-                'mixing_beta': 0.7,
-                'mixing_mode': 'plain',
-                'mixing_ndim': 8,
-                'noncolin': False,
-                'nspin': 1,
-                'occupations': None,
-                'press': 0.,
-                'press_conv_thr': 0.5,
-                'smearing': '',
-                'startmag': 0.,
-                'wf_collect': False,
-            },
+        self.defaults = AttributeDict({
+            'qe': qe_defaults,
             'delta_threshold_degauss': 30,
             'delta_factor_degauss': 0.1,
             'delta_factor_mixing_beta': 0.8,
             'delta_factor_max_seconds': 0.95,
-        }
+        })
 
     @classmethod
     def define(cls, spec):
@@ -505,7 +492,7 @@ class PwBaseWorkChain(WorkChain):
 
         # Limit the max seconds to a fraction of the scheduler's max_wallclock_seconds to prevent early termination
         max_wallclock_seconds = inputs['_options']['max_wallclock_seconds']
-        max_seconds_factor = self.defaults['delta_factor_max_seconds']
+        max_seconds_factor = self.defaults.delta_factor_max_seconds
         max_seconds = max_wallclock_seconds * max_seconds_factor
         inputs['parameters']['CONTROL']['max_seconds'] = max_seconds
 
