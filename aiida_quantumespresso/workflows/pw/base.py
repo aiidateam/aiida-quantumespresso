@@ -18,11 +18,11 @@ from aiida.work.run import submit
 from aiida.work.workchain import WorkChain, ToContext, if_, while_, append_
 from aiida_quantumespresso.common.exceptions import UnexpectedFailure
 from aiida_quantumespresso.common.pluginloader import get_plugin, get_plugins
-from aiida_quantumespresso.workflows.utils.mapping import update_mapping
-from aiida_quantumespresso.workflows.utils.resources import get_default_options
-from aiida_quantumespresso.workflows.utils.resources import get_pw_parallelization_parameters
-from aiida_quantumespresso.workflows.utils.resources import cmdline_remove_npools
-from aiida_quantumespresso.workflows.utils.resources import create_scheduler_resources
+from aiida_quantumespresso.utils.mapping import update_mapping
+from aiida_quantumespresso.utils.resources import get_default_options
+from aiida_quantumespresso.utils.resources import get_pw_parallelization_parameters
+from aiida_quantumespresso.utils.resources import cmdline_remove_npools
+from aiida_quantumespresso.utils.resources import create_scheduler_resources
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
 
@@ -118,6 +118,9 @@ class PwBaseWorkChain(WorkChain):
             'parameters': self.inputs.parameters.get_dict()
         }
 
+        # Make sure the parameters dictionary has a CONTROL dictionary
+        self.ctx.inputs['parameters'].setdefault('CONTROL', {})
+
         if 'parent_folder' in self.inputs:
             self.ctx.inputs['parent_folder'] = self.inputs.parent_folder
             self.ctx.inputs['parameters']['CONTROL']['restart_mode'] = 'restart'
@@ -133,7 +136,7 @@ class PwBaseWorkChain(WorkChain):
         if 'options' in self.inputs:
             self.ctx.inputs['_options'] = self.inputs.options.get_dict()
         else:
-            self.ctx.inputs['_options'] = get_default_options()
+            self.ctx.inputs['_options'] = {}
 
         if 'vdw_table' in self.inputs:
             self.ctx.inputs['vdw_table'] = self.inputs.vdw_table
@@ -147,6 +150,15 @@ class PwBaseWorkChain(WorkChain):
         if not any([key in self.inputs for key in ['options', 'automatic_parallelization']]):
             self.abort_nowait('you have to specify either the options or automatic_parallelization input')
             return
+
+        # If automatic parallelization is not enabled, we better make sure that the options satisfy minimum requirements
+        if 'automatic_parallelization' not in self.inputs:
+            num_machines = self.inputs['options'].get('resources', {}).get('num_machines', None)
+            max_wallclock_seconds = self.inputs['options'].get('max_wallclock_seconds', None)
+
+            if num_machines is None or max_wallclock_seconds is None:
+                self.abort_nowait("no automatic_parallelization requested, but the options do not specify both '{}' and '{}'"
+                    .format('num_machines', 'max_wallclock_seconds'))
 
     def validate_pseudo_potentials(self):
         """
@@ -196,14 +208,6 @@ class PwBaseWorkChain(WorkChain):
         """
         return 'automatic_parallelization' in self.inputs
 
-    def should_run_pw(self):
-        """
-        Return whether a pw restart calculation should be run, which is the case as long as the last
-        calculation was not converged successfully and the maximum number of restarts has not yet
-        been exceeded
-        """
-        return not self.ctx.is_finished and self.ctx.iteration < self.ctx.max_iterations
-
     def validate_init_inputs(self):
         """
         Validate the inputs that are required for the initialization calculation. The automatic_parallelization
@@ -216,22 +220,28 @@ class PwBaseWorkChain(WorkChain):
         If any of these keys are not set or any superfluous keys are specified, the workchain will abort.
         """
         automatic_parallelization = self.inputs.automatic_parallelization.get_dict()
-
         max_wall_time_seconds = automatic_parallelization.pop('max_wall_time_seconds', None)
         target_time_seconds = automatic_parallelization.pop('target_time_seconds', None)
         max_num_machines = automatic_parallelization.pop('max_num_machines', None)
-
-        for key in [max_wall_time_seconds, target_time_seconds, max_num_machines]:
-            if key is None:
-                self.abort_nowait('required key "{}" in automatic_parallelization input not found'.format(str(key)))
-                return
-
         remaining_keys = automatic_parallelization.keys()
+
+        for key in [k for k in [max_wall_time_seconds, target_time_seconds, max_num_machines] if k == None]:
+            self.abort_nowait('required key "{}" in automatic_parallelization input not found'.format(str(key)))
 
         if remaining_keys:
             self.abort_nowait('detected unrecognized keys in the automatic_parallelization input: {}'
                 .format('"{}" '.join(remaining_keys)))
-            return
+
+        # Add the calculation mode to the automatic parallelization dictionary
+        self.ctx.automatic_parallelization = {
+            'max_wall_time_seconds': max_wall_time_seconds,
+            'target_time_seconds': target_time_seconds,
+            'max_num_machines': max_num_machines,
+            'calculation_mode': self.inputs.parameters.get_dict()['CONTROL']['calculation']
+        }
+
+        self.ctx.inputs['_options'].setdefault('resources', {})['num_machines'] = max_num_machines
+        self.ctx.inputs['_options']['max_wallclock_seconds'] = max_wall_time_seconds
 
     def run_init(self):
         """
@@ -241,11 +251,12 @@ class PwBaseWorkChain(WorkChain):
         """
         inputs = deepcopy(self.ctx.inputs)
 
+        # Set the initialization flag and the initial default options
         inputs['settings']['ONLY_INITIALIZATION'] = True
-        inputs['settings'] = ParameterData(dict=inputs['settings'])
-        inputs['parameters'] = ParameterData(dict=inputs['parameters'])
         inputs['_options'] = update_mapping(inputs['_options'], get_default_options())
 
+        # Prepare the final input dictionary
+        inputs = self._prepare_process_inputs(inputs)
         process = PwCalculation.process()
         running = submit(process, **inputs)
 
@@ -264,12 +275,8 @@ class PwBaseWorkChain(WorkChain):
             self.abort_nowait('the initialization calculation did not finish successfully')
             return
 
-        calculation_mode = calculation.inp.parameters.get_dict()['CONTROL']['calculation']
-        automatic_parallelization = self.inputs.automatic_parallelization.get_dict()
-        automatic_parallelization['calculation_mode'] = calculation_mode
-
         # Get automated parallelization settings
-        parallelization = get_pw_parallelization_parameters(calculation, **automatic_parallelization)
+        parallelization = get_pw_parallelization_parameters(calculation, **self.ctx.automatic_parallelization)
 
         self.report('Determined the following resource settings from automatic_parallelization input: {}'
             .format(parallelization))
@@ -285,12 +292,19 @@ class PwBaseWorkChain(WorkChain):
         cmdline = cmdline_remove_npools(cmdline)
         cmdline.extend(['-nk', str(parallelization['npools'])])
 
+        # Set the new cmdline setting and resource options
         self.ctx.inputs['settings']['cmdline'] = cmdline
         self.ctx.inputs['_options'] = update_mapping(options, {'resources': resources})
 
-        self.report('using options: {}'.format(self.ctx.inputs['_options']))
-
         return
+
+    def should_run_pw(self):
+        """
+        Return whether a pw restart calculation should be run, which is the case as long as the last
+        calculation was not converged successfully and the maximum number of restarts has not yet
+        been exceeded
+        """
+        return not self.ctx.is_finished and self.ctx.iteration < self.ctx.max_iterations
 
     def run_pw(self):
         """
@@ -305,9 +319,8 @@ class PwBaseWorkChain(WorkChain):
             inputs['parameters']['CONTROL']['restart_mode'] = 'restart'
             inputs['parent_folder'] = self.ctx.restart_calc.out.remote_folder
 
-        inputs['parameters'] = ParameterData(dict=inputs['parameters'])
-        inputs['settings'] = ParameterData(dict=inputs['settings'])
-
+        # Prepare the final input dictionary
+        inputs = self._prepare_process_inputs(inputs)
         process = PwCalculation.process()
         running = submit(process, **inputs)
 
@@ -479,6 +492,30 @@ class PwBaseWorkChain(WorkChain):
         if not is_handled:
             raise UnexpectedFailure('PwCalculation<{}> failed due to an unknown reason'.format(calculation.pk))
 
+    def _prepare_process_inputs(self, inputs):
+        """
+        Prepare the inputs dictionary for a PwCalculation process. The 'max_seconds' setting in the 'CONTROL' card
+        of the parameters will be set to a fraction of the 'max_wallclock_seconds' that will be given to the job via
+        the '_options' dictionary. This will prevent the job from being prematurely terminated by the scheduler without
+        getting the chance to exit cleanly. Any remaining bare dictionaries in the inputs dictionary will be wrapped
+        in a ParameterData data node except for the '_options' key which should remain a standard dictionary
+        """
+        prepared_inputs = {}
+
+        # Limit the max seconds to a fraction of the scheduler's max_wallclock_seconds to prevent early termination
+        max_wallclock_seconds = inputs['_options']['max_wallclock_seconds']
+        max_seconds_factor = self.defaults['delta_factor_max_seconds']
+        max_seconds = max_wallclock_seconds * max_seconds_factor
+        inputs['parameters']['CONTROL']['max_seconds'] = max_seconds
+
+        # Wrap all the bare dictionaries in a ParameterData
+        for key, value in inputs.iteritems():
+            if key != '_options' and isinstance(value, dict) and all([isinstance(k, (str, unicode)) for k in value.keys()]):
+                prepared_inputs[key] = ParameterData(dict=value)
+            else:
+                prepared_inputs[key] = value
+
+        return prepared_inputs
 
 def get_error_handlers():
     """

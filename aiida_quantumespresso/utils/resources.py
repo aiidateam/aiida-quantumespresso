@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 from math import exp, ceil
-from aiida_quantumespresso.workflows.utils.defaults.calculation import pw as pw_defaults
+from aiida_quantumespresso.utils.defaults.calculation import pw as pw_defaults
 
 def create_scheduler_resources(scheduler, base, goal):
     """
