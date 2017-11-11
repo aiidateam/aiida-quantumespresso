@@ -213,35 +213,36 @@ class PwBaseWorkChain(WorkChain):
         Validate the inputs that are required for the initialization calculation. The automatic_parallelization
         input expects a ParameterData node with the following keys:
 
-            * max_wall_time_seconds
+            * max_wallclock_seconds
             * target_time_seconds
             * max_num_machines
 
         If any of these keys are not set or any superfluous keys are specified, the workchain will abort.
         """
         automatic_parallelization = self.inputs.automatic_parallelization.get_dict()
-        max_wall_time_seconds = automatic_parallelization.pop('max_wall_time_seconds', None)
-        target_time_seconds = automatic_parallelization.pop('target_time_seconds', None)
-        max_num_machines = automatic_parallelization.pop('max_num_machines', None)
-        remaining_keys = automatic_parallelization.keys()
 
-        for key in [k for k in [max_wall_time_seconds, target_time_seconds, max_num_machines] if k == None]:
-            self.abort_nowait('required key "{}" in automatic_parallelization input not found'.format(str(key)))
+        expected_keys = ['max_wallclock_seconds', 'target_time_seconds', 'max_num_machines']
+        received_keys = [(key, automatic_parallelization.get(key, None)) for key in expected_keys]
+        remaining_keys = [key for key in automatic_parallelization.keys() if key not in expected_keys]
+
+        for k, v in [(key, value) for key, value in received_keys if value is None]:
+            self.abort_nowait('required key "{}" in automatic_parallelization input not found'.format(k))
+            return
 
         if remaining_keys:
-            self.abort_nowait('detected unrecognized keys in the automatic_parallelization input: {}'
-                .format('"{}" '.join(remaining_keys)))
+            self.abort_nowait('detected unrecognized keys in the automatic_parallelization input: {}'.format(' '.join(remaining_keys)))
+            return
 
         # Add the calculation mode to the automatic parallelization dictionary
         self.ctx.automatic_parallelization = {
-            'max_wall_time_seconds': max_wall_time_seconds,
-            'target_time_seconds': target_time_seconds,
-            'max_num_machines': max_num_machines,
+            'max_wallclock_seconds': automatic_parallelization['max_wallclock_seconds'],
+            'target_time_seconds': automatic_parallelization['target_time_seconds'],
+            'max_num_machines': automatic_parallelization['max_num_machines'],
             'calculation_mode': self.inputs.parameters.get_dict()['CONTROL']['calculation']
         }
 
-        self.ctx.inputs['_options'].setdefault('resources', {})['num_machines'] = max_num_machines
-        self.ctx.inputs['_options']['max_wallclock_seconds'] = max_wall_time_seconds
+        self.ctx.inputs['_options'].setdefault('resources', {})['num_machines'] = automatic_parallelization['max_num_machines']
+        self.ctx.inputs['_options']['max_wallclock_seconds'] = automatic_parallelization['max_wallclock_seconds']
 
     def run_init(self):
         """

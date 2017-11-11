@@ -69,7 +69,7 @@ def get_default_options(num_machines=1, max_wallclock_seconds=1800):
         'max_wallclock_seconds': int(max_wallclock_seconds),
     }
 
-def get_pw_parallelization_parameters(calculation, max_num_machines, target_time_seconds, max_wall_time_seconds,
+def get_pw_parallelization_parameters(calculation, max_num_machines, target_time_seconds, max_wallclock_seconds,
     calculation_mode='scf', round_interval=1800, scaling_law=(exp(-16.1951988), 1.22535849)):
     """
     Guess an optimal choice of parallelzation parameters for a PwCalculation based
@@ -79,11 +79,11 @@ def get_pw_parallelization_parameters(calculation, max_num_machines, target_time
         to get number of k-points, of electrons, of spins, fft grids, etc.
     :param max_num_machines: the maximum allowed number of nodes to be used
     :param target_time_seconds: time the calculation should take finally for the user
-    :param max_wall_time_seconds: maximum allowed walltime the calculation should take
+    :param max_wallclock_seconds: maximum allowed walltime the calculation should take
     :param calculation_mode: kind of calculation_mode to be performed
         ('scf', 'nscf', 'bands', 'relax', 'md', 'vc-relax', 'vc-md')
     :param round_interval: the interval in seconds to which the estimated time in the results
-        will be rounded up, to determine the max_wall_time_seconds that should be set
+        will be rounded up, to determine the max_wallclock_seconds that should be set
     :param scaling_law: list or tuple with 2 numbers giving the 
         fit parameters for a power law expressing the single-CPU time to do 
         1 scf step, for 1 k-point, 1 spin and 1 small box of the fft grid, 
@@ -166,7 +166,7 @@ def get_pw_parallelization_parameters(calculation, max_num_machines, target_time
         num_machines = max([i for i in range(num_machines, max_num_machines + 1) if i % num_machines == 0])
 
     estimated_time = time_single_cpu/(num_mpiprocs_per_machine * num_machines)
-    max_wallclock_seconds = ceil(estimated_time / round_interval) * round_interval
+    max_wallclock_seconds = min(ceil(estimated_time / round_interval) * round_interval, max_wallclock_seconds)
     
     result = {
         'resources': {
