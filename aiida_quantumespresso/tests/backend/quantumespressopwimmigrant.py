@@ -33,7 +33,7 @@ import os
 from aiida_quantumespresso.calculations.pwimmigrant import PwimmigrantCalculation
 from aiida.daemon.execmanager import retrieve_jobs
 from aiida.common.folders import SandboxFolder
-from aiida_quantumespresso.tools.pwinputparser import str2val
+from aiida_quantumespresso.tools.qeinputparser import str2val
 from aiida.orm import Code
 from aiida.backends.testbase import AiidaTestCase
 
