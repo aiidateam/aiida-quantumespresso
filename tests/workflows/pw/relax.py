@@ -90,7 +90,7 @@ def execute(args):
     automatic_parallelization = {
         'max_num_machines': 1,
         'target_time_seconds': 1800,
-        'max_wall_time_seconds': 4*3600
+        'max_wallclock_seconds': 4 * 3600
     }
 
     run(
