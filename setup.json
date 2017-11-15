@@ -63,7 +63,7 @@
         ]
     }, 
     "install_requires": [
-        "aiida-core>=0.10.0rc1"
+        "aiida_core>=0.10.0rc3"
     ], 
     "license": "MIT License", 
     "name": "aiida_quantumespresso", 

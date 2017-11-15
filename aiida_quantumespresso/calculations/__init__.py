@@ -15,7 +15,6 @@ from aiida.orm.data.remote import RemoteData
 from aiida.common.datastructures import CodeInfo
 from aiida.common.links import LinkType
 
-
 class BasePwCpInputGenerator(object):
     """
     Baseclass for the common things between CP and PW of Quantum ESPRESSO.
@@ -469,8 +468,7 @@ class BasePwCpInputGenerator(object):
 
         return inputfile, local_copy_list_to_append
 
-    def _prepare_for_submission(self, tempfolder,
-                                inputdict):
+    def _prepare_for_submission(self, tempfolder, inputdict):
         """
         This is the routine to be called when you want to create
         the input files and related stuff with a plugin.
@@ -650,6 +648,20 @@ class BasePwCpInputGenerator(object):
                         get_input_data_text(k, v, mapping=mapping_species))
                 environ_infile.write("/\n")
 
+        # Check for the deprecated 'ALSO_BANDS' setting and if present fire a deprecation log message
+        also_bands = settings_dict.pop('ALSO_BANDS', None)
+        if also_bands:
+            import logging
+            from aiida.utils.logger import get_dblogger_extra
+
+            logger = logging.LoggerAdapter(logger=self.logger, extra=get_dblogger_extra(self))
+            logger.warning(
+                "The '{}' setting is deprecated as bands are now parsed by default. "
+                "If you do not want the bands to be parsed set the '{}' to True {}. "
+                "Note that the eigenvalue.xml files are also no longer stored in the repository"
+                .format('also_bands', 'no_bands', type(self))
+            )
+
         calcinfo = CalcInfo()
 
         calcinfo.uuid = self.uuid
@@ -660,15 +672,10 @@ class BasePwCpInputGenerator(object):
         # is replaced by mpirun ... pw.x ... -in aiida.in
         # in the scheduler, _get_run_line, if cmdline_params is empty, it
         # simply uses < calcinfo.stin_name
-        calcinfo.cmdline_params = (list(cmdline_params)
-                                   + ["-in", self._INPUT_FILE_NAME])
-        # calcinfo.stdin_name = self._INPUT_FILE_NAME
-        # calcinfo.stdout_name = self._OUTPUT_FILE_NAME
+        calcinfo.cmdline_params = (list(cmdline_params) + ["-in", self._INPUT_FILE_NAME])
 
         codeinfo = CodeInfo()
-        codeinfo.cmdline_params = (list(cmdline_params)
-                                   + ["-in", self._INPUT_FILE_NAME])
-        # calcinfo.stdin_name = self._INPUT_FILE_NAME
+        codeinfo.cmdline_params = (list(cmdline_params) + ["-in", self._INPUT_FILE_NAME])
         codeinfo.stdout_name = self._OUTPUT_FILE_NAME
         codeinfo.code_uuid = code.uuid
         calcinfo.codes_info = [codeinfo]
@@ -681,18 +688,16 @@ class BasePwCpInputGenerator(object):
         calcinfo.retrieve_list = []
         calcinfo.retrieve_list.append(self._OUTPUT_FILE_NAME)
         calcinfo.retrieve_list.append(self._DATAFILE_XML)
-        settings_retrieve_list = settings_dict.pop('ADDITIONAL_RETRIEVE_LIST',
-                                                   [])
-
-        # If the calculation mode in the input parameters is set to 'bands' or 'also_bands' has
-        # been set in the settings, we want to retrieve the following files to parse the bands
-        calculation_mode = parameters.get_dict().get('CONTROL', {}).get('calculation', {})
-        if settings_dict.pop('ALSO_BANDS', False) or calculation_mode == 'bands':
-            paths = os.path.join(self._OUTPUT_SUBFOLDER, self._PREFIX + '.save', 'K*[0-9]', 'eigenval*.xml')
-            settings_retrieve_list.append([paths, '.', 2])
-
-        calcinfo.retrieve_list += settings_retrieve_list
+        calcinfo.retrieve_list += settings_dict.pop('ADDITIONAL_RETRIEVE_LIST', [])
         calcinfo.retrieve_list += self._internal_retrieve_list
+
+        # Retrieve the k-point directories with the xml files to the temporary folder
+        # to parse the band eigenvalues and occupations but not to have to save the raw files
+        # if and only if the 'no_bands' key was not set to true in the settings
+        no_bands = settings_dict.pop('NO_BANDS', False)
+        if no_bands is False:
+            xmlpaths = os.path.join(self._OUTPUT_SUBFOLDER, self._PREFIX + '.save', 'K*[0-9]', 'eigenval*.xml')
+            calcinfo.retrieve_temporary_list = [[xmlpaths, '.', 2]]
 
         try:
             Parserclass = self.get_parserclass()

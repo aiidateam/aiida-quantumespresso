@@ -74,7 +74,7 @@ def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_
         except IOError:
             raise QEOutputParsingError("Failed to open xml file: {}.".format(xml_file))
 
-        xml_data,structure_data,bands_data = parse_pw_xml_output(xml_lines,dir_with_bands)
+        xml_data, structure_data, bands_data = parse_pw_xml_output(xml_lines, dir_with_bands)
         # Note the xml file should always be consistent.
     else:
         parser_info['parser_warnings'].append('Skipping the parsing of the xml file.')
