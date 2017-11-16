@@ -11,7 +11,7 @@ case "$TEST_TYPE" in
         ;;
     tests)
         # TODO HERE: run the correct tests for QE
-        #verdi -p test_$TEST_AIIDA_BACKEND devel tests
+        verdi -p test_$TEST_AIIDA_BACKEND devel tests db.quantumespresso
 
         # Run the daemon tests using docker
         verdi -p $TEST_AIIDA_BACKEND run ${TRAVIS_BUILD_DIR}/.travis-data/test_pw_with_daemon.py
