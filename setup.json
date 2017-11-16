@@ -59,6 +59,9 @@
         ]
     }, 
     "extras_require": {
+        "atomic_tools": [
+            "ase"
+        ], 
         "dev_precommit": [
             "pre-commit"
         ], 
