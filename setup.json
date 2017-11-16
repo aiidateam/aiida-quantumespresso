@@ -37,10 +37,10 @@
             "quantumespresso.q2r = aiida_quantumespresso.parsers.q2r:Q2rParser"
         ], 
         "aiida.tests": [
-            "quantumespresso.pw = aiida_quantumespresso.tests.backend.quantumespressopw", 
-            "quantumespresso.pw_input = aiida_quantumespresso.tests.backend.pwinputparser", 
-            "quantumespresso.pw_immigrant = aiida_quantumespresso.tests.backend.quantumespressopwimmigrant", 
-            "quantumespresso.tcodexporter = aiida_quantumespresso.tests.backend.tcodexporter"
+            "quantumespresso.pw = aiida_quantumespresso.tests.quantumespressopw", 
+            "quantumespresso.pw_input = aiida_quantumespresso.tests.pwinputparser", 
+            "quantumespresso.pw_immigrant = aiida_quantumespresso.tests.quantumespressopwimmigrant", 
+            "quantumespresso.tcodexporter = aiida_quantumespresso.tests.tcodexporter"
         ], 
         "aiida.tools.dbexporters.tcod_plugins": [
             "quantumespresso.cp = aiida_quantumespresso.tools.dbexporters.tcod_plugins.cp:CpTcodtranslator", 
