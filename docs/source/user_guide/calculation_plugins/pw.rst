@@ -87,8 +87,8 @@ All output nodes can be accessed with the ``calculation.out`` method.
   Quantities are parsed at every step of the ionic-relaxation / molecular-dynamics run.
 * output_band (non spin polarized calculations)) or output_band1 + output_band2 
   (spin polarized calculations) :py:class:`BandsData <aiida.orm.data.array.bands.BandsData>`
-  Present only if parsing is activated with the **`ALSO_BANDS`** :ref:`setting <also-bands-setting>`.
-  Contains the list of electronic energies for every kpoint.
+  The default parsing can be deactivated with the **`no_bands`** :ref:`setting <no-bands-setting>`.
+  Contains the list band energies and occupations at every k-point.
   If calculation is a molecular dynamics or a relaxation run, bands refer only to the last ionic configuration.
 * output_structure :py:class:`StructureData <aiida.orm.data.structure.StructureData>`
   Present only if the calculation is moving the ions.
@@ -123,16 +123,19 @@ it as input of a calculation ``calc`` by doing::
 
 The different options are described below.
 
-.. _also-bands-setting:
+.. _no-bands-setting:
 
 Parsing band energies
 .....................
-During each scf or nscf run, QE stores the band energies at the k-points
-of interest in .xml files in the output directory. If you want to retrieve
-and parse them, you can set::
+During each scf or nscf run, QE stores the band energies and occupations in a separate
+file in a separate directory for each k-point. These files are retrieved locally and stored
+in a temporary folder for the duration of the parsing, which is discarded as soon as the
+parsing is completed. This parsing of bands is done by default, but if you are not interested
+in the output bands node and want to prevent the unnecessary download of the required files,
+you can switch the parsing of by setting the following parameter in the settings dictionary::
 
   settings_dict = {
-      'also_bands': True
+      'no_bands': True
   }
 
 Fixing some atom coordinates
@@ -248,6 +251,3 @@ those files as a list as follows (here in the case of a file named
   settings_dict = {  
     'additional_retrieve_list': ['testfile.txt'],
   }
-
-
-

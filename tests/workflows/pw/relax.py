@@ -83,9 +83,14 @@ def execute(args):
     options  = {
         'resources': {
             'num_machines': 1,
-            'tot_num_mpiprocs': 8,
         },
         'max_wallclock_seconds': args.max_wallclock_seconds,
+    }
+    
+    automatic_parallelization = {
+        'max_num_machines': 1,
+        'target_time_seconds': 1800,
+        'max_wallclock_seconds': 4 * 3600
     }
 
     run(
@@ -96,7 +101,8 @@ def execute(args):
         kpoints=kpoints,
         parameters=ParameterData(dict=parameters),
         settings=ParameterData(dict=settings),
-        options=ParameterData(dict=options)
+        options=ParameterData(dict=options),
+        automatic_parallelization=ParameterData(dict=automatic_parallelization)
     )
 
 
