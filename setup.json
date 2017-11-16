@@ -60,7 +60,9 @@
     }, 
     "extras_require": {
         "atomic_tools": [
-            "ase"
+            "ase", 
+            "PyCifRW", 
+            "spglib"
         ], 
         "dev_precommit": [
             "pre-commit"
