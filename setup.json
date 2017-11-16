@@ -61,7 +61,7 @@
     "extras_require": {
         "atomic_tools": [
             "ase", 
-            "PyCifRW", 
+            "PyCifRW==3.6.2.1", 
             "spglib"
         ], 
         "dev_precommit": [
