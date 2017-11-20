@@ -153,12 +153,12 @@ class PwBandsWorkChain(WorkChain):
         inputs['parameters']['CONTROL']['calculation'] = calculation_mode
 
         # Construct a new kpoint mesh on the current structure or pass the static mesh
-        if 'kpoints_distance' in self.inputs:
+        if 'kpoints_mesh' in self.inputs:
+            kpoints_mesh = self.inputs.kpoints_mesh
+        else:
             kpoints_mesh = KpointsData()
             kpoints_mesh.set_cell_from_structure(structure)
             kpoints_mesh.set_kpoints_mesh_from_density(self.inputs.kpoints_distance.value)
-        else:
-            kpoints_mesh = self.inputs.kpoints_mesh
 
         # Final input preparation, wrapping dictionaries in ParameterData nodes
         inputs['kpoints'] = kpoints_mesh
