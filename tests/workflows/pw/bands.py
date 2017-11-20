@@ -105,7 +105,7 @@ def execute(args):
         code=code,
         structure=structure,
         pseudo_family=Str(args.pseudo_family),
-        kpoints=kpoints,
+        kpoints_mesh=kpoints,
         parameters=ParameterData(dict=parameters),
         settings=ParameterData(dict=settings),
         options=ParameterData(dict=options),
