@@ -137,8 +137,8 @@ class PwBaseWorkChain(WorkChain):
 
         # If automatic parallelization is not enabled, we better make sure that the options satisfy minimum requirements
         if 'automatic_parallelization' not in self.inputs:
-            num_machines = self.inputs['options'].get('resources', {}).get('num_machines', None)
-            max_wallclock_seconds = self.inputs['options'].get('max_wallclock_seconds', None)
+            num_machines = self.ctx.inputs['_options'].get('resources', {}).get('num_machines', None)
+            max_wallclock_seconds = self.ctx.inputs['_options'].get('max_wallclock_seconds', None)
 
             if num_machines is None or max_wallclock_seconds is None:
                 self.abort_nowait("no automatic_parallelization requested, but the options do not specify both '{}' and '{}'"
