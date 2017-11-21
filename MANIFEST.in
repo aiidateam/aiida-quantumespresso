@@ -1,4 +1,4 @@
 include setup.json
 include LICENSE.txt
-recursive-include aiida_quantumespresso/tests/backend/pwtestjobs *
-recursive-include aiida_quantumespresso/tests/backend/parser_tests/ *
+recursive-include aiida_quantumespresso/tests/pwtestjobs *
+recursive-include aiida_quantumespresso/tests/parser_tests/ *
