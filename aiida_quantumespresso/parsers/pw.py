@@ -191,6 +191,13 @@ class PwParser(Parser):
                 new_nodes_list += [('output_band', the_bands_data)]
                 out_dict['linknames_band'] = ['output_band']
 
+        # Separate the atomic_occupations dictionary in its own node if it is present
+        atomic_occupations = out_dict.get('atomic_occupations', {})
+        if atomic_occupations:
+            out_dict.pop('atomic_occupations')
+            atomic_occupations_node = ParameterData(dict=atomic_occupations)
+            new_nodes_list.append(('output_atomic_occupations', atomic_occupations_node))
+
         output_params = ParameterData(dict=out_dict)
         new_nodes_list.append((self.get_linkname_outparams(), output_params))
 

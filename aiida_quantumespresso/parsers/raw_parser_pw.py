@@ -1698,6 +1698,38 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                 except Exception:
                     parsed_data['warnings'].append('Error while parsing stress tensor.')
 
+
+    # If specified in the parser options, parse the atomic occupations
+    parse_atomic_occupations = parser_opts.get('atomic_occupations', False)
+
+    if parse_atomic_occupations:
+
+        atomic_occupations = {}
+        hubbard_blocks = split = data.split('LDA+U parameters')
+
+        for line in hubbard_blocks[-1].split('\n'):
+
+            if 'Tr[ns(na)]' in line:
+
+                values = line.split('=')
+                atomic_index = values[0].split()[1]
+                occupations = values[1].split()
+
+                if len(occupations) == 1:
+                    atomic_occupations[atomic_index] = {
+                        'total': occupations[0]
+                    }
+                elif len(occupations) == 3:
+                    atomic_occupations[atomic_index] = {
+                        'up': occupations[0],
+                        'down': occupations[1],
+                        'total': occupations[2]
+                    }
+                else:
+                    continue
+
+        parsed_data['atomic_occupations'] =  atomic_occupations
+
     return parsed_data, trajectory_data, critical_warnings.values()
 
 def parse_QE_errors(lines,count,warnings):
