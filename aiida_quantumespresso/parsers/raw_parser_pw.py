@@ -105,7 +105,7 @@ def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_
 
     # parse
     try:
-        out_data,trajectory_data,critical_messages = parse_pw_text_output(out_lines,xml_data,structure_data,input_dict)
+        out_data,trajectory_data,critical_messages = parse_pw_text_output(out_lines, xml_data, structure_data, input_dict, parser_opts)
     except QEOutputParsingError as e:
         if not finished_run: # I try to parse it as much as possible
             parser_info['parser_warnings'].append('Error while parsing the output file')
@@ -1080,7 +1080,7 @@ def parse_pw_xml_output(data,dir_with_bands=None):
 
     return parsed_data,structure_dict,bands_dict
 
-def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
+def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, parser_opts={}):
     """
     Parses the text output of QE-PWscf.
 
@@ -1088,6 +1088,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
     :param xml_data: the dictionary with the keys read from xml.
     :param structure_data: dictionary, coming from the xml, with info on the structure
     :param input_dict: dictionary with the input parameters
+    :param parser_opts: the parser options from the settings input parameter node
 
     :return parsed_data: dictionary with key values, referring to quantities
                          at the last scf step.
