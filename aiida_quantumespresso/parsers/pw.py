@@ -45,13 +45,14 @@ class PwParser(Parser):
         successful = True
 
         # Load the input dictionary
-        settings = self._calc.inp.settings.get_dict()
         parameters = self._calc.inp.parameters.get_dict()
 
-        # Look for eventual flags of the parser
+        # Look for optional settings input node and potential 'parser_options' dictionary within it
         try:
+            settings = self._calc.inp.settings.get_dict()
             parser_opts = settings[self.get_parser_settings_key()]
         except (AttributeError, KeyError):
+            settings = {}
             parser_opts = {}
 
         # Check that the retrieved folder is there
