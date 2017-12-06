@@ -105,7 +105,7 @@ def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_
 
     # parse
     try:
-        out_data,trajectory_data,critical_messages = parse_pw_text_output(out_lines,xml_data,structure_data,input_dict)
+        out_data,trajectory_data,critical_messages = parse_pw_text_output(out_lines, xml_data, structure_data, input_dict, parser_opts)
     except QEOutputParsingError as e:
         if not finished_run: # I try to parse it as much as possible
             parser_info['parser_warnings'].append('Error while parsing the output file')
@@ -1080,7 +1080,7 @@ def parse_pw_xml_output(data,dir_with_bands=None):
 
     return parsed_data,structure_dict,bands_dict
 
-def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
+def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, parser_opts={}):
     """
     Parses the text output of QE-PWscf.
 
@@ -1088,6 +1088,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
     :param xml_data: the dictionary with the keys read from xml.
     :param structure_data: dictionary, coming from the xml, with info on the structure
     :param input_dict: dictionary with the input parameters
+    :param parser_opts: the parser options from the settings input parameter node
 
     :return parsed_data: dictionary with key values, referring to quantities
                          at the last scf step.
@@ -1696,6 +1697,38 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
                     parsed_data['stress'+units_suffix] = default_stress_units
                 except Exception:
                     parsed_data['warnings'].append('Error while parsing stress tensor.')
+
+
+    # If specified in the parser options, parse the atomic occupations
+    parse_atomic_occupations = parser_opts.get('atomic_occupations', False)
+
+    if parse_atomic_occupations:
+
+        atomic_occupations = {}
+        hubbard_blocks = split = data.split('LDA+U parameters')
+
+        for line in hubbard_blocks[-1].split('\n'):
+
+            if 'Tr[ns(na)]' in line:
+
+                values = line.split('=')
+                atomic_index = values[0].split()[1]
+                occupations = values[1].split()
+
+                if len(occupations) == 1:
+                    atomic_occupations[atomic_index] = {
+                        'total': occupations[0]
+                    }
+                elif len(occupations) == 3:
+                    atomic_occupations[atomic_index] = {
+                        'up': occupations[0],
+                        'down': occupations[1],
+                        'total': occupations[2]
+                    }
+                else:
+                    continue
+
+        parsed_data['atomic_occupations'] =  atomic_occupations
 
     return parsed_data, trajectory_data, critical_warnings.values()
 

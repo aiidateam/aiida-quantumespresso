@@ -45,13 +45,14 @@ class PwParser(Parser):
         successful = True
 
         # Load the input dictionary
-        settings = self._calc.inp.settings.get_dict()
         parameters = self._calc.inp.parameters.get_dict()
 
-        # Look for eventual flags of the parser
+        # Look for optional settings input node and potential 'parser_options' dictionary within it
         try:
+            settings = self._calc.inp.settings.get_dict()
             parser_opts = settings[self.get_parser_settings_key()]
         except (AttributeError, KeyError):
+            settings = {}
             parser_opts = {}
 
         # Check that the retrieved folder is there
@@ -190,6 +191,13 @@ class PwParser(Parser):
 
                 new_nodes_list += [('output_band', the_bands_data)]
                 out_dict['linknames_band'] = ['output_band']
+
+        # Separate the atomic_occupations dictionary in its own node if it is present
+        atomic_occupations = out_dict.get('atomic_occupations', {})
+        if atomic_occupations:
+            out_dict.pop('atomic_occupations')
+            atomic_occupations_node = ParameterData(dict=atomic_occupations)
+            new_nodes_list.append(('output_atomic_occupations', atomic_occupations_node))
 
         output_params = ParameterData(dict=out_dict)
         new_nodes_list.append((self.get_linkname_outparams(), output_params))

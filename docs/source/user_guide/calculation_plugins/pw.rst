@@ -24,9 +24,15 @@ Inputs
   Input parameters of pw.x, as a nested dictionary, mapping the input of QE.
   Example::
     
-      {"CONTROL":{"calculation":"scf"},
-       "ELECTRONS":{"ecutwfc":30.,"ecutrho":100.},
-      }
+    {
+        "CONTROL":{
+            "calculation":"scf"
+        },
+        "ELECTRONS":{
+            "ecutwfc":30.,
+            "ecutrho":100.
+        },
+    }
 
   A full list of variables and their meaning is found in the `pw.x documentation`_.
 
@@ -34,19 +40,19 @@ Inputs
 
   Following keywords, related to the structure or to the file paths, are already taken care of by AiiDA::
     
-      'CONTROL', 'pseudo_dir': pseudopotential directory
-      'CONTROL', 'outdir': scratch directory
-      'CONTROL', 'prefix': file prefix
-      'SYSTEM', 'ibrav': cell shape
-      'SYSTEM', 'celldm': cell dm
-      'SYSTEM', 'nat': number of atoms
-      'SYSTEM', 'ntyp': number of species
-      'SYSTEM', 'a': cell parameters
-      'SYSTEM', 'b': cell parameters
-      'SYSTEM', 'c': cell parameters
-      'SYSTEM', 'cosab': cell parameters
-      'SYSTEM', 'cosac': cell parameters
-      'SYSTEM', 'cosbc': cell parameters
+    'CONTROL', 'pseudo_dir': pseudopotential directory
+    'CONTROL', 'outdir': scratch directory
+    'CONTROL', 'prefix': file prefix
+    'SYSTEM', 'ibrav': cell shape
+    'SYSTEM', 'celldm': cell dm
+    'SYSTEM', 'nat': number of atoms
+    'SYSTEM', 'ntyp': number of species
+    'SYSTEM', 'a': cell parameters
+    'SYSTEM', 'b': cell parameters
+    'SYSTEM', 'c': cell parameters
+    'SYSTEM', 'cosab': cell parameters
+    'SYSTEM', 'cosac': cell parameters
+    'SYSTEM', 'cosbc': cell parameters
 
   Those keywords should not be specified, otherwise the submission will fail.
      
@@ -119,7 +125,7 @@ Quantum Espresso namelists, additional parameters can be specified in the 'setti
 After having defined the content of ``settings_dict``, you can use
 it as input of a calculation ``calc`` by doing::
 
-  calc.use_settings(ParameterData(dict=settings_dict))
+    calc.use_settings(ParameterData(dict=settings_dict))
 
 The different options are described below.
 
@@ -134,9 +140,9 @@ parsing is completed. This parsing of bands is done by default, but if you are n
 in the output bands node and want to prevent the unnecessary download of the required files,
 you can switch the parsing of by setting the following parameter in the settings dictionary::
 
-  settings_dict = {
-      'no_bands': True
-  }
+    settings_dict = {
+        'no_bands': True
+    }
 
 Fixing some atom coordinates
 ............................
@@ -145,15 +151,15 @@ If you want to ask QE to keep some coordinates of some atoms fixed
 0 or 1 values after the atomic coordinates), you can specify the following
 list of lists::
 
-  settings_dict = {
-      'fixed_coords': [
-          [True,False,False],
-          [True,True,True],
-          [False,False,False],
-          [False,False,False],
-          [False,False,False],
-          ],
-  }
+    settings_dict = {
+        'fixed_coords': [
+            [True, False, False],
+            [True, True, True],
+            [False, False, False],
+            [False, False, False],
+            [False, False, False]
+        ],
+    }
 
 the list of lists (of booleans) must be of length N times 3, where N is the 
 number of sites (i.e., atoms) in the input structure. ``False`` means that
@@ -167,9 +173,9 @@ equivalent by symmetry). Instead of generating it manually, you can
 pass a usual KpointsData specifying a mesh, and then pass the following 
 variable::
 
-  settings_dict = {  
-      'force_kpoints_list': True,
-  }
+    settings_dict = {
+        'force_kpoints_list': True,
+    }
 
 Gamma-only calculation
 ......................
@@ -177,9 +183,9 @@ If you are using only the Gamma point (a grid of 1x1x1 without offset), you
 may want to use the following flag to tell QE to use the gamma-only routines
 (typically twice faster)::
 
-  settings_dict = {  
-      'gamma_only': False,
-  }
+    settings_dict = {
+        'gamma_only': False,
+    }
 
 Initialization only
 ...................
@@ -188,9 +194,9 @@ part (e.g. to parse the number of symmetries detected, the number of G vectors,
 of k-points, ...)
 In this case, by specifying::
 
-  settings_dict = {  
-      'only_initialization': True,
-  }
+    settings_dict = {
+        'only_initialization': True,
+    }
 
 a file named ``aiida.EXIT`` (where ``aiida`` is the prefix) will be also generated,
 asking QE to exit cleanly after the initialisation.
@@ -203,9 +209,9 @@ The QE plugin will automatically figure out which namelists should be specified
 If you want to override the automatic list, you can specify the list
 of namelists you want to produce as follows::
 
-  settings_dict = {  
-      'namelists': ['CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', 'CELL', 'OTHERNL'],
-  }
+    settings_dict = {
+        'namelists': ['CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', 'CELL', 'OTHERNL'],
+    }
 
 
 Adding command-line options
@@ -214,9 +220,9 @@ If you want to add command-line options to the executable (particularly
 relevant e.g. to tune the parallelization level), you can pass each option 
 as a string in a list, as follows::
 
-  settings_dict = {  
-      'cmdline': ['-nk', '4'],
-  }
+    settings_dict = {
+        'cmdline': ['-nk', '4'],
+    }
 
 Using symlinks for the restarts
 ...............................
@@ -231,9 +237,9 @@ scratch directory of your computing cluster. If you prefer to use symlinks,
 pass::
 
 
-  settings_dict = {  
-      'parent_folder_symlink': True,
-  }
+    settings_dict = {
+        'parent_folder_symlink': True,
+    }
 
 .. note:: Use this flag ONLY IF YOU KNOW WHAT YOU ARE DOING. In particular, 
   if you run a NSCF with this flag after a SCF calculation, the scratch directory
@@ -248,6 +254,26 @@ retrieve (and preserve in the AiiDA repository in the long term), you can add
 those files as a list as follows (here in the case of a file named
 ``testfile.txt``)::
 
-  settings_dict = {  
-    'additional_retrieve_list': ['testfile.txt'],
-  }
+    settings_dict = {
+        'additional_retrieve_list': ['testfile.txt'],
+    }
+
+
+Parser options
+--------------
+To customize the parsing, the ``settings`` input ``ParameterData`` node provides
+the special key ``parser_options`` which has the options discussed below.
+
+Parsing atomic occupations
+..........................
+For DFT+U calculations, pw.x will also print atomic electron occupations to the standard
+output. This flag enables or disables the parsing of this information into a ``ParameterData``
+output node with the link name ``atomic_occupations``. The value should be a boolean, with
+``False`` being the default. Setting it to ``True`` will enable the parsing of the atomic
+occupations::
+
+    settings_dict = {
+        'parser_options': {
+            'parse_atomic_occupations': True,
+        }
+    }

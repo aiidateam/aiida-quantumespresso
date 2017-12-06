@@ -702,7 +702,7 @@ class BasePwCpInputGenerator(object):
         try:
             Parserclass = self.get_parserclass()
             parser = Parserclass(self)
-            parser_opts = parser.get_parser_settings_key()
+            parser_opts = parser.get_parser_settings_key().upper()
             settings_dict.pop(parser_opts)
         except (KeyError, AttributeError):
             # the key parser_opts isn't inside the dictionary
