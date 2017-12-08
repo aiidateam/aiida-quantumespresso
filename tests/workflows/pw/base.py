@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import argparse
 from aiida.common.exceptions import NotExistent
-from aiida.orm.data.base import Str
+from aiida.orm.data.base import Bool, Str
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
@@ -42,6 +42,10 @@ def parser_setup():
     parser.add_argument(
         '-w', type=int, default=1800, dest='max_wallclock_seconds',
         help='the maximum wallclock time in seconds to set for the calculations. (default: %(default)d)'
+    )
+    parser.add_argument(
+        '-x', '--clean-workdir', action="store_true", dest='clean_workdir',
+        help='clean the remote folder of all the launched calculations after completion of the workchain'
     )
 
     return parser
@@ -94,15 +98,19 @@ def execute(args):
         'max_wallclock_seconds': args.max_wallclock_seconds
     }
 
-    run(
-        PwBaseWorkChain,
-        code=code,
-        structure=structure,
-        pseudo_family=Str(args.pseudo_family),
-        kpoints=kpoints,
-        parameters=ParameterData(dict=parameters),
-        automatic_parallelization=ParameterData(dict=automatic_parallelization)
-    )
+    inputs = {
+        'code': code,
+        'structure': structure,
+        'pseudo_family': Str(args.pseudo_family),
+        'kpoints': kpoints,
+        'parameters': ParameterData(dict=parameters),
+        'automatic_parallelization': ParameterData(dict=automatic_parallelization),
+    }
+
+    if args.clean_workdir:
+        inputs['clean_workdir'] = Bool(True)
+
+    run(PwBaseWorkChain, **inputs)
 
 
 def main():

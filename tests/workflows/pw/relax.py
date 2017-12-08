@@ -1,9 +1,8 @@
 #!/usr/bin/env runaiida
 # -*- coding: utf-8 -*-
-
 import argparse
 from aiida.common.exceptions import NotExistent
-from aiida.orm.data.base import Str
+from aiida.orm.data.base import Bool, Str
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
@@ -21,12 +20,12 @@ def parser_setup():
         description='Run the PwRelaxWorkChain for a given input structure',
     )
     parser.add_argument(
-        '-k', nargs=3, type=int, default=[2, 2, 2], dest='kpoints', metavar='Q',
-        help='define the q-points mesh. (default: %(default)s)'
-    )
-    parser.add_argument(
         '-c', type=str, required=True, dest='codename',
         help='the name of the AiiDA code that references QE pw.x'
+    )
+    parser.add_argument(
+        '-k', nargs=3, type=int, default=[2, 2, 2], dest='kpoints', metavar='Q',
+        help='define the q-points mesh. (default: %(default)s)'
     )
     parser.add_argument(
         '-p', type=str, required=True, dest='pseudo_family',
@@ -39,6 +38,10 @@ def parser_setup():
     parser.add_argument(
         '-w', type=int, default=1800, dest='max_wallclock_seconds',
         help='the maximum wallclock time in seconds to set for the calculations. (default: %(default)d)'
+    )
+    parser.add_argument(
+        '-x', '--clean-workdir', action="store_true", dest='clean_workdir',
+        help='clean the remote folder of all the launched calculations after completion of the workchain'
     )
 
     return parser
@@ -93,17 +96,21 @@ def execute(args):
         'max_wallclock_seconds': 4 * 3600
     }
 
-    run(
-        PwRelaxWorkChain,
-        code=code,
-        structure=structure,
-        pseudo_family=Str(args.pseudo_family),
-        kpoints=kpoints,
-        parameters=ParameterData(dict=parameters),
-        settings=ParameterData(dict=settings),
-        options=ParameterData(dict=options),
-        automatic_parallelization=ParameterData(dict=automatic_parallelization)
-    )
+    inputs = {
+        'code': code,
+        'structure': structure,
+        'pseudo_family': Str(args.pseudo_family),
+        'kpoints': kpoints,
+        'parameters': ParameterData(dict=parameters),
+        'settings': ParameterData(dict=settings),
+        'options': ParameterData(dict=options),
+        'automatic_parallelization': ParameterData(dict=automatic_parallelization)
+    }
+
+    if args.clean_workdir:
+        inputs['clean_workdir'] = Bool(True)
+
+    run(PwRelaxWorkChain, **inputs)
 
 
 def main():
@@ -111,7 +118,7 @@ def main():
     Setup the parser to retrieve the command line arguments and pass them to the main execution function.
     """
     parser = parser_setup()
-    args   = parser.parse_args()
+    args = parser.parse_args()
     result = execute(args)
 
 
