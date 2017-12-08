@@ -78,18 +78,10 @@ def execute(args):
     kpoints.set_kpoints_mesh(args.kpoints)
 
     parameters = {
-        'CONTROL': {
-            'restart_mode': 'from_scratch',
-            'calculation': 'scf',
-            'tstress': True,
-        },
         'SYSTEM': {
-            'ecutwfc': 40.,
-            'ecutrho': 320.,
+            'ecutwfc': 30.,
+            'ecutrho': 240.,
         },
-        'ELECTRONS': {
-            'conv_thr': 1.e-10,
-        }
     }
     
     automatic_parallelization = {

@@ -110,6 +110,12 @@ class PwBaseWorkChain(WorkChain):
         """
         Validate inputs that may depend on each other
         """
+        if 'CONTROL'not in self.ctx.inputs.parameters:
+            self.ctx.inputs.parameters['CONTROL'] = {}
+
+        if 'calculation' not in self.ctx.inputs.parameters['CONTROL']:
+            self.ctx.inputs.parameters['CONTROL']['calculation'] = 'scf'
+
         if 'parent_folder' in self.inputs:
             self.ctx.inputs.parent_folder = self.inputs.parent_folder
             self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'restart'

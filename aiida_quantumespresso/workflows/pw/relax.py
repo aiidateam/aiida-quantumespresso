@@ -32,7 +32,7 @@ class PwRelaxWorkChain(WorkChain):
         spec.input('kpoints_distance', valid_type=Float, default=Float(0.2))
         spec.input('vdw_table', valid_type=SinglefileData, required=False)
         spec.input('parameters', valid_type=ParameterData)
-        spec.input('settings', valid_type=ParameterData)
+        spec.input('settings', valid_type=ParameterData, required=False)
         spec.input('options', valid_type=ParameterData, required=False)
         spec.input('automatic_parallelization', valid_type=ParameterData, required=False)
         spec.input('final_scf', valid_type=Bool, default=Bool(False))
@@ -71,7 +71,6 @@ class PwRelaxWorkChain(WorkChain):
             'code': self.inputs.code,
             'structure': self.inputs.structure,
             'parameters': self.inputs.parameters.get_dict(),
-            'settings': self.inputs.settings,
             'clean_workdir': self.inputs.clean_workdir,
         }
 
@@ -96,6 +95,9 @@ class PwRelaxWorkChain(WorkChain):
         # Set the correct relaxation scheme in the input parameters
         if 'CONTROL' not in self.ctx.inputs['parameters']:
             self.ctx.inputs['parameters']['CONTROL'] = {}
+
+        if 'settings' in self.inputs:
+            self.ctx.inputs['settings'] = self.inputs.settings
 
         # If options set, add it to the default inputs
         if 'options' in self.inputs:

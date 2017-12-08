@@ -78,20 +78,10 @@ def execute(args):
     kpoints.set_kpoints_mesh(args.kpoints)
 
     parameters = {
-        'CONTROL': {
-            'restart_mode': 'from_scratch',
-        },
         'SYSTEM': {
             'ecutwfc': 30.,
             'ecutrho': 240.,
         },
-    }
-    settings = {}
-    options  = {
-        'resources': {
-            'num_machines': 1,
-        },
-        'max_wallclock_seconds': args.max_wallclock_seconds,
     }
     
     automatic_parallelization = {
@@ -106,8 +96,6 @@ def execute(args):
         'pseudo_family': Str(args.pseudo_family),
         'kpoints': kpoints,
         'parameters': ParameterData(dict=parameters),
-        'settings': ParameterData(dict=settings),
-        'options': ParameterData(dict=options),
         'automatic_parallelization': ParameterData(dict=automatic_parallelization)
     }
 
