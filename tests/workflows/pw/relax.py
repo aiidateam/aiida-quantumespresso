@@ -36,7 +36,11 @@ def parser_setup():
         help='the node id of the structure'
     )
     parser.add_argument(
-        '-w', type=int, default=1800, dest='max_wallclock_seconds',
+        '-m', type=int, default=1, dest='max_num_machines',
+        help='the maximum number of machines (nodes) to use for the calculations. (default: %(default)d)'
+    )
+    parser.add_argument(
+        '-w', type=int, default=3600, dest='max_wallclock_seconds',
         help='the maximum wallclock time in seconds to set for the calculations. (default: %(default)d)'
     )
     parser.add_argument(
@@ -91,9 +95,9 @@ def execute(args):
     }
     
     automatic_parallelization = {
-        'max_num_machines': 1,
-        'target_time_seconds': 1800,
-        'max_wallclock_seconds': 4 * 3600
+        'max_num_machines': args.max_num_machines,
+        'target_time_seconds': 0.5 * args.max_wallclock_seconds,
+        'max_wallclock_seconds': args.max_wallclock_seconds
     }
 
     inputs = {
