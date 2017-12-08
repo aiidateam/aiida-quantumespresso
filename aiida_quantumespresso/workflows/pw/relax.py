@@ -141,7 +141,7 @@ class PwRelaxWorkChain(WorkChain):
         """
         self.ctx.iteration += 1
 
-        inputs = dict(self.ctx.inputs)
+        inputs = deepcopy(self.ctx.inputs)
         inputs['parameters'] = ParameterData(dict=inputs['parameters'])
 
         # Construct a new kpoint mesh on the current structure or pass the static mesh
@@ -215,7 +215,7 @@ class PwRelaxWorkChain(WorkChain):
         """
         Run the PwBaseWorkChain to run a final scf PwCalculation for the relaxed structure
         """
-        inputs = dict(self.ctx.inputs)
+        inputs = deepcopy(self.ctx.inputs)
 
         parameters = inputs['parameters']
         parameters['CONTROL']['calculation'] = 'scf'
