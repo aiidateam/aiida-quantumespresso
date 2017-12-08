@@ -61,8 +61,8 @@ class PwBaseWorkChain(WorkChain):
         spec.input('settings', valid_type=ParameterData, required=False)
         spec.input('options', valid_type=ParameterData, required=False)
         spec.input('automatic_parallelization', valid_type=ParameterData, required=False)
-        spec.input('clean_workdir', valid_type=Bool, default=Bool(False))
         spec.input('max_iterations', valid_type=Int, default=Int(5))
+        spec.input('clean_workdir', valid_type=Bool, default=Bool(False))
         spec.outline(
             cls.setup,
             cls.validate_inputs,
@@ -367,12 +367,23 @@ class PwBaseWorkChain(WorkChain):
             self.report('remote folders will not be cleaned')
             return
 
-        for calc in self.ctx.calculations:
+        cleaned_calcs = []
+        calculations = self.ctx.calculations
+
+        try:
+            calculations.append(self.ctx.calculation_init)
+        except AttributeError:
+            pass
+
+        for calculation in calculations:
             try:
-                calc.out.remote_folder._clean()
-                self.report('cleaned remote folder of {}<{}>'.format(calc.__class__.__name__, calc.pk))
+                calculation.out.remote_folder._clean()
+                cleaned_calcs.append(calculation.pk)
             except Exception:
                 pass
+
+        if len(cleaned_calcs) > 0:
+            self.report('cleaned remote folders of calculations: {}'.format(' '.join(map(str, cleaned_calcs))))
 
     def _handle_calculation_sanity_checks(self, calculation):
         """

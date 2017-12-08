@@ -40,6 +40,7 @@ class PwRelaxWorkChain(WorkChain):
         spec.input('meta_converge', valid_type=Bool, default=Bool(True))
         spec.input('relaxation_scheme', valid_type=Str, default=Str('vc-relax'))
         spec.input('volume_convergence', valid_type=Float, default=Float(0.01))
+        spec.input('clean_workdir', valid_type=Bool, default=Bool(False))
         spec.outline(
             cls.setup,
             cls.validate_inputs,
@@ -70,7 +71,8 @@ class PwRelaxWorkChain(WorkChain):
             'code': self.inputs.code,
             'structure': self.inputs.structure,
             'parameters': self.inputs.parameters.get_dict(),
-            'settings': self.inputs.settings
+            'settings': self.inputs.settings,
+            'clean_workdir': self.inputs.clean_workdir,
         }
 
         # We expect either a KpointsData with given mesh or a desired distance between k-points
