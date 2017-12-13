@@ -34,7 +34,14 @@
             "quantumespresso.ph = aiida_quantumespresso.parsers.ph:PhParser", 
             "quantumespresso.projwfc = aiida_quantumespresso.parsers.projwfc:ProjwfcParser", 
             "quantumespresso.pw = aiida_quantumespresso.parsers.pw:PwParser", 
-            "quantumespresso.q2r = aiida_quantumespresso.parsers.q2r:Q2rParser"
+            "quantumespresso.q2r = aiida_quantumespresso.parsers.q2r:Q2rParser", 
+            "quantumespresso.pw2wannier90 = aiida_quantumespresso.parsers.pw2wannier90:Pw2wannier90Parser"
+        ], 
+        "aiida.tests": [
+            "quantumespresso.pw = aiida_quantumespresso.tests.quantumespressopw", 
+            "quantumespresso.pw_input = aiida_quantumespresso.tests.pwinputparser", 
+            "quantumespresso.pw_immigrant = aiida_quantumespresso.tests.quantumespressopwimmigrant", 
+            "quantumespresso.tcodexporter = aiida_quantumespresso.tests.tcodexporter"
         ], 
         "aiida.tools.dbexporters.tcod_plugins": [
             "quantumespresso.cp = aiida_quantumespresso.tools.dbexporters.tcod_plugins.cp:CpTcodtranslator", 
@@ -52,6 +59,11 @@
         ]
     }, 
     "extras_require": {
+        "atomic_tools": [
+            "ase", 
+            "PyCifRW==3.6.2.1", 
+            "spglib"
+        ], 
         "dev_precommit": [
             "pre-commit"
         ], 
@@ -62,7 +74,7 @@
         ]
     }, 
     "install_requires": [
-        "aiida-core>=0.10.0rc1"
+        "aiida_core>=0.10.0rc3"
     ], 
     "license": "MIT License", 
     "name": "aiida_quantumespresso", 

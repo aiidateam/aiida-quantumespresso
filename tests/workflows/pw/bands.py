@@ -83,7 +83,6 @@ def execute(args):
     options  = {
         'resources': {
             'num_machines': 1,
-            'tot_num_mpiprocs': 8,
         },
         'max_wallclock_seconds': args.max_wallclock_seconds,
     }
@@ -94,16 +93,23 @@ def execute(args):
         'settings': ParameterData(dict=settings),
         'options': ParameterData(dict=options)
     }
+    
+    automatic_parallelization = {
+        'max_num_machines': 1,
+        'target_time_seconds': 1800,
+        'max_wallclock_seconds': 4 * 3600
+    }
 
     run(
         PwBandsWorkChain,
         code=code,
         structure=structure,
         pseudo_family=Str(args.pseudo_family),
-        kpoints=kpoints,
+        kpoints_mesh=kpoints,
         parameters=ParameterData(dict=parameters),
         settings=ParameterData(dict=settings),
         options=ParameterData(dict=options),
+        automatic_parallelization=ParameterData(dict=automatic_parallelization),
         relax=relax_inputs
     )
 

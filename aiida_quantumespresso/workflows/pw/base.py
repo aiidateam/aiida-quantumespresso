@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
+from copy import deepcopy
 from collections import namedtuple
 from aiida.orm import Code
 from aiida.orm.data.base import Bool, Int, Str
-from aiida.orm.data.upf import UpfData, get_pseudos_from_structure
 from aiida.orm.data.folder import FolderData
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.parameter import ParameterData
@@ -11,12 +11,20 @@ from aiida.orm.data.array.bands import BandsData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.data.singlefile import SinglefileData
 from aiida.orm.utils import CalculationFactory
+from aiida.common.extendeddicts import AttributeDict
 from aiida.common.exceptions import NotExistent
 from aiida.common.datastructures import calc_states
 from aiida.work.run import submit
-from aiida.work.workchain import WorkChain, ToContext, while_, append_
+from aiida.work.workchain import WorkChain, ToContext, if_, while_, append_
 from aiida_quantumespresso.common.exceptions import UnexpectedFailure
 from aiida_quantumespresso.common.pluginloader import get_plugin, get_plugins
+from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
+from aiida_quantumespresso.utils.mapping import update_mapping
+from aiida_quantumespresso.utils.pseudopotential import validate_and_prepare_pseudos_inputs
+from aiida_quantumespresso.utils.resources import get_default_options
+from aiida_quantumespresso.utils.resources import get_pw_parallelization_parameters
+from aiida_quantumespresso.utils.resources import cmdline_remove_npools
+from aiida_quantumespresso.utils.resources import create_scheduler_resources
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
 
@@ -31,47 +39,38 @@ class PwBaseWorkChain(WorkChain):
         super(PwBaseWorkChain, self).__init__(*args, **kwargs)
 
         # Default values
-        self.defaults = {
-            'qe': {
-                'degauss': 0.,
-                'diagonalization': 'david',
-                'electron_maxstep': 100,
-                'mixing_beta': 0.7,
-                'mixing_mode': 'plain',
-                'mixing_ndim': 8,
-                'noncolin': False,
-                'nspin': 1,
-                'occupations': None,
-                'press': 0.,
-                'press_conv_thr': 0.5,
-                'smearing': '',
-                'startmag': 0.,
-                'wf_collect': False,
-            },
+        self.defaults = AttributeDict({
+            'qe': qe_defaults,
             'delta_threshold_degauss': 30,
             'delta_factor_degauss': 0.1,
             'delta_factor_mixing_beta': 0.8,
             'delta_factor_max_seconds': 0.95,
-        }
+        })
 
     @classmethod
     def define(cls, spec):
         super(PwBaseWorkChain, cls).define(spec)
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
+        spec.input('kpoints', valid_type=KpointsData)
+        spec.input('parameters', valid_type=ParameterData)
         spec.input_group('pseudos', required=False)
         spec.input('pseudo_family', valid_type=Str, required=False)
         spec.input('parent_folder', valid_type=RemoteData, required=False)
-        spec.input('kpoints', valid_type=KpointsData)
         spec.input('vdw_table', valid_type=SinglefileData, required=False)
-        spec.input('parameters', valid_type=ParameterData)
-        spec.input('settings', valid_type=ParameterData)
-        spec.input('options', valid_type=ParameterData)
-        spec.input('clean_workdir', valid_type=Bool, default=Bool(False))
+        spec.input('settings', valid_type=ParameterData, required=False)
+        spec.input('options', valid_type=ParameterData, required=False)
+        spec.input('automatic_parallelization', valid_type=ParameterData, required=False)
         spec.input('max_iterations', valid_type=Int, default=Int(5))
+        spec.input('clean_workdir', valid_type=Bool, default=Bool(False))
         spec.outline(
             cls.setup,
-            cls.validate_pseudo_potentials,
+            cls.validate_inputs,
+            if_(cls.should_run_init)(
+                cls.validate_init_inputs,
+                cls.run_init,
+                cls.inspect_init,
+            ),
             while_(cls.should_run_pw)(
                 cls.run_pw,
                 cls.inspect_pw,
@@ -87,7 +86,9 @@ class PwBaseWorkChain(WorkChain):
 
     def setup(self):
         """
-        Initialize context variables
+        Initialize context variables and define convenience dictionary of inputs for PwCalculation. Only the required inputs
+        are added here as the non required ones will have to be validated first in the next step of the outline. ParameterData
+        nodes that may need to be update during the workchain are unpacked into their dictionary for convenience.
         """
         self.ctx.max_iterations = self.inputs.max_iterations.value
         self.ctx.unexpected_failure = False
@@ -96,67 +97,166 @@ class PwBaseWorkChain(WorkChain):
         self.ctx.is_finished = False
         self.ctx.iteration = 0
 
-        # Define convenience dictionary of inputs for PwCalculation
-        self.ctx.inputs = {
+        self.ctx.inputs = AttributeDict({
             'code': self.inputs.code,
             'structure': self.inputs.structure,
-            'pseudo': {},
             'kpoints': self.inputs.kpoints,
-            'parameters': self.inputs.parameters.get_dict(),
-            'settings': self.inputs.settings.get_dict(),
-            '_options': self.inputs.options.get_dict(),
-        }
-
-        # Add the van der Waals kernel table file if specified
-        if 'vdw_table' in self.inputs:
-            self.ctx.inputs['vdw_table'] = self.inputs.vdw_table
-
-        # Prevent PwCalculation from being terminated by scheduler
-        max_wallclock_seconds = self.ctx.inputs['_options']['max_wallclock_seconds']
-        self.ctx.inputs['parameters']['CONTROL']['max_seconds'] = int(0.95 * max_wallclock_seconds)
+            'parameters': self.inputs.parameters.get_dict()
+        })
 
         return
 
-    def validate_pseudo_potentials(self):
+    def validate_inputs(self):
         """
-        Validate the inputs related to pseudopotentials to check that we have the minimum required
-        amount of information to be able to run a PwCalculation
+        Validate inputs that may depend on each other
         """
-        structure = self.inputs.structure
-        pseudo_family = self.inputs.pseudo_family.value
+        if 'CONTROL'not in self.ctx.inputs.parameters:
+            self.ctx.inputs.parameters['CONTROL'] = {}
 
-        if all([key not in self.inputs for key in ['pseudos', 'pseudo_family']]):
-            self.abort_nowait('neither explicit pseudos nor a pseudo_family was specified in the inputs')
+        if 'calculation' not in self.ctx.inputs.parameters['CONTROL']:
+            self.ctx.inputs.parameters['CONTROL']['calculation'] = 'scf'
+
+        if 'parent_folder' in self.inputs:
+            self.ctx.inputs.parent_folder = self.inputs.parent_folder
+            self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'restart'
+        else:
+            self.ctx.inputs.parent_folder = None
+            self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'from_scratch'
+
+        if 'settings' in self.inputs:
+            self.ctx.inputs.settings = self.inputs.settings.get_dict()
+        else:
+            self.ctx.inputs.settings = {}
+
+        if 'options' in self.inputs:
+            self.ctx.inputs._options = self.inputs.options.get_dict()
+        else:
+            self.ctx.inputs._options = {}
+
+        if 'vdw_table' in self.inputs:
+            self.ctx.inputs.vdw_table = self.inputs.vdw_table
+
+        # Either automatic_parallelization or options has to be specified
+        if not any([key in self.inputs for key in ['options', 'automatic_parallelization']]):
+            self.abort_nowait('you have to specify either the options or automatic_parallelization input')
             return
-        elif all([key in self.inputs for key in ['pseudos', 'pseudo_family']]):
-            self.report('both explicit pseudos as well as a pseudo_family were specified: using explicit pseudos')
-            pseudos = self.inputs.pseudos
-        elif 'pseudos' in self.inputs:
-            self.report('only explicit pseudos were specified: using explicit pseudos')
-            pseudos = self.inputs.pseudos
-        elif 'pseudo_family' in self.inputs:
-            self.report('only a pseudo_family was specified: using pseudos from pseudo_family {}'.format(pseudo_family))
-            pseudos = get_pseudos_from_structure(structure, pseudo_family)
 
-        for kind in self.inputs.structure.get_kind_names():
-            if kind not in pseudos:
-                self.abort_nowait('no pseudo available for element {}'.format(kind))
-            elif not isinstance(pseudos[kind], UpfData):
-                self.abort_nowait('pseudo for element {} is not of type UpfData'.format(kind))
+        # If automatic parallelization is not enabled, we better make sure that the options satisfy minimum requirements
+        if 'automatic_parallelization' not in self.inputs:
+            num_machines = self.ctx.inputs['_options'].get('resources', {}).get('num_machines', None)
+            max_wallclock_seconds = self.ctx.inputs['_options'].get('max_wallclock_seconds', None)
 
-        # The pseudos dictionary should now be a dictionary of UPF nodes with the kind as linkname
-        # As such, if there are multiple kinds with the same element, there will be duplicate UPF nodes
-        # but multiple links for the same input node are not allowed. Moreover, to couple the UPF nodes
-        # to the Calculation instance, we have to go through the use_pseudo method, which takes the kind
-        # name as an additional parameter. When creating a Calculation through a Process instance, one
-        # cannot call the use methods directly but rather should pass them as keyword arguments. However, 
-        # we can pass the additional parameters by using them as the keys of a dictionary
-        unique_pseudos = {}
-        for kind, pseudo in pseudos.iteritems():
-            unique_pseudos.setdefault(pseudo, []).append(kind)
+            if num_machines is None or max_wallclock_seconds is None:
+                self.abort_nowait("no automatic_parallelization requested, but the options do not specify both '{}' and '{}'"
+                    .format('num_machines', 'max_wallclock_seconds'))
 
-        for pseudo, kinds in unique_pseudos.iteritems():
-             self.ctx.inputs['pseudo'][tuple(kinds)] = pseudo
+        # Validate the inputs related to pseudopotentials
+        structure = self.inputs.structure
+        pseudos = self.inputs.get('pseudos', None)
+        pseudo_family = self.inputs.get('pseudo_family', None)
+
+        try:
+            self.ctx.inputs.pseudo = validate_and_prepare_pseudos_inputs(structure, pseudos, pseudo_family)
+        except ValueError as exception:
+            self.abort_nowait('{}'.format(exception))
+
+    def should_run_init(self):
+        """
+        Return whether an initialization calculation should be run, which is the case if the user wants
+        to use automatic parallelization and has specified the ParameterData node in the inputs
+        """
+        return 'automatic_parallelization' in self.inputs
+
+    def validate_init_inputs(self):
+        """
+        Validate the inputs that are required for the initialization calculation. The automatic_parallelization
+        input expects a ParameterData node with the following keys:
+
+            * max_wallclock_seconds
+            * target_time_seconds
+            * max_num_machines
+
+        If any of these keys are not set or any superfluous keys are specified, the workchain will abort.
+        """
+        automatic_parallelization = self.inputs.automatic_parallelization.get_dict()
+
+        expected_keys = ['max_wallclock_seconds', 'target_time_seconds', 'max_num_machines']
+        received_keys = [(key, automatic_parallelization.get(key, None)) for key in expected_keys]
+        remaining_keys = [key for key in automatic_parallelization.keys() if key not in expected_keys]
+
+        for k, v in [(key, value) for key, value in received_keys if value is None]:
+            self.abort_nowait('required key "{}" in automatic_parallelization input not found'.format(k))
+            return
+
+        if remaining_keys:
+            self.abort_nowait('detected unrecognized keys in the automatic_parallelization input: {}'.format(' '.join(remaining_keys)))
+            return
+
+        # Add the calculation mode to the automatic parallelization dictionary
+        self.ctx.automatic_parallelization = {
+            'max_wallclock_seconds': automatic_parallelization['max_wallclock_seconds'],
+            'target_time_seconds': automatic_parallelization['target_time_seconds'],
+            'max_num_machines': automatic_parallelization['max_num_machines'],
+            'calculation_mode': self.ctx.inputs.parameters['CONTROL']['calculation']
+        }
+
+        self.ctx.inputs._options.setdefault('resources', {})['num_machines'] = automatic_parallelization['max_num_machines']
+        self.ctx.inputs._options['max_wallclock_seconds'] = automatic_parallelization['max_wallclock_seconds']
+
+    def run_init(self):
+        """
+        Run a first dummy pw calculation that will exit straight after initialization. At that
+        point it will have generated some general output pertaining to the dimensions of the
+        calculation which we can use to distribute available computational resources
+        """
+        inputs = deepcopy(self.ctx.inputs)
+
+        # Set the initialization flag and the initial default options
+        inputs['settings']['ONLY_INITIALIZATION'] = True
+        inputs['_options'] = update_mapping(inputs['_options'], get_default_options())
+
+        # Prepare the final input dictionary
+        inputs = self._prepare_process_inputs(inputs)
+        process = PwCalculation.process()
+        running = submit(process, **inputs)
+
+        self.report('launching initialization PwCalculation<{}>'.format(running.pid))
+
+        return ToContext(calculation_init=running)
+
+    def inspect_init(self):
+        """
+        Use the initialization PwCalculation to determine the required resource settings for the
+        requested calculation based on the settings in the automatic_parallelization input
+        """
+        calculation = self.ctx.calculation_init
+
+        if not calculation.has_finished_ok():
+            self.abort_nowait('the initialization calculation did not finish successfully')
+            return
+
+        # Get automated parallelization settings
+        parallelization = get_pw_parallelization_parameters(calculation, **self.ctx.automatic_parallelization)
+
+        self.report('Determined the following resource settings from automatic_parallelization input: {}'
+            .format(parallelization))
+
+        options = self.ctx.inputs._options
+        base_resources = options.get('resources', {})
+        goal_resources = parallelization['resources']
+
+        scheduler = calculation.get_computer().get_scheduler()
+        resources = create_scheduler_resources(scheduler, base_resources, goal_resources)
+
+        cmdline = self.ctx.inputs.settings.get('cmdline', [])
+        cmdline = cmdline_remove_npools(cmdline)
+        cmdline.extend(['-nk', str(parallelization['npools'])])
+
+        # Set the new cmdline setting and resource options
+        self.ctx.inputs.settings['cmdline'] = cmdline
+        self.ctx.inputs._options = update_mapping(options, {'resources': resources})
+
+        return
 
     def should_run_pw(self):
         """
@@ -173,20 +273,14 @@ class PwBaseWorkChain(WorkChain):
         self.ctx.iteration += 1
 
         # Create local copy of general inputs stored in the context and adapt for next calculation
-        inputs = dict(self.ctx.inputs)
+        inputs = deepcopy(self.ctx.inputs)
 
-        if self.ctx.iteration == 1 and 'parent_folder' in self.inputs:
-            inputs['parameters']['CONTROL']['restart_mode'] = 'restart'
-            inputs['parent_folder'] = self.inputs.parent_folder
-        elif self.ctx.restart_calc:
+        if self.ctx.restart_calc:
             inputs['parameters']['CONTROL']['restart_mode'] = 'restart'
             inputs['parent_folder'] = self.ctx.restart_calc.out.remote_folder
-        else:
-            inputs['parameters']['CONTROL']['restart_mode'] = 'from_scratch'
 
-        inputs['parameters'] = ParameterData(dict=inputs['parameters'])
-        inputs['settings'] = ParameterData(dict=inputs['settings'])
-
+        # Prepare the final input dictionary
+        inputs = self._prepare_process_inputs(inputs)
         process = PwCalculation.process()
         running = submit(process, **inputs)
 
@@ -221,8 +315,8 @@ class PwBaseWorkChain(WorkChain):
 
         # Abort: unexpected state of last calculation
         elif calculation.get_state() not in expected_states:
-            self.abort_nowait('unexpected state ({}) of PwCalculation<{}>'.format(
-                calculation.get_state(), calculation.pk))
+            self.abort_nowait('unexpected state ({}) of PwCalculation<{}>'
+                .format(calculation.get_state(), calculation.pk))
 
         # Retry or abort: submission failed, try to restart or abort
         elif calculation.get_state() in [calc_states.SUBMISSIONFAILED]:
@@ -250,7 +344,8 @@ class PwBaseWorkChain(WorkChain):
             else:
                 self.ctx.unexpected_failure = False
                 self.ctx.restart_calc = calculation
-                self.report('calculation did not converge after {} iterations, restarting'.format(self.ctx.iteration))
+                self.report('calculation did not converge after {} iterations, restarting'
+                    .format(self.ctx.iteration))
 
         return
 
@@ -278,12 +373,23 @@ class PwBaseWorkChain(WorkChain):
             self.report('remote folders will not be cleaned')
             return
 
-        for calc in self.ctx.calculations:
+        cleaned_calcs = []
+        calculations = self.ctx.calculations
+
+        try:
+            calculations.append(self.ctx.calculation_init)
+        except AttributeError:
+            pass
+
+        for calculation in calculations:
             try:
-                calc.out.remote_folder._clean()
-                self.report('cleaned remote folder of {}<{}>'.format(calc.__class__.__name__, calc.pk))
+                calculation.out.remote_folder._clean()
+                cleaned_calcs.append(calculation.pk)
             except Exception:
                 pass
+
+        if len(cleaned_calcs) > 0:
+            self.report('cleaned remote folders of calculations: {}'.format(' '.join(map(str, cleaned_calcs))))
 
     def _handle_calculation_sanity_checks(self, calculation):
         """
@@ -357,6 +463,30 @@ class PwBaseWorkChain(WorkChain):
         if not is_handled:
             raise UnexpectedFailure('PwCalculation<{}> failed due to an unknown reason'.format(calculation.pk))
 
+    def _prepare_process_inputs(self, inputs):
+        """
+        Prepare the inputs dictionary for a PwCalculation process. The 'max_seconds' setting in the 'CONTROL' card
+        of the parameters will be set to a fraction of the 'max_wallclock_seconds' that will be given to the job via
+        the '_options' dictionary. This will prevent the job from being prematurely terminated by the scheduler without
+        getting the chance to exit cleanly. Any remaining bare dictionaries in the inputs dictionary will be wrapped
+        in a ParameterData data node except for the '_options' key which should remain a standard dictionary
+        """
+        prepared_inputs = {}
+
+        # Limit the max seconds to a fraction of the scheduler's max_wallclock_seconds to prevent early termination
+        max_wallclock_seconds = inputs['_options']['max_wallclock_seconds']
+        max_seconds_factor = self.defaults.delta_factor_max_seconds
+        max_seconds = max_wallclock_seconds * max_seconds_factor
+        inputs['parameters']['CONTROL']['max_seconds'] = max_seconds
+
+        # Wrap all the bare dictionaries in a ParameterData
+        for key, value in inputs.iteritems():
+            if key != '_options' and isinstance(value, dict) and all([isinstance(k, (str, unicode)) for k in value.keys()]):
+                prepared_inputs[key] = ParameterData(dict=value)
+            else:
+                prepared_inputs[key] = value
+
+        return prepared_inputs
 
 def get_error_handlers():
     """

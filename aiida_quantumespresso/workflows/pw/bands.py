@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from aiida.orm import Code
-from aiida.orm.data.base import Str, Float
+from aiida.orm.data.base import Str, Float, Bool
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.bands import BandsData
@@ -12,7 +12,7 @@ from aiida.common.links import LinkType
 from aiida.common.exceptions import AiidaException, NotExistent
 from aiida.common.datastructures import calc_states
 from aiida.work.run import submit
-from aiida.work.workchain import WorkChain, ToContext, while_, append_
+from aiida.work.workchain import WorkChain, ToContext, while_, append_, if_
 from aiida.work.workfunction import workfunction
 from seekpath.aiidawrappers import get_path, get_explicit_k_path
 
@@ -36,12 +36,17 @@ class PwBandsWorkChain(WorkChain):
         spec.input('vdw_table', valid_type=SinglefileData, required=False)
         spec.input('parameters', valid_type=ParameterData)
         spec.input('settings', valid_type=ParameterData)
-        spec.input('options', valid_type=ParameterData)
+        spec.input('options', valid_type=ParameterData, required=False)
+        spec.input('skip_relax', valid_type=Bool, default=Bool(False))
+        spec.input('automatic_parallelization', valid_type=ParameterData, required=False)
         spec.input('group', valid_type=Str, required=False)
         spec.input_group('relax')
         spec.outline(
+            cls.validate_inputs,
             cls.setup,
-            cls.run_relax,
+            if_(cls.should_do_relax)(
+                cls.run_relax,
+            ),
             cls.run_seekpath,
             cls.run_scf,
             cls.run_bands,
@@ -60,8 +65,7 @@ class PwBandsWorkChain(WorkChain):
         self.ctx.inputs = {
             'code': self.inputs.code,
             'parameters': self.inputs.parameters.get_dict(),
-            'settings': self.inputs.settings,
-            'options': self.inputs.options,
+            'settings': self.inputs.settings
         }
 
         # We expect either a KpointsData with given mesh or a desired distance between k-points
@@ -78,7 +82,29 @@ class PwBandsWorkChain(WorkChain):
         if 'CONTROL' not in self.ctx.inputs['parameters']:
             self.ctx.inputs['parameters']['CONTROL'] = {}
 
+        # If options set, add it to the default inputs
+        if 'options' in self.inputs:
+            self.ctx.inputs['options'] = self.inputs.options
+
+        # If automatic parallelization was set, add it to the default inputs
+        if 'automatic_parallelization' in self.inputs:
+            self.ctx.inputs['automatic_parallelization'] = self.inputs.automatic_parallelization
+
         return
+
+    def validate_inputs(self):
+        """
+        Validate inputs that may depend on each other
+        """
+        if not any([key in self.inputs for key in ['options', 'automatic_parallelization']]):
+            self.abort_nowait('you have to specify either the options or automatic_parallelization input')
+            return
+
+    def should_do_relax(self):
+        """
+        If the skip_relax input is set to True we do not perform the relax calculation on the input structure
+        """
+        return not self.inputs.skip_relax.value
 
     def run_relax(self):
         """
@@ -91,6 +117,14 @@ class PwBandsWorkChain(WorkChain):
             'pseudo_family': self.inputs.pseudo_family,
         })
 
+        # If options set, add it to the default inputs
+        if 'options' in self.inputs:
+            inputs['options'] = self.inputs.options
+
+        # If automatic parallelization was set, add it to the default inputs
+        if 'automatic_parallelization' in self.inputs:
+            inputs['automatic_parallelization'] = self.inputs.automatic_parallelization
+
         running = submit(PwRelaxWorkChain, **inputs)
 
         self.report('launching PwRelaxWorkChain<{}>'.format(running.pid))
@@ -102,11 +136,14 @@ class PwBandsWorkChain(WorkChain):
         Run the relaxed structure through SeeKPath to get the new primitive structure, just in case
         the symmetry of the cell changed in the cell relaxation step
         """
-        try:
-            structure = self.ctx.workchain_relax.out.output_structure
-        except:
-            self.abort_nowait('the relax workchain did not output a output_structure node')
-            return
+        if self.inputs.skip_relax:
+            structure = self.inputs.structure
+        else:
+            try:
+                structure = self.ctx.workchain_relax.out.output_structure
+            except:
+                self.abort_nowait('the relax workchain did not output a output_structure node')
+                return
 
         result = seekpath_structure_analysis(structure)
 
@@ -128,12 +165,12 @@ class PwBandsWorkChain(WorkChain):
         inputs['parameters']['CONTROL']['calculation'] = calculation_mode
 
         # Construct a new kpoint mesh on the current structure or pass the static mesh
-        if 'kpoints_distance' in self.inputs:
+        if 'kpoints_mesh' in self.inputs:
+            kpoints_mesh = self.inputs.kpoints_mesh
+        else:
             kpoints_mesh = KpointsData()
             kpoints_mesh.set_cell_from_structure(structure)
             kpoints_mesh.set_kpoints_mesh_from_density(self.inputs.kpoints_distance.value)
-        else:
-            kpoints_mesh = self.inputs.kpoints_mesh
 
         # Final input preparation, wrapping dictionaries in ParameterData nodes
         inputs['kpoints'] = kpoints_mesh
@@ -168,7 +205,6 @@ class PwBandsWorkChain(WorkChain):
 
         # Tell the plugin to retrieve the bands
         settings = inputs['settings'].get_dict()
-        settings['also_bands'] = True
 
         # Final input preparation, wrapping dictionaries in ParameterData nodes
         inputs['kpoints'] = self.ctx.kpoints_path

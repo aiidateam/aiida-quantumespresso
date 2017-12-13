@@ -72,8 +72,7 @@ try:
     settings_dict = calc.inp.settings.get_dict()
 except AttributeError:
     settings_dict = {}
-settings_dict.update({'also_bands': True,
-                      'PARENT_FOLDER_SYMLINK': True})
+settings_dict.update({'PARENT_FOLDER_SYMLINK': True})
 
 new_input_dict = calc.inp.parameters.get_dict()
 if not parentcalc.res.smearing_method:
