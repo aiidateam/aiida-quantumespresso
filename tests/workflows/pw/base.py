@@ -44,7 +44,7 @@ def parser_setup():
         help='the maximum wallclock time in seconds to set for the calculations. (default: %(default)d)'
     )
     parser.add_argument(
-        '-x', '--clean-workdir', action="store_true", dest='clean_workdir',
+        '-x', '--clean-workdir', action='store_true', dest='clean_workdir',
         help='clean the remote folder of all the launched calculations after completion of the workchain'
     )
 
