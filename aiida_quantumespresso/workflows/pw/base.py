@@ -86,9 +86,10 @@ class PwBaseWorkChain(WorkChain):
 
     def setup(self):
         """
-        Initialize context variables and define convenience dictionary of inputs for PwCalculation. Only the required inputs
-        are added here as the non required ones will have to be validated first in the next step of the outline. ParameterData
-        nodes that may need to be update during the workchain are unpacked into their dictionary for convenience.
+        Initialize context variables and define convenience dictionary of inputs for PwCalculation. Only the
+        required inputs are added here as the non required ones will have to be validated first in the next step
+        of the outline. ParameterData nodes that may need to be update during the workchain are unpacked into
+        their dictionary for convenience.
         """
         self.ctx.max_iterations = self.inputs.max_iterations.value
         self.ctx.unexpected_failure = False
@@ -178,30 +179,31 @@ class PwBaseWorkChain(WorkChain):
 
         If any of these keys are not set or any superfluous keys are specified, the workchain will abort.
         """
-        automatic_parallelization = self.inputs.automatic_parallelization.get_dict()
+        parallelization = self.inputs.automatic_parallelization.get_dict()
 
         expected_keys = ['max_wallclock_seconds', 'target_time_seconds', 'max_num_machines']
-        received_keys = [(key, automatic_parallelization.get(key, None)) for key in expected_keys]
-        remaining_keys = [key for key in automatic_parallelization.keys() if key not in expected_keys]
+        received_keys = [(key, parallelization.get(key, None)) for key in expected_keys]
+        remaining_keys = [key for key in parallelization.keys() if key not in expected_keys]
 
         for k, v in [(key, value) for key, value in received_keys if value is None]:
             self.abort_nowait('required key "{}" in automatic_parallelization input not found'.format(k))
             return
 
         if remaining_keys:
-            self.abort_nowait('detected unrecognized keys in the automatic_parallelization input: {}'.format(' '.join(remaining_keys)))
+            self.abort_nowait('detected unrecognized keys in the automatic_parallelization input: {}'
+                .format(' '.join(remaining_keys)))
             return
 
         # Add the calculation mode to the automatic parallelization dictionary
         self.ctx.automatic_parallelization = {
-            'max_wallclock_seconds': automatic_parallelization['max_wallclock_seconds'],
-            'target_time_seconds': automatic_parallelization['target_time_seconds'],
-            'max_num_machines': automatic_parallelization['max_num_machines'],
+            'max_wallclock_seconds': parallelization['max_wallclock_seconds'],
+            'target_time_seconds': parallelization['target_time_seconds'],
+            'max_num_machines': parallelization['max_num_machines'],
             'calculation_mode': self.ctx.inputs.parameters['CONTROL']['calculation']
         }
 
-        self.ctx.inputs._options.setdefault('resources', {})['num_machines'] = automatic_parallelization['max_num_machines']
-        self.ctx.inputs._options['max_wallclock_seconds'] = automatic_parallelization['max_wallclock_seconds']
+        self.ctx.inputs._options.setdefault('resources', {})['num_machines'] = parallelization['max_num_machines']
+        self.ctx.inputs._options['max_wallclock_seconds'] = parallelization['max_wallclock_seconds']
 
     def run_init(self):
         """
