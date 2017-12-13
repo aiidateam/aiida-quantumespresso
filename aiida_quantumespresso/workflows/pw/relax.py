@@ -34,6 +34,7 @@ class PwRelaxWorkChain(WorkChain):
         spec.input('pseudo_family', valid_type=Str, required=False)
         spec.input('kpoints', valid_type=KpointsData, required=False)
         spec.input('kpoints_distance', valid_type=Float, default=Float(0.2))
+        spec.input('kpoints_force_parity', valid_type=Bool, default=Bool(False))
         spec.input('vdw_table', valid_type=SinglefileData, required=False)
         spec.input('parameters', valid_type=ParameterData)
         spec.input('settings', valid_type=ParameterData, required=False)
@@ -67,6 +68,7 @@ class PwRelaxWorkChain(WorkChain):
         """
         Input validation and context setup
         """
+        self.ctx.current_structure = self.inputs.structure
         self.ctx.current_parent_folder = None
         self.ctx.current_cell_volume = None
         self.ctx.is_converged = False
@@ -74,7 +76,6 @@ class PwRelaxWorkChain(WorkChain):
 
         self.ctx.inputs = AttributeDict({
             'code': self.inputs.code,
-            'structure': self.inputs.structure,
             'parameters': self.inputs.parameters.get_dict(),
         })
 
@@ -144,13 +145,17 @@ class PwRelaxWorkChain(WorkChain):
         self.ctx.iteration += 1
 
         inputs = deepcopy(self.ctx.inputs)
+        inputs['structure'] = self.ctx.current_structure
         inputs['parameters'] = ParameterData(dict=inputs['parameters'])
 
         # Construct a new kpoint mesh on the current structure or pass the static mesh
         if 'kpoints' not in self.inputs or self.inputs.kpoints == None:
             kpoints = KpointsData()
-            kpoints.set_cell_from_structure(self.ctx.inputs.structure)
-            kpoints.set_kpoints_mesh_from_density(self.inputs.kpoints_distance.value, force_parity=True)
+            kpoints.set_cell_from_structure(self.ctx.current_structure)
+            kpoints.set_kpoints_mesh_from_density(
+                self.inputs.kpoints_distance.value,
+                force_parity=self.inputs.kpoints_force_parity.value
+            )
             inputs['kpoints'] = kpoints
         else:
             inputs['kpoints'] = self.inputs.kpoints
@@ -184,7 +189,7 @@ class PwRelaxWorkChain(WorkChain):
 
         # Set relaxed structure as input structure for next iteration
         self.ctx.current_parent_folder = workchain.out.remote_folder
-        self.ctx.inputs.structure = structure
+        self.ctx.current_structure = structure
         self.report('after iteration {} cell volume of relaxed structure is {}'
             .format(self.ctx.iteration, curr_cell_volume))
 
@@ -226,8 +231,11 @@ class PwRelaxWorkChain(WorkChain):
         # Construct a new kpoint mesh on the current structure or pass the static mesh
         if 'kpoints' not in self.inputs or self.inputs.kpoints == None:
             kpoints = KpointsData()
-            kpoints.set_cell_from_structure(self.ctx.inputs.structure)
-            kpoints.set_kpoints_mesh_from_density(self.inputs.kpoints_distance.value, force_parity=True)
+            kpoints.set_cell_from_structure(self.ctx.current_structure)
+            kpoints.set_kpoints_mesh_from_density(
+                self.inputs.kpoints_distance.value,
+                force_parity=self.inputs.kpoints_force_parity.value
+            )
         else:
             kpoints = self.inputs.kpoints
 
