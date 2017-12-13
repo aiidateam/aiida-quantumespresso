@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from copy import deepcopy
 from aiida.orm import Code
 from aiida.orm.data.base import Str, Float, Bool
 from aiida.orm.data.folder import FolderData
@@ -9,6 +10,7 @@ from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.data.singlefile import SinglefileData
 from aiida.orm.group import Group
 from aiida.orm.utils import WorkflowFactory
+from aiida.common.extendeddicts import AttributeDict
 from aiida.common.exceptions import AiidaException, NotExistent
 from aiida.common.datastructures import calc_states
 from aiida.work.run import submit
@@ -32,7 +34,7 @@ class PwRelaxWorkChain(WorkChain):
         spec.input('kpoints_distance', valid_type=Float, default=Float(0.2))
         spec.input('vdw_table', valid_type=SinglefileData, required=False)
         spec.input('parameters', valid_type=ParameterData)
-        spec.input('settings', valid_type=ParameterData)
+        spec.input('settings', valid_type=ParameterData, required=False)
         spec.input('options', valid_type=ParameterData, required=False)
         spec.input('automatic_parallelization', valid_type=ParameterData, required=False)
         spec.input('final_scf', valid_type=Bool, default=Bool(False))
@@ -40,6 +42,7 @@ class PwRelaxWorkChain(WorkChain):
         spec.input('meta_converge', valid_type=Bool, default=Bool(True))
         spec.input('relaxation_scheme', valid_type=Str, default=Str('vc-relax'))
         spec.input('volume_convergence', valid_type=Float, default=Float(0.01))
+        spec.input('clean_workdir', valid_type=Bool, default=Bool(False))
         spec.outline(
             cls.setup,
             cls.validate_inputs,
@@ -66,12 +69,12 @@ class PwRelaxWorkChain(WorkChain):
         self.ctx.is_converged = False
         self.ctx.iteration = 0
 
-        self.ctx.inputs = {
+        self.ctx.inputs = AttributeDict({
             'code': self.inputs.code,
             'structure': self.inputs.structure,
             'parameters': self.inputs.parameters.get_dict(),
-            'settings': self.inputs.settings
-        }
+            'clean_workdir': self.inputs.clean_workdir,
+        })
 
         # We expect either a KpointsData with given mesh or a desired distance between k-points
         if all([key not in self.inputs for key in ['kpoints', 'kpoints_distance']]):
@@ -80,30 +83,33 @@ class PwRelaxWorkChain(WorkChain):
 
         # We expect either a pseudo family string or an explicit list of pseudos
         if self.inputs.pseudo_family:
-            self.ctx.inputs['pseudo_family'] = self.inputs.pseudo_family
+            self.ctx.inputs.pseudo_family = self.inputs.pseudo_family
         elif self.inputs.pseudos:
-            self.ctx.inputs['pseudos'] = self.inputs.pseudos
+            self.ctx.inputs.pseudos = self.inputs.pseudos
         else:
             self.abort_nowait('neither explicit pseudos nor a pseudo_family was specified in the inputs')
             return
 
         # Add the van der Waals kernel table file if specified
         if 'vdw_table' in self.inputs:
-            self.ctx.inputs['vdw_table'] = self.inputs.vdw_table
+            self.ctx.inputs.vdw_table = self.inputs.vdw_table
 
         # Set the correct relaxation scheme in the input parameters
-        if 'CONTROL' not in self.ctx.inputs['parameters']:
-            self.ctx.inputs['parameters']['CONTROL'] = {}
+        if 'CONTROL' not in self.ctx.inputs.parameters:
+            self.ctx.inputs.parameters['CONTROL'] = {}
+
+        if 'settings' in self.inputs:
+            self.ctx.inputs.settings = self.inputs.settings
 
         # If options set, add it to the default inputs
         if 'options' in self.inputs:
-            self.ctx.inputs['options'] = self.inputs.options
+            self.ctx.inputs.options = self.inputs.options
 
         # If automatic parallelization was set, add it to the default inputs
         if 'automatic_parallelization' in self.inputs:
-            self.ctx.inputs['automatic_parallelization'] = self.inputs.automatic_parallelization
+            self.ctx.inputs.automatic_parallelization = self.inputs.automatic_parallelization
 
-        self.ctx.inputs['parameters']['CONTROL']['calculation'] = self.inputs.relaxation_scheme
+        self.ctx.inputs.parameters['CONTROL']['calculation'] = self.inputs.relaxation_scheme
 
         return
 
@@ -135,13 +141,13 @@ class PwRelaxWorkChain(WorkChain):
         """
         self.ctx.iteration += 1
 
-        inputs = dict(self.ctx.inputs)
+        inputs = deepcopy(self.ctx.inputs)
         inputs['parameters'] = ParameterData(dict=inputs['parameters'])
 
         # Construct a new kpoint mesh on the current structure or pass the static mesh
         if 'kpoints' not in self.inputs or self.inputs.kpoints == None:
             kpoints = KpointsData()
-            kpoints.set_cell_from_structure(self.ctx.inputs['structure'])
+            kpoints.set_cell_from_structure(self.ctx.inputs.structure)
             kpoints.set_kpoints_mesh_from_density(self.inputs.kpoints_distance.value, force_parity=True)
             inputs['kpoints'] = kpoints
         else:
@@ -176,7 +182,7 @@ class PwRelaxWorkChain(WorkChain):
 
         # Set relaxed structure as input structure for next iteration
         self.ctx.current_parent_folder = workchain.out.remote_folder
-        self.ctx.inputs['structure'] = structure
+        self.ctx.inputs.structure = structure
         self.report('after iteration {} cell volume of relaxed structure is {}'
             .format(self.ctx.iteration, curr_cell_volume))
 
@@ -209,7 +215,7 @@ class PwRelaxWorkChain(WorkChain):
         """
         Run the PwBaseWorkChain to run a final scf PwCalculation for the relaxed structure
         """
-        inputs = dict(self.ctx.inputs)
+        inputs = deepcopy(self.ctx.inputs)
 
         parameters = inputs['parameters']
         parameters['CONTROL']['calculation'] = 'scf'
@@ -218,7 +224,7 @@ class PwRelaxWorkChain(WorkChain):
         # Construct a new kpoint mesh on the current structure or pass the static mesh
         if 'kpoints' not in self.inputs or self.inputs.kpoints == None:
             kpoints = KpointsData()
-            kpoints.set_cell_from_structure(self.ctx.inputs['structure'])
+            kpoints.set_cell_from_structure(self.ctx.inputs.structure)
             kpoints.set_kpoints_mesh_from_density(self.inputs.kpoints_distance.value, force_parity=True)
         else:
             kpoints = self.inputs.kpoints
