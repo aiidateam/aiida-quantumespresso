@@ -2,6 +2,7 @@
 from aiida.common.extendeddicts import AttributeDict
 
 pw = AttributeDict({
+    'conv_thr': 1e-6,
     'degauss': 0.,
     'diagonalization': 'david',
     'electron_maxstep': 100,

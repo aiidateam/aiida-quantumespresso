@@ -44,7 +44,7 @@ def parser_setup():
         help='the maximum wallclock time in seconds to set for the calculations. (default: %(default)d)'
     )
     parser.add_argument(
-        '-x', '--clean-workdir', action="store_true", dest='clean_workdir',
+        '-x', '--clean-workdir', action='store_true', dest='clean_workdir',
         help='clean the remote folder of all the launched calculations after completion of the workchain'
     )
 
@@ -96,7 +96,8 @@ def execute(args):
         'pseudo_family': Str(args.pseudo_family),
         'kpoints': kpoints,
         'parameters': ParameterData(dict=parameters),
-        'automatic_parallelization': ParameterData(dict=automatic_parallelization)
+        'automatic_parallelization': ParameterData(dict=automatic_parallelization),
+        'final_scf': Bool(True)
     }
 
     if args.clean_workdir:

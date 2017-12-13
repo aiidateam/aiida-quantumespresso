@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from copy import deepcopy
+from aiida.common.links import LinkType
 from aiida.orm import Code
 from aiida.orm.data.base import Str, Float, Bool
 from aiida.orm.data.folder import FolderData
@@ -9,13 +10,14 @@ from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.data.singlefile import SinglefileData
 from aiida.orm.group import Group
-from aiida.orm.utils import WorkflowFactory
+from aiida.orm.utils import CalculationFactory, WorkflowFactory
 from aiida.common.extendeddicts import AttributeDict
 from aiida.common.exceptions import AiidaException, NotExistent
 from aiida.common.datastructures import calc_states
 from aiida.work.run import submit
 from aiida.work.workchain import WorkChain, ToContext, if_, while_, append_
 
+PwCalculation = CalculationFactory('quantumespresso.pw')
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 
 class PwRelaxWorkChain(WorkChain):
@@ -54,6 +56,7 @@ class PwRelaxWorkChain(WorkChain):
                 cls.run_final_scf,
             ),
             cls.results,
+            cls.clean,
         )
         spec.output('output_structure', valid_type=StructureData)
         spec.output('output_parameters', valid_type=ParameterData)
@@ -73,7 +76,6 @@ class PwRelaxWorkChain(WorkChain):
             'code': self.inputs.code,
             'structure': self.inputs.structure,
             'parameters': self.inputs.parameters.get_dict(),
-            'clean_workdir': self.inputs.clean_workdir,
         })
 
         # We expect either a KpointsData with given mesh or a desired distance between k-points
@@ -271,3 +273,36 @@ class PwRelaxWorkChain(WorkChain):
                 self.out(link_label, node)
                 self.report("attaching {}<{}> as an output node with label '{}'"
                     .format(node.__class__.__name__, node.pk, link_label))
+
+    def clean(self):
+        """
+        Clean remote folders of all PwCalculations run by ourselves and the called subworkchains, if the clean_workdir
+        parameter was set to true in the Workchain inputs. We perform this cleaning only at the very end of the
+        workchain and do not pass the clean_workdir input directly to the sub workchains that we call, because some of
+        the sub workchains may rely on the calculation of on of the previous sub workchains.
+        """
+        if not self.inputs.clean_workdir.value:
+            self.report('remote folders will not be cleaned')
+            return
+
+        cleaned_calcs = []
+        workchains = self.ctx.workchains
+
+        try:
+            workchains.append(self.ctx.workchain_scf)
+        except AttributeError:
+            pass
+
+        for workchain in workchains:
+            calculations = workchain.get_outputs(link_type=LinkType.CALL)
+
+            for calculation in calculations:
+                if isinstance(calculation, PwCalculation):
+                    try:
+                        calculation.out.remote_folder._clean()
+                        cleaned_calcs.append(calculation.pk)
+                    except Exception:
+                        pass
+
+        if len(cleaned_calcs) > 0:
+            self.report('cleaned remote folders of calculations: {}'.format(' '.join(map(str, cleaned_calcs))))
