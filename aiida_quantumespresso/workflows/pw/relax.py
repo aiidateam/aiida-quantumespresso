@@ -138,9 +138,10 @@ class PwRelaxWorkChain(WorkChain):
     def should_run_final_scf(self):
         """
         Return whether after successful relaxation a final scf calculation should be run. If the maximum number of
-        meta convergence iterations has been exceeded, the structure is not relaxed and the final scf should not be run
+        meta convergence iterations has been exceeded and convergence has not been reached, the structure cannot be
+        considered to be relaxed and the final scf should not be run
         """
-        return self.inputs.final_scf.value and self.ctx.iteration < self.inputs.max_meta_convergence_iterations.value
+        return self.inputs.final_scf.value and self.ctx.is_converged
 
     def run_relax(self):
         """
@@ -269,8 +270,10 @@ class PwRelaxWorkChain(WorkChain):
         # Get the latest workchain, which is either the workchain_scf if it ran or otherwise the last regular workchain
         try:
             workchain = self.ctx.workchain_scf
+            structure = workchain.inp.structure
         except AttributeError:
             workchain = self.ctx.workchains[-1]
+            structure = workchain.out.output_structure
 
         if 'group' in self.inputs:
             # Retrieve the final successful calculation through its output_parameters
@@ -281,9 +284,12 @@ class PwRelaxWorkChain(WorkChain):
             self.report("storing the final PwCalculation<{}> in the group '{}'"
                 .format(calculation.pk, self.inputs.group.value))
 
-        link_labels = ['output_structure', 'output_parameters', 'remote_folder',  'retrieved']
+        # Store the structure separately since the PwBaseWorkChain of final scf will not have it as an output
+        self.out('output_structure', structure)
+        self.report("attaching {}<{}> as an output node with label '{}'"
+            .format(structure.__class__.__name__, structure.pk, 'output_structure'))
 
-        for link_label in link_labels:
+        for link_label in ['output_parameters', 'remote_folder',  'retrieved']:
             if link_label in workchain.out:
                 node = workchain.get_outputs_dict()[link_label]
                 self.out(link_label, node)
