@@ -76,7 +76,6 @@ class PwBaseWorkChain(WorkChain):
                 cls.inspect_pw,
             ),
             cls.results,
-            cls.clean,
         )
         spec.output('output_band', valid_type=BandsData, required=False)
         spec.output('output_structure', valid_type=StructureData, required=False)
@@ -366,17 +365,25 @@ class PwBaseWorkChain(WorkChain):
         if 'output_band' in self.ctx.restart_calc.out:
             self.out('output_band', self.ctx.restart_calc.out.output_band)
 
-    def clean(self):
+    def on_destroy(self):
         """
         Clean remote folders of the PwCalculations that were run if the clean_workdir parameter was
         set to true in the Workchain inputs
         """
+        super(PwBaseWorkChain, self).on_destroy()
+        if not self.has_finished():
+            return
+
         if not self.inputs.clean_workdir.value:
             self.report('remote folders will not be cleaned')
             return
 
         cleaned_calcs = []
-        calculations = self.ctx.calculations
+
+        try:
+            calculations = self.ctx.calculations
+        except AttributeError:
+            calculations = []
 
         try:
             calculations.append(self.ctx.calculation_init)

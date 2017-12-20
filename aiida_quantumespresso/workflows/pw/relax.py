@@ -59,7 +59,6 @@ class PwRelaxWorkChain(WorkChain):
                 cls.run_final_scf,
             ),
             cls.results,
-            cls.clean,
         )
         spec.output('output_structure', valid_type=StructureData)
         spec.output('output_parameters', valid_type=ParameterData)
@@ -296,19 +295,27 @@ class PwRelaxWorkChain(WorkChain):
                 self.report("attaching {}<{}> as an output node with label '{}'"
                     .format(node.__class__.__name__, node.pk, link_label))
 
-    def clean(self):
+    def on_destroy(self):
         """
         Clean remote folders of all PwCalculations run by ourselves and the called subworkchains, if the clean_workdir
         parameter was set to true in the Workchain inputs. We perform this cleaning only at the very end of the
         workchain and do not pass the clean_workdir input directly to the sub workchains that we call, because some of
         the sub workchains may rely on the calculation of on of the previous sub workchains.
         """
+        super(PwRelaxWorkChain, self).on_destroy()
+        if not self.has_finished():
+            return
+
         if not self.inputs.clean_workdir.value:
             self.report('remote folders will not be cleaned')
             return
 
         cleaned_calcs = []
-        workchains = self.ctx.workchains
+
+        try:
+            workchains = self.ctx.workchains
+        except AttributeError:
+            workchains = []
 
         try:
             workchains.append(self.ctx.workchain_scf)
