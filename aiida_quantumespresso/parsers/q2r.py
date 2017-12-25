@@ -32,12 +32,6 @@ class Q2rParser(Parser):
 
         # suppose at the start that the job is successful
         successful = True
-
-        # check if I'm not to overwrite anything
-        state = self._calc.get_state()
-        if state != calc_states.PARSING:
-            raise InvalidOperation("Calculation not in {} state"
-                                   .format(calc_states.PARSING) )
         
         # Check that the retrieved folder is there 
         try:

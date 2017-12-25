@@ -51,11 +51,6 @@ class DosParser(Parser):
         successful = True
         new_nodes_list = []
 
-        # check if I'm not to overwrite anything
-        state = self._calc.get_state()
-        if state != calc_states.PARSING:
-           raise InvalidOperation("Calculation not in {} state")
-
         try:
             out_folder = self._calc.get_retrieved_node()
         except KeyError:
