@@ -5,7 +5,7 @@ from aiida.orm.data.parameter import ParameterData
 from aiida.work.workchain import WorkChain, ToContext, append_
 from aiida.work.run import submit
 from aiida_quantumespresso.common.pluginloader import get_plugin, get_plugins
-from aiida_quantumespresso.common.exceptions import UnexpectedFailure
+from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
 
 class BaseRestartWorkChain(WorkChain):
     """
@@ -132,7 +132,7 @@ class BaseRestartWorkChain(WorkChain):
             if calculation.get_state() in [calc_states.FAILED]:
                 try:
                     handled = self._handle_calculation_failure(calculation)
-                except UnexpectedFailure as exception:
+                except UnexpectedCalculationFailure as exception:
                     self._handle_unexpected_failure(calculation, exception)
                     self.ctx.unexpected_failure = True
 
@@ -245,7 +245,7 @@ class BaseRestartWorkChain(WorkChain):
             _ = outputs['warnings']
             _ = outputs['parser_warnings']
         except (NotExistent, AttributeError, KeyError) as exception:
-            raise UnexpectedFailure(exception)
+            raise UnexpectedCalculationFailure(exception)
 
         handlers = []
         is_handled = False
@@ -259,7 +259,7 @@ class BaseRestartWorkChain(WorkChain):
             handlers.extend(plugin_handlers)
 
         if len(handlers) == 0:
-            raise UnexpectedFailure('no calculation error handlers were found')
+            raise UnexpectedCalculationFailure('no calculation error handlers were found')
 
         # Sort the handlers based on their priority in reverse order
         handlers.sort(key=lambda x: x.priority, reverse=True)
@@ -278,7 +278,7 @@ class BaseRestartWorkChain(WorkChain):
 
         # If none of the executed error handlers reported that they handled an error, the failure reason is unknown
         if not is_handled:
-            raise UnexpectedFailure('calculation failure was not handled')
+            raise UnexpectedCalculationFailure('calculation failure was not handled')
 
         return
 

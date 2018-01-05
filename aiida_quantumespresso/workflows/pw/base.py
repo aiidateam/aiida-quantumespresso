@@ -13,7 +13,7 @@ from aiida.orm.utils import CalculationFactory
 from aiida.common.extendeddicts import AttributeDict
 from aiida.work.run import submit
 from aiida.work.workchain import ToContext, if_, while_
-from aiida_quantumespresso.common.exceptions import UnexpectedFailure
+from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
 from aiida_quantumespresso.common.workchain import ErrorHandlerReport
 from aiida_quantumespresso.common.workchain import ErrorHandler
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
@@ -319,7 +319,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         """
         warnings = calculation.res.warnings
         if (any(['%%%' in w for w in warnings]) or any(['Error' in w for w in warnings])):
-            raise UnexpectedFailure('PwCalculation<{}> failed due to an unknown reason'.format(calculation.pk))
+            raise UnexpectedCalculationFailure('PwCalculation<{}> failed due to an unknown reason'
+                .format(calculation.pk))
 
     def _handle_error_exceeded_maximum_walltime(self, calculation):
         """
@@ -347,7 +348,7 @@ def get_error_handlers():
     return [
         ErrorHandler(500, PwBaseWorkChain._handle_error_read_namelists),
         ErrorHandler(400, PwBaseWorkChain._handle_error_diagonalization),
-        ErrorHandler(600, PwBaseWorkChain._handle_error_unrecognized_by_parser),
+        ErrorHandler(300, PwBaseWorkChain._handle_error_unrecognized_by_parser),
         ErrorHandler(200, PwBaseWorkChain._handle_error_exceeded_maximum_walltime),
         ErrorHandler(100, PwBaseWorkChain._handle_error_convergence_not_reached)
     ]
