@@ -286,7 +286,6 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         """
         The calculation failed because it could not read the generated input file
         """
-        self.report('handling')
         if any(['read_namelists' in w for w in calculation.res.warnings]):
             self.abort_nowait('PwCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
             return self.ErrorHandlingReport(True, False)
@@ -295,7 +294,6 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         """
         Diagonalization failed with current scheme. Try to restart from previous clean calculation with different scheme
         """
-        self.report('handling')
         input_parameters = calculation.inp.parameters.get_dict()
         input_electrons = input_parameters.get('ELECTRONS', {})
         diagonalization = input_electrons.get('diagonalization', self.defaults['qe']['diagonalization'])
@@ -317,7 +315,6 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         Calculation failed with an error that was not recognized by the parser and was attached
         wholesale to the warnings. We treat it as an unexpected failure and raise the exception
         """
-        self.report('handling')
         warnings = calculation.res.warnings
         if (any(['%%%' in w for w in warnings]) or any(['Error' in w for w in warnings])):
             raise UnexpectedFailure('PwCalculation<{}> failed due to an unknown reason'.format(calculation.pk))
@@ -326,12 +323,20 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         """
         Calculation ended nominally but ran out of allotted wall time
         """
-        self.report('handling')
         if 'Maximum CPU time exceeded' in calculation.res.warnings:
             self.ctx.restart_calc = calculation
             self.report('PwCalculation<{}> terminated because maximum wall time was exceeded, restarting'
                 .format(calculation.pk))
             return self.ErrorHandlingReport(True, False)
+
+    def _handle_error_convergence_not_reached(self, calculation):
+        """
+        At the end of the scf cycle, the convergence threshold was not reached. We simply restart
+        from the previous calculation without changing any of the input parameters
+        """
+        if 'The scf cycle did not reach convergence.' in calculation.res.warnings:
+            self.report('PwCalculation<{}> did not converge, restart from previous calculation'.format(calculation.pk))
+            return self.ErrorHandlingReport(True, True)
 
 def get_error_handlers():
     """
@@ -341,5 +346,6 @@ def get_error_handlers():
         PwBaseWorkChain._handle_error_read_namelists,
         PwBaseWorkChain._handle_error_diagonalization,
         PwBaseWorkChain._handle_error_unrecognized_by_parser,
-        PwBaseWorkChain._handle_error_exceeded_maximum_walltime
+        PwBaseWorkChain._handle_error_exceeded_maximum_walltime,
+        PwBaseWorkChain._handle_error_convergence_not_reached
     ]
