@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from collections import namedtuple
 from aiida.common.datastructures import calc_states
 from aiida.orm.calculation import JobCalculation
 from aiida.orm.data.parameter import ParameterData
@@ -50,8 +49,6 @@ class BaseRestartWorkChain(WorkChain):
     _calculation_class = None
     _error_handler_entry_point = None
     _expected_calculation_states = [calc_states.FINISHED, calc_states.FAILED, calc_states.SUBMISSIONFAILED]
-
-    ErrorHandlingReport = namedtuple('ErrorHandlingReport', 'is_handled do_break')
 
     def __init__(self, *args, **kwargs):
         super(BaseRestartWorkChain, self).__init__(*args, **kwargs)
@@ -250,13 +247,13 @@ class BaseRestartWorkChain(WorkChain):
         except (NotExistent, AttributeError, KeyError) as exception:
             raise UnexpectedFailure(exception)
 
+        handlers = []
         is_handled = False
 
         if self._error_handler_entry_point is None:
             self.abort_nowait('no error handler entry point registered, cannot handle calculation failure')
             return
 
-        handlers = []
         for plugin in get_plugins(self._error_handler_entry_point):
             plugin_handlers = get_plugin(self._error_handler_entry_point, plugin)()
             handlers.extend(plugin_handlers)
@@ -264,8 +261,11 @@ class BaseRestartWorkChain(WorkChain):
         if len(handlers) == 0:
             raise UnexpectedFailure('no calculation error handlers were found')
 
+        # Sort the handlers based on their priority in reverse order
+        handlers.sort(key=lambda x: x.priority, reverse=True)
+
         for handler in handlers:
-            handler_report = handler(self, calculation)
+            handler_report = handler.method(self, calculation)
 
             # If at least one error is handled, we consider the computation failure handled
             if handler_report and handler_report.is_handled:
@@ -276,7 +276,7 @@ class BaseRestartWorkChain(WorkChain):
             if handler_report and handler_report.do_break:
                 break
 
-        # If none of the executed error handler reported that they handled an error, the failure reason is unknown
+        # If none of the executed error handlers reported that they handled an error, the failure reason is unknown
         if not is_handled:
             raise UnexpectedFailure('calculation failure was not handled')
 

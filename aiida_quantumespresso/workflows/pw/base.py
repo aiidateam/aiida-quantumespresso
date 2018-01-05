@@ -14,6 +14,8 @@ from aiida.common.extendeddicts import AttributeDict
 from aiida.work.run import submit
 from aiida.work.workchain import ToContext, if_, while_
 from aiida_quantumespresso.common.exceptions import UnexpectedFailure
+from aiida_quantumespresso.common.workchain import ErrorHandlerReport
+from aiida_quantumespresso.common.workchain import ErrorHandler
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 from aiida_quantumespresso.utils.mapping import update_mapping
 from aiida_quantumespresso.utils.pseudopotential import validate_and_prepare_pseudos_inputs
@@ -288,7 +290,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         """
         if any(['read_namelists' in w for w in calculation.res.warnings]):
             self.abort_nowait('PwCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
-            return self.ErrorHandlingReport(True, False)
+            return ErrorHandlerReport(True, False)
 
     def _handle_error_diagonalization(self, calculation):
         """
@@ -308,7 +310,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             self.ctx.inputs['parameters']['ELECTRONS']['diagonalization'] = 'cg'
             self.report('PwCalculation<{}> failed to diagonalize with "{}" scheme'.format(diagonalization))
             self.report('Restarting with diagonalization scheme "{}"'.format(new_diagonalization))
-            return self.ErrorHandlingReport(True, False)
+            return ErrorHandlerReport(True, False)
 
     def _handle_error_unrecognized_by_parser(self, calculation):
         """
@@ -327,7 +329,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             self.ctx.restart_calc = calculation
             self.report('PwCalculation<{}> terminated because maximum wall time was exceeded, restarting'
                 .format(calculation.pk))
-            return self.ErrorHandlingReport(True, False)
+            return ErrorHandlerReport(True, False)
 
     def _handle_error_convergence_not_reached(self, calculation):
         """
@@ -336,16 +338,16 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         """
         if 'The scf cycle did not reach convergence.' in calculation.res.warnings:
             self.report('PwCalculation<{}> did not converge, restart from previous calculation'.format(calculation.pk))
-            return self.ErrorHandlingReport(True, True)
+            return ErrorHandlerReport(True, True)
 
 def get_error_handlers():
     """
     Return a list of all the implemented error handlers in the case of a PwCalculation failure
     """
     return [
-        PwBaseWorkChain._handle_error_read_namelists,
-        PwBaseWorkChain._handle_error_diagonalization,
-        PwBaseWorkChain._handle_error_unrecognized_by_parser,
-        PwBaseWorkChain._handle_error_exceeded_maximum_walltime,
-        PwBaseWorkChain._handle_error_convergence_not_reached
+        ErrorHandler(500, PwBaseWorkChain._handle_error_read_namelists),
+        ErrorHandler(400, PwBaseWorkChain._handle_error_diagonalization),
+        ErrorHandler(600, PwBaseWorkChain._handle_error_unrecognized_by_parser),
+        ErrorHandler(200, PwBaseWorkChain._handle_error_exceeded_maximum_walltime),
+        ErrorHandler(100, PwBaseWorkChain._handle_error_convergence_not_reached)
     ]
