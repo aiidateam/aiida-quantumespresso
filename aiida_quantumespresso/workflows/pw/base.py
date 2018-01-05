@@ -11,7 +11,6 @@ from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.data.singlefile import SinglefileData
 from aiida.orm.utils import CalculationFactory
 from aiida.common.extendeddicts import AttributeDict
-from aiida.common.exceptions import NotExistent
 from aiida.work.run import submit
 from aiida.work.workchain import ToContext, if_, while_
 from aiida_quantumespresso.common.exceptions import UnexpectedFailure
@@ -22,13 +21,13 @@ from aiida_quantumespresso.utils.resources import get_default_options
 from aiida_quantumespresso.utils.resources import get_pw_parallelization_parameters
 from aiida_quantumespresso.utils.resources import cmdline_remove_npools
 from aiida_quantumespresso.utils.resources import create_scheduler_resources
-from aiida_quantumespresso.workflows.pw import BaseWorkChain
+from aiida_quantumespresso.workflows import BaseRestartWorkChain
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
 
-class PwBaseWorkChain(BaseWorkChain):
+class PwBaseWorkChain(BaseRestartWorkChain):
     """
-    Base Workchain to launch a Quantum Espresso pw.x total energy calculation
+    Base workchain to launch a Quantum Espresso pw.x calculation
     """
     _calculation_class = PwCalculation
     _error_handler_entry_point = 'aiida_quantumespresso.workflow_error_handlers.pw.base'
@@ -269,6 +268,19 @@ class PwBaseWorkChain(BaseWorkChain):
             inputs['parent_folder'] = self.ctx.restart_calc.out.remote_folder
 
         self.ctx.inputs = inputs
+
+    def _prepare_process_inputs(self, inputs):
+        """
+        The 'max_seconds' setting in the 'CONTROL' card of the parameters will be set to a fraction of the
+        'max_wallclock_seconds' that will be given to the job via the '_options' dictionary. This will prevent the job
+        from being prematurely terminated by the scheduler without getting the chance to exit cleanly.
+        """
+        max_wallclock_seconds = inputs['_options']['max_wallclock_seconds']
+        max_seconds_factor = self.defaults.delta_factor_max_seconds
+        max_seconds = max_wallclock_seconds * max_seconds_factor
+        inputs['parameters']['CONTROL']['max_seconds'] = max_seconds
+
+        return super(PwBaseWorkChain, self)._prepare_process_inputs(inputs)
 
     def _handle_error_read_namelists(self, calculation):
         """
