@@ -286,6 +286,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         """
         The calculation failed because it could not read the generated input file
         """
+        self.report('handling')
         if any(['read_namelists' in w for w in calculation.res.warnings]):
             self.abort_nowait('PwCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
             return self.ErrorHandlingReport(True, False)
@@ -294,6 +295,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         """
         Diagonalization failed with current scheme. Try to restart from previous clean calculation with different scheme
         """
+        self.report('handling')
         input_parameters = calculation.inp.parameters.get_dict()
         input_electrons = input_parameters.get('ELECTRONS', {})
         diagonalization = input_electrons.get('diagonalization', self.defaults['qe']['diagonalization'])
@@ -315,6 +317,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         Calculation failed with an error that was not recognized by the parser and was attached
         wholesale to the warnings. We treat it as an unexpected failure and raise the exception
         """
+        self.report('handling')
         warnings = calculation.res.warnings
         if (any(['%%%' in w for w in warnings]) or any(['Error' in w for w in warnings])):
             raise UnexpectedFailure('PwCalculation<{}> failed due to an unknown reason'.format(calculation.pk))
@@ -323,6 +326,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         """
         Calculation ended nominally but ran out of allotted wall time
         """
+        self.report('handling')
         if 'Maximum CPU time exceeded' in calculation.res.warnings:
             self.ctx.restart_calc = calculation
             self.report('PwCalculation<{}> terminated because maximum wall time was exceeded, restarting'

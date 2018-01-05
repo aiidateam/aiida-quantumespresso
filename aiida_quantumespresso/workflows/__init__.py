@@ -226,13 +226,13 @@ class BaseRestartWorkChain(WorkChain):
         Otherwise we restart once more.
         """
         if exception:
-            self.report('exception: {}'.format(exception))
+            self.report('{}'.format(exception))
 
         if self.ctx.unexpected_failure:
-            self.abort_nowait('{}<{}> failed for an unknown reason for the second consecutive time'
+            self.abort_nowait('failure of {}<{}> could not be handled for the second consecutive time'
                 .format(self._calculation_class.__name__, calculation.pk))
         else:
-            self.report('{}<{}> failed for an unknown reason, restarting once more'
+            self.report('failure of {}<{}> could not be handled, restarting once more'
                 .format(self._calculation_class.__name__, calculation.pk))
 
         return
@@ -253,13 +253,16 @@ class BaseRestartWorkChain(WorkChain):
         is_handled = False
 
         if self._error_handler_entry_point is None:
-            self.abort_nowait('no error handler entry point registered cannot handle calculation failure')
+            self.abort_nowait('no error handler entry point registered, cannot handle calculation failure')
             return
 
         handlers = []
         for plugin in get_plugins(self._error_handler_entry_point):
             plugin_handlers = get_plugin(self._error_handler_entry_point, plugin)()
             handlers.extend(plugin_handlers)
+
+        if len(handlers) == 0:
+            raise UnexpectedFailure('no calculation error handlers were found')
 
         for handler in handlers:
             handler_report = handler(self, calculation)
@@ -275,7 +278,7 @@ class BaseRestartWorkChain(WorkChain):
 
         # If none of the executed error handler reported that they handled an error, the failure reason is unknown
         if not is_handled:
-            raise UnexpectedFailure
+            raise UnexpectedFailure('calculation failure was not handled')
 
         return
 
