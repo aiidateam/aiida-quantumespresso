@@ -82,21 +82,11 @@ def execute(args):
             'ecutwfc': 30.,
             'ecutrho': 240.,
         },
-        'ELECTRONS': {
-            'electron_maxstep': 2,
-        }
     }
     
     automatic_parallelization = {
         'max_num_machines': args.max_num_machines,
         'target_time_seconds': 0.5 * args.max_wallclock_seconds,
-        'max_wallclock_seconds': args.max_wallclock_seconds
-    }
-
-    options = {
-        'resources': {
-            'num_machines': 1,
-        },
         'max_wallclock_seconds': args.max_wallclock_seconds
     }
 
@@ -106,8 +96,7 @@ def execute(args):
         'pseudo_family': Str(args.pseudo_family),
         'kpoints': kpoints,
         'parameters': ParameterData(dict=parameters),
-        # 'automatic_parallelization': ParameterData(dict=automatic_parallelization),
-        'options': ParameterData(dict=options),
+        'automatic_parallelization': ParameterData(dict=automatic_parallelization),
     }
 
     if args.clean_workdir:
