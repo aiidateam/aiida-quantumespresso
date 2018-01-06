@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from collections import namedtuple
+from functools import wraps
 
 """
 A namedtuple to define an error handler for a WorkChain. It defines two fields:
@@ -28,3 +29,18 @@ and False otherwise. If no further error handling should be performed after this
 the 'do_break' field should be set to True
 """
 ErrorHandlerReport = namedtuple('ErrorHandlerReport', 'is_handled do_break')
+
+"""
+A cutesy decorator for workchain error handling methods
+"""
+def register_error_handler(cls, priority):
+    def error_handler_decorator(handler):
+        @wraps(handler)
+        def error_handler(self, calculation):
+            if cls._verbose:
+                self.report('({}){}'.format(priority, handler.__name__))
+            return handler(self, calculation)
+        setattr(cls, handler.__name__, error_handler)
+        cls._error_handlers.append(ErrorHandler(priority, error_handler))
+        return error_handler
+    return error_handler_decorator

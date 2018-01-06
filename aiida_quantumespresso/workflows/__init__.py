@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 from aiida.common.datastructures import calc_states
+from aiida.common.exceptions import LoadingPluginFailed, MissingPluginError
 from aiida.orm.calculation import JobCalculation
 from aiida.orm.data.parameter import ParameterData
 from aiida.work.workchain import WorkChain, ToContext, append_
 from aiida.work.run import submit
-from aiida_quantumespresso.common.pluginloader import get_plugin, get_plugins
 from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
+from aiida_quantumespresso.common.pluginloader import get_plugin, get_plugins
 
 class BaseRestartWorkChain(WorkChain):
     """
@@ -46,6 +47,7 @@ class BaseRestartWorkChain(WorkChain):
     before the next calculation will be run with those inputs.
     """
     _verbose = False
+    _error_handlers = []
     _calculation_class = None
     _error_handler_entry_point = None
     _expected_calculation_states = [calc_states.FINISHED, calc_states.FAILED, calc_states.SUBMISSIONFAILED]
@@ -55,6 +57,15 @@ class BaseRestartWorkChain(WorkChain):
 
         if self._calculation_class is None or not issubclass(self._calculation_class, JobCalculation):
             raise ValueError('no valid JobCalculation class defined for _calculation_class attribute')
+
+        # If an error handler entry point is defined, load them. If the plugin cannot be loaded log it and pass
+        if self._error_handler_entry_point is not None:
+            for plugin in get_plugins(self._error_handler_entry_point):
+                try:
+                    get_plugin(self._error_handler_entry_point, plugin)
+                except (LoadingPluginFailed, MissingPluginError):
+                    self.logger.warning("failed to load the '{}' entry point for the '{}' error handlers"
+                        .format(plugin, self._error_handler_entry_point))
 
         return
 
@@ -247,22 +258,13 @@ class BaseRestartWorkChain(WorkChain):
         except (NotExistent, AttributeError, KeyError) as exception:
             raise UnexpectedCalculationFailure(exception)
 
-        handlers = []
         is_handled = False
 
-        if self._error_handler_entry_point is None:
-            self.abort_nowait('no error handler entry point registered, cannot handle calculation failure')
-            return
-
-        for plugin in get_plugins(self._error_handler_entry_point):
-            plugin_handlers = get_plugin(self._error_handler_entry_point, plugin)()
-            handlers.extend(plugin_handlers)
+        # Sort the handlers based on their priority in reverse order
+        handlers = sorted(self._error_handlers, key=lambda x: x.priority, reverse=True)
 
         if len(handlers) == 0:
-            raise UnexpectedCalculationFailure('no calculation error handlers were found')
-
-        # Sort the handlers based on their priority in reverse order
-        handlers.sort(key=lambda x: x.priority, reverse=True)
+            raise UnexpectedCalculationFailure('no calculation error handlers were registered')
 
         for handler in handlers:
             handler_report = handler.method(self, calculation)

@@ -16,6 +16,7 @@ from aiida.work.workchain import ToContext, if_, while_
 from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
 from aiida_quantumespresso.common.workchain import ErrorHandlerReport
 from aiida_quantumespresso.common.workchain import ErrorHandler
+from aiida_quantumespresso.common.workchain import register_error_handler
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 from aiida_quantumespresso.utils.mapping import update_mapping
 from aiida_quantumespresso.utils.pseudopotential import validate_and_prepare_pseudos_inputs
@@ -31,6 +32,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
     """
     Base workchain to launch a Quantum Espresso pw.x calculation
     """
+    _verbose = True
     _calculation_class = PwCalculation
     _error_handler_entry_point = 'aiida_quantumespresso.workflow_error_handlers.pw.base'
 
@@ -284,71 +286,66 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
         return super(PwBaseWorkChain, self)._prepare_process_inputs(inputs)
 
-    def _handle_error_read_namelists(self, calculation):
-        """
-        The calculation failed because it could not read the generated input file
-        """
-        if any(['read_namelists' in w for w in calculation.res.warnings]):
-            self.abort_nowait('PwCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
-            return ErrorHandlerReport(True, False)
 
-    def _handle_error_diagonalization(self, calculation):
-        """
-        Diagonalization failed with current scheme. Try to restart from previous clean calculation with different scheme
-        """
-        input_parameters = calculation.inp.parameters.get_dict()
-        input_electrons = input_parameters.get('ELECTRONS', {})
-        diagonalization = input_electrons.get('diagonalization', self.defaults['qe']['diagonalization'])
 
-        if ((
-            any(['too many bands are not converged' in w for w in calculation.res.warnings]) or
-            any(['eigenvalues not converged' in w for w in calculation.res.warnings])
-        ) and (
-            diagonalization == 'david'
-        )):
-            new_diagonalization = 'cg'
-            self.ctx.inputs['parameters']['ELECTRONS']['diagonalization'] = 'cg'
-            self.report('PwCalculation<{}> failed to diagonalize with "{}" scheme'.format(diagonalization))
-            self.report('Restarting with diagonalization scheme "{}"'.format(new_diagonalization))
-            return ErrorHandlerReport(True, False)
-
-    def _handle_error_unrecognized_by_parser(self, calculation):
-        """
-        Calculation failed with an error that was not recognized by the parser and was attached
-        wholesale to the warnings. We treat it as an unexpected failure and raise the exception
-        """
-        warnings = calculation.res.warnings
-        if (any(['%%%' in w for w in warnings]) or any(['Error' in w for w in warnings])):
-            raise UnexpectedCalculationFailure('PwCalculation<{}> failed due to an unknown reason'
-                .format(calculation.pk))
-
-    def _handle_error_exceeded_maximum_walltime(self, calculation):
-        """
-        Calculation ended nominally but ran out of allotted wall time
-        """
-        if 'Maximum CPU time exceeded' in calculation.res.warnings:
-            self.ctx.restart_calc = calculation
-            self.report('PwCalculation<{}> terminated because maximum wall time was exceeded, restarting'
-                .format(calculation.pk))
-            return ErrorHandlerReport(True, False)
-
-    def _handle_error_convergence_not_reached(self, calculation):
-        """
-        At the end of the scf cycle, the convergence threshold was not reached. We simply restart
-        from the previous calculation without changing any of the input parameters
-        """
-        if 'The scf cycle did not reach convergence.' in calculation.res.warnings:
-            self.report('PwCalculation<{}> did not converge, restart from previous calculation'.format(calculation.pk))
-            return ErrorHandlerReport(True, True)
-
-def get_error_handlers():
+@register_error_handler(PwBaseWorkChain, 500)
+def _handle_error_read_namelists(self, calculation):
     """
-    Return a list of all the implemented error handlers in the case of a PwCalculation failure
+    The calculation failed because it could not read the generated input file
     """
-    return [
-        ErrorHandler(500, PwBaseWorkChain._handle_error_read_namelists),
-        ErrorHandler(400, PwBaseWorkChain._handle_error_diagonalization),
-        ErrorHandler(300, PwBaseWorkChain._handle_error_unrecognized_by_parser),
-        ErrorHandler(200, PwBaseWorkChain._handle_error_exceeded_maximum_walltime),
-        ErrorHandler(100, PwBaseWorkChain._handle_error_convergence_not_reached)
-    ]
+    if any(['read_namelists' in w for w in calculation.res.warnings]):
+        self.abort_nowait('PwCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
+        return ErrorHandlerReport(True, False)
+
+@register_error_handler(PwBaseWorkChain, 400)
+def _handle_error_diagonalization(self, calculation):
+    """
+    Diagonalization failed with current scheme. Try to restart from previous clean calculation with different scheme
+    """
+    input_parameters = calculation.inp.parameters.get_dict()
+    input_electrons = input_parameters.get('ELECTRONS', {})
+    diagonalization = input_electrons.get('diagonalization', self.defaults['qe']['diagonalization'])
+
+    if ((
+        any(['too many bands are not converged' in w for w in calculation.res.warnings]) or
+        any(['eigenvalues not converged' in w for w in calculation.res.warnings])
+    ) and (
+        diagonalization == 'david'
+    )):
+        new_diagonalization = 'cg'
+        self.ctx.inputs['parameters']['ELECTRONS']['diagonalization'] = 'cg'
+        self.report('PwCalculation<{}> failed to diagonalize with "{}" scheme'.format(diagonalization))
+        self.report('Restarting with diagonalization scheme "{}"'.format(new_diagonalization))
+        return ErrorHandlerReport(True, False)
+
+@register_error_handler(PwBaseWorkChain, 300)
+def _handle_error_unrecognized_by_parser(self, calculation):
+    """
+    Calculation failed with an error that was not recognized by the parser and was attached
+    wholesale to the warnings. We treat it as an unexpected failure and raise the exception
+    """
+    warnings = calculation.res.warnings
+    if (any(['%%%' in w for w in warnings]) or any(['Error' in w for w in warnings])):
+        raise UnexpectedCalculationFailure('PwCalculation<{}> failed due to an unknown reason'
+            .format(calculation.pk))
+
+@register_error_handler(PwBaseWorkChain, 200)
+def _handle_error_exceeded_maximum_walltime(self, calculation):
+    """
+    Calculation ended nominally but ran out of allotted wall time
+    """
+    if 'Maximum CPU time exceeded' in calculation.res.warnings:
+        self.ctx.restart_calc = calculation
+        self.report('PwCalculation<{}> terminated because maximum wall time was exceeded, restarting'
+            .format(calculation.pk))
+        return ErrorHandlerReport(True, False)
+
+@register_error_handler(PwBaseWorkChain, 100)
+def _handle_error_convergence_not_reached(self, calculation):
+    """
+    At the end of the scf cycle, the convergence threshold was not reached. We simply restart
+    from the previous calculation without changing any of the input parameters
+    """
+    if 'The scf cycle did not reach convergence.' in calculation.res.warnings:
+        self.report('PwCalculation<{}> did not converge, restart from previous calculation'.format(calculation.pk))
+        return ErrorHandlerReport(True, True)
