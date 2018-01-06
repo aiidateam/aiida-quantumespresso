@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from aiida.common.exceptions import MissingPluginError
+from aiida.common.exceptions import LoadingPluginFailed, MissingPluginError
 
 try:
     from reentry import manager as epm
@@ -37,6 +37,6 @@ def get_plugin(category, name):
     try:
         plugin = entrypoint.load()
     except ImportError:
-        raise MissingPluginError("Loading the plugin '{}' failed".format(name))
+        raise LoadingPluginFailed("Loading the plugin '{}' failed".format(name))
 
     return plugin
