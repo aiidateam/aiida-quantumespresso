@@ -3,6 +3,7 @@ from copy import deepcopy
 from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import Code
 from aiida.orm.data.base import Bool, Float, Int, Str
+from aiida.orm.data.folder import FolderData
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
@@ -12,6 +13,7 @@ from aiida.work.workchain import WorkChain, ToContext, while_, append_
 from aiida_quantumespresso.common.workchain import ErrorHandlerReport
 from aiida_quantumespresso.common.workchain import register_error_handler
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
+from aiida_quantumespresso.utils.resources import get_default_options
 from aiida_quantumespresso.workflows import BaseRestartWorkChain
 
 PhCalculation = CalculationFactory('quantumespresso.ph')
@@ -28,7 +30,6 @@ class PhBaseWorkChain(BaseRestartWorkChain):
     def __init__(self, *args, **kwargs):
         super(PhBaseWorkChain, self).__init__(*args, **kwargs)
 
-        # Default values
         self.defaults = AttributeDict({
             'qe': qe_defaults,
             'delta_factor_max_seconds': 0.95,
@@ -39,11 +40,11 @@ class PhBaseWorkChain(BaseRestartWorkChain):
     def define(cls, spec):
         super(PhBaseWorkChain, cls).define(spec)
         spec.input('code', valid_type=Code)
-        spec.input('parent_calc', valid_type=PwCalculation)
         spec.input('qpoints', valid_type=KpointsData)
         spec.input('parameters', valid_type=ParameterData)
-        spec.input('settings', valid_type=ParameterData)
-        spec.input('options', valid_type=ParameterData)
+        spec.input('parent_calc', valid_type=PwCalculation)
+        spec.input('settings', valid_type=ParameterData, required=False)
+        spec.input('options', valid_type=ParameterData, required=False)
         spec.outline(
             cls.setup,
             cls.validate_inputs,
@@ -54,46 +55,48 @@ class PhBaseWorkChain(BaseRestartWorkChain):
             ),
             cls.results,
         )
-        spec.dynamic_output()
+        spec.output('output_parameters', valid_type=ParameterData)
+        spec.output('retrieved', valid_type=FolderData)
 
     def validate_inputs(self):
         """
-        Validate inputs that may depend on each other
+        Define context dictionary 'inputs_raw' with the inputs for the PhCalculations as they were at the beginning
+        of the workchain. Changes have to be made to a deep copy so this remains unchanged and we can always reset
+        the inputs to their initial state. Inputs that are not required by the workchain will be given a default value
+        if not specified or be validated otherwise.
         """
         self.ctx.inputs_raw = AttributeDict({
             'code': self.inputs.code,
             'qpoints': self.inputs.qpoints,
             'parameters': self.inputs.parameters.get_dict(),
-            'settings': self.inputs.settings.get_dict(),
-            '_options': self.inputs.options.get_dict(),
         })
-
-        self.ctx.restart_calc = self.inputs.parent_calc
 
         if 'INPUTPH' not in self.ctx.inputs_raw.parameters:
             self.ctx.inputs_raw.parameters['INPUTPH'] = {}
+
+        if 'settings' in self.inputs:
+            self.ctx.inputs_raw.settings = self.inputs.settings.get_dict()
+        else:
+            self.ctx.inputs_raw.settings = {}
+
+        if 'options' in self.inputs:
+            self.ctx.inputs_raw._options = self.inputs.options.get_dict()
+        else:
+            self.ctx.inputs_raw._options = get_default_options()
+
+        self.ctx.restart_calc = self.inputs.parent_calc
 
         # Assign a deepcopy to self.ctx.inputs which will be used by the BaseRestartWorkChain
         self.ctx.inputs = deepcopy(self.ctx.inputs_raw)
 
     def prepare_calculation(self):
         """
-        Run a new PhCalculation or restart from a previous PhCalculation run in this workchain
+        Prepare the inputs for the next calculation
         """
-        inputs = deepcopy(self.ctx.inputs)
-
         if isinstance(self.ctx.restart_calc, PhCalculation):
-            inputs.parameters['INPUTPH']['recover'] = True
-        elif isinstance(self.ctx.restart_calc, PwCalculation):
-            pass
-        else:
-            ctype = type(self.ctx.restart_calc)
-            self.abort_nowait("The type '{}' of the parent calculation is invalid".format(ctype.__class.__))
-            return
+            self.ctx.inputs.parameters['INPUTPH']['recover'] = True
 
-        inputs.parent_folder = self.ctx.restart_calc.out.remote_folder
-
-        self.ctx.inputs = inputs
+        self.ctx.inputs.parent_folder = self.ctx.restart_calc.out.remote_folder
 
     def _prepare_process_inputs(self, inputs):
         """

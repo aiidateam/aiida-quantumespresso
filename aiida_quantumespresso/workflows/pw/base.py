@@ -38,7 +38,6 @@ class PwBaseWorkChain(BaseRestartWorkChain):
     def __init__(self, *args, **kwargs):
         super(PwBaseWorkChain, self).__init__(*args, **kwargs)
 
-        # Default values
         self.defaults = AttributeDict({
             'qe': qe_defaults,
             'delta_threshold_degauss': 30,
@@ -84,10 +83,10 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
     def validate_inputs(self):
         """
-        Initialize context variables and define convenience dictionary of inputs for PwCalculation. Only the
-        required inputs are added here as the non required ones will have to be validated first in the next step
-        of the outline. ParameterData nodes that may need to be update during the workchain are unpacked into
-        their dictionary for convenience.
+        Define context dictionary 'inputs_raw' with the inputs for the PwCalculations as they were at the beginning
+        of the workchain. Changes have to be made to a deep copy so this remains unchanged and we can always reset
+        the inputs to their initial state. Inputs that are not required by the workchain will be given a default value
+        if not specified or be validated otherwise.
         """
         self.ctx.inputs_raw = AttributeDict({
             'code': self.inputs.code,
