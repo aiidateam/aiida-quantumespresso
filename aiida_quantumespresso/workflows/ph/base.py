@@ -32,6 +32,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         self.defaults = AttributeDict({
             'qe': qe_defaults,
             'delta_factor_max_seconds': 0.95,
+            'alpha_mix': 0.70,
         })
 
     @classmethod
@@ -43,8 +44,6 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         spec.input('parameters', valid_type=ParameterData)
         spec.input('settings', valid_type=ParameterData)
         spec.input('options', valid_type=ParameterData)
-        spec.input('compute_epsil', valid_type=Bool, default=Bool(False))
-        spec.input('alpha_mix', valid_type=Float, default=Float(0.7))
         spec.outline(
             cls.setup,
             cls.validate_inputs,
@@ -71,7 +70,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
 
         self.ctx.restart_calc = self.inputs.parent_calc
 
-        if 'INPUTPH'not in self.ctx.inputs_raw.parameters:
+        if 'INPUTPH' not in self.ctx.inputs_raw.parameters:
             self.ctx.inputs_raw.parameters['INPUTPH'] = {}
 
         # Assign a deepcopy to self.ctx.inputs which will be used by the BaseRestartWorkChain
@@ -138,7 +137,7 @@ def _handle_fatal_error_not_converged(self, calculation):
     The calculation failed because it could not read the generated input file
     """
     if ('Phonon did not reach end of self consistency' in calculation.res.warnings):
-        alpha_mix_old = calculation.inp.parameters.get_dict()['INPUTPH'].get('alpha_mix(1)', self.inputs.alpha_mix.value)
+        alpha_mix_old = calculation.inp.parameters.get_dict()['INPUTPH'].get('alpha_mix(1)', self.defaults.alpha_mix)
         alpha_mix_new = 0.9 * alpha_mix_old
         self.ctx.inputs.parameters['INPUTPH']['alpha_mix(1)'] = alpha_mix_new
         self.ctx.restart_calc = calculation
