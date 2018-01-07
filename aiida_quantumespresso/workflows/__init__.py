@@ -112,11 +112,11 @@ class BaseRestartWorkChain(WorkChain):
         self.ctx.iteration += 1
 
         try:
-            raw_inputs = self.ctx.inputs
+            unwrapped_inputs = self.ctx.inputs
         except AttributeError:
             raise ValueError('no calculation input dictionary was defined in self.ctx.inputs')
 
-        inputs = self._prepare_process_inputs(raw_inputs)
+        inputs = self._prepare_process_inputs(unwrapped_inputs)
         process = self._calculation_class.process()
         running = submit(process, **inputs)
 
