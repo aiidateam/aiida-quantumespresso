@@ -15,7 +15,6 @@ from aiida.work.run import submit
 from aiida.work.workchain import ToContext, if_, while_
 from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
 from aiida_quantumespresso.common.workchain import ErrorHandlerReport
-from aiida_quantumespresso.common.workchain import ErrorHandler
 from aiida_quantumespresso.common.workchain import register_error_handler
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 from aiida_quantumespresso.utils.mapping import update_mapping
@@ -62,8 +61,6 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         spec.input('settings', valid_type=ParameterData, required=False)
         spec.input('options', valid_type=ParameterData, required=False)
         spec.input('automatic_parallelization', valid_type=ParameterData, required=False)
-        spec.input('max_iterations', valid_type=Int, default=Int(5))
-        spec.input('clean_workdir', valid_type=Bool, default=Bool(False))
         spec.outline(
             cls.setup,
             cls.validate_inputs,
@@ -92,12 +89,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         of the outline. ParameterData nodes that may need to be update during the workchain are unpacked into
         their dictionary for convenience.
         """
-        self.ctx.max_iterations = self.inputs.max_iterations.value
-        self.ctx.unexpected_failure = False
-        self.ctx.submission_failure = False
-        self.ctx.restart_calc = None
-        self.ctx.is_finished = False
-        self.ctx.iteration = 0
+        super(PwBaseWorkChain, self).setup()
 
         self.ctx.raw_inputs = AttributeDict({
             'code': self.inputs.code,

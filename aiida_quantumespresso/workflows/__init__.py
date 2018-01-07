@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 from aiida.common.datastructures import calc_states
 from aiida.common.exceptions import LoadingPluginFailed, MissingPluginError
+from aiida.common.links import LinkType
 from aiida.orm.calculation import JobCalculation
+from aiida.orm.data.base import Bool, Int
 from aiida.orm.data.parameter import ParameterData
 from aiida.work.workchain import WorkChain, ToContext, append_
 from aiida.work.run import submit
@@ -25,6 +27,7 @@ class BaseRestartWorkChain(WorkChain):
     The idea is to subclass this workchain and leverage the generic error handling that is implemented
     in the few outline methods. Part of the suggested outline would look something like the following:
 
+        cls.setup
         while_(cls.should_run_calculation)(
             cls.run_calculation,
             cls.inspect_calculation,
@@ -37,6 +40,7 @@ class BaseRestartWorkChain(WorkChain):
     One can update the inputs based on the results from a prior calculation by calling an outline
     method just before the run_calculation step, for example:
 
+        cls.setup
         while_(cls.should_run_calculation)(
             cls.prepare_calculation,
             cls.run_calculation,
@@ -69,13 +73,37 @@ class BaseRestartWorkChain(WorkChain):
 
         return
 
+    @classmethod
+    def define(cls, spec):
+        super(BaseRestartWorkChain, cls).define(spec)
+        spec.input('max_iterations', valid_type=Int, default=Int(5), help="""
+            the maximum number of iterations the workchain will attempt to get the calculation to finish successfully
+            """
+        )
+        spec.input('clean_workdir', valid_type=Bool, default=Bool(False), help="""
+            when set to True, the work directories of all called calculation will be cleaned at the end of workchain execution
+            """
+        )
+
+    def setup(self):
+        """
+        Initialize context variables that are used during the logical flow of the BaseRestartWorkChain
+        """
+        self.ctx.unexpected_failure = False
+        self.ctx.submission_failure = False
+        self.ctx.restart_calc = None
+        self.ctx.is_finished = False
+        self.ctx.iteration = 0
+
+        return
+
     def should_run_calculation(self):
         """
         Return whether a new calculation should be run, which is the case as long as the last
         calculation has not finished successfully and the maximum number of restarts has not yet
         been exceeded
         """
-        return not self.ctx.is_finished and self.ctx.iteration < self.ctx.max_iterations
+        return not self.ctx.is_finished and self.ctx.iteration < self.inputs.max_iterations.value
 
     def run_calculation(self):
         """
@@ -116,9 +144,9 @@ class BaseRestartWorkChain(WorkChain):
             self.ctx.is_finished = True
 
         # Abort: exceeded maximum number of retries
-        elif self.ctx.iteration >= self.ctx.max_iterations:
+        elif self.ctx.iteration >= self.inputs.max_iterations.value:
             self.abort_nowait('reached the maximumm number of iterations {}\nlast ran {}<{}>'
-                .format(self.ctx.max_iterations, self._calculation_class.__name__, calculation.pk))
+                .format(self.inputs.max_iterations.value, self._calculation_class.__name__, calculation.pk))
 
         # Abort: unexpected state of last calculation
         elif calculation.get_state() not in self._expected_calculation_states:
@@ -177,31 +205,23 @@ class BaseRestartWorkChain(WorkChain):
 
     def on_destroy(self):
         """
-        Clean remote folders of the calculations that were run if the clean_workdir input was
-        provided and True in the Workchain inputs
+        Clean remote folders of the calculations called in the workchain if the clean_workdir input is True
         """
         super(BaseRestartWorkChain, self).on_destroy()
-        if not self.has_finished():
-            return
 
-        if not 'clean_workdir' in self.inputs or self.inputs.clean_workdir.value is False:
+        if not self.has_finished() or self.inputs.clean_workdir.value is False:
             return
 
         cleaned_calcs = []
 
-        try:
-            calculations = self.ctx.calculations
-        except AttributeError:
-            calculations = []
-
-        for calculation in calculations:
+        for calculation in self.calc.get_outputs(link_type=LinkType.CALL):
             try:
                 calculation.out.remote_folder._clean()
                 cleaned_calcs.append(calculation.pk)
             except BaseException:
                 pass
 
-        if len(cleaned_calcs) > 0:
+        if cleaned_calcs:
             self.report('cleaned remote folders of calculations: {}'.format(' '.join(map(str, cleaned_calcs))))
 
     def _handle_calculation_sanity_checks(self, calculation):
@@ -220,7 +240,7 @@ class BaseRestartWorkChain(WorkChain):
         """
         if self.ctx.submission_failure:
             self.abort_nowait('submission for {}<{}> failed for the second consecutive time'
-                .format(calculation.pk))
+                .format(self._calculation_class.__name__, calculation.pk))
         else:
             self.report('submission for {}<{}> failed, restarting once more'
                 .format(self._calculation_class.__name__, calculation.pk))
@@ -255,7 +275,7 @@ class BaseRestartWorkChain(WorkChain):
             outputs = calculation.out.output_parameters.get_dict()
             _ = outputs['warnings']
             _ = outputs['parser_warnings']
-        except (NotExistent, AttributeError, KeyError) as exception:
+        except (AttributeError, KeyError) as exception:
             raise UnexpectedCalculationFailure(exception)
 
         is_handled = False
@@ -263,13 +283,13 @@ class BaseRestartWorkChain(WorkChain):
         # Sort the handlers based on their priority in reverse order
         handlers = sorted(self._error_handlers, key=lambda x: x.priority, reverse=True)
 
-        if len(handlers) == 0:
+        if not handlers:
             raise UnexpectedCalculationFailure('no calculation error handlers were registered')
 
         for handler in handlers:
             handler_report = handler.method(self, calculation)
 
-            # If at least one error is handled, we consider the computation failure handled
+            # If at least one error is handled, we consider the calculation failure handled
             if handler_report and handler_report.is_handled:
                 self.ctx.restart_calc = calculation
                 is_handled = True
