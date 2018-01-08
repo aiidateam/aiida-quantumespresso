@@ -10,11 +10,11 @@ from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.utils import CalculationFactory
 from aiida.work.run import submit
 from aiida.work.workchain import WorkChain, ToContext, while_, append_
-from aiida_quantumespresso.common.workchain import ErrorHandlerReport
-from aiida_quantumespresso.common.workchain import register_error_handler
+from aiida_quantumespresso.common.workchain.utils import ErrorHandlerReport
+from aiida_quantumespresso.common.workchain.utils import register_error_handler
+from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkChain
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 from aiida_quantumespresso.utils.resources import get_default_options
-from aiida_quantumespresso.workflows import BaseRestartWorkChain
 
 PhCalculation = CalculationFactory('quantumespresso.ph')
 PwCalculation = CalculationFactory('quantumespresso.pw')

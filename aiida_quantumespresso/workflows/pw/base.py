@@ -14,8 +14,9 @@ from aiida.common.extendeddicts import AttributeDict
 from aiida.work.run import submit
 from aiida.work.workchain import ToContext, if_, while_
 from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
-from aiida_quantumespresso.common.workchain import ErrorHandlerReport
-from aiida_quantumespresso.common.workchain import register_error_handler
+from aiida_quantumespresso.common.workchain.utils import ErrorHandlerReport
+from aiida_quantumespresso.common.workchain.utils import register_error_handler
+from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkChain
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 from aiida_quantumespresso.utils.mapping import update_mapping
 from aiida_quantumespresso.utils.pseudopotential import validate_and_prepare_pseudos_inputs
@@ -23,7 +24,6 @@ from aiida_quantumespresso.utils.resources import get_default_options
 from aiida_quantumespresso.utils.resources import get_pw_parallelization_parameters
 from aiida_quantumespresso.utils.resources import cmdline_remove_npools
 from aiida_quantumespresso.utils.resources import create_scheduler_resources
-from aiida_quantumespresso.workflows import BaseRestartWorkChain
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
 
