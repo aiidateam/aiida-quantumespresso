@@ -992,7 +992,7 @@ def _lowercase_dict(d, dict_name):
     from collections import Counter
 
     if not isinstance(d, dict):
-        raise TypeError("_lowercase_dict accepts only dictionaries as argument, while you gave {}".format(d))
+        raise TypeError("_lowercase_dict accepts only dictionaries as argument, while you gave {}".format(type(d)))
     new_dict = dict((str(k).lower(), v) for k, v in d.iteritems())
     if len(new_dict) != len(d):
         num_items = Counter(str(k).lower() for k in d.keys())
@@ -1008,7 +1008,7 @@ def _uppercase_dict(d, dict_name):
     from collections import Counter
 
     if not isinstance(d, dict):
-        raise TypeError("_uppercase_dict accepts only dictionaries as argument, while you gave {}".format(d))
+        raise TypeError("_uppercase_dict accepts only dictionaries as argument, while you gave {}".format(type(d)))
     new_dict = dict((str(k).upper(), v) for k, v in d.iteritems())
     if len(new_dict) != len(d):
         num_items = Counter(str(k).upper() for k in d.keys())
