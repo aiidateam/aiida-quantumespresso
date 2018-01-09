@@ -527,12 +527,13 @@ class PhCalculation(JobCalculation):
         Function to restart a calculation that was not completed before 
         (like max walltime reached...) i.e. not to restart a FAILED calculation.
         Returns a calculation c2, with all links prepared but not stored in DB.
-        To submit it simply:
-        c2.store_all()
-        c2.submit()
-        
+        To submit it simply::
+
+            c2.store_all()
+            c2.submit()
+
         :param bool force_restart: restart also if parent is not in FINISHED 
-        state (e.g. FAILED, IMPORTED, etc.). Default=False.
+            state (e.g. FAILED, IMPORTED, etc.). Default=False.
         """
         from aiida.common.datastructures import calc_states
         if self.get_state() != calc_states.FINISHED:

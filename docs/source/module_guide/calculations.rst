@@ -1,6 +1,11 @@
 Calculations
 ++++++++++++
 
+Quantum Espresso - ph.x
+-----------------------
+.. automodule:: aiida_quantumespresso.calculations.ph
+   :members:
+
 Quantum Espresso - pw.x
 -----------------------
 .. automodule:: aiida_quantumespresso.calculations.pw

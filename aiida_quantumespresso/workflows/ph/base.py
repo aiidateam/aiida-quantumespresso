@@ -1,306 +1,168 @@
 # -*- coding: utf-8 -*-
+from copy import deepcopy
+from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import Code
 from aiida.orm.data.base import Bool, Float, Int, Str
+from aiida.orm.data.folder import FolderData
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.utils import CalculationFactory
-from aiida.common.exceptions import NotExistent
-from aiida.common.datastructures import calc_states
 from aiida.work.run import submit
 from aiida.work.workchain import WorkChain, ToContext, while_, append_
-from aiida_quantumespresso.common.exceptions import UnexpectedFailure
+from aiida_quantumespresso.common.workchain.utils import ErrorHandlerReport
+from aiida_quantumespresso.common.workchain.utils import register_error_handler
+from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkChain
+from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
+from aiida_quantumespresso.utils.resources import get_default_options
 
 PhCalculation = CalculationFactory('quantumespresso.ph')
 PwCalculation = CalculationFactory('quantumespresso.pw')
 
-class PhBaseWorkChain(WorkChain):
+class PhBaseWorkChain(BaseRestartWorkChain):
     """
     Base Workchain to launch a Quantum Espresso phonon ph.x calculation and restart it until
     successfully converged or until the maximum number of restarts is exceeded
     """
+    _verbose = True
+    _calculation_class = PhCalculation
+
     def __init__(self, *args, **kwargs):
         super(PhBaseWorkChain, self).__init__(*args, **kwargs)
+
+        self.defaults = AttributeDict({
+            'qe': qe_defaults,
+            'delta_factor_max_seconds': 0.95,
+            'alpha_mix': 0.70,
+        })
 
     @classmethod
     def define(cls, spec):
         super(PhBaseWorkChain, cls).define(spec)
         spec.input('code', valid_type=Code)
-        spec.input('parent_calc', valid_type=PwCalculation)
         spec.input('qpoints', valid_type=KpointsData)
         spec.input('parameters', valid_type=ParameterData)
-        spec.input('settings', valid_type=ParameterData)
-        spec.input('options', valid_type=ParameterData)
-        spec.input('clean_workdir', valid_type=Bool, default=Bool(False))
-        spec.input('compute_epsil', valid_type=Bool, default=Bool(False))
-        spec.input('alpha_mix', valid_type=Float, default=Float(0.7))
-        spec.input('max_iterations', valid_type=Int, default=Int(10))
+        spec.input('parent_calc', valid_type=PwCalculation)
+        spec.input('settings', valid_type=ParameterData, required=False)
+        spec.input('options', valid_type=ParameterData, required=False)
         spec.outline(
             cls.setup,
-            while_(cls.should_run_ph)(
-                cls.run_ph,
-                cls.inspect_ph,
+            cls.validate_inputs,
+            while_(cls.should_run_calculation)(
+                cls.prepare_calculation,
+                cls.run_calculation,
+                cls.inspect_calculation,
             ),
-            cls.run_results,
-            cls.run_clean,
+            cls.results,
         )
-        spec.dynamic_output()
+        spec.output('output_parameters', valid_type=ParameterData)
+        spec.output('retrieved', valid_type=FolderData)
 
-    def setup(self):
+    def validate_inputs(self):
         """
-        Initialize context variables
+        Define context dictionary 'inputs_raw' with the inputs for the PhCalculations as they were at the beginning
+        of the workchain. Changes have to be made to a deep copy so this remains unchanged and we can always reset
+        the inputs to their initial state. Inputs that are not required by the workchain will be given a default value
+        if not specified or be validated otherwise.
         """
-        self.ctx.max_iterations = self.inputs.max_iterations.value
-        self.ctx.restart_calc = self.inputs.parent_calc
-        self.ctx.unexpected_failure = False
-        self.ctx.submission_failure = False
-        self.ctx.is_finished = False
-        self.ctx.iteration = 0
-
-        # Define convenience dictionary of inputs for PhCalculation
-        self.ctx.inputs = {
+        self.ctx.inputs_raw = AttributeDict({
             'code': self.inputs.code,
             'qpoints': self.inputs.qpoints,
             'parameters': self.inputs.parameters.get_dict(),
-            'settings': self.inputs.settings.get_dict(),
-            '_options': self.inputs.options.get_dict(),
-        }
+        })
 
-        # Prevent PhCalculation from being terminated by scheduler
-        max_wallclock_seconds = self.ctx.inputs['_options']['max_wallclock_seconds']
-        self.ctx.inputs['parameters']['INPUTPH']['max_seconds'] = int(0.95 * max_wallclock_seconds)
+        if 'INPUTPH' not in self.ctx.inputs_raw.parameters:
+            self.ctx.inputs_raw.parameters['INPUTPH'] = {}
 
-        return
+        if 'settings' in self.inputs:
+            self.ctx.inputs_raw.settings = self.inputs.settings.get_dict()
+        else:
+            self.ctx.inputs_raw.settings = {}
 
-    def should_run_ph(self):
+        if 'options' in self.inputs:
+            self.ctx.inputs_raw._options = self.inputs.options.get_dict()
+        else:
+            self.ctx.inputs_raw._options = get_default_options()
+
+        self.ctx.restart_calc = self.inputs.parent_calc
+
+        # Assign a deepcopy to self.ctx.inputs which will be used by the BaseRestartWorkChain
+        self.ctx.inputs = deepcopy(self.ctx.inputs_raw)
+
+    def prepare_calculation(self):
         """
-        Return whether a ph restart calculation should be run, which is the case as long as the last
-        calculation was not converged successfully and the maximum number of restarts has not yet
-        been exceeded
+        Prepare the inputs for the next calculation
         """
-        return not self.ctx.is_finished and self.ctx.iteration < self.ctx.max_iterations
-
-    def run_ph(self):
-        """
-        Run a PhCalculation either starting from a previous PwCalculation or restarting from a
-        previous PhCalculation run in this workchain
-        """
-        self.ctx.iteration += 1
-
-        # Create local copy of general inputs stored in the context and adapt for next calculation
-        inputs = dict(self.ctx.inputs)
-
         if isinstance(self.ctx.restart_calc, PhCalculation):
-            inputs['parameters']['INPUTPH']['recover'] = True
-        elif isinstance(self.ctx.restart_calc, PwCalculation):
-            pass
-        else:
-            ctype = type(self.ctx.restart_calc)
-            self.abort_nowait("The type '{}' of the parent calculation is invalid".format(ctype))
+            self.ctx.inputs.parameters['INPUTPH']['recover'] = True
 
-        inputs['parent_folder'] = self.ctx.restart_calc.out.remote_folder
-        inputs['parameters'] = ParameterData(dict=inputs['parameters'])
-        inputs['settings'] = ParameterData(dict=inputs['settings'])
+        self.ctx.inputs.parent_folder = self.ctx.restart_calc.out.remote_folder
 
-        process = PhCalculation.process()
-        running = submit(process, **inputs)
-
-        self.report('launching PhCalculation<{}> iteration #{}'.format(
-            running.pid, self.ctx.iteration))
-
-        return ToContext(calculations=append_(running))
-
-    def inspect_ph(self):
+    def _prepare_process_inputs(self, inputs):
         """
-        Analyse the results of the previous PhCalculation, checking whether it finished successfully
-        or if not troubleshoot the cause and adapt the input parameters accordingly before
-        restarting, or abort if unrecoverable error was found
+        The 'max_seconds' setting in the 'INPUTPH' card of the parameters will be set to a fraction of the
+        'max_wallclock_seconds' that will be given to the job via the '_options' dictionary. This will prevent the job
+        from being prematurely terminated by the scheduler without getting the chance to exit cleanly.
         """
-        try:
-            calculation = self.ctx.calculations[-1]
-        except IndexError:
-            self.abort_nowait('the first iteration finished without returning a PhCalculation')
-            return
+        max_wallclock_seconds = inputs._options['max_wallclock_seconds']
+        max_seconds_factor = self.defaults.delta_factor_max_seconds
+        max_seconds = max_wallclock_seconds * max_seconds_factor
+        inputs.parameters['INPUTPH']['max_seconds'] = max_seconds
 
-        expected_states = [calc_states.FINISHED, calc_states.FAILED, calc_states.SUBMISSIONFAILED]
+        return super(PhBaseWorkChain, self)._prepare_process_inputs(inputs)
 
-        # Done: successful convergence of last calculation
-        if calculation.has_finished_ok():
-            self.report('converged successfully after {} iterations'.format(self.ctx.iteration))
-            self.ctx.restart_calc = calculation
-            self.ctx.is_finished = True
 
-        # Abort: exceeded maximum number of retries
-        elif self.ctx.iteration >= self.ctx.max_iterations:
-            self.report('reached the max number of iterations {}'.format(self.ctx.max_iterations))
-            self.abort_nowait('last ran PhCalculation<{}>'.format(calculation.pk))
 
-        # Abort: unexpected state of last calculation
-        elif calculation.get_state() not in expected_states:
-            self.abort_nowait('unexpected state ({}) of PhCalculation<{}>'.format(
-                calculation.get_state(), calculation.pk))
-
-        # Retry or abort: submission failed, try to restart or abort
-        elif calculation.get_state() in [calc_states.SUBMISSIONFAILED]:
-            self._handle_submission_failure(calculation)
-            self.ctx.submission_failure = True
-
-        # Retry or abort: calculation finished or failed
-        elif calculation.get_state() in [calc_states.FINISHED, calc_states.FAILED]:
-
-            # Calculation was at least submitted successfully, so we reset the flag
-            self.ctx.submission_failure = False
-
-            # Check output for problems independent on calculation state and that do not trigger parser warnings
-            self._handle_calculation_sanity_checks(calculation)
-
-            # Calculation failed, try to salvage it or handle any unexpected failures
-            if calculation.get_state() in [calc_states.FAILED]:
-                try:
-                    self._handle_calculation_failure(calculation)
-                except UnexpectedFailure as exception:
-                    self._handle_unexpected_failure(calculation, exception)
-                    self.ctx.unexpected_failure = True
-
-            # Calculation finished: but did not finish ok, simply try to restart from this calculation
-            else:
-                self.ctx.unexpected_failure = False
-                self.ctx.restart_calc = calculation
-                self.report('calculation did not converge after {} iterations, restarting'.format(self.ctx.iteration))
-
-        return
-
-    def run_results(self):
-        """
-        Attach the output parameters and retrieved folder of the last calculation to the outputs
-        """
-        calculation = self.ctx.calculations[-1]
-        self.report('workchain completed after {} iterations'.format(self.ctx.iteration))
-        self.out('output_parameters', calculation.out.output_parameters)
-        self.out('retrieved', calculation.out.retrieved)
-
-    def run_clean(self):
-        """
-        Clean remote folders of the PhCalculations that were run if the clean_workdir parameter was
-        set to true in the Workchain inputs
-        """
-        if not self.inputs.clean_workdir.value:
-            self.report('remote folders will not be cleaned')
-            return
-
-        for calc in self.ctx.calculations:
-            try:
-                calc.out.remote_folder._clean()
-                self.report('cleaned remote folder of {}<{}>'.format(calc.__class__.__name__, calc.pk))
-            except Exception:
-                pass
-
-    def _handle_submission_failure(self, calculation):
-        """
-        The submission of the calculation has failed. If the submission_failure flag is set to true, this
-        is the second consecutive submission failure and we abort the workchain. Otherwise we restart once more.
-        """
-        if self.ctx.submission_failure:
-            self.abort_nowait('submission for PhCalculation<{}> failed for the second consecutive time'
-                .format(calculation.pk))
-        else:
-            self.report('submission for PhCalculation<{}> failed, restarting once more'
-                .format(calculation.pk))
-
-    def _handle_unexpected_failure(self, calculation, exception=None):
-        """
-        The calculation has failed for an unknown reason and could not be handled. If the unexpected_failure
-        flag is true, this is the second consecutive unexpected failure and we abort the workchain.
-        Otherwise we restart once more.
-        """
-        if exception:
-            self.report('exception: {}'.format(exception))
-
-        if self.ctx.unexpected_failure:
-            self.abort_nowait('PhCalculation<{}> failed for an unknown case for the second consecutive time'
-                .format(calculation.pk))
-        else:
-            self.report('PhCalculation<{}> failed for an unknown case, restarting once more'
-                .format(calculation.pk))
-
-    def _handle_calculation_sanity_checks(self, calculation):
-        """
-        Calculations that run successfully may still have problems that can only be determined when inspecting
-        the output. The same problems may also be the hidden root of a calculation failure. For that reason,
-        after verifying that the calculation ran, regardless of its calculation state, we perform some sanity
-        checks.
-        """
-        return
-
-    def _handle_calculation_failure(self, calculation):
-        """
-        The calculation has failed so we try to analyze the reason and change the inputs accordingly
-        for the next calculation. If the calculation failed, but did so cleanly, we set it as the
-        restart_calc, in all other cases we do not replace the restart_calc
-        """
-        try:
-            input_parameters = calculation.inp.parameters.get_dict()
-            output_parameters = calculation.out.output_parameters.get_dict()
-            warnings = output_parameters['warnings']
-            parser_warnings = output_parameters['parser_warnings']
-        except (NotExistent, AttributeError, KeyError) as exception:
-            raise UnexpectedFailure(exception)
-        else:
-
-            # Errors during parsing of input files
-            if any(['read_namelists' in w for w in warnings]):
-                self._handle_fatal_error_read_namelists(calculation)
-
-            # Premature termination by the scheduler
-            elif (('QE ph run did not reach the end of the execution.' in parser_warnings) and len(warnings) == 0):
-                self._handle_error_premature_termination(calculation)
-
-            # Calculation did not converge
-            elif ('Phonon did not reach end of self consistency' in warnings):
-                self._handle_fatal_error_not_converged(calculation)
-
-            # Clean calculation termination due to exceeding maximum allotted walltime
-            elif 'Maximum CPU time exceeded' in warnings:
-                self._handle_error_exceeded_maximum_walltime(calculation)
-
-            else:
-                raise UnexpectedFailure
-
-    def _handle_fatal_error_read_namelists(self, calculation):
-        """
-        The calculation failed because it could not read the generated input file
-        """
+@register_error_handler(PhBaseWorkChain, 400)
+def _handle_fatal_error_read_namelists(self, calculation):
+    """
+    The calculation failed because it could not read the generated input file
+    """
+    if any(['reading inputph namelist' in w for w in calculation.res.warnings]):
         self.abort_nowait('PhCalculation<{}> failed because of an invalid input file'
             .format(calculation.pk))
+        return ErrorHandlerReport(True, True)
 
-    def _handle_fatal_error_not_converged(self, calculation):
-        """
-        The calculation failed because it could not read the generated input file
-        """
-        alpha_mix_old = calculation.inp.parameters.get_dict()['INPUTPH'].get('alpha_mix(1)', self.inputs.alpha_mix.value)
-        alpha_mix_new = 0.9 * alpha_mix_old
-        self.ctx.inputs['parameters']['INPUTPH']['alpha_mix(1)'] = alpha_mix_new
-        self.ctx.restart_calc = calculation
-        self.report('PhCalculation<{}> terminated without reaching convergence, '
-            'setting alpha_mix to {} and restarting'.format(calculation.pk, alpha_mix_new))
-
-    def _handle_error_premature_termination(self, calculation):
-        """
-        Calculation did not reach the end of execution, probably because it was killed by the scheduler
-        for running out of allotted walltime
-        """
-        input_parameters = calculation.inp.parameters.get_dict()
-        settings = self.ctx.inputs['settings']
-        max_seconds = settings.get('max_seconds', input_parameters['CONTROL']['max_seconds'])
-        max_seconds_reduced = int(0.95 * max_seconds)
-        self.ctx.inputs['parameters']['CONTROL']['max_seconds'] = max_seconds_reduced
-        self.report('PhCalculation<{}> was terminated prematurely, reducing "max_seconds" from {} to {}'
-            .format(calculation.pk, max_seconds, max_seconds_reduced))
-
-    def _handle_error_exceeded_maximum_walltime(self, calculation):
-        """
-        Calculation ended nominally but ran out of allotted wall time
-        """
+@register_error_handler(PhBaseWorkChain, 300)
+def _handle_error_exceeded_maximum_walltime(self, calculation):
+    """
+    Calculation ended nominally but ran out of allotted wall time
+    """
+    if 'Maximum CPU time exceeded' in calculation.res.warnings:
         self.ctx.restart_calc = calculation
         self.report('PhCalculation<{}> terminated because maximum wall time was exceeded, restarting'
             .format(calculation.pk))
+        return ErrorHandlerReport(True, True)
+
+@register_error_handler(PhBaseWorkChain, 200)
+def _handle_fatal_error_not_converged(self, calculation):
+    """
+    The calculation failed because it could not read the generated input file
+    """
+    if ('Phonon did not reach end of self consistency' in calculation.res.warnings):
+        alpha_mix_old = calculation.inp.parameters.get_dict()['INPUTPH'].get('alpha_mix(1)', self.defaults.alpha_mix)
+        alpha_mix_new = 0.9 * alpha_mix_old
+        self.ctx.inputs.parameters['INPUTPH']['alpha_mix(1)'] = alpha_mix_new
+        self.ctx.restart_calc = calculation
+        self.report('PhCalculation<{}> terminated without reaching convergence, '
+            'setting alpha_mix to {} and restarting'.format(calculation.pk, alpha_mix_new))
+        return ErrorHandlerReport(True, True)
+
+@register_error_handler(PhBaseWorkChain, 100)
+def _handle_error_premature_termination(self, calculation):
+    """
+    Calculation did not reach the end of execution, probably because it was killed by the scheduler
+    for running out of allotted walltime
+    """
+    if 'QE ph run did not reach the end of the execution.' in calculation.res.parser_warnings:
+        inputs = calculation.inp.parameters.get_dict()
+        settings = self.ctx.inputs.settings
+
+        factor = self.defaults.delta_factor_max_seconds
+        max_seconds = settings.get('max_seconds', inputs['INPUTPH']['max_seconds'])
+        max_seconds_reduced = int(max_seconds * factor)
+        self.ctx.inputs.parameters['INPUTPH']['max_seconds'] = max_seconds_reduced
+
+        self.report('PwCalculation<{}> was terminated prematurely, reducing "max_seconds" from {} to {}'
+            .format(calculation.pk, max_seconds, max_seconds_reduced))
+        return ErrorHandlerReport(True, False)
