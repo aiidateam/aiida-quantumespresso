@@ -59,7 +59,8 @@
             "launch_workflow_pw_band_structure = cli.workflows.pw.band_structure:launch",
             "launch_workflow_pw_bands = cli.workflows.pw.bands:launch",
             "launch_workflow_pw_relax = cli.workflows.pw.relax:launch",
-            "launch_workflow_pw_base = cli.workflows.pw.base:launch"
+            "launch_workflow_pw_base = cli.workflows.pw.base:launch",
+            "launch_workflow_ph_base = cli.workflows.ph.base:launch"
         ]
     }, 
     "extras_require": {
