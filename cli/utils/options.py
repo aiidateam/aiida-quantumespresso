@@ -34,7 +34,7 @@ code = overridable_option(
 structure = overridable_option(
     '-s', '--structure', type=click.INT, required=True,
     callback=validators.validate_structure,
-    help='the node id of the structure'
+    help='the node pk of the structure'
 )
 
 pseudo_family = overridable_option(
@@ -47,6 +47,12 @@ kpoint_mesh = overridable_option(
     '-k', '--kpoint-mesh', 'kpoints', nargs=3, type=click.INT, default=[2, 2, 2], show_default=True,
     callback=validators.validate_kpoint_mesh,
     help='the number of points in the kpoint mesh along each basis vector'
+)
+
+parent_calc = overridable_option(
+    '-r', '--parent-calc', type=click.INT, required=True,
+    callback=validators.validate_parent_calc,
+    help='the node pk of the parent calculation'
 )
 
 max_num_machines = overridable_option(

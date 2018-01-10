@@ -82,3 +82,26 @@ def validate_kpoint_mesh(ctx, param, value):
         raise click.BadParameter("failed to create a KpointsData mesh out of {}\n{}".format(value, exception))
 
     return kpoints
+
+def validate_parent_calc(ctx, param, value):
+    """
+    Command line option validator for an AiiDA JobCalculation pk. It expects
+    an integer for the value and will try to load the corresponding node. it
+    will also check if successful if the node is a JobCalculation instance.
+
+    :param value: a JobCalculation node pk
+    :returns: a JobCalculation instance
+    """
+    from aiida.common.exceptions import NotExistent
+    from aiida.orm import load_node
+    from aiida.orm.calculation import JobCalculation
+
+    try:
+        parent_calc = load_node(int(value))
+    except NotExistent as exception:
+        raise click.BadParameter('failed to load the node<{}>\n{}'.format(value, exception))
+
+    if not isinstance(parent_calc, JobCalculation):
+        raise click.BadParameter('node<{}> is not of type JobCalculation'.format(value))
+
+    return parent_calc
