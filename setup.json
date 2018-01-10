@@ -56,6 +56,7 @@
         ],
         "console_scripts": [
             "launch_calculation_pw = cli.calculations.pw.base:launch",
+            "launch_workflow_pw_bands = cli.workflows.pw.bands:launch",
             "launch_workflow_pw_relax = cli.workflows.pw.relax:launch",
             "launch_workflow_pw_base = cli.workflows.pw.base:launch"
         ]
