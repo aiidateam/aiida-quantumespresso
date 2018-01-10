@@ -45,12 +45,6 @@ class NebParser(Parser):
         import copy
         
         successful = True
-        
-        # check if I'm not to overwrite anything
-        #state = self._calc.get_state()
-        #if state != calc_states.PARSING:
-        #    raise InvalidOperation("Calculation not in {} state"
-        #                           .format(calc_states.PARSING) )
 
         # look for eventual flags of the parser
         try:

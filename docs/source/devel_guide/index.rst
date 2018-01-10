@@ -5,3 +5,4 @@ Developer's guide
    :maxdepth: 4
 
    ./parsertests
+   ./workchains

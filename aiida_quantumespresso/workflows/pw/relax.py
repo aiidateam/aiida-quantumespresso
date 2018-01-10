@@ -2,7 +2,7 @@
 from copy import deepcopy
 from aiida.common.links import LinkType
 from aiida.orm import Code
-from aiida.orm.data.base import Str, Float, Bool
+from aiida.orm.data.base import Bool, Float, Int, Str 
 from aiida.orm.data.folder import FolderData
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.parameter import ParameterData
@@ -42,7 +42,9 @@ class PwRelaxWorkChain(WorkChain):
         spec.input('automatic_parallelization', valid_type=ParameterData, required=False)
         spec.input('final_scf', valid_type=Bool, default=Bool(False))
         spec.input('group', valid_type=Str, required=False)
-        spec.input('meta_converge', valid_type=Bool, default=Bool(True))
+        spec.input('max_iterations', valid_type=Int, default=Int(5))
+        spec.input('max_meta_convergence_iterations', valid_type=Int, default=Int(5))
+        spec.input('meta_convergence', valid_type=Bool, default=Bool(True))
         spec.input('relaxation_scheme', valid_type=Str, default=Str('vc-relax'))
         spec.input('volume_convergence', valid_type=Float, default=Float(0.01))
         spec.input('clean_workdir', valid_type=Bool, default=Bool(False))
@@ -57,7 +59,6 @@ class PwRelaxWorkChain(WorkChain):
                 cls.run_final_scf,
             ),
             cls.results,
-            cls.clean,
         )
         spec.output('output_structure', valid_type=StructureData)
         spec.output('output_parameters', valid_type=ParameterData)
@@ -77,6 +78,7 @@ class PwRelaxWorkChain(WorkChain):
         self.ctx.inputs = AttributeDict({
             'code': self.inputs.code,
             'parameters': self.inputs.parameters.get_dict(),
+            'max_iterations': self.inputs.max_iterations
         })
 
         # We expect either a KpointsData with given mesh or a desired distance between k-points
@@ -127,16 +129,18 @@ class PwRelaxWorkChain(WorkChain):
     def should_run_relax(self):
         """
         Return whether a relaxation workchain should be run, which is the case as long as the volume
-        change between two consecutive relaxation runs is larger than the specified volumen convergence
-        threshold value.
+        change between two consecutive relaxation runs is larger than the specified volume convergence
+        threshold value and the maximum number of meta convergence iterations is not exceeded
         """
-        return not self.ctx.is_converged
+        return not self.ctx.is_converged and self.ctx.iteration < self.inputs.max_meta_convergence_iterations.value
 
     def should_run_final_scf(self):
         """
-        Return whether after successful relaxation a final scf calculation should be run
+        Return whether after successful relaxation a final scf calculation should be run. If the maximum number of
+        meta convergence iterations has been exceeded and convergence has not been reached, the structure cannot be
+        considered to be relaxed and the final scf should not be run
         """
-        return self.inputs.final_scf.value
+        return self.inputs.final_scf.value and self.ctx.is_converged
 
     def run_relax(self):
         """
@@ -198,7 +202,7 @@ class PwRelaxWorkChain(WorkChain):
             self.ctx.current_cell_volume = curr_cell_volume
 
             # If meta convergence is switched off we are done
-            if not self.inputs.meta_converge.value:
+            if not self.inputs.meta_convergence.value:
                 self.ctx.is_converged = True
             return
 
@@ -223,6 +227,7 @@ class PwRelaxWorkChain(WorkChain):
         Run the PwBaseWorkChain to run a final scf PwCalculation for the relaxed structure
         """
         inputs = deepcopy(self.ctx.inputs)
+        structure = self.ctx.current_structure
 
         parameters = inputs['parameters']
         parameters['CONTROL']['calculation'] = 'scf'
@@ -231,7 +236,7 @@ class PwRelaxWorkChain(WorkChain):
         # Construct a new kpoint mesh on the current structure or pass the static mesh
         if 'kpoints' not in self.inputs or self.inputs.kpoints == None:
             kpoints = KpointsData()
-            kpoints.set_cell_from_structure(self.ctx.current_structure)
+            kpoints.set_cell_from_structure(structure)
             kpoints.set_kpoints_mesh_from_density(
                 self.inputs.kpoints_distance.value,
                 force_parity=self.inputs.kpoints_force_parity.value
@@ -241,6 +246,7 @@ class PwRelaxWorkChain(WorkChain):
 
         inputs.update({
             'kpoints': kpoints,
+            'structure': structure,
             'parameters': ParameterData(dict=parameters),
             'parent_folder': self.ctx.current_parent_folder,
         })
@@ -255,14 +261,18 @@ class PwRelaxWorkChain(WorkChain):
         """
         Attach the output parameters and structure of the last workchain to the outputs
         """
-        self.report('workchain completed after {} iterations'.format(self.ctx.iteration))
-
-        if self.inputs.final_scf.value:
-            workchain = self.ctx.workchain_scf
-            self.out('output_structure', workchain.inp.structure)
+        if self.ctx.is_converged and self.ctx.iteration <= self.inputs.max_meta_convergence_iterations.value:
+            self.report('workchain completed after {} iterations'.format(self.ctx.iteration))
         else:
+            self.report('maximum number of meta convergence iterations exceeded')
+
+        # Get the latest workchain, which is either the workchain_scf if it ran or otherwise the last regular workchain
+        try:
+            workchain = self.ctx.workchain_scf
+            structure = workchain.inp.structure
+        except AttributeError:
             workchain = self.ctx.workchains[-1]
-            self.out('output_structure', workchain.out.output_structure)
+            structure = workchain.out.output_structure
 
         if 'group' in self.inputs:
             # Retrieve the final successful calculation through its output_parameters
@@ -273,28 +283,39 @@ class PwRelaxWorkChain(WorkChain):
             self.report("storing the final PwCalculation<{}> in the group '{}'"
                 .format(calculation.pk, self.inputs.group.value))
 
-        link_labels = ['output_parameters', 'remote_folder',  'retrieved']
+        # Store the structure separately since the PwBaseWorkChain of final scf will not have it as an output
+        self.out('output_structure', structure)
+        self.report("attaching {}<{}> as an output node with label '{}'"
+            .format(structure.__class__.__name__, structure.pk, 'output_structure'))
 
-        for link_label in link_labels:
+        for link_label in ['output_parameters', 'remote_folder',  'retrieved']:
             if link_label in workchain.out:
                 node = workchain.get_outputs_dict()[link_label]
                 self.out(link_label, node)
                 self.report("attaching {}<{}> as an output node with label '{}'"
                     .format(node.__class__.__name__, node.pk, link_label))
 
-    def clean(self):
+    def on_destroy(self):
         """
         Clean remote folders of all PwCalculations run by ourselves and the called subworkchains, if the clean_workdir
         parameter was set to true in the Workchain inputs. We perform this cleaning only at the very end of the
         workchain and do not pass the clean_workdir input directly to the sub workchains that we call, because some of
         the sub workchains may rely on the calculation of on of the previous sub workchains.
         """
+        super(PwRelaxWorkChain, self).on_destroy()
+        if not self.has_finished():
+            return
+
         if not self.inputs.clean_workdir.value:
             self.report('remote folders will not be cleaned')
             return
 
         cleaned_calcs = []
-        workchains = self.ctx.workchains
+
+        try:
+            workchains = self.ctx.workchains
+        except AttributeError:
+            workchains = []
 
         try:
             workchains.append(self.ctx.workchain_scf)
