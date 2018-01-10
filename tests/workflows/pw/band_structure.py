@@ -1,6 +1,5 @@
 #!/usr/bin/env runaiida
 # -*- coding: utf-8 -*-
-
 import argparse
 from aiida.common.exceptions import NotExistent
 from aiida.orm.data.base import Str
@@ -10,6 +9,7 @@ from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.utils import WorkflowFactory
 from aiida.work.run import run
+from aiida_quantumespresso.utils.resources import get_default_options
 
 PwBandStructureWorkChain = WorkflowFactory('quantumespresso.pw.band_structure')
 
@@ -30,7 +30,7 @@ def parser_setup():
     )
     parser.add_argument(
         '-p', type=str, required=True, dest='pseudo_family',
-        help='the name of pseudo family to use'
+        help='the name of the pseudo family to use'
     )
     parser.add_argument(
         '-s', type=int, required=True, dest='structure',
@@ -74,13 +74,14 @@ def execute(args):
         print "The provided pk {} for the structure does not correspond to StructureData, aborting...".format(args.parent_calc)
         return
 
-    run(
-        PwBandStructureWorkChain,
-        code=code,
-        structure=structure,
-        pseudo_family=Str(args.pseudo_family),
-        protocol=Str(args.protocol)
-    )
+    inputs = {
+        'code': code,
+        'structure': structure,
+        'pseudo_family': Str(args.pseudo_family),
+        'protocol': Str(args.protocol),
+    }
+
+    run(PwBandStructureWorkChain, **inputs)
 
 
 def main():
@@ -88,7 +89,7 @@ def main():
     Setup the parser to retrieve the command line arguments and pass them to the main execution function.
     """
     parser = parser_setup()
-    args   = parser.parse_args()
+    args = parser.parse_args()
     result = execute(args)
 
 

@@ -35,7 +35,7 @@ class PwBandsWorkChain(WorkChain):
         spec.input('kpoints_distance', valid_type=Float, default=Float(0.2))
         spec.input('vdw_table', valid_type=SinglefileData, required=False)
         spec.input('parameters', valid_type=ParameterData)
-        spec.input('settings', valid_type=ParameterData)
+        spec.input('settings', valid_type=ParameterData, required=False)
         spec.input('options', valid_type=ParameterData, required=False)
         spec.input('skip_relax', valid_type=Bool, default=Bool(False))
         spec.input('automatic_parallelization', valid_type=ParameterData, required=False)
@@ -65,7 +65,6 @@ class PwBandsWorkChain(WorkChain):
         self.ctx.inputs = {
             'code': self.inputs.code,
             'parameters': self.inputs.parameters.get_dict(),
-            'settings': self.inputs.settings
         }
 
         # We expect either a KpointsData with given mesh or a desired distance between k-points
@@ -81,6 +80,11 @@ class PwBandsWorkChain(WorkChain):
         # Set the correct relaxation scheme in the input parameters
         if 'CONTROL' not in self.ctx.inputs['parameters']:
             self.ctx.inputs['parameters']['CONTROL'] = {}
+
+        if 'settings' in self.inputs:
+            self.ctx.inputs['settings'] = self.inputs.settings.get_dict()
+        else:
+            self.ctx.inputs['settings'] = {}
 
         # If options set, add it to the default inputs
         if 'options' in self.inputs:
@@ -176,6 +180,7 @@ class PwBandsWorkChain(WorkChain):
         inputs['kpoints'] = kpoints_mesh
         inputs['structure'] = structure
         inputs['parameters'] = ParameterData(dict=inputs['parameters'])
+        inputs['settings'] = ParameterData(dict=inputs['settings'])
         inputs['pseudo_family'] = self.inputs.pseudo_family
 
         running = submit(PwBaseWorkChain, **inputs)
@@ -203,15 +208,12 @@ class PwBandsWorkChain(WorkChain):
         inputs['parameters']['CONTROL']['restart_mode'] = restart_mode
         inputs['parameters']['CONTROL']['calculation'] = calculation_mode
 
-        # Tell the plugin to retrieve the bands
-        settings = inputs['settings'].get_dict()
-
         # Final input preparation, wrapping dictionaries in ParameterData nodes
         inputs['kpoints'] = self.ctx.kpoints_path
         inputs['structure'] = structure
         inputs['parent_folder'] = remote_folder
         inputs['parameters'] = ParameterData(dict=inputs['parameters'])
-        inputs['settings'] = ParameterData(dict=settings)
+        inputs['settings'] = ParameterData(dict=inputs['settings'])
         inputs['pseudo_family'] = self.inputs.pseudo_family
 
         running = submit(PwBaseWorkChain, **inputs)

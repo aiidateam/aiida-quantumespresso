@@ -7,6 +7,7 @@ from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.utils import CalculationFactory, WorkflowFactory
 from aiida.work.run import run
+from aiida_quantumespresso.utils.resources import get_default_options
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
 PhBaseWorkChain = WorkflowFactory('quantumespresso.ph.base')
@@ -20,20 +21,20 @@ def parser_setup():
         description='Run the PhBaseWorkChain for a previously completed PwCalculation',
     )
     parser.add_argument(
-        '-m', type=int, default=5, dest='max_iterations',
-        help='the maximum number of iterations to allow for each SCF cycle for a single k-point. (default: %(default)d)'
-    )
-    parser.add_argument(
-        '-k', nargs=3, type=int, default=[2, 2, 2], dest='qpoints', metavar='Q',
-        help='define the q-points mesh. (default: %(default)s)'
-    )
-    parser.add_argument(
         '-c', type=str, required=True, dest='codename',
         help='the name of the AiiDA code that references QE ph.x'
     )
     parser.add_argument(
         '-p', type=int, required=True, dest='parent_calc',
         help='the node id of the parent PwCalculation'
+    )
+    parser.add_argument(
+        '-q', nargs=3, type=int, default=[2, 2, 2], dest='qpoints', metavar='Q',
+        help='define the q-points mesh. (default: %(default)s)'
+    )
+    parser.add_argument(
+        '-m', type=int, default=1, dest='max_num_machines',
+        help='the maximum number of machines (nodes) to use for the calculations. (default: %(default)d)'
     )
     parser.add_argument(
         '-w', type=int, default=1800, dest='max_wallclock_seconds',
@@ -71,27 +72,20 @@ def execute(args):
 
     parameters = {
         'INPUTPH': {
-            'tr2_ph': 1e-10,
         }
     }
-    settings = {}
-    options  = {
-        'resources': {
-            'num_machines': 1
-        },
-        'max_wallclock_seconds': args.max_wallclock_seconds,
+
+    options = get_default_options(args.max_num_machines, args.max_wallclock_seconds)
+
+    inputs = {
+        'code': code,
+        'qpoints': qpoints,
+        'parent_calc': parent_calc,
+        'parameters': ParameterData(dict=parameters),
+        'options': ParameterData(dict=options),
     }
 
-    run(
-        PhBaseWorkChain,
-        code=code,
-        parent_calc=parent_calc,
-        qpoints=qpoints,
-        parameters=ParameterData(dict=parameters),
-        settings=ParameterData(dict=settings),
-        options=ParameterData(dict=options),
-        max_iterations=Int(args.max_iterations)
-    )
+    run(PhBaseWorkChain, **inputs)
 
 
 def main():
@@ -99,7 +93,7 @@ def main():
     Setup the parser to retrieve the command line arguments and pass them to the main execution function.
     """
     parser = parser_setup()
-    args   = parser.parse_args()
+    args = parser.parse_args()
     result = execute(args)
 
 

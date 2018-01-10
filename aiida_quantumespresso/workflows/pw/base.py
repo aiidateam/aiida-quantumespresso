@@ -227,8 +227,9 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         # Get automated parallelization settings
         parallelization = get_pw_parallelization_parameters(calculation, **self.ctx.automatic_parallelization)
 
-        self.report('Determined the following resource settings from automatic_parallelization input: {}'
-            .format(parallelization))
+        node = ParameterData(dict=parallelization)
+        self.out('automatic_parallelization', node)
+        self.report('results of automatic parallelization in {}<{}>'.format(node.__class__.__name__, node.pk))
 
         options = self.ctx.inputs_raw._options
         base_resources = options.get('resources', {})

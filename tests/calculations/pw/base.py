@@ -8,6 +8,7 @@ from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.utils import CalculationFactory
 from aiida.work.run import run
+from aiida_quantumespresso.utils.resources import get_default_options
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
 
@@ -20,29 +21,33 @@ def parser_setup():
         description='Run a PwCalculation for a given input structure',
     )
     parser.add_argument(
-        '-k', nargs=3, type=int, default=[2, 2, 2], dest='kpoints', metavar='Q',
-        help='define the k-points mesh. (default: %(default)s)'
-    )
-    parser.add_argument(
         '-c', type=str, required=True, dest='codename',
         help='the name of the AiiDA code that references QE pw.x'
     )
     parser.add_argument(
+        '-k', nargs=3, type=int, default=[2, 2, 2], dest='kpoints', metavar='K',
+        help='define the k-points mesh. (default: %(default)s)'
+    )
+    parser.add_argument(
         '-p', type=str, required=True, dest='pseudo_family',
-        help='the name of pseudo family to use'
+        help='the name of the pseudo family to use'
     )
     parser.add_argument(
         '-s', type=int, required=True, dest='structure',
         help='the node id of the structure'
     )
     parser.add_argument(
-        '-m', '--mode', type=str, default='scf', dest='calculation_mode',
-        const='all', nargs='?', choices=['scf', 'vc-relax'],
-        help='select the calculation mode (default: %(default)s)'
+        '-m', type=int, default=1, dest='max_num_machines',
+        help='the maximum number of machines (nodes) to use for the calculations. (default: %(default)d)'
     )
     parser.add_argument(
         '-w', type=int, default=1800, dest='max_wallclock_seconds',
         help='the maximum wallclock time in seconds to set for the calculations. (default: %(default)d)'
+    )
+    parser.add_argument(
+        '-z', '--mode', type=str, default='scf', dest='calculation_mode',
+        const='all', nargs='?', choices=['scf', 'vc-relax'],
+        help='select the calculation mode (default: %(default)s)'
     )
 
     return parser
@@ -78,7 +83,6 @@ def execute(args):
         'CONTROL': {
             'restart_mode': 'from_scratch',
             'calculation': args.calculation_mode,
-            'tstress': True,
         },
         'SYSTEM': {
             'ecutwfc': 30.,
@@ -88,14 +92,8 @@ def execute(args):
             'conv_thr': 1.e-10,
         }
     }
-    settings = {}
-    options  = {
-        'resources': {
-            'num_machines': 1
-        },
-        'max_wallclock_seconds': args.max_wallclock_seconds,
-    }
 
+    options = get_default_options(args.max_num_machines, args.max_wallclock_seconds)
     pseudo = get_pseudos_from_structure(structure, args.pseudo_family)
 
     inputs = {
@@ -104,7 +102,7 @@ def execute(args):
         'pseudo': pseudo,
         'kpoints': kpoints,
         'parameters': ParameterData(dict=parameters),
-        'settings': ParameterData(dict=settings),
+        'settings': ParameterData(dict={}),
         '_options': options,
     }
 
@@ -124,7 +122,7 @@ def main():
     Setup the parser to retrieve the command line arguments and pass them to the main execution function.
     """
     parser = parser_setup()
-    args   = parser.parse_args()
+    args = parser.parse_args()
     result = execute(args)
 
 
