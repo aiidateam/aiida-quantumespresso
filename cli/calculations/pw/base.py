@@ -1,130 +1,61 @@
-#!/usr/bin/env runaiida
 # -*- coding: utf-8 -*-
-import argparse, re
-from aiida.common.exceptions import NotExistent
-from aiida.orm.data.upf import get_pseudos_from_structure
-from aiida.orm.data.parameter import ParameterData
-from aiida.orm.data.structure import StructureData
-from aiida.orm.data.array.kpoints import KpointsData
-from aiida.orm.utils import CalculationFactory
-from aiida.work.run import run
-from aiida_quantumespresso.utils.resources import get_default_options
+import click
+from cli.utils import options
+from cli.utils.click import command
 
-PwCalculation = CalculationFactory('quantumespresso.pw')
 
-def parser_setup():
+@command()
+@options.code()
+@options.structure()
+@options.pseudo_family()
+@options.kpoint_mesh()
+@options.max_num_machines()
+@options.max_wallclock_seconds()
+@click.option(
+    '-z', '--calculation-mode', 'mode', type=click.Choice(['scf', 'vc-relax']), default='scf', show_default=True,
+    help='select the calculation mode'
+)
+def launch(code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, mode):
     """
-    Setup the parser of command line arguments and return it. This is separated from the main
-    execution body to allow tests to effectively mock the setup of the parser and the command line arguments
+    Run a PwCalculation for a given input structure
     """
-    parser = argparse.ArgumentParser(
-        description='Run a PwCalculation for a given input structure',
-    )
-    parser.add_argument(
-        '-c', type=str, required=True, dest='codename',
-        help='the name of the AiiDA code that references QE pw.x'
-    )
-    parser.add_argument(
-        '-k', nargs=3, type=int, default=[2, 2, 2], dest='kpoints', metavar='K',
-        help='define the k-points mesh. (default: %(default)s)'
-    )
-    parser.add_argument(
-        '-p', type=str, required=True, dest='pseudo_family',
-        help='the name of the pseudo family to use'
-    )
-    parser.add_argument(
-        '-s', type=int, required=True, dest='structure',
-        help='the node id of the structure'
-    )
-    parser.add_argument(
-        '-m', type=int, default=1, dest='max_num_machines',
-        help='the maximum number of machines (nodes) to use for the calculations. (default: %(default)d)'
-    )
-    parser.add_argument(
-        '-w', type=int, default=1800, dest='max_wallclock_seconds',
-        help='the maximum wallclock time in seconds to set for the calculations. (default: %(default)d)'
-    )
-    parser.add_argument(
-        '-z', '--mode', type=str, default='scf', dest='calculation_mode',
-        const='all', nargs='?', choices=['scf', 'vc-relax'],
-        help='select the calculation mode (default: %(default)s)'
-    )
+    from aiida.orm import load_node
+    from aiida.orm.data.parameter import ParameterData
+    from aiida.orm.data.upf import get_pseudos_from_structure
+    from aiida.orm.utils import CalculationFactory
+    from aiida.work.run import run
+    from aiida_quantumespresso.utils.resources import get_default_options
 
-    return parser
-
-
-def execute(args):
-    """
-    The main execution of the script, which will run some preliminary checks on the command
-    line arguments before passing them to the workchain and running it
-    """
-    try:
-        code = Code.get_from_string(args.codename)
-    except NotExistent as exception:
-        print "Execution failed: could not retrieve the code '{}'".format(args.codename)
-        print "Exception report: {}".format(exception)
-        return
-
-    try:
-        structure = load_node(args.structure)
-    except NotExistent as exception:
-        print "Execution failed: failed to load the node for the given structure pk '{}'".format(args.structure)
-        print "Exception report: {}".format(exception)
-        return
-
-    if not isinstance(structure, StructureData):
-        print "The provided pk {} for the structure does not correspond to StructureData, aborting...".format(args.structure)
-        return
-
-    kpoints = KpointsData()
-    kpoints.set_kpoints_mesh(args.kpoints)
+    PwCalculation = CalculationFactory('quantumespresso.pw')
 
     parameters = {
         'CONTROL': {
-            'restart_mode': 'from_scratch',
-            'calculation': args.calculation_mode,
+            'calculation': mode,
         },
         'SYSTEM': {
             'ecutwfc': 30.,
             'ecutrho': 240.,
         },
-        'ELECTRONS': {
-            'conv_thr': 1.e-10,
-        }
     }
-
-    options = get_default_options(args.max_num_machines, args.max_wallclock_seconds)
-    pseudo = get_pseudos_from_structure(structure, args.pseudo_family)
 
     inputs = {
         'code': code,
         'structure': structure,
-        'pseudo': pseudo,
+        'pseudo': get_pseudos_from_structure(structure, pseudo_family),
         'kpoints': kpoints,
         'parameters': ParameterData(dict=parameters),
         'settings': ParameterData(dict={}),
-        '_options': options,
+        '_options': get_default_options(max_num_machines, max_wallclock_seconds),
     }
 
-    print 'Running a pw.x calculation in the {} mode...'.format(args.calculation_mode)
+    click.echo('Running a pw.x calculation in the {} mode... '.format(mode))
+
     process = PwCalculation.process()
-    results = run(process, **inputs)
+    results, pk = run(process, _return_pid=True, **inputs)
+    calculation = load_node(pk)
 
-    print '\n{link:25s} {node}'.format(link='Output link', node='Node pk and type')
-    print '{s}'.format(s='-'*60)
-    for link, node in sorted(results.iteritems()):
-        if not re.match(r'.*_[0-9]+', link):
-            print '{link:25s} <{node_pk}> {node_type}'.format(link=link, node_pk=node.pk, node_type=node.__class__.__name__)
-
-
-def main():
-    """
-    Setup the parser to retrieve the command line arguments and pass them to the main execution function.
-    """
-    parser = parser_setup()
-    args = parser.parse_args()
-    result = execute(args)
-
-
-if __name__ == "__main__":
-    main()
+    click.echo('PwCalculation<{}> terminated with state: {}'.format(pk, calculation.get_state()))
+    click.echo('\n{link:25s} {node}'.format(link='Output link', node='Node pk and type'))
+    click.echo('{s}'.format(s='-'*60))
+    for link, node in sorted(calculation.get_outputs(also_labels=True)):
+        click.echo('{:25s} <{}> {}'.format(link, node.pk, node.__class__.__name__))
