@@ -58,7 +58,7 @@ def register_error_handler(cls, priority):
     def error_handler_decorator(handler):
         @wraps(handler)
         def error_handler(self, calculation):
-            if hasattr(_verbose, cls) and cls._verbose:
+            if hasattr(cls, '_verbose') and cls._verbose:
                 self.report('({}){}'.format(priority, handler.__name__))
             return handler(self, calculation)
         setattr(cls, handler.__name__, error_handler)
