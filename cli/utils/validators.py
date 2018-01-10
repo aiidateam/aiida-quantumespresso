@@ -11,11 +11,12 @@ def validate_structure(ctx, param, value):
     :param value: a StructureData node pk
     :returns: a StructureData instance
     """
+    from aiida.common.exceptions import NotExistent
     from aiida.orm import load_node
     from aiida.orm.data.structure import StructureData
 
     try:
-        structure = load_node(value)
+        structure = load_node(int(value))
     except NotExistent as exception:
         raise click.BadParameter('failed to load the node<{}>\n{}'.format(value, exception))
 
@@ -32,6 +33,7 @@ def validate_code(ctx, param, value):
     :param value: a Code label
     :returns: a Code instance
     """
+    from aiida.common.exceptions import NotExistent
     from aiida.orm import Code
 
     try:
@@ -49,6 +51,7 @@ def validate_pseudo_family(ctx, param, value):
     :param value: a UpfData pseudo potential family label
     :returns: the pseudo potential family label
     """
+    from aiida.common.exceptions import NotExistent
     from aiida.orm.data.upf import UpfData
 
     try:
@@ -67,7 +70,6 @@ def validate_kpoint_mesh(ctx, param, value):
     :param value: a tuple of three positive integers
     :returns: a KpointsData instance
     """
-    from aiida.common.exceptions import NotExistent
     from aiida.orm.data.array.kpoints import KpointsData
 
     if any([type(i) != int for i in value]) or any([int(i) <= 0 for i in value]):
