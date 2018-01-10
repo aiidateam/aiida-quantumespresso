@@ -67,6 +67,8 @@ class BaseRestartWorkChain(WorkChain):
             for plugin in get_plugins(self._error_handler_entry_point):
                 try:
                     get_plugin(self._error_handler_entry_point, plugin)
+                    self.logger.info("loaded the '{}' entry point for the '{}' error handlers category"
+                        .format(plugin, self._error_handler_entry_point, plugin))
                 except (LoadingPluginFailed, MissingPluginError):
                     self.logger.warning("failed to load the '{}' entry point for the '{}' error handlers"
                         .format(plugin, self._error_handler_entry_point))
