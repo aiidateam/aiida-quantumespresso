@@ -41,8 +41,8 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         super(PhBaseWorkChain, cls).define(spec)
         spec.input('code', valid_type=Code)
         spec.input('qpoints', valid_type=KpointsData)
-        spec.input('parameters', valid_type=ParameterData)
         spec.input('parent_calc', valid_type=PwCalculation)
+        spec.input('parameters', valid_type=ParameterData, required=False)
         spec.input('settings', valid_type=ParameterData, required=False)
         spec.input('options', valid_type=ParameterData, required=False)
         spec.outline(
@@ -68,8 +68,12 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         self.ctx.inputs_raw = AttributeDict({
             'code': self.inputs.code,
             'qpoints': self.inputs.qpoints,
-            'parameters': self.inputs.parameters.get_dict(),
         })
+
+        if 'parameters' in self.inputs:
+            self.ctx.inputs_raw.parameters = self.inputs.parameters.get_dict()
+        else:
+            self.ctx.inputs_raw.parameters = {}
 
         if 'INPUTPH' not in self.ctx.inputs_raw.parameters:
             self.ctx.inputs_raw.parameters['INPUTPH'] = {}
