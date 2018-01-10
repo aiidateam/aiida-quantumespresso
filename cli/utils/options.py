@@ -58,3 +58,13 @@ max_wallclock_seconds = overridable_option(
     '-w', '--max-wallclock-seconds', type=click.INT, default=1800, show_default=True,
     help='the maximum wallclock time in seconds to set for the calculations'
 )
+
+automatic_parallelization = overridable_option(
+    '-a', '--automatic-parallelization', is_flag=True, default=False, show_default=True,
+    help='enable the automatic parallelization option of the workchain'
+)
+
+clean_workdir = overridable_option(
+    '-x', '--clean-workdir', is_flag=True, default=False, show_default=True,
+    help='clean the remote folder of all the launched calculations after completion of the workchain'
+)

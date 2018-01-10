@@ -55,7 +55,8 @@
             "quantumespresso.pw.band_structure = aiida_quantumespresso.workflows.pw.band_structure:PwBandStructureWorkChain"
         ],
         "console_scripts": [
-            "launch_calculation_pw = cli.calculations.pw.base:launch"
+            "launch_calculation_pw = cli.calculations.pw.base:launch",
+            "launch_workflow_pw_base = cli.workflows.pw.base:launch"
         ]
     }, 
     "extras_require": {
