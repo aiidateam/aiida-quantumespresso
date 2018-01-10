@@ -8,6 +8,7 @@ from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.utils import WorkflowFactory
 from aiida.work.run import run
+from aiida_quantumespresso.utils.resources import get_default_options
 
 PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
 
@@ -24,12 +25,12 @@ def parser_setup():
         help='the name of the AiiDA code that references QE pw.x'
     )
     parser.add_argument(
-        '-k', nargs=3, type=int, default=[2, 2, 2], dest='kpoints', metavar='Q',
-        help='define the q-points mesh. (default: %(default)s)'
+        '-k', nargs=3, type=int, default=[2, 2, 2], dest='kpoints', metavar='K',
+        help='define the k-points mesh. (default: %(default)s)'
     )
     parser.add_argument(
         '-p', type=str, required=True, dest='pseudo_family',
-        help='the name of pseudo family to use'
+        help='the name of the pseudo family to use'
     )
     parser.add_argument(
         '-s', type=int, required=True, dest='structure',
@@ -40,8 +41,12 @@ def parser_setup():
         help='the maximum number of machines (nodes) to use for the calculations. (default: %(default)d)'
     )
     parser.add_argument(
-        '-w', type=int, default=3600, dest='max_wallclock_seconds',
+        '-w', type=int, default=1800, dest='max_wallclock_seconds',
         help='the maximum wallclock time in seconds to set for the calculations. (default: %(default)d)'
+    )
+    parser.add_argument(
+        '-a', '--automatic-parallelization', action='store_true', dest='automatic_parallelization',
+        help='enable the automatic parallelization option of the workchain'
     )
     parser.add_argument(
         '-x', '--clean-workdir', action='store_true', dest='clean_workdir',
@@ -83,12 +88,6 @@ def execute(args):
             'ecutrho': 240.,
         },
     }
-    
-    automatic_parallelization = {
-        'max_num_machines': args.max_num_machines,
-        'target_time_seconds': 0.5 * args.max_wallclock_seconds,
-        'max_wallclock_seconds': args.max_wallclock_seconds
-    }
 
     inputs = {
         'code': code,
@@ -96,9 +95,19 @@ def execute(args):
         'pseudo_family': Str(args.pseudo_family),
         'kpoints': kpoints,
         'parameters': ParameterData(dict=parameters),
-        'automatic_parallelization': ParameterData(dict=automatic_parallelization),
         'final_scf': Bool(True)
     }
+
+    if args.automatic_parallelization:
+        automatic_parallelization = {
+            'max_num_machines': args.max_num_machines,
+            'target_time_seconds': 0.5 * args.max_wallclock_seconds,
+            'max_wallclock_seconds': args.max_wallclock_seconds
+        }
+        inputs['automatic_parallelization'] = ParameterData(dict=automatic_parallelization)
+    else:
+        options = get_default_options(args.max_num_machines, args.max_wallclock_seconds)
+        inputs['options'] = ParameterData(dict=options)
 
     if args.clean_workdir:
         inputs['clean_workdir'] = Bool(True)

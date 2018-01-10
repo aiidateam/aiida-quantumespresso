@@ -1,6 +1,5 @@
 #!/usr/bin/env runaiida
 # -*- coding: utf-8 -*-
-
 import argparse
 from aiida.common.exceptions import NotExistent
 from aiida.orm.data.base import Str, Float
@@ -9,6 +8,7 @@ from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.utils import WorkflowFactory
 from aiida.work.run import run
+from aiida_quantumespresso.utils.resources import get_default_options
 
 PwBandsWorkChain = WorkflowFactory('quantumespresso.pw.bands')
 
@@ -21,24 +21,32 @@ def parser_setup():
         description='Run the PwBandsWorkChain for a given input structure',
     )
     parser.add_argument(
-        '-k', nargs=3, type=int, default=[2, 2, 2], dest='kpoints', metavar='Q',
-        help='define the q-points mesh. (default: %(default)s)'
-    )
-    parser.add_argument(
         '-c', type=str, required=True, dest='codename',
         help='the name of the AiiDA code that references QE pw.x'
     )
     parser.add_argument(
+        '-k', nargs=3, type=int, default=[2, 2, 2], dest='kpoints', metavar='K',
+        help='define the k-points mesh. (default: %(default)s)'
+    )
+    parser.add_argument(
         '-p', type=str, required=True, dest='pseudo_family',
-        help='the name of pseudo family to use'
+        help='the name of the pseudo family to use'
     )
     parser.add_argument(
         '-s', type=int, required=True, dest='structure',
         help='the node id of the structure'
     )
     parser.add_argument(
+        '-m', type=int, default=1, dest='max_num_machines',
+        help='the maximum number of machines (nodes) to use for the calculations. (default: %(default)d)'
+    )
+    parser.add_argument(
         '-w', type=int, default=1800, dest='max_wallclock_seconds',
         help='the maximum wallclock time in seconds to set for the calculations. (default: %(default)d)'
+    )
+    parser.add_argument(
+        '-a', '--automatic-parallelization', action='store_true', dest='automatic_parallelization',
+        help='enable the automatic parallelization option of the workchain'
     )
 
     return parser
@@ -71,47 +79,38 @@ def execute(args):
     kpoints.set_kpoints_mesh(args.kpoints)
 
     parameters = {
-        'CONTROL': {
-            'restart_mode': 'from_scratch',
-        },
         'SYSTEM': {
             'ecutwfc': 30.,
             'ecutrho': 240.,
         },
     }
-    settings = {}
-    options  = {
-        'resources': {
-            'num_machines': 1,
-        },
-        'max_wallclock_seconds': args.max_wallclock_seconds,
-    }
 
     relax_inputs = {
         'kpoints_distance': Float(0.2),
         'parameters': ParameterData(dict=parameters),
-        'settings': ParameterData(dict=settings),
-        'options': ParameterData(dict=options)
-    }
-    
-    automatic_parallelization = {
-        'max_num_machines': 1,
-        'target_time_seconds': 1800,
-        'max_wallclock_seconds': 4 * 3600
     }
 
-    run(
-        PwBandsWorkChain,
-        code=code,
-        structure=structure,
-        pseudo_family=Str(args.pseudo_family),
-        kpoints_mesh=kpoints,
-        parameters=ParameterData(dict=parameters),
-        settings=ParameterData(dict=settings),
-        options=ParameterData(dict=options),
-        automatic_parallelization=ParameterData(dict=automatic_parallelization),
-        relax=relax_inputs
-    )
+    inputs = {
+        'code': code,
+        'structure': structure,
+        'pseudo_family': Str(args.pseudo_family),
+        'kpoints_mesh': kpoints,
+        'parameters': ParameterData(dict=parameters),
+        'relax': relax_inputs
+    }
+
+    if args.automatic_parallelization:
+        automatic_parallelization = {
+            'max_num_machines': args.max_num_machines,
+            'target_time_seconds': 0.5 * args.max_wallclock_seconds,
+            'max_wallclock_seconds': args.max_wallclock_seconds
+        }
+        inputs['automatic_parallelization'] = ParameterData(dict=automatic_parallelization)
+    else:
+        options = get_default_options(args.max_num_machines, args.max_wallclock_seconds)
+        inputs['options'] = ParameterData(dict=options)
+
+    run(PwBandsWorkChain, **inputs)
 
 
 def main():
@@ -119,7 +118,7 @@ def main():
     Setup the parser to retrieve the command line arguments and pass them to the main execution function.
     """
     parser = parser_setup()
-    args   = parser.parse_args()
+    args = parser.parse_args()
     result = execute(args)
 
 
