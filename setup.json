@@ -53,6 +53,14 @@
             "quantumespresso.pw.relax = aiida_quantumespresso.workflows.pw.relax:PwRelaxWorkChain", 
             "quantumespresso.pw.bands = aiida_quantumespresso.workflows.pw.bands:PwBandsWorkChain", 
             "quantumespresso.pw.band_structure = aiida_quantumespresso.workflows.pw.band_structure:PwBandStructureWorkChain"
+        ], 
+        "console_scripts": [
+            "launch_calculation_pw = cli.calculations.pw.base:launch", 
+            "launch_workflow_pw_band_structure = cli.workflows.pw.band_structure:launch", 
+            "launch_workflow_pw_bands = cli.workflows.pw.bands:launch", 
+            "launch_workflow_pw_relax = cli.workflows.pw.relax:launch", 
+            "launch_workflow_pw_base = cli.workflows.pw.base:launch", 
+            "launch_workflow_ph_base = cli.workflows.ph.base:launch"
         ]
     }, 
     "extras_require": {
@@ -71,7 +79,8 @@
         ]
     }, 
     "install_requires": [
-        "aiida_core>=0.10.0rc3"
+        "aiida_core>=0.10.0rc3", 
+        "click"
     ], 
     "license": "MIT License", 
     "name": "aiida_quantumespresso", 
