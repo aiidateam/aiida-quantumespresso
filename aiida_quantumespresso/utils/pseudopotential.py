@@ -15,7 +15,7 @@ def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=N
     we can pass the additional parameters by using them as the keys of a dictionary
 
     :param structure: StructureData node
-    :param pseudos: a dictionary where keys are tuples of kind name and value are UpfData nodes
+    :param pseudos: a dictionary where keys are the kind names and value are UpfData nodes
     :param pseudo_family: string name of the pseudopotential family to use
     :raises: ValueError if neither pseudos or pseudo_family is specified or if no UpfData is found for
         every element in the structure
