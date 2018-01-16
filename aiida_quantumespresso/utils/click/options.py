@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import 
 import click
-from cli.utils import validators
+from aiida_quantumespresso.utils.click import validators
 
 class overridable_option(object):
     """
