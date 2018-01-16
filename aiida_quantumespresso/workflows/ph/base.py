@@ -4,6 +4,7 @@ from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import Code
 from aiida.orm.data.base import Bool, Float, Int, Str
 from aiida.orm.data.folder import FolderData
+from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
@@ -41,7 +42,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         super(PhBaseWorkChain, cls).define(spec)
         spec.input('code', valid_type=Code)
         spec.input('qpoints', valid_type=KpointsData)
-        spec.input('parent_calc', valid_type=PwCalculation)
+        spec.input('parent_folder', valid_type=RemoteData)
         spec.input('parameters', valid_type=ParameterData, required=False)
         spec.input('settings', valid_type=ParameterData, required=False)
         spec.input('options', valid_type=ParameterData, required=False)
@@ -56,6 +57,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
             cls.results,
         )
         spec.output('output_parameters', valid_type=ParameterData)
+        spec.output('remote_folder', valid_type=RemoteData)
         spec.output('retrieved', valid_type=FolderData)
 
     def validate_inputs(self):
@@ -68,6 +70,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         self.ctx.inputs_raw = AttributeDict({
             'code': self.inputs.code,
             'qpoints': self.inputs.qpoints,
+            'parent_folder': self.inputs.parent_folder,
         })
 
         if 'parameters' in self.inputs:
@@ -88,8 +91,6 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         else:
             self.ctx.inputs_raw._options = get_default_options()
 
-        self.ctx.restart_calc = self.inputs.parent_calc
-
         # Assign a deepcopy to self.ctx.inputs which will be used by the BaseRestartWorkChain
         self.ctx.inputs = deepcopy(self.ctx.inputs_raw)
 
@@ -99,8 +100,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         """
         if isinstance(self.ctx.restart_calc, PhCalculation):
             self.ctx.inputs.parameters['INPUTPH']['recover'] = True
-
-        self.ctx.inputs.parent_folder = self.ctx.restart_calc.out.remote_folder
+            self.ctx.inputs.parent_folder = self.ctx.restart_calc.out.remote_folder
 
     def _prepare_process_inputs(self, inputs):
         """
