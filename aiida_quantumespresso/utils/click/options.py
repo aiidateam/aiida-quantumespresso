@@ -80,3 +80,9 @@ clean_workdir = overridable_option(
     '-x', '--clean-workdir', is_flag=True, default=False, show_default=True,
     help='clean the remote folder of all the launched calculations after completion of the workchain'
 )
+
+group = overridable_option(
+    '-g', '--group', type=click.STRING, required=True,
+    callback=validators.validate_group,
+    help='the name or pk of a Group'
+)
