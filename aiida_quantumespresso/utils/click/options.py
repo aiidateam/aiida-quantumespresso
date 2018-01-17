@@ -17,13 +17,19 @@ class overridable_option(object):
         self.args = args
         self.kwargs = kwargs
 
-    def __call__(self, **kwargs):
+    def __call__(self, *args, **kwargs):
         """
         Override kwargs (no name changes) and return option
         """
+        if not args:
+            args_copy = self.args
+        else:
+            args_copy = args
+
         kw_copy = self.kwargs.copy()
         kw_copy.update(kwargs)
-        return click.option(*self.args, **kw_copy)
+
+        return click.option(*args_copy, **kw_copy)
 
 code = overridable_option(
     '-c', '--code', type=click.STRING, required=True,
@@ -73,4 +79,10 @@ automatic_parallelization = overridable_option(
 clean_workdir = overridable_option(
     '-x', '--clean-workdir', is_flag=True, default=False, show_default=True,
     help='clean the remote folder of all the launched calculations after completion of the workchain'
+)
+
+group = overridable_option(
+    '-g', '--group', type=click.STRING, required=True,
+    callback=validators.validate_group,
+    help='the name or pk of a Group'
 )

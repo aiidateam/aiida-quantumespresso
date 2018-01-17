@@ -105,3 +105,28 @@ def validate_parent_calc(ctx, param, value):
         raise click.BadParameter('node<{}> is not of type JobCalculation'.format(value))
 
     return parent_calc
+
+def validate_group(ctx, param, value):
+    """
+    Command line option validator for an AiiDA Group. It expects a string for the value
+    that corresponds to the label or a pk of an AiiDA group.
+
+    :param value: a Group label or pk
+    :returns: a Group instance
+    """
+    from aiida.common.exceptions import NotExistent
+    from aiida.orm import Group
+
+    try:
+        group = Group.get_from_string(value)
+    except NotExistent as exception:
+        pass
+    else:
+        return group
+
+    try:
+        group = Group.get(pk=int(value))
+    except NotExistent as exception:
+        raise click.BadParameter("failed to load the Group with the label or pk '{}'\n{}".format(value, exception))
+    else:
+        return group
