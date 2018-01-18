@@ -275,13 +275,16 @@ class PwRelaxWorkChain(WorkChain):
             structure = workchain.out.output_structure
 
         if 'group' in self.inputs:
-            # Retrieve the final successful calculation through its output_parameters
-            # This will need a cleaner way eventually, this is just plain confusing
-            calculation = workchain.out.output_parameters.inp.output_parameters
-            group, _ = Group.get_or_create(name=self.inputs.group.value)
-            group.add_nodes(calculation)
-            self.report("storing the final PwCalculation<{}> in the group '{}'"
-                .format(calculation.pk, self.inputs.group.value))
+            # Retrieve the final successful PwCalculation through the output_parameters of the PwBaseWorkChain
+            try:
+                calculation = workchain.out.output_parameters.get_inputs(node_type=PwCalculation)[0]
+            except (AttributeError, IndexError) as exception:
+                self.report('could not retrieve the last run PwCalculation to add to the result group')
+            else:
+                group, _ = Group.get_or_create(name=self.inputs.group.value)
+                group.add_nodes(calculation)
+                self.report("storing the final PwCalculation<{}> in the group '{}'"
+                    .format(calculation.pk, self.inputs.group.value))
 
         # Store the structure separately since the PwBaseWorkChain of final scf will not have it as an output
         self.out('output_structure', structure)
