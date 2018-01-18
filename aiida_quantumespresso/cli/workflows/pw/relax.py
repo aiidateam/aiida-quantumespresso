@@ -13,11 +13,19 @@ from aiida_quantumespresso.utils.click import options
 @options.max_wallclock_seconds()
 @options.automatic_parallelization()
 @options.clean_workdir()
+@click.option(
+    '-f', '--final-scf', is_flag=True, default=False, show_default=True,
+    help='run a final scf calculation for the final relaxed structure'
+)
+@click.option(
+    '-g', '--group', type=click.STRING, required=False,
+    help='the label of a Group to add the final PwCalculation to in case of success'
+)
 def launch(
     code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds,
-    automatic_parallelization, clean_workdir):
+    automatic_parallelization, clean_workdir, final_scf, group):
     """
-    Run the PwBaseWorkChain for a given input structure
+    Run the PwRelaxWorkChain for a given input structure
     """
     from aiida.orm.data.base import Bool, Str
     from aiida.orm.data.parameter import ParameterData
@@ -55,5 +63,11 @@ def launch(
 
     if clean_workdir:
         inputs['clean_workdir'] = Bool(True)
+
+    if final_scf:
+        inputs['final_scf'] = Bool(True)
+
+    if group:
+        inputs['group'] = Str(group)
 
     run(PwRelaxWorkChain, **inputs)
