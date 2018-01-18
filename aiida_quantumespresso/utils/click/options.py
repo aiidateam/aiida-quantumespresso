@@ -12,15 +12,19 @@ class overridable_option(object):
 
     def __init__(self, *args, **kwargs):
         """
-        Store the defaults.
+        Store the defaults
         """
         self.args = args
         self.kwargs = kwargs
 
     def __call__(self, *args, **kwargs):
         """
-        Override kwargs (no name changes) and return option
+        Override args if passed and update the kwargs and return the click.option
+        If a callback is specified in the kwargs make sure to bind the callback_kwargs
+        to it using the partial lambda construct of functools
         """
+        import functools
+
         if not args:
             args_copy = self.args
         else:
@@ -28,6 +32,14 @@ class overridable_option(object):
 
         kw_copy = self.kwargs.copy()
         kw_copy.update(kwargs)
+
+        # Pop the optional callback_kwargs if present
+        callback_kwargs = kw_copy.pop('callback_kwargs', {})
+
+        if 'callback' in kw_copy:
+            callback_plain = kw_copy['callback']
+            callback_bound = functools.partial(callback_plain, callback_kwargs)
+            kw_copy['callback'] = callback_bound
 
         return click.option(*args_copy, **kw_copy)
 

@@ -2,12 +2,15 @@
 from __future__ import absolute_import 
 import click
 
-def validate_structure(ctx, param, value):
+def validate_structure(callback_kwargs, ctx, param, value):
     """
     Command line option validator for an AiiDA structure data pk. It expects
     an integer for the value and will try to load the corresponding node. it
     will also check if successful if the node is a StructureData instance.
 
+    :param callback_kwargs: an optional dictionary with arguments for internal use in the validator
+    :param ctx: internal context of the click.command
+    :param param: the click Parameter, i.e. either the Option or Argument to which the validator is hooked up
     :param value: a StructureData node pk
     :returns: a StructureData instance
     """
@@ -25,11 +28,14 @@ def validate_structure(ctx, param, value):
 
     return structure
 
-def validate_code(ctx, param, value):
+def validate_code(callback_kwargs, ctx, param, value):
     """
     Command line option validator for an AiiDA code. It expects a string for the value
     that corresponds to the label of an AiiDA code that has been setup.
 
+    :param callback_kwargs: an optional dictionary with arguments for internal use in the validator
+    :param ctx: internal context of the click.command
+    :param param: the click Parameter, i.e. either the Option or Argument to which the validator is hooked up
     :param value: a Code label
     :returns: a Code instance
     """
@@ -43,11 +49,14 @@ def validate_code(ctx, param, value):
 
     return code
 
-def validate_pseudo_family(ctx, param, value):
+def validate_pseudo_family(callback_kwargs, ctx, param, value):
     """
     Command line option validator for a pseudo potential family. The value should be a
     string that corresponds to a registered UpfData family, which is an AiiDA Group.
 
+    :param callback_kwargs: an optional dictionary with arguments for internal use in the validator
+    :param ctx: internal context of the click.command
+    :param param: the click Parameter, i.e. either the Option or Argument to which the validator is hooked up
     :param value: a UpfData pseudo potential family label
     :returns: the pseudo potential family label
     """
@@ -61,12 +70,15 @@ def validate_pseudo_family(ctx, param, value):
 
     return value
 
-def validate_kpoint_mesh(ctx, param, value):
+def validate_kpoint_mesh(callback_kwargs, ctx, param, value):
     """
     Command line option validator for a kpoints mesh tuple. The value should be a tuple
     of three positive integers out of which a KpointsData object will be created with
     a mesh equal to the tuple.
 
+    :param callback_kwargs: an optional dictionary with arguments for internal use in the validator
+    :param ctx: internal context of the click.command
+    :param param: the click Parameter, i.e. either the Option or Argument to which the validator is hooked up
     :param value: a tuple of three positive integers
     :returns: a KpointsData instance
     """
@@ -83,34 +95,55 @@ def validate_kpoint_mesh(ctx, param, value):
 
     return kpoints
 
-def validate_parent_calc(ctx, param, value):
+def validate_parent_calc(callback_kwargs, ctx, param, value):
     """
     Command line option validator for an AiiDA JobCalculation pk. It expects
     an integer for the value and will try to load the corresponding node. it
     will also check if successful if the node is a JobCalculation instance.
 
+    Accepted callback_kwargs:
+        * entry_point: a calculation entry point string to define the expected calculation class
+            For example, 'quantumespresso.ph' will check that value is instance of PhCalculation
+            The default will simply check whether the value is an instance of JobCalculation.
+            If the class cannot be loaded from the entry point a ValueError is thrown
+
+    :param callback_kwargs: an optional dictionary with arguments for internal use in the validator
+    :param ctx: internal context of the click.command
+    :param param: the click Parameter, i.e. either the Option or Argument to which the validator is hooked up
     :param value: a JobCalculation node pk
     :returns: a JobCalculation instance
     """
-    from aiida.common.exceptions import NotExistent
-    from aiida.orm import load_node
+    from aiida.common.exceptions import NotExistent, LoadingPluginFailed, MissingPluginError
+    from aiida.orm import load_node, CalculationFactory
     from aiida.orm.calculation import JobCalculation
+
+    if 'entry_point' in callback_kwargs:
+        entry_point = callback_kwargs['entry_point']
+        try:
+            cls = CalculationFactory(entry_point)
+        except (LoadingPluginFailed, MissingPluginError):
+            raise ValueError("could not load calculation plugin for entry point '{}'".format(entry_point))
+    else:
+        cls = JobCalculation
 
     try:
         parent_calc = load_node(int(value))
     except NotExistent as exception:
         raise click.BadParameter('failed to load the node<{}>\n{}'.format(value, exception))
 
-    if not isinstance(parent_calc, JobCalculation):
-        raise click.BadParameter('node<{}> is not of type JobCalculation'.format(value))
+    if not isinstance(parent_calc, cls):
+        raise click.BadParameter('node<{}> is not of type {}'.format(value, cls.__name__))
 
     return parent_calc
 
-def validate_group(ctx, param, value):
+def validate_group(callback_kwargs, ctx, param, value):
     """
     Command line option validator for an AiiDA Group. It expects a string for the value
     that corresponds to the label or a pk of an AiiDA group.
 
+    :param callback_kwargs: an optional dictionary with arguments for internal use in the validator
+    :param ctx: internal context of the click.command
+    :param param: the click Parameter, i.e. either the Option or Argument to which the validator is hooked up
     :param value: a Group label or pk
     :returns: a Group instance
     """
