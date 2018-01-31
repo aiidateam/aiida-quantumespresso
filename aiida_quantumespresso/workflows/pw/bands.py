@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from copy import deepcopy
+from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import Code
 from aiida.orm.data.base import Str, Float, Bool
 from aiida.orm.data.parameter import ParameterData
@@ -8,11 +10,8 @@ from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.data.singlefile import SinglefileData
 from aiida.orm.group import Group
 from aiida.orm.utils import WorkflowFactory
-from aiida.common.links import LinkType
-from aiida.common.exceptions import AiidaException, NotExistent
-from aiida.common.datastructures import calc_states
 from aiida.work.run import submit
-from aiida.work.workchain import WorkChain, ToContext, while_, append_, if_
+from aiida.work.workchain import WorkChain, ToContext, if_
 from aiida.work.workfunction import workfunction
 from seekpath.aiidawrappers import get_path, get_explicit_k_path
 
@@ -41,8 +40,8 @@ class PwBandsWorkChain(WorkChain):
         spec.input('group', valid_type=Str, required=False)
         spec.input_group('relax', required=False)
         spec.outline(
-            cls.validate_inputs,
             cls.setup,
+            cls.validate_inputs,
             if_(cls.should_do_relax)(
                 cls.run_relax,
             ),
@@ -59,49 +58,51 @@ class PwBandsWorkChain(WorkChain):
 
     def setup(self):
         """
-        Input validation and context setup
+        Initialize context variables that are used during the logical flow of the BaseRestartWorkChain
         """
-        self.ctx.inputs = {
+        self.ctx.inputs_raw = AttributeDict({
             'code': self.inputs.code,
+            'pseudo_family': self.inputs.pseudo_family,
             'parameters': self.inputs.parameters.get_dict(),
-        }
+        })
+
+    def validate_inputs(self):
+        """
+        Validate inputs that may depend on each other
+        """
 
         # We expect either a KpointsData with given mesh or a desired distance between k-points
         if all([key not in self.inputs for key in ['kpoints_mesh', 'kpoints_distance']]):
             self.abort_nowait('neither the kpoints_mesh nor a kpoints_distance was specified in the inputs')
             return
 
-        # Add the van der Waals kernel table file if specified
-        if 'vdw_table' in self.inputs:
-            self.ctx.inputs['vdw_table'] = self.inputs.vdw_table
-            self.inputs.relax['vdw_table'] = self.inputs.vdw_table
-
-        # Set the correct relaxation scheme in the input parameters
-        if 'CONTROL' not in self.ctx.inputs['parameters']:
-            self.ctx.inputs['parameters']['CONTROL'] = {}
-
-        if 'settings' in self.inputs:
-            self.ctx.inputs['settings'] = self.inputs.settings.get_dict()
-        else:
-            self.ctx.inputs['settings'] = {}
-
-        # If options set, add it to the default inputs
-        if 'options' in self.inputs:
-            self.ctx.inputs['options'] = self.inputs.options
-
-        # If automatic parallelization was set, add it to the default inputs
-        if 'automatic_parallelization' in self.inputs:
-            self.ctx.inputs['automatic_parallelization'] = self.inputs.automatic_parallelization
-
-        return
-
-    def validate_inputs(self):
-        """
-        Validate inputs that may depend on each other
-        """
         if not any([key in self.inputs for key in ['options', 'automatic_parallelization']]):
             self.abort_nowait('you have to specify either the options or automatic_parallelization input')
             return
+
+        # Add the van der Waals kernel table file if specified
+        if 'vdw_table' in self.inputs:
+            self.ctx.inputs_raw.vdw_table = self.inputs.vdw_table
+            self.inputs.relax['vdw_table'] = self.inputs.vdw_table
+
+        # Set the correct relaxation scheme in the input parameters
+        if 'CONTROL' not in self.ctx.inputs_raw.parameters:
+            self.ctx.inputs_raw.parameters['CONTROL'] = {}
+
+        if 'settings' in self.inputs:
+            self.ctx.inputs_raw.settings = self.inputs.settings.get_dict()
+        else:
+            self.ctx.inputs_raw.settings = {}
+
+        # If options set, add it to the default inputs
+        if 'options' in self.inputs:
+            self.ctx.inputs_raw.options = self.inputs.options
+
+        # If automatic parallelization was set, add it to the default inputs
+        if 'automatic_parallelization' in self.inputs:
+            self.ctx.inputs_raw.automatic_parallelization = self.inputs.automatic_parallelization
+
+        return
 
     def should_do_relax(self):
         """
@@ -160,12 +161,12 @@ class PwBandsWorkChain(WorkChain):
         """
         Run the PwBaseWorkChain in scf mode on the primitive cell of the relaxed input structure
         """
-        inputs = dict(self.ctx.inputs)
+        inputs = deepcopy(self.ctx.inputs_raw)
         structure = self.ctx.structure_relaxed_primitive
         calculation_mode = 'scf'
 
         # Set the correct pw.x input parameters
-        inputs['parameters']['CONTROL']['calculation'] = calculation_mode
+        inputs.parameters['CONTROL']['calculation'] = calculation_mode
 
         # Construct a new kpoint mesh on the current structure or pass the static mesh
         if 'kpoints_mesh' in self.inputs:
@@ -176,11 +177,10 @@ class PwBandsWorkChain(WorkChain):
             kpoints_mesh.set_kpoints_mesh_from_density(self.inputs.kpoints_distance.value)
 
         # Final input preparation, wrapping dictionaries in ParameterData nodes
-        inputs['kpoints'] = kpoints_mesh
-        inputs['structure'] = structure
-        inputs['parameters'] = ParameterData(dict=inputs['parameters'])
-        inputs['settings'] = ParameterData(dict=inputs['settings'])
-        inputs['pseudo_family'] = self.inputs.pseudo_family
+        inputs.kpoints = kpoints_mesh
+        inputs.structure = structure
+        inputs.parameters = ParameterData(dict=inputs.parameters)
+        inputs.settings = ParameterData(dict=inputs.settings)
 
         running = submit(PwBaseWorkChain, **inputs)
 
@@ -198,22 +198,21 @@ class PwBandsWorkChain(WorkChain):
             self.abort_nowait('the scf workchain did not output a remote_folder node')
             return
 
-        inputs = dict(self.ctx.inputs)
+        inputs = deepcopy(self.ctx.inputs_raw)
         structure = self.ctx.structure_relaxed_primitive
         restart_mode = 'restart'
         calculation_mode = 'bands'
 
         # Set the correct pw.x input parameters
-        inputs['parameters']['CONTROL']['restart_mode'] = restart_mode
-        inputs['parameters']['CONTROL']['calculation'] = calculation_mode
+        inputs.parameters['CONTROL']['restart_mode'] = restart_mode
+        inputs.parameters['CONTROL']['calculation'] = calculation_mode
 
         # Final input preparation, wrapping dictionaries in ParameterData nodes
-        inputs['kpoints'] = self.ctx.kpoints_path
-        inputs['structure'] = structure
-        inputs['parent_folder'] = remote_folder
-        inputs['parameters'] = ParameterData(dict=inputs['parameters'])
-        inputs['settings'] = ParameterData(dict=inputs['settings'])
-        inputs['pseudo_family'] = self.inputs.pseudo_family
+        inputs.kpoints = self.ctx.kpoints_path
+        inputs.structure = structure
+        inputs.parent_folder = remote_folder
+        inputs.parameters = ParameterData(dict=inputs.parameters)
+        inputs.settings = ParameterData(dict=inputs.settings)
 
         running = submit(PwBaseWorkChain, **inputs)
 
