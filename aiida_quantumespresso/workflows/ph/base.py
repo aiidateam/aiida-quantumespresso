@@ -42,6 +42,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         spec.input('parameters', valid_type=ParameterData, required=False)
         spec.input('settings', valid_type=ParameterData, required=False)
         spec.input('options', valid_type=ParameterData, required=False)
+        spec.input('only_initialization', valid_type=Bool, default=Bool(False))
         spec.outline(
             cls.setup,
             cls.validate_inputs,
@@ -86,6 +87,9 @@ class PhBaseWorkChain(BaseRestartWorkChain):
             self.ctx.inputs_raw._options = self.inputs.options.get_dict()
         else:
             self.ctx.inputs_raw._options = get_default_options()
+
+        if self.inputs.only_initialization.value:
+            self.ctx.inputs_raw.settings['ONLY_INITIALIZATION'] = True
 
         # Assign a deepcopy to self.ctx.inputs which will be used by the BaseRestartWorkChain
         self.ctx.inputs = deepcopy(self.ctx.inputs_raw)
