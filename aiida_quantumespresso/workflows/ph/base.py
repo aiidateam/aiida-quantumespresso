@@ -6,15 +6,12 @@ from aiida.orm.data.base import Bool, Float, Int, Str
 from aiida.orm.data.folder import FolderData
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.parameter import ParameterData
-from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.utils import CalculationFactory
-from aiida.work.run import submit
-from aiida.work.workchain import WorkChain, ToContext, while_, append_
+from aiida.work.workchain import while_
 from aiida_quantumespresso.common.workchain.utils import ErrorHandlerReport
 from aiida_quantumespresso.common.workchain.utils import register_error_handler
 from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkChain
-from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 from aiida_quantumespresso.utils.resources import get_default_options
 
 PhCalculation = CalculationFactory('quantumespresso.ph')
@@ -32,7 +29,6 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         super(PhBaseWorkChain, self).__init__(*args, **kwargs)
 
         self.defaults = AttributeDict({
-            'qe': qe_defaults,
             'delta_factor_max_seconds': 0.95,
             'alpha_mix': 0.70,
         })
@@ -46,6 +42,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         spec.input('parameters', valid_type=ParameterData, required=False)
         spec.input('settings', valid_type=ParameterData, required=False)
         spec.input('options', valid_type=ParameterData, required=False)
+        spec.input('only_initialization', valid_type=Bool, default=Bool(False))
         spec.outline(
             cls.setup,
             cls.validate_inputs,
@@ -90,6 +87,9 @@ class PhBaseWorkChain(BaseRestartWorkChain):
             self.ctx.inputs_raw._options = self.inputs.options.get_dict()
         else:
             self.ctx.inputs_raw._options = get_default_options()
+
+        if self.inputs.only_initialization.value:
+            self.ctx.inputs_raw.settings['ONLY_INITIALIZATION'] = True
 
         # Assign a deepcopy to self.ctx.inputs which will be used by the BaseRestartWorkChain
         self.ctx.inputs = deepcopy(self.ctx.inputs_raw)

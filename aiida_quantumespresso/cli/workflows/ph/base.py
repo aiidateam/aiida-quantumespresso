@@ -33,7 +33,7 @@ def launch(
     inputs = {
         'code': code,
         'qpoints': kpoints,
-        'parent_calc': parent_calc,
+        'parent_folder': parent_calc.out.remote_folder,
         'parameters': ParameterData(dict=parameters),
         'options': ParameterData(dict=options),
     }
