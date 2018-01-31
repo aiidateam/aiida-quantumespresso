@@ -37,10 +37,9 @@ class PwBandsWorkChain(WorkChain):
         spec.input('parameters', valid_type=ParameterData)
         spec.input('settings', valid_type=ParameterData, required=False)
         spec.input('options', valid_type=ParameterData, required=False)
-        spec.input('skip_relax', valid_type=Bool, default=Bool(False))
         spec.input('automatic_parallelization', valid_type=ParameterData, required=False)
         spec.input('group', valid_type=Str, required=False)
-        spec.input_group('relax')
+        spec.input_group('relax', required=False)
         spec.outline(
             cls.validate_inputs,
             cls.setup,
@@ -106,9 +105,9 @@ class PwBandsWorkChain(WorkChain):
 
     def should_do_relax(self):
         """
-        If the skip_relax input is set to True we do not perform the relax calculation on the input structure
+        If the 'relax' input group was specified, we relax the input structure
         """
-        return not self.inputs.skip_relax.value
+        return 'relax' in self.inputs
 
     def run_relax(self):
         """
@@ -140,13 +139,13 @@ class PwBandsWorkChain(WorkChain):
         Run the relaxed structure through SeeKPath to get the new primitive structure, just in case
         the symmetry of the cell changed in the cell relaxation step
         """
-        if self.inputs.skip_relax:
+        if 'workchain_relax' not in self.ctx:
             structure = self.inputs.structure
         else:
             try:
                 structure = self.ctx.workchain_relax.out.output_structure
             except:
-                self.abort_nowait('the relax workchain did not output a output_structure node')
+                self.abort_nowait('the relax workchain did not output an output_structure node')
                 return
 
         result = seekpath_structure_analysis(structure)
