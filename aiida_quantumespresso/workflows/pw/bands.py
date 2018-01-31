@@ -13,7 +13,6 @@ from aiida.orm.utils import WorkflowFactory
 from aiida.work.run import submit
 from aiida.work.workchain import WorkChain, ToContext, if_
 from aiida.work.workfunction import workfunction
-from seekpath.aiidawrappers import get_path, get_explicit_k_path
 
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
@@ -152,7 +151,7 @@ class PwBandsWorkChain(WorkChain):
         result = seekpath_structure_analysis(structure)
 
         self.ctx.structure_relaxed_primitive = result['primitive_structure']
-        self.ctx.kpoints_path = result['explicit_kpoints_path']
+        self.ctx.kpoints_path = result['explicit_kpoints']
 
         self.out('primitive_structure', result['primitive_structure'])
         self.out('seekpath_parameters', result['parameters'])
@@ -245,18 +244,5 @@ def seekpath_structure_analysis(structure):
     Note that the returned primitive cell may differ from the original structure in
     which case the k-points are only congruent with the primitive cell.
     """
-    seekpath_info = get_path(structure)
-    explicit_path = get_explicit_k_path(structure)
-
-    primitive_structure = seekpath_info.pop('primitive_structure')
-    conv_structure = seekpath_info.pop('conv_structure')
-    parameters = ParameterData(dict=seekpath_info)
-
-    result = {
-        'parameters': parameters,
-        'conv_structure': conv_structure,
-        'primitive_structure': primitive_structure,
-        'explicit_kpoints_path': explicit_path['explicit_kpoints'],
-    }
-
-    return result
+    from aiida.tools import get_explicit_kpoints_path
+    return get_explicit_kpoints_path(structure)
