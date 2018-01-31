@@ -78,7 +78,7 @@
         ]
     }, 
     "install_requires": [
-        "aiida_core[atomic_tools]>=0.11.0",
+        "aiida_core[atomic_tools]>=0.11.0", 
         "click"
     ], 
     "license": "MIT License", 
