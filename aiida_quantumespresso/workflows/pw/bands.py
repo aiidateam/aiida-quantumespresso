@@ -29,7 +29,6 @@ class PwBandsWorkChain(WorkChain):
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
         spec.input('pseudo_family', valid_type=Str)
-        spec.input('kpoints_mesh', valid_type=KpointsData, required=False)
         spec.input('kpoints_distance', valid_type=Float, default=Float(0.2))
         spec.input('vdw_table', valid_type=SinglefileData, required=False)
         spec.input('parameters', valid_type=ParameterData)
@@ -69,12 +68,6 @@ class PwBandsWorkChain(WorkChain):
         """
         Validate inputs that may depend on each other
         """
-
-        # We expect either a KpointsData with given mesh or a desired distance between k-points
-        if all([key not in self.inputs for key in ['kpoints_mesh', 'kpoints_distance']]):
-            self.abort_nowait('neither the kpoints_mesh nor a kpoints_distance was specified in the inputs')
-            return
-
         if not any([key in self.inputs for key in ['options', 'automatic_parallelization']]):
             self.abort_nowait('you have to specify either the options or automatic_parallelization input')
             return
@@ -89,9 +82,7 @@ class PwBandsWorkChain(WorkChain):
             self.ctx.inputs_raw.parameters['CONTROL'] = {}
 
         if 'settings' in self.inputs:
-            self.ctx.inputs_raw.settings = self.inputs.settings.get_dict()
-        else:
-            self.ctx.inputs_raw.settings = {}
+            self.ctx.inputs_raw.settings = self.inputs.settings
 
         # If options set, add it to the default inputs
         if 'options' in self.inputs:
@@ -148,9 +139,20 @@ class PwBandsWorkChain(WorkChain):
                 self.abort_nowait('the relax workchain did not output an output_structure node')
                 return
 
-        result = seekpath_structure_analysis(structure)
+        seekpath_parameters = ParameterData(dict={
+            'reference_distance': self.inputs.kpoints_distance.value
+        })
 
-        self.ctx.structure_relaxed_primitive = result['primitive_structure']
+        result = seekpath_structure_analysis(structure, seekpath_parameters)
+        self.ctx.structure = result['primitive_structure']
+
+        # Construct a new kpoint mesh for the scf calculation on the current primitive structure
+        kpoints_mesh = KpointsData()
+        kpoints_mesh.set_cell_from_structure(self.ctx.structure)
+        kpoints_mesh.set_kpoints_mesh_from_density(self.inputs.kpoints_distance.value)
+
+        # Save the kpoints objects for the scf and bands calculation in the context
+        self.ctx.kpoints_mesh = kpoints_mesh
         self.ctx.kpoints_path = result['explicit_kpoints']
 
         self.out('primitive_structure', result['primitive_structure'])
@@ -158,28 +160,19 @@ class PwBandsWorkChain(WorkChain):
 
     def run_scf(self):
         """
-        Run the PwBaseWorkChain in scf mode on the primitive cell of the relaxed input structure
+        Run the PwBaseWorkChain in scf mode on the primitive cell of (optionally relaxed) input structure
         """
         inputs = deepcopy(self.ctx.inputs_raw)
-        structure = self.ctx.structure_relaxed_primitive
+
         calculation_mode = 'scf'
 
         # Set the correct pw.x input parameters
         inputs.parameters['CONTROL']['calculation'] = calculation_mode
 
-        # Construct a new kpoint mesh on the current structure or pass the static mesh
-        if 'kpoints_mesh' in self.inputs:
-            kpoints_mesh = self.inputs.kpoints_mesh
-        else:
-            kpoints_mesh = KpointsData()
-            kpoints_mesh.set_cell_from_structure(structure)
-            kpoints_mesh.set_kpoints_mesh_from_density(self.inputs.kpoints_distance.value)
-
         # Final input preparation, wrapping dictionaries in ParameterData nodes
-        inputs.kpoints = kpoints_mesh
-        inputs.structure = structure
+        inputs.kpoints = self.ctx.kpoints_mesh
+        inputs.structure = self.ctx.structure
         inputs.parameters = ParameterData(dict=inputs.parameters)
-        inputs.settings = ParameterData(dict=inputs.settings)
 
         running = submit(PwBaseWorkChain, **inputs)
 
@@ -189,7 +182,7 @@ class PwBandsWorkChain(WorkChain):
 
     def run_bands(self):
         """
-        Run the PwBaseWorkChain to run a bands PwCalculation
+        Run the PwBaseWorkChain to run a bands PwCalculation along the path of high-symmetry determined by Seekpath
         """
         try:
             remote_folder = self.ctx.workchain_scf.out.remote_folder
@@ -198,7 +191,7 @@ class PwBandsWorkChain(WorkChain):
             return
 
         inputs = deepcopy(self.ctx.inputs_raw)
-        structure = self.ctx.structure_relaxed_primitive
+
         restart_mode = 'restart'
         calculation_mode = 'bands'
 
@@ -208,10 +201,9 @@ class PwBandsWorkChain(WorkChain):
 
         # Final input preparation, wrapping dictionaries in ParameterData nodes
         inputs.kpoints = self.ctx.kpoints_path
-        inputs.structure = structure
+        inputs.structure = self.ctx.structure
         inputs.parent_folder = remote_folder
         inputs.parameters = ParameterData(dict=inputs.parameters)
-        inputs.settings = ParameterData(dict=inputs.settings)
 
         running = submit(PwBaseWorkChain, **inputs)
 
@@ -237,7 +229,7 @@ class PwBandsWorkChain(WorkChain):
 
 
 @workfunction
-def seekpath_structure_analysis(structure):
+def seekpath_structure_analysis(structure, parameters):
     """
     This workfunction will take a structure and pass it through SeeKpath to get the
     primitive cell and the path of high symmetry k-points through its Brillouin zone.
@@ -245,4 +237,4 @@ def seekpath_structure_analysis(structure):
     which case the k-points are only congruent with the primitive cell.
     """
     from aiida.tools import get_explicit_kpoints_path
-    return get_explicit_kpoints_path(structure)
+    return get_explicit_kpoints_path(structure, **parameters.get_dict())
