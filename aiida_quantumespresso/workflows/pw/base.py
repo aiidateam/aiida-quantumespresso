@@ -12,7 +12,6 @@ from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.data.singlefile import SinglefileData
 from aiida.orm.utils import CalculationFactory
 from aiida.common.extendeddicts import AttributeDict
-from aiida.work.run import submit
 from aiida.work.workchain import ToContext, if_, while_
 from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
 from aiida_quantumespresso.common.workchain.utils import ErrorHandlerReport
@@ -54,7 +53,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         spec.input('structure', valid_type=StructureData)
         spec.input('kpoints', valid_type=KpointsData)
         spec.input('parameters', valid_type=ParameterData)
-        spec.input_group('pseudos', required=False)
+        spec.input_namespace('pseudos', required=False)
         spec.input('pseudo_family', valid_type=Str, required=False)
         spec.input('parent_folder', valid_type=RemoteData, required=False)
         spec.input('vdw_table', valid_type=SinglefileData, required=False)
@@ -116,9 +115,9 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             self.ctx.inputs_raw.settings = {}
 
         if 'options' in self.inputs:
-            self.ctx.inputs_raw._options = self.inputs.options.get_dict()
+            self.ctx.inputs_raw.options = self.inputs.options.get_dict()
         else:
-            self.ctx.inputs_raw._options = {}
+            self.ctx.inputs_raw.options = {}
 
         if 'vdw_table' in self.inputs:
             self.ctx.inputs_raw.vdw_table = self.inputs.vdw_table
@@ -130,8 +129,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
         # If automatic parallelization is not enabled, we better make sure that the options satisfy minimum requirements
         if 'automatic_parallelization' not in self.inputs:
-            num_machines = self.ctx.inputs_raw['_options'].get('resources', {}).get('num_machines', None)
-            max_wallclock_seconds = self.ctx.inputs_raw['_options'].get('max_wallclock_seconds', None)
+            num_machines = self.ctx.inputs_raw['options'].get('resources', {}).get('num_machines', None)
+            max_wallclock_seconds = self.ctx.inputs_raw['options'].get('max_wallclock_seconds', None)
 
             if num_machines is None or max_wallclock_seconds is None:
                 self.abort_nowait("no automatic_parallelization requested, but the options do not specify both '{}' and '{}'"
@@ -191,8 +190,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             'calculation_mode': self.ctx.inputs_raw.parameters['CONTROL']['calculation']
         }
 
-        self.ctx.inputs_raw._options.setdefault('resources', {})['num_machines'] = parallelization['max_num_machines']
-        self.ctx.inputs_raw._options['max_wallclock_seconds'] = parallelization['max_wallclock_seconds']
+        self.ctx.inputs_raw.options.setdefault('resources', {})['num_machines'] = parallelization['max_num_machines']
+        self.ctx.inputs_raw.options['max_wallclock_seconds'] = parallelization['max_wallclock_seconds']
 
     def run_init(self):
         """
@@ -204,14 +203,14 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
         # Set the initialization flag and the initial default options
         inputs.settings['ONLY_INITIALIZATION'] = True
-        inputs._options = update_mapping(inputs['_options'], get_default_options())
+        inputs.options = update_mapping(inputs['options'], get_default_options())
 
         # Prepare the final input dictionary
         inputs = self._prepare_process_inputs(inputs)
         process = PwCalculation.process()
-        running = submit(process, **inputs)
+        running = self.submit(process, **inputs)
 
-        self.report('launching initialization PwCalculation<{}>'.format(running.pid))
+        self.report('launching initialization PwCalculation<{}>'.format(running.pk))
 
         return ToContext(calculation_init=running)
 
@@ -233,7 +232,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         self.out('automatic_parallelization', node)
         self.report('results of automatic parallelization in {}<{}>'.format(node.__class__.__name__, node.pk))
 
-        options = self.ctx.inputs_raw._options
+        options = self.ctx.inputs_raw.options
         base_resources = options.get('resources', {})
         goal_resources = parallelization['resources']
 
@@ -246,7 +245,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
         # Set the new cmdline setting and resource options
         self.ctx.inputs_raw.settings['cmdline'] = cmdline
-        self.ctx.inputs_raw._options = update_mapping(options, {'resources': resources})
+        self.ctx.inputs_raw.options = update_mapping(options, {'resources': resources})
 
         # Update the self.ctx.inputs which will be used by the BaseRestartWorkChain
         self.ctx.inputs = deepcopy(self.ctx.inputs_raw)
@@ -264,10 +263,10 @@ class PwBaseWorkChain(BaseRestartWorkChain):
     def _prepare_process_inputs(self, inputs):
         """
         The 'max_seconds' setting in the 'CONTROL' card of the parameters will be set to a fraction of the
-        'max_wallclock_seconds' that will be given to the job via the '_options' dictionary. This will prevent the job
+        'max_wallclock_seconds' that will be given to the job via the 'options' dictionary. This will prevent the job
         from being prematurely terminated by the scheduler without getting the chance to exit cleanly.
         """
-        max_wallclock_seconds = inputs._options['max_wallclock_seconds']
+        max_wallclock_seconds = inputs.options['max_wallclock_seconds']
         max_seconds_factor = self.defaults.delta_factor_max_seconds
         max_seconds = max_wallclock_seconds * max_seconds_factor
         inputs.parameters['CONTROL']['max_seconds'] = max_seconds

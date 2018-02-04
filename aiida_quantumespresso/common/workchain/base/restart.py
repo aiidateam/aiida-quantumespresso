@@ -6,7 +6,6 @@ from aiida.orm.calculation import JobCalculation
 from aiida.orm.data.base import Bool, Int
 from aiida.orm.data.parameter import ParameterData
 from aiida.work.workchain import WorkChain, ToContext, append_
-from aiida.work.run import submit
 from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
 from aiida_quantumespresso.common.pluginloader import get_plugin, get_plugins
 
@@ -120,10 +119,10 @@ class BaseRestartWorkChain(WorkChain):
 
         inputs = self._prepare_process_inputs(unwrapped_inputs)
         process = self._calculation_class.process()
-        running = submit(process, **inputs)
+        running = self.submit(process, **inputs)
 
         self.report('launching {}<{}> iteration #{}'
-            .format(self._calculation_class.__name__, running.pid, self.ctx.iteration))
+            .format(self._calculation_class.__name__, running.pk, self.ctx.iteration))
 
         return ToContext(calculations=append_(running))
 
@@ -309,7 +308,7 @@ class BaseRestartWorkChain(WorkChain):
     def _prepare_process_inputs(self, inputs):
         """
         Prepare the inputs dictionary for a calculation process. Any remaining bare dictionaries in the inputs
-        dictionary will be wrapped in a ParameterData data node except for the '_options' key which should remain
+        dictionary will be wrapped in a ParameterData data node except for the 'options' key which should remain
         a standard dictionary. Another exception are dictionaries whose keys are not strings but for example tuples.
         This is the format used by input groups as in for example the explicit pseudo dictionary where the key is
         a tuple of kind to which the UpfData corresponds.
@@ -317,7 +316,7 @@ class BaseRestartWorkChain(WorkChain):
         prepared_inputs = {}
 
         for key, val in inputs.iteritems():
-            if key != '_options' and isinstance(val, dict) and all([isinstance(k, (basestring)) for k in val.keys()]):
+            if key != 'options' and isinstance(val, dict) and all([isinstance(k, (basestring)) for k in val.keys()]):
                 prepared_inputs[key] = ParameterData(dict=val)
             else:
                 prepared_inputs[key] = val

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from copy import deepcopy
 from aiida.orm import Code
 from aiida.orm.data.base import Str, Float, Bool
 from aiida.orm.data.parameter import ParameterData
@@ -11,9 +12,9 @@ from aiida.orm.utils import WorkflowFactory
 from aiida.common.links import LinkType
 from aiida.common.exceptions import AiidaException, NotExistent
 from aiida.common.datastructures import calc_states
-from aiida.work.run import submit
+from aiida.common.extendeddicts import AttributeDict
 from aiida.work.workchain import WorkChain, ToContext, while_, append_, if_
-from aiida.work.workfunction import workfunction
+from aiida.work.workfunctions import workfunction
 from seekpath.aiidawrappers import get_path, get_explicit_k_path
 
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
@@ -39,7 +40,7 @@ class PwBandsWorkChain(WorkChain):
         spec.input('options', valid_type=ParameterData, required=False)
         spec.input('automatic_parallelization', valid_type=ParameterData, required=False)
         spec.input('group', valid_type=Str, required=False)
-        spec.input_group('relax', required=False)
+        spec.input_namespace('relax', required=False, dynamic=True)
         spec.outline(
             cls.validate_inputs,
             cls.setup,
@@ -113,7 +114,7 @@ class PwBandsWorkChain(WorkChain):
         """
         Run the PwRelaxWorkChain to run a relax PwCalculation
         """
-        inputs = self.inputs.relax
+        inputs = AttributeDict(deepcopy(self.inputs.relax))
         inputs.update({
             'code': self.inputs.code,
             'structure': self.inputs.structure,
@@ -128,9 +129,9 @@ class PwBandsWorkChain(WorkChain):
         if 'automatic_parallelization' in self.inputs:
             inputs['automatic_parallelization'] = self.inputs.automatic_parallelization
 
-        running = submit(PwRelaxWorkChain, **inputs)
+        running = self.submit(PwRelaxWorkChain, **inputs)
 
-        self.report('launching PwRelaxWorkChain<{}>'.format(running.pid))
+        self.report('launching PwRelaxWorkChain<{}>'.format(running.pk))
 
         return ToContext(workchain_relax=running)
 
@@ -182,9 +183,9 @@ class PwBandsWorkChain(WorkChain):
         inputs['settings'] = ParameterData(dict=inputs['settings'])
         inputs['pseudo_family'] = self.inputs.pseudo_family
 
-        running = submit(PwBaseWorkChain, **inputs)
+        running = self.submit(PwBaseWorkChain, **inputs)
 
-        self.report('launching PwBaseWorkChain<{}> in {} mode'.format(running.pid, calculation_mode))
+        self.report('launching PwBaseWorkChain<{}> in {} mode'.format(running.pk, calculation_mode))
 
         return ToContext(workchain_scf=running)
 
@@ -215,9 +216,9 @@ class PwBandsWorkChain(WorkChain):
         inputs['settings'] = ParameterData(dict=inputs['settings'])
         inputs['pseudo_family'] = self.inputs.pseudo_family
 
-        running = submit(PwBaseWorkChain, **inputs)
+        running = self.submit(PwBaseWorkChain, **inputs)
 
-        self.report('launching PwBaseWorkChain<{}> in {} mode'.format(running.pid, calculation_mode))
+        self.report('launching PwBaseWorkChain<{}> in {} mode'.format(running.pk, calculation_mode))
 
         return ToContext(workchain_bands=running)
 

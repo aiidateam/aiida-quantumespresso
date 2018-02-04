@@ -3,6 +3,7 @@ import click
 from aiida_quantumespresso.utils.click import command
 from aiida_quantumespresso.utils.click import options
 
+
 @command()
 @options.code()
 @options.structure()
@@ -12,16 +13,17 @@ from aiida_quantumespresso.utils.click import options
 @options.max_wallclock_seconds()
 @options.automatic_parallelization()
 @options.clean_workdir()
+@options.daemon()
 def launch(
     code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds,
-    automatic_parallelization, clean_workdir):
+    automatic_parallelization, clean_workdir, daemon):
     """
     Run the PwBaseWorkChain for a given input structure
     """
     from aiida.orm.data.base import Bool, Str
     from aiida.orm.data.parameter import ParameterData
     from aiida.orm.utils import WorkflowFactory
-    from aiida.work.run import run
+    from aiida.work.launch import run, submit
     from aiida_quantumespresso.utils.resources import get_default_options
 
     PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
@@ -55,4 +57,8 @@ def launch(
     if clean_workdir:
         inputs['clean_workdir'] = Bool(True)
 
-    run(PwBaseWorkChain, **inputs)
+    if daemon:
+        workchain = submit(PwBaseWorkChain, **inputs)
+        click.echo('Submitted {}<{}> to the daemon'.format(PwBaseWorkChain.__name__, workchain.pk))
+    else:
+        run(PwBaseWorkChain, **inputs)

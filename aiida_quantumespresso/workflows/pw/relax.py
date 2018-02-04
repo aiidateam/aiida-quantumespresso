@@ -14,7 +14,6 @@ from aiida.orm.utils import CalculationFactory, WorkflowFactory
 from aiida.common.extendeddicts import AttributeDict
 from aiida.common.exceptions import AiidaException, NotExistent
 from aiida.common.datastructures import calc_states
-from aiida.work.run import submit
 from aiida.work.workchain import WorkChain, ToContext, if_, while_, append_
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
@@ -30,7 +29,7 @@ class PwRelaxWorkChain(WorkChain):
         super(PwRelaxWorkChain, cls).define(spec)
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
-        spec.input_group('pseudos', required=False)
+        spec.input_namespace('pseudos', required=False, dynamic=True)
         spec.input('pseudo_family', valid_type=Str, required=False)
         spec.input('kpoints', valid_type=KpointsData, required=False)
         spec.input('kpoints_distance', valid_type=Float, default=Float(0.2))
@@ -164,9 +163,9 @@ class PwRelaxWorkChain(WorkChain):
         else:
             inputs['kpoints'] = self.inputs.kpoints
 
-        running = submit(PwBaseWorkChain, **inputs)
+        running = self.submit(PwBaseWorkChain, **inputs)
 
-        self.report('launching PwBaseWorkChain<{}>'.format(running.pid))
+        self.report('launching PwBaseWorkChain<{}>'.format(running.pk))
 
         return ToContext(workchains=append_(running))
 
@@ -251,9 +250,9 @@ class PwRelaxWorkChain(WorkChain):
             'parent_folder': self.ctx.current_parent_folder,
         })
 
-        running = submit(PwBaseWorkChain, **inputs)
+        running = self.submit(PwBaseWorkChain, **inputs)
 
-        self.report('launching PwBaseWorkChain<{}> for final scf'.format(running.pid))
+        self.report('launching PwBaseWorkChain<{}> for final scf'.format(running.pk))
 
         return ToContext(workchain_scf=running)
 

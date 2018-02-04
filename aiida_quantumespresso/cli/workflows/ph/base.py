@@ -10,14 +10,15 @@ from aiida_quantumespresso.utils.click import options
 @options.kpoint_mesh()
 @options.max_num_machines()
 @options.max_wallclock_seconds()
+@options.daemon()
 def launch(
-    code, parent_calc, kpoints, max_num_machines, max_wallclock_seconds):
+    code, parent_calc, kpoints, max_num_machines, max_wallclock_seconds, daemon):
     """
     Run the PhBaseWorkChain for a previously completed PwCalculation
     """
     from aiida.orm.data.parameter import ParameterData
     from aiida.orm.utils import CalculationFactory, WorkflowFactory
-    from aiida.work.run import run
+    from aiida.work.launch import run, submit
     from aiida_quantumespresso.utils.resources import get_default_options
 
     PwCalculation = CalculationFactory('quantumespresso.pw')
@@ -38,4 +39,8 @@ def launch(
         'options': ParameterData(dict=options),
     }
 
-    run(PhBaseWorkChain, **inputs)
+    if daemon:
+        workchain = submit(PhBaseWorkChain, **inputs)
+        click.echo('Submitted {}<{}> to the daemon'.format(PhBaseWorkChain.__name__, workchain.pk))
+    else:
+        run(PhBaseWorkChain, **inputs)

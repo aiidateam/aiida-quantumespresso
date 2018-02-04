@@ -11,11 +11,12 @@ from aiida_quantumespresso.utils.click import options
 @options.kpoint_mesh()
 @options.max_num_machines()
 @options.max_wallclock_seconds()
+@options.daemon()
 @click.option(
     '-z', '--calculation-mode', 'mode', type=click.Choice(['scf', 'vc-relax']), default='scf', show_default=True,
     help='select the calculation mode'
 )
-def launch(code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, mode):
+def launch(code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, mode, daemon):
     """
     Run a PwCalculation for a given input structure
     """
@@ -23,7 +24,7 @@ def launch(code, structure, pseudo_family, kpoints, max_num_machines, max_wallcl
     from aiida.orm.data.parameter import ParameterData
     from aiida.orm.data.upf import get_pseudos_from_structure
     from aiida.orm.utils import CalculationFactory
-    from aiida.work.run import run
+    from aiida.work.launch import run_get_pid, submit
     from aiida_quantumespresso.utils.resources import get_default_options
 
     PwCalculation = CalculationFactory('quantumespresso.pw')
@@ -45,13 +46,20 @@ def launch(code, structure, pseudo_family, kpoints, max_num_machines, max_wallcl
         'kpoints': kpoints,
         'parameters': ParameterData(dict=parameters),
         'settings': ParameterData(dict={}),
-        '_options': get_default_options(max_num_machines, max_wallclock_seconds),
+        'options': get_default_options(max_num_machines, max_wallclock_seconds),
     }
 
     click.echo('Running a pw.x calculation in the {} mode... '.format(mode))
 
     process = PwCalculation.process()
-    results, pk = run(process, _return_pid=True, **inputs)
+
+    if daemon:
+        calculation = submit(process, **inputs)
+        pk = calculation.pk
+        click.echo('Submitted {}<{}> to the daemon'.format(PwCalculation.__name__, calculation.pk))
+    else:
+        results, pk = run_get_pid(process, **inputs)
+
     calculation = load_node(pk)
 
     click.echo('PwCalculation<{}> terminated with state: {}'.format(pk, calculation.get_state()))

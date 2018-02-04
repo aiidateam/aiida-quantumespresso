@@ -6,7 +6,6 @@ from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.bands import BandsData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.utils import WorkflowFactory
-from aiida.work.run import submit
 from aiida.work.workchain import WorkChain, ToContext
 
 PwBandsWorkChain = WorkflowFactory('quantumespresso.pw.bands')
@@ -232,9 +231,9 @@ class PwBandStructureWorkChain(WorkChain):
             'volume_convergence': Float(0.01)
         }
 
-        running = submit(PwBandsWorkChain, **inputs)
+        running = self.submit(PwBandsWorkChain, **inputs)
 
-        self.report('launching PwBandsWorkChain<{}>'.format(running.pid))
+        self.report('launching PwBandsWorkChain<{}>'.format(running.pk))
 
         return ToContext(workchain_bands=running)
 

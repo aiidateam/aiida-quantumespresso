@@ -13,6 +13,7 @@ from aiida_quantumespresso.utils.click import options
 @options.max_wallclock_seconds()
 @options.automatic_parallelization()
 @options.clean_workdir()
+@options.daemon()
 @click.option(
     '-f', '--final-scf', is_flag=True, default=False, show_default=True,
     help='run a final scf calculation for the final relaxed structure'
@@ -23,14 +24,14 @@ from aiida_quantumespresso.utils.click import options
 )
 def launch(
     code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds,
-    automatic_parallelization, clean_workdir, final_scf, group):
+    automatic_parallelization, clean_workdir, final_scf, group, daemon):
     """
     Run the PwRelaxWorkChain for a given input structure
     """
     from aiida.orm.data.base import Bool, Str
     from aiida.orm.data.parameter import ParameterData
     from aiida.orm.utils import WorkflowFactory
-    from aiida.work.run import run
+    from aiida.work.launch import run, submit
     from aiida_quantumespresso.utils.resources import get_default_options
 
     PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
@@ -70,4 +71,8 @@ def launch(
     if group:
         inputs['group'] = Str(group)
 
-    run(PwRelaxWorkChain, **inputs)
+    if daemon:
+        workchain = submit(PwRelaxWorkChain, **inputs)
+        click.echo('Submitted {}<{}> to the daemon'.format(PwRelaxWorkChain.__name__, workchain.pk))
+    else:
+        run(PwRelaxWorkChain, **inputs)

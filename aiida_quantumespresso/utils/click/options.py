@@ -88,6 +88,11 @@ automatic_parallelization = overridable_option(
     help='enable the automatic parallelization option of the workchain'
 )
 
+daemon = overridable_option(
+    '-d', '--daemon', is_flag=True, default=False, show_default=True,
+    help='submit the workchain to the daemon instead of running it locally'
+)
+
 clean_workdir = overridable_option(
     '-x', '--clean-workdir', is_flag=True, default=False, show_default=True,
     help='clean the remote folder of all the launched calculations after completion of the workchain'
