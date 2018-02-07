@@ -1728,13 +1728,28 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
         if lelfield is True:
 
             # For every property only get the last entry if possible
-            ed_cell = trajectory_frame['electronic_dipole_cell_average'].pop()
-            ed_axes = trajectory_frame['electronic_dipole_cartesian_axes'].pop()
-            id_cell = trajectory_frame['ionic_dipole_cell_average'].pop()
-            id_axes = trajectory_frame['ionic_dipole_cartesian_axes'].pop()
+            try:
+                ed_cell = trajectory_frame['electronic_dipole_cell_average'].pop()
+            except IndexError:
+                ed_cell = None
+
+            try:
+                ed_axes = trajectory_frame['electronic_dipole_cartesian_axes'].pop()
+            except IndexError:
+                ed_axes = None
+
+            try:
+                id_cell = trajectory_frame['ionic_dipole_cell_average'].pop()
+            except IndexError:
+                id_cell = None
+
+            try:
+                id_axes = trajectory_frame['ionic_dipole_cartesian_axes'].pop()
+            except IndexError:
+                id_axes = None
 
             # Only add them if all four properties were successfully parsed
-            if all([ed_cell, ed_axes, id_cell, id_axes]):
+            if all([value is not None for value in [ed_cell, ed_axes, id_cell, id_axes]]):
                 trajectory_data.setdefault('electronic_dipole_cell_average', []).append(ed_cell)
                 trajectory_data.setdefault('electronic_dipole_cartesian_axes', []).append(ed_axes)
                 trajectory_data.setdefault('ionic_dipole_cell_average', []).append(id_cell)
