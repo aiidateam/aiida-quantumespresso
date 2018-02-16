@@ -1700,7 +1700,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
 
 
     # If specified in the parser options, parse the atomic occupations
-    parse_atomic_occupations = parser_opts.get('atomic_occupations', False)
+    parse_atomic_occupations = parser_opts.get('parse_atomic_occupations', False)
 
     if parse_atomic_occupations:
 
