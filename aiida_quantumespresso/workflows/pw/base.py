@@ -106,7 +106,6 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             self.ctx.inputs_raw.parent_folder = self.inputs.parent_folder
             self.ctx.inputs_raw.parameters['CONTROL']['restart_mode'] = 'restart'
         else:
-            self.ctx.inputs_raw.parent_folder = None
             self.ctx.inputs_raw.parameters['CONTROL']['restart_mode'] = 'from_scratch'
 
         if 'settings' in self.inputs:
