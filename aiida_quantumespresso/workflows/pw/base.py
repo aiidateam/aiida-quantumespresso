@@ -36,16 +36,13 @@ class PwBaseWorkChain(BaseRestartWorkChain):
     _calculation_class = PwCalculation
     _error_handler_entry_point = 'aiida_quantumespresso.workflow_error_handlers.pw.base'
 
-    def __init__(self, *args, **kwargs):
-        super(PwBaseWorkChain, self).__init__(*args, **kwargs)
-
-        self.defaults = AttributeDict({
-            'qe': qe_defaults,
-            'delta_threshold_degauss': 30,
-            'delta_factor_degauss': 0.1,
-            'delta_factor_mixing_beta': 0.8,
-            'delta_factor_max_seconds': 0.95,
-        })
+    defaults = AttributeDict({
+        'qe': qe_defaults,
+        'delta_threshold_degauss': 30,
+        'delta_factor_degauss': 0.1,
+        'delta_factor_mixing_beta': 0.8,
+        'delta_factor_max_seconds': 0.95,
+    })
 
     @classmethod
     def define(cls, spec):
