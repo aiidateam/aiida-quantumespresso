@@ -30,6 +30,8 @@ class PwBandsWorkChain(WorkChain):
         spec.input('structure', valid_type=StructureData)
         spec.input('pseudo_family', valid_type=Str)
         spec.input('kpoints_distance', valid_type=Float, default=Float(0.2))
+        spec.input('kpoints_distance_bands', valid_type=Float, default=Float(0.2))
+        spec.input('kpoinst_mesh', valid_type=KpointsData, required=False)
         spec.input('vdw_table', valid_type=SinglefileData, required=False)
         spec.input('parameters', valid_type=ParameterData)
         spec.input('settings', valid_type=ParameterData, required=False)
@@ -140,7 +142,7 @@ class PwBandsWorkChain(WorkChain):
                 return
 
         seekpath_parameters = ParameterData(dict={
-            'reference_distance': self.inputs.kpoints_distance.value
+            'reference_distance': self.inputs.kpoints_distance_bands.value
         })
 
         result = seekpath_structure_analysis(structure, seekpath_parameters)
@@ -199,8 +201,12 @@ class PwBandsWorkChain(WorkChain):
         inputs.parameters['CONTROL']['restart_mode'] = restart_mode
         inputs.parameters['CONTROL']['calculation'] = calculation_mode
 
+        if 'kpoints_mesh' in self.inputs:
+            inputs.kpoints = self.inputs.kpoints_mesh
+        else:
+            inputs.kpoints = self.ctx.kpoints_path
+
         # Final input preparation, wrapping dictionaries in ParameterData nodes
-        inputs.kpoints = self.ctx.kpoints_path
         inputs.structure = self.ctx.structure
         inputs.parent_folder = remote_folder
         inputs.parameters = ParameterData(dict=inputs.parameters)
