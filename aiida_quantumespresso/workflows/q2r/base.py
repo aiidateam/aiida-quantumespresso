@@ -21,9 +21,6 @@ class Q2rBaseWorkChain(BaseRestartWorkChain):
     _verbose = True
     _calculation_class = Q2rCalculation
 
-    def __init__(self, *args, **kwargs):
-        super(Q2rBaseWorkChain, self).__init__(*args, **kwargs)
-
     @classmethod
     def define(cls, spec):
         super(Q2rBaseWorkChain, cls).define(spec)

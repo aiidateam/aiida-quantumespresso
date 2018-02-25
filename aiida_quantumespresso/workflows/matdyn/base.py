@@ -24,9 +24,6 @@ class MatdynBaseWorkChain(BaseRestartWorkChain):
     _verbose = True
     _calculation_class = MatdynCalculation
 
-    def __init__(self, *args, **kwargs):
-        super(MatdynBaseWorkChain, self).__init__(*args, **kwargs)
-
     @classmethod
     def define(cls, spec):
         super(MatdynBaseWorkChain, cls).define(spec)
