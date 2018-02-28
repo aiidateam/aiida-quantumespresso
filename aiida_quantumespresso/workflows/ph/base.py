@@ -27,13 +27,10 @@ class PhBaseWorkChain(BaseRestartWorkChain):
     _verbose = True
     _calculation_class = PhCalculation
 
-    def __init__(self, *args, **kwargs):
-        super(PhBaseWorkChain, self).__init__(*args, **kwargs)
-
-        self.defaults = AttributeDict({
-            'delta_factor_max_seconds': 0.95,
-            'alpha_mix': 0.70,
-        })
+    defaults = AttributeDict({
+        'delta_factor_max_seconds': 0.95,
+        'alpha_mix': 0.70,
+    })
 
     @classmethod
     def define(cls, spec):

@@ -17,8 +17,6 @@ class PwBandStructureWorkChain(WorkChain):
     Workchain to relax and compute the band structure for a given input structure
     using Quantum ESPRESSO's pw.x
     """
-    def __init__(self, *args, **kwargs):
-        super(PwBandStructureWorkChain, self).__init__(*args, **kwargs)
 
     @classmethod
     def define(cls, spec):
