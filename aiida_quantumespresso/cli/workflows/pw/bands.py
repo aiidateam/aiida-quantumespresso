@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import click
-from aiida_quantumespresso.utils.click import command
-from aiida_quantumespresso.utils.click import options
+from aiida.utils.cli import command
+from aiida.utils.cli import options
+from aiida_quantumespresso.utils.cli import options as options_qe
 
 
 @command()
@@ -11,8 +12,8 @@ from aiida_quantumespresso.utils.click import options
 @options.kpoint_mesh()
 @options.max_num_machines()
 @options.max_wallclock_seconds()
-@options.automatic_parallelization()
 @options.daemon()
+@options_qe.automatic_parallelization()
 def launch(
     code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, automatic_parallelization, daemon):
     """

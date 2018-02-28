@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 import click
-from aiida_quantumespresso.utils.click import command
-from aiida_quantumespresso.utils.click import options
+from aiida.utils.cli import command
+from aiida.utils.cli import options
 
 
 @command()
 @options.code()
-@options.parent_calc()
+@options.calculation()
 @options.kpoint_mesh()
 @options.max_num_machines()
 @options.max_wallclock_seconds()
 @options.daemon()
 def launch(
-    code, parent_calc, kpoints, max_num_machines, max_wallclock_seconds, daemon):
+    code, calculation, kpoints, max_num_machines, max_wallclock_seconds, daemon):
     """
     Run the PhBaseWorkChain for a previously completed PwCalculation
     """
@@ -34,7 +34,7 @@ def launch(
     inputs = {
         'code': code,
         'qpoints': kpoints,
-        'parent_folder': parent_calc.out.remote_folder,
+        'parent_folder': calculation.out.remote_folder,
         'parameters': ParameterData(dict=parameters),
         'options': ParameterData(dict=options),
     }

@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import click
-from aiida_quantumespresso.utils.click import command
-from aiida_quantumespresso.utils.click import options
+from aiida.utils.cli import command
+from aiida.utils.cli import options
+from aiida_quantumespresso.utils.cli import options as options_qe
 
 
 @command()
@@ -11,9 +12,9 @@ from aiida_quantumespresso.utils.click import options
 @options.kpoint_mesh()
 @options.max_num_machines()
 @options.max_wallclock_seconds()
-@options.automatic_parallelization()
-@options.clean_workdir()
 @options.daemon()
+@options_qe.automatic_parallelization()
+@options_qe.clean_workdir()
 @click.option(
     '-f', '--final-scf', is_flag=True, default=False, show_default=True,
     help='run a final scf calculation for the final relaxed structure'

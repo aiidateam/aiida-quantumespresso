@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import click
-from aiida_quantumespresso.utils.click import command
-from aiida_quantumespresso.utils.click import options
+from aiida.utils.cli import command
+from aiida.utils.cli import options
 
 
 @command()
