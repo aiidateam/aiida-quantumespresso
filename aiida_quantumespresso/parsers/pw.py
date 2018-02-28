@@ -66,7 +66,7 @@ class PwParser(Parser):
         if self._calc._get_retrieve_temporary_list():
             try:
                 temporary_folder = retrieved[self.retrieved_temporary_folder_key]
-                dir_with_bands = temporary_folder.get_abs_path('.')
+                dir_with_bands = temporary_folder
             except KeyError:
                 self.logger.error('the {} was not passed as an argument'.format(self.retrieved_temporary_folder_key))
                 return False, ()
