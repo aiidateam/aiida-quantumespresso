@@ -204,13 +204,13 @@ class BaseRestartWorkChain(WorkChain):
 
         return
 
-    def on_destroy(self):
+    def on_terminated(self):
         """
         Clean remote folders of the calculations called in the workchain if the clean_workdir input is True
         """
-        super(BaseRestartWorkChain, self).on_destroy()
+        super(BaseRestartWorkChain, self).on_terminated()
 
-        if not self.is_terminated or self.inputs.clean_workdir.value is False:
+        if self.inputs.clean_workdir.value is False:
             return
 
         cleaned_calcs = []

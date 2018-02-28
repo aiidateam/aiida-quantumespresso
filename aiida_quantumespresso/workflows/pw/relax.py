@@ -297,18 +297,16 @@ class PwRelaxWorkChain(WorkChain):
                 self.report("attaching {}<{}> as an output node with label '{}'"
                     .format(node.__class__.__name__, node.pk, link_label))
 
-    def on_destroy(self):
+    def on_terminated(self):
         """
         Clean remote folders of all PwCalculations run by ourselves and the called subworkchains, if the clean_workdir
         parameter was set to true in the Workchain inputs. We perform this cleaning only at the very end of the
         workchain and do not pass the clean_workdir input directly to the sub workchains that we call, because some of
         the sub workchains may rely on the calculation of on of the previous sub workchains.
         """
-        super(PwRelaxWorkChain, self).on_destroy()
-        if not self.is_terminated:
-            return
+        super(PwRelaxWorkChain, self).on_terminated()
 
-        if not self.inputs.clean_workdir.value:
+        if self.inputs.clean_workdir.value is False:
             self.report('remote folders will not be cleaned')
             return
 
@@ -335,5 +333,5 @@ class PwRelaxWorkChain(WorkChain):
                     except Exception:
                         pass
 
-        if len(cleaned_calcs) > 0:
+        if cleaned_calcs:
             self.report('cleaned remote folders of calculations: {}'.format(' '.join(map(str, cleaned_calcs))))
