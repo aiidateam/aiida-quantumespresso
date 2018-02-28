@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from copy import deepcopy
+from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import Code
-from aiida.orm.data.base import Bool, Int, Str
-from aiida.orm.data.folder import FolderData
+from aiida.orm.data.base import Str
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
@@ -11,7 +11,6 @@ from aiida.orm.data.array.bands import BandsData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.data.singlefile import SinglefileData
 from aiida.orm.utils import CalculationFactory
-from aiida.common.extendeddicts import AttributeDict
 from aiida.work.workchain import ToContext, if_, while_
 from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
 from aiida_quantumespresso.common.workchain.utils import ErrorHandlerReport
@@ -79,7 +78,6 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         spec.output('output_structure', valid_type=StructureData, required=False)
         spec.output('output_parameters', valid_type=ParameterData)
         spec.output('remote_folder', valid_type=RemoteData)
-        spec.output('retrieved', valid_type=FolderData)
 
     def validate_inputs(self):
         """

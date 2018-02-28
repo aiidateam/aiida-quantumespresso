@@ -2,8 +2,7 @@
 from copy import deepcopy
 from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import Code
-from aiida.orm.data.base import Bool, Float, Int, Str
-from aiida.orm.data.folder import FolderData
+from aiida.orm.data.base import Bool
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.array.kpoints import KpointsData
@@ -54,7 +53,6 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         )
         spec.output('output_parameters', valid_type=ParameterData)
         spec.output('remote_folder', valid_type=RemoteData)
-        spec.output('retrieved', valid_type=FolderData)
 
     def validate_inputs(self):
         """

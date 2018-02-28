@@ -4,7 +4,6 @@ from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import Code
 from aiida.orm.calculation import JobCalculation
 from aiida.orm.data.base import Bool, Float, Int, Str 
-from aiida.orm.data.folder import FolderData
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
@@ -62,7 +61,6 @@ class PwRelaxWorkChain(WorkChain):
         spec.output('output_structure', valid_type=StructureData)
         spec.output('output_parameters', valid_type=ParameterData)
         spec.output('remote_folder', valid_type=RemoteData)
-        spec.output('retrieved', valid_type=FolderData)
 
     def setup(self):
         """

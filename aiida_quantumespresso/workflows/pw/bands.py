@@ -10,11 +10,8 @@ from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.data.singlefile import SinglefileData
 from aiida.orm.group import Group
 from aiida.orm.utils import WorkflowFactory
-from aiida.common.links import LinkType
-from aiida.common.exceptions import AiidaException, NotExistent
-from aiida.common.datastructures import calc_states
 from aiida.common.extendeddicts import AttributeDict
-from aiida.work.workchain import WorkChain, ToContext, while_, append_, if_
+from aiida.work.workchain import WorkChain, ToContext, if_
 from aiida.work.workfunctions import workfunction
 from seekpath.aiidawrappers import get_path, get_explicit_k_path
 

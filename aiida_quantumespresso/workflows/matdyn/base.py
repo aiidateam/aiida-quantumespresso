@@ -2,9 +2,6 @@
 from copy import deepcopy
 from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import Code
-from aiida.orm.data.folder import FolderData
-from aiida.orm.data.remote import RemoteData
-from aiida.orm.data.singlefile import SinglefileData
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.array.bands import BandsData
 from aiida.orm.data.array.kpoints import KpointsData
@@ -31,7 +28,7 @@ class MatdynBaseWorkChain(BaseRestartWorkChain):
         super(MatdynBaseWorkChain, cls).define(spec)
         spec.input('code', valid_type=Code)
         spec.input('kpoints', valid_type=KpointsData)
-        spec.input('parent_folder', valid_type=SinglefileData)
+        spec.input('parent_folder', valid_type=ForceconstantsData)
         spec.input('parameters', valid_type=ParameterData, required=False)
         spec.input('settings', valid_type=ParameterData, required=False)
         spec.input('options', valid_type=ParameterData, required=False)
@@ -46,8 +43,6 @@ class MatdynBaseWorkChain(BaseRestartWorkChain):
         )
         spec.output('output_parameters', valid_type=ParameterData)
         spec.output('output_phonon_bands', valid_type=BandsData)
-        spec.output('remote_folder', valid_type=RemoteData)
-        spec.output('retrieved', valid_type=FolderData)
 
     def validate_inputs(self):
         """
