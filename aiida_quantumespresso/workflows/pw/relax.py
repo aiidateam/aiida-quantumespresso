@@ -305,7 +305,7 @@ class PwRelaxWorkChain(WorkChain):
         the sub workchains may rely on the calculation of on of the previous sub workchains.
         """
         super(PwRelaxWorkChain, self).on_destroy()
-        if not self.has_finished():
+        if not self.is_terminated:
             return
 
         if not self.inputs.clean_workdir.value:

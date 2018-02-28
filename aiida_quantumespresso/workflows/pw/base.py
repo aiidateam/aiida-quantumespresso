@@ -220,7 +220,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         """
         calculation = self.ctx.calculation_init
 
-        if not calculation.has_finished_ok():
+        if not calculation.is_finished_ok:
             self.abort_nowait('the initialization calculation did not finish successfully')
             return
 

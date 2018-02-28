@@ -139,7 +139,7 @@ class BaseRestartWorkChain(WorkChain):
             return
 
         # Done: successful completion of last calculation
-        if calculation.has_finished_ok():
+        if calculation.is_finished_ok:
             self.report('{}<{}> completed successfully'.format(self._calculation_class.__name__, calculation.pk))
             self.ctx.restart_calc = calculation
             self.ctx.is_finished = True
@@ -210,7 +210,7 @@ class BaseRestartWorkChain(WorkChain):
         """
         super(BaseRestartWorkChain, self).on_destroy()
 
-        if not self.has_finished() or self.inputs.clean_workdir.value is False:
+        if not self.is_terminated or self.inputs.clean_workdir.value is False:
             return
 
         cleaned_calcs = []
