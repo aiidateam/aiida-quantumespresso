@@ -68,11 +68,6 @@
         ]
     }, 
     "extras_require": {
-        "atomic_tools": [
-            "ase", 
-            "PyCifRW==3.6.2.1", 
-            "spglib"
-        ], 
         "dev_precommit": [
             "pre-commit"
         ], 
@@ -83,7 +78,7 @@
         ]
     }, 
     "install_requires": [
-        "aiida_core>=0.10.0rc3", 
+        "aiida_core>=0.11.0[atomic_tools]", 
         "click"
     ], 
     "license": "MIT License", 
