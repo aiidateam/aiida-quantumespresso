@@ -2,6 +2,7 @@
 import click
 from aiida.utils.cli import command
 from aiida.utils.cli import options
+from aiida_quantumespresso.utils.cli import options as options_qe
 
 
 @command()
@@ -11,11 +12,13 @@ from aiida.utils.cli import options
 @options.max_num_machines()
 @options.max_wallclock_seconds()
 @options.daemon()
+@options_qe.clean_workdir()
 def launch(
-    code, parent_calc, kpoints, max_num_machines, max_wallclock_seconds, daemon):
+    code, parent_calc, kpoints, max_num_machines, max_wallclock_seconds, daemon, clean_workdir):
     """
     Run the MatdynBaseWorkChain for a previously completed Q2rCalculation
     """
+    from aiida.orm.data.base import Bool
     from aiida.orm.data.parameter import ParameterData
     from aiida.orm.utils import CalculationFactory, WorkflowFactory
     from aiida.work.launch import run, submit
@@ -31,6 +34,9 @@ def launch(
         'parent_folder': parent_calc.out.force_constants,
         'options': ParameterData(dict=options),
     }
+
+    if clean_workdir:
+        inputs['clean_workdir'] = Bool(True)
 
     if daemon:
         workchain = submit(MatdynBaseWorkChain, **inputs)

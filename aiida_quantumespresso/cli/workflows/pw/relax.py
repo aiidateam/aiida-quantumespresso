@@ -24,8 +24,8 @@ from aiida_quantumespresso.utils.cli import options as options_qe
     help='the label of a Group to add the final PwCalculation to in case of success'
 )
 def launch(
-    code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds,
-    automatic_parallelization, clean_workdir, final_scf, group, daemon):
+    code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, daemon,
+    automatic_parallelization, clean_workdir, final_scf, group):
     """
     Run the PwRelaxWorkChain for a given input structure
     """

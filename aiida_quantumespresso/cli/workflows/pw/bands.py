@@ -14,8 +14,10 @@ from aiida_quantumespresso.utils.cli import options as options_qe
 @options.max_wallclock_seconds()
 @options.daemon()
 @options_qe.automatic_parallelization()
+@options_qe.clean_workdir()
 def launch(
-    code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, automatic_parallelization, daemon):
+    code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, daemon,
+    automatic_parallelization, clean_workdir):
     """
     Run the PwBandsWorkChain for a given input structure
     """
@@ -58,6 +60,9 @@ def launch(
     else:
         options = get_default_options(max_num_machines, max_wallclock_seconds)
         inputs['options'] = ParameterData(dict=options)
+
+    if clean_workdir:
+        inputs['clean_workdir'] = Bool(True)
 
     if daemon:
         workchain = submit(PwBandsWorkChain, **inputs)

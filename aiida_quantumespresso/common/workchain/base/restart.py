@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from aiida.common.datastructures import calc_states
 from aiida.common.exceptions import LoadingPluginFailed, MissingPluginError
-from aiida.common.links import LinkType
 from aiida.orm.calculation import JobCalculation
 from aiida.orm.data.base import Bool, Int
 from aiida.orm.data.parameter import ParameterData
 from aiida.work.workchain import WorkChain, ToContext, append_
 from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
 from aiida_quantumespresso.common.pluginloader import get_plugin, get_plugins
+
 
 class BaseRestartWorkChain(WorkChain):
     """
@@ -206,21 +206,24 @@ class BaseRestartWorkChain(WorkChain):
 
     def on_terminated(self):
         """
-        Clean remote folders of the calculations called in the workchain if the clean_workdir input is True
+        If the clean_workdir input was set to True, recursively collect all called Calculations by
+        ourselves and our called descendants, and clean the remote folder for the JobCalculation instances
         """
         super(BaseRestartWorkChain, self).on_terminated()
 
         if self.inputs.clean_workdir.value is False:
+            self.report('remote folders will not be cleaned')
             return
 
         cleaned_calcs = []
 
-        for calculation in self.calc.get_outputs(link_type=LinkType.CALL):
-            try:
-                calculation.out.remote_folder._clean()
-                cleaned_calcs.append(calculation.pk)
-            except BaseException:
-                pass
+        for called_descendant in self.calc.called_descendants:
+            if isinstance(called_descendant, JobCalculation):
+                try:
+                    called_descendant.out.remote_folder._clean()
+                    cleaned_calcs.append(called_descendant.pk)
+                except (IOError, OSError, KeyError) as exception:
+                    pass
 
         if cleaned_calcs:
             self.report('cleaned remote folders of calculations: {}'.format(' '.join(map(str, cleaned_calcs))))

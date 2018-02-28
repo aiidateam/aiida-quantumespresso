@@ -8,7 +8,9 @@ from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.utils import WorkflowFactory
 from aiida.work.workchain import WorkChain, ToContext
 
+
 PwBandsWorkChain = WorkflowFactory('quantumespresso.pw.bands')
+
 
 class PwBandStructureWorkChain(WorkChain):
     """

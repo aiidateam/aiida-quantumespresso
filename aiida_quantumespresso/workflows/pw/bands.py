@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from copy import deepcopy
 from aiida.orm import Code
+from aiida.orm.calculation import JobCalculation
 from aiida.orm.data.base import Str, Float, Bool
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
@@ -17,8 +18,10 @@ from aiida.work.workchain import WorkChain, ToContext, while_, append_, if_
 from aiida.work.workfunctions import workfunction
 from seekpath.aiidawrappers import get_path, get_explicit_k_path
 
+
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
+
 
 class PwBandsWorkChain(WorkChain):
     """
@@ -39,6 +42,7 @@ class PwBandsWorkChain(WorkChain):
         spec.input('settings', valid_type=ParameterData, required=False)
         spec.input('options', valid_type=ParameterData, required=False)
         spec.input('automatic_parallelization', valid_type=ParameterData, required=False)
+        spec.input('clean_workdir', valid_type=Bool, default=Bool(False))
         spec.input('group', valid_type=Str, required=False)
         spec.input_namespace('relax', required=False, dynamic=True)
         spec.outline(
@@ -237,6 +241,30 @@ class PwBandsWorkChain(WorkChain):
             group.add_nodes(output_band)
             self.report("storing the output_band<{}> in the group '{}'"
                 .format(output_band.pk, self.inputs.group.value))
+
+    def on_terminated(self):
+        """
+        If the clean_workdir input was set to True, recursively collect all called Calculations by
+        ourselves and our called descendants, and clean the remote folder for the JobCalculation instances
+        """
+        super(PwBandsWorkChain, self).on_terminated()
+
+        if self.inputs.clean_workdir.value is False:
+            self.report('remote folders will not be cleaned')
+            return
+
+        cleaned_calcs = []
+
+        for called_descendant in self.calc.called_descendants:
+            if isinstance(called_descendant, JobCalculation):
+                try:
+                    called_descendant.out.remote_folder._clean()
+                    cleaned_calcs.append(called_descendant.pk)
+                except (IOError, OSError, KeyError) as exception:
+                    pass
+
+        if cleaned_calcs:
+            self.report('cleaned remote folders of calculations: {}'.format(' '.join(map(str, cleaned_calcs))))
 
 
 @workfunction

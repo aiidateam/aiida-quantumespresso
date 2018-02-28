@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from copy import deepcopy
-from aiida.common.links import LinkType
+from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import Code
+from aiida.orm.calculation import JobCalculation
 from aiida.orm.data.base import Bool, Float, Int, Str 
 from aiida.orm.data.folder import FolderData
 from aiida.orm.data.remote import RemoteData
@@ -11,13 +12,12 @@ from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.data.singlefile import SinglefileData
 from aiida.orm.group import Group
 from aiida.orm.utils import CalculationFactory, WorkflowFactory
-from aiida.common.extendeddicts import AttributeDict
-from aiida.common.exceptions import AiidaException, NotExistent
-from aiida.common.datastructures import calc_states
 from aiida.work.workchain import WorkChain, ToContext, if_, while_, append_
+
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
+
 
 class PwRelaxWorkChain(WorkChain):
     """
@@ -299,10 +299,8 @@ class PwRelaxWorkChain(WorkChain):
 
     def on_terminated(self):
         """
-        Clean remote folders of all PwCalculations run by ourselves and the called subworkchains, if the clean_workdir
-        parameter was set to true in the Workchain inputs. We perform this cleaning only at the very end of the
-        workchain and do not pass the clean_workdir input directly to the sub workchains that we call, because some of
-        the sub workchains may rely on the calculation of on of the previous sub workchains.
+        If the clean_workdir input was set to True, recursively collect all called Calculations by
+        ourselves and our called descendants, and clean the remote folder for the JobCalculation instances
         """
         super(PwRelaxWorkChain, self).on_terminated()
 
@@ -312,26 +310,13 @@ class PwRelaxWorkChain(WorkChain):
 
         cleaned_calcs = []
 
-        try:
-            workchains = self.ctx.workchains
-        except AttributeError:
-            workchains = []
-
-        try:
-            workchains.append(self.ctx.workchain_scf)
-        except AttributeError:
-            pass
-
-        for workchain in workchains:
-            calculations = workchain.get_outputs(link_type=LinkType.CALL)
-
-            for calculation in calculations:
-                if isinstance(calculation, PwCalculation):
-                    try:
-                        calculation.out.remote_folder._clean()
-                        cleaned_calcs.append(calculation.pk)
-                    except Exception:
-                        pass
+        for called_descendant in self.calc.called_descendants:
+            if isinstance(called_descendant, JobCalculation):
+                try:
+                    called_descendant.out.remote_folder._clean()
+                    cleaned_calcs.append(called_descendant.pk)
+                except (IOError, OSError, KeyError) as exception:
+                    pass
 
         if cleaned_calcs:
             self.report('cleaned remote folders of calculations: {}'.format(' '.join(map(str, cleaned_calcs))))

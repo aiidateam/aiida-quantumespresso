@@ -16,8 +16,8 @@ from aiida_quantumespresso.utils.cli import options as options_qe
 @options_qe.automatic_parallelization()
 @options_qe.clean_workdir()
 def launch(
-    code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds,
-    automatic_parallelization, clean_workdir, daemon):
+    code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, daemon,
+    automatic_parallelization, clean_workdir):
     """
     Run the PwBaseWorkChain for a given input structure
     """

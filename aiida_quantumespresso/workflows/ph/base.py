@@ -14,8 +14,10 @@ from aiida_quantumespresso.common.workchain.utils import register_error_handler
 from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkChain
 from aiida_quantumespresso.utils.resources import get_default_options
 
+
 PhCalculation = CalculationFactory('quantumespresso.ph')
 PwCalculation = CalculationFactory('quantumespresso.pw')
+
 
 class PhBaseWorkChain(BaseRestartWorkChain):
     """

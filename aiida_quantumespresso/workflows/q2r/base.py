@@ -11,7 +11,9 @@ from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkC
 from aiida_quantumespresso.data.forceconstants import ForceconstantsData
 from aiida_quantumespresso.utils.resources import get_default_options
 
+
 Q2rCalculation = CalculationFactory('quantumespresso.q2r')
+
 
 class Q2rBaseWorkChain(BaseRestartWorkChain):
     """

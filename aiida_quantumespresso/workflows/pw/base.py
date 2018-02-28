@@ -25,7 +25,9 @@ from aiida_quantumespresso.utils.resources import get_pw_parallelization_paramet
 from aiida_quantumespresso.utils.resources import cmdline_remove_npools
 from aiida_quantumespresso.utils.resources import create_scheduler_resources
 
+
 PwCalculation = CalculationFactory('quantumespresso.pw')
+
 
 class PwBaseWorkChain(BaseRestartWorkChain):
     """
