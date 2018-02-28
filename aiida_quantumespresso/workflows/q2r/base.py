@@ -70,9 +70,9 @@ class Q2rBaseWorkChain(BaseRestartWorkChain):
             self.ctx.inputs_raw.settings = {}
 
         if 'options' in self.inputs:
-            self.ctx.inputs_raw._options = self.inputs.options.get_dict()
+            self.ctx.inputs_raw.options = self.inputs.options.get_dict()
         else:
-            self.ctx.inputs_raw._options = get_default_options()
+            self.ctx.inputs_raw.options = get_default_options()
 
         # Assign a deepcopy to self.ctx.inputs which will be used by the BaseRestartWorkChain
         self.ctx.inputs = deepcopy(self.ctx.inputs_raw)

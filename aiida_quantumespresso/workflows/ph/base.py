@@ -86,9 +86,9 @@ class PhBaseWorkChain(BaseRestartWorkChain):
             self.ctx.inputs_raw.settings = {}
 
         if 'options' in self.inputs:
-            self.ctx.inputs_raw._options = self.inputs.options.get_dict()
+            self.ctx.inputs_raw.options = self.inputs.options.get_dict()
         else:
-            self.ctx.inputs_raw._options = get_default_options()
+            self.ctx.inputs_raw.options = get_default_options()
 
         if self.inputs.only_initialization.value:
             self.ctx.inputs_raw.settings['ONLY_INITIALIZATION'] = True
@@ -107,10 +107,10 @@ class PhBaseWorkChain(BaseRestartWorkChain):
     def _prepare_process_inputs(self, inputs):
         """
         The 'max_seconds' setting in the 'INPUTPH' card of the parameters will be set to a fraction of the
-        'max_wallclock_seconds' that will be given to the job via the '_options' dictionary. This will prevent the job
+        'max_wallclock_seconds' that will be given to the job via the 'options' dictionary. This will prevent the job
         from being prematurely terminated by the scheduler without getting the chance to exit cleanly.
         """
-        max_wallclock_seconds = inputs._options['max_wallclock_seconds']
+        max_wallclock_seconds = inputs.options['max_wallclock_seconds']
         max_seconds_factor = self.defaults.delta_factor_max_seconds
         max_seconds = max_wallclock_seconds * max_seconds_factor
         inputs.parameters['INPUTPH']['max_seconds'] = max_seconds
