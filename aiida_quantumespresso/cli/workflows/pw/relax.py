@@ -6,7 +6,7 @@ from aiida_quantumespresso.utils.cli import options as options_qe
 
 
 @command()
-@options.code()
+@options.code(callback_kwargs={'entry_point': 'quantumespresso.pw'})
 @options.structure()
 @options.pseudo_family()
 @options.kpoint_mesh()

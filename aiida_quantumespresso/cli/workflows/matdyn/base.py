@@ -6,15 +6,15 @@ from aiida_quantumespresso.utils.cli import options as options_qe
 
 
 @command()
-@options.code()
-@options.parent_calc(callback_kwargs={'entry_point': 'quantumespresso.q2r'})
+@options.code(callback_kwargs={'entry_point': 'quantumespresso.matdyn'})
+@options.calculation(callback_kwargs={'entry_point': 'quantumespresso.q2r'})
 @options.kpoint_mesh()
 @options.max_num_machines()
 @options.max_wallclock_seconds()
 @options.daemon()
 @options_qe.clean_workdir()
 def launch(
-    code, parent_calc, kpoints, max_num_machines, max_wallclock_seconds, daemon, clean_workdir):
+    code, calculation, kpoints, max_num_machines, max_wallclock_seconds, daemon, clean_workdir):
     """
     Run the MatdynBaseWorkChain for a previously completed Q2rCalculation
     """
@@ -31,7 +31,7 @@ def launch(
     inputs = {
         'code': code,
         'kpoints': kpoints,
-        'parent_folder': parent_calc.out.force_constants,
+        'parent_folder': calculation.out.force_constants,
         'options': ParameterData(dict=options),
     }
 

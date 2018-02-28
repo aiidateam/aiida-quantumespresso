@@ -6,8 +6,8 @@ from aiida_quantumespresso.utils.cli import options as options_qe
 
 
 @command()
-@options.code()
-@options.calculation()
+@options.code(callback_kwargs={'entry_point': 'quantumespresso.ph'})
+@options.calculation(callback_kwargs={'entry_point': 'quantumespresso.pw'})
 @options.kpoint_mesh()
 @options.max_num_machines()
 @options.max_wallclock_seconds()
