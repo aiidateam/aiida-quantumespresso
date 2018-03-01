@@ -280,7 +280,7 @@ def _handle_error_read_namelists(self, calculation):
     """
     if any(['read_namelists' in w for w in calculation.res.warnings]):
         self.abort_nowait('PwCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
-        return ErrorHandlerReport(True, False)
+        return ErrorHandlerReport(True, True)
 
 @register_error_handler(PwBaseWorkChain, 400)
 def _handle_error_exceeded_maximum_walltime(self, calculation):
@@ -291,7 +291,7 @@ def _handle_error_exceeded_maximum_walltime(self, calculation):
         self.ctx.restart_calc = calculation
         self.report('PwCalculation<{}> terminated because maximum wall time was exceeded, restarting'
             .format(calculation.pk))
-        return ErrorHandlerReport(True, False)
+        return ErrorHandlerReport(True, True)
 
 @register_error_handler(PwBaseWorkChain, 300)
 def _handle_error_diagonalization(self, calculation):
@@ -310,8 +310,10 @@ def _handle_error_diagonalization(self, calculation):
     )):
         new_diagonalization = 'cg'
         self.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = 'cg'
+        self.ctx.restart_calc = calculation
         self.report('PwCalculation<{}> failed to diagonalize with "{}" scheme'.format(diagonalization))
         self.report('Restarting with diagonalization scheme "{}"'.format(new_diagonalization))
+        return ErrorHandlerReport(True, True)
 
 @register_error_handler(PwBaseWorkChain, 200)
 def _handle_error_convergence_not_reached(self, calculation):
@@ -320,9 +322,9 @@ def _handle_error_convergence_not_reached(self, calculation):
     from the previous calculation without changing any of the input parameters
     """
     if 'The scf cycle did not reach convergence.' in calculation.res.warnings:
+        self.ctx.restart_calc = calculation
         self.report('PwCalculation<{}> did not converge, restart from previous calculation'.format(calculation.pk))
         return ErrorHandlerReport(True, True)
-        return ErrorHandlerReport(True, False)
 
 @register_error_handler(PwBaseWorkChain, 100)
 def _handle_error_unrecognized_by_parser(self, calculation):
