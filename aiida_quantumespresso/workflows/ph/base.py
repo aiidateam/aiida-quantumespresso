@@ -120,8 +120,7 @@ def _handle_fatal_error_read_namelists(self, calculation):
     The calculation failed because it could not read the generated input file
     """
     if any(['reading inputph namelist' in w for w in calculation.res.warnings]):
-        self.abort_nowait('PhCalculation<{}> failed because of an invalid input file'
-            .format(calculation.pk))
+        self.abort_nowait('PhCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
         return ErrorHandlerReport(True, True)
 
 @register_error_handler(PhBaseWorkChain, 300)
@@ -164,6 +163,7 @@ def _handle_error_premature_termination(self, calculation):
         max_seconds_reduced = int(max_seconds * factor)
         self.ctx.inputs.parameters['INPUTPH']['max_seconds'] = max_seconds_reduced
 
+        self.ctx.restart_calc = calculation
         self.report('PwCalculation<{}> was terminated prematurely, reducing "max_seconds" from {} to {}'
             .format(calculation.pk, max_seconds, max_seconds_reduced))
-        return ErrorHandlerReport(True, False)
+        return ErrorHandlerReport(True, True)
