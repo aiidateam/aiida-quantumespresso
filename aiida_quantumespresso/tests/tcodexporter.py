@@ -237,20 +237,15 @@ class TestTcodDbExporter(AiidaTestCase):
                           ['cd 1; ./_aiidasubmit.sh'])
 
     def test_pw_translation(self):
-        from aiida.tools.dbexporters.tcod \
-            import translate_calculation_specific_values
-        # from aiida.tools.dbexporters.tcod_plugins.pw \
-        #     import PwTcodtranslator as PWT
-        # from aiida.tools.dbexporters.tcod_plugins.cp \
-        #     import CpTcodtranslator as CPT
+        from aiida.tools.dbexporters.tcod import translate_calculation_specific_values
         from aiida.orm.code import Code
         from aiida.orm.data.array import ArrayData
         from aiida.orm.data.array.kpoints import KpointsData
         from aiida.orm.data.parameter import ParameterData
         import numpy
-        from aiida.common.pluginloader import get_plugin
-        PWT = get_plugin('tools.dbexporters.tcod_plugins', 'quantumespresso.pw')
-        CPT = get_plugin('tools.dbexporters.tcod_plugins', 'quantumespresso.cp')
+        from aiida.plugins.entry_point import load_entry_point
+        PWT = load_entry_point('aiida.tools.dbexporters.tcod_plugins', 'quantumespresso.pw')
+        CPT = load_entry_point('aiida.tools.dbexporters.tcod_plugins', 'quantumespresso.cp')
 
         code = Code()
         code._set_attr('remote_exec_path', '/test')
@@ -432,7 +427,7 @@ class TestTcodDbExporter(AiidaTestCase):
         s = a._get_aiida_structure(store=True)
         val = export_values(s)
         script = val.first_block()['_tcod_file_contents'][1]
-        function = '_get_aiida_structure_ase_inline'
+        function = '_get_aiida_structure_pymatgen_inline'
         self.assertNotEqual(script.find(function), script.rfind(function))
 
     @unittest.skipIf(not has_ase(), "Unable to import ase")
