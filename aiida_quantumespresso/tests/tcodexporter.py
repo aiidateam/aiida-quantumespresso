@@ -158,6 +158,10 @@ class TestTcodDbExporter(AiidaTestCase):
                 _cell_angle_beta  90
                 _cell_angle_gamma 90
                 loop_
+                _symmetry_equiv_pos_site_id
+                _symmetry_equiv_pos_as_xyz
+                1 +x,+y,+z
+                loop_
                 _atom_site_label
                 _atom_site_fract_x
                 _atom_site_fract_y
@@ -413,6 +417,10 @@ class TestTcodDbExporter(AiidaTestCase):
                 _cell_angle_alpha 90
                 _cell_angle_beta  90
                 _cell_angle_gamma 90
+                loop_
+                _symmetry_equiv_pos_site_id
+                _symmetry_equiv_pos_as_xyz
+                1 +x,+y,+z
                 loop_
                 _atom_site_label
                 _atom_site_fract_x
