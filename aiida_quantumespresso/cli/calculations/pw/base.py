@@ -24,7 +24,7 @@ def launch(code, structure, pseudo_family, kpoints, max_num_machines, max_wallcl
     from aiida.orm.data.parameter import ParameterData
     from aiida.orm.data.upf import get_pseudos_from_structure
     from aiida.orm.utils import CalculationFactory
-    from aiida.work.launch import run_get_pid, submit
+    from aiida.work.launch import run_get_node, submit
     from aiida_quantumespresso.utils.resources import get_default_options
 
     PwCalculation = CalculationFactory('quantumespresso.pw')
@@ -49,7 +49,6 @@ def launch(code, structure, pseudo_family, kpoints, max_num_machines, max_wallcl
         'options': get_default_options(max_num_machines, max_wallclock_seconds),
     }
 
-    click.echo('Running a pw.x calculation in the {} mode... '.format(mode))
 
     process = PwCalculation.process()
 
@@ -58,12 +57,10 @@ def launch(code, structure, pseudo_family, kpoints, max_num_machines, max_wallcl
         pk = calculation.pk
         click.echo('Submitted {}<{}> to the daemon'.format(PwCalculation.__name__, calculation.pk))
     else:
-        results, pk = run_get_pid(process, **inputs)
-
-    calculation = load_node(pk)
-
-    click.echo('PwCalculation<{}> terminated with state: {}'.format(pk, calculation.get_state()))
-    click.echo('\n{link:25s} {node}'.format(link='Output link', node='Node pk and type'))
-    click.echo('{s}'.format(s='-'*60))
-    for link, node in sorted(calculation.get_outputs(also_labels=True)):
-        click.echo('{:25s} <{}> {}'.format(link, node.pk, node.__class__.__name__))
+        click.echo('Running a pw.x calculation in the {} mode... '.format(mode))
+        results, calculation = run_get_node(process, **inputs)
+        click.echo('PwCalculation<{}> terminated with state: {}'.format(calculation.pk, calculation.get_state()))
+        click.echo('\n{link:25s} {node}'.format(link='Output link', node='Node pk and type'))
+        click.echo('{s}'.format(s='-'*60))
+        for link, node in sorted(calculation.get_outputs(also_labels=True)):
+            click.echo('{:25s} <{}> {}'.format(link, node.pk, node.__class__.__name__))
