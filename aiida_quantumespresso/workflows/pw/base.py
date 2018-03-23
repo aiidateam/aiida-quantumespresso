@@ -101,7 +101,6 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             self.ctx.inputs.parent_folder = self.inputs.parent_folder
             self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'restart'
         else:
-            self.ctx.inputs.parent_folder = None
             self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'from_scratch'
 
         if 'settings' in self.inputs:
@@ -198,8 +197,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         inputs.options = update_mapping(inputs['options'], get_default_options())
 
         # Prepare the final input dictionary
-        inputs = self._prepare_process_inputs(inputs)
         process = PwCalculation.process()
+        inputs = self._prepare_process_inputs(process, inputs)
         running = self.submit(process, **inputs)
 
         self.report('launching initialization PwCalculation<{}>'.format(running.pk))
@@ -252,7 +251,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'restart'
             self.ctx.inputs.parent_folder = self.ctx.restart_calc.out.remote_folder
 
-    def _prepare_process_inputs(self, inputs):
+    def _prepare_process_inputs(self, process, inputs):
         """
         The 'max_seconds' setting in the 'CONTROL' card of the parameters will be set to a fraction of the
         'max_wallclock_seconds' that will be given to the job via the 'options' dictionary. This will prevent the job
@@ -263,7 +262,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         max_seconds = max_wallclock_seconds * max_seconds_factor
         inputs.parameters['CONTROL']['max_seconds'] = max_seconds
 
-        return super(PwBaseWorkChain, self)._prepare_process_inputs(inputs)
+        return super(PwBaseWorkChain, self)._prepare_process_inputs(process, inputs)
 
 
 @register_error_handler(PwBaseWorkChain, 500)

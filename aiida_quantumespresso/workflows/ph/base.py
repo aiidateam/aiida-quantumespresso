@@ -2,6 +2,7 @@
 from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import Code
 from aiida.orm.data.base import Bool
+from aiida.orm.data.folder import FolderData
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.array.kpoints import KpointsData
@@ -52,6 +53,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         )
         spec.output('output_parameters', valid_type=ParameterData)
         spec.output('remote_folder', valid_type=RemoteData)
+        spec.output('retrieved', valid_type=FolderData)
 
     def validate_inputs(self):
         """
@@ -94,7 +96,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
             self.ctx.inputs.parameters['INPUTPH']['recover'] = True
             self.ctx.inputs.parent_folder = self.ctx.restart_calc.out.remote_folder
 
-    def _prepare_process_inputs(self, inputs):
+    def _prepare_process_inputs(self, process, inputs):
         """
         The 'max_seconds' setting in the 'INPUTPH' card of the parameters will be set to a fraction of the
         'max_wallclock_seconds' that will be given to the job via the 'options' dictionary. This will prevent the job
@@ -105,7 +107,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         max_seconds = max_wallclock_seconds * max_seconds_factor
         inputs.parameters['INPUTPH']['max_seconds'] = max_seconds
 
-        return super(PhBaseWorkChain, self)._prepare_process_inputs(inputs)
+        return super(PhBaseWorkChain, self)._prepare_process_inputs(process, inputs)
 
 
 @register_error_handler(PhBaseWorkChain, 400)

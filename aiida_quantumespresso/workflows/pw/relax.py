@@ -161,7 +161,7 @@ class PwRelaxWorkChain(WorkChain):
         else:
             inputs['kpoints'] = self.inputs.kpoints
 
-        inputs = prepare_process_inputs(inputs)
+        inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
 
         self.report('launching PwBaseWorkChain<{}>'.format(running.pk))
@@ -247,7 +247,7 @@ class PwRelaxWorkChain(WorkChain):
             'parent_folder': self.ctx.current_parent_folder,
         })
 
-        inputs = prepare_process_inputs(inputs)
+        inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
 
         self.report('launching PwBaseWorkChain<{}> for final scf'.format(running.pk))

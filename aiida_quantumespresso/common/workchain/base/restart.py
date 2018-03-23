@@ -117,8 +117,8 @@ class BaseRestartWorkChain(WorkChain):
         except AttributeError:
             raise ValueError('no calculation input dictionary was defined in self.ctx.inputs')
 
-        inputs = self._prepare_process_inputs(unwrapped_inputs)
         process = self._calculation_class.process()
+        inputs = self._prepare_process_inputs(process, unwrapped_inputs)
         running = self.submit(process, **inputs)
 
         self.report('launching {}<{}> iteration #{}'
@@ -308,7 +308,7 @@ class BaseRestartWorkChain(WorkChain):
 
         return
 
-    def _prepare_process_inputs(self, inputs):
+    def _prepare_process_inputs(self, process, inputs):
         """
         Prepare the inputs dictionary for a calculation process. Any remaining bare dictionaries in the inputs
         dictionary will be wrapped in a ParameterData data node except for the 'options' key which should remain
@@ -317,4 +317,4 @@ class BaseRestartWorkChain(WorkChain):
         a tuple of kind to which the UpfData corresponds.
         """
         from aiida_quantumespresso.utils.mapping import prepare_process_inputs
-        return prepare_process_inputs(inputs)
+        return prepare_process_inputs(process, inputs)

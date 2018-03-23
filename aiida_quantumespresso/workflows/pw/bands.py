@@ -109,7 +109,7 @@ class PwBandsWorkChain(WorkChain):
         """
         Run the PwRelaxWorkChain to run a relax PwCalculation
         """
-        inputs = AttributeDict(deepcopy(self.inputs.relax))
+        inputs = AttributeDict(self.inputs.relax)
         inputs.update({
             'code': self.inputs.code,
             'structure': self.inputs.structure,
@@ -175,7 +175,7 @@ class PwBandsWorkChain(WorkChain):
         inputs.kpoints = self.ctx.kpoints_mesh
         inputs.structure = self.ctx.structure
 
-        inputs = prepare_process_inputs(inputs)
+        inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
 
         self.report('launching PwBaseWorkChain<{}> in {} mode'.format(running.pk, calculation_mode))
@@ -208,7 +208,7 @@ class PwBandsWorkChain(WorkChain):
         inputs.structure = self.ctx.structure
         inputs.parent_folder = remote_folder
 
-        inputs = prepare_process_inputs(inputs)
+        inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
 
         self.report('launching PwBaseWorkChain<{}> in {} mode'.format(running.pk, calculation_mode))
