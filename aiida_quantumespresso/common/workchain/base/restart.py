@@ -10,6 +10,7 @@ from aiida.work.run import submit
 from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
 from aiida_quantumespresso.common.pluginloader import get_plugin, get_plugins
 
+
 class BaseRestartWorkChain(WorkChain):
     """
     Base restart workchain
@@ -314,12 +315,5 @@ class BaseRestartWorkChain(WorkChain):
         This is the format used by input groups as in for example the explicit pseudo dictionary where the key is
         a tuple of kind to which the UpfData corresponds.
         """
-        prepared_inputs = {}
-
-        for key, val in inputs.iteritems():
-            if key != '_options' and isinstance(val, dict) and all([isinstance(k, (basestring)) for k in val.keys()]):
-                prepared_inputs[key] = ParameterData(dict=val)
-            else:
-                prepared_inputs[key] = val
-
-        return prepared_inputs
+        from aiida_quantumespresso.utils.mapping import prepare_process_inputs
+        return prepare_process_inputs(inputs)

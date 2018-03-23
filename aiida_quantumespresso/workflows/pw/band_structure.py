@@ -9,7 +9,9 @@ from aiida.orm.utils import WorkflowFactory
 from aiida.work.run import submit
 from aiida.work.workchain import WorkChain, ToContext
 
+
 PwBandsWorkChain = WorkflowFactory('quantumespresso.pw.bands')
+
 
 class PwBandStructureWorkChain(WorkChain):
     """
