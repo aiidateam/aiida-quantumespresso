@@ -5,6 +5,7 @@ from aiida.utils.cli import options
 from aiida_quantumespresso.utils.cli import options as options_qe
 
 
+
 @command()
 @options.code(callback_kwargs={'entry_point': 'quantumespresso.pw'})
 @options.structure()

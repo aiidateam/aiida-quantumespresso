@@ -316,12 +316,5 @@ class BaseRestartWorkChain(WorkChain):
         This is the format used by input groups as in for example the explicit pseudo dictionary where the key is
         a tuple of kind to which the UpfData corresponds.
         """
-        prepared_inputs = {}
-
-        for key, val in inputs.iteritems():
-            if key != 'options' and isinstance(val, dict) and all([isinstance(k, (basestring)) for k in val.keys()]):
-                prepared_inputs[key] = ParameterData(dict=val)
-            else:
-                prepared_inputs[key] = val
-
-        return prepared_inputs
+        from aiida_quantumespresso.utils.mapping import prepare_process_inputs
+        return prepare_process_inputs(inputs)

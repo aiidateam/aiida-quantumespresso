@@ -16,7 +16,7 @@ from aiida.utils.cli import options
     '-z', '--calculation-mode', 'mode', type=click.Choice(['scf', 'vc-relax']), default='scf', show_default=True,
     help='select the calculation mode'
 )
-def launch(code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, mode, daemon):
+def launch(code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, daemon, mode):
     """
     Run a PwCalculation for a given input structure
     """
@@ -54,7 +54,6 @@ def launch(code, structure, pseudo_family, kpoints, max_num_machines, max_wallcl
 
     if daemon:
         calculation = submit(process, **inputs)
-        pk = calculation.pk
         click.echo('Submitted {}<{}> to the daemon'.format(PwCalculation.__name__, calculation.pk))
     else:
         click.echo('Running a pw.x calculation in the {} mode... '.format(mode))

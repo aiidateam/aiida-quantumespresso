@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from copy import deepcopy
 from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import Code
 from aiida.orm.calculation import JobCalculation
@@ -12,6 +11,8 @@ from aiida.orm.data.singlefile import SinglefileData
 from aiida.orm.group import Group
 from aiida.orm.utils import CalculationFactory, WorkflowFactory
 from aiida.work.workchain import WorkChain, ToContext, if_, while_, append_
+from aiida_quantumespresso.utils.mapping import prepare_process_inputs
+
 
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
@@ -145,9 +146,8 @@ class PwRelaxWorkChain(WorkChain):
         """
         self.ctx.iteration += 1
 
-        inputs = deepcopy(self.ctx.inputs)
+        inputs = self.ctx.inputs
         inputs['structure'] = self.ctx.current_structure
-        inputs['parameters'] = ParameterData(dict=inputs['parameters'])
 
         # Construct a new kpoint mesh on the current structure or pass the static mesh
         if 'kpoints' not in self.inputs or self.inputs.kpoints == None:
@@ -161,6 +161,7 @@ class PwRelaxWorkChain(WorkChain):
         else:
             inputs['kpoints'] = self.inputs.kpoints
 
+        inputs = prepare_process_inputs(inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
 
         self.report('launching PwBaseWorkChain<{}>'.format(running.pk))
@@ -223,12 +224,11 @@ class PwRelaxWorkChain(WorkChain):
         """
         Run the PwBaseWorkChain to run a final scf PwCalculation for the relaxed structure
         """
-        inputs = deepcopy(self.ctx.inputs)
+        inputs = self.ctx.inputs
         structure = self.ctx.current_structure
 
-        parameters = inputs['parameters']
-        parameters['CONTROL']['calculation'] = 'scf'
-        parameters['CONTROL']['restart_mode'] = 'restart'
+        inputs.parameters['CONTROL']['calculation'] = 'scf'
+        inputs.parameters['CONTROL']['restart_mode'] = 'restart'
 
         # Construct a new kpoint mesh on the current structure or pass the static mesh
         if 'kpoints' not in self.inputs or self.inputs.kpoints == None:
@@ -244,10 +244,10 @@ class PwRelaxWorkChain(WorkChain):
         inputs.update({
             'kpoints': kpoints,
             'structure': structure,
-            'parameters': ParameterData(dict=parameters),
             'parent_folder': self.ctx.current_parent_folder,
         })
 
+        inputs = prepare_process_inputs(inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
 
         self.report('launching PwBaseWorkChain<{}> for final scf'.format(running.pk))

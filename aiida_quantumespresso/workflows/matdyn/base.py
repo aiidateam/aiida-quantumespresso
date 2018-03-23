@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from copy import deepcopy
 from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import Code
 from aiida.orm.data.parameter import ParameterData
@@ -46,31 +45,28 @@ class MatdynBaseWorkChain(BaseRestartWorkChain):
 
     def validate_inputs(self):
         """
-        Define context dictionary 'inputs_raw' with the inputs for the MatdynCalculations as they were at the beginning
-        of the workchain. Changes have to be made to a deep copy so this remains unchanged and we can always reset
-        the inputs to their initial state. Inputs that are not required by the workchain will be given a default value
-        if not specified or be validated otherwise.
+        Validate inputs that depend might depend on each other and cannot be validated by the spec. Also define
+        dictionary `inputs` in the context, that will contain the inputs for the calculation that will be launched
+        in the `run_calculation` step.
         """
-        self.ctx.inputs_raw = AttributeDict({
+        self.ctx.inputs = AttributeDict({
             'code': self.inputs.code,
             'kpoints': self.inputs.kpoints,
             'parent_folder': self.inputs.parent_folder,
         })
 
         if 'parameters' in self.inputs:
-            self.ctx.inputs_raw.parameters = self.inputs.parameters.get_dict()
+            self.ctx.inputs.parameters = self.inputs.parameters.get_dict()
         else:
-            self.ctx.inputs_raw.parameters = {'INPUT': {}}
+            self.ctx.inputs.parameters = {'INPUT': {}}
 
         if 'settings' in self.inputs:
-            self.ctx.inputs_raw.settings = self.inputs.settings.get_dict()
+            self.ctx.inputs.settings = self.inputs.settings.get_dict()
         else:
-            self.ctx.inputs_raw.settings = {}
+            self.ctx.inputs.settings = {}
 
         if 'options' in self.inputs:
-            self.ctx.inputs_raw.options = self.inputs.options.get_dict()
+            self.ctx.inputs.options = self.inputs.options.get_dict()
         else:
-            self.ctx.inputs_raw.options = get_default_options()
+            self.ctx.inputs.options = get_default_options()
 
-        # Assign a deepcopy to self.ctx.inputs which will be used by the BaseRestartWorkChain
-        self.ctx.inputs = deepcopy(self.ctx.inputs_raw)

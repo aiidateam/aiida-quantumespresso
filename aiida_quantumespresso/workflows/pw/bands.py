@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from copy import deepcopy
 from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import Code
 from aiida.orm.calculation import JobCalculation
@@ -13,6 +12,7 @@ from aiida.orm.group import Group
 from aiida.orm.utils import WorkflowFactory
 from aiida.work.workchain import WorkChain, ToContext, if_
 from aiida.work.workfunctions import workfunction
+from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 
 
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
@@ -63,7 +63,7 @@ class PwBandsWorkChain(WorkChain):
         """
         Initialize context variables that are used during the logical flow of the BaseRestartWorkChain
         """
-        self.ctx.inputs_raw = AttributeDict({
+        self.ctx.inputs = AttributeDict({
             'code': self.inputs.code,
             'pseudo_family': self.inputs.pseudo_family,
             'parameters': self.inputs.parameters.get_dict(),
@@ -79,23 +79,23 @@ class PwBandsWorkChain(WorkChain):
 
         # Add the van der Waals kernel table file if specified
         if 'vdw_table' in self.inputs:
-            self.ctx.inputs_raw.vdw_table = self.inputs.vdw_table
+            self.ctx.inputs.vdw_table = self.inputs.vdw_table
             self.inputs.relax['vdw_table'] = self.inputs.vdw_table
 
         # Set the correct relaxation scheme in the input parameters
-        if 'CONTROL' not in self.ctx.inputs_raw.parameters:
-            self.ctx.inputs_raw.parameters['CONTROL'] = {}
+        if 'CONTROL' not in self.ctx.inputs.parameters:
+            self.ctx.inputs.parameters['CONTROL'] = {}
 
         if 'settings' in self.inputs:
-            self.ctx.inputs_raw.settings = self.inputs.settings
+            self.ctx.inputs.settings = self.inputs.settings
 
         # If options set, add it to the default inputs
         if 'options' in self.inputs:
-            self.ctx.inputs_raw.options = self.inputs.options
+            self.ctx.inputs.options = self.inputs.options
 
         # If automatic parallelization was set, add it to the default inputs
         if 'automatic_parallelization' in self.inputs:
-            self.ctx.inputs_raw.automatic_parallelization = self.inputs.automatic_parallelization
+            self.ctx.inputs.automatic_parallelization = self.inputs.automatic_parallelization
 
         return
 
@@ -167,18 +167,15 @@ class PwBandsWorkChain(WorkChain):
         """
         Run the PwBaseWorkChain in scf mode on the primitive cell of (optionally relaxed) input structure
         """
-        inputs = deepcopy(self.ctx.inputs_raw)
-
+        inputs = self.ctx.inputs
         calculation_mode = 'scf'
 
         # Set the correct pw.x input parameters
         inputs.parameters['CONTROL']['calculation'] = calculation_mode
-
-        # Final input preparation, wrapping dictionaries in ParameterData nodes
         inputs.kpoints = self.ctx.kpoints_mesh
         inputs.structure = self.ctx.structure
-        inputs.parameters = ParameterData(dict=inputs.parameters)
 
+        inputs = prepare_process_inputs(inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
 
         self.report('launching PwBaseWorkChain<{}> in {} mode'.format(running.pk, calculation_mode))
@@ -195,8 +192,7 @@ class PwBandsWorkChain(WorkChain):
             self.abort_nowait('the scf workchain did not output a remote_folder node')
             return
 
-        inputs = deepcopy(self.ctx.inputs_raw)
-
+        inputs = self.ctx.inputs
         restart_mode = 'restart'
         calculation_mode = 'bands'
 
@@ -209,11 +205,10 @@ class PwBandsWorkChain(WorkChain):
         else:
             inputs.kpoints = self.ctx.kpoints_path
 
-        # Final input preparation, wrapping dictionaries in ParameterData nodes
         inputs.structure = self.ctx.structure
         inputs.parent_folder = remote_folder
-        inputs.parameters = ParameterData(dict=inputs.parameters)
 
+        inputs = prepare_process_inputs(inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
 
         self.report('launching PwBaseWorkChain<{}> in {} mode'.format(running.pk, calculation_mode))

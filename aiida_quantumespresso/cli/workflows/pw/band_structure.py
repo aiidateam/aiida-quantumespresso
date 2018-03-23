@@ -14,7 +14,7 @@ from aiida.utils.cli import options
     help='the protocol to use for the workflow'
 )
 def launch(
-    code, structure, pseudo_family, protocol, daemon):
+    code, structure, pseudo_family, daemon, protocol):
     """
     Run the PwBandStructureWorkChain for a given input structure 
     to compute the band structure for the relaxed structure
