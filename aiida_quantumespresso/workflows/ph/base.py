@@ -23,13 +23,14 @@ class PhBaseWorkChain(BaseRestartWorkChain):
     Base Workchain to launch a Quantum Espresso phonon ph.x calculation and restart it until
     successfully converged or until the maximum number of restarts is exceeded
     """
-    _verbose = True
     _calculation_class = PhCalculation
 
     defaults = AttributeDict({
         'delta_factor_max_seconds': 0.95,
         'alpha_mix': 0.70,
     })
+
+    ERROR_CALCULATION_INVALID_INPUT_FILE = 7
 
     @classmethod
     def define(cls, spec):
@@ -116,8 +117,8 @@ def _handle_fatal_error_read_namelists(self, calculation):
     The calculation failed because it could not read the generated input file
     """
     if any(['reading inputph namelist' in w for w in calculation.res.warnings]):
-        self.abort_nowait('PhCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
-        return ErrorHandlerReport(True, True)
+        self.report('PhCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
+        return ErrorHandlerReport(True, True, self.ERROR_CALCULATION_INVALID_INPUT_FILE)
 
 
 @register_error_handler(PhBaseWorkChain, 300)

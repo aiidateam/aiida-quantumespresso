@@ -15,7 +15,8 @@ as its sole argument. If the condition of the error handler is met, it should re
 :param method: the workchain class method
 """
 
-ErrorHandlerReport = namedtuple('ErrorHandlerReport', 'is_handled do_break')
+ErrorHandlerReport = namedtuple('ErrorHandlerReport', 'is_handled do_break exit_status')
+ErrorHandlerReport.__new__.__defaults__ = (False, False, None)
 """
 A namedtuple to define an error handler report for a :class:`~aiida.work.workchain.WorkChain`.
 
@@ -25,8 +26,9 @@ If the error was appriopriately handled, the 'is_handled' field should be set to
 and `False` otherwise. If no further error handling should be performed after this method
 the 'do_break' field should be set to `True`
 
-:param is_handled: boolean, set to `True` when an error was handled
-:param do_break: boolean, set to `True` if no further error handling should be performed
+:param is_handled: boolean, set to `True` when an error was handled, default is `False`
+:param do_break: boolean, set to `True` if no further error handling should be performed, default is `False`
+:param exit_status: set to non-zero integer to abort the workchain with this exit status, default is `None`
 """
 
 def register_error_handler(cls, priority):

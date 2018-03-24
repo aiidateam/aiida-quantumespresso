@@ -25,6 +25,10 @@ class PwBandsWorkChain(WorkChain):
     structure. The structure will first be relaxed followed by a band structure calculation
     """
 
+    ERROR_INVALID_INPUT_RESOURCES = 1
+    ERROR_CALCULATION_RELAX_FAILED = 2
+    ERROR_CALCULATION_SCF_FAILED = 3
+
     @classmethod
     def define(cls, spec):
         super(PwBandsWorkChain, cls).define(spec)
@@ -74,8 +78,8 @@ class PwBandsWorkChain(WorkChain):
         Validate inputs that may depend on each other
         """
         if not any([key in self.inputs for key in ['options', 'automatic_parallelization']]):
-            self.abort_nowait('you have to specify either the options or automatic_parallelization input')
-            return
+            self.report('you have to specify either the options or automatic_parallelization input')
+            return self.ERROR_INVALID_INPUT_RESOURCES
 
         # Add the van der Waals kernel table file if specified
         if 'vdw_table' in self.inputs:
@@ -141,8 +145,8 @@ class PwBandsWorkChain(WorkChain):
             try:
                 structure = self.ctx.workchain_relax.out.output_structure
             except:
-                self.abort_nowait('the relax workchain did not output an output_structure node')
-                return
+                self.report('the relax workchain did not output an output_structure node')
+                return self.ERROR_CALCULATION_RELAX_FAILED
 
         seekpath_parameters = ParameterData(dict={
             'reference_distance': self.inputs.kpoints_distance_bands.value
@@ -189,8 +193,8 @@ class PwBandsWorkChain(WorkChain):
         try:
             remote_folder = self.ctx.workchain_scf.out.remote_folder
         except AttributeError as exception:
-            self.abort_nowait('the scf workchain did not output a remote_folder node')
-            return
+            self.report('the scf workchain did not output a remote_folder node')
+            return self.ERROR_CALCULATION_SCF_FAILED
 
         inputs = self.ctx.inputs
         restart_mode = 'restart'

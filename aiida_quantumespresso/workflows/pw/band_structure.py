@@ -18,6 +18,8 @@ class PwBandStructureWorkChain(WorkChain):
     using Quantum ESPRESSO's pw.x
     """
 
+    ERROR_INVALID_INPUT_UNRECOGNIZED_KIND = 1
+
     @classmethod
     def define(cls, spec):
         super(PwBandStructureWorkChain, cls).define(spec)
@@ -184,7 +186,8 @@ class PwBandStructureWorkChain(WorkChain):
                 ecutwfc.append(cutoff)
                 ecutrho.append(cutrho)
             except KeyError as exception:
-                self.abort_nowait('failed to retrieve the cutoff or dual factor for {}'.format(kind))
+                self.report('failed to retrieve the cutoff or dual factor for {}'.format(kind))
+                return self.ERROR_INVALID_INPUT_UNRECOGNIZED_KIND
 
         natoms = len(structure.sites)
         conv_thr = self.ctx.protocol['convergence_threshold'] * natoms

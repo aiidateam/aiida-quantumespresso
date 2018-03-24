@@ -19,7 +19,6 @@ class Q2rBaseWorkChain(BaseRestartWorkChain):
     Base Workchain to launch a Quantum Espresso q2r.x calculation and restart it until
     successfully finished or until the maximum number of restarts is exceeded
     """
-    _verbose = True
     _calculation_class = Q2rCalculation
 
     @classmethod

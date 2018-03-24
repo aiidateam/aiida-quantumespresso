@@ -24,6 +24,12 @@ class PwRelaxWorkChain(WorkChain):
     Workchain to launch a Quantum Espresso pw.x to relax a structure
     """
 
+    ERROR_INVALID_INPUT_KPOINTS = 1
+    ERROR_INVALID_INPUT_PSEUDOS = 2
+    ERROR_INVALID_INPUT_RESOURCES = 3
+    ERROR_ITERATION_RETURNED_NO_WORKCHAIN = 4
+    ERROR_WORKCHAIN_RETURNED_NO_STRUCTURE = 5
+
     @classmethod
     def define(cls, spec):
         super(PwRelaxWorkChain, cls).define(spec)
@@ -81,8 +87,8 @@ class PwRelaxWorkChain(WorkChain):
 
         # We expect either a KpointsData with given mesh or a desired distance between k-points
         if all([key not in self.inputs for key in ['kpoints', 'kpoints_distance']]):
-            self.abort_nowait('neither the kpoints nor a kpoints_distance was specified in the inputs')
-            return
+            self.report('neither the kpoints nor a kpoints_distance was specified in the inputs')
+            return self.ERROR_INVALID_INPUT_KPOINTS
 
         # We expect either a pseudo family string or an explicit list of pseudos
         if self.inputs.pseudo_family:
@@ -90,8 +96,8 @@ class PwRelaxWorkChain(WorkChain):
         elif self.inputs.pseudos:
             self.ctx.inputs.pseudos = self.inputs.pseudos
         else:
-            self.abort_nowait('neither explicit pseudos nor a pseudo_family was specified in the inputs')
-            return
+            self.report('neither explicit pseudos nor a pseudo_family was specified in the inputs')
+            return self.ERROR_INVALID_INPUT_PSEUDOS
 
         # Add the van der Waals kernel table file if specified
         if 'vdw_table' in self.inputs:
@@ -121,8 +127,8 @@ class PwRelaxWorkChain(WorkChain):
         Validate inputs that may depend on each other
         """
         if not any([key in self.inputs for key in ['options', 'automatic_parallelization']]):
-            self.abort_nowait('you have to specify either the options or automatic_parallelization input')
-            return
+            self.report('you have to specify either the options or automatic_parallelization input')
+            return self.ERROR_INVALID_INPUT_RESOURCES
 
     def should_run_relax(self):
         """
@@ -175,16 +181,16 @@ class PwRelaxWorkChain(WorkChain):
         converged and can quit the workchain. If the 
         """
         try:
-            workchain = self.ctx.workchains[-1]
+            workchain = self.ctx.workchains[self.ctx.iteration - 1]
         except IndexError:
-            self.abort_nowait('the first iteration finished without returning a PwBaseWorkChain')
-            return
+            self.report('iteration {} finished without returning a workchain'.format(self.ctx.iteration))
+            return self.ERROR_ITERATION_RETURNED_NO_WORKCHAIN
 
         try:
             structure = workchain.out.output_structure
         except AttributeError as exception:
-            self.abort_nowait('the workchain did not have an output structure and probably failed')
-            return
+            self.report('the workchain did not have an output structure and probably failed')
+            return self.ERROR_WORKCHAIN_RETURNED_NO_STRUCTURE
 
         prev_cell_volume = self.ctx.current_cell_volume
         curr_cell_volume = structure.get_cell_volume()

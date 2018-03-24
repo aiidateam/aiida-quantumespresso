@@ -31,7 +31,6 @@ class PwBaseWorkChain(BaseRestartWorkChain):
     """
     Base workchain to launch a Quantum Espresso pw.x calculation
     """
-    _verbose = True
     _calculation_class = PwCalculation
     _error_handler_entry_point = 'aiida_quantumespresso.workflow_error_handlers.pw.base'
 
@@ -42,6 +41,14 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         'delta_factor_mixing_beta': 0.8,
         'delta_factor_max_seconds': 0.95,
     })
+
+    ERROR_INVALID_INPUT_PSEUDO_POTENTIALS = 1
+    ERROR_INVALID_INPUT_RESOURCES = 2
+    ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED = 3
+    ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY = 4
+    ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY = 5
+    ERROR_INITIALIZATION_CALCULATION_FAILED = 6
+    ERROR_CALCULATION_INVALID_INPUT_FILE = 7
 
     @classmethod
     def define(cls, spec):
@@ -118,8 +125,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
         # Either automatic_parallelization or options has to be specified
         if not any([key in self.inputs for key in ['options', 'automatic_parallelization']]):
-            self.abort_nowait('you have to specify either the options or automatic_parallelization input')
-            return
+            self.report('you have to specify either the options or automatic_parallelization input')
+            return self.ERROR_INVALID_INPUT_RESOURCES
 
         # If automatic parallelization is not enabled, we better make sure that the options satisfy minimum requirements
         if 'automatic_parallelization' not in self.inputs:
@@ -127,8 +134,9 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             max_wallclock_seconds = self.ctx.inputs['options'].get('max_wallclock_seconds', None)
 
             if num_machines is None or max_wallclock_seconds is None:
-                self.abort_nowait("no automatic_parallelization requested, but the options do not specify both '{}' and '{}'"
+                self.report("no automatic_parallelization requested, but the options do not specify both '{}' and '{}'"
                     .format('num_machines', 'max_wallclock_seconds'))
+                return self.ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED
 
         # Validate the inputs related to pseudopotentials
         structure = self.inputs.structure
@@ -138,7 +146,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         try:
             self.ctx.inputs.pseudo = validate_and_prepare_pseudos_inputs(structure, pseudos, pseudo_family)
         except ValueError as exception:
-            self.abort_nowait('{}'.format(exception))
+            self.report('{}'.format(exception))
+            return self.ERROR_INVALID_INPUT_PSEUDO_POTENTIALS
 
     def should_run_init(self):
         """
@@ -165,13 +174,13 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         remaining_keys = [key for key in parallelization.keys() if key not in expected_keys]
 
         for k, v in [(key, value) for key, value in received_keys if value is None]:
-            self.abort_nowait('required key "{}" in automatic_parallelization input not found'.format(k))
-            return
+            self.report('required key "{}" in automatic_parallelization input not found'.format(k))
+            return self.ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY
 
         if remaining_keys:
-            self.abort_nowait('detected unrecognized keys in the automatic_parallelization input: {}'
+            self.report('detected unrecognized keys in the automatic_parallelization input: {}'
                 .format(' '.join(remaining_keys)))
-            return
+            return self.ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY
 
         # Add the calculation mode to the automatic parallelization dictionary
         self.ctx.automatic_parallelization = {
@@ -213,8 +222,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         calculation = self.ctx.calculation_init
 
         if not calculation.is_finished_ok:
-            self.abort_nowait('the initialization calculation did not finish successfully')
-            return
+            self.report('the initialization calculation did not finish successfully')
+            return self.ERROR_INITIALIZATION_CALCULATION_FAILED
 
         # Get automated parallelization settings
         parallelization = get_pw_parallelization_parameters(calculation, **self.ctx.automatic_parallelization)
@@ -271,8 +280,8 @@ def _handle_error_read_namelists(self, calculation):
     The calculation failed because it could not read the generated input file
     """
     if any(['read_namelists' in w for w in calculation.res.warnings]):
-        self.abort_nowait('PwCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
-        return ErrorHandlerReport(True, True)
+        self.report('PwCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
+        return ErrorHandlerReport(True, True, self.ERROR_CALCULATION_INVALID_INPUT_FILE)
 
 
 @register_error_handler(PwBaseWorkChain, 400)

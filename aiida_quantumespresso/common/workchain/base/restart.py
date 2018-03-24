@@ -55,6 +55,12 @@ class BaseRestartWorkChain(WorkChain):
     _error_handler_entry_point = None
     _expected_calculation_states = [calc_states.FINISHED, calc_states.FAILED, calc_states.SUBMISSIONFAILED]
 
+    ERROR_ITERATION_RETURNED_NO_CALCULATION = 100
+    ERROR_MAXIMUM_ITERATIONS_EXCEEDED = 101
+    ERROR_UNEXPECTED_CALCULATION_STATE = 102
+    ERROR_SECOND_CONSECUTIVE_SUBMISSION_FAILURE = 103
+    ERROR_SECOND_CONSECUTIVE_UNHANDLED_FAILURE = 104
+
     def __init__(self, *args, **kwargs):
         super(BaseRestartWorkChain, self).__init__(*args, **kwargs)
 
@@ -90,6 +96,7 @@ class BaseRestartWorkChain(WorkChain):
         """
         Initialize context variables that are used during the logical flow of the BaseRestartWorkChain
         """
+        self.ctx.calc_name = self._calculation_class.__name__
         self.ctx.unexpected_failure = False
         self.ctx.submission_failure = False
         self.ctx.restart_calc = None
@@ -121,8 +128,7 @@ class BaseRestartWorkChain(WorkChain):
         inputs = self._prepare_process_inputs(process, unwrapped_inputs)
         running = self.submit(process, **inputs)
 
-        self.report('launching {}<{}> iteration #{}'
-            .format(self._calculation_class.__name__, running.pk, self.ctx.iteration))
+        self.report('launching {}<{}> iteration #{}'.format(self.ctx.calc_name, running.pk, self.ctx.iteration))
 
         return ToContext(calculations=append_(running))
 
@@ -132,31 +138,34 @@ class BaseRestartWorkChain(WorkChain):
         or if not troubleshoot the cause and handle the errors, or abort if unrecoverable error was found
         """
         try:
-            calculation = self.ctx.calculations[-1]
+            calculation = self.ctx.calculations[self.ctx.iteration - 1]
         except IndexError:
-            self.abort_nowait('the first iteration finished without returning a {}'
-                .format(self._calculation_class.__name__))
-            return
+            self.report('iteration {} finished without returning a {}'.format(self.ctx.iteration, self.ctx.calc_name))
+            return self.ERROR_ITERATION_RETURNED_NO_CALCULATION
+
+        exit_status = None
 
         # Done: successful completion of last calculation
         if calculation.is_finished_ok:
-            self.report('{}<{}> completed successfully'.format(self._calculation_class.__name__, calculation.pk))
+            self.report('{}<{}> completed successfully'.format(self.ctx.calc_name, calculation.pk))
             self.ctx.restart_calc = calculation
             self.ctx.is_finished = True
 
         # Abort: exceeded maximum number of retries
         elif self.ctx.iteration >= self.inputs.max_iterations.value:
-            self.abort_nowait('reached the maximumm number of iterations {}\nlast ran {}<{}>'
-                .format(self.inputs.max_iterations.value, self._calculation_class.__name__, calculation.pk))
+            self.report('reached the maximumm number of iterations {}\nlast ran {}<{}>'
+                .format(self.inputs.max_iterations.value, self.ctx.calc_name, calculation.pk))
+            exit_status = self.ERROR_MAXIMUM_ITERATIONS_EXCEEDED
 
         # Abort: unexpected state of last calculation
         elif calculation.get_state() not in self._expected_calculation_states:
-            self.abort_nowait('unexpected state ({}) of {}<{}>'
-                .format(calculation.get_state(), self._calculation_class.__name__, calculation.pk))
+            self.report('unexpected state ({}) of {}<{}>'
+                .format(calculation.get_state(), self.ctx.calc_name, calculation.pk))
+            exit_status = self.ERROR_UNEXPECTED_CALCULATION_STATE
 
         # Retry or abort: submission failed, try to restart or abort
         elif calculation.get_state() in [calc_states.SUBMISSIONFAILED]:
-            self._handle_submission_failure(calculation)
+            exit_status = self._handle_submission_failure(calculation)
             self.ctx.submission_failure = True
 
         # Retry or abort: calculation finished or failed
@@ -166,14 +175,14 @@ class BaseRestartWorkChain(WorkChain):
             self.ctx.submission_failure = False
 
             # Check output for problems independent on calculation state and that do not trigger parser warnings
-            self._handle_calculation_sanity_checks(calculation)
+            exit_status = self._handle_calculation_sanity_checks(calculation)
 
             # Calculation failed, try to salvage it or handle any unexpected failures
             if calculation.get_state() in [calc_states.FAILED]:
                 try:
-                    handled = self._handle_calculation_failure(calculation)
+                    exit_status = self._handle_calculation_failure(calculation)
                 except UnexpectedCalculationFailure as exception:
-                    self._handle_unexpected_failure(calculation, exception)
+                    exit_status = self._handle_unexpected_failure(calculation, exception)
                     self.ctx.unexpected_failure = True
 
             # Calculation finished: but did not finish ok, simply try to restart from this calculation
@@ -182,7 +191,7 @@ class BaseRestartWorkChain(WorkChain):
                 self.ctx.restart_calc = calculation
                 self.report('calculation terminated without errors but did not complete successfully, restarting')
 
-        return
+        return exit_status
 
     def results(self):
         """
@@ -193,7 +202,7 @@ class BaseRestartWorkChain(WorkChain):
         for name, port in self.spec().outputs.iteritems():
             if port.required and name not in self.ctx.restart_calc.out:
                 self.report('the spec specifies the output {} as required but was not an output of {}<{}>'
-                    .format(name, self._calculation_class.__name__, self.ctx.restart_calc.pk))
+                    .format(name, self.ctx.calc_name, self.ctx.restart_calc.pk))
 
             if name in self.ctx.restart_calc.out:
                 node = self.ctx.restart_calc.out[name]
@@ -235,7 +244,7 @@ class BaseRestartWorkChain(WorkChain):
         after verifying that the calculation ran, regardless of its calculation state, we perform some sanity
         checks.
         """
-        return
+        pass
 
     def _handle_submission_failure(self, calculation):
         """
@@ -243,13 +252,13 @@ class BaseRestartWorkChain(WorkChain):
         is the second consecutive submission failure and we abort the workchain Otherwise we restart once more.
         """
         if self.ctx.submission_failure:
-            self.abort_nowait('submission for {}<{}> failed for the second consecutive time'
-                .format(self._calculation_class.__name__, calculation.pk))
+            self.report('submission for {}<{}> failed for the second consecutive time'
+                .format(self.ctx.calc_name, calculation.pk))
+            return self.ERROR_SECOND_CONSECUTIVE_SUBMISSION_FAILURE
+
         else:
             self.report('submission for {}<{}> failed, restarting once more'
-                .format(self._calculation_class.__name__, calculation.pk))
-
-        return
+                .format(self.ctx.calc_name, calculation.pk))
 
     def _handle_unexpected_failure(self, calculation, exception=None):
         """
@@ -261,13 +270,13 @@ class BaseRestartWorkChain(WorkChain):
             self.report('{}'.format(exception))
 
         if self.ctx.unexpected_failure:
-            self.abort_nowait('failure of {}<{}> could not be handled for the second consecutive time'
-                .format(self._calculation_class.__name__, calculation.pk))
+            self.report('failure of {}<{}> could not be handled for the second consecutive time'
+                .format(self.ctx.calc_name, calculation.pk))
+            return self.ERROR_SECOND_CONSECUTIVE_UNHANDLED_FAILURE
+
         else:
             self.report('failure of {}<{}> could not be handled, restarting once more'
-                .format(self._calculation_class.__name__, calculation.pk))
-
-        return
+                .format(self.ctx.calc_name, calculation.pk))
 
     def _handle_calculation_failure(self, calculation):
         """
@@ -306,7 +315,7 @@ class BaseRestartWorkChain(WorkChain):
         if not is_handled:
             raise UnexpectedCalculationFailure('calculation failure was not handled')
 
-        return
+        return handler_report.exit_status
 
     def _prepare_process_inputs(self, process, inputs):
         """
