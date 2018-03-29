@@ -116,7 +116,7 @@ class PwRelaxWorkChain(WorkChain):
         if 'automatic_parallelization' in self.inputs:
             self.ctx.inputs.automatic_parallelization = self.inputs.automatic_parallelization
 
-        self.ctx.inputs.parameters['CONTROL']['calculation'] = self.inputs.relaxation_scheme
+        self.ctx.inputs.parameters['CONTROL']['calculation'] = self.inputs.relaxation_scheme.value
 
         return
 
