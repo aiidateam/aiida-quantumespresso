@@ -74,7 +74,7 @@ def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_
         except IOError:
             raise QEOutputParsingError("Failed to open xml file: {}.".format(xml_file))
 
-        xml_data,structure_data,bands_data = parse_pw_xml_output(xml_lines,dir_with_bands)
+        xml_data, structure_data, bands_data = parse_pw_xml_output(xml_lines, dir_with_bands)
         # Note the xml file should always be consistent.
     else:
         parser_info['parser_warnings'].append('Skipping the parsing of the xml file.')
@@ -105,7 +105,7 @@ def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_
 
     # parse
     try:
-        out_data,trajectory_data,critical_messages = parse_pw_text_output(out_lines,xml_data,structure_data,input_dict)
+        out_data,trajectory_data,critical_messages = parse_pw_text_output(out_lines, xml_data, structure_data, input_dict, parser_opts)
     except QEOutputParsingError as e:
         if not finished_run: # I try to parse it as much as possible
             parser_info['parser_warnings'].append('Error while parsing the output file')
@@ -1080,7 +1080,7 @@ def parse_pw_xml_output(data,dir_with_bands=None):
 
     return parsed_data,structure_dict,bands_dict
 
-def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
+def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, parser_opts={}):
     """
     Parses the text output of QE-PWscf.
 
@@ -1088,6 +1088,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
     :param xml_data: the dictionary with the keys read from xml.
     :param structure_data: dictionary, coming from the xml, with info on the structure
     :param input_dict: dictionary with the input parameters
+    :param parser_opts: the parser options from the settings input parameter node
 
     :return parsed_data: dictionary with key values, referring to quantities
                          at the last scf step.
@@ -1121,6 +1122,9 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
                       }
 
     all_warnings = dict(critical_warnings.items() + minor_warnings.items())
+
+    # Determine whether the input switched on an electric field
+    lelfield = input_dict.get('CONTROL', {}).get('lelfield', False)
 
     # Find some useful quantities.
     if not xml_data.get('number_of_bands',None) and not structure_data:
@@ -1391,6 +1395,9 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
 
     # now I create a bunch of arrays for every step.
     for data_step in relax_steps:
+
+        trajectory_frame = {}
+
         for count,line in enumerate(data_step):
 
             if 'CELL_PARAMETERS' in line:
@@ -1696,6 +1703,89 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}):
                     parsed_data['stress'+units_suffix] = default_stress_units
                 except Exception:
                     parsed_data['warnings'].append('Error while parsing stress tensor.')
+
+            # Electronic and ionic dipoles when 'lelfield' was set to True in input parameters
+            elif lelfield is True:
+
+                if 'Electronic Dipole per cell' in line:
+                    electronic_dipole = float(line.split()[-1])
+                    trajectory_frame.setdefault('electronic_dipole_cell_average', []).append(electronic_dipole)
+
+                elif 'Ionic Dipole per cell' in line:
+                    ionic_dipole = float(line.split()[-1])
+                    trajectory_frame.setdefault('ionic_dipole_cell_average', []).append(ionic_dipole)
+
+                elif 'Electronic Dipole on Cartesian axes' in line:
+                    electronic_dipole = [float(data_step[count + i + 1].split()[1]) for i in range(3)]
+                    trajectory_frame.setdefault('electronic_dipole_cartesian_axes', []).append(electronic_dipole)
+
+                elif 'Ionic Dipole on Cartesian axes' in line:
+                    ionic_dipole = [float(data_step[count + i + 1].split()[1]) for i in range(3)]
+                    trajectory_frame.setdefault('ionic_dipole_cartesian_axes', []).append(ionic_dipole)
+
+
+        # End of trajectory frame, only keep last entries for dipole related values
+        if lelfield is True:
+
+            # For every property only get the last entry if possible
+            try:
+                ed_cell = trajectory_frame['electronic_dipole_cell_average'].pop()
+            except IndexError:
+                ed_cell = None
+
+            try:
+                ed_axes = trajectory_frame['electronic_dipole_cartesian_axes'].pop()
+            except IndexError:
+                ed_axes = None
+
+            try:
+                id_cell = trajectory_frame['ionic_dipole_cell_average'].pop()
+            except IndexError:
+                id_cell = None
+
+            try:
+                id_axes = trajectory_frame['ionic_dipole_cartesian_axes'].pop()
+            except IndexError:
+                id_axes = None
+
+            # Only add them if all four properties were successfully parsed
+            if all([value is not None for value in [ed_cell, ed_axes, id_cell, id_axes]]):
+                trajectory_data.setdefault('electronic_dipole_cell_average', []).append(ed_cell)
+                trajectory_data.setdefault('electronic_dipole_cartesian_axes', []).append(ed_axes)
+                trajectory_data.setdefault('ionic_dipole_cell_average', []).append(id_cell)
+                trajectory_data.setdefault('ionic_dipole_cartesian_axes', []).append(id_axes)
+
+
+    # If specified in the parser options, parse the atomic occupations
+    parse_atomic_occupations = parser_opts.get('parse_atomic_occupations', False)
+
+    if parse_atomic_occupations:
+
+        atomic_occupations = {}
+        hubbard_blocks = split = data.split('LDA+U parameters')
+
+        for line in hubbard_blocks[-1].split('\n'):
+
+            if 'Tr[ns(na)]' in line:
+
+                values = line.split('=')
+                atomic_index = values[0].split()[1]
+                occupations = values[1].split()
+
+                if len(occupations) == 1:
+                    atomic_occupations[atomic_index] = {
+                        'total': occupations[0]
+                    }
+                elif len(occupations) == 3:
+                    atomic_occupations[atomic_index] = {
+                        'up': occupations[0],
+                        'down': occupations[1],
+                        'total': occupations[2]
+                    }
+                else:
+                    continue
+
+        parsed_data['atomic_occupations'] =  atomic_occupations
 
     return parsed_data, trajectory_data, critical_warnings.values()
 

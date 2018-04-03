@@ -34,12 +34,6 @@ class PhParser(Parser):
         
         successful = True
         
-        # check if I'm not to overwrite anything
-        state = self._calc.get_state()
-        if state != calc_states.PARSING:
-            raise InvalidOperation("Calculation not in {} state"
-                                   .format(calc_states.PARSING) )
-        
         # retrieve the whole list of input links
         calc_input_parameterdata = self._calc.get_inputs(node_type=ParameterData,
                                                          also_labels=True)

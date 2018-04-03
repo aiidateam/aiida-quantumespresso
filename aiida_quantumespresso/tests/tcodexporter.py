@@ -401,78 +401,6 @@ class TestTcodDbExporter(AiidaTestCase):
             # '_tcod_atom_site_resid_force_Cartn_z': [3,6],
         })
 
-    def test_nwcpymatgen_translation(self):
-        from aiida.tools.dbexporters.tcod \
-            import translate_calculation_specific_values
-        # from aiida.tools.dbexporters.tcod_plugins.nwcpymatgen \
-        #     import NwcpymatgenTcodtranslator as NPT
-        from aiida.orm.data.parameter import ParameterData
-        from tcodexporter import FakeObject
-        from aiida.common.pluginloader import get_plugin
-        NPT = get_plugin('tools.dbexporters.tcod_plugins', 'nwchem.nwcpymatgen')
-
-        calc = FakeObject({
-            "out": {"output":
-                ParameterData(dict={
-                    "basis_set": {
-                        "H": {
-                            "description": "6-31g",
-                            "functions": "2",
-                            "shells": "2",
-                            "types": "2s"
-                        },
-                        "O": {
-                            "description": "6-31g",
-                            "functions": "9",
-                            "shells": "5",
-                            "types": "3s2p"
-                        }
-                    },
-                    "corrections": {},
-                    "energies": [
-                        -2057.99011937535
-                    ],
-                    "errors": [],
-                    "frequencies": None,
-                    "has_error": False,
-                    "job_type": "NWChem SCF Module"
-                }),
-                "job_info": ParameterData(dict={
-                    "0 permanent": ".",
-                    "0 scratch": ".",
-                    "argument  1": "aiida.in",
-                    "compiled": "Sun_Dec_22_04:02:59_2013",
-                    "data base": "./aiida.db",
-                    "date": "Mon May 11 17:10:07 2015",
-                    "ga revision": "10379",
-                    "global": "200.0 Mbytes (distinct from heap & stack)",
-                    "hardfail": "no",
-                    "heap": "100.0 Mbytes",
-                    "hostname": "theospc11",
-                    "input": "aiida.in",
-                    "nproc": "6",
-                    "nwchem branch": "6.3",
-                    "nwchem revision": "24277",
-                    "prefix": "aiida.",
-                    "program": "/usr/bin/nwchem",
-                    "source": "/build/buildd/nwchem-6.3+r1",
-                    "stack": "100.0 Mbytes",
-                    "status": "startup",
-                    "time left": "-1s",
-                    "total": "400.0 Mbytes",
-                    "verify": "yes",
-                })
-            }})
-        res = translate_calculation_specific_values(calc, NPT)
-        self.assertEquals(res, {
-            '_tcod_software_package': 'NWChem',
-            '_tcod_software_package_version': '6.3',
-            '_tcod_software_package_compilation_date': '2013-12-22T04:02:59',
-            '_atom_type_symbol': ['H', 'O'],
-            '_dft_atom_basisset': ['6-31g', '6-31g'],
-            '_dft_atom_type_valence_configuration': ['2s', '3s2p'],
-        })
-
     @unittest.skipIf(not has_ase(), "Unable to import ase")
     @unittest.skipIf(not has_spglib(), "Unable to import spglib")
     @unittest.skipIf(not has_pycifrw(), "Unable to import PyCifRW")
@@ -616,24 +544,24 @@ class TestTcodDbExporter(AiidaTestCase):
             '_cell_length_b',
             '_cell_length_c',
             '_chemical_formula_sum',
-            '_symmetry_Int_Tables_number',
             '_symmetry_equiv_pos_as_xyz',
-            '_symmetry_space_group_name_H-M',
-            '_symmetry_space_group_name_Hall'
+            '_symmetry_int_tables_number',
+            '_symmetry_space_group_name_h-m',
+            '_symmetry_space_group_name_hall'
         ]
 
         tcod_file_tags = [
             '_tcod_content_encoding_id',
             '_tcod_content_encoding_layer_id',
             '_tcod_content_encoding_layer_type',
-            '_tcod_file_URI',
             '_tcod_file_content_encoding',
             '_tcod_file_contents',
             '_tcod_file_id',
             '_tcod_file_md5sum',
             '_tcod_file_name',
             '_tcod_file_role',
-            '_tcod_file_sha1sum'
+            '_tcod_file_sha1sum',
+            '_tcod_file_uri'
         ]
 
         # Not stored and not to be stored:

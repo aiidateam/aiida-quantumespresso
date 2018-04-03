@@ -1,4 +1,4 @@
-.. _my-ref-to-pwimmigration-tutorial:
+.. _pwimmigrant-tutorial:
 
 PWscf immigration
 =================

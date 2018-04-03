@@ -25,6 +25,9 @@ class Pw2wannier90Calculation(NamelistsCalculation):
         self._default_parser = None
         self._internal_retrieve_list = []
 
+        # Default Matdyn output parser provided by AiiDA
+        self._default_parser = 'quantumespresso.pw2wannier90'
+
     @classproperty
     def _use_methods(cls):
         """
