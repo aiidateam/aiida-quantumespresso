@@ -257,12 +257,6 @@ class NamelistsCalculation(JobCalculation):
         
         calcinfo.retrieve_singlefile_list = self._retrieve_singlefile_list
 
-        codeinfo = CodeInfo()
-        codeinfo.stdin_name = self._INPUT_FILE_NAME
-        codeinfo.stdout_name = self._OUTPUT_FILE_NAME
-        codeinfo.code_uuid = code.uuid
-        calcinfo.codes_info = [codeinfo]
-
         if settings_dict:
             try:
                 Parserclass = self.get_parserclass()
