@@ -111,6 +111,7 @@ class PwParser(Parser):
                         for i,this in enumerate(self._possible_symmetries):
                             if name in this['name']:
                                 index = i
+                                break
                         if index is None:
                             self.logger.error("Symmetry {} not found".format(name))
                         new_dict = {}
@@ -350,6 +351,7 @@ class PwParser(Parser):
         ]
 
         # Names for the 32 matrices, with and without inversion
+        # The order matters: those without inversion need to be first
         matrices_name = [
             'identity                                     ',
             '180 deg rotation - cart. axis [0,0,1]        ',
