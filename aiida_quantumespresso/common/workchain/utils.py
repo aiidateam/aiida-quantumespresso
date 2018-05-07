@@ -56,12 +56,19 @@ def register_error_handler(cls, priority):
         during the handling of a failed calculation. Higher priorities will be handled first
     """
     def error_handler_decorator(handler):
+
         @wraps(handler)
         def error_handler(self, calculation):
             if hasattr(cls, '_verbose') and cls._verbose:
                 self.report('({}){}'.format(priority, handler.__name__))
             return handler(self, calculation)
+
         setattr(cls, handler.__name__, error_handler)
+
+        if not hasattr(cls, '_error_handlers'):
+            cls._error_handlers = []
         cls._error_handlers.append(ErrorHandler(priority, error_handler))
+
         return error_handler
+
     return error_handler_decorator
