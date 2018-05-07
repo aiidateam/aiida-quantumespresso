@@ -50,7 +50,6 @@ class BaseRestartWorkChain(WorkChain):
     before the next calculation will be run with those inputs.
     """
     _verbose = False
-    _error_handlers = []
     _calculation_class = None
     _error_handler_entry_point = None
     _expected_calculation_states = [calc_states.FINISHED, calc_states.FAILED, calc_states.SUBMISSIONFAILED]
@@ -153,7 +152,7 @@ class BaseRestartWorkChain(WorkChain):
 
         # Abort: exceeded maximum number of retries
         elif self.ctx.iteration >= self.inputs.max_iterations.value:
-            self.report('reached the maximumm number of iterations {}\nlast ran {}<{}>'
+            self.report('reached the maximumm number of iterations {}: last ran {}<{}>'
                 .format(self.inputs.max_iterations.value, self.ctx.calc_name, calculation.pk))
             exit_status = self.ERROR_MAXIMUM_ITERATIONS_EXCEEDED
 
