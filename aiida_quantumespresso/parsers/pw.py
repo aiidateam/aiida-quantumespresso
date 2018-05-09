@@ -277,7 +277,7 @@ class PwParser(Parser):
         """
         Return the extended dictionary of symmetries.
         """
-        data = self._calc.get_outputs(type=ParameterData, also_labels=True)
+        data = self._calc.get_outputs(node_type=ParameterData, also_labels=True)
         all_data = [i[1] for i in data if i[0]==self.get_linkname_outparams()]
         if len(all_data) > 1:
             raise UniquenessError('More than one output parameterdata found.')

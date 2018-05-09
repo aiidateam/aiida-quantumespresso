@@ -266,9 +266,9 @@ the special key ``parser_options`` which has the options discussed below.
 
 Parsing atomic occupations
 ..........................
-For DFT+U calculations, pw.x will also print atomic electron occupations to the standard
+For DFT+U calculations, ``pw.x`` will also print atomic electron occupations to the standard
 output. This flag enables or disables the parsing of this information into a ``ParameterData``
-output node with the link name ``atomic_occupations``. The value should be a boolean, with
+output node with the link name ``output_atomic_occupations``. The value should be a boolean, with
 ``False`` being the default. Setting it to ``True`` will enable the parsing of the atomic
 occupations::
 
@@ -277,3 +277,6 @@ occupations::
             'parse_atomic_occupations': True,
         }
     }
+
+Note that for ``pw.x`` to print the required information, the flag ``lda_plus_u`` has to be
+set to ``True`` in the ``SYSTEM`` card of the input ``parameters`` node.

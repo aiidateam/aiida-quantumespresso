@@ -10,6 +10,7 @@ from aiida.work.run import submit
 from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
 from aiida_quantumespresso.common.pluginloader import get_plugin, get_plugins
 
+
 class BaseRestartWorkChain(WorkChain):
     """
     Base restart workchain
@@ -51,7 +52,6 @@ class BaseRestartWorkChain(WorkChain):
     before the next calculation will be run with those inputs.
     """
     _verbose = False
-    _error_handlers = []
     _calculation_class = None
     _error_handler_entry_point = None
     _expected_calculation_states = [calc_states.FINISHED, calc_states.FAILED, calc_states.SUBMISSIONFAILED]
@@ -147,7 +147,7 @@ class BaseRestartWorkChain(WorkChain):
 
         # Abort: exceeded maximum number of retries
         elif self.ctx.iteration >= self.inputs.max_iterations.value:
-            self.abort_nowait('reached the maximumm number of iterations {}\nlast ran {}<{}>'
+            self.abort_nowait('reached the maximumm number of iterations {}: last ran {}<{}>'
                 .format(self.inputs.max_iterations.value, self._calculation_class.__name__, calculation.pk))
 
         # Abort: unexpected state of last calculation
@@ -314,12 +314,5 @@ class BaseRestartWorkChain(WorkChain):
         This is the format used by input groups as in for example the explicit pseudo dictionary where the key is
         a tuple of kind to which the UpfData corresponds.
         """
-        prepared_inputs = {}
-
-        for key, val in inputs.iteritems():
-            if key != '_options' and isinstance(val, dict) and all([isinstance(k, (basestring)) for k in val.keys()]):
-                prepared_inputs[key] = ParameterData(dict=val)
-            else:
-                prepared_inputs[key] = val
-
-        return prepared_inputs
+        from aiida_quantumespresso.utils.mapping import prepare_process_inputs
+        return prepare_process_inputs(inputs)

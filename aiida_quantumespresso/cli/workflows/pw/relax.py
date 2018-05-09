@@ -11,6 +11,7 @@ from aiida_quantumespresso.utils.click import options
 @options.kpoint_mesh()
 @options.max_num_machines()
 @options.max_wallclock_seconds()
+@options.daemon()
 @options.automatic_parallelization()
 @options.clean_workdir()
 @click.option(
@@ -22,7 +23,7 @@ from aiida_quantumespresso.utils.click import options
     help='the label of a Group to add the final PwCalculation to in case of success'
 )
 def launch(
-    code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds,
+    code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, daemon,
     automatic_parallelization, clean_workdir, final_scf, group):
     """
     Run the PwRelaxWorkChain for a given input structure
@@ -30,7 +31,7 @@ def launch(
     from aiida.orm.data.base import Bool, Str
     from aiida.orm.data.parameter import ParameterData
     from aiida.orm.utils import WorkflowFactory
-    from aiida.work.run import run
+    from aiida.work.run import run, submit
     from aiida_quantumespresso.utils.resources import get_default_options
 
     PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
@@ -70,4 +71,8 @@ def launch(
     if group:
         inputs['group'] = Str(group)
 
-    run(PwRelaxWorkChain, **inputs)
+    if daemon:
+        workchain = submit(PwRelaxWorkChain, **inputs)
+        click.echo('Submitted {}<{}> to the daemon'.format(PwRelaxWorkChain.__name__, workchain.pid))
+    else:
+        run(PwRelaxWorkChain, **inputs)

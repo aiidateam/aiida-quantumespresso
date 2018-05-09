@@ -11,16 +11,18 @@ from aiida_quantumespresso.utils.click import options
 @options.kpoint_mesh()
 @options.max_num_machines()
 @options.max_wallclock_seconds()
+@options.daemon()
 @options.automatic_parallelization()
 def launch(
-    code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, automatic_parallelization):
+    code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, daemon,
+    automatic_parallelization):
     """
     Run the PwBandsWorkChain for a given input structure
     """
     from aiida.orm.data.base import Bool, Float, Str
     from aiida.orm.data.parameter import ParameterData
     from aiida.orm.utils import WorkflowFactory
-    from aiida.work.run import run
+    from aiida.work.run import run, submit
     from aiida_quantumespresso.utils.resources import get_default_options
 
     PwBandsWorkChain = WorkflowFactory('quantumespresso.pw.bands')
@@ -57,4 +59,8 @@ def launch(
         options = get_default_options(max_num_machines, max_wallclock_seconds)
         inputs['options'] = ParameterData(dict=options)
 
-    run(PwBandsWorkChain, **inputs)
+    if daemon:
+        workchain = submit(PwBandsWorkChain, **inputs)
+        click.echo('Submitted {}<{}> to the daemon'.format(PwBandsWorkChain.__name__, workchain.pid))
+    else:
+        run(PwBandsWorkChain, **inputs)

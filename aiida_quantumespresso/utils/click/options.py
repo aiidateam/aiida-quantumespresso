@@ -98,3 +98,8 @@ group = overridable_option(
     callback=validators.validate_group,
     help='the name or pk of a Group'
 )
+
+daemon = overridable_option(
+    '-d', '--daemon', is_flag=True, default=False, show_default=True,
+    help='submit the workchain to the daemon instead of running it locally'
+)

@@ -1,24 +1,22 @@
 # -*- coding: utf-8 -*-
-from copy import deepcopy
 from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import Code
 from aiida.orm.data.base import Bool, Float, Int, Str
 from aiida.orm.data.folder import FolderData
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.parameter import ParameterData
-from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.utils import CalculationFactory
-from aiida.work.run import submit
-from aiida.work.workchain import WorkChain, ToContext, while_, append_
+from aiida.work.workchain import while_
 from aiida_quantumespresso.common.workchain.utils import ErrorHandlerReport
 from aiida_quantumespresso.common.workchain.utils import register_error_handler
 from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkChain
-from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 from aiida_quantumespresso.utils.resources import get_default_options
+
 
 PhCalculation = CalculationFactory('quantumespresso.ph')
 PwCalculation = CalculationFactory('quantumespresso.pw')
+
 
 class PhBaseWorkChain(BaseRestartWorkChain):
     """
@@ -28,14 +26,10 @@ class PhBaseWorkChain(BaseRestartWorkChain):
     _verbose = True
     _calculation_class = PhCalculation
 
-    def __init__(self, *args, **kwargs):
-        super(PhBaseWorkChain, self).__init__(*args, **kwargs)
-
-        self.defaults = AttributeDict({
-            'qe': qe_defaults,
-            'delta_factor_max_seconds': 0.95,
-            'alpha_mix': 0.70,
-        })
+    defaults = AttributeDict({
+        'delta_factor_max_seconds': 0.95,
+        'alpha_mix': 0.70,
+    })
 
     @classmethod
     def define(cls, spec):
@@ -46,6 +40,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         spec.input('parameters', valid_type=ParameterData, required=False)
         spec.input('settings', valid_type=ParameterData, required=False)
         spec.input('options', valid_type=ParameterData, required=False)
+        spec.input('only_initialization', valid_type=Bool, default=Bool(False))
         spec.outline(
             cls.setup,
             cls.validate_inputs,
@@ -62,37 +57,36 @@ class PhBaseWorkChain(BaseRestartWorkChain):
 
     def validate_inputs(self):
         """
-        Define context dictionary 'inputs_raw' with the inputs for the PhCalculations as they were at the beginning
-        of the workchain. Changes have to be made to a deep copy so this remains unchanged and we can always reset
-        the inputs to their initial state. Inputs that are not required by the workchain will be given a default value
-        if not specified or be validated otherwise.
+        Validate inputs that depend might depend on each other and cannot be validated by the spec. Also define
+        dictionary `inputs` in the context, that will contain the inputs for the calculation that will be launched
+        in the `run_calculation` step.
         """
-        self.ctx.inputs_raw = AttributeDict({
+        self.ctx.inputs = AttributeDict({
             'code': self.inputs.code,
             'qpoints': self.inputs.qpoints,
             'parent_folder': self.inputs.parent_folder,
         })
 
         if 'parameters' in self.inputs:
-            self.ctx.inputs_raw.parameters = self.inputs.parameters.get_dict()
+            self.ctx.inputs.parameters = self.inputs.parameters.get_dict()
         else:
-            self.ctx.inputs_raw.parameters = {}
+            self.ctx.inputs.parameters = {}
 
-        if 'INPUTPH' not in self.ctx.inputs_raw.parameters:
-            self.ctx.inputs_raw.parameters['INPUTPH'] = {}
+        if 'INPUTPH' not in self.ctx.inputs.parameters:
+            self.ctx.inputs.parameters['INPUTPH'] = {}
 
         if 'settings' in self.inputs:
-            self.ctx.inputs_raw.settings = self.inputs.settings.get_dict()
+            self.ctx.inputs.settings = self.inputs.settings.get_dict()
         else:
-            self.ctx.inputs_raw.settings = {}
+            self.ctx.inputs.settings = {}
 
         if 'options' in self.inputs:
-            self.ctx.inputs_raw._options = self.inputs.options.get_dict()
+            self.ctx.inputs._options = self.inputs.options.get_dict()
         else:
-            self.ctx.inputs_raw._options = get_default_options()
+            self.ctx.inputs._options = get_default_options()
 
-        # Assign a deepcopy to self.ctx.inputs which will be used by the BaseRestartWorkChain
-        self.ctx.inputs = deepcopy(self.ctx.inputs_raw)
+        if self.inputs.only_initialization.value:
+            self.ctx.inputs.settings['ONLY_INITIALIZATION'] = True
 
     def prepare_calculation(self):
         """
@@ -116,16 +110,15 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         return super(PhBaseWorkChain, self)._prepare_process_inputs(inputs)
 
 
-
 @register_error_handler(PhBaseWorkChain, 400)
 def _handle_fatal_error_read_namelists(self, calculation):
     """
     The calculation failed because it could not read the generated input file
     """
     if any(['reading inputph namelist' in w for w in calculation.res.warnings]):
-        self.abort_nowait('PhCalculation<{}> failed because of an invalid input file'
-            .format(calculation.pk))
+        self.abort_nowait('PhCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
         return ErrorHandlerReport(True, True)
+
 
 @register_error_handler(PhBaseWorkChain, 300)
 def _handle_error_exceeded_maximum_walltime(self, calculation):
@@ -137,6 +130,7 @@ def _handle_error_exceeded_maximum_walltime(self, calculation):
         self.report('PhCalculation<{}> terminated because maximum wall time was exceeded, restarting'
             .format(calculation.pk))
         return ErrorHandlerReport(True, True)
+
 
 @register_error_handler(PhBaseWorkChain, 200)
 def _handle_fatal_error_not_converged(self, calculation):
@@ -151,6 +145,7 @@ def _handle_fatal_error_not_converged(self, calculation):
         self.report('PhCalculation<{}> terminated without reaching convergence, '
             'setting alpha_mix to {} and restarting'.format(calculation.pk, alpha_mix_new))
         return ErrorHandlerReport(True, True)
+
 
 @register_error_handler(PhBaseWorkChain, 100)
 def _handle_error_premature_termination(self, calculation):
@@ -167,6 +162,7 @@ def _handle_error_premature_termination(self, calculation):
         max_seconds_reduced = int(max_seconds * factor)
         self.ctx.inputs.parameters['INPUTPH']['max_seconds'] = max_seconds_reduced
 
+        self.ctx.restart_calc = calculation
         self.report('PwCalculation<{}> was terminated prematurely, reducing "max_seconds" from {} to {}'
             .format(calculation.pk, max_seconds, max_seconds_reduced))
-        return ErrorHandlerReport(True, False)
+        return ErrorHandlerReport(True, True)

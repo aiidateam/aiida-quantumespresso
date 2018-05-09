@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-from copy import deepcopy
 from aiida.orm import Code
 from aiida.orm.data.base import Bool, Int, Str
 from aiida.orm.data.folder import FolderData
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
+from aiida.orm.data.array import ArrayData
 from aiida.orm.data.array.bands import BandsData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.data.singlefile import SinglefileData
@@ -25,7 +25,9 @@ from aiida_quantumespresso.utils.resources import get_pw_parallelization_paramet
 from aiida_quantumespresso.utils.resources import cmdline_remove_npools
 from aiida_quantumespresso.utils.resources import create_scheduler_resources
 
+
 PwCalculation = CalculationFactory('quantumespresso.pw')
+
 
 class PwBaseWorkChain(BaseRestartWorkChain):
     """
@@ -35,16 +37,13 @@ class PwBaseWorkChain(BaseRestartWorkChain):
     _calculation_class = PwCalculation
     _error_handler_entry_point = 'aiida_quantumespresso.workflow_error_handlers.pw.base'
 
-    def __init__(self, *args, **kwargs):
-        super(PwBaseWorkChain, self).__init__(*args, **kwargs)
-
-        self.defaults = AttributeDict({
-            'qe': qe_defaults,
-            'delta_threshold_degauss': 30,
-            'delta_factor_degauss': 0.1,
-            'delta_factor_mixing_beta': 0.8,
-            'delta_factor_max_seconds': 0.95,
-        })
+    defaults = AttributeDict({
+        'qe': qe_defaults,
+        'delta_threshold_degauss': 30,
+        'delta_factor_degauss': 0.1,
+        'delta_factor_mixing_beta': 0.8,
+        'delta_factor_max_seconds': 0.95,
+    })
 
     @classmethod
     def define(cls, spec):
@@ -75,6 +74,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             ),
             cls.results,
         )
+        spec.output('output_array', valid_type=ArrayData, required=False)
         spec.output('output_band', valid_type=BandsData, required=False)
         spec.output('output_structure', valid_type=StructureData, required=False)
         spec.output('output_parameters', valid_type=ParameterData)
@@ -83,43 +83,42 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
     def validate_inputs(self):
         """
-        Define context dictionary 'inputs_raw' with the inputs for the PwCalculations as they were at the beginning
-        of the workchain. Changes have to be made to a deep copy so this remains unchanged and we can always reset
-        the inputs to their initial state. Inputs that are not required by the workchain will be given a default value
-        if not specified or be validated otherwise.
+        Validate inputs that depend might depend on each other and cannot be validated by the spec. Also define
+        dictionary `inputs` in the context, that will contain the inputs for the calculation that will be launched
+        in the `run_calculation` step.
         """
-        self.ctx.inputs_raw = AttributeDict({
+        self.ctx.inputs = AttributeDict({
             'code': self.inputs.code,
             'structure': self.inputs.structure,
             'kpoints': self.inputs.kpoints,
             'parameters': self.inputs.parameters.get_dict()
         })
 
-        if 'CONTROL'not in self.ctx.inputs_raw.parameters:
-            self.ctx.inputs_raw.parameters['CONTROL'] = {}
+        if 'CONTROL'not in self.ctx.inputs.parameters:
+            self.ctx.inputs.parameters['CONTROL'] = {}
 
-        if 'calculation' not in self.ctx.inputs_raw.parameters['CONTROL']:
-            self.ctx.inputs_raw.parameters['CONTROL']['calculation'] = 'scf'
+        if 'calculation' not in self.ctx.inputs.parameters['CONTROL']:
+            self.ctx.inputs.parameters['CONTROL']['calculation'] = 'scf'
 
         if 'parent_folder' in self.inputs:
-            self.ctx.inputs_raw.parent_folder = self.inputs.parent_folder
-            self.ctx.inputs_raw.parameters['CONTROL']['restart_mode'] = 'restart'
+            self.ctx.inputs.parent_folder = self.inputs.parent_folder
+            self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'restart'
         else:
-            self.ctx.inputs_raw.parent_folder = None
-            self.ctx.inputs_raw.parameters['CONTROL']['restart_mode'] = 'from_scratch'
+            self.ctx.inputs.parent_folder = None
+            self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'from_scratch'
 
         if 'settings' in self.inputs:
-            self.ctx.inputs_raw.settings = self.inputs.settings.get_dict()
+            self.ctx.inputs.settings = self.inputs.settings.get_dict()
         else:
-            self.ctx.inputs_raw.settings = {}
+            self.ctx.inputs.settings = {}
 
         if 'options' in self.inputs:
-            self.ctx.inputs_raw._options = self.inputs.options.get_dict()
+            self.ctx.inputs._options = self.inputs.options.get_dict()
         else:
-            self.ctx.inputs_raw._options = {}
+            self.ctx.inputs._options = {}
 
         if 'vdw_table' in self.inputs:
-            self.ctx.inputs_raw.vdw_table = self.inputs.vdw_table
+            self.ctx.inputs.vdw_table = self.inputs.vdw_table
 
         # Either automatic_parallelization or options has to be specified
         if not any([key in self.inputs for key in ['options', 'automatic_parallelization']]):
@@ -128,8 +127,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
         # If automatic parallelization is not enabled, we better make sure that the options satisfy minimum requirements
         if 'automatic_parallelization' not in self.inputs:
-            num_machines = self.ctx.inputs_raw['_options'].get('resources', {}).get('num_machines', None)
-            max_wallclock_seconds = self.ctx.inputs_raw['_options'].get('max_wallclock_seconds', None)
+            num_machines = self.ctx.inputs['_options'].get('resources', {}).get('num_machines', None)
+            max_wallclock_seconds = self.ctx.inputs['_options'].get('max_wallclock_seconds', None)
 
             if num_machines is None or max_wallclock_seconds is None:
                 self.abort_nowait("no automatic_parallelization requested, but the options do not specify both '{}' and '{}'"
@@ -141,12 +140,9 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         pseudo_family = self.inputs.get('pseudo_family', None)
 
         try:
-            self.ctx.inputs_raw.pseudo = validate_and_prepare_pseudos_inputs(structure, pseudos, pseudo_family)
+            self.ctx.inputs.pseudo = validate_and_prepare_pseudos_inputs(structure, pseudos, pseudo_family)
         except ValueError as exception:
             self.abort_nowait('{}'.format(exception))
-
-        # Assign a deepcopy to self.ctx.inputs which will be used by the BaseRestartWorkChain
-        self.ctx.inputs = deepcopy(self.ctx.inputs_raw)
 
     def should_run_init(self):
         """
@@ -186,11 +182,11 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             'max_wallclock_seconds': parallelization['max_wallclock_seconds'],
             'target_time_seconds': parallelization['target_time_seconds'],
             'max_num_machines': parallelization['max_num_machines'],
-            'calculation_mode': self.ctx.inputs_raw.parameters['CONTROL']['calculation']
+            'calculation_mode': self.ctx.inputs.parameters['CONTROL']['calculation']
         }
 
-        self.ctx.inputs_raw._options.setdefault('resources', {})['num_machines'] = parallelization['max_num_machines']
-        self.ctx.inputs_raw._options['max_wallclock_seconds'] = parallelization['max_wallclock_seconds']
+        self.ctx.inputs._options.setdefault('resources', {})['num_machines'] = parallelization['max_num_machines']
+        self.ctx.inputs._options['max_wallclock_seconds'] = parallelization['max_wallclock_seconds']
 
     def run_init(self):
         """
@@ -198,7 +194,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         point it will have generated some general output pertaining to the dimensions of the
         calculation which we can use to distribute available computational resources
         """
-        inputs = deepcopy(self.ctx.inputs)
+        inputs = self.ctx.inputs
 
         # Set the initialization flag and the initial default options
         inputs.settings['ONLY_INITIALIZATION'] = True
@@ -231,23 +227,23 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         self.out('automatic_parallelization', node)
         self.report('results of automatic parallelization in {}<{}>'.format(node.__class__.__name__, node.pk))
 
-        options = self.ctx.inputs_raw._options
+        options = self.ctx.inputs._options
         base_resources = options.get('resources', {})
         goal_resources = parallelization['resources']
 
         scheduler = calculation.get_computer().get_scheduler()
         resources = create_scheduler_resources(scheduler, base_resources, goal_resources)
 
-        cmdline = self.ctx.inputs_raw.settings.get('cmdline', [])
+        cmdline = self.ctx.inputs.settings.get('cmdline', [])
         cmdline = cmdline_remove_npools(cmdline)
         cmdline.extend(['-nk', str(parallelization['npools'])])
 
         # Set the new cmdline setting and resource options
-        self.ctx.inputs_raw.settings['cmdline'] = cmdline
-        self.ctx.inputs_raw._options = update_mapping(options, {'resources': resources})
+        self.ctx.inputs.settings['cmdline'] = cmdline
+        self.ctx.inputs._options = update_mapping(options, {'resources': resources})
 
-        # Update the self.ctx.inputs which will be used by the BaseRestartWorkChain
-        self.ctx.inputs = deepcopy(self.ctx.inputs_raw)
+        # Remove the only initialization flag
+        self.ctx.inputs.settings.pop('ONLY_INITIALIZATION')
 
         return
 
@@ -273,7 +269,6 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         return super(PwBaseWorkChain, self)._prepare_process_inputs(inputs)
 
 
-
 @register_error_handler(PwBaseWorkChain, 500)
 def _handle_error_read_namelists(self, calculation):
     """
@@ -281,7 +276,8 @@ def _handle_error_read_namelists(self, calculation):
     """
     if any(['read_namelists' in w for w in calculation.res.warnings]):
         self.abort_nowait('PwCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
-        return ErrorHandlerReport(True, False)
+        return ErrorHandlerReport(True, True)
+
 
 @register_error_handler(PwBaseWorkChain, 400)
 def _handle_error_exceeded_maximum_walltime(self, calculation):
@@ -292,7 +288,8 @@ def _handle_error_exceeded_maximum_walltime(self, calculation):
         self.ctx.restart_calc = calculation
         self.report('PwCalculation<{}> terminated because maximum wall time was exceeded, restarting'
             .format(calculation.pk))
-        return ErrorHandlerReport(True, False)
+        return ErrorHandlerReport(True, True)
+
 
 @register_error_handler(PwBaseWorkChain, 300)
 def _handle_error_diagonalization(self, calculation):
@@ -311,8 +308,11 @@ def _handle_error_diagonalization(self, calculation):
     )):
         new_diagonalization = 'cg'
         self.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = 'cg'
+        self.ctx.restart_calc = calculation
         self.report('PwCalculation<{}> failed to diagonalize with "{}" scheme'.format(diagonalization))
         self.report('Restarting with diagonalization scheme "{}"'.format(new_diagonalization))
+        return ErrorHandlerReport(True, True)
+
 
 @register_error_handler(PwBaseWorkChain, 200)
 def _handle_error_convergence_not_reached(self, calculation):
@@ -321,9 +321,10 @@ def _handle_error_convergence_not_reached(self, calculation):
     from the previous calculation without changing any of the input parameters
     """
     if 'The scf cycle did not reach convergence.' in calculation.res.warnings:
+        self.ctx.restart_calc = calculation
         self.report('PwCalculation<{}> did not converge, restart from previous calculation'.format(calculation.pk))
         return ErrorHandlerReport(True, True)
-        return ErrorHandlerReport(True, False)
+
 
 @register_error_handler(PwBaseWorkChain, 100)
 def _handle_error_unrecognized_by_parser(self, calculation):
