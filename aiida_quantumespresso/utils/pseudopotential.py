@@ -44,13 +44,21 @@ def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=N
         every element in the structure
     :returns: a dictionary of UpfData nodes where the key is a tuple with the kind name
     """
+    from aiida.orm.data.base import Str
     result_pseudos = {}
     unique_pseudos = {}
 
     if pseudos is None and pseudo_family is None:
-        raise ValueError('neither an explicit pseudos dictionary nor a pseudo_family was specified')
+        raise ValueError('Neither an explicit pseudos dictionary nor a pseudo_family was specified')
     elif pseudo_family:
-        pseudos = get_pseudos_from_structure(structure, pseudo_family.value)
+        # This will already raise some exceptions, potentially, like the ones below
+        pseudos = get_pseudos_from_structure(structure, str(pseudo_family))
+
+    if pseudos and pseudo_family:
+        raise ValueError('You cannot specify both "pseudos" and "pseudo_family"')
+
+    if isinstance(pseudos, (str, unicode, Str)):
+        raise TypeError('You passed "pseudos" as a string - maybe you wanted to pass it as "pseudo_family" instead?')
 
     for kind in structure.get_kind_names():
         if kind not in pseudos:
