@@ -66,7 +66,7 @@ def _create_restart_pw_cp(parent_calc, force_restart, parent_folder_symlink,
         old_inp_dict['CONTROL']['restart_mode'] = 'restart'
         inp_dict = ParameterData(dict=old_inp_dict)
 
-    remote_folders = parent_calc.get_outputs(type=RemoteData, link_type=LinkType.CREATE)
+    remote_folders = parent_calc.get_outputs(node_type=RemoteData, link_type=LinkType.CREATE)
     if len(remote_folders) != 1:
         raise InputValidationError("More than one output RemoteData found "
                                    "in calculation {}".format(parent_calc.pk))
@@ -246,7 +246,7 @@ def create_restart_ph(parent_calc, force_restart=False,
     old_inp_dict['INPUTPH']['recover'] = True
     inp_dict = ParameterData(dict=old_inp_dict) 
 
-    remote_folders = parent_calc.get_outputs(type=RemoteData, link_type=LinkType.CREATE)
+    remote_folders = parent_calc.get_outputs(node_type=RemoteData, link_type=LinkType.CREATE)
     if len(remote_folders)!=1:
         raise InputValidationError("More than one output RemoteData found "
                                     "in calculation {}".format(parent_calc.pk))

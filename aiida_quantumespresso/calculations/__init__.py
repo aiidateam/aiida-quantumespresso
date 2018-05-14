@@ -883,7 +883,7 @@ class BasePwCpInputGenerator(object):
             old_inp_dict['CONTROL']['restart_mode'] = 'restart'
             inp_dict = ParameterData(dict=old_inp_dict)
 
-        remote_folders = self.get_outputs(type=RemoteData)
+        remote_folders = self.get_outputs(node_type=RemoteData)
         if len(remote_folders) != 1:
             raise InputValidationError("More than one output RemoteData found "
                                        "in calculation {}".format(self.pk))

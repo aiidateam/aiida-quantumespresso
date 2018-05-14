@@ -478,7 +478,7 @@ class PhCalculation(JobCalculation):
         
         self._check_valid_parent(calc)
         
-        remotedatas = calc.get_outputs(type=RemoteData)
+        remotedatas = calc.get_outputs(node_type=RemoteData)
         if not remotedatas:
             raise NotExistent("No output remotedata found in "
                                   "the parent")
@@ -561,7 +561,7 @@ class PhCalculation(JobCalculation):
         old_inp_dict['INPUTPH']['recover'] = True
         inp_dict = ParameterData(dict=old_inp_dict) 
         
-        remote_folders = self.get_outputs(type=RemoteData)
+        remote_folders = self.get_outputs(node_type=RemoteData)
         if len(remote_folders)!=1:
             raise InputValidationError("More than one output RemoteData found "
                                        "in calculation {}".format(self.pk))
