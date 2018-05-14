@@ -74,6 +74,15 @@ def _create_restart_pw_cp(parent_calc, force_restart, parent_folder_symlink,
 
     builder = parent_calc.__class__.get_builder()
 
+    # Set the same options
+    # TODO: Implement this in a way, in AiiDA, to allow to get the values in a single call,
+    #       returning either only those actually set, or all with their defaults,
+    #       and here just call that method (to re-set those actually set).
+    for option in builder.options._valid_fields:
+        option_val = getattr(parent_calc, 'get_{}'.format(option))()
+        if option_val:  # Skip None, empty strings, and empty dicts/lists
+            setattr(builder.options, option, option_val)
+
     builder.label = parent_calc.label
     builder.description = "[Restart of {} {}]\n{}".format(
         parent_calc.__class__.__name__, parent_calc.uuid,
@@ -253,7 +262,16 @@ def create_restart_ph(parent_calc, force_restart=False,
     remote_folder = remote_folders[0]
     
     builder = parent_calc.__class__.get_builder()
-    
+
+    # Set the same options
+    # TODO: Implement this in a way, in AiiDA, to allow to get the values in a single call,
+    #       returning either only those actually set, or all with their defaults,
+    #       and here just call that method (to re-set those actually set).
+    for option in builder.options._valid_fields:
+        option_val = getattr(parent_calc, 'get_{}'.format(option))()
+        if option_val:  # Skip None, empty strings, and empty dicts/lists
+            setattr(builder.options, option, option_val)
+
     builder.label = parent_calc.label
     builder.description = "[Restart of {} {}]\n{}".format(
         parent_calc.__class__.__name__, parent_calc.uuid,
