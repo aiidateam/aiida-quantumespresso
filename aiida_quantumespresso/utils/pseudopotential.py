@@ -1,6 +1,29 @@
 # -*- coding: utf-8 -*-
 from aiida.orm.data.upf import UpfData, get_pseudos_from_structure
 
+def get_pseudos_of_calc(calc):
+    """
+    Return a dictionary of pseudos used by a given (pw.x, cp.x) calculation.
+
+    This returns a dictionary ``pseudos`` that can be set in a builder as ``builder.pseudo = pseudos``.
+
+    :param calc: a pw.x or cp.x calculation.
+    :return: a dictionary where the key is the kind name and the value is the UpfData object.
+    """
+    from aiida.common.links import LinkType
+
+    pseudos = {}
+    # I create here a dictionary that associates each kind name to a pseudo
+    inputs = calc.get_inputs_dict(link_type=LinkType.INPUT)
+    for linkname in inputs.keys():
+        if linkname.startswith(calc._get_linkname_pseudo_prefix()):
+            # Note that this string might be a sequence of kind names
+            # concatenated by an underscore, see implementation in the
+            # input plugin implementation.
+            multiplekindstring = linkname[len(calc._get_linkname_pseudo_prefix()):]
+            pseudos[multiplekindstring] = inputs[linkname]
+    return pseudos
+
 def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=None):
     """
     Use the explicitly passed pseudos dictionary or use the pseudo_family in combination with

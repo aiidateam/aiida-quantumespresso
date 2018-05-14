@@ -834,6 +834,11 @@ class BasePwCpInputGenerator(object):
         c2.store_all()
         c2.submit()
 
+        .. deprecated:: 3.0
+           Use the helper method :py:func:`aiida_quantumespresso.utils.restart.create_restart_cp` or
+           :py:func:`aiida_quantumespresso.utils.restart.create_restart_pw` instead,
+           that returns a calculation builder rather than a new, unstored calculation.
+
         :param bool force_restart: restart also if parent is not in FINISHED
            state (e.g. FAILED, IMPORTED, etc.). Default=False.
         :param bool parent_folder_symlink: if True, symlinks are used
@@ -849,6 +854,11 @@ class BasePwCpInputGenerator(object):
            Useful to restart calculations that have crashed on the cluster for
            external reasons. Default=False
         """
+        import warnings
+        warnings.warn('This method has been deprecated, use instead '
+                      'aiida_quantumespresso.utils.restart.create_restart_pw() or '
+                      'aiida_quantumespresso.utils.restart.create_restart_cp()', DeprecationWarning)
+
         from aiida.common.datastructures import calc_states
 
         # Check the calculation's state using ``from_attribute=True`` to
