@@ -482,16 +482,26 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
         Function to restart a calculation that was not completed before 
         (like max walltime reached...) i.e. not to restart a really FAILED calculation.
         Returns a calculation c2, with all links prepared but not stored in DB.
-        To submit it simply:
-        c2.store_all()
-        c2.submit()
-        
+        To submit it, simply do::
+
+          c2.store_all()
+          c2.submit()
+
+        .. deprecated:: 3.0
+           Use the helper method :py:func:`aiida_quantumespresso.utils.restart.create_restart_neb` instead,
+           that returns a calculation builder rather than a new, unstored calculation.
+
+
         :param bool force_restart: restart also if parent is not in FINISHED 
         state (e.g. FAILED, IMPORTED, etc.). Default=False.
         :param bool parent_folder_symlink: if True, symlinks are used
         instead of hard copies of the files. Default given by 
         self._default_symlink_usage.
         """
+        import warnings
+        warnings.warn('This method has been deprecated, use instead '
+                      'aiida_quantumespresso.utils.restart.create_restart_neb()', DeprecationWarning)
+
         from aiida.common.datastructures import calc_states
 
         # Check the calculation's state using ``from_attribute=True`` to
