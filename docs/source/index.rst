@@ -10,7 +10,7 @@
 .. figure:: images/AiiDA_transparent_logo.png
     :width: 250px
     :align: center
-    :height: 100px
+    :height: 60px
 .. figure:: images/qe_logo.jpg
     :width: 233px
     :align: center
@@ -64,3 +64,21 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+Acknowledgements
+++++++++++++++++
+We acknowledge support from the `NCCR MARVEL`_ funded by the Swiss National Science Foundation and the EU Centre of Excellence "`MaX – Materials Design at the Exascale`_". (Horizon 2020 EINFRA-5, Grant No. 676598).
+
+.. figure:: images/MARVEL.png
+    :width: 300px
+    :align: center
+    :height: 157px
+.. figure:: images/MaX.png
+    :width: 300px
+    :align: center
+    :height: 84px
+
+.. _NCCR MARVEL: http://nccr-marvel.ch/
+.. _MaX – Materials Design at the Exascale: http://www.max-centre.eu/
+
+
+  

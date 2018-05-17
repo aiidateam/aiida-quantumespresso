@@ -83,10 +83,12 @@ class PwParser(Parser):
         # The xml file is required for parsing
         if not self._calc._DATAFILE_XML_BASENAME in list_of_files:
             self.logger.error("The xml output file '{}' was not found but is required".format(self._calc._DATAFILE_XML_BASENAME))
-            return False, ()
+            successful = False
+            xml_file = None
+        else:
+            xml_file = os.path.join(out_folder.get_abs_path('.'), self._calc._DATAFILE_XML_BASENAME)
 
         out_file = os.path.join(out_folder.get_abs_path('.'), self._calc._OUTPUT_FILE_NAME)
-        xml_file = os.path.join(out_folder.get_abs_path('.'), self._calc._DATAFILE_XML_BASENAME)
 
         # Call the raw parsing function
         parsing_args = [out_file, parameters, parser_opts, xml_file, dir_with_bands]
@@ -277,7 +279,7 @@ class PwParser(Parser):
         """
         Return the extended dictionary of symmetries.
         """
-        data = self._calc.get_outputs(type=ParameterData, also_labels=True)
+        data = self._calc.get_outputs(node_type=ParameterData, also_labels=True)
         all_data = [i[1] for i in data if i[0]==self.get_linkname_outparams()]
         if len(all_data) > 1:
             raise UniquenessError('More than one output parameterdata found.')
