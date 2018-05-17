@@ -16,6 +16,6 @@ case "$TEST_TYPE" in
         verdi -p $TEST_AIIDA_BACKEND run ${TRAVIS_BUILD_DIR}/.travis-data/test_pw_with_daemon.py
         ;;
     pre-commit)
-        pre-commit run --all-files
+        pre-commit run --all-files || ( git status --short ; git diff ; exit 1 )
         ;;
 esac
