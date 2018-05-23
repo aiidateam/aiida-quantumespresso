@@ -652,7 +652,7 @@ class BasePwCpInputGenerator(object):
         also_bands = settings_dict.pop('ALSO_BANDS', None)
         if also_bands:
             import logging
-            from aiida.utils.logger import get_dblogger_extra
+            from aiida.common.log import get_dblogger_extra
 
             logger = logging.LoggerAdapter(logger=self.logger, extra=get_dblogger_extra(self))
             logger.warning(
