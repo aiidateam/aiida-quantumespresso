@@ -478,7 +478,7 @@ class PhCalculation(JobCalculation):
         
         self._check_valid_parent(calc)
         
-        remotedatas = calc.get_outputs(type=RemoteData)
+        remotedatas = calc.get_outputs(node_type=RemoteData)
         if not remotedatas:
             raise NotExistent("No output remotedata found in "
                                   "the parent")
@@ -532,9 +532,17 @@ class PhCalculation(JobCalculation):
             c2.store_all()
             c2.submit()
 
+        .. deprecated:: 3.0
+           Use the helper method :py:func:`aiida_quantumespresso.utils.restart.create_restart_ph` instead,
+           that returns a calculation builder rather than a new, unstored calculation.
+
         :param bool force_restart: restart also if parent is not in FINISHED 
             state (e.g. FAILED, IMPORTED, etc.). Default=False.
         """
+        import warnings
+        warnings.warn('This method has been deprecated, use instead '
+                      'aiida_quantumespresso.utils.restart.create_restart_ph()', DeprecationWarning)
+
         from aiida.common.datastructures import calc_states
         if self.get_state() != calc_states.FINISHED:
             if force_restart:
@@ -553,7 +561,7 @@ class PhCalculation(JobCalculation):
         old_inp_dict['INPUTPH']['recover'] = True
         inp_dict = ParameterData(dict=old_inp_dict) 
         
-        remote_folders = self.get_outputs(type=RemoteData)
+        remote_folders = self.get_outputs(node_type=RemoteData)
         if len(remote_folders)!=1:
             raise InputValidationError("More than one output RemoteData found "
                                        "in calculation {}".format(self.pk))
