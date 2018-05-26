@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import collections
 import os
 
 from aiida.common.exceptions import InputValidationError
@@ -14,6 +15,7 @@ from aiida.orm.data.singlefile import SinglefileData
 from aiida.orm.data.remote import RemoteData
 from aiida.common.datastructures import CodeInfo
 from aiida.common.links import LinkType
+from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
 class BasePwCpInputGenerator(object):
     """
@@ -448,7 +450,7 @@ class BasePwCpInputGenerator(object):
             # empty namelist
             namelist = input_params.pop(namelist_name, {})
             for k, v in sorted(namelist.iteritems()):
-                inputfile += get_input_data_text(k, v, mapping=mapping_species)
+                inputfile += convert_input_to_namelist_entry(k, v, mapping=mapping_species)
             inputfile += "/\n"
     
         # Write cards now
@@ -645,7 +647,7 @@ class BasePwCpInputGenerator(object):
                 environ_infile.write("&ENVIRON\n")
                 for k, v in sorted(environ_namelist.iteritems()):
                     environ_infile.write(
-                        get_input_data_text(k, v, mapping=mapping_species))
+                        convert_input_to_namelist_entry(k, v, mapping=mapping_species))
                 environ_infile.write("/\n")
 
         # Check for the deprecated 'ALSO_BANDS' setting and if present fire a deprecation log message
@@ -940,62 +942,6 @@ class BasePwCpInputGenerator(object):
             c2.use_vdw_table(old_vdw_table)
 
         return c2
-
-
-def get_input_data_text(key, val, mapping=None):
-    """
-    Given a key and a value, return a string (possibly multiline for arrays)
-    with the text to be added to the input file.
-
-    :param key: the flag name
-    :param val: the flag value. If it is an array, a line for each element
-            is produced, with variable indexing starting from 1.
-            Each value is formatted using the conv_to_fortran function.
-    :param mapping: Optional parameter, must be provided if val is a dictionary.
-            It maps each key of the 'val' dictionary to the corresponding
-            list index. For instance, if ``key='magn'``,
-            ``val = {'Fe': 0.1, 'O': 0.2}`` and ``mapping = {'Fe': 2, 'O': 1}``,
-            this function will return the two lines ``magn(1) = 0.2`` and
-            ``magn(2) = 0.1``. This parameter is ignored if 'val'
-            is not a dictionary.
-    """
-    from aiida.common.utils import conv_to_fortran
-    # I don't try to do iterator=iter(val) and catch TypeError because
-    # it would also match strings
-    # I check first the dictionary, because it would also match hasattr(__iter__)
-    if isinstance(val, dict):
-        if mapping is None:
-            raise ValueError("If 'val' is a dictionary, you must provide also "
-                             "the 'mapping' parameter")
-
-        # At difference with the case of a list, at the beginning list_of_strings
-        # is a list of 2-tuples where the first element is the idx, and the
-        # second is the actual line. This is used at the end to resort everything.
-        list_of_strings = []
-        for elemk, itemval in val.iteritems():
-            try:
-                idx = mapping[elemk]
-            except KeyError:
-                raise ValueError("Unable to find the key '{}' in the mapping "
-                                 "dictionary".format(elemk))
-
-            list_of_strings.append((idx, "  {0}({2}) = {1}\n".format(
-                key, conv_to_fortran(itemval), idx)))
-
-        # I first have to resort, then to remove the index from the first
-        # column, finally to join the strings
-        list_of_strings = zip(*sorted(list_of_strings))[1]
-        return "".join(list_of_strings)
-    elif hasattr(val, '__iter__'):
-        # a list/array/tuple of values
-        list_of_strings = [
-            "  {0}({2}) = {1}\n".format(key, conv_to_fortran(itemval),
-                                        idx + 1)
-            for idx, itemval in enumerate(val)]
-        return "".join(list_of_strings)
-    else:
-        # single value
-        return "  {0} = {1}\n".format(key, conv_to_fortran(val))
 
 
 def _lowercase_dict(d, dict_name):

@@ -13,7 +13,8 @@ from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.calculation.job import JobCalculation
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
-from aiida_quantumespresso.calculations import get_input_data_text, _lowercase_dict, _uppercase_dict
+from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
+from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
 # List of namelists (uppercase) that are allowed to be found in the
 # input_data, in the correct order
@@ -329,7 +330,7 @@ class PhCalculation(JobCalculation):
                 # empty namelist
                 namelist = input_params.pop(namelist_name,{})
                 for k, v in sorted(namelist.iteritems()):
-                    infile.write(get_input_data_text(k,v))
+                    infile.write(convert_input_to_namelist_entry(k,v))
                 infile.write("/\n")
             
             # add list of qpoints if required

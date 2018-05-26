@@ -15,7 +15,8 @@ from aiida.orm.data.upf import UpfData
 from aiida.orm.data.remote import RemoteData 
 from aiida.orm.calculation.job import JobCalculation
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
-from aiida_quantumespresso.calculations import get_input_data_text,_lowercase_dict,_uppercase_dict
+from aiida_quantumespresso.calculations import _lowercase_dict,_uppercase_dict
+from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
 
 class NebCalculation(BasePwCpInputGenerator,JobCalculation):
@@ -184,7 +185,7 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
         # empty namelist
         namelist = input_params.pop('PATH', {})
         for k, v in sorted(namelist.iteritems()):
-            inputfile += get_input_data_text(k, v)
+            inputfile += convert_input_to_namelist_entry(k, v)
         inputfile += "/\n"
 
         # Write cards now
