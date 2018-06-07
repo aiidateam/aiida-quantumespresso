@@ -5,7 +5,7 @@ Tests for ``aiida_quantumespresso.tools.pwinputparser``.
 Since the AiiDa-specific methods of PwInputFile generates (unstored) Node
 objects, this  has to be run with a temporary database.
 
-The directory, ``./pwtestjobs/``, contains small QE jobs that are used to test
+The directory, ``./test_data/``, contains small QE jobs that are used to test
 the parsing and units conversion. The test jobs should all contain the same
 structure, input parameters, ect., but the units of the input files differ,
 in order to test the unit and coordinate transformations of the PwInputTools
@@ -24,7 +24,7 @@ from aiida.backends.testbase import AiidaTestCase
 # File names: a_celldm(1)_kpoints_cellparameters_atomicposition
 
 # Define the path to the directory containing the test PW runs.
-TEST_JOB_DIR = os.path.join(os.path.dirname(__file__), 'pwtestjobs')
+TEST_JOB_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 # Get the paths of all the input files.
 INPUT_FILES = [os.path.join(TEST_JOB_DIR, x) for x in os.listdir(TEST_JOB_DIR)
                if x.endswith('.in')]

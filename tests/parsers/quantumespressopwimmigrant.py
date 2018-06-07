@@ -2,7 +2,7 @@
 """
 Tests for the pwimmigrant plugin for Quantum Espresso.
 
-The directory, ``./pwtestjobs/``, contains small QE jobs that are used to test
+The directory, ``./test_data/``, contains small QE jobs that are used to test
 the parsing and units conversion of an immigration. The test jobs should all
 contain the same structure, input parameters, ect., but the units of the
 input files differ, in order to test the unit and coordinate transformations
@@ -39,7 +39,7 @@ from aiida.backends.testbase import AiidaTestCase
 
 
 # Define the path to the directory containing the test PW runs.
-TEST_JOB_DIR = os.path.join(os.path.dirname(__file__), 'pwtestjobs')
+TEST_JOB_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 
 # Get the prefixes of all the test jobs. The prefix defines the input and
 # output file names.
