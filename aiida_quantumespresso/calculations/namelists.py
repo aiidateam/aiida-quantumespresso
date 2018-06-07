@@ -14,8 +14,8 @@ from aiida.orm.data.folder import FolderData
 from aiida.orm.data.singlefile import SinglefileData
 from aiida.orm.calculation.job import JobCalculation
 from aiida.common.datastructures import CodeInfo
-from aiida_quantumespresso.calculations import (
-    _lowercase_dict, _uppercase_dict, get_input_data_text)
+from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
+from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
     
 
 class NamelistsCalculation(JobCalculation):   
@@ -200,7 +200,7 @@ class NamelistsCalculation(JobCalculation):
                 # empty namelist
                 namelist = input_params.pop(namelist_name,{})
                 for k, v in sorted(namelist.iteritems()):
-                    infile.write(get_input_data_text(k,v))
+                    infile.write(convert_input_to_namelist_entry(k,v))
                 infile.write("/\n")
 
             # Write remaning text now, if any
