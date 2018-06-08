@@ -16,10 +16,12 @@ Plugin to create a Quantum Espresso pw.x file.
 # TODO: all a lot of logger.debug stuff
 import os
 
-from aiida.orm.calculation.job import JobCalculation
-from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 from aiida.common.utils import classproperty
+from aiida.orm import CalculationFactory
+from aiida.orm.calculation.job import JobCalculation
 from aiida.orm.data.array.kpoints import KpointsData
+from aiida.orm.data.singlefile import SinglefileData
+from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 
 
 class PwCalculation(BasePwCpInputGenerator, JobCalculation):
@@ -51,19 +53,22 @@ class PwCalculation(BasePwCpInputGenerator, JobCalculation):
             'vc-relax': ['CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', 'CELL'],
         }
 
-        # Keywords that cannot be set
-        self._blocked_keywords = [('CONTROL', 'pseudo_dir'),  # set later
-                                  ('CONTROL', 'outdir'),  # set later
-                                  ('CONTROL', 'prefix'),  # set later
-                                  ('SYSTEM', 'ibrav'),  # set later
-                                  ('SYSTEM', 'celldm'),
-                                  ('SYSTEM', 'nat'),  # set later
-                                  ('SYSTEM', 'ntyp'),  # set later
-                                  ('SYSTEM', 'a'), ('SYSTEM', 'b'),
-                                  ('SYSTEM', 'c'),
-                                  ('SYSTEM', 'cosab'), ('SYSTEM', 'cosac'),
-                                  ('SYSTEM', 'cosbc'),
-                                  ]
+        # Keywords that cannot be set by the user but will be set by the plugin
+        self._blocked_keywords = [
+            ('CONTROL', 'pseudo_dir'),
+            ('CONTROL', 'outdir'),
+            ('CONTROL', 'prefix'),
+            ('SYSTEM', 'ibrav'),
+            ('SYSTEM', 'celldm'),
+            ('SYSTEM', 'nat'),
+            ('SYSTEM', 'ntyp'),
+            ('SYSTEM', 'a'),
+            ('SYSTEM', 'b'),
+            ('SYSTEM', 'c'),
+            ('SYSTEM', 'cosab'),
+            ('SYSTEM', 'cosac'),
+            ('SYSTEM', 'cosbc'),
+        ]
 
         self._use_kpoints = True
 
@@ -76,17 +81,38 @@ class PwCalculation(BasePwCpInputGenerator, JobCalculation):
         """
         Extend the parent _use_methods with further keys.
         """
-        retdict = JobCalculation._use_methods
-        retdict.update(BasePwCpInputGenerator._baseclass_use_methods)
+        use_methods = JobCalculation._use_methods
+        use_methods.update(BasePwCpInputGenerator._baseclass_use_methods)
+        use_methods.update({
+            'kpoints': {
+                'valid_types': (KpointsData, ),
+                'additional_parameter': None,
+                'linkname': 'kpoints',
+                'docstring': ('KpointsData node that contains the kpoints mesh or path'),
+            },
+            'hubbard_file': {
+                'valid_types': (SinglefileData, ),
+                'additional_parameter': None,
+                'linkname': 'hubbard_file',
+                'docstring': 'SinglefileData node containing the output Hubbard parameters from a HpCalculation',
+            }
+        })
 
-        retdict['kpoints'] = {
-            'valid_types': KpointsData,
-            'additional_parameter': None,
-            'linkname': 'kpoints',
-            'docstring': "Use the node defining the kpoint sampling to use",
-        }
+        return use_methods
 
-        return retdict
+    @classproperty
+    def input_file_name_hubbard_file(cls):
+        """
+        The relative file name of the file containing the Hubbard parameters if they should
+        be read from file instead of specified in the input file cards. Requires the
+        aiida-quantumespresso-hp plugin to be installed
+        """
+        try:
+            HpCalculation = CalculationFactory('quantumespresso.hp')
+        except Exception as exception:
+            raise RuntimeError('this is determined by the aiida-quantumespresso-hp plugin but it is not installed')
+
+        return HpCalculation.input_file_name_hubbard_file
 
     @classmethod
     def input_helper(cls, *args, **kwargs):
@@ -103,5 +129,3 @@ class PwCalculation(BasePwCpInputGenerator, JobCalculation):
         """
         from . import helpers
         return helpers.pw_input_helper(*args, **kwargs)
-
-

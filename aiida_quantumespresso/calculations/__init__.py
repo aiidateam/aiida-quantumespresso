@@ -548,6 +548,11 @@ class BasePwCpInputGenerator(object):
                 raise InputValidationError("vdw_table, if specified, "
                                            "must be of type SinglefileData")
 
+        hubbard_file = inputdict.pop(self.get_linkname('hubbard_file'), None)
+        if hubbard_file is not None:
+            if not isinstance(hubbard_file, SinglefileData):
+                raise InputValidationError('hubbard_file, if specified, must be of type SinglefileData')
+
         try:
             code = inputdict.pop(self.get_linkname('code'))
         except KeyError:
@@ -579,13 +584,14 @@ class BasePwCpInputGenerator(object):
         # Note that the name of the table is not checked but should be the
         # one expected by QE.
         if vdw_table:
-            local_copy_list.append(
-                (
-                vdw_table.get_file_abs_path(),
-                os.path.join(self._PSEUDO_SUBFOLDER,
-                    os.path.split(vdw_table.get_file_abs_path())[1])
-                )
-                )
+            src_path = vdw_table.get_file_abs_path()
+            dst_path = os.path.join(self._PSEUDO_SUBFOLDER, os.path.split(vdw_table.get_file_abs_path())[1])
+            local_copy_list.append((src_path, dst_path))
+
+        if hubbard_file:
+            src_path = hubbard_file.get_file_abs_path()
+            dst_path = self.input_file_name_hubbard_file
+            local_copy_list.append((src_path, dst_path))
 
         input_filecontent, local_copy_pseudo_list = self._generate_PWCPinputdata(parameters,settings_dict,pseudos,
                                                                                  structure,kpoints)

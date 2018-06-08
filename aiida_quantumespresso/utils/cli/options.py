@@ -15,15 +15,25 @@ clean_workdir = overridable_option(
 
 ecutwfc = overridable_option(
     '-W', '--ecutwfc', type=click.FLOAT, default=30., show_default=True,
-    help='The plane wave cutoff energy in Ry'
+    help='the plane wave cutoff energy in Ry'
 )
 
 ecutrho = overridable_option(
     '-R', '--ecutrho', type=click.FLOAT, default=240., show_default=True,
-    help='The charge density cutoff energy in Ry'
+    help='the charge density cutoff energy in Ry'
 )
 
 hubbard_u = overridable_option(
-    '-U', '--hubbard-u', nargs=2, multiple=True, type=click.Tuple([unicode, float]),
-    help='Add a Hubbard U term to a specific kind'
+    '-U', '--hubbard-u', nargs=2, multiple=True, type=click.Tuple([unicode, float]), metavar='KIND MAGNITUDE',
+    help='add a Hubbard U term to a specific kind'
+)
+
+hubbard_v = overridable_option(
+    '-V', '--hubbard-v', nargs=4, multiple=True, type=click.Tuple([int, int, int, float]), metavar='SITE SITE TYPE MAGNITUDE',
+    help='add a Hubbard V interaction between two sites'
+)
+
+starting_magnetization = overridable_option(
+    '-M', '--starting-magnetization', nargs=2, multiple=True, type=click.Tuple([unicode, float]),
+    help='add a starting magnetization to a specific kind'
 )

@@ -3,6 +3,7 @@ import click
 from aiida.utils.cli import command
 from aiida.utils.cli import options
 from aiida_quantumespresso.utils.cli import options as options_qe
+from aiida_quantumespresso.utils.cli.validate import validate_hubbard_parameters
 
 
 @command()
@@ -16,22 +17,23 @@ from aiida_quantumespresso.utils.cli import options as options_qe
 @options_qe.ecutwfc()
 @options_qe.ecutrho()
 @options_qe.hubbard_u()
+@options_qe.hubbard_v()
+@click.option('--hubbard-file', 'hubbard_file_pk', type=click.INT,
+    help='the pk of a SinglefileData containing Hubbard parameters from a HpCalculation to use as input for Hubbard V')
 @click.option(
     '-z', '--calculation-mode', 'mode', type=click.Choice(['scf', 'vc-relax']), default='scf', show_default=True,
     help='Select the calculation mode'
 )
-def launch(code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, daemon, mode, hubbard_u,
-    ecutwfc, ecutrho):
+def launch(code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, daemon, mode,
+    ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file_pk):
     """
     Run a PwCalculation for a given input structure
     """
-    from aiida.orm import load_node
     from aiida.orm.data.parameter import ParameterData
     from aiida.orm.data.upf import get_pseudos_from_structure
     from aiida.orm.utils import CalculationFactory
     from aiida.work.launch import run_get_node, submit
     from aiida_quantumespresso.utils.resources import get_default_options
-
 
     PwCalculation = CalculationFactory('quantumespresso.pw')
 
@@ -45,19 +47,10 @@ def launch(code, structure, pseudo_family, kpoints, max_num_machines, max_wallcl
         },
     }
 
-    if hubbard_u:
-        structure_kinds = structure.get_kind_names()
-        hubbard_u_kinds = [kind for kind, value in hubbard_u]
-
-        if not set(hubbard_u_kinds).issubset(structure_kinds):
-            raise click.BadParameter('the kinds in the specified starting Hubbard U values is not a strict subset of the kinds in the structure')
-            return
-
-        parameters['SYSTEM']['hubbard_u'] = {}
-        parameters['SYSTEM']['lda_plus_u'] = True
-
-        for kind, value in hubbard_u:
-            parameters['SYSTEM']['hubbard_u'][kind] = value
+    try:
+        hubbard_file = validate_hubbard_parameters(structure, parameters, hubbard_u, hubbard_v, hubbard_file_pk)
+    except ValueError as exception:
+        raise click.BadParameter(exception)
 
     inputs = {
         'code': code,
@@ -69,15 +62,15 @@ def launch(code, structure, pseudo_family, kpoints, max_num_machines, max_wallcl
         'options': get_default_options(max_num_machines, max_wallclock_seconds),
     }
 
-
-    process = PwCalculation.process()
+    if hubbard_file:
+        inputs['hubbard_file'] = hubbard_file
 
     if daemon:
-        calculation = submit(process, **inputs)
+        calculation = submit(PwCalculation, **inputs)
         click.echo('Submitted {}<{}> to the daemon'.format(PwCalculation.__name__, calculation.pk))
     else:
         click.echo('Running a pw.x calculation in the {} mode... '.format(mode))
-        results, calculation = run_get_node(process, **inputs)
+        results, calculation = run_get_node(PwCalculation, **inputs)
         click.echo('PwCalculation<{}> terminated with state: {}'.format(calculation.pk, calculation.get_state()))
         click.echo('\n{link:25s} {node}'.format(link='Output link', node='Node pk and type'))
         click.echo('{s}'.format(s='-'*60))
