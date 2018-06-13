@@ -309,7 +309,7 @@ def _handle_error_diagonalization(self, calculation):
         new_diagonalization = 'cg'
         self.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = 'cg'
         self.ctx.restart_calc = calculation
-        self.report('PwCalculation<{}> failed to diagonalize with "{}" scheme'.format(diagonalization))
+        self.report('PwCalculation<{}> failed to diagonalize with "{}" scheme'.format(calculation.pk, diagonalization))
         self.report('Restarting with diagonalization scheme "{}"'.format(new_diagonalization))
         return ErrorHandlerReport(True, True)
 
