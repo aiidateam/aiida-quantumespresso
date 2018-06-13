@@ -1,17 +1,26 @@
 ## v2.0.1:
+Minor patch release reducing the size of the package and some small bug fixes
+
+### Make distribution lightweight
+- Tests and fixture data have been removed from the main package, massively reducing distribution size [[#154]](https://github.com/aiidateam/aiida-quantumespresso/pull/154)
+
+### Minor bug fixes
+- Adapt the keyword `type` to `node_type` in the `Node.get_outputs` method [[#143]](https://github.com/aiidateam/aiida-quantumespresso/pull/143)
+- Fix a missing parameter in the string formatter of one of the error handlers of `PwBaseWorkChain` [[#158]](https://github.com/aiidateam/aiida-quantumespresso/pull/158)
+
+
+## v2.0.1:
 Minor patch release with some small bug fixes
 
 ### Update to newer versions of Quantum ESPRESSO
-- Add the input helper XML files for v6.0, v.6.1 and v6.2 [[#135]](https://github.com/aiidateam/aiida-quantumespresso/pull/135)
-
+- Add the input helper XML files for v6.0, v6.1 and v6.2 [[#135]](https://github.com/aiidateam/aiida-quantumespresso/pull/135)
 
 ### Bug fixes
-- Parse the standard output in the PwParser even if XML file is missing [[#133]](https://github.com/aiidateam/aiida-quantumespresso/pull/133)
-  This allows to get in the warnings the QE errors.
-- Bugfix for the `_error_handlers` list attribute from BaseRestartWorkChain 
-  that is now appended to the correct list[[#127]](https://github.com/aiidateam/aiida-quantumespresso/pull/127)
-- a number of minor bugfixes to the PwParser to adapt to the updated AiiDA API [[#123]](https://github.com/aiidateam/aiida-quantumespresso/pull/123) [[#138]](https://github.com/aiidateam/aiida-quantumespresso/pull/138)
-- Fix a bug causing cmdline args to be ignored in namelists.py [[#122]](https://github.com/aiidateam/aiida-quantumespresso/pull/122) 
+- Parse the standard output in the `PwParser` even if XML file is missing in order to still get errors in output parameters [[#133]](https://github.com/aiidateam/aiida-quantumespresso/pull/133)
+- Bugfix for the `_error_handlers` list attribute from `BaseRestartWorkChain` that is now appended to the correct list[[#127]](https://github.com/aiidateam/aiida-quantumespresso/pull/127)
+- Number of minor bugfixes to the `PwParser` to adapt to the updated AiiDA API [[#123]](https://github.com/aiidateam/aiida-quantumespresso/pull/123) [[#138]](https://github.com/aiidateam/aiida-quantumespresso/pull/138)
+- Fix a bug causing cmdline args to be ignored in `namelists.py` [[#122]](https://github.com/aiidateam/aiida-quantumespresso/pull/122)
+
 
 ## v2.0.0:
 Major release with a lot of new functionality, mostly centered around the workflows
