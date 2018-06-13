@@ -35,15 +35,15 @@ before_install:
 install:
     # Upgrade pip setuptools and wheel to be able to run the next command
     - pip install -U pip wheel setuptools reentry
-    # Install AiiDA with some optional dependencies
-    - pip install .[atomic_tools,docs,dev_precommit]
+
+    # Install the repository with some optional dependencies
+    - pip install .[docs,dev_precommit]
 
 env:
 - TEST_TYPE="pre-commit"
 - TEST_AIIDA_BACKEND=django TEST_TYPE="docs"
 - TEST_AIIDA_BACKEND=django TEST_TYPE="tests"
 - TEST_AIIDA_BACKEND=sqlalchemy TEST_TYPE="tests"
-
 
 before_script:
     - .travis-data/setup_profiles.sh
