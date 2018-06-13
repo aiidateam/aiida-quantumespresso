@@ -4,6 +4,9 @@ This is the official Quantum ESPRESSO plugin for AiiDA.
 The version 3.x series ot the AiiDA-Quantum ESPRESSO plugins are compatible with the AiiDA 1.x series.
 For the plugin that supports AiiDA 0.9-0.12, check the earlier version of this plugin (versions 1.x and 2.x).
 
+The plugin versions 1.x and 2.x support AiiDA-core in the 0.9-0.12 range.
+For the plugins compatible with AiiDA-core 1.x, check the pre-releases for version 3.x (branch `release-v3.0.0`).
+
 # Documentation
 The documentation for this package can be found on Read the Docs at 
 http://aiida-quantumespresso.readthedocs.io/en/latest/
