@@ -219,6 +219,24 @@ def spin_dependent_subparcer(out_info_dict):
     # pdos=pdos_arrays
     return bands_data,  projection_data
 
+
+def natural_sort_key(sort_key, _nsre=re.compile('([0-9]+)')):
+    """
+    Pass to ``key`` for ``str.sort`` to achieve natural sorting.
+    For example, ``["2", "11", "1"]`` will be
+    sorted to ``["1", "2", "11"]`` instead of ``["1", "11", "2"]``
+    :param sort_key: Original key to be processed
+    :return: A list of string and integers.
+    """
+    keys = []
+    for text in _nsre.split(sort_key):
+        if text.isdigit():
+            keys.append(int(text))
+        else:
+            keys.append(text)
+    return keys
+
+
 def spin_dependent_pdos_subparcer(out_info_dict):
     """
     Finds and labels the pdos arrays associated with the out_info_dict
@@ -241,15 +259,14 @@ def spin_dependent_pdos_subparcer(out_info_dict):
     mf = mult_factor
     fa = first_array
     pdos_file_names = [k for k in pdos_atm_array_dict]
-    pdos_file_names.sort()
+    pdos_file_names.sort(key=natural_sort_key)
     out_arrays = []
     # we can keep the pdos in synch with the projections by relying on the fact
     # both are produced in the same order (thus the sorted file_names)
     for name in pdos_file_names:
         this_array = pdos_atm_array_dict[name]
-        for i in range(fa, np.shape(this_array)[1]):
-            if i % mf == 0:
-                out_arrays.append(this_array[:,i])
+        for i in range(fa, np.shape(this_array)[1], mf):
+            out_arrays.append(this_array[:,i])
 
     return out_arrays
 
