@@ -165,6 +165,50 @@ the list of lists (of booleans) must be of length N times 3, where N is the
 number of sites (i.e., atoms) in the input structure. ``False`` means that
 the coordinate is free to move, ``True`` blocks that coordinate.
 
+ATOMIC_FORCES
+.............
+The pw.x input file format allows one to specify an additional card ``ATOMIC_FORCES``, which can be used to define external forces on each atom.
+Details for the input format and units can be found `in the official documentation <http://www.quantum-espresso.org/Doc/INPUT_PW.html#ATOMIC_FORCES>`_.
+Note that the input card expects exactly as many force vectors as there are entries in the ``ATOMIC_POSITIONS`` card.
+If we take as an example a silicon input structure with exactly two sites, the settings dictionary would like the following::
+
+    settings_dict = {
+        'ATOMIC_FORCES': [
+            [0.1, 0.0, 0.0],
+            [0.0, 0.5, 0.3],
+        ]
+    }
+
+When passed as an input to the calculation, this will result in the following card being printed in the input file::
+
+    ATOMIC_FORCES
+    Si           0.1000000000       0.0000000000       0.0000000000
+    Si           0.0000000000       0.5000000000       0.3000000000
+
+.. note:: the values for the forces in the settings input node are used as is and will not be converted by the plugin, so they should be given in Ry/a.u. as that is the unit that the code expects.
+
+ATOMIC_VELOCITIES
+.................
+Although undocumented, the pw.x input file format allows one to specify an additional card ``ATOMIC_VELOCITIES``, which can be used to define initial velocities on each atom, in parallel to the external forces card.
+Details for the input format and units can be found `in the official documentation for CP <http://www.quantum-espresso.org/Doc/INPUT_CP.html#ATOMIC_VELOCITIES>`_.
+Note that the input card expects exactly as many velocity vectors as there are entries in the ``ATOMIC_POSITIONS`` card.
+If we take as an example a silicon input structure with exactly two sites, the settings dictionary would like the following::
+
+    settings_dict = {
+        'ATOMIC_VELOCITIES': [
+            [0.1, 0.0, 0.0],
+            [0.0, 0.5, 0.3],
+        ]
+    }
+
+When passed as an input to the calculation, this will result in the following card being printed in the input file::
+
+    ATOMIC_VELOCITIES
+    Si           0.1000000000       0.0000000000       0.0000000000
+    Si           0.0000000000       0.5000000000       0.3000000000
+
+.. note:: the values for the velocities in the settings input node are used as is and will not be converted by the plugin, so they should be given in a.u. as that is the unit that the code expects.
+
 Passing an explicit list of kpoints on a grid
 .............................................
 Some codes (e.g., Wannier90) require that a QE calculation is run with 
