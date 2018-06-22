@@ -13,7 +13,7 @@ from aiida.orm.data.upf import UpfData
 from aiida.orm.data.singlefile import SinglefileData
 from aiida.orm.data.remote import RemoteData
 from aiida.common.datastructures import CodeInfo
-from aiida.common.links import LinkType
+
 
 class BasePwCpInputGenerator(object):
     """
@@ -28,14 +28,13 @@ class BasePwCpInputGenerator(object):
     _DATAFILE_XML = 'undefined.xml'
     _ENVIRON_INPUT_FILE_NAME = 'environ.in'
 
-    ## NOTE!! DO NOT UPDATE lists and dictionaries defined here,
-    ## they will be changed for all classes of the current run!
+    # NOTE!! DO NOT UPDATE lists and dictionaries defined here,
+    # they will be changed for all classes of the current run!
 
     # Additional files that should always be retrieved for the specific plugin
     _internal_retrieve_list = []
 
-    ## Default PW output parser provided by AiiDA
-    # to be defined in the subclass
+    # Default PW output parser provided by AiiDA to be defined in the subclass
 
     _automatic_namelists = {}
 
@@ -290,39 +289,58 @@ class BasePwCpInputGenerator(object):
                     site.kind_name.ljust(6), site.position[0], site.position[1],
                     site.position[2], fixed_coords_string))
         atomic_positions_card = "".join(atomic_positions_card_list)
-        del atomic_positions_card_list  # Free memory
+        del atomic_positions_card_list
 
-        # velocities (to initialize MD, if set)
+        # Optional ATOMIC_FORCES card
+        atomic_forces = settings_dict.pop('ATOMIC_FORCES', None)
+        if atomic_forces is not None:
+
+            # Checking that there are as many forces defined as there are sites in the structure
+            if len(atomic_forces) != len(structure.sites):
+                raise InputValidationError(
+                    'Input structure contains {:d} sites, but atomic forces has length {:d}'.format(
+                        len(structure.sites), len(atomic_forces)
+                    )
+                )
+
+            lines = ['ATOMIC_FORCES\n']
+            for site, vector in zip(structure.sites, atomic_forces):
+
+                # Checking that all 3 dimensions are specified:
+                if len(vector) != 3:
+                    raise InputValidationError('Forces({}) for {} has not length three'.format(vector, site))
+
+                lines.append('{0} {1:18.10f} {2:18.10f} {3:18.10f}\n'.format(site.kind_name.ljust(6), *vector))
+
+            # Append to atomic_positions_card so that this card will be printed directly after
+            atomic_positions_card += ''.join(lines)
+            del lines
+
+        # Optional ATOMIC_VELOCITIES card
         atomic_velocities = settings_dict.pop('ATOMIC_VELOCITIES', None)
         if atomic_velocities is not None:
-            # Checking if as many velocities are set as structures:
+
+            # Checking that there are as many velocities defined as there are sites in the structure
             if len(atomic_velocities) != len(structure.sites):
                 raise InputValidationError(
-                    "Input structure contains {:d} sites, but "
-                    "atomic velocities has length {:d}".format(
-                            len(structure.sites),
-                            len(atomic_velocities)
-                        )
+                    'Input structure contains {:d} sites, but atomic velocities has length {:d}'.format(
+                        len(structure.sites), len(atomic_velocities)
                     )
-            atomic_velocities_strings = ["ATOMIC_VELOCITIES\n"]
-            for site, vel in zip(structure.sites, atomic_velocities):
-                # Checking that all 3 dimension are specified:
-                if len(vel) != 3:
-                    raise InputValidationError(
-                        "Velocities({}) for {} has not length three"
-                        "".format(vel, site))
-                # Appending to atomic_velocities_strings
-                atomic_velocities_strings.append(
-                    "{0} {1:18.10f} {2:18.10f} {3:18.10f}\n".format(
-                            site.kind_name.ljust(6),
-                            vel[0], vel[1], vel[2]
-                        )
-                    )
-            # I append to atomic_positions_card  so that velocities 
-            # are defined right after positions:
-            atomic_positions_card = atomic_positions_card + "".join(atomic_velocities_strings)
-            # Freeing the memory
-            del atomic_velocities_strings
+                )
+
+            lines = ['ATOMIC_VELOCITIES\n']
+            for site, vector in zip(structure.sites, atomic_velocities):
+
+                # Checking that all 3 dimensions are specified:
+                if len(vector) != 3:
+                    raise InputValidationError('Velocities({}) for {} has not length three'.format(vector, site))
+
+                lines.append('{0} {1:18.10f} {2:18.10f} {3:18.10f}\n'.format(site.kind_name.ljust(6), *vector))
+
+            # Append to atomic_positions_card so that this card will be printed directly after
+            atomic_positions_card += ''.join(lines)
+            del lines
+
         # I set the variables that must be specified, related to the system
         # Set some variables (look out at the case! NAMELISTS should be
         # uppercase, internal flag names must be lowercase)
@@ -1018,4 +1036,3 @@ def _uppercase_dict(d, dict_name):
             "are repeated more than once when compared case-insensitively: {}."
             "This is not allowed.".format(dict_name, double_keys))
     return new_dict
-
