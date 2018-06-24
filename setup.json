@@ -38,6 +38,7 @@
             "quantumespresso.pw2wannier90 = aiida_quantumespresso.parsers.pw2wannier90:Pw2wannier90Parser"
         ], 
         "aiida.tests": [
+            "quantumespresso.parsers = tests.parsers.parsers", 
             "quantumespresso.pw = tests.parsers.quantumespressopw", 
             "quantumespresso.pw_input = tests.parsers.pwinputparser", 
             "quantumespresso.pw_immigrant = tests.parsers.quantumespressopwimmigrant", 
