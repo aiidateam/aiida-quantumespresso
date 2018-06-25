@@ -103,6 +103,20 @@ All output nodes can be accessed with the ``calculation.out`` method.
   Present only if the calculation changes the cell shape.
   Kpoints refer to the last structure.
 
+.. _pw-parser-version:
+
+Parser version
+--------------
+The parser shares the version of the package and it will be stored in the `output_parameters` node of the calculation under the key ``parser_version``.
+Therefore, to retrieve the version of the parser that was used to parse a completed calculation, you can do:
+
+.. code:: python
+
+    parser_version = calculation.out.output_parameters.get_dict()['parser_version']
+
+.. note:: The convention of tying the parser version to the version of the package was introduced in ``v2.1.0``.
+    Before that version, the version of the parser was statically defined and included in the key ``parser_info`` of the ``output_parameters`` node.
+
 Errors
 ------
 Errors of the parsing are reported in the log of the calculation (accessible 

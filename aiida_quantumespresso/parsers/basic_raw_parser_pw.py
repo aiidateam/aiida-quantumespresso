@@ -10,7 +10,7 @@ import xml.dom.minidom
 import os
 import string
 from aiida_quantumespresso.parsers.constants import ry_to_ev, hartree_to_ev, bohr_to_ang, ry_si, bohr_si
-from aiida_quantumespresso.parsers import QEOutputParsingError
+from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
 
 # TODO: it could be possible to use info of the input file to parse output.
 # but atm the output has all the informations needed for the parsing.
@@ -57,11 +57,7 @@ def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_
     # TODO: input_dict should be used as well
 
     job_successful = True
-
-    parser_version = '0.1'
-    parser_info = {}
-    parser_info['parser_warnings'] = []
-    parser_info['parser_info'] = 'AiiDA QE Basic Parser v{}'.format(parser_version)
+    parser_info = get_parser_info(parser_info_template='aiida-quantumespresso basic parser pw.x v{}')
 
     # if xml_file is not given in input, skip its parsing
     if xml_file is not None:

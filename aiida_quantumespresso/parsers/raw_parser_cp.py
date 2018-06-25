@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from aiida_quantumespresso.parsers import QEOutputParsingError
 from xml.dom.minidom import parseString
+from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
 from aiida_quantumespresso.parsers.raw_parser_pw import (read_xml_card,
                    parse_xml_child_integer,xml_card_header,parse_xml_child_bool,
                    parse_xml_child_str,parse_xml_child_float,
@@ -155,10 +155,7 @@ def parse_cp_xml_counter_output(data):
 
 def parse_cp_raw_output(out_file,xml_file=None,xml_counter_file=None):
 
-    parser_version = '0.1'
-    parser_info = {}
-    parser_info['parser_warnings'] = []
-    parser_info['parser_info'] = 'AiiDA QE Parser v{}'.format(parser_version)
+    parser_info = get_parser_info(parser_info_template='aiida-quantumespresso parser cp.x v{}')
 
     # analyze the xml
     if xml_file is not None:
