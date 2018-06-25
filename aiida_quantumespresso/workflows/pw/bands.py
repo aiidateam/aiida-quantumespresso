@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
 from aiida.common.extendeddicts import AttributeDict
-from aiida.orm import Code
 from aiida.orm.calculation import JobCalculation
-from aiida.orm.data.base import Str, Float, Bool
+from aiida.orm.data.base import Str, Bool
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.bands import BandsData
-from aiida.orm.data.array.kpoints import KpointsData
-from aiida.orm.data.singlefile import SinglefileData
 from aiida.orm.group import Group
 from aiida.orm.utils import WorkflowFactory
 from aiida.work.workchain import WorkChain, ToContext, if_
@@ -20,41 +17,32 @@ PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
 
 
 class PwBandsWorkChain(WorkChain):
-    """
-    Workchain to launch a Quantum Espresso pw.x to calculate a bandstructure for a given
-    structure. The structure will first be relaxed followed by a band structure calculation
-    """
+    """Workchain to compute a band structure for a given structure using Quantum ESPRESSO pw.x"""
 
-    ERROR_INVALID_INPUT_RESOURCES = 1
-    ERROR_CALCULATION_RELAX_FAILED = 2
-    ERROR_CALCULATION_SCF_FAILED = 3
+    ERROR_SUB_PROCESS_RELAX_FAILED = 2
+    ERROR_SUB_PROCESS_SCF_FAILED = 3
+    ERROR_SUB_PROCESS_BANDS_FAILED = 4
 
     @classmethod
     def define(cls, spec):
         super(PwBandsWorkChain, cls).define(spec)
-        spec.input('code', valid_type=Code)
+        spec.expose_inputs(PwRelaxWorkChain, namespace='relax', exclude=('structure',))
+        spec.expose_inputs(PwBaseWorkChain, namespace='scf', exclude=('structure', 'kpoints'))
+        spec.expose_inputs(PwBaseWorkChain, namespace='bands', exclude=('structure',))
         spec.input('structure', valid_type=StructureData)
-        spec.input('pseudo_family', valid_type=Str)
-        spec.input('kpoints_distance', valid_type=Float, default=Float(0.2))
-        spec.input('kpoints_distance_bands', valid_type=Float, default=Float(0.2))
-        spec.input('kpoints', valid_type=KpointsData, required=False)
-        spec.input('vdw_table', valid_type=SinglefileData, required=False)
-        spec.input('parameters', valid_type=ParameterData)
-        spec.input('settings', valid_type=ParameterData, required=False)
-        spec.input('options', valid_type=ParameterData, required=False)
-        spec.input('automatic_parallelization', valid_type=ParameterData, required=False)
         spec.input('clean_workdir', valid_type=Bool, default=Bool(False))
         spec.input('group', valid_type=Str, required=False)
-        spec.input_namespace('relax', required=False, dynamic=True)
         spec.outline(
             cls.setup,
-            cls.validate_inputs,
             if_(cls.should_do_relax)(
                 cls.run_relax,
+                cls.inspect_relax,
             ),
             cls.run_seekpath,
             cls.run_scf,
+            cls.inspect_scf,
             cls.run_bands,
+            cls.inspect_bands,
             cls.results,
         )
         spec.output('primitive_structure', valid_type=StructureData)
@@ -64,69 +52,17 @@ class PwBandsWorkChain(WorkChain):
         spec.output('band_structure', valid_type=BandsData)
 
     def setup(self):
-        """
-        Initialize context variables that are used during the logical flow of the BaseRestartWorkChain
-        """
-        self.ctx.inputs = AttributeDict({
-            'code': self.inputs.code,
-            'pseudo_family': self.inputs.pseudo_family,
-            'parameters': self.inputs.parameters.get_dict(),
-        })
-
-    def validate_inputs(self):
-        """
-        Validate inputs that may depend on each other
-        """
-        if not any([key in self.inputs for key in ['options', 'automatic_parallelization']]):
-            self.report('you have to specify either the options or automatic_parallelization input')
-            return self.ERROR_INVALID_INPUT_RESOURCES
-
-        # Add the van der Waals kernel table file if specified
-        if 'vdw_table' in self.inputs:
-            self.ctx.inputs.vdw_table = self.inputs.vdw_table
-            self.inputs.relax['vdw_table'] = self.inputs.vdw_table
-
-        # Set the correct relaxation scheme in the input parameters
-        if 'CONTROL' not in self.ctx.inputs.parameters:
-            self.ctx.inputs.parameters['CONTROL'] = {}
-
-        if 'settings' in self.inputs:
-            self.ctx.inputs.settings = self.inputs.settings
-
-        # If options set, add it to the default inputs
-        if 'options' in self.inputs:
-            self.ctx.inputs.options = self.inputs.options
-
-        # If automatic parallelization was set, add it to the default inputs
-        if 'automatic_parallelization' in self.inputs:
-            self.ctx.inputs.automatic_parallelization = self.inputs.automatic_parallelization
-
-        return
+        """Define the current structure in the context to be the input structure."""
+        self.ctx.current_structure = self.inputs.structure
 
     def should_do_relax(self):
-        """
-        If the 'relax' input group was specified, we relax the input structure
-        """
+        """If the 'relax' input namespace was specified, we relax the input structure."""
         return 'relax' in self.inputs
 
     def run_relax(self):
-        """
-        Run the PwRelaxWorkChain to run a relax PwCalculation
-        """
-        inputs = AttributeDict(self.inputs.relax)
-        inputs.update({
-            'code': self.inputs.code,
-            'structure': self.inputs.structure,
-            'pseudo_family': self.inputs.pseudo_family,
-        })
-
-        # If options set, add it to the default inputs
-        if 'options' in self.inputs:
-            inputs['options'] = self.inputs.options
-
-        # If automatic parallelization was set, add it to the default inputs
-        if 'automatic_parallelization' in self.inputs:
-            inputs['automatic_parallelization'] = self.inputs.automatic_parallelization
+        """Run the PwRelaxWorkChain to run a relax PwCalculation."""
+        inputs = AttributeDict(self.exposed_inputs(PwRelaxWorkChain, namespace='relax'))
+        inputs.structure = self.ctx.current_structure
 
         running = self.submit(PwRelaxWorkChain, **inputs)
 
@@ -134,90 +70,83 @@ class PwBandsWorkChain(WorkChain):
 
         return ToContext(workchain_relax=running)
 
+    def inspect_relax(self):
+        """Verify that the PwRelaxWorkChain finished successfully."""
+        if not self.ctx.workchain_relax.is_finished_ok:
+            self.report('PwRelaxWorkChain failed with exit status {}'.format(self.ctx.workchain_relax.finish_status))
+            return self.ERROR_SUB_PROCESS_RELAX_FAILED
+        else:
+            self.ctx.current_structure = self.ctx.workchain_relax.out.output_structure
+
     def run_seekpath(self):
         """
         Run the relaxed structure through SeeKPath to get the new primitive structure, just in case
         the symmetry of the cell changed in the cell relaxation step
         """
-        if 'workchain_relax' not in self.ctx:
-            structure = self.inputs.structure
+        if 'kpoints_distance' in self.inputs.bands:
+            seekpath_parameters = ParameterData(dict={
+                'reference_distance': self.inputs.bands.kpoints_distance.value
+            })
         else:
-            try:
-                structure = self.ctx.workchain_relax.out.output_structure
-            except:
-                self.report('the relax workchain did not output an output_structure node')
-                return self.ERROR_CALCULATION_RELAX_FAILED
+            seekpath_parameters = ParameterData(dict={})
 
-        seekpath_parameters = ParameterData(dict={
-            'reference_distance': self.inputs.kpoints_distance_bands.value
-        })
-
-        result = seekpath_structure_analysis(structure, seekpath_parameters)
-        self.ctx.structure = result['primitive_structure']
-
-        # Construct a new kpoint mesh for the scf calculation on the current primitive structure
-        kpoints_mesh = KpointsData()
-        kpoints_mesh.set_cell_from_structure(self.ctx.structure)
-        kpoints_mesh.set_kpoints_mesh_from_density(self.inputs.kpoints_distance.value)
-
-        # Save the kpoints objects for the scf and bands calculation in the context
-        self.ctx.kpoints_mesh = kpoints_mesh
+        result = seekpath_structure_analysis(self.ctx.current_structure, seekpath_parameters)
+        self.ctx.current_structure = result['primitive_structure']
         self.ctx.kpoints_path = result['explicit_kpoints']
 
         self.out('primitive_structure', result['primitive_structure'])
         self.out('seekpath_parameters', result['parameters'])
 
     def run_scf(self):
-        """
-        Run the PwBaseWorkChain in scf mode on the primitive cell of (optionally relaxed) input structure
-        """
-        inputs = self.ctx.inputs
-        calculation_mode = 'scf'
-
-        # Set the correct pw.x input parameters
-        inputs.parameters['CONTROL']['calculation'] = calculation_mode
-        inputs.kpoints = self.ctx.kpoints_mesh
-        inputs.structure = self.ctx.structure
+        """Run the PwBaseWorkChain in scf mode on the primitive cell of (optionally relaxed) input structure"""
+        inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='scf'))
+        inputs.structure = self.ctx.current_structure
+        inputs.parameters = inputs.parameters.get_dict()
+        inputs.parameters.setdefault('CONTROL', {})
+        inputs.parameters['CONTROL']['calculation'] = 'scf'
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
 
-        self.report('launching PwBaseWorkChain<{}> in {} mode'.format(running.pk, calculation_mode))
+        self.report('launching PwBaseWorkChain<{}> in {} mode'.format(running.pk, 'scf'))
 
         return ToContext(workchain_scf=running)
 
-    def run_bands(self):
-        """
-        Run the PwBaseWorkChain to run a bands PwCalculation along the path of high-symmetry determined by Seekpath
-        """
-        try:
-            remote_folder = self.ctx.workchain_scf.out.remote_folder
-        except AttributeError as exception:
-            self.report('the scf workchain did not output a remote_folder node')
-            return self.ERROR_CALCULATION_SCF_FAILED
-
-        inputs = self.ctx.inputs
-        restart_mode = 'restart'
-        calculation_mode = 'bands'
-
-        # Set the correct pw.x input parameters
-        inputs.parameters['CONTROL']['restart_mode'] = restart_mode
-        inputs.parameters['CONTROL']['calculation'] = calculation_mode
-
-        if 'kpoints' in self.inputs:
-            inputs.kpoints = self.inputs.kpoints
+    def inspect_scf(self):
+        """Verify that the PwBaseWorkChain for the scf run finished successfully."""
+        if not self.ctx.workchain_scf.is_finished_ok:
+            self.report('scf PwBaseWorkChain failed with exit status {}'.format(self.ctx.workchain_scf.finish_status))
+            return self.ERROR_SUB_PROCESS_SCF_FAILED
         else:
+            self.ctx.current_folder = self.ctx.workchain_scf.out.remote_folder
+
+    def run_bands(self):
+        """Run the PwBaseWorkChain in bands mode along the path of high-symmetry determined by Seekpath."""
+        inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='bands'))
+        inputs.structure = self.ctx.current_structure
+        inputs.parameters = inputs.parameters.get_dict()
+        inputs.parameters.setdefault('CONTROL', {})
+        inputs.parameters['CONTROL']['restart_mode'] = 'restart'
+        inputs.parameters['CONTROL']['calculation'] = 'bands'
+
+        if 'kpoints' not in self.inputs.bands:
             inputs.kpoints = self.ctx.kpoints_path
 
-        inputs.structure = self.ctx.structure
-        inputs.parent_folder = remote_folder
+        inputs.structure = self.ctx.current_structure
+        inputs.parent_folder = self.ctx.current_folder
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
 
-        self.report('launching PwBaseWorkChain<{}> in {} mode'.format(running.pk, calculation_mode))
+        self.report('launching PwBaseWorkChain<{}> in {} mode'.format(running.pk, 'bands'))
 
         return ToContext(workchain_bands=running)
+
+    def inspect_bands(self):
+        """Verify that the PwBaseWorkChain for the bands run finished successfully."""
+        if not self.ctx.workchain_bands.is_finished_ok:
+            self.report('bands PwBaseWorkChain failed with exit status {}'.format(self.ctx.workchain_scf.finish_status))
+            return self.ERROR_SUB_PROCESS_BANDS_FAILED
 
     def results(self):
         """
@@ -253,7 +182,7 @@ class PwBandsWorkChain(WorkChain):
                 try:
                     called_descendant.out.remote_folder._clean()
                     cleaned_calcs.append(called_descendant.pk)
-                except (IOError, OSError, KeyError) as exception:
+                except (IOError, OSError, KeyError):
                     pass
 
         if cleaned_calcs:

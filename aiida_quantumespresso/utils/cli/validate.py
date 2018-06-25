@@ -15,6 +15,7 @@ def validate_hubbard_parameters(structure, parameters, hubbard_u=None, hubbard_v
     :param hubbard_v: the Hubbard V inputs values from the cli
     :param hubbard_file_pk: a pk referencing a SinglefileData with Hubbard parameters
     :returns: the loaded SinglefileData node with Hubbard parameters if valid pk was defined, None otherwise
+    :raises ValueError: if the input is invalid
     """
     from aiida.orm import load_node
     from aiida.orm.data.singlefile import SinglefileData
@@ -54,7 +55,7 @@ def validate_hubbard_parameters(structure, parameters, hubbard_u=None, hubbard_v
         hubbard_kinds = [value[0] for value in hubbard_u]
 
         if not set(hubbard_kinds).issubset(structure_kinds):
-            raise ValueError('the kinds in the specified starting Hubbard values is not a strict subset of the kinds in the structure')
+            raise ValueError('kinds in the specified Hubbard U is not a strict subset of the structure kinds')
 
         parameters['SYSTEM']['lda_plus_u'] = True
         parameters['SYSTEM']['lda_plus_u_kind'] = 0
@@ -64,3 +65,61 @@ def validate_hubbard_parameters(structure, parameters, hubbard_u=None, hubbard_v
             parameters['SYSTEM']['hubbard_u'][kind] = value
 
     return hubbard_file
+
+
+def validate_starting_magnetization(structure, parameters, starting_magnetization=None):
+    """
+    Validate starting magnetization parameters and update the parameters input node accordingly.
+
+    :param structure: the StructureData node that will be used in the inputs
+    :param parameters: the ParameterData node that will be used in the inputs
+    :param starting_magnetization: the starting magnetization inputs values from the cli
+    :raises ValueError: if the input is invalid
+    """
+    if not starting_magnetization:
+        return
+
+    structure_kinds = structure.get_kind_names()
+    magnetization_kinds = [kind for kind, magnetization in starting_magnetization]
+
+    if not set(magnetization_kinds).issubset(structure_kinds):
+        raise ValueError('kinds in the specified starting magnetization is not a strict subset of the structure kinds')
+
+    parameters['SYSTEM']['nspin'] = 2
+    parameters['SYSTEM']['starting_magnetization'] = {}
+
+    for kind, magnetization in starting_magnetization:
+        parameters['SYSTEM']['starting_magnetization'][kind] = magnetization
+
+
+def validate_smearing(parameters, smearing=None):
+    """
+    Validate smearing parameters and update the parameters input node accordingly.
+
+    :param parameters: the ParameterData node that will be used in the inputs
+    :param smearing: a tuple of a string and float corresponding to type of smearing and the degauss value
+    :raises ValueError: if the input is invalid
+    """
+    if not any(smearing):
+        return
+
+    valid_smearing_types = {
+        'gaussian': ['gaussian', 'gauss'],
+        'methfessel-paxton': ['methfessel-paxton', 'm-p', 'mp'],
+        'marzari-vanderbilt': ['marzari-vanderbilt', 'cold', 'm-v', 'mv'],
+        'fermi-dirac': ['fermi-dirac', 'f-d', 'fd'],
+    }
+
+    for smearing_type, options in valid_smearing_types.items():
+        if smearing[0] in options:
+            break
+    else:
+        raise ValueError('the smearing type "{}" is invalid, choose from {}'
+            .format(smearing[0], ', '.join(valid_smearing_types.keys())))
+
+    if not isinstance(smearing[1], float):
+        raise ValueError('the smearing value should be a float')
+
+    parameters['SYSTEM']['occupations'] = 'smearing'
+    parameters['SYSTEM']['smearing'] = smearing_type
+    parameters['SYSTEM']['degauss'] = smearing[1]
