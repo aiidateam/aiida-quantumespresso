@@ -1,0 +1,1148 @@
+{
+    "links_uuid": [
+        {
+            "input": "4d9c61c2-3f38-4b5e-bf3f-2aa9d85fdbfe",
+            "label": "remote_folder",
+            "type": "createlink",
+            "output": "17b6e9d4-069f-45af-9dce-2e0518617505"
+        },
+        {
+            "input": "4d9c61c2-3f38-4b5e-bf3f-2aa9d85fdbfe",
+            "label": "retrieved",
+            "type": "createlink",
+            "output": "116a5a1c-753f-405d-81de-b788b1e3d00c"
+        },
+        {
+            "input": "4d9c61c2-3f38-4b5e-bf3f-2aa9d85fdbfe",
+            "label": "output_band",
+            "type": "createlink",
+            "output": "9cea0b50-e461-4a28-95b9-6617a6283d83"
+        },
+        {
+            "input": "4d9c61c2-3f38-4b5e-bf3f-2aa9d85fdbfe",
+            "label": "output_parameters",
+            "type": "createlink",
+            "output": "d2b87360-563d-4866-bf16-dee9a92694bb"
+        },
+        {
+            "input": "4d9c61c2-3f38-4b5e-bf3f-2aa9d85fdbfe",
+            "label": "output_array",
+            "type": "createlink",
+            "output": "ce9b97a4-6424-4bdf-a8bb-c91a8b465b25"
+        },
+        {
+            "input": "f1ea706b-c938-47ca-ab12-2993f01d3f2b",
+            "label": "structure",
+            "type": "inputlink",
+            "output": "4d9c61c2-3f38-4b5e-bf3f-2aa9d85fdbfe"
+        },
+        {
+            "input": "185c5b8d-0608-44e4-a7b5-137d85baee0f",
+            "label": "kpoints",
+            "type": "inputlink",
+            "output": "4d9c61c2-3f38-4b5e-bf3f-2aa9d85fdbfe"
+        },
+        {
+            "input": "c8c37744-a6b0-450b-9349-d08a8576a952",
+            "label": "settings",
+            "type": "inputlink",
+            "output": "4d9c61c2-3f38-4b5e-bf3f-2aa9d85fdbfe"
+        },
+        {
+            "input": "f1f51c7f-0f4e-403a-b66a-60c882740325",
+            "label": "parameters",
+            "type": "inputlink",
+            "output": "4d9c61c2-3f38-4b5e-bf3f-2aa9d85fdbfe"
+        },
+        {
+            "input": "9ca79aa4-596e-4bbd-9cc7-3f8a75ba24ab",
+            "label": "code",
+            "type": "inputlink",
+            "output": "4d9c61c2-3f38-4b5e-bf3f-2aa9d85fdbfe"
+        }
+    ],
+    "export_data": {
+        "Node": {
+            "4": {
+                "description": "Quantum ESPRESSO v6.1 pw.x",
+                "mtime": "2018-04-06T07:59:19.832057",
+                "uuid": "9ca79aa4-596e-4bbd-9cc7-3f8a75ba24ab",
+                "label": "pw-v6.1",
+                "user": 2,
+                "dbcomputer": 1,
+                "nodeversion": 2,
+                "type": "code.Code.",
+                "public": false,
+                "ctime": "2018-04-06T07:59:19.786063"
+            },
+            "328": {
+                "description": "",
+                "mtime": "2018-06-25T11:54:49.582403",
+                "uuid": "f1f51c7f-0f4e-403a-b66a-60c882740325",
+                "label": "",
+                "user": 2,
+                "dbcomputer": null,
+                "nodeversion": 1,
+                "type": "data.parameter.ParameterData.",
+                "public": false,
+                "ctime": "2018-06-25T11:54:49.574416"
+            },
+            "329": {
+                "description": "",
+                "mtime": "2018-06-25T11:54:49.591180",
+                "uuid": "c8c37744-a6b0-450b-9349-d08a8576a952",
+                "label": "",
+                "user": 2,
+                "dbcomputer": null,
+                "nodeversion": 1,
+                "type": "data.parameter.ParameterData.",
+                "public": false,
+                "ctime": "2018-06-25T11:54:49.574726"
+            },
+            "330": {
+                "description": "",
+                "mtime": "2018-06-25T11:54:49.595516",
+                "uuid": "185c5b8d-0608-44e4-a7b5-137d85baee0f",
+                "label": "",
+                "user": 2,
+                "dbcomputer": null,
+                "nodeversion": 1,
+                "type": "data.array.kpoints.KpointsData.",
+                "public": false,
+                "ctime": "2018-06-25T11:54:49.218285"
+            },
+            "331": {
+                "description": "",
+                "mtime": "2018-06-25T11:55:09.880313",
+                "uuid": "4d9c61c2-3f38-4b5e-bf3f-2aa9d85fdbfe",
+                "label": "",
+                "user": 2,
+                "dbcomputer": 1,
+                "nodeversion": 19,
+                "type": "calculation.job.quantumespresso.pw.PwCalculation.",
+                "public": false,
+                "ctime": "2018-06-25T11:54:49.575973"
+            },
+            "140": {
+                "description": "",
+                "mtime": "2018-04-06T07:59:39.880910",
+                "uuid": "f1ea706b-c938-47ca-ab12-2993f01d3f2b",
+                "label": "",
+                "user": 2,
+                "dbcomputer": null,
+                "nodeversion": 1,
+                "type": "data.structure.StructureData.",
+                "public": false,
+                "ctime": "2018-04-06T07:59:39.769660"
+            },
+            "333": {
+                "description": "",
+                "mtime": "2018-06-25T11:55:07.538085",
+                "uuid": "116a5a1c-753f-405d-81de-b788b1e3d00c",
+                "label": "",
+                "user": 2,
+                "dbcomputer": null,
+                "nodeversion": 1,
+                "type": "data.folder.FolderData.",
+                "public": false,
+                "ctime": "2018-06-25T11:55:07.527332"
+            },
+            "334": {
+                "description": "",
+                "mtime": "2018-06-25T11:55:07.782839",
+                "uuid": "9cea0b50-e461-4a28-95b9-6617a6283d83",
+                "label": "",
+                "user": 2,
+                "dbcomputer": null,
+                "nodeversion": 1,
+                "type": "data.array.bands.BandsData.",
+                "public": false,
+                "ctime": "2018-06-25T11:55:07.768948"
+            },
+            "335": {
+                "description": "",
+                "mtime": "2018-06-25T11:55:07.814658",
+                "uuid": "d2b87360-563d-4866-bf16-dee9a92694bb",
+                "label": "",
+                "user": 2,
+                "dbcomputer": null,
+                "nodeversion": 1,
+                "type": "data.parameter.ParameterData.",
+                "public": false,
+                "ctime": "2018-06-25T11:55:07.775055"
+            },
+            "336": {
+                "description": "",
+                "mtime": "2018-06-25T11:55:07.885187",
+                "uuid": "ce9b97a4-6424-4bdf-a8bb-c91a8b465b25",
+                "label": "",
+                "user": 2,
+                "dbcomputer": null,
+                "nodeversion": 1,
+                "type": "data.array.ArrayData.",
+                "public": false,
+                "ctime": "2018-06-25T11:55:07.778359"
+            },
+            "332": {
+                "description": "",
+                "mtime": "2018-06-25T11:54:57.661655",
+                "uuid": "17b6e9d4-069f-45af-9dce-2e0518617505",
+                "label": "",
+                "user": 2,
+                "dbcomputer": 1,
+                "nodeversion": 1,
+                "type": "data.remote.RemoteData.",
+                "public": false,
+                "ctime": "2018-06-25T11:54:57.655903"
+            }
+        },
+        "Computer": {
+            "1": {
+                "name": "localhost",
+                "transport_params": {},
+                "description": "localhost",
+                "hostname": "localhost",
+                "enabled": true,
+                "uuid": "f13667ba-af72-427c-af26-eed4981fb681",
+                "transport_type": "local",
+                "scheduler_type": "direct",
+                "metadata": {
+                    "workdir": "/scratch/",
+                    "prepend_text": "",
+                    "shebang": "#!/bin/bash",
+                    "default_mpiprocs_per_machine": 1,
+                    "append_text": "",
+                    "mpirun_command": []
+                }
+            }
+        },
+        "User": {
+            "2": {
+                "first_name": "Sebastiaan",
+                "last_name": "Huber",
+                "email": "sebastiaan.huber@epfl.ch",
+                "institution": "EPFL"
+            }
+        }
+    },
+    "groups_uuid": {},
+    "node_attributes_conversion": {
+        "140": {
+            "kinds": [
+                {
+                    "symbols": [
+                        null
+                    ],
+                    "weights": [
+                        null
+                    ],
+                    "mass": null,
+                    "name": null
+                }
+            ],
+            "pbc3": null,
+            "pbc2": null,
+            "pbc1": null,
+            "sites": [
+                {
+                    "position": [
+                        null,
+                        null,
+                        null
+                    ],
+                    "kind_name": null
+                },
+                {
+                    "position": [
+                        null,
+                        null,
+                        null
+                    ],
+                    "kind_name": null
+                }
+            ],
+            "cell": [
+                [
+                    null,
+                    null,
+                    null
+                ],
+                [
+                    null,
+                    null,
+                    null
+                ],
+                [
+                    null,
+                    null,
+                    null
+                ]
+            ]
+        },
+        "335": {
+            "xml_warnings": [],
+            "parser_version": null,
+            "non_colinear_calculation": null,
+            "symmetries": [
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                },
+                {
+                    "symmetry_number": null,
+                    "t_rev": null
+                }
+            ],
+            "format_version": null,
+            "number_of_atoms": null,
+            "q_real_space": null,
+            "energy_hartree_units": null,
+            "energy": null,
+            "rho_cutoff_units": null,
+            "monkhorst_pack_offset": [
+                null,
+                null,
+                null
+            ],
+            "inversion_symmetry": null,
+            "rho_cutoff": null,
+            "magnetization_angle2": [
+                null
+            ],
+            "magnetization_angle1": [
+                null
+            ],
+            "number_of_atomic_wfc": null,
+            "energy_ewald_units": null,
+            "number_of_bands": null,
+            "fixed_occupations": null,
+            "monkhorst_pack_grid": [
+                null,
+                null,
+                null
+            ],
+            "number_of_symmetries": null,
+            "spin_orbit_domag": null,
+            "wfc_cutoff_units": null,
+            "fft_grid": [
+                null,
+                null,
+                null
+            ],
+            "linknames_band": [
+                null
+            ],
+            "lsda": null,
+            "wall_time": null,
+            "pp_check_flag": null,
+            "energy_ewald": null,
+            "no_time_rev_operations": null,
+            "energy_accuracy_units": null,
+            "energy_xc": null,
+            "number_of_spin_components": null,
+            "number_of_species": null,
+            "number_of_bravais_symmetries": null,
+            "parser_info": null,
+            "k_points_units": null,
+            "smooth_fft_grid": [
+                null,
+                null,
+                null
+            ],
+            "beta_real_space": null,
+            "constraint_mag": null,
+            "warnings": [],
+            "do_not_use_time_reversal": null,
+            "energy_threshold": null,
+            "energy_hartree": null,
+            "init_wall_time_seconds": null,
+            "lda_plus_u_calculation": null,
+            "scf_iterations": null,
+            "has_dipole_correction": null,
+            "charge_density": null,
+            "dft_exchange_correlation": null,
+            "parser_warnings": [],
+            "fermi_energy": null,
+            "starting_magnetization": [
+                null
+            ],
+            "symmetries_units": null,
+            "volume": null,
+            "energy_xc_units": null,
+            "spin_orbit_calculation": null,
+            "creator_name": null,
+            "energy_one_electron_units": null,
+            "wfc_cutoff": null,
+            "tetrahedron_method": null,
+            "time_reversal_flag": null,
+            "total_number_of_scf_iterations": null,
+            "energy_one_electron": null,
+            "format_name": null,
+            "number_of_k_points": null,
+            "smearing_method": null,
+            "energy_units": null,
+            "has_electric_field": null,
+            "fermi_energy_units": null,
+            "energy_accuracy": null,
+            "lkpoint_dir": null,
+            "number_of_electrons": null,
+            "wall_time_seconds": null,
+            "creator_version": null
+        },
+        "334": {
+            "array|kpoints": [
+                null,
+                null
+            ],
+            "array|weights": [
+                null
+            ],
+            "pbc3": null,
+            "array|bands": [
+                null,
+                null
+            ],
+            "pbc1": null,
+            "labels": [],
+            "label_numbers": [],
+            "cell": [
+                [
+                    null,
+                    null,
+                    null
+                ],
+                [
+                    null,
+                    null,
+                    null
+                ],
+                [
+                    null,
+                    null,
+                    null
+                ]
+            ],
+            "array|occupations": [
+                null,
+                null
+            ],
+            "pbc2": null,
+            "units": null
+        },
+        "336": {
+            "array|atomic_species_name": [
+                null
+            ]
+        },
+        "331": {
+            "_finished": null,
+            "retrieve_list": [
+                null,
+                null,
+                null,
+                null
+            ],
+            "last_jobinfo": null,
+            "linkname_retrieved": null,
+            "parser": null,
+            "max_wallclock_seconds": null,
+            "jobresource_params": {
+                "num_machines": null,
+                "default_mpiprocs_per_machine": null
+            },
+            "remote_workdir": null,
+            "state": null,
+            "retrieve_temporary_list": [
+                [
+                    null,
+                    null,
+                    null
+                ]
+            ],
+            "scheduler_state": null,
+            "_sealed": null,
+            "retrieve_singlefile_list": [],
+            "scheduler_lastchecktime": "date",
+            "job_id": null
+        },
+        "330": {
+            "mesh": [
+                null,
+                null,
+                null
+            ],
+            "offset": [
+                null,
+                null,
+                null
+            ]
+        },
+        "332": {
+            "remote_path": null
+        },
+        "333": {},
+        "4": {
+            "is_local": null,
+            "append_text": null,
+            "remote_exec_path": null,
+            "prepend_text": null,
+            "input_plugin": null
+        },
+        "328": {
+            "CONTROL": {
+                "calculation": null
+            },
+            "SYSTEM": {
+                "ecutwfc": null,
+                "ecutrho": null
+            }
+        },
+        "329": {}
+    },
+    "node_attributes": {
+        "140": {
+            "kinds": [
+                {
+                    "symbols": [
+                        "Si"
+                    ],
+                    "weights": [
+                        1.0
+                    ],
+                    "mass": 28.0855,
+                    "name": "Si"
+                }
+            ],
+            "pbc3": true,
+            "pbc2": true,
+            "pbc1": true,
+            "sites": [
+                {
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "kind_name": "Si"
+                },
+                {
+                    "position": [
+                        1.3575,
+                        1.3575,
+                        1.3575
+                    ],
+                    "kind_name": "Si"
+                }
+            ],
+            "cell": [
+                [
+                    2.715,
+                    2.715,
+                    0.0
+                ],
+                [
+                    2.715,
+                    0.0,
+                    2.715
+                ],
+                [
+                    0.0,
+                    2.715,
+                    2.715
+                ]
+            ]
+        },
+        "335": {
+            "xml_warnings": [],
+            "parser_version": "2.0.1",
+            "non_colinear_calculation": false,
+            "symmetries": [
+                {
+                    "symmetry_number": 0,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 1,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 2,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 3,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 4,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 5,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 6,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 7,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 8,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 9,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 10,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 11,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 12,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 13,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 14,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 15,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 16,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 17,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 18,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 19,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 20,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 21,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 22,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 23,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 32,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 33,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 34,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 35,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 36,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 37,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 38,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 39,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 40,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 41,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 42,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 43,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 44,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 45,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 46,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 47,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 48,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 49,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 50,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 51,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 52,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 53,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 54,
+                    "t_rev": "0"
+                },
+                {
+                    "symmetry_number": 55,
+                    "t_rev": "0"
+                }
+            ],
+            "format_version": "1.4.0",
+            "number_of_atoms": 2,
+            "q_real_space": false,
+            "energy_hartree_units": "eV",
+            "energy": -308.191875414092,
+            "rho_cutoff_units": "eV",
+            "monkhorst_pack_offset": [
+                0,
+                0,
+                0
+            ],
+            "inversion_symmetry": true,
+            "rho_cutoff": 3265.366014072,
+            "magnetization_angle2": [
+                0.0
+            ],
+            "magnetization_angle1": [
+                0.0
+            ],
+            "number_of_atomic_wfc": 8,
+            "energy_ewald_units": "eV",
+            "number_of_bands": 4,
+            "fixed_occupations": false,
+            "monkhorst_pack_grid": [
+                2,
+                2,
+                2
+            ],
+            "number_of_symmetries": 48,
+            "spin_orbit_domag": false,
+            "wfc_cutoff_units": "eV",
+            "fft_grid": [
+                36,
+                36,
+                36
+            ],
+            "linknames_band": [
+                "output_band"
+            ],
+            "lsda": false,
+            "wall_time": "         2.01s ",
+            "pp_check_flag": true,
+            "energy_ewald": -228.561248748643,
+            "no_time_rev_operations": false,
+            "energy_accuracy_units": "eV",
+            "energy_xc": -168.631790234362,
+            "number_of_spin_components": 1,
+            "number_of_species": 1,
+            "number_of_bravais_symmetries": 48,
+            "parser_info": "AiiDA QE Parser v2.0.1",
+            "k_points_units": "2 pi / Angstrom",
+            "smooth_fft_grid": [
+                25,
+                25,
+                25
+            ],
+            "beta_real_space": false,
+            "constraint_mag": 0,
+            "warnings": [],
+            "do_not_use_time_reversal": false,
+            "energy_threshold": 3.84e-06,
+            "energy_hartree": 17.2680757695669,
+            "init_wall_time_seconds": 0.9,
+            "lda_plus_u_calculation": false,
+            "scf_iterations": 5,
+            "has_dipole_correction": false,
+            "charge_density": "./charge-density.dat",
+            "dft_exchange_correlation": "PBE",
+            "parser_warnings": [],
+            "fermi_energy": 6.5091589497145,
+            "starting_magnetization": [
+                0.0
+            ],
+            "symmetries_units": "crystal",
+            "volume": 40.02575175,
+            "energy_xc_units": "eV",
+            "spin_orbit_calculation": false,
+            "creator_name": "pwscf",
+            "energy_one_electron_units": "eV",
+            "wfc_cutoff": 408.170751759,
+            "tetrahedron_method": false,
+            "time_reversal_flag": true,
+            "total_number_of_scf_iterations": 5,
+            "energy_one_electron": 71.7330877993463,
+            "format_name": "qexml",
+            "number_of_k_points": 3,
+            "smearing_method": false,
+            "energy_units": "eV",
+            "has_electric_field": false,
+            "fermi_energy_units": "eV",
+            "energy_accuracy": 7.347073531662e-06,
+            "lkpoint_dir": true,
+            "number_of_electrons": 8.0,
+            "wall_time_seconds": 2.01,
+            "creator_version": "6.1"
+        },
+        "334": {
+            "array|kpoints": [
+                3,
+                3
+            ],
+            "array|weights": [
+                3
+            ],
+            "pbc3": true,
+            "array|bands": [
+                3,
+                4
+            ],
+            "pbc1": true,
+            "labels": [],
+            "label_numbers": [],
+            "cell": [
+                [
+                    2.715,
+                    2.715,
+                    0.0
+                ],
+                [
+                    2.715,
+                    0.0,
+                    2.715
+                ],
+                [
+                    0.0,
+                    2.715,
+                    2.715
+                ]
+            ],
+            "array|occupations": [
+                3,
+                4
+            ],
+            "pbc2": true,
+            "units": "eV"
+        },
+        "336": {
+            "array|atomic_species_name": [
+                2
+            ]
+        },
+        "331": {
+            "_finished": true,
+            "retrieve_list": [
+                "aiida.out",
+                "./out/aiida.save/data-file.xml",
+                "_scheduler-stdout.txt",
+                "_scheduler-stderr.txt"
+            ],
+            "last_jobinfo": "{\"job_state\": \"DONE\", \"detailedJobinfo\": \"AiiDA MESSAGE: This scheduler does not implement the routine get_detailed_jobinfo to retrieve the information on a job after it has finished.\", \"job_id\": \"542\"}",
+            "linkname_retrieved": "retrieved",
+            "parser": "quantumespresso.pw",
+            "max_wallclock_seconds": 1800,
+            "jobresource_params": {
+                "num_machines": 1,
+                "default_mpiprocs_per_machine": 1
+            },
+            "remote_workdir": "/scratch/4d/9c/61c2-3f38-4b5e-bf3f-2aa9d85fdbfe",
+            "state": "FINISHED",
+            "retrieve_temporary_list": [
+                [
+                    "./out/aiida.save/K*[0-9]/eigenval*.xml",
+                    ".",
+                    2
+                ]
+            ],
+            "scheduler_state": "DONE",
+            "_sealed": true,
+            "retrieve_singlefile_list": [],
+            "scheduler_lastchecktime": "2018-06-25T11:55:04.496140",
+            "job_id": "542"
+        },
+        "330": {
+            "mesh": [
+                2,
+                2,
+                2
+            ],
+            "offset": [
+                0.0,
+                0.0,
+                0.0
+            ]
+        },
+        "40": {
+            "element": "Si",
+            "md5": "d928fff27e2cf23ab01de9cd48acd62a",
+            "filename": "Si.pbe-n-rrkjus_psl.1.0.0.UPF"
+        },
+        "332": {
+            "remote_path": "/scratch/4d/9c/61c2-3f38-4b5e-bf3f-2aa9d85fdbfe"
+        },
+        "333": {},
+        "4": {
+            "is_local": false,
+            "append_text": "",
+            "remote_exec_path": "/home/sphuber/code/qe/qe-6.1/bin/pw.x",
+            "prepend_text": "",
+            "input_plugin": "quantumespresso.pw"
+        },
+        "328": {
+            "CONTROL": {
+                "calculation": "scf"
+            },
+            "SYSTEM": {
+                "ecutwfc": 30.0,
+                "ecutrho": 240.0
+            }
+        },
+        "329": {}
+    }
+}
