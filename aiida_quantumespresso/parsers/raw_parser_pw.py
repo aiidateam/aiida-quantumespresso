@@ -6,20 +6,16 @@ The functions mostly work without aiida specific functionalities.
 The parsing will try to convert whatever it can in some dictionary, which
 by operative decision doesn't have much structure encoded, [the values are simple ]
 """
-import xml.dom.minidom
 import os
-import string
 import re
-from aiida_quantumespresso.parsers.constants import ry_to_ev,hartree_to_ev,bohr_to_ang,ry_si,bohr_si
+import string
+import xml.dom.minidom
+
+import aiida_quantumespresso
+from aiida_quantumespresso.parsers.constants import ry_to_ev, hartree_to_ev, bohr_to_ang, ry_si, bohr_si
 from aiida_quantumespresso.parsers import QEOutputParsingError
 
-# TODO: it could be possible to use info of the input file to parse output.
-# but atm the output has all the informations needed for the parsing.
-
-# parameter that will be used later for comparisons
-
 lattice_tolerance = 1.e-5
-
 default_energy_units = 'eV'
 units_suffix = '_units'
 k_points_default_units = '2 pi / Angstrom'
@@ -31,7 +27,8 @@ default_force_units = 'ev / angstrom'
 default_stress_units = 'GPascal'
 default_polarization_units = 'C / m^2'
 
-def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_with_bands=None):
+
+def parse_raw_output(out_file, input_dict, parser_opts={}, xml_file=None, dir_with_bands=None):
     """
     Parses the output of a calculation
     Receives in input the paths to the output file and the xml file.
@@ -42,7 +39,7 @@ def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_
 
     :param out_file: path to pw std output
     :param input_dict: dictionary with the input parameters
-    :param parser_opts: not used
+    :return parsed_data: dictionary with key values, referring to quantities at the last scf step
     :param dir_with_bands: path to directory with all k-points (Kxxxxx) folders
     :param xml_file: path to QE data-file.xml
 
@@ -57,14 +54,13 @@ def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_
     import copy
     # TODO: a lot of ifs could be cleaned out
 
-    # TODO: input_dict should be used as well
-
     job_successful = True
 
-    parser_version = '0.1'
+    parser_version = aiida_quantumespresso.__version__
     parser_info = {}
     parser_info['parser_warnings'] = []
     parser_info['parser_info'] = 'AiiDA QE Parser v{}'.format(parser_version)
+    parser_info['parser_version'] = parser_version
 
     # if xml_file is not given in input, skip its parsing
     if xml_file is not None:
@@ -1089,14 +1085,11 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
     :param structure_data: dictionary, coming from the xml, with info on the structure
     :param input_dict: dictionary with the input parameters
     :param parser_opts: the parser options from the settings input parameter node
-
-    :return parsed_data: dictionary with key values, referring to quantities
-                         at the last scf step.
+    :return parsed_data: dictionary with key values, referring to quantities at the last scf step
     :return trajectory_data: key,values referring to intermediate scf steps,
-                             as in the case of vc-relax. Empty dictionary if no
-                             value is present.
+        as in the case of vc-relax. Empty dictionary if no value is present.
     :return critical_messages: a list with critical messages. If any is found in
-                               parsed_data['warnings'], the calculation is FAILED!
+        parsed_data['warnings'], the calculation is FAILED!
     """
     # Separate the input string into separate lines
     data_lines = data.split('\n')
