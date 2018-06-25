@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 from collections import Mapping
 from aiida.common.extendeddicts import AttributeDict
-from aiida.orm.calculation.job import JobCalculation
 from aiida.orm.data.parameter import ParameterData
-from aiida.work.processes import Process
 
 
 def update_mapping(original, source):
@@ -27,9 +25,9 @@ def update_mapping(original, source):
 
     for key, value in source.iteritems():
         if (
-            key in original 
-            and (isinstance(value, Mapping) or isinstance(value, ParameterData))
-            and (isinstance(original[key], Mapping) or isinstance(original[key], ParameterData))
+            key in original and
+            (isinstance(value, Mapping) or isinstance(value, ParameterData)) and
+            (isinstance(original[key], Mapping) or isinstance(original[key], ParameterData))
         ):
             original[key] = update_mapping(original[key], value)
         else:

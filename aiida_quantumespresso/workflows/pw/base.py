@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import Code
-from aiida.orm.data.base import Str
+from aiida.orm.data.base import Bool, Float, Str
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
@@ -22,15 +22,15 @@ from aiida_quantumespresso.utils.resources import get_default_options
 from aiida_quantumespresso.utils.resources import get_pw_parallelization_parameters
 from aiida_quantumespresso.utils.resources import cmdline_remove_npools
 from aiida_quantumespresso.utils.resources import create_scheduler_resources
+from aiida_quantumespresso.workflows.workfunctions import create_kpoints_from_distance
 
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
 
 
 class PwBaseWorkChain(BaseRestartWorkChain):
-    """
-    Base workchain to launch a Quantum Espresso pw.x calculation
-    """
+    """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts"""
+
     _calculation_class = PwCalculation
     _error_handler_entry_point = 'aiida_quantumespresso.workflow_error_handlers.pw.base'
 
@@ -42,20 +42,23 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         'delta_factor_max_seconds': 0.95,
     })
 
-    ERROR_INVALID_INPUT_PSEUDO_POTENTIALS = 1
-    ERROR_INVALID_INPUT_RESOURCES = 2
-    ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED = 3
-    ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY = 4
-    ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY = 5
-    ERROR_INITIALIZATION_CALCULATION_FAILED = 6
-    ERROR_CALCULATION_INVALID_INPUT_FILE = 7
+    ERROR_INVALID_INPUT_PSEUDO_POTENTIALS = 301
+    ERROR_INVALID_INPUT_RESOURCES = 302
+    ERROR_INVALID_INPUT_KPOINTS = 303
+    ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED = 304
+    ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY = 310
+    ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY = 311
+    ERROR_INITIALIZATION_CALCULATION_FAILED = 401
+    ERROR_CALCULATION_INVALID_INPUT_FILE = 402
 
     @classmethod
     def define(cls, spec):
         super(PwBaseWorkChain, cls).define(spec)
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
-        spec.input('kpoints', valid_type=KpointsData)
+        spec.input('kpoints', valid_type=KpointsData, required=False)
+        spec.input('kpoints_distance', valid_type=Float, required=False)
+        spec.input('kpoints_force_parity', valid_type=Bool, required=False)
         spec.input('parameters', valid_type=ParameterData)
         spec.input_namespace('pseudos', required=False)
         spec.input('pseudo_family', valid_type=Str, required=False)
@@ -94,7 +97,6 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         self.ctx.inputs = AttributeDict({
             'code': self.inputs.code,
             'structure': self.inputs.structure,
-            'kpoints': self.inputs.kpoints,
             'parameters': self.inputs.parameters.get_dict()
         })
 
@@ -125,18 +127,31 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
         # Either automatic_parallelization or options has to be specified
         if not any([key in self.inputs for key in ['options', 'automatic_parallelization']]):
-            self.report('you have to specify either the options or automatic_parallelization input')
+            self.report("you have to specify either the 'options' or 'automatic_parallelization' input")
             return self.ERROR_INVALID_INPUT_RESOURCES
 
         # If automatic parallelization is not enabled, we better make sure that the options satisfy minimum requirements
         if 'automatic_parallelization' not in self.inputs:
-            num_machines = self.ctx.inputs['options'].get('resources', {}).get('num_machines', None)
-            max_wallclock_seconds = self.ctx.inputs['options'].get('max_wallclock_seconds', None)
+            num_machines = self.ctx.inputs.options.get('resources', {}).get('num_machines', None)
+            max_wallclock_seconds = self.ctx.inputs.options.get('max_wallclock_seconds', None)
 
             if num_machines is None or max_wallclock_seconds is None:
-                self.report("no automatic_parallelization requested, but the options do not specify both '{}' and '{}'"
+                self.report("no 'automatic_parallelization' input, but the 'options' do not specify both '{}' and '{}'"
                     .format('num_machines', 'max_wallclock_seconds'))
                 return self.ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED
+
+        # Either a KpointsData with given mesh/path, or a desired distance between k-points should be specified
+        if all([key not in self.inputs for key in ['kpoints', 'kpoints_distance']]):
+            self.report("neither the 'kpoints' nor the 'kpoints_distance' input was specified")
+            return self.ERROR_INVALID_INPUT_KPOINTS
+
+        try:
+            self.ctx.inputs.kpoints = self.inputs.kpoints
+        except AttributeError:
+            structure = self.inputs.structure
+            distance = self.inputs.kpoints_distance
+            force_parity = self.inputs.get('kpoints_force_parity', Bool(False))
+            self.ctx.inputs.kpoints = create_kpoints_from_distance(structure, distance, force_parity)
 
         # Validate the inputs related to pseudopotentials
         structure = self.inputs.structure

@@ -24,16 +24,26 @@ ecutrho = overridable_option(
 )
 
 hubbard_u = overridable_option(
-    '-U', '--hubbard-u', nargs=2, multiple=True, type=click.Tuple([unicode, float]), metavar='KIND MAGNITUDE',
-    help='add a Hubbard U term to a specific kind'
+    '-U', '--hubbard-u', nargs=2, multiple=True, type=click.Tuple([unicode, float]),
+    help='add a Hubbard U term to a specific kind', metavar='<KIND MAGNITUDE>...'
 )
 
 hubbard_v = overridable_option(
-    '-V', '--hubbard-v', nargs=4, multiple=True, type=click.Tuple([int, int, int, float]), metavar='SITE SITE TYPE MAGNITUDE',
-    help='add a Hubbard V interaction between two sites'
+    '-V', '--hubbard-v', nargs=4, multiple=True, type=click.Tuple([int, int, int, float]),
+    help='add a Hubbard V interaction between two sites', metavar='<SITE SITE TYPE MAGNITUDE>...'
+)
+
+hubbard_file = overridable_option(
+    '-H', '--hubbard-file', 'hubbard_file_pk', type=click.INT,
+    help='the pk of a SinglefileData containing Hubbard parameters from a HpCalculation to use as input for Hubbard V'
 )
 
 starting_magnetization = overridable_option(
     '-M', '--starting-magnetization', nargs=2, multiple=True, type=click.Tuple([unicode, float]),
-    help='add a starting magnetization to a specific kind'
+    help='add a starting magnetization to a specific kind', metavar='<KIND MAGNITUDE>...'
+)
+
+smearing = overridable_option(
+    '-S', '--smearing', nargs=2, default=(None, None), type=click.Tuple([unicode, float]),
+    help='add smeared occupations by specifying the type and amount of smearing', metavar='<TYPE DEGAUSS>'
 )
