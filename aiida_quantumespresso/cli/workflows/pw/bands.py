@@ -83,7 +83,6 @@ def launch(
             'code': code,
             'pseudo_family': pseudo_family,
             'kpoints_distance': Float(1.0),
-            'kpoints': kpoints,
             'parameters': parameters,
         }
     }

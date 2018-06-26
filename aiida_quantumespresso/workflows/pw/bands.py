@@ -73,7 +73,7 @@ class PwBandsWorkChain(WorkChain):
     def inspect_relax(self):
         """Verify that the PwRelaxWorkChain finished successfully."""
         if not self.ctx.workchain_relax.is_finished_ok:
-            self.report('PwRelaxWorkChain failed with exit status {}'.format(self.ctx.workchain_relax.finish_status))
+            self.report('PwRelaxWorkChain failed with exit status {}'.format(self.ctx.workchain_relax.exit_status))
             return self.ERROR_SUB_PROCESS_RELAX_FAILED
         else:
             self.ctx.current_structure = self.ctx.workchain_relax.out.output_structure
@@ -115,7 +115,7 @@ class PwBandsWorkChain(WorkChain):
     def inspect_scf(self):
         """Verify that the PwBaseWorkChain for the scf run finished successfully."""
         if not self.ctx.workchain_scf.is_finished_ok:
-            self.report('scf PwBaseWorkChain failed with exit status {}'.format(self.ctx.workchain_scf.finish_status))
+            self.report('scf PwBaseWorkChain failed with exit status {}'.format(self.ctx.workchain_scf.exit_status))
             return self.ERROR_SUB_PROCESS_SCF_FAILED
         else:
             self.ctx.current_folder = self.ctx.workchain_scf.out.remote_folder
@@ -145,7 +145,7 @@ class PwBandsWorkChain(WorkChain):
     def inspect_bands(self):
         """Verify that the PwBaseWorkChain for the bands run finished successfully."""
         if not self.ctx.workchain_bands.is_finished_ok:
-            self.report('bands PwBaseWorkChain failed with exit status {}'.format(self.ctx.workchain_scf.finish_status))
+            self.report('bands PwBaseWorkChain failed with exit status {}'.format(self.ctx.workchain_scf.exit_status))
             return self.ERROR_SUB_PROCESS_BANDS_FAILED
 
     def results(self):
