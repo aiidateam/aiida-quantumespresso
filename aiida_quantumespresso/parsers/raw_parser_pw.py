@@ -11,9 +11,8 @@ import re
 import string
 import xml.dom.minidom
 
-import aiida_quantumespresso
 from aiida_quantumespresso.parsers.constants import ry_to_ev, hartree_to_ev, bohr_to_ang, ry_si, bohr_si
-from aiida_quantumespresso.parsers import QEOutputParsingError
+from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
 
 lattice_tolerance = 1.e-5
 default_energy_units = 'eV'
@@ -55,12 +54,7 @@ def parse_raw_output(out_file, input_dict, parser_opts={}, xml_file=None, dir_wi
     # TODO: a lot of ifs could be cleaned out
 
     job_successful = True
-
-    parser_version = aiida_quantumespresso.__version__
-    parser_info = {}
-    parser_info['parser_warnings'] = []
-    parser_info['parser_info'] = 'AiiDA QE Parser v{}'.format(parser_version)
-    parser_info['parser_version'] = parser_version
+    parser_info = get_parser_info(parser_info_template='aiida-quantumespresso parser pw.x v{}')
 
     # if xml_file is not given in input, skip its parsing
     if xml_file is not None:

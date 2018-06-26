@@ -4,11 +4,12 @@ A collection of function that are used to parse the output of Quantum Espresso P
 The function that needs to be called from outside is parse_raw_ph_output().
 Ideally, the functions should work even without aiida and will return a dictionary with parsed keys.
 """
-from xml.dom.minidom import parseString
-from aiida_quantumespresso.parsers.constants import *
-from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers.raw_parser_pw import parse_xml_child_bool,read_xml_card,convert_qe_time_to_sec
 import numpy
+from xml.dom.minidom import parseString
+from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
+from aiida_quantumespresso.parsers.constants import *
+from aiida_quantumespresso.parsers.raw_parser_pw import parse_xml_child_bool,read_xml_card,convert_qe_time_to_sec
+
 
 def parse_raw_ph_output(out_file, tensor_file=None, dynmat_files=[]):
     """
@@ -35,11 +36,7 @@ def parse_raw_ph_output(out_file, tensor_file=None, dynmat_files=[]):
     """
     
     job_successful = True
-    
-    parser_version = '0.1'
-    parser_info = {}
-    parser_info['parser_warnings'] = []
-    parser_info['parser_info'] = 'AiiDA QE-PH Parser v{}'.format(parser_version)
+    parser_info = get_parser_info(parser_info_template='aiida-quantumespresso parser ph.x v{}')
     
     # load QE out file
     try:
