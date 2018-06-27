@@ -6,7 +6,6 @@ from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.bands import BandsData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.utils import WorkflowFactory
-from aiida.work.run import submit
 from aiida.work.workchain import WorkChain, ToContext
 
 
@@ -18,6 +17,8 @@ class PwBandStructureWorkChain(WorkChain):
     Workchain to relax and compute the band structure for a given input structure
     using Quantum ESPRESSO's pw.x
     """
+
+    ERROR_INVALID_INPUT_UNRECOGNIZED_KIND = 1
 
     @classmethod
     def define(cls, spec):
@@ -185,7 +186,8 @@ class PwBandStructureWorkChain(WorkChain):
                 ecutwfc.append(cutoff)
                 ecutrho.append(cutrho)
             except KeyError as exception:
-                self.abort_nowait('failed to retrieve the cutoff or dual factor for {}'.format(kind))
+                self.report('failed to retrieve the cutoff or dual factor for {}'.format(kind))
+                return self.ERROR_INVALID_INPUT_UNRECOGNIZED_KIND
 
         natoms = len(structure.sites)
         conv_thr = self.ctx.protocol['convergence_threshold'] * natoms
@@ -232,9 +234,9 @@ class PwBandStructureWorkChain(WorkChain):
             'volume_convergence': Float(0.01)
         }
 
-        running = submit(PwBandsWorkChain, **inputs)
+        running = self.submit(PwBandsWorkChain, **inputs)
 
-        self.report('launching PwBandsWorkChain<{}>'.format(running.pid))
+        self.report('launching PwBandsWorkChain<{}>'.format(running.pk))
 
         return ToContext(workchain_bands=running)
 

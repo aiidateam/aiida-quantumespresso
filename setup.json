@@ -78,11 +78,11 @@
         ]
     }, 
     "install_requires": [
-        "aiida_core>=0.12.0[atomic_tools]", 
+        "aiida_core>=1.0.0a1[atomic_tools]", 
         "click"
     ], 
     "license": "MIT License", 
     "name": "aiida_quantumespresso", 
     "url": "https://github.com/aiidateam/aiida-quantumespresso", 
-    "version": "2.0.1"
+    "version": "3.0.0a1"
 }

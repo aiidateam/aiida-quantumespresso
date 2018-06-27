@@ -8,9 +8,7 @@ then
     # Refresh the entrypoint cache through reentry
     reentry scan
 
-    # start the daemon for the correct profile
-    # (actually, for the way it works now, the -p probably does not
-    #  have any effect...)
+    # Start the daemon for the correct profile
     verdi -p $TEST_AIIDA_BACKEND daemon start
     
     # Setup the torquessh computer

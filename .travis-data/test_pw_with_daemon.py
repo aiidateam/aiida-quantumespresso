@@ -138,7 +138,7 @@ while time.time() - start_time < timeout_secs:
     except subprocess.CalledProcessError as e:
         print "Note: the command failed, message: {}".format(e.message)
 
-    if calc.has_finished():
+    if calc.is_terminated:
         print "Calculation terminated its execution"
         exited_with_timeout = False
         break

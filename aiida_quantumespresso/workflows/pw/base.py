@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
+from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import Code
-from aiida.orm.data.base import Bool, Int, Str
-from aiida.orm.data.folder import FolderData
+from aiida.orm.data.base import Bool, Float, Str
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
@@ -10,8 +10,6 @@ from aiida.orm.data.array.bands import BandsData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.data.singlefile import SinglefileData
 from aiida.orm.utils import CalculationFactory
-from aiida.common.extendeddicts import AttributeDict
-from aiida.work.run import submit
 from aiida.work.workchain import ToContext, if_, while_
 from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
 from aiida_quantumespresso.common.workchain.utils import ErrorHandlerReport
@@ -24,16 +22,15 @@ from aiida_quantumespresso.utils.resources import get_default_options
 from aiida_quantumespresso.utils.resources import get_pw_parallelization_parameters
 from aiida_quantumespresso.utils.resources import cmdline_remove_npools
 from aiida_quantumespresso.utils.resources import create_scheduler_resources
+from aiida_quantumespresso.workflows.workfunctions import create_kpoints_from_distance
 
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
 
 
 class PwBaseWorkChain(BaseRestartWorkChain):
-    """
-    Base workchain to launch a Quantum Espresso pw.x calculation
-    """
-    _verbose = True
+    """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts"""
+
     _calculation_class = PwCalculation
     _error_handler_entry_point = 'aiida_quantumespresso.workflow_error_handlers.pw.base'
 
@@ -50,9 +47,11 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         super(PwBaseWorkChain, cls).define(spec)
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
-        spec.input('kpoints', valid_type=KpointsData)
+        spec.input('kpoints', valid_type=KpointsData, required=False)
+        spec.input('kpoints_distance', valid_type=Float, required=False)
+        spec.input('kpoints_force_parity', valid_type=Bool, required=False)
         spec.input('parameters', valid_type=ParameterData)
-        spec.input_group('pseudos', required=False)
+        spec.input_namespace('pseudos', required=False)
         spec.input('pseudo_family', valid_type=Str, required=False)
         spec.input('parent_folder', valid_type=RemoteData, required=False)
         spec.input('vdw_table', valid_type=SinglefileData, required=False)
@@ -74,12 +73,27 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             ),
             cls.results,
         )
+        spec.exit_code(301, 'ERROR_INVALID_INPUT_PSEUDO_POTENTIALS',
+            message="the explicitly passed 'pseudos' or 'pseudo_family' input could not be used to get the necessary potentials")
+        spec.exit_code(302, 'ERROR_INVALID_INPUT_KPOINTS',
+            message="neither the 'kpoints' nor the 'kpoints_distance' input was specified")
+        spec.exit_code(303, 'ERROR_INVALID_INPUT_RESOURCES',
+            message="neither the 'options' nor 'automatic_parallelization' input was specified")
+        spec.exit_code(304, 'ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED',
+            message="the 'options' do not specify both 'num_machines' and 'max_wallclock_seconds'")
+        spec.exit_code(310, 'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY',
+            message="required key for 'automatic_parallelization' was not specified")
+        spec.exit_code(311, 'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY',
+            message="unrecognized keys were specified for 'automatic_parallelization'")
+        spec.exit_code(401, 'ERROR_INITIALIZATION_CALCULATION_FAILED',
+            message='the initialization calculation failed')
+        spec.exit_code(402, 'ERROR_CALCULATION_INVALID_INPUT_FILE',
+            message='the calculation failed because it had an invalid input file')
         spec.output('output_array', valid_type=ArrayData, required=False)
         spec.output('output_band', valid_type=BandsData, required=False)
         spec.output('output_structure', valid_type=StructureData, required=False)
         spec.output('output_parameters', valid_type=ParameterData)
         spec.output('remote_folder', valid_type=RemoteData)
-        spec.output('retrieved', valid_type=FolderData)
 
     def validate_inputs(self):
         """
@@ -90,7 +104,6 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         self.ctx.inputs = AttributeDict({
             'code': self.inputs.code,
             'structure': self.inputs.structure,
-            'kpoints': self.inputs.kpoints,
             'parameters': self.inputs.parameters.get_dict()
         })
 
@@ -104,7 +117,6 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             self.ctx.inputs.parent_folder = self.inputs.parent_folder
             self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'restart'
         else:
-            self.ctx.inputs.parent_folder = None
             self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'from_scratch'
 
         if 'settings' in self.inputs:
@@ -113,26 +125,36 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             self.ctx.inputs.settings = {}
 
         if 'options' in self.inputs:
-            self.ctx.inputs._options = self.inputs.options.get_dict()
+            self.ctx.inputs.options = self.inputs.options.get_dict()
         else:
-            self.ctx.inputs._options = {}
+            self.ctx.inputs.options = {}
 
         if 'vdw_table' in self.inputs:
             self.ctx.inputs.vdw_table = self.inputs.vdw_table
 
         # Either automatic_parallelization or options has to be specified
         if not any([key in self.inputs for key in ['options', 'automatic_parallelization']]):
-            self.abort_nowait('you have to specify either the options or automatic_parallelization input')
-            return
+            return self.exit_codes.ERROR_INVALID_INPUT_RESOURCES
 
         # If automatic parallelization is not enabled, we better make sure that the options satisfy minimum requirements
         if 'automatic_parallelization' not in self.inputs:
-            num_machines = self.ctx.inputs['_options'].get('resources', {}).get('num_machines', None)
-            max_wallclock_seconds = self.ctx.inputs['_options'].get('max_wallclock_seconds', None)
+            num_machines = self.ctx.inputs.options.get('resources', {}).get('num_machines', None)
+            max_wallclock_seconds = self.ctx.inputs.options.get('max_wallclock_seconds', None)
 
             if num_machines is None or max_wallclock_seconds is None:
-                self.abort_nowait("no automatic_parallelization requested, but the options do not specify both '{}' and '{}'"
-                    .format('num_machines', 'max_wallclock_seconds'))
+                return self.exit_codes.ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED
+
+        # Either a KpointsData with given mesh/path, or a desired distance between k-points should be specified
+        if all([key not in self.inputs for key in ['kpoints', 'kpoints_distance']]):
+            return self.exit_codes.ERROR_INVALID_INPUT_KPOINTS
+
+        try:
+            self.ctx.inputs.kpoints = self.inputs.kpoints
+        except AttributeError:
+            structure = self.inputs.structure
+            distance = self.inputs.kpoints_distance
+            force_parity = self.inputs.get('kpoints_force_parity', Bool(False))
+            self.ctx.inputs.kpoints = create_kpoints_from_distance(structure, distance, force_parity)
 
         # Validate the inputs related to pseudopotentials
         structure = self.inputs.structure
@@ -142,7 +164,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         try:
             self.ctx.inputs.pseudo = validate_and_prepare_pseudos_inputs(structure, pseudos, pseudo_family)
         except ValueError as exception:
-            self.abort_nowait('{}'.format(exception))
+            self.report('{}'.format(exception))
+            return self.exit_codes.ERROR_INVALID_INPUT_PSEUDO_POTENTIALS
 
     def should_run_init(self):
         """
@@ -169,13 +192,13 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         remaining_keys = [key for key in parallelization.keys() if key not in expected_keys]
 
         for k, v in [(key, value) for key, value in received_keys if value is None]:
-            self.abort_nowait('required key "{}" in automatic_parallelization input not found'.format(k))
-            return
+            self.report('required key "{}" in automatic_parallelization input not found'.format(k))
+            return self.exit_codes.ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY
 
         if remaining_keys:
-            self.abort_nowait('detected unrecognized keys in the automatic_parallelization input: {}'
+            self.report('detected unrecognized keys in the automatic_parallelization input: {}'
                 .format(' '.join(remaining_keys)))
-            return
+            return self.exit_codes.ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY
 
         # Add the calculation mode to the automatic parallelization dictionary
         self.ctx.automatic_parallelization = {
@@ -185,8 +208,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             'calculation_mode': self.ctx.inputs.parameters['CONTROL']['calculation']
         }
 
-        self.ctx.inputs._options.setdefault('resources', {})['num_machines'] = parallelization['max_num_machines']
-        self.ctx.inputs._options['max_wallclock_seconds'] = parallelization['max_wallclock_seconds']
+        self.ctx.inputs.options.setdefault('resources', {})['num_machines'] = parallelization['max_num_machines']
+        self.ctx.inputs.options['max_wallclock_seconds'] = parallelization['max_wallclock_seconds']
 
     def run_init(self):
         """
@@ -198,14 +221,14 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
         # Set the initialization flag and the initial default options
         inputs.settings['ONLY_INITIALIZATION'] = True
-        inputs._options = update_mapping(inputs['_options'], get_default_options())
+        inputs.options = update_mapping(inputs['options'], get_default_options())
 
         # Prepare the final input dictionary
-        inputs = self._prepare_process_inputs(inputs)
         process = PwCalculation.process()
-        running = submit(process, **inputs)
+        inputs = self._prepare_process_inputs(process, inputs)
+        running = self.submit(process, **inputs)
 
-        self.report('launching initialization PwCalculation<{}>'.format(running.pid))
+        self.report('launching initialization PwCalculation<{}>'.format(running.pk))
 
         return ToContext(calculation_init=running)
 
@@ -216,9 +239,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         """
         calculation = self.ctx.calculation_init
 
-        if not calculation.has_finished_ok():
-            self.abort_nowait('the initialization calculation did not finish successfully')
-            return
+        if not calculation.is_finished_ok:
+            return self.exit_codes.ERROR_INITIALIZATION_CALCULATION_FAILED
 
         # Get automated parallelization settings
         parallelization = get_pw_parallelization_parameters(calculation, **self.ctx.automatic_parallelization)
@@ -227,7 +249,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         self.out('automatic_parallelization', node)
         self.report('results of automatic parallelization in {}<{}>'.format(node.__class__.__name__, node.pk))
 
-        options = self.ctx.inputs._options
+        options = self.ctx.inputs.options
         base_resources = options.get('resources', {})
         goal_resources = parallelization['resources']
 
@@ -240,7 +262,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
         # Set the new cmdline setting and resource options
         self.ctx.inputs.settings['cmdline'] = cmdline
-        self.ctx.inputs._options = update_mapping(options, {'resources': resources})
+        self.ctx.inputs.options = update_mapping(options, {'resources': resources})
 
         # Remove the only initialization flag
         self.ctx.inputs.settings.pop('ONLY_INITIALIZATION')
@@ -255,18 +277,18 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'restart'
             self.ctx.inputs.parent_folder = self.ctx.restart_calc.out.remote_folder
 
-    def _prepare_process_inputs(self, inputs):
+    def _prepare_process_inputs(self, process, inputs):
         """
         The 'max_seconds' setting in the 'CONTROL' card of the parameters will be set to a fraction of the
-        'max_wallclock_seconds' that will be given to the job via the '_options' dictionary. This will prevent the job
+        'max_wallclock_seconds' that will be given to the job via the 'options' dictionary. This will prevent the job
         from being prematurely terminated by the scheduler without getting the chance to exit cleanly.
         """
-        max_wallclock_seconds = inputs._options['max_wallclock_seconds']
+        max_wallclock_seconds = inputs.options['max_wallclock_seconds']
         max_seconds_factor = self.defaults.delta_factor_max_seconds
         max_seconds = max_wallclock_seconds * max_seconds_factor
         inputs.parameters['CONTROL']['max_seconds'] = max_seconds
 
-        return super(PwBaseWorkChain, self)._prepare_process_inputs(inputs)
+        return super(PwBaseWorkChain, self)._prepare_process_inputs(process, inputs)
 
 
 @register_error_handler(PwBaseWorkChain, 500)
@@ -275,8 +297,8 @@ def _handle_error_read_namelists(self, calculation):
     The calculation failed because it could not read the generated input file
     """
     if any(['read_namelists' in w for w in calculation.res.warnings]):
-        self.abort_nowait('PwCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
-        return ErrorHandlerReport(True, True)
+        self.report('PwCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
+        return ErrorHandlerReport(True, True, self.exit_codes.ERROR_CALCULATION_INVALID_INPUT_FILE)
 
 
 @register_error_handler(PwBaseWorkChain, 400)

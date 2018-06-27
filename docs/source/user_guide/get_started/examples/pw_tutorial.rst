@@ -101,11 +101,11 @@ Where in the last line we just load the database object representing the code.
   to not do this! This is not an error, but does not allow to use the
   ``.get_from_string()`` method to get those calculations). 
   In this case, you can use directly the ``.get()`` method, for instance::
-  
+
     code = Code.get(label='pw-5.1', machinename='TheHive')
 
   or even more generally get the code from its (integer) PK::
-    
+
     code = load_node(PK)
 
 Structure
@@ -115,7 +115,7 @@ We now proceed in setting up the structure.
 
 .. note:: Here we discuss only the main features of structures in AiiDA, needed
     to run a Quantum ESPRESSO PW calculation.
-     
+
     For more detailed information, give a look to the 
     :ref:`structure_tutorial`.
 
@@ -191,21 +191,22 @@ Note also that numbers and booleans are written in Python, i.e. ``False`` and
 not the Fortran string ``.false.``!
 ::
 
-  ParameterData = DataFactory('parameter')
+    ParameterData = DataFactory('parameter')
 
-  parameters = ParameterData(dict={
-            'CONTROL': {
-                'calculation': 'scf',
-                'restart_mode': 'from_scratch',
-                'wf_collect': True,
-                },
-            'SYSTEM': {
-                'ecutwfc': 30.,
-                'ecutrho': 240.,
-                },
-            'ELECTRONS': {
-                'conv_thr': 1.e-6,
-                }})
+    parameters = ParameterData(dict={
+        'CONTROL': {
+            'calculation': 'scf',
+            'restart_mode': 'from_scratch',
+            'wf_collect': True,
+        },
+        'SYSTEM': {
+            'ecutwfc': 30.,
+            'ecutrho': 240.,
+        },
+        'ELECTRONS': {
+            'conv_thr': 1.e-6,
+        }
+    })
 
 .. note:: also in this case, we chose not to store the ``parameters`` node.
   If we wanted, we could even have done it in a single line::
@@ -231,16 +232,17 @@ without remembering in which namelists the keywords are located.
 
 You can access this function as follows. First, you define the input dictionary::
 
-  test_dict = {
-            'CONTROL': {
-                'calculation': 'scf',
-                },
-            'SYSTEM': {
-                'ecutwfc': 30.,
-                },
-            'ELECTRONS': {
-                'conv_thr': 1.e-6,
-                }}
+    test_dict = {
+        'CONTROL': {
+            'calculation': 'scf',
+        },
+        'SYSTEM': {
+            'ecutwfc': 30.,
+        },
+        'ELECTRONS': {
+            'conv_thr': 1.e-6,
+        }
+    }
 
 Then, you can verify if the input is correct by using the 
 :py:func:`~aiida_quantumespresso.calculations.helpers.pw_input_helper` function,
@@ -260,19 +262,20 @@ the type will be converted). You can then use the output for the input Parameter
 As an example, if you pass an incorrect input, e.g. the following where we have introduced 
 a few errors::
 
-  test_dict = {
-            'CONTROL': {
-                'calculation': 'scf',
-                },
-            'SYSTEM': {
-                'ecutwfc': 30.,
-		'cosab': 10.,
-		'nosym': 1,
-                },
-            'ELECTRONS': {
-                'convthr': 1.e-6,
-                'ecutrho': 100.
-                }}
+    test_dict = {
+        'CONTROL': {
+            'calculation': 'scf',
+        },
+        'SYSTEM': {
+            'ecutwfc': 30.,
+            'cosab': 10.,
+            'nosym': 1,
+        },
+        'ELECTRONS': {
+            'convthr': 1.e-6,
+            'ecutrho': 100.
+        }
+    }
 
 After running the ``input_helper`` method, you will get an exception with a message
 similar to the following::
@@ -293,26 +296,27 @@ There are a few additional options that are useful:
     validation, the function will reconstruct the correct dictionary to pass as input for
     the AiiDA QE calculation. Example::
 
-      test_dict_flat = {
-          'calculation': 'scf',
-          'ecutwfc': 30.,
-          'conv_thr': 1.e-6,
-          }
-      resdict = CalculationFactory('quantumespresso.pw').input_helper(
-          test_dict_flat, structure=s, flat_mode = True)
+        test_dict_flat = {
+            'calculation': 'scf',
+            'ecutwfc': 30.,
+            'conv_thr': 1.e-6,
+        }
+        resdict = CalculationFactory('quantumespresso.pw').input_helper(
+            test_dict_flat, structure=s, flat_mode = True)
 
     and after running, ``resdict`` will contain::
      
-       test_dict = {
+        test_dict = {
             'CONTROL': {
                 'calculation': 'scf',
-                },
+            },
             'SYSTEM': {
                 'ecutwfc': 30.,
-                },
+            },
             'ELECTRONS': {
                 'conv_thr': 1.e-6,
-                }}
+            }
+        }
 
     where the namelists have been automatically generated.
 
@@ -334,6 +338,100 @@ There are a few additional options that are useful:
    This applies in particular if you are using very old versions of QE, or customized versions
    that accept different parameters.
 
+
+Multi-dimensional variables
+///////////////////////////
+The input format of pw.x contains various keywords that do not simply take the format of a key value pair, but
+rather there will some indices in the key itself. Take for example the ``Hubbard_U(i)`` keyword of the ``SYSTEM`` card.
+The Hubbard U value needs to be applied to a specific species and therefore the index ``i`` is required to be able to
+make this distinction. Note that the value of ``i`` needs to correspond to the index of the species to which the
+Hubbard U value needs to be applied.
+
+The ``PwCalculation`` plugin makes this easy as it will do the conversion from kind name to species index automatically.
+This allows you to specify a Hubbard U value by using a dictionary notation, where the key is the kind name to which
+it should be applied. For example, if you have a structure with the kind ``Co`` and what it to have a Hubbard U value,
+one can add the following in the parameter data dictionary::
+
+    parameters = {
+        'SYSTEM': {
+            'hubbard_u': {
+                'Co': 4.5
+            }
+        }
+    }
+
+This part of the parameters dictionary will be transformed by the plugin into the following input file::
+
+    &SYSTEM
+        hubbard_u(1) = 4.5
+    /
+    ATOMIC_SPECIES
+    Co     58.933195 Co_pbe_v1.2.uspp.F.UPF
+    Li     6.941 li_pbe_v1.4.uspp.F.UPF
+    O      15.9994 O_pbe_v1.2.uspp.F.UPF
+
+Note that since ``Co`` is listed as the first atomic species, the index in the ``hubbard_u(1)`` keyword reflects this.
+The usage of a dictionary where the keys correspond to a kind of the input structure, will work for any keyword where
+the index should correspond to the index of the atomic species. Examples of keywords where this approach will work::
+
+    angle1(i)
+    angle2(i)
+    hubbard_alpha(i)
+    hubbard_beta(i)
+    hubbard_j0(i)
+    hubbard_u(i)
+    london_c6(i)
+    london_rvdw(i)
+    starting_charge(i)
+    starting_magnetization(i)
+
+However, there are also keywords that require more than index, or where the single index actually does not correspond
+to the index of an atomic species. The list of keywords that match this description::
+
+    efield_cart(i)
+    fixed_magnetization(i)
+    hubbard_j(i,ityp)
+    starting_ns_eigenvalue(m,ispin,I)
+
+To allow one to define these keywords, one can use nested lists, where the first few elements constitute all the index
+values and the final element corresponds to the actual value. For example the following::
+
+    parameters = {
+        'SYSTEM': {
+            'starting_ns_eigenvalue': [
+                [1, 1, 3, 3.5],
+                [2, 1, 1, 2.8]
+            ]
+        }
+    }
+
+will result in the following input file::
+
+    &SYSTEM
+        starting_ns_eigenvalue(1,1,3) = 3.5
+        starting_ns_eigenvalue(2,1,1) = 2.8
+    /
+
+Note that any of the values within the lists that correspond to a kind in the input structure, will be replaced with the
+index of the corresponding atomic species. For example::
+
+    hubbard_j: [
+        [2, 'Ni', 3.5],
+        [2, 'Fe', 7.4],
+    ]
+
+would be formatted as::
+
+    hubbard_j(2, 1) = 3.5
+    hubbard_j(2, 3) = 7.4
+
+Assuming the input structure contained the kinds 'Ni' and 'Fe', which would have received the atomic species indices 1
+and 3 in the ultimate input file, respectively.
+
+.. note::
+
+    Nota bene: The code will not verify that a keyword actually requires an atomic species index in a certain position,
+    and will indiscriminately map the value to an atomic species index if that value corresponds to a kind name.
 
 
 Other inputs

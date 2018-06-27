@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 from aiida.common.datastructures import calc_states
 from aiida.common.exceptions import LoadingPluginFailed, MissingPluginError
-from aiida.common.links import LinkType
 from aiida.orm.calculation import JobCalculation
 from aiida.orm.data.base import Bool, Int
-from aiida.orm.data.parameter import ParameterData
 from aiida.work.workchain import WorkChain, ToContext, append_
-from aiida.work.run import submit
 from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
 from aiida_quantumespresso.common.pluginloader import get_plugin, get_plugins
 
@@ -78,19 +75,26 @@ class BaseRestartWorkChain(WorkChain):
     @classmethod
     def define(cls, spec):
         super(BaseRestartWorkChain, cls).define(spec)
-        spec.input('max_iterations', valid_type=Int, default=Int(5), help="""
-            the maximum number of iterations the workchain will attempt to get the calculation to finish successfully
-            """
-        )
-        spec.input('clean_workdir', valid_type=Bool, default=Bool(False), help="""
-            when set to True, the work directories of all called calculation will be cleaned at the end of workchain execution
-            """
-        )
+        spec.input('max_iterations', valid_type=Int, default=Int(5),
+            help='maximum number of iterations the workchain will restart the calculation to finish successfully')
+        spec.input('clean_workdir', valid_type=Bool, default=Bool(False),
+            help='if True, work directories of all called calculation will be cleaned at the end of execution')
+        spec.exit_code(100, 'ERROR_ITERATION_RETURNED_NO_CALCULATION',
+            message='the run_calculation step did not successfully add a calculation node to the context')
+        spec.exit_code(101, 'ERROR_MAXIMUM_ITERATIONS_EXCEEDED',
+            message='the maximum number of iterations was exceeded')
+        spec.exit_code(102, 'ERROR_UNEXPECTED_CALCULATION_STATE',
+            message='the calculation finished with an unexpected calculation state')
+        spec.exit_code(103, 'ERROR_SECOND_CONSECUTIVE_SUBMISSION_FAILURE',
+            message='the calculation failed to submit, twice in a row')
+        spec.exit_code(104, 'ERROR_SECOND_CONSECUTIVE_UNHANDLED_FAILURE',
+            message='the calculation failed for an unknown reason, twice in a row')
 
     def setup(self):
         """
         Initialize context variables that are used during the logical flow of the BaseRestartWorkChain
         """
+        self.ctx.calc_name = self._calculation_class.__name__
         self.ctx.unexpected_failure = False
         self.ctx.submission_failure = False
         self.ctx.restart_calc = None
@@ -118,14 +122,12 @@ class BaseRestartWorkChain(WorkChain):
         except AttributeError:
             raise ValueError('no calculation input dictionary was defined in self.ctx.inputs')
 
-        inputs = self._prepare_process_inputs(unwrapped_inputs)
-        process = self._calculation_class.process()
-        running = submit(process, **inputs)
+        inputs = self._prepare_process_inputs(self._calculation_class, unwrapped_inputs)
+        calculation = self.submit(self._calculation_class, **inputs)
 
-        self.report('launching {}<{}> iteration #{}'
-            .format(self._calculation_class.__name__, running.pid, self.ctx.iteration))
+        self.report('launching {}<{}> iteration #{}'.format(self.ctx.calc_name, calculation.pk, self.ctx.iteration))
 
-        return ToContext(calculations=append_(running))
+        return ToContext(calculations=append_(calculation))
 
     def inspect_calculation(self):
         """
@@ -133,31 +135,34 @@ class BaseRestartWorkChain(WorkChain):
         or if not troubleshoot the cause and handle the errors, or abort if unrecoverable error was found
         """
         try:
-            calculation = self.ctx.calculations[-1]
+            calculation = self.ctx.calculations[self.ctx.iteration - 1]
         except IndexError:
-            self.abort_nowait('the first iteration finished without returning a {}'
-                .format(self._calculation_class.__name__))
-            return
+            self.report('iteration {} finished without returning a {}'.format(self.ctx.iteration, self.ctx.calc_name))
+            return self.exit_codes.ERROR_ITERATION_RETURNED_NO_CALCULATION
+
+        exit_code = None
 
         # Done: successful completion of last calculation
-        if calculation.has_finished_ok():
-            self.report('{}<{}> completed successfully'.format(self._calculation_class.__name__, calculation.pk))
+        if calculation.is_finished_ok:
+            self.report('{}<{}> completed successfully'.format(self.ctx.calc_name, calculation.pk))
             self.ctx.restart_calc = calculation
             self.ctx.is_finished = True
 
         # Abort: exceeded maximum number of retries
         elif self.ctx.iteration >= self.inputs.max_iterations.value:
-            self.abort_nowait('reached the maximumm number of iterations {}: last ran {}<{}>'
-                .format(self.inputs.max_iterations.value, self._calculation_class.__name__, calculation.pk))
+            self.report('reached the maximumm number of iterations {}: last ran {}<{}>'
+                .format(self.inputs.max_iterations.value, self.ctx.calc_name, calculation.pk))
+            exit_code = self.exit_codes.ERROR_MAXIMUM_ITERATIONS_EXCEEDED
 
         # Abort: unexpected state of last calculation
         elif calculation.get_state() not in self._expected_calculation_states:
-            self.abort_nowait('unexpected state ({}) of {}<{}>'
-                .format(calculation.get_state(), self._calculation_class.__name__, calculation.pk))
+            self.report('unexpected state ({}) of {}<{}>'
+                .format(calculation.get_state(), self.ctx.calc_name, calculation.pk))
+            exit_code = self.exit_codes.ERROR_UNEXPECTED_CALCULATION_STATE
 
         # Retry or abort: submission failed, try to restart or abort
         elif calculation.get_state() in [calc_states.SUBMISSIONFAILED]:
-            self._handle_submission_failure(calculation)
+            exit_code = self._handle_submission_failure(calculation)
             self.ctx.submission_failure = True
 
         # Retry or abort: calculation finished or failed
@@ -167,14 +172,14 @@ class BaseRestartWorkChain(WorkChain):
             self.ctx.submission_failure = False
 
             # Check output for problems independent on calculation state and that do not trigger parser warnings
-            self._handle_calculation_sanity_checks(calculation)
+            exit_code = self._handle_calculation_sanity_checks(calculation)
 
             # Calculation failed, try to salvage it or handle any unexpected failures
             if calculation.get_state() in [calc_states.FAILED]:
                 try:
-                    handled = self._handle_calculation_failure(calculation)
+                    exit_code = self._handle_calculation_failure(calculation)
                 except UnexpectedCalculationFailure as exception:
-                    self._handle_unexpected_failure(calculation, exception)
+                    exit_code = self._handle_unexpected_failure(calculation, exception)
                     self.ctx.unexpected_failure = True
 
             # Calculation finished: but did not finish ok, simply try to restart from this calculation
@@ -183,7 +188,7 @@ class BaseRestartWorkChain(WorkChain):
                 self.ctx.restart_calc = calculation
                 self.report('calculation terminated without errors but did not complete successfully, restarting')
 
-        return
+        return exit_code
 
     def results(self):
         """
@@ -194,7 +199,7 @@ class BaseRestartWorkChain(WorkChain):
         for name, port in self.spec().outputs.iteritems():
             if port.required and name not in self.ctx.restart_calc.out:
                 self.report('the spec specifies the output {} as required but was not an output of {}<{}>'
-                    .format(name, self._calculation_class.__name__, self.ctx.restart_calc.pk))
+                    .format(name, self.ctx.calc_name, self.ctx.restart_calc.pk))
 
             if name in self.ctx.restart_calc.out:
                 node = self.ctx.restart_calc.out[name]
@@ -205,23 +210,26 @@ class BaseRestartWorkChain(WorkChain):
 
         return
 
-    def on_destroy(self):
+    def on_terminated(self):
         """
-        Clean remote folders of the calculations called in the workchain if the clean_workdir input is True
+        If the clean_workdir input was set to True, recursively collect all called Calculations by
+        ourselves and our called descendants, and clean the remote folder for the JobCalculation instances
         """
-        super(BaseRestartWorkChain, self).on_destroy()
+        super(BaseRestartWorkChain, self).on_terminated()
 
-        if not self.has_finished() or self.inputs.clean_workdir.value is False:
+        if self.inputs.clean_workdir.value is False:
+            self.report('remote folders will not be cleaned')
             return
 
         cleaned_calcs = []
 
-        for calculation in self.calc.get_outputs(link_type=LinkType.CALL):
-            try:
-                calculation.out.remote_folder._clean()
-                cleaned_calcs.append(calculation.pk)
-            except BaseException:
-                pass
+        for called_descendant in self.calc.called_descendants:
+            if isinstance(called_descendant, JobCalculation):
+                try:
+                    called_descendant.out.remote_folder._clean()
+                    cleaned_calcs.append(called_descendant.pk)
+                except (IOError, OSError, KeyError):
+                    pass
 
         if cleaned_calcs:
             self.report('cleaned remote folders of calculations: {}'.format(' '.join(map(str, cleaned_calcs))))
@@ -233,7 +241,7 @@ class BaseRestartWorkChain(WorkChain):
         after verifying that the calculation ran, regardless of its calculation state, we perform some sanity
         checks.
         """
-        return
+        pass
 
     def _handle_submission_failure(self, calculation):
         """
@@ -241,13 +249,13 @@ class BaseRestartWorkChain(WorkChain):
         is the second consecutive submission failure and we abort the workchain Otherwise we restart once more.
         """
         if self.ctx.submission_failure:
-            self.abort_nowait('submission for {}<{}> failed for the second consecutive time'
-                .format(self._calculation_class.__name__, calculation.pk))
+            self.report('submission for {}<{}> failed for the second consecutive time'
+                .format(self.ctx.calc_name, calculation.pk))
+            return self.exit_codes.ERROR_SECOND_CONSECUTIVE_SUBMISSION_FAILURE
+
         else:
             self.report('submission for {}<{}> failed, restarting once more'
-                .format(self._calculation_class.__name__, calculation.pk))
-
-        return
+                .format(self.ctx.calc_name, calculation.pk))
 
     def _handle_unexpected_failure(self, calculation, exception=None):
         """
@@ -259,13 +267,13 @@ class BaseRestartWorkChain(WorkChain):
             self.report('{}'.format(exception))
 
         if self.ctx.unexpected_failure:
-            self.abort_nowait('failure of {}<{}> could not be handled for the second consecutive time'
-                .format(self._calculation_class.__name__, calculation.pk))
+            self.report('failure of {}<{}> could not be handled for the second consecutive time'
+                .format(self.ctx.calc_name, calculation.pk))
+            return self.exit_codes.ERROR_SECOND_CONSECUTIVE_UNHANDLED_FAILURE
+
         else:
             self.report('failure of {}<{}> could not be handled, restarting once more'
-                .format(self._calculation_class.__name__, calculation.pk))
-
-        return
+                .format(self.ctx.calc_name, calculation.pk))
 
     def _handle_calculation_failure(self, calculation):
         """
@@ -304,15 +312,15 @@ class BaseRestartWorkChain(WorkChain):
         if not is_handled:
             raise UnexpectedCalculationFailure('calculation failure was not handled')
 
-        return
+        return handler_report.exit_code
 
-    def _prepare_process_inputs(self, inputs):
+    def _prepare_process_inputs(self, process, inputs):
         """
         Prepare the inputs dictionary for a calculation process. Any remaining bare dictionaries in the inputs
-        dictionary will be wrapped in a ParameterData data node except for the '_options' key which should remain
+        dictionary will be wrapped in a ParameterData data node except for the 'options' key which should remain
         a standard dictionary. Another exception are dictionaries whose keys are not strings but for example tuples.
         This is the format used by input groups as in for example the explicit pseudo dictionary where the key is
         a tuple of kind to which the UpfData corresponds.
         """
         from aiida_quantumespresso.utils.mapping import prepare_process_inputs
-        return prepare_process_inputs(inputs)
+        return prepare_process_inputs(process, inputs)

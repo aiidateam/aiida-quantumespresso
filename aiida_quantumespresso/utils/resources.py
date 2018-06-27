@@ -3,6 +3,7 @@ import numpy as np
 from math import exp, ceil
 from aiida_quantumespresso.utils.defaults.calculation import pw as pw_defaults
 
+
 def create_scheduler_resources(scheduler, base, goal):
     """
     This function will take a dictionary 'base', which contains scheduler resource
@@ -36,6 +37,7 @@ def create_scheduler_resources(scheduler, base, goal):
 
     return {key: value for key, value in job_resource.iteritems() if value is not None}
 
+
 def cmdline_remove_npools(cmdline):
     """
     Remove all options related to npools in the list of command line options that is
@@ -50,24 +52,39 @@ def cmdline_remove_npools(cmdline):
     :param cmdline: the cmdline setting which is a list of string directives
     :return: the new cmdline setting
     """
-    return [e for i,e in enumerate(cmdline) 
-             if (e not in ('-npools','-npool','-nk') 
-                 and cmdline[i-1] not in ('-npools','-npool','-nk'))]
+    return [e for i, e in enumerate(cmdline) if (e not in ('-npools', '-npool', '-nk') and
+        cmdline[i - 1] not in ('-npools', '-npool', '-nk'))]
 
-def get_default_options(num_machines=1, max_wallclock_seconds=1800):
+
+def get_default_options(max_num_machines=1, max_wallclock_seconds=1800):
     """
     Return an instance of the options dictionary with the minimally required parameters
     for a JobCalculation and set to default values unless overriden
 
-    :param num_machines: set the number of nodes, default=1
+    :param max_num_machines: set the number of nodes, default=1
     :param max_wallclock_seconds: set the maximum number of wallclock seconds, default=1800
     """
     return {
         'resources': {
-            'num_machines': int(num_machines)
+            'num_machines': int(max_num_machines)
         },
         'max_wallclock_seconds': int(max_wallclock_seconds),
     }
+
+
+def get_automatic_parallelization_options(max_num_machines=1, max_wallclock_seconds=1800):
+    """
+    Return an instance of the automatic parallelization options dictionary
+
+    :param max_num_machines: set the number of nodes, default=1
+    :param max_wallclock_seconds: set the maximum number of wallclock seconds, default=1800
+    """
+    return {
+        'max_num_machines': max_num_machines,
+        'target_time_seconds': 0.5 * max_wallclock_seconds,
+        'max_wallclock_seconds': max_wallclock_seconds
+    }
+
 
 def get_pw_parallelization_parameters(calculation, max_num_machines, target_time_seconds, max_wallclock_seconds,
     calculation_mode='scf', round_interval=1800, scaling_law=(exp(-16.1951988), 1.22535849)):
@@ -84,13 +101,13 @@ def get_pw_parallelization_parameters(calculation, max_num_machines, target_time
         ('scf', 'nscf', 'bands', 'relax', 'md', 'vc-relax', 'vc-md')
     :param round_interval: the interval in seconds to which the estimated time in the results
         will be rounded up, to determine the max_wallclock_seconds that should be set
-    :param scaling_law: list or tuple with 2 numbers giving the 
-        fit parameters for a power law expressing the single-CPU time to do 
-        1 scf step, for 1 k-point, 1 spin and 1 small box of the fft grid, 
+    :param scaling_law: list or tuple with 2 numbers giving the
+        fit parameters for a power law expressing the single-CPU time to do
+        1 scf step, for 1 k-point, 1 spin and 1 small box of the fft grid,
         as a function of number of electrons, in the form:
             normalized_single_CPU_time = A*n_elec^B
         where A is the first number and B the second.
-        Default values were obtained on piz-dora (CSCS) in 2015, on a set of 
+        Default values were obtained on piz-dora (CSCS) in 2015, on a set of
         4370 calculations (with a very rough fit).
 
     :return: a dictionary with suggested parallelization parameters with the following keys
@@ -100,12 +117,12 @@ def get_pw_parallelization_parameters(calculation, max_num_machines, target_time
         * estimated_time: the estimated time the calculation should take in seconds
         * max_wallclock_seconds: the recommended max_wall_clock_seconds setting based on the
             estimated_time value and the round_interval argument
-        
+
     .. note:: If there was an out-of-memory problem during the initial
         calculation, the number of machines is increased.
     """
     from fractions import gcd
-    
+
     default_num_mpiprocs_per_machine = calculation.get_computer().get_default_mpiprocs_per_machine()
 
     input_parameters = calculation.inp.parameters.get_dict()
@@ -129,13 +146,17 @@ def get_pw_parallelization_parameters(calculation, max_num_machines, target_time
 
     # Compute an estimate single-CPU time
     time_single_cpu = np.prod(fft_grid) * nspin * nkpoints * niterations * scaling_law[0] * nbands ** scaling_law[1]
-    
+
     # The number of nodes is the maximum number we can use that is dividing nkpoints
     num_machines = max([m for m in range(1, max_num_machines + 1) if nkpoints % m == 0])
 
     # If possible try to make number of kpoints even by changing the number of machines
-    if (num_machines == 1 and nkpoints > 6 and max_num_machines > 1
-        and time_single_cpu / default_num_mpiprocs_per_machine > target_time):
+    if (
+        num_machines == 1 and
+        nkpoints > 6 and
+        max_num_machines > 1 and
+        time_single_cpu / default_num_mpiprocs_per_machine > target_time_seconds
+    ):
         num_machines = max([m for m in range(1, max_num_machines + 1) if (nkpoints + 1) % m == 0])
 
     # Now we will try to decrease the number of processes per machine (by not more than one fourth)
@@ -165,9 +186,9 @@ def get_pw_parallelization_parameters(calculation, max_num_machines, target_time
     if calculation.get_scheduler_error() and 'OOM' in calculation.get_scheduler_error():
         num_machines = max([i for i in range(num_machines, max_num_machines + 1) if i % num_machines == 0])
 
-    estimated_time = time_single_cpu/(num_mpiprocs_per_machine * num_machines)
+    estimated_time = time_single_cpu / (num_mpiprocs_per_machine * num_machines)
     max_wallclock_seconds = min(ceil(estimated_time / round_interval) * round_interval, max_wallclock_seconds)
-    
+
     result = {
         'resources': {
             'num_machines': num_machines,

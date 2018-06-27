@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import Code
-from aiida.orm.data.base import Bool, Float, Int, Str
+from aiida.orm.data.base import Bool
 from aiida.orm.data.folder import FolderData
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.parameter import ParameterData
@@ -23,7 +23,6 @@ class PhBaseWorkChain(BaseRestartWorkChain):
     Base Workchain to launch a Quantum Espresso phonon ph.x calculation and restart it until
     successfully converged or until the maximum number of restarts is exceeded
     """
-    _verbose = True
     _calculation_class = PhCalculation
 
     defaults = AttributeDict({
@@ -51,6 +50,8 @@ class PhBaseWorkChain(BaseRestartWorkChain):
             ),
             cls.results,
         )
+        spec.exit_code(402, 'ERROR_CALCULATION_INVALID_INPUT_FILE',
+            message='the calculation failed because it had an invalid input file')
         spec.output('output_parameters', valid_type=ParameterData)
         spec.output('remote_folder', valid_type=RemoteData)
         spec.output('retrieved', valid_type=FolderData)
@@ -81,9 +82,9 @@ class PhBaseWorkChain(BaseRestartWorkChain):
             self.ctx.inputs.settings = {}
 
         if 'options' in self.inputs:
-            self.ctx.inputs._options = self.inputs.options.get_dict()
+            self.ctx.inputs.options = self.inputs.options.get_dict()
         else:
-            self.ctx.inputs._options = get_default_options()
+            self.ctx.inputs.options = get_default_options()
 
         if self.inputs.only_initialization.value:
             self.ctx.inputs.settings['ONLY_INITIALIZATION'] = True
@@ -96,18 +97,18 @@ class PhBaseWorkChain(BaseRestartWorkChain):
             self.ctx.inputs.parameters['INPUTPH']['recover'] = True
             self.ctx.inputs.parent_folder = self.ctx.restart_calc.out.remote_folder
 
-    def _prepare_process_inputs(self, inputs):
+    def _prepare_process_inputs(self, process, inputs):
         """
         The 'max_seconds' setting in the 'INPUTPH' card of the parameters will be set to a fraction of the
-        'max_wallclock_seconds' that will be given to the job via the '_options' dictionary. This will prevent the job
+        'max_wallclock_seconds' that will be given to the job via the 'options' dictionary. This will prevent the job
         from being prematurely terminated by the scheduler without getting the chance to exit cleanly.
         """
-        max_wallclock_seconds = inputs._options['max_wallclock_seconds']
+        max_wallclock_seconds = inputs.options['max_wallclock_seconds']
         max_seconds_factor = self.defaults.delta_factor_max_seconds
         max_seconds = max_wallclock_seconds * max_seconds_factor
         inputs.parameters['INPUTPH']['max_seconds'] = max_seconds
 
-        return super(PhBaseWorkChain, self)._prepare_process_inputs(inputs)
+        return super(PhBaseWorkChain, self)._prepare_process_inputs(process, inputs)
 
 
 @register_error_handler(PhBaseWorkChain, 400)
@@ -116,8 +117,8 @@ def _handle_fatal_error_read_namelists(self, calculation):
     The calculation failed because it could not read the generated input file
     """
     if any(['reading inputph namelist' in w for w in calculation.res.warnings]):
-        self.abort_nowait('PhCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
-        return ErrorHandlerReport(True, True)
+        self.report('PhCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
+        return ErrorHandlerReport(True, True, self.exit_codes.ERROR_CALCULATION_INVALID_INPUT_FILE)
 
 
 @register_error_handler(PhBaseWorkChain, 300)

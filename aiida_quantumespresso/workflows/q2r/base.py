@@ -19,7 +19,6 @@ class Q2rBaseWorkChain(BaseRestartWorkChain):
     Base Workchain to launch a Quantum Espresso q2r.x calculation and restart it until
     successfully finished or until the maximum number of restarts is exceeded
     """
-    _verbose = True
     _calculation_class = Q2rCalculation
 
     @classmethod
@@ -41,7 +40,6 @@ class Q2rBaseWorkChain(BaseRestartWorkChain):
         )
         spec.output('force_constants', valid_type=ForceconstantsData)
         spec.output('remote_folder', valid_type=RemoteData)
-        spec.output('retrieved', valid_type=FolderData)
 
     def validate_inputs(self):
         """
@@ -65,6 +63,6 @@ class Q2rBaseWorkChain(BaseRestartWorkChain):
             self.ctx.inputs.settings = {}
 
         if 'options' in self.inputs:
-            self.ctx.inputs._options = self.inputs.options.get_dict()
+            self.ctx.inputs.options = self.inputs.options.get_dict()
         else:
-            self.ctx.inputs._options = get_default_options()
+            self.ctx.inputs.options = get_default_options()

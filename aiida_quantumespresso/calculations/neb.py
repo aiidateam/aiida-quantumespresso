@@ -15,7 +15,8 @@ from aiida.orm.data.upf import UpfData
 from aiida.orm.data.remote import RemoteData 
 from aiida.orm.calculation.job import JobCalculation
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
-from aiida_quantumespresso.calculations import get_input_data_text,_lowercase_dict,_uppercase_dict
+from aiida_quantumespresso.calculations import _lowercase_dict,_uppercase_dict
+from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
 
 class NebCalculation(BasePwCpInputGenerator,JobCalculation):
@@ -184,7 +185,7 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
         # empty namelist
         namelist = input_params.pop('PATH', {})
         for k, v in sorted(namelist.iteritems()):
-            inputfile += get_input_data_text(k, v)
+            inputfile += convert_input_to_namelist_entry(k, v)
         inputfile += "/\n"
 
         # Write cards now
@@ -482,16 +483,26 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
         Function to restart a calculation that was not completed before 
         (like max walltime reached...) i.e. not to restart a really FAILED calculation.
         Returns a calculation c2, with all links prepared but not stored in DB.
-        To submit it simply:
-        c2.store_all()
-        c2.submit()
-        
+        To submit it, simply do::
+
+          c2.store_all()
+          c2.submit()
+
+        .. deprecated:: 3.0
+           Use the helper method :py:func:`aiida_quantumespresso.utils.restart.create_restart_neb` instead,
+           that returns a calculation builder rather than a new, unstored calculation.
+
+
         :param bool force_restart: restart also if parent is not in FINISHED 
         state (e.g. FAILED, IMPORTED, etc.). Default=False.
         :param bool parent_folder_symlink: if True, symlinks are used
         instead of hard copies of the files. Default given by 
         self._default_symlink_usage.
         """
+        import warnings
+        warnings.warn('This method has been deprecated, use instead '
+                      'aiida_quantumespresso.utils.restart.create_restart_neb()', DeprecationWarning)
+
         from aiida.common.datastructures import calc_states
 
         # Check the calculation's state using ``from_attribute=True`` to
@@ -513,7 +524,7 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
         old_inp_dict['PATH']['restart_mode'] = 'restart'
         inp_dict = ParameterData(dict=old_inp_dict)
 
-        remote_folders = self.get_outputs(type=RemoteData)
+        remote_folders = self.get_outputs(node_type=RemoteData)
         if len(remote_folders) != 1:
             raise InputValidationError("More than one output RemoteData found "
                                        "in calculation {}".format(self.pk))

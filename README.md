@@ -1,10 +1,8 @@
 # AiiDA Quantum ESPRESSO
-This is the official Quantum ESPRESSO plugin for AiiDA that used to be contained within the aiida_core package.
-It is now maintained as a separate package and for AiiDA >= v0.9.0 the new plugin system will ensure that the
-entry points are automatically registered upon installation.
+This is the official Quantum ESPRESSO plugin for AiiDA.
 
-The plugin versions 1.x and 2.x support AiiDA-core in the 0.9-0.12 range.
-For the plugins compatible with AiiDA-core 1.x, check the pre-releases for version 3.x (branch `release-v3.0.0`).
+The `develop` branch, which will become `aiida-quantumespresso v3.0.0`,  is only compatible with `aiida-core v1.0.0` and up.
+For support for older versions of `aiida-core` use `aiida-quantumespresso v2.*`.
 
 # Documentation
 The documentation for this package can be found on Read the Docs at 

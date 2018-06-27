@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import click
-from aiida_quantumespresso.utils.click import command
-from aiida_quantumespresso.utils.click import options
+from aiida.utils.cli import command
+from aiida.utils.cli import options
 
 
 @command()
-@options.code()
+@options.code(callback_kwargs={'entry_point': 'quantumespresso.pw'})
 @options.structure()
 @options.pseudo_family()
 @options.daemon()
@@ -21,7 +21,7 @@ def launch(
     """
     from aiida.orm.data.base import Str
     from aiida.orm.utils import WorkflowFactory
-    from aiida.work.run import run, submit
+    from aiida.work.launch import run, submit
 
     PwBandStructureWorkChain = WorkflowFactory('quantumespresso.pw.band_structure')
 
@@ -34,6 +34,6 @@ def launch(
 
     if daemon:
         workchain = submit(PwBandStructureWorkChain, **inputs)
-        click.echo('Submitted {}<{}> to the daemon'.format(PwBandStructureWorkChain.__name__, workchain.pid))
+        click.echo('Submitted {}<{}> to the daemon'.format(PwBandStructureWorkChain.__name__, workchain.pk))
     else:
         run(PwBandStructureWorkChain, **inputs)
