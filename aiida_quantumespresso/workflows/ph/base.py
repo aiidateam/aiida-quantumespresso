@@ -30,8 +30,6 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         'alpha_mix': 0.70,
     })
 
-    ERROR_CALCULATION_INVALID_INPUT_FILE = 7
-
     @classmethod
     def define(cls, spec):
         super(PhBaseWorkChain, cls).define(spec)
@@ -52,6 +50,8 @@ class PhBaseWorkChain(BaseRestartWorkChain):
             ),
             cls.results,
         )
+        spec.exit_code(402, 'ERROR_CALCULATION_INVALID_INPUT_FILE',
+            message='the calculation failed because it had an invalid input file')
         spec.output('output_parameters', valid_type=ParameterData)
         spec.output('remote_folder', valid_type=RemoteData)
         spec.output('retrieved', valid_type=FolderData)
@@ -118,7 +118,7 @@ def _handle_fatal_error_read_namelists(self, calculation):
     """
     if any(['reading inputph namelist' in w for w in calculation.res.warnings]):
         self.report('PhCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
-        return ErrorHandlerReport(True, True, self.ERROR_CALCULATION_INVALID_INPUT_FILE)
+        return ErrorHandlerReport(True, True, self.exit_codes.ERROR_CALCULATION_INVALID_INPUT_FILE)
 
 
 @register_error_handler(PhBaseWorkChain, 300)

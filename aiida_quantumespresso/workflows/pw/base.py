@@ -42,15 +42,6 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         'delta_factor_max_seconds': 0.95,
     })
 
-    ERROR_INVALID_INPUT_PSEUDO_POTENTIALS = 301
-    ERROR_INVALID_INPUT_RESOURCES = 302
-    ERROR_INVALID_INPUT_KPOINTS = 303
-    ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED = 304
-    ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY = 310
-    ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY = 311
-    ERROR_INITIALIZATION_CALCULATION_FAILED = 401
-    ERROR_CALCULATION_INVALID_INPUT_FILE = 402
-
     @classmethod
     def define(cls, spec):
         super(PwBaseWorkChain, cls).define(spec)
@@ -82,6 +73,22 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             ),
             cls.results,
         )
+        spec.exit_code(301, 'ERROR_INVALID_INPUT_PSEUDO_POTENTIALS',
+            message="the explicitly passed 'pseudos' or 'pseudo_family' input could not be used to get the necessary potentials")
+        spec.exit_code(302, 'ERROR_INVALID_INPUT_KPOINTS',
+            message="neither the 'kpoints' nor the 'kpoints_distance' input was specified")
+        spec.exit_code(303, 'ERROR_INVALID_INPUT_RESOURCES',
+            message="neither the 'options' nor 'automatic_parallelization' input was specified")
+        spec.exit_code(304, 'ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED',
+            message="the 'options' do not specify both 'num_machines' and 'max_wallclock_seconds'")
+        spec.exit_code(310, 'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY',
+            message="required key for 'automatic_parallelization' was not specified")
+        spec.exit_code(311, 'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY',
+            message="unrecognized keys were specified for 'automatic_parallelization'")
+        spec.exit_code(401, 'ERROR_INITIALIZATION_CALCULATION_FAILED',
+            message='the initialization calculation failed')
+        spec.exit_code(402, 'ERROR_CALCULATION_INVALID_INPUT_FILE',
+            message='the calculation failed because it had an invalid input file')
         spec.output('output_array', valid_type=ArrayData, required=False)
         spec.output('output_band', valid_type=BandsData, required=False)
         spec.output('output_structure', valid_type=StructureData, required=False)
@@ -127,8 +134,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
         # Either automatic_parallelization or options has to be specified
         if not any([key in self.inputs for key in ['options', 'automatic_parallelization']]):
-            self.report("you have to specify either the 'options' or 'automatic_parallelization' input")
-            return self.ERROR_INVALID_INPUT_RESOURCES
+            return self.exit_codes.ERROR_INVALID_INPUT_RESOURCES
 
         # If automatic parallelization is not enabled, we better make sure that the options satisfy minimum requirements
         if 'automatic_parallelization' not in self.inputs:
@@ -136,14 +142,11 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             max_wallclock_seconds = self.ctx.inputs.options.get('max_wallclock_seconds', None)
 
             if num_machines is None or max_wallclock_seconds is None:
-                self.report("no 'automatic_parallelization' input, but the 'options' do not specify both '{}' and '{}'"
-                    .format('num_machines', 'max_wallclock_seconds'))
-                return self.ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED
+                return self.exit_codes.ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED
 
         # Either a KpointsData with given mesh/path, or a desired distance between k-points should be specified
         if all([key not in self.inputs for key in ['kpoints', 'kpoints_distance']]):
-            self.report("neither the 'kpoints' nor the 'kpoints_distance' input was specified")
-            return self.ERROR_INVALID_INPUT_KPOINTS
+            return self.exit_codes.ERROR_INVALID_INPUT_KPOINTS
 
         try:
             self.ctx.inputs.kpoints = self.inputs.kpoints
@@ -162,7 +165,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             self.ctx.inputs.pseudo = validate_and_prepare_pseudos_inputs(structure, pseudos, pseudo_family)
         except ValueError as exception:
             self.report('{}'.format(exception))
-            return self.ERROR_INVALID_INPUT_PSEUDO_POTENTIALS
+            return self.exit_codes.ERROR_INVALID_INPUT_PSEUDO_POTENTIALS
 
     def should_run_init(self):
         """
@@ -190,12 +193,12 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
         for k, v in [(key, value) for key, value in received_keys if value is None]:
             self.report('required key "{}" in automatic_parallelization input not found'.format(k))
-            return self.ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY
+            return self.exit_codes.ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY
 
         if remaining_keys:
             self.report('detected unrecognized keys in the automatic_parallelization input: {}'
                 .format(' '.join(remaining_keys)))
-            return self.ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY
+            return self.exit_codes.ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY
 
         # Add the calculation mode to the automatic parallelization dictionary
         self.ctx.automatic_parallelization = {
@@ -237,8 +240,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         calculation = self.ctx.calculation_init
 
         if not calculation.is_finished_ok:
-            self.report('the initialization calculation did not finish successfully')
-            return self.ERROR_INITIALIZATION_CALCULATION_FAILED
+            return self.exit_codes.ERROR_INITIALIZATION_CALCULATION_FAILED
 
         # Get automated parallelization settings
         parallelization = get_pw_parallelization_parameters(calculation, **self.ctx.automatic_parallelization)
@@ -296,7 +298,7 @@ def _handle_error_read_namelists(self, calculation):
     """
     if any(['read_namelists' in w for w in calculation.res.warnings]):
         self.report('PwCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
-        return ErrorHandlerReport(True, True, self.ERROR_CALCULATION_INVALID_INPUT_FILE)
+        return ErrorHandlerReport(True, True, self.exit_codes.ERROR_CALCULATION_INVALID_INPUT_FILE)
 
 
 @register_error_handler(PwBaseWorkChain, 400)

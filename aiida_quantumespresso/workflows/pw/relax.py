@@ -16,12 +16,6 @@ PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 class PwRelaxWorkChain(WorkChain):
     """Workchain to relax a structure using Quantum ESPRESSO pw.x"""
 
-    ERROR_INVALID_INPUT_KPOINTS = 301
-    ERROR_INVALID_INPUT_PSEUDOS = 302
-    ERROR_INVALID_INPUT_RESOURCES = 303
-    ERROR_ITERATION_RETURNED_NO_WORKCHAIN = 404
-    ERROR_WORKCHAIN_RETURNED_NO_STRUCTURE = 405
-
     @classmethod
     def define(cls, spec):
         super(PwRelaxWorkChain, cls).define(spec)
@@ -42,9 +36,14 @@ class PwRelaxWorkChain(WorkChain):
             ),
             if_(cls.should_run_final_scf)(
                 cls.run_final_scf,
+                cls.inspect_final_scf,
             ),
             cls.results,
         )
+        spec.exit_code(401, 'ERROR_SUB_PROCESS_FAILED_RELAX',
+            message='the relax PwBaseWorkChain sub process failed')
+        spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_FINAL_SCF',
+            message='the final scf PwBaseWorkChain sub process failed')
         spec.expose_outputs(PwBaseWorkChain)
 
     def setup(self):
@@ -102,17 +101,13 @@ class PwRelaxWorkChain(WorkChain):
         If the difference ratio is less than the volume convergence threshold we consider the cell relaxation
         converged and can quit the workchain. If the
         """
-        try:
-            workchain = self.ctx.workchains[self.ctx.iteration - 1]
-        except IndexError:
-            self.report('iteration {} finished without returning a workchain'.format(self.ctx.iteration))
-            return self.ERROR_ITERATION_RETURNED_NO_WORKCHAIN
+        workchain = self.ctx.workchains[-1]
 
-        try:
+        if not self.workchain.is_finished_ok:
+            self.report('relax PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
+            return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
+        else:
             structure = workchain.out.output_structure
-        except AttributeError:
-            self.report('the workchain did not have an output structure and probably failed')
-            return self.ERROR_WORKCHAIN_RETURNED_NO_STRUCTURE
 
         prev_cell_volume = self.ctx.current_cell_volume
         curr_cell_volume = structure.get_cell_volume()
@@ -149,9 +144,7 @@ class PwRelaxWorkChain(WorkChain):
         return
 
     def run_final_scf(self):
-        """
-        Run the PwBaseWorkChain to run a final scf PwCalculation for the relaxed structure
-        """
+        """Run the PwBaseWorkChain to run a final scf PwCalculation for the relaxed structure."""
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base'))
         inputs.structure = self.ctx.current_structure
         inputs.parent_folder = self.ctx.current_parent_folder
@@ -168,10 +161,16 @@ class PwRelaxWorkChain(WorkChain):
 
         return ToContext(workchain_scf=running)
 
+    def inspect_final_scf(self):
+        """Inspect the result of the final scf PwBaseWorkChain."""
+        workchain = self.ctx.workchain_scf
+
+        if not workchain.is_finished_ok:
+            self.report('final scf PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
+            return self.exit_codes.ERROR_SUB_PROCESS_FAILED_FINAL_SCF
+
     def results(self):
-        """
-        Attach the output parameters and structure of the last workchain to the outputs
-        """
+        """Attach the output parameters and structure of the last workchain to the outputs."""
         if self.ctx.is_converged and self.ctx.iteration <= self.inputs.max_meta_convergence_iterations.value:
             self.report('workchain completed after {} iterations'.format(self.ctx.iteration))
         else:

@@ -20,11 +20,10 @@ def launch(
     """
     from aiida.orm.data.base import Bool
     from aiida.orm.data.parameter import ParameterData
-    from aiida.orm.utils import CalculationFactory, WorkflowFactory
+    from aiida.orm.utils import WorkflowFactory
     from aiida.work.launch import run, submit
     from aiida_quantumespresso.utils.resources import get_default_options
 
-    PwCalculation = CalculationFactory('quantumespresso.pw')
     PhBaseWorkChain = WorkflowFactory('quantumespresso.ph.base')
 
     parameters = {

@@ -68,4 +68,3 @@ class MatdynBaseWorkChain(BaseRestartWorkChain):
             self.ctx.inputs.options = self.inputs.options.get_dict()
         else:
             self.ctx.inputs.options = get_default_options()
-

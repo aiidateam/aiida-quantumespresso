@@ -69,7 +69,6 @@ def get_default_options(max_num_machines=1, max_wallclock_seconds=1800):
             'num_machines': int(max_num_machines)
         },
         'max_wallclock_seconds': int(max_wallclock_seconds),
-        'withmpi': False
     }
 
 
