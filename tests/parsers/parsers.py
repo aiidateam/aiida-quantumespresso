@@ -165,9 +165,7 @@ class TestParsers(AiidaTestCase):
         retrieve_temporary_list = calc.get_attr('retrieve_temporary_list', None)
 
         if retrieve_temporary_list:
-            from aiida.orm.data.folder import FolderData
-            retrieved_temporary_folder = FolderData()
-            retrieved_temporary_folder.replace_with_folder(retrieved.get_abs_path('.'), overwrite=True)
+            retrieved_temporary_folder = retrieved.get_abs_path('.')
         else:
             retrieved_temporary_folder = None
 
