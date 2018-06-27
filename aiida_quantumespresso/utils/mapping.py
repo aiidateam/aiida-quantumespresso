@@ -50,6 +50,11 @@ def prepare_process_inputs(process, inputs):
     :param inputs: a dictionary of inputs intended for submission of the process
     :return: a dictionary with all bare dictionaries wrapped in ParameterData if dictated by process spec
     """
+    from aiida.orm.calculation.job import JobCalculation
+
+    if issubclass(process, JobCalculation):
+        process = process.process()
+
     prepared_inputs = AttributeDict()
 
     try:

@@ -19,10 +19,6 @@ PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
 class PwBandsWorkChain(WorkChain):
     """Workchain to compute a band structure for a given structure using Quantum ESPRESSO pw.x"""
 
-    ERROR_SUB_PROCESS_RELAX_FAILED = 2
-    ERROR_SUB_PROCESS_SCF_FAILED = 3
-    ERROR_SUB_PROCESS_BANDS_FAILED = 4
-
     @classmethod
     def define(cls, spec):
         super(PwBandsWorkChain, cls).define(spec)
@@ -45,6 +41,12 @@ class PwBandsWorkChain(WorkChain):
             cls.inspect_bands,
             cls.results,
         )
+        spec.exit_code(401, 'ERROR_SUB_PROCESS_FAILED_RELAX',
+            message='the PwRelaxWorkChain sub process failed')
+        spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_SCF',
+            message='the scf PwBasexWorkChain sub process failed')
+        spec.exit_code(403, 'ERROR_SUB_PROCESS_FAILED_BANDS',
+            message='the bands PwBasexWorkChain sub process failed')
         spec.output('primitive_structure', valid_type=StructureData)
         spec.output('seekpath_parameters', valid_type=ParameterData)
         spec.output('scf_parameters', valid_type=ParameterData)
@@ -72,11 +74,13 @@ class PwBandsWorkChain(WorkChain):
 
     def inspect_relax(self):
         """Verify that the PwRelaxWorkChain finished successfully."""
-        if not self.ctx.workchain_relax.is_finished_ok:
-            self.report('PwRelaxWorkChain failed with exit status {}'.format(self.ctx.workchain_relax.exit_status))
-            return self.ERROR_SUB_PROCESS_RELAX_FAILED
+        workchain = self.ctx.workchain_relax
+
+        if not workchain.is_finished_ok:
+            self.report('PwRelaxWorkChain failed with exit status {}'.format(workchain.exit_status))
+            return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
         else:
-            self.ctx.current_structure = self.ctx.workchain_relax.out.output_structure
+            self.ctx.current_structure = workchain.out.output_structure
 
     def run_seekpath(self):
         """
@@ -114,16 +118,17 @@ class PwBandsWorkChain(WorkChain):
 
     def inspect_scf(self):
         """Verify that the PwBaseWorkChain for the scf run finished successfully."""
-        if not self.ctx.workchain_scf.is_finished_ok:
-            self.report('scf PwBaseWorkChain failed with exit status {}'.format(self.ctx.workchain_scf.exit_status))
-            return self.ERROR_SUB_PROCESS_SCF_FAILED
+        workchain = self.ctx.workchain_bands
+
+        if not workchain.is_finished_ok:
+            self.report('scf PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
+            return self.exit_codes.ERROR_SUB_PROCESS_FAILED_SCF
         else:
-            self.ctx.current_folder = self.ctx.workchain_scf.out.remote_folder
+            self.ctx.current_folder = workchain.out.remote_folder
 
     def run_bands(self):
         """Run the PwBaseWorkChain in bands mode along the path of high-symmetry determined by Seekpath."""
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='bands'))
-        inputs.structure = self.ctx.current_structure
         inputs.parameters = inputs.parameters.get_dict()
         inputs.parameters.setdefault('CONTROL', {})
         inputs.parameters['CONTROL']['restart_mode'] = 'restart'
@@ -144,14 +149,14 @@ class PwBandsWorkChain(WorkChain):
 
     def inspect_bands(self):
         """Verify that the PwBaseWorkChain for the bands run finished successfully."""
-        if not self.ctx.workchain_bands.is_finished_ok:
-            self.report('bands PwBaseWorkChain failed with exit status {}'.format(self.ctx.workchain_scf.exit_status))
-            return self.ERROR_SUB_PROCESS_BANDS_FAILED
+        workchain = self.ctx.workchain_bands
+
+        if not workchain.is_finished_ok:
+            self.report('bands PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
+            return self.exit_codes.ERROR_SUB_PROCESS_FAILED_BANDS
 
     def results(self):
-        """
-        Attach the desired output nodes directly as outputs of the workchain
-        """
+        """Attach the desired output nodes directly as outputs of the workchain."""
         self.report('workchain succesfully completed')
         self.out('scf_parameters', self.ctx.workchain_scf.out.output_parameters)
         self.out('band_parameters', self.ctx.workchain_bands.out.output_parameters)

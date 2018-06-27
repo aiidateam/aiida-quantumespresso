@@ -2,6 +2,9 @@
 from collections import namedtuple
 from functools import wraps
 
+from aiida.work import ExitCode
+
+
 ErrorHandler = namedtuple('ErrorHandler', 'priority method')
 """
 A namedtuple to define an error handler for a :class:`~aiida.work.workchain.WorkChain`.
@@ -15,8 +18,9 @@ as its sole argument. If the condition of the error handler is met, it should re
 :param method: the workchain class method
 """
 
-ErrorHandlerReport = namedtuple('ErrorHandlerReport', 'is_handled do_break exit_status')
-ErrorHandlerReport.__new__.__defaults__ = (False, False, None)
+
+ErrorHandlerReport = namedtuple('ErrorHandlerReport', 'is_handled do_break exit_code')
+ErrorHandlerReport.__new__.__defaults__ = (False, False, ExitCode())
 """
 A namedtuple to define an error handler report for a :class:`~aiida.work.workchain.WorkChain`.
 
@@ -28,8 +32,9 @@ the 'do_break' field should be set to `True`
 
 :param is_handled: boolean, set to `True` when an error was handled, default is `False`
 :param do_break: boolean, set to `True` if no further error handling should be performed, default is `False`
-:param exit_status: set to non-zero integer to abort the workchain with this exit status, default is `None`
+:param exit_code: an instance of the :class:`~aiida.work.ExitCode` tuple
 """
+
 
 def register_error_handler(cls, priority):
     """

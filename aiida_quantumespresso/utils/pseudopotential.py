@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from aiida.orm.data.upf import UpfData, get_pseudos_from_structure
 
+
 def get_pseudos_of_calc(calc):
     """
     Return a dictionary of pseudos used by a given (pw.x, cp.x) calculation.
@@ -24,6 +25,7 @@ def get_pseudos_of_calc(calc):
             pseudos[multiplekindstring] = inputs[linkname]
     return pseudos
 
+
 def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=None):
     """
     Use the explicitly passed pseudos dictionary or use the pseudo_family in combination with
@@ -34,7 +36,7 @@ def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=N
     but multiple links for the same input node are not allowed. Moreover, to couple the UPF nodes
     to the Calculation instance, we have to go through the use_pseudo method, which takes the kind
     name as an additional parameter. When creating a Calculation through a Process instance, one
-    cannot call the use methods directly but rather should pass them as keyword arguments. However, 
+    cannot call the use methods directly but rather should pass them as keyword arguments. However,
     we can pass the additional parameters by using them as the keys of a dictionary
 
     :param structure: StructureData node
