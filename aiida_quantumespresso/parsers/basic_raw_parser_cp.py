@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-from aiida_quantumespresso.parsers import QEOutputParsingError
 from xml.dom.minidom import parseString
+from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
 from aiida_quantumespresso.parsers.basic_raw_parser_pw import (read_xml_card,
-                                                                       parse_xml_child_integer, parse_xml_child_bool,
-                                                                       parse_xml_child_str, parse_xml_child_float,
-                                                                       parse_xml_child_attribute_str, xml_card_cell,
-                                                                       xml_card_ions,
-)
+                                                               parse_xml_child_integer,
+                                                               parse_xml_child_str, parse_xml_child_float,
+                                                               parse_xml_child_attribute_str, xml_card_cell,
+                                                               xml_card_ions,
+                                                               )
 
 
 def parse_cp_traj_stanzas(num_elements, splitlines, prepend_name, rescale=1.):
@@ -150,10 +150,7 @@ def parse_cp_xml_counter_output(data):
 
 
 def parse_cp_raw_output(out_file, xml_file=None, xml_counter_file=None):
-    parser_version = '0.1'
-    parser_info = {}
-    parser_info['parser_warnings'] = []
-    parser_info['parser_info'] = 'AiiDA QE Parser v{}'.format(parser_version)
+    parser_info = get_parser_info(parser_info_template='aiida-quantumespresso basic parser cp.x v{}')
 
     # analyze the xml
     if xml_file is not None:

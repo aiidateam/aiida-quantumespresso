@@ -9,9 +9,9 @@ by operative decision doesn't have much structure encoded, [the values are simpl
 import xml.dom.minidom
 import os
 import string
+from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
 from aiida_quantumespresso.parsers.constants import ry_to_ev,hartree_to_ev,bohr_to_ang,ry_si,bohr_si
 from aiida_quantumespresso.parsers.raw_parser_pw import convert_qe_time_to_sec
-from aiida_quantumespresso.parsers import QEOutputParsingError
 
 def parse_raw_output_neb(out_file, input_dict,parser_opts=None):
     """
@@ -37,11 +37,7 @@ def parse_raw_output_neb(out_file, input_dict,parser_opts=None):
     import copy
 
     job_successful = True
-    
-    parser_version = '0.1'
-    parser_info = {}
-    parser_info['parser_warnings'] = []
-    parser_info['parser_info'] = 'AiiDA QE Parser v{}'.format(parser_version)
+    parser_info = get_parser_info(parser_info_template='aiida-quantumespresso parser neb.x v{}')
     
     # load NEB out file
     try:
