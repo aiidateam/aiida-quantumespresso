@@ -5,6 +5,9 @@ set -ev
 
 if [[ "$TEST_TYPE" == "tests" ]]
 then
+    # Copy test data from the repository to the installed package of the virtual environment
+    cp -r ${TRAVIS_BUILD_DIR}/tests ${VIRTUAL_ENV}/lib/python2.7/site-packages/
+
     # Refresh the entrypoint cache through reentry
     reentry scan
 

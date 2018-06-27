@@ -38,10 +38,11 @@
             "quantumespresso.pw2wannier90 = aiida_quantumespresso.parsers.pw2wannier90:Pw2wannier90Parser"
         ], 
         "aiida.tests": [
-            "quantumespresso.pw = aiida_quantumespresso.tests.quantumespressopw", 
-            "quantumespresso.pw_input = aiida_quantumespresso.tests.pwinputparser", 
-            "quantumespresso.pw_immigrant = aiida_quantumespresso.tests.quantumespressopwimmigrant", 
-            "quantumespresso.tcodexporter = aiida_quantumespresso.tests.tcodexporter"
+            "quantumespresso.parsers = tests.parsers.parsers", 
+            "quantumespresso.pw = tests.parsers.quantumespressopw", 
+            "quantumespresso.pw_input = tests.parsers.pwinputparser", 
+            "quantumespresso.pw_immigrant = tests.parsers.quantumespressopwimmigrant", 
+            "quantumespresso.tcodexporter = tests.parsers.tcodexporter"
         ], 
         "aiida.tools.dbexporters.tcod_plugins": [
             "quantumespresso.cp = aiida_quantumespresso.tools.dbexporters.tcod_plugins.cp:CpTcodtranslator", 
@@ -78,7 +79,7 @@
         ]
     }, 
     "install_requires": [
-        "aiida_core>=1.0.0a1[atomic_tools]", 
+        "aiida_core[atomic_tools]>=1.0.0a1", 
         "click"
     ], 
     "license": "MIT License", 
