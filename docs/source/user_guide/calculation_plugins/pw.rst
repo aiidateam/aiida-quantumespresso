@@ -103,6 +103,20 @@ All output nodes can be accessed with the ``calculation.out`` method.
   Present only if the calculation changes the cell shape.
   Kpoints refer to the last structure.
 
+.. _pw-parser-version:
+
+Parser version
+--------------
+The parser shares the version of the package and it will be stored in the `output_parameters` node of the calculation under the key ``parser_version``.
+Therefore, to retrieve the version of the parser that was used to parse a completed calculation, you can do:
+
+.. code:: python
+
+    parser_version = calculation.out.output_parameters.get_dict()['parser_version']
+
+.. note:: The convention of tying the parser version to the version of the package was introduced in ``v2.1.0``.
+    Before that version, the version of the parser was statically defined and included in the key ``parser_info`` of the ``output_parameters`` node.
+
 Errors
 ------
 Errors of the parsing are reported in the log of the calculation (accessible 
@@ -164,6 +178,50 @@ list of lists::
 the list of lists (of booleans) must be of length N times 3, where N is the 
 number of sites (i.e., atoms) in the input structure. ``False`` means that
 the coordinate is free to move, ``True`` blocks that coordinate.
+
+ATOMIC_FORCES
+.............
+The pw.x input file format allows one to specify an additional card ``ATOMIC_FORCES``, which can be used to define external forces on each atom.
+Details for the input format and units can be found `in the official documentation <http://www.quantum-espresso.org/Doc/INPUT_PW.html#ATOMIC_FORCES>`_.
+Note that the input card expects exactly as many force vectors as there are entries in the ``ATOMIC_POSITIONS`` card.
+If we take as an example a silicon input structure with exactly two sites, the settings dictionary would like the following::
+
+    settings_dict = {
+        'ATOMIC_FORCES': [
+            [0.1, 0.0, 0.0],
+            [0.0, 0.5, 0.3],
+        ]
+    }
+
+When passed as an input to the calculation, this will result in the following card being printed in the input file::
+
+    ATOMIC_FORCES
+    Si           0.1000000000       0.0000000000       0.0000000000
+    Si           0.0000000000       0.5000000000       0.3000000000
+
+.. note:: the values for the forces in the settings input node are used as is and will not be converted by the plugin, so they should be given in Ry/a.u. as that is the unit that the code expects.
+
+ATOMIC_VELOCITIES
+.................
+Although undocumented, the pw.x input file format allows one to specify an additional card ``ATOMIC_VELOCITIES``, which can be used to define initial velocities on each atom, in parallel to the external forces card.
+Details for the input format and units can be found `in the official documentation for CP <http://www.quantum-espresso.org/Doc/INPUT_CP.html#ATOMIC_VELOCITIES>`_.
+Note that the input card expects exactly as many velocity vectors as there are entries in the ``ATOMIC_POSITIONS`` card.
+If we take as an example a silicon input structure with exactly two sites, the settings dictionary would like the following::
+
+    settings_dict = {
+        'ATOMIC_VELOCITIES': [
+            [0.1, 0.0, 0.0],
+            [0.0, 0.5, 0.3],
+        ]
+    }
+
+When passed as an input to the calculation, this will result in the following card being printed in the input file::
+
+    ATOMIC_VELOCITIES
+    Si           0.1000000000       0.0000000000       0.0000000000
+    Si           0.0000000000       0.5000000000       0.3000000000
+
+.. note:: the values for the velocities in the settings input node are used as is and will not be converted by the plugin, so they should be given in a.u. as that is the unit that the code expects.
 
 Passing an explicit list of kpoints on a grid
 .............................................

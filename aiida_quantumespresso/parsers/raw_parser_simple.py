@@ -3,7 +3,8 @@
 A basic parser for the common format of QE
 """
 from aiida_quantumespresso.parsers import parse_QE_errors, convert_qe_time_to_sec
-from aiida_quantumespresso.parsers import QEOutputParsingError
+from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
+
 
 def parse_qe_simple(filecontent, codename=None):
     """
@@ -19,7 +20,9 @@ def parse_qe_simple(filecontent, codename=None):
     """
     # suppose at the start that the job is successful
     successful = True
+    parser_info = get_parser_info(parser_info_template='aiida-quantumespresso parser simple v{}')
     parsed_data = {'warnings': []}
+    parsed_data.update(parser_info)
 
     error_message = "There was an error, please check the 'error_message' key"
 
@@ -31,7 +34,7 @@ def parse_qe_simple(filecontent, codename=None):
     lines = filecontent.split('\n')
 
     if codename is not None:
-        for count in range (len(lines)):
+        for count in range(len(lines)):
             line = lines[count]
 
             codestring = "Program {}".format(codename)
@@ -66,7 +69,4 @@ def parse_qe_simple(filecontent, codename=None):
                 if len(messages) > 0:
                     parsed_data['error_message'].extend(messages)
 
-
     return successful, parsed_data
-
-
