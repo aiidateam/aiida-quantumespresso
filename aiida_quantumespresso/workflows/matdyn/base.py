@@ -10,15 +10,12 @@ from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkC
 from aiida_quantumespresso.data.forceconstants import ForceconstantsData
 from aiida_quantumespresso.utils.resources import get_default_options
 
-
 MatdynCalculation = CalculationFactory('quantumespresso.matdyn')
 
 
 class MatdynBaseWorkChain(BaseRestartWorkChain):
-    """
-    Base Workchain to launch a Quantum Espresso matdyn.x calculation and restart it until
-    successfully finished or until the maximum number of restarts is exceeded
-    """
+    """Workchain to run a Quantum ESPRESSO matdyn.x calculation with automated error handling and restarts"""
+
     _calculation_class = MatdynCalculation
 
     @classmethod

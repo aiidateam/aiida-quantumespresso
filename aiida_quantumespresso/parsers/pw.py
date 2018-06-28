@@ -78,12 +78,14 @@ class PwParser(Parser):
 
         # The stdout is required for parsing
         if self._calc._OUTPUT_FILE_NAME not in list_of_files:
-            self.logger.error("The standard output file '{}' was not found but is required".format(self._calc._OUTPUT_FILE_NAME))
+            self.logger.error("The standard output file '{}' was not found but is required".format(
+                self._calc._OUTPUT_FILE_NAME))
             return False, ()
 
         # The xml file is required for parsing
         if self._calc._DATAFILE_XML_BASENAME not in list_of_files:
-            self.logger.error("The xml output file '{}' was not found but is required".format(self._calc._DATAFILE_XML_BASENAME))
+            self.logger.error("The xml output file '{}' was not found but is required".format(
+                self._calc._DATAFILE_XML_BASENAME))
             successful = False
             xml_file = None
         else:
@@ -180,9 +182,10 @@ class PwParser(Parser):
                             rotation_cart_old = numpy.dot(cell_T, numpy.dot(rotation_cryst, cell_Tinv))
 
                             inversion = self._possible_symmetries[index]['inversion']
-                            if not are_matrices_equal(rotation_cart_old, rotation_cart_new, swap_sign_matrix_b=inversion):
+                            if not are_matrices_equal(
+                                    rotation_cart_old, rotation_cart_new, swap_sign_matrix_b=inversion):
                                 self.logger.error('Mapped rotation matrix {} does not match the original rotation {}'
-                                    .format(rotation_cart_new, rotation_cart_old))
+                                                  .format(rotation_cart_new, rotation_cart_old))
                                 new_dict['all_symmetries'] = this_sym
                             else:
                                 # Note: here I lose the information about equivalent ions and fractional_translation.
@@ -258,9 +261,7 @@ class PwParser(Parser):
 
                 the_bands_data = BandsData()
                 the_bands_data.set_kpointsdata(kpoints_for_bands)
-                the_bands_data.set_bands(bands_energies,
-                                         units=bands_data['bands_units'],
-                                         occupations=the_occupations)
+                the_bands_data.set_bands(bands_energies, units=bands_data['bands_units'], occupations=the_occupations)
 
                 new_nodes_list += [('output_band', the_bands_data)]
                 out_dict['linknames_band'] = ['output_band']
@@ -427,70 +428,38 @@ class PwParser(Parser):
 
         # Names for the 32 matrices, with and without inversion
         matrices_name = [
-            'identity                                     ',
-            '180 deg rotation - cart. axis [0,0,1]        ',
-            '180 deg rotation - cart. axis [0,1,0]        ',
-            '180 deg rotation - cart. axis [1,0,0]        ',
-            '180 deg rotation - cart. axis [1,1,0]        ',
-            '180 deg rotation - cart. axis [1,-1,0]       ',
-            ' 90 deg rotation - cart. axis [0,0,-1]       ',
-            ' 90 deg rotation - cart. axis [0,0,1]        ',
-            '180 deg rotation - cart. axis [1,0,1]        ',
-            '180 deg rotation - cart. axis [-1,0,1]       ',
-            ' 90 deg rotation - cart. axis [0,1,0]        ',
-            ' 90 deg rotation - cart. axis [0,-1,0]       ',
-            '180 deg rotation - cart. axis [0,1,1]        ',
-            '180 deg rotation - cart. axis [0,1,-1]       ',
-            ' 90 deg rotation - cart. axis [-1,0,0]       ',
-            ' 90 deg rotation - cart. axis [1,0,0]        ',
-            '120 deg rotation - cart. axis [-1,-1,-1]     ',
-            '120 deg rotation - cart. axis [-1,1,1]       ',
-            '120 deg rotation - cart. axis [1,1,-1]       ',
-            '120 deg rotation - cart. axis [1,-1,1]       ',
-            '120 deg rotation - cart. axis [1,1,1]        ',
-            '120 deg rotation - cart. axis [-1,1,-1]      ',
-            '120 deg rotation - cart. axis [1,-1,-1]      ',
-            '120 deg rotation - cart. axis [-1,-1,1]      ',
-            ' 60 deg rotation - cryst. axis [0,0,1]       ',
-            ' 60 deg rotation - cryst. axis [0,0,-1]      ',
-            '120 deg rotation - cryst. axis [0,0,1]       ',
-            '120 deg rotation - cryst. axis [0,0,-1]      ',
-            '180 deg rotation - cryst. axis [1,-1,0]      ',
-            '180 deg rotation - cryst. axis [2,1,0]       ',
-            '180 deg rotation - cryst. axis [0,1,0]       ',
-            '180 deg rotation - cryst. axis [1,1,0]       ',
-            'inversion                                    ',
-            'inv. 180 deg rotation - cart. axis [0,0,1]   ',
-            'inv. 180 deg rotation - cart. axis [0,1,0]   ',
-            'inv. 180 deg rotation - cart. axis [1,0,0]   ',
-            'inv. 180 deg rotation - cart. axis [1,1,0]   ',
-            'inv. 180 deg rotation - cart. axis [1,-1,0]  ',
-            'inv.  90 deg rotation - cart. axis [0,0,-1]  ',
-            'inv.  90 deg rotation - cart. axis [0,0,1]   ',
-            'inv. 180 deg rotation - cart. axis [1,0,1]   ',
-            'inv. 180 deg rotation - cart. axis [-1,0,1]  ',
-            'inv.  90 deg rotation - cart. axis [0,1,0]   ',
-            'inv.  90 deg rotation - cart. axis [0,-1,0]  ',
-            'inv. 180 deg rotation - cart. axis [0,1,1]   ',
-            'inv. 180 deg rotation - cart. axis [0,1,-1]  ',
-            'inv.  90 deg rotation - cart. axis [-1,0,0]  ',
-            'inv.  90 deg rotation - cart. axis [1,0,0]   ',
-            'inv. 120 deg rotation - cart. axis [-1,-1,-1]',
-            'inv. 120 deg rotation - cart. axis [-1,1,1]  ',
-            'inv. 120 deg rotation - cart. axis [1,1,-1]  ',
-            'inv. 120 deg rotation - cart. axis [1,-1,1]  ',
-            'inv. 120 deg rotation - cart. axis [1,1,1]   ',
-            'inv. 120 deg rotation - cart. axis [-1,1,-1] ',
-            'inv. 120 deg rotation - cart. axis [1,-1,-1] ',
-            'inv. 120 deg rotation - cart. axis [-1,-1,1] ',
-            'inv.  60 deg rotation - cryst. axis [0,0,1]  ',
-            'inv.  60 deg rotation - cryst. axis [0,0,-1] ',
-            'inv. 120 deg rotation - cryst. axis [0,0,1]  ',
-            'inv. 120 deg rotation - cryst. axis [0,0,-1] ',
-            'inv. 180 deg rotation - cryst. axis [1,-1,0] ',
-            'inv. 180 deg rotation - cryst. axis [2,1,0]  ',
-            'inv. 180 deg rotation - cryst. axis [0,1,0]  ',
-            'inv. 180 deg rotation - cryst. axis [1,1,0]  '
+            'identity                                     ', '180 deg rotation - cart. axis [0,0,1]        ',
+            '180 deg rotation - cart. axis [0,1,0]        ', '180 deg rotation - cart. axis [1,0,0]        ',
+            '180 deg rotation - cart. axis [1,1,0]        ', '180 deg rotation - cart. axis [1,-1,0]       ',
+            ' 90 deg rotation - cart. axis [0,0,-1]       ', ' 90 deg rotation - cart. axis [0,0,1]        ',
+            '180 deg rotation - cart. axis [1,0,1]        ', '180 deg rotation - cart. axis [-1,0,1]       ',
+            ' 90 deg rotation - cart. axis [0,1,0]        ', ' 90 deg rotation - cart. axis [0,-1,0]       ',
+            '180 deg rotation - cart. axis [0,1,1]        ', '180 deg rotation - cart. axis [0,1,-1]       ',
+            ' 90 deg rotation - cart. axis [-1,0,0]       ', ' 90 deg rotation - cart. axis [1,0,0]        ',
+            '120 deg rotation - cart. axis [-1,-1,-1]     ', '120 deg rotation - cart. axis [-1,1,1]       ',
+            '120 deg rotation - cart. axis [1,1,-1]       ', '120 deg rotation - cart. axis [1,-1,1]       ',
+            '120 deg rotation - cart. axis [1,1,1]        ', '120 deg rotation - cart. axis [-1,1,-1]      ',
+            '120 deg rotation - cart. axis [1,-1,-1]      ', '120 deg rotation - cart. axis [-1,-1,1]      ',
+            ' 60 deg rotation - cryst. axis [0,0,1]       ', ' 60 deg rotation - cryst. axis [0,0,-1]      ',
+            '120 deg rotation - cryst. axis [0,0,1]       ', '120 deg rotation - cryst. axis [0,0,-1]      ',
+            '180 deg rotation - cryst. axis [1,-1,0]      ', '180 deg rotation - cryst. axis [2,1,0]       ',
+            '180 deg rotation - cryst. axis [0,1,0]       ', '180 deg rotation - cryst. axis [1,1,0]       ',
+            'inversion                                    ', 'inv. 180 deg rotation - cart. axis [0,0,1]   ',
+            'inv. 180 deg rotation - cart. axis [0,1,0]   ', 'inv. 180 deg rotation - cart. axis [1,0,0]   ',
+            'inv. 180 deg rotation - cart. axis [1,1,0]   ', 'inv. 180 deg rotation - cart. axis [1,-1,0]  ',
+            'inv.  90 deg rotation - cart. axis [0,0,-1]  ', 'inv.  90 deg rotation - cart. axis [0,0,1]   ',
+            'inv. 180 deg rotation - cart. axis [1,0,1]   ', 'inv. 180 deg rotation - cart. axis [-1,0,1]  ',
+            'inv.  90 deg rotation - cart. axis [0,1,0]   ', 'inv.  90 deg rotation - cart. axis [0,-1,0]  ',
+            'inv. 180 deg rotation - cart. axis [0,1,1]   ', 'inv. 180 deg rotation - cart. axis [0,1,-1]  ',
+            'inv.  90 deg rotation - cart. axis [-1,0,0]  ', 'inv.  90 deg rotation - cart. axis [1,0,0]   ',
+            'inv. 120 deg rotation - cart. axis [-1,-1,-1]', 'inv. 120 deg rotation - cart. axis [-1,1,1]  ',
+            'inv. 120 deg rotation - cart. axis [1,1,-1]  ', 'inv. 120 deg rotation - cart. axis [1,-1,1]  ',
+            'inv. 120 deg rotation - cart. axis [1,1,1]   ', 'inv. 120 deg rotation - cart. axis [-1,1,-1] ',
+            'inv. 120 deg rotation - cart. axis [1,-1,-1] ', 'inv. 120 deg rotation - cart. axis [-1,-1,1] ',
+            'inv.  60 deg rotation - cryst. axis [0,0,1]  ', 'inv.  60 deg rotation - cryst. axis [0,0,-1] ',
+            'inv. 120 deg rotation - cryst. axis [0,0,1]  ', 'inv. 120 deg rotation - cryst. axis [0,0,-1] ',
+            'inv. 180 deg rotation - cryst. axis [1,-1,0] ', 'inv. 180 deg rotation - cryst. axis [2,1,0]  ',
+            'inv. 180 deg rotation - cryst. axis [0,1,0]  ', 'inv. 180 deg rotation - cryst. axis [1,1,0]  '
         ]
 
         rotations = []

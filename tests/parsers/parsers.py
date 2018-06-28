@@ -14,7 +14,6 @@ Tests for specific subclasses of Data
 from aiida.backends.testbase import AiidaTestCase
 
 
-
 ### Here comparisons are defined #####################################
 ### Each comparison has to be a function with name
 ### _comparison_COMPARISONNAME
@@ -54,6 +53,7 @@ def _comparison_LengthEqual(testclass, dbdata, comparisondata):
 
 ### End of comparison definition #####################################
 
+
 def output_test(pk, testname, skip_uuids_from_inputs=[]):
     """
     This is the function that should be used to create a new test from an
@@ -77,13 +77,10 @@ def output_test(pk, testname, skip_uuids_from_inputs=[]):
     from aiida.orm.utils import load_node
     from aiida.orm.importexport import export_tree
     c = load_node(pk, parent_class=JobCalculation)
-    outfolder = "test_{}_{}".format(
-        c.get_parser_name().replace('.', '_'),
-        testname)
+    outfolder = "test_{}_{}".format(c.get_parser_name().replace('.', '_'), testname)
 
     if not is_valid_folder_name(outfolder):
-        raise ValueError("The testname is invalid; it can contain only "
-                         "letters, digits or underscores")
+        raise ValueError("The testname is invalid; it can contain only " "letters, digits or underscores")
 
     if os.path.exists(outfolder):
         raise ValueError("Out folder '{}' already exists".format(outfolder))
@@ -98,11 +95,8 @@ def output_test(pk, testname, skip_uuids_from_inputs=[]):
     try:
         to_export.append(c.out.retrieved.dbnode)
     except AttributeError:
-        raise ValueError("No output retrieved node; without it, we cannot "
-                         "test the parser!")
-    export_tree(to_export, folder=folder,
-                also_parents=False,
-                also_calc_outputs=False)
+        raise ValueError("No output retrieved node; without it, we cannot " "test the parser!")
+    export_tree(to_export, folder=folder, also_parents=False, also_calc_outputs=False)
 
     # Create an empty checks file
     with open(os.path.join(outfolder, '_aiida_checks.json'), 'w') as f:
@@ -111,8 +105,7 @@ def output_test(pk, testname, skip_uuids_from_inputs=[]):
     for path, dirlist, filelist in os.walk(outfolder):
         if len(dirlist) == 0 and len(filelist) == 0:
             with open("{}/.gitignore".format(path), 'w') as f:
-                f.write("# This is a placeholder file, used to make git "
-                        "store an empty folder")
+                f.write("# This is a placeholder file, used to make git " "store an empty folder")
                 f.flush()
 
 
@@ -133,6 +126,7 @@ def is_valid_folder_name(name):
         return False
 
     return True
+
 
 class TestParsers(AiidaTestCase):
     """
@@ -175,11 +169,9 @@ class TestParsers(AiidaTestCase):
         except IOError:
             raise ValueError("This test does not provide a check file!")
         except ValueError:
-            raise ValueError("This test does provide a check file, but it cannot "
-                             "be JSON-decoded!")
+            raise ValueError("This test does provide a check file, but it cannot " "be JSON-decoded!")
 
-        mod_path = 'aiida.backends.tests.parser_tests.{}'.format(
-            os.path.split(outfolder)[1])
+        mod_path = 'aiida.backends.tests.parser_tests.{}'.format(os.path.split(outfolder)[1])
 
         skip_test = False
         try:
@@ -216,8 +208,7 @@ class TestParsers(AiidaTestCase):
                     try:
                         test_node = parsed_output_nodes[test_node_name]
                     except KeyError:
-                        raise AssertionError("Output node '{}' expected but "
-                                             "not found".format(test_node_name))
+                        raise AssertionError("Output node '{}' expected but " "not found".format(test_node_name))
 
                     # Each subkey: attribute to check
                     # attr_test is the name of the attribute
@@ -226,57 +217,41 @@ class TestParsers(AiidaTestCase):
                             dbdata = test_node.get_attr(attr_test)
                         except AttributeError:
                             raise AssertionError("Attribute '{}' not found in "
-                                                 "parsed node '{}'".format(
-                                attr_test,
-                                test_node_name))
+                                                 "parsed node '{}'".format(attr_test, test_node_name))
                         # Test data from the JSON
                         attr_test_listtests = tests[test_node_name][attr_test]
-                        for test_number, attr_test_data in enumerate(
-                                attr_test_listtests, start=1):
+                        for test_number, attr_test_data in enumerate(attr_test_listtests, start=1):
                             try:
                                 comparison = attr_test_data.pop('comparison')
                             except KeyError as e:
-                                raise ValueError(
-                                    "Missing '{}' in the '{}' field "
-                                    "in '{}' in "
-                                    "the test file".format(e.message,
-                                                           attr_test,
-                                                           test_node_name))
+                                raise ValueError("Missing '{}' in the '{}' field "
+                                                 "in '{}' in "
+                                                 "the test file".format(e.message, attr_test, test_node_name))
 
                             try:
-                                comparison_test = globals()[
-                                    "_comparison_{}".format(comparison)]
+                                comparison_test = globals()["_comparison_{}".format(comparison)]
                             except KeyError:
-                                raise ValueError(
-                                    "Unsupported '{}' comparison in "
-                                    "the '{}' field in '{}' in "
-                                    "the test file".format(comparison,
-                                                           attr_test,
-                                                           test_node_name))
+                                raise ValueError("Unsupported '{}' comparison in "
+                                                 "the '{}' field in '{}' in "
+                                                 "the test file".format(comparison, attr_test, test_node_name))
 
                             if not isfunction(comparison_test):
-                                raise TypeError(
-                                    "Internal error: the variable _comparison_{} is not a "
-                                    "function!".format(comparison))
+                                raise TypeError("Internal error: the variable _comparison_{} is not a "
+                                                "function!".format(comparison))
 
                             try:
-                                comparison_test(testclass=self, dbdata=dbdata,
-                                                comparisondata=attr_test_data)
+                                comparison_test(testclass=self, dbdata=dbdata, comparisondata=attr_test_data)
                             except Exception as e:
                                 # I change both the message and the 'args'
                                 # (apparently, args[0] is used by str(e))
                                 # Probably, a 'better' way should be found to do this!
-                                e.message = "Failed test #{} for {}->{}: {}".format(
-                                    test_number, test_node_name, attr_test,
-                                    e.message)
+                                e.message = "Failed test #{} for {}->{}: {}".format(test_number, test_node_name,
+                                                                                    attr_test, e.message)
                                 if e.args:
-                                    e.args = tuple(
-                                        ["Failed test #{} for {}->{}: {}".format(
-                                            test_number,
-                                            test_node_name,
-                                            attr_test,
-                                            e.args[0])]
-                                        + list(e.args[1:]))
+                                    e.args = tuple([
+                                        "Failed test #{} for {}->{}: {}".format(test_number, test_node_name, attr_test,
+                                                                                e.args[0])
+                                    ] + list(e.args[1:]))
                                 raise e
 
         return base_test
@@ -298,8 +273,7 @@ class TestParsers(AiidaTestCase):
                     absf = os.path.abspath(os.path.join(parser_test_folder, f))
                     if is_valid_folder_name(f) and os.path.isdir(absf):
                         function_name = f
-                        setattr(newcls, function_name,
-                                newcls.return_base_test(absf))
+                        setattr(newcls, function_name, newcls.return_base_test(absf))
 
             return newcls
 

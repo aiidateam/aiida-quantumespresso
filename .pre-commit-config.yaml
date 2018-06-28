@@ -1,3 +1,4 @@
+repos:
 - repo: local
   hooks: 
   - id: version-number
@@ -7,3 +8,19 @@
     files: '^(setup.json)'
     pass_filenames: false
 
+- repo: git://github.com/pre-commit/mirrors-yapf
+  sha: v0.19.0
+  hooks:
+  - id: yapf
+    language: system
+    files: >-
+      (?x)^(
+        .travis-data/.*.py|
+        aiida_quantumespresso/.*/.*.py|
+        tests/calculations/.*.py|
+        tests/parsers/parsers.py|
+        tests/parsers/pwinputparser.py|
+        tests/parsers/quantumespressopw.py|
+        tests/parsers/quantumespressopwimmigrant.py|
+        tests/parsers/tcodexporter.py
+      )$

@@ -27,4 +27,3 @@ from aiida.common.constants import (
 #  REAL(DP), PARAMETER :: AMU_AU           = AMU_SI / ELECTRONMASS_SI
 #  REAL(DP), PARAMETER :: AMU_RY           = AMU_AU / 2.0_DP
 amu_Ry = 911.4442421323
-

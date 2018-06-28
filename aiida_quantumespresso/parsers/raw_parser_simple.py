@@ -62,8 +62,7 @@ def parse_qe_simple(filecontent, codename=None):
                 # Pass count=0 to start from the top of the file (anyway, it's a short file)
                 # pass an empty warnings list because we don't have existing warnings
                 # (this is used to avoid duplication of errors)
-                messages = parse_QE_errors(lines, count=count,
-                                           warnings=parsed_data['error_message'])
+                messages = parse_QE_errors(lines, count=count, warnings=parsed_data['error_message'])
 
                 # if it found something, add to log
                 if len(messages) > 0:

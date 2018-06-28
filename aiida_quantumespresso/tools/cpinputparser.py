@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
 import re
 import numpy as np
-from qeinputparser import (
-        QeInputFile,parse_namelists,parse_atomic_positions,
-        parse_atomic_species,parse_cell_parameters, RE_FLAGS )
+from qeinputparser import (QeInputFile, parse_namelists, parse_atomic_positions, parse_atomic_species,
+                           parse_cell_parameters, RE_FLAGS)
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.common.exceptions import ParsingError
 
+from qeinputparser import (QeInputFile, parse_namelists, parse_atomic_positions, parse_atomic_species,
+                           parse_cell_parameters, RE_FLAGS)
 
-from qeinputparser import (
-        QeInputFile,parse_namelists,parse_atomic_positions,
-        parse_atomic_species,parse_cell_parameters, RE_FLAGS )
 
 class CpInputFile(QeInputFile):
+
     def __init__(self, pwinput):
         """
         Parse inputs's namelist and cards to create attributes of the info.
@@ -43,4 +42,3 @@ class CpInputFile(QeInputFile):
         self.cell_parameters = parse_cell_parameters(self.input_txt)
         # Parse the ATOMIC_SPECIES card.
         self.atomic_species = parse_atomic_species(self.input_txt)
-    

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from aiida_quantumespresso.calculations.pw import PwCalculation
-from aiida_quantumespresso.parsers.basic_raw_parser_pw import (
-    parse_raw_output, QEOutputParsingError)
+from aiida_quantumespresso.parsers.basic_raw_parser_pw import (parse_raw_output, QEOutputParsingError)
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.folder import FolderData
 from aiida.parsers.parser import Parser  # , ParserParamManager
@@ -62,7 +61,6 @@ class BasicpwParser(Parser):
             self.logger.error("No retrieved folder found")
             return False, ()
 
-
         # check what is inside the folder
         list_of_files = out_folder.get_folder_list()
         # at least the stdout should exist
@@ -78,15 +76,12 @@ class BasicpwParser(Parser):
             has_xml = True
         # look for bands
         has_bands = False
-        if glob.glob(os.path.join(out_folder.get_abs_path('.'),
-                                  'K*[0-9]')):
+        if glob.glob(os.path.join(out_folder.get_abs_path('.'), 'K*[0-9]')):
             # Note: assuming format of kpoints subfolder is K*[0-9]
             has_bands = True
             # TODO: maybe it can be more general than bands only?
-        out_file = os.path.join(out_folder.get_abs_path('.'),
-                                self._calc._OUTPUT_FILE_NAME)
-        xml_file = os.path.join(out_folder.get_abs_path('.'),
-                                self._calc._DATAFILE_XML_BASENAME)
+        out_file = os.path.join(out_folder.get_abs_path('.'), self._calc._OUTPUT_FILE_NAME)
+        xml_file = os.path.join(out_folder.get_abs_path('.'), self._calc._DATAFILE_XML_BASENAME)
         dir_with_bands = out_folder.get_abs_path('.')
 
         # call the raw parsing function
@@ -95,8 +90,7 @@ class BasicpwParser(Parser):
             parsing_args.append(xml_file)
         if has_bands:
             if not has_xml:
-                self.logger.warning("Cannot parse bands if xml file not "
-                                    "found")
+                self.logger.warning("Cannot parse bands if xml file not " "found")
             else:
                 parsing_args.append(dir_with_bands)
 
@@ -128,8 +122,7 @@ class BasicpwParser(Parser):
 
             kpoints_from_output = KpointsData()
             kpoints_from_output.set_cell_from_structure(struc)
-            kpoints_from_output.set_kpoints(k_points_list, cartesian=True,
-                                            weights=k_points_weights_list)
+            kpoints_from_output.set_kpoints(k_points_list, cartesian=True, weights=k_points_weights_list)
             kpoints_from_input = self._calc.inp.kpoints
             try:
                 kpoints_from_input.get_kpoints()
@@ -160,10 +153,11 @@ class BasicpwParser(Parser):
                 # printing (logic is broken if restart is on)
 
                 traj = TrajectoryData()
-                traj.set_trajectory(stepids=stepids,
-                                    cells=cells,
-                                    symbols=symbols,
-                                    positions=positions,
+                traj.set_trajectory(
+                    stepids=stepids,
+                    cells=cells,
+                    symbols=symbols,
+                    positions=positions,
                 )
                 for x in trajectory_data.iteritems():
                     traj.set_array(x[0], numpy.array(x[1]))

@@ -113,23 +113,28 @@ class BasePwCpInputGenerator(object):
                               "restarts and similar"),
             },
             "pseudo": {
-                'valid_types': UpfData,
-                'additional_parameter': "kind",
-                'linkname': cls._get_linkname_pseudo,
-                'docstring': (
-                    "Use a node for the UPF pseudopotential of one of "
-                    "the elements in the structure. You have to pass "
-                    "an additional parameter ('kind') specifying the "
-                    "name of the structure kind (i.e., the name of "
-                    "the species) for which you want to use this "
-                    "pseudo. You can pass either a string, or a "
-                    "list of strings if more than one kind uses the "
-                    "same pseudo"),
+                'valid_types':
+                UpfData,
+                'additional_parameter':
+                "kind",
+                'linkname':
+                cls._get_linkname_pseudo,
+                'docstring': ("Use a node for the UPF pseudopotential of one of "
+                              "the elements in the structure. You have to pass "
+                              "an additional parameter ('kind') specifying the "
+                              "name of the structure kind (i.e., the name of "
+                              "the species) for which you want to use this "
+                              "pseudo. You can pass either a string, or a "
+                              "list of strings if more than one kind uses the "
+                              "same pseudo"),
             },
             "vdw_table": {
-                'valid_types': SinglefileData,
-                'additional_parameter': None,
-                'linkname': 'vdw_table',
+                'valid_types':
+                SinglefileData,
+                'additional_parameter':
+                None,
+                'linkname':
+                'vdw_table',
                 'docstring': ("Use a Van der Waals kernel table. It should be "
                               "a SinglefileData, with the table provided "
                               "(note that the filename is not checked but it "
@@ -137,7 +142,7 @@ class BasePwCpInputGenerator(object):
             },
         }
 
-    def _generate_PWCPinputdata(self,parameters,settings_dict,pseudos,structure,kpoints=None):
+    def _generate_PWCPinputdata(self, parameters, settings_dict, pseudos, structure, kpoints=None):
         """
         This method creates the content of an input file
         in the PW/CP format.
@@ -150,10 +155,8 @@ class BasePwCpInputGenerator(object):
         # I put the first-level keys as uppercase (i.e., namelist and card names)
         # and the second-level keys as lowercase
         # (deeper levels are unchanged)
-        input_params = _uppercase_dict(parameters.get_dict(),
-                                       dict_name='parameters')
-        input_params = {k: _lowercase_dict(v, dict_name=k)
-                        for k, v in input_params.iteritems()}
+        input_params = _uppercase_dict(parameters.get_dict(), dict_name='parameters')
+        input_params = {k: _lowercase_dict(v, dict_name=k) for k, v in input_params.iteritems()}
 
         # I remove unwanted elements (for the moment, instead, I stop; to change when
         # we setup a reasonable logging)
@@ -166,12 +169,10 @@ class BasePwCpInputGenerator(object):
             if nl in input_params:
                 # The following lines is meant to avoid putting in input the
                 # parameters like celldm(*)
-                stripped_inparams = [re.sub("[(0-9)]", "", _)
-                                     for _ in input_params[nl].keys()]
+                stripped_inparams = [re.sub("[(0-9)]", "", _) for _ in input_params[nl].keys()]
                 if flag in stripped_inparams:
-                    raise InputValidationError(
-                        "You cannot specify explicitly the '{}' flag in the '{}' "
-                        "namelist or card.".format(flag, nl))
+                    raise InputValidationError("You cannot specify explicitly the '{}' flag in the '{}' "
+                                               "namelist or card.".format(flag, nl))
                 if defaultvalue is not None:
                     if nl not in input_params:
                         input_params[nl] = {}
@@ -186,15 +187,13 @@ class BasePwCpInputGenerator(object):
         input_params['CONTROL']['prefix'] = self._PREFIX
 
         input_params['CONTROL']['verbosity'] = input_params['CONTROL'].get(
-            'verbosity',
-            self._default_verbosity)  # Set to high if not specified
+            'verbosity', self._default_verbosity)  # Set to high if not specified
 
         # ============ I prepare the input site data =============
         # ------------ CELL_PARAMETERS -----------
         cell_parameters_card = "CELL_PARAMETERS angstrom\n"
         for vector in structure.cell:
-            cell_parameters_card += ("{0:18.10f} {1:18.10f} {2:18.10f}"
-                                     "\n".format(*vector))
+            cell_parameters_card += ("{0:18.10f} {1:18.10f} {2:18.10f}" "\n".format(*vector))
 
         # ------------- ATOMIC_SPECIES ------------
         atomic_species_card_list = []
@@ -223,31 +222,24 @@ class BasePwCpInputGenerator(object):
             except KeyError:
                 # The pseudo was not encountered yet; use a new name and
                 # also add it to the local copy list
-                filename = get_unique_filename(ps.filename,
-                                               pseudo_filenames.values())
+                filename = get_unique_filename(ps.filename, pseudo_filenames.values())
                 pseudo_filenames[ps.pk] = filename
                 # I add this pseudo file to the list of files to copy
-                local_copy_list_to_append.append((ps.get_file_abs_path(),
-                                        os.path.join(self._PSEUDO_SUBFOLDER,
-                                                     filename)))
+                local_copy_list_to_append.append((ps.get_file_abs_path(), os.path.join(
+                    self._PSEUDO_SUBFOLDER, filename)))
             kind_names.append(kind.name)
-            atomic_species_card_list.append("{} {} {}\n".format(
-                kind.name.ljust(6), kind.mass, filename))
+            atomic_species_card_list.append("{} {} {}\n".format(kind.name.ljust(6), kind.mass, filename))
 
         # I join the lines, but I resort them using the alphabetical order of
         # species, given by the kind_names list. I also store the mapping_species
         # list, with the order of species used in the file
-        mapping_species, sorted_atomic_species_card_list = zip(
-            *sorted(zip(kind_names, atomic_species_card_list)))
+        mapping_species, sorted_atomic_species_card_list = zip(*sorted(zip(kind_names, atomic_species_card_list)))
         # The format of mapping_species required later is a dictionary, whose
         # values are the indices, so I convert to this format
         # Note the (idx+1) to convert to fortran 1-based lists
-        mapping_species = {sp_name: (idx + 1) for idx, sp_name
-                           in enumerate(mapping_species)}
+        mapping_species = {sp_name: (idx + 1) for idx, sp_name in enumerate(mapping_species)}
         # I add the first line
-        sorted_atomic_species_card_list = (["ATOMIC_SPECIES\n"] +
-                                           list(
-                                               sorted_atomic_species_card_list))
+        sorted_atomic_species_card_list = (["ATOMIC_SPECIES\n"] + list(sorted_atomic_species_card_list))
         atomic_species_card = "".join(sorted_atomic_species_card_list)
         # Free memory
         del sorted_atomic_species_card_list
@@ -264,32 +256,23 @@ class BasePwCpInputGenerator(object):
             fixed_coords_strings = [""] * len(structure.sites)
         else:
             if len(fixed_coords) != len(structure.sites):
-                raise InputValidationError(
-                    "Input structure contains {:d} sites, but "
-                    "fixed_coords has length {:d}".format(len(structure.sites),
-                                                          len(fixed_coords)))
+                raise InputValidationError("Input structure contains {:d} sites, but "
+                                           "fixed_coords has length {:d}".format(
+                                               len(structure.sites), len(fixed_coords)))
 
             for i, this_atom_fix in enumerate(fixed_coords):
                 if len(this_atom_fix) != 3:
-                    raise InputValidationError(
-                        "fixed_coords({:d}) has not length three"
-                        "".format(i + 1))
+                    raise InputValidationError("fixed_coords({:d}) has not length three" "".format(i + 1))
                 for fixed_c in this_atom_fix:
                     if not isinstance(fixed_c, bool):
-                        raise InputValidationError(
-                            "fixed_coords({:d}) has non-boolean "
-                            "elements".format(i + 1))
+                        raise InputValidationError("fixed_coords({:d}) has non-boolean " "elements".format(i + 1))
 
                 if_pos_values = [self._if_pos(_) for _ in this_atom_fix]
-                fixed_coords_strings.append(
-                    "  {:d} {:d} {:d}".format(*if_pos_values))
+                fixed_coords_strings.append("  {:d} {:d} {:d}".format(*if_pos_values))
 
-        for site, fixed_coords_string in zip(
-                structure.sites, fixed_coords_strings):
-            atomic_positions_card_list.append(
-                "{0} {1:18.10f} {2:18.10f} {3:18.10f} {4}\n".format(
-                    site.kind_name.ljust(6), site.position[0], site.position[1],
-                    site.position[2], fixed_coords_string))
+        for site, fixed_coords_string in zip(structure.sites, fixed_coords_strings):
+            atomic_positions_card_list.append("{0} {1:18.10f} {2:18.10f} {3:18.10f} {4}\n".format(
+                site.kind_name.ljust(6), site.position[0], site.position[1], site.position[2], fixed_coords_string))
         atomic_positions_card = "".join(atomic_positions_card_list)
         del atomic_positions_card_list
 
@@ -301,9 +284,7 @@ class BasePwCpInputGenerator(object):
             if len(atomic_forces) != len(structure.sites):
                 raise InputValidationError(
                     'Input structure contains {:d} sites, but atomic forces has length {:d}'.format(
-                        len(structure.sites), len(atomic_forces)
-                    )
-                )
+                        len(structure.sites), len(atomic_forces)))
 
             lines = ['ATOMIC_FORCES\n']
             for site, vector in zip(structure.sites, atomic_forces):
@@ -326,9 +307,7 @@ class BasePwCpInputGenerator(object):
             if len(atomic_velocities) != len(structure.sites):
                 raise InputValidationError(
                     'Input structure contains {:d} sites, but atomic velocities has length {:d}'.format(
-                        len(structure.sites), len(atomic_velocities)
-                    )
-                )
+                        len(structure.sites), len(atomic_velocities)))
 
             lines = ['ATOMIC_VELOCITIES\n']
             for site, vector in zip(structure.sites, atomic_velocities):
@@ -357,8 +336,7 @@ class BasePwCpInputGenerator(object):
             try:
                 mesh, offset = kpoints.get_kpoints_mesh()
                 has_mesh = True
-                force_kpoints_list = settings_dict.pop('FORCE_KPOINTS_LIST',
-                                                       False)
+                force_kpoints_list = settings_dict.pop('FORCE_KPOINTS_LIST', False)
                 if force_kpoints_list:
                     kpoints_list = kpoints.get_kpoints_mesh(print_list=True)
                     num_kpoints = len(kpoints_list)
@@ -372,12 +350,10 @@ class BasePwCpInputGenerator(object):
                     num_kpoints = len(kpoints_list)
                     has_mesh = False
                     if num_kpoints == 0:
-                        raise InputValidationError(
-                            "At least one k point must be "
-                            "provided for non-gamma calculations")
+                        raise InputValidationError("At least one k point must be "
+                                                   "provided for non-gamma calculations")
                 except AttributeError:
-                    raise InputValidationError(
-                        "No valid kpoints have been found")
+                    raise InputValidationError("No valid kpoints have been found")
 
                 try:
                     _, weights = kpoints.get_kpoints(also_weights=True)
@@ -388,18 +364,14 @@ class BasePwCpInputGenerator(object):
 
             if gamma_only:
                 if has_mesh:
-                    if tuple(mesh) != (1, 1, 1) or tuple(offset) != (
-                            0., 0., 0.):
-                        raise InputValidationError(
-                            "If a gamma_only calculation is requested, the "
-                            "kpoint mesh must be (1,1,1),offset=(0.,0.,0.)")
+                    if tuple(mesh) != (1, 1, 1) or tuple(offset) != (0., 0., 0.):
+                        raise InputValidationError("If a gamma_only calculation is requested, the "
+                                                   "kpoint mesh must be (1,1,1),offset=(0.,0.,0.)")
 
                 else:
-                    if (len(kpoints_list) != 1 or
-                                tuple(kpoints_list[0]) != tuple(0., 0., 0.)):
-                        raise InputValidationError(
-                            "If a gamma_only calculation is requested, the "
-                            "kpoints coordinates must only be (0.,0.,0.)")
+                    if (len(kpoints_list) != 1 or tuple(kpoints_list[0]) != tuple(0., 0., 0.)):
+                        raise InputValidationError("If a gamma_only calculation is requested, the "
+                                                   "kpoints coordinates must only be (0.,0.,0.)")
 
                 kpoints_type = "gamma"
 
@@ -413,12 +385,10 @@ class BasePwCpInputGenerator(object):
 
             if kpoints_type == "automatic":
                 if any([(i != 0. and i != 0.5) for i in offset]):
-                    raise InputValidationError("offset list must only be made "
-                                               "of 0 or 0.5 floats")
+                    raise InputValidationError("offset list must only be made " "of 0 or 0.5 floats")
                 the_offset = [0 if i == 0. else 1 for i in offset]
                 the_6_integers = list(mesh) + the_offset
-                kpoints_card_list.append("{:d} {:d} {:d} {:d} {:d} {:d}\n"
-                                         "".format(*the_6_integers))
+                kpoints_card_list.append("{:d} {:d} {:d} {:d} {:d} {:d}\n" "".format(*the_6_integers))
 
             elif kpoints_type == "gamma":
                 # nothing to be written in this case
@@ -426,9 +396,8 @@ class BasePwCpInputGenerator(object):
             else:
                 kpoints_card_list.append("{:d}\n".format(num_kpoints))
                 for kpoint, weight in zip(kpoints_list, weights):
-                    kpoints_card_list.append(
-                        "  {:18.10f} {:18.10f} {:18.10f} {:18.10f}"
-                        "\n".format(kpoint[0], kpoint[1], kpoint[2], weight))
+                    kpoints_card_list.append("  {:18.10f} {:18.10f} {:18.10f} {:18.10f}"
+                                             "\n".format(kpoint[0], kpoint[1], kpoint[2], weight))
 
             kpoints_card = "".join(kpoints_card_list)
             del kpoints_card_list
@@ -437,25 +406,22 @@ class BasePwCpInputGenerator(object):
         try:
             namelists_toprint = settings_dict.pop('NAMELISTS')
             if not isinstance(namelists_toprint, list):
-                raise InputValidationError(
-                    "The 'NAMELISTS' value, if specified in the settings input "
-                    "node, must be a list of strings")
+                raise InputValidationError("The 'NAMELISTS' value, if specified in the settings input "
+                                           "node, must be a list of strings")
         except KeyError:  # list of namelists not specified; do automatic detection
             try:
                 control_nl = input_params['CONTROL']
                 calculation_type = control_nl['calculation']
             except KeyError:
-                raise InputValidationError(
-                    "No 'calculation' in CONTROL namelist."
-                    "It is required for automatic detection of the valid list "
-                    "of namelists. Otherwise, specify the list of namelists "
-                    "using the NAMELISTS key inside the 'settings' input node")
+                raise InputValidationError("No 'calculation' in CONTROL namelist."
+                                           "It is required for automatic detection of the valid list "
+                                           "of namelists. Otherwise, specify the list of namelists "
+                                           "using the NAMELISTS key inside the 'settings' input node")
 
             try:
                 namelists_toprint = self._automatic_namelists[calculation_type]
             except KeyError:
-                sugg_string = get_suggestion(calculation_type,
-                                             self._automatic_namelists.keys())
+                sugg_string = get_suggestion(calculation_type, self._automatic_namelists.keys())
                 raise InputValidationError("Unknown 'calculation' value in "
                                            "CONTROL namelist {}. Otherwise, specify the list of "
                                            "namelists using the NAMELISTS inside the 'settings' input "
@@ -464,13 +430,13 @@ class BasePwCpInputGenerator(object):
         inputfile = ""
         for namelist_name in namelists_toprint:
             inputfile += "&{0}\n".format(namelist_name)
-            # namelist content; set to {} if not present, so that we leave an 
+            # namelist content; set to {} if not present, so that we leave an
             # empty namelist
             namelist = input_params.pop(namelist_name, {})
             for k, v in sorted(namelist.iteritems()):
                 inputfile += convert_input_to_namelist_entry(k, v, mapping=mapping_species)
             inputfile += "/\n"
-    
+
         # Write cards now
         inputfile += atomic_species_card
         inputfile += atomic_positions_card
@@ -479,12 +445,11 @@ class BasePwCpInputGenerator(object):
         inputfile += cell_parameters_card
         #TODO: write CONSTRAINTS
         #TODO: write OCCUPATIONS
-            
-        if input_params:            
-            raise InputValidationError(
-                "The following namelists are specified in input_params, but are "
-                "not valid namelists for the current type of calculation: "
-                "{}".format(",".join(input_params.keys())))
+
+        if input_params:
+            raise InputValidationError("The following namelists are specified in input_params, but are "
+                                       "not valid namelists for the current type of calculation: "
+                                       "{}".format(",".join(input_params.keys())))
 
         return inputfile, local_copy_list_to_append
 
@@ -532,11 +497,9 @@ class BasePwCpInputGenerator(object):
             settings_dict = {}
         else:
             if not isinstance(settings, ParameterData):
-                raise InputValidationError("settings, if specified, must be of "
-                                           "type ParameterData")
+                raise InputValidationError("settings, if specified, must be of " "type ParameterData")
             # Settings converted to uppercase
-            settings_dict = _uppercase_dict(settings.get_dict(),
-                                            dict_name='settings')
+            settings_dict = _uppercase_dict(settings.get_dict(), dict_name='settings')
 
         pseudos = {}
         # I create here a dictionary that associates each kind name to a pseudo
@@ -550,21 +513,18 @@ class BasePwCpInputGenerator(object):
                                                "type UpfData".format(",".join(kinds)))
                 for kind in kinds:
                     if kind in pseudos:
-                        raise InputValidationError("Pseudo for kind {} passed "
-                                                   "more than one time".format(kind))
+                        raise InputValidationError("Pseudo for kind {} passed " "more than one time".format(kind))
                     pseudos[kind] = the_pseudo
 
         parent_calc_folder = inputdict.pop(self.get_linkname('parent_folder'), None)
         if parent_calc_folder is not None:
             if not isinstance(parent_calc_folder, RemoteData):
-                raise InputValidationError("parent_calc_folder, if specified, "
-                                           "must be of type RemoteData")
+                raise InputValidationError("parent_calc_folder, if specified, " "must be of type RemoteData")
 
         vdw_table = inputdict.pop(self.get_linkname('vdw_table'), None)
         if vdw_table is not None:
             if not isinstance(vdw_table, SinglefileData):
-                raise InputValidationError("vdw_table, if specified, "
-                                           "must be of type SinglefileData")
+                raise InputValidationError("vdw_table, if specified, " "must be of type SinglefileData")
 
         hubbard_file = inputdict.pop(self.get_linkname('hubbard_file'), None)
         if hubbard_file is not None:
@@ -585,8 +545,8 @@ class BasePwCpInputGenerator(object):
         kindnames = [k.name for k in structure.kinds]
         if set(kindnames) != set(pseudos.keys()):
             err_msg = ("Mismatch between the defined pseudos and the list of "
-                       "kinds of the structure. Pseudos: {}; kinds: {}".format(
-                ",".join(pseudos.keys()), ",".join(list(kindnames))))
+                       "kinds of the structure. Pseudos: {}; kinds: {}".format(",".join(pseudos.keys()), ",".join(
+                           list(kindnames))))
             raise InputValidationError(err_msg)
 
         ##############################
@@ -611,8 +571,8 @@ class BasePwCpInputGenerator(object):
             dst_path = self.input_file_name_hubbard_file
             local_copy_list.append((src_path, dst_path))
 
-        input_filecontent, local_copy_pseudo_list = self._generate_PWCPinputdata(parameters,settings_dict,pseudos,
-                                                                                 structure,kpoints)
+        input_filecontent, local_copy_pseudo_list = self._generate_PWCPinputdata(parameters, settings_dict, pseudos,
+                                                                                 structure, kpoints)
         local_copy_list += local_copy_pseudo_list
 
         input_filename = tempfolder.get_abs_path(self._INPUT_FILE_NAME)
@@ -620,32 +580,24 @@ class BasePwCpInputGenerator(object):
             infile.write(input_filecontent)
 
         # operations for restart
-        symlink = settings_dict.pop('PARENT_FOLDER_SYMLINK',
-                                    self._default_symlink_usage)  # a boolean
+        symlink = settings_dict.pop('PARENT_FOLDER_SYMLINK', self._default_symlink_usage)  # a boolean
         if symlink:
             if parent_calc_folder is not None:
                 # I put the symlink to the old parent ./out folder
-                remote_symlink_list.append(
-                    (parent_calc_folder.get_computer().uuid,
-                     os.path.join(parent_calc_folder.get_remote_path(),
-                                  self._restart_copy_from),
-                     self._restart_copy_to
-                     ))
+                remote_symlink_list.append((parent_calc_folder.get_computer().uuid,
+                                            os.path.join(parent_calc_folder.get_remote_path(), self._restart_copy_from),
+                                            self._restart_copy_to))
         else:
             # copy remote output dir, if specified
             if parent_calc_folder is not None:
-                remote_copy_list.append(
-                    (parent_calc_folder.get_computer().uuid,
-                     os.path.join(parent_calc_folder.get_remote_path(),
-                                  self._restart_copy_from),
-                     self._restart_copy_to
-                     ))
+                remote_copy_list.append((parent_calc_folder.get_computer().uuid,
+                                         os.path.join(parent_calc_folder.get_remote_path(), self._restart_copy_from),
+                                         self._restart_copy_to))
 
         # here we may create an aiida.EXIT file
         create_exit_file = settings_dict.pop('ONLY_INITIALIZATION', False)
         if create_exit_file:
-            exit_filename = tempfolder.get_abs_path(
-                '{}.EXIT'.format(self._PREFIX))
+            exit_filename = tempfolder.get_abs_path('{}.EXIT'.format(self._PREFIX))
             with open(exit_filename, 'w') as f:
                 f.write('\n')
 
@@ -653,8 +605,7 @@ class BasePwCpInputGenerator(object):
         environ_namelist = settings_dict.pop('ENVIRON', None)
         if environ_namelist is not None:
             if not isinstance(environ_namelist, dict):
-                raise InputValidationError(
-                    "ENVIRON namelist should be specified as a dictionary")
+                raise InputValidationError("ENVIRON namelist should be specified as a dictionary")
             # We first add the environ flag to the command-line options (if not already present)
             try:
                 if '-environ' not in settings_dict['CMDLINE']:
@@ -663,15 +614,15 @@ class BasePwCpInputGenerator(object):
                 settings_dict['CMDLINE'] = ['-environ']
             # To create a mapping from the species to an incremental fortran 1-based index
             # we use the alphabetical order as in the inputdata generation
-            mapping_species = {sp_name: (idx+1) for idx, sp_name in 
-                               enumerate(sorted([kind.name for kind in structure.kinds]))}
-            environ_input_filename = tempfolder.get_abs_path(
-                self._ENVIRON_INPUT_FILE_NAME)
+            mapping_species = {
+                sp_name: (idx + 1)
+                for idx, sp_name in enumerate(sorted([kind.name for kind in structure.kinds]))
+            }
+            environ_input_filename = tempfolder.get_abs_path(self._ENVIRON_INPUT_FILE_NAME)
             with open(environ_input_filename, 'w') as environ_infile:
                 environ_infile.write("&ENVIRON\n")
                 for k, v in sorted(environ_namelist.iteritems()):
-                    environ_infile.write(
-                        convert_input_to_namelist_entry(k, v, mapping=mapping_species))
+                    environ_infile.write(convert_input_to_namelist_entry(k, v, mapping=mapping_species))
                 environ_infile.write("/\n")
 
         # Check for the deprecated 'ALSO_BANDS' setting and if present fire a deprecation log message
@@ -681,12 +632,10 @@ class BasePwCpInputGenerator(object):
             from aiida.common.log import get_dblogger_extra
 
             logger = logging.LoggerAdapter(logger=self.logger, extra=get_dblogger_extra(self))
-            logger.warning(
-                "The '{}' setting is deprecated as bands are now parsed by default. "
-                "If you do not want the bands to be parsed set the '{}' to True {}. "
-                "Note that the eigenvalue.xml files are also no longer stored in the repository"
-                .format('also_bands', 'no_bands', type(self))
-            )
+            logger.warning("The '{}' setting is deprecated as bands are now parsed by default. "
+                           "If you do not want the bands to be parsed set the '{}' to True {}. "
+                           "Note that the eigenvalue.xml files are also no longer stored in the repository".format(
+                               'also_bands', 'no_bands', type(self)))
 
         calcinfo = CalcInfo()
 
@@ -737,7 +686,7 @@ class BasePwCpInputGenerator(object):
         if settings_dict:
             raise InputValidationError("The following keys have been found in "
                                        "the settings input node, but were not understood: {}".format(
-                ",".join(settings_dict.keys())))
+                                           ",".join(settings_dict.keys())))
 
         return calcinfo
 
@@ -779,8 +728,7 @@ class BasePwCpInputGenerator(object):
         elif isinstance(kind, basestring):
             suffix_string = kind
         else:
-            raise TypeError("The parameter 'kind' of _get_linkname_pseudo can "
-                            "only be a string or a list of strings")
+            raise TypeError("The parameter 'kind' of _get_linkname_pseudo can " "only be a string or a list of strings")
         return "{}{}".format(cls._get_linkname_pseudo_prefix(), suffix_string)
 
     def use_pseudos_from_family(self, family_name):
@@ -844,12 +792,13 @@ class BasePwCpInputGenerator(object):
         input_remote = self.get_inputs(node_type=RemoteData)
         if input_remote:
             raise ValidationError("Cannot set several parent calculation to a "
-                                  "{} calculation".format(
-                self.__class__.__name__))
+                                  "{} calculation".format(self.__class__.__name__))
 
         self.use_parent_folder(remotedata)
 
-    def create_restart(self, force_restart=False, parent_folder_symlink=None,
+    def create_restart(self,
+                       force_restart=False,
+                       parent_folder_symlink=None,
                        use_output_structure=False,
                        restart_from_beginning=False):
         """
@@ -891,10 +840,9 @@ class BasePwCpInputGenerator(object):
         # correctly handle IMPORTED calculations.
         if self.get_state(from_attribute=True) != calc_states.FINISHED:
             if not force_restart:
-                raise InputValidationError(
-                    "Calculation to be restarted must be "
-                    "in the {} state. Otherwise, use the force_restart "
-                    "flag".format(calc_states.FINISHED))
+                raise InputValidationError("Calculation to be restarted must be "
+                                           "in the {} state. Otherwise, use the force_restart "
+                                           "flag".format(calc_states.FINISHED))
 
         if parent_folder_symlink is None:
             parent_folder_symlink = self._default_symlink_usage
@@ -911,8 +859,7 @@ class BasePwCpInputGenerator(object):
 
         remote_folders = self.get_outputs(node_type=RemoteData)
         if len(remote_folders) != 1:
-            raise InputValidationError("More than one output RemoteData found "
-                                       "in calculation {}".format(self.pk))
+            raise InputValidationError("More than one output RemoteData found " "in calculation {}".format(self.pk))
         remote_folder = remote_folders[0]
 
         c2 = self.copy()
@@ -939,8 +886,7 @@ class BasePwCpInputGenerator(object):
             c2.use_kpoints(calc_inp[self.get_linkname('kpoints')])
         c2.use_code(calc_inp[self.get_linkname('code')])
         try:
-            old_settings_dict = calc_inp[self.get_linkname('settings')
-            ].get_dict()
+            old_settings_dict = calc_inp[self.get_linkname('settings')].get_dict()
         except KeyError:
             old_settings_dict = {}
         if parent_folder_symlink is not None:
@@ -977,10 +923,9 @@ def _lowercase_dict(d, dict_name):
     if len(new_dict) != len(d):
         num_items = Counter(str(k).lower() for k in d.keys())
         double_keys = ",".join([k for k, v in num_items if v > 1])
-        raise InputValidationError(
-            "Inside the dictionary '{}' there are the following keys that "
-            "are repeated more than once when compared case-insensitively: {}."
-            "This is not allowed.".format(dict_name, double_keys))
+        raise InputValidationError("Inside the dictionary '{}' there are the following keys that "
+                                   "are repeated more than once when compared case-insensitively: {}."
+                                   "This is not allowed.".format(dict_name, double_keys))
     return new_dict
 
 
@@ -993,8 +938,7 @@ def _uppercase_dict(d, dict_name):
     if len(new_dict) != len(d):
         num_items = Counter(str(k).upper() for k in d.keys())
         double_keys = ",".join([k for k, v in num_items if v > 1])
-        raise InputValidationError(
-            "Inside the dictionary '{}' there are the following keys that "
-            "are repeated more than once when compared case-insensitively: {}."
-            "This is not allowed.".format(dict_name, double_keys))
+        raise InputValidationError("Inside the dictionary '{}' there are the following keys that "
+                                   "are repeated more than once when compared case-insensitively: {}."
+                                   "This is not allowed.".format(dict_name, double_keys))
     return new_dict

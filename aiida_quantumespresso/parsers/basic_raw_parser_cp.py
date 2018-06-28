@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 from xml.dom.minidom import parseString
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
-from aiida_quantumespresso.parsers.basic_raw_parser_pw import (read_xml_card,
-                                                               parse_xml_child_integer,
-                                                               parse_xml_child_str, parse_xml_child_float,
-                                                               parse_xml_child_attribute_str, xml_card_cell,
-                                                               xml_card_ions,
-                                                               )
+from aiida_quantumespresso.parsers.basic_raw_parser_pw import (
+    read_xml_card,
+    parse_xml_child_integer,
+    parse_xml_child_str,
+    parse_xml_child_float,
+    parse_xml_child_attribute_str,
+    xml_card_cell,
+    xml_card_ions,
+)
 
 
 def parse_cp_traj_stanzas(num_elements, splitlines, prepend_name, rescale=1.):
@@ -47,8 +50,7 @@ def parse_cp_traj_stanzas(num_elements, splitlines, prepend_name, rescale=1.):
             else:
                 raise ValueError("Wrong line length ({})".format(len(l)))
         if len(this_stanza) != 0:
-            raise ValueError("Wrong length of last block ({} lines instead of 0)."
-                             .format(len(this_stanza)))
+            raise ValueError("Wrong length of last block ({} lines instead of 0).".format(len(this_stanza)))
         if len(steps) != len(stanzas):
             raise ValueError("Length mismatch between number of steps and number of defined stanzas.")
         return {
@@ -158,8 +160,7 @@ def parse_cp_raw_output(out_file, xml_file=None, xml_counter_file=None):
             with open(xml_file, 'r') as f:
                 xml_lines = f.read()
         except IOError:
-            raise QEOutputParsingError("Failed to open xml file: %s."
-                                       .format(xml_file))
+            raise QEOutputParsingError("Failed to open xml file: %s.".format(xml_file))
         # TODO: this function should probably be the same of pw.
         # after all, the parser was fault-tolerant
         xml_data = parse_cp_xml_output(xml_lines)
@@ -167,15 +168,13 @@ def parse_cp_raw_output(out_file, xml_file=None, xml_counter_file=None):
         parser_info['parser_warnings'].append('Skipping the parsing of the xml file.')
         xml_data = {}
 
-
     # analyze the counter file, which keeps info on the steps
     if xml_counter_file is not None:
         try:
             with open(xml_counter_file, 'r') as f:
                 xml_counter_lines = f.read()
         except IOError:
-            raise QEOutputParsingError("Failed to open xml counter file: %s."
-                                       .format(xml_file))
+            raise QEOutputParsingError("Failed to open xml counter file: %s.".format(xml_file))
         xml_counter_data = parse_cp_xml_counter_output(xml_counter_lines)
     else:
         xml_counter_data = {}
@@ -318,8 +317,8 @@ def parse_cp_xml_output(data):
                 third_tagname = 'cdmi'
                 third_tag = second_tag.getElementsByTagName(third_tagname)[0]
                 list_data = third_tag.childNodes[0].data.rstrip().split()
-                parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = [float(i) for i in
-                                                                                                 list_data]
+                parsed_data[(second_tagname + '_' + third_tagname).replace(
+                    '-', '_').lower()] = [float(i) for i in list_data]
             except:
                 pass
 

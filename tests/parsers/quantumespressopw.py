@@ -32,16 +32,11 @@ class TestQEPWInputGeneration(AiidaTestCase):
     """
     Test if the input is correctly generated
     """
+
     @classmethod
     def setUpClass(cls):
         super(TestQEPWInputGeneration, cls).setUpClass()
-        cls.calc_params = {
-            'computer': cls.computer,
-            'resources': {
-                'num_machines': 1,
-                'num_mpiprocs_per_machine': 1
-            }
-        }
+        cls.calc_params = {'computer': cls.computer, 'resources': {'num_machines': 1, 'num_mpiprocs_per_machine': 1}}
 
         cls.code = Code()
         cls.code.set_remote_computer_exec((cls.computer, '/x.x'))
@@ -78,9 +73,7 @@ class TestQEPWInputGeneration(AiidaTestCase):
         k.set_kpoints_mesh([4, 4, 4])
         k.store()
 
-        pseudo_dir = os.path.join(os.path.split(aiida.__file__)[0],
-                                  os.pardir, 'examples',
-                                  'testdata', 'qepseudos')
+        pseudo_dir = os.path.join(os.path.split(aiida.__file__)[0], os.pardir, 'examples', 'testdata', 'qepseudos')
 
         raw_pseudos = [
             ("Ba.pbesol-spn-rrkjus_psl.0.2.3-tot-pslib030.UPF", 'Ba'),
@@ -93,8 +86,7 @@ class TestQEPWInputGeneration(AiidaTestCase):
         logging.disable(logging.ERROR)
         for fname, elem in raw_pseudos:
             absname = os.path.realpath(os.path.join(pseudo_dir, fname))
-            pseudo, _ = UpfData.get_or_create(
-                absname, use_first=True)
+            pseudo, _ = UpfData.get_or_create(absname, use_first=True)
             pseudos[elem] = pseudo
         # Reset logging level
         logging.disable(logging.NOTSET)
@@ -145,10 +137,7 @@ class TestQEPWInputGeneration(AiidaTestCase):
         """
         import logging
 
-        s = StructureData(cell=[
-            [2.871, 0., 0.],
-            [0., 2.871, 0.],
-            [0., 0., 2.871]])
+        s = StructureData(cell=[[2.871, 0., 0.], [0., 2.871, 0.], [0., 0., 2.871]])
 
         ## I leave this as a reference, but I use instead the
         ## append_atom method
@@ -158,8 +147,7 @@ class TestQEPWInputGeneration(AiidaTestCase):
         # s.append_site(Site(kind_name='Ba1', position=[0.,0.,0.]))
         # s.append_site(Site(kind_name='Ba2', position=[1.4355,1.4355,1.4355]))
         s.append_atom(symbols='Ba', position=[0., 0., 0.], name='Ba1')
-        s.append_atom(symbols='Ba', position=[1.4355, 1.4355, 1.4355],
-                      name='Ba2')
+        s.append_atom(symbols='Ba', position=[1.4355, 1.4355, 1.4355], name='Ba2')
 
         input_params = {
             'CONTROL': {
@@ -174,7 +162,7 @@ class TestQEPWInputGeneration(AiidaTestCase):
                 'starting_magnetization': {
                     'Ba1': 0.5,
                     'Ba2': -0.5
-                    },
+                },
             },
             'ELECTRONS': {
                 'conv_thr': 1.e-10,
@@ -190,9 +178,7 @@ class TestQEPWInputGeneration(AiidaTestCase):
         k.set_kpoints_mesh([4, 4, 4])
         k.store()
 
-        pseudo_dir = os.path.join(os.path.split(aiida.__file__)[0],
-                                  os.pardir, 'examples',
-                                  'testdata', 'qepseudos')
+        pseudo_dir = os.path.join(os.path.split(aiida.__file__)[0], os.pardir, 'examples', 'testdata', 'qepseudos')
 
         raw_pseudos = [
             ("Ba.pbesol-spn-rrkjus_psl.0.2.3-tot-pslib030.UPF", 'Ba'),
@@ -203,8 +189,7 @@ class TestQEPWInputGeneration(AiidaTestCase):
         logging.disable(logging.ERROR)
         for fname, elem in raw_pseudos:
             absname = os.path.realpath(os.path.join(pseudo_dir, fname))
-            pseudo, _ = UpfData.get_or_create(
-                absname, use_first=True)
+            pseudo, _ = UpfData.get_or_create(absname, use_first=True)
             pseudos[elem] = pseudo
         # Reset logging level
         logging.disable(logging.NOTSET)
@@ -225,31 +210,21 @@ class TestQEPWInputGeneration(AiidaTestCase):
             with open(os.path.join(f.abspath, 'aiida.in')) as infile:
                 lines = [_.strip() for _ in infile.readlines()]
 
-            find_kind_ba1 = any('Ba1' in l and
-                                'Ba.pbesol-spn-rrkjus_psl.0.2.3-tot-pslib030.UPF' in l
-                                for l in lines)
-            self.assertTrue(find_kind_ba1, "Unable to find the species line "
-                                           "for Ba1")
-            find_kind_ba2 = any('Ba2' in l and
-                                'Ba.pbesol-spn-rrkjus_psl.0.2.3-tot-pslib030.UPF' in l
-                                for l in lines)
-            self.assertTrue(find_kind_ba2, "Unable to find the species line "
-                                           "for Ba2")
+            find_kind_ba1 = any('Ba1' in l and 'Ba.pbesol-spn-rrkjus_psl.0.2.3-tot-pslib030.UPF' in l for l in lines)
+            self.assertTrue(find_kind_ba1, "Unable to find the species line " "for Ba1")
+            find_kind_ba2 = any('Ba2' in l and 'Ba.pbesol-spn-rrkjus_psl.0.2.3-tot-pslib030.UPF' in l for l in lines)
+            self.assertTrue(find_kind_ba2, "Unable to find the species line " "for Ba2")
 
             found1 = False
             found2 = False
             for l in lines:
                 if 'starting_magnetization(1)' in l:
                     if found1:
-                        raise ValueError(
-                            "starting_magnetization(1) found multiple times")
+                        raise ValueError("starting_magnetization(1) found multiple times")
                     found1 = True
-                    self.assertAlmostEquals(
-                        float(l.split('=')[1].replace('d', 'e')), 0.5)
+                    self.assertAlmostEquals(float(l.split('=')[1].replace('d', 'e')), 0.5)
                 if 'starting_magnetization(2)' in l:
                     if found2:
-                        raise ValueError(
-                            "starting_magnetization(2) found multiple times")
+                        raise ValueError("starting_magnetization(2) found multiple times")
                     found2 = True
-                    self.assertAlmostEquals(
-                        float(l.split('=')[1].replace('d', 'e')), -0.5)
+                    self.assertAlmostEquals(float(l.split('=')[1].replace('d', 'e')), -0.5)

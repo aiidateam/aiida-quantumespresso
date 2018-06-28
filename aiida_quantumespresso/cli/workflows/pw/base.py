@@ -23,9 +23,9 @@ from aiida_quantumespresso.utils.cli import validate
 @options_qe.smearing()
 @options_qe.automatic_parallelization()
 @options_qe.clean_workdir()
-def launch(
-    code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, daemon, ecutwfc, ecutrho,
-    hubbard_u, hubbard_v, hubbard_file_pk, starting_magnetization, smearing, automatic_parallelization, clean_workdir):
+def launch(code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, daemon, ecutwfc, ecutrho,
+           hubbard_u, hubbard_v, hubbard_file_pk, starting_magnetization, smearing, automatic_parallelization,
+           clean_workdir):
     """
     Run the PwBaseWorkChain for a given input structure
     """
@@ -45,7 +45,8 @@ def launch(
     }
 
     try:
-        hubbard_file = validate.validate_hubbard_parameters(structure, parameters, hubbard_u, hubbard_v, hubbard_file_pk)
+        hubbard_file = validate.validate_hubbard_parameters(structure, parameters, hubbard_u, hubbard_v,
+                                                            hubbard_file_pk)
     except ValueError as exception:
         raise click.BadParameter(exception.message)
 

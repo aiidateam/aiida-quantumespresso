@@ -24,17 +24,21 @@ from aiida_quantumespresso.utils.cli import validate
 @options_qe.automatic_parallelization()
 @options_qe.clean_workdir()
 @click.option(
-    '-f', '--final-scf', is_flag=True, default=False, show_default=True,
-    help='run a final scf calculation for the final relaxed structure'
-)
+    '-f',
+    '--final-scf',
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help='run a final scf calculation for the final relaxed structure')
 @click.option(
-    '-g', '--group', type=click.STRING, required=False,
-    help='the label of a Group to add the final PwCalculation to in case of success'
-)
-def launch(
-    code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, daemon, ecutwfc, ecutrho,
-    hubbard_u, hubbard_v, hubbard_file_pk, starting_magnetization, smearing, automatic_parallelization, clean_workdir,
-    final_scf, group):
+    '-g',
+    '--group',
+    type=click.STRING,
+    required=False,
+    help='the label of a Group to add the final PwCalculation to in case of success')
+def launch(code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, daemon, ecutwfc, ecutrho,
+           hubbard_u, hubbard_v, hubbard_file_pk, starting_magnetization, smearing, automatic_parallelization,
+           clean_workdir, final_scf, group):
     """
     Run the PwRelaxWorkChain for a given input structure
     """
@@ -54,7 +58,8 @@ def launch(
     }
 
     try:
-        hubbard_file = validate.validate_hubbard_parameters(structure, parameters, hubbard_u, hubbard_v, hubbard_file_pk)
+        hubbard_file = validate.validate_hubbard_parameters(structure, parameters, hubbard_u, hubbard_v,
+                                                            hubbard_file_pk)
     except ValueError as exception:
         raise click.BadParameter(exception.message)
 

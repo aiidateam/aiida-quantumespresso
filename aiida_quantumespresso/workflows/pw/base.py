@@ -24,7 +24,6 @@ from aiida_quantumespresso.utils.resources import cmdline_remove_npools
 from aiida_quantumespresso.utils.resources import create_scheduler_resources
 from aiida_quantumespresso.workflows.workfunctions import create_kpoints_from_distance
 
-
 PwCalculation = CalculationFactory('quantumespresso.pw')
 
 
@@ -42,6 +41,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         'delta_factor_max_seconds': 0.95,
     })
 
+    # yapf: disable
     @classmethod
     def define(cls, spec):
         super(PwBaseWorkChain, cls).define(spec)
@@ -74,7 +74,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             cls.results,
         )
         spec.exit_code(301, 'ERROR_INVALID_INPUT_PSEUDO_POTENTIALS',
-            message="the explicitly passed 'pseudos' or 'pseudo_family' input could not be used to get the necessary potentials")
+            message="the 'pseudos' or 'pseudo_family' input could not be used to get the necessary potentials")
         spec.exit_code(302, 'ERROR_INVALID_INPUT_KPOINTS',
             message="neither the 'kpoints' nor the 'kpoints_distance' input was specified")
         spec.exit_code(303, 'ERROR_INVALID_INPUT_RESOURCES',
@@ -107,7 +107,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             'parameters': self.inputs.parameters.get_dict()
         })
 
-        if 'CONTROL'not in self.ctx.inputs.parameters:
+        if 'CONTROL' not in self.ctx.inputs.parameters:
             self.ctx.inputs.parameters['CONTROL'] = {}
 
         if 'calculation' not in self.ctx.inputs.parameters['CONTROL']:
@@ -196,8 +196,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             return self.exit_codes.ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY
 
         if remaining_keys:
-            self.report('detected unrecognized keys in the automatic_parallelization input: {}'
-                .format(' '.join(remaining_keys)))
+            self.report('detected unrecognized keys in the automatic_parallelization input: {}'.format(
+                ' '.join(remaining_keys)))
             return self.exit_codes.ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY
 
         # Add the calculation mode to the automatic parallelization dictionary
@@ -308,8 +308,8 @@ def _handle_error_exceeded_maximum_walltime(self, calculation):
     """
     if 'Maximum CPU time exceeded' in calculation.res.warnings:
         self.ctx.restart_calc = calculation
-        self.report('PwCalculation<{}> terminated because maximum wall time was exceeded, restarting'
-            .format(calculation.pk))
+        self.report('PwCalculation<{}> terminated because maximum wall time was exceeded, restarting'.format(
+            calculation.pk))
         return ErrorHandlerReport(True, True)
 
 
@@ -322,12 +322,8 @@ def _handle_error_diagonalization(self, calculation):
     input_electrons = input_parameters.get('ELECTRONS', {})
     diagonalization = input_electrons.get('diagonalization', self.defaults['qe']['diagonalization'])
 
-    if ((
-        any(['too many bands are not converged' in w for w in calculation.res.warnings]) or
-        any(['eigenvalues not converged' in w for w in calculation.res.warnings])
-    ) and (
-        diagonalization == 'david'
-    )):
+    if ((any(['too many bands are not converged' in w for w in calculation.res.warnings]) or
+         any(['eigenvalues not converged' in w for w in calculation.res.warnings])) and (diagonalization == 'david')):
         new_diagonalization = 'cg'
         self.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = 'cg'
         self.ctx.restart_calc = calculation

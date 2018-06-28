@@ -134,7 +134,7 @@ def convert_input_to_namelist_entry(key, val, mapping=None):
 
                         if value not in mapping:
                             raise ValueError('the nested list contained string {} but this is not a key in the mapping'
-                                .format(value))
+                                             .format(value))
                         else:
                             values.append(str(mapping[value]))
                     else:

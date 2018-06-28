@@ -22,12 +22,15 @@ from aiida_quantumespresso.utils.cli import validate
 @options_qe.starting_magnetization()
 @options_qe.smearing()
 @click.option(
-    '-z', '--calculation-mode', 'mode', type=click.Choice(['scf', 'vc-relax']), default='scf', show_default=True,
-    help='select the calculation mode'
-)
-def launch(
-    code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, daemon, ecutwfc, ecutrho,
-    hubbard_u, hubbard_v, hubbard_file_pk, starting_magnetization, smearing, mode):
+    '-z',
+    '--calculation-mode',
+    'mode',
+    type=click.Choice(['scf', 'vc-relax']),
+    default='scf',
+    show_default=True,
+    help='select the calculation mode')
+def launch(code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, daemon, ecutwfc, ecutrho,
+           hubbard_u, hubbard_v, hubbard_file_pk, starting_magnetization, smearing, mode):
     """
     Run a PwCalculation for a given input structure
     """
@@ -50,7 +53,8 @@ def launch(
     }
 
     try:
-        hubbard_file = validate.validate_hubbard_parameters(structure, parameters, hubbard_u, hubbard_v, hubbard_file_pk)
+        hubbard_file = validate.validate_hubbard_parameters(structure, parameters, hubbard_u, hubbard_v,
+                                                            hubbard_file_pk)
     except ValueError as exception:
         raise click.BadParameter(exception.message)
 

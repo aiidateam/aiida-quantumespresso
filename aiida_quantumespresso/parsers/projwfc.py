@@ -37,14 +37,13 @@ def find_orbitals_from_statelines(out_info_dict):
         try:
             state_dict = {}
             state_dict["atomnum"] = int(atomnum_re.findall(state_line)[0])
-            state_dict["atomnum"] -= 1 # to keep with orbital indexing
+            state_dict["atomnum"] -= 1  # to keep with orbital indexing
             state_dict["kind_name"] = element_re.findall(state_line)[0].strip()
             state_dict["angular_momentum"] = int(lnum_re.findall(state_line)[0])
             state_dict["magnetic_number"] = int(mnum_re.findall(state_line)[0])
-            state_dict["magnetic_number"] -= 1 # to keep with orbital indexing
+            state_dict["magnetic_number"] -= 1  # to keep with orbital indexing
         except ValueError:
-            raise QEOutputParsingError("State lines are not formatted "
-            "in a standard way.")
+            raise QEOutputParsingError("State lines are not formatted " "in a standard way.")
         state_dicts.append(state_dict)
 
     # here is some logic to figure out the value of radial_nodes to use
@@ -52,7 +51,7 @@ def find_orbitals_from_statelines(out_info_dict):
     for i in range(len(state_dicts)):
         radial_nodes = 0
         state_dict = state_dicts[i].copy()
-        for j in range(i-1, -1, -1):
+        for j in range(i - 1, -1, -1):
             if state_dict == state_dicts[j]:
                 radial_nodes += 1
         state_dict["radial_nodes"] = radial_nodes
@@ -73,6 +72,7 @@ def find_orbitals_from_statelines(out_info_dict):
         this_orb.set_orbital_dict(state_dict)
         orbitals.append(this_orb)
     return orbitals
+
 
 # def find_dicts_from_pdos_atm_filenames(out_info_dict):
 #     """
@@ -140,7 +140,7 @@ def spin_dependent_subparcer(out_info_dict):
 
     out_file = out_info_dict["out_file"]
     spin_down = out_info_dict["spin_down"]
-    od = out_info_dict #using a shorter name for convenience
+    od = out_info_dict  #using a shorter name for convenience
     #   regular expressions needed for later parsing
     WaveFraction1_re = re.compile(r"\=(.*?)\*")  # state composition 1
     WaveFractionremain_re = re.compile(r"\+(.*?)\*")  # state comp 2
@@ -155,34 +155,31 @@ def spin_dependent_subparcer(out_info_dict):
             if spin_down:
                 i += od["k_states"]
             # grabs band energy
-            for j in range (i*od["num_bands"],(i+1)*od["num_bands"],1):
+            for j in range(i * od["num_bands"], (i + 1) * od["num_bands"], 1):
                 out_ind = od["e_lines"][j]
                 val = out_file[out_ind].split()[4]
-                bands[i%od["k_states"]][j%od["num_bands"]] = val
+                bands[i % od["k_states"]][j % od["num_bands"]] = val
                 #subloop grabs pdos
                 wave_fraction = []
                 wave_id = []
-                for k in range(od["e_lines"][j]+1,od["psi_lines"][j],1):
+                for k in range(od["e_lines"][j] + 1, od["psi_lines"][j], 1):
                     out_line = out_file[k]
                     wave_fraction += WaveFraction1_re.findall(out_line)
                     wave_fraction += WaveFractionremain_re.findall(out_line)
                     wave_id += FunctionId_re.findall(out_line)
                 if len(wave_id) != len(wave_fraction):
                     raise IndexError
-                for l in range (len(wave_id)):
+                for l in range(len(wave_id)):
                     wave_id[l] = int(wave_id[l])
                     wave_fraction[l] = float(wave_fraction[l])
                     #sets relevant values in pdos_array
-                    projection_arrays[i%od["k_states"]][
-                        j%od["num_bands"]][wave_id[l]-1] = wave_fraction[l]
+                    projection_arrays[i % od["k_states"]][j % od["num_bands"]][wave_id[l] - 1] = wave_fraction[l]
     except IndexError:
-        raise QEOutputParsingError("the standard out file does not "
-                                   "comply with the official "
-                                   "documentation.")
+        raise QEOutputParsingError("the standard out file does not " "comply with the official " "documentation.")
 
     bands_data = BandsData()
     try:
-    # Attempts to retrive the kpoints from the parent calc
+        # Attempts to retrive the kpoints from the parent calc
         parent_calc = out_info_dict["parent_calc"]
         parent_kpoints = parent_calc.get_inputs_dict()['kpoints']
         if len(od['k_vect']) != len(parent_kpoints.get_kpoints()):
@@ -194,30 +191,30 @@ def spin_dependent_subparcer(out_info_dict):
     bands_data.set_bands(bands, units='eV')
 
     orbitals = out_info_dict["orbitals"]
-    if len(orbitals) != np.shape(projection_arrays[0,0,:])[0]:
+    if len(orbitals) != np.shape(projection_arrays[0, 0, :])[0]:
         raise QEOutputParsingError("There was an internal parsing error, "
                                    " the projection array shape does not agree"
                                    " with the number of orbitals")
     projection_data = ProjectionData()
     projection_data.set_reference_bandsdata(bands_data)
-    projections = [projection_arrays[:,:,i] for i in range(len(orbitals))]
+    projections = [projection_arrays[:, :, i] for i in range(len(orbitals))]
 
     # Do the bands_check manually here
     for projection in projections:
-        if np.shape(projection) !=  np.shape(bands):
+        if np.shape(projection) != np.shape(bands):
             raise AttributeError("Projections not the same shape as the bands")
-
 
     #insert here some logic to assign pdos to the orbitals
     pdos_arrays = spin_dependent_pdos_subparcer(out_info_dict)
-    energy_arrays = [out_info_dict["energy"]]*len(orbitals)
-    projection_data.set_projectiondata(orbitals,
-                                       list_of_projections=projections,
-                                       list_of_energy=energy_arrays,
-                                       list_of_pdos=pdos_arrays,
-                                       bands_check=False)
+    energy_arrays = [out_info_dict["energy"]] * len(orbitals)
+    projection_data.set_projectiondata(
+        orbitals,
+        list_of_projections=projections,
+        list_of_energy=energy_arrays,
+        list_of_pdos=pdos_arrays,
+        bands_check=False)
     # pdos=pdos_arrays
-    return bands_data,  projection_data
+    return bands_data, projection_data
 
 
 def natural_sort_key(sort_key, _nsre=re.compile('([0-9]+)')):
@@ -266,12 +263,9 @@ def spin_dependent_pdos_subparcer(out_info_dict):
     for name in pdos_file_names:
         this_array = pdos_atm_array_dict[name]
         for i in range(fa, np.shape(this_array)[1], mf):
-            out_arrays.append(this_array[:,i])
+            out_arrays.append(this_array[:, i])
 
     return out_arrays
-
-
-
 
 
 class ProjwfcParser(Parser):
@@ -288,91 +282,87 @@ class ProjwfcParser(Parser):
         """
         # check for valid input
         if not isinstance(calculation, ProjwfcCalculation):
-            raise QEOutputParsingError("Input calc must be a "
-                                       "ProjwfcCalculation")
+            raise QEOutputParsingError("Input calc must be a " "ProjwfcCalculation")
         self._calc = calculation
         super(ProjwfcParser, self).__init__(calculation)
 
     def parse_with_retrieved(self, retrieved):
-            """
+        """
             Parses the datafolder, stores results.
             Retrieves projwfc output, and some basic information from the
             out_file, such as warnings and wall_time
             """
 
-            # job is unsuccessful until established otherwise
-            successful = False
-            new_nodes_list = []
+        # job is unsuccessful until established otherwise
+        successful = False
+        new_nodes_list = []
 
-            # Check that the retrieved folder is there
-            try:
-                out_folder = self._calc.get_retrieved_node()
-            except KeyError:
-                self.logger.error("No retrieved folder found")
-                return successful, new_nodes_list
-
-
-            # Reading all the files produced during the calculation
-            # Read standard out
-            try:
-                filpath = out_folder.get_abs_path(self._calc._OUTPUT_FILE_NAME)
-                with open(filpath, 'r') as fil:
-                        out_file = fil.readlines()
-            except OSError:
-                self.logger.error("Standard output file could not be found.")
-                successful = False
-                return successful, new_nodes_list
-
-            # check that the file has finished i.e. JOB DONE is inside the file
-            for i in range(len(out_file)):
-                line = out_file[-i]
-                if "JOB DONE" in line:
-                    successful = True
-                    break
-            if not successful:
-                self.logger.error("Computation did not finish properly")
-            parsed_data = parse_raw_out_basic(out_file, "PROJWFC")
-            # Adds warnings
-            for message in parsed_data['warnings']:
-                self.logger.error(message)
-
-            # creating node list, setting initial parameters
-            output_params = ParameterData(dict=parsed_data)
-            new_nodes_list.append((self.get_linkname_outparams(), output_params))
-
-            # checks and reads pdos_tot file
-            out_filenames = out_folder.get_folder_list()
-            pdostot_filename = fnmatch.filter(out_filenames,'*pdos_tot*')[0]
-            try:
-                pdostot_path  = out_folder.get_abs_path(pdostot_filename)
-                # Energy(eV), Ldos, Pdos
-                pdostot_array = np.genfromtxt(pdostot_path)
-                energy = pdostot_array[:,0]
-                dos = pdostot_array[:,1]
-            except OSError:
-                successful = False
-                self.logger.error("pdos_tot output file could not found")
-                return successful, new_nodes_list
-
-            # checks and reads all of the individual pdos_atm files
-            pdos_atm_filenames = fnmatch.filter(out_filenames,'*pdos_atm*')
-            pdos_atm_array_dict = {name:np.genfromtxt(out_folder.get_abs_path(
-                                   name)) for name in pdos_atm_filenames}
-
-            # finding the bands and projections
-            out_info_dict = {}
-            out_info_dict["out_file"] = out_file
-            out_info_dict["energy"] = energy
-            out_info_dict["pdos_atm_array_dict"] = pdos_atm_array_dict
-            new_nodes_list += self._parse_bands_and_projections(out_info_dict)
-
-            Dos_out = XyData()
-            Dos_out.set_x(energy,"Energy","eV")
-            Dos_out.set_y(dos,"Dos","states/eV")
-            new_nodes_list += [("Dos",Dos_out)]
-
+        # Check that the retrieved folder is there
+        try:
+            out_folder = self._calc.get_retrieved_node()
+        except KeyError:
+            self.logger.error("No retrieved folder found")
             return successful, new_nodes_list
 
+        # Reading all the files produced during the calculation
+        # Read standard out
+        try:
+            filpath = out_folder.get_abs_path(self._calc._OUTPUT_FILE_NAME)
+            with open(filpath, 'r') as fil:
+                out_file = fil.readlines()
+        except OSError:
+            self.logger.error("Standard output file could not be found.")
+            successful = False
+            return successful, new_nodes_list
+
+        # check that the file has finished i.e. JOB DONE is inside the file
+        for i in range(len(out_file)):
+            line = out_file[-i]
+            if "JOB DONE" in line:
+                successful = True
+                break
+        if not successful:
+            self.logger.error("Computation did not finish properly")
+        parsed_data = parse_raw_out_basic(out_file, "PROJWFC")
+        # Adds warnings
+        for message in parsed_data['warnings']:
+            self.logger.error(message)
+
+        # creating node list, setting initial parameters
+        output_params = ParameterData(dict=parsed_data)
+        new_nodes_list.append((self.get_linkname_outparams(), output_params))
+
+        # checks and reads pdos_tot file
+        out_filenames = out_folder.get_folder_list()
+        pdostot_filename = fnmatch.filter(out_filenames, '*pdos_tot*')[0]
+        try:
+            pdostot_path = out_folder.get_abs_path(pdostot_filename)
+            # Energy(eV), Ldos, Pdos
+            pdostot_array = np.genfromtxt(pdostot_path)
+            energy = pdostot_array[:, 0]
+            dos = pdostot_array[:, 1]
+        except OSError:
+            successful = False
+            self.logger.error("pdos_tot output file could not found")
+            return successful, new_nodes_list
+
+        # checks and reads all of the individual pdos_atm files
+        pdos_atm_filenames = fnmatch.filter(out_filenames, '*pdos_atm*')
+        pdos_atm_array_dict = {name: np.genfromtxt(out_folder.get_abs_path(name)) for name in pdos_atm_filenames}
+
+        # finding the bands and projections
+        out_info_dict = {}
+        out_info_dict["out_file"] = out_file
+        out_info_dict["energy"] = energy
+        out_info_dict["pdos_atm_array_dict"] = pdos_atm_array_dict
+        new_nodes_list += self._parse_bands_and_projections(out_info_dict)
+
+        Dos_out = XyData()
+        Dos_out.set_x(energy, "Energy", "eV")
+        Dos_out.set_y(dos, "Dos", "states/eV")
+        new_nodes_list += [("Dos", Dos_out)]
+
+        return successful, new_nodes_list
 
     def _parse_bands_and_projections(self, out_info_dict):
         """
@@ -404,27 +394,23 @@ class ProjwfcParser(Parser):
 
         #Basic check
         if len(out_info_dict["e_lines"]) != len(out_info_dict["psi_lines"]):
-            raise QEOutputParsingError("Not formatted in a manner "
-            " that can be handled")
+            raise QEOutputParsingError("Not formatted in a manner " " that can be handled")
         if len(out_info_dict["psi_lines"]) % len(out_info_dict["k_lines"]) != 0:
-            raise QEOutputParsingError("Band Energy Points is not "
-            " a multiple of kpoints")
+            raise QEOutputParsingError("Band Energy Points is not " " a multiple of kpoints")
         #calculates the number of bands
-        out_info_dict["num_bands"] = len(
-            out_info_dict["psi_lines"])/len(out_info_dict["k_lines"])
+        out_info_dict["num_bands"] = len(out_info_dict["psi_lines"]) / len(out_info_dict["k_lines"])
 
         # Uses the parent input parameters, and checks if the parent used
         # spin calculations try to replace with a query, if possible.
-        parent_remote =  self._calc.get_inputs_dict()['parent_calc_folder']
+        parent_remote = self._calc.get_inputs_dict()['parent_calc_folder']
         parent_calc = parent_remote.get_inputs_dict()['remote_folder']
         out_info_dict["parent_calc"] = parent_calc
         parent_param = parent_calc.get_outputs_dict()['output_parameters']
         try:
             structure = parent_calc.get_inputs_dict()['structure']
         except KeyError:
-            raise ValueError("The parent had no structure! Cannot parse"
-                             "from this!")
-        try :
+            raise ValueError("The parent had no structure! Cannot parse" "from this!")
+        try:
             nspin = parent_param.get_dict()['number_of_spin_components']
             if nspin != 1:
                 spin = True
@@ -440,11 +426,10 @@ class ProjwfcParser(Parser):
         if spin:
             if out_info_dict["k_states"] % 2 != 0:
                 raise ValueError("Internal formatting error regarding spin")
-            out_info_dict["k_states"] = out_info_dict["k_states"]/2
+            out_info_dict["k_states"] = out_info_dict["k_states"] / 2
 
         #   adds in the k-vector for each kpoint
-        k_vect = [out_file[out_info_dict["k_lines"][i]].split()[2:]
-                  for i in range(out_info_dict["k_states"])]
+        k_vect = [out_file[out_info_dict["k_lines"][i]].split()[2:] for i in range(out_info_dict["k_states"])]
         out_info_dict["k_vect"] = np.array(k_vect)
         out_info_dict["structure"] = structure
         out_info_dict["orbitals"] = find_orbitals_from_statelines(out_info_dict)
@@ -463,21 +448,14 @@ class ProjwfcParser(Parser):
             # spin up states are written first, then spin down
             #
             out_info_dict["spin_down"] = False
-            bands_data1, projection_data1 = spin_dependent_subparcer(
-                out_info_dict)
-            append_nodes_list += [("projections_up", projection_data1),
-                                     ("bands_up", bands_data1)]
+            bands_data1, projection_data1 = spin_dependent_subparcer(out_info_dict)
+            append_nodes_list += [("projections_up", projection_data1), ("bands_up", bands_data1)]
             out_info_dict["spin_down"] = True
-            bands_data2, projection_data2 = spin_dependent_subparcer(
-                out_info_dict)
-            append_nodes_list += [("projections_down", projection_data2),
-                     ("bands_down", bands_data2)]
+            bands_data2, projection_data2 = spin_dependent_subparcer(out_info_dict)
+            append_nodes_list += [("projections_down", projection_data2), ("bands_down", bands_data2)]
         else:
             out_info_dict["spin_down"] = False
-            bands_data, projection_data = spin_dependent_subparcer(
-                out_info_dict)
-            append_nodes_list += [("projections", projection_data),
-                     ("bands", bands_data)]
+            bands_data, projection_data = spin_dependent_subparcer(out_info_dict)
+            append_nodes_list += [("projections", projection_data), ("bands", bands_data)]
 
         return append_nodes_list
-

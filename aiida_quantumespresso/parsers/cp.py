@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 from aiida_quantumespresso.calculations.cp import CpCalculation
-from aiida_quantumespresso.parsers.raw_parser_cp import (
-    QEOutputParsingError, parse_cp_traj_stanzas, parse_cp_raw_output)
-from aiida_quantumespresso.parsers.constants import (bohr_to_ang,
-                                                     timeau_to_sec, hartree_to_ev)
+from aiida_quantumespresso.parsers.raw_parser_cp import (QEOutputParsingError, parse_cp_traj_stanzas,
+                                                         parse_cp_raw_output)
+from aiida_quantumespresso.parsers.constants import (bohr_to_ang, timeau_to_sec, hartree_to_ev)
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.folder import FolderData
@@ -75,8 +74,7 @@ class CpParser(Parser):
 
         xml_counter_file = None
         if self._calc._FILE_XML_PRINT_COUNTER in list_of_files:
-            xml_counter_file = out_folder.get_abs_path(
-                self._calc._FILE_XML_PRINT_COUNTER)
+            xml_counter_file = out_folder.get_abs_path(self._calc._FILE_XML_PRINT_COUNTER)
 
         parsing_args = [out_file, xml_file, xml_counter_file]
 
@@ -89,26 +87,26 @@ class CpParser(Parser):
         # append everthing in the temporary dictionary raw_trajectory
         expected_configs = None
         raw_trajectory = {}
-        evp_keys = ['electronic_kinetic_energy', 'cell_temperature', 'ionic_temperature',
-                    'scf_total_energy', 'enthalpy', 'enthalpy_plus_kinetic',
-                    'energy_constant_motion', 'volume', 'pressure']
+        evp_keys = [
+            'electronic_kinetic_energy', 'cell_temperature', 'ionic_temperature', 'scf_total_energy', 'enthalpy',
+            'enthalpy_plus_kinetic', 'energy_constant_motion', 'volume', 'pressure'
+        ]
         pos_vel_keys = ['cells', 'positions', 'times', 'velocities']
         # set a default null values
 
         # Now prepare the reordering, as filex in the xml are  ordered
-        reordering = self._generate_sites_ordering(out_dict['species'],
-                                                   out_dict['atoms'])
+        reordering = self._generate_sites_ordering(out_dict['species'], out_dict['atoms'])
 
         # =============== POSITIONS trajectory ============================
         try:
-            with open(out_folder.get_abs_path(
-                    '{}.pos'.format(self._calc._PREFIX))) as posfile:
+            with open(out_folder.get_abs_path('{}.pos'.format(self._calc._PREFIX))) as posfile:
                 pos_data = [l.split() for l in posfile]
                 # POSITIONS stored in angstrom
-            traj_data = parse_cp_traj_stanzas(num_elements=out_dict['number_of_atoms'],
-                                              splitlines=pos_data,
-                                              prepend_name='positions_traj',
-                                              rescale=bohr_to_ang)
+            traj_data = parse_cp_traj_stanzas(
+                num_elements=out_dict['number_of_atoms'],
+                splitlines=pos_data,
+                prepend_name='positions_traj',
+                rescale=bohr_to_ang)
 
             # here initialize the dictionary. If the parsing of positions fails, though, I don't have anything
             # out of the CP dynamics. Therefore, the calculation status is set to FAILED.
@@ -119,47 +117,40 @@ class CpParser(Parser):
             out_dict['warnings'].append("Unable to open the POS file... skipping.")
             successful = False
         except Exception as e:
-            out_dict['warnings'].append("Error parsing POS file ({}). Skipping file."
-                                        .format(e.message))
+            out_dict['warnings'].append("Error parsing POS file ({}). Skipping file.".format(e.message))
             successful = False
 
         # =============== CELL trajectory ============================
         try:
-            with open(os.path.join(out_folder.get_abs_path('.'),
-                                   '{}.cel'.format(self._calc._PREFIX))) as celfile:
+            with open(os.path.join(out_folder.get_abs_path('.'), '{}.cel'.format(self._calc._PREFIX))) as celfile:
                 cel_data = [l.split() for l in celfile]
-            traj_data = parse_cp_traj_stanzas(num_elements=3,
-                                              splitlines=cel_data,
-                                              prepend_name='cell_traj',
-                                              rescale=bohr_to_ang)
+            traj_data = parse_cp_traj_stanzas(
+                num_elements=3, splitlines=cel_data, prepend_name='cell_traj', rescale=bohr_to_ang)
             raw_trajectory['cells'] = numpy.array(traj_data['cell_traj_data'])
         except IOError:
             out_dict['warnings'].append("Unable to open the CEL file... skipping.")
         except Exception as e:
-            out_dict['warnings'].append("Error parsing CEL file ({}). Skipping file."
-                                        .format(e.message))
+            out_dict['warnings'].append("Error parsing CEL file ({}). Skipping file.".format(e.message))
 
         # =============== VELOCITIES trajectory ============================
         try:
-            with open(os.path.join(out_folder.get_abs_path('.'),
-                                   '{}.vel'.format(self._calc._PREFIX))) as velfile:
+            with open(os.path.join(out_folder.get_abs_path('.'), '{}.vel'.format(self._calc._PREFIX))) as velfile:
                 vel_data = [l.split() for l in velfile]
-            traj_data = parse_cp_traj_stanzas(num_elements=out_dict['number_of_atoms'],
-                                              splitlines=vel_data,
-                                              prepend_name='velocities_traj',
-                                              rescale=bohr_to_ang / timeau_to_sec * 10 ** 12)  # velocities in ang/ps,
+            traj_data = parse_cp_traj_stanzas(
+                num_elements=out_dict['number_of_atoms'],
+                splitlines=vel_data,
+                prepend_name='velocities_traj',
+                rescale=bohr_to_ang / timeau_to_sec * 10**12)  # velocities in ang/ps,
             raw_trajectory['velocities_ordered'] = self._get_reordered_array(traj_data['velocities_traj_data'],
                                                                              reordering)
         except IOError:
             out_dict['warnings'].append("Unable to open the VEL file... skipping.")
         except Exception as e:
-            out_dict['warnings'].append("Error parsing VEL file ({}). Skipping file."
-                                        .format(e.message))
+            out_dict['warnings'].append("Error parsing VEL file ({}). Skipping file.".format(e.message))
 
         # =============== EVP trajectory ============================
         try:
-            matrix = numpy.genfromtxt(os.path.join(out_folder.get_abs_path('.'),
-                                                   '{}.evp'.format(self._calc._PREFIX)))
+            matrix = numpy.genfromtxt(os.path.join(out_folder.get_abs_path('.'), '{}.evp'.format(self._calc._PREFIX)))
             # there might be a different format if the matrix has one row only
             try:
                 matrix.shape[1]
@@ -173,30 +164,30 @@ class CpParser(Parser):
                 # I here use the version number to parse, plus some
                 # heuristics to check that I'm doing the right thing
                 #print "New version"
-                raw_trajectory['steps'] = numpy.array(matrix[:,0],dtype=int)
-                raw_trajectory['evp_times']                 = matrix[:,1]                    # TPS, ps
-                raw_trajectory['electronic_kinetic_energy'] = matrix[:,2] * hartree_to_ev    # EKINC, eV
-                raw_trajectory['cell_temperature']          = matrix[:,3]                    # TEMPH, K
-                raw_trajectory['ionic_temperature']         = matrix[:,4]                    # TEMPP, K
-                raw_trajectory['scf_total_energy']          = matrix[:,5] * hartree_to_ev    # ETOT, eV
-                raw_trajectory['enthalpy']                  = matrix[:,6] * hartree_to_ev    # ENTHAL, eV
-                raw_trajectory['enthalpy_plus_kinetic']     = matrix[:,7] * hartree_to_ev    # ECONS, eV
-                raw_trajectory['energy_constant_motion']    = matrix[:,8] * hartree_to_ev    # ECONT, eV
-                raw_trajectory['volume']                    = matrix[:,9] * (bohr_to_ang**3) # volume, angstrom^3
-                raw_trajectory['pressure']                  = matrix[:,10]                    # out_press, GPa
+                raw_trajectory['steps'] = numpy.array(matrix[:, 0], dtype=int)
+                raw_trajectory['evp_times'] = matrix[:, 1]  # TPS, ps
+                raw_trajectory['electronic_kinetic_energy'] = matrix[:, 2] * hartree_to_ev  # EKINC, eV
+                raw_trajectory['cell_temperature'] = matrix[:, 3]  # TEMPH, K
+                raw_trajectory['ionic_temperature'] = matrix[:, 4]  # TEMPP, K
+                raw_trajectory['scf_total_energy'] = matrix[:, 5] * hartree_to_ev  # ETOT, eV
+                raw_trajectory['enthalpy'] = matrix[:, 6] * hartree_to_ev  # ENTHAL, eV
+                raw_trajectory['enthalpy_plus_kinetic'] = matrix[:, 7] * hartree_to_ev  # ECONS, eV
+                raw_trajectory['energy_constant_motion'] = matrix[:, 8] * hartree_to_ev  # ECONT, eV
+                raw_trajectory['volume'] = matrix[:, 9] * (bohr_to_ang**3)  # volume, angstrom^3
+                raw_trajectory['pressure'] = matrix[:, 10]  # out_press, GPa
             else:
                 #print "Old version"
-                raw_trajectory['steps'] = numpy.array(matrix[:,0],dtype=int)
-                raw_trajectory['electronic_kinetic_energy'] = matrix[:,1] * hartree_to_ev    # EKINC, eV
-                raw_trajectory['cell_temperature']          = matrix[:,2]                    # TEMPH, K
-                raw_trajectory['ionic_temperature']         = matrix[:,3]                    # TEMPP, K
-                raw_trajectory['scf_total_energy']          = matrix[:,4] * hartree_to_ev    # ETOT, eV
-                raw_trajectory['enthalpy']                  = matrix[:,5] * hartree_to_ev    # ENTHAL, eV
-                raw_trajectory['enthalpy_plus_kinetic']     = matrix[:,6] * hartree_to_ev    # ECONS, eV
-                raw_trajectory['energy_constant_motion']    = matrix[:,7] * hartree_to_ev    # ECONT, eV
-                raw_trajectory['volume']                    = matrix[:,8] * (bohr_to_ang**3) # volume, angstrom^3
-                raw_trajectory['pressure']                  = matrix[:,9]                    # out_press, GPa
-                raw_trajectory['evp_times']                  = matrix[:,10]                    # TPS, ps
+                raw_trajectory['steps'] = numpy.array(matrix[:, 0], dtype=int)
+                raw_trajectory['electronic_kinetic_energy'] = matrix[:, 1] * hartree_to_ev  # EKINC, eV
+                raw_trajectory['cell_temperature'] = matrix[:, 2]  # TEMPH, K
+                raw_trajectory['ionic_temperature'] = matrix[:, 3]  # TEMPP, K
+                raw_trajectory['scf_total_energy'] = matrix[:, 4] * hartree_to_ev  # ETOT, eV
+                raw_trajectory['enthalpy'] = matrix[:, 5] * hartree_to_ev  # ENTHAL, eV
+                raw_trajectory['enthalpy_plus_kinetic'] = matrix[:, 6] * hartree_to_ev  # ECONS, eV
+                raw_trajectory['energy_constant_motion'] = matrix[:, 7] * hartree_to_ev  # ECONT, eV
+                raw_trajectory['volume'] = matrix[:, 8] * (bohr_to_ang**3)  # volume, angstrom^3
+                raw_trajectory['pressure'] = matrix[:, 9]  # out_press, GPa
+                raw_trajectory['evp_times'] = matrix[:, 10]  # TPS, ps
 
             # Huristics to understand if it's correct.
             # A better heuristics could also try to fix possible issues
@@ -205,13 +196,11 @@ class CpParser(Parser):
             # but I won't do it, as there may be also other columns swapped.
             # Better to stop and ask the user to check what's going on.
             max_time_difference = abs(
-                numpy.array(raw_trajectory['times']) -
-                numpy.array(raw_trajectory['evp_times'])).max()
-            if max_time_difference > 1.e-4: # It is typically ~1.e-7 due to roundoff errors
+                numpy.array(raw_trajectory['times']) - numpy.array(raw_trajectory['evp_times'])).max()
+            if max_time_difference > 1.e-4:  # It is typically ~1.e-7 due to roundoff errors
                 # If there is a large discrepancy, I set successful = False,
                 # it means there is something very weird going on...
-                out_dict['warnings'].append("Error parsing EVP file ({}). Skipping file."
-                                            .format(e.message))
+                out_dict['warnings'].append("Error parsing EVP file ({}). Skipping file.".format(e.message))
                 successful = False
 
                 # In this case, remove all what has been parsed to avoid users
@@ -235,21 +224,22 @@ class CpParser(Parser):
         raw_trajectory['symbols'] = numpy.array([str(i.kind_name) for i in input_structure.sites])
 
         traj = TrajectoryData()
-        traj.set_trajectory(stepids=raw_trajectory['steps'],
-                            cells=raw_trajectory['cells'],
-                            symbols=raw_trajectory['symbols'],
-                            positions=raw_trajectory['positions_ordered'],
-                            times=raw_trajectory['times'],
-                            velocities=raw_trajectory['velocities_ordered'],
+        traj.set_trajectory(
+            stepids=raw_trajectory['steps'],
+            cells=raw_trajectory['cells'],
+            symbols=raw_trajectory['symbols'],
+            positions=raw_trajectory['positions_ordered'],
+            times=raw_trajectory['times'],
+            velocities=raw_trajectory['velocities_ordered'],
         )
 
         for this_name in evp_keys:
             try:
-                traj.set_array(this_name,raw_trajectory[this_name])
+                traj.set_array(this_name, raw_trajectory[this_name])
             except KeyError:
                 # Some columns may have not been parsed, skip
                 pass
-        new_nodes_list = [(self.get_linkname_trajectory(),traj)]
+        new_nodes_list = [(self.get_linkname_trajectory(), traj)]
 
         # Remove big dictionaries that would be redundant
         # For atoms and cell, there is a small possibility that nothing is parsed
@@ -312,8 +302,7 @@ class CpParser(Parser):
 
         # Dictionary to associate the species name to the idx
         # Example: {'Ba': 1, 'O': 2, 'Ti': 3}
-        species_dict = {name: idx for idx, name in zip(raw_species['index'],
-                                                       raw_species['type'])}
+        species_dict = {name: idx for idx, name in zip(raw_species['index'], raw_species['type'])}
         # List of the indices of the specie associated to each atom,
         # in the order specified in input
         # Example: (1,3,2,2,2)
@@ -343,8 +332,7 @@ class CpParser(Parser):
         # the first atom Ba in the input is atom 0 in the CP output (the first),
         # the second atom Ti in the input is atom 4 (the fifth) in the CP output,
         # and so on
-        sorted_indexed_reordering = sorted([(_[1], _[0]) for _ in
-                                            enumerate(reordering)])
+        sorted_indexed_reordering = sorted([(_[1], _[0]) for _ in enumerate(reordering)])
         reordering_inverse = [_[1] for _ in sorted_indexed_reordering]
         return reordering_inverse
 

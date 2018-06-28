@@ -64,30 +64,46 @@ class BaseRestartWorkChain(WorkChain):
             for plugin in get_plugins(self._error_handler_entry_point):
                 try:
                     get_plugin(self._error_handler_entry_point, plugin)
-                    self.logger.info("loaded the '{}' entry point for the '{}' error handlers category"
-                        .format(plugin, self._error_handler_entry_point, plugin))
+                    self.logger.info("loaded the '{}' entry point for the '{}' error handlers category".format(
+                        plugin, self._error_handler_entry_point, plugin))
                 except (LoadingPluginFailed, MissingPluginError):
-                    self.logger.warning("failed to load the '{}' entry point for the '{}' error handlers"
-                        .format(plugin, self._error_handler_entry_point))
+                    self.logger.warning("failed to load the '{}' entry point for the '{}' error handlers".format(
+                        plugin, self._error_handler_entry_point))
 
         return
 
     @classmethod
     def define(cls, spec):
         super(BaseRestartWorkChain, cls).define(spec)
-        spec.input('max_iterations', valid_type=Int, default=Int(5),
-            help='maximum number of iterations the workchain will restart the calculation to finish successfully')
-        spec.input('clean_workdir', valid_type=Bool, default=Bool(False),
-            help='if True, work directories of all called calculation will be cleaned at the end of execution')
-        spec.exit_code(100, 'ERROR_ITERATION_RETURNED_NO_CALCULATION',
+        spec.input(
+            'max_iterations',
+            valid_type=Int,
+            default=Int(5),
+            help='the maximum number of iterations the workchain will attempt to get the calculation to finish'
+            'successfully')
+        spec.input(
+            'clean_workdir',
+            valid_type=Bool,
+            default=Bool(False),
+            help='when set to True, the work directories of all called calculation will be cleaned at the end of'
+            'workchain execution')
+        spec.exit_code(
+            100,
+            'ERROR_ITERATION_RETURNED_NO_CALCULATION',
             message='the run_calculation step did not successfully add a calculation node to the context')
-        spec.exit_code(101, 'ERROR_MAXIMUM_ITERATIONS_EXCEEDED',
-            message='the maximum number of iterations was exceeded')
-        spec.exit_code(102, 'ERROR_UNEXPECTED_CALCULATION_STATE',
+        spec.exit_code(
+            101, 'ERROR_MAXIMUM_ITERATIONS_EXCEEDED', message='the maximum number of iterations was exceeded')
+        spec.exit_code(
+            102,
+            'ERROR_UNEXPECTED_CALCULATION_STATE',
             message='the calculation finished with an unexpected calculation state')
-        spec.exit_code(103, 'ERROR_SECOND_CONSECUTIVE_SUBMISSION_FAILURE',
+        spec.exit_code(
+            103,
+            'ERROR_SECOND_CONSECUTIVE_SUBMISSION_FAILURE',
             message='the calculation failed to submit, twice in a row')
-        spec.exit_code(104, 'ERROR_SECOND_CONSECUTIVE_UNHANDLED_FAILURE',
+        spec.exit_code(
+            104,
+            'ERROR_SECOND_CONSECUTIVE_UNHANDLED_FAILURE',
             message='the calculation failed for an unknown reason, twice in a row')
 
     def setup(self):
@@ -150,14 +166,14 @@ class BaseRestartWorkChain(WorkChain):
 
         # Abort: exceeded maximum number of retries
         elif self.ctx.iteration >= self.inputs.max_iterations.value:
-            self.report('reached the maximumm number of iterations {}: last ran {}<{}>'
-                .format(self.inputs.max_iterations.value, self.ctx.calc_name, calculation.pk))
+            self.report('reached the maximumm number of iterations {}: last ran {}<{}>'.format(
+                self.inputs.max_iterations.value, self.ctx.calc_name, calculation.pk))
             exit_code = self.exit_codes.ERROR_MAXIMUM_ITERATIONS_EXCEEDED
 
         # Abort: unexpected state of last calculation
         elif calculation.get_state() not in self._expected_calculation_states:
-            self.report('unexpected state ({}) of {}<{}>'
-                .format(calculation.get_state(), self.ctx.calc_name, calculation.pk))
+            self.report('unexpected state ({}) of {}<{}>'.format(calculation.get_state(), self.ctx.calc_name,
+                                                                 calculation.pk))
             exit_code = self.exit_codes.ERROR_UNEXPECTED_CALCULATION_STATE
 
         # Retry or abort: submission failed, try to restart or abort
@@ -198,15 +214,14 @@ class BaseRestartWorkChain(WorkChain):
 
         for name, port in self.spec().outputs.iteritems():
             if port.required and name not in self.ctx.restart_calc.out:
-                self.report('the spec specifies the output {} as required but was not an output of {}<{}>'
-                    .format(name, self.ctx.calc_name, self.ctx.restart_calc.pk))
+                self.report('the spec specifies the output {} as required but was not an output of {}<{}>'.format(
+                    name, self.ctx.calc_name, self.ctx.restart_calc.pk))
 
             if name in self.ctx.restart_calc.out:
                 node = self.ctx.restart_calc.out[name]
                 self.out(name, self.ctx.restart_calc.out[name])
                 if self._verbose:
-                    self.report("attaching the node {}<{}> as '{}'"
-                        .format(node.__class__.__name__, node.pk, name))
+                    self.report("attaching the node {}<{}> as '{}'".format(node.__class__.__name__, node.pk, name))
 
         return
 
@@ -249,13 +264,12 @@ class BaseRestartWorkChain(WorkChain):
         is the second consecutive submission failure and we abort the workchain Otherwise we restart once more.
         """
         if self.ctx.submission_failure:
-            self.report('submission for {}<{}> failed for the second consecutive time'
-                .format(self.ctx.calc_name, calculation.pk))
+            self.report('submission for {}<{}> failed for the second consecutive time'.format(
+                self.ctx.calc_name, calculation.pk))
             return self.exit_codes.ERROR_SECOND_CONSECUTIVE_SUBMISSION_FAILURE
 
         else:
-            self.report('submission for {}<{}> failed, restarting once more'
-                .format(self.ctx.calc_name, calculation.pk))
+            self.report('submission for {}<{}> failed, restarting once more'.format(self.ctx.calc_name, calculation.pk))
 
     def _handle_unexpected_failure(self, calculation, exception=None):
         """
@@ -267,13 +281,13 @@ class BaseRestartWorkChain(WorkChain):
             self.report('{}'.format(exception))
 
         if self.ctx.unexpected_failure:
-            self.report('failure of {}<{}> could not be handled for the second consecutive time'
-                .format(self.ctx.calc_name, calculation.pk))
+            self.report('failure of {}<{}> could not be handled for the second consecutive time'.format(
+                self.ctx.calc_name, calculation.pk))
             return self.exit_codes.ERROR_SECOND_CONSECUTIVE_UNHANDLED_FAILURE
 
         else:
-            self.report('failure of {}<{}> could not be handled, restarting once more'
-                .format(self.ctx.calc_name, calculation.pk))
+            self.report('failure of {}<{}> could not be handled, restarting once more'.format(
+                self.ctx.calc_name, calculation.pk))
 
     def _handle_calculation_failure(self, calculation):
         """

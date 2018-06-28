@@ -11,7 +11,6 @@ from aiida.work.workchain import WorkChain, ToContext, if_
 from aiida.work.workfunctions import workfunction
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 
-
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
 
@@ -19,6 +18,7 @@ PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
 class PwBandsWorkChain(WorkChain):
     """Workchain to compute a band structure for a given structure using Quantum ESPRESSO pw.x"""
 
+    # yapf: disable
     @classmethod
     def define(cls, spec):
         super(PwBandsWorkChain, cls).define(spec)
@@ -88,9 +88,7 @@ class PwBandsWorkChain(WorkChain):
         the symmetry of the cell changed in the cell relaxation step
         """
         if 'kpoints_distance' in self.inputs.bands:
-            seekpath_parameters = ParameterData(dict={
-                'reference_distance': self.inputs.bands.kpoints_distance.value
-            })
+            seekpath_parameters = ParameterData(dict={'reference_distance': self.inputs.bands.kpoints_distance.value})
         else:
             seekpath_parameters = ParameterData(dict={})
 
@@ -118,7 +116,7 @@ class PwBandsWorkChain(WorkChain):
 
     def inspect_scf(self):
         """Verify that the PwBaseWorkChain for the scf run finished successfully."""
-        workchain = self.ctx.workchain_bands
+        workchain = self.ctx.workchain_scf
 
         if not workchain.is_finished_ok:
             self.report('scf PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
@@ -166,8 +164,7 @@ class PwBandsWorkChain(WorkChain):
             output_band = self.ctx.workchain_bands.out.output_band
             group, _ = Group.get_or_create(name=self.inputs.group.value)
             group.add_nodes(output_band)
-            self.report("storing the output_band<{}> in the group '{}'"
-                .format(output_band.pk, self.inputs.group.value))
+            self.report("storing the output_band<{}> in the group '{}'".format(output_band.pk, self.inputs.group.value))
 
     def on_terminated(self):
         """

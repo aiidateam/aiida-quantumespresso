@@ -35,17 +35,11 @@ class CpCalculation(BasePwCpInputGenerator, JobCalculation):
         _cp_read_unit_number = 50
         _cp_write_unit_number = 51
 
-        self._DATAFILE_XML = os.path.join(
-            BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-            '{}_{}.save'.format(BasePwCpInputGenerator._PREFIX,
-                                _cp_write_unit_number),
-            BasePwCpInputGenerator._DATAFILE_XML_BASENAME)
+        self._DATAFILE_XML = os.path.join(BasePwCpInputGenerator._OUTPUT_SUBFOLDER, '{}_{}.save'.format(
+            BasePwCpInputGenerator._PREFIX, _cp_write_unit_number), BasePwCpInputGenerator._DATAFILE_XML_BASENAME)
 
-        self._FILE_XML_PRINT_COUNTER = os.path.join(
-            BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-            '{}_{}.save'.format(BasePwCpInputGenerator._PREFIX,
-                                _cp_write_unit_number),
-            self._FILE_XML_PRINT_COUNTER_BASENAME)
+        self._FILE_XML_PRINT_COUNTER = os.path.join(BasePwCpInputGenerator._OUTPUT_SUBFOLDER, '{}_{}.save'.format(
+            BasePwCpInputGenerator._PREFIX, _cp_write_unit_number), self._FILE_XML_PRINT_COUNTER_BASENAME)
 
         # Default output parser provided by AiiDA
         self._default_parser = 'quantumespresso.cp'
@@ -61,40 +55,40 @@ class CpCalculation(BasePwCpInputGenerator, JobCalculation):
         }
 
         # Keywords that cannot be set
-        self._blocked_keywords = [('CONTROL', 'pseudo_dir'),  # set later
-                                  ('CONTROL', 'outdir'),  # set later
-                                  ('CONTROL', 'prefix'),  # set later
-                                  ('SYSTEM', 'ibrav'),  # set later
-                                  ('SYSTEM', 'celldm'),
-                                  ('SYSTEM', 'nat'),  # set later
-                                  ('SYSTEM', 'ntyp'),  # set later
-                                  ('SYSTEM', 'a'), ('SYSTEM', 'b'), ('SYSTEM', 'c'),
-                                  ('SYSTEM', 'cosab'), ('SYSTEM', 'cosac'), ('SYSTEM', 'cosbc'),
-                                  ('CONTROL', 'ndr', _cp_read_unit_number),
-                                  ('CONTROL', 'ndw', _cp_write_unit_number),
+        self._blocked_keywords = [
+            ('CONTROL', 'pseudo_dir'),  # set later
+            ('CONTROL', 'outdir'),  # set later
+            ('CONTROL', 'prefix'),  # set later
+            ('SYSTEM', 'ibrav'),  # set later
+            ('SYSTEM', 'celldm'),
+            ('SYSTEM', 'nat'),  # set later
+            ('SYSTEM', 'ntyp'),  # set later
+            ('SYSTEM', 'a'),
+            ('SYSTEM', 'b'),
+            ('SYSTEM', 'c'),
+            ('SYSTEM', 'cosab'),
+            ('SYSTEM', 'cosac'),
+            ('SYSTEM', 'cosbc'),
+            ('CONTROL', 'ndr', _cp_read_unit_number),
+            ('CONTROL', 'ndw', _cp_write_unit_number),
         ]
 
         self._use_kpoints = False
 
         # in restarts, it will copy from the parent the following
-        self._restart_copy_from = os.path.join(
-            BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-            '{}_{}.save'.format(BasePwCpInputGenerator._PREFIX,
-                                _cp_write_unit_number))
+        self._restart_copy_from = os.path.join(BasePwCpInputGenerator._OUTPUT_SUBFOLDER, '{}_{}.save'.format(
+            BasePwCpInputGenerator._PREFIX, _cp_write_unit_number))
         # in restarts, it will copy the previous folder in the following one
-        self._restart_copy_to = os.path.join(
-            BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-            '{}_{}.save'.format(BasePwCpInputGenerator._PREFIX,
-                                _cp_read_unit_number))
+        self._restart_copy_to = os.path.join(BasePwCpInputGenerator._OUTPUT_SUBFOLDER, '{}_{}.save'.format(
+            BasePwCpInputGenerator._PREFIX, _cp_read_unit_number))
 
-        _cp_ext_list = ['cel', 'con', 'eig', 'evp', 'for', 'nos', 'pol',
-                        'pos', 'spr', 'str', 'the', 'vel', 'wfc']
+        _cp_ext_list = ['cel', 'con', 'eig', 'evp', 'for', 'nos', 'pol', 'pos', 'spr', 'str', 'the', 'vel', 'wfc']
 
         # I retrieve them all, even if I don't parse all of them
-        self._internal_retrieve_list = [os.path.join(
-            BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-            '{}.{}'.format(BasePwCpInputGenerator._PREFIX,
-                           ext)) for ext in _cp_ext_list]
+        self._internal_retrieve_list = [
+            os.path.join(BasePwCpInputGenerator._OUTPUT_SUBFOLDER, '{}.{}'.format(BasePwCpInputGenerator._PREFIX, ext))
+            for ext in _cp_ext_list
+        ]
         self._internal_retrieve_list += [self._FILE_XML_PRINT_COUNTER]
 
         # Default input and output files
@@ -109,7 +103,6 @@ class CpCalculation(BasePwCpInputGenerator, JobCalculation):
     def _default_verbosity(cls):
         return 'low'
 
-
     @classproperty
     def _use_methods(cls):
         """
@@ -119,5 +112,3 @@ class CpCalculation(BasePwCpInputGenerator, JobCalculation):
         retdict.update(BasePwCpInputGenerator._baseclass_use_methods)
 
         return retdict
-
-

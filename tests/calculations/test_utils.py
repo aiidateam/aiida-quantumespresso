@@ -29,21 +29,15 @@ class TestUtilsConvertInputToNamelistEntry(unittest.TestCase):
         """
         When the value is a single value, it should be formatted as 'key = value'
         """
-        parameters = {
-            'ecutwfc': 100
-        }
-        expected = {
-            'ecutwfc': ['ecutwfc = 100']
-        }
+        parameters = {'ecutwfc': 100}
+        expected = {'ecutwfc': ['ecutwfc = 100']}
         self.validate_converted_output(parameters, expected)
 
     def test_single_list(self):
         """
         When the value is a single list, each entry should be formatted as 'key(i) = value[i]'
         """
-        parameters = {
-            'efield': [4, 5, 6]
-        }
+        parameters = {'efield': [4, 5, 6]}
         expected = {
             'efield': [
                 'efield(1) = 4',

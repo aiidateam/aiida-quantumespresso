@@ -25,12 +25,10 @@ def get_plugin(category, name):
     eps = [ep for ep in epm.iter_entry_points(group=category) if ep.name == name]
 
     if not eps:
-        raise MissingPluginError(
-            "No plugin named '{}' found for '{}'".format(name, category))
+        raise MissingPluginError("No plugin named '{}' found for '{}'".format(name, category))
 
     if len(eps) > 1:
-        raise MissingPluginError(
-            "Multiple plugins found for '{}' in '{}'".format(name, category))
+        raise MissingPluginError("Multiple plugins found for '{}' in '{}'".format(name, category))
 
     entrypoint = eps[0]
 
@@ -38,7 +36,6 @@ def get_plugin(category, name):
         plugin = entrypoint.load()
     except ImportError as exception:
         import traceback
-        raise LoadingPluginFailed("Loading the plugin '{}' failed:\n{}"
-            .format(name, traceback.format_exc()))
+        raise LoadingPluginFailed("Loading the plugin '{}' failed:\n{}".format(name, traceback.format_exc()))
 
     return plugin

@@ -35,10 +35,8 @@ class PwCalculation(BasePwCpInputGenerator, JobCalculation):
     def _init_internal_params(self):
         super(PwCalculation, self)._init_internal_params()
 
-        self._DATAFILE_XML = os.path.join(
-            BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-            '{}.save'.format(BasePwCpInputGenerator._PREFIX),
-            BasePwCpInputGenerator._DATAFILE_XML_BASENAME)
+        self._DATAFILE_XML = os.path.join(BasePwCpInputGenerator._OUTPUT_SUBFOLDER, '{}.save'.format(
+            BasePwCpInputGenerator._PREFIX), BasePwCpInputGenerator._DATAFILE_XML_BASENAME)
 
         # Default PW output parser provided by AiiDA
         self._default_parser = 'quantumespresso.pw'
@@ -85,13 +83,13 @@ class PwCalculation(BasePwCpInputGenerator, JobCalculation):
         use_methods.update(BasePwCpInputGenerator._baseclass_use_methods)
         use_methods.update({
             'kpoints': {
-                'valid_types': (KpointsData, ),
+                'valid_types': (KpointsData,),
                 'additional_parameter': None,
                 'linkname': 'kpoints',
                 'docstring': ('KpointsData node that contains the kpoints mesh or path'),
             },
             'hubbard_file': {
-                'valid_types': (SinglefileData, ),
+                'valid_types': (SinglefileData,),
                 'additional_parameter': None,
                 'linkname': 'hubbard_file',
                 'docstring': 'SinglefileData node containing the output Hubbard parameters from a HpCalculation',

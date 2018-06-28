@@ -32,8 +32,8 @@ def create_scheduler_resources(scheduler, base, goal):
     try:
         job_resource = scheduler.create_job_resource(**resources)
     except TypeError as exception:
-        raise ValueError('failed to create job resources for the {} scheduler: {}'
-            .format(scheduler.__class__, exception.message))
+        raise ValueError('failed to create job resources for the {} scheduler: {}'.format(
+            scheduler.__class__, exception.message))
 
     return {key: value for key, value in job_resource.iteritems() if value is not None}
 
@@ -52,8 +52,10 @@ def cmdline_remove_npools(cmdline):
     :param cmdline: the cmdline setting which is a list of string directives
     :return: the new cmdline setting
     """
-    return [e for i, e in enumerate(cmdline) if (e not in ('-npools', '-npool', '-nk') and
-        cmdline[i - 1] not in ('-npools', '-npool', '-nk'))]
+    return [
+        e for i, e in enumerate(cmdline)
+        if (e not in ('-npools', '-npool', '-nk') and cmdline[i - 1] not in ('-npools', '-npool', '-nk'))
+    ]
 
 
 def get_default_options(max_num_machines=1, max_wallclock_seconds=1800):
@@ -86,8 +88,13 @@ def get_automatic_parallelization_options(max_num_machines=1, max_wallclock_seco
     }
 
 
-def get_pw_parallelization_parameters(calculation, max_num_machines, target_time_seconds, max_wallclock_seconds,
-    calculation_mode='scf', round_interval=1800, scaling_law=(exp(-16.1951988), 1.22535849)):
+def get_pw_parallelization_parameters(calculation,
+                                      max_num_machines,
+                                      target_time_seconds,
+                                      max_wallclock_seconds,
+                                      calculation_mode='scf',
+                                      round_interval=1800,
+                                      scaling_law=(exp(-16.1951988), 1.22535849)):
     """
     Guess an optimal choice of parallelzation parameters for a PwCalculation based
     on a completed initialization PwCalculation run
@@ -145,18 +152,14 @@ def get_pw_parallelization_parameters(calculation, max_num_machines, target_time
         niterations = 1
 
     # Compute an estimate single-CPU time
-    time_single_cpu = np.prod(fft_grid) * nspin * nkpoints * niterations * scaling_law[0] * nbands ** scaling_law[1]
+    time_single_cpu = np.prod(fft_grid) * nspin * nkpoints * niterations * scaling_law[0] * nbands**scaling_law[1]
 
     # The number of nodes is the maximum number we can use that is dividing nkpoints
     num_machines = max([m for m in range(1, max_num_machines + 1) if nkpoints % m == 0])
 
     # If possible try to make number of kpoints even by changing the number of machines
-    if (
-        num_machines == 1 and
-        nkpoints > 6 and
-        max_num_machines > 1 and
-        time_single_cpu / default_num_mpiprocs_per_machine > target_time_seconds
-    ):
+    if (num_machines == 1 and nkpoints > 6 and max_num_machines > 1 and
+            time_single_cpu / default_num_mpiprocs_per_machine > target_time_seconds):
         num_machines = max([m for m in range(1, max_num_machines + 1) if (nkpoints + 1) % m == 0])
 
     # Now we will try to decrease the number of processes per machine (by not more than one fourth)

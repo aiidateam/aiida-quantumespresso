@@ -1,0 +1,10 @@
+ignore-paths:
+  - docs
+  - examples
+  - tests
+
+pyflakes:
+  run: false
+
+mccabe:
+  run: false

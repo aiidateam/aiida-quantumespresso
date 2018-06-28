@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 from xml.dom.minidom import parseString
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
-from aiida_quantumespresso.parsers.raw_parser_pw import (read_xml_card,
-                   parse_xml_child_integer,xml_card_header,parse_xml_child_bool,
-                   parse_xml_child_str,parse_xml_child_float,
-                   parse_xml_child_attribute_str,xml_card_cell,xml_card_ions,
-                   xml_card_exchangecorrelation,xml_card_spin,xml_card_planewaves)
+from aiida_quantumespresso.parsers.raw_parser_pw import (
+    read_xml_card, parse_xml_child_integer, xml_card_header, parse_xml_child_bool, parse_xml_child_str,
+    parse_xml_child_float, parse_xml_child_attribute_str, xml_card_cell, xml_card_ions, xml_card_exchangecorrelation,
+    xml_card_spin, xml_card_planewaves)
 
 
-def parse_cp_traj_stanzas(num_elements, splitlines, prepend_name,rescale=1.):
+def parse_cp_traj_stanzas(num_elements, splitlines, prepend_name, rescale=1.):
     """
     num_elements: Number of lines (with three elements) between lines with two only
     elements (containing step number and time in ps).
@@ -39,37 +38,37 @@ def parse_cp_traj_stanzas(num_elements, splitlines, prepend_name,rescale=1.):
                 if len(this_stanza) == 0 and not start_stanza:
                     raise ValueError("Wrong position of long line.")
                 start_stanza = False
-                this_stanza.append([float(l[0])*rescale,float(l[1])*rescale,float(l[2])*rescale])
+                this_stanza.append([float(l[0]) * rescale, float(l[1]) * rescale, float(l[2]) * rescale])
                 if len(this_stanza) == num_elements:
                     stanzas.append(this_stanza)
                     this_stanza = []
             else:
                 raise ValueError("Wrong line length ({})".format(len(l)))
         if len(this_stanza) != 0:
-            raise ValueError("Wrong length of last block ({} lines instead of 0)."
-                             .format(len(this_stanza)))
+            raise ValueError("Wrong length of last block ({} lines instead of 0).".format(len(this_stanza)))
         if len(steps) != len(stanzas):
             raise ValueError("Length mismatch between number of steps and number of defined stanzas.")
         return {
             '{}_steps'.format(prepend_name): steps,
             '{}_times'.format(prepend_name): times,
             '{}_data'.format(prepend_name): stanzas,
-            }
+        }
     except Exception as e:
-        e.message = "At line {}: {}".format(linenum+1, e.message)
+        e.message = "At line {}: {}".format(linenum + 1, e.message)
         raise e
 
-def parse_cp_text_output(data,xml_data):
+
+def parse_cp_text_output(data, xml_data):
     """
     data must be a list of strings, one for each lines, as returned by readlines().
     On output, a dictionary with parsed values
     """
     # TODO: uniform readlines() and read() usage for passing input to the parser
 
-    parsed_data={}
-    parsed_data['warnings']=[]
+    parsed_data = {}
+    parsed_data['warnings'] = []
 
-    for count,line in enumerate(data):
+    for count, line in enumerate(data):
 
         if 'warning' in line.lower():
             parsed_data['warnings'].append(line)
@@ -77,56 +76,56 @@ def parse_cp_text_output(data,xml_data):
             parsed_data['warnings'].append('Bananas from the ortho.')
         elif 'CP' in line and 'WALL' in line:
             try:
-                time=line.split('CPU')[1].split('WALL')[0]
-                parsed_data['wall_time']=time
+                time = line.split('CPU')[1].split('WALL')[0]
+                parsed_data['wall_time'] = time
             except:
                 raise QEOutputParsingError('Error while parsing wall time.')
 
-    for count,line in enumerate(reversed(data)):
+    for count, line in enumerate(reversed(data)):
         if 'nfi' in line and 'ekinc' in line and 'econs' in line:
-            this_line = data[len(data)-count]
+            this_line = data[len(data) - count]
             try:
-                parsed_data['ekinc'] = [float( this_line.split()[1] )]
+                parsed_data['ekinc'] = [float(this_line.split()[1])]
             except ValueError:
                 pass
             try:
-                parsed_data['temph'] = [float( this_line.split()[2] )]
+                parsed_data['temph'] = [float(this_line.split()[2])]
             except ValueError:
                 pass
             try:
-                parsed_data['tempp'] = [float( this_line.split()[3] )]
+                parsed_data['tempp'] = [float(this_line.split()[3])]
             except ValueError:
                 pass
             try:
-                parsed_data['etot'] = [float( this_line.split()[4] )]
+                parsed_data['etot'] = [float(this_line.split()[4])]
             except ValueError:
                 pass
             try:
-                parsed_data['enthal'] = [float( this_line.split()[5] )]
+                parsed_data['enthal'] = [float(this_line.split()[5])]
             except ValueError:
                 pass
             try:
-                parsed_data['econs'] = [float( this_line.split()[6] )]
+                parsed_data['econs'] = [float(this_line.split()[6])]
             except ValueError:
                 pass
             try:
-                parsed_data['econt'] = [float( this_line.split()[7] )]
+                parsed_data['econt'] = [float(this_line.split()[7])]
             except ValueError:
                 pass
             try:
-                parsed_data['vnhh'] = [float( this_line.split()[8] )]
+                parsed_data['vnhh'] = [float(this_line.split()[8])]
             except (ValueError, IndexError):
                 pass
             try:
-                parsed_data['xnhh0'] = [float( this_line.split()[9] )]
+                parsed_data['xnhh0'] = [float(this_line.split()[9])]
             except (ValueError, IndexError):
                 pass
             try:
-                parsed_data['vnhp'] = [float( this_line.split()[10] )]
+                parsed_data['vnhp'] = [float(this_line.split()[10])]
             except (ValueError, IndexError):
                 pass
             try:
-                parsed_data['xnhp0'] = [float( this_line.split()[11] )]
+                parsed_data['xnhp0'] = [float(this_line.split()[11])]
             except (ValueError, IndexError):
                 pass
 
@@ -141,65 +140,62 @@ def parse_cp_xml_counter_output(data):
     On output, a dictionary with parsed values.
     """
     dom = parseString(data)
-    parsed_data={}
-    cardname='LAST_SUCCESSFUL_PRINTOUT'
+    parsed_data = {}
+    cardname = 'LAST_SUCCESSFUL_PRINTOUT'
 
-    card1 = [ _ for _ in dom.childNodes if _.nodeName=='PRINT_COUNTER'][0]
-    card2 = [ _ for _ in card1.childNodes if _.nodeName=='LAST_SUCCESSFUL_PRINTOUT'][0]
+    card1 = [_ for _ in dom.childNodes if _.nodeName == 'PRINT_COUNTER'][0]
+    card2 = [_ for _ in card1.childNodes if _.nodeName == 'LAST_SUCCESSFUL_PRINTOUT'][0]
 
-    tagname='STEP'
-    parsed_data[cardname.lower().replace('-','_')] = parse_xml_child_integer(tagname,card2)
+    tagname = 'STEP'
+    parsed_data[cardname.lower().replace('-', '_')] = parse_xml_child_integer(tagname, card2)
 
     return parsed_data
 
 
-def parse_cp_raw_output(out_file,xml_file=None,xml_counter_file=None):
+def parse_cp_raw_output(out_file, xml_file=None, xml_counter_file=None):
 
     parser_info = get_parser_info(parser_info_template='aiida-quantumespresso parser cp.x v{}')
 
     # analyze the xml
     if xml_file is not None:
         try:
-            with open(xml_file,'r') as f:
+            with open(xml_file, 'r') as f:
                 xml_lines = f.read()
         except IOError:
-            raise QEOutputParsingError("Failed to open xml file: %s."
-                                       .format(xml_file) )
+            raise QEOutputParsingError("Failed to open xml file: %s.".format(xml_file))
         # TODO: this function should probably be the same of pw.
         # after all, the parser was fault-tolerant
-        xml_data=parse_cp_xml_output(xml_lines)
+        xml_data = parse_cp_xml_output(xml_lines)
     else:
         parser_info['parser_warnings'].append('Skipping the parsing of the xml file.')
         xml_data = {}
 
-
     # analyze the counter file, which keeps info on the steps
     if xml_counter_file is not None:
         try:
-            with open(xml_counter_file,'r') as f:
+            with open(xml_counter_file, 'r') as f:
                 xml_counter_lines = f.read()
         except IOError:
-            raise QEOutputParsingError("Failed to open xml counter file: %s."
-                                       .format(xml_file) )
-        xml_counter_data=parse_cp_xml_counter_output(xml_counter_lines)
+            raise QEOutputParsingError("Failed to open xml counter file: %s.".format(xml_file))
+        xml_counter_data = parse_cp_xml_counter_output(xml_counter_lines)
     else:
-        xml_counter_data={}
+        xml_counter_data = {}
 
     # analyze the standard output
     try:
-        with open(out_file,'r') as f:
+        with open(out_file, 'r') as f:
             out_lines = f.readlines()
     except IOError:
         raise QEOutputParsingError("Failed to open output file: %s." % out_file)
 
     # understand if the job ended smoothly
-    job_successful=False
+    job_successful = False
     for line in reversed(out_lines):
         if 'JOB DONE' in line:
-            job_successful=True
+            job_successful = True
             break
 
-    out_data=parse_cp_text_output(out_lines,xml_data)
+    out_data = parse_cp_text_output(out_lines, xml_data)
 
     for key in out_data.keys():
         if key in xml_data.keys():
@@ -212,9 +208,7 @@ def parse_cp_raw_output(out_file,xml_file=None,xml_counter_file=None):
 
     # TODO: parse the trajectory and save them in a reasonable format
 
-    return final_data,job_successful
-
-
+    return final_data, job_successful
 
 
 # TODO: the xml has a lot in common with pw, maybe I should avoid duplication of code
@@ -231,162 +225,162 @@ def parse_cp_xml_output(data):
 
     dom = parseString(data)
 
-    parsed_data={}
+    parsed_data = {}
 
     #CARD HEADER
-    parsed_data = copy.deepcopy(xml_card_header(parsed_data,dom))
+    parsed_data = copy.deepcopy(xml_card_header(parsed_data, dom))
 
     # CARD CONTROL
 
-    cardname='CONTROL'
-    target_tags=read_xml_card(dom,cardname)
+    cardname = 'CONTROL'
+    target_tags = read_xml_card(dom, cardname)
 
-    tagname='PP_CHECK_FLAG'
-    parsed_data[tagname.lower()]=parse_xml_child_bool(tagname,target_tags)
+    tagname = 'PP_CHECK_FLAG'
+    parsed_data[tagname.lower()] = parse_xml_child_bool(tagname, target_tags)
 
     # CARD STATUS
 
     cardname = 'STATUS'
-    target_tags = read_xml_card(dom,cardname)
+    target_tags = read_xml_card(dom, cardname)
 
     tagname = 'STEP'
     attrname = 'ITERATION'
-    parsed_data[(tagname+'_'+attrname).lower()]=int(parse_xml_child_attribute_str(tagname,attrname,target_tags))
+    parsed_data[(tagname + '_' + attrname).lower()] = int(parse_xml_child_attribute_str(tagname, attrname, target_tags))
 
     tagname = 'TIME'
     attrname = 'UNITS'
-    value=parse_xml_child_float(tagname,target_tags)
-    units = parse_xml_child_attribute_str(tagname,attrname,target_tags)
+    value = parse_xml_child_float(tagname, target_tags)
+    units = parse_xml_child_attribute_str(tagname, attrname, target_tags)
     if units not in ['pico-seconds']:
         raise QEOutputParsingError("Units {} are not supported by parser".format(units))
-    parsed_data[tagname.lower()]=value
+    parsed_data[tagname.lower()] = value
 
     tagname = 'TITLE'
-    parsed_data[tagname.lower()]=parse_xml_child_str(tagname,target_tags)
+    parsed_data[tagname.lower()] = parse_xml_child_str(tagname, target_tags)
 
     # CARD CELL
-    parsed_data,lattice_vectors,volume = copy.deepcopy(xml_card_cell(parsed_data,dom))
+    parsed_data, lattice_vectors, volume = copy.deepcopy(xml_card_cell(parsed_data, dom))
 
     # CARD IONS
-    parsed_data = copy.deepcopy(xml_card_ions(parsed_data,dom,lattice_vectors,volume))
+    parsed_data = copy.deepcopy(xml_card_ions(parsed_data, dom, lattice_vectors, volume))
 
     # CARD PLANE WAVES
 
-    parsed_data = copy.deepcopy(xml_card_planewaves(parsed_data,dom,'cp'))
+    parsed_data = copy.deepcopy(xml_card_planewaves(parsed_data, dom, 'cp'))
 
     # CARD SPIN
-    parsed_data = copy.deepcopy(xml_card_spin(parsed_data,dom))
+    parsed_data = copy.deepcopy(xml_card_spin(parsed_data, dom))
 
     # CARD EXCHANGE_CORRELATION
-    parsed_data = copy.deepcopy(xml_card_exchangecorrelation(parsed_data,dom))
+    parsed_data = copy.deepcopy(xml_card_exchangecorrelation(parsed_data, dom))
 
     # TODO CARD OCCUPATIONS
 
     # CARD BRILLOUIN ZONE
     # TODO: k points are saved for CP... Why?
 
-    cardname='BRILLOUIN_ZONE'
-    target_tags=read_xml_card(dom,cardname)
+    cardname = 'BRILLOUIN_ZONE'
+    target_tags = read_xml_card(dom, cardname)
 
-    tagname='NUMBER_OF_K-POINTS'
-    parsed_data[tagname.replace('-','_').lower()]=parse_xml_child_integer(tagname,target_tags)
+    tagname = 'NUMBER_OF_K-POINTS'
+    parsed_data[tagname.replace('-', '_').lower()] = parse_xml_child_integer(tagname, target_tags)
 
-    tagname='UNITS_FOR_K-POINTS'
-    attrname='UNITS'
-    metric=parse_xml_child_attribute_str(tagname,attrname,target_tags)
+    tagname = 'UNITS_FOR_K-POINTS'
+    attrname = 'UNITS'
+    metric = parse_xml_child_attribute_str(tagname, attrname, target_tags)
     if metric not in ['2 pi / a']:
-        raise QEOutputParsingError('Error parsing attribute %s, tag %s inside %s, units unknown'% (attrname,tagname, target_tags.tagName ) )
-    parsed_data[tagname.replace('-','_').lower()]=metric
+        raise QEOutputParsingError('Error parsing attribute %s, tag %s inside %s, units unknown' %
+                                   (attrname, tagname, target_tags.tagName))
+    parsed_data[tagname.replace('-', '_').lower()] = metric
 
     # TODO: check what happens if one does not use the monkhorst pack in the code
-    tagname='MONKHORST_PACK_GRID'
+    tagname = 'MONKHORST_PACK_GRID'
     try:
-        a=target_tags.getElementsByTagName(tagname)[0]
-        value=[int(a.getAttribute('nk'+str(i+1))) for i in range(3)]
-        parsed_data[tagname.replace('-','_').lower()]=value
+        a = target_tags.getElementsByTagName(tagname)[0]
+        value = [int(a.getAttribute('nk' + str(i + 1))) for i in range(3)]
+        parsed_data[tagname.replace('-', '_').lower()] = value
     except:
-        raise QEOutputParsingError('Error parsing tag %s inside %s.'% (tagname, target_tags.tagName ) )
+        raise QEOutputParsingError('Error parsing tag %s inside %s.' % (tagname, target_tags.tagName))
 
-    tagname='MONKHORST_PACK_OFFSET'
+    tagname = 'MONKHORST_PACK_OFFSET'
     try:
-        a=target_tags.getElementsByTagName(tagname)[0]
-        value=[int(a.getAttribute('k'+str(i+1))) for i in range(3)]
-        parsed_data[tagname.replace('-','_').lower()]=value
+        a = target_tags.getElementsByTagName(tagname)[0]
+        value = [int(a.getAttribute('k' + str(i + 1))) for i in range(3)]
+        parsed_data[tagname.replace('-', '_').lower()] = value
     except:
-        raise QEOutputParsingError('Error parsing tag %s inside %s.'% (tagname, target_tags.tagName ) )
+        raise QEOutputParsingError('Error parsing tag %s inside %s.' % (tagname, target_tags.tagName))
 
     try:
-        kpoints=[]
+        kpoints = []
         for i in range(parsed_data['number_of_k_points']):
-            tagname='K-POINT.'+str(i+1)
-            a=target_tags.getElementsByTagName(tagname)[0]
-            b=a.getAttribute('XYZ').replace('\n','').rsplit()
-            value=[ float(s) for s in b ]
+            tagname = 'K-POINT.' + str(i + 1)
+            a = target_tags.getElementsByTagName(tagname)[0]
+            b = a.getAttribute('XYZ').replace('\n', '').rsplit()
+            value = [float(s) for s in b]
 
-            metric=parsed_data['units_for_k_points']
-            if metric=='2 pi / a':
-                value=[ float(s)/parsed_data['lattice_parameter'] for s in value ]
+            metric = parsed_data['units_for_k_points']
+            if metric == '2 pi / a':
+                value = [float(s) / parsed_data['lattice_parameter'] for s in value]
 
-                weight=float(a.getAttribute('WEIGHT'))
+                weight = float(a.getAttribute('WEIGHT'))
 
-                kpoints.append([value,weight])
+                kpoints.append([value, weight])
 
-        parsed_data['k_point']=kpoints
+        parsed_data['k_point'] = kpoints
     except:
-        raise QEOutputParsingError('Error parsing tag K-POINT.# inside %s.'% (target_tags.tagName ) )
+        raise QEOutputParsingError('Error parsing tag K-POINT.# inside %s.' % (target_tags.tagName))
 
-    tagname='NORM-OF-Q'
+    tagname = 'NORM-OF-Q'
     # TODO decide if save this parameter
-    parsed_data[tagname.replace('-','_').lower()]=parse_xml_child_float(tagname,target_tags)
-
+    parsed_data[tagname.replace('-', '_').lower()] = parse_xml_child_float(tagname, target_tags)
 
     # CARD PARALLELISM
     # can be optional
 
     try:
-        cardname='PARALLELISM'
-        target_tags=read_xml_card(dom,cardname)
+        cardname = 'PARALLELISM'
+        target_tags = read_xml_card(dom, cardname)
 
-        tagname='GRANULARITY_OF_K-POINTS_DISTRIBUTION'
-        parsed_data[tagname.lower().replace('-','_')] = parse_xml_child_integer(tagname,target_tags)
+        tagname = 'GRANULARITY_OF_K-POINTS_DISTRIBUTION'
+        parsed_data[tagname.lower().replace('-', '_')] = parse_xml_child_integer(tagname, target_tags)
 
-        tagname='NUMBER_OF_PROCESSORS'
-        parsed_data[tagname.lower().replace('-','_')] = parse_xml_child_integer(tagname,target_tags)
+        tagname = 'NUMBER_OF_PROCESSORS'
+        parsed_data[tagname.lower().replace('-', '_')] = parse_xml_child_integer(tagname, target_tags)
 
-        tagname='NUMBER_OF_PROCESSORS_PER_POOL'
-        parsed_data[tagname.lower().replace('-','_')] = parse_xml_child_integer(tagname,target_tags)
+        tagname = 'NUMBER_OF_PROCESSORS_PER_POOL'
+        parsed_data[tagname.lower().replace('-', '_')] = parse_xml_child_integer(tagname, target_tags)
 
-        tagname='NUMBER_OF_PROCESSORS_PER_IMAGE'
-        parsed_data[tagname.lower().replace('-','_')] = parse_xml_child_integer(tagname,target_tags)
+        tagname = 'NUMBER_OF_PROCESSORS_PER_IMAGE'
+        parsed_data[tagname.lower().replace('-', '_')] = parse_xml_child_integer(tagname, target_tags)
 
-        tagname='NUMBER_OF_PROCESSORS_PER_TASKGROUP'
-        parsed_data[tagname.lower().replace('-','_')] = parse_xml_child_integer(tagname,target_tags)
+        tagname = 'NUMBER_OF_PROCESSORS_PER_TASKGROUP'
+        parsed_data[tagname.lower().replace('-', '_')] = parse_xml_child_integer(tagname, target_tags)
 
-        tagname='NUMBER_OF_PROCESSORS_PER_POT'
-        parsed_data[tagname.lower().replace('-','_')] = parse_xml_child_integer(tagname,target_tags)
+        tagname = 'NUMBER_OF_PROCESSORS_PER_POT'
+        parsed_data[tagname.lower().replace('-', '_')] = parse_xml_child_integer(tagname, target_tags)
 
-        tagname='NUMBER_OF_PROCESSORS_PER_BAND_GROUP'
-        parsed_data[tagname.lower().replace('-','_')] = parse_xml_child_integer(tagname,target_tags)
+        tagname = 'NUMBER_OF_PROCESSORS_PER_BAND_GROUP'
+        parsed_data[tagname.lower().replace('-', '_')] = parse_xml_child_integer(tagname, target_tags)
 
-        tagname='NUMBER_OF_PROCESSORS_PER_DIAGONALIZATION'
-        parsed_data[tagname.lower().replace('-','_')] = parse_xml_child_integer(tagname,target_tags)
+        tagname = 'NUMBER_OF_PROCESSORS_PER_DIAGONALIZATION'
+        parsed_data[tagname.lower().replace('-', '_')] = parse_xml_child_integer(tagname, target_tags)
     except:
         pass
 
     # CARD TIMESTEPS
 
     cardname = 'TIMESTEPS'
-    target_tags = read_xml_card(dom,cardname)
+    target_tags = read_xml_card(dom, cardname)
 
-    for tagname in ['STEP0','STEPM']:
+    for tagname in ['STEP0', 'STEPM']:
         try:
             tag = target_tags.getElementsByTagName(tagname)[0]
 
             try:
                 second_tagname = 'ACCUMULATORS'
                 second_tag = tag.getElementsByTagName(second_tagname)[0]
-                data=second_tag.childNodes[0].data.rstrip().split() # list of floats
-                parsed_data[second_tagname.replace('-','_').lower()] = [float(i) for i in data]
+                data = second_tag.childNodes[0].data.rstrip().split()  # list of floats
+                parsed_data[second_tagname.replace('-', '_').lower()] = [float(i) for i in data]
             except:
                 pass
 
@@ -397,41 +391,41 @@ def parse_cp_xml_output(data):
             list_data = third_tag.childNodes[0].data.rstrip().split()
             list_data = [float(i) for i in list_data]
             # convert to matrix
-            val=[]
-            mat=[]
-            for i,data in enumerate(list_data):
+            val = []
+            mat = []
+            for i, data in enumerate(list_data):
                 val.append(data)
-                if (i+1)%3==0:
+                if (i + 1) % 3 == 0:
                     mat.append(val)
-                    val=[]
-            parsed_data[(second_tagname+'_'+third_tagname).replace('-','_').lower()] = mat
+                    val = []
+            parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = mat
             third_tagname = 'svel'
             third_tag = second_tag.getElementsByTagName(third_tagname)[0]
             list_data = third_tag.childNodes[0].data.rstrip().split()
             list_data = [float(i) for i in list_data]
             # convert to matrix
-            val=[]
-            mat=[]
-            for i,data in enumerate(list_data):
+            val = []
+            mat = []
+            for i, data in enumerate(list_data):
                 val.append(data)
-                if (i+1)%3==0:
+                if (i + 1) % 3 == 0:
                     mat.append(val)
-                    val=[]
-            parsed_data[(second_tagname+'_'+third_tagname).replace('-','_').lower()] = mat
+                    val = []
+            parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = mat
             try:
                 third_tagname = 'taui'
                 third_tag = second_tag.getElementsByTagName(third_tagname)[0]
                 list_data = third_tag.childNodes[0].data.rstrip().split()
                 list_data = [float(i) for i in list_data]
                 # convert to matrix
-                val=[]
-                mat=[]
-                for i,data in enumerate(list_data):
+                val = []
+                mat = []
+                for i, data in enumerate(list_data):
                     val.append(data)
-                    if (i+1)%3==0:
+                    if (i + 1) % 3 == 0:
                         mat.append(val)
-                        val=[]
-                parsed_data[(second_tagname+'_'+third_tagname).replace('-','_').lower()] = mat
+                        val = []
+                parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = mat
             except:
                 pass
 
@@ -439,7 +433,8 @@ def parse_cp_xml_output(data):
                 third_tagname = 'cdmi'
                 third_tag = second_tag.getElementsByTagName(third_tagname)[0]
                 list_data = third_tag.childNodes[0].data.rstrip().split()
-                parsed_data[(second_tagname+'_'+third_tagname).replace('-','_').lower()] = [float(i) for i in list_data]
+                parsed_data[(second_tagname + '_' + third_tagname).replace(
+                    '-', '_').lower()] = [float(i) for i in list_data]
             except:
                 pass
 
@@ -449,14 +444,14 @@ def parse_cp_xml_output(data):
                 list_data = third_tag.childNodes[0].data.rstrip().split()
                 list_data = [float(i) for i in list_data]
                 # convert to matrix
-                val=[]
-                mat=[]
-                for i,data in enumerate(list_data):
+                val = []
+                mat = []
+                for i, data in enumerate(list_data):
                     val.append(data)
-                    if (i+1)%3==0:
+                    if (i + 1) % 3 == 0:
                         mat.append(val)
-                        val=[]
-                parsed_data[(second_tagname+'_'+third_tagname).replace('-','_').lower()] = mat
+                        val = []
+                parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = mat
             except:
                 pass
 
@@ -464,24 +459,28 @@ def parse_cp_xml_output(data):
             second_tag = tag.getElementsByTagName(second_tagname)[0]
             third_tagname = 'nhpcl'
             third_tag = second_tag.getElementsByTagName(third_tagname)[0]
-            parsed_data[(second_tagname+'_'+third_tagname).replace('-','_').lower()] = float(third_tag.childNodes[0].data)
+            parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = float(
+                third_tag.childNodes[0].data)
             third_tagname = 'nhpdim'
             third_tag = second_tag.getElementsByTagName(third_tagname)[0]
-            parsed_data[(second_tagname+'_'+third_tagname).replace('-','_').lower()] = float(third_tag.childNodes[0].data)
+            parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = float(
+                third_tag.childNodes[0].data)
             third_tagname = 'xnhp'
             third_tag = second_tag.getElementsByTagName(third_tagname)[0]
-            parsed_data[(second_tagname+'_'+third_tagname).replace('-','_').lower()] = float(third_tag.childNodes[0].data)
+            parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = float(
+                third_tag.childNodes[0].data)
             try:
                 third_tagname = 'vnhp'
                 third_tag = second_tag.getElementsByTagName(third_tagname)[0]
-                parsed_data[(second_tagname+'_'+third_tagname).replace('-','_').lower()] = float(third_tag.childNodes[0].data)
+                parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = float(
+                    third_tag.childNodes[0].data)
             except:
                 pass
 
             try:
                 second_tagname = 'ekincm'
                 second_tag = tag.getElementsByTagName(second_tagname)[0]
-                parsed_data[second_tagname.replace('-','_').lower()] = float(second_tag.childNodes[0].data)
+                parsed_data[second_tagname.replace('-', '_').lower()] = float(second_tag.childNodes[0].data)
             except:
                 pass
 
@@ -490,13 +489,15 @@ def parse_cp_xml_output(data):
             try:
                 third_tagname = 'xnhe'
                 third_tag = second_tag.getElementsByTagName(third_tagname)[0]
-                parsed_data[(second_tagname+'_'+third_tagname).replace('-','_').lower()] = float(third_tag.childNodes[0].data)
+                parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = float(
+                    third_tag.childNodes[0].data)
             except:
                 pass
             try:
                 third_tagname = 'vnhe'
                 third_tag = second_tag.getElementsByTagName(third_tagname)[0]
-                parsed_data[(second_tagname+'_'+third_tagname).replace('-','_').lower()] = float(third_tag.childNodes[0].data)
+                parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = float(
+                    third_tag.childNodes[0].data)
             except:
                 pass
 
@@ -508,14 +509,14 @@ def parse_cp_xml_output(data):
                 list_data = third_tag.childNodes[0].data.rstrip().split()
                 list_data = [float(i) for i in list_data]
                 # convert to matrix
-                val=[]
-                mat=[]
-                for i,data in enumerate(list_data):
+                val = []
+                mat = []
+                for i, data in enumerate(list_data):
                     val.append(data)
-                    if (i+1)%3==0:
+                    if (i + 1) % 3 == 0:
                         mat.append(val)
-                        val=[]
-                parsed_data[(second_tagname+'_'+third_tagname).replace('-','_').lower()] = mat
+                        val = []
+                parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = mat
             except:
                 pass
             try:
@@ -524,14 +525,14 @@ def parse_cp_xml_output(data):
                 list_data = third_tag.childNodes[0].data.rstrip().split()
                 list_data = [float(i) for i in list_data]
                 # convert to matrix
-                val=[]
-                mat=[]
-                for i,data in enumerate(list_data):
+                val = []
+                mat = []
+                for i, data in enumerate(list_data):
                     val.append(data)
-                    if (i+1)%3==0:
+                    if (i + 1) % 3 == 0:
                         mat.append(val)
-                        val=[]
-                parsed_data[(second_tagname+'_'+third_tagname).replace('-','_').lower()] = mat
+                        val = []
+                parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = mat
             except:
                 pass
             try:
@@ -540,14 +541,14 @@ def parse_cp_xml_output(data):
                 list_data = third_tag.childNodes[0].data.rstrip().split()
                 list_data = [float(i) for i in list_data]
                 # convert to matrix
-                val=[]
-                mat=[]
-                for i,data in enumerate(list_data):
+                val = []
+                mat = []
+                for i, data in enumerate(list_data):
                     val.append(data)
-                    if (i+1)%3==0:
+                    if (i + 1) % 3 == 0:
                         mat.append(val)
-                        val=[]
-                parsed_data[(second_tagname+'_'+third_tagname).replace('-','_').lower()] = mat
+                        val = []
+                parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = mat
             except:
                 pass
 
@@ -560,14 +561,14 @@ def parse_cp_xml_output(data):
                 list_data = [float(i) for i in list_data]
 
                 # convert to matrix
-                val=[]
-                mat=[]
-                for i,data in enumerate(list_data):
+                val = []
+                mat = []
+                for i, data in enumerate(list_data):
                     val.append(data)
-                    if (i+1)%3==0:
+                    if (i + 1) % 3 == 0:
                         mat.append(val)
-                        val=[]
-                parsed_data[(second_tagname+'_'+third_tagname).replace('-','_').lower()] = mat
+                        val = []
+                parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = mat
             except:
                 pass
             try:
@@ -576,35 +577,35 @@ def parse_cp_xml_output(data):
                 list_data = third_tag.childNodes[0].data.rstrip().split()
                 list_data = [float(i) for i in list_data]
                 # convert to matrix
-                val=[]
-                mat=[]
-                for i,data in enumerate(list_data):
+                val = []
+                mat = []
+                for i, data in enumerate(list_data):
                     val.append(data)
-                    if (i+1)%3==0:
+                    if (i + 1) % 3 == 0:
                         mat.append(val)
-                        val=[]
-                parsed_data[(second_tagname+'_'+third_tagname).replace('-','_').lower()] = mat
+                        val = []
+                parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = mat
             except:
                 pass
         except:
-            raise QEOutputParsingError('Error parsing CARD {}'.format(cardname) )
+            raise QEOutputParsingError('Error parsing CARD {}'.format(cardname))
 
     # CARD BAND_STRUCTURE_INFO
 
-    cardname='BAND_STRUCTURE_INFO'
-    target_tags=read_xml_card(dom,cardname)
+    cardname = 'BAND_STRUCTURE_INFO'
+    target_tags = read_xml_card(dom, cardname)
 
-    tagname='NUMBER_OF_ATOMIC_WFC'
-    parsed_data[tagname.lower().replace('-','_')] = parse_xml_child_integer(tagname,target_tags)
+    tagname = 'NUMBER_OF_ATOMIC_WFC'
+    parsed_data[tagname.lower().replace('-', '_')] = parse_xml_child_integer(tagname, target_tags)
 
-    tagname='NUMBER_OF_ELECTRONS'
-    parsed_data[tagname.lower().replace('-','_')] = int(parse_xml_child_float(tagname,target_tags))
+    tagname = 'NUMBER_OF_ELECTRONS'
+    parsed_data[tagname.lower().replace('-', '_')] = int(parse_xml_child_float(tagname, target_tags))
 
-    tagname='NUMBER_OF_BANDS'
-    parsed_data[tagname.lower().replace('-','_')] = parse_xml_child_integer(tagname,target_tags)
+    tagname = 'NUMBER_OF_BANDS'
+    parsed_data[tagname.lower().replace('-', '_')] = parse_xml_child_integer(tagname, target_tags)
 
-    tagname='NUMBER_OF_SPIN_COMPONENTS'
-    parsed_data[tagname.lower().replace('-','_')] = parse_xml_child_integer(tagname,target_tags)
+    tagname = 'NUMBER_OF_SPIN_COMPONENTS'
+    parsed_data[tagname.lower().replace('-', '_')] = parse_xml_child_integer(tagname, target_tags)
 
     # TODO
     # - EIGENVALUES (that actually just contains occupations)

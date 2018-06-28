@@ -8,18 +8,15 @@ from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.utils import WorkflowFactory
 from aiida.work.workchain import WorkChain, ToContext
 
-
 PwBandsWorkChain = WorkflowFactory('quantumespresso.pw.bands')
 
 
 class PwBandStructureWorkChain(WorkChain):
-    """
-    Workchain to relax and compute the band structure for a given input structure
-    using Quantum ESPRESSO's pw.x
-    """
+    """Workchain to relax and compute the band structure for a given input structure using Quantum ESPRESSO's pw.x"""
 
     ERROR_INVALID_INPUT_UNRECOGNIZED_KIND = 1
 
+    # yapf: disable
     @classmethod
     def define(cls, spec):
         super(PwBandStructureWorkChain, cls).define(spec)
@@ -70,89 +67,421 @@ class PwBandStructureWorkChain(WorkChain):
                 'occupations': 'smearing',
                 'tstress': True,
                 'pseudo_data': {
-                    'H':  {'cutoff': 55,  'dual': 8,  'pseudo': '031US'},
-                    'He': {'cutoff': 55,  'dual': 4,  'pseudo': 'SG15'},
-                    'Li': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.4'},
-                    'Be': {'cutoff': 40,  'dual': 8,  'pseudo': 'GBRV-1.4'},
-                    'B':  {'cutoff': 40,  'dual': 8,  'pseudo': '031PAW'},
-                    'C':  {'cutoff': 50,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'N':  {'cutoff': 55,  'dual': 8,  'pseudo': 'THEOS'},
-                    'O':  {'cutoff': 45,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'F':  {'cutoff': 50,  'dual': 8,  'pseudo': 'GBRV-1.4'},
-                    'Ne': {'cutoff': 200, 'dual': 8,  'pseudo': '100PAW'},
-                    'Na': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Mg': {'cutoff': 35,  'dual': 8,  'pseudo': 'GBRV-1.4'},
-                    'Al': {'cutoff': 30,  'dual': 8,  'pseudo': '100PAW'},
-                    'Si': {'cutoff': 30,  'dual': 8,  'pseudo': '100US'},
-                    'P':  {'cutoff': 30,  'dual': 8,  'pseudo': '100US'},
-                    'S':  {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Cl': {'cutoff': 35,  'dual': 8,  'pseudo': 'GBRV-1.4'},
-                    'Ar': {'cutoff': 120, 'dual': 8,  'pseudo': '100US'},
-                    'K':  {'cutoff': 50,  'dual': 8,  'pseudo': '100US'},
-                    'Ca': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Sc': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Ti': {'cutoff': 35,  'dual': 8,  'pseudo': 'GBRV-1.4'},
-                    'V':  {'cutoff': 40,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Cr': {'cutoff': 40,  'dual': 8,  'pseudo': 'GBRV-1.5'},
-                    'Mn': {'cutoff': 70,  'dual': 12, 'pseudo': '031PAW'},
-                    'Fe': {'cutoff': 90,  'dual': 12, 'pseudo': '031PAW'},
-                    'Co': {'cutoff': 55,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Ni': {'cutoff': 45,  'dual': 8,  'pseudo': 'GBRV-1.4'},
-                    'Cu': {'cutoff': 40,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Zn': {'cutoff': 40,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Ga': {'cutoff': 35,  'dual': 8,  'pseudo': '031US'},
-                    'Ge': {'cutoff': 40,  'dual': 8,  'pseudo': '100PAW'},
-                    'As': {'cutoff': 30,  'dual': 8,  'pseudo': '031US'},
-                    'Se': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Br': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.4'},
-                    'Kr': {'cutoff': 100, 'dual': 8,  'pseudo': '031US'},
-                    'Rb': {'cutoff': 50,  'dual': 4,  'pseudo': 'SG15'},
-                    'Sr': {'cutoff': 35,  'dual': 8,  'pseudo': '100US'},
-                    'Y':  {'cutoff': 35,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Zr': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Nb': {'cutoff': 35,  'dual': 8,  'pseudo': '031PAW'},
-                    'Mo': {'cutoff': 35,  'dual': 4,  'pseudo': 'SG15'},
-                    'Tc': {'cutoff': 30,  'dual': 4,  'pseudo': 'SG15'},
-                    'Ru': {'cutoff': 40,  'dual': 4,  'pseudo': 'SG15'},
-                    'Rh': {'cutoff': 45,  'dual': 8,  'pseudo': '100PAW'},
-                    'Pd': {'cutoff': 55,  'dual': 8,  'pseudo': '100PAW'},
-                    'Ag': {'cutoff': 35,  'dual': 8,  'pseudo': 'GBRV-1.4'},
-                    'Cd': {'cutoff': 40,  'dual': 8,  'pseudo': '031US'},
-                    'In': {'cutoff': 35,  'dual': 8,  'pseudo': '031US'},
-                    'Sn': {'cutoff': 35,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Sb': {'cutoff': 40,  'dual': 8,  'pseudo': 'GBRV-1.4'},
-                    'Te': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'I':  {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Xe': {'cutoff': 120, 'dual': 8,  'pseudo': '100US'},
-                    'Cs': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Ba': {'cutoff': 40,  'dual': 4,  'pseudo': 'SG15'},
-                    'Hf': {'cutoff': 35,  'dual': 8,  'pseudo': '031US'},
-                    'Ta': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'W':  {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Re': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Os': {'cutoff': 35,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Ir': {'cutoff': 40,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Pt': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.4'},
-                    'Au': {'cutoff': 45,  'dual': 4,  'pseudo': 'SG15'},
-                    'Hg': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Tl': {'cutoff': 30,  'dual': 8,  'pseudo': '031US'},
-                    'Pb': {'cutoff': 40,  'dual': 8,  'pseudo': '031PAW'},
-                    'Bi': {'cutoff': 35,  'dual': 8,  'pseudo': '031PAW'},
-                    'Po': {'cutoff': 45,  'dual': 8,  'pseudo': '100US'},
-                    'Rn': {'cutoff': 45,  'dual': 8,  'pseudo': '100US'},
-                    'La': {'cutoff': 55,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Ce': {'cutoff': 45,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Pr': {'cutoff': 50,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Nd': {'cutoff': 40,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Sm': {'cutoff': 40,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Eu': {'cutoff': 55,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Tb': {'cutoff': 40,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Dy': {'cutoff': 40,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Ho': {'cutoff': 40,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Er': {'cutoff': 40,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Tm': {'cutoff': 40,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Yb': {'cutoff': 40,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Lu': {'cutoff': 45,  'dual': 8,  'pseudo': 'Wentzcovitch'},
+                    'H': {
+                        'cutoff': 55,
+                        'dual': 8,
+                        'pseudo': '031US'
+                    },
+                    'He': {
+                        'cutoff': 55,
+                        'dual': 4,
+                        'pseudo': 'SG15'
+                    },
+                    'Li': {
+                        'cutoff': 30,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.4'
+                    },
+                    'Be': {
+                        'cutoff': 40,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.4'
+                    },
+                    'B': {
+                        'cutoff': 40,
+                        'dual': 8,
+                        'pseudo': '031PAW'
+                    },
+                    'C': {
+                        'cutoff': 50,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'N': {
+                        'cutoff': 55,
+                        'dual': 8,
+                        'pseudo': 'THEOS'
+                    },
+                    'O': {
+                        'cutoff': 45,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'F': {
+                        'cutoff': 50,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.4'
+                    },
+                    'Ne': {
+                        'cutoff': 200,
+                        'dual': 8,
+                        'pseudo': '100PAW'
+                    },
+                    'Na': {
+                        'cutoff': 30,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'Mg': {
+                        'cutoff': 35,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.4'
+                    },
+                    'Al': {
+                        'cutoff': 30,
+                        'dual': 8,
+                        'pseudo': '100PAW'
+                    },
+                    'Si': {
+                        'cutoff': 30,
+                        'dual': 8,
+                        'pseudo': '100US'
+                    },
+                    'P': {
+                        'cutoff': 30,
+                        'dual': 8,
+                        'pseudo': '100US'
+                    },
+                    'S': {
+                        'cutoff': 30,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'Cl': {
+                        'cutoff': 35,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.4'
+                    },
+                    'Ar': {
+                        'cutoff': 120,
+                        'dual': 8,
+                        'pseudo': '100US'
+                    },
+                    'K': {
+                        'cutoff': 50,
+                        'dual': 8,
+                        'pseudo': '100US'
+                    },
+                    'Ca': {
+                        'cutoff': 30,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'Sc': {
+                        'cutoff': 30,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'Ti': {
+                        'cutoff': 35,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.4'
+                    },
+                    'V': {
+                        'cutoff': 40,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'Cr': {
+                        'cutoff': 40,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.5'
+                    },
+                    'Mn': {
+                        'cutoff': 70,
+                        'dual': 12,
+                        'pseudo': '031PAW'
+                    },
+                    'Fe': {
+                        'cutoff': 90,
+                        'dual': 12,
+                        'pseudo': '031PAW'
+                    },
+                    'Co': {
+                        'cutoff': 55,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'Ni': {
+                        'cutoff': 45,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.4'
+                    },
+                    'Cu': {
+                        'cutoff': 40,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'Zn': {
+                        'cutoff': 40,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'Ga': {
+                        'cutoff': 35,
+                        'dual': 8,
+                        'pseudo': '031US'
+                    },
+                    'Ge': {
+                        'cutoff': 40,
+                        'dual': 8,
+                        'pseudo': '100PAW'
+                    },
+                    'As': {
+                        'cutoff': 30,
+                        'dual': 8,
+                        'pseudo': '031US'
+                    },
+                    'Se': {
+                        'cutoff': 30,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'Br': {
+                        'cutoff': 30,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.4'
+                    },
+                    'Kr': {
+                        'cutoff': 100,
+                        'dual': 8,
+                        'pseudo': '031US'
+                    },
+                    'Rb': {
+                        'cutoff': 50,
+                        'dual': 4,
+                        'pseudo': 'SG15'
+                    },
+                    'Sr': {
+                        'cutoff': 35,
+                        'dual': 8,
+                        'pseudo': '100US'
+                    },
+                    'Y': {
+                        'cutoff': 35,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'Zr': {
+                        'cutoff': 30,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'Nb': {
+                        'cutoff': 35,
+                        'dual': 8,
+                        'pseudo': '031PAW'
+                    },
+                    'Mo': {
+                        'cutoff': 35,
+                        'dual': 4,
+                        'pseudo': 'SG15'
+                    },
+                    'Tc': {
+                        'cutoff': 30,
+                        'dual': 4,
+                        'pseudo': 'SG15'
+                    },
+                    'Ru': {
+                        'cutoff': 40,
+                        'dual': 4,
+                        'pseudo': 'SG15'
+                    },
+                    'Rh': {
+                        'cutoff': 45,
+                        'dual': 8,
+                        'pseudo': '100PAW'
+                    },
+                    'Pd': {
+                        'cutoff': 55,
+                        'dual': 8,
+                        'pseudo': '100PAW'
+                    },
+                    'Ag': {
+                        'cutoff': 35,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.4'
+                    },
+                    'Cd': {
+                        'cutoff': 40,
+                        'dual': 8,
+                        'pseudo': '031US'
+                    },
+                    'In': {
+                        'cutoff': 35,
+                        'dual': 8,
+                        'pseudo': '031US'
+                    },
+                    'Sn': {
+                        'cutoff': 35,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'Sb': {
+                        'cutoff': 40,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.4'
+                    },
+                    'Te': {
+                        'cutoff': 30,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'I': {
+                        'cutoff': 30,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'Xe': {
+                        'cutoff': 120,
+                        'dual': 8,
+                        'pseudo': '100US'
+                    },
+                    'Cs': {
+                        'cutoff': 30,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'Ba': {
+                        'cutoff': 40,
+                        'dual': 4,
+                        'pseudo': 'SG15'
+                    },
+                    'Hf': {
+                        'cutoff': 35,
+                        'dual': 8,
+                        'pseudo': '031US'
+                    },
+                    'Ta': {
+                        'cutoff': 30,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'W': {
+                        'cutoff': 30,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'Re': {
+                        'cutoff': 30,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'Os': {
+                        'cutoff': 35,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'Ir': {
+                        'cutoff': 40,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'Pt': {
+                        'cutoff': 30,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.4'
+                    },
+                    'Au': {
+                        'cutoff': 45,
+                        'dual': 4,
+                        'pseudo': 'SG15'
+                    },
+                    'Hg': {
+                        'cutoff': 30,
+                        'dual': 8,
+                        'pseudo': 'GBRV-1.2'
+                    },
+                    'Tl': {
+                        'cutoff': 30,
+                        'dual': 8,
+                        'pseudo': '031US'
+                    },
+                    'Pb': {
+                        'cutoff': 40,
+                        'dual': 8,
+                        'pseudo': '031PAW'
+                    },
+                    'Bi': {
+                        'cutoff': 35,
+                        'dual': 8,
+                        'pseudo': '031PAW'
+                    },
+                    'Po': {
+                        'cutoff': 45,
+                        'dual': 8,
+                        'pseudo': '100US'
+                    },
+                    'Rn': {
+                        'cutoff': 45,
+                        'dual': 8,
+                        'pseudo': '100US'
+                    },
+                    'La': {
+                        'cutoff': 55,
+                        'dual': 8,
+                        'pseudo': 'Wentzcovitch'
+                    },
+                    'Ce': {
+                        'cutoff': 45,
+                        'dual': 8,
+                        'pseudo': 'Wentzcovitch'
+                    },
+                    'Pr': {
+                        'cutoff': 50,
+                        'dual': 8,
+                        'pseudo': 'Wentzcovitch'
+                    },
+                    'Nd': {
+                        'cutoff': 40,
+                        'dual': 8,
+                        'pseudo': 'Wentzcovitch'
+                    },
+                    'Sm': {
+                        'cutoff': 40,
+                        'dual': 8,
+                        'pseudo': 'Wentzcovitch'
+                    },
+                    'Eu': {
+                        'cutoff': 55,
+                        'dual': 8,
+                        'pseudo': 'Wentzcovitch'
+                    },
+                    'Tb': {
+                        'cutoff': 40,
+                        'dual': 8,
+                        'pseudo': 'Wentzcovitch'
+                    },
+                    'Dy': {
+                        'cutoff': 40,
+                        'dual': 8,
+                        'pseudo': 'Wentzcovitch'
+                    },
+                    'Ho': {
+                        'cutoff': 40,
+                        'dual': 8,
+                        'pseudo': 'Wentzcovitch'
+                    },
+                    'Er': {
+                        'cutoff': 40,
+                        'dual': 8,
+                        'pseudo': 'Wentzcovitch'
+                    },
+                    'Tm': {
+                        'cutoff': 40,
+                        'dual': 8,
+                        'pseudo': 'Wentzcovitch'
+                    },
+                    'Yb': {
+                        'cutoff': 40,
+                        'dual': 8,
+                        'pseudo': 'Wentzcovitch'
+                    },
+                    'Lu': {
+                        'cutoff': 45,
+                        'dual': 8,
+                        'pseudo': 'Wentzcovitch'
+                    },
                 }
             }
 
@@ -164,9 +493,7 @@ class PwBandStructureWorkChain(WorkChain):
         kpoints_mesh = KpointsData()
         kpoints_mesh.set_cell_from_structure(self.inputs.structure)
         kpoints_mesh.set_kpoints_mesh_from_density(
-            distance=self.ctx.protocol['kpoints_mesh_density'],
-            offset=self.ctx.protocol['kpoints_mesh_offset']
-        )
+            distance=self.ctx.protocol['kpoints_mesh_density'], offset=self.ctx.protocol['kpoints_mesh_offset'])
 
         self.ctx.kpoints_mesh = kpoints_mesh
 
@@ -247,9 +574,11 @@ class PwBandStructureWorkChain(WorkChain):
         """
         self.report('workchain succesfully completed')
 
-        for link_label in ['primitive_structure', 'seekpath_parameters', 'scf_parameters', 'band_parameters', 'band_structure']:
+        for link_label in [
+                'primitive_structure', 'seekpath_parameters', 'scf_parameters', 'band_parameters', 'band_structure'
+        ]:
             if link_label in self.ctx.workchain_bands.out:
                 node = self.ctx.workchain_bands.get_outputs_dict()[link_label]
                 self.out(link_label, node)
-                self.report("attaching {}<{}> as an output node with label '{}'"
-                    .format(node.__class__.__name__, node.pk, link_label))
+                self.report("attaching {}<{}> as an output node with label '{}'".format(
+                    node.__class__.__name__, node.pk, link_label))

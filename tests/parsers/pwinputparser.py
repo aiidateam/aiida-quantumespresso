@@ -26,8 +26,7 @@ from aiida.backends.testbase import AiidaTestCase
 # Define the path to the directory containing the test PW runs.
 TEST_JOB_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 # Get the paths of all the input files.
-INPUT_FILES = [os.path.join(TEST_JOB_DIR, x) for x in os.listdir(TEST_JOB_DIR)
-               if x.endswith('.in')]
+INPUT_FILES = [os.path.join(TEST_JOB_DIR, x) for x in os.listdir(TEST_JOB_DIR) if x.endswith('.in')]
 
 
 class TestPwInputFile(AiidaTestCase):
@@ -53,23 +52,11 @@ class TestPwInputFile(AiidaTestCase):
         # Create a reference StructureData object for the structure contained
         # in all the input files.
         ref_structure = StructureData()
-        ref_structure.set_cell(
-            ((2.456, 0., 0.),
-             (-1.228, 2.12695, 0.),
-             (0., 0., 6.69604))
-        )
-        ref_structure.append_atom(
-            name='C', symbols='C', position=(0., 0., 0.), mass=12.
-        )
-        ref_structure.append_atom(
-            name='C', symbols='C', position=(0., 1.41797, 0.), mass=12.
-        )
-        ref_structure.append_atom(
-            name='C', symbols='C', position=(0., 0., 3.34802), mass=12.
-        )
-        ref_structure.append_atom(
-            name='C', symbols='C', position=(1.228, 0.70899, 3.34802), mass=12.
-        )
+        ref_structure.set_cell(((2.456, 0., 0.), (-1.228, 2.12695, 0.), (0., 0., 6.69604)))
+        ref_structure.append_atom(name='C', symbols='C', position=(0., 0., 0.), mass=12.)
+        ref_structure.append_atom(name='C', symbols='C', position=(0., 1.41797, 0.), mass=12.)
+        ref_structure.append_atom(name='C', symbols='C', position=(0., 0., 3.34802), mass=12.)
+        ref_structure.append_atom(name='C', symbols='C', position=(1.228, 0.70899, 3.34802), mass=12.)
 
         # Check each input file for agreement with reference values.
         for input_file in INPUT_FILES:
@@ -100,21 +87,24 @@ class TestPwInputFile(AiidaTestCase):
         # NOTE: Only the items important to the proper creation of an AiiDa
         # calculation are included here and checked below.
         ref_namelists = {
-            'CONTROL':
-                {'calculation': 'scf',
-                 'restart_mode': 'from_scratch',
-                 'outdir': './tmp'},
-            'ELECTRONS':
-                {'conv_thr': 1e-05},
-            'SYSTEM':
-                {'ecutwfc': 30.0,
-                 'occupations': 'fixed',
-                 'ibrav': 0,
-                 'degauss': 0.02,
-                 'smearing': 'methfessel-paxton',
-                 'nat': 4,
-                 'ntyp': 1,
-                 'ecutrho': 180.0}
+            'CONTROL': {
+                'calculation': 'scf',
+                'restart_mode': 'from_scratch',
+                'outdir': './tmp'
+            },
+            'ELECTRONS': {
+                'conv_thr': 1e-05
+            },
+            'SYSTEM': {
+                'ecutwfc': 30.0,
+                'occupations': 'fixed',
+                'ibrav': 0,
+                'degauss': 0.02,
+                'smearing': 'methfessel-paxton',
+                'nat': 4,
+                'ntyp': 1,
+                'ecutrho': 180.0
+            }
         }
 
         # Check each input file for agreement with reference values.
@@ -126,42 +116,23 @@ class TestPwInputFile(AiidaTestCase):
             # Check the key/value pairs for each namelist in ref_namelists.
             for namelist_key, namelist in ref_namelists.items():
                 for key, ref_value in namelist.items():
-                    self.assertEqual(pwinputfile.namelists[namelist_key][key],
-                                     ref_value)
+                    self.assertEqual(pwinputfile.namelists[namelist_key][key], ref_value)
 
     def test_get_kpointsdata_manual(self):
         """Test get_kpointsdata for all inputs w/ manually specified kpoints."""
 
         # Define reference cell.
-        ref_cell = np.array([[2.456, 0., 0.],
-                             [-1.228, 2.12695, 0.],
-                             [0., 0., 6.69604]])
+        ref_cell = np.array([[2.456, 0., 0.], [-1.228, 2.12695, 0.], [0., 0., 6.69604]])
         # Define reference kpoints.
-        ref_kpoints = np.array([[0., 0., 0.],
-                                [0.25, 0., 0.],
-                                [0.5, 0., 0.],
-                                [0.3333333, 0.3333333, 0.],
-                                [0.1666667, 0.1666667, 0.],
-                                [0., 0., 0.],
-                                [0., 0., 0.25],
-                                [0., 0., 0.5],
-                                [0.5, 0., 0.5],
-                                [0.3333333, 0.3333333, 0.5],
-                                [0., 0., 0.5],
-                                [0.5, 0., 0.5],
-                                [0.5, 0., 0.],
-                                [0.3333333, 0.3333333, 0.],
-                                [0.3333333, 0.3333333, 0.5]])
+        ref_kpoints = np.array([[0., 0., 0.], [0.25, 0., 0.], [0.5, 0., 0.], [0.3333333, 0.3333333, 0.], [
+            0.1666667, 0.1666667, 0.
+        ], [0., 0., 0.], [0., 0., 0.25], [0., 0., 0.5], [0.5, 0., 0.5], [0.3333333, 0.3333333, 0.5], [0., 0., 0.5],
+                                [0.5, 0., 0.5], [0.5, 0., 0.], [0.3333333, 0.3333333, 0.], [0.3333333, 0.3333333, 0.5]])
         # Define reference weights.
-        ref_weights = np.array(
-            [1., 1., 5., 2., 2., 4., 4., 1., 5., 2., 4., 5., 2., 4., 2.]
-        )
+        ref_weights = np.array([1., 1., 5., 2., 2., 4., 4., 1., 5., 2., 4., 5., 2., 4., 2.])
 
         # Filter out all input files with manually specified kpoints.
-        manual_input_files = filter(
-            lambda x: 'automatic' not in x and 'gamma' not in x,
-            INPUT_FILES
-        )
+        manual_input_files = filter(lambda x: 'automatic' not in x and 'gamma' not in x, INPUT_FILES)
 
         # Check each input file for agreement with reference values.
         tol = 0.0001
@@ -182,9 +153,7 @@ class TestPwInputFile(AiidaTestCase):
         """Test get_kpointsdata for all inputs w/ automatic kpoints."""
 
         # Define reference cell.
-        ref_cell = np.array([[2.456, 0., 0.],
-                             [-1.228, 2.12695, 0.],
-                             [0., 0., 6.69604]])
+        ref_cell = np.array([[2.456, 0., 0.], [-1.228, 2.12695, 0.], [0., 0., 6.69604]])
         # Define reference kpoints mesh.
         ref_mesh = np.array([5, 5, 6])
         # Define reference offset.
@@ -212,9 +181,7 @@ class TestPwInputFile(AiidaTestCase):
         """Test get_kpointsdata for all inputs w/ gamma kpoints."""
 
         # Define reference cell.
-        ref_cell = np.array([[2.456, 0., 0.],
-                             [-1.228, 2.12695, 0.],
-                             [0., 0., 6.69604]])
+        ref_cell = np.array([[2.456, 0., 0.], [-1.228, 2.12695, 0.], [0., 0., 6.69604]])
         # Define reference kpoints mesh.
         ref_mesh = np.array([1, 1, 1])
         # Define reference offset.
@@ -242,9 +209,7 @@ class TestPwInputFile(AiidaTestCase):
         """Test the parsing of the ATOMIC_SPECIES card."""
 
         # Define the reference atomic species dictionary.
-        ref_atomic_species = {'masses': [12.0],
-                              'names': ['C'],
-                              'pseudo_file_names': ['C.pbe-rrkjus.UPF']}
+        ref_atomic_species = {'masses': [12.0], 'names': ['C'], 'pseudo_file_names': ['C.pbe-rrkjus.UPF']}
 
         # Check each input file for agreement with reference values.
         for input_file in INPUT_FILES:

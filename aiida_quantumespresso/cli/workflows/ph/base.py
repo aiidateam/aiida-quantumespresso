@@ -13,8 +13,7 @@ from aiida_quantumespresso.utils.cli import options as options_qe
 @options.max_wallclock_seconds()
 @options.daemon()
 @options_qe.clean_workdir()
-def launch(
-    code, calculation, kpoints, max_num_machines, max_wallclock_seconds, daemon, clean_workdir):
+def launch(code, calculation, kpoints, max_num_machines, max_wallclock_seconds, daemon, clean_workdir):
     """
     Run the PhBaseWorkChain for a previously completed PwCalculation
     """
@@ -26,10 +25,7 @@ def launch(
 
     PhBaseWorkChain = WorkflowFactory('quantumespresso.ph.base')
 
-    parameters = {
-        'INPUTPH': {
-        }
-    }
+    parameters = {'INPUTPH': {}}
 
     options = get_default_options(max_num_machines, max_wallclock_seconds)
 

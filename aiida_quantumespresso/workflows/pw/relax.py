@@ -8,7 +8,6 @@ from aiida.orm.utils import CalculationFactory, WorkflowFactory
 from aiida.work.workchain import WorkChain, ToContext, if_, while_, append_
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 
-
 PwCalculation = CalculationFactory('quantumespresso.pw')
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 
@@ -16,6 +15,7 @@ PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 class PwRelaxWorkChain(WorkChain):
     """Workchain to relax a structure using Quantum ESPRESSO pw.x"""
 
+    # yapf: disable
     @classmethod
     def define(cls, spec):
         super(PwRelaxWorkChain, cls).define(spec)
@@ -103,7 +103,7 @@ class PwRelaxWorkChain(WorkChain):
         """
         workchain = self.ctx.workchains[-1]
 
-        if not self.workchain.is_finished_ok:
+        if not workchain.is_finished_ok:
             self.report('relax PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
         else:
@@ -115,8 +115,8 @@ class PwRelaxWorkChain(WorkChain):
         # Set relaxed structure as input structure for next iteration
         self.ctx.current_parent_folder = workchain.out.remote_folder
         self.ctx.current_structure = structure
-        self.report('after iteration {} cell volume of relaxed structure is {}'
-            .format(self.ctx.iteration, curr_cell_volume))
+        self.report('after iteration {} cell volume of relaxed structure is {}'.format(
+            self.ctx.iteration, curr_cell_volume))
 
         # After first iteration, simply set the cell volume and restart the next base workchain
         if not prev_cell_volume:
@@ -133,11 +133,11 @@ class PwRelaxWorkChain(WorkChain):
 
         if volume_difference < volume_threshold:
             self.ctx.is_converged = True
-            self.report('relative cell volume difference {} smaller than convergence threshold {}'
-                .format(volume_difference, volume_threshold))
+            self.report('relative cell volume difference {} smaller than convergence threshold {}'.format(
+                volume_difference, volume_threshold))
         else:
-            self.report('current relative cell volume difference {} larger than convergence threshold {}'
-                .format(volume_difference, volume_threshold))
+            self.report('current relative cell volume difference {} larger than convergence threshold {}'.format(
+                volume_difference, volume_threshold))
 
         self.ctx.current_cell_volume = curr_cell_volume
 
@@ -193,8 +193,8 @@ class PwRelaxWorkChain(WorkChain):
             else:
                 group, _ = Group.get_or_create(name=self.inputs.group.value)
                 group.add_nodes(calculation)
-                self.report("storing the final PwCalculation<{}> in the group '{}'"
-                    .format(calculation.pk, self.inputs.group.value))
+                self.report("storing the final PwCalculation<{}> in the group '{}'".format(
+                    calculation.pk, self.inputs.group.value))
 
         self.out_many(self.exposed_outputs(workchain, PwBaseWorkChain))
         self.out('output_structure', structure)

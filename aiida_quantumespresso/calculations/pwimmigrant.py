@@ -12,8 +12,7 @@ from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.upf import UpfData
 from aiida.common.folders import SandboxFolder
 from aiida.common.datastructures import calc_states
-from aiida.common.exceptions import (FeatureNotAvailable, InvalidOperation,
-                                     InputValidationError)
+from aiida.common.exceptions import (FeatureNotAvailable, InvalidOperation, InputValidationError)
 from aiida.common.links import LinkType
 from aiida_quantumespresso.tools import pwinputparser
 
@@ -53,8 +52,7 @@ class PwimmigrantCalculation(PwCalculation):
 
         super(PwimmigrantCalculation, self)._init_internal_params()
 
-    def create_input_nodes(self, open_transport, input_file_name=None,
-                           output_file_name=None, remote_workdir=None):
+    def create_input_nodes(self, open_transport, input_file_name=None, output_file_name=None, remote_workdir=None):
         """
         Create calculation input nodes based on the job's files.
 
@@ -137,79 +135,67 @@ class PwimmigrantCalculation(PwCalculation):
         if remote_workdir is not None:
             self.set_remote_workdir(remote_workdir)
         elif self.get_attr('remote_workdir', None) is None:
-            raise InputValidationError(
-                'The remote working directory has not been specified.\n'
-                'Please specify it using one of the following...\n '
-                '(a) pass as a keyword argument to create_input_nodes\n'
-                '    [create_input_nodes(remote_workdir=your_remote_workdir)]\n'
-                '(b) pass as a keyword argument when instantiating\n '
-                '    [calc = PwCalculationImport(remote_workdir='
-                'your_remote_workdir)]\n'
-                '(c) use the set_remote_workdir method\n'
-                '    [calc.set_remote_workdir(your_remote_workdir)]'
-            )
+            raise InputValidationError('The remote working directory has not been specified.\n'
+                                       'Please specify it using one of the following...\n '
+                                       '(a) pass as a keyword argument to create_input_nodes\n'
+                                       '    [create_input_nodes(remote_workdir=your_remote_workdir)]\n'
+                                       '(b) pass as a keyword argument when instantiating\n '
+                                       '    [calc = PwCalculationImport(remote_workdir='
+                                       'your_remote_workdir)]\n'
+                                       '(c) use the set_remote_workdir method\n'
+                                       '    [calc.set_remote_workdir(your_remote_workdir)]')
         if input_file_name is not None:
             self._INPUT_FILE_NAME = input_file_name
         elif self._INPUT_FILE_NAME is None:
-            raise InputValidationError(
-                'The input file_name has not been specified.\n'
-                'Please specify it using one of the following...\n '
-                '(a) pass as a keyword argument to create_input_nodes\n'
-                '    [create_input_nodes(input_file_name=your_file_name)]\n'
-                '(b) pass as a keyword argument when instantiating\n '
-                '    [calc = PwCalculationImport(input_file_name='
-                'your_file_name)]\n'
-                '(c) use the set_input_file_name method\n'
-                '    [calc.set_input_file_name(your_file_name)]'
-            )
+            raise InputValidationError('The input file_name has not been specified.\n'
+                                       'Please specify it using one of the following...\n '
+                                       '(a) pass as a keyword argument to create_input_nodes\n'
+                                       '    [create_input_nodes(input_file_name=your_file_name)]\n'
+                                       '(b) pass as a keyword argument when instantiating\n '
+                                       '    [calc = PwCalculationImport(input_file_name='
+                                       'your_file_name)]\n'
+                                       '(c) use the set_input_file_name method\n'
+                                       '    [calc.set_input_file_name(your_file_name)]')
         if output_file_name is not None:
             self._OUTPUT_FILE_NAME = output_file_name
         elif self._OUTPUT_FILE_NAME is None:
-            raise InputValidationError(
-                'The input file_name has not been specified.\n'
-                'Please specify it using one of the following...\n '
-                '(a) pass as a keyword argument to create_input_nodes\n'
-                '    [create_input_nodes(output_file_name=your_file_name)]\n'
-                '(b) pass as a keyword argument when instantiating\n '
-                '    [calc = PwCalculationImport(output_file_name='
-                'your_file_name)]\n'
-                '(c) use the set_output_file_name method\n'
-                '    [calc.set_output_file_name(your_file_name)]'
-            )
+            raise InputValidationError('The input file_name has not been specified.\n'
+                                       'Please specify it using one of the following...\n '
+                                       '(a) pass as a keyword argument to create_input_nodes\n'
+                                       '    [create_input_nodes(output_file_name=your_file_name)]\n'
+                                       '(b) pass as a keyword argument when instantiating\n '
+                                       '    [calc = PwCalculationImport(output_file_name='
+                                       'your_file_name)]\n'
+                                       '(c) use the set_output_file_name method\n'
+                                       '    [calc.set_output_file_name(your_file_name)]')
 
         # Check that open_transport is the correct transport type.
         if type(open_transport) is not self.get_computer().get_transport_class():
-            raise InputValidationError(
-                "The transport passed as the `open_transport` parameter is "
-                "not the same transport type linked to the computer. Please "
-                "obtain the correct transport class using the "
-                "`get_transport_class` method of the calculation's computer. "
-                "See the tutorial for more information."
-            )
+            raise InputValidationError("The transport passed as the `open_transport` parameter is "
+                                       "not the same transport type linked to the computer. Please "
+                                       "obtain the correct transport class using the "
+                                       "`get_transport_class` method of the calculation's computer. "
+                                       "See the tutorial for more information.")
 
         # Check that open_transport is actually open.
         if not open_transport._is_open:
-            raise InvalidOperation(
-                "The transport passed as the `open_transport` parameter is "
-                "not open. Please execute the open the transport using it's "
-                "`open` method, or execute the call to this method within a "
-                "`with` statement context guard. See the tutorial for more "
-                "information."
-            )
+            raise InvalidOperation("The transport passed as the `open_transport` parameter is "
+                                   "not open. Please execute the open the transport using it's "
+                                   "`open` method, or execute the call to this method within a "
+                                   "`with` statement context guard. See the tutorial for more "
+                                   "information.")
 
         # Copy the input file and psuedo files to a temp folder for parsing.
         with SandboxFolder() as folder:
 
             # Copy the input file to the temp folder.
-            remote_path = os.path.join(self._get_remote_workdir(),
-                                       self._INPUT_FILE_NAME)
+            remote_path = os.path.join(self._get_remote_workdir(), self._INPUT_FILE_NAME)
             open_transport.get(remote_path, folder.abspath)
 
             # Parse the input file.
             local_path = os.path.join(folder.abspath, self._INPUT_FILE_NAME)
             with open(local_path) as fin:
                 pwinputfile = pwinputparser.PwInputFile(fin)
-
 
             # Determine PREFIX, if it hasn't already been set by the user.
             if self._PREFIX is None:
@@ -227,9 +213,7 @@ class PwimmigrantCalculation(PwCalculation):
                 self._OUTPUT_SUBFOLDER = control_dict.get('outdir', None)
                 if self._OUTPUT_SUBFOLDER is None:
                     # See if the $ESPRESSO_TMPDIR is set.
-                    envar = open_transport.exec_command_wait(
-                        'echo $ESPRESSO_TMPDIR'
-                    )[1]
+                    envar = open_transport.exec_command_wait('echo $ESPRESSO_TMPDIR')[1]
                     if len(envar.strip()) > 0:
                         self._OUTPUT_SUBFOLDER = envar.strip()
                     else:
@@ -238,19 +222,15 @@ class PwimmigrantCalculation(PwCalculation):
 
             # Copy the pseudo files to the temp folder.
             for fnm in pwinputfile.atomic_species['pseudo_file_names']:
-                remote_path = os.path.join(self._get_remote_workdir(),
-                                           self._OUTPUT_SUBFOLDER,
-                                           '{}.save/'.format(self._PREFIX),
-                                           fnm)
+                remote_path = os.path.join(self._get_remote_workdir(), self._OUTPUT_SUBFOLDER, '{}.save/'.format(
+                    self._PREFIX), fnm)
                 open_transport.get(remote_path, folder.abspath)
 
             # Make sure that ibrav = 0, since aiida doesn't support anything
             # else.
             if pwinputfile.namelists['SYSTEM']['ibrav'] != 0:
-                raise FeatureNotAvailable(
-                    'Found ibrav !=0 while parsing the input file. '
-                    'Currently, AiiDa only supports ibrav = 0.'
-                )
+                raise FeatureNotAvailable('Found ibrav !=0 while parsing the input file. '
+                                          'Currently, AiiDa only supports ibrav = 0.')
 
             # Create ParameterData node based on the namelist and link as input.
 
@@ -334,27 +314,22 @@ class PwimmigrantCalculation(PwCalculation):
         # Manually set the files that will be copied to the repository and that
         # the parser will extract the results from. This would normally be
         # performed in self._prepare_for_submission prior to submission.
-        self._set_attr('retrieve_list',
-                       [self._OUTPUT_FILE_NAME, self._DATAFILE_XML])
+        self._set_attr('retrieve_list', [self._OUTPUT_FILE_NAME, self._DATAFILE_XML])
         self._set_attr('retrieve_singlefile_list', [])
 
         # Make sure the calculation and input links are stored.
         self.store_all()
 
         # Store the original input file in the calculation's repository folder.
-        remote_path = os.path.join(self._get_remote_workdir(),
-                                   self._INPUT_FILE_NAME)
-        raw_input_folder = self.folder.get_subfolder(_input_subfolder,
-                                                     create=True)
+        remote_path = os.path.join(self._get_remote_workdir(), self._INPUT_FILE_NAME)
+        raw_input_folder = self.folder.get_subfolder(_input_subfolder, create=True)
         open_transport.get(remote_path, raw_input_folder.abspath)
 
         # Manually add the remote working directory as a RemoteData output
         # node.
         self._set_state(calc_states.SUBMITTING)
-        remotedata = RemoteData(computer=self.get_computer(),
-                                remote_path=self._get_remote_workdir())
-        remotedata.add_link_from(self, label='remote_folder',
-                                 link_type=LinkType.CREATE)
+        remotedata = RemoteData(computer=self.get_computer(), remote_path=self._get_remote_workdir())
+        remotedata.add_link_from(self, label='remote_folder', link_type=LinkType.CREATE)
         remotedata.store()
 
     def prepare_for_retrieval_and_parsing(self, open_transport):
@@ -385,30 +360,24 @@ class PwimmigrantCalculation(PwCalculation):
 
         # Check that the create_input_nodes method has run successfully.
         if not self.get_attr('input_nodes_created', False):
-            raise InvalidOperation(
-                "You must run the create_input_nodes method before calling "
-                "prepare_for_retrieval_and_parsing!"
-            )
+            raise InvalidOperation("You must run the create_input_nodes method before calling "
+                                   "prepare_for_retrieval_and_parsing!")
 
         # Check that open_transport is the correct transport type.
         if type(open_transport) is not self.get_computer().get_transport_class():
-            raise InputValidationError(
-                "The transport passed as the `open_transport` parameter is "
-                "not the same transport type linked to the computer. Please "
-                "obtain the correct transport class using the "
-                "`get_transport_class` method of the calculation's computer. "
-                "See the tutorial for more information."
-            )
+            raise InputValidationError("The transport passed as the `open_transport` parameter is "
+                                       "not the same transport type linked to the computer. Please "
+                                       "obtain the correct transport class using the "
+                                       "`get_transport_class` method of the calculation's computer. "
+                                       "See the tutorial for more information.")
 
         # Check that open_transport is actually open.
         if not open_transport._is_open:
-            raise InvalidOperation(
-                "The transport passed as the `open_transport` parameter is "
-                "not open. Please execute the open the transport using it's "
-                "`open` method, or execute the call to this method within a "
-                "`with` statement context guard. See the tutorial for more "
-                "information."
-            )
+            raise InvalidOperation("The transport passed as the `open_transport` parameter is "
+                                   "not open. Please execute the open the transport using it's "
+                                   "`open` method, or execute the call to this method within a "
+                                   "`with` statement context guard. See the tutorial for more "
+                                   "information.")
 
         # Prepare the calculation for retrieval
         self._prepare_for_retrieval(open_transport)
@@ -525,9 +494,7 @@ class PwimmigrantCalculation(PwCalculation):
 
     @property
     def _DATAFILE_XML(self):
-        path = os.path.join(self._OUTPUT_SUBFOLDER,
-                            '{}.save'.format(self._PREFIX),
-                            self._DATAFILE_XML_BASENAME)
+        path = os.path.join(self._OUTPUT_SUBFOLDER, '{}.save'.format(self._PREFIX), self._DATAFILE_XML_BASENAME)
         return path
 
     @_DATAFILE_XML.setter

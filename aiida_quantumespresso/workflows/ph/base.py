@@ -13,16 +13,13 @@ from aiida_quantumespresso.common.workchain.utils import register_error_handler
 from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkChain
 from aiida_quantumespresso.utils.resources import get_default_options
 
-
 PhCalculation = CalculationFactory('quantumespresso.ph')
 PwCalculation = CalculationFactory('quantumespresso.pw')
 
 
 class PhBaseWorkChain(BaseRestartWorkChain):
-    """
-    Base Workchain to launch a Quantum Espresso phonon ph.x calculation and restart it until
-    successfully converged or until the maximum number of restarts is exceeded
-    """
+    """Workchain to run a Quantum ESPRESSO ph.x calculation with automated error handling and restarts"""
+
     _calculation_class = PhCalculation
 
     defaults = AttributeDict({
@@ -30,6 +27,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         'alpha_mix': 0.70,
     })
 
+    # yapf: disable
     @classmethod
     def define(cls, spec):
         super(PhBaseWorkChain, cls).define(spec)
@@ -128,8 +126,8 @@ def _handle_error_exceeded_maximum_walltime(self, calculation):
     """
     if 'Maximum CPU time exceeded' in calculation.res.warnings:
         self.ctx.restart_calc = calculation
-        self.report('PhCalculation<{}> terminated because maximum wall time was exceeded, restarting'
-            .format(calculation.pk))
+        self.report('PhCalculation<{}> terminated because maximum wall time was exceeded, restarting'.format(
+            calculation.pk))
         return ErrorHandlerReport(True, True)
 
 
@@ -144,7 +142,7 @@ def _handle_fatal_error_not_converged(self, calculation):
         self.ctx.inputs.parameters['INPUTPH']['alpha_mix(1)'] = alpha_mix_new
         self.ctx.restart_calc = calculation
         self.report('PhCalculation<{}> terminated without reaching convergence, '
-            'setting alpha_mix to {} and restarting'.format(calculation.pk, alpha_mix_new))
+                    'setting alpha_mix to {} and restarting'.format(calculation.pk, alpha_mix_new))
         return ErrorHandlerReport(True, True)
 
 
@@ -164,6 +162,6 @@ def _handle_error_premature_termination(self, calculation):
         self.ctx.inputs.parameters['INPUTPH']['max_seconds'] = max_seconds_reduced
 
         self.ctx.restart_calc = calculation
-        self.report('PwCalculation<{}> was terminated prematurely, reducing "max_seconds" from {} to {}'
-            .format(calculation.pk, max_seconds, max_seconds_reduced))
+        self.report('PwCalculation<{}> was terminated prematurely, reducing "max_seconds" from {} to {}'.format(
+            calculation.pk, max_seconds, max_seconds_reduced))
         return ErrorHandlerReport(True, True)

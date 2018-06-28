@@ -9,6 +9,7 @@ from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers import parse_raw_out_basic
 from aiida_quantumespresso.calculations.dos import DosCalculation
 
+
 class DosParser(Parser):
     """
     This class is the implementation of the Parser class for Dos.
@@ -61,7 +62,7 @@ class DosParser(Parser):
         try:
             filpath = out_folder.get_abs_path(self._calc._OUTPUT_FILE_NAME)
             with open(filpath, 'r') as fil:
-                    out_file = fil.readlines()
+                out_file = fil.readlines()
         except OSError:
             self.logger.error("Standard output file could not be found.")
             successful = False
@@ -81,7 +82,7 @@ class DosParser(Parser):
         try:
             dos_path = out_folder.get_abs_path(self._calc._DOS_FILENAME)
             with open(dos_path, 'r') as fil:
-                    dos_file = fil.readlines()
+                dos_file = fil.readlines()
         except OSError:
             successful = False
             self.logger.error("Dos output file could not found")
@@ -91,40 +92,36 @@ class DosParser(Parser):
 
         array_names = [[], []]
         array_units = [[], []]
-        array_names[0] = ['dos_energy', 'dos',
-                          'integrated_dos']  # When spin is not displayed
-        array_names[1] = ['dos_energy', 'dos_spin_up', 'dos_spin_down',
-                          'integrated_dos']  # When spin is displayed
-        array_units[0] = ['eV', 'states/eV',
-                          'states']  # When spin is not displayed
-        array_units[1] = ['eV', 'states/eV', 'states/eV',
-                          'states']  # When spin is displayed
+        array_names[0] = ['dos_energy', 'dos', 'integrated_dos']  # When spin is not displayed
+        array_names[1] = ['dos_energy', 'dos_spin_up', 'dos_spin_down', 'integrated_dos']  # When spin is displayed
+        array_units[0] = ['eV', 'states/eV', 'states']  # When spin is not displayed
+        array_units[1] = ['eV', 'states/eV', 'states/eV', 'states']  # When spin is displayed
 
         # grabs parsed data from aiida.dos
         array_data, spin = parse_raw_dos(dos_file, array_names, array_units)
-        
+
         energy_units = 'eV'
         dos_units = 'states/eV'
-        int_dos_units = 'states'        
+        int_dos_units = 'states'
         xy_data = XyData()
-        xy_data.set_x(array_data["dos_energy"],"dos_energy", energy_units)
+        xy_data.set_x(array_data["dos_energy"], "dos_energy", energy_units)
         y_arrays = []
         y_names = []
         y_units = []
-        y_arrays  += [array_data["integrated_dos"]]
+        y_arrays += [array_data["integrated_dos"]]
         y_names += ["integrated_dos"]
         y_units += ["states"]
         if spin:
-            y_arrays  += [array_data["dos_spin_up"]]
-            y_arrays  += [array_data["dos_spin_down"]]
+            y_arrays += [array_data["dos_spin_up"]]
+            y_arrays += [array_data["dos_spin_down"]]
             y_names += ["dos_spin_up"]
             y_names += ["dos_spin_down"]
-            y_units += ["states/eV"]*2
+            y_units += ["states/eV"] * 2
         else:
-            y_arrays  += [array_data["dos"]]
+            y_arrays += [array_data["dos"]]
             y_names += ["dos"]
             y_units += ["states/eV"]
-        xy_data.set_y(y_arrays,y_names,y_units)
+        xy_data.set_y(y_arrays, y_names, y_units)
 
         # grabs the parsed data from aiida.out
         parsed_data = parse_raw_out_basic(out_file, "DOS")
@@ -133,10 +130,8 @@ class DosParser(Parser):
         for message in parsed_data['warnings']:
             self.logger.error(message)
         # Create New Nodes List
-        new_nodes_list = [(self.get_linkname_outparams(), output_params),
-                          (self.get_linkname_dos(), xy_data)]
-        return successful,new_nodes_list
-
+        new_nodes_list = [(self.get_linkname_outparams(), output_params), (self.get_linkname_dos(), xy_data)]
+        return successful, new_nodes_list
 
 
 def parse_raw_dos(dos_file, array_names, array_units):
@@ -167,8 +162,7 @@ def parse_raw_dos(dos_file, array_names, array_units):
     try:
         dos_data = np.genfromtxt(dos_file)
     except ValueError:
-        raise QEOutputParsingError('dosfile could not be loaded '
-        ' using genfromtxt')
+        raise QEOutputParsingError('dosfile could not be loaded ' ' using genfromtxt')
     if len(dos_data) == 0:
         raise QEOutputParsingError("Dos file is empty.")
     if np.isnan(dos_data).any():
@@ -184,16 +178,15 @@ def parse_raw_dos(dos_file, array_names, array_units):
         # spin is used
         array_names = array_names[1]
         array_units = array_units[1]
-        spin = True 
+        spin = True
     else:
-        raise QEOutputParsingError("Dos file in format that the parser is not "
-                                   "designed to handle.")
+        raise QEOutputParsingError("Dos file in format that the parser is not " "designed to handle.")
 
     i = 0
     array_data = {}
     array_data['header'] = np.array(dos_header)
     while i < len(array_names):
         array_data[array_names[i]] = dos_data[:, i]
-        array_data[array_names[i]+'_units'] = np.array(array_units[i])
+        array_data[array_names[i] + '_units'] = np.array(array_units[i])
         i += 1
-    return array_data,spin
+    return array_data, spin

@@ -13,8 +13,7 @@ from aiida_quantumespresso.utils.cli import options as options_qe
 @options.max_wallclock_seconds()
 @options.daemon()
 @options_qe.clean_workdir()
-def launch(
-    code, calculation, kpoints, max_num_machines, max_wallclock_seconds, daemon, clean_workdir):
+def launch(code, calculation, kpoints, max_num_machines, max_wallclock_seconds, daemon, clean_workdir):
     """
     Run the MatdynBaseWorkChain for a previously completed Q2rCalculation
     """

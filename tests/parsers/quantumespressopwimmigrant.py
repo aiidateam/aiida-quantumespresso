@@ -37,14 +37,12 @@ from aiida_quantumespresso.tools.qeinputparser import str2val
 from aiida.orm import Code
 from aiida.backends.testbase import AiidaTestCase
 
-
 # Define the path to the directory containing the test PW runs.
 TEST_JOB_DIR = os.path.join(os.path.dirname(__file__), 'test_data')
 
 # Get the prefixes of all the test jobs. The prefix defines the input and
 # output file names.
-PEFIXES = [fnm.strip('.in') for fnm in os.listdir(TEST_JOB_DIR)
-           if fnm.endswith('.in')]
+PEFIXES = [fnm.strip('.in') for fnm in os.listdir(TEST_JOB_DIR) if fnm.endswith('.in')]
 
 
 class LocalSetup(AiidaTestCase):
@@ -99,8 +97,10 @@ class LocalSetup(AiidaTestCase):
                 # calling of the `set_` methods with the specified values.
                 init_params = {
                     'computer': self.computer,
-                    'resources': {'num_machines': 1,
-                                  'num_mpiprocs_per_machine': 1},
+                    'resources': {
+                        'num_machines': 1,
+                        'num_mpiprocs_per_machine': 1
+                    },
                     'remote_workdir': TEST_JOB_DIR,
                     'input_file_name': prefix + '.in',
                     'output_file_name': prefix + '.out'
@@ -114,10 +114,7 @@ class LocalSetup(AiidaTestCase):
                 try:
                     calc.create_input_nodes(t)  # Open transport passed.
                 except Exception as error:
-                    self.fail(
-                        "Error creating input nodes for prefix '{}':\n{}\n\n"
-                        "".format(prefix, error)
-                    )
+                    self.fail("Error creating input nodes for prefix '{}':\n{}\n\n" "".format(prefix, error))
 
                 # Submit a test submission in a temporary directory and store
                 # the input file's contents. Need to do this before now,
@@ -141,9 +138,7 @@ class LocalSetup(AiidaTestCase):
                     try:
                         retrieve_all(calc, t, folder.abspath)
                     except Exception as error:
-                        self.fail("Error during retrieval of immigrated calcs:\n{}\n\n"
-                                  "".format(error)
-                        )
+                        self.fail("Error during retrieval of immigrated calcs:\n{}\n\n" "".format(error))
 
         # Test the create_input_nodes method by comparing the input files
         # generated above by the submit_test method. The first input file
@@ -163,44 +158,37 @@ class LocalSetup(AiidaTestCase):
                     try:
                         val1, val2 = [str2val(x) for x in (w1, w2)]
                     except Exception as error:
-                        self.fail(
-                            "The strings, '{}' and '{}', of the submit_test "
-                            "input files for calcs with prefixes {} and {} "
-                            "were not equal and could not be converted to "
-                            "python values using the str2val function of "
-                            "pwinputparser.\nThe exception thrown was:\n{"
-                            "}\n\n".format(
-                                w1, w2, prefixes[0], prefix, error
-                            )
-                        )
+                        self.fail("The strings, '{}' and '{}', of the submit_test "
+                                  "input files for calcs with prefixes {} and {} "
+                                  "were not equal and could not be converted to "
+                                  "python values using the str2val function of "
+                                  "pwinputparser.\nThe exception thrown was:\n{"
+                                  "}\n\n".format(w1, w2, prefixes[0], prefix, error))
 
                     # If both values were converted to floats...
                     if all([type(v) is float for v in val1, val2]):
                         # Test if they differ by more than a specified
                         # tolerance.
                         self.assertAlmostEqual(
-                            val1, val2, 4,
+                            val1,
+                            val2,
+                            4,
                             msg="The values, {} and {}, of the submit_test "
-                                "input files for calcs with prefixes {} and {} "
-                                "are not within the specified number of "
-                                "decimal places."
-                                "".format(
-                                val1, val2, prefixes[0], prefix
-                            )
-                        )
+                            "input files for calcs with prefixes {} and {} "
+                            "are not within the specified number of "
+                            "decimal places."
+                            "".format(val1, val2, prefixes[0], prefix))
 
                     # If they weren't floats, then they should have been
                     # identical, so the test fails.
                     else:
                         self.assertEqual(
-                            val1, val2,
+                            val1,
+                            val2,
                             msg="The values, {} and {}, of the submit_test "
-                                "input files for calcs with prefixes {} and {} "
-                                "did not match. They should have been "
-                                "identical!".format(
-                                val1, val2, prefixes[0], prefix
-                            )
-                        )
+                            "input files for calcs with prefixes {} and {} "
+                            "did not match. They should have been "
+                            "identical!".format(val1, val2, prefixes[0], prefix))
 
 
 class TestPwImmigrantCalculationManual(LocalSetup):
@@ -214,9 +202,7 @@ class TestPwImmigrantCalculationManual(LocalSetup):
         """
 
         # Filter out all prefixes with manually specified kpoints.
-        manual_prefixes = filter(
-            lambda x: 'automatic' not in x and 'gamma' not in x, PEFIXES
-        )
+        manual_prefixes = filter(lambda x: 'automatic' not in x and 'gamma' not in x, PEFIXES)
 
         # Test this group of prefixes.
         self.run_tests_on_calcs_with_prefixes(manual_prefixes)

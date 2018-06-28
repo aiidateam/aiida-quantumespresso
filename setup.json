@@ -69,8 +69,12 @@
         ]
     }, 
     "extras_require": {
-        "dev_precommit": [
-            "pre-commit"
+        "dev": [
+            "pre-commit", 
+            "prospector", 
+            "pylint", 
+            "flake8", 
+            "yapf"
         ], 
         "docs": [
             "Sphinx", 

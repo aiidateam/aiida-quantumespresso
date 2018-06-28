@@ -5,7 +5,6 @@ from aiida.utils.cli import options
 from aiida_quantumespresso.utils.cli import options as options_qe
 
 
-
 @command()
 @options.code(callback_kwargs={'entry_point': 'quantumespresso.q2r'})
 @options.calculation(callback_kwargs={'entry_point': 'quantumespresso.ph'})
@@ -13,8 +12,7 @@ from aiida_quantumespresso.utils.cli import options as options_qe
 @options.max_wallclock_seconds()
 @options.daemon()
 @options_qe.clean_workdir()
-def launch(
-    code, calculation, max_num_machines, max_wallclock_seconds, daemon, clean_workdir):
+def launch(code, calculation, max_num_machines, max_wallclock_seconds, daemon, clean_workdir):
     """
     Run the Q2rBaseWorkChain for a previously completed PhCalculation
     """
