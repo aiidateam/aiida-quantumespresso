@@ -19,7 +19,7 @@ class PwRelaxWorkChain(WorkChain):
     @classmethod
     def define(cls, spec):
         super(PwRelaxWorkChain, cls).define(spec)
-        spec.expose_inputs(PwBaseWorkChain, namespace='base', exclude=('structure',))
+        spec.expose_inputs(PwBaseWorkChain, namespace='base', exclude=('structure', 'clean_workdir'))
         spec.input('structure', valid_type=StructureData)
         spec.input('final_scf', valid_type=Bool, default=Bool(False))
         spec.input('group', valid_type=Str, required=False)
@@ -103,7 +103,7 @@ class PwRelaxWorkChain(WorkChain):
         """
         workchain = self.ctx.workchains[-1]
 
-        if not self.workchain.is_finished_ok:
+        if not workchain.is_finished_ok:
             self.report('relax PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
         else:

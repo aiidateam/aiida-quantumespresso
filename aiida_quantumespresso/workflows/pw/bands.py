@@ -22,9 +22,9 @@ class PwBandsWorkChain(WorkChain):
     @classmethod
     def define(cls, spec):
         super(PwBandsWorkChain, cls).define(spec)
-        spec.expose_inputs(PwRelaxWorkChain, namespace='relax', exclude=('structure',))
-        spec.expose_inputs(PwBaseWorkChain, namespace='scf', exclude=('structure', 'kpoints'))
-        spec.expose_inputs(PwBaseWorkChain, namespace='bands', exclude=('structure',))
+        spec.expose_inputs(PwRelaxWorkChain, namespace='relax', exclude=('structure', 'clean_workdir'))
+        spec.expose_inputs(PwBaseWorkChain, namespace='scf', exclude=('structure', 'clean_workdir', 'kpoints'))
+        spec.expose_inputs(PwBaseWorkChain, namespace='bands', exclude=('structure', 'clean_workdir'))
         spec.input('structure', valid_type=StructureData)
         spec.input('clean_workdir', valid_type=Bool, default=Bool(False))
         spec.input('group', valid_type=Str, required=False)

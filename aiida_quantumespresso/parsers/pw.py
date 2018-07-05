@@ -101,7 +101,7 @@ class PwParser(Parser):
         # If the parser option 'all_symmetries' is not set to True, we reduce the raw parsed symmetries to safe space
         all_symmetries = parser_opts.get('all_symmetries', False)
 
-        if not all_symmetries:
+        if not all_symmetries and 'cell' in structure_data:
 
             # In the standard output, each symmetry operation print two rotation matrices:
             #
