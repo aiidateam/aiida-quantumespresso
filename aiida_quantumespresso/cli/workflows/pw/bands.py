@@ -70,8 +70,8 @@ def launch(
                 'pseudo_family': pseudo_family,
                 'kpoints_distance': Float(1.0),
                 'parameters': parameters,
-                'meta_convergence': Bool(False),
-            }
+            },
+            'meta_convergence': Bool(False),
         },
         'scf': {
             'code': code,

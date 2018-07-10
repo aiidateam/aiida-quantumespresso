@@ -50,7 +50,7 @@ def convert_qe2aiida_structure(output_dict, input_structure=None):
 
     else:
 
-        s = input_structure.copy()
+        s = input_structure.clone()
         s.reset_cell(cell_dict['lattice_vectors'])
         new_pos = [i[1] for i in cell_dict['atoms']]
         s.reset_sites_positions(new_pos)
