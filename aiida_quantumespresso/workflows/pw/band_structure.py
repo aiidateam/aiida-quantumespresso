@@ -7,7 +7,8 @@ from aiida.orm.data.array.bands import BandsData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.utils import WorkflowFactory
 from aiida.work.workchain import WorkChain, ToContext
-
+import copy
+from aiida_quantumespresso.utils.mapping import update_mapping, prepare_process_inputs
 
 PwBandsWorkChain = WorkflowFactory('quantumespresso.pw.bands')
 
@@ -27,6 +28,11 @@ class PwBandStructureWorkChain(WorkChain):
         spec.input('structure', valid_type=StructureData)
         spec.input('pseudo_family', valid_type=Str)
         spec.input('protocol', valid_type=Str, default=Str('standard'))
+        spec.input('scf_options', valid_type=ParameterData)
+        #spec.expose_inputs(PwBandsWorkChain, namespace='bands_workflow', include=('relax.base.options', 'scf.options', 'bands.options'))
+        #del spec.inputs['bands_workflow']['bands']['code']
+        #del spec.inputs['bands_workflow']['scf']['code']
+        #del spec.inputs['bands_workflow']['relax']['base']['code']
         spec.outline(
             cls.setup_protocol,
             cls.setup_kpoints,
@@ -45,19 +51,12 @@ class PwBandStructureWorkChain(WorkChain):
         Setup of context variables and inputs for the PwBandsWorkChain. Based on the specified
         protocol, we define values for variables that affect the execution of the calculations
         """
-        self.ctx.inputs = {
-            'code': self.inputs.code,
-            'structure': self.inputs.structure,
-            'pseudo_family': self.inputs.pseudo_family,
-            'parameters': {},
-            'settings': {},
-            'options': {
-                'resources': {
-                    'num_machines': 1
-                },
-                'max_wallclock_seconds': 1800,
-            },
-        }
+        # Todo: 
+        # - add MD5 sum to each, and complain if not present.
+        # - in this case, pseudo_family should be ignored
+        # - update pseudo_data (this is hardcoded to the one we need for the
+        #   modified SSSP 1.0)
+        # - add protocol_data to override some of the specified variable
 
         if self.inputs.protocol == 'standard':
             self.report('running the workchain in the "{}" protocol'.format(self.inputs.protocol.value))
@@ -158,8 +157,7 @@ class PwBandStructureWorkChain(WorkChain):
 
     def setup_kpoints(self):
         """
-        Define the k-point mesh for the relax and scf calculations. Also get the k-point path for
-        the bands calculation for the initial input structure from SeeKpath
+        Define the k-point mesh for the relax and scf calculations.
         """
         kpoints_mesh = KpointsData()
         kpoints_mesh.set_cell_from_structure(self.inputs.structure)
@@ -192,7 +190,7 @@ class PwBandStructureWorkChain(WorkChain):
         natoms = len(structure.sites)
         conv_thr = self.ctx.protocol['convergence_threshold'] * natoms
 
-        self.ctx.inputs['parameters'] = {
+        self.ctx.parameters = {
             'CONTROL': {
                 'restart_mode': 'from_scratch',
                 'tstress': self.ctx.protocol['tstress'],
@@ -213,26 +211,46 @@ class PwBandStructureWorkChain(WorkChain):
         """
         Run the PwBandsWorkChain to compute the band structure
         """
-        inputs = dict(self.ctx.inputs)
+        def get_common_inputs():
+            return {
+                'code': self.inputs.code,
+                'pseudo_family': self.inputs.pseudo_family,
+                'parameters': ParameterData(dict=self.ctx.parameters),
+                'options': self.inputs.scf_options, # NOTE: for now we use these options for all three steps (relax, scf, bands)
+                #'settings': {},
+            } 
 
-        options = inputs['options']
-        settings = inputs['settings']
-        parameters = inputs['parameters']
+        relax_inputs = get_common_inputs()
+        update_mapping(relax_inputs, {
+            'kpoints': self.ctx.kpoints_mesh,
+            'relaxation_scheme': Str('vc-relax'),  
+            'meta_convergence': Bool(False),
+            'volume_convergence': Float(0.01),
+        })
+
+        scf_inputs = get_common_inputs()
+        update_mapping(scf_inputs, {
+            'kpoints': self.ctx.kpoints_mesh,
+        })
+
+        bands_inputs = get_common_inputs()
+        update_mapping(bands_inputs, {
+            'kpoints_distance': Float(0.01),
+        })
 
         # Final input preparation, wrapping dictionaries in ParameterData nodes
-        inputs['kpoints_mesh'] = self.ctx.kpoints_mesh
-        inputs['parameters'] = ParameterData(dict=parameters)
-        inputs['settings'] = ParameterData(dict=settings)
-        inputs['options'] = ParameterData(dict=options)
-        inputs['relax'] = {
-            'kpoints_distance': Float(self.ctx.protocol['kpoints_mesh_density']),
-            'parameters': ParameterData(dict=parameters),
-            'settings': ParameterData(dict=settings),
-            'options': ParameterData(dict=options),
-            'meta_convergence': Bool(False),
-            'relaxation_scheme': Str('vc-relax'),
-            'volume_convergence': Float(0.01)
+        inputs = {
+            'structure': self.inputs.structure,
+            'relax': {
+                'base': relax_inputs,
+            },
+            'scf': scf_inputs,
+            'bands': bands_inputs,
         }
+
+        self.report("inputs: {}".format(inputs))
+
+        #inputs = prepare_process_inputs(self.__class__, inputs)
 
         running = self.submit(PwBandsWorkChain, **inputs)
 
