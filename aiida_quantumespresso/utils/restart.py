@@ -8,6 +8,28 @@ from aiida.common.datastructures import calc_states
 from aiida.common.exceptions import InputValidationError 
 from aiida.common.links import LinkType
 
+def clone_calculation(calculation):
+    """
+    Create a clone of a Calculation node.
+    This is a temporary workaround, it's better to create a new builder.
+
+    :returns: an unstored clone of this node. Note: links are not copied
+    """
+    clone = self.__class__()
+    clone.dbnode.dbcomputer = self._dbnode.dbcomputer
+    clone.dbnode.type = self._dbnode.type
+    clone.label = self.label
+    clone.description = self.description
+
+    for key, value in self.iterattrs():
+        if key != Sealable.SEALED_KEY:
+            clone._set_attr(key, value)
+
+    for path in self.get_folder_list():
+        clone.add_path(self.get_abs_path(path), path)
+
+    return clone
+
 def _create_restart_pw_cp(parent_calc, force_restart, parent_folder_symlink,
                    use_output_structure,
                    restart_from_beginning):

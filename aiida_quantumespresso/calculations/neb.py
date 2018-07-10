@@ -499,6 +499,7 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
         instead of hard copies of the files. Default given by 
         self._default_symlink_usage.
         """
+        from aiida_quantumespresso.utils.restart import clone_calculation
         import warnings
         warnings.warn('This method has been deprecated, use instead '
                       'aiida_quantumespresso.utils.restart.create_restart_neb()', DeprecationWarning)
@@ -530,7 +531,7 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
                                        "in calculation {}".format(self.pk))
         remote_folder = remote_folders[0]
 
-        c2 = self.copy()
+        c2 = clone_calculation(self)
 
         #if not 'Restart' in c2.label:
         #    labelstring = c2.label + " Restart of {} {}.".format(

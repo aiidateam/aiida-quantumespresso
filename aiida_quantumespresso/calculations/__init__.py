@@ -16,7 +16,6 @@ from aiida.orm.data.remote import RemoteData
 from aiida.common.datastructures import CodeInfo
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
-
 class BasePwCpInputGenerator(object):
     """
     Baseclass for the common things between CP and PW of Quantum ESPRESSO.
@@ -880,6 +879,8 @@ class BasePwCpInputGenerator(object):
            Useful to restart calculations that have crashed on the cluster for
            external reasons. Default=False
         """
+        from aiida_quantumespresso.utils.restart import clone_calculation
+
         import warnings
         warnings.warn('This method has been deprecated, use instead '
                       'aiida_quantumespresso.utils.restart.create_restart_pw() or '
@@ -915,7 +916,7 @@ class BasePwCpInputGenerator(object):
                                        "in calculation {}".format(self.pk))
         remote_folder = remote_folders[0]
 
-        c2 = self.copy()
+        c2 = clone_calculation(self)
 
         # if not 'Restart' in c2.label:
         #    labelstring = c2.label + " Restart of {} {}.".format(
