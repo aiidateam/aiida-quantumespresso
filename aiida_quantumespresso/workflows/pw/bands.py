@@ -118,7 +118,7 @@ class PwBandsWorkChain(WorkChain):
 
     def inspect_scf(self):
         """Verify that the PwBaseWorkChain for the scf run finished successfully."""
-        workchain = self.ctx.workchain_bands
+        workchain = self.ctx.workchain_scf
 
         if not workchain.is_finished_ok:
             self.report('scf PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
