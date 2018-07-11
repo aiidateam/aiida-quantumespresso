@@ -23,7 +23,7 @@ class PwBandsWorkChain(WorkChain):
     def define(cls, spec):
         super(PwBandsWorkChain, cls).define(spec)
         spec.expose_inputs(PwRelaxWorkChain, namespace='relax', exclude=('structure', 'clean_workdir'))
-        spec.expose_inputs(PwBaseWorkChain, namespace='scf', exclude=('structure', 'clean_workdir', 'kpoints'))
+        spec.expose_inputs(PwBaseWorkChain, namespace='scf', exclude=('structure', 'clean_workdir'))
         spec.expose_inputs(PwBaseWorkChain, namespace='bands', exclude=('structure', 'clean_workdir'))
         spec.input('structure', valid_type=StructureData)
         spec.input('clean_workdir', valid_type=Bool, default=Bool(False))
@@ -108,8 +108,9 @@ class PwBandsWorkChain(WorkChain):
         inputs.parameters = inputs.parameters.get_dict()
         inputs.parameters.setdefault('CONTROL', {})
         inputs.parameters['CONTROL']['calculation'] = 'scf'
-
+        
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
+
         running = self.submit(PwBaseWorkChain, **inputs)
 
         self.report('launching PwBaseWorkChain<{}> in {} mode'.format(running.pk, 'scf'))
