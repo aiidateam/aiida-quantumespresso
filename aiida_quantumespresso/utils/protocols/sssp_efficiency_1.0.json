@@ -1,595 +1,595 @@
 {
   "Ag": {
-    "cutoff": "50", 
-    "dual": "4", 
+    "cutoff": 50.0, 
+    "dual": 4.0, 
     "filename": "Ag_ONCV_PBE-1.0.upf", 
     "md5": "96da9acec54ba82f98e06bace1ebc465", 
     "pseudopotential": "SG15"
   }, 
   "Al": {
-    "cutoff": "30", 
-    "dual": "8", 
+    "cutoff": 30.0, 
+    "dual": 8.0, 
     "filename": "Al.pbe-n-kjpaw_psl.1.0.0.UPF", 
     "md5": "4d58055f5a69695be6f94701d50bfe3f", 
     "pseudopotential": "100PAW"
   }, 
   "Ar": {
-    "cutoff": "60", 
-    "dual": "4", 
+    "cutoff": 60.0, 
+    "dual": 4.0, 
     "filename": "Ar_ONCV_PBE-1.1.upf", 
     "md5": "a77c8a1d3c1177db2740bcf15580026f", 
     "pseudopotential": "SG15-1.1"
   }, 
   "As": {
-    "cutoff": "35", 
-    "dual": "8", 
+    "cutoff": 35.0, 
+    "dual": 8.0, 
     "filename": "As.pbe-n-rrkjus_psl.0.2.UPF", 
     "md5": "65b5f6fa7e01059f4fa1abb257bb8345", 
     "pseudopotential": "031US"
   }, 
   "Au": {
-    "cutoff": "45", 
-    "dual": "4", 
+    "cutoff": 45.0, 
+    "dual": 4.0, 
     "filename": "Au_ONCV_PBE-1.0.upf", 
     "md5": "5ec73a17706288f9850c08f91fd9baba", 
     "pseudopotential": "SG15"
   }, 
   "B": {
-    "cutoff": "35", 
-    "dual": "8", 
+    "cutoff": 35.0, 
+    "dual": 8.0, 
     "filename": "b_pbe_v1.4.uspp.F.UPF", 
     "md5": "d4f86aa283d21edc7270d27692276f2d", 
     "pseudopotential": "GBRV-1.4"
   }, 
   "Ba": {
-    "cutoff": "30", 
-    "dual": "4", 
+    "cutoff": 30.0, 
+    "dual": 4.0, 
     "filename": "Ba_ONCV_PBE-1.0.upf", 
     "md5": "4927b9e2a6b4728c87dc3d98c09b76b2", 
     "pseudopotential": "SG15"
   }, 
   "Be": {
-    "cutoff": "40", 
-    "dual": "8", 
+    "cutoff": 40.0, 
+    "dual": 8.0, 
     "filename": "be_pbe_v1.4.uspp.F.UPF", 
     "md5": "0ddd4b1b05c7c530d3835eede83a0c9d", 
     "pseudopotential": "GBRV-1.4"
   }, 
   "Bi": {
-    "cutoff": "45", 
-    "dual": "8", 
+    "cutoff": 45.0, 
+    "dual": 8.0, 
     "filename": "Bi_pbe_v1.uspp.F.UPF", 
     "md5": "4ddfbf22c8017d8242ea503f03fc0760", 
     "pseudopotential": "GBRV-1.2"
   }, 
   "Br": {
-    "cutoff": "30", 
-    "dual": "8", 
+    "cutoff": 30.0, 
+    "dual": 8.0, 
     "filename": "br_pbe_v1.4.uspp.F.UPF", 
     "md5": "5f233baeb3d94f004e87e56605852f02", 
     "pseudopotential": "GBRV-1.4"
   }, 
   "C": {
-    "cutoff": "45", 
-    "dual": "8", 
+    "cutoff": 45.0, 
+    "dual": 8.0, 
     "filename": "C.pbe-n-kjpaw_psl.1.0.0.UPF", 
     "md5": "3c1e077dc15eef7714f9eedb5d018cca", 
     "pseudopotential": "100PAW"
   }, 
   "Ca": {
-    "cutoff": "30", 
-    "dual": "8", 
+    "cutoff": 30.0, 
+    "dual": 8.0, 
     "filename": "Ca_pbe_v1.uspp.F.UPF", 
     "md5": "39f7ec7746941a206ebdd32e27f3551c", 
     "pseudopotential": "GBRV-1.2"
   }, 
   "Cd": {
-    "cutoff": "60", 
-    "dual": "8", 
+    "cutoff": 60.0, 
+    "dual": 8.0, 
     "filename": "Cd.pbe-dn-rrkjus_psl.0.3.1.UPF", 
     "md5": "ea498c2416f56e9b22015e2373a3ebcb", 
     "pseudopotential": "031US"
   }, 
   "Ce": {
-    "cutoff": "40", 
-    "dual": "8", 
+    "cutoff": 40.0, 
+    "dual": 8.0, 
     "filename": "Ce.GGA-PBE-paw-v1.0.UPF", 
     "md5": "dc69ee0ee9cbd9ffa271930058dac651", 
     "pseudopotential": "Wentzcovitch"
   }, 
   "Cl": {
-    "cutoff": "40", 
-    "dual": "8", 
+    "cutoff": 40.0, 
+    "dual": 8.0, 
     "filename": "cl_pbe_v1.4.uspp.F.UPF", 
     "md5": "57e873116e566281d65a9bd395d6c02d", 
     "pseudopotential": "GBRV-1.4"
   }, 
   "Co": {
-    "cutoff": "45", 
-    "dual": "8", 
+    "cutoff": 45.0, 
+    "dual": 8.0, 
     "filename": "Co_pbe_v1.2.uspp.F.UPF", 
     "md5": "9bc02f3232333ea4f003ae461d4f94f4", 
     "pseudopotential": "GBRV-1.2"
   }, 
   "Cr": {
-    "cutoff": "40", 
-    "dual": "8", 
+    "cutoff": 40.0, 
+    "dual": 8.0, 
     "filename": "cr_pbe_v1.5.uspp.F.UPF", 
     "md5": "ca27c5583c18d2c4a870c3140978663b", 
     "pseudopotential": "GBRV-1.5"
   }, 
   "Cs": {
-    "cutoff": "30", 
-    "dual": "8", 
+    "cutoff": 30.0, 
+    "dual": 8.0, 
     "filename": "Cs_pbe_v1.uspp.F.UPF", 
     "md5": "5707a32a62fff108affbc2d04ed54c53", 
     "pseudopotential": "GBRV-1.2"
   }, 
   "Cu": {
-    "cutoff": "55", 
-    "dual": "8", 
+    "cutoff": 55.0, 
+    "dual": 8.0, 
     "filename": "Cu_pbe_v1.2.uspp.F.UPF", 
     "md5": "9a9416d8123c3777e4ee723dc3840d14", 
     "pseudopotential": "GBRV-1.2"
   }, 
   "Dy": {
-    "cutoff": "40", 
-    "dual": "8", 
+    "cutoff": 40.0, 
+    "dual": 8.0, 
     "filename": "Dy.GGA-PBE-paw-v1.0.UPF", 
     "md5": "c6fc73a1ad57b41b87487c0f0e95c55d", 
     "pseudopotential": "Wentzcovitch"
   }, 
   "Er": {
-    "cutoff": "40", 
-    "dual": "8", 
+    "cutoff": 40.0, 
+    "dual": 8.0, 
     "filename": "Er.GGA-PBE-paw-v1.0.UPF", 
     "md5": "a59098ac9e8f687dba8f18cb0aebbef1", 
     "pseudopotential": "Wentzcovitch"
   }, 
   "Eu": {
-    "cutoff": "40", 
-    "dual": "8", 
+    "cutoff": 40.0, 
+    "dual": 8.0, 
     "filename": "Eu.GGA-PBE-paw-v1.0.UPF", 
     "md5": "e116dd4c557efbc8d4fef4deea7de468", 
     "pseudopotential": "Wentzcovitch"
   }, 
   "F": {
-    "cutoff": "45", 
-    "dual": "8", 
+    "cutoff": 45.0, 
+    "dual": 8.0, 
     "filename": "f_pbe_v1.4.uspp.F.UPF", 
     "md5": "f6af66c09c47d263a28b8f0eff78cb08", 
     "pseudopotential": "GBRV-1.4"
   }, 
   "Fe": {
-    "cutoff": "90", 
-    "dual": "12", 
+    "cutoff": 90.0, 
+    "dual": 12.0, 
     "filename": "Fe.pbe-spn-kjpaw_psl.0.2.1.UPF", 
     "md5": "c363bc50758daf0aa67de18649da56b5", 
     "pseudopotential": "031PAW"
   }, 
   "Ga": {
-    "cutoff": "70", 
-    "dual": "8", 
+    "cutoff": 70.0, 
+    "dual": 8.0, 
     "filename": "Ga.pbe-dn-kjpaw_psl.1.0.0.UPF", 
     "md5": "7dd748ec00a8b483b3d9feecdec915b4", 
     "pseudopotential": "100PAW"
   }, 
   "Gd": {
-    "cutoff": "40", 
-    "dual": "8", 
+    "cutoff": 40.0, 
+    "dual": 8.0, 
     "filename": "Gd.GGA-PBE-paw-v1.0.UPF", 
     "md5": "1b95f7106ff7b28e2acb41f1078433e7", 
     "pseudopotential": "Wentzcovitch"
   }, 
   "Ge": {
-    "cutoff": "40", 
-    "dual": "8", 
+    "cutoff": 40.0, 
+    "dual": 8.0, 
     "filename": "ge_pbe_v1.4.uspp.F.UPF", 
     "md5": "bc8249fa1f0a04a6526aff59fd6ff73c", 
     "pseudopotential": "GBRV-1.4"
   }, 
   "H": {
-    "cutoff": "60", 
-    "dual": "8", 
+    "cutoff": 60.0, 
+    "dual": 8.0, 
     "filename": "H.pbe-rrkjus_psl.1.0.0.UPF", 
     "md5": "2dccae6dd7278d6497d0b9a626c18668", 
     "pseudopotential": "100US"
   }, 
   "He": {
-    "cutoff": "50", 
-    "dual": "4", 
+    "cutoff": 50.0, 
+    "dual": 4.0, 
     "filename": "He_ONCV_PBE-1.0.upf", 
     "md5": "effc41d539048064f5e5469cae28786c", 
     "pseudopotential": "SG15"
   }, 
   "Hf": {
-    "cutoff": "50", 
-    "dual": "4", 
+    "cutoff": 50.0, 
+    "dual": 4.0, 
     "filename": "Hf-sp.oncvpsp.upf", 
     "md5": "ce4dc93a09f11dea35bc347c23f65409", 
     "pseudopotential": "Dojo"
   }, 
   "Hg": {
-    "cutoff": "50", 
-    "dual": "4", 
+    "cutoff": 50.0, 
+    "dual": 4.0, 
     "filename": "Hg_ONCV_PBE-1.0.upf", 
     "md5": "879192a29c9a8b59865e35e00b6f4460", 
     "pseudopotential": "SG15"
   }, 
   "Ho": {
-    "cutoff": "40", 
-    "dual": "8", 
+    "cutoff": 40.0, 
+    "dual": 8.0, 
     "filename": "Ho.GGA-PBE-paw-v1.0.UPF", 
     "md5": "260de4632068e52d4fd0f05d847477cc", 
     "pseudopotential": "Wentzcovitch"
   }, 
   "I": {
-    "cutoff": "35", 
-    "dual": "8", 
+    "cutoff": 35.0, 
+    "dual": 8.0, 
     "filename": "I.pbe-n-kjpaw_psl.0.2.UPF", 
     "md5": "7fa6108230874b9d723757ff140a72b8", 
     "pseudopotential": "031PAW"
   }, 
   "In": {
-    "cutoff": "50", 
-    "dual": "8", 
+    "cutoff": 50.0, 
+    "dual": 8.0, 
     "filename": "In.pbe-dn-rrkjus_psl.0.2.2.UPF", 
     "md5": "acb3fe55f9d54318a30064182abf1cf3", 
     "pseudopotential": "031US"
   }, 
   "Ir": {
-    "cutoff": "55", 
-    "dual": "8", 
+    "cutoff": 55.0, 
+    "dual": 8.0, 
     "filename": "Ir_pbe_v1.2.uspp.F.UPF", 
     "md5": "459291130f25dc23845cbde6f1e60983", 
     "pseudopotential": "GBRV-1.2"
   }, 
   "K": {
-    "cutoff": "60", 
-    "dual": "8", 
+    "cutoff": 60.0, 
+    "dual": 8.0, 
     "filename": "K.pbe-spn-kjpaw_psl.1.0.0.UPF", 
     "md5": "32cfb8e8db6de9c522999dcfd6d89a05", 
     "pseudopotential": "100PAW"
   }, 
   "Kr": {
-    "cutoff": "45", 
-    "dual": "4", 
+    "cutoff": 45.0, 
+    "dual": 4.0, 
     "filename": "Kr_ONCV_PBE-1.0.upf", 
     "md5": "222168078d0aa721a3441b79e62ffbb3", 
     "pseudopotential": "SG15"
   }, 
   "La": {
-    "cutoff": "40", 
-    "dual": "8", 
+    "cutoff": 40.0, 
+    "dual": 8.0, 
     "filename": "La.GGA-PBE-paw-v1.0.UPF", 
     "md5": "88b423020bb18277d02386968faf562e", 
     "pseudopotential": "Wentzcovitch"
   }, 
   "Li": {
-    "cutoff": "40", 
-    "dual": "8", 
+    "cutoff": 40.0, 
+    "dual": 8.0, 
     "filename": "li_pbe_v1.4.uspp.F.UPF", 
     "md5": "d577e4aaf4ea9ac4ced527bbe45fa4c1", 
     "pseudopotential": "GBRV-1.4"
   }, 
   "Lu": {
-    "cutoff": "45", 
-    "dual": "8", 
+    "cutoff": 45.0, 
+    "dual": 8.0, 
     "filename": "Lu.GGA-PBE-paw-v1.0.UPF", 
     "md5": "cc2d98ef89034b2417eef746a3a935bb", 
     "pseudopotential": "Wentzcovitch"
   }, 
   "Mg": {
-    "cutoff": "30", 
-    "dual": "8", 
+    "cutoff": 30.0, 
+    "dual": 8.0, 
     "filename": "Mg.pbe-n-kjpaw_psl.0.3.0.UPF", 
     "md5": "6b9d2feb78b5d66e266d5e3b3180ff4e", 
     "pseudopotential": "031PAW"
   }, 
   "Mn": {
-    "cutoff": "65", 
-    "dual": "12", 
+    "cutoff": 65.0, 
+    "dual": 12.0, 
     "filename": "mn_pbe_v1.5.uspp.F.UPF", 
     "md5": "5430f8183b8a9c561b8c01bedf5c9271", 
     "pseudopotential": "GBRV-1.5"
   }, 
   "Mo": {
-    "cutoff": "35", 
-    "dual": "4", 
+    "cutoff": 35.0, 
+    "dual": 4.0, 
     "filename": "Mo_ONCV_PBE-1.0.upf", 
     "md5": "4b6561892115dd8d258c927f8d7b4976", 
     "pseudopotential": "SG15"
   }, 
   "N": {
-    "cutoff": "60", 
-    "dual": "8", 
+    "cutoff": 60.0, 
+    "dual": 8.0, 
     "filename": "N.pbe-n-radius_5.UPF", 
     "md5": "ebe8d54cecf9ccff0f5690f4b8e17d41", 
     "pseudopotential": "THEOS"
   }, 
   "Na": {
-    "cutoff": "40", 
-    "dual": "8", 
+    "cutoff": 40.0, 
+    "dual": 8.0, 
     "filename": "na_pbe_v1.5.uspp.F.UPF", 
     "md5": "fe8bedc38298e4519b7cfa94db60ecff", 
     "pseudopotential": "GBRV-1.5"
   }, 
   "Nb": {
-    "cutoff": "40", 
-    "dual": "8", 
+    "cutoff": 40.0, 
+    "dual": 8.0, 
     "filename": "Nb.pbe-spn-kjpaw_psl.0.3.0.UPF", 
     "md5": "1d03c9a87a79e3d19071143b6c7e212e", 
     "pseudopotential": "031PAW"
   }, 
   "Nd": {
-    "cutoff": "40", 
-    "dual": "8", 
+    "cutoff": 40.0, 
+    "dual": 8.0, 
     "filename": "Nd.GGA-PBE-paw-v1.0.UPF", 
     "md5": "eeaa52e7faf2236f67e67aa260689531", 
     "pseudopotential": "Wentzcovitch"
   }, 
   "Ne": {
-    "cutoff": "50", 
-    "dual": "4", 
+    "cutoff": 50.0, 
+    "dual": 4.0, 
     "filename": "Ne_ONCV_PBE-1.0.upf", 
     "md5": "be4c53c7eca2bb9a5f9b92b623d6e1f6", 
     "pseudopotential": "SG15"
   }, 
   "Ni": {
-    "cutoff": "45", 
-    "dual": "8", 
+    "cutoff": 45.0, 
+    "dual": 8.0, 
     "filename": "ni_pbe_v1.4.uspp.F.UPF", 
     "md5": "f901cb78cad0d94b2b76c27340a1dbd0", 
     "pseudopotential": "GBRV-1.4"
   }, 
   "O": {
-    "cutoff": "50", 
-    "dual": "8", 
+    "cutoff": 50.0, 
+    "dual": 8.0, 
     "filename": "O.pbe-n-kjpaw_psl.0.1.UPF", 
     "md5": "82fb7d84a0d522fa5f94381020a4fa31", 
     "pseudopotential": "031PAW"
   }, 
   "Os": {
-    "cutoff": "60", 
-    "dual": "8", 
+    "cutoff": 60.0, 
+    "dual": 8.0, 
     "filename": "Os.pbe-spfn-rrkjus_psl.1.0.0.UPF", 
     "md5": "d82a4c1e44e8a4ba0fc215a3cbf27dd1", 
     "pseudopotential": "100US"
   }, 
   "P": {
-    "cutoff": "30", 
-    "dual": "8", 
+    "cutoff": 30.0, 
+    "dual": 8.0, 
     "filename": "P.pbe-n-rrkjus_psl.1.0.0.UPF", 
     "md5": "2c8bd697df9c55c3483f903a53691148", 
     "pseudopotential": "100US"
   }, 
   "Pb": {
-    "cutoff": "35", 
-    "dual": "4", 
+    "cutoff": 35.0, 
+    "dual": 4.0, 
     "filename": "Pb_ONCV_PBE-1.0.upf", 
     "md5": "f45df7481b1b82446040fd7c587dc1f8", 
     "pseudopotential": "SG15"
   }, 
   "Pd": {
-    "cutoff": "45", 
-    "dual": "4", 
+    "cutoff": 45.0, 
+    "dual": 4.0, 
     "filename": "Pd_ONCV_PBE-1.0.upf", 
     "md5": "02f68d92fb9ce4e6ee0ba14ddd79aca1", 
     "pseudopotential": "SG15"
   }, 
   "Pm": {
-    "cutoff": "40", 
-    "dual": "8", 
+    "cutoff": 40.0, 
+    "dual": 8.0, 
     "filename": "Pm.GGA-PBE-paw-v1.0.UPF", 
     "md5": "6e417badd29173cbd769164e222c03c0", 
     "pseudopotential": "Wentzcovitch"
   }, 
   "Po": {
-    "cutoff": "75", 
-    "dual": "8", 
+    "cutoff": 75.0, 
+    "dual": 8.0, 
     "filename": "Po.pbe-dn-rrkjus_psl.1.0.0.UPF", 
     "md5": "8f262fc97403a191d4e4232cee065316", 
     "pseudopotential": "100US"
   }, 
   "Pr": {
-    "cutoff": "40", 
-    "dual": "8", 
+    "cutoff": 40.0, 
+    "dual": 8.0, 
     "filename": "Pr.GGA-PBE-paw-v1.0.UPF", 
     "md5": "b9d229132a9cbeeb27fd693c8170bec4", 
     "pseudopotential": "Wentzcovitch"
   }, 
   "Pt": {
-    "cutoff": "35", 
-    "dual": "8", 
+    "cutoff": 35.0, 
+    "dual": 8.0, 
     "filename": "pt_pbe_v1.4.uspp.F.UPF", 
     "md5": "078298b68910038dabe84a1089411f2b", 
     "pseudopotential": "GBRV-1.4"
   }, 
   "Rb": {
-    "cutoff": "30", 
-    "dual": "4", 
+    "cutoff": 30.0, 
+    "dual": 4.0, 
     "filename": "Rb_ONCV_PBE-1.0.upf", 
     "md5": "15542e1eba05e735164d8d9a3dbc9a9d", 
     "pseudopotential": "SG15"
   }, 
   "Re": {
-    "cutoff": "30", 
-    "dual": "8", 
+    "cutoff": 30.0, 
+    "dual": 8.0, 
     "filename": "Re_pbe_v1.2.uspp.F.UPF", 
     "md5": "96face0e1ec8334c36fb72272167086d", 
     "pseudopotential": "GBRV-1.2"
   }, 
   "Rh": {
-    "cutoff": "35", 
-    "dual": "4", 
+    "cutoff": 35.0, 
+    "dual": 4.0, 
     "filename": "Rh_ONCV_PBE-1.0.upf", 
     "md5": "ef55d7f679c573d7455239b9a6870c9d", 
     "pseudopotential": "SG15"
   }, 
   "Rn": {
-    "cutoff": "120", 
-    "dual": "8", 
+    "cutoff": 120.0, 
+    "dual": 8.0, 
     "filename": "Rn.pbe-dn-kjpaw_psl.1.0.0.UPF", 
     "md5": "2dfa38f973c4edd09e39253db72cae77", 
     "pseudopotential": "100PAW"
   }, 
   "Ru": {
-    "cutoff": "35", 
-    "dual": "4", 
+    "cutoff": 35.0, 
+    "dual": 4.0, 
     "filename": "Ru_ONCV_PBE-1.0.upf", 
     "md5": "8e1186d8981a3b0814ebaef4f2dcaf99", 
     "pseudopotential": "SG15"
   }, 
   "S": {
-    "cutoff": "35", 
-    "dual": "8", 
+    "cutoff": 35.0, 
+    "dual": 8.0, 
     "filename": "s_pbe_v1.4.uspp.F.UPF", 
     "md5": "d8f87a3edda8e02277390f087fc9d342", 
     "pseudopotential": "GBRV-1.4"
   }, 
   "Sb": {
-    "cutoff": "60", 
-    "dual": "4", 
+    "cutoff": 60.0, 
+    "dual": 4.0, 
     "filename": "Sb_ONCV_PBE-1.0.upf", 
     "md5": "f85cd9a7bdb764f053fbc8424eb9d264", 
     "pseudopotential": "SG15"
   }, 
   "Sc": {
-    "cutoff": "40", 
-    "dual": "4", 
+    "cutoff": 40.0, 
+    "dual": 4.0, 
     "filename": "Sc_ONCV_PBE-1.0.upf", 
     "md5": "0aa3e7a695f831f9dc6b0660bef5c756", 
     "pseudopotential": "SG15"
   }, 
   "Se": {
-    "cutoff": "30", 
-    "dual": "8", 
+    "cutoff": 30.0, 
+    "dual": 8.0, 
     "filename": "Se_pbe_v1.uspp.F.UPF", 
     "md5": "1fbcc6eba57870666afb6d0105a55852", 
     "pseudopotential": "GBRV-1.2"
   }, 
   "Si": {
-    "cutoff": "30", 
-    "dual": "8", 
+    "cutoff": 30.0, 
+    "dual": 8.0, 
     "filename": "Si.pbe-n-rrkjus_psl.1.0.0.UPF", 
     "md5": "5630248a67c10f84b967c58d6c4794fc", 
     "pseudopotential": "100US"
   }, 
   "Sm": {
-    "cutoff": "40", 
-    "dual": "8", 
+    "cutoff": 40.0, 
+    "dual": 8.0, 
     "filename": "Sm.GGA-PBE-paw-v1.0.UPF", 
     "md5": "1fae4c1db8dee23fcc00da4797120524", 
     "pseudopotential": "Wentzcovitch"
   }, 
   "Sn": {
-    "cutoff": "60", 
-    "dual": "8", 
+    "cutoff": 60.0, 
+    "dual": 8.0, 
     "filename": "Sn_pbe_v1.uspp.F.UPF", 
     "md5": "970fa1de220ec1498c61207b660bd3d9", 
     "pseudopotential": "GBRV-1.2"
   }, 
   "Sr": {
-    "cutoff": "30", 
-    "dual": "8", 
+    "cutoff": 30.0, 
+    "dual": 8.0, 
     "filename": "Sr_pbe_v1.uspp.F.UPF", 
     "md5": "78c4134299955f6278e780f26b1a3023", 
     "pseudopotential": "GBRV-1.2"
   }, 
   "Ta": {
-    "cutoff": "45", 
-    "dual": "8", 
+    "cutoff": 45.0, 
+    "dual": 8.0, 
     "filename": "Ta_pbe_v1.uspp.F.UPF", 
     "md5": "7e08d7c23cdfed2d46a613ff2d002372", 
     "pseudopotential": "GBRV-1.2"
   }, 
   "Tb": {
-    "cutoff": "40", 
-    "dual": "8", 
+    "cutoff": 40.0, 
+    "dual": 8.0, 
     "filename": "Tb.GGA-PBE-paw-v1.0.UPF", 
     "md5": "ddadd6d0de8ac5b18b2c762d3d08017f", 
     "pseudopotential": "Wentzcovitch"
   }, 
   "Tc": {
-    "cutoff": "30", 
-    "dual": "4", 
+    "cutoff": 30.0, 
+    "dual": 4.0, 
     "filename": "Tc_ONCV_PBE-1.0.upf", 
     "md5": "30df3033dce682009f4242df5f75e10e", 
     "pseudopotential": "SG15"
   }, 
   "Te": {
-    "cutoff": "30", 
-    "dual": "8", 
+    "cutoff": 30.0, 
+    "dual": 8.0, 
     "filename": "Te_pbe_v1.uspp.F.UPF", 
     "md5": "801c367e6d70b01792985a5fcae9046d", 
     "pseudopotential": "GBRV-1.2"
   }, 
   "Ti": {
-    "cutoff": "35", 
-    "dual": "8", 
+    "cutoff": 35.0, 
+    "dual": 8.0, 
     "filename": "ti_pbe_v1.4.uspp.F.UPF", 
     "md5": "596f786357a20719ba4d28c8d8fc8f5a", 
     "pseudopotential": "GBRV-1.4"
   }, 
   "Tl": {
-    "cutoff": "50", 
-    "dual": "8", 
+    "cutoff": 50.0, 
+    "dual": 8.0, 
     "filename": "Tl_pbe_v1.2.uspp.F.UPF", 
     "md5": "49a9eefdf86476ec5457d106ccf81432", 
     "pseudopotential": "GBRV-1.2"
   }, 
   "Tm": {
-    "cutoff": "40", 
-    "dual": "8", 
+    "cutoff": 40.0, 
+    "dual": 8.0, 
     "filename": "Tm.GGA-PBE-paw-v1.0.UPF", 
     "md5": "2113c14c24f0a6693590c7725c37680e", 
     "pseudopotential": "Wentzcovitch"
   }, 
   "V": {
-    "cutoff": "35", 
-    "dual": "8", 
+    "cutoff": 35.0, 
+    "dual": 8.0, 
     "filename": "v_pbe_v1.4.uspp.F.UPF", 
     "md5": "2c7b05b42f70c306b0e26052cd04306e", 
     "pseudopotential": "GBRV-1.4"
   }, 
   "W": {
-    "cutoff": "30", 
-    "dual": "8", 
+    "cutoff": 30.0, 
+    "dual": 8.0, 
     "filename": "W_pbe_v1.2.uspp.F.UPF", 
     "md5": "e265cf3f5bd8d38655eea53d5273f572", 
     "pseudopotential": "GBRV-1.2"
   }, 
   "Xe": {
-    "cutoff": "60", 
-    "dual": "4", 
+    "cutoff": 60.0, 
+    "dual": 4.0, 
     "filename": "Xe_ONCV_PBE-1.1.upf", 
     "md5": "7cb92cff2c30c9eda53cb05cb0975cea", 
     "pseudopotential": "SG15-1.1"
   }, 
   "Y": {
-    "cutoff": "35", 
-    "dual": "8", 
+    "cutoff": 35.0, 
+    "dual": 8.0, 
     "filename": "Y_pbe_v1.uspp.F.UPF", 
     "md5": "34dc4a4ee1e793913c76210211e5a0f5", 
     "pseudopotential": "GBRV-1.2"
   }, 
   "Yb": {
-    "cutoff": "40", 
-    "dual": "8", 
+    "cutoff": 40.0, 
+    "dual": 8.0, 
     "filename": "Yb.GGA-PBE-paw-v1.0.UPF", 
     "md5": "b1b88808406685ec6b839c2143a22dcc", 
     "pseudopotential": "Wentzcovitch"
   }, 
   "Zn": {
-    "cutoff": "40", 
-    "dual": "8", 
+    "cutoff": 40.0, 
+    "dual": 8.0, 
     "filename": "Zn_pbe_v1.uspp.F.UPF", 
     "md5": "3b07897dc9b85c1f00e860157f0273c2", 
     "pseudopotential": "GBRV-1.2"
   }, 
   "Zr": {
-    "cutoff": "30", 
-    "dual": "8", 
+    "cutoff": 30.0, 
+    "dual": 8.0, 
     "filename": "Zr_pbe_v1.uspp.F.UPF", 
     "md5": "709fb3565068e13549b1bd43c3571ba0", 
     "pseudopotential": "GBRV-1.2"
