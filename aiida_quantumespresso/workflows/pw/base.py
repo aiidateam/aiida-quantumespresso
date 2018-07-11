@@ -51,7 +51,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         spec.input('kpoints_distance', valid_type=Float, required=False)
         spec.input('kpoints_force_parity', valid_type=Bool, required=False)
         spec.input('parameters', valid_type=ParameterData)
-        spec.input_namespace('pseudos', required=False)
+        spec.input_namespace('pseudos', required=False, dynamic=True)
         spec.input('pseudo_family', valid_type=Str, required=False)
         spec.input('parent_folder', valid_type=RemoteData, required=False)
         spec.input('vdw_table', valid_type=SinglefileData, required=False)
