@@ -146,9 +146,12 @@ class ProtocolManager(object):
         """
         return self.modifiers['pseudo'][modifier_name]
     
-    def check_pseudos(self, modifier_name=None):
+    def check_pseudos(self, modifier_name=None, pseudo_data=None):
         """
         Given a pseudo modifier name, checks which pseudos exist in the DB.
+
+        :param modifier_name: the name of the modifier. Leave to None to use the default one.
+        :param pseudo_data: should be passed only if modifier_name == 'custom'
 
         :return: a dictionary with three keys:
 
@@ -168,7 +171,16 @@ class ProtocolManager(object):
                 "You did not specify a modifier name, but no default "
                 "modifier name exists for protocol '{}'.".format(self.name))
 
-        pseudo_data = self.get_pseudo_data(modifier_name)
+        if modifier_name == 'custom':
+            if pseudo_data is None:
+                raise ValueError(
+                    "You chose 'custom' as modifier_name, but did not provide a "
+                    "pseudo_data!")
+        else:
+            if pseudo_data is not None:
+                raise ValueError(
+                    "You passed a pseudo_data, but the modifier name is not 'custom'!")
+            pseudo_data = self.get_pseudo_data(modifier_name)
 
         # No pseudo found
         missing = set()

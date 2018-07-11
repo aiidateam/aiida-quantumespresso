@@ -131,7 +131,9 @@ class PwBandStructureWorkChain(WorkChain):
         def get_common_inputs():
 
             protocol, protocol_modifiers = self._get_protocol()
-            checked_pseudos = protocol.check_pseudos()
+            checked_pseudos = protocol.check_pseudos(
+                modifier_name=protocol_modifiers.get('pseudo', None),
+                pseudo_data=protocol_modifiers.get('pseudo_data', None))
             known_pseudos = checked_pseudos['found']
 
             pseudos = get_pseudos_from_dict(self.inputs.structure, known_pseudos)
