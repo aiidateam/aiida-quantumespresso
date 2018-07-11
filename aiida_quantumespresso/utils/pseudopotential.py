@@ -74,3 +74,57 @@ def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=N
         result_pseudos[tuple(kinds)] = pseudo
 
     return result_pseudos
+
+def get_pseudos_from_dict(structure, pseudos_uuids):
+    """
+    Given a dictionary in the format::
+
+      {
+          'Al': '045a7a8d-feb1-4aeb-9d32-4e04b13bfc32',
+          'C': '08ad7d53-b7cc-45d5-acb8-13530790b751',
+          ...
+      }
+
+    (i.e., associating a chemical element name to a UUID of a UpfData node
+    in the database), and a AiiDA structure, return a dictionary 
+    associating each kind name with its UpfData object.
+
+    :param structure: a StructureData
+    :param pseudos_uuids: a dictionary of UUIDs of UpfData for each chemical element, as specified above
+    :raise MultipleObjectsError: if more than one UPF for the same element is
+       found in the group.
+    :raise NotExistent: if no UPF for an element in the group is
+       found in the group.
+    """
+    from aiida.common.exceptions import NotExistent
+    from aiida.orm import load_node
+
+    pseudos_uuids = {}
+
+    pseudo_list = {}
+    for kind in structure.kinds:
+        symbol = kind.symbol
+        try:
+            uuid = pseudos_uuids[symbol]
+        except KeyError:
+            raise NotExistent("No UPF for element {} found in the provided pseudos_uuids dictionary".format(
+                symbol))
+        try:
+            upf = load_node(uuid)
+        except NotExistent:
+            raise NotExistent(
+                "No node found associated to the UUID {} given for element {} "
+                "in the provided pseudos_uuids dictionary".format(
+                uuid, symbol))
+        if not isinstance(upf, UpfData):
+            raise ValueError(
+                "Node with UUID {} is not a UpfData".format(
+                uuid))
+        if upf.element != symbol:
+            raise ValueError(
+                "Node with UUID {} is associated to element {} and not to {} as expected".format(
+                uuid, upf.element, symbol))
+
+        pseudo_list[kind.name] = upf
+
+    return pseudo_list
