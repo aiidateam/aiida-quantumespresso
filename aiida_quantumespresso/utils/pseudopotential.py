@@ -99,8 +99,6 @@ def get_pseudos_from_dict(structure, pseudos_uuids):
     from aiida.common.exceptions import NotExistent
     from aiida.orm import load_node
 
-    pseudos_uuids = {}
-
     pseudo_list = {}
     for kind in structure.kinds:
         symbol = kind.symbol
