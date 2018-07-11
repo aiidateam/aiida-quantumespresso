@@ -104,8 +104,8 @@ class ProtocolManager(object):
             pseudo_data = self.get_pseudo_data(pseudo_modifier_name)
 
         # Check that there are no unknown modifiers
-        if modifiers:
-            raise ValueError("Unknown modifiers specified: {}".format(",".join(sorted(modifiers))))
+        if modifiers_copy:
+            raise ValueError("Unknown modifiers specified: {}".format(",".join(sorted(modifiers_copy))))
 
         retdata = self.get_parameters_data(parameters_modifier_name)
         retdata['pseudo_data'] = pseudo_data
