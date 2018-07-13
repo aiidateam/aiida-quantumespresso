@@ -162,6 +162,10 @@ class PwBandsWorkChain(WorkChain):
         inputs.parameters.setdefault('CONTROL', {})
         inputs.parameters['CONTROL']['restart_mode'] = 'restart'
         inputs.parameters['CONTROL']['calculation'] = 'bands'
+        # c-g seems better for bands as a default
+        inputs.parameters['ELECTRONS']['diagonalization'] = 'cg'
+        # We need full accuracy as we are doing bands
+        inputs.parameters['ELECTRONS']['diago_full_acc'] = True
 
         ## START - Manage the number of additional bands ##
         # Get info from SCF on number of electrons and number of spin components
