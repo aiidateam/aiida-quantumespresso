@@ -540,6 +540,7 @@ class PhCalculation(JobCalculation):
         :param bool force_restart: restart also if parent is not in FINISHED 
             state (e.g. FAILED, IMPORTED, etc.). Default=False.
         """
+        from aiida_quantumespresso.utils.restart import clone_calculation
         import warnings
         warnings.warn('This method has been deprecated, use instead '
                       'aiida_quantumespresso.utils.restart.create_restart_ph()', DeprecationWarning)
@@ -568,7 +569,7 @@ class PhCalculation(JobCalculation):
                                        "in calculation {}".format(self.pk))
         remote_folder = remote_folders[0]
         
-        c2 = self.copy()
+        c2 = clone_calculation(self)
         
         #if 'Restart' in c2.label:
         #    # increment by 1 the number of restart already done

@@ -76,7 +76,7 @@ class MatdynParser(Parser):
         kpointsdata = self._calc.inp.kpoints
         try:
             kpoints = kpointsdata.get_kpoints()
-            kpointsdata_for_bands = kpointsdata.copy()
+            kpointsdata_for_bands = kpointsdata.clone()
         except AttributeError:
             kpoints = kpointsdata.get_kpoints_mesh(print_list=True)
             kpointsdata_for_bands = KpointsData()
