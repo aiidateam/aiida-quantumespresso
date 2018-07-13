@@ -28,8 +28,13 @@ class PwBandsWorkChain(WorkChain):
         spec.input('structure', valid_type=StructureData)
         spec.input('clean_workdir', valid_type=Bool, default=Bool(False))
         spec.input('group', valid_type=Str, required=False)
+        # These options are used to control the WorkChain behaviour. For instance,
+        # to increase the number of empty bands to compute. They are checked in validate_inputs
+        # (where you can check more in detail which ones are accepted).
+        spec.input('workchain_options',  valid_type=ParameterData, required=False)
         spec.outline(
             cls.setup,
+            cls.validate_inputs,
             if_(cls.should_do_relax)(
                 cls.run_relax,
                 cls.inspect_relax,
@@ -47,6 +52,8 @@ class PwBandsWorkChain(WorkChain):
             message='the scf PwBasexWorkChain sub process failed')
         spec.exit_code(403, 'ERROR_SUB_PROCESS_FAILED_BANDS',
             message='the bands PwBasexWorkChain sub process failed')
+        spec.exit_code(501, 'ERROR_INVALID_WORKCHAIN_OPTIONS_INPUTS',
+            message='invalid inputs provided in workchain_options')
         spec.output('primitive_structure', valid_type=StructureData)
         spec.output('seekpath_parameters', valid_type=ParameterData)
         spec.output('scf_parameters', valid_type=ParameterData)
@@ -56,6 +63,27 @@ class PwBandsWorkChain(WorkChain):
     def setup(self):
         """Define the current structure in the context to be the input structure."""
         self.ctx.current_structure = self.inputs.structure
+
+    def validate_inputs(self):
+        """Validate the additional inputs to this workchain. Make sure """
+        try:
+            wc_options = self.inputs['workchain_options'].get_dict()
+        except KeyError:
+            wc_options = {}
+
+        # This value sets the number of bands for the band structure calculations
+        # defined as a multiplicative factore wrt to the number of occupied states
+        # e.g. 1.2 means 20% more or at least 4 more as in QE.
+        # If not specified, set it to None. It will be then set to a proper
+        # default inside run_bands
+        self.ctx.num_bands_factor = wc_options.pop('num_bands_factor', None)
+
+        if wc_options:
+            #Checking that all options given in input are recognised
+            self.report('Unknown variable passed inside workchain_options: {}'.format(
+                              ', '.join(wc_options.keys())
+                              ))
+            return self.ERROR_INVALID_WORKCHAIN_OPTIONS_INPUTS
 
     def should_do_relax(self):
         """If the 'relax' input namespace was specified, we relax the input structure."""
@@ -128,12 +156,34 @@ class PwBandsWorkChain(WorkChain):
             self.ctx.current_folder = workchain.out.remote_folder
 
     def run_bands(self):
-        """Run the PwBaseWorkChain in bands mode along the path of high-symmetry determined by Seekpath."""
+        """Run the PwBaseWorkChain in bands mode along the path of high-symmetry determined by seekpath."""
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='bands'))
         inputs.parameters = inputs.parameters.get_dict()
         inputs.parameters.setdefault('CONTROL', {})
         inputs.parameters['CONTROL']['restart_mode'] = 'restart'
         inputs.parameters['CONTROL']['calculation'] = 'bands'
+
+        ## START - Manage the number of additional bands ##
+        # Get info from SCF on number of electrons and number of spin components
+        scf_out_dict = self.ctx.workchain_scf.out.output_parameters.get_dict()
+        num_elec = int(scf_out_dict['number_of_electrons'])
+        num_spin = int(scf_out_dict['number_of_spin_components'])
+
+        # This gives the same results also with noncollinear calcs
+        # e.g. with 8 electrons, no spinors and a factor of 1.5 you compute 6 bands
+        #      with spinors you compute 12 bands (still 50% more than the occupied states)
+        # As in QE, we add at least 4 (8 with spinors) additional bands
+        # If no num_bands_factor was specified (and the validation above set it to None),
+        # use 1.2 as the default value (that is the default of QE as well: 20% more bands),
+        # but do it also in the case of insulators.
+        num_bands_factor = self.ctx.num_bands_factor
+        if num_bands_factor is None:
+            num_bands_factor = 1.2
+
+        inputs.parameters['SYSTEM']['nbnd'] = max(
+            int(0.5 * num_elec * num_spin * num_bands_factor),
+            int(num_elec * num_spin * 0.5) + 4 * num_spin)
+        ## END - Manage the number of additional bands ##
 
         if 'kpoints' not in self.inputs.bands:
             inputs.kpoints = self.ctx.kpoints_path
