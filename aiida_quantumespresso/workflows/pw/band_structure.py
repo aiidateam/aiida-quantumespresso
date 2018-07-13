@@ -1,17 +1,22 @@
 # -*- coding: utf-8 -*-
+import copy
+
 from aiida.orm import Code
 from aiida.orm.data.base import Str, Float, Bool
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.bands import BandsData
 from aiida.orm.data.array.kpoints import KpointsData
-from aiida.orm.utils import WorkflowFactory
+from aiida.orm import WorkflowFactory
 from aiida.work.workchain import WorkChain, ToContext
 
+from aiida_quantumespresso.utils.mapping import update_mapping, prepare_process_inputs
+from aiida_quantumespresso.utils.protocols.pw import ProtocolManager
+from aiida_quantumespresso.utils.pseudopotential import get_pseudos_from_dict
 
 PwBandsWorkChain = WorkflowFactory('quantumespresso.pw.bands')
 
-
+          
 class PwBandStructureWorkChain(WorkChain):
     """
     Workchain to relax and compute the band structure for a given input structure
@@ -25,8 +30,13 @@ class PwBandStructureWorkChain(WorkChain):
         super(PwBandStructureWorkChain, cls).define(spec)
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
-        spec.input('pseudo_family', valid_type=Str)
-        spec.input('protocol', valid_type=Str, default=Str('standard'))
+        #spec.input('pseudo_family', valid_type=Str)
+        spec.input('protocol', valid_type=ParameterData)
+        spec.input('scf_options', valid_type=ParameterData)
+        #spec.expose_inputs(PwBandsWorkChain, namespace='bands_workflow', include=('relax.base.options', 'scf.options', 'bands.options'))
+        #del spec.inputs['bands_workflow']['bands']['code']
+        #del spec.inputs['bands_workflow']['scf']['code']
+        #del spec.inputs['bands_workflow']['relax']['base']['code']
         spec.outline(
             cls.setup_protocol,
             cls.setup_kpoints,
@@ -34,132 +44,40 @@ class PwBandStructureWorkChain(WorkChain):
             cls.run_bands,
             cls.run_results,
         )
+        
+        spec.exit_code(101,'BANDS_WORKCHAIN_FAILED',
+            message='The bands subworkchain failed')
+ 
         spec.output('primitive_structure', valid_type=StructureData)
         spec.output('seekpath_parameters', valid_type=ParameterData)
         spec.output('scf_parameters', valid_type=ParameterData)
         spec.output('band_parameters', valid_type=ParameterData)
         spec.output('band_structure', valid_type=BandsData)
 
+    def _get_protocol(self):
+        """
+        Return a ProtocolManager class and a dictionary of modifiers
+        """
+        protocol_data = self.inputs.protocol.get_dict()
+        protocol_name = protocol_data['name']
+        protocol = ProtocolManager(protocol_name)
+        
+        protocol_modifiers = protocol_data.get('modifiers', {})
+
+        return protocol, protocol_modifiers
+
     def setup_protocol(self):
         """
         Setup of context variables and inputs for the PwBandsWorkChain. Based on the specified
         protocol, we define values for variables that affect the execution of the calculations
         """
-        self.ctx.inputs = {
-            'code': self.inputs.code,
-            'structure': self.inputs.structure,
-            'pseudo_family': self.inputs.pseudo_family,
-            'parameters': {},
-            'settings': {},
-            'options': {
-                'resources': {
-                    'num_machines': 1
-                },
-                'max_wallclock_seconds': 1800,
-            },
-        }
-
-        if self.inputs.protocol == 'standard':
-            self.report('running the workchain in the "{}" protocol'.format(self.inputs.protocol.value))
-            self.ctx.protocol = {
-                'kpoints_mesh_offset': [0., 0., 0.],
-                'kpoints_mesh_density': 0.2,
-                'convergence_threshold': 2.E-06,
-                'smearing': 'marzari-vanderbilt',
-                'degauss': 0.02,
-                'occupations': 'smearing',
-                'tstress': True,
-                'pseudo_data': {
-                    'H':  {'cutoff': 55,  'dual': 8,  'pseudo': '031US'},
-                    'He': {'cutoff': 55,  'dual': 4,  'pseudo': 'SG15'},
-                    'Li': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.4'},
-                    'Be': {'cutoff': 40,  'dual': 8,  'pseudo': 'GBRV-1.4'},
-                    'B':  {'cutoff': 40,  'dual': 8,  'pseudo': '031PAW'},
-                    'C':  {'cutoff': 50,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'N':  {'cutoff': 55,  'dual': 8,  'pseudo': 'THEOS'},
-                    'O':  {'cutoff': 45,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'F':  {'cutoff': 50,  'dual': 8,  'pseudo': 'GBRV-1.4'},
-                    'Ne': {'cutoff': 200, 'dual': 8,  'pseudo': '100PAW'},
-                    'Na': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Mg': {'cutoff': 35,  'dual': 8,  'pseudo': 'GBRV-1.4'},
-                    'Al': {'cutoff': 30,  'dual': 8,  'pseudo': '100PAW'},
-                    'Si': {'cutoff': 30,  'dual': 8,  'pseudo': '100US'},
-                    'P':  {'cutoff': 30,  'dual': 8,  'pseudo': '100US'},
-                    'S':  {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Cl': {'cutoff': 35,  'dual': 8,  'pseudo': 'GBRV-1.4'},
-                    'Ar': {'cutoff': 120, 'dual': 8,  'pseudo': '100US'},
-                    'K':  {'cutoff': 50,  'dual': 8,  'pseudo': '100US'},
-                    'Ca': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Sc': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Ti': {'cutoff': 35,  'dual': 8,  'pseudo': 'GBRV-1.4'},
-                    'V':  {'cutoff': 40,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Cr': {'cutoff': 40,  'dual': 8,  'pseudo': 'GBRV-1.5'},
-                    'Mn': {'cutoff': 70,  'dual': 12, 'pseudo': '031PAW'},
-                    'Fe': {'cutoff': 90,  'dual': 12, 'pseudo': '031PAW'},
-                    'Co': {'cutoff': 55,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Ni': {'cutoff': 45,  'dual': 8,  'pseudo': 'GBRV-1.4'},
-                    'Cu': {'cutoff': 40,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Zn': {'cutoff': 40,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Ga': {'cutoff': 35,  'dual': 8,  'pseudo': '031US'},
-                    'Ge': {'cutoff': 40,  'dual': 8,  'pseudo': '100PAW'},
-                    'As': {'cutoff': 30,  'dual': 8,  'pseudo': '031US'},
-                    'Se': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Br': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.4'},
-                    'Kr': {'cutoff': 100, 'dual': 8,  'pseudo': '031US'},
-                    'Rb': {'cutoff': 50,  'dual': 4,  'pseudo': 'SG15'},
-                    'Sr': {'cutoff': 35,  'dual': 8,  'pseudo': '100US'},
-                    'Y':  {'cutoff': 35,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Zr': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Nb': {'cutoff': 35,  'dual': 8,  'pseudo': '031PAW'},
-                    'Mo': {'cutoff': 35,  'dual': 4,  'pseudo': 'SG15'},
-                    'Tc': {'cutoff': 30,  'dual': 4,  'pseudo': 'SG15'},
-                    'Ru': {'cutoff': 40,  'dual': 4,  'pseudo': 'SG15'},
-                    'Rh': {'cutoff': 45,  'dual': 8,  'pseudo': '100PAW'},
-                    'Pd': {'cutoff': 55,  'dual': 8,  'pseudo': '100PAW'},
-                    'Ag': {'cutoff': 35,  'dual': 8,  'pseudo': 'GBRV-1.4'},
-                    'Cd': {'cutoff': 40,  'dual': 8,  'pseudo': '031US'},
-                    'In': {'cutoff': 35,  'dual': 8,  'pseudo': '031US'},
-                    'Sn': {'cutoff': 35,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Sb': {'cutoff': 40,  'dual': 8,  'pseudo': 'GBRV-1.4'},
-                    'Te': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'I':  {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Xe': {'cutoff': 120, 'dual': 8,  'pseudo': '100US'},
-                    'Cs': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Ba': {'cutoff': 40,  'dual': 4,  'pseudo': 'SG15'},
-                    'Hf': {'cutoff': 35,  'dual': 8,  'pseudo': '031US'},
-                    'Ta': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'W':  {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Re': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Os': {'cutoff': 35,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Ir': {'cutoff': 40,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Pt': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.4'},
-                    'Au': {'cutoff': 45,  'dual': 4,  'pseudo': 'SG15'},
-                    'Hg': {'cutoff': 30,  'dual': 8,  'pseudo': 'GBRV-1.2'},
-                    'Tl': {'cutoff': 30,  'dual': 8,  'pseudo': '031US'},
-                    'Pb': {'cutoff': 40,  'dual': 8,  'pseudo': '031PAW'},
-                    'Bi': {'cutoff': 35,  'dual': 8,  'pseudo': '031PAW'},
-                    'Po': {'cutoff': 45,  'dual': 8,  'pseudo': '100US'},
-                    'Rn': {'cutoff': 45,  'dual': 8,  'pseudo': '100US'},
-                    'La': {'cutoff': 55,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Ce': {'cutoff': 45,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Pr': {'cutoff': 50,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Nd': {'cutoff': 40,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Sm': {'cutoff': 40,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Eu': {'cutoff': 55,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Tb': {'cutoff': 40,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Dy': {'cutoff': 40,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Ho': {'cutoff': 40,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Er': {'cutoff': 40,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Tm': {'cutoff': 40,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Yb': {'cutoff': 40,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                    'Lu': {'cutoff': 45,  'dual': 8,  'pseudo': 'Wentzcovitch'},
-                }
-            }
+        protocol, protocol_modifiers = self._get_protocol()
+        self.report('running the workchain in the "{}" protocol'.format(protocol.name))
+        self.ctx.protocol = protocol.get_protocol_data(modifiers=protocol_modifiers)
 
     def setup_kpoints(self):
         """
-        Define the k-point mesh for the relax and scf calculations. Also get the k-point path for
-        the bands calculation for the initial input structure from SeeKpath
+        Define the k-point mesh for the relax and scf calculations.
         """
         kpoints_mesh = KpointsData()
         kpoints_mesh.set_cell_from_structure(self.inputs.structure)
@@ -185,17 +103,18 @@ class PwBandStructureWorkChain(WorkChain):
                 cutrho = dual * cutoff
                 ecutwfc.append(cutoff)
                 ecutrho.append(cutrho)
-            except KeyError as exception:
+            except KeyError:
                 self.report('failed to retrieve the cutoff or dual factor for {}'.format(kind))
                 return self.ERROR_INVALID_INPUT_UNRECOGNIZED_KIND
 
         natoms = len(structure.sites)
-        conv_thr = self.ctx.protocol['convergence_threshold'] * natoms
+        conv_thr = self.ctx.protocol['convergence_threshold_per_atom'] * natoms
 
-        self.ctx.inputs['parameters'] = {
+        self.ctx.parameters = {
             'CONTROL': {
                 'restart_mode': 'from_scratch',
                 'tstress': self.ctx.protocol['tstress'],
+                'tprnfor': self.ctx.protocol['tprnfor'],
             },
             'SYSTEM': {
                 'ecutwfc': max(ecutwfc),
@@ -213,25 +132,56 @@ class PwBandStructureWorkChain(WorkChain):
         """
         Run the PwBandsWorkChain to compute the band structure
         """
-        inputs = dict(self.ctx.inputs)
+        def get_common_inputs():
 
-        options = inputs['options']
-        settings = inputs['settings']
-        parameters = inputs['parameters']
+            protocol, protocol_modifiers = self._get_protocol()
+            checked_pseudos = protocol.check_pseudos(
+                modifier_name=protocol_modifiers.get('pseudo', None),
+                pseudo_data=protocol_modifiers.get('pseudo_data', None))
+            known_pseudos = checked_pseudos['found']
+
+            pseudos = get_pseudos_from_dict(self.inputs.structure, known_pseudos)
+
+            return {
+                'code': self.inputs.code,
+                #'pseudo_family': self.inputs.pseudo_family,
+                'pseudos': pseudos,
+                'parameters': ParameterData(dict=self.ctx.parameters),
+                'options': self.inputs.scf_options, # NOTE: for now we use these options for all three steps (relax, scf, bands)
+                #'settings': {},
+            } 
+
+        relax_inputs = get_common_inputs()
+        update_mapping(relax_inputs, {
+            'kpoints': self.ctx.kpoints_mesh,
+            'relaxation_scheme': Str('vc-relax'),  
+            'meta_convergence': Bool(self.ctx.protocol['meta_convergence']),
+            'volume_convergence': Float(self.ctx.protocol['volume_convergence']),
+        })
+
+        scf_inputs = get_common_inputs()
+        update_mapping(scf_inputs, {
+            'kpoints': self.ctx.kpoints_mesh,
+        })
+
+        #Updating the number of bands to compute
+        num_bands_factor = self.ctx.protocol.get('num_bands_factor', None)
+        bands_inputs = get_common_inputs()
+        if num_bands_factor is not None:
+            #Using a dict because it is converted to ParameterData in the next step
+            bands_inputs['workchain_options'] = ParameterData(dict={'num_bands_factor':num_bands_factor})
+        update_mapping(bands_inputs, {
+            'kpoints_distance': Float(self.ctx.protocol['kpoints_distance_for_bands']),
+        })
 
         # Final input preparation, wrapping dictionaries in ParameterData nodes
-        inputs['kpoints_mesh'] = self.ctx.kpoints_mesh
-        inputs['parameters'] = ParameterData(dict=parameters)
-        inputs['settings'] = ParameterData(dict=settings)
-        inputs['options'] = ParameterData(dict=options)
-        inputs['relax'] = {
-            'kpoints_distance': Float(self.ctx.protocol['kpoints_mesh_density']),
-            'parameters': ParameterData(dict=parameters),
-            'settings': ParameterData(dict=settings),
-            'options': ParameterData(dict=options),
-            'meta_convergence': Bool(False),
-            'relaxation_scheme': Str('vc-relax'),
-            'volume_convergence': Float(0.01)
+        inputs = {
+            'structure': self.inputs.structure,
+            'relax': {
+                'base': relax_inputs,
+            },
+            'scf': scf_inputs,
+            'bands': bands_inputs,
         }
 
         running = self.submit(PwBandsWorkChain, **inputs)
@@ -245,11 +195,22 @@ class PwBandStructureWorkChain(WorkChain):
         Attach the relevant output nodes from the band calculation to the workchain outputs
         for convenience
         """
-        self.report('workchain succesfully completed')
-
+        exit_code = 0 
+        if self.ctx.workchain_bands.is_finished_ok:
+            self.report('workchain succesfully completed')
+        else:
+            wc_bands = self.ctx.workchain_bands 
+            self.report('bands sub-workchain failed (process state: {}, '
+                        'exit message: {}, '
+                        'exit status: {})'.format(
+                        wc_bands.process_state, wc_bands.exit_message, wc_bands.exit_status))
+            exit_code = self.exit_codes.BANDS_WORKCHAIN_FAILED
+            
         for link_label in ['primitive_structure', 'seekpath_parameters', 'scf_parameters', 'band_parameters', 'band_structure']:
             if link_label in self.ctx.workchain_bands.out:
                 node = self.ctx.workchain_bands.get_outputs_dict()[link_label]
                 self.out(link_label, node)
                 self.report("attaching {}<{}> as an output node with label '{}'"
                     .format(node.__class__.__name__, node.pk, link_label))
+        if exit_code:
+            return exit_code
