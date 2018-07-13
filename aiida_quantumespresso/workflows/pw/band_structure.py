@@ -169,7 +169,7 @@ class PwBandStructureWorkChain(WorkChain):
         bands_inputs = get_common_inputs()
         if num_bands_factor is not None:
             #Using a dict because it is converted to ParameterData in the next step
-            bands_inputs['workchain_options'] = {'num_bands_factor':num_bands_factor}
+            bands_inputs['workchain_options'] = ParameterData(dict={'num_bands_factor':num_bands_factor})
         update_mapping(bands_inputs, {
             'kpoints_distance': Float(self.ctx.protocol['kpoints_distance_for_bands']),
         })
@@ -183,10 +183,6 @@ class PwBandStructureWorkChain(WorkChain):
             'scf': scf_inputs,
             'bands': bands_inputs,
         }
-
-        self.report("inputs: {}".format(inputs))
-
-        #inputs = prepare_process_inputs(self.__class__, inputs)
 
         running = self.submit(PwBandsWorkChain, **inputs)
 
