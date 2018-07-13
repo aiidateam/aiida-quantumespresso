@@ -202,9 +202,9 @@ class PwBandStructureWorkChain(WorkChain):
             wc_bands = self.ctx.workchain_bands 
             self.report('bands sub-workchain failed (process state: {}, '
                         'exit message: {}, '
-                        'exit code: {})'.format(
-                        wc_bands.process_state, wc_bands.exit_message, wc_bands.exit_code))
-            exit_code = self.BANDS_WORKCHAIN_FAILED
+                        'exit status: {})'.format(
+                        wc_bands.process_state, wc_bands.exit_message, wc_bands.exit_status))
+            exit_code = self.exit_codes.BANDS_WORKCHAIN_FAILED
             
         for link_label in ['primitive_structure', 'seekpath_parameters', 'scf_parameters', 'band_parameters', 'band_structure']:
             if link_label in self.ctx.workchain_bands.out:
