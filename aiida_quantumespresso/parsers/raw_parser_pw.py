@@ -1040,8 +1040,10 @@ def parse_pw_xml_output(data,dir_with_bands=None):
             bands_dict['occupations'] = occupations
             bands_dict['bands'] = bands
             bands_dict['bands'+units_suffix] = default_energy_units
-        except Exception:
-            raise QEOutputParsingError('Error parsing card {}'.format(tagname))
+        except Exception as exception:
+            raise QEOutputParsingError('Error parsing card {}: {} {}'.format(
+                tagname,exception.__class__.__name__,exception
+                ))
 
 #     if dir_with_bands:
 #         # if there is at least an empty band:

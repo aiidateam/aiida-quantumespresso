@@ -44,6 +44,10 @@ class PwBandStructureWorkChain(WorkChain):
             cls.run_bands,
             cls.run_results,
         )
+        
+        spec.exit_code(101,'BANDS_WORKCHAIN_FAILED',
+            message='The bands subworkchain failed')
+ 
         spec.output('primitive_structure', valid_type=StructureData)
         spec.output('seekpath_parameters', valid_type=ParameterData)
         spec.output('scf_parameters', valid_type=ParameterData)
@@ -160,7 +164,12 @@ class PwBandStructureWorkChain(WorkChain):
             'kpoints': self.ctx.kpoints_mesh,
         })
 
+        #Updating the number of bands to compute
+        num_bands_factor = self.ctx.protocol.get('num_bands_factor', None)
         bands_inputs = get_common_inputs()
+        if num_bands_factor is not None:
+            #Using a dict because it is converted to ParameterData in the next step
+            bands_inputs['workchain_options'] = {'num_bands_factor':num_bands_factor}
         update_mapping(bands_inputs, {
             'kpoints_distance': Float(self.ctx.protocol['kpoints_distance_for_bands']),
         })
@@ -190,11 +199,22 @@ class PwBandStructureWorkChain(WorkChain):
         Attach the relevant output nodes from the band calculation to the workchain outputs
         for convenience
         """
-        self.report('workchain succesfully completed')
-
+        exit_code = 0 
+        if self.ctx.workchain_bands.is_finished_ok:
+            self.report('workchain succesfully completed')
+        else:
+            wc_bands = self.ctx.workchain_bands 
+            self.report('bands sub-workchain failed (process state: {}, '
+                        'exit message: {}, '
+                        'exit code: {})'.format(
+                        wc_bands.process_state, wc_bands.exit_message, wc_bands.exit_code))
+            exit_code = self.BANDS_WORKCHAIN_FAILED
+            
         for link_label in ['primitive_structure', 'seekpath_parameters', 'scf_parameters', 'band_parameters', 'band_structure']:
             if link_label in self.ctx.workchain_bands.out:
                 node = self.ctx.workchain_bands.get_outputs_dict()[link_label]
                 self.out(link_label, node)
                 self.report("attaching {}<{}> as an output node with label '{}'"
                     .format(node.__class__.__name__, node.pk, link_label))
+        if exit_code:
+            return exit_code

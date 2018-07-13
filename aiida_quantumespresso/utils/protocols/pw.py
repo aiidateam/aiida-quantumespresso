@@ -13,7 +13,7 @@ def _get_all_protocol_modifiers():
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sssp_precision_1.0.json')) as f:
         SSSP_1_0_prec = json.load(f)
 
-    return {
+    protocols =  {
         'theos-ht-1.0': {
             'pseudo': {
                 'SSSP-efficiency-1.0': SSSP_1_0_eff,
@@ -33,6 +33,7 @@ def _get_all_protocol_modifiers():
                     'volume_convergence': 0.01,
                     'tstress': True,
                     'tprnfor': True,
+                    'num_bands_factor':None,     #number of bands wrt number of occupied bands
                 },
                 'default': {
                     'kpoints_mesh_offset': [0., 0., 0.],
@@ -46,11 +47,15 @@ def _get_all_protocol_modifiers():
                     'volume_convergence': 0.01, 
                     'tstress': True,
                     'tprnfor': True,
+                    'num_bands_factor':None,     #number of bands wrt number of occupied bands
                 },         
             },
             'parameters_default': 'default'
         }
     }
+    protocols['theos-ht-1.0']['parameters']['scdm'] = protocols['theos-ht-1.0']['parameters']['default']
+    protocols['theos-ht-1.0']['parameters']['scdm']['num_bands_factor'] = 3.0    
+    return protocols
 
 class ProtocolManager(object):
     """
