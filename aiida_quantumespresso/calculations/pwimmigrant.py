@@ -334,8 +334,7 @@ class PwimmigrantCalculation(PwCalculation):
         # Manually set the files that will be copied to the repository and that
         # the parser will extract the results from. This would normally be
         # performed in self._prepare_for_submission prior to submission.
-        self.set_attribute('retrieve_list',
-                       [self._OUTPUT_FILE_NAME, self._DATAFILE_XML])
+        self.set_attribute('retrieve_list', [self._OUTPUT_FILE_NAME] + self.xml_filenames)
         self.set_attribute('retrieve_singlefile_list', [])
 
         # Make sure the calculation and input links are stored.
@@ -515,16 +514,3 @@ class PwimmigrantCalculation(PwCalculation):
     @_OUTPUT_FILE_NAME.setter
     def _OUTPUT_FILE_NAME(self, value):
         self.set_attribute('output_file_name', value)
-
-    @property
-    def _DATAFILE_XML(self):
-        path = os.path.join(self._OUTPUT_SUBFOLDER,
-                            '{}.save'.format(self._PREFIX),
-                            self._DATAFILE_XML_BASENAME)
-        return path
-
-    @_DATAFILE_XML.setter
-    def _DATAFILE_XML(self, value):
-        # Don't store this value in the db, since it gets set to the Aiida
-        # default in the parent class.
-        pass

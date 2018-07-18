@@ -1,3 +1,4 @@
 include setup.json
 include LICENSE.txt
 include aiida_quantumespresso/utils/protocols/*.json
+include aiida_quantumespresso/parsers/parse_xml/pw/schemas/*.xsd

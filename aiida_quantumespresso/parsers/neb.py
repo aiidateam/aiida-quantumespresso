@@ -4,8 +4,10 @@ from aiida.parsers.parser import Parser
 from aiida.orm.nodes.data.array.bands import KpointsData
 from aiida.orm.nodes.data.dict import Dict
 from aiida_quantumespresso.parsers import convert_qe2aiida_structure
-from aiida_quantumespresso.parsers.raw_parser_pw import (
-    parse_pw_xml_output, parse_pw_text_output, QEOutputParsingError)
+from aiida_quantumespresso.parsers.parse_xml.pw.parse import parse_pw_xml_post_6_2
+from aiida_quantumespresso.parsers.parse_xml.pw.versions import get_xml_file_version, QeXmlVersion
+from aiida_quantumespresso.parsers.raw_parser_pw import parse_pw_xml_pre_6_2, parse_pw_text_output
+from aiida_quantumespresso.parsers.raw_parser_pw import QEOutputParsingError
 from aiida_quantumespresso.parsers.raw_parser_neb import parse_raw_output_neb
 from aiida_quantumespresso.calculations.neb import NebCalculation
 import six
@@ -102,20 +104,30 @@ class NebParser(Parser):
         cells = []
         for i in range(num_images):
             # look for xml and parse
-            xml_file = os.path.join(out_folder.get_abs_path('.'),
-                                    self._calc._PREFIX +'_{}'.format(i+1),self._calc._PREFIX+'.save',
-                                    self._calc._DATAFILE_XML_BASENAME)
-            try:
-                with open(xml_file,'r') as f:                
-                    xml_lines = f.read() # Note: read() and not readlines()
-            except IOError:
-                self.logger.error("No xml file found for image {} at {}".format(i+1,xml_file))
+
+            for xml_filename in self._calc.xml_filenames:
+                if xml_filename in list_of_files:
+                    xml_file = os.path.join(out_folder.get_abs_path('.'),
+                                            self._calc._PREFIX +'_{}'.format(i+1),self._calc._PREFIX+'.save',
+                                            xml_filename)
+
+                    try:
+                        xml_file_version = get_xml_file_version(xml_file)
+                    except ValueError as exception:
+                        raise QEOutputParsingError('failed to determine XML output file version: {}'.format(exception))
+
+                    if xml_file_version == QeXmlVersion.POST_6_2:
+                        xml_data, structure_dict, bands_data = parse_pw_xml_post_6_2(xml_file)
+                    elif xml_file_version == QeXmlVersion.PRE_6_2:
+                        xml_data, structure_dict, bands_data = parse_pw_xml_pre_6_2(xml_file, dir_with_bands)
+                    else:
+                        raise ValueError('unrecognize XML file version')
+
+                    structure_data = convert_qe2aiida_structure(structure_dict)
+            else:
+                self.logger.error("No xml output file found for image {}".format(i+1))
                 successful = False
                 return successful, ()
-            xml_data,structure_dict,bands_data = parse_pw_xml_output(xml_lines)
-            
-            # convert the dictionary obtained from parsing the xml to an AiiDA StructureData
-            structure_data = convert_qe2aiida_structure(structure_dict)
             
             # look for pw output and parse it
             pw_out_file = os.path.join(out_folder.get_abs_path('.'),

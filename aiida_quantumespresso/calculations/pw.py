@@ -39,19 +39,25 @@ class PwCalculation(BasePwCpInputGenerator):
         ('SYSTEM', 'cosbc'),
     ]
 
-    _DATAFILE_XML = os.path.join(
-        BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-        '{}.save'.format(BasePwCpInputGenerator._PREFIX),
-        BasePwCpInputGenerator._DATAFILE_XML_BASENAME)
-
     _use_kpoints = True
 
     # Default input and output files
     _DEFAULT_INPUT_FILE = 'aiida.in'
     _DEFAULT_OUTPUT_FILE = 'aiida.out'
 
-    #not using symlink in pw to allow multiple nscf to run on top of the same scf
+    # Not using symlink in pw to allow multiple nscf to run on top of the same scf
     _default_symlink_usage = False
+
+    @classproperty
+    def xml_filepaths(cls):
+        """Return a list of XML output filepaths relative to the remote working directory that should be retrieved."""
+        filepaths = []
+
+        for filename in cls.xml_filenames:
+            filepath = os.path.join(cls._OUTPUT_SUBFOLDER, '{}.save'.format(cls._PREFIX), filename)
+            filepaths.append(filepath)
+
+        return filepaths
 
     @classmethod
     def define(cls, spec):
@@ -74,7 +80,15 @@ class PwCalculation(BasePwCpInputGenerator):
         spec.exit_code(
             100, 'ERROR_NO_RETRIEVED_FOLDER', message='The retrieved folder data node could not be accessed.')
         spec.exit_code(
+            101, 'ERROR_NO_RETRIEVED_TEMPORARY_FOLDER', message='The retrieved temporary folder could not be accessed.')
+        spec.exit_code(
             110, 'ERROR_READING_OUTPUT_FILE', message='The output file could not be read from the retrieved folder.')
+        spec.exit_code(
+            115, 'ERROR_MISSING_XML_FILE', message='The required XML file is not present in the retrieved folder.')
+        spec.exit_code(
+            116, 'ERROR_MULTIPLE_XML_FILES', message='The retrieved folder contains multiple XML files.')
+        spec.exit_code(
+            117, 'ERROR_READING_XML_FILE', message='The required XML file could not be read.')
         spec.exit_code(120, 'ERROR_INVALID_OUTPUT', message='The output file contains invalid output.')
 
     @classproperty
