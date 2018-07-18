@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-import os
 
+import os
 import numpy
+import six
+from six.moves import zip
 
 from aiida import orm
 from aiida.common import exceptions
@@ -11,8 +13,6 @@ from aiida.parsers import Parser
 from aiida_quantumespresso.parsers import convert_qe2aiida_structure
 from aiida_quantumespresso.parsers.raw_parser_pw import parse_raw_output, QEOutputParsingError
 from aiida_quantumespresso.utils.linalg import are_matrices_equal
-import six
-from six.moves import zip
 
 
 class PwParser(Parser):
@@ -50,7 +50,7 @@ class PwParser(Parser):
                 dir_with_bands = temporary_folder
             except KeyError:
                 self.logger.error('the `retrieved_temporary_folder` was not passed as an argument')
-                return ExitCode(101)
+                return self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER
         else:
             dir_with_bands = None
 
@@ -58,23 +58,28 @@ class PwParser(Parser):
 
         # The stdout is required for parsing
         filename_stdout = self.node.get_attribute('output_filename')
-        filename_xml = self.node.process_class._DATAFILE_XML_BASENAME
 
         if filename_stdout not in list_of_files:
             self.logger.error("The standard output file '{}' was not found but is required".format(filename_stdout))
-            return ExitCode(102)
+            return self.exit_codes.ERROR_READING_OUTPUT_FILE
 
-        # The xml file is required for parsing
-        if filename_xml not in list_of_files:
-            self.logger.error("The xml output file '{}' was not found but is required".format(filename_xml))
-            xml_file = None
+        filepath_stdout = os.path.join(output_folder._repository._get_base_folder().abspath, filename_stdout)
+
+        # The xml file is required for successful parsing, but if it does not exist, we still try to parse the out file
+        xml_files = [xml_file for xml_file in self.node.process_class.xml_filenames if xml_file in list_of_files]
+        xml_file = None
+
+        if not xml_files:
+            self.logger.error('no XML output files found, which is required for parsing')
+            return self.exit_codes.ERROR_MISSING_XML_FILE
+        elif len(xml_files) > 1:
+            self.logger.error('more than one XML file retrieved, which should never happen')
+            return self.exit_codes.ERROR_MULTIPLE_XML_FILES
         else:
-            xml_file = os.path.join(output_folder._repository._get_base_folder().abspath, filename_xml)
-
-        out_file = os.path.join(output_folder._repository._get_base_folder().abspath, filename_stdout)
+            xml_file = os.path.join(output_folder._repository._get_base_folder().abspath, xml_files[0])
 
         # Call the raw parsing function
-        parsing_args = [out_file, parameters, parser_options, xml_file, dir_with_bands]
+        parsing_args = [filepath_stdout, parameters, parser_options, xml_file, dir_with_bands]
         out_dict, trajectory_data, structure_data, bands_data, raw_successful = parse_raw_output(*parsing_args)
 
         # If the parser option 'all_symmetries' is not set to True, we reduce the raw parsed symmetries to safe space

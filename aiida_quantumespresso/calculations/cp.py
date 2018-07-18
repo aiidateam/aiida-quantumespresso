@@ -30,22 +30,27 @@ class CpCalculation(BasePwCpInputGenerator, JobCalculation):
     For more information, refer to http://www.quantum-espresso.org/
     """
 
+    _CP_READ_UNIT_NUMBER = 50
+    _CP_WRITE_UNIT_NUMBER = 51
+
+    @classproperty
+    def xml_filepaths(cls):
+        """Returns a list of relative filepaths of XML files."""
+        filepaths = []
+
+        for filename in cls.xml_filenames:
+            filepath = os.path.join(cls._OUTPUT_SUBFOLDER, '{}_{}.save'.format(cls._PREFIX, cls._CP_WRITE_UNIT_NUMBER), filename)
+            filepaths.append(filepath)
+
+        return filepaths
+
     def _init_internal_params(self):
         super(CpCalculation, self)._init_internal_params()
-
-        _cp_read_unit_number = 50
-        _cp_write_unit_number = 51
-
-        self._DATAFILE_XML = os.path.join(
-            BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-            '{}_{}.save'.format(BasePwCpInputGenerator._PREFIX,
-                                _cp_write_unit_number),
-            BasePwCpInputGenerator._DATAFILE_XML_BASENAME)
 
         self._FILE_XML_PRINT_COUNTER = os.path.join(
             BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
             '{}_{}.save'.format(BasePwCpInputGenerator._PREFIX,
-                                _cp_write_unit_number),
+                                _CP_WRITE_UNIT_NUMBER),
             self._FILE_XML_PRINT_COUNTER_BASENAME)
 
         # Default output parser provided by AiiDA
@@ -71,8 +76,8 @@ class CpCalculation(BasePwCpInputGenerator, JobCalculation):
                                   ('SYSTEM', 'ntyp'),  # set later
                                   ('SYSTEM', 'a'), ('SYSTEM', 'b'), ('SYSTEM', 'c'),
                                   ('SYSTEM', 'cosab'), ('SYSTEM', 'cosac'), ('SYSTEM', 'cosbc'),
-                                  ('CONTROL', 'ndr', _cp_read_unit_number),
-                                  ('CONTROL', 'ndw', _cp_write_unit_number),
+                                  ('CONTROL', 'ndr', self._CP_READ_UNIT_NUMBER),
+                                  ('CONTROL', 'ndw', self._CP_WRITE_UNIT_NUMBER),
         ]
 
         self._use_kpoints = False
@@ -81,12 +86,12 @@ class CpCalculation(BasePwCpInputGenerator, JobCalculation):
         self._restart_copy_from = os.path.join(
             BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
             '{}_{}.save'.format(BasePwCpInputGenerator._PREFIX,
-                                _cp_write_unit_number))
+                                self._CP_WRITE_UNIT_NUMBER))
         # in restarts, it will copy the previous folder in the following one
         self._restart_copy_to = os.path.join(
             BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
             '{}_{}.save'.format(BasePwCpInputGenerator._PREFIX,
-                                _cp_read_unit_number))
+                                self._CP_READ_UNIT_NUMBER))
 
         _cp_ext_list = ['cel', 'con', 'eig', 'evp', 'for', 'nos', 'pol',
                         'pos', 'spr', 'str', 'the', 'vel', 'wfc']
@@ -110,7 +115,6 @@ class CpCalculation(BasePwCpInputGenerator, JobCalculation):
     def _default_verbosity(cls):
         return 'low'
 
-
     @classproperty
     def _use_methods(cls):
         """
@@ -120,5 +124,3 @@ class CpCalculation(BasePwCpInputGenerator, JobCalculation):
         retdict.update(BasePwCpInputGenerator._baseclass_use_methods)
 
         return retdict
-
-

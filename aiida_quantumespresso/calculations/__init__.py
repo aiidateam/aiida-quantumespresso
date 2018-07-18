@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
+
+import abc
 import io
 import os
 
 from aiida import orm
 from aiida.common import datastructures, exceptions
+from aiida.common.lang import classproperty
 from aiida.engine import CalcJob
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 import six
@@ -18,8 +21,8 @@ class BasePwCpInputGenerator(CalcJob):
     _PREFIX = 'aiida'
     _INPUT_FILE_NAME = 'aiida.in'
     _OUTPUT_FILE_NAME = 'aiida.out'
-    _DATAFILE_XML_BASENAME = 'data-file.xml'
-    _DATAFILE_XML = 'undefined.xml'
+    _DATAFILE_XML_PRE_6_2 = 'data-file.xml'
+    _DATAFILE_XML_POST_6_2 = 'data-file-schema.xml'
     _ENVIRON_INPUT_FILE_NAME = 'environ.in'
 
     # Additional files that should always be retrieved for the specific plugin
@@ -42,6 +45,22 @@ class BasePwCpInputGenerator(CalcJob):
 
     # Default verbosity; change in subclasses
     _default_verbosity = 'high'
+
+    _use_kpoints = False
+
+    @classproperty
+    def xml_filenames(cls):
+        """Return a list of XML output filenames that can be written by a calculation.
+
+        Note that this includes all potential filenames across all known versions of Quantum ESPRESSO
+        """
+        return [cls._DATAFILE_XML_POST_6_2, cls._DATAFILE_XML_PRE_6_2]
+
+    @abc.abstractmethod
+    @classproperty
+    def xml_filepaths(cls):
+        """Return a list of XML output filepaths relative to the remote working directory that should be retrieved."""
+        pass
 
     @classmethod
     def define(cls, spec):
@@ -195,7 +214,7 @@ class BasePwCpInputGenerator(CalcJob):
         # Retrieve by default the output file and the xml file
         calcinfo.retrieve_list = []
         calcinfo.retrieve_list.append(self._OUTPUT_FILE_NAME)
-        calcinfo.retrieve_list.append(self._DATAFILE_XML)
+        calcinfo.retrieve_list.extend(self.xml_filepaths)
         calcinfo.retrieve_list += settings_dict.pop('ADDITIONAL_RETRIEVE_LIST', [])
         calcinfo.retrieve_list += self._internal_retrieve_list
 
@@ -303,8 +322,6 @@ class BasePwCpInputGenerator(CalcJob):
                 # The pseudo was not encountered yet; use a new name and also add it to the local copy list
                 filename = get_unique_filename(ps.filename, list(pseudo_filenames.values()))
                 pseudo_filenames[ps.pk] = filename
-                # I add this pseudo file to the list of files to copy
-                filepath = os.path.join(ps._repository._get_base_folder().abspath, ps.filename)
                 local_copy_list_to_append.append((ps.uuid, ps.filename, os.path.join(self._PSEUDO_SUBFOLDER, filename)))
 
             kind_names.append(kind.name)
@@ -577,7 +594,7 @@ def _lowercase_dict(d, dict_name):
     if len(new_dict) != len(d):
         num_items = Counter(str(k).lower() for k in d.keys())
         double_keys = ",".join([k for k, v in num_items if v > 1])
-        raise InputValidationError(
+        raise exceptions.InputValidationError(
             "Inside the dictionary '{}' there are the following keys that "
             "are repeated more than once when compared case-insensitively: {}."
             "This is not allowed.".format(dict_name, double_keys))
@@ -593,7 +610,7 @@ def _uppercase_dict(d, dict_name):
     if len(new_dict) != len(d):
         num_items = Counter(str(k).upper() for k in d.keys())
         double_keys = ",".join([k for k, v in num_items if v > 1])
-        raise InputValidationError(
+        raise exceptions.InputValidationError(
             "Inside the dictionary '{}' there are the following keys that "
             "are repeated more than once when compared case-insensitively: {}."
             "This is not allowed.".format(dict_name, double_keys))
