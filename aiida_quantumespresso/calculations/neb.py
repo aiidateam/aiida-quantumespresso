@@ -19,7 +19,7 @@ from aiida_quantumespresso.calculations import _lowercase_dict,_uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
 
-class NebCalculation(BasePwCpInputGenerator,JobCalculation):
+class NebCalculation(BasePwCpInputGenerator, JobCalculation):
     """
     Nudged Elastic Band code (neb.x) of Quantum ESPRESSO distribution
     For more information, refer to http://www.quantum-espresso.org/
@@ -27,6 +27,17 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
 
     # in restarts, will not copy but use symlinks
     _default_symlink_usage = False
+
+    @classproperty
+    def xml_filepaths(cls):
+        """Returns a list of relative filepaths of XML files."""
+        filepaths = []
+
+        for filename in cls.xml_filenames:
+            filepath = os.path.join(cls._OUTPUT_SUBFOLDER, '{}_*[0-9].save'.format(cls._PREFIX), filename)
+            filepaths.append(filepath)
+
+        return filepaths
     
     def _init_internal_params(self):
         super(NebCalculation, self)._init_internal_params()
@@ -446,11 +457,10 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
                                                     self._PREFIX + '_*[0-9]', 'PW.out'),
                                        '.',
                                        2])
-        calcinfo.retrieve_list.append([os.path.join(self._OUTPUT_SUBFOLDER,
-                                                    self._PREFIX + '_*[0-9]',self._PREFIX + '.save', 
-                                                    self._DATAFILE_XML_BASENAME),
-                                       '.',
-                                       3])
+
+        for xml_filepath in self.xml_filepaths:
+            calcinfo.retrieve_list.append([xml_filepath, '.', 3])
+
         settings_retrieve_list = settings_dict.pop('ADDITIONAL_RETRIEVE_LIST', [])
         calcinfo.retrieve_list += settings_retrieve_list
         calcinfo.retrieve_list += self._internal_retrieve_list

@@ -335,7 +335,7 @@ class PwimmigrantCalculation(PwCalculation):
         # the parser will extract the results from. This would normally be
         # performed in self._prepare_for_submission prior to submission.
         self._set_attr('retrieve_list',
-                       [self._OUTPUT_FILE_NAME, self._DATAFILE_XML])
+                       [self._OUTPUT_FILE_NAME] + self.xml_filenames)
         self._set_attr('retrieve_singlefile_list', [])
 
         # Make sure the calculation and input links are stored.
@@ -522,16 +522,3 @@ class PwimmigrantCalculation(PwCalculation):
     @_OUTPUT_FILE_NAME.setter
     def _OUTPUT_FILE_NAME(self, value):
         self._set_attr('output_file_name', value)
-
-    @property
-    def _DATAFILE_XML(self):
-        path = os.path.join(self._OUTPUT_SUBFOLDER,
-                            '{}.save'.format(self._PREFIX),
-                            self._DATAFILE_XML_BASENAME)
-        return path
-
-    @_DATAFILE_XML.setter
-    def _DATAFILE_XML(self, value):
-        # Don't store this value in the db, since it gets set to the Aiida
-        # default in the parent class.
-        pass

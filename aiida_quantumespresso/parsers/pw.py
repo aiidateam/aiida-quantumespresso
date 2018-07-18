@@ -80,16 +80,21 @@ class PwParser(Parser):
         if self._calc._OUTPUT_FILE_NAME not in list_of_files:
             self.logger.error("The standard output file '{}' was not found but is required".format(self._calc._OUTPUT_FILE_NAME))
             return False, ()
-
-        # The xml file is required for parsing
-        if self._calc._DATAFILE_XML_BASENAME not in list_of_files:
-            self.logger.error("The xml output file '{}' was not found but is required".format(self._calc._DATAFILE_XML_BASENAME))
-            successful = False
-            xml_file = None
         else:
-            xml_file = os.path.join(out_folder.get_abs_path('.'), self._calc._DATAFILE_XML_BASENAME)
+            out_file = os.path.join(out_folder.get_abs_path('.'), self._calc._OUTPUT_FILE_NAME)
 
-        out_file = os.path.join(out_folder.get_abs_path('.'), self._calc._OUTPUT_FILE_NAME)
+        # The xml file is required for successful parsing, but if it does not exist, we still try to parse the out file
+        xml_files = [xml_file for xml_file in self._calc.xml_filenames if xml_file in list_of_files]
+        xml_file = None
+
+        if not xml_files:
+            successful = False
+            self.logger.error('no XML output files found, which is required for parsing')
+        elif len(xml_files) > 1:
+            successful = False
+            self.logger.error('more than one XML file retrieved, which should never happen')
+        else:
+            xml_file = os.path.join(out_folder.get_abs_path('.'), xml_files[0])
 
         # Call the raw parsing function
         parsing_args = [out_file, parameters, parser_opts, xml_file, dir_with_bands]

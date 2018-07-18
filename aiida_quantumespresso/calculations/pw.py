@@ -32,13 +32,21 @@ class PwCalculation(BasePwCpInputGenerator, JobCalculation):
     # false due to PWscf bug, could be set to true on versions >= 5.1.0
     _default_symlink_usage = False
 
+    @classproperty
+    def xml_filepaths(cls):
+        """Returns a list of relative filepaths of XML files."""
+        filepaths = []
+
+        for filename in cls.xml_filenames:
+            filepath = os.path.join(cls._OUTPUT_SUBFOLDER, '{}.save'.format(cls._PREFIX), filename)
+            filepaths.append(filepath)
+
+        return filepaths
+
     def _init_internal_params(self):
         super(PwCalculation, self)._init_internal_params()
 
-        self._DATAFILE_XML = os.path.join(
-            BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-            '{}.save'.format(BasePwCpInputGenerator._PREFIX),
-            BasePwCpInputGenerator._DATAFILE_XML_BASENAME)
+        self._xml_files = []
 
         # Default PW output parser provided by AiiDA
         self._default_parser = 'quantumespresso.pw'

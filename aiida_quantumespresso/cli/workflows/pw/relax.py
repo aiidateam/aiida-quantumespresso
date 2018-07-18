@@ -23,6 +23,7 @@ from aiida_quantumespresso.utils.cli import validate
 @options_qe.smearing()
 @options_qe.automatic_parallelization()
 @options_qe.clean_workdir()
+@click.option('-k', '--kpoints-distance', type=click.FLOAT, required=True, default=0.15)
 @click.option(
     '-f', '--final-scf', is_flag=True, default=False, show_default=True,
     help='run a final scf calculation for the final relaxed structure'
@@ -34,11 +35,11 @@ from aiida_quantumespresso.utils.cli import validate
 def launch(
     code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, daemon, ecutwfc, ecutrho,
     hubbard_u, hubbard_v, hubbard_file_pk, starting_magnetization, smearing, automatic_parallelization, clean_workdir,
-    final_scf, group):
+    final_scf, group, kpoints_distance):
     """
     Run the PwRelaxWorkChain for a given input structure
     """
-    from aiida.orm.data.base import Bool, Str
+    from aiida.orm.data.base import Bool, Float, Str
     from aiida.orm.data.parameter import ParameterData
     from aiida.orm.utils import WorkflowFactory
     from aiida.work.launch import run, submit
@@ -73,7 +74,7 @@ def launch(
         'base': {
             'code': code,
             'pseudo_family': Str(pseudo_family),
-            'kpoints': kpoints,
+            'kpoints_distance': Float(kpoints_distance),
             'parameters': ParameterData(dict=parameters),
         }
     }

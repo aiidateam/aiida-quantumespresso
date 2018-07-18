@@ -74,19 +74,19 @@ class BasicpwParser(Parser):
         # with the right options
         # look for xml
         has_xml = False
-        if self._calc._DATAFILE_XML_BASENAME in list_of_files:
-            has_xml = True
+        for xml_filename in self._calc.xml_filenames:
+            if xml_filename in list_of_files:
+                xml_file = os.path.join(out_folder.get_abs_path('.'), xml_filename)
+                has_xml = True
+                break
+
         # look for bands
         has_bands = False
-        if glob.glob(os.path.join(out_folder.get_abs_path('.'),
-                                  'K*[0-9]')):
+        if glob.glob(os.path.join(out_folder.get_abs_path('.'), 'K*[0-9]')):
             # Note: assuming format of kpoints subfolder is K*[0-9]
             has_bands = True
             # TODO: maybe it can be more general than bands only?
-        out_file = os.path.join(out_folder.get_abs_path('.'),
-                                self._calc._OUTPUT_FILE_NAME)
-        xml_file = os.path.join(out_folder.get_abs_path('.'),
-                                self._calc._DATAFILE_XML_BASENAME)
+        out_file = os.path.join(out_folder.get_abs_path('.'), self._calc._OUTPUT_FILE_NAME)
         dir_with_bands = out_folder.get_abs_path('.')
 
         # call the raw parsing function
@@ -95,8 +95,7 @@ class BasicpwParser(Parser):
             parsing_args.append(xml_file)
         if has_bands:
             if not has_xml:
-                self.logger.warning("Cannot parse bands if xml file not "
-                                    "found")
+                self.logger.warning("Cannot parse bands if xml file not found")
             else:
                 parsing_args.append(dir_with_bands)
 

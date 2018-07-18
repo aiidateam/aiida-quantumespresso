@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import abc
 import collections
 import os
 
@@ -25,8 +26,8 @@ class BasePwCpInputGenerator(object):
     _PREFIX = 'aiida'
     _INPUT_FILE_NAME = 'aiida.in'
     _OUTPUT_FILE_NAME = 'aiida.out'
-    _DATAFILE_XML_BASENAME = 'data-file.xml'
-    _DATAFILE_XML = 'undefined.xml'
+    _DATAFILE_XML_PRE_6_2 = 'data-file.xml'
+    _DATAFILE_XML_POST_6_2 = 'data-file-schema.xml'
     _ENVIRON_INPUT_FILE_NAME = 'environ.in'
 
     # NOTE!! DO NOT UPDATE lists and dictionaries defined here,
@@ -50,6 +51,26 @@ class BasePwCpInputGenerator(object):
 
     # Default verbosity; change in subclasses
     _default_verbosity = 'high'
+
+    @classproperty
+    def xml_filenames(cls):
+        """
+        Returns a list of XML output filenames that can be written by a calculation to the .save folder.
+
+        Note that this includes all potential filenames across all known versions of Quantum ESPRESSO
+        """
+        return [cls._DATAFILE_XML_POST_6_2, cls._DATAFILE_XML_PRE_6_2]
+
+    @abc.abstractmethod
+    @classproperty
+    def xml_filepaths(cls):
+        """
+        Returns a list of relative filepaths of XML files.
+
+        This assumes that all xml filenames returned by the xml_filenames class property are written to
+        the same .save output folder
+        """
+        pass
 
     # To be specified in the subclass:
     # _automatic_namelists = {
@@ -712,7 +733,7 @@ class BasePwCpInputGenerator(object):
         # Retrieve by default the output file and the xml file
         calcinfo.retrieve_list = []
         calcinfo.retrieve_list.append(self._OUTPUT_FILE_NAME)
-        calcinfo.retrieve_list.append(self._DATAFILE_XML)
+        calcinfo.retrieve_list.extend(self.xml_filepaths)
         calcinfo.retrieve_list += settings_dict.pop('ADDITIONAL_RETRIEVE_LIST', [])
         calcinfo.retrieve_list += self._internal_retrieve_list
 
