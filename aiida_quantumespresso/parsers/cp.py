@@ -71,8 +71,9 @@ class CpParser(Parser):
         out_file = out_folder.get_abs_path(self._calc._OUTPUT_FILE_NAME)
 
         xml_file = None
-        if self._calc._DATAFILE_XML_BASENAME in list_of_files:
-            xml_file = out_folder.get_abs_path(self._calc._DATAFILE_XML_BASENAME)
+        for xml_filename in self._calc.xml_filenames:
+            if xml_filename in list_of_files:
+                xml_file = out_folder.get_abs_path(xml_filename)
 
         xml_counter_file = None
         if self._calc._FILE_XML_PRINT_COUNTER in list_of_files:

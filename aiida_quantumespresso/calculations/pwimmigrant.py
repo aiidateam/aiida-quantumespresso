@@ -7,10 +7,12 @@ from __future__ import absolute_import
 import os
 from copy import deepcopy
 from aiida_quantumespresso.calculations.pw import PwCalculation
+from aiida.orm.calculation.job import _input_subfolder
 from aiida.orm.nodes.data.remote import RemoteData
 from aiida.orm.nodes.data.dict import Dict
 from aiida.orm.nodes.data.upf import UpfData
 from aiida.common.folders import SandboxFolder
+from aiida.common.datastructures import calc_states
 from aiida.common.exceptions import (FeatureNotAvailable, InvalidOperation,
                                      InputValidationError)
 from aiida.common.links import LinkType
@@ -262,7 +264,7 @@ class PwimmigrantCalculation(PwCalculation):
             # we are safe to fake that they were never there in the first place.
             parameters_dict = deepcopy(pwinputfile.namelists)
             for namelist, blocked_key in self._blocked_keywords:
-                keys = list(parameters_dict[namelist].keys())
+                keys = parameters_dict[namelist].keys()
                 for this_key in parameters_dict[namelist].keys():
                     # take into account that celldm and celldm(*) must be blocked
                     if re.sub("[(0-9)]", "", this_key) == blocked_key:
@@ -335,7 +337,7 @@ class PwimmigrantCalculation(PwCalculation):
         # the parser will extract the results from. This would normally be
         # performed in self._prepare_for_submission prior to submission.
         self.set_attribute('retrieve_list',
-                       [self._OUTPUT_FILE_NAME, self._DATAFILE_XML])
+                       [self._OUTPUT_FILE_NAME] + self.xml_filenames)
         self.set_attribute('retrieve_singlefile_list', [])
 
         # Make sure the calculation and input links are stored.
@@ -349,6 +351,7 @@ class PwimmigrantCalculation(PwCalculation):
 
         # Manually add the remote working directory as a RemoteData output
         # node.
+        self._set_state(calc_states.SUBMITTING)
         remotedata = RemoteData(computer=self.get_computer(),
                                 remote_path=self._get_remote_workdir())
         remotedata.add_link_from(self, label='remote_folder',
@@ -410,6 +413,11 @@ class PwimmigrantCalculation(PwCalculation):
 
         # Prepare the calculation for retrieval
         self._prepare_for_retrieval(open_transport)
+
+        # Manually set the state of the calculation to "COMPUTED", so that it
+        # will be retrieved and parsed the next time the daemon updates the
+        # status of calculations.
+        self._set_state(calc_states.PARSING)
 
     def set_remote_workdir(self, remote_workdir):
         """
@@ -515,16 +523,3 @@ class PwimmigrantCalculation(PwCalculation):
     @_OUTPUT_FILE_NAME.setter
     def _OUTPUT_FILE_NAME(self, value):
         self.set_attribute('output_file_name', value)
-
-    @property
-    def _DATAFILE_XML(self):
-        path = os.path.join(self._OUTPUT_SUBFOLDER,
-                            '{}.save'.format(self._PREFIX),
-                            self._DATAFILE_XML_BASENAME)
-        return path
-
-    @_DATAFILE_XML.setter
-    def _DATAFILE_XML(self, value):
-        # Don't store this value in the db, since it gets set to the Aiida
-        # default in the parent class.
-        pass

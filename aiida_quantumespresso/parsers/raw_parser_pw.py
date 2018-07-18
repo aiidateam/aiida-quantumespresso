@@ -13,10 +13,12 @@ import re
 import string
 import xml.dom.minidom
 
-from aiida_quantumespresso.parsers.constants import ry_to_ev, hartree_to_ev, bohr_to_ang, ry_si, bohr_si
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
 import six
 from six.moves import range
+from aiida_quantumespresso.parsers.constants import ry_to_ev, hartree_to_ev, bohr_to_ang, ry_si, bohr_si
+from aiida_quantumespresso.parsers.parse_xml.pw.parse import parse_pw_xml_post_6_2
+from aiida_quantumespresso.parsers.parse_xml.pw.versions import get_xml_file_version, QeXmlVersion
 
 lattice_tolerance = 1.e-5
 default_energy_units = 'eV'
@@ -44,7 +46,7 @@ def parse_raw_output(out_file, input_dict, parser_opts={}, xml_file=None, dir_wi
     :param input_dict: dictionary with the input parameters
     :return parsed_data: dictionary with key values, referring to quantities at the last scf step
     :param dir_with_bands: path to directory with all k-points (Kxxxxx) folders
-    :param xml_file: path to QE data-file.xml
+    :param xml_file: optional path to the XML output file
 
     :return parameter_data: a dictionary with parsed parameters
     :return trajectory_data: a dictionary with arrays (for relax & md calcs.)
@@ -53,23 +55,27 @@ def parse_raw_output(out_file, input_dict, parser_opts={}, xml_file=None, dir_wi
     :return job_successful: a boolean that is False in case of failed calculations
 
     :raises QEOutputParsingError: for errors in the parsing
-    :raises AssertionError: if two keys in the parsed dicts are found to be equal    """
+    :raises AssertionError: if two keys in the parsed dicts are found to be equal
+    """
     import copy
-    # TODO: a lot of ifs could be cleaned out
 
     job_successful = True
     parser_info = get_parser_info(parser_info_template='aiida-quantumespresso parser pw.x v{}')
 
-    # if xml_file is not given in input, skip its parsing
     if xml_file is not None:
-        try:
-            with open(xml_file,'r') as f:
-                xml_lines = f.read() # Note: read() and not readlines()
-        except IOError:
-            raise QEOutputParsingError("Failed to open xml file: {}.".format(xml_file))
 
-        xml_data, structure_data, bands_data = parse_pw_xml_output(xml_lines, dir_with_bands)
-        # Note the xml file should always be consistent.
+        try:
+            xml_file_version = get_xml_file_version(xml_file)
+        except ValueError as exception:
+            raise QEOutputParsingError('failed to determine XML output file version: {}'.format(exception))
+
+        if xml_file_version == QeXmlVersion.POST_6_2:
+            xml_data, structure_data, bands_data = parse_pw_xml_post_6_2(xml_file)
+        elif xml_file_version == QeXmlVersion.PRE_6_2:
+            xml_data, structure_data, bands_data = parse_pw_xml_pre_6_2(xml_file, dir_with_bands)
+        else:
+            raise ValueError('unrecognize XML file version')
+
     else:
         parser_info['parser_warnings'].append('Skipping the parsing of the xml file.')
         xml_data = {}
@@ -78,7 +84,7 @@ def parse_raw_output(out_file, input_dict, parser_opts={}, xml_file=None, dir_wi
 
     # load QE out file
     try:
-        with open(out_file,'r') as f:
+        with open(out_file, 'r') as f:
             out_lines = f.read()
     except IOError: # non existing output file -> job crashed
         raise QEOutputParsingError("Failed to open output file: {}.".format(out_file))
@@ -97,9 +103,8 @@ def parse_raw_output(out_file, input_dict, parser_opts={}, xml_file=None, dir_wi
         parser_info['parser_warnings'].append(warning)
         job_successful = False
 
-    # parse
     try:
-        out_data,trajectory_data,critical_messages = parse_pw_text_output(out_lines, xml_data, structure_data, input_dict, parser_opts)
+        out_data, trajectory_data, critical_messages = parse_pw_text_output(out_lines, xml_data, structure_data, input_dict, parser_opts)
     except QEOutputParsingError as e:
         if not finished_run: # I try to parse it as much as possible
             parser_info['parser_warnings'].append('Error while parsing the output file')
@@ -135,8 +140,8 @@ def parse_raw_output(out_file, input_dict, parser_opts={}, xml_file=None, dir_wi
         job_successful = False
 
     for key in out_data.keys():
-        if key in list(xml_data.keys()):
-            if key=='fermi_energy' or key=='fermi_energy_units': # an exception for the (only?) key that may be found on both
+        if key in xml_data.keys():
+            if key == 'fermi_energy' or key == 'fermi_energy_units': # an exception for the (only?) key that may be found on both
                 del out_data[key]
             else:
                 raise AssertionError('{} found in both dictionaries, '
@@ -717,16 +722,22 @@ def xml_card_exchangecorrelation(parsed_data,dom):
 
     return parsed_data
 
-def parse_pw_xml_output(data,dir_with_bands=None):
+def parse_pw_xml_pre_6_2(xml_file, dir_with_bands=None):
     """
-    Parse the xml data of QE v5.0.x
-    Input data must be a single string, as returned by file.read()
+    Parse the XML output file of Quantum ESPRESSO with the format from before the XSD schema file
     Returns a dictionary with parsed values
     """
     import copy
     from xml.parsers.expat import ExpatError
     # NOTE : I often assume that if the xml file has been written, it has no
     # internal errors.
+
+    try:
+        with open(xml_file, 'r') as handle:
+            data = handle.read()
+    except IOError:
+        raise QEOutputParsingError("Failed to open xml file: {}.".format(xml_file))
+
     try:
         dom = xml.dom.minidom.parseString(data)
     except ExpatError:
@@ -1120,7 +1131,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
     lelfield = input_dict.get('CONTROL', {}).get('lelfield', False)
 
     # Find some useful quantities.
-    if not xml_data.get('number_of_bands',None) and not structure_data:
+    if not xml_data.get('number_of_bands', None) and not structure_data:
         try:
             for line in data.split('\n'):
                 if 'lattice parameter (alat)' in line:
@@ -1219,8 +1230,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                     [data_lines[i+1+j].split()[1] for j in range(nat)]
 
         # parse the initialization time (take only first occurence)
-        elif ('init_wall_time_seconds' not in parsed_data
-              and "total cpu time spent up to now is" in line):
+        elif ('init_wall_time_seconds' not in parsed_data and "total cpu time spent up to now is" in line):
             init_time = float(line.split("total cpu time spent up to now is"
                                          )[1].split('secs')[0])
             parsed_data['init_wall_time_seconds'] = init_time

@@ -70,6 +70,82 @@ class PwCalculation(BasePwCpInputGenerator):
         spec.exit_code(120, 'ERROR_INVALID_OUTPUT', message='The output file contains invalid output.')
 
     @classproperty
+    def xml_filepaths(cls):
+        """Returns a list of relative filepaths of XML files."""
+        filepaths = []
+
+        for filename in cls.xml_filenames:
+            filepath = os.path.join(cls._OUTPUT_SUBFOLDER, '{}.save'.format(cls._PREFIX), filename)
+            filepaths.append(filepath)
+
+        return filepaths
+
+    def _init_internal_params(self):
+        super(PwCalculation, self)._init_internal_params()
+
+        self._xml_files = []
+
+        # Default PW output parser provided by AiiDA
+        self._default_parser = 'quantumespresso.pw'
+
+        self._automatic_namelists = {
+            'scf': ['CONTROL', 'SYSTEM', 'ELECTRONS'],
+            'nscf': ['CONTROL', 'SYSTEM', 'ELECTRONS'],
+            'bands': ['CONTROL', 'SYSTEM', 'ELECTRONS'],
+            'relax': ['CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS'],
+            'md': ['CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS'],
+            'vc-md': ['CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', 'CELL'],
+            'vc-relax': ['CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', 'CELL'],
+        }
+
+        # Keywords that cannot be set by the user but will be set by the plugin
+        self._blocked_keywords = [
+            ('CONTROL', 'pseudo_dir'),
+            ('CONTROL', 'outdir'),
+            ('CONTROL', 'prefix'),
+            ('SYSTEM', 'ibrav'),
+            ('SYSTEM', 'celldm'),
+            ('SYSTEM', 'nat'),
+            ('SYSTEM', 'ntyp'),
+            ('SYSTEM', 'a'),
+            ('SYSTEM', 'b'),
+            ('SYSTEM', 'c'),
+            ('SYSTEM', 'cosab'),
+            ('SYSTEM', 'cosac'),
+            ('SYSTEM', 'cosbc'),
+        ]
+
+        self._use_kpoints = True
+
+        # Default input and output files
+        self._DEFAULT_INPUT_FILE = 'aiida.in'
+        self._DEFAULT_OUTPUT_FILE = 'aiida.out'
+
+    @classproperty
+    def _use_methods(cls):
+        """
+        Extend the parent _use_methods with further keys.
+        """
+        use_methods = JobCalculation._use_methods
+        use_methods.update(BasePwCpInputGenerator._baseclass_use_methods)
+        use_methods.update({
+            'kpoints': {
+                'valid_types': (KpointsData, ),
+                'additional_parameter': None,
+                'linkname': 'kpoints',
+                'docstring': ('KpointsData node that contains the kpoints mesh or path'),
+            },
+            'hubbard_file': {
+                'valid_types': (SinglefileData, ),
+                'additional_parameter': None,
+                'linkname': 'hubbard_file',
+                'docstring': 'SinglefileData node containing the output Hubbard parameters from a HpCalculation',
+            }
+        })
+
+        return use_methods
+
+    @classproperty
     def input_file_name_hubbard_file(cls):
         """
         The relative file name of the file containing the Hubbard parameters if they should
