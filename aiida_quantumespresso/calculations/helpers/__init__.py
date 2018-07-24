@@ -296,9 +296,43 @@ def pw_input_helper(input_params, structure,
         valid_dims[dim.getAttribute('name').lower()]['end_val'] = \
             dim.getAttribute('end')
 
+    # ====== List of known PW 'multidimensions' (arrays) (from XML file) ===========
+    known_multidims = dom.getElementsByTagName('multidimension')
+    valid_multidims = {}
+    for dim in known_multidims:
+        if dim in valid_multidims:
+            raise InternalError('Something strange, I found more than one '
+                "multidimensional keyword '{}' in the XML description...".format(dim))
+
+        valid_multidims[dim.getAttribute('name').lower()] = {}
+        parent = dim
+        try:
+            while True:
+                parent = parent.parentNode
+                if parent.tagName == 'namelist':
+                    valid_multidims[dim.getAttribute('name').lower()]['namelist'] = \
+                        parent.getAttribute('name').upper()
+                    break
+        except AttributeError:
+            # There are also variables in cards instead of namelists: ignore them
+            pass
+
+        expected_type = dim.getAttribute('type').upper()
+        start_values = dim.getAttribute('start').split(',')
+        end_values = dim.getAttribute('end').split(',')
+        indexes = dim.getAttribute('indexes').split(',')
+
+        valid_multidims[dim.getAttribute('name').lower()]['expected_type'] = expected_type
+        valid_multidims[dim.getAttribute('name').lower()]['start'] = start_values
+        valid_multidims[dim.getAttribute('name').lower()]['end'] = end_values
+        valid_multidims[dim.getAttribute('name').lower()]['indexes'] = indexes
+
+        if len(set([len(start_values), len(end_values), len(indexes)])) != 1:
+            raise InternalError('XML schema defines a multidimension keyword with start, end and indexes values of unequal length')
+
     # Used to suggest valid keywords if an unknown one is found
     valid_invars_list = list(
-        set([i.lower() for i in valid_dims.keys()] +
+        set([i.lower() for i in valid_dims.keys()] + [i.lower() for i in valid_multidims.keys()] +
             [i.lower() for i in valid_kws.keys()]) - set(blocked_kws))
 
     # =================== Check for blocked keywords ===========================
@@ -503,6 +537,90 @@ def pw_input_helper(input_params, structure,
                     else:
                         errors_list.append(err_str)
                         continue
+
+        elif kw in valid_multidims:
+            # It is a multidimensional array
+
+            variable = valid_multidims[kw]
+            indexes = variable['indexes']
+            namelist_name = variable['namelist']
+
+            # Create empty list for this keyword in the correct namelist
+            try:
+                internal_dict[namelist_name][kw] = []
+            except KeyError:
+                err_str = \
+                    'Error, unknown namelist {}'.format(namelist_name)
+                if stop_at_first_error:
+                    raise QEInputValidationError(err_str)
+                else:
+                    errors_list.append(err_str)
+                    continue
+
+            for array in value:
+
+                # Append empty list for this array of values
+                internal_dict[namelist_name][kw].append([])
+
+                # Each array should contain N + 1 values, where N is the number of indexes for this multidimensional
+                if len(array) != len(indexes) + 1:
+                    err_str = 'Error, expected {} values per array for kw {}, got only {}.'.format(len(indexes) + 1, kw, len(array))
+                    if stop_at_first_error:
+                        raise QEInputValidationError(err_str)
+                    else:
+                        errors_list.append(err_str)
+                        continue
+
+                actual_value = array[-1]
+
+                for i, index in enumerate(indexes):
+
+                    index_value = array[i]
+
+                    try:
+                        start_value = int(variable['start'][i])
+                    except ValueError:
+                        err_str = "Error, invalid start value '{}' for keyword '{}'.".format(variable['start'][i], kw)
+                        if stop_at_first_error:
+                            raise QEInputValidationError(err_str)
+                        else:
+                            errors_list.append(err_str)
+                            continue
+
+                    end_value = variable['end'][i]
+
+                    if end_value == 'ntyp':
+
+                        kindname = index_value
+
+                        if kindname not in atomic_species_list:
+                            err_str = \
+                            "Error, '{}' is not a valid kind name.".format(kindname)
+                            if stop_at_first_error:
+                                raise QEInputValidationError(err_str)
+                            else:
+                                errors_list.append(err_str)
+                                continue
+
+                        internal_dict[namelist_name][kw][-1].append(kindname)
+                    else:
+                        # Other types are assumed to be an integer
+                        try:
+                            index_value = int(index_value)
+                        except ValueError:
+                            err_str = 'Error, only integer types are supported for index {}, got {}'.format(index, index_value)
+                            if stop_at_first_error:
+                                raise QEInputValidationError(err_str)
+                            else:
+                                errors_list.append(err_str)
+                                continue
+
+                        internal_dict[namelist_name][kw][-1].append(index_value)
+
+                # Validate the actual value, convert it and append to the current array
+                converted = _check_and_convert(kw, actual_value, variable['expected_type'])
+                internal_dict[namelist_name][kw][-1].append(converted)
+
         else:
             # Neither a variable nor an array
             err_str = 'Problem parsing keyword {}. '.format(kw)
