@@ -312,7 +312,11 @@ class BaseRestartWorkChain(WorkChain):
         if not is_handled:
             raise UnexpectedCalculationFailure('calculation failure was not handled')
 
-        return handler_report.exit_code
+        # The last called error handler may not necessarily have returned a handler report
+        if handler_report:
+            return handler_report.exit_code
+
+        return
 
     def _prepare_process_inputs(self, process, inputs):
         """
