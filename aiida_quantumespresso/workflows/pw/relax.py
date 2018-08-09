@@ -99,15 +99,19 @@ class PwRelaxWorkChain(WorkChain):
         """
         Compare the cell volume of the relaxed structure of the last completed workchain with the previous.
         If the difference ratio is less than the volume convergence threshold we consider the cell relaxation
-        converged and can quit the workchain. If the
+        converged and can quit the workchain.
         """
         workchain = self.ctx.workchains[-1]
 
         if not workchain.is_finished_ok:
             self.report('relax PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
-        else:
+
+        try:
             structure = workchain.out.output_structure
+        except AttributeError:
+            self.report('relax PwBaseWorkChain finished successful but without output structure')
+            return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
 
         prev_cell_volume = self.ctx.current_cell_volume
         curr_cell_volume = structure.get_cell_volume()
