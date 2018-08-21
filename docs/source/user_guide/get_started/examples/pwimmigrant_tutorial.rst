@@ -129,7 +129,7 @@ Calling these methods with an open transport is performed as follows:
     # Get the computer's transport and create an instance.
     from aiida.backends.utils import get_authinfo, get_automatic_user
     authinfo = get_authinfo(computer=computer, aiidauser=get_automatic_user())
-    transport = a.get_transport()
+    transport = authinfo.get_transport()
 
     # Open the transport for the duration of the immigrations, so it's not
     # reopened for each one. This is best performed using the transport's
