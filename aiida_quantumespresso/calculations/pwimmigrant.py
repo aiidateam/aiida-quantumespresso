@@ -48,13 +48,15 @@ class PwimmigrantCalculation(PwCalculation):
         file containing the stdout of QE).
     :type output_file_name: str
     """
-
     def _init_internal_params(self):
+
+        self._require_xml = False
 
         super(PwimmigrantCalculation, self)._init_internal_params()
 
     def create_input_nodes(self, open_transport, input_file_name=None,
-                           output_file_name=None, remote_workdir=None):
+                           output_file_name=None, remote_workdir=None,
+                           calc_hooks=None):
         """
         Create calculation input nodes based on the job's files.
 
@@ -114,6 +116,13 @@ class PwimmigrantCalculation(PwCalculation):
             calculation's files. Therefore, ``remote_workdir`` should be the
             absolute path to the job's directory on that computer.
         :type remote_workdir: str
+
+        :param calc_hooks: one or more of the input nodes can be linked with a function which
+        takes as input those input nodes and returns them (in the same order).
+        In this way the input nodes can be linked to precursor Calculation node(s).
+        Allowed keys are "structure", "kpoints", "parameters", "settings" and can only be used once
+        an example would be calc_hooks=[[my_func1, ["structure", "parameters"]], [my_func2, ["kpoints"]]]
+        :type calc_hooks: list
 
         :raises aiida.common.exceptions.InputValidationError: if
             ``open_transport`` is a different type of transport than the
@@ -196,6 +205,23 @@ class PwimmigrantCalculation(PwCalculation):
                 "`with` statement context guard. See the tutorial for more "
                 "information."
             )
+        
+        # check the calc_hooks are valid
+        if calc_hooks is not None:
+            try:
+                keys = [p for f, ps in calc_hooks for p in ps]
+            except:
+                raise InputValidationError(
+                    "Invalid calc_hooks list structure"
+                )
+            if not set(keys).issubset(["structure", "kpoints", "parameters", "settings"]):
+                raise InputValidationError(
+                    "Invalid calc_hooks key, must be one of structure, kpoints, parameters or settings: {}".format(keys)
+                )
+            if not len(set(keys)) == len(keys):
+                raise InputValidationError(
+                    "The keys for calc_hooks must be used only once: {}".format(keys)
+                )
 
         # Copy the input file and psuedo files to a temp folder for parsing.
         with SandboxFolder() as folder:
@@ -276,7 +302,6 @@ class PwimmigrantCalculation(PwCalculation):
                         parameters_dict[namelist].pop(this_key, None)
 
             parameters = ParameterData(dict=parameters_dict)
-            self.use_parameters(parameters)
 
             # Initialize the dictionary for settings parameter data for possible
             # use later for gamma kpoint and fixed coordinates.
@@ -285,7 +310,6 @@ class PwimmigrantCalculation(PwCalculation):
             # Create a KpointsData node based on the K_POINTS card block
             # and link as input.
             kpointsdata = pwinputfile.get_kpointsdata()
-            self.use_kpoints(kpointsdata)
             # If only the gamma kpoint is used, add to the settings dictionary.
             if pwinputfile.k_points['type'] == 'gamma':
                 settings_dict['gamma_only'] = True
@@ -294,7 +318,6 @@ class PwimmigrantCalculation(PwCalculation):
             # CELL_PARAMETERS, and ATOMIC_SPECIES card blocks, and link as
             # input.
             structuredata = pwinputfile.get_structuredata()
-            self.use_structure(structuredata)
 
             # Get or create a UpfData node for the pseudopotentials used for
             # the calculation.
@@ -313,10 +336,25 @@ class PwimmigrantCalculation(PwCalculation):
         if any((any(fc_xyz) for fc_xyz in fixed_coords)):
             settings_dict['FIXED_COORDS'] = fixed_coords
 
+        settingsdata = ParameterData(dict=settings_dict)
+        
+        nodes = {"structure": structuredata,
+                 "parameters": parameters,
+                 "kpoints": kpointsdata,
+                 "settings": settingsdata}
+        
+        if calc_hooks is not None:
+            for func, keys in calc_hooks:
+                key_nodes = [nodes[k] for k in keys]
+                func(*key_nodes)
+
+        self.use_structure(structuredata)
+        self.use_parameters(parameters)
+        self.use_kpoints(kpointsdata)
         # If the settings_dict has been filled in, create a ParameterData
         # node from it and link as input.
         if settings_dict:
-            self.use_settings(ParameterData(dict=settings_dict))
+            self.use_settings(settingsdata)
 
         self._set_attr('input_nodes_created', True)
 
@@ -389,7 +427,6 @@ class PwimmigrantCalculation(PwCalculation):
         :raises aiida.common.exceptions.InvalidOperation: if
             ``open_transport`` is not open.
         """
-
         # Check that the create_input_nodes method has run successfully.
         if not self.get_attr('input_nodes_created', False):
             raise InvalidOperation(
