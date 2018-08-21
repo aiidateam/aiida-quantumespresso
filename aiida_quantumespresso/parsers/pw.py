@@ -24,6 +24,7 @@ class PwParser(Parser):
 
         :param calculation: instance of the PwCalculation
         """
+        self._require_xml = calc._require_xml if hasattr(calc, "_require_xml") else True
         self._possible_symmetries = self._get_qe_symmetry_list()
 
         if not isinstance(calc, PwCalculation):
@@ -83,8 +84,11 @@ class PwParser(Parser):
 
         # The xml file is required for parsing
         if self._calc._DATAFILE_XML_BASENAME not in list_of_files:
-            self.logger.error("The xml output file '{}' was not found but is required".format(self._calc._DATAFILE_XML_BASENAME))
-            successful = False
+            if self._require_xml:
+                self.logger.error("The xml output file '{}' was not found but is required".format(self._calc._DATAFILE_XML_BASENAME))
+                successful = False
+            else:
+                self.logger.warning("The xml output file '{}' was not found and is recommended".format(self._calc._DATAFILE_XML_BASENAME))
             xml_file = None
         else:
             xml_file = os.path.join(out_folder.get_abs_path('.'), self._calc._DATAFILE_XML_BASENAME)
