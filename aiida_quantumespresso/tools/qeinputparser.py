@@ -233,7 +233,9 @@ def str2val(valstr):
         (?:                   # either
          \d*[.]\d+            # 10.53 or .53
          |                    # or
-         \d+[.]\d* )          # 10.53 or 10.
+         \d+[.]\d*            # 10.53 or 10.
+         |                    # or
+         \d+ )                # or integer
         (?:[dEeE][-+]?[0-9]+)?  # optional exponent
         """, re.X)
     # Strip any white space characters before analyzing.

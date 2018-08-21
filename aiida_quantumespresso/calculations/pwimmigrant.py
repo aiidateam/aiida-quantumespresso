@@ -242,7 +242,14 @@ class PwimmigrantCalculation(PwCalculation):
                                            self._OUTPUT_SUBFOLDER,
                                            '{}.save/'.format(self._PREFIX),
                                            fnm)
-                open_transport.get(remote_path, folder.abspath)
+                if open_transport.path_exists(remote_path):
+                    open_transport.get(remote_path, folder.abspath)
+                else:
+                    # allow for the pseudo files to be in the base folder
+                    remote_path = os.path.join(self._get_remote_workdir(),
+                                               self._OUTPUT_SUBFOLDER,
+                                               fnm)
+                    open_transport.get(remote_path, folder.abspath)
 
             # Make sure that ibrav = 0, since aiida doesn't support anything
             # else.

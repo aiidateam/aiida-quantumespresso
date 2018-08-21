@@ -11,6 +11,8 @@ import re
 import string
 import xml.dom.minidom
 
+import numpy as np
+
 from aiida_quantumespresso.parsers.constants import ry_to_ev, hartree_to_ev, bohr_to_ang, ry_si, bohr_si
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
 
@@ -27,7 +29,7 @@ default_stress_units = 'GPascal'
 default_polarization_units = 'C / m^2'
 
 
-def parse_raw_output(out_file, input_dict, parser_opts={}, xml_file=None, dir_with_bands=None):
+def parse_raw_output(out_file, input_dict, parser_opts={}, xml_file=None, dir_with_bands=None, in_struct=None):
     """
     Parses the output of a calculation
     Receives in input the paths to the output file and the xml file.
@@ -41,6 +43,7 @@ def parse_raw_output(out_file, input_dict, parser_opts={}, xml_file=None, dir_wi
     :return parsed_data: dictionary with key values, referring to quantities at the last scf step
     :param dir_with_bands: path to directory with all k-points (Kxxxxx) folders
     :param xml_file: path to QE data-file.xml
+    :param in_struct: the input StructureData object
 
     :return parameter_data: a dictionary with parsed parameters
     :return trajectory_data: a dictionary with arrays (for relax & md calcs.)
@@ -95,7 +98,8 @@ def parse_raw_output(out_file, input_dict, parser_opts={}, xml_file=None, dir_wi
 
     # parse
     try:
-        out_data,trajectory_data,critical_messages = parse_pw_text_output(out_lines, xml_data, structure_data, input_dict, parser_opts)
+        out_data,trajectory_data,critical_messages = parse_pw_text_output(out_lines, xml_data, structure_data,
+                                                                          input_dict, parser_opts, in_struct)
     except QEOutputParsingError as e:
         if not finished_run: # I try to parse it as much as possible
             parser_info['parser_warnings'].append('Error while parsing the output file')
@@ -104,6 +108,29 @@ def parse_raw_output(out_file, input_dict, parser_opts={}, xml_file=None, dir_wi
             critical_messages = []
         else: # if it was finished and I got error, it's a mistake of the parser
             raise QEOutputParsingError('Error while parsing QE output. Exception message: {}'.format(e.message))
+        
+    if xml_file is None and not structure_data:
+        # if there is no xml available, we get the final structure from the text output + initial structure
+        init_ase = in_struct.get_ase()
+        structure_data["cell"] = {}
+        
+        if trajectory_data.get("lattice_vectors_relax", False):
+            latt_vectors = trajectory_data["lattice_vectors_relax"][-1]
+        else:
+            latt_vectors = init_ase.cell.tolist()        
+        
+        structure_data["cell"]["lattice_vectors"] = latt_vectors
+        
+        if trajectory_data.get("atomic_positions_relax", False):
+            positions = trajectory_data["atomic_positions_relax"][-1]
+        else:
+            positions = init_ase.positions.tolist()
+        if trajectory_data.get("symbols", False):
+            symbols = trajectory_data["symbols"]
+        else:
+            symbols = init_ase.get_chemical_symbols()
+            
+        structure_data["cell"]["atoms"] = list(zip(symbols, positions))
 
     # I add in the out_data all the last elements of trajectory_data values.
     # Safe for some large arrays, that I will likely never query.
@@ -1070,7 +1097,7 @@ def parse_pw_xml_output(data,dir_with_bands=None):
 
     return parsed_data,structure_dict,bands_dict
 
-def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, parser_opts={}):
+def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, parser_opts={}, in_struct=None):
     """
     Parses the text output of QE-PWscf.
 
@@ -1079,6 +1106,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
     :param structure_data: dictionary, coming from the xml, with info on the structure
     :param input_dict: dictionary with the input parameters
     :param parser_opts: the parser options from the settings input parameter node
+    :param in_struct: the input StructureData
     :return parsed_data: dictionary with key values, referring to quantities at the last scf step
     :return trajectory_data: key,values referring to intermediate scf steps,
         as in the case of vc-relax. Empty dictionary if no value is present.
@@ -1124,7 +1152,11 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                 elif 'number of atomic types' in line:
                     ntyp = int(line.split('=')[1])
                 elif 'unit-cell volume' in line:
-                    volume = float(line.split('=')[1].split('(a.u.)^3')[0])
+                    if '(a.u.)^3' in line:
+                        volume = float(line.split('=')[1].split('(a.u.)^3')[0])
+                    else:
+                        # occurs in v5.3.0
+                        volume = float(line.split('=')[1].split('a.u.^3')[0])
                 elif 'number of Kohn-Sham states' in line:
                     nbnd = int(line.split('=')[1])
                 elif "number of k points" in line:
@@ -1211,8 +1243,11 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
             if 'site n.' in data_lines[i] and 'atom' in data_lines[i]:
                 trajectory_data['atomic_species_name'] = \
                     [data_lines[i+1+j].split()[1] for j in range(nat)]
+                # strip numbers
+                symbols = [''.join([i for i in s if not i.isdigit()]) for s in trajectory_data["atomic_species_name"]]
+                trajectory_data["symbols"] = symbols
 
-        # parse the initialization time (take only first occurence)
+         # parse the initialization time (take only first occurence)
         elif ('init_wall_time_seconds' not in parsed_data
               and "total cpu time spent up to now is" in line):
             init_time = float(line.split("total cpu time spent up to now is"
@@ -1426,9 +1461,18 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                     # the inizialization of tau prevent parsed_data to be associated
                     # to the pointer of the previous iteration
                     metric = line.split('(')[1].split(')')[0]
-                    if metric not in ['alat','bohr','angstrom']:
+                    if metric not in ['alat','bohr','angstrom','crystal']:
                         raise QEOutputParsingError('Error while parsing atomic_positions:'
-                                                   ' units not supported.')
+                                                   ' units not supported: {}'.format(metric))
+                    
+                    if metric == "crystal":
+                        #TODO check if there are cases where this will fail 
+                        if trajectory_data.get('lattice_vectors_relax', False):
+                            avec, bvec, cvec = np.array(trajectory_data['lattice_vectors_relax'][-1])
+                        else:
+                            # assume we are dealing with a fixed cell
+                            avec, bvec, cvec = in_struct.get_ase().cell
+                        
                     # TODO: check how to map the atoms in the original scheme
                     positions = []
                     #chem_symbols = []
@@ -1440,6 +1484,9 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                             tau = [ alat*float(s) for s in tau ]
                         elif metric == 'bohr':
                             tau = [ bohr_to_ang*float(s) for s in tau ]
+                        elif metric == 'crystal':
+                            an, bn, cn = [float(s) for s in tau]
+                            tau = (an * avec + bn * bvec + cn * cvec).tolist()
                         positions.append(tau)
                         #chem_symbols.append(chem_symbol)
                     try:
@@ -1447,8 +1494,8 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                     except KeyError:
                         trajectory_data[this_key] = [positions]
                     #trajectory_data[this_key_2] = chem_symbols # the symbols do not change during a run
-                except Exception:
-                    parsed_data['warnings'].append('Error while parsing relaxation atomic positions.')
+                except Exception as err:
+                    parsed_data['warnings'].append('Error while parsing relaxation atomic positions: {}'.format(err))
 
             # NOTE: in the above, the chemical symbols are not those of AiiDA
             # since the AiiDA structure is different. So, I assume now that the

@@ -92,8 +92,13 @@ class PwParser(Parser):
         out_file = os.path.join(out_folder.get_abs_path('.'), self._calc._OUTPUT_FILE_NAME)
 
         # Call the raw parsing function
-        parsing_args = [out_file, parameters, parser_opts, xml_file, dir_with_bands]
+        in_struc = self._calc.get_inputs_dict()['structure']
+        parsing_args = [out_file, parameters, parser_opts, xml_file, dir_with_bands, in_struc]
         out_dict, trajectory_data, structure_data, bands_data, raw_successful = parse_raw_output(*parsing_args)
+
+        out_warnings = out_dict.get("warnings", [])
+        if out_warnings:
+            self.logger.warning("the parser raised the following errors:\n{}".format("\n\t".join(out_warnings)))
 
         # If calculation was not considered failed already, use the new value
         successful = raw_successful if successful else successful
@@ -149,11 +154,12 @@ class PwParser(Parser):
             # We compute here the transpose and its inverse of the structure cell basis, which is needed to transform
             # the parsed rotation matrices, which are in crystal coordinates, to cartesian coordinates, which are the
             # matrices that are returned by the _get_qe_symmetry_list staticmethod
-            cell = structure_data['cell']['lattice_vectors']
-            cell_T = numpy.transpose(cell)
-            cell_Tinv = numpy.linalg.inv(cell_T)
 
             try:
+                cell = structure_data['cell']['lattice_vectors']
+                cell_T = numpy.transpose(cell)
+                cell_Tinv = numpy.linalg.inv(cell_T)
+
                 if 'symmetries' in out_dict.keys():
                     old_symmetries = out_dict['symmetries']
                     new_symmetries = []
@@ -200,7 +206,6 @@ class PwParser(Parser):
         new_nodes_list = []
 
         # I eventually save the new structure. structure_data is unnecessary after this
-        in_struc = self._calc.get_inputs_dict()['structure']
         type_calc = parameters['CONTROL']['calculation']
         struc = in_struc
         if type_calc in ['relax', 'vc-relax', 'md', 'vc-md']:
