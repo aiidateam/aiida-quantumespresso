@@ -301,7 +301,6 @@ class BaseRestartWorkChain(WorkChain):
 
             # If at least one error is handled, we consider the calculation failure handled
             if handler_report and handler_report.is_handled:
-                self.ctx.restart_calc = calculation
                 is_handled = True
 
             # After certain error handlers, we may want to skip all other error handling
