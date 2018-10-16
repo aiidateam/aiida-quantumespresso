@@ -1,8 +1,0 @@
-qe-pw
-Quantum ESPRESSO pw.x code
-False
-quantumespresso.pw
-torquessh
-/usr/bin/pw.x
-
-
