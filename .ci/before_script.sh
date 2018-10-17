@@ -13,15 +13,18 @@ then
 
     # Start the daemon for the correct profile
     verdi -p $TEST_AIIDA_BACKEND daemon start
-    
-    # Setup the torquessh computer
-    cat ${TRAVIS_BUILD_DIR}/.travis-data/computer-setup-input.txt | verdi -p $TEST_AIIDA_BACKEND computer setup
+    verdi -p $TEST_AIIDA_BACKEND daemon status
 
-    # Configure the torquessh computer
-    cat ${TRAVIS_BUILD_DIR}/.travis-data/computer-configure-input.txt | verdi -p $TEST_AIIDA_BACKEND computer configure torquessh
+    # Setup the torquessh computer - this one is custom, using torque scheduler
+    verdi -p $TEST_AIIDA_BACKEND computer setup --non-interactive --label=torquessh --hostname=localhost --enabled --transport=ssh --scheduler=torque --mpiprocs-per-machine=1 --prepend-text="" --append-text="" --work-dir='/scratch/{username}/aiida_run' --mpirun-command='mpirun -np {tot_num_mpiprocs}'
 
-    # Configure the 'doubler' code inside torquessh
-    cat ${TRAVIS_BUILD_DIR}/.travis-data/pwcode-setup-input.txt | verdi -p $TEST_AIIDA_BACKEND code setup
+    # Configure the torquessh computer - this one is custom, using port 22
+    verdi -p $TEST_AIIDA_BACKEND computer configure ssh torquessh --non-interactive --username=app --port=10022 --key-filename=~/.ssh/id_rsa --timeout=60 --compress --gss-host=localhost --load-system-host-keys --key-policy=RejectPolicy
+
+    # Configure the 'add' code inside torquessh, which is only required for the integrations test on Jenkins
+    verdi -p $TEST_AIIDA_BACKEND code setup -n -L qe-pw \
+        -D "Quantum ESPRESSO pw.x code" --on-computer -P quantumespresso.pw \
+        -Y torquessh --remote-abs-path=/usr/bin/pw.x
 
     # Make sure that the torquessh (localhost:10022) key is hashed
     # in the known_hosts file
