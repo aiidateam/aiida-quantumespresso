@@ -24,7 +24,7 @@ against the input texts of the other jobs in the group. These input texts
 should match identically, with the exception of small deviations in the
 numerical values contained within.
 
-The daemon process, ``retrieve_all``, is called upon immigration of the group
+The daemon process, ``retrieve_calculation``, is called upon immigration of the group
 of jobs, in order to test the correct preparation of the PwimmigrantCalculation.
 """
 # TODO: Test exception handling of user errors.
@@ -32,7 +32,7 @@ import os
 
 from aiida_quantumespresso.calculations.pwimmigrant import PwimmigrantCalculation
 from aiida.common.folders import SandboxFolder
-from aiida.daemon.execmanager import retrieve_all
+from aiida.daemon.execmanager import retrieve_calculation
 from aiida_quantumespresso.tools.qeinputparser import str2val
 from aiida.orm import Code
 from aiida.backends.testbase import AiidaTestCase
@@ -139,7 +139,7 @@ class LocalSetup(AiidaTestCase):
                 # retrieved and parsed.
                 with SandboxFolder() as folder:
                     try:
-                        retrieve_all(calc, t, folder.abspath)
+                        retrieve_calculation(calc, t, folder.abspath)
                     except Exception as error:
                         self.fail("Error during retrieval of immigrated calcs:\n{}\n\n"
                                   "".format(error)

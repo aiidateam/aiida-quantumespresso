@@ -416,7 +416,7 @@ class PwimmigrantCalculation(PwCalculation):
         # Manually set the state of the calculation to "COMPUTED", so that it
         # will be retrieved and parsed the next time the daemon updates the
         # status of calculations.
-        self._set_state(calc_states.COMPUTED)
+        self._set_state(calc_states.PARSING)
 
     def set_remote_workdir(self, remote_workdir):
         """

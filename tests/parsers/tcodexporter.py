@@ -205,7 +205,7 @@ class TestTcodDbExporter(AiidaTestCase):
             calc.add_link_from(cif, "cif")
 
         calc.store()
-        calc._set_state(calc_states.SUBMITTING)
+        calc._set_state(calc_states.TOSUBMIT)
         with SandboxFolder() as f:
             calc._store_raw_input_folder(f.abspath)
 
@@ -219,6 +219,8 @@ class TestTcodDbExporter(AiidaTestCase):
                 calc._SCHED_ERROR_FILE), 'w') as f:
             f.write("standard error")
             f.flush()
+
+        calc._set_state(calc_states.PARSING)
 
         fd.store()
         fd.add_link_from(calc, calc._get_linkname_retrieved(), LinkType.CREATE)
