@@ -165,7 +165,8 @@ class PwParser(Parser):
                                     .format(rotation_cart_new, rotation_cart_old))
                                 new_dict['all_symmetries'] = this_sym
                             else:
-                                # Note: here I lose the information about equivalent ions and fractional_translation.
+                                # Note: here I lose the information about equivalent ions and fractional_translation,
+                                # since I don't copy them to new_dict.
                                 new_dict['t_rev'] = this_sym['t_rev']
                                 new_dict['symmetry_number'] = index
                         else:
@@ -234,6 +235,7 @@ class PwParser(Parser):
                 except IndexError:
                     bands_energies = bands_data['bands'][0]
 
+                # TODO: replicate this in the new parser!
                 the_bands_data = orm.BandsData()
                 the_bands_data.set_kpointsdata(kpoints_for_bands)
                 the_bands_data.set_bands(bands_energies,
@@ -242,6 +244,7 @@ class PwParser(Parser):
 
                 self.out('output_band', the_bands_data)
                 out_dict['linknames_band'] = ['output_band']
+                # TODO: replicate this in the new parser!
 
         # Separate the atomic_occupations dictionary in its own node if it is present
         atomic_occupations = out_dict.get('atomic_occupations', {})
