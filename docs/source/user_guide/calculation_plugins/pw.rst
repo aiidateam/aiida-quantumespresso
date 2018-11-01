@@ -107,7 +107,7 @@ All output nodes can be accessed with the ``calculation.out`` method.
 
 Parser version
 --------------
-The parser shares the version of the package and it will be stored in the `output_parameters` node of the calculation under the key ``parser_version``.
+The parser shares the version of the package and it will be stored in the ``output_parameters`` node of the calculation under the key ``parser_version``.
 Therefore, to retrieve the version of the parser that was used to parse a completed calculation, you can do:
 
 .. code:: python
@@ -338,3 +338,17 @@ occupations::
 
 Note that for ``pw.x`` to print the required information, the flag ``lda_plus_u`` has to be
 set to ``True`` in the ``SYSTEM`` card of the input ``parameters`` node.
+
+Include deprecated output keys
+..........................
+In version 3 of the plugin, some keys have been deprecated and removed by default
+from the ``output_parameters`` node, often replaced by more appropriate keys.
+To also include the deprecated keys, add ``include_deprecated_v2_keys: True``
+to the ``parser_options`` element of the settings dictionary.
+The default value of this options is ``False``. Example::
+
+    settings_dict = {
+        'parser_options': {
+            'include_deprecated_v2_keys': True,
+        }
+    }

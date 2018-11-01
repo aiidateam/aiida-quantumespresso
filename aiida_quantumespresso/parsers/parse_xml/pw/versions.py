@@ -58,7 +58,9 @@ def get_schema_filename(xml):
     """
     Returns the name of the schema file that corresponds to the given XML object
     """
+    
     XML_SCHEMA_LOCATION_KEY = '{http://www.w3.org/2001/XMLSchema-instance}schemaLocation'
+    # The part in curly brackets is an expanded namespace
 
     element_root = xml.getroot()
 
@@ -66,13 +68,14 @@ def get_schema_filename(xml):
         return None
 
     element_schema_location = element_root.get(XML_SCHEMA_LOCATION_KEY)
+    # e.g. "http://www.quantum-espresso.org/ns/qes/qes-1.0 http://www.quantum-espresso.org/ns/qes/qes-1.0.xsd"
 
     if element_schema_location is None:
         return None
 
-    schema_location = element_schema_location.split()[1]
-    schema_filename = schema_location.rpartition('/')[2]
-
+    schema_location = element_schema_location.split()[1]  # e.g. "http://www.quantum-espresso.org/ns/qes/qes-1.0.xsd"
+    schema_filename = schema_location.rpartition('/')[2]  # e.g. "qes-1.0.xsd"
+    
     return schema_filename
 
 
@@ -83,7 +86,10 @@ def is_valid_post_6_2_version(xml):
     This version of the output XML is parsable with an XSD schema file
     """
     KNOWN_SCHEMA_VERSIONS = [
-        'qes-1.0.xsd'
+        'qes-1.0.xsd',
+        'qes_181201.xsd',
+        'qes_190207.xsd',
+        'qes_190304.xsd',  # changes n_opt_steps from positiveInteger to integer
     ]
 
     schema_filename = get_schema_filename(xml)

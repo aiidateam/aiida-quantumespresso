@@ -1,0 +1,49 @@
+## v3.0.0:
+
+### !!! WIP !!!
+
+~~  aiida-quantumespresso develop vs v3  ~~
+(tested on QE 6.2.1 (old XML) and QE 6.3-backports (old XML))
+
+Output parameters:
+* removed:   u'k_points_units': u'2 pi / Angstrom',
+* removed:   u'fixed_occupations': False,
+* removed:   u'smearing_method': True,
+* removed:   u'tetrahedron_method': False,
+* added:   u'occupations': u'smearing',   ( or 'tetrahedra' or 'fixed')
+
+~~ "include_deprecated_v2_keys"=False vs =True ~~
+(tested with aiida-quantumespresso v3, on QE 6.2.1 (old XML), QE 6.3-backports (old XML), QE 6.3-backports (new XML))
+
+Re-added output parameters:
+* u'fixed_occupations': False,
+* u'smearing_method': True,
+* u'tetrahedron_method': False,
+
+~~  QE 6.2.1 vs QE 6.3-backports (both old XML)  ~~
+(tested with aiida-quantumespresso v3 and aiida-quantumespresso develop)
+
+No difference (except for  u'creator_version': u'6.2' / u'6.3')
+
+~~  QE 6.3-backports (old XML) vs (new XML), aiida-quantumespresso v3  ~~
+
+Output parameters:
+* now optional:   u'beta_real_space': False,   # changed name to "real_space_beta", but only found in 6.4+
+* added:    u'convergence_info': {u'opt_conv': {u'grad_norm': 2.81412559154777e-26,
+                                                u'n_opt_steps': 0},
+                                  u'scf_conv': {u'n_scf_steps': 32729,
+                                                u'scf_error': 2.36844843377886e-10}},
+* changed value:  'dft_exchange_correlation':
+    old: u' SLA  PW   PBX  PBC',  new: u'PBE',
+* added:   u'do_magnetization': False,
+* added:   u'exit_status': 0,
+* changed value:   u'format_name':
+    old: u'qexml',  new: u'QEXSD',
+* changed value:   u'format_version':
+    old: u'1.4.0',  new: u'0.1.0',
+* added (possibly empty):    u'lattice_symmetries': [],
+* changed value:    u'lkpoint_dir': False   # now hardcoded
+* removed:    u'pp_check_flag': True,
+
+### NB: more changes since v2.1.0
+
