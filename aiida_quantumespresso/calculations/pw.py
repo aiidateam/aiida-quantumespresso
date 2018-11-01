@@ -40,7 +40,8 @@ class PwCalculation(BasePwCpInputGenerator, JobCalculation):
         for filename in cls.xml_filenames:
             filepath = os.path.join(cls._OUTPUT_SUBFOLDER, '{}.save'.format(cls._PREFIX), filename)
             filepaths.append(filepath)
-
+        
+        print "xml_filepaths() is returning:", filepaths
         return filepaths
 
     def _init_internal_params(self):
