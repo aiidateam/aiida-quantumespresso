@@ -7,6 +7,15 @@ from aiida_quantumespresso.parsers.constants import ry_to_ev, hartree_to_ev, boh
 from .versions import get_schema_filepath, get_default_schema_filepath
 
 
+class QEXMLParsingError(ValueError):
+    pass
+
+def parser_assert(condition, message=''):
+    # TODO: can we use self.logger.error from here?
+    # Assert is not good! Raising unhandled exceptions isn't either!
+    if not condition:
+        raise QEXMLParsingError(message)
+
 def cell_volume(a1, a2, a3):
     r"""Returns the volume of the primitive cell: :math:`|\vec a_1\cdot(\vec a_2\cross \vec a_3)|`"""
     a_mid_0 = a2[1] * a3[2] - a2[2] * a3[1]
@@ -168,26 +177,68 @@ def parse_pw_xml_post_6_2(xml_file):
         symmetries.append(sym)
 
     # Band structure
-    number_of_k_points = xml_dictionary['output']['band_structure']['nks']
-    number_of_electrons = xml_dictionary['output']['band_structure']['nelec']
-    number_of_atomic_wfc = xml_dictionary['output']['band_structure']['num_of_atomic_wfc']
-    number_of_bands = xml_dictionary['output']['band_structure']['nbnd']
+    num_k_points   = xml_dictionary['output']['band_structure']['nks']
+    num_electrons  = xml_dictionary['output']['band_structure']['nelec']
+    num_atomic_wfc = xml_dictionary['output']['band_structure']['num_of_atomic_wfc']
+    num_bands      = xml_dictionary['output']['band_structure']['nbnd']
+    num_bands_up   = xml_dictionary['output']['band_structure'].get('nbnd_up')
+    num_bands_down = xml_dictionary['output']['band_structure'].get('nbnd_dw')
+    if (num_bands_up is None) and (num_bands_down is None):
+        spins = False
+    else:
+        # TODO: is it always nbnd_up==nbnd_dw ?
+        parser_assert((num_bands_up is not None) and (num_bands_down is not None),
+            "Only one of 'nbnd_up' and 'nbnd_dw' was found")
+        parser_assert(num_bands == num_bands_up + num_bands_down,
+            "Inconsistent number of bands: nbnd={}, nbnd_up={}, nbnd_down={}".format(num_bands, num_bands_up, num_bands_down))
+        spins = True
+
+    # k-points
     k_points = []
-    #= [ks_state['k_point']['$'] for ks_state in xml_dictionary['output']['band_structure']['ks_energies']],
     k_points_weights = []
-    #= [ks_state['k_point']['@weight'] for ks_state in xml_dictionary['output']['band_structure']['ks_energies']],
-    band_eigenvalues = []
-    band_occupations = []
-    for ks_state in xml_dictionary['output']['band_structure']['ks_energies']:
+    ks_states = xml_dictionary['output']['band_structure']['ks_energies']
+    for ks_state in ks_states:
         k_points.append(ks_state['k_point']['$'])
         k_points_weights.append(ks_state['k_point']['@weight'])
-        band_eigenvalues.append(ks_state['eigenvalues']['$'])
-        band_occupations.append(ks_state['occupations']['$'])
+    # bands
+    if not spins:
+        band_eigenvalues = []
+        band_occupations = []
+        for ks_state in ks_states:
+            band_eigenvalues.append(ks_state['eigenvalues']['$'])
+            band_occupations.append(ks_state['occupations']['$'])
+    else:
+        band_eigenvalues = [[],[]]
+        band_occupations = [[],[]]
+        for ks_state in ks_states:
+            band_eigenvalues[0].append(ks_state['eigenvalues']['$'][0:num_bands_up])
+            band_eigenvalues[1].append(ks_state['eigenvalues']['$'][num_bands_up:num_bands])
+            band_occupations[0].append(ks_state['occupations']['$'][0:num_bands_up])
+            band_occupations[1].append(ks_state['occupations']['$'][num_bands_up:num_bands])
+
     band_eigenvalues = np.array(band_eigenvalues) * hartree_to_ev
-    if len(band_eigenvalues) != number_of_k_points or len(band_occupations) != number_of_k_points:
-        raise ValueError("Inconsistent number of k-points: nks={}, len(band_eigenvalues)={}, len(band_occupations)={}"
-                         .format(nks, len(band_eigenvalues), len(band_occupations)))
-    # TODO: can we use self.logger.error from here? Assert is not good! Unhandled exceptions aren't either!
+    band_occupations = np.array(band_occupations)
+    # TODO: remove this v
+    print type(num_k_points), type(num_bands), type(num_bands_up), type(num_bands_down)
+    print type(band_eigenvalues), type(band_occupations)
+    print type(band_eigenvalues.shape), type(band_occupations.shape)
+    #print type(band_occupations.shape[0]), type(band_occupations.shape[1]), type(band_occupations.shape[2])
+    print band_eigenvalues.shape, band_occupations.shape
+    # TODO remove this ^
+    if not spins:
+        parser_assert(band_eigenvalues.shape == (num_k_points,num_bands),
+                      "Unexpected shape of band_eigenvalues: {}, expected :{}?"
+                      .format(band_eigenvalues.shape, (num_k_points,num_bands)))
+        parser_assert(band_occupations.shape == (num_k_points,num_bands),
+                      "Unexpected shape of band_occupations: {}, expected :{}?"
+                      .format(band_occupations.shape, (num_k_points,num_bands)))
+    else:
+        parser_assert(band_eigenvalues.shape == (2,num_k_points,num_bands_up),
+                      "Unexpected shape of band_eigenvalues: {}, expected :{}?"
+                      .format(band_eigenvalues.shape, (2,num_k_points,num_bands_up)))
+        parser_assert(band_occupations.shape == (2,num_k_points,num_bands_up),
+                      "Unexpected shape of band_occupations: {}, expected :{}?"
+                      .format(band_occupations.shape, (2,num_k_points,num_bands_up)))
     
     bands_dict = {
         'occupations': band_occupations,
@@ -253,10 +304,10 @@ def parse_pw_xml_post_6_2(xml_file):
         'smooth_fft_grid': xml_dictionary['output']['basis_set']['fft_smooth'].values(),
         'dft_exchange_correlation': xml_dictionary['input']['dft']['functional'],
         'spin_orbit_calculation': spin_orbit_calculation,
-        'number_of_atomic_wfc': number_of_atomic_wfc,
-        'number_of_k_points': number_of_k_points,
-        'number_of_electrons': number_of_electrons,
-        'number_of_bands': number_of_bands,
+        'number_of_atomic_wfc': num_atomic_wfc,
+        'number_of_k_points': num_k_points,
+        'number_of_electrons': num_electrons,
+        'number_of_bands': num_bands/2 if spins else num_bands,
         'k_points': k_points,
         'k_points_weights': k_points_weights,
         'q_real_space': xml_dictionary['output']['algorithmic_info']['real_space_q'],
