@@ -282,7 +282,10 @@ class PwParser(Parser):
                 positions = numpy.array(trajectory_data.pop('atomic_positions_relax'))
                 try:
                     cells = numpy.array(trajectory_data.pop('lattice_vectors_relax'))
-                    # if KeyError, the MD was at fixed cell
+                    # if the cell is only printed once, the MD/relax was at fixed cell
+                    if len(cells) == 1 and len(positions) > 1:
+                        cells = numpy.array([cells[0]] * len(positions))
+                # if KeyError (the cell is never printed), the MD/relax was at fixed cell
                 except KeyError:
                     cells = numpy.array([in_struc.cell] * len(positions))
 
