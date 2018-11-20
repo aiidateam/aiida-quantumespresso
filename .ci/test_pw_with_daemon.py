@@ -1,5 +1,9 @@
 #!/usr/bin/env runaiida
 # -*- coding: utf-8 -*-
+from __future__ import division
+from __future__ import print_function
+from __future__ import absolute_import
+
 import os
 import subprocess
 import sys
@@ -95,9 +99,9 @@ for fname, elem, pot_type in raw_pseudos:
     pseudo, created = UpfData.get_or_create(
         absname, use_first=True)
     if created:
-        print "Created the pseudo for {}".format(elem)
+        print("Created the pseudo for {}".format(elem))
     else:
-        print "Using the pseudo for {} from DB: {}".format(elem, pseudo.pk)
+        print("Using the pseudo for {} from DB: {}".format(elem, pseudo.pk))
     pseudos_to_use[elem] = pseudo
 
 for k, v in pseudos_to_use.iteritems():
@@ -109,14 +113,14 @@ if settings is not None:
     calc.use_settings(settings)
 
 calc.store_all()
-print "created calculation; calc=Calculation(uuid='{}') # ID={}".format(
-    calc.uuid, calc.dbnode.pk)
+print("created calculation; calc=Calculation(uuid='{}') # ID={}".format(
+    calc.uuid, calc.dbnode.pk))
 calc.submit()
-print "submitted calculation; calc=Calculation(uuid='{}') # ID={}".format(
-    calc.uuid, calc.dbnode.pk)
+print("submitted calculation; calc=Calculation(uuid='{}') # ID={}".format(
+    calc.uuid, calc.dbnode.pk))
 
 
-print "Wating for end of execution..."
+print("Wating for end of execution...")
 start_time = time.time()
 exited_with_timeout = True
 while time.time() - start_time < timeout_secs:
@@ -126,35 +130,35 @@ while time.time() - start_time < timeout_secs:
     # print some debug info, both for debugging reasons and to avoid
     # that the test machine is shut down because there is no output
 
-    print "#"*78
-    print "####### TIME ELAPSED: {} s".format(time.time() - start_time)
-    print "#"*78
-    print "Output of 'verdi calculation list':"
+    print("#"*78)
+    print("####### TIME ELAPSED: {} s".format(time.time() - start_time))
+    print("#"*78)
+    print("Output of 'verdi calculation list':")
     try:
-        print subprocess.check_output(
+        print(subprocess.check_output(
             ["verdi", "calculation", "list"], 
             stderr=subprocess.STDOUT,
-        )
+        ))
     except subprocess.CalledProcessError as e:
-        print "Note: the command failed, message: {}".format(e.message)
+        print("Note: the command failed, message: {}".format(e.message))
 
     if calc.is_terminated:
-        print "Calculation terminated its execution"
+        print("Calculation terminated its execution")
         exited_with_timeout = False
         break
 
 if exited_with_timeout:
-    print "Timeout!! Calculation did not complete after {} seconds".format(
-        timeout_secs)
+    print("Timeout!! Calculation did not complete after {} seconds".format(
+        timeout_secs))
     sys.exit(2)
 else:
     if abs(calc.res.energy - expected_energy) < 1.e-3:
-        print "OK, energy has the expected value"
+        print("OK, energy has the expected value")
         sys.exit(0)
     else:
-        print "ERROR!"
-        print "Expected energy value: {}".format(expected_energy)
-        print "Actual energy value: {}".format(calc.res.energy)
+        print("ERROR!")
+        print("Expected energy value: {}".format(expected_energy))
+        print("Actual energy value: {}".format(calc.res.energy))
         sys.exit(3)
         
         
