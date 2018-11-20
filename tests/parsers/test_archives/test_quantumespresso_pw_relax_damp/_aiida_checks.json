@@ -1,0 +1,10 @@
+{
+  "output_trajectory": {
+    "array|cells": [
+      {
+        "comparison": "Equal",
+        "value": [6,3,3]
+      }
+    ]
+  }
+}
