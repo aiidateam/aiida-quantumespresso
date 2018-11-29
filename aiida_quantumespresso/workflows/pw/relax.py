@@ -44,7 +44,8 @@ class PwRelaxWorkChain(WorkChain):
             message='the relax PwBaseWorkChain sub process failed')
         spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_FINAL_SCF',
             message='the final scf PwBaseWorkChain sub process failed')
-        spec.expose_outputs(PwBaseWorkChain)
+        spec.expose_outputs(PwBaseWorkChain, exclude=['output_structure'])
+        spec.output('output_structure', valid_type=StructureData, required=True)
 
     def setup(self):
         """
