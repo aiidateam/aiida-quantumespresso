@@ -1096,19 +1096,20 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
     trajectory_data = {}
 
     # critical warnings: if any is found, the calculation status is FAILED
-    critical_warnings = {'The maximum number of steps has been reached.':"The maximum step of the ionic/electronic relaxation has been reached.",
-                         'convergence NOT achieved after':"The scf cycle did not reach convergence.",
-                         #'eigenvalues not converged':None, # special treatment
-                         'iterations completed, stopping':'Maximum number of iterations reached in Wentzcovitch Damped Dynamics.',
-                         'Maximum CPU time exceeded':'Maximum CPU time exceeded',
-                         '%%%%%%%%%%%%%%':None,
-                         }
+    critical_warnings = {
+        'The maximum number of steps has been reached.': "The maximum step of the ionic/electronic relaxation has been reached.",
+        'convergence NOT achieved after': "The scf cycle did not reach convergence.",
+        'iterations completed, stopping': 'Maximum number of iterations reached in Wentzcovitch Damped Dynamics.',
+        'Maximum CPU time exceeded': 'Maximum CPU time exceeded',
+        'problems computing cholesky': 'ERROR_DIAGONALIZATION_CHOLESKY_DECOMPOSITION',
+    }
 
-    minor_warnings = {'Warning:':None,
-                      'DEPRECATED:':None,
-                      'incommensurate with FFT grid':'The FFT is incommensurate: some symmetries may be lost.',
-                      'SCF correction compared to forces is too large, reduce conv_thr':"Forces are inaccurate (SCF correction is large): reduce conv_thr.",
-                      }
+    minor_warnings = {
+        'Warning:': None,
+        'DEPRECATED:': None,
+        'incommensurate with FFT grid': 'The FFT is incommensurate: some symmetries may be lost.',
+        'SCF correction compared to forces is too large, reduce conv_thr': 'Forces are inaccurate (SCF correction is large): reduce conv_thr.',
+    }
 
     all_warnings = dict(critical_warnings.items() + minor_warnings.items())
 
@@ -1116,7 +1117,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
     lelfield = input_dict.get('CONTROL', {}).get('lelfield', False)
 
     # Find some useful quantities.
-    if not xml_data.get('number_of_bands',None) and not structure_data:
+    if not xml_data.get('number_of_bands', None) and not structure_data:
         try:
             for line in data.split('\n'):
                 if 'lattice parameter (alat)' in line:
@@ -1150,31 +1151,27 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                 parsed_data['number_of_k_points'] = nk
                 parsed_data['fft_grid'] = FFT_grid
                 parsed_data['smooth_fft_grid'] = smooth_FFT_grid
-            except NameError:
-                # these are not crucial, so parsing does not fail if they are not found
+            except NameError:  # these are not crucial, so parsing does not fail if they are not found
                 pass
-        except NameError: # nat or other variables where not found, and thus not initialized
-            # try to get some error message
-            for count,line in enumerate(data.split('\n')):
-                if any( i in line for i in all_warnings):
-                    messages = [ all_warnings[i] if all_warnings[i] is not None
-                                    else line for i in all_warnings.keys()
-                                    if i in line]
+        except NameError:  # nat or other variables where not found, and thus not initialized
 
-                    if '%%%%%%%%%%%%%%' in line:
-                        messages = parse_QE_errors(data.split('\n'),count,
-                                                   parsed_data['warnings'])
+            # Try to get some error messages
+            lines = data.split('\n')
 
-                    # if it found something, add to log
-                    if len(messages)>0:
-                        parsed_data['warnings'].extend(messages)
+            for line_number, line in enumerate(lines):
 
-            if len(parsed_data['warnings'])>0:
+                if '%%%%%%%%%%%%%%' in line:
+                    messages = parse_QE_errors(lines, line_number, all_warnings)
+                elif any(i in line for i in all_warnings):
+                    messages = [message for marker, message in all_warnings.items() if marker in line]
+
+                parsed_data['warnings'].extend(set(messages))
+
+            if len(parsed_data['warnings']) > 0:
                 return parsed_data, trajectory_data, critical_warnings.values()
             else:
-                # did not find any error message -> raise an Error and do not
-                # return anything
-                raise QEOutputParsingError("Parser can't load basic info.")
+                # did not find any error message -> raise an Error and do not return anything
+                raise QEOutputParsingError('Parser cannot load basic info.')
     else:
         nat = structure_data['number_of_atoms']
         ntyp = structure_data['number_of_species']
@@ -1193,7 +1190,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
     c_bands_error = False
 
     # now grep quantities that can be considered isolated informations.
-    for count,line in enumerate(data_lines):
+    for count, line in enumerate(data_lines):
 
         # to be used for later
         if 'Carrying out vdW-DF run using the following parameters:' in line:
@@ -1308,8 +1305,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
             c_bands_error = True
 
         elif "iteration #" in line:
-            if ( ("Calculation restarted" not in line) and
-                 ("Calculation stopped" not in line) ):
+            if 'Calculation restarted' not in line and 'Calculation stopped' not in line:
                 try:
                     parsed_data['total_number_of_scf_iterations'] += 1
                 except KeyError:
@@ -1320,54 +1316,31 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                 # I put a warning only if c_bands error appears in the last iteration
                 c_bands_error = False
 
-        # Parsing of errors
-        elif any( i in line for i in all_warnings):
-            message = [ all_warnings[i] for i in all_warnings.keys() if i in line][0]
-            if message is None:
-                message = line
+        # If the line is the marker for a Quantum ESPRESSO exception we parse the warnings between those markers
+        elif '%%%%%%%%%%%%%%' in line:
+                messages = parse_QE_errors(data_lines, count, all_warnings)
+                parsed_data['warnings'].extend(set(messages))
 
-            # if the run is a molecular dynamics, I ignore that I reached the
-            # last iteration step.
-            if ('The maximum number of steps has been reached.' in line and
-                'md' in input_dict.get('CONTROL',{}).get('calculation','')):
-                message = None
+        # Alternatively, get all messages of the warnings whose marker is found in the line
+        elif any(i in line for i in all_warnings):
 
-            if 'iterations completed, stopping' in line:
-                value = message
-                message = None
-                if 'Wentzcovitch Damped Dynamics:' in line:
-                    dynamic_iterations = int(line.split()[3])
-                    if max_dynamic_iterations == dynamic_iterations:
-                        message = value
+            messages = [message for marker, message in all_warnings.items() if marker in line]
 
-#             if 'c_bands' and 'eigenvalues not converged' in line:
-#                 # even if some bands are not converged, this is a problem only
-#                 # if it happens at the last scf step
-#                 # start a loop to find the end of scf step
-#                 # if another iteration is found, no warning is needed
-#                 doloop = True
-#                 j = 0
-#                 while doloop:
-#                     line2 = data.split('\n')[count+j]
-#                     if "iteration #" in line2:
-#                         doloop = False
-#                         message = None
-#                     if "End of self-consistent calculation" in line2:
-#                         doloop = False # to prevent going until the end of file
-#                     j += 1
-#                     print count+j
+            # If no explicit warnings are matched, we turn the line itself as the message
+            if not messages:
+                messages = [line.strip()]
 
-            if '%%%%%%%%%%%%%%' in line:
-                message  = None
-                messages = parse_QE_errors(data_lines,count,parsed_data['warnings'])
+            # If the run is a molecular dynamics, I ignore that I reached the last iteration step.
+            if ('The maximum number of steps has been reached.' in line
+                and 'md' in input_dict.get('CONTROL', {}).get('calculation', '')):
+                messages = []
 
-            # if it found something, add to log
-            try:
-                parsed_data['warnings'].extend(messages)
-            except UnboundLocalError:
-                pass
-            if message is not None:
-                parsed_data['warnings'].append(message)
+            if 'iterations completed, stopping' in line and 'Wentzcovitch Damped Dynamics:' in line:
+                dynamic_iterations = int(line.split()[3])
+                if max_dynamic_iterations != dynamic_iterations:
+                    messages = []
+
+            parsed_data['warnings'].extend(set(messages))
 
     if c_bands_error:
         parsed_data['warnings'].append("c_bands: at least 1 eigenvalues not converged")
@@ -1744,14 +1717,13 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                 trajectory_data.setdefault('ionic_dipole_cell_average', []).append(id_cell)
                 trajectory_data.setdefault('ionic_dipole_cartesian_axes', []).append(id_axes)
 
-
     # If specified in the parser options, parse the atomic occupations
     parse_atomic_occupations = parser_opts.get('parse_atomic_occupations', False)
 
     if parse_atomic_occupations:
 
         atomic_occupations = {}
-        hubbard_blocks = split = data.split('LDA+U parameters')
+        hubbard_blocks = data.split('LDA+U parameters')
 
         for line in hubbard_blocks[-1].split('\n'):
 
@@ -1774,60 +1746,37 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                 else:
                     continue
 
-        parsed_data['atomic_occupations'] =  atomic_occupations
+        parsed_data['atomic_occupations'] = atomic_occupations
+
+    # Remove duplicate warning messages from the parsed data dictionary by turning it into a set
+    parsed_data['warnings'] = set(parsed_data['warnings'])
 
     return parsed_data, trajectory_data, critical_warnings.values()
 
-def parse_QE_errors(lines,count,warnings):
+
+def parse_QE_errors(lines, line_number_start, warnings):
     """
-    Parse QE errors messages (those appearing between some lines with
-      ``%%%%%%%%``)
+    Parse QE errors messages (those appearing between some lines with ``%%%%%%%%``)
 
     :param lines: list of strings, the output text file as read by ``readlines()``
-      or as obtained by ``data.split('\\\\n')`` when data is the text file read by ``read()``
-    :param count: the line at which we identified some ``%%%%%%%%``
-    :param warnings: the warnings already parsed in the file
+        or as obtained by ``data.split('\\\\n')`` when data is the text file read by ``read()``
+    :param line_number_start: the line at which we identified some ``%%%%%%%%``
+    :param warnings: dictionary where keys are error markers and the value the corresponding warning messages that
+        should be returned.
     :return messages: a list of QE error messages
     """
-
-#    PREVIOUS VERSION
-#    TODO: suppress it when we are sure the new one is working in all cases
-#    # find the indices of the lines with problems
-#    found_endpoint = False
-#    init_problem = count
-#    for count2,line2 in enumerate(lines[count+1:]):
-#        end_problem = count + count2 + 1
-#        if "%%%%%%%%%%%%" in line2:
-#            found_endpoint = True
-#            break
-#    if not found_endpoint:
-#        message = None
-#    else:
-#        # build a dictionary with the lines
-#        prob_list = lines[init_problem:end_problem+1]
-#        irred_list = list(set(prob_list))
-#        message = ""
-#        for v in prob_list:
-#            if v in irred_list:
-#                #irred_list.pop(v)
-#                message += irred_list.pop(irred_list.index(v)) + '\n'
-#    return [message]
-
-    # find the indices of the lines with problems
-    found_endpoint = False
-    init_problem = count
-    for count2,line2 in enumerate(lines[count+1:]):
-        end_problem = count + count2 + 1
-        if "%%%%%%%%%%%%" in line2:
-            found_endpoint = True
-            break
     messages = []
-    if found_endpoint:
-        # build a dictionary with the lines
-        prob_list = lines[init_problem:end_problem+1]
-        irred_list = list(set(prob_list))
-        for v in prob_list:
-            if ( len(v)>0 and (v in irred_list and v not in warnings) ):
-                messages.append(irred_list.pop(irred_list.index(v)))
 
-    return messages
+    for line_number, line in enumerate(lines[line_number_start + 1:]):
+        if '%%%%%%%%%%%%' in line:
+            line_number_end = line_number
+            break
+    else:
+        return messages
+
+    for line in lines[line_number_start:line_number_end]:
+        for marker, message in warnings.items():
+            if marker in line:
+                messages.append(message)
+
+    return set(messages)

@@ -29,7 +29,7 @@ PwCalculation = CalculationFactory('quantumespresso.pw')
 
 
 class PwBaseWorkChain(BaseRestartWorkChain):
-    """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts"""
+    """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts."""
 
     _calculation_class = PwCalculation
     _error_handler_entry_point = 'aiida_quantumespresso.workflow_error_handlers.pw.base'
@@ -86,9 +86,11 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         spec.exit_code(311, 'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY',
             message="unrecognized keys were specified for 'automatic_parallelization'")
         spec.exit_code(401, 'ERROR_INITIALIZATION_CALCULATION_FAILED',
-            message='the initialization calculation failed')
+            message="the initialization calculation failed")
         spec.exit_code(402, 'ERROR_CALCULATION_INVALID_INPUT_FILE',
-            message='the calculation failed because it had an invalid input file')
+            message="the calculation failed because it had an invalid input file")
+        spec.exit_code(420, 'ERROR_DIAGONALIZATION_CHOLESKY_DECOMPOSITION',
+            message="error in diagonalization algorithm because the cholesky decomposition failed")
         spec.output('output_array', valid_type=ArrayData, required=False)
         spec.output('output_band', valid_type=BandsData, required=False)
         spec.output('output_structure', valid_type=StructureData, required=False)
@@ -311,6 +313,15 @@ def _handle_error_exceeded_maximum_walltime(self, calculation):
         self.report('PwCalculation<{}> terminated because maximum wall time was exceeded, restarting'
             .format(calculation.pk))
         return ErrorHandlerReport(True, True)
+
+
+@register_error_handler(PwBaseWorkChain, 350)
+def _handle_error_diagonalization_cholesky(self, calculation):
+    """Check if the diagonalization failed due to problem with the Cholesky decomposition."""
+    if 'ERROR_DIAGONALIZATION_CHOLESKY_DECOMPOSITION' in calculation.res.warnings:
+        exit_code = self.exit_codes.ERROR_DIAGONALIZATION_CHOLESKY_DECOMPOSITION
+        self.report(exit_code.message)
+        return ErrorHandlerReport(True, True, exit_code)
 
 
 @register_error_handler(PwBaseWorkChain, 300)
