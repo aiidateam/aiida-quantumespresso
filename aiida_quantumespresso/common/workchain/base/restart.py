@@ -6,6 +6,7 @@ from aiida.orm.data.base import Bool, Int
 from aiida.work.workchain import WorkChain, ToContext, append_
 from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
 from aiida_quantumespresso.common.pluginloader import get_plugin, get_plugins
+from aiida.common.lang import override
 
 
 class BaseRestartWorkChain(WorkChain):
@@ -59,6 +60,15 @@ class BaseRestartWorkChain(WorkChain):
         if self._calculation_class is None or not issubclass(self._calculation_class, JobCalculation):
             raise ValueError('no valid JobCalculation class defined for _calculation_class attribute')
 
+        self._load_error_handlers()
+        return
+
+    @override
+    def load_instance_state(self, saved_state, load_context):
+        super(BaseRestartWorkChain, self).load_instance_state(saved_state, load_context)
+        self._load_error_handlers()
+
+    def _load_error_handlers(self):
         # If an error handler entry point is defined, load them. If the plugin cannot be loaded log it and pass
         if self._error_handler_entry_point is not None:
             for plugin in get_plugins(self._error_handler_entry_point):
@@ -69,8 +79,6 @@ class BaseRestartWorkChain(WorkChain):
                 except (LoadingPluginFailed, MissingPluginError):
                     self.logger.warning("failed to load the '{}' entry point for the '{}' error handlers"
                         .format(plugin, self._error_handler_entry_point))
-
-        return
 
     @classmethod
     def define(cls, spec):
@@ -289,6 +297,7 @@ class BaseRestartWorkChain(WorkChain):
             raise UnexpectedCalculationFailure(exception)
 
         is_handled = False
+        handler_report = None
 
         # Sort the handlers based on their priority in reverse order
         handlers = sorted(self._error_handlers, key=lambda x: x.priority, reverse=True)
