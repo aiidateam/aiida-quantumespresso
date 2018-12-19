@@ -205,18 +205,17 @@ class BaseRestartWorkChain(WorkChain):
         self.report('workchain completed after {} iterations'.format(self.ctx.iteration))
 
         for name, port in self.spec().outputs.iteritems():
-            if port.required and name not in self.ctx.restart_calc.out:
-                self.report('the spec specifies the output {} as required but was not an output of {}<{}>'
-                    .format(name, self.ctx.calc_name, self.ctx.restart_calc.pk))
 
-            if name in self.ctx.restart_calc.out:
-                node = self.ctx.restart_calc.out[name]
-                self.out(name, self.ctx.restart_calc.out[name])
+            try:
+                node = self.ctx.restart_calc.get_outgoing(link_label_filter=name).one().node
+            except ValueError:
+                if port.required:
+                    self.report("the process spec specifies the output '{}' as required but was not an output of {}<{}>"
+                        .format(name, self.ctx.calc_name, self.ctx.restart_calc.pk))
+            else:
+                self.out(name, node)
                 if self._verbose:
-                    self.report("attaching the node {}<{}> as '{}'"
-                        .format(node.__class__.__name__, node.pk, name))
-
-        return
+                    self.report("attaching the node {}<{}> as '{}'".format(node.__class__.__name__, node.pk, name))
 
     def on_terminated(self):
         """

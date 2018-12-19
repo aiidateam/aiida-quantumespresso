@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-import collections
 import os
 
 from aiida.common.exceptions import InputValidationError
 from aiida.common.datastructures import CalcInfo
-from aiida.orm.data.upf import get_pseudos_from_structure
-from aiida.common.utils import classproperty
+from aiida.common.links import LinkType
+from aiida.common.lang import classproperty
 
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.array.kpoints import KpointsData
-from aiida.orm.data.upf import UpfData
+from aiida.orm.data.upf import UpfData, get_pseudos_from_structure
 from aiida.orm.data.singlefile import SinglefileData
 from aiida.orm.data.remote import RemoteData
 from aiida.common.datastructures import CodeInfo
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+
 
 class BasePwCpInputGenerator(object):
     """
@@ -142,7 +142,7 @@ class BasePwCpInputGenerator(object):
         in the PW/CP format.
         :
         """
-        from aiida.common.utils import get_unique_filename, get_suggestion
+        from aiida.common.utils import get_unique_filename
         import re
         local_copy_list_to_append = []
 
@@ -211,7 +211,7 @@ class BasePwCpInputGenerator(object):
             # This should not give errors, I already checked before that
             # the list of keys of pseudos and kinds coincides
             ps = pseudos[kind.name]
-            if kind.is_alloy() or kind.has_vacancies():
+            if kind.is_alloy or kind.has_vacancies:
                 raise InputValidationError("Kind '{}' is an alloy or has "
                                            "vacancies. This is not allowed for pw.x input structures."
                                            "".format(kind.name))
@@ -453,12 +453,10 @@ class BasePwCpInputGenerator(object):
             try:
                 namelists_toprint = self._automatic_namelists[calculation_type]
             except KeyError:
-                sugg_string = get_suggestion(calculation_type,
-                                             self._automatic_namelists.keys())
                 raise InputValidationError("Unknown 'calculation' value in "
                                            "CONTROL namelist {}. Otherwise, specify the list of "
                                            "namelists using the NAMELISTS inside the 'settings' input "
-                                           "node".format(sugg_string))
+                                           "node".format(calculation_type))
 
         inputfile = ""
         for namelist_name in namelists_toprint:
@@ -494,8 +492,7 @@ class BasePwCpInputGenerator(object):
 
         :param tempfolder: a aiida.common.folders.Folder subclass where
                            the plugin should put all its files.
-        :param inputdict: a dictionary with the input nodes, as they would
-                be returned by get_inputs_dict (without the Code!)
+        :param inputdict: a dictionary with the input nodes, as they would be returned by get_incoming (without the Code)
         """
         local_copy_list = []
         remote_copy_list = []
@@ -828,7 +825,7 @@ class BasePwCpInputGenerator(object):
         :note: this method can be redefined in a given subclass
                to specify which is the reference structure to consider.
         """
-        return self.get_inputs_dict()[self.get_linkname('structure')]
+        return self.get_incoming(link_label_filter=self.get_linkname('structure')).one().node
 
     def _set_parent_remotedata(self, remotedata):
         """
@@ -840,7 +837,7 @@ class BasePwCpInputGenerator(object):
             raise ValueError('remotedata must be a RemoteData')
 
         # complain if another remotedata is already found
-        input_remote = self.get_inputs(node_type=RemoteData)
+        input_remote = self.get_incoming(node_class=RemoteData).all()
         if input_remote:
             raise ValidationError("Cannot set several parent calculation to a "
                                   "{} calculation".format(
@@ -900,30 +897,22 @@ class BasePwCpInputGenerator(object):
         if parent_folder_symlink is None:
             parent_folder_symlink = self._default_symlink_usage
 
-        calc_inp = self.get_inputs_dict()
+        inputs = self.get_incoming(link_type=LinkType.INPUT_CALC).all()
 
         if restart_from_beginning:
-            inp_dict = calc_inp[self.get_linkname('parameters')]
+            inp_dict = inputs.get_node_by_label(self.get_linkname('parameters'))
         else:  # case of restart without using the parent scratch
-            old_inp_dict = calc_inp[self.get_linkname('parameters')].get_dict()
+            old_inp_dict = inputs.get_node_by_label(self.get_linkname('parameters')).get_dict()
             # add the restart flag
             old_inp_dict['CONTROL']['restart_mode'] = 'restart'
             inp_dict = ParameterData(dict=old_inp_dict)
 
-        remote_folders = self.get_outputs(node_type=RemoteData)
-        if len(remote_folders) != 1:
-            raise InputValidationError("More than one output RemoteData found "
-                                       "in calculation {}".format(self.pk))
-        remote_folder = remote_folders[0]
+        try:
+            remote_folder = self.get_outgoing(node_class=RemoteData).one().node
+        except ValueError:
+            raise InputValidationError("More than one output RemoteData found in calculation {}".format(self.pk))
 
         c2 = clone_calculation(self)
-
-        # if not 'Restart' in c2.label:
-        #    labelstring = c2.label + " Restart of {} {}.".format(
-        #                                self.__class__.__name__,self.pk)
-        # else:
-        #    labelstring = " Restart of {} {}.".format(self.__class__.__name__,self.pk)
-        # c2.label = labelstring.lstrip()
 
         # set the new links
         c2.use_parameters(inp_dict)
@@ -932,16 +921,15 @@ class BasePwCpInputGenerator(object):
             try:
                 c2.use_structure(self.out.output_structure)
             except AttributeError:
-                c2.use_structure(calc_inp[self.get_linkname('structure')])
+                c2.use_structure(inputs.get_node_by_label(self.get_linkname('structure')))
         else:
-            c2.use_structure(calc_inp[self.get_linkname('structure')])
+            c2.use_structure(inputs.get_node_by_label(self.get_linkname('structure')))
 
         if self._use_kpoints:
-            c2.use_kpoints(calc_inp[self.get_linkname('kpoints')])
-        c2.use_code(calc_inp[self.get_linkname('code')])
+            c2.use_kpoints(inputs.get_node_by_label(self.get_linkname('kpoints')))
+        c2.use_code(inputs.get_node_by_label(self.get_linkname('code')))
         try:
-            old_settings_dict = calc_inp[self.get_linkname('settings')
-            ].get_dict()
+            old_settings_dict = inputs.get_node_by_label(self.get_linkname('settings')).get_dict()
         except KeyError:
             old_settings_dict = {}
         if parent_folder_symlink is not None:
@@ -953,13 +941,12 @@ class BasePwCpInputGenerator(object):
 
         c2._set_parent_remotedata(remote_folder)
         # set links for pseudos
-        for linkname, input_node in self.get_inputs_dict().iteritems():
-            if isinstance(input_node, UpfData):
-                c2.add_link_from(input_node, label=linkname)
+        for triple in self.get_incoming(node_class=UpfData, link_type=LinkType.INPUT_CALC).all():
+            c2.add_link_from(triple.node, label=triple.link_label)
 
         # Add also the vdw table, if the parent had one
         try:
-            old_vdw_table = calc_inp[self.get_linkname('vdw_table')]
+            old_vdw_table = inputs.get_node_by_label(self.get_linkname('vdw_table'))
         except KeyError:
             # No VdW table
             pass

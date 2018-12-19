@@ -117,10 +117,10 @@ parameters = ParameterData(dict={
 calc = code.new_calc()
 calc.label = "Test QE cp.x"
 calc.description = "Test calculation with the Quantum ESPRESSO cp.x code"
-calc.set_max_wallclock_seconds(30 * 60)  # 30 min
-calc.set_resources({"num_machines": 1})
+calc.set_option('max_wallclock_seconds', 30 * 60)  # 30 min
+calc.set_option('resources', {"num_machines": 1})
 if queue is not None:
-    calc.set_queue_name(queue)
+    calc.set_option('queue_name', queue)
 
 calc.use_structure(s)
 calc.use_parameters(parameters)

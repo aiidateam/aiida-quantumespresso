@@ -7,7 +7,7 @@ afterwards).
 import os
 from aiida.common.exceptions import InputValidationError
 from aiida.common.datastructures import CalcInfo, CodeInfo
-from aiida.common.utils import classproperty
+from aiida.common.lang import classproperty
 from aiida.orm.data.parameter import ParameterData 
 from aiida.orm.data.remote import RemoteData 
 from aiida.orm.data.folder import FolderData 

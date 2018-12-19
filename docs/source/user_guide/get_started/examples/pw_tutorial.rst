@@ -497,10 +497,10 @@ of nodes (``num_machines``), possibly the number of MPI processes per node
 of MPI processes with respect to the default value configured when setting up
 the computer in AiiDA, the job walltime, the queue name (if desired), ...::
 
-  calc.set_max_wallclock_seconds(30*60) # 30 min
-  calc.set_resources({"num_machines": 1})
+  calc.set_option('max_wallclock_seconds', 30*60) # 30 min
+  calc.set_option('resources', {"num_machines": 1})
   ## OPTIONAL, use only if you need to explicitly specify a queue name
-  # calc.set_queue_name("the_queue_name")
+  # calc.set_option('queue_name', "the_queue_name")
 
 (For the complete scheduler documentation, see :ref:`my-reference-to-scheduler`)
 
@@ -509,8 +509,8 @@ the computer in AiiDA, the job walltime, the queue name (if desired), ...::
   is to say that the following lines::
   
     calc = code.new_calc()
-    calc.set_max_wallclock_seconds(3600)
-    calc.set_resources({"num_machines": 1})
+    calc.set_option('max_wallclock_seconds', 3600)
+    calc.set_option('resources', {"num_machines": 1})
     
   is equivalent to::
   

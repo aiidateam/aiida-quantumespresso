@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
+from aiida.common import exceptions
+from aiida.orm.data.remote import RemoteData
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 from aiida_quantumespresso.calculations.pw import PwCalculation
+
 
 class ProjwfcCalculation(NamelistsCalculation):
     """
@@ -27,22 +30,14 @@ class ProjwfcCalculation(NamelistsCalculation):
         self._default_parser = 'quantumespresso.projwfc'
         self._internal_retrieve_list = [self._PREFIX+".pdos*"]
 
-    def use_parent_calculation(self,calc):
-        """
-        Set the parent calculation,
-        from which it will inherit the outputsubfolder.
-        The link will be created from parent RemoteData and NamelistCalculation
-        """
-        if not isinstance(calc,PwCalculation):
-            raise ValueError("Parent calculation must be a PwCalculation")
-        from aiida.common.exceptions import UniquenessError
-        localdatas = [_[1] for _ in calc.get_outputs(also_labels=True)]
-        if len(localdatas) == 0:
-            raise UniquenessError("No output retrieved data found in the parent"
-                                  "calc, probably it did not finish yet, "
-                                  "or it crashed")
+    def use_parent_calculation(self, calc):
+        """Set the parent calculation."""
+        if not isinstance(calc, PwCalculation):
+            raise ValueError('Parent calculation must be a PwCalculation')
 
-        localdata = [_[1] for _ in calc.get_outputs(also_labels=True)
-                              if _[0] == 'remote_folder']
-        localdata = localdata[0]
-        self.use_parent_folder(localdata)
+        try:
+            remote_folder = calc.get_outgoing(node_class=RemoteData, link_label_filter='remote_folder').one().node
+        except ValueError:
+            raise exceptions.UniquenessError('Parent calculation does not have a remote folder output node.')
+
+        self.use_parent_folder(remote_folder)
