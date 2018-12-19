@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-from aiida.common.utils import classproperty
+from aiida.common.lang import classproperty
 from aiida.orm.data.folder import FolderData
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 from aiida_quantumespresso.calculations.ph import PhCalculation

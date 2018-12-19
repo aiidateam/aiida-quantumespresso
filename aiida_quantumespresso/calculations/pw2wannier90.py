@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+from aiida.orm.data.remote import RemoteData
+from aiida.common.lang import classproperty
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 from aiida_quantumespresso.calculations.pw import PwCalculation
-from aiida.common.utils import classproperty
 from aiida.orm import DataFactory
+
 
 class Pw2wannier90Calculation(NamelistsCalculation):
     """
@@ -47,30 +49,18 @@ class Pw2wannier90Calculation(NamelistsCalculation):
             })
         return retdict
 
-    def use_parent_calculation(self,calc):
-        """
-        Set the parent calculation,
-        from which it will inherit the outputsubfolder.
-        The link will be created from parent RemoteData and NamelistCalculation
-        """
-        if not isinstance(calc,PwCalculation):
-            raise ValueError("Parent calculation must be a PwCalculation")
-        from aiida.common.exceptions import UniquenessError
-        localdatas = [_[1] for _ in calc.get_outputs(also_labels=True)]
-        if len(localdatas) == 0:
-            raise UniquenessError("No output retrieved data found in the parent"
-                                  "calc, probably it did not finish yet, "
-                                  "or it crashed")
+    def use_parent_calculation(self, calc):
+        """Set the parent calculation."""
+        if not isinstance(calc, PwCalculation):
+            raise ValueError('Parent calculation must be a PwCalculation')
 
-        localdata = [_[1] for _ in calc.get_outputs(also_labels=True)
-                              if _[0] == 'remote_folder']
         try:
-            localdata = localdata[0]
-        except IndexError:
-            raise UniquenessError("No 'remote_folder' output node found in "
-                "the parent_calc, probably it did not finish yet, "
-                "or it crashed")
-        self.use_parent_folder(localdata)
+            remote_folder = calc.get_outgoing(node_class=RemoteData, link_label_filter='remote_folder').one().node
+        except ValueError:
+            raise exceptions.UniquenessError('Parent calculation does not have a remote folder output node.')
+
+        self.use_parent_folder(remote_folder)
+
 
     def _prepare_for_submission(self, tempfolder, inputdict):
       """

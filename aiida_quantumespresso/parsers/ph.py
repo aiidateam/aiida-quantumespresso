@@ -34,23 +34,6 @@ class PhParser(Parser):
         
         successful = True
         
-        # retrieve the whole list of input links
-        calc_input_parameterdata = self._calc.get_inputs(node_type=ParameterData,
-                                                         also_labels=True)
-        
-        # look for eventual flags of the parser
-        parser_opts_query = [i[1] for i in calc_input_parameterdata if i[0]=='parser_opts']
-        # TODO: there should be a function returning the name of parser_opts
-        if len(parser_opts_query)>1:
-            self.logger.error("Too many ({}) parser_opts found"
-                               .format(len(parser_opts_query)))
-            successful = False
-
-        parser_opts = parser_opts_query[0] if parser_opts_query else []
-        if parser_opts:
-            # TODO this feature could be a set of flags to pass to the raw_parser
-            raise NotImplementedError("The parser_options feature is not yet implemented")
-        
         # Check that the retrieved folder is there 
         try:
             out_folder = retrieved[self._calc._get_linkname_retrieved()]

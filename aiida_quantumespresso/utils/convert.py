@@ -1,5 +1,71 @@
 # -*- coding: utf-8 -*-
 
+import numbers
+import six
+
+
+def conv_to_fortran(val, quote_strings=True):
+    """
+    :param val: the value to be read and converted to a Fortran-friendly string.
+    """
+    # Note that bool should come before integer, because a boolean matches also
+    # isinstance(...,int)
+    import numpy
+
+    if isinstance(val, (bool, numpy.bool_)):
+        if val:
+            val_str = '.true.'
+        else:
+            val_str = '.false.'
+    elif isinstance(val, numbers.Integral):
+        val_str = "{:d}".format(val)
+    elif isinstance(val, numbers.Real):
+        val_str = ("{:18.10e}".format(val)).replace('e', 'd')
+    elif isinstance(val, six.string_types):
+        if quote_strings:
+            val_str = "'{!s}'".format(val)
+        else:
+            val_str = "{!s}".format(val)
+    else:
+        raise ValueError("Invalid value '{}' of type '{}' passed, accepts only bools, ints, floats and strings".format(
+            val, type(val)))
+
+    return val_str
+
+
+def conv_to_fortran_withlists(val, quote_strings=True):
+    """
+    Same as conv_to_fortran but with extra logic to handle lists
+    :param val: the value to be read and converted to a Fortran-friendly string.
+    """
+    # pylint: disable=too-many-return-statements
+
+    # Note that bool should come before integer, because a boolean matches also
+    # isinstance(...,int)
+    if isinstance(val, (list, tuple)):
+        val_str = ", ".join(conv_to_fortran(thing, quote_strings=quote_strings) for thing in val)
+        return val_str
+
+    if isinstance(val, bool):
+        if val:
+            return '.true.'
+
+        return '.false.'
+
+    if isinstance(val, six.integer_types):
+        return "{:d}".format(val)
+
+    if isinstance(val, float):
+        return "{:18.10e}".format(val).replace('e', 'd')
+
+    if isinstance(val, six.string_types):
+        if quote_strings:
+            return "'{!s}'".format(val)
+
+        return "{!s}".format(val)
+
+    raise ValueError("Invalid value passed, accepts only bools, ints, floats and strings")
+
 
 def convert_input_to_namelist_entry(key, val, mapping=None):
     """
@@ -86,8 +152,6 @@ def convert_input_to_namelist_entry(key, val, mapping=None):
 
         This will map every occurrence of 'Fe' and 'O' in the values to the corresponding integer.
     """
-    from aiida.common.utils import conv_to_fortran
-
     # I don't try to do iterator=iter(val) and catch TypeError because it would also match strings
     # I check first the dictionary, because it would also match hasattr(__iter__)
     if isinstance(val, dict):

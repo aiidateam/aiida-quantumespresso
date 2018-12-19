@@ -4,8 +4,8 @@ Plugin to create a Quantum Espresso ph.x input file.
 """
 import os
 import numpy
-from aiida.common.utils import classproperty
-from aiida.common.exceptions import UniquenessError, InputValidationError,ValidationError
+from aiida.common.lang import classproperty
+from aiida.common import exceptions
 from aiida.common.datastructures import CalcInfo, CodeInfo
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.parameter import ParameterData
@@ -17,10 +17,9 @@ from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
 # List of namelists (uppercase) that are allowed to be found in the
-# input_data, in the correct order
-    
-# in restarts, will not copy but use symlinks
+# input_data, in the correct order in restarts, will not copy but use symlinks
 _default_symlink_usage = False
+
 
 class PhCalculation(JobCalculation):
     """
@@ -130,7 +129,7 @@ class PhCalculation(JobCalculation):
         try:
             code = inputdict.pop(self.get_linkname('code'))
         except KeyError:
-            raise InputValidationError("No code specified for this calculation")
+            raise exceptions.InputValidationError("No code specified for this calculation")
 
         local_copy_list = []
         remote_copy_list = []
@@ -139,16 +138,16 @@ class PhCalculation(JobCalculation):
         try:
             parameters = inputdict.pop(self.get_linkname('parameters'))
         except KeyError:
-            raise InputValidationError("No parameters specified for this calculation")
+            raise exceptions.InputValidationError("No parameters specified for this calculation")
         if not isinstance(parameters, ParameterData):
-            raise InputValidationError("parameters is not of type ParameterData")
+            raise exceptions.InputValidationError("parameters is not of type ParameterData")
         
         try:
             qpoints = inputdict.pop(self.get_linkname('qpoints'))
         except KeyError:
-            raise InputValidationError("No qpoints specified for this calculation")
+            raise exceptions.InputValidationError("No qpoints specified for this calculation")
         if not isinstance(qpoints, KpointsData):
-            raise InputValidationError("qpoints is not of type KpointsData")
+            raise exceptions.InputValidationError("qpoints is not of type KpointsData")
 
         # Settings can be undefined, and defaults to an empty dictionary.
         # They will be used for any input that doen't fit elsewhere.
@@ -157,7 +156,7 @@ class PhCalculation(JobCalculation):
             settings_dict = {}
         else:
             if not isinstance(settings,  ParameterData):
-                raise InputValidationError("settings, if specified, must be of "
+                raise exceptions.InputValidationError("settings, if specified, must be of "
                                            "type ParameterData")
             # Settings converted to uppercase
             settings_dict = _uppercase_dict(settings.get_dict(),
@@ -165,25 +164,22 @@ class PhCalculation(JobCalculation):
 
         parent_calc_folder = inputdict.pop(self.get_linkname('parent_folder'),None)
         if parent_calc_folder is None:
-            raise InputValidationError("No parent calculation found, needed to "
+            raise exceptions.InputValidationError("No parent calculation found, needed to "
                                        "compute phonons")
         # TODO: to be a PwCalculation is not sufficient: it could also be a nscf
         # calculation that is invalid for phonons
         
         if not isinstance(parent_calc_folder, RemoteData):
-            raise InputValidationError("parent_calc_folder, if specified,"
+            raise exceptions.InputValidationError("parent_calc_folder, if specified,"
                                        "must be of type RemoteData")
 
         restart_flag = False
         # extract parent calculation
-        parent_calcs = parent_calc_folder.get_inputs(node_type=JobCalculation)
-        n_parents = len(parent_calcs)
-        if n_parents != 1:
-            raise UniquenessError("Input RemoteData is child of {} "
-                                  "calculation{}, while it should have "
-                                  "a single parent".format(n_parents,
-                                                "" if n_parents==0 else "s"))
-        parent_calc = parent_calcs[0]
+        try:
+            parent_calc = parent_calc_folder.get_incoming(node_class=JobCalculation).one().node
+        except ValueError:
+            raise exceptions.UniquenessError('Input RemoteData has multiple parents')
+
         # check that it is a valid parent
         self._check_valid_parent(parent_calc)
         
@@ -194,7 +190,7 @@ class PhCalculation(JobCalculation):
         new_comp = self.get_computer()
         old_comp = parent_calc.get_computer()
         if ( not new_comp.uuid == old_comp.uuid ):
-            raise InputValidationError("PhCalculation must be launched on the same computer"
+            raise exceptions.InputValidationError("PhCalculation must be launched on the same computer"
                           " of the parent: {}".format(old_comp.get_name()))
 
         # put by default, default_parent_output_folder = ./out
@@ -204,7 +200,7 @@ class PhCalculation(JobCalculation):
             try:
                 default_parent_output_folder = parent_calc._get_output_folder()
             except AttributeError:
-                raise InputValidationError("Parent of PhCalculation  does not "
+                raise exceptions.InputValidationError("Parent of PhCalculation  does not "
                                            "have a default output subfolder")
         #os.path.join(
         #                   parent_calc.OUTPUT_SUBFOLDER, 
@@ -214,7 +210,7 @@ class PhCalculation(JobCalculation):
 
         # Here, there should be no other inputs
         if inputdict:
-            raise InputValidationError("The following input data nodes are "
+            raise exceptions.InputValidationError("The following input data nodes are "
                 "unrecognized: {}".format(inputdict.keys()))
 
         ##############################
@@ -241,14 +237,14 @@ class PhCalculation(JobCalculation):
         for nl, flag in self._blocked_keywords:
             if nl in input_params:
                 if flag in input_params[nl]:
-                    raise InputValidationError(
+                    raise exceptions.InputValidationError(
                         "You cannot specify explicitly the '{}' flag in the '{}' "
                         "namelist or card.".format(flag, nl))
         
         # Set some variables (look out at the case! NAMELISTS should be uppercase,
         # internal flag names must be lowercase)
         if 'INPUTPH' not in input_params:
-            raise InputValidationError("No namelist INPUTPH found in input") # I cannot decide what to do in the calculation
+            raise exceptions.InputValidationError("No namelist INPUTPH found in input") # I cannot decide what to do in the calculation
         input_params['INPUTPH']['outdir'] = self._OUTPUT_SUBFOLDER
         input_params['INPUTPH']['iverbosity'] = 1 # in human language 1=high
         input_params['INPUTPH']['prefix'] = self._PREFIX
@@ -280,7 +276,7 @@ class PhCalculation(JobCalculation):
                 list_of_points = qpoints.get_kpoints(cartesian=True)
             except AttributeError as e:
                 # In this case, there are no info on the qpoints at all
-                raise InputValidationError("Neither a qpoints mesh or a valid "
+                raise exceptions.InputValidationError("Neither a qpoints mesh or a valid "
                                            "list of qpoints was found in input",
                                            e.message)
             # change to 2pi/a coordinates
@@ -309,7 +305,7 @@ class PhCalculation(JobCalculation):
         try:
             namelists_toprint = settings_dict.pop('NAMELISTS')
             if not isinstance(namelists_toprint, list):
-                raise InputValidationError(
+                raise exceptions.InputValidationError(
                     "The 'NAMELISTS' value, if specified in the settings input "
                     "node, must be a list of strings")
         except KeyError: # list of namelists not specified in the settings; do automatic detection
@@ -340,7 +336,7 @@ class PhCalculation(JobCalculation):
             #TODO: write nat_todo
             
         if input_params:
-            raise InputValidationError(
+            raise exceptions.InputValidationError(
                 "The following namelists are specified in input_params, but are "
                 "not valid namelists for the current type of calculation: "
                 "{}".format(",".join(input_params.keys())))
@@ -442,66 +438,35 @@ class PhCalculation(JobCalculation):
             calcinfo.retrieve_list.append( extra )
         
         if settings_dict:
-            raise InputValidationError("The following keys have been found in "
+            raise exceptions.InputValidationError("The following keys have been found in "
                 "the settings input node, but were not understood: {}".format(
                 ",".join(settings_dict.keys())))
         
         return calcinfo
-        
-    def _check_valid_parent(self,calc):
-        """
-        Check that calc is a valid parent for a PhCalculation.
-        It can be a PwCalculation, PhCalculation, or (if the class exists) a 
-        CopyonlyCalculation
-        :todo: maybe assume that CopyonlyCalculation class always exists?
-        """
+
+    def use_parent_calculation(self, calc):
+        """Set the parent calculation."""
+        if not isinstance(calc, (PhCalculation, PwCalculation)):
+            raise ValueError('Parent calculation must be a PhCalculation or PwCalculation')
 
         try:
-            from aiida.orm.calculation.job.simpleplugins.copyonly import CopyonlyCalculation
-            if ( ( (not isinstance(calc,PwCalculation)) 
-                            and (not isinstance(calc,PhCalculation)) )
-                            and (not isinstance(calc,CopyonlyCalculation)) ):
-                raise ValueError("Parent calculation must be a PwCalculation, a "
-                                 "PhCalculation or a CopyonlyCalculation")
-        except ImportError:
-            if ( (not isinstance(calc,PwCalculation)) 
-                            and (not isinstance(calc,PhCalculation)) ):
-                raise ValueError("Parent calculation must be a PwCalculation or "
-                                 "a PhCalculation")
-    
-    def use_parent_calculation(self,calc):
-        """
-        Set the parent calculation of Ph, 
-        from which it will inherit the outputsubfolder.
-        The link will be created from parent RemoteData to PhCalculation 
-        """
-        from aiida.common.exceptions import NotExistent
-        
-        self._check_valid_parent(calc)
-        
-        remotedatas = calc.get_outputs(node_type=RemoteData)
-        if not remotedatas:
-            raise NotExistent("No output remotedata found in "
-                                  "the parent")
-        if len(remotedatas) != 1:
-            raise UniquenessError("More than one output remotedata found in "
-                                  "the parent")
-        remotedata = remotedatas[0]
-        
-        self._set_parent_remotedata(remotedata)
+            remote_folder = calc.get_outgoing(node_class=RemoteData, link_label_filter='remote_folder').one().node
+        except ValueError:
+            raise exceptions.UniquenessError('Parent calculation does not have a remote folder output node.')
+
+        self._set_parent_remotedata(remote_folder)
 
     def _set_parent_remotedata(self,remotedata):
         """
         Used to set a parent remotefolder in the restart of ph.
         """
-        if not isinstance(remotedata,RemoteData):
+        if not isinstance(remotedata, RemoteData):
             raise ValueError('remotedata must be a RemoteData')
-        
+
         # complain if another remotedata is already found
-        input_remote = self.get_inputs(node_type=RemoteData)
+        input_remote = self.get_incoming(node_class=RemoteData).all()
         if input_remote:
-            raise ValidationError("Cannot set several parent calculation to a "
-                                  "ph calculation")
+            raise exceptions.ValidationError("Cannot set several parent calculation to a ph calculation")
 
         self.use_parent_folder(remotedata)
             
@@ -550,24 +515,23 @@ class PhCalculation(JobCalculation):
             if force_restart:
                 pass
             else:
-                raise InputValidationError("Calculation to be restarted must be "
+                raise exceptions.InputValidationError("Calculation to be restarted must be "
                             "in the {} state. Otherwise, use the force_restart "
                             "flag".format(calc_states.FINISHED) )
         
-        inp = self.get_inputs_dict()
-        code = inp['code']
-        qpoints = inp['qpoints']
+        inputs = self.get_incoming()
+        code = inputs.get_node_by_label('code')
+        qpoints = inputs.get_node_by_label('qpoints')
         
-        old_inp_dict = inp['parameters'].get_dict()
+        old_inp_dict = inputs.get_node_by_label('parameters').get_dict()
         # add the restart flag
         old_inp_dict['INPUTPH']['recover'] = True
         inp_dict = ParameterData(dict=old_inp_dict) 
-        
-        remote_folders = self.get_outputs(node_type=RemoteData)
-        if len(remote_folders)!=1:
-            raise InputValidationError("More than one output RemoteData found "
-                                       "in calculation {}".format(self.pk))
-        remote_folder = remote_folders[0]
+
+        try:
+            remote_folder = self.get_outgoing(node_class=RemoteData, link_label_filter='remote_folder').one().node
+        except ValueError:
+            raise InputValidationError("No or more than one output RemoteData found in calculation {}".format(self.pk))
         
         c2 = clone_calculation(self)
         
@@ -595,7 +559,7 @@ class PhCalculation(JobCalculation):
         
         # settings will use the logic for the usage of symlinks
         try:
-            old_settings_dict = inp['settings'].get_dict()
+            old_settings_dict = inputs.get_node_by_label('settings').get_dict()
         except KeyError:
             old_settings_dict = {}
         if parent_folder_symlink:

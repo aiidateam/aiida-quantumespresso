@@ -19,7 +19,7 @@ import os
 
 from aiida.orm.calculation.job import JobCalculation
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
-from aiida.common.utils import classproperty
+from aiida.common.lang import classproperty
 
 
 class CpCalculation(BasePwCpInputGenerator, JobCalculation):

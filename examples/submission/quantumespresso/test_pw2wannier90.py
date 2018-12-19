@@ -74,8 +74,8 @@ parentcalc = load_node(parent_id)
 calc = code.new_calc()
 calc.label = "Test QE pw2wannier90.x"
 calc.description = "Test calculation with the Quantum ESPRESSO pw2wannier90.x code"
-calc.set_max_wallclock_seconds(60*30) # 30 min
-calc.set_resources({"num_machines":num_machines})
+calc.set_option('max_wallclock_seconds', 60*30) # 30 min
+calc.set_option('resources', {"num_machines":num_machines})
 
 calc.use_parameters(parameters)
 calc.use_parent_calculation(parentcalc)

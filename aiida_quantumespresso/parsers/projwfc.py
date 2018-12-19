@@ -184,7 +184,7 @@ def spin_dependent_subparcer(out_info_dict):
     try:
     # Attempts to retrive the kpoints from the parent calc
         parent_calc = out_info_dict["parent_calc"]
-        parent_kpoints = parent_calc.get_inputs_dict()['kpoints']
+        parent_kpoints = parent_calc.get_incoming(link_label_filter='kpoints').one().node
         if len(od['k_vect']) != len(parent_kpoints.get_kpoints()):
             raise AttributeError
         bands_data.set_kpointsdata(parent_kpoints)
@@ -415,16 +415,16 @@ class ProjwfcParser(Parser):
 
         # Uses the parent input parameters, and checks if the parent used
         # spin calculations try to replace with a query, if possible.
-        parent_remote =  self._calc.get_inputs_dict()['parent_calc_folder']
-        parent_calc = parent_remote.get_inputs_dict()['remote_folder']
+        parent_remote = self._calc.get_incoming(link_label_filter='parent_calc_folder').one().node
+        parent_calc = parent_remote.get_incoming(link_label_filter='remote_folder').one().node
         out_info_dict["parent_calc"] = parent_calc
-        parent_param = parent_calc.get_outputs_dict()['output_parameters']
+
+        parent_param = parent_calc.get_outgoing(link_label_filter='output_parameters').one().node
         try:
-            structure = parent_calc.get_inputs_dict()['structure']
-        except KeyError:
-            raise ValueError("The parent had no structure! Cannot parse"
-                             "from this!")
-        try :
+            structure = parent_calc.get_incoming(link_label_filter='structure').one().node
+        except ValueError:
+            raise ValueError("The parent had no structure! Cannot parse from this!")
+        try:
             nspin = parent_param.get_dict()['number_of_spin_components']
             if nspin != 1:
                 spin = True

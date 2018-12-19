@@ -2,30 +2,6 @@
 from aiida.orm.data.upf import UpfData, get_pseudos_from_structure
 
 
-def get_pseudos_of_calc(calc):
-    """
-    Return a dictionary of pseudos used by a given (pw.x, cp.x) calculation.
-
-    This returns a dictionary ``pseudos`` that can be set in a builder as ``builder.pseudo = pseudos``.
-
-    :param calc: a pw.x or cp.x calculation.
-    :return: a dictionary where the key is the kind name and the value is the UpfData object.
-    """
-    from aiida.common.links import LinkType
-
-    pseudos = {}
-    # I create here a dictionary that associates each kind name to a pseudo
-    inputs = calc.get_inputs_dict(link_type=LinkType.INPUT)
-    for linkname in inputs.keys():
-        if linkname.startswith(calc._get_linkname_pseudo_prefix()):
-            # Note that this string might be a sequence of kind names
-            # concatenated by an underscore, see implementation in the
-            # input plugin implementation.
-            multiplekindstring = linkname[len(calc._get_linkname_pseudo_prefix()):]
-            pseudos[multiplekindstring] = inputs[linkname]
-    return pseudos
-
-
 def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=None):
     """
     Use the explicitly passed pseudos dictionary or use the pseudo_family in combination with
@@ -41,25 +17,26 @@ def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=N
 
     :param structure: StructureData node
     :param pseudos: a dictionary where keys are the kind names and value are UpfData nodes
-    :param pseudo_family: string name of the pseudopotential family to use
+    :param pseudo_family: pseudopotential family name to use, should be Str node
     :raises: ValueError if neither pseudos or pseudo_family is specified or if no UpfData is found for
         every element in the structure
     :returns: a dictionary of UpfData nodes where the key is a tuple with the kind name
     """
     from aiida.orm.data.base import Str
+
     result_pseudos = {}
     unique_pseudos = {}
 
     if pseudos and pseudo_family:
-        raise ValueError('You cannot specify both "pseudos" and "pseudo_family"')
+        raise ValueError('you cannot specify both "pseudos" and "pseudo_family"')
     elif pseudos is None and pseudo_family is None:
-        raise ValueError('Neither an explicit pseudos dictionary nor a pseudo_family was specified')
+        raise ValueError('neither an explicit pseudos dictionary nor a pseudo_family was specified')
     elif pseudo_family:
         # This will already raise some exceptions, potentially, like the ones below
-        pseudos = get_pseudos_from_structure(structure, str(pseudo_family))
+        pseudos = get_pseudos_from_structure(structure, pseudo_family.value)
 
     if isinstance(pseudos, (str, unicode, Str)):
-        raise TypeError('You passed "pseudos" as a string - maybe you wanted to pass it as "pseudo_family" instead?')
+        raise TypeError('you passed "pseudos" as a string - maybe you wanted to pass it as "pseudo_family" instead?')
 
     for kind in structure.get_kind_names():
         if kind not in pseudos:
@@ -75,18 +52,42 @@ def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=N
 
     return result_pseudos
 
+
+def get_pseudos_of_calc(calc):
+    """
+    Return a dictionary of pseudos used by a given (pw.x, cp.x) calculation.
+
+    This returns a dictionary ``pseudos`` that can be set in a builder as ``builder.pseudo = pseudos``.
+
+    :param calc: a pw.x or cp.x calculation.
+    :return: a dictionary where the key is the kind name and the value is the UpfData object.
+    """
+    from aiida.common.links import LinkType
+
+    pseudos = {}
+    # I create here a dictionary that associates each kind name to a pseudo
+    inputs = calc.get_incoming(link_type=LinkType.INPUT_CALC)
+    for linkname in inputs.keys():
+        if linkname.startswith(calc._get_linkname_pseudo_prefix()):
+            # Note that this string might be a sequence of kind names
+            # concatenated by an underscore, see implementation in the
+            # input plugin implementation.
+            multiplekindstring = linkname[len(calc._get_linkname_pseudo_prefix()):]
+            pseudos[multiplekindstring] = inputs[linkname]
+    return pseudos
+
+
 def get_pseudos_from_dict(structure, pseudos_uuids):
     """
     Given a dictionary in the format::
 
-      {
-          'Al': '045a7a8d-feb1-4aeb-9d32-4e04b13bfc32',
-          'C': '08ad7d53-b7cc-45d5-acb8-13530790b751',
-          ...
-      }
+        {
+            'Al': '045a7a8d-feb1-4aeb-9d32-4e04b13bfc32',
+            'C': '08ad7d53-b7cc-45d5-acb8-13530790b751',
+        }
 
     (i.e., associating a chemical element name to a UUID of a UpfData node
-    in the database), and a AiiDA structure, return a dictionary 
+    in the database), and a AiiDA structure, return a dictionary
     associating each kind name with its UpfData object.
 
     :param structure: a StructureData
@@ -111,17 +112,13 @@ def get_pseudos_from_dict(structure, pseudos_uuids):
             upf = load_node(uuid)
         except NotExistent:
             raise NotExistent(
-                "No node found associated to the UUID {} given for element {} "
-                "in the provided pseudos_uuids dictionary".format(
-                uuid, symbol))
+                'No node found associated to the UUID {} given for element {} '
+                'in the provided pseudos_uuids dictionary'.format(uuid, symbol))
         if not isinstance(upf, UpfData):
-            raise ValueError(
-                "Node with UUID {} is not a UpfData".format(
-                uuid))
+            raise ValueError('Node with UUID {} is not a UpfData'.format(uuid))
         if upf.element != symbol:
             raise ValueError(
-                "Node with UUID {} is associated to element {} and not to {} as expected".format(
-                uuid, upf.element, symbol))
+                'Node<{}> is associated to element {} and not to {} as expected'.format(uuid, upf.element, symbol))
 
         pseudo_list[kind.name] = upf
 

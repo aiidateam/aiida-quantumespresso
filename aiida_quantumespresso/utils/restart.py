@@ -79,21 +79,20 @@ def _create_restart_pw_cp(parent_calc, force_restart, parent_folder_symlink,
                 "in the {} state. Otherwise, use the force_restart "
                 "flag".format(calc_states.FINISHED))
 
-    calc_inp = parent_calc.get_inputs_dict(link_type=LinkType.INPUT)
+    inputs = parent_calc.get_incoming(link_type=LinkType.INPUT_CALC)
 
     if restart_from_beginning:
-        inp_dict = calc_inp[parent_calc.get_linkname('parameters')]
+        inp_dict = inputs.get_node_by_label(parent_calc.get_linkname('parameters'))
     else:  # case of restart without using the parent scratch
-        old_inp_dict = calc_inp[parent_calc.get_linkname('parameters')].get_dict()
+        old_inp_dict = inputs.get_node_by_label(parent_calc.get_linkname('parameters')).get_dict()
         # add the restart flag
         old_inp_dict['CONTROL']['restart_mode'] = 'restart'
         inp_dict = ParameterData(dict=old_inp_dict)
 
-    remote_folders = parent_calc.get_outputs(node_type=RemoteData, link_type=LinkType.CREATE)
-    if len(remote_folders) != 1:
-        raise InputValidationError("More than one output RemoteData found "
-                                   "in calculation {}".format(parent_calc.pk))
-    remote_folder = remote_folders[0]
+    try:
+        remote_folder = parent_calc.get_outcoming(node_class=RemoteData, link_type=LinkType.CREATE).one().node
+    except ValueError:
+        raise InputValidationError("No or more than one output RemoteData found in calculation {}".format(parent_calc.pk))
 
     builder = parent_calc.__class__.get_builder()
 
@@ -118,18 +117,18 @@ def _create_restart_pw_cp(parent_calc, force_restart, parent_folder_symlink,
         try:
             builder.structure = parent_calc.out.output_structure
         except AttributeError:
-            builder.structure = calc_inp[parent_calc.get_linkname('structure')]
+            builder.structure = inputs.get_node_by_label(parent_calc.get_linkname('structure'))
     else:
-        builder.structure = calc_inp[parent_calc.get_linkname('structure')]
+        builder.structure = inputs.get_node_by_label(parent_calc.get_linkname('structure'))
 
     # This distinguishes between pw.x and cp.x
     if parent_calc._use_kpoints:
-        builder.kpoints = calc_inp[parent_calc.get_linkname('kpoints')]
+        builder.kpoints = inputs.get_node_by_label(parent_calc.get_linkname('kpoints'))
 
-    builder.code = calc_inp[parent_calc.get_linkname('code')]
+    builder.code = inputs.get_node_by_label(parent_calc.get_linkname('code'))
 
     try:
-        old_settings_dict = calc_inp[parent_calc.get_linkname('settings')].get_dict()
+        old_settings_dict = inputs.get_node_by_label(parent_calc.get_linkname('settings')).get_dict()
     except KeyError:
         old_settings_dict = {}
     if parent_folder_symlink is None:
@@ -149,7 +148,7 @@ def _create_restart_pw_cp(parent_calc, force_restart, parent_folder_symlink,
 
     # Add also the vdw table, if the parent had one
     try:
-        old_vdw_table = calc_inp[parent_calc.get_linkname('vdw_table')]
+        old_vdw_table = inputs.get_node_by_label(parent_calc.get_linkname('vdw_table'))
     except KeyError:
         # No VdW table
         pass
@@ -270,18 +269,17 @@ def create_restart_neb(parent_calc, force_restart=False, parent_folder_symlink=N
                 "in the {} state. Otherwise, use the force_restart "
                 "flag".format(calc_states.FINISHED))
 
-    calc_inp = parent_calc.get_inputs_dict(link_type=LinkType.INPUT)
+    inputs = parent_calc.get_incoming(link_type=LinkType.INPUT_CALC)
 
-    old_inp_dict = calc_inp[parent_calc.get_linkname('neb_parameters')].get_dict()
+    old_inp_dict = inputs.get_node_by_label(parent_calc.get_linkname('neb_parameters')).get_dict()
     # add the restart flag
     old_inp_dict['PATH']['restart_mode'] = 'restart'
     inp_dict = ParameterData(dict=old_inp_dict)
 
-    remote_folders = parent_calc.get_outputs(node_type=RemoteData, link_type=LinkType.CREATE)
-    if len(remote_folders) != 1:
-        raise InputValidationError("More than one output RemoteData found "
-                                   "in calculation {}".format(parent_calc.pk))
-    remote_folder = remote_folders[0]
+    try:
+        remote_folder = parent_calc.get_outcoming(node_class=RemoteData, link_type=LinkType.CREATE).one().node
+    except ValueError:
+        raise InputValidationError("No or more than one output RemoteData found in calculation {}".format(parent_calc.pk))
 
     builder = parent_calc.__class__.get_builder()
 
@@ -302,18 +300,17 @@ def create_restart_neb(parent_calc, force_restart=False, parent_folder_symlink=N
     # set the new links
     builder.neb_parameters = inp_dict
 
-    builder.pw_parameters = calc_inp[parent_calc.get_linkname('pw_parameters')]
+    builder.pw_parameters = inputs.get_node_by_label(parent_calc.get_linkname('pw_parameters'))
 
-    builder.first_structure = calc_inp[parent_calc.get_linkname('first_structure')]
-    builder.last_structure = calc_inp[parent_calc.get_linkname('last_structure')]
+    builder.first_structure = inputs.get_node_by_label(parent_calc.get_linkname('first_structure'))
+    builder.last_structure = inputs.get_node_by_label(parent_calc.get_linkname('last_structure'))
 
     if parent_calc._use_kpoints:
-        builder.kpoints = calc_inp[parent_calc.get_linkname('kpoints')]
-    builder.code = calc_inp[parent_calc.get_linkname('code')]
+        builder.kpoints = inputs.get_node_by_label(parent_calc.get_linkname('kpoints'))
+    builder.code = inputs.get_node_by_label(parent_calc.get_linkname('code'))
 
     try:
-        old_settings_dict = calc_inp[parent_calc.get_linkname('settings')
-        ].get_dict()
+        old_settings_dict = inputs.get_node_by_label(parent_calc.get_linkname('settings')).get_dict()
     except KeyError:
         old_settings_dict = {}
     if parent_folder_symlink is None:
@@ -333,7 +330,7 @@ def create_restart_neb(parent_calc, force_restart=False, parent_folder_symlink=N
 
     # Add also the vdw table, if the parent had one
     try:
-        old_vdw_table = calc_inp[parent_calc.get_linkname('vdw_table')]
+        old_vdw_table = inputs.get_node_by_label(parent_calc.get_linkname('vdw_table'))
     except KeyError:
         # No VdW table
         pass
@@ -381,20 +378,19 @@ def create_restart_ph(parent_calc, force_restart=False,
                 "in the {} state. Otherwise, use the force_restart "
                 "flag".format(calc_states.FINISHED) )
     
-    inp = parent_calc.get_inputs_dict(link_type=LinkType.INPUT)
-    code = inp['code']
-    qpoints = inp['qpoints']
+    inputs = parent_calc.get_incoming(link_type=LinkType.INPUT_CALC)
+    code = inputs.get_node_by_label('code')
+    qpoints = inputs.get_node_by_label('qpoints')
     
-    old_inp_dict = inp['parameters'].get_dict()
+    old_inp_dict = inputs.get_node_by_label('parameters').get_dict()
     # add the restart flag
     old_inp_dict['INPUTPH']['recover'] = True
     inp_dict = ParameterData(dict=old_inp_dict) 
 
-    remote_folders = parent_calc.get_outputs(node_type=RemoteData, link_type=LinkType.CREATE)
-    if len(remote_folders)!=1:
-        raise InputValidationError("More than one output RemoteData found "
-                                    "in calculation {}".format(parent_calc.pk))
-    remote_folder = remote_folders[0]
+    try:
+        remote_folder = parent_calc.get_outcoming(node_class=RemoteData, link_type=LinkType.CREATE).one().node
+    except ValueError:
+        raise InputValidationError("No or more than one output RemoteData found in calculation {}".format(parent_calc.pk))
     
     builder = parent_calc.__class__.get_builder()
 
@@ -418,7 +414,7 @@ def create_restart_ph(parent_calc, force_restart=False,
     builder.qpoints = qpoints
 
     try:
-        old_settings_dict = inp['settings'].get_dict()
+        old_settings_dict = inputs.get_node_by_label('settings').get_dict()
     except KeyError:
         old_settings_dict = {}
     if parent_folder_symlink is None:

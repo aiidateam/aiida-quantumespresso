@@ -130,8 +130,8 @@ variables for a ``cp.x`` calculation::
 We then create a new calculation with the proper settings::
   
   calc = code.new_calc()
-  calc.set_max_wallclock_seconds(30*60) # 30 min
-  calc.set_resources({"num_machines": 1, "num_mpiprocs_per_machine": 16})
+  calc.set_option('max_wallclock_seconds', 30*60) # 30 min
+  calc.set_option('resources', {"num_machines": 1, "num_mpiprocs_per_machine": 16})
 
 And we link the input data to the calculation
 (and therefore set the links in the database). The main difference

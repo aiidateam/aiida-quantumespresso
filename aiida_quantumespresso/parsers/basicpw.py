@@ -108,7 +108,7 @@ class BasicpwParser(Parser):
         new_nodes_list = []
 
         # I eventually save the new structure. structure_data is unnecessary after this
-        in_struc = self._calc.get_inputs_dict()['structure']
+        in_struc = self._calc.get_incoming(link_label_filter='structure').one().node
         type_calc = input_dict['CONTROL']['calculation']
         struc = in_struc
         if type_calc in ['relax', 'vc-relax', 'md', 'vc-md']:

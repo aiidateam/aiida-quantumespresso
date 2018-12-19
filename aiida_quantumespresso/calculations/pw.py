@@ -16,7 +16,7 @@ Plugin to create a Quantum Espresso pw.x file.
 # TODO: all a lot of logger.debug stuff
 import os
 
-from aiida.common.utils import classproperty
+from aiida.common.lang import classproperty
 from aiida.orm import CalculationFactory
 from aiida.orm.calculation.job import JobCalculation
 from aiida.orm.data.array.kpoints import KpointsData

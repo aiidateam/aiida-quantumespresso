@@ -200,7 +200,7 @@ class PwParser(Parser):
         new_nodes_list = []
 
         # I eventually save the new structure. structure_data is unnecessary after this
-        in_struc = self._calc.get_inputs_dict()['structure']
+        in_struc = self._calc.get_incoming(link_label_filter='structure').one().node
         type_calc = parameters['CONTROL']['calculation']
         struc = in_struc
         if type_calc in ['relax', 'vc-relax', 'md', 'vc-md']:
@@ -353,8 +353,8 @@ class PwParser(Parser):
         """
         Return the extended dictionary of symmetries.
         """
-        data = self._calc.get_outputs(node_type=ParameterData, also_labels=True)
-        all_data = [i[1] for i in data if i[0] == self.get_linkname_outparams()]
+        data = self._calc.get_outgoing(node_class=ParameterData)
+        all_data = [i.node for i in data if i.link_label == self.get_linkname_outparams()]
         if len(all_data) > 1:
             raise UniquenessError('More than one output parameterdata found.')
         elif not all_data:

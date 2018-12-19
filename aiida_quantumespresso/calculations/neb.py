@@ -6,7 +6,8 @@ import os
 import copy
 from aiida.common.exceptions import InputValidationError
 from aiida.common.datastructures import CalcInfo, CodeInfo
-from aiida.common.utils import classproperty
+from aiida.common.links import LinkType
+from aiida.common.lang import classproperty
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm.data.parameter import ParameterData 
@@ -476,7 +477,7 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
         This is a redefinition of the method in the BaseClass
         The first structure is used to choose the pseudopotentials
         """
-        return self.get_inputs_dict()[self.get_linkname('first_structure')]
+        return self.get_incoming(link_label_filter=self.get_linkname('first_structure')).one().node
     
     def create_restart(self, force_restart=False, parent_folder_symlink=None):
         """
@@ -518,18 +519,17 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
         if parent_folder_symlink is None:
             parent_folder_symlink = self._default_symlink_usage
 
-        calc_inp = self.get_inputs_dict()
+        inputs = self.get_incoming(link_type=LinkType.INPUT_CALC)
 
-        old_inp_dict = calc_inp[self.get_linkname('neb_parameters')].get_dict()
+        old_inp_dict = inputs.get_node_by_label(self.get_linkname('neb_parameters')).get_dict()
         # add the restart flag
         old_inp_dict['PATH']['restart_mode'] = 'restart'
         inp_dict = ParameterData(dict=old_inp_dict)
 
-        remote_folders = self.get_outputs(node_type=RemoteData)
-        if len(remote_folders) != 1:
-            raise InputValidationError("More than one output RemoteData found "
-                                       "in calculation {}".format(self.pk))
-        remote_folder = remote_folders[0]
+        try:
+            remote_folder = self.get_outgoing(node_class=RemoteData, link_label_filter='remote_folder').one().node
+        except ValueError:
+            raise InputValidationError("No or more than one output RemoteData found in calculation {}".format(self.pk))
 
         c2 = clone_calculation(self)
 
@@ -543,17 +543,16 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
         # set the new links
         c2.use_neb_parameters(inp_dict)
         
-        c2.use_pw_parameters(calc_inp[self.get_linkname('pw_parameters')])
+        c2.use_pw_parameters(inputs.get_node_by_label(self.get_linkname('pw_parameters')))
         
-        c2.use_first_structure(calc_inp[self.get_linkname('first_structure')])
-        c2.use_last_structure(calc_inp[self.get_linkname('last_structure')])
+        c2.use_first_structure(inputs.get_node_by_label(self.get_linkname('first_structure')))
+        c2.use_last_structure(inputs.get_node_by_label(self.get_linkname('last_structure')))
 
         if self._use_kpoints:
-            c2.use_kpoints(calc_inp[self.get_linkname('kpoints')])
-        c2.use_code(calc_inp[self.get_linkname('code')])
+            c2.use_kpoints(inputs.get_node_by_label(self.get_linkname('kpoints')))
+        c2.use_code(inputs.get_node_by_label(self.get_linkname('code')))
         try:
-            old_settings_dict = calc_inp[self.get_linkname('settings')
-                                         ].get_dict()
+            old_settings_dict = inputs.get_node_by_label(self.get_linkname('settings')).get_dict()
         except KeyError:
             old_settings_dict = {}
         if parent_folder_symlink is not None:
@@ -565,13 +564,12 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
 
         c2._set_parent_remotedata(remote_folder)
         # set links for pseudos
-        for linkname, input_node in self.get_inputs_dict().iteritems():
-            if isinstance(input_node, UpfData):
-                c2._add_link_from(input_node, label=linkname)
+        for triple in self.get_incoming(node_class=UpfData).all():
+            c2._add_link_from(triple.node, label=triple.link_label)
 
         # Add also the vdw table, if the parent had one
         try:
-            old_vdw_table = calc_inp[self.get_linkname('vdw_table')]
+            old_vdw_table = inputs.get_node_by_label(self.get_linkname('vdw_table'))
         except KeyError:
             # No VdW table
             pass

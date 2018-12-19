@@ -382,9 +382,7 @@ class PwTcodtranslator(BaseTcodtranslator):
         """
         from aiida.orm.data.upf import parse_upf
         types = {}
-        for node in calc.get_inputs():
-            if not isinstance(node,UpfData):
-                continue
+        for node in calc.get_incoming(node_class=UpfData).all_nodes():
             element = node.element
             parsed = parse_upf(node.get_file_abs_path())
             if parsed['version'] != "2":

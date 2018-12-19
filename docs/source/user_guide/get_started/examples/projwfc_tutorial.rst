@@ -52,8 +52,8 @@ the code, and the proper scheduler info.
     parentcalc = load_node(parent_id)
 
     calc = code.new_calc()
-    calc.set_max_wallclock_seconds(30*60) # 30 min
-    calc.set_resources({"num_machines": 1})
+    calc.set_option('max_wallclock_seconds', 30*60) # 30 min
+    calc.set_option('resources', {"num_machines": 1})
 
     calc.use_parameters(parameters)
     calc.use_code(code)

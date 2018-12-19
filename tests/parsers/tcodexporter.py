@@ -185,7 +185,7 @@ class TestTcodDbExporter(AiidaTestCase):
         code.store()
 
         calc = JobCalculation(computer=self.computer)
-        calc.set_resources({'num_machines': 1,
+        calc.set_option('resources', {'num_machines': 1,
                             'num_mpiprocs_per_machine': 1})
         calc.add_link_from(code, "code")
         calc.set_environment_variables({'PATH': '/dev/null', 'USER': 'unknown'})

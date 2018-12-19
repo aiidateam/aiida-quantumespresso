@@ -74,15 +74,15 @@ settings = ParameterData(dict=settings_dict)
 calc = code.new_calc()
 calc.label = "Test QE pw.x"
 calc.description = "Test calculation with the Quantum ESPRESSO pw.x code"
-calc.set_max_wallclock_seconds(30 * 60)  # 30 min
+calc.set_option('max_wallclock_seconds', 30 * 60)  # 30 min
 # Valid only for Slurm and PBS (using default values for the
 # number_cpus_per_machine), change for SGE-like schedulers
-calc.set_resources({"num_machines": 1})
+calc.set_option('resources', {"num_machines": 1})
 if run_in_serial_mode:
-    calc.set_withmpi(False)
+    calc.set_option('withmpi', (False)
 
 if queue is not None:
-    calc.set_queue_name(queue)
+    calc.set_option('queue_name', queue)
 
 calc.use_structure(s)
 calc.use_parameters(parameters)

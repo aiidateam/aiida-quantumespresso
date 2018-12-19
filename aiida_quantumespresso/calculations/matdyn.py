@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
 import os
-from aiida.common.utils import classproperty
-from aiida.orm.data.folder import FolderData
+from aiida.common import exceptions
+from aiida.common.lang import classproperty
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 from aiida_quantumespresso.calculations.q2r import Q2rCalculation
+
 
 class MatdynCalculation(NamelistsCalculation):
     """
     matdyn.x code of the Quantum ESPRESSO distribution, used to obtain the
     phonon frequencies in reciprocal space from the interatomic force constants given by q2r.
     For more information, refer to http://www.quantum-espresso.org/
-    """    
+    """
+
     def _init_internal_params(self):
         super(MatdynCalculation, self)._init_internal_params()
                 
@@ -52,28 +54,18 @@ class MatdynCalculation(NamelistsCalculation):
                },                        
             })
         return retdict
-    
-    def use_parent_calculation(self,calc):
-        """
-        Set the parent calculation, 
-        from which it will inherit the outputsubfolder.
-        The link will be created from parent RemoteData and NamelistCalculation 
-        """
-        if not isinstance(calc,Q2rCalculation):
-            raise ValueError("Parent calculation must be a Q2rCalculation")
 
-        from aiida.common.exceptions import UniquenessError
-        localdatas = [_[1] for _ in calc.get_outputs(also_labels=True)
-                      if _[0] == calc.get_linkname_force_matrix()]
-        if len(localdatas) == 0:
-            raise UniquenessError("No output retrieved data found in the parent "
-                                  "calc, probably it did not finish yet, "
-                                  "or it crashed")
-        if len(localdatas) != 1:
-            raise UniquenessError("More than one output retrieved data found")
-        localdata = localdatas[0]
-        
-        self.use_parent_folder(localdata)
+    def use_parent_calculation(self, calc):
+        """Set the parent calculation."""
+        if not isinstance(calc, Q2rCalculation):
+            raise ValueError('Parent calculation must be a Q2rCalculation')
+
+        try:
+            remote_folder = calc.get_outgoing(node_class=RemoteData, link_label_filter='remote_folder').one().node
+        except ValueError:
+            raise exceptions.UniquenessError('Parent calculation does not have a remote folder output node.')
+
+        self.use_parent_folder(remote_folder)
    
     def _get_following_text(self, inputdict, settings):
         """
