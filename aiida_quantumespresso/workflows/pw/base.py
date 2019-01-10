@@ -22,7 +22,7 @@ from aiida_quantumespresso.utils.resources import get_default_options
 from aiida_quantumespresso.utils.resources import get_pw_parallelization_parameters
 from aiida_quantumespresso.utils.resources import cmdline_remove_npools
 from aiida_quantumespresso.utils.resources import create_scheduler_resources
-from aiida_quantumespresso.workflows.workfunctions import create_kpoints_from_distance
+from aiida_quantumespresso.workflows.functions.create_kpoints_from_distance import create_kpoints_from_distance
 
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
@@ -51,7 +51,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         spec.input('kpoints_distance', valid_type=Float, required=False)
         spec.input('kpoints_force_parity', valid_type=Bool, required=False)
         spec.input('parameters', valid_type=ParameterData)
-        spec.input_namespace('pseudos', required=False, dynamic=True)
+        spec.input_namespace('pseudo', required=False, dynamic=True)
         spec.input('pseudo_family', valid_type=Str, required=False)
         spec.input('parent_folder', valid_type=RemoteData, required=False)
         spec.input('vdw_table', valid_type=SinglefileData, required=False)
@@ -74,7 +74,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             cls.results,
         )
         spec.exit_code(301, 'ERROR_INVALID_INPUT_PSEUDO_POTENTIALS',
-            message="the explicitly passed 'pseudos' or 'pseudo_family' input could not be used to get the necessary potentials")
+            message="the explicitly passed 'pseudos' or 'pseudo_family' could not be used to get the necessary potentials")
         spec.exit_code(302, 'ERROR_INVALID_INPUT_KPOINTS',
             message="neither the 'kpoints' nor the 'kpoints_distance' input was specified")
         spec.exit_code(303, 'ERROR_INVALID_INPUT_RESOURCES',
@@ -158,7 +158,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
         # Validate the inputs related to pseudopotentials
         structure = self.inputs.structure
-        pseudos = self.inputs.get('pseudos', None)
+        pseudos = self.inputs.get('pseudo', None)
         pseudo_family = self.inputs.get('pseudo_family', None)
 
         try:
