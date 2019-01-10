@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 from aiida.common.extendeddicts import AttributeDict
-from aiida.orm.calculation import JobCalculation
-from aiida.orm.data.base import Str, Bool, Float
+from aiida.orm.node.process import CalcJobNode
+from aiida.orm.data.base import Bool, Float
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.structure import StructureData
 from aiida.orm.data.array.bands import BandsData
-from aiida.orm.group import Group
 from aiida.orm.utils import WorkflowFactory
 from aiida.work.workchain import WorkChain, ToContext, if_
-from aiida.work.workfunctions import workfunction
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
+from aiida_quantumespresso.workflows.functions.seekpath_structure_analysis import seekpath_structure_analysis
 
 
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
@@ -28,7 +27,6 @@ class PwBandsWorkChain(WorkChain):
         spec.input('structure', valid_type=StructureData)
         spec.input('clean_workdir', valid_type=Bool, default=Bool(False))
         spec.input('nbands_factor', valid_type=Float, default=Float(1.2))
-        spec.input('group', valid_type=Str, required=False)
         spec.outline(
             cls.setup,
             if_(cls.should_do_relax)(
@@ -179,17 +177,10 @@ class PwBandsWorkChain(WorkChain):
         self.out('band_parameters', self.ctx.workchain_bands.out.output_parameters)
         self.out('band_structure', self.ctx.workchain_bands.out.output_band)
 
-        if 'group' in self.inputs:
-            output_band = self.ctx.workchain_bands.out.output_band
-            group, _ = Group.get_or_create(name=self.inputs.group.value)
-            group.add_nodes(output_band)
-            self.report("storing the output_band<{}> in the group '{}'"
-                .format(output_band.pk, self.inputs.group.value))
-
     def on_terminated(self):
         """
         If the clean_workdir input was set to True, recursively collect all called Calculations by
-        ourselves and our called descendants, and clean the remote folder for the JobCalculation instances
+        ourselves and our called descendants, and clean the remote folder for the CalcJobNode instances
         """
         super(PwBandsWorkChain, self).on_terminated()
 
@@ -200,7 +191,7 @@ class PwBandsWorkChain(WorkChain):
         cleaned_calcs = []
 
         for called_descendant in self.calc.called_descendants:
-            if isinstance(called_descendant, JobCalculation):
+            if isinstance(called_descendant, CalcJobNode):
                 try:
                     called_descendant.out.remote_folder._clean()
                     cleaned_calcs.append(called_descendant.pk)
@@ -209,15 +200,3 @@ class PwBandsWorkChain(WorkChain):
 
         if cleaned_calcs:
             self.report('cleaned remote folders of calculations: {}'.format(' '.join(map(str, cleaned_calcs))))
-
-
-@workfunction
-def seekpath_structure_analysis(structure, parameters):
-    """
-    This workfunction will take a structure and pass it through SeeKpath to get the
-    primitive cell and the path of high symmetry k-points through its Brillouin zone.
-    Note that the returned primitive cell may differ from the original structure in
-    which case the k-points are only congruent with the primitive cell.
-    """
-    from aiida.tools import get_explicit_kpoints_path
-    return get_explicit_kpoints_path(structure, **parameters.get_dict())

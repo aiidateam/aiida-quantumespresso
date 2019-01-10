@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import copy
-
 from aiida.orm import Code
 from aiida.orm.data.base import Str, Float, Bool
 from aiida.orm.data.parameter import ParameterData
@@ -9,34 +7,23 @@ from aiida.orm.data.array.bands import BandsData
 from aiida.orm.data.array.kpoints import KpointsData
 from aiida.orm import WorkflowFactory
 from aiida.work.workchain import WorkChain, ToContext
-
-from aiida_quantumespresso.utils.mapping import update_mapping, prepare_process_inputs
+from aiida_quantumespresso.utils.mapping import update_mapping
 from aiida_quantumespresso.utils.protocols.pw import ProtocolManager
 from aiida_quantumespresso.utils.pseudopotential import get_pseudos_from_dict
 
 PwBandsWorkChain = WorkflowFactory('quantumespresso.pw.bands')
 
-          
-class PwBandStructureWorkChain(WorkChain):
-    """
-    Workchain to relax and compute the band structure for a given input structure
-    using Quantum ESPRESSO's pw.x
-    """
 
-    ERROR_INVALID_INPUT_UNRECOGNIZED_KIND = 1
+class PwBandStructureWorkChain(WorkChain):
+    """Workchain to automatically compute a band structure for a given structure using Quantum ESPRESSO pw.x"""
 
     @classmethod
     def define(cls, spec):
         super(PwBandStructureWorkChain, cls).define(spec)
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
-        #spec.input('pseudo_family', valid_type=Str)
         spec.input('protocol', valid_type=ParameterData)
         spec.input('scf_options', valid_type=ParameterData)
-        #spec.expose_inputs(PwBandsWorkChain, namespace='bands_workflow', include=('relax.base.options', 'scf.options', 'bands.options'))
-        #del spec.inputs['bands_workflow']['bands']['code']
-        #del spec.inputs['bands_workflow']['scf']['code']
-        #del spec.inputs['bands_workflow']['relax']['base']['code']
         spec.outline(
             cls.setup_protocol,
             cls.setup_kpoints,
@@ -44,10 +31,8 @@ class PwBandStructureWorkChain(WorkChain):
             cls.run_bands,
             cls.run_results,
         )
-        
-        spec.exit_code(101,'BANDS_WORKCHAIN_FAILED',
-            message='The bands subworkchain failed')
- 
+        spec.exit_code(101, 'ERROR_INVALID_INPUT_UNRECOGNIZED_KIND', message='The bands subworkchain failed')
+        spec.exit_code(102, 'ERROR_SUB_PROCESS_FAILED_BANDS', message='the bands PwBasexWorkChain sub process failed')
         spec.output('primitive_structure', valid_type=StructureData)
         spec.output('seekpath_parameters', valid_type=ParameterData)
         spec.output('scf_parameters', valid_type=ParameterData)
@@ -61,7 +46,7 @@ class PwBandStructureWorkChain(WorkChain):
         protocol_data = self.inputs.protocol.get_dict()
         protocol_name = protocol_data['name']
         protocol = ProtocolManager(protocol_name)
-        
+
         protocol_modifiers = protocol_data.get('modifiers', {})
 
         return protocol, protocol_modifiers
@@ -105,7 +90,7 @@ class PwBandStructureWorkChain(WorkChain):
                 ecutrho.append(cutrho)
             except KeyError:
                 self.report('failed to retrieve the cutoff or dual factor for {}'.format(kind))
-                return self.ERROR_INVALID_INPUT_UNRECOGNIZED_KIND
+                return self.exit_codes.ERROR_INVALID_INPUT_UNRECOGNIZED_KIND
 
         natoms = len(structure.sites)
         conv_thr = self.ctx.protocol['convergence_threshold_per_atom'] * natoms
@@ -144,17 +129,15 @@ class PwBandStructureWorkChain(WorkChain):
 
             return {
                 'code': self.inputs.code,
-                #'pseudo_family': self.inputs.pseudo_family,
                 'pseudos': pseudos,
                 'parameters': ParameterData(dict=self.ctx.parameters),
-                'options': self.inputs.scf_options, # NOTE: for now we use these options for all three steps (relax, scf, bands)
-                #'settings': {},
-            } 
+                'options': self.inputs.scf_options,
+            }
 
         relax_inputs = get_common_inputs()
         update_mapping(relax_inputs, {
             'kpoints': self.ctx.kpoints_mesh,
-            'relaxation_scheme': Str('vc-relax'),  
+            'relaxation_scheme': Str('vc-relax'),
             'meta_convergence': Bool(self.ctx.protocol['meta_convergence']),
             'volume_convergence': Float(self.ctx.protocol['volume_convergence']),
         })
@@ -164,12 +147,12 @@ class PwBandStructureWorkChain(WorkChain):
             'kpoints': self.ctx.kpoints_mesh,
         })
 
-        #Updating the number of bands to compute
+        # Updating the number of bands to compute
         num_bands_factor = self.ctx.protocol.get('num_bands_factor', None)
         bands_inputs = get_common_inputs()
         if num_bands_factor is not None:
-            #Using a dict because it is converted to ParameterData in the next step
-            bands_inputs['workchain_options'] = ParameterData(dict={'num_bands_factor':num_bands_factor})
+            bands_inputs['nbands_factor'] = Float(num_bands_factor)
+
         update_mapping(bands_inputs, {
             'kpoints_distance': Float(self.ctx.protocol['kpoints_distance_for_bands']),
         })
@@ -195,22 +178,30 @@ class PwBandStructureWorkChain(WorkChain):
         Attach the relevant output nodes from the band calculation to the workchain outputs
         for convenience
         """
-        exit_code = 0 
+        exit_code = 0
+
         if self.ctx.workchain_bands.is_finished_ok:
             self.report('workchain succesfully completed')
         else:
-            wc_bands = self.ctx.workchain_bands 
+            wc_bands = self.ctx.workchain_bands
             self.report('bands sub-workchain failed (process state: {}, '
                         'exit message: {}, '
-                        'exit status: {})'.format(
-                        wc_bands.process_state, wc_bands.exit_message, wc_bands.exit_status))
-            exit_code = self.exit_codes.BANDS_WORKCHAIN_FAILED
-            
-        for link_label in ['primitive_structure', 'seekpath_parameters', 'scf_parameters', 'band_parameters', 'band_structure']:
-            if link_label in self.ctx.workchain_bands.out:
-                node = self.ctx.workchain_bands.get_outputs_dict()[link_label]
-                self.out(link_label, node)
+                        'exit status: {})'.format(wc_bands.process_state, wc_bands.exit_message, wc_bands.exit_status))
+            exit_code = self.exit_codes.ERROR_SUB_PROCESS_FAILED_BANDS
+
+        link_labels = [
+            'primitive_structure',
+            'seekpath_parameters',
+            'scf_parameters',
+            'band_parameters',
+            'band_structure'
+        ]
+
+        for link_triple in self.ctx.workchain_bands.get_outcoming().all():
+            if link_triple.link_label in link_labels:
+                self.out(link_triple.link_label, link_triple.node)
                 self.report("attaching {}<{}> as an output node with label '{}'"
-                    .format(node.__class__.__name__, node.pk, link_label))
+                    .format(link_triple.node.__class__.__name__, link_triple.node.pk, link_triple.link_label))
+
         if exit_code:
             return exit_code

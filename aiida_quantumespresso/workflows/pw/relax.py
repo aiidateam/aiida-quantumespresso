@@ -3,7 +3,6 @@ from aiida.common.extendeddicts import AttributeDict
 from aiida.orm.calculation import JobCalculation
 from aiida.orm.data.base import Bool, Float, Int, Str
 from aiida.orm.data.structure import StructureData
-from aiida.orm.group import Group
 from aiida.orm.utils import CalculationFactory, WorkflowFactory
 from aiida.work.workchain import WorkChain, ToContext, if_, while_, append_
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
@@ -22,7 +21,6 @@ class PwRelaxWorkChain(WorkChain):
         spec.expose_inputs(PwBaseWorkChain, namespace='base', exclude=('structure', 'clean_workdir'))
         spec.input('structure', valid_type=StructureData)
         spec.input('final_scf', valid_type=Bool, default=Bool(False))
-        spec.input('group', valid_type=Str, required=False)
         spec.input('relaxation_scheme', valid_type=Str, default=Str('vc-relax'))
         spec.input('meta_convergence', valid_type=Bool, default=Bool(True))
         spec.input('max_meta_convergence_iterations', valid_type=Int, default=Int(5))
@@ -188,18 +186,6 @@ class PwRelaxWorkChain(WorkChain):
         except AttributeError:
             workchain = self.ctx.workchains[-1]
             structure = workchain.out.output_structure
-
-        if 'group' in self.inputs:
-            # Retrieve the final successful PwCalculation through the output_parameters of the PwBaseWorkChain
-            try:
-                calculation = workchain.out.output_parameters.get_inputs(node_type=PwCalculation)[0]
-            except (AttributeError, IndexError):
-                self.report('could not retrieve the last run PwCalculation to add to the result group')
-            else:
-                group, _ = Group.get_or_create(name=self.inputs.group.value)
-                group.add_nodes(calculation)
-                self.report("storing the final PwCalculation<{}> in the group '{}'"
-                    .format(calculation.pk, self.inputs.group.value))
 
         self.out_many(self.exposed_outputs(workchain, PwBaseWorkChain))
         self.out('output_structure', structure)

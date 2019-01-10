@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from aiida.work.workfunctions import workfunction
+from aiida.work import calcfunction
 
 
-@workfunction
+@calcfunction
 def create_kpoints_from_distance(structure, distance, force_parity):
     """
     Generate a uniformly spaced kpoint mesh for a given structure where the spacing between kpoints in reciprocal
