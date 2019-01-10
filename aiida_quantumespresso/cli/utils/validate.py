@@ -1,9 +1,39 @@
 # -*- coding: utf-8 -*-
-from aiida.cmdline.utils.decorators import with_dbenv
-from aiida.common.exceptions import NotExistent
+import click
+
+from aiida.cmdline.utils import decorators
+from aiida.common import exceptions
 
 
-@with_dbenv()
+def validate_kpoints_mesh(ctx, param, value):
+    """
+    Command line option validator for a kpoints mesh tuple. The value should be a tuple
+    of three positive integers out of which a KpointsData object will be created with
+    a mesh equal to the tuple.
+
+    :param ctx: internal context of the click.command
+    :param param: the click Parameter, i.e. either the Option or Argument to which the validator is hooked up
+    :param value: a tuple of three positive integers
+    :returns: a KpointsData instance
+    """
+    from aiida.orm.data.array.kpoints import KpointsData
+
+    if not value:
+        return None
+
+    if any([type(i) != int for i in value]) or any([int(i) <= 0 for i in value]):
+        raise click.BadParameter('all values of the tuple should be positive greater than zero integers')
+
+    try:
+        kpoints = KpointsData()
+        kpoints.set_kpoints_mesh(value)
+    except ValueError as exception:
+        raise click.BadParameter("failed to create a KpointsData mesh out of {}\n{}".format(value, exception))
+
+    return kpoints
+
+
+@decorators.with_dbenv()
 def validate_hubbard_parameters(structure, parameters, hubbard_u=None, hubbard_v=None, hubbard_file_pk=None):
     """
     Validate Hubbard input parameters and update the parameters input node accordingly. If a valid hubbard_file_pk
@@ -29,7 +59,7 @@ def validate_hubbard_parameters(structure, parameters, hubbard_u=None, hubbard_v
 
         try:
             hubbard_file = load_node(pk=hubbard_file_pk)
-        except NotExistent:
+        except exceptions.NotExistent:
             ValueError('{} is not a valid pk'.format(hubbard_file_pk))
         else:
             if not isinstance(hubbard_file, SinglefileData):
