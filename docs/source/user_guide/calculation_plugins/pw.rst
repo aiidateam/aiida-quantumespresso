@@ -7,7 +7,27 @@ Use the plugin to support inputs of Quantum Espresso pw.x executable.
 
 Supported codes
 ---------------
-* tested from pw.x v5.0 onwards.
+
+==========  ================================================================
+QE version   Support by aiida-quantumespresso
+==========  ================================================================
+< 5.0       Not supported
+5.0 to 5.4  Legacy support [#legacy]_
+6.0, 6.1    Supported (with old XML) [#oldxml1]_
+6.2, 6.3    Supported (with old XML; requires compilation flag) [#oldxml2]_
+6.4         Supported [#newxml]_
+==========  ================================================================
+
+Notes:
+
+.. [#legacy] These versions were originally compatible, but are not continuously tested any more; therefore their compatibility is not guaranteed. We welcome pull requests that maintain or improve compatibility with these versions.
+
+.. [#oldxml1] QE 6.0 and 6.1 optionally provide a new output format (schema-based XML), disabled by default, which is not supported by aiida-quantumespresso.
+
+.. [#oldxml2] In QE 6.2 and 6.3, the new schema-based XML output format is enabled by default. This is still not supported by aiida-quantumespresso, so **you must disable it when compiling QE**: either run ``./configure`` with the option ``--disable-xml``, or add ``-D__OLDXML`` to ``MANUAL_FLAGS`` in ``make.inc``.
+
+.. [#newxml] Since version 6.4, the schema-based XML output is mandatory and fully supported by aiida-quantumespresso.
+
 
 Inputs
 ------
