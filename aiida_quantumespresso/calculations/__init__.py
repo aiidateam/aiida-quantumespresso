@@ -39,6 +39,9 @@ class BasePwCpInputGenerator(object):
 
     _automatic_namelists = {}
 
+    # blocked keywords are specified in the subclass
+    _blocked_keywords = {}
+
     # in restarts, will not copy but use symlinks
     _default_symlink_usage = True
 
@@ -61,21 +64,6 @@ class BasePwCpInputGenerator(object):
     #        'vc-md':    ['CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', 'CELL'],
     #        'vc-relax': ['CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', 'CELL'],
     #        }
-
-    # Keywords that cannot be set
-    # If the length of the tuple is three, the third value is the value that
-    # will be automatically set.
-    # Note that some values (ibrav, nat, ntyp, ...) are overridden anyway
-    #     _blocked_keywords = [('CONTROL', 'pseudo_dir'), # set later
-    #          ('CONTROL', 'outdir'),  # set later
-    #          ('CONTROL', 'prefix'),  # set later
-    #          ('SYSTEM', 'ibrav'),  # set later
-    #          ('SYSTEM', 'celldm'),
-    #          ('SYSTEM', 'nat'),  # set later
-    #          ('SYSTEM', 'ntyp'),  # set later
-    #          ('SYSTEM', 'a'), ('SYSTEM', 'b'), ('SYSTEM', 'c'),
-    #     ('SYSTEM', 'cosab'), ('SYSTEM', 'cosac'), ('SYSTEM', 'cosbc'),
-    # ]
 
     # _use_kpoints = False
 
