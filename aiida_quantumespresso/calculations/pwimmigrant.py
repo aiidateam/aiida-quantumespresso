@@ -236,7 +236,6 @@ class PwimmigrantCalculation(PwCalculation):
             with open(local_path) as fin:
                 pwinputfile = pwinputparser.PwInputFile(fin)
 
-
             # Determine PREFIX, if it hasn't already been set by the user.
             if self._PREFIX is None:
                 control_dict = pwinputfile.namelists['CONTROL']

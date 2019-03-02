@@ -235,7 +235,7 @@ def str2val(valstr):
          |                    # or
          \d+[.]\d*            # 10.53 or 10.
          |                    # or
-         \d+ )                # or integer
+         \d+ )                # integer
         (?:[dEeE][-+]?[0-9]+)?  # optional exponent
         """, re.X)
     # Strip any white space characters before analyzing.
@@ -261,9 +261,12 @@ def str2val(valstr):
                 print 'Error converting {} to a value'.format(repr(valstr))
                 raise error
     if val is None:
-        raise ValueError('Unable to convert {} to a python variable.\n'
-                         'NOTE: Support for algebraic expressions is not yet '
-                         'implemented.'.format(repr(valstr)))
+        try:
+            val = float(valstr)
+        except (TypeError, ValueError):
+            raise ValueError('Unable to convert {} to a python variable.\n'
+                             'NOTE: Support for algebraic expressions is not yet '
+                             'implemented.'.format(repr(valstr)))
     else:
         return val
 

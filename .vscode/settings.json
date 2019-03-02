@@ -1,0 +1,6 @@
+{
+    "python.pythonPath": "/anaconda/envs/aiida_cry17_0_4_0_py27/bin/python",
+    "python.linting.pylintEnabled": false,
+    "python.linting.flake8Enabled": true,
+    "python.linting.enabled": true
+}
