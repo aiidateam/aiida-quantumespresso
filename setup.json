@@ -67,7 +67,14 @@
             "launch_workflow_q2r_base = aiida_quantumespresso.cli.workflows.q2r.base:launch", 
             "launch_workflow_matdyn_base = aiida_quantumespresso.cli.workflows.matdyn.base:launch"
         ]
-    }, 
+    },
+    "setup_requires": ["reentry"],
+    "install_requires": [
+        "aiida_core==0.12.2",
+        "click",
+        "spglib==1.10.3.65",
+        "ase==3.12.0"
+    ], 
     "extras_require": {
         "dev_precommit": [
             "pre-commit"
@@ -78,10 +85,6 @@
             "sphinx_rtd_theme"
         ]
     }, 
-    "install_requires": [
-        "aiida_core[atomic_tools]>=0.12.0,<1.0.0", 
-        "click"
-    ], 
     "license": "MIT License", 
     "name": "aiida_quantumespresso", 
     "url": "https://github.com/aiidateam/aiida-quantumespresso", 
