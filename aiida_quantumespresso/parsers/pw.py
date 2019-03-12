@@ -1,105 +1,81 @@
 # -*- coding: utf-8 -*-
+import os
+
 import numpy
-from aiida.common.exceptions import UniquenessError
-from aiida.orm.data.array.bands import BandsData
-from aiida.orm.data.array.kpoints import KpointsData
-from aiida.orm.data.parameter import ParameterData
-from aiida.parsers.parser import Parser
-from aiida_quantumespresso.calculations.pw import PwCalculation
+
+from aiida import orm
+from aiida.common import exceptions
+from aiida.engine import ExitCode
+from aiida.parsers import Parser
 from aiida_quantumespresso.parsers import convert_qe2aiida_structure
 from aiida_quantumespresso.parsers.raw_parser_pw import parse_raw_output, QEOutputParsingError
 from aiida_quantumespresso.utils.linalg import are_matrices_equal
 
 
 class PwParser(Parser):
-    """
-    The Parser implementation for the PwCalculation JobCalculation class
-    """
+    """`Parser` implementation for the `PwCalculation` calculation job class."""
 
     _setting_key = 'parser_options'
 
-    def __init__(self, calc):
-        """
-        Initialize the Parser for a PwCalculation
-
-        :param calculation: instance of the PwCalculation
-        """
-        self._possible_symmetries = self._get_qe_symmetry_list()
-
-        if not isinstance(calc, PwCalculation):
-            raise QEOutputParsingError('Input calc must be a PwCalculation')
-
-        super(PwParser, self).__init__(calc)
-
-    def parse_with_retrieved(self, retrieved):
+    def parse(self, **kwargs):
         """
         Parse the output nodes for a PwCalculations from a dictionary of retrieved nodes.
         Two nodes that are expected are the default 'retrieved' FolderData node which will
         store the retrieved files permanently in the repository. The second required node
         is the unstored FolderData node with the temporary retrieved files, which should
         be passed under the key 'retrieved_temporary_folder_key' of the Parser class.
-
-        :param retrieved: a dictionary of retrieved nodes
         """
-        import os
+        try:
+            output_folder = self.retrieved
+        except exceptions.NotExistent:
+            return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
 
-        successful = True
-
-        # Load the input dictionary
-        parameters = self._calc.inp.parameters.get_dict()
+        parameters = self.node.inp.parameters.get_dict()
 
         # Look for optional settings input node and potential 'parser_options' dictionary within it
         try:
-            settings = self._calc.inp.settings.get_dict()
-            parser_opts = settings[self.get_parser_settings_key()]
+            settings = self.node.inp.settings.get_dict()
+            parser_options = settings[self.get_parser_settings_key()]
         except (AttributeError, KeyError):
             settings = {}
-            parser_opts = {}
-
-        # Check that the retrieved folder is there
-        try:
-            out_folder = retrieved[self._calc._get_linkname_retrieved()]
-        except KeyError:
-            self.logger.error("No retrieved folder found")
-            return False, ()
+            parser_options = {}
 
         # Verify that the retrieved_temporary_folder is within the arguments if temporary files were specified
-        if self._calc._get_retrieve_temporary_list():
+        if self.node.get_attribute('retrieve_temporary_list', None):
             try:
-                temporary_folder = retrieved[self.retrieved_temporary_folder_key]
+                temporary_folder = kwargs['retrieved_temporary_folder']
                 dir_with_bands = temporary_folder
             except KeyError:
-                self.logger.error('the {} was not passed as an argument'.format(self.retrieved_temporary_folder_key))
-                return False, ()
+                self.logger.error('the `retrieved_temporary_folder` was not passed as an argument')
+                return ExitCode(101)
         else:
             dir_with_bands = None
 
-        list_of_files = out_folder.get_folder_list()
+        list_of_files = output_folder._repository.list_object_names()
 
         # The stdout is required for parsing
-        if self._calc._OUTPUT_FILE_NAME not in list_of_files:
-            self.logger.error("The standard output file '{}' was not found but is required".format(self._calc._OUTPUT_FILE_NAME))
-            return False, ()
+        filename_stdout = self.node.get_attribute('output_filename')
+        filename_xml = self.node.load_process_class()._DATAFILE_XML_BASENAME
+
+        if filename_stdout not in list_of_files:
+            self.logger.error("The standard output file '{}' was not found but is required".format(filename_stdout))
+            return ExitCode(102)
 
         # The xml file is required for parsing
-        if self._calc._DATAFILE_XML_BASENAME not in list_of_files:
-            self.logger.error("The xml output file '{}' was not found but is required".format(self._calc._DATAFILE_XML_BASENAME))
-            successful = False
+        if filename_xml not in list_of_files:
+            self.logger.error("The xml output file '{}' was not found but is required".format(filename_xml))
             xml_file = None
         else:
-            xml_file = os.path.join(out_folder.get_abs_path('.'), self._calc._DATAFILE_XML_BASENAME)
+            xml_file = os.path.join(output_folder._repository._get_base_folder().abspath, filename_xml)
 
-        out_file = os.path.join(out_folder.get_abs_path('.'), self._calc._OUTPUT_FILE_NAME)
+        out_file = os.path.join(output_folder._repository._get_base_folder().abspath, filename_stdout)
 
         # Call the raw parsing function
-        parsing_args = [out_file, parameters, parser_opts, xml_file, dir_with_bands]
+        parsing_args = [out_file, parameters, parser_options, xml_file, dir_with_bands]
         out_dict, trajectory_data, structure_data, bands_data, raw_successful = parse_raw_output(*parsing_args)
 
-        # If calculation was not considered failed already, use the new value
-        successful = raw_successful if successful else successful
-
         # If the parser option 'all_symmetries' is not set to True, we reduce the raw parsed symmetries to safe space
-        all_symmetries = parser_opts.get('all_symmetries', False)
+        all_symmetries = parser_options.get('all_symmetries', False)
 
         if not all_symmetries and 'cell' in structure_data:
 
@@ -152,6 +128,7 @@ class PwParser(Parser):
             cell = structure_data['cell']['lattice_vectors']
             cell_T = numpy.transpose(cell)
             cell_Tinv = numpy.linalg.inv(cell_T)
+            possible_symmetries = self._get_qe_symmetry_list()
 
             try:
                 if 'symmetries' in out_dict.keys():
@@ -159,7 +136,7 @@ class PwParser(Parser):
                     new_symmetries = []
                     for this_sym in old_symmetries:
                         name = this_sym['name'].strip()
-                        for i, this in enumerate(self._possible_symmetries):
+                        for i, this in enumerate(possible_symmetries):
                             # Since we do an exact comparison we strip the string name from whitespace
                             # and as soon as it is matched, we break to prevent it from matching another
                             if name == this['name'].strip():
@@ -172,14 +149,14 @@ class PwParser(Parser):
                         new_dict = {}
                         if index is not None:
                             # The raw parsed rotation matrix is in crystal coordinates, whereas the mapped rotation
-                            # in self._possible_symmetries is in cartesian coordinates. To allow them to be compared
+                            # in possible_symmetries is in cartesian coordinates. To allow them to be compared
                             # to make sure we matched the correct rotation symmetry, we first convert the parsed matrix
                             # to cartesian coordinates. For explanation of the method, see comment above.
                             rotation_cryst = this_sym['rotation']
-                            rotation_cart_new = self._possible_symmetries[index]['matrix']
+                            rotation_cart_new = possible_symmetries[index]['matrix']
                             rotation_cart_old = numpy.dot(cell_T, numpy.dot(rotation_cryst, cell_Tinv))
 
-                            inversion = self._possible_symmetries[index]['inversion']
+                            inversion = possible_symmetries[index]['inversion']
                             if not are_matrices_equal(rotation_cart_old, rotation_cart_new, swap_sign_matrix_b=inversion):
                                 self.logger.error('Mapped rotation matrix {} does not match the original rotation {}'
                                     .format(rotation_cart_new, rotation_cart_old))
@@ -197,16 +174,14 @@ class PwParser(Parser):
             except KeyError:  # no symmetries were parsed (failed case, likely)
                 self.logger.error("No symmetries were found in output")
 
-        new_nodes_list = []
-
         # I eventually save the new structure. structure_data is unnecessary after this
-        in_struc = self._calc.get_incoming(link_label_filter='structure').one().node
+        in_struc = self.node.get_incoming(link_label_filter='structure').one().node
         type_calc = parameters['CONTROL']['calculation']
         struc = in_struc
         if type_calc in ['relax', 'vc-relax', 'md', 'vc-md']:
             if 'cell' in structure_data.keys():
                 struc = convert_qe2aiida_structure(structure_data, input_structure=in_struc)
-                new_nodes_list.append((self.get_linkname_outstructure(), struc))
+                self.out(self.get_linkname_outstructure(), struc)
 
         k_points_list = trajectory_data.pop('k_points', None)
         k_points_weights_list = trajectory_data.pop('k_points_weights', None)
@@ -217,16 +192,16 @@ class PwParser(Parser):
             if out_dict['k_points_units'] not in ['2 pi / Angstrom']:
                 raise QEOutputParsingError('Error in kpoints units (should be cartesian)')
 
-            kpoints_from_output = KpointsData()
+            kpoints_from_output = orm.KpointsData()
             kpoints_from_output.set_cell_from_structure(struc)
             kpoints_from_output.set_kpoints(k_points_list, cartesian=True, weights=k_points_weights_list)
-            kpoints_from_input = self._calc.inp.kpoints
+            kpoints_from_input = self.node.inp.kpoints
 
             if not bands_data:
                 try:
                     kpoints_from_input.get_kpoints()
                 except AttributeError:
-                    new_nodes_list += [(self.get_linkname_out_kpoints(), kpoints_from_output)]
+                    self.out(self.get_linkname_out_kpoints(), kpoints_from_output)
 
             # Converting bands into a BandsData object (including the kpoints)
             if bands_data:
@@ -256,28 +231,26 @@ class PwParser(Parser):
                 except IndexError:
                     bands_energies = bands_data['bands'][0]
 
-                the_bands_data = BandsData()
+                the_bands_data = orm.BandsData()
                 the_bands_data.set_kpointsdata(kpoints_for_bands)
                 the_bands_data.set_bands(bands_energies,
                                          units=bands_data['bands_units'],
                                          occupations=the_occupations)
 
-                new_nodes_list += [('output_band', the_bands_data)]
+                self.out('output_band', the_bands_data)
                 out_dict['linknames_band'] = ['output_band']
 
         # Separate the atomic_occupations dictionary in its own node if it is present
         atomic_occupations = out_dict.get('atomic_occupations', {})
         if atomic_occupations:
             out_dict.pop('atomic_occupations')
-            atomic_occupations_node = ParameterData(dict=atomic_occupations)
-            new_nodes_list.append(('output_atomic_occupations', atomic_occupations_node))
+            atomic_occupations_node = orm.Dict(dict=atomic_occupations)
+            self.out('output_atomic_occupations', atomic_occupations_node)
 
-        output_params = ParameterData(dict=out_dict)
-        new_nodes_list.append((self.get_linkname_outparams(), output_params))
+        output_params = orm.Dict(dict=out_dict)
+        self.out('output_parameters', output_params)
 
         if trajectory_data:
-            from aiida.orm.data.array.trajectory import TrajectoryData
-            from aiida.orm.data.array import ArrayData
             try:
                 positions = numpy.array(trajectory_data.pop('atomic_positions_relax'))
                 try:
@@ -294,7 +267,7 @@ class PwParser(Parser):
                 # I will insert time parsing when they fix their issues about time
                 # printing (logic is broken if restart is on)
 
-                traj = TrajectoryData()
+                traj = orm.TrajectoryData()
                 traj.set_trajectory(
                     stepids=stepids,
                     cells=cells,
@@ -303,16 +276,16 @@ class PwParser(Parser):
                 )
                 for x in trajectory_data.iteritems():
                     traj.set_array(x[0], numpy.array(x[1]))
-                new_nodes_list.append((self.get_linkname_outtrajectory(), traj))
+                self.out(self.get_linkname_outtrajectory(), traj)
 
             except KeyError:
                 # forces, atomic charges and atomic mag. moments, in scf calculation (when outputed)
-                arraydata = ArrayData()
+                arraydata = orm.ArrayData()
                 for x in trajectory_data.iteritems():
                     arraydata.set_array(x[0], numpy.array(x[1]))
-                new_nodes_list.append((self.get_linkname_outarray(), arraydata))
+                self.out(self.get_linkname_outarray(), arraydata)
 
-        return successful, new_nodes_list
+        return ExitCode(0)
 
     def get_parser_settings_key(self):
         """
@@ -353,10 +326,11 @@ class PwParser(Parser):
         """
         Return the extended dictionary of symmetries.
         """
-        data = self._calc.get_outgoing(node_class=ParameterData)
+        possible_symmetries = self._get_qe_symmetry_list()
+        data = self.node.get_outgoing(node_class=orm.Dict)
         all_data = [i.node for i in data if i.link_label == self.get_linkname_outparams()]
         if len(all_data) > 1:
-            raise UniquenessError('More than one output parameterdata found.')
+            raise exceptions.UniquenessError('More than one output parameterdata found.')
         elif not all_data:
             return []
         else:
@@ -371,9 +345,9 @@ class PwParser(Parser):
                     except KeyError:
                         pass
                 # expand the rest
-                new_dict['name'] = self._possible_symmetries[element['symmetry_number']]['name']
-                new_dict['rotation'] = self._possible_symmetries[element['symmetry_number']]['matrix']
-                new_dict['inversion'] = self._possible_symmetries[element['symmetry_number']]['inversion']
+                new_dict['name'] = possible_symmetries[element['symmetry_number']]['name']
+                new_dict['rotation'] = possible_symmetries[element['symmetry_number']]['matrix']
+                new_dict['inversion'] = possible_symmetries[element['symmetry_number']]['inversion']
                 new_list.append(new_dict)
             return new_list
 

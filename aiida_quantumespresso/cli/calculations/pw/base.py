@@ -33,14 +33,13 @@ def launch(
     code, structure, pseudo_family, kpoints_mesh, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file_pk,
     starting_magnetization, smearing, max_num_machines, max_wallclock_seconds, with_mpi, daemon, mode):
     """Run a PwCalculation."""
-    from aiida.orm.data.parameter import ParameterData
-    from aiida.orm.data.upf import get_pseudos_from_structure
-    from aiida.orm.utils import CalculationFactory
-    from aiida.work import launch
+    from aiida.orm import Dict
+    from aiida.orm.nodes.data.upf import get_pseudos_from_structure
+    from aiida.engine import launch
+    from aiida.plugins import CalculationFactory
     from aiida_quantumespresso.utils.resources import get_default_options
 
-    # PwCalculation = CalculationFactory('quantumespresso.pw')
-    from aiida.work.calcjob import PwCalculation
+    PwCalculation = CalculationFactory('quantumespresso.pw')
 
     parameters = {
         'CONTROL': {
@@ -70,11 +69,13 @@ def launch(
     inputs = {
         'code': code,
         'structure': structure,
-        'pseudo': get_pseudos_from_structure(structure, pseudo_family),
+        'pseudos': get_pseudos_from_structure(structure, pseudo_family),
         'kpoints': kpoints_mesh,
-        'parameters': ParameterData(dict=parameters),
-        'settings': ParameterData(dict={}),
-        'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
+        'parameters': Dict(dict=parameters),
+        'settings': Dict(dict={}),
+        'metadata': {
+            'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
+        }
     }
 
     if hubbard_file:

@@ -16,7 +16,7 @@ def validate_kpoints_mesh(ctx, param, value):
     :param value: a tuple of three positive integers
     :returns: a KpointsData instance
     """
-    from aiida.orm.data.array.kpoints import KpointsData
+    from aiida.orm import KpointsData
 
     if not value:
         return None
@@ -47,8 +47,7 @@ def validate_hubbard_parameters(structure, parameters, hubbard_u=None, hubbard_v
     :returns: the loaded SinglefileData node with Hubbard parameters if valid pk was defined, None otherwise
     :raises ValueError: if the input is invalid
     """
-    from aiida.orm import load_node
-    from aiida.orm.data.singlefile import SinglefileData
+    from aiida.orm import load_node, SinglefileData
 
     if [v is None for v in [hubbard_u, hubbard_v, hubbard_file_pk]].count(True) > 1:
         raise ValueError('the hubbard_u, hubbard_v and hubbard_file_pk options are mutually exclusive')
