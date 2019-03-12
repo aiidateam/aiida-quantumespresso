@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from aiida.parsers.exceptions import OutputParsingError
+from aiida.common.exceptions import OutputParsingError
 import aiida_quantumespresso
 
 
