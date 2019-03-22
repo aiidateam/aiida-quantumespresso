@@ -12,7 +12,7 @@ import numpy as np
 from qeinputparser import (
         QeInputFile,parse_namelists,parse_atomic_positions,
         parse_atomic_species,parse_cell_parameters, RE_FLAGS )
-from aiida.orm.data.array.kpoints import KpointsData
+from aiida.orm.nodes.data.array.kpoints import KpointsData
 from aiida.common.exceptions import ParsingError
 
 
@@ -176,7 +176,7 @@ class PwInputFile(QeInputFile):
         settings node to the calculation with `gamma_only = True`.
 
         :return: KpointsData object of the kpoints in the input file
-        :rtype: aiida.orm.data.array.kpoints.KpointsData
+        :rtype: aiida.orm.nodes.data.array.kpoints.KpointsData
         :raises NotImplementedError: if the kpoints are
             in a format not yet supported.
         """

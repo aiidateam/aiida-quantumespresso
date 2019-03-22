@@ -2,8 +2,8 @@
 import os
 from aiida.common import exceptions
 from aiida.common.lang import classproperty
-from aiida.orm.data.remote import RemoteData
-from aiida.orm.data.array.kpoints import KpointsData
+from aiida.orm.nodes.data.remote import RemoteData
+from aiida.orm.nodes.data.array.kpoints import KpointsData
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 from aiida_quantumespresso.calculations.q2r import Q2rCalculation
 
@@ -97,7 +97,7 @@ class MatdynCalculation(NamelistsCalculation):
         return "\n".join(retlist)+"\n"
     
     def _prepare_for_submission(self,tempfolder, inputdict): 
-        from aiida.orm.data.singlefile import SinglefileData
+        from aiida.orm.nodes.data.singlefile import SinglefileData
         
         parent_calc_folder = inputdict.get(self.get_linkname('parent_folder'),
                                            None)

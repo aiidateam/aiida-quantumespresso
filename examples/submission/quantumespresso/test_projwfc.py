@@ -10,8 +10,9 @@
 ###########################################################################
 import sys, os, numpy
 from aiida.common.example_helpers import test_and_get_code
+from aiida.orm import load_node
 
-ParameterData = DataFactory('parameter')
+Dict = DataFactory('dict')
 
 try:
     dontsend = sys.argv[1]
@@ -48,10 +49,10 @@ code = test_and_get_code(codename, expected_code_type='quantumespresso.projwfc')
 
 computer = code.get_remote_computer()
 
-parameters = ParameterData(dict={'PROJWFC': {'DeltaE' : 0.2}
+parameters = Dict(dict={'PROJWFC': {'DeltaE' : 0.2}
                                  })
 
-parentcalc = JobCalculation.get_subclass_from_pk(parent_id)
+parentcalc = load_node(parent_id)
 
 # calc = code.new_calc(computer=computer)
 calc = code.new_calc()

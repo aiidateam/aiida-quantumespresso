@@ -40,7 +40,7 @@ def validate_hubbard_parameters(structure, parameters, hubbard_u=None, hubbard_v
     is provided, the node will be loaded and returned
 
     :param structure: the StructureData node that will be used in the inputs
-    :param parameters: the ParameterData node that will be used in the inputs
+    :param parameters: the Dict node that will be used in the inputs
     :param hubbard_u: the Hubbard U inputs values from the cli
     :param hubbard_v: the Hubbard V inputs values from the cli
     :param hubbard_file_pk: a pk referencing a SinglefileData with Hubbard parameters
@@ -101,7 +101,7 @@ def validate_starting_magnetization(structure, parameters, starting_magnetizatio
     Validate starting magnetization parameters and update the parameters input node accordingly.
 
     :param structure: the StructureData node that will be used in the inputs
-    :param parameters: the ParameterData node that will be used in the inputs
+    :param parameters: the Dict node that will be used in the inputs
     :param starting_magnetization: the starting magnetization inputs values from the cli
     :raises ValueError: if the input is invalid
     """
@@ -125,7 +125,7 @@ def validate_smearing(parameters, smearing=None):
     """
     Validate smearing parameters and update the parameters input node accordingly.
 
-    :param parameters: the ParameterData node that will be used in the inputs
+    :param parameters: the Dict node that will be used in the inputs
     :param smearing: a tuple of a string and float corresponding to type of smearing and the degauss value
     :raises ValueError: if the input is invalid
     """

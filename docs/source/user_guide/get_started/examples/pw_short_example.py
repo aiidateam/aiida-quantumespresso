@@ -13,7 +13,7 @@ load_dbenv()
 
 from aiida.orm import Code, DataFactory
 StructureData = DataFactory('structure')
-ParameterData = DataFactory('parameter')
+Dict = DataFactory('dict')
 KpointsData = DataFactory('array.kpoints')
 
 ###############################
@@ -37,7 +37,7 @@ s.append_atom(position=(alat/2.,alat/2.,0.),symbols='O')
 s.append_atom(position=(alat/2.,0.,alat/2.),symbols='O')
 s.append_atom(position=(0.,alat/2.,alat/2.),symbols='O')
 
-parameters = ParameterData(dict={
+parameters = Dict(dict={
           'CONTROL': {
               'calculation': 'scf',
               'restart_mode': 'from_scratch',

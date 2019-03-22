@@ -35,7 +35,7 @@ def convert_qe2aiida_structure(output_dict, input_structure=None):
     Receives the dictionary cell parsed from quantum espresso
     Convert it into an AiiDA structure object
     """
-    from aiida.orm import DataFactory
+    from aiida.plugins import DataFactory
 
     StructureData = DataFactory('structure')
 

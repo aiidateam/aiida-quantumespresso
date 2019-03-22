@@ -19,7 +19,7 @@ from aiida.common.exceptions import NotExistent
 ################################################################
 
 UpfData = DataFactory('upf')
-ParameterData = DataFactory('parameter')
+Dict = DataFactory('dict')
 KpointsData = DataFactory('array.kpoints')
 StructureData = DataFactory('structure')
 try:
@@ -82,7 +82,7 @@ except NotExistent:
     print >> sys.stderr, ",".join(i.name for i in valid_pseudo_groups)
     sys.exit(1)
 
-parameters = ParameterData(dict={
+parameters = Dict(dict={
     'CONTROL': {
         'calculation': 'scf',
         'restart_mode': 'from_scratch',
@@ -154,8 +154,8 @@ except NotExistent:
 calc.use_kpoints(kpoints)
 
 if settings is not None:
-    calc.use_settings(ParameterData(dict=settings))
-#from aiida.orm.data.remote import RemoteData
+    calc.use_settings(Dict(dict=settings))
+#from aiida.orm.nodes.data.remote import RemoteData
 #calc.set_outdir(remotedata)
 
 

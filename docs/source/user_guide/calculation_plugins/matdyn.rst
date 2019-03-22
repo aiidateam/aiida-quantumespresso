@@ -11,7 +11,7 @@ Supported codes
 
 Inputs
 ------
-* **parameters**, class :py:class:`ParameterData <aiida.orm.data.parameter.ParameterData>`
+* **parameters**, class :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>`
   Input parameters of pw.x, as a nested dictionary, mapping the input of QE.
   Example::
     
@@ -32,7 +32,7 @@ Inputs
 * **parent_calculation**, pass the parent q2r calculation of its FolderData as the **parent_folder**
   to pass the input force constants.
 
-* **kpoints**, class :py:class:`KpointsData <aiida.orm.data.array.kpoints.KpointsData>`
+* **kpoints**, class :py:class:`KpointsData <aiida.orm.nodes.data.array.kpoints.KpointsData>`
   Points on which to compute the interpolated frequencies. 
   Must contain a list of kpoints.
 
@@ -41,16 +41,16 @@ Outputs
 There are several output nodes that can be created by the plugin, according to the calculation details.
 All output nodes can be accessed with the ``calculation.out`` method.
 
-* output_parameters :py:class:`ParameterData <aiida.orm.data.parameter.ParameterData>`
+* output_parameters :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>`
   Contains warnings. ``calculation.out.output_parameters`` can also be accessed
   by the ``calculation.res`` shortcut.
 
-* output_phonon_bands :py:class:`BandsData <aiida.orm.data.array.bands.BandsData>`
+* output_phonon_bands :py:class:`BandsData <aiida.orm.nodes.data.array.bands.BandsData>`
   Phonon frequencies as a function of qpoints.
 
 Errors
 ------
 Errors of the parsing are reported in the log of the calculation (accessible 
 with the ``verdi calculation logshow`` command). 
-Moreover, they are stored in the ParameterData under the key ``warnings``, and are
+Moreover, they are stored in the Dict under the key ``warnings``, and are
 accessible with ``Calculation.res.warnings``.

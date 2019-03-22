@@ -19,7 +19,7 @@ amu_au           = amu_si / electronmass_si
 def generate_cp_velocities(s, temp, force_kind_order = False, seed=None):
     
     import numpy as np
-    import aiida.orm.data.structure as struct
+    import aiida.orm.nodes.data.structure as struct
     
     if not isinstance(s, struct.StructureData):
         return
@@ -431,7 +431,7 @@ def import_array(fname, mul=1.0):
 
 def import_cp(s, dir, prefix, vel=False):
     
-    import aiida.orm.data.structure as struct
+    import aiida.orm.nodes.data.structure as struct
     import ase.atoms as atoms
     import os
     

@@ -33,7 +33,7 @@ As usual, we load the database environment and load the ``PwimmigrantCalculation
     load_dbenv()
 
     from aiida.orm.code import Code
-    from aiida.orm import CalculationFactory
+    from aiida.plugins import CalculationFactory
 
     # Load the PwimmigrantCalculation class.
     PwimmigrantCalculation = CalculationFactory('quantumespresso.pwimmigrant')
@@ -104,11 +104,11 @@ The immigration
 
 Now that AiiDA knows where to look for the input files of the calculations we are immigrating, all we need to do in order to generate all the input nodes is call the ``create_input_nodes`` method. This method is the most helpful method of the ``PwimmigrantCalculation`` class. It parses the job's input file and creates and links the follow types of input nodes:
 
-* ParameterData -- based on the namelists and their variable-value pairs
+* Dict -- based on the namelists and their variable-value pairs
 * KpointsData -- based on the ``K_POINTS`` card
 * SturctureData --  based on the ``ATOMIC_POSITIONS`` and ``CELL_PARAMETERS`` cards (and the ``a`` or ``celldm(1)`` of the ``&SYSTEM`` namelist, if ``alat`` is specified through these variables)
 * UpfData -- one for each of the atomic species, based on the pseudopotential files specified in the ``ATOMIC_SPECIES`` card
-* settings ParameterData --  if there are any fixed coordinates, or if the gamma kpoint is used
+* settings Dict --  if there are any fixed coordinates, or if the gamma kpoint is used
 
 All units conversion and/or coordinate transformations are handled automatically, and the input nodes are generated in the correct units and coordinates required by AiiDA.
 

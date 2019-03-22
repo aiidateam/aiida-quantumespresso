@@ -19,17 +19,17 @@ from aiida_quantumespresso.cli.utils import options as options_qe
 def launch(
     code, structure, pseudo_family, daemon, protocol):
     """Run a PwBandStructureWorkChain."""
-    from aiida.orm import DataFactory
-    from aiida.orm.utils import WorkflowFactory
+    from aiida.plugins import DataFactory
+    from aiida.plugins import WorkflowFactory
     from aiida.work import launch
 
     PwBandStructureWorkChain = WorkflowFactory('quantumespresso.pw.band_structure')
-    ParameterData = DataFactory('parameter')
+    Dict = DataFactory('dict')
 
     inputs = {
         'code': code,
         'structure': structure,
-        'protocol': ParameterData(dict={
+        'protocol': Dict(dict={
             'name': 'theos-ht-1.0',
         }),
     }

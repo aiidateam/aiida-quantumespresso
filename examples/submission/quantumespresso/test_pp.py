@@ -11,7 +11,7 @@
 import sys, os, numpy
 from aiida.common.example_helpers import test_and_get_code
 
-ParameterData = DataFactory('parameter')
+Dict = DataFactory('dict')
 
 try:
     dontsend = sys.argv[1]
@@ -47,7 +47,7 @@ code = test_and_get_code(codename, expected_code_type='quantumespresso.pp')
 
 computer = code.get_remote_computer()
 
-parameters = ParameterData(dict={'INPUTPP': {'plot_num' : 11},
+parameters = Dict(dict={'INPUTPP': {'plot_num' : 11},
 #                                 'PLOT': {'filepp': 'a'},
                              })
 

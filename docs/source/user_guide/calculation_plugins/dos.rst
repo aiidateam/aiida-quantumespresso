@@ -18,7 +18,7 @@ Inputs
 * **parent_calculation**, A PW calculation. It is also recommended that a bands calculation be used as the parent
   for the best viewing results, though this is not mandatory.
 
-* **parameters**, class :py:class:`ParameterData <aiida.orm.data.parameter.ParameterData>`
+* **parameters**, class :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>`
   Input parameters of dos.x, as a nested dictionary, mapping the input of QE.
   See the QE documentation for the full list of variables and their meaning.
 
@@ -28,10 +28,10 @@ Outputs
 There are several output nodes that can be created by the plugin.
 All output nodes can be accessed with the ``calculation.out`` method.
 
-* output_parameters :py:class:`ParameterData <aiida.orm.data.parameter.ParameterData>`
+* output_parameters :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>`
   (accessed by ``calculation.res``) Contains the wall time of the run, as well as any warnings that may occurred.
 
-* output_dos :py:class:`XyData <aiida.orm.data.array.xy.XyData>`
+* output_dos :py:class:`XyData <aiida.orm.nodes.data.array.xy.XyData>`
   Contains the dos. The energy axis and dos can be found using::
 
     Dos.get_x()
@@ -50,7 +50,7 @@ Errors
 ------
 Errors of the parsing are reported in the log of the calculation (accessible
 with the ``verdi calculation logshow`` command).
-Moreover, they are stored in the ParameterData under the key ``warnings``, and are
+Moreover, they are stored in the Dict under the key ``warnings``, and are
 accessible with ``Calculation.res.warnings``.
 
 

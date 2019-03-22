@@ -10,9 +10,10 @@
 ###########################################################################
 import sys, os, numpy
 from aiida.common.example_helpers import test_and_get_code
+from aiida.orm import load_node
 
 ################################################################
-ParameterData = DataFactory('parameter')
+Dict = DataFactory('dict')
 # KpointsData = DataFactory('array.kpoints')
 try:
     dontsend = sys.argv[1]
@@ -49,10 +50,10 @@ code = test_and_get_code(codename, expected_code_type='quantumespresso.dos')
 
 computer = code.get_remote_computer()
 
-parameters = ParameterData(dict={'DOS': {'DeltaE' : 0.2},
+parameters = Dict(dict={'DOS': {'DeltaE' : 0.2},
                                  })
 
-parentcalc = JobCalculation.get_subclass_from_pk(parent_id)
+parentcalc = load_node(parent_id)
 
 calc = code.new_calc(computer=computer)
 calc.label = "Test QE dos.x"

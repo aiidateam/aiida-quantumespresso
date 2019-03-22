@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import Code
-from aiida.orm.data.folder import FolderData
-from aiida.orm.data.remote import RemoteData
-from aiida.orm.data.parameter import ParameterData
-from aiida.orm.utils import CalculationFactory
+from aiida.orm.nodes.data.folder import FolderData
+from aiida.orm.nodes.data.remote import RemoteData
+from aiida.orm.nodes.data.dict import Dict
+from aiida.plugins import CalculationFactory
 from aiida.work.workchain import while_
 from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkChain
 from aiida_quantumespresso.data.forceconstants import ForceconstantsData
@@ -26,9 +26,9 @@ class Q2rBaseWorkChain(BaseRestartWorkChain):
         super(Q2rBaseWorkChain, cls).define(spec)
         spec.input('code', valid_type=Code)
         spec.input('parent_folder', valid_type=FolderData)
-        spec.input('parameters', valid_type=ParameterData, required=False)
-        spec.input('settings', valid_type=ParameterData, required=False)
-        spec.input('options', valid_type=ParameterData, required=False)
+        spec.input('parameters', valid_type=Dict, required=False)
+        spec.input('settings', valid_type=Dict, required=False)
+        spec.input('options', valid_type=Dict, required=False)
         spec.outline(
             cls.setup,
             cls.validate_inputs,

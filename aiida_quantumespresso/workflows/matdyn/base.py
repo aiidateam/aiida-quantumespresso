@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import Code
-from aiida.orm.data.parameter import ParameterData
-from aiida.orm.data.array.bands import BandsData
-from aiida.orm.data.array.kpoints import KpointsData
-from aiida.orm.utils import CalculationFactory
+from aiida.orm.nodes.data.dict import Dict
+from aiida.orm.nodes.data.array.bands import BandsData
+from aiida.orm.nodes.data.array.kpoints import KpointsData
+from aiida.plugins import CalculationFactory
 from aiida.work.workchain import while_
 from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkChain
 from aiida_quantumespresso.data.forceconstants import ForceconstantsData
@@ -27,9 +27,9 @@ class MatdynBaseWorkChain(BaseRestartWorkChain):
         spec.input('code', valid_type=Code)
         spec.input('kpoints', valid_type=KpointsData)
         spec.input('parent_folder', valid_type=ForceconstantsData)
-        spec.input('parameters', valid_type=ParameterData, required=False)
-        spec.input('settings', valid_type=ParameterData, required=False)
-        spec.input('options', valid_type=ParameterData, required=False)
+        spec.input('parameters', valid_type=Dict, required=False)
+        spec.input('settings', valid_type=Dict, required=False)
+        spec.input('options', valid_type=Dict, required=False)
         spec.outline(
             cls.setup,
             cls.validate_inputs,
@@ -39,7 +39,7 @@ class MatdynBaseWorkChain(BaseRestartWorkChain):
             ),
             cls.results,
         )
-        spec.output('output_parameters', valid_type=ParameterData)
+        spec.output('output_parameters', valid_type=Dict)
         spec.output('output_phonon_bands', valid_type=BandsData)
 
     def validate_inputs(self):

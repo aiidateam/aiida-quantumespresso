@@ -16,7 +16,7 @@ def parse_qe_simple(filecontent, codename=None):
         If passed, a few more things are parsed (e.g. code version, walltime, ...)
     :return: (successful, out_dict) where successful is a boolean (False is a critical error occurred);
         out_dict is a dictionary with parsed information (e.g. a list of warnings) that could e.g. be
-        returned as a ParameterData by the parser.
+        returned as a Dict by the parser.
     """
     # suppose at the start that the job is successful
     successful = True

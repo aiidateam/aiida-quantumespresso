@@ -7,9 +7,9 @@ import numpy
 from aiida.common.lang import classproperty
 from aiida.common import exceptions
 from aiida.common.datastructures import CalcInfo, CodeInfo
-from aiida.orm.data.remote import RemoteData
-from aiida.orm.data.parameter import ParameterData
-from aiida.orm.data.array.kpoints import KpointsData
+from aiida.orm.nodes.data.remote import RemoteData
+from aiida.orm.nodes.data.dict import Dict
+from aiida.orm.nodes.data.array.kpoints import KpointsData
 from aiida.orm.calculation.job import JobCalculation
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
@@ -88,13 +88,13 @@ class PhCalculation(JobCalculation):
         retdict = JobCalculation._use_methods
         retdict.update({
             "settings": {
-               'valid_types': ParameterData,
+               'valid_types': Dict,
                'additional_parameter': None,
                'linkname': 'settings',
                'docstring': "Use an additional node for special settings",
                },
             "parameters": {
-               'valid_types': ParameterData,
+               'valid_types': Dict,
                'additional_parameter': None,
                'linkname': 'parameters',
                'docstring': ("Use a node that specifies the input parameters "
@@ -139,8 +139,8 @@ class PhCalculation(JobCalculation):
             parameters = inputdict.pop(self.get_linkname('parameters'))
         except KeyError:
             raise exceptions.InputValidationError("No parameters specified for this calculation")
-        if not isinstance(parameters, ParameterData):
-            raise exceptions.InputValidationError("parameters is not of type ParameterData")
+        if not isinstance(parameters, Dict):
+            raise exceptions.InputValidationError("parameters is not of type Dict")
         
         try:
             qpoints = inputdict.pop(self.get_linkname('qpoints'))
@@ -155,9 +155,9 @@ class PhCalculation(JobCalculation):
         if settings is None:
             settings_dict = {}
         else:
-            if not isinstance(settings,  ParameterData):
+            if not isinstance(settings,  Dict):
                 raise exceptions.InputValidationError("settings, if specified, must be of "
-                                           "type ParameterData")
+                                           "type Dict")
             # Settings converted to uppercase
             settings_dict = _uppercase_dict(settings.get_dict(),
                                             dict_name='settings')
@@ -510,14 +510,12 @@ class PhCalculation(JobCalculation):
         warnings.warn('This method has been deprecated, use instead '
                       'aiida_quantumespresso.utils.restart.create_restart_ph()', DeprecationWarning)
 
-        from aiida.common.datastructures import calc_states
-        if self.get_state() != calc_states.FINISHED:
+        if not self.is_finished_ok:
             if force_restart:
                 pass
             else:
-                raise exceptions.InputValidationError("Calculation to be restarted must be "
-                            "in the {} state. Otherwise, use the force_restart "
-                            "flag".format(calc_states.FINISHED) )
+                raise exceptions.InputValidationError(
+                    "Calculation to be restarted must be finshed ok. Otherwise, use the force_restart flag")
         
         inputs = self.get_incoming()
         code = inputs.get_node_by_label('code')
@@ -526,7 +524,7 @@ class PhCalculation(JobCalculation):
         old_inp_dict = inputs.get_node_by_label('parameters').get_dict()
         # add the restart flag
         old_inp_dict['INPUTPH']['recover'] = True
-        inp_dict = ParameterData(dict=old_inp_dict) 
+        inp_dict = Dict(dict=old_inp_dict) 
 
         try:
             remote_folder = self.get_outgoing(node_class=RemoteData, link_label_filter='remote_folder').one().node
@@ -566,7 +564,7 @@ class PhCalculation(JobCalculation):
             old_settings_dict['PARENT_FOLDER_SYMLINK'] = True
             
         if old_settings_dict: # if not empty dictionary
-            settings = ParameterData(dict=old_settings_dict)
+            settings = Dict(dict=old_settings_dict)
             c2.use_settings(settings)
         
         c2._set_parent_remotedata( remote_folder )

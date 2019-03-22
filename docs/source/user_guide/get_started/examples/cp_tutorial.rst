@@ -81,7 +81,7 @@ the database::
   codename = 'my_cp'
   code = Code.get_from_string(codename)
 
-Then create the StructureData with the structure, and a ParameterData 
+Then create the StructureData with the structure, and a Dict 
 node for the inputs. This time, of course, you have to specify the correct
 variables for a ``cp.x`` calculation::
 
@@ -98,8 +98,8 @@ variables for a ``cp.x`` calculation::
   s.append_atom(position=(alat/2.,0.,alat/2.),symbols=['O'])
   s.append_atom(position=(0.,alat/2.,alat/2.),symbols=['O'])
 
-  ParameterData = DataFactory('parameter')
-  parameters = ParameterData(dict={
+  Dict = DataFactory('dict')
+  parameters = Dict(dict={
             'CONTROL': {
                 'calculation': 'cp',
                 'restart_mode': 'from_scratch',

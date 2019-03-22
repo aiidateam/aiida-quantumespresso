@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 
-from aiida.orm.data.upf import UpfData
+from aiida.orm.nodes.data.upf import UpfData
 from aiida.tools.dbexporters.tcod_plugins import BaseTcodtranslator
 
 class PwTcodtranslator(BaseTcodtranslator):
@@ -380,7 +380,7 @@ class PwTcodtranslator(BaseTcodtranslator):
     def _get_raw_pseudopotential_type(cls,calc,**kwargs):
         """
         """
-        from aiida.orm.data.upf import parse_upf
+        from aiida.orm.nodes.data.upf import parse_upf
         types = {}
         for node in calc.get_incoming(node_class=UpfData).all_nodes():
             element = node.element

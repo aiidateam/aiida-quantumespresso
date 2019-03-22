@@ -8,10 +8,10 @@ def create_scheduler_resources(scheduler, base, goal):
     """
     This function will take a dictionary 'base', which contains scheduler resource
     settings that can be set for the 'resources' key in the 'options' input of a
-    JobCalculation, and update it with target scheduler resource value from the
+    CalcJob, and update it with target scheduler resource value from the
     dictionary 'goal', checking that the resource settings are allowed for the
     specific scheduler implementation. The function should than return a dictionary
-    that can be used directly in the 'options' input of the JobCalculation.
+    that can be used directly in the 'options' input of the CalcJob.
     Any keys in either 'base' or 'goal' that are not recognized as valid resource keys
     by the scheduler class, will be removed and will be kept otherwise. For settings that
     appear both in 'base' and 'goal', the value in 'goal' will be used.
@@ -20,7 +20,7 @@ def create_scheduler_resources(scheduler, base, goal):
     :param base: dictionary with base scheduler resource settings
     :param goal: dictionary with target scheduler resource settings
     :returns: dictionary that can be used for the 'resources' key in the 'options'
-        dictionary of a JobCalculation
+        dictionary of a CalcJob
     """
     base.update(goal)
 
@@ -59,7 +59,7 @@ def cmdline_remove_npools(cmdline):
 def get_default_options(max_num_machines=1, max_wallclock_seconds=1800, with_mpi=False):
     """
     Return an instance of the options dictionary with the minimally required parameters
-    for a JobCalculation and set to default values unless overriden
+    for a CalcJob and set to default values unless overriden
 
     :param max_num_machines: set the number of nodes, default=1
     :param max_wallclock_seconds: set the maximum number of wallclock seconds, default=1800

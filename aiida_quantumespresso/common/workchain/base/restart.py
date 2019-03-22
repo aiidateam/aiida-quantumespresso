@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-from aiida.common.datastructures import calc_states
 from aiida.common.exceptions import LoadingPluginFailed, MissingPluginError
-from aiida.orm.calculation import JobCalculation
-from aiida.orm.data.base import Bool, Int
+from aiida.orm import CalcJob, CalcJobNode
+from aiida.orm.nodes.data.base import Bool, Int
 from aiida.work.workchain import WorkChain, ToContext, append_
 from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
 from aiida_quantumespresso.common.pluginloader import get_plugin, get_plugins
@@ -52,13 +51,12 @@ class BaseRestartWorkChain(WorkChain):
     _verbose = False
     _calculation_class = None
     _error_handler_entry_point = None
-    _expected_calculation_states = [calc_states.FINISHED, calc_states.FAILED, calc_states.SUBMISSIONFAILED]
 
     def __init__(self, *args, **kwargs):
         super(BaseRestartWorkChain, self).__init__(*args, **kwargs)
 
-        if self._calculation_class is None or not issubclass(self._calculation_class, JobCalculation):
-            raise ValueError('no valid JobCalculation class defined for _calculation_class attribute')
+        if self._calculation_class is None or not issubclass(self._calculation_class, CalcJob):
+            raise ValueError('no valid CalcJob class defined for _calculation_class attribute')
 
         self._load_error_handlers()
         return
@@ -162,19 +160,8 @@ class BaseRestartWorkChain(WorkChain):
                 .format(self.inputs.max_iterations.value, self.ctx.calc_name, calculation.pk))
             exit_code = self.exit_codes.ERROR_MAXIMUM_ITERATIONS_EXCEEDED
 
-        # Abort: unexpected state of last calculation
-        elif calculation.get_state() not in self._expected_calculation_states:
-            self.report('unexpected state ({}) of {}<{}>'
-                .format(calculation.get_state(), self.ctx.calc_name, calculation.pk))
-            exit_code = self.exit_codes.ERROR_UNEXPECTED_CALCULATION_STATE
-
-        # Retry or abort: submission failed, try to restart or abort
-        elif calculation.get_state() in [calc_states.SUBMISSIONFAILED]:
-            exit_code = self._handle_submission_failure(calculation)
-            self.ctx.submission_failure = True
-
         # Retry or abort: calculation finished or failed
-        elif calculation.get_state() in [calc_states.FINISHED, calc_states.FAILED]:
+        else:
 
             # Calculation was at least submitted successfully, so we reset the flag
             self.ctx.submission_failure = False
@@ -183,18 +170,11 @@ class BaseRestartWorkChain(WorkChain):
             exit_code = self._handle_calculation_sanity_checks(calculation)
 
             # Calculation failed, try to salvage it or handle any unexpected failures
-            if calculation.get_state() in [calc_states.FAILED]:
-                try:
-                    exit_code = self._handle_calculation_failure(calculation)
-                except UnexpectedCalculationFailure as exception:
-                    exit_code = self._handle_unexpected_failure(calculation, exception)
-                    self.ctx.unexpected_failure = True
-
-            # Calculation finished: but did not finish ok, simply try to restart from this calculation
-            else:
-                self.ctx.unexpected_failure = False
-                self.ctx.restart_calc = calculation
-                self.report('calculation terminated without errors but did not complete successfully, restarting')
+            try:
+                exit_code = self._handle_calculation_failure(calculation)
+            except UnexpectedCalculationFailure as exception:
+                exit_code = self._handle_unexpected_failure(calculation, exception)
+                self.ctx.unexpected_failure = True
 
         return exit_code
 
@@ -220,7 +200,7 @@ class BaseRestartWorkChain(WorkChain):
     def on_terminated(self):
         """
         If the clean_workdir input was set to True, recursively collect all called Calculations by
-        ourselves and our called descendants, and clean the remote folder for the JobCalculation instances
+        ourselves and our called descendants, and clean the remote folder for the CalcJobNode instances
         """
         super(BaseRestartWorkChain, self).on_terminated()
 
@@ -231,7 +211,7 @@ class BaseRestartWorkChain(WorkChain):
         cleaned_calcs = []
 
         for called_descendant in self.calc.called_descendants:
-            if isinstance(called_descendant, JobCalculation):
+            if isinstance(called_descendant, CalcJobNode):
                 try:
                     called_descendant.out.remote_folder._clean()
                     cleaned_calcs.append(called_descendant.pk)
@@ -328,7 +308,7 @@ class BaseRestartWorkChain(WorkChain):
     def _prepare_process_inputs(self, process, inputs):
         """
         Prepare the inputs dictionary for a calculation process. Any remaining bare dictionaries in the inputs
-        dictionary will be wrapped in a ParameterData data node except for the 'options' key which should remain
+        dictionary will be wrapped in a Dict data node except for the 'options' key which should remain
         a standard dictionary. Another exception are dictionaries whose keys are not strings but for example tuples.
         This is the format used by input groups as in for example the explicit pseudo dictionary where the key is
         a tuple of kind to which the UpfData corresponds.

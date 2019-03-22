@@ -83,7 +83,7 @@
                 "user": 2,
                 "dbcomputer": null,
                 "nodeversion": 1,
-                "type": "data.parameter.ParameterData.",
+                "type": "data.parameter.Dict.",
                 "public": false,
                 "ctime": "2018-06-25T11:54:49.574416"
             },
@@ -95,7 +95,7 @@
                 "user": 2,
                 "dbcomputer": null,
                 "nodeversion": 1,
-                "type": "data.parameter.ParameterData.",
+                "type": "data.parameter.Dict.",
                 "public": false,
                 "ctime": "2018-06-25T11:54:49.574726"
             },
@@ -167,7 +167,7 @@
                 "user": 2,
                 "dbcomputer": null,
                 "nodeversion": 1,
-                "type": "data.parameter.ParameterData.",
+                "type": "data.parameter.Dict.",
                 "public": false,
                 "ctime": "2018-06-25T11:55:07.775055"
             },

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from aiida.common.extendeddicts import AttributeDict
-from aiida.orm.calculation import JobCalculation
-from aiida.orm.data.base import Bool, Float, Int, Str
-from aiida.orm.data.structure import StructureData
-from aiida.orm.utils import CalculationFactory, WorkflowFactory
+from aiida.orm import CalcJobNode
+from aiida.orm.nodes.data.base import Bool, Float, Int, Str
+from aiida.orm.nodes.data.structure import StructureData
+from aiida.plugins import CalculationFactory, WorkflowFactory
 from aiida.work.workchain import WorkChain, ToContext, if_, while_, append_
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 
@@ -193,7 +193,7 @@ class PwRelaxWorkChain(WorkChain):
     def on_terminated(self):
         """
         If the clean_workdir input was set to True, recursively collect all called Calculations by
-        ourselves and our called descendants, and clean the remote folder for the JobCalculation instances
+        ourselves and our called descendants, and clean the remote folder for the CalcJobNode instances
         """
         super(PwRelaxWorkChain, self).on_terminated()
 
@@ -204,7 +204,7 @@ class PwRelaxWorkChain(WorkChain):
         cleaned_calcs = []
 
         for called_descendant in self.calc.called_descendants:
-            if isinstance(called_descendant, JobCalculation):
+            if isinstance(called_descendant, CalcJobNode):
                 try:
                     called_descendant.out.remote_folder._clean()
                     cleaned_calcs.append(called_descendant.pk)

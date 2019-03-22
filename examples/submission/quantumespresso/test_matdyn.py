@@ -14,9 +14,10 @@ import os
 import numpy
 
 from aiida.common.example_helpers import test_and_get_code
+from aiida.orm import load_node
 
 ################################################################
-ParameterData = DataFactory('parameter')
+Dict = DataFactory('dict')
 KpointsData = DataFactory('array.kpoints')
 try:
     dontsend = sys.argv[1]
@@ -53,7 +54,7 @@ code = test_and_get_code(codename, expected_code_type='quantumespresso.matdyn')
 
 computer = code.get_remote_computer()
 
-parameters = ParameterData(dict={
+parameters = Dict(dict={
             'INPUT': {
                 'asr': 'simple',
                 },
@@ -61,11 +62,11 @@ parameters = ParameterData(dict={
 
 # additional settings specifying that we want to retrieve also the file with
 # phonon displacements
-settings = ParameterData(dict={
+settings = Dict(dict={
             'additional_retrieve_list': ['phonon_displacements.dat'],
             })
 
-parentcalc = JobCalculation.get_subclass_from_pk(parent_id)
+parentcalc = load_node(parent_id)
 
 kpoints = KpointsData()
 try:

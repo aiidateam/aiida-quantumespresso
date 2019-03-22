@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import Code
-from aiida.orm.data.base import Bool, Float, Str
-from aiida.orm.data.remote import RemoteData
-from aiida.orm.data.parameter import ParameterData
-from aiida.orm.data.structure import StructureData
-from aiida.orm.data.array import ArrayData
-from aiida.orm.data.array.bands import BandsData
-from aiida.orm.data.array.kpoints import KpointsData
-from aiida.orm.data.singlefile import SinglefileData
-from aiida.orm.utils import CalculationFactory
+from aiida.orm.nodes.data.base import Bool, Float, Str
+from aiida.orm.nodes.data.remote import RemoteData
+from aiida.orm.nodes.data.dict import Dict
+from aiida.orm.nodes.data.structure import StructureData
+from aiida.orm.nodes.data.array import ArrayData
+from aiida.orm.nodes.data.array.bands import BandsData
+from aiida.orm.nodes.data.array.kpoints import KpointsData
+from aiida.orm.nodes.data.singlefile import SinglefileData
+from aiida.plugins import CalculationFactory
 from aiida.work.workchain import ToContext, if_, while_
 from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
 from aiida_quantumespresso.common.workchain.utils import ErrorHandlerReport
@@ -50,14 +50,14 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         spec.input('kpoints', valid_type=KpointsData, required=False)
         spec.input('kpoints_distance', valid_type=Float, required=False)
         spec.input('kpoints_force_parity', valid_type=Bool, required=False)
-        spec.input('parameters', valid_type=ParameterData)
+        spec.input('parameters', valid_type=Dict)
         spec.input_namespace('pseudo', required=False, dynamic=True)
         spec.input('pseudo_family', valid_type=Str, required=False)
         spec.input('parent_folder', valid_type=RemoteData, required=False)
         spec.input('vdw_table', valid_type=SinglefileData, required=False)
-        spec.input('settings', valid_type=ParameterData, required=False)
-        spec.input('options', valid_type=ParameterData, required=False)
-        spec.input('automatic_parallelization', valid_type=ParameterData, required=False)
+        spec.input('settings', valid_type=Dict, required=False)
+        spec.input('options', valid_type=Dict, required=False)
+        spec.input('automatic_parallelization', valid_type=Dict, required=False)
         spec.outline(
             cls.setup,
             cls.validate_inputs,
@@ -92,7 +92,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         spec.output('output_array', valid_type=ArrayData, required=False)
         spec.output('output_band', valid_type=BandsData, required=False)
         spec.output('output_structure', valid_type=StructureData, required=False)
-        spec.output('output_parameters', valid_type=ParameterData)
+        spec.output('output_parameters', valid_type=Dict)
         spec.output('remote_folder', valid_type=RemoteData)
 
     def validate_inputs(self):
@@ -170,14 +170,14 @@ class PwBaseWorkChain(BaseRestartWorkChain):
     def should_run_init(self):
         """
         Return whether an initialization calculation should be run, which is the case if the user wants
-        to use automatic parallelization and has specified the ParameterData node in the inputs
+        to use automatic parallelization and has specified the Dict node in the inputs
         """
         return 'automatic_parallelization' in self.inputs
 
     def validate_init_inputs(self):
         """
         Validate the inputs that are required for the initialization calculation. The automatic_parallelization
-        input expects a ParameterData node with the following keys:
+        input expects a Dict node with the following keys:
 
             * max_wallclock_seconds
             * target_time_seconds
@@ -245,7 +245,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         # Get automated parallelization settings
         parallelization = get_pw_parallelization_parameters(calculation, **self.ctx.automatic_parallelization)
 
-        node = ParameterData(dict=parallelization)
+        node = Dict(dict=parallelization)
         self.out('automatic_parallelization', node)
         self.report('results of automatic parallelization in {}<{}>'.format(node.__class__.__name__, node.pk))
 

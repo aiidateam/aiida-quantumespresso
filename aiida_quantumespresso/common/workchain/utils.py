@@ -11,7 +11,7 @@ A namedtuple to define an error handler for a :class:`~aiida.work.workchain.Work
 
 The priority determines in which order the error handling methods are executed, with
 the higher priority being executed first. The method defines an unbound WorkChain method
-that takes an instance of a :class:`~aiida.orm.implementation.general.calculation.job.AbstractJobCalculation`
+that takes an instance of a :class:`~aiida.orm.nodes.process.calculations.calcjob.CalcJobNode`
 as its sole argument. If the condition of the error handler is met, it should return an :class:`.ErrorHandlerReport`.
 
 :param priority: integer denoting the error handlers priority

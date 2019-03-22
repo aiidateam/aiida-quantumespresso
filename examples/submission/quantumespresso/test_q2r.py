@@ -13,10 +13,11 @@ import sys
 import os
 
 from aiida.common.example_helpers import test_and_get_code
+from aiida.orm import load_node
 
 ################################################################
 UpfData = DataFactory('upf')
-ParameterData = DataFactory('parameter')
+Dict = DataFactory('dict')
 StructureData = DataFactory('structure')
 try:
     dontsend = sys.argv[1]
@@ -53,7 +54,7 @@ code = test_and_get_code(codename, expected_code_type='quantumespresso.q2r')
 
 computer = code.get_remote_computer()
 
-parameters = ParameterData(dict={
+parameters = Dict(dict={
             'INPUT': {
                 'zasr': 'simple',
                 },
@@ -66,7 +67,7 @@ calc.set_option('max_wallclock_seconds', 60*30) # 30 min
 calc.set_option('resources', {"num_machines":num_machines})
 
 calc.use_parameters(parameters)
-parentcalc = JobCalculation.get_subclass_from_pk(parent_id)
+parentcalc = load_node(parent_id)
 calc.use_parent_calculation(parentcalc)
 
 if submit_test:

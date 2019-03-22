@@ -36,9 +36,9 @@ def launch(
     starting_magnetization, smearing, automatic_parallelization, clean_workdir, max_num_machines, max_wallclock_seconds,
     with_mpi, daemon, final_scf):
     """Run a PwRelaxWorkChain."""
-    from aiida.orm.data.base import Bool, Float, Str
-    from aiida.orm.data.parameter import ParameterData
-    from aiida.orm.utils import WorkflowFactory
+    from aiida.orm.nodes.data.base import Bool, Float, Str
+    from aiida.orm.nodes.data.dict import Dict
+    from aiida.plugins import WorkflowFactory
     from aiida.work import launch
     from aiida_quantumespresso.utils.resources import get_default_options, get_automatic_parallelization_options
 
@@ -72,7 +72,7 @@ def launch(
             'code': code,
             'pseudo_family': Str(pseudo_family),
             'kpoints_distance': Float(kpoints_distance),
-            'parameters': ParameterData(dict=parameters),
+            'parameters': Dict(dict=parameters),
         }
     }
 
@@ -81,10 +81,10 @@ def launch(
 
     if automatic_parallelization:
         automatic_parallelization = get_automatic_parallelization_options(max_num_machines, max_wallclock_seconds)
-        inputs['base']['automatic_parallelization'] = ParameterData(dict=automatic_parallelization)
+        inputs['base']['automatic_parallelization'] = Dict(dict=automatic_parallelization)
     else:
         options = get_default_options(max_num_machines, max_wallclock_seconds)
-        inputs['base']['options'] = ParameterData(dict=options)
+        inputs['base']['options'] = Dict(dict=options)
 
     if clean_workdir:
         inputs['clean_workdir'] = Bool(True)

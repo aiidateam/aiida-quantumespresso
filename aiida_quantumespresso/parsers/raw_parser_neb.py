@@ -88,7 +88,7 @@ def parse_raw_output_neb(out_file, input_dict,parser_opts=None):
     parameter_data = dict(out_data.items() + parser_info.items())
 
     # return various data.
-    # parameter data will be mapped in ParameterData
+    # parameter data will be mapped in Dict
     # iteration_data in ArrayData
     return parameter_data,iteration_data,job_successful
 

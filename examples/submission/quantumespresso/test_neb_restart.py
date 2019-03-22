@@ -19,7 +19,7 @@ import os
 
 ################################################################
 UpfData = DataFactory('upf')
-ParameterData = DataFactory('parameter')
+Dict = DataFactory('dict')
 StructureData = DataFactory('structure')
 RemoteData = DataFactory('remote')
 

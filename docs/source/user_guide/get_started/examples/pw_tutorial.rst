@@ -126,7 +126,7 @@ We do it in the following way: we load the DataFactory, which is a tool to load 
 (NB: it's not yet a class instance!) 
 (If you are not familiar with the terminology of object programming, we could take `Wikipedia <http://en.wikipedia.org/wiki/Object_(computer_science)>`_ and see their short explanation: in common speech that one refers to *a* file as a class, while *the* file is the object or the class instance. In other words, the class is our definition of the object Structure, while its instance is what will be saved as an object in the database)::
 
-  from aiida.orm import DataFactory
+  from aiida.plugins import DataFactory
   StructureData = DataFactory('structure')
 
 We define the cell with a 3x3 matrix (we choose the convention where each ROW represents a lattice vector), which in this case is just a cube of size 4 Angstroms::
@@ -178,22 +178,22 @@ Parameters
 Now we need to provide also the parameters of a Quantum Espresso calculation,
 like the cutoff for the wavefunctions, some convergence threshold, etc...
 The Quantum ESPRESSO pw.x plugin requires to pass this information within a
-ParameterData object, that is a specific AiiDA data node that can store a
+Dict object, that is a specific AiiDA data node that can store a
 dictionary (even nested) of basic data types: integers, floats, strings, lists,
 dates, ...
 We first load the class through the DataFactory, just like we did for the Structure.
 Then we create the instance of the object ``parameter``.
 To represent closely the structure of the QE input file,
-ParameterData is a nested dictionary, at the first level the namelists
+Dict is a nested dictionary, at the first level the namelists
 (capitalized), and then the variables with their values (in lower case).
 
 Note also that numbers and booleans are written in Python, i.e. ``False`` and
 not the Fortran string ``.false.``!
 ::
 
-    ParameterData = DataFactory('parameter')
+    Dict = DataFactory('dict')
 
-    parameters = ParameterData(dict={
+    parameters = Dict(dict={
         'CONTROL': {
             'calculation': 'scf',
             'restart_mode': 'from_scratch',
@@ -211,7 +211,7 @@ not the Fortran string ``.false.``!
 .. note:: also in this case, we chose not to store the ``parameters`` node.
   If we wanted, we could even have done it in a single line::
     
-    parameters = ParameterData(dict={...}).store()
+    parameters = Dict(dict={...}).store()
 
 The experienced QE user will have noticed also that a couple of variables
 are missing: the prefix, the pseudo directory and the scratch directory are
@@ -255,9 +255,9 @@ exception, and the error message will have a verbose explanation of the possible
 errors, and in many cases it will suggest how to fix them. Otherwise, in ``resdict``
 you will find the same dictionary you passed in input, potentially slightly modified
 to fix some small mistakes (e.g., if you pass an integer value where a float is expected,
-the type will be converted). You can then use the output for the input ParameterData node::
+the type will be converted). You can then use the output for the input Dict node::
 
-  parameters = ParameterData(dict=resdict)
+  parameters = Dict(dict=resdict)
 
 As an example, if you pass an incorrect input, e.g. the following where we have introduced 
 a few errors::
@@ -459,10 +459,10 @@ in crystal coordinates (here they all have equal weights)::
 
 .. _gamma-only:
 .. note:: It is also possible to generate a gamma-only computation. To do so 
-  one has to specify additional settings, of type ParameterData, putting 
+  one has to specify additional settings, of type Dict, putting 
   gamma-only to True::
     
-    settings = ParameterData(dict={'gamma_only':True})
+    settings = Dict(dict={'gamma_only':True})
 
   then set the kpoints mesh to a single point (gamma)::
 
@@ -475,7 +475,7 @@ in crystal coordinates (here they all have equal weights)::
     
 As a further comment, this is specific to the way the plugin
 for Quantum Espresso works.
-Other codes may need more than two ParameterData, or even none of them.
+Other codes may need more than two Dict, or even none of them.
 And also how this parameters have to be written depends on the plugin: 
 what is discussed here is just the format that we decided for
 the Quantum Espresso plugins.
@@ -678,7 +678,7 @@ Download: :download:`this example script <pw_short_example.py>`
   
   from aiida.orm import Code, DataFactory
   StructureData = DataFactory('structure')
-  ParameterData = DataFactory('parameter')
+  Dict = DataFactory('dict')
   KpointsData = DataFactory('array.kpoints')
   
   ###############################
@@ -702,7 +702,7 @@ Download: :download:`this example script <pw_short_example.py>`
   s.append_atom(position=(alat/2.,0.,alat/2.),symbols='O')
   s.append_atom(position=(0.,alat/2.,alat/2.),symbols='O')
   
-  parameters = ParameterData(dict={
+  parameters = Dict(dict={
             'CONTROL': {
                 'calculation': 'scf',
                 'restart_mode': 'from_scratch',

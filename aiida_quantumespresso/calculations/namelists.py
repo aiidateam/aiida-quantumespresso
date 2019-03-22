@@ -8,10 +8,10 @@ import os
 from aiida.common.exceptions import InputValidationError
 from aiida.common.datastructures import CalcInfo, CodeInfo
 from aiida.common.lang import classproperty
-from aiida.orm.data.parameter import ParameterData 
-from aiida.orm.data.remote import RemoteData 
-from aiida.orm.data.folder import FolderData 
-from aiida.orm.data.singlefile import SinglefileData
+from aiida.orm.nodes.data.dict import Dict 
+from aiida.orm.nodes.data.remote import RemoteData 
+from aiida.orm.nodes.data.folder import FolderData 
+from aiida.orm.nodes.data.singlefile import SinglefileData
 from aiida.orm.calculation.job import JobCalculation
 from aiida.common.datastructures import CodeInfo
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
@@ -64,13 +64,13 @@ class NamelistsCalculation(JobCalculation):
         retdict = JobCalculation._use_methods
         retdict.update({
             "settings": {
-               'valid_types': ParameterData,
+               'valid_types': Dict,
                'additional_parameter': None,
                'linkname': 'settings',
                'docstring': "Use an additional node for special settings",
                },
             "parameters": {
-               'valid_types': ParameterData,
+               'valid_types': Dict,
                'additional_parameter': None,
                'linkname': 'parameters',
                'docstring': ("Use a node that specifies the input parameters "
@@ -118,17 +118,17 @@ class NamelistsCalculation(JobCalculation):
             parameters = inputdict.pop(self.get_linkname('parameters'))
         except KeyError:
             raise InputValidationError("No parameters specified for this calculation")
-        if not isinstance(parameters, ParameterData):
-            raise InputValidationError("parameters is not of type ParameterData")
+        if not isinstance(parameters, Dict):
+            raise InputValidationError("parameters is not of type Dict")
         
         # Settings can be undefined, and defaults to an empty dictionary
         settings = inputdict.pop(self.get_linkname('settings'),None)
         if settings is None:
             settings_dict = {}
         else:
-            if not isinstance(settings,  ParameterData):
+            if not isinstance(settings,  Dict):
                 raise InputValidationError("settings, if specified, must be of "
-                                           "type ParameterData")
+                                           "type Dict")
             # Settings converted to uppercase
             settings_dict = _uppercase_dict(settings.get_dict(),
                                             dict_name='settings')

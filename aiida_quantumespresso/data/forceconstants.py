@@ -3,7 +3,7 @@
 Implement subclass for real-space interatomic force constants file from QE-Q2R
 """
 import numpy
-from aiida.orm.data.singlefile import SinglefileData
+from aiida.orm.nodes.data.singlefile import SinglefileData
 from aiida_quantumespresso.parsers.constants import bohr_to_ang
 
 class ForceconstantsData(SinglefileData):
@@ -29,7 +29,7 @@ class ForceconstantsData(SinglefileData):
         
         # add all other attributes found in the parsed dictionary
         for key in out_dict.keys():
-            self._set_attr(key, out_dict[key])
+            self.set_attribute(key, out_dict[key])
  
     @property
     def number_of_species(self):
