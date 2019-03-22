@@ -6,7 +6,6 @@ Plugin to immigrate a Quantum Espresso pw.x job that was not run using AiiDa.
 import os
 from copy import deepcopy
 from aiida_quantumespresso.calculations.pw import PwCalculation
-from aiida.orm.calculation.job import _input_subfolder
 from aiida.orm.data.remote import RemoteData
 from aiida.orm.data.parameter import ParameterData
 from aiida.orm.data.upf import UpfData
@@ -344,8 +343,7 @@ class PwimmigrantCalculation(PwCalculation):
         # Store the original input file in the calculation's repository folder.
         remote_path = os.path.join(self._get_remote_workdir(),
                                    self._INPUT_FILE_NAME)
-        raw_input_folder = self.folder.get_subfolder(_input_subfolder,
-                                                     create=True)
+        raw_input_folder = self.folder.get_subfolder('raw_input', create=True)
         open_transport.get(remote_path, raw_input_folder.abspath)
 
         # Manually add the remote working directory as a RemoteData output
