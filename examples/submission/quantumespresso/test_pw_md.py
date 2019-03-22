@@ -19,7 +19,7 @@ from aiida.common.example_helpers import test_and_get_code
 
 ################################################################
 UpfData = DataFactory('upf')
-ParameterData = DataFactory('parameter')
+Dict = DataFactory('dict')
 KpointsData = DataFactory('array.kpoints')
 StructureData = DataFactory('structure')
 try:
@@ -88,7 +88,7 @@ if auto_pseudos:
         print >> sys.stderr, ",".join(i.name for i in valid_pseudo_groups)
         sys.exit(1)
 
-parameters = ParameterData(dict={
+parameters = Dict(dict={
     'CONTROL': {
         'calculation': 'md',
         'restart_mode': 'from_scratch',
@@ -115,7 +115,7 @@ parameters = ParameterData(dict={
 kpoints = KpointsData()
 
 # method gamma only
-#settings = ParameterData(dict={'gamma_only':True})
+#settings = Dict(dict={'gamma_only':True})
 #kpoints.set_kpoints_mesh([1,1,1])
 
 # method list
@@ -128,7 +128,7 @@ kpoints_mesh = 2
 kpoints.set_kpoints_mesh([kpoints_mesh, kpoints_mesh, kpoints_mesh])
 
 settings_dict = {}
-settings = ParameterData(dict=settings_dict)
+settings = Dict(dict=settings_dict)
 
 ## For remote codes, it is not necessary to manually set the computer,
 ## since it is set automatically by new_calc
@@ -186,7 +186,7 @@ calc.use_kpoints(kpoints)
 
 if settings is not None:
     calc.use_settings(settings)
-#from aiida.orm.data.remote import RemoteData
+#from aiida.orm.nodes.data.remote import RemoteData
 #calc.set_outdir(remotedata)
 
 

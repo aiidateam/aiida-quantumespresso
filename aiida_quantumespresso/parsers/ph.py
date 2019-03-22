@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 from aiida.parsers.parser import Parser
-from aiida.orm.data.folder import FolderData
-from aiida.orm.data.parameter import ParameterData
-from aiida.common.datastructures import calc_states
+from aiida.orm.nodes.data.folder import FolderData
+from aiida.orm.nodes.data.dict import Dict
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.raw_parser_ph import parse_raw_ph_output
 from aiida_quantumespresso.calculations.ph import PhCalculation
@@ -84,7 +83,7 @@ class PhParser(Parser):
         successful = raw_successful if successful else successful
         
         # convert the dictionary into an AiiDA object
-        output_params = ParameterData(dict=out_dict)
+        output_params = Dict(dict=out_dict)
         
         # save it into db
         new_nodes_list = [ (self.get_linkname_outparams(),output_params) ]

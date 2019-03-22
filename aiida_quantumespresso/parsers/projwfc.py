@@ -7,13 +7,12 @@ from aiida.parsers.parser import Parser
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers import parse_raw_out_basic
 from aiida.common.exceptions import InvalidOperation
-from aiida.orm.data.parameter import ParameterData
+from aiida.orm.nodes.data.dict import Dict
 from aiida.common.orbital import OrbitalFactory
 from aiida_quantumespresso.calculations.projwfc import ProjwfcCalculation
-from aiida.orm.data.array.projection import ProjectionData
-from aiida.orm.data.array.bands import BandsData
-from aiida.common.datastructures import calc_states
-from aiida.orm.data.array.xy import XyData
+from aiida.orm.nodes.data.array.projection import ProjectionData
+from aiida.orm.nodes.data.array.bands import BandsData
+from aiida.orm.nodes.data.array.xy import XyData
 
 
 def find_orbitals_from_statelines(out_info_dict):
@@ -337,7 +336,7 @@ class ProjwfcParser(Parser):
                 self.logger.error(message)
 
             # creating node list, setting initial parameters
-            output_params = ParameterData(dict=parsed_data)
+            output_params = Dict(dict=parsed_data)
             new_nodes_list.append((self.get_linkname_outparams(), output_params))
 
             # checks and reads pdos_tot file

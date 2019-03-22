@@ -11,7 +11,7 @@ Supported codes
 
 Inputs
 ------
-* **parameters**, class :py:class:`ParameterData <aiida.orm.data.parameter.ParameterData>`
+* **parameters**, class :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>`
   Input parameters of q2r.x, as a nested dictionary, mapping the input of QE.
   Example::
     
@@ -29,7 +29,7 @@ Inputs
 
 Outputs
 -------
-* force_constants :py:class:`SinglefileData <aiida.orm.data.singlefile.SinglefileData>` 
+* force_constants :py:class:`SinglefileData <aiida.orm.nodes.data.singlefile.SinglefileData>` 
   A file containing the force constants in real space.
 
 

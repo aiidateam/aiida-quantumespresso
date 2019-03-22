@@ -4,7 +4,6 @@ Utility functions to return builders ready to be submitted
 for restarting a Quantum ESPRESSO calculation (or to apply small 
 modifications).
 """
-from aiida.common.datastructures import calc_states
 from aiida.common.exceptions import InputValidationError 
 from aiida.common.links import LinkType
 
@@ -23,7 +22,7 @@ def clone_calculation(calculation):
 
     for key, value in self.iterattrs():
         if key != Sealable.SEALED_KEY:
-            clone._set_attr(key, value)
+            clone.set_attribute(key, value)
 
     for path in self.get_folder_list():
         clone.add_path(self.get_abs_path(path), path)
@@ -59,10 +58,10 @@ def _create_restart_pw_cp(parent_calc, force_restart, parent_folder_symlink,
        Useful to restart calculations that have crashed on the cluster for
        external reasons.
     """
-    from aiida.orm import DataFactory, CalculationFactory
+    from aiida.plugins import DataFactory, CalculationFactory
     from aiida_quantumespresso.utils.pseudopotential import get_pseudos_of_calc
 
-    ParameterData = DataFactory('parameter')
+    Dict = DataFactory('dict')
     RemoteData = DataFactory('remote')
 
     if not isinstance(parent_calc, (CalculationFactory('quantumespresso.cp'), CalculationFactory('quantumespresso.pw'))):
@@ -72,12 +71,10 @@ def _create_restart_pw_cp(parent_calc, force_restart, parent_folder_symlink,
 
     # Check the calculation's state using ``from_attribute=True`` to
     # correctly handle IMPORTED calculations.
-    if parent_calc.get_state(from_attribute=True) != calc_states.FINISHED:
+    if not parent_calc.is_finished_ok:
         if not force_restart:
             raise InputValidationError(
-                "Calculation to be restarted must be "
-                "in the {} state. Otherwise, use the force_restart "
-                "flag".format(calc_states.FINISHED))
+                "Calculation to be restarted must be finished ok. Otherwise, use the force_restart flag")
 
     inputs = parent_calc.get_incoming(link_type=LinkType.INPUT_CALC)
 
@@ -87,7 +84,7 @@ def _create_restart_pw_cp(parent_calc, force_restart, parent_folder_symlink,
         old_inp_dict = inputs.get_node_by_label(parent_calc.get_linkname('parameters')).get_dict()
         # add the restart flag
         old_inp_dict['CONTROL']['restart_mode'] = 'restart'
-        inp_dict = ParameterData(dict=old_inp_dict)
+        inp_dict = Dict(dict=old_inp_dict)
 
     try:
         remote_folder = parent_calc.get_outcoming(node_class=RemoteData, link_type=LinkType.CREATE).one().node
@@ -139,7 +136,7 @@ def _create_restart_pw_cp(parent_calc, force_restart, parent_folder_symlink,
         old_settings_dict['PARENT_FOLDER_SYMLINK'] = parent_folder_symlink
 
     if old_settings_dict:  # if not empty dictionary
-        settings = ParameterData(dict=old_settings_dict)
+        settings = Dict(dict=old_settings_dict)
         builder.settings = settings
 
     builder.parent_folder = remote_folder
@@ -249,10 +246,10 @@ def create_restart_neb(parent_calc, force_restart=False, parent_folder_symlink=N
        instead of hard copies of the files.
        Pass None for the default calculation behavior.
     """
-    from aiida.orm import DataFactory, CalculationFactory
+    from aiida.plugins import DataFactory, CalculationFactory
     from aiida_quantumespresso.utils.pseudopotential import get_pseudos_of_calc
 
-    ParameterData = DataFactory('parameter')
+    Dict = DataFactory('dict')
     RemoteData = DataFactory('remote')
 
     if not isinstance(parent_calc, CalculationFactory('quantumespresso.neb')):
@@ -262,19 +259,16 @@ def create_restart_neb(parent_calc, force_restart=False, parent_folder_symlink=N
 
     # Check the calculation's state using ``from_attribute=True`` to
     # correctly handle IMPORTED calculations.
-    if parent_calc.get_state(from_attribute=True) != calc_states.FINISHED:
-        if not force_restart:
-            raise InputValidationError(
-                "Calculation to be restarted must be "
-                "in the {} state. Otherwise, use the force_restart "
-                "flag".format(calc_states.FINISHED))
+    if not force_restart and not parent_calc.is_finished_ok:
+        raise exceptions.InputValidationError(
+            "Calculation to be restarted must be finshed ok. Otherwise, use the force_restart flag")
 
     inputs = parent_calc.get_incoming(link_type=LinkType.INPUT_CALC)
 
     old_inp_dict = inputs.get_node_by_label(parent_calc.get_linkname('neb_parameters')).get_dict()
     # add the restart flag
     old_inp_dict['PATH']['restart_mode'] = 'restart'
-    inp_dict = ParameterData(dict=old_inp_dict)
+    inp_dict = Dict(dict=old_inp_dict)
 
     try:
         remote_folder = parent_calc.get_outcoming(node_class=RemoteData, link_type=LinkType.CREATE).one().node
@@ -321,7 +315,7 @@ def create_restart_neb(parent_calc, force_restart=False, parent_folder_symlink=N
         old_settings_dict['PARENT_FOLDER_SYMLINK'] = parent_folder_symlink
 
     if old_settings_dict:  # if not empty dictionary
-        settings = ParameterData(dict=old_settings_dict)
+        settings = Dict(dict=old_settings_dict)
         builder.settings = settings
 
     builder.parent_folder = remote_folder
@@ -361,9 +355,9 @@ def create_restart_ph(parent_calc, force_restart=False,
         `PARENT_FOLDER_SYMLINK` in the `settings` input. Default: the value specified
         in aiida_quantumespresso.calculations.ph._default_symlink_usage.
     """
-    from aiida.orm import DataFactory, CalculationFactory
+    from aiida.plugins import DataFactory, CalculationFactory
 
-    ParameterData = DataFactory('parameter')
+    Dict = DataFactory('dict')
     RemoteData = DataFactory('remote')
 
     if not isinstance(parent_calc, CalculationFactory('quantumespresso.ph')):
@@ -371,12 +365,9 @@ def create_restart_ph(parent_calc, force_restart=False,
             "This function can only deal with restarts of PhCalculations (QE ph.x codes), "
             "but I got {} instead".format(parent_calc.__class__.__name__))
 
-    if parent_calc.get_state(from_attribute=True) != calc_states.FINISHED:
-        if not force_restart:
-            raise InputValidationError(
-                "Calculation to be restarted must be "
-                "in the {} state. Otherwise, use the force_restart "
-                "flag".format(calc_states.FINISHED) )
+    if not force_restart and not parent_calc.is_finished_ok:
+        raise exceptions.InputValidationError(
+            "Calculation to be restarted must be finshed ok. Otherwise, use the force_restart flag")
     
     inputs = parent_calc.get_incoming(link_type=LinkType.INPUT_CALC)
     code = inputs.get_node_by_label('code')
@@ -385,7 +376,7 @@ def create_restart_ph(parent_calc, force_restart=False,
     old_inp_dict = inputs.get_node_by_label('parameters').get_dict()
     # add the restart flag
     old_inp_dict['INPUTPH']['recover'] = True
-    inp_dict = ParameterData(dict=old_inp_dict) 
+    inp_dict = Dict(dict=old_inp_dict) 
 
     try:
         remote_folder = parent_calc.get_outcoming(node_class=RemoteData, link_type=LinkType.CREATE).one().node
@@ -409,7 +400,7 @@ def create_restart_ph(parent_calc, force_restart=False,
         parent_calc.description)
     
     # set the parameters, and the (same) code and q-points
-    builder.parameters = ParameterData(inp_dict)
+    builder.parameters = Dict(inp_dict)
     builder.code = code
     builder.qpoints = qpoints
 
@@ -425,7 +416,7 @@ def create_restart_ph(parent_calc, force_restart=False,
         old_settings_dict['PARENT_FOLDER_SYMLINK'] = parent_folder_symlink
         
     if old_settings_dict: # if not empty dictionary
-        settings = ParameterData(dict=old_settings_dict)
+        settings = Dict(dict=old_settings_dict)
         builder.settings = settings
     
     builder.parent_folder = remote_folder

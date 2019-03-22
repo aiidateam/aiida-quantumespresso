@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from aiida.common import exceptions
-from aiida.orm.data.remote import RemoteData
+from aiida.orm.nodes.data.remote import RemoteData
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 from aiida_quantumespresso.calculations.pw import PwCalculation
 

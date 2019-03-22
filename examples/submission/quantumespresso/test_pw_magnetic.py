@@ -20,7 +20,7 @@ from aiida.common.example_helpers import test_and_get_code
 ################################################################
 
 UpfData = DataFactory('upf')
-ParameterData = DataFactory('parameter')
+Dict = DataFactory('dict')
 KpointsData = DataFactory('array.kpoints')
 StructureData = DataFactory('structure')
 try:
@@ -82,7 +82,7 @@ except NotExistent:
 max_seconds = 1000
 
 # parameters are adapted from D. Dragoni (but much less converged...)
-parameters = ParameterData(dict={
+parameters = Dict(dict={
     'CONTROL': {
         'calculation': 'scf',
         'restart_mode': 'from_scratch',
@@ -142,7 +142,7 @@ calc.use_kpoints(kpoints)
 
 if settings is not None:
     calc.use_settings(settings)
-#from aiida.orm.data.remote import RemoteData
+#from aiida.orm.nodes.data.remote import RemoteData
 #calc.set_outdir(remotedata)
 
 

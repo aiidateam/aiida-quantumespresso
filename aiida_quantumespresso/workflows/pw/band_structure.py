@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from aiida.orm import Code
-from aiida.orm.data.base import Str, Float, Bool
-from aiida.orm.data.parameter import ParameterData
-from aiida.orm.data.structure import StructureData
-from aiida.orm.data.array.bands import BandsData
-from aiida.orm.data.array.kpoints import KpointsData
+from aiida.orm.nodes.data.base import Str, Float, Bool
+from aiida.orm.nodes.data.dict import Dict
+from aiida.orm.nodes.data.structure import StructureData
+from aiida.orm.nodes.data.array.bands import BandsData
+from aiida.orm.nodes.data.array.kpoints import KpointsData
 from aiida.orm import WorkflowFactory
 from aiida.work.workchain import WorkChain, ToContext
 from aiida_quantumespresso.utils.mapping import update_mapping
@@ -22,8 +22,8 @@ class PwBandStructureWorkChain(WorkChain):
         super(PwBandStructureWorkChain, cls).define(spec)
         spec.input('code', valid_type=Code)
         spec.input('structure', valid_type=StructureData)
-        spec.input('protocol', valid_type=ParameterData)
-        spec.input('scf_options', valid_type=ParameterData)
+        spec.input('protocol', valid_type=Dict)
+        spec.input('scf_options', valid_type=Dict)
         spec.outline(
             cls.setup_protocol,
             cls.setup_kpoints,
@@ -34,9 +34,9 @@ class PwBandStructureWorkChain(WorkChain):
         spec.exit_code(101, 'ERROR_INVALID_INPUT_UNRECOGNIZED_KIND', message='The bands subworkchain failed')
         spec.exit_code(102, 'ERROR_SUB_PROCESS_FAILED_BANDS', message='the bands PwBasexWorkChain sub process failed')
         spec.output('primitive_structure', valid_type=StructureData)
-        spec.output('seekpath_parameters', valid_type=ParameterData)
-        spec.output('scf_parameters', valid_type=ParameterData)
-        spec.output('band_parameters', valid_type=ParameterData)
+        spec.output('seekpath_parameters', valid_type=Dict)
+        spec.output('scf_parameters', valid_type=Dict)
+        spec.output('band_parameters', valid_type=Dict)
         spec.output('band_structure', valid_type=BandsData)
 
     def _get_protocol(self):
@@ -130,7 +130,7 @@ class PwBandStructureWorkChain(WorkChain):
             return {
                 'code': self.inputs.code,
                 'pseudos': pseudos,
-                'parameters': ParameterData(dict=self.ctx.parameters),
+                'parameters': Dict(dict=self.ctx.parameters),
                 'options': self.inputs.scf_options,
             }
 
@@ -157,7 +157,7 @@ class PwBandStructureWorkChain(WorkChain):
             'kpoints_distance': Float(self.ctx.protocol['kpoints_distance_for_bands']),
         })
 
-        # Final input preparation, wrapping dictionaries in ParameterData nodes
+        # Final input preparation, wrapping dictionaries in Dict nodes
         inputs = {
             'structure': self.inputs.structure,
             'relax': {

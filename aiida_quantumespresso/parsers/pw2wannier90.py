@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from aiida.orm.data.parameter import ParameterData
+from aiida.orm.nodes.data.dict import Dict
 from aiida.parsers.parser import Parser
 from aiida_quantumespresso.parsers.raw_parser_simple import parse_qe_simple
 
@@ -43,7 +43,7 @@ class Pw2wannier90Parser(Parser):
         # If any failed, it's failed
         successful = successful and successful_raw
 
-        out_params = ParameterData(dict=out_dict)
+        out_params = Dict(dict=out_dict)
         new_nodes_list = [(self.get_linkname_outparams(), out_params)]
 
         return successful,new_nodes_list

@@ -18,7 +18,7 @@ from aiida.common.exceptions import NotExistent
 ################################################################
 
 UpfData = DataFactory('upf')
-ParameterData = DataFactory('parameter')
+Dict = DataFactory('dict')
 KpointsData = DataFactory('array.kpoints')
 StructureData = DataFactory('structure')
 try:
@@ -81,7 +81,7 @@ for site in s1.sites:
         fixed_coords.append([True,True,True])
     else:
         fixed_coords.append([True,True,False])
-settings = ParameterData(dict={
+settings = Dict(dict={
         'fixed_coords': fixed_coords
         })
 
@@ -111,7 +111,7 @@ if auto_pseudos:
         print >> sys.stderr, ",".join(i.name for i in valid_pseudo_groups)
         sys.exit(1)
     
-pw_parameters = ParameterData(dict={
+pw_parameters = Dict(dict={
     'CONTROL': {
         'calculation': 'scf',
         'restart_mode': 'from_scratch',
@@ -126,7 +126,7 @@ pw_parameters = ParameterData(dict={
 
     }})
 
-neb_parameters = ParameterData(dict={
+neb_parameters = Dict(dict={
         'PATH': {
             'restart_mode': 'from_scratch',
             'string_method': 'neb',
@@ -145,7 +145,7 @@ neb_parameters = ParameterData(dict={
 #try:
 #    settings.update_dict({'climbing_images': [4]})
 #except NameError:
-#    settings = ParameterData(dict={'climbing_images': [4]})
+#    settings = Dict(dict={'climbing_images': [4]})
 
 kpoints = KpointsData()
 
@@ -186,7 +186,7 @@ calc.use_kpoints(kpoints)
 
 if settings is not None:
     calc.use_settings(settings)
-#from aiida.orm.data.remote import RemoteData
+#from aiida.orm.nodes.data.remote import RemoteData
 #calc.set_outdir(remotedata)
 
 if submit_test:

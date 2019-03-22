@@ -18,7 +18,7 @@ import os
 import numpy as np
 
 from aiida_quantumespresso.tools import pwinputparser
-from aiida.orm.data.structure import StructureData
+from aiida.orm.nodes.data.structure import StructureData
 from aiida.backends.testbase import AiidaTestCase
 
 # File names: a_celldm(1)_kpoints_cellparameters_atomicposition

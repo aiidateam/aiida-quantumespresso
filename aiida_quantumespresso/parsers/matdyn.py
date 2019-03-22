@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 from aiida.parsers.parser import Parser
-from aiida.common.datastructures import calc_states
 from aiida.common.exceptions import UniquenessError
-from aiida.orm.data.folder import FolderData
-from aiida.orm.data.parameter import ParameterData
-from aiida.orm.data.array.bands import BandsData
-from aiida.orm.data.array.kpoints import KpointsData
+from aiida.orm.nodes.data.folder import FolderData
+from aiida.orm.nodes.data.dict import Dict
+from aiida.orm.nodes.data.array.bands import BandsData
+from aiida.orm.nodes.data.array.kpoints import KpointsData
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.constants import invcm_to_THz
 from aiida_quantumespresso.calculations.matdyn import MatdynCalculation
@@ -113,7 +112,7 @@ class MatdynParser(Parser):
         output_bands.set_bands(phonon_bands,units='THz')
         
         # convert the dictionary into an AiiDA object (here only warnings remain)
-        output_params = ParameterData(dict=parsed_data)
+        output_params = Dict(dict=parsed_data)
         
         for message in parsed_data['warnings']:
             self.logger.error(message)

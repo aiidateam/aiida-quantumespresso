@@ -11,17 +11,17 @@ Supported codes
 
 Inputs
 ------
-* **pseudo**, class :py:class:`UpfData <aiida.orm.data.upf.UpfData>`
+* **pseudo**, class :py:class:`UpfData <aiida.orm.nodes.data.upf.UpfData>`
   One pseudopotential file per atomic species.
   
   Alternatively, pseudo for every atomic species can be set with the **use_pseudos_from_family**
   method, if a family of pseudopotentials has been installed..
   
-* **kpoints**, class :py:class:`KpointsData <aiida.orm.data.array.kpoints.KpointsData>`
+* **kpoints**, class :py:class:`KpointsData <aiida.orm.nodes.data.array.kpoints.KpointsData>`
   Reciprocal space points on which to build the wavefunctions. Can either be 
   a mesh or a list of points with/without weights
 
-* **neb_parameters**, class :py:class:`ParameterData <aiida.orm.data.parameter.ParameterData>`
+* **neb_parameters**, class :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>`
   Input parameters of neb.x, as a nested dictionary, mapping the input of QE.
   Example::
     
@@ -29,7 +29,7 @@ Inputs
       }
   
   See the QE documentation for the full list of variables and their meaning.
-* **pw_parameters**, class :py:class:`ParameterData <aiida.orm.data.parameter.ParameterData>`
+* **pw_parameters**, class :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>`
   Nested dictionary containing the input parameters in PW format common to all images.
   Example::
     
@@ -56,12 +56,12 @@ Inputs
       'SYSTEM', 'cosac': cell parameters
       'SYSTEM', 'cosbc': cell parameters
      
-* **first_structure**, class :py:class:`StructureData <aiida.orm.data.structure.StructureData>`
+* **first_structure**, class :py:class:`StructureData <aiida.orm.nodes.data.structure.StructureData>`
   Structure of the first image.
-* **last_structure**, class :py:class:`StructureData <aiida.orm.data.structure.StructureData>`
+* **last_structure**, class :py:class:`StructureData <aiida.orm.nodes.data.structure.StructureData>`
   Structure of the last image.
   
-* **settings**, class :py:class:`ParameterData <aiida.orm.data.parameter.ParameterData>` (optional)
+* **settings**, class :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>` (optional)
   An optional dictionary that activates non-default operations. Possible values are:
     
     *  **'CLIMBING_IMAGES'**: list of integers. Specify the indices of the climbing images. 
@@ -85,7 +85,7 @@ Inputs
     *  **'ALL_ITERATIONS'**: boolean. If true the energies and forces for each image at each intermediate 
        iteration are also parsed and stored in the output node ``iteration_array`` (default: False)
     
-* **parent_folder**, class :py:class:`RemoteData <aiida.orm.data.parameter.ParameterData>` (optional)
+* **parent_folder**, class :py:class:`RemoteData <aiida.orm.nodes.data.dict.Dict>` (optional)
   If specified, the scratch folder coming from a previous NEB calculation is 
   copied in the scratch of the new calculation.
 
@@ -96,17 +96,17 @@ Outputs
 There are several output nodes that can be created by the plugin, according to the calculation details.
 All output nodes can be accessed with the ``calculation.out`` method.
 
-* output_parameters :py:class:`ParameterData <aiida.orm.data.parameter.ParameterData>` 
+* output_parameters :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>` 
   (accessed by ``calculation.res``)
   Contains the data obtained by parsing the NEB output file. Information on the last iteration are only reported. 
   The parsed PW outputs of each image are also reported as a subdictionaries. 
-* mep_array :py:class:`ArrayData <aiida.orm.data.array.ArrayData>`
+* mep_array :py:class:`ArrayData <aiida.orm.nodes.data.array.ArrayData>`
   Contains the parsed data on the calculated and interpolated Minimim Energy Path (MEP), 
   i.e. the energy profile as a function of the reaction coordinate.
-* output_trajectory :py:class:`ArrayData <aiida.orm.data.array.ArrayData>`
+* output_trajectory :py:class:`ArrayData <aiida.orm.nodes.data.array.ArrayData>`
   Contains the structure of the images at the last iteration of the NEB calculation, 
   too big to be put in the dictionary.
-* iteration_array :py:class:`ArrayData <aiida.orm.data.array.ArrayData>` , and other quantities at intermediate iterations.
+* iteration_array :py:class:`ArrayData <aiida.orm.nodes.data.array.ArrayData>` , and other quantities at intermediate iterations.
   
   
 
@@ -114,5 +114,5 @@ Errors
 ------
 Errors of the parsing are reported in the log of the calculation (accessible 
 with the ``verdi calculation logshow`` command). 
-Moreover, they are stored in the ParameterData under the key ``warnings``, and are
+Moreover, they are stored in the Dict under the key ``warnings``, and are
 accessible with ``Calculation.res.warnings``.

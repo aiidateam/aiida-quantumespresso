@@ -14,7 +14,7 @@ import os
 from aiida.common.example_helpers import test_and_get_code
 
 UpfData = DataFactory('upf')
-ParameterData = DataFactory('parameter')
+Dict = DataFactory('dict')
 StructureData = DataFactory('structure')
 RemoteData = DataFactory('remote')
 KpointsData = DataFactory('array.kpoints')
@@ -55,7 +55,7 @@ code = test_and_get_code(codename, expected_code_type='quantumespresso.ph')
 
 ######
 
-parameters = ParameterData(dict={
+parameters = Dict(dict={
             'INPUTPH': {
                 'tr2_ph' : 1.0e-8,
                 #'epsil' : True,
@@ -66,7 +66,7 @@ qpoints.set_kpoints_mesh([1,1,1])
 #qpoints.set_kpoints([[0.,0.,0.],[0.,0.,0.01]])
 #qpoints.set_kpoints([[0.,0.1,0.]])
 
-#    settings = ParameterData(dict={'PREPARE_FOR_D3':True})
+#    settings = Dict(dict={'PREPARE_FOR_D3':True})
 settings=None
 
 parentcalc = QEPwCalc.get_subclass_from_pk(parent_id)

@@ -147,7 +147,7 @@ def parse_raw_output(out_file, input_dict, parser_opts=None, xml_file=None, dir_
     parameter_data = dict(xml_data.items() + out_data.items() + parser_info.items())
 
     # return various data.
-    # parameter data will be mapped in ParameterData
+    # parameter data will be mapped in Dict
     # trajectory_data in ArrayData
     # structure_data in a Structure
     # bands_data should probably be merged in ArrayData
@@ -635,7 +635,7 @@ def parse_pw_text_output(data, xml_data=None, structure_data=None, input_dict=No
             raise QEOutputParsingError("Parser can't load basic info.")
 
     # Save these two quantities in the parsed_data, because they will be
-    # useful for queries (maybe), and structure_data will not be stored as a ParameterData
+    # useful for queries (maybe), and structure_data will not be stored as a Dict
     parsed_data['number_of_atoms'] = nat
     parsed_data['number_of_species'] = ntyp
     parsed_data['volume'] = volume

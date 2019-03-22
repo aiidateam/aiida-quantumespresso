@@ -13,7 +13,7 @@ from aiida import load_dbenv
 load_dbenv()
 
 from aiida.orm.code import Code
-from aiida.orm import CalculationFactory
+from aiida.plugins import CalculationFactory
 
 
 # Load the PwimmigrantCalculation class.

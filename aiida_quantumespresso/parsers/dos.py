@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 from aiida.parsers.parser import Parser
-from aiida.orm.data.array.xy import XyData
-from aiida.orm.data.parameter import ParameterData
+from aiida.orm.nodes.data.array.xy import XyData
+from aiida.orm.nodes.data.dict import Dict
 from aiida.common.exceptions import InvalidOperation
-from aiida.common.datastructures import calc_states
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers import parse_raw_out_basic
 from aiida_quantumespresso.calculations.dos import DosCalculation
@@ -128,7 +127,7 @@ class DosParser(Parser):
 
         # grabs the parsed data from aiida.out
         parsed_data = parse_raw_out_basic(out_file, "DOS")
-        output_params = ParameterData(dict=parsed_data)
+        output_params = Dict(dict=parsed_data)
         # Adds warnings
         for message in parsed_data['warnings']:
             self.logger.error(message)

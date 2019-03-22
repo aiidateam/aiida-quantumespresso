@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 from aiida.parsers.parser import Parser
-from aiida.common.datastructures import calc_states
-from aiida.orm.data.array.bands import KpointsData
-from aiida.orm.data.parameter import ParameterData
+from aiida.orm.nodes.data.array.bands import KpointsData
+from aiida.orm.nodes.data.dict import Dict
 from aiida_quantumespresso.parsers import convert_qe2aiida_structure
 from aiida_quantumespresso.parsers.raw_parser_pw import (
     parse_pw_xml_output, parse_pw_text_output, QEOutputParsingError)
@@ -38,8 +37,8 @@ class NebParser(Parser):
             nodes.
         """
         from aiida.common.exceptions import InvalidOperation
-        from aiida.orm.data.array.trajectory import TrajectoryData
-        from aiida.orm.data.array import ArrayData
+        from aiida.orm.nodes.data.array.trajectory import TrajectoryData
+        from aiida.orm.nodes.data.array import ArrayData
         import os 
         import numpy
         import copy
@@ -168,7 +167,7 @@ class NebParser(Parser):
         new_nodes_list = []
         
         # convert the dictionary into an AiiDA object
-        output_params = ParameterData(dict=dict(neb_out_dict.items()+image_data.items()))
+        output_params = Dict(dict=dict(neb_out_dict.items()+image_data.items()))
         
         # return it to the execmanager
         new_nodes_list.append((self.get_linkname_outparams(),output_params))
@@ -186,7 +185,7 @@ class NebParser(Parser):
         
         if parser_opts.get('all_iterations',False):
             if iteration_data:           
-                from aiida.orm.data.array import ArrayData
+                from aiida.orm.nodes.data.array import ArrayData
             
                 arraydata = ArrayData()
                 for x in iteration_data.iteritems():

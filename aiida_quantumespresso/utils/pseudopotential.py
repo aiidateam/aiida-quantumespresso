@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from aiida.orm.data.upf import UpfData, get_pseudos_from_structure
+from aiida.orm.nodes.data.upf import UpfData, get_pseudos_from_structure
 
 
 def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=None):
@@ -22,7 +22,7 @@ def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=N
         every element in the structure
     :returns: a dictionary of UpfData nodes where the key is a tuple with the kind name
     """
-    from aiida.orm.data.base import Str
+    from aiida.orm.nodes.data.base import Str
 
     result_pseudos = {}
     unique_pseudos = {}

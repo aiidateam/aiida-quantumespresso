@@ -11,7 +11,7 @@ def import_qeinput(fname):
     
     :param fname: the file name that should be read
     """
-    import aiida.orm.data.structure as struct
+    import aiida.orm.nodes.data.structure as struct
     
     
     bohr          = 0.52917720859
@@ -166,7 +166,7 @@ def import_qeinput(fname):
         Return the atomic number given a symbol string, or return zero if
         the symbol is not recognized
         """
-        from aiida.orm.data.structure import _atomic_numbers
+        from aiida.orm.nodes.data.structure import _atomic_numbers
 
         return _atomic_numbers.get(name, 0)
     

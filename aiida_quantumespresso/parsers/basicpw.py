@@ -2,14 +2,13 @@
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.parsers.basic_raw_parser_pw import (
     parse_raw_output, QEOutputParsingError)
-from aiida.orm.data.parameter import ParameterData
-from aiida.orm.data.folder import FolderData
+from aiida.orm.nodes.data.dict import Dict
+from aiida.orm.nodes.data.folder import FolderData
 from aiida.parsers.parser import Parser  # , ParserParamManager
 from aiida_quantumespresso.parsers import convert_qe2aiida_structure
-from aiida.common.datastructures import calc_states
 from aiida.common.exceptions import UniquenessError
-from aiida.orm.data.array import ArrayData
-from aiida.orm.data.array.kpoints import KpointsData
+from aiida.orm.nodes.data.array import ArrayData
+from aiida.orm.nodes.data.array.kpoints import KpointsData
 
 # TODO: I don't like the generic class always returning a name for the link to the output structure
 
@@ -137,14 +136,14 @@ class BasicpwParser(Parser):
                 new_nodes_list += [(self.get_linkname_out_kpoints(), kpoints_from_output)]
 
         # convert the dictionary into an AiiDA object
-        output_params = ParameterData(dict=out_dict)
+        output_params = Dict(dict=out_dict)
         # return it to the execmanager
         new_nodes_list.append((self.get_linkname_outparams(), output_params))
 
         if trajectory_data:
             import numpy
-            from aiida.orm.data.array.trajectory import TrajectoryData
-            from aiida.orm.data.array import ArrayData
+            from aiida.orm.nodes.data.array.trajectory import TrajectoryData
+            from aiida.orm.nodes.data.array import ArrayData
 
             try:
                 positions = numpy.array(trajectory_data.pop('atomic_positions_relax'))

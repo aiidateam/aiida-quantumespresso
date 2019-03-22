@@ -8,12 +8,12 @@ from aiida.common.exceptions import InputValidationError
 from aiida.common.datastructures import CalcInfo, CodeInfo
 from aiida.common.links import LinkType
 from aiida.common.lang import classproperty
-from aiida.orm.data.structure import StructureData
-from aiida.orm.data.array.kpoints import KpointsData
-from aiida.orm.data.parameter import ParameterData 
-from aiida.orm.data.singlefile import SinglefileData
-from aiida.orm.data.upf import UpfData
-from aiida.orm.data.remote import RemoteData 
+from aiida.orm.nodes.data.structure import StructureData
+from aiida.orm.nodes.data.array.kpoints import KpointsData
+from aiida.orm.nodes.data.dict import Dict 
+from aiida.orm.nodes.data.singlefile import SinglefileData
+from aiida.orm.nodes.data.upf import UpfData
+from aiida.orm.nodes.data.remote import RemoteData 
 from aiida.orm.calculation.job import JobCalculation
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 from aiida_quantumespresso.calculations import _lowercase_dict,_uppercase_dict
@@ -74,7 +74,7 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
 
         retdict.update({                
                 "settings": {
-                    'valid_types': ParameterData,
+                    'valid_types': Dict,
                     'additional_parameter': None,
                     'linkname': 'settings',
                     'docstring': "Use an additional node for special settings",
@@ -98,14 +98,14 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
                     'docstring': "Use the node defining the kpoint sampling to use",
                     },
                 "pw_parameters": {
-                    'valid_types': ParameterData,
+                    'valid_types': Dict,
                     'additional_parameter': None,
                     'linkname': 'pw_parameters',
                     'docstring': ("Use a node that specifies the input parameters "
                                   "for the PW namelists"),
                     },
                 "neb_parameters" : {
-                    'valid_types': ParameterData,
+                    'valid_types': Dict,
                     'additional_parameter': None,
                     'linkname': 'neb_parameters',
                     'docstring':("Use a node that specifies the input parameters "
@@ -226,15 +226,15 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
             pw_parameters = inputdict.pop(self.get_linkname('pw_parameters'))
         except KeyError:
             raise InputValidationError("No PW parameters specified for this calculation")
-        if not isinstance(pw_parameters, ParameterData):
-            raise InputValidationError("PW parameters is not of type ParameterData")
+        if not isinstance(pw_parameters, Dict):
+            raise InputValidationError("PW parameters is not of type Dict")
 
         try:
             neb_parameters = inputdict.pop(self.get_linkname('neb_parameters'))
         except KeyError:
             raise InputValidationError("No NEB parameters specified for this calculation")
-        if not isinstance(neb_parameters, ParameterData):
-            raise InputValidationError("NEB parameters is not of type ParameterData")
+        if not isinstance(neb_parameters, Dict):
+            raise InputValidationError("NEB parameters is not of type Dict")
 
         try:
             first_structure = inputdict.pop(self.get_linkname('first_structure'))
@@ -262,9 +262,9 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
         if settings is None:
             settings_dict = {}
         else:
-            if not isinstance(settings,  ParameterData):
+            if not isinstance(settings,  Dict):
                 raise InputValidationError("settings, if specified, must be of "
-                                           "type ParameterData")
+                                           "type Dict")
             # Settings converted to uppercase
             settings_dict = _uppercase_dict(settings.get_dict(),
                                             dict_name='settings')
@@ -505,16 +505,12 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
         warnings.warn('This method has been deprecated, use instead '
                       'aiida_quantumespresso.utils.restart.create_restart_neb()', DeprecationWarning)
 
-        from aiida.common.datastructures import calc_states
-
         # Check the calculation's state using ``from_attribute=True`` to
         # correctly handle IMPORTED calculations.
-        if self.get_state(from_attribute=True) != calc_states.FINISHED:
+        if not self.is_finished_ok:
             if not force_restart:
                 raise InputValidationError(
-                    "Calculation to be restarted must be "
-                    "in the {} state. Otherwise, use the force_restart "
-                    "flag".format(calc_states.FINISHED))
+                    "Calculation to be restarted must be finshed ok. Otherwise, use the force_restart flag")
 
         if parent_folder_symlink is None:
             parent_folder_symlink = self._default_symlink_usage
@@ -524,7 +520,7 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
         old_inp_dict = inputs.get_node_by_label(self.get_linkname('neb_parameters')).get_dict()
         # add the restart flag
         old_inp_dict['PATH']['restart_mode'] = 'restart'
-        inp_dict = ParameterData(dict=old_inp_dict)
+        inp_dict = Dict(dict=old_inp_dict)
 
         try:
             remote_folder = self.get_outgoing(node_class=RemoteData, link_label_filter='remote_folder').one().node
@@ -559,7 +555,7 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
             old_settings_dict['PARENT_FOLDER_SYMLINK'] = parent_folder_symlink
 
         if old_settings_dict:  # if not empty dictionary
-            settings = ParameterData(dict=old_settings_dict)
+            settings = Dict(dict=old_settings_dict)
             c2.use_settings(settings)
 
         c2._set_parent_remotedata(remote_folder)

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 from aiida.common.extendeddicts import AttributeDict
 from aiida.orm.node.process import CalcJobNode
-from aiida.orm.data.base import Bool, Float
-from aiida.orm.data.parameter import ParameterData
-from aiida.orm.data.structure import StructureData
-from aiida.orm.data.array.bands import BandsData
-from aiida.orm.utils import WorkflowFactory
+from aiida.orm.nodes.data.base import Bool, Float
+from aiida.orm.nodes.data.dict import Dict
+from aiida.orm.nodes.data.structure import StructureData
+from aiida.orm.nodes.data.array.bands import BandsData
+from aiida.plugins import WorkflowFactory
 from aiida.work.workchain import WorkChain, ToContext, if_
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 from aiida_quantumespresso.workflows.functions.seekpath_structure_analysis import seekpath_structure_analysis
@@ -47,9 +47,9 @@ class PwBandsWorkChain(WorkChain):
         spec.exit_code(403, 'ERROR_SUB_PROCESS_FAILED_BANDS',
             message='the bands PwBasexWorkChain sub process failed')
         spec.output('primitive_structure', valid_type=StructureData)
-        spec.output('seekpath_parameters', valid_type=ParameterData)
-        spec.output('scf_parameters', valid_type=ParameterData)
-        spec.output('band_parameters', valid_type=ParameterData)
+        spec.output('seekpath_parameters', valid_type=Dict)
+        spec.output('scf_parameters', valid_type=Dict)
+        spec.output('band_parameters', valid_type=Dict)
         spec.output('band_structure', valid_type=BandsData)
 
     def setup(self):
@@ -87,11 +87,11 @@ class PwBandsWorkChain(WorkChain):
         the symmetry of the cell changed in the cell relaxation step
         """
         if 'kpoints_distance' in self.inputs.bands:
-            seekpath_parameters = ParameterData(dict={
+            seekpath_parameters = Dict(dict={
                 'reference_distance': self.inputs.bands.kpoints_distance.value
             })
         else:
-            seekpath_parameters = ParameterData(dict={})
+            seekpath_parameters = Dict(dict={})
 
         result = seekpath_structure_analysis(self.ctx.current_structure, seekpath_parameters)
         self.ctx.current_structure = result['primitive_structure']

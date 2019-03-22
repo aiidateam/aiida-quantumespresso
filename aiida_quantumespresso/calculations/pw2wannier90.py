@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-from aiida.orm.data.remote import RemoteData
+from aiida.orm.nodes.data.remote import RemoteData
 from aiida.common.lang import classproperty
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 from aiida_quantumespresso.calculations.pw import PwCalculation
-from aiida.orm import DataFactory
+from aiida.plugins import DataFactory
 
 
 class Pw2wannier90Calculation(NamelistsCalculation):

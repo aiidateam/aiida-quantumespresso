@@ -13,7 +13,7 @@ import os
 
 ################################################################
 UpfData = DataFactory('upf')
-ParameterData = DataFactory('parameter')
+Dict = DataFactory('dict')
 KpointsData = DataFactory('array.kpoints')
 StructureData = DataFactory('structure')
 RemoteData = DataFactory('remote')
@@ -90,8 +90,8 @@ kpoints.set_cell(calc.inp.structure.cell, calc.inp.structure.pbc)
 kpoints.set_kpoints_path(kpoint_distance = 0.05)
 
 calc.use_kpoints(kpoints)
-calc.use_parameters(ParameterData(dict=new_input_dict))
-calc.use_settings(ParameterData(dict=settings_dict))
+calc.use_parameters(Dict(dict=new_input_dict))
+calc.use_settings(Dict(dict=settings_dict))
 
 if submit_test:
     subfolder, script_filename = calc.submit_test()

@@ -79,7 +79,7 @@
         ]
     }, 
     "install_requires": [
-        "aiida_core[atomic_tools]>=1.0.0a3", 
+        "aiida_core[atomic_tools]>=1.0.0b1", 
         "matplotlib<3.0.0; python_version < '3'"
     ], 
     "license": "MIT License", 

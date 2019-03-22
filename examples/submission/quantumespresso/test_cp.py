@@ -19,7 +19,7 @@ from aiida.common.example_helpers import test_and_get_code
 
 ################################################################
 UpfData = DataFactory('upf')
-ParameterData = DataFactory('parameter')
+Dict = DataFactory('dict')
 StructureData = DataFactory('structure')
 
 try:
@@ -86,7 +86,7 @@ if auto_pseudos:
         print >> sys.stderr, ",".join(i.name for i in valid_pseudo_groups)
         sys.exit(1)
 
-parameters = ParameterData(dict={
+parameters = Dict(dict={
     'CONTROL': {
         'calculation': 'cp',
         'restart_mode': 'from_scratch',
@@ -155,7 +155,7 @@ else:
         calc.use_pseudo(v, kind=k)
 
 # calc.use_settings(settings)
-# from aiida.orm.data.remote import RemoteData
+# from aiida.orm.nodes.data.remote import RemoteData
 # calc.set_outdir(remotedata)
 
 if submit_test:

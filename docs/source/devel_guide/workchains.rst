@@ -64,8 +64,8 @@ For example in an outline method ``prepare_calculation`` one could do the follow
             'parameters': self.inputs.parameters
         }
 
-The values in the dictionary need to be instances of :class:`aiida.orm.data.Data` or a dictionary. The |BaseRestartWorkChain|
-will make sure that bare dictionaries will be wrapped in :class:`~aiida.orm.data.parameter.ParameterData` instances.
+The values in the dictionary need to be instances of :class:`aiida.orm.nodes.data.Data` or a dictionary. The |BaseRestartWorkChain|
+will make sure that bare dictionaries will be wrapped in :class:`~aiida.orm.nodes.data.dict.Dict` instances.
 
 Error handling
 ==============

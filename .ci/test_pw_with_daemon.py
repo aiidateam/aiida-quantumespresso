@@ -9,7 +9,7 @@ import subprocess
 import sys
 import time
 
-from aiida.orm import DataFactory
+from aiida.plugins import DataFactory
 
 # If set to True, will ask AiiDA to run in serial mode (i.e., AiiDA will not
 # invoke the mpirun command in the submission script)
@@ -24,7 +24,7 @@ expected_energy = -3700.91106342615
 ################################################################
 
 UpfData = DataFactory('upf')
-ParameterData = DataFactory('parameter')
+Dict = DataFactory('dict')
 KpointsData = DataFactory('array.kpoints')
 StructureData = DataFactory('structure')
 
@@ -46,7 +46,7 @@ s.append_atom(position=(0., alat / 2., alat / 2.), symbols=['O'])
 
 elements = list(s.get_symbols_set())
 
-parameters = ParameterData(dict={
+parameters = Dict(dict={
     'CONTROL': {
         'calculation': 'scf',
         'restart_mode': 'from_scratch',
@@ -69,7 +69,7 @@ kpoints.set_kpoints_mesh([kpoints_mesh, kpoints_mesh, kpoints_mesh])
 # to retrieve the bands
 # (the object settings is optional)
 settings_dict = {}
-settings = ParameterData(dict=settings_dict)
+settings = Dict(dict=settings_dict)
 
 calc = code.new_calc()
 calc.label = "Test QE pw.x"
@@ -79,7 +79,7 @@ calc.set_option('max_wallclock_seconds', 30 * 60)  # 30 min
 # number_cpus_per_machine), change for SGE-like schedulers
 calc.set_option('resources', {"num_machines": 1})
 if run_in_serial_mode:
-    calc.set_option('withmpi', (False)
+    calc.set_option('withmpi', False)
 
 if queue is not None:
     calc.set_option('queue_name', queue)

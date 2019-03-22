@@ -22,9 +22,9 @@ def launch(
     """
     Run the PhBaseWorkChain for a previously completed PwCalculation
     """
-    from aiida.orm.data.base import Bool
-    from aiida.orm.data.parameter import ParameterData
-    from aiida.orm.utils import WorkflowFactory
+    from aiida.orm.nodes.data.base import Bool
+    from aiida.orm.nodes.data.dict import Dict
+    from aiida.plugins import WorkflowFactory
     from aiida.work import launch
     from aiida_quantumespresso.utils.resources import get_default_options
 
@@ -41,8 +41,8 @@ def launch(
         'code': code,
         'qpoints': kpoints_mesh,
         'parent_folder': calculation.out.remote_folder,
-        'parameters': ParameterData(dict=parameters),
-        'options': ParameterData(dict=options),
+        'parameters': Dict(dict=parameters),
+        'options': Dict(dict=options),
     }
 
     if clean_workdir:

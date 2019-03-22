@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import Code
-from aiida.orm.data.base import Bool
-from aiida.orm.data.folder import FolderData
-from aiida.orm.data.remote import RemoteData
-from aiida.orm.data.parameter import ParameterData
-from aiida.orm.data.array.kpoints import KpointsData
-from aiida.orm.utils import CalculationFactory
+from aiida.orm.nodes.data.base import Bool
+from aiida.orm.nodes.data.folder import FolderData
+from aiida.orm.nodes.data.remote import RemoteData
+from aiida.orm.nodes.data.dict import Dict
+from aiida.orm.nodes.data.array.kpoints import KpointsData
+from aiida.plugins import CalculationFactory
 from aiida.work.workchain import while_
 from aiida_quantumespresso.common.workchain.utils import ErrorHandlerReport
 from aiida_quantumespresso.common.workchain.utils import register_error_handler
@@ -36,9 +36,9 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         spec.input('code', valid_type=Code)
         spec.input('qpoints', valid_type=KpointsData)
         spec.input('parent_folder', valid_type=RemoteData)
-        spec.input('parameters', valid_type=ParameterData, required=False)
-        spec.input('settings', valid_type=ParameterData, required=False)
-        spec.input('options', valid_type=ParameterData, required=False)
+        spec.input('parameters', valid_type=Dict, required=False)
+        spec.input('settings', valid_type=Dict, required=False)
+        spec.input('options', valid_type=Dict, required=False)
         spec.input('only_initialization', valid_type=Bool, default=Bool(False))
         spec.outline(
             cls.setup,
@@ -52,7 +52,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         )
         spec.exit_code(402, 'ERROR_CALCULATION_INVALID_INPUT_FILE',
             message='the calculation failed because it had an invalid input file')
-        spec.output('output_parameters', valid_type=ParameterData)
+        spec.output('output_parameters', valid_type=Dict)
         spec.output('remote_folder', valid_type=RemoteData)
         spec.output('retrieved', valid_type=FolderData)
 

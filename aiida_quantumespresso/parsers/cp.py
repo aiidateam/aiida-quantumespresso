@@ -4,12 +4,11 @@ from aiida_quantumespresso.parsers.raw_parser_cp import (
     QEOutputParsingError, parse_cp_traj_stanzas, parse_cp_raw_output)
 from aiida_quantumespresso.parsers.constants import (bohr_to_ang,
                                                      timeau_to_sec, hartree_to_ev)
-from aiida.orm.data.parameter import ParameterData
-from aiida.orm.data.structure import StructureData
-from aiida.orm.data.folder import FolderData
+from aiida.orm.nodes.data.dict import Dict
+from aiida.orm.nodes.data.structure import StructureData
+from aiida.orm.nodes.data.folder import FolderData
 from aiida.parsers.parser import Parser
-from aiida.common.datastructures import calc_states
-from aiida.orm.data.array.trajectory import TrajectoryData
+from aiida.orm.nodes.data.array.trajectory import TrajectoryData
 import numpy
 
 
@@ -291,7 +290,7 @@ class CpParser(Parser):
             pass
 
         # convert the dictionary into an AiiDA object
-        output_params = ParameterData(dict=out_dict)
+        output_params = Dict(dict=out_dict)
         # save it into db
         new_nodes_list.append((self.get_linkname_outparams(), output_params))
 

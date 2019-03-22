@@ -10,7 +10,7 @@ import re
 import os
 import numpy as np
 from aiida.common.exceptions import ParsingError
-from aiida.orm.data.structure import StructureData, _valid_symbols
+from aiida.orm.nodes.data.structure import StructureData, _valid_symbols
 from aiida.common.constants import bohr_to_ang
 from aiida.common.exceptions import InputValidationError
 from aiida_quantumespresso.calculations import _uppercase_dict
@@ -204,7 +204,7 @@ class QeInputFile(object):
         wish to use different pseudo's for two or more of the same atom).
     
         :return: StructureData object of the structure in the input file
-        :rtype: aiida.orm.data.structure.StructureData
+        :rtype: aiida.orm.nodes.data.structure.StructureData
         :raises aiida.common.exceptions.ParsingError: if there are issues
             parsing the input.
         """
@@ -371,7 +371,7 @@ def parse_atomic_positions(txt):
         Map strings '0', '1' strings to bools: '0' --> True; '1' --> False.
 
         While this is opposite to the QE standard, this mapping is what needs to
-        be passed to aiida in a 'settings' ParameterData object.
+        be passed to aiida in a 'settings' Dict object.
         (See the _if_pos method of BasePwCpInputGenerator)
         """
         if s == '0':
@@ -1035,12 +1035,12 @@ def get_structuredata_from_qeinput(
     Function that receives either
     :param filepath: the filepath storing **or**
     :param text: the string of a standard QE-input file.
-    An instance of :py:class:`~aiida.orm.data.structure.StructureData` is initialized with kinds, positions and cell
+    An instance of :py:class:`~aiida.orm.nodes.data.structure.StructureData` is initialized with kinds, positions and cell
     as defined in the input file.
     This function can deal with ibrav being set different from 0 and the cell being defined
     with celldm(n) or A,B,C, cosAB etc.
     """
-    from aiida.orm.data.structure import StructureData, Kind, Site
+    from aiida.orm.nodes.data.structure import StructureData, Kind, Site
     #~ from aiida.common.utils import get_fortfloat
 
     valid_elements_regex = re.compile("""
@@ -1102,7 +1102,7 @@ Ac | Th | Pa | U  | Np | Pu | Am | Cm | Bk | Cf | Es | Fm | Md | No | Lr | # Act
 
     # instance and set the cell
     structuredata = StructureData()
-    structuredata._set_attr('cell', cell.tolist())
+    structuredata.set_attribute('cell', cell.tolist())
 
     #################  KINDS ##########################
 

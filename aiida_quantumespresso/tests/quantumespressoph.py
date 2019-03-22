@@ -8,13 +8,13 @@ import os
 import aiida
 from aiida.common.exceptions import InputValidationError
 from aiida.common.folders import SandboxFolder
-from aiida.orm import CalculationFactory, DataFactory
+from aiida.plugins import CalculationFactory, DataFactory
 from aiida.backends.testbase import AiidaTestCase
 from aiida.orm import Code
 
 PhCalc = CalculationFactory('quantumespresso.ph')
 StructureData = DataFactory('structure')
-ParameterData = DataFactory('parameter')
+Dict = DataFactory('dict')
 UpfData = DataFactory('upf')
 KpointsData = DataFactory('array.kpoints')
 
@@ -41,7 +41,7 @@ class TestQEPHInputGeneration(AiidaTestCase):
     def test_inputs(self):
         import logging
 
-        parameters = ParameterData(dict={
+        parameters = Dict(dict={
             'INPUTPH': {
                 'tr2_ph': 1.0e-8,
             }})
