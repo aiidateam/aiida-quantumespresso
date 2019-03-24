@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Command line scripts to launch a `PhBaseWorkChain` for testing and demonstration purposes."""
 import click
 
 from aiida.cmdline.params import options, types
@@ -17,32 +18,23 @@ from aiida_quantumespresso.cli.utils import options as options_qe
 @options_qe.WITH_MPI()
 @options_qe.DAEMON()
 @decorators.with_dbenv()
-def launch(
-    code, calculation, kpoints_mesh, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
-    """
-    Run the PhBaseWorkChain for a previously completed PwCalculation
-    """
-    from aiida.orm.nodes.data.base import Bool
-    from aiida.orm.nodes.data.dict import Dict
+def cli(code, calculation, kpoints_mesh, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
+    """Run the `PhBaseWorkChain` for a previously completed `PwCalculation`."""
+    from aiida.engine import launch
+    from aiida.orm import Bool, Dict
     from aiida.plugins import WorkflowFactory
-    from aiida.work import launch
     from aiida_quantumespresso.utils.resources import get_default_options
 
-    PhBaseWorkChain = WorkflowFactory('quantumespresso.ph.base')
+    PhBaseWorkChain = WorkflowFactory('quantumespresso.ph.base')  # pylint: disable=invalid-name
 
-    parameters = {
-        'INPUTPH': {
-        }
-    }
-
-    options = get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)
+    parameters = {'INPUTPH': {}}
 
     inputs = {
         'code': code,
         'qpoints': kpoints_mesh,
         'parent_folder': calculation.out.remote_folder,
         'parameters': Dict(dict=parameters),
-        'options': Dict(dict=options),
+        'options': Dict(dict=get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)),
     }
 
     if clean_workdir:
