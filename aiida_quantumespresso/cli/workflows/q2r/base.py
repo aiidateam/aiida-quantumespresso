@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Command line scripts to launch a `Q2rBaseWorkChain` for testing and demonstration purposes."""
 import click
 
 from aiida.cmdline.params import options, types
@@ -16,25 +17,19 @@ from aiida_quantumespresso.cli.utils import options as options_qe
 @options_qe.WITH_MPI()
 @options_qe.DAEMON()
 @decorators.with_dbenv()
-def launch(
-    code, calculation, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
-    """
-    Run the Q2rBaseWorkChain for a previously completed PhCalculation
-    """
-    from aiida.orm.nodes.data.base import Bool
-    from aiida.orm.nodes.data.dict import Dict
+def cli(code, calculation, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
+    """Run the `Q2rBaseWorkChain` for a previously completed `PhCalculation`."""
+    from aiida.engine import launch
+    from aiida.orm import Bool, Dict
     from aiida.plugins import WorkflowFactory
-    from aiida.work import launch
     from aiida_quantumespresso.utils.resources import get_default_options
 
-    Q2rBaseWorkChain = WorkflowFactory('quantumespresso.q2r.base')
-
-    options = get_default_options(max_num_machines, max_wallclock_seconds)
+    Q2rBaseWorkChain = WorkflowFactory('quantumespresso.q2r.base')  # pylint: disable=invalid-name
 
     inputs = {
         'code': code,
         'parent_folder': calculation.out.retrieved,
-        'options': Dict(dict=options),
+        'options': Dict(dict=get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)),
     }
 
     if clean_workdir:

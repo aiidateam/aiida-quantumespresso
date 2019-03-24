@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Command line scripts to launch a `PwRelaxWorkChain` for testing and demonstration purposes."""
 import click
 
 from aiida.cmdline.params import options, types
@@ -27,22 +28,23 @@ from aiida_quantumespresso.cli.utils import validate
 @options_qe.WITH_MPI()
 @options_qe.DAEMON()
 @click.option(
-    '-f', '--final-scf', is_flag=True, default=False, show_default=True,
-    help='Run a final scf calculation for the final relaxed structure.'
-)
+    '-f',
+    '--final-scf',
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help='Run a final scf calculation for the final relaxed structure.')
 @decorators.with_dbenv()
-def launch(
-    code, structure, pseudo_family, kpoints_distance, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file_pk,
-    starting_magnetization, smearing, automatic_parallelization, clean_workdir, max_num_machines, max_wallclock_seconds,
-    with_mpi, daemon, final_scf):
-    """Run a PwRelaxWorkChain."""
-    from aiida.orm.nodes.data.base import Bool, Float, Str
-    from aiida.orm.nodes.data.dict import Dict
+def cli(code, structure, pseudo_family, kpoints_distance, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file_pk,
+        starting_magnetization, smearing, automatic_parallelization, clean_workdir, max_num_machines,
+        max_wallclock_seconds, with_mpi, daemon, final_scf):
+    """Run a `PwRelaxWorkChain`."""
+    from aiida.engine import launch
+    from aiida.orm import Bool, Float, Str, Dict
     from aiida.plugins import WorkflowFactory
-    from aiida.work import launch
     from aiida_quantumespresso.utils.resources import get_default_options, get_automatic_parallelization_options
 
-    PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
+    PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')  # pylint: disable=invalid-name
 
     parameters = {
         'SYSTEM': {
@@ -52,7 +54,8 @@ def launch(
     }
 
     try:
-        hubbard_file = validate.validate_hubbard_parameters(structure, parameters, hubbard_u, hubbard_v, hubbard_file_pk)
+        hubbard_file = validate.validate_hubbard_parameters(structure, parameters, hubbard_u, hubbard_v,
+                                                            hubbard_file_pk)
     except ValueError as exception:
         raise click.BadParameter(exception.message)
 
@@ -83,8 +86,7 @@ def launch(
         automatic_parallelization = get_automatic_parallelization_options(max_num_machines, max_wallclock_seconds)
         inputs['base']['automatic_parallelization'] = Dict(dict=automatic_parallelization)
     else:
-        options = get_default_options(max_num_machines, max_wallclock_seconds)
-        inputs['base']['options'] = Dict(dict=options)
+        inputs['base']['options'] = Dict(dict=get_default_options(max_num_machines, max_wallclock_seconds, with_mpi))
 
     if clean_workdir:
         inputs['clean_workdir'] = Bool(True)

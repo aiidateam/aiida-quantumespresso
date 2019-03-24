@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Command line scripts to launch a `PwCalculation` for testing and demonstration purposes."""
 import click
 
 from aiida.cmdline.params import options, types
@@ -25,21 +26,24 @@ from aiida_quantumespresso.cli.utils import validate
 @options_qe.WITH_MPI()
 @options_qe.DAEMON()
 @click.option(
-    '-z', '--calculation-mode', 'mode', type=click.Choice(['scf', 'vc-relax']), default='scf', show_default=True,
-    help='select the calculation mode'
-)
+    '-z',
+    '--calculation-mode',
+    'mode',
+    type=click.Choice(['scf', 'vc-relax']),
+    default='scf',
+    show_default=True,
+    help='select the calculation mode')
 @decorators.with_dbenv()
-def launch(
-    code, structure, pseudo_family, kpoints_mesh, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file_pk,
-    starting_magnetization, smearing, max_num_machines, max_wallclock_seconds, with_mpi, daemon, mode):
+def cli(code, structure, pseudo_family, kpoints_mesh, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file_pk,
+        starting_magnetization, smearing, max_num_machines, max_wallclock_seconds, with_mpi, daemon, mode):
     """Run a PwCalculation."""
+    from aiida.engine import launch
     from aiida.orm import Dict
     from aiida.orm.nodes.data.upf import get_pseudos_from_structure
-    from aiida.engine import launch
     from aiida.plugins import CalculationFactory
     from aiida_quantumespresso.utils.resources import get_default_options
 
-    PwCalculation = CalculationFactory('quantumespresso.pw')
+    PwCalculation = CalculationFactory('quantumespresso.pw')  # pylint: disable=invalid-name
 
     parameters = {
         'CONTROL': {
@@ -52,7 +56,8 @@ def launch(
     }
 
     try:
-        hubbard_file = validate.validate_hubbard_parameters(structure, parameters, hubbard_u, hubbard_v, hubbard_file_pk)
+        hubbard_file = validate.validate_hubbard_parameters(structure, parameters, hubbard_u, hubbard_v,
+                                                            hubbard_file_pk)
     except ValueError as exception:
         raise click.BadParameter(exception.message)
 
@@ -86,7 +91,7 @@ def launch(
         click.echo('Submitted {}<{}> to the daemon'.format(PwCalculation.__name__, calculation.pk))
     else:
         click.echo('Running a pw.x calculation in the {} mode... '.format(mode))
-        results, calculation = launch.run_get_node(PwCalculation, **inputs)
+        _, calculation = launch.run_get_node(PwCalculation, **inputs)
         click.echo('PwCalculation<{}> terminated with state: {}'.format(calculation.pk, calculation.get_state()))
         click.echo('\n{link:25s} {node}'.format(link='Output link', node='Node pk and type'))
         click.echo('{s}'.format(s='-' * 60))

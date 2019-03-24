@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Utility functions for validation of command line interface parameter inputs."""
 import click
 
 from aiida.cmdline.utils import decorators
@@ -16,12 +17,13 @@ def validate_kpoints_mesh(ctx, param, value):
     :param value: a tuple of three positive integers
     :returns: a KpointsData instance
     """
+    # pylint: disable=unused-argument
     from aiida.orm import KpointsData
 
     if not value:
         return None
 
-    if any([type(i) != int for i in value]) or any([int(i) <= 0 for i in value]):
+    if any([not isinstance(integer, int) for integer in value]) or any([int(i) <= 0 for i in value]):
         raise click.BadParameter('all values of the tuple should be positive greater than zero integers')
 
     try:
@@ -62,7 +64,7 @@ def validate_hubbard_parameters(structure, parameters, hubbard_u=None, hubbard_v
             ValueError('{} is not a valid pk'.format(hubbard_file_pk))
         else:
             if not isinstance(hubbard_file, SinglefileData):
-                ValueError('Node<{}> is not a SinglefileData but {}'.format())
+                ValueError('Node<{}> is not a SinglefileData but {}'.format(hubbard_file_pk, type(hubbard_file)))
 
         parameters['SYSTEM']['lda_plus_u'] = True
         parameters['SYSTEM']['lda_plus_u_kind'] = 2
@@ -139,16 +141,16 @@ def validate_smearing(parameters, smearing=None):
         'fermi-dirac': ['fermi-dirac', 'f-d', 'fd'],
     }
 
-    for smearing_type, options in valid_smearing_types.items():
+    for _, options in valid_smearing_types.items():
         if smearing[0] in options:
             break
     else:
-        raise ValueError('the smearing type "{}" is invalid, choose from {}'
-            .format(smearing[0], ', '.join(valid_smearing_types.keys())))
+        raise ValueError('the smearing type "{}" is invalid, choose from {}'.format(
+            smearing[0], ', '.join(valid_smearing_types.keys())))
 
     if not isinstance(smearing[1], float):
         raise ValueError('the smearing value should be a float')
 
     parameters['SYSTEM']['occupations'] = 'smearing'
-    parameters['SYSTEM']['smearing'] = smearing_type
+    parameters['SYSTEM']['smearing'] = smearing[0]
     parameters['SYSTEM']['degauss'] = smearing[1]
