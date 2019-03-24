@@ -9,7 +9,6 @@
     args: ['-i']
     exclude: &exclude_files >
       (?x)^(
-        .ci/.*|
         aiida_quantumespresso/calculations.*|
         aiida_quantumespresso/cli/.*|
         aiida_quantumespresso/common/.*|
@@ -21,8 +20,7 @@
         aiida_quantumespresso/workflows/.*|
         docs/.*|
         examples/.*|
-        tests/.*|
-        setup.py
+        tests/.*
       )$
 
   - id: prospector
