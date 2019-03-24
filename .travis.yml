@@ -41,7 +41,7 @@ install:
     - pip install -U pip wheel setuptools reentry
 
     # Install the repository with some optional dependencies
-    - pip install .[docs,dev_precommit]
+    - pip install .[dev,docs]
 
 env:
 - TEST_TYPE="pre-commit"
