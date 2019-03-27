@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from xml.dom.minidom import parseString
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
 from aiida_quantumespresso.parsers.raw_parser_pw import (read_xml_card,
@@ -6,6 +7,7 @@ from aiida_quantumespresso.parsers.raw_parser_pw import (read_xml_card,
                    parse_xml_child_str,parse_xml_child_float,
                    parse_xml_child_attribute_str,xml_card_cell,xml_card_ions,
                    xml_card_exchangecorrelation,xml_card_spin,xml_card_planewaves)
+from six.moves import range
 
 
 def parse_cp_traj_stanzas(num_elements, splitlines, prepend_name,rescale=1.):
@@ -202,13 +204,13 @@ def parse_cp_raw_output(out_file,xml_file=None,xml_counter_file=None):
     out_data=parse_cp_text_output(out_lines,xml_data)
 
     for key in out_data.keys():
-        if key in xml_data.keys():
+        if key in list(xml_data.keys()):
             raise AssertionError('%s found in both dictionaries' % key)
-        if key in xml_counter_data.keys():
+        if key in list(xml_counter_data.keys()):
             raise AssertionError('%s found in both dictionaries' % key)
         # out_data keys take precedence and overwrite xml_data keys,
         # if the same key name is shared by both (but this should not happen!)
-    final_data = dict(xml_data.items() + out_data.items() + xml_counter_data.items())
+    final_data = dict(list(xml_data.items()) + list(out_data.items()) + list(xml_counter_data.items()))
 
     # TODO: parse the trajectory and save them in a reasonable format
 

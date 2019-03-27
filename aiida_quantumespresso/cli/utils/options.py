@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 """Pre-defined overridable options for commonly used command line interface parameters."""
+from __future__ import absolute_import
+
+import six
 import click
 
 from aiida.cmdline.params import types
@@ -90,7 +93,7 @@ HUBBARD_U = OverridableOption(
     '--hubbard-u',
     nargs=2,
     multiple=True,
-    type=click.Tuple([unicode, float]),
+    type=click.Tuple([six.text_type, float]),
     help=u'Add a Hubbard U term to a specific kind.',
     metavar='<KIND MAGNITUDE>...')
 
@@ -115,7 +118,7 @@ STARTING_MAGNETIZATION = OverridableOption(
     '--starting-magnetization',
     nargs=2,
     multiple=True,
-    type=click.Tuple([unicode, float]),
+    type=click.Tuple([six.text_type, float]),
     help=u'Add a starting magnetization to a specific kind.',
     metavar='<KIND MAGNITUDE>...')
 
@@ -124,6 +127,6 @@ SMEARING = OverridableOption(
     '--smearing',
     nargs=2,
     default=(None, None),
-    type=click.Tuple([unicode, float]),
+    type=click.Tuple([six.text_type, float]),
     help=u'Add smeared occupations by specifying the type and amount of smearing.',
     metavar='<TYPE DEGAUSS>')

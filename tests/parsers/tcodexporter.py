@@ -10,10 +10,12 @@
 """
 Tests for TestTcodDbExporter
 """
+from __future__ import absolute_import
 import unittest
 
 from aiida.backends.testbase import AiidaTestCase
 from aiida.common.links import LinkType
+from six.moves import range
 
 
 

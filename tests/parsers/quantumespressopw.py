@@ -12,6 +12,7 @@ TODO: to test:
 - content for non-existent namelists specified
 """
 
+from __future__ import absolute_import
 import os
 import unittest
 

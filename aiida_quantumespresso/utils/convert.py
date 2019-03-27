@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
 import numbers
 import six
+from six.moves import zip
 
 
 def conv_to_fortran(val, quote_strings=True):
@@ -164,7 +166,7 @@ def convert_input_to_namelist_entry(key, val, mapping=None):
         # second is the actual line. This is used at the end to resort everything.
         list_of_strings = []
 
-        for elemk, itemval in val.iteritems():
+        for elemk, itemval in six.iteritems(val):
             try:
                 idx = mapping[elemk]
             except KeyError:
@@ -173,7 +175,7 @@ def convert_input_to_namelist_entry(key, val, mapping=None):
             list_of_strings.append((idx, '  {0}({2}) = {1}\n'.format(key, conv_to_fortran(itemval), idx)))
 
         # I first have to resort, then to remove the index from the first column, finally to join the strings
-        list_of_strings = zip(*sorted(list_of_strings))[1]
+        list_of_strings = list(zip(*sorted(list_of_strings)))[1]
         return ''.join(list_of_strings)
 
     # A list/array/tuple of values
@@ -189,10 +191,10 @@ def convert_input_to_namelist_entry(key, val, mapping=None):
 
                 for value in itemval[:-1]:
 
-                    if not isinstance(value, (int, basestring)):
+                    if not isinstance(value, (int, six.string_types)):
                         raise ValueError('values of double nested lists should be either integers or strings')
 
-                    if isinstance(value, basestring):
+                    if isinstance(value, six.string_types):
                         if mapping is None:
                             raise ValueError('cannot map the string value because no mapping was defined')
 

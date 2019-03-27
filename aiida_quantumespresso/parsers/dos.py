@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import numpy as np
 from aiida.parsers.parser import Parser
 from aiida.orm.nodes.data.array.xy import XyData
@@ -7,6 +8,7 @@ from aiida.common.exceptions import InvalidOperation
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers import parse_raw_out_basic
 from aiida_quantumespresso.calculations.dos import DosCalculation
+from six.moves import range
 
 class DosParser(Parser):
     """

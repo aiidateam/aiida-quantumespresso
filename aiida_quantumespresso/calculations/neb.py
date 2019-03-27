@@ -2,6 +2,7 @@
 """
 Plugin to create a Quantum Espresso neb.x input file.
 """
+from __future__ import absolute_import
 import os
 import copy
 from aiida.common.exceptions import InputValidationError
@@ -18,6 +19,7 @@ from aiida.orm.calculation.job import JobCalculation
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 from aiida_quantumespresso.calculations import _lowercase_dict,_uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+import six
 
 
 class NebCalculation(BasePwCpInputGenerator,JobCalculation):
@@ -153,7 +155,7 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
         input_params = _uppercase_dict(neb_parameters.get_dict(),
                                        dict_name='parameters')
         input_params = {k: _lowercase_dict(v, dict_name=k)
-                        for k, v in input_params.iteritems()}
+                        for k, v in six.iteritems(input_params)}
         
         # For the neb input there is no blocked keyword
         
@@ -185,7 +187,7 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
         # namelist content; set to {} if not present, so that we leave an 
         # empty namelist
         namelist = input_params.pop('PATH', {})
-        for k, v in sorted(namelist.iteritems()):
+        for k, v in sorted(six.iteritems(namelist)):
             inputfile += convert_input_to_namelist_entry(k, v)
         inputfile += "/\n"
 
@@ -197,7 +199,7 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
             raise InputValidationError(
                 "The following namelists are specified in input_params, but are "
                 "not valid namelists for the current type of calculation: "
-                "{}".format(",".join(input_params.keys())))
+                "{}".format(",".join(list(input_params.keys()))))
 
         return inputfile
 
@@ -300,7 +302,7 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
         # Here, there should be no more parameters...
         if inputdict:
             raise InputValidationError("The following input data nodes are "
-                                       "unrecognized: {}".format(inputdict.keys()))
+                                       "unrecognized: {}".format(list(inputdict.keys())))
 
         # Check that the first and last image have the same cell
         if abs(np.array(first_structure.cell)-
@@ -321,7 +323,7 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
         if set(kindnames) != set(pseudos.keys()):
             err_msg = ("Mismatch between the defined pseudos and the list of "
                        "kinds of the structure. Pseudos: {}; kinds: {}".format(
-                ",".join(pseudos.keys()), ",".join(list(kindnames))))
+                ",".join(list(pseudos.keys())), ",".join(list(kindnames))))
             raise InputValidationError(err_msg)
 
         ##############################
@@ -355,7 +357,7 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
 
         # We need to pop the settings that were used in the PW calculations
         for key in settings_dict.keys():
-            if key not in this_settings_dict.keys():
+            if key not in list(this_settings_dict.keys()):
                 settings_dict.pop(key)
 
         # We avoid to copy twice the same pseudopotential to the same filename
@@ -465,7 +467,7 @@ class NebCalculation(BasePwCpInputGenerator,JobCalculation):
             except (KeyError, AttributeError):  # the key parser_opts isn't inside the dictionary
                 raise InputValidationError("The following keys have been found in "
                                            "the settings input node, but were not understood: {}".format(
-                    ",".join(settings_dict.keys())))
+                    ",".join(list(settings_dict.keys()))))
 
         return calcinfo
 

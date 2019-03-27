@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from aiida.common.extendeddicts import AttributeDict
 from aiida.orm.node.process import CalcJobNode
 from aiida.orm.nodes.data.base import Bool, Float
@@ -9,6 +10,7 @@ from aiida.plugins import WorkflowFactory
 from aiida.work.workchain import WorkChain, ToContext, if_
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 from aiida_quantumespresso.workflows.functions.seekpath_structure_analysis import seekpath_structure_analysis
+from six.moves import map
 
 
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')

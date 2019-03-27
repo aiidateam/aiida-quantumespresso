@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
 from aiida.tools.dbexporters.tcod_plugins import BaseTcodtranslator
 
 class CpTcodtranslator(BaseTcodtranslator):

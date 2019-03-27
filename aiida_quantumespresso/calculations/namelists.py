@@ -4,6 +4,7 @@ Plugin to create a Quantum Espresso input file for a generic post-processing
 (or similar) code that only requires a few namelists (plus possibly some text
 afterwards).
 """
+from __future__ import absolute_import
 import os
 from aiida.common.exceptions import InputValidationError
 from aiida.common.datastructures import CalcInfo, CodeInfo
@@ -16,6 +17,7 @@ from aiida.orm.calculation.job import JobCalculation
 from aiida.common.datastructures import CodeInfo
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+import six
     
 
 class NamelistsCalculation(JobCalculation):   
@@ -150,7 +152,7 @@ class NamelistsCalculation(JobCalculation):
         # Here, there should be no more parameters...
         if inputdict:
             raise InputValidationError("The following input data nodes are "
-                "unrecognized: {}".format(inputdict.keys()))
+                "unrecognized: {}".format(list(inputdict.keys())))
 
         ##############################
         # END OF INITIAL INPUT CHECK #
@@ -162,7 +164,7 @@ class NamelistsCalculation(JobCalculation):
         input_params = _uppercase_dict(parameters.get_dict(),
                                        dict_name='parameters')
         input_params = {k: _lowercase_dict(v, dict_name=k) 
-                        for k, v in input_params.iteritems()}
+                        for k, v in six.iteritems(input_params)}
         
         # set default values. NOTE: this is different from PW/CP
         for blocked in self._blocked_keywords:
@@ -199,7 +201,7 @@ class NamelistsCalculation(JobCalculation):
                 # namelist content; set to {} if not present, so that we leave an 
                 # empty namelist
                 namelist = input_params.pop(namelist_name,{})
-                for k, v in sorted(namelist.iteritems()):
+                for k, v in sorted(six.iteritems(namelist)):
                     infile.write(convert_input_to_namelist_entry(k,v))
                 infile.write("/\n")
 
@@ -211,7 +213,7 @@ class NamelistsCalculation(JobCalculation):
             raise InputValidationError(
                 "The following namelists are specified in input_params, but are "
                 "not valid namelists for the current type of calculation: "
-                "{}".format(",".join(input_params.keys())))
+                "{}".format(",".join(list(input_params.keys()))))
         
         # copy remote output dir, if specified
         if parent_calc_folder is not None:
@@ -266,7 +268,7 @@ class NamelistsCalculation(JobCalculation):
             except (KeyError,AttributeError): # the key parser_opts isn't inside the dictionary, or it is set to None
                 raise InputValidationError("The following keys have been found in "
                   "the settings input node, but were not understood: {}".format(
-                  ",".join(settings_dict.keys())))
+                  ",".join(list(settings_dict.keys()))))
         
         return calcinfo
 

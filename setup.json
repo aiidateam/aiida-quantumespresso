@@ -74,6 +74,7 @@
             "prospector==1.1.5", 
             "pylint==1.9.4; python_version<'3.0'", 
             "pylint==2.2.2; python_version>='3.0'", 
+            "astroid==2.1.0; python_version>='3.0'",
             "yapf==0.26.0"
         ], 
         "docs": [

@@ -6,6 +6,8 @@ them.
 TODO: Parse CONSTRAINTS, OCCUPATIONS, ATOMIC_FORCES once they are implemented
       in AiiDA
 """
+from __future__ import absolute_import
+from __future__ import print_function
 import re
 import os
 import numpy as np
@@ -15,6 +17,10 @@ from aiida.common.constants import bohr_to_ang
 from aiida.common.exceptions import InputValidationError
 from aiida_quantumespresso.calculations import _uppercase_dict
 from aiida_quantumespresso.parsers.constants import bohr_to_ang
+import six
+from six.moves import map
+from six.moves import range
+from six.moves import zip
 
 
 RE_FLAGS = re.M | re.X | re.I
@@ -153,18 +159,9 @@ class QeInputFile(object):
             parsing the pwinput.
         """
         # Get the text of the pwinput file as a single string.
-        # File.
-        if isinstance(pwinput, file):
-            try:
-                self.input_txt = pwinput.read()
-            except IOError:
-                raise IOError(
-                    'Unable to open the provided pwinput, {}'
-                    ''.format(file.name)
-                )
         # List.
-        elif isinstance(pwinput, list):
-            if all((issubclass(type(s), basestring) for s in pwinput)):
+        if isinstance(pwinput, list):
+            if all((issubclass(type(s), six.string_types) for s in pwinput)):
                 self.input_txt = ''.join(pwinput)
             else:
                 raise TypeError(
@@ -172,7 +169,7 @@ class QeInputFile(object):
                     'strings. Each element should be a string containing a line'
                     'of the pwinput file.')
         # Path or string of the text.
-        elif issubclass(type(pwinput), basestring):
+        elif issubclass(type(pwinput), six.string_types):
             if os.path.isfile(pwinput):
                 if os.path.exists(pwinput) and os.path.isabs(pwinput):
                     self.input_txt = open(pwinput).read()
@@ -183,6 +180,15 @@ class QeInputFile(object):
                     )
             else:
                 self.input_txt = pwinput
+        # File.
+        else:
+            try:
+                self.input_txt = pwinput.read()
+            except IOError:
+                raise IOError(
+                    'Unable to open the provided pwinput, {}'
+                    ''.format(file.name)
+                )
 
         # Check that pwinput is not empty.
         if len(self.input_txt.strip()) == 0:
@@ -256,7 +262,7 @@ def str2val(valstr):
             try:
                 val = conversion_fn(valstr)
             except ValueError as error:
-                print 'Error converting {} to a value'.format(repr(valstr))
+                print('Error converting {} to a value'.format(repr(valstr)))
                 raise error
     if val is None:
         raise ValueError('Unable to convert {} to a python variable.\n'
@@ -322,7 +328,7 @@ def parse_namelists(txt):
             nmlst_dict[key.lower()] = str2val(valstr)
         # ...and, store nmlst_dict as a value in params_dict with the namelist
         # as the key.
-        if len(nmlst_dict.keys()) > 0:
+        if len(list(nmlst_dict.keys())) > 0:
             params_dict[nmlst.upper()] = nmlst_dict
     if len(params_dict) == 0:
         raise ParsingError(
@@ -504,9 +510,9 @@ def parse_atomic_positions(txt):
         #~ fixed_coords.append(3 * [False])  # False <--> not fixed (the default)
     # Next, try using the re for lines with force modifications.
     for match in atomic_positions_w_constraints_re.finditer(blockstr):
-        positions.append(map(fortfloat, match.group('x', 'y', 'z')))
+        positions.append(list(map(fortfloat, match.group('x', 'y', 'z'))))
         fixed_coords_this_pos = [f or '1' for f in match.group('fx', 'fy', 'fz')] # False <--> not fixed (the default)
-        fixed_coords.append(map(str01_to_bool, fixed_coords_this_pos)) 
+        fixed_coords.append(list(map(str01_to_bool, fixed_coords_this_pos))) 
         names.append(match.group('name'))
 
     # Check that the number of atomic positions parsed is equal to the number of
@@ -655,7 +661,7 @@ def parse_cell_parameters(txt):
     # Now, extract the lattice vectors.
     lattice_vectors = []
     for match in cell_vector_regex.finditer(blockstr):
-        lattice_vectors.append(map(fortfloat, (match.group('x'),match.group('y'),match.group('z'))))
+        lattice_vectors.append(list(map(fortfloat, (match.group('x'),match.group('y'),match.group('z')))))
     info_dict = dict(units=units, cell=lattice_vectors)
     return info_dict
 
@@ -743,7 +749,7 @@ def get_cell_from_parameters(cell_parameters, system_dict, alat, using_celldm):
     """
     ibrav = system_dict['ibrav']
 
-    valid_ibravs = range(15) + [-5, -9, -12]
+    valid_ibravs = list(range(15)) + [-5, -9, -12]
     if ibrav not in valid_ibravs:
         raise InputValidationError(
             'I found ibrav = {} in input, \n'

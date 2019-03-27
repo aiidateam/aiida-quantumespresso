@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from aiida.orm.nodes.data.upf import UpfData, get_pseudos_from_structure
+import six
 
 
 def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=None):
@@ -35,7 +37,7 @@ def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=N
         # This will already raise some exceptions, potentially, like the ones below
         pseudos = get_pseudos_from_structure(structure, pseudo_family.value)
 
-    if isinstance(pseudos, (str, unicode, Str)):
+    if isinstance(pseudos, (str, six.text_type, Str)):
         raise TypeError('you passed "pseudos" as a string - maybe you wanted to pass it as "pseudo_family" instead?')
 
     for kind in structure.get_kind_names():
@@ -44,10 +46,10 @@ def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=N
         elif not isinstance(pseudos[kind], UpfData):
             raise ValueError('pseudo for element {} is not of type UpfData'.format(kind))
 
-    for kind, pseudo in pseudos.iteritems():
+    for kind, pseudo in six.iteritems(pseudos):
         unique_pseudos.setdefault(pseudo, []).append(kind)
 
-    for pseudo, kinds in unique_pseudos.iteritems():
+    for pseudo, kinds in six.iteritems(unique_pseudos):
         result_pseudos[tuple(kinds)] = pseudo
 
     return result_pseudos

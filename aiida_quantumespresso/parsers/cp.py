@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from aiida_quantumespresso.calculations.cp import CpCalculation
 from aiida_quantumespresso.parsers.raw_parser_cp import (
     QEOutputParsingError, parse_cp_traj_stanzas, parse_cp_raw_output)
@@ -10,6 +11,7 @@ from aiida.orm.nodes.data.folder import FolderData
 from aiida.parsers.parser import Parser
 from aiida.orm.nodes.data.array.trajectory import TrajectoryData
 import numpy
+from six.moves import zip
 
 
 class CpParser(Parser):

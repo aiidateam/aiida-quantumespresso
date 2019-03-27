@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import os
 import aiida.common
+from six.moves import range
+from six.moves import zip
 
 logger = aiida.common.aiidalogger.getChild('input')
 
@@ -355,7 +358,7 @@ def import_qeinput(fname):
     for k in atomic_kinds:
         the_struc.append_kind(k)
      
-    sites = zip(atomic_kindnames, atomic_pos)
+    sites = list(zip(atomic_kindnames, atomic_pos))
      
     for kindname, pos in sites:
         the_struc.append_site(struct.Site(kind_name = kindname, position=pos))

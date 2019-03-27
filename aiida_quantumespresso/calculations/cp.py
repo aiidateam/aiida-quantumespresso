@@ -15,6 +15,7 @@ TODO: implement pre_... and post_... hooks to add arbitrary strings before
       for development when new cards are needed
 TODO: all a lot of logger.debug stuff
 """
+from __future__ import absolute_import
 import os
 
 from aiida.orm.calculation.job import JobCalculation

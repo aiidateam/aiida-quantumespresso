@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import re
 import copy
 import fnmatch
@@ -13,6 +14,7 @@ from aiida_quantumespresso.calculations.projwfc import ProjwfcCalculation
 from aiida.orm.nodes.data.array.projection import ProjectionData
 from aiida.orm.nodes.data.array.bands import BandsData
 from aiida.orm.nodes.data.array.xy import XyData
+from six.moves import range
 
 
 def find_orbitals_from_statelines(out_info_dict):

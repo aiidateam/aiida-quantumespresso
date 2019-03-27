@@ -5,6 +5,7 @@ language: python
 
 python:
     - "2.7"
+    - "3.6"
 
 cache: pip
 
@@ -38,22 +39,23 @@ before_install:
 
 install:
     # Upgrade pip setuptools and wheel to be able to run the next command
-    - pip install -U pip wheel setuptools reentry
+    - pip install -U pip==18.1 wheel setuptools reentry
 
     # Install the repository with some optional dependencies
     - pip install .[dev,docs]
 
 env:
-- TEST_TYPE="pre-commit"
-- TEST_AIIDA_BACKEND=django TEST_TYPE="docs"
-- TEST_AIIDA_BACKEND=django TEST_TYPE="tests"
-- TEST_AIIDA_BACKEND=sqlalchemy TEST_TYPE="tests"
+    - TEST_TYPE="pre-commit"
+    - TEST_AIIDA_BACKEND=django TEST_TYPE="docs"
+    - TEST_AIIDA_BACKEND=django TEST_TYPE="tests"
+    - TEST_AIIDA_BACKEND=sqlalchemy TEST_TYPE="tests"
 
 before_script:
     - .ci/setup_profiles.sh
     - .ci/before_script.sh
 
-script: .ci/test_script.sh
+script:
+    - .ci/test_script.sh
 
 git:
   depth: 3

@@ -8,6 +8,8 @@
 # For further information on the license, see the LICENSE.txt file        #
 # For further information please visit http://www.aiida.net               #
 ###########################################################################
+from __future__ import absolute_import
+from __future__ import print_function
 from aiida import load_dbenv
 load_dbenv()
 
@@ -66,6 +68,6 @@ calc.use_kpoints(kpoints)
 calc.use_pseudos_from_family(pseudo_family)
 
 calc.store_all()
-print "created calculation with PK={}".format(calc.pk)
+print("created calculation with PK={}".format(calc.pk))
 calc.submit()
 

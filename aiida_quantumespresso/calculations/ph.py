@@ -2,6 +2,7 @@
 """
 Plugin to create a Quantum Espresso ph.x input file.
 """
+from __future__ import absolute_import
 import os
 import numpy
 from aiida.common.lang import classproperty
@@ -15,6 +16,7 @@ from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+import six
 
 # List of namelists (uppercase) that are allowed to be found in the
 # input_data, in the correct order in restarts, will not copy but use symlinks
@@ -211,7 +213,7 @@ class PhCalculation(JobCalculation):
         # Here, there should be no other inputs
         if inputdict:
             raise exceptions.InputValidationError("The following input data nodes are "
-                "unrecognized: {}".format(inputdict.keys()))
+                "unrecognized: {}".format(list(inputdict.keys())))
 
         ##############################
         # END OF INITIAL INPUT CHECK #
@@ -223,7 +225,7 @@ class PhCalculation(JobCalculation):
         input_params = _uppercase_dict(parameters.get_dict(),
                                        dict_name='parameters')
         input_params = {k: _lowercase_dict(v, dict_name=k) 
-                        for k, v in input_params.iteritems()}
+                        for k, v in six.iteritems(input_params)}
 
         prepare_for_d3 = settings_dict.pop('PREPARE_FOR_D3',False)
         if prepare_for_d3:
@@ -325,7 +327,7 @@ class PhCalculation(JobCalculation):
                 # namelist content; set to {} if not present, so that we leave an 
                 # empty namelist
                 namelist = input_params.pop(namelist_name,{})
-                for k, v in sorted(namelist.iteritems()):
+                for k, v in sorted(six.iteritems(namelist)):
                     infile.write(convert_input_to_namelist_entry(k,v))
                 infile.write("/\n")
             
@@ -339,7 +341,7 @@ class PhCalculation(JobCalculation):
             raise exceptions.InputValidationError(
                 "The following namelists are specified in input_params, but are "
                 "not valid namelists for the current type of calculation: "
-                "{}".format(",".join(input_params.keys())))
+                "{}".format(",".join(list(input_params.keys()))))
         
         # copy the parent scratch
         symlink = settings_dict.pop('PARENT_FOLDER_SYMLINK',
@@ -440,7 +442,7 @@ class PhCalculation(JobCalculation):
         if settings_dict:
             raise exceptions.InputValidationError("The following keys have been found in "
                 "the settings input node, but were not understood: {}".format(
-                ",".join(settings_dict.keys())))
+                ",".join(list(settings_dict.keys()))))
         
         return calcinfo
 
@@ -485,7 +487,7 @@ class PhCalculation(JobCalculation):
         :param pseudo_folder: a string with the relative path (in the remote 
         directory) to the pseudo folder
         """
-        self.set_attr("pseudo_folder", unicode(pseudo_folder))
+        self.set_attr("pseudo_folder", six.text_type(pseudo_folder))
     
     def create_restart(self,force_restart=False,
                        parent_folder_symlink=_default_symlink_usage):

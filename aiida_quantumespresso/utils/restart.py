@@ -4,6 +4,7 @@ Utility functions to return builders ready to be submitted
 for restarting a Quantum ESPRESSO calculation (or to apply small 
 modifications).
 """
+from __future__ import absolute_import
 from aiida.common.exceptions import InputValidationError 
 from aiida.common.links import LinkType
 

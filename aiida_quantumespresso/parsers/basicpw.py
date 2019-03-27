@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.parsers.basic_raw_parser_pw import (
     parse_raw_output, QEOutputParsingError)
@@ -9,6 +10,7 @@ from aiida_quantumespresso.parsers import convert_qe2aiida_structure
 from aiida.common.exceptions import UniquenessError
 from aiida.orm.nodes.data.array import ArrayData
 from aiida.orm.nodes.data.array.kpoints import KpointsData
+import six
 
 # TODO: I don't like the generic class always returning a name for the link to the output structure
 
@@ -111,7 +113,7 @@ class BasicpwParser(Parser):
         type_calc = input_dict['CONTROL']['calculation']
         struc = in_struc
         if type_calc in ['relax', 'vc-relax', 'md', 'vc-md']:
-            if 'cell' in structure_data.keys():
+            if 'cell' in list(structure_data.keys()):
                 struc = convert_qe2aiida_structure(structure_data, input_structure=in_struc)
                 new_nodes_list.append((self.get_linkname_outstructure(), struc))
 
@@ -164,14 +166,14 @@ class BasicpwParser(Parser):
                                     symbols=symbols,
                                     positions=positions,
                 )
-                for x in trajectory_data.iteritems():
+                for x in six.iteritems(trajectory_data):
                     traj.set_array(x[0], numpy.array(x[1]))
                 # return it to the execmanager
                 new_nodes_list.append((self.get_linkname_outtrajectory(), traj))
 
             except KeyError:  # forces in scf calculation (when outputed)
                 arraydata = ArrayData()
-                for x in trajectory_data.iteritems():
+                for x in six.iteritems(trajectory_data):
                     arraydata.set_array(x[0], numpy.array(x[1]))
                 # return it to the execmanager
                 new_nodes_list.append((self.get_linkname_outarray(), arraydata))

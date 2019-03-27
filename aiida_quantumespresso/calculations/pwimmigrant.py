@@ -3,6 +3,7 @@
 Plugin to immigrate a Quantum Espresso pw.x job that was not run using AiiDa.
 """
 # TODO: Document the current limitations (e.g. ibrav == 0)
+from __future__ import absolute_import
 import os
 from copy import deepcopy
 from aiida_quantumespresso.calculations.pw import PwCalculation
@@ -14,6 +15,7 @@ from aiida.common.exceptions import (FeatureNotAvailable, InvalidOperation,
                                      InputValidationError)
 from aiida.common.links import LinkType
 from aiida_quantumespresso.tools import pwinputparser
+from six.moves import zip
 
 
 class PwimmigrantCalculation(PwCalculation):
@@ -260,7 +262,7 @@ class PwimmigrantCalculation(PwCalculation):
             # we are safe to fake that they were never there in the first place.
             parameters_dict = deepcopy(pwinputfile.namelists)
             for namelist, blocked_key in self._blocked_keywords:
-                keys = parameters_dict[namelist].keys()
+                keys = list(parameters_dict[namelist].keys())
                 for this_key in parameters_dict[namelist].keys():
                     # take into account that celldm and celldm(*) must be blocked
                     if re.sub("[(0-9)]", "", this_key) == blocked_key:

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Command line scripts to launch a `MatdynBaseWorkChain` for testing and demonstration purposes."""
+from __future__ import absolute_import
 import click
 
 from aiida.cmdline.params import options, types

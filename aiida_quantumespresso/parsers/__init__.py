@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from aiida.common.exceptions import OutputParsingError
 import aiida_quantumespresso
+from six.moves import range
 
 
 class QEOutputParsingError(OutputParsingError):
@@ -78,7 +80,7 @@ def parse_raw_out_basic(out_file, calc_name):
     minor_warnings = {'Warning:':None,
                       'DEPRECATED:':None,
                       }
-    all_warnings = dict(critical_warnings.items() + minor_warnings.items())
+    all_warnings = dict(list(critical_warnings.items()) + list(minor_warnings.items()))
     for count in range (len(out_file)):
         line = out_file[count]
         # parse the global file, for informations that are written only once

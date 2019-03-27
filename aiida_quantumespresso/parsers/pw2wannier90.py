@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from aiida.orm.nodes.data.dict import Dict
 from aiida.parsers.parser import Parser
 from aiida_quantumespresso.parsers.raw_parser_simple import parse_qe_simple
