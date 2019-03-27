@@ -57,7 +57,7 @@ class PwCalculation(BasePwCpInputGenerator):
         spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.pw', non_db=True)
         spec.input('kpoints', valid_type=orm.KpointsData,
             help='kpoint mesh or kpoint path')
-        spec.input('hubbard_file', valid_type=orm.SinglefileData,
+        spec.input('hubbard_file', valid_type=orm.SinglefileData, required=False,
             help='SinglefileData node containing the output Hubbard parameters from a HpCalculation')
         spec.exit_code(
             100, 'ERROR_NO_RETRIEVED_FOLDER', message='The retrieved folder data node could not be accessed.')

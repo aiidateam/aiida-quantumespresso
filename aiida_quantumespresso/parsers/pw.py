@@ -30,11 +30,11 @@ class PwParser(Parser):
         except exceptions.NotExistent:
             return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
 
-        parameters = self.node.inp.parameters.get_dict()
+        parameters = self.node.inputs.parameters.get_dict()
 
         # Look for optional settings input node and potential 'parser_options' dictionary within it
         try:
-            settings = self.node.inp.settings.get_dict()
+            settings = self.node.inputs.settings.get_dict()
             parser_options = settings[self.get_parser_settings_key()]
         except (AttributeError, KeyError):
             settings = {}
@@ -195,7 +195,7 @@ class PwParser(Parser):
             kpoints_from_output = orm.KpointsData()
             kpoints_from_output.set_cell_from_structure(struc)
             kpoints_from_output.set_kpoints(k_points_list, cartesian=True, weights=k_points_weights_list)
-            kpoints_from_input = self.node.inp.kpoints
+            kpoints_from_input = self.node.inputs.kpoints
 
             if not bands_data:
                 try:
