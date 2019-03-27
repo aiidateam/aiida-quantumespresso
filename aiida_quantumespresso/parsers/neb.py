@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from aiida.parsers.parser import Parser
 from aiida.orm.nodes.data.array.bands import KpointsData
 from aiida.orm.nodes.data.dict import Dict
@@ -7,6 +8,8 @@ from aiida_quantumespresso.parsers.raw_parser_pw import (
     parse_pw_xml_output, parse_pw_text_output, QEOutputParsingError)
 from aiida_quantumespresso.parsers.raw_parser_neb import parse_raw_output_neb
 from aiida_quantumespresso.calculations.neb import NebCalculation
+import six
+from six.moves import range
 
 
 class NebParser(Parser):
@@ -134,7 +137,7 @@ class NebParser(Parser):
                          'lattice_vectors_relax','atomic_positions_relax',
                          'atomic_species_name']
             tmp_trajectory_data = copy.copy(trajectory_data)
-            for x in tmp_trajectory_data.iteritems():
+            for x in six.iteritems(tmp_trajectory_data):
                 if x[0] in skip_keys:
                     continue
                 pw_out_data[x[0]] = x[1][-1]
@@ -149,7 +152,7 @@ class NebParser(Parser):
                     pass
     
             key = 'pw_output_image_{}'.format(i+1)
-            image_data[key] = dict(pw_out_data.items() + xml_data.items())
+            image_data[key] = dict(list(pw_out_data.items()) + list(xml_data.items()))
             
             positions.append([site.position for site in structure_data.sites])
             cells.append(structure_data.cell)
@@ -167,7 +170,7 @@ class NebParser(Parser):
         new_nodes_list = []
         
         # convert the dictionary into an AiiDA object
-        output_params = Dict(dict=dict(neb_out_dict.items()+image_data.items()))
+        output_params = Dict(dict=dict(list(neb_out_dict.items())+list(image_data.items())))
         
         # return it to the execmanager
         new_nodes_list.append((self.get_linkname_outparams(),output_params))
@@ -188,7 +191,7 @@ class NebParser(Parser):
                 from aiida.orm.nodes.data.array import ArrayData
             
                 arraydata = ArrayData()
-                for x in iteration_data.iteritems():
+                for x in six.iteritems(iteration_data):
                     arraydata.set_array(x[0],numpy.array(x[1]))               
                 new_nodes_list.append((self.get_linkname_iterationarray(),arraydata))
         

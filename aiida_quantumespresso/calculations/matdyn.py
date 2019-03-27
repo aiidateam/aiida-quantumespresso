@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import os
 from aiida.common import exceptions
 from aiida.common.lang import classproperty

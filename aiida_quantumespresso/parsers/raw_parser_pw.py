@@ -6,6 +6,8 @@ The functions mostly work without aiida specific functionalities.
 The parsing will try to convert whatever it can in some dictionary, which
 by operative decision doesn't have much structure encoded, [the values are simple ]
 """
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import re
 import string
@@ -13,6 +15,8 @@ import xml.dom.minidom
 
 from aiida_quantumespresso.parsers.constants import ry_to_ev, hartree_to_ev, bohr_to_ang, ry_si, bohr_si
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
+import six
+from six.moves import range
 
 lattice_tolerance = 1.e-5
 default_energy_units = 'eV'
@@ -111,7 +115,7 @@ def parse_raw_output(out_file, input_dict, parser_opts={}, xml_file=None, dir_wi
                  'lattice_vectors_relax','atomic_positions_relax',
                  'atomic_species_name']
     tmp_trajectory_data = copy.copy(trajectory_data)
-    for x in tmp_trajectory_data.iteritems():
+    for x in six.iteritems(tmp_trajectory_data):
         if x[0] in skip_keys:
             continue
         out_data[x[0]] = x[1][-1]
@@ -131,7 +135,7 @@ def parse_raw_output(out_file, input_dict, parser_opts={}, xml_file=None, dir_wi
         job_successful = False
 
     for key in out_data.keys():
-        if key in xml_data.keys():
+        if key in list(xml_data.keys()):
             if key=='fermi_energy' or key=='fermi_energy_units': # an exception for the (only?) key that may be found on both
                 del out_data[key]
             else:
@@ -141,7 +145,7 @@ def parse_raw_output(out_file, input_dict, parser_opts={}, xml_file=None, dir_wi
         # out_data keys take precedence and overwrite xml_data keys,
         # if the same key name is shared by both
         # dictionaries (but this should not happen!)
-    parameter_data = dict(xml_data.items() + out_data.items() + parser_info.items())
+    parameter_data = dict(list(xml_data.items()) + list(out_data.items()) + list(parser_info.items()))
 
     # return various data.
     # parameter data will be mapped in Dict
@@ -171,7 +175,7 @@ def read_xml_card(dom,cardname):
         #the_card = dom.getElementsByTagName(cardname)[0]
         return the_card
     except Exception as e:
-        print e
+        print(e)
         raise QEOutputParsingError('Error parsing tag {}'.format(cardname) )
 
 def parse_xml_child_integer(tagname,target_tags):
@@ -1110,7 +1114,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                       'SCF correction compared to forces is too large, reduce conv_thr':"Forces are inaccurate (SCF correction is large): reduce conv_thr.",
                       }
 
-    all_warnings = dict(critical_warnings.items() + minor_warnings.items())
+    all_warnings = dict(list(critical_warnings.items()) + list(minor_warnings.items()))
 
     # Determine whether the input switched on an electric field
     lelfield = input_dict.get('CONTROL', {}).get('lelfield', False)
@@ -1170,7 +1174,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                         parsed_data['warnings'].extend(messages)
 
             if len(parsed_data['warnings'])>0:
-                return parsed_data, trajectory_data, critical_warnings.values()
+                return parsed_data, trajectory_data, list(critical_warnings.values())
             else:
                 # did not find any error message -> raise an Error and do not
                 # return anything
@@ -1291,7 +1295,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                 try:
                     # Split line in components delimited by either space(s) or
                     # parenthesis and filter out empty strings
-                    line_elems = filter(None, re.split(' +|\(|\)', line))
+                    line_elems = [_f for _f in re.split(' +|\(|\)', line) if _f]
 
                     pg_international = line_elems[-1]
                     pg_schoenflies = line_elems[-2]
@@ -1776,7 +1780,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
 
         parsed_data['atomic_occupations'] =  atomic_occupations
 
-    return parsed_data, trajectory_data, critical_warnings.values()
+    return parsed_data, trajectory_data, list(critical_warnings.values())
 
 def parse_QE_errors(lines,count,warnings):
     """

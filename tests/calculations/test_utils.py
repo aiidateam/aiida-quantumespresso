@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import unittest
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+import six
 
 
 class TestUtilsConvertInputToNamelistEntry(unittest.TestCase):
@@ -18,7 +20,7 @@ class TestUtilsConvertInputToNamelistEntry(unittest.TestCase):
         For each key, value in the parameters dictionary, verify that the output produced by the utility function
         convert_input_to_namelist_entry matches the expected strings
         """
-        for key, value in parameters.iteritems():
+        for key, value in six.iteritems(parameters):
             converted = convert_input_to_namelist_entry(key, value, self.mapping)
             lines = [line for line in converted.split('\n') if line]
 
@@ -117,7 +119,7 @@ class TestUtilsConvertInputToNamelistEntry(unittest.TestCase):
             ]
         }
 
-        for key, value in parameters.iteritems():
+        for key, value in six.iteritems(parameters):
             with self.assertRaises(ValueError):
                 convert_input_to_namelist_entry(key, value, self.mapping)
 
@@ -131,7 +133,7 @@ class TestUtilsConvertInputToNamelistEntry(unittest.TestCase):
             ]
         }
 
-        for key, value in parameters.iteritems():
+        for key, value in six.iteritems(parameters):
             with self.assertRaises(ValueError):
                 convert_input_to_namelist_entry(key, value, self.mapping)
 
@@ -145,6 +147,6 @@ class TestUtilsConvertInputToNamelistEntry(unittest.TestCase):
             ]
         }
 
-        for key, value in parameters.iteritems():
+        for key, value in six.iteritems(parameters):
             with self.assertRaises(ValueError):
                 convert_input_to_namelist_entry(key, value, None)

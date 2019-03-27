@@ -28,6 +28,7 @@ The daemon process, ``retrieve_calculation``, is called upon immigration of the 
 of jobs, in order to test the correct preparation of the PwimmigrantCalculation.
 """
 # TODO: Test exception handling of user errors.
+from __future__ import absolute_import
 import os
 import unittest
 
@@ -37,6 +38,7 @@ from aiida.engine.daemon.execmanager import retrieve_calculation
 from aiida_quantumespresso.tools.qeinputparser import str2val
 from aiida.orm import Code
 from aiida.backends.testbase import AiidaTestCase
+from six.moves import zip
 
 
 # Define the path to the directory containing the test PW runs.
@@ -176,7 +178,7 @@ class LocalSetup(AiidaTestCase):
                         )
 
                     # If both values were converted to floats...
-                    if all([type(v) is float for v in val1, val2]):
+                    if all([type(v) is float for v in (val1, val2)]):
                         # Test if they differ by more than a specified
                         # tolerance.
                         self.assertAlmostEqual(
@@ -216,9 +218,7 @@ class TestPwImmigrantCalculationManual(LocalSetup):
         """
 
         # Filter out all prefixes with manually specified kpoints.
-        manual_prefixes = filter(
-            lambda x: 'automatic' not in x and 'gamma' not in x, PEFIXES
-        )
+        manual_prefixes = [x for x in PEFIXES if 'automatic' not in x and 'gamma' not in x]
 
         # Test this group of prefixes.
         self.run_tests_on_calcs_with_prefixes(manual_prefixes)
@@ -236,7 +236,7 @@ class TestPwImmigrantCalculationAutomatic(LocalSetup):
         """
 
         # Filter out all prefixes with automatic kpoints.
-        automatic_prefixes = filter(lambda x: 'automatic' in x, PEFIXES)
+        automatic_prefixes = [x for x in PEFIXES if 'automatic' in x]
 
         # Test this group of prefixes.
         self.run_tests_on_calcs_with_prefixes(automatic_prefixes)
@@ -254,7 +254,7 @@ class TestPwImmigrantCalculationGamma(LocalSetup):
         """
 
         # Filter out all prefixes with gamma kpoints.
-        gamma_prefixes = filter(lambda x: 'gamma' in x, PEFIXES)
+        gamma_prefixes = [x for x in PEFIXES if 'gamma' in x]
 
         # Test this group of prefixes.
         self.run_tests_on_calcs_with_prefixes(gamma_prefixes)

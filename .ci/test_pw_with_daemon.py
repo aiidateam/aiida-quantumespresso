@@ -10,6 +10,8 @@ import subprocess
 import sys
 import time
 
+import six
+
 from aiida.plugins import DataFactory
 
 
@@ -121,7 +123,7 @@ def main():
             print("Using the pseudo for {} from DB: {}".format(elem, pseudo.pk))
         pseudos_to_use[elem] = pseudo
 
-    for kind, pseudo in pseudos_to_use.iteritems():
+    for kind, pseudo in six.iteritems(pseudos_to_use):
         calc.use_pseudo(pseudo, kind=kind)
 
     calc.use_kpoints(kpoints)
@@ -153,7 +155,7 @@ def main():
                 stderr=subprocess.STDOUT,
             ))
         except subprocess.CalledProcessError as exception:
-            print("Note: the command failed, message: {}".format(exception.message))
+            print("Note: the command failed, message: {}".format(str(exception)))
 
         if calc.is_terminated:
             print("Calculation terminated its execution")

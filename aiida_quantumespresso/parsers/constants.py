@@ -9,6 +9,7 @@ among different codes (e.g., different standard definition), we define
 the constants in this file.
 """
 
+from __future__ import absolute_import
 from aiida.common.constants import (
     ang_to_m,
     bohr_si,

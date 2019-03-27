@@ -13,6 +13,7 @@ methods. The only thing that should vary between some of them is the type of
 k-points (manual, gamma, and automatic). For this reason, the testing of
 get_kpointsdata is split up into three different test methods.
 """
+from __future__ import absolute_import
 import os
 
 import numpy as np
@@ -20,6 +21,7 @@ import numpy as np
 from aiida_quantumespresso.tools import pwinputparser
 from aiida.orm.nodes.data.structure import StructureData
 from aiida.backends.testbase import AiidaTestCase
+from six.moves import zip
 
 # File names: a_celldm(1)_kpoints_cellparameters_atomicposition
 
@@ -158,10 +160,7 @@ class TestPwInputFile(AiidaTestCase):
         )
 
         # Filter out all input files with manually specified kpoints.
-        manual_input_files = filter(
-            lambda x: 'automatic' not in x and 'gamma' not in x,
-            INPUT_FILES
-        )
+        manual_input_files = [x for x in INPUT_FILES if 'automatic' not in x and 'gamma' not in x]
 
         # Check each input file for agreement with reference values.
         tol = 0.0001
@@ -191,7 +190,7 @@ class TestPwInputFile(AiidaTestCase):
         ref_offset = np.array([0.5, 0.5, 0.])
 
         # Filter out all input files with automatic kpoints.
-        automatic_input_files = filter(lambda x: 'automatic' in x, INPUT_FILES)
+        automatic_input_files = [x for x in INPUT_FILES if 'automatic' in x]
 
         # Check each input file for agreement with reference values.
         tol = 0.0001
@@ -221,7 +220,7 @@ class TestPwInputFile(AiidaTestCase):
         ref_offset = np.array([0., 0., 0.])
 
         # Filter out all input files with gamma kpoints.
-        gamma_input_files = filter(lambda x: 'gamma' in x, INPUT_FILES)
+        gamma_input_files = [x for x in INPUT_FILES if 'gamma' in x]
 
         # Check each input file for agreement with reference values.
         tol = 0.0001

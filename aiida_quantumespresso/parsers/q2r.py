@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from aiida.parsers.parser import Parser
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.calculations.q2r import Q2rCalculation

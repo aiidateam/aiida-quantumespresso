@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from aiida.orm.nodes.data.remote import RemoteData
 from aiida.common.lang import classproperty
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation

@@ -6,12 +6,15 @@ The functions mostly work without aiida specific functionalities.
 The parsing will try to convert whatever it can in some dictionary, which
 by operative decision doesn't have much structure encoded, [the values are simple ] 
 """
+from __future__ import absolute_import
 import xml.dom.minidom
 import os
 import string
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
 from aiida_quantumespresso.parsers.constants import ry_to_ev,hartree_to_ev,bohr_to_ang,ry_si,bohr_si
 from aiida_quantumespresso.parsers.raw_parser_pw import convert_qe_time_to_sec
+import six
+from six.moves import range
 
 def parse_raw_output_neb(out_file, input_dict,parser_opts=None):
     """
@@ -76,7 +79,7 @@ def parse_raw_output_neb(out_file, input_dict,parser_opts=None):
     # I leave the possibility to skip some large arrays (None for the time being).
     skip_keys = []
     tmp_iteration_data = copy.copy(iteration_data)
-    for x in tmp_iteration_data.iteritems():
+    for x in six.iteritems(tmp_iteration_data):
         if x[0] in skip_keys:
             continue    
         out_data[x[0]] = x[1][-1]
@@ -85,7 +88,7 @@ def parse_raw_output_neb(out_file, input_dict,parser_opts=None):
     if any([ x in out_data['warnings'] for x in critical_messages]):
         job_successful = False
 
-    parameter_data = dict(out_data.items() + parser_info.items())
+    parameter_data = dict(list(out_data.items()) + list(parser_info.items()))
 
     # return various data.
     # parameter data will be mapped in Dict
@@ -122,7 +125,7 @@ def parse_neb_text_output(data,input_dict={}):
     minor_warnings = {'Warning:':None,                           
                       }
     
-    all_warnings = dict(critical_warnings.items() + minor_warnings.items())
+    all_warnings = dict(list(critical_warnings.items()) + list(minor_warnings.items()))
     
     parsed_data = {}
     parsed_data['warnings'] = []
@@ -248,4 +251,4 @@ def parse_neb_text_output(data,input_dict={}):
                 image_dist = float(line.split('=')[1].split('bohr')[0])
                 iteration_data['image_dist'].append(image_dist * bohr_to_ang)
                 
-    return parsed_data, dict(iteration_data), critical_warnings.values()
+    return parsed_data, dict(iteration_data), list(critical_warnings.values())

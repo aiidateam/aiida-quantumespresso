@@ -1,5 +1,8 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import json
 import os
+import six
 
 def _get_all_protocol_modifiers():
     """
@@ -119,7 +122,7 @@ class ProtocolManager(object):
 
     def get_parameters_modifier_names(self):
         """Get all valid parameters modifier names"""
-        return self.modifiers['parameters'].keys()
+        return list(self.modifiers['parameters'].keys())
  
     def get_default_parameters_modifier_name(self):
         """
@@ -136,7 +139,7 @@ class ProtocolManager(object):
 
     def get_pseudo_modifier_names(self):
         """Get all valid pseudopotential modifier names"""
-        return self.modifiers['pseudo'].keys()
+        return list(self.modifiers['pseudo'].keys())
 
     def get_default_pseudo_modifier_name(self):
         """
@@ -194,7 +197,7 @@ class ProtocolManager(object):
         # Pseudo with MD5 found, but wrong element!
         mismatch = {}
 
-        for element, this_pseudo_data in pseudo_data.iteritems():
+        for element, this_pseudo_data in six.iteritems(pseudo_data):
             md5 = this_pseudo_data['md5']
             
             qb = QueryBuilder()
@@ -221,5 +224,5 @@ class ProtocolManager(object):
 
 if __name__ == "__main__":
     p = ProtocolManager('theos-ht-1.0')
-    print p.check_pseudos()
-    print p.get_protocol_data()
+    print(p.check_pseudos())
+    print(p.get_protocol_data())

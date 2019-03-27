@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Utility functions for validation of command line interface parameter inputs."""
+from __future__ import absolute_import
 import click
 
 from aiida.cmdline.utils import decorators
@@ -146,7 +147,7 @@ def validate_smearing(parameters, smearing=None):
             break
     else:
         raise ValueError('the smearing type "{}" is invalid, choose from {}'.format(
-            smearing[0], ', '.join(valid_smearing_types.keys())))
+            smearing[0], ', '.join(list(valid_smearing_types.keys()))))
 
     if not isinstance(smearing[1], float):
         raise ValueError('the smearing value should be a float')

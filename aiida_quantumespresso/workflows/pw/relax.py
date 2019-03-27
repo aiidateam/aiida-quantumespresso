@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import CalcJobNode
 from aiida.orm.nodes.data.base import Bool, Float, Int, Str
@@ -6,6 +7,7 @@ from aiida.orm.nodes.data.structure import StructureData
 from aiida.plugins import CalculationFactory, WorkflowFactory
 from aiida.work.workchain import WorkChain, ToContext, if_, while_, append_
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
+from six.moves import map
 
 
 PwCalculation = CalculationFactory('quantumespresso.pw')

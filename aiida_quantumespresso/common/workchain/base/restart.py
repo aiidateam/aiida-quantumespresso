@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from aiida.common.exceptions import LoadingPluginFailed, MissingPluginError
 from aiida.orm import CalcJob, CalcJobNode
 from aiida.orm.nodes.data.base import Bool, Int
@@ -6,6 +7,8 @@ from aiida.work.workchain import WorkChain, ToContext, append_
 from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
 from aiida_quantumespresso.common.pluginloader import get_plugin, get_plugins
 from aiida.common.lang import override
+import six
+from six.moves import map
 
 
 class BaseRestartWorkChain(WorkChain):
@@ -184,7 +187,7 @@ class BaseRestartWorkChain(WorkChain):
         """
         self.report('workchain completed after {} iterations'.format(self.ctx.iteration))
 
-        for name, port in self.spec().outputs.iteritems():
+        for name, port in six.iteritems(self.spec().outputs):
 
             try:
                 node = self.ctx.restart_calc.get_outgoing(link_label_filter=name).one().node

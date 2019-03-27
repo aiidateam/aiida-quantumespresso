@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """Sub class of `Data` to handle interatomic force constants produced by the Quantum ESPRESSO q2r.x code"""
+from __future__ import absolute_import
+
 import numpy
+from six.moves import range
 
 from aiida.orm import SinglefileData
 from aiida_quantumespresso.parsers.constants import bohr_to_ang
@@ -9,19 +12,16 @@ from aiida_quantumespresso.parsers.constants import bohr_to_ang
 class ForceconstantsData(SinglefileData):
     """Class to handle interatomic force constants from the Quantum ESPRESSO q2r.x code"""
 
-    def set_file(self, filepath):
+    def set_file(self, file):
         """Add a file to the node, parse it and set the attributes found
 
-        :param filepath: absolute path to the file
+        :param file: absolute path to the file or a filelike object
         """
-        with open(filepath, 'r') as handle:
-            lines = handle.readlines()
+        # pylint: disable=redefined-builtin,arguments-differ
+        super(ForceconstantsData, self).set_file(file)
 
         # Parse the force constants file
-        dictionary, _, _ = parse_q2r_force_constants_file(lines, also_force_constants=False)
-
-        # Set the single file from the given filepath
-        self.put_object_from_file(filepath)
+        dictionary, _, _ = parse_q2r_force_constants_file(self.get_content().splitlines(), also_force_constants=False)
 
         # Add all other attributes found in the parsed dictionary
         for key, value in dictionary.items():
@@ -167,7 +167,7 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
         for _ in range(nat):
             line = [float(c) for c in lines[current_line].split()]
             ityp = int(line[1])
-            if (ityp > 0 and ityp < ntyp + 1):
+            if 0 < ityp < ntyp + 1:
                 line[0] = atom_type_list[ityp - 1][0]  # string with element name
                 line[1] = atom_type_list[ityp - 1][1]  # element mass in amu_ry
                 # Convert atomic positions (in cartesian) from alat to Angstrom:
@@ -229,6 +229,6 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
                                         current_line += 1
 
     except (IndexError, ValueError) as exception:
-        raise ValueError(exception.message + '\nForce constants file could not be parsed (incorrect file format)')
+        raise ValueError(str(exception) + '\nForce constants file could not be parsed (incorrect file format)')
 
     return parsed_data, force_constants, warnings

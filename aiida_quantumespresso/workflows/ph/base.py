@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from aiida.common.extendeddicts import AttributeDict
 from aiida.orm import Code
 from aiida.orm.nodes.data.base import Bool

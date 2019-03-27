@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from collections import Mapping
 from aiida.common.extendeddicts import AttributeDict
 from aiida.orm.nodes.data.dict import Dict
+import six
 
 
 def update_mapping(original, source):
@@ -23,7 +25,7 @@ def update_mapping(original, source):
     if isinstance(source, Dict):
         source = source.get_dict()
 
-    for key, value in source.iteritems():
+    for key, value in six.iteritems(source):
         if (
             key in original and
             (isinstance(value, Mapping) or isinstance(value, Dict)) and
@@ -57,7 +59,7 @@ def prepare_process_inputs(process, inputs):
     except AttributeError:
         raise ValueError('process {} does not have a spec')
 
-    for key, value in inputs.iteritems():
+    for key, value in six.iteritems(inputs):
 
         if key not in process_spec.inputs:
             continue

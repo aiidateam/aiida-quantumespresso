@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Command line scripts to launch a `PwRelaxWorkChain` for testing and demonstration purposes."""
+from __future__ import absolute_import
 import click
 
 from aiida.cmdline.params import options, types
@@ -57,17 +58,17 @@ def cli(code, structure, pseudo_family, kpoints_distance, ecutwfc, ecutrho, hubb
         hubbard_file = validate.validate_hubbard_parameters(structure, parameters, hubbard_u, hubbard_v,
                                                             hubbard_file_pk)
     except ValueError as exception:
-        raise click.BadParameter(exception.message)
+        raise click.BadParameter(str(exception))
 
     try:
         validate.validate_starting_magnetization(structure, parameters, starting_magnetization)
     except ValueError as exception:
-        raise click.BadParameter(exception.message)
+        raise click.BadParameter(str(exception))
 
     try:
         validate.validate_smearing(parameters, smearing)
     except ValueError as exception:
-        raise click.BadParameter(exception.message)
+        raise click.BadParameter(str(exception))
 
     inputs = {
         'structure': structure,

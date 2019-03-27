@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import os
 
 import numpy
@@ -10,6 +11,8 @@ from aiida.parsers import Parser
 from aiida_quantumespresso.parsers import convert_qe2aiida_structure
 from aiida_quantumespresso.parsers.raw_parser_pw import parse_raw_output, QEOutputParsingError
 from aiida_quantumespresso.utils.linalg import are_matrices_equal
+import six
+from six.moves import zip
 
 
 class PwParser(Parser):
@@ -131,7 +134,7 @@ class PwParser(Parser):
             possible_symmetries = self._get_qe_symmetry_list()
 
             try:
-                if 'symmetries' in out_dict.keys():
+                if 'symmetries' in list(out_dict.keys()):
                     old_symmetries = out_dict['symmetries']
                     new_symmetries = []
                     for this_sym in old_symmetries:
@@ -179,7 +182,7 @@ class PwParser(Parser):
         type_calc = parameters['CONTROL']['calculation']
         struc = in_struc
         if type_calc in ['relax', 'vc-relax', 'md', 'vc-md']:
-            if 'cell' in structure_data.keys():
+            if 'cell' in list(structure_data.keys()):
                 struc = convert_qe2aiida_structure(structure_data, input_structure=in_struc)
                 self.out(self.get_linkname_outstructure(), struc)
 
@@ -274,14 +277,14 @@ class PwParser(Parser):
                     symbols=symbols,
                     positions=positions,
                 )
-                for x in trajectory_data.iteritems():
+                for x in six.iteritems(trajectory_data):
                     traj.set_array(x[0], numpy.array(x[1]))
                 self.out(self.get_linkname_outtrajectory(), traj)
 
             except KeyError:
                 # forces, atomic charges and atomic mag. moments, in scf calculation (when outputed)
                 arraydata = orm.ArrayData()
-                for x in trajectory_data.iteritems():
+                for x in six.iteritems(trajectory_data):
                     arraydata.set_array(x[0], numpy.array(x[1]))
                 self.out(self.get_linkname_outarray(), arraydata)
 

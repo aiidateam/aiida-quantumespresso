@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import numpy as np
 from math import exp, ceil
 from aiida_quantumespresso.utils.defaults.calculation import pw as pw_defaults
+import six
+from six.moves import range
 
 
 def create_scheduler_resources(scheduler, base, goal):
@@ -25,7 +28,7 @@ def create_scheduler_resources(scheduler, base, goal):
     base.update(goal)
 
     resources = {}
-    for key, value in base.iteritems():
+    for key, value in six.iteritems(base):
         if key in scheduler._job_resource_class.get_valid_keys():
             resources[key] = value
 
@@ -35,7 +38,7 @@ def create_scheduler_resources(scheduler, base, goal):
         raise ValueError('failed to create job resources for the {} scheduler: {}'
             .format(scheduler.__class__, exception.message))
 
-    return {key: value for key, value in job_resource.iteritems() if value is not None}
+    return {key: value for key, value in six.iteritems(job_resource) if value is not None}
 
 
 def cmdline_remove_npools(cmdline):

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from aiida.parsers.parser import Parser
 from aiida.orm.nodes.data.folder import FolderData
 from aiida.orm.nodes.data.dict import Dict

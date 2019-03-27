@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+from __future__ import print_function
 import xml.dom.minidom
 import os
 import difflib
@@ -8,6 +10,7 @@ from aiida.common.exceptions import InputValidationError, InternalError
 # required, e.g. with strings. But be careful, check if the behavior in 
 # this case is the intended one.
 from distutils.version import StrictVersion
+import six
 
 class QEInputValidationError(InputValidationError):
     """
@@ -37,7 +40,7 @@ def _check_and_convert(kw,val,expected_type):
                 'Expected a boolean for keyword {}, found {} instead'.format(
                 kw, type(val)))
     elif expected_type.upper() == "REAL":
-        if isinstance(val,(int, long)):
+        if isinstance(val,six.integer_types):
             outval = float(val)
         elif isinstance(val, float):
             outval = val
@@ -46,14 +49,14 @@ def _check_and_convert(kw,val,expected_type):
                 'Expected a float for keyword {}, found {} instead'.format(
                 kw, type(val)))
     elif expected_type.upper() == "INTEGER":
-        if isinstance(val,(int, long)): 
+        if isinstance(val,six.integer_types): 
             outval = val
         else:
             raise TypeError(
                 'Expected an integer for keyword {}, found {} instead'.format(
                 kw, type(val)))
     elif expected_type.upper() == "CHARACTER":
-        if isinstance(val,basestring):
+        if isinstance(val,six.string_types):
             outval = val
         else:
             raise TypeError(
@@ -151,13 +154,13 @@ def pw_input_helper(input_params, structure,
         input_params_internal = {}
         input_original_namelists = {}           
         all_input_namelists = set()
-        for nl, content in input_params.iteritems():
+        for nl, content in six.iteritems(input_params):
             if not isinstance(content, dict):
                 raise QEInputValidationError(
                     "The content associated to the namelist '{}' must be a "
                     "dictionary".format(nl))
             all_input_namelists.add(nl)
-            for k, v in content.iteritems():
+            for k, v in six.iteritems(content):
                 input_params_internal[k] = copy.deepcopy(v)
                 if k in input_original_namelists:
                     err_str = "The keyword '{}' was specified both in the "
@@ -322,14 +325,14 @@ def pw_input_helper(input_params, structure,
     except KeyError:
         raise QEInputValidationError("Error, you need to specify at least the "
             "calculation type (among {})".format(
-            ", ".join(valid_calculations_and_opt_namelists.keys())))        
+            ", ".join(list(valid_calculations_and_opt_namelists.keys()))))        
         
     try:
         opt_namelists = valid_calculations_and_opt_namelists[calculation_type]
     except KeyError:
         raise QEInputValidationError("Error, {} is not a valid value for "
             "the calculation type (valid values: {})".format(calculation_type,
-            ", ".join(valid_calculations_and_opt_namelists.keys())))        
+            ", ".join(list(valid_calculations_and_opt_namelists.keys()))))        
         
     internal_dict = {i: {} for i in compulsory_namelists + opt_namelists}
     all_namelists = set(compulsory_namelists)
@@ -352,7 +355,7 @@ def pw_input_helper(input_params, structure,
     # the compulsory ones at the end
     inserted_kws = []
     # I parse each element of the input dictionary
-    for kw, value in input_params_internal.iteritems():
+    for kw, value in six.iteritems(input_params_internal):
         #print kw, valid_kws[kw.lower()]
         kw = kw.lower()
             
@@ -424,7 +427,7 @@ def pw_input_helper(input_params, structure,
                         continue
 
                 outdict = {}
-                for kindname, found_item in value.iteritems():
+                for kindname, found_item in six.iteritems(value):
                     if kindname not in atomic_species_list:
                         err_str = \
                         "Error, '{}' is not a valid kind name.".format(kindname)
@@ -546,7 +549,7 @@ if __name__ == "__main__":
      structure.append_atom(symbols='O', position=[0.5,0.5,0.5])
 
      try:
-         print validate_pw_input({
+         print(validate_pw_input({
              'calculation': 'vc-relax',
              'ecutwfc': 30.,
              'lda_plus_u': True,
@@ -556,15 +559,15 @@ if __name__ == "__main__":
              'hubbard_u': {'O': 1},
              },
              structure, flat_mode = True,
-             version = '5.1')
+             version = '5.1'))
      except QEInputValidationError as e:
-         print "*"*72
-         print "* ERROR !"
-         print "*"*72
-         print e.message
+         print("*"*72)
+         print("* ERROR !")
+         print("*"*72)
+         print(e.message)
          
      try:
-         print validate_pw_input(
+         print(validate_pw_input(
              {
                  'CONTROL': {
                      'calculation': 'vc-relax'
@@ -582,11 +585,11 @@ if __name__ == "__main__":
                      'hubbard_u': {'O': 1.0}, 
                      'lda_plus_u': True}
              },
-             structure, flat_mode = False)
+             structure, flat_mode = False))
      except QEInputValidationError as e:
-         print "*"*72
-         print "* ERROR !"
-         print "*"*72
-         print e.message
+         print("*"*72)
+         print("* ERROR !")
+         print("*"*72)
+         print(e.message)
     
     

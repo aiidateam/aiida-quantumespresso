@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from aiida.parsers.parser import Parser
 from aiida.common.exceptions import UniquenessError
 from aiida.orm.nodes.data.folder import FolderData
@@ -8,6 +9,7 @@ from aiida.orm.nodes.data.array.kpoints import KpointsData
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.constants import invcm_to_THz
 from aiida_quantumespresso.calculations.matdyn import MatdynCalculation
+from six.moves import range
 
 class MatdynParser(Parser):
     """

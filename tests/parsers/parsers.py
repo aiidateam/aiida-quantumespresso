@@ -10,8 +10,10 @@
 """
 Tests for specific subclasses of Data
 """
+from __future__ import absolute_import
 import unittest
 from aiida.backends.testbase import AiidaTestCase
+from six.moves import range
 
 
 

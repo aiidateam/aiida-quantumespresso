@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import io
 import os
 
@@ -6,6 +7,8 @@ from aiida import orm
 from aiida.common import datastructures, exceptions
 from aiida.engine import CalcJob
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+import six
+from six.moves import zip
 
 
 class BasePwCpInputGenerator(CalcJob):
@@ -66,7 +69,7 @@ class BasePwCpInputGenerator(CalcJob):
         if set(kinds) != set(self.inputs.pseudos.keys()):
             raise exceptions.InputValidationError(
                 'Mismatch between the defined pseudos and the list of kinds of the structure.\n'
-                'Pseudos: {};\nKinds: {}'.format(', '.join(self.inputs.pseudos.keys()), ', '.join(list(kinds))))
+                'Pseudos: {};\nKinds: {}'.format(', '.join(list(self.inputs.pseudos.keys())), ', '.join(list(kinds))))
 
         local_copy_list = []
         remote_copy_list = []
@@ -147,7 +150,7 @@ class BasePwCpInputGenerator(CalcJob):
 
             with open(environ_input_filename, 'w') as handle:
                 handle.write('&ENVIRON\n')
-                for k, v in sorted(environ_namelist.iteritems()):
+                for k, v in sorted(six.iteritems(environ_namelist)):
                     handle.write(convert_input_to_namelist_entry(k, v, mapping=mapping_species))
                 handle.write('/\n')
 
@@ -212,7 +215,7 @@ class BasePwCpInputGenerator(CalcJob):
             pass
 
         if settings_dict:
-            unknown_keys = ', '.join(settings_dict.keys())
+            unknown_keys = ', '.join(list(settings_dict.keys()))
             raise exceptions.InputValidationError('`settings` contained unknown keys: {}'.format(unknown_keys))
 
         return calcinfo
@@ -233,7 +236,7 @@ class BasePwCpInputGenerator(CalcJob):
         input_params = _uppercase_dict(parameters.get_dict(),
                                        dict_name='parameters')
         input_params = {k: _lowercase_dict(v, dict_name=k)
-                        for k, v in input_params.iteritems()}
+                        for k, v in six.iteritems(input_params)}
 
         # I remove unwanted elements (for the moment, instead, I stop; to change when
         # we setup a reasonable logging)
@@ -302,7 +305,7 @@ class BasePwCpInputGenerator(CalcJob):
                 filename = pseudo_filenames[ps.pk]
             except KeyError:
                 # The pseudo was not encountered yet; use a new name and also add it to the local copy list
-                filename = get_unique_filename(ps.filename, pseudo_filenames.values())
+                filename = get_unique_filename(ps.filename, list(pseudo_filenames.values()))
                 pseudo_filenames[ps.pk] = filename
                 # I add this pseudo file to the list of files to copy
                 filepath = os.path.join(ps._repository._get_base_folder().abspath, ps.filename)
@@ -314,8 +317,8 @@ class BasePwCpInputGenerator(CalcJob):
         # I join the lines, but I resort them using the alphabetical order of
         # species, given by the kind_names list. I also store the mapping_species
         # list, with the order of species used in the file
-        mapping_species, sorted_atomic_species_card_list = zip(
-            *sorted(zip(kind_names, atomic_species_card_list)))
+        mapping_species, sorted_atomic_species_card_list = list(zip(
+            *sorted(zip(kind_names, atomic_species_card_list))))
         # The format of mapping_species required later is a dictionary, whose
         # values are the indices, so I convert to this format
         # Note the (idx+1) to convert to fortran 1-based lists
@@ -539,7 +542,7 @@ class BasePwCpInputGenerator(CalcJob):
             inputfile += "&{0}\n".format(namelist_name)
             # namelist content; set to {} if not present, so that we leave an empty namelist
             namelist = input_params.pop(namelist_name, {})
-            for k, v in sorted(namelist.iteritems()):
+            for k, v in sorted(six.iteritems(namelist)):
                 inputfile += convert_input_to_namelist_entry(k, v, mapping=mapping_species)
             inputfile += "/\n"
 
@@ -554,7 +557,7 @@ class BasePwCpInputGenerator(CalcJob):
             raise exceptions.InputValidationError(
                 "The following namelists are specified in input_params, but are "
                 "not valid namelists for the current type of calculation: "
-                "{}".format(",".join(input_params.keys())))
+                "{}".format(",".join(list(input_params.keys()))))
 
         return inputfile, local_copy_list_to_append
 
@@ -575,7 +578,7 @@ def _lowercase_dict(d, dict_name):
 
     if not isinstance(d, dict):
         raise TypeError("_lowercase_dict accepts only dictionaries as argument, while you gave {}".format(type(d)))
-    new_dict = dict((str(k).lower(), v) for k, v in d.iteritems())
+    new_dict = dict((str(k).lower(), v) for k, v in six.iteritems(d))
     if len(new_dict) != len(d):
         num_items = Counter(str(k).lower() for k in d.keys())
         double_keys = ",".join([k for k, v in num_items if v > 1])
@@ -591,7 +594,7 @@ def _uppercase_dict(d, dict_name):
 
     if not isinstance(d, dict):
         raise TypeError("_uppercase_dict accepts only dictionaries as argument, while you gave {}".format(type(d)))
-    new_dict = dict((str(k).upper(), v) for k, v in d.iteritems())
+    new_dict = dict((str(k).upper(), v) for k, v in six.iteritems(d))
     if len(new_dict) != len(d):
         num_items = Counter(str(k).upper() for k in d.keys())
         double_keys = ",".join([k for k, v in num_items if v > 1])
