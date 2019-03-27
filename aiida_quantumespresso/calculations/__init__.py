@@ -306,7 +306,7 @@ class BasePwCpInputGenerator(CalcJob):
                 pseudo_filenames[ps.pk] = filename
                 # I add this pseudo file to the list of files to copy
                 filepath = os.path.join(ps._repository._get_base_folder().abspath, ps.filename)
-                local_copy_list_to_append.append((filepath, os.path.join(self._PSEUDO_SUBFOLDER, filename)))
+                local_copy_list_to_append.append((ps.uuid, ps.filename, os.path.join(self._PSEUDO_SUBFOLDER, filename)))
 
             kind_names.append(kind.name)
             atomic_species_card_list.append("{} {} {}\n".format(kind.name.ljust(6), kind.mass, filename))
