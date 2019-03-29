@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import
+from __future__ import print_function
 import numbers
 import six
 from six.moves import zip
@@ -172,14 +173,14 @@ def convert_input_to_namelist_entry(key, val, mapping=None):
             except KeyError:
                 raise ValueError("Unable to find the key '{}' in the mapping dictionary".format(elemk))
 
-            list_of_strings.append((idx, '  {0}({2}) = {1}\n'.format(key, conv_to_fortran(itemval), idx)))
+            list_of_strings.append((idx, u'  {0}({2}) = {1}\n'.format(key, conv_to_fortran(itemval), idx)))
 
         # I first have to resort, then to remove the index from the first column, finally to join the strings
         list_of_strings = list(zip(*sorted(list_of_strings)))[1]
         return ''.join(list_of_strings)
 
-    # A list/array/tuple of values
-    elif hasattr(val, '__iter__'):
+    # A list/tuple of values
+    elif isinstance(val, (list, tuple)):
 
         list_of_strings = []
 
@@ -211,10 +212,10 @@ def convert_input_to_namelist_entry(key, val, mapping=None):
             else:
                 idx_string = '{}'.format(idx + 1)
 
-            list_of_strings.append('  {0}({2}) = {1}\n'.format(key, conv_to_fortran(itemval), idx_string))
+            list_of_strings.append(u'  {0}({2}) = {1}\n'.format(key, conv_to_fortran(itemval), idx_string))
 
-        return ''.join(list_of_strings)
+        return u''.join(list_of_strings)
 
     # Single value
     else:
-        return '  {0} = {1}\n'.format(key, conv_to_fortran(val))
+        return u'  {0} = {1}\n'.format(key, conv_to_fortran(val))

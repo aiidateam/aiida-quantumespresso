@@ -93,8 +93,8 @@ def cli(code, structure, pseudo_family, kpoints_mesh, ecutwfc, ecutrho, hubbard_
     else:
         click.echo('Running a pw.x calculation in the {} mode... '.format(mode))
         _, calculation = launch.run_get_node(PwCalculation, **inputs)
-        click.echo('PwCalculation<{}> terminated with state: {}'.format(calculation.pk, calculation.get_state()))
+        click.echo('PwCalculation<{}> terminated with state: {}'.format(calculation.pk, calculation.process_state))
         click.echo('\n{link:25s} {node}'.format(link='Output link', node='Node pk and type'))
         click.echo('{s}'.format(s='-' * 60))
-        for triple in sorted(calculation.get_outgoing().all()):
+        for triple in sorted(calculation.get_outgoing().all(), key=lambda triple: triple.link_label):
             click.echo('{:25s} {}<{}> '.format(triple.link_label, triple.node.__class__.__name__, triple.node.pk))

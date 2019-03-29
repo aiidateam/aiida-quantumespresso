@@ -26,16 +26,18 @@ class BasePwCpInputGenerator(CalcJob):
     _internal_retrieve_list = []
 
     # Default PW output parser provided by AiiDA to be defined in the subclass
-
     _automatic_namelists = {}
 
-    # in restarts, will not copy but use symlinks
+    # Blocked keywords that are to be specified in the subclass
+    _blocked_keywords = {}
+
+    # In restarts, will not copy but use symlinks
     _default_symlink_usage = True
 
-    # in restarts, it will copy from the parent the following
+    # In restarts, it will copy from the parent the following
     _restart_copy_from = os.path.join(_OUTPUT_SUBFOLDER, '*')
 
-    # in restarts, it will copy the previous folder in the following one
+    # In restarts, it will copy the previous folder in the following one
     _restart_copy_to = _OUTPUT_SUBFOLDER
 
     # Default verbosity; change in subclasses
@@ -103,7 +105,7 @@ class BasePwCpInputGenerator(CalcJob):
         local_copy_list += local_copy_pseudo_list
 
         input_filename = folder.get_abs_path(self._INPUT_FILE_NAME)
-        with io.open(input_filename, 'wb') as handle:
+        with io.open(input_filename, 'w') as handle:
             handle.write(input_filecontent)
 
         # operations for restart
@@ -233,10 +235,8 @@ class BasePwCpInputGenerator(CalcJob):
         # I put the first-level keys as uppercase (i.e., namelist and card names)
         # and the second-level keys as lowercase
         # (deeper levels are unchanged)
-        input_params = _uppercase_dict(parameters.get_dict(),
-                                       dict_name='parameters')
-        input_params = {k: _lowercase_dict(v, dict_name=k)
-                        for k, v in six.iteritems(input_params)}
+        input_params = _uppercase_dict(parameters.get_dict(), dict_name='parameters')
+        input_params = {k: _lowercase_dict(v, dict_name=k) for k, v in six.iteritems(input_params)}
 
         # I remove unwanted elements (for the moment, instead, I stop; to change when
         # we setup a reasonable logging)
@@ -262,15 +262,11 @@ class BasePwCpInputGenerator(CalcJob):
 
         # Set some variables (look out at the case! NAMELISTS should be uppercase,
         # internal flag names must be lowercase)
-        if 'CONTROL' not in input_params:
-            input_params['CONTROL'] = {}
+        input_params.setdefault('CONTROL', {})
         input_params['CONTROL']['pseudo_dir'] = self._PSEUDO_SUBFOLDER
         input_params['CONTROL']['outdir'] = self._OUTPUT_SUBFOLDER
         input_params['CONTROL']['prefix'] = self._PREFIX
-
-        input_params['CONTROL']['verbosity'] = input_params['CONTROL'].get(
-            'verbosity',
-            self._default_verbosity)  # Set to high if not specified
+        input_params['CONTROL']['verbosity'] = input_params['CONTROL'].get('verbosity', self._default_verbosity)  # Set to high if not specified
 
         # ============ I prepare the input site data =============
         # ------------ CELL_PARAMETERS -----------
@@ -426,8 +422,7 @@ class BasePwCpInputGenerator(CalcJob):
         # I set the variables that must be specified, related to the system
         # Set some variables (look out at the case! NAMELISTS should be
         # uppercase, internal flag names must be lowercase)
-        if 'SYSTEM' not in input_params:
-            input_params['SYSTEM'] = {}
+        input_params.setdefault('SYSTEM', {})
         input_params['SYSTEM']['ibrav'] = 0
         input_params['SYSTEM']['nat'] = len(structure.sites)
         input_params['SYSTEM']['ntyp'] = len(structure.kinds)
@@ -537,14 +532,14 @@ class BasePwCpInputGenerator(CalcJob):
                                            "namelists using the NAMELISTS inside the 'settings' input "
                                            "node".format(calculation_type))
 
-        inputfile = ""
+        inputfile = u''
         for namelist_name in namelists_toprint:
-            inputfile += "&{0}\n".format(namelist_name)
+            inputfile += u'&{0}\n'.format(namelist_name)
             # namelist content; set to {} if not present, so that we leave an empty namelist
             namelist = input_params.pop(namelist_name, {})
-            for k, v in sorted(six.iteritems(namelist)):
-                inputfile += convert_input_to_namelist_entry(k, v, mapping=mapping_species)
-            inputfile += "/\n"
+            for key, value in sorted(namelist.items()):
+                inputfile += convert_input_to_namelist_entry(key, value, mapping=mapping_species)
+            inputfile += u'/\n'
 
         # Write cards now
         inputfile += atomic_species_card
