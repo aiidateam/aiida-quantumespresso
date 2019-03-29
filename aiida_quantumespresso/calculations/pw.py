@@ -50,6 +50,9 @@ class PwCalculation(BasePwCpInputGenerator):
     _DEFAULT_INPUT_FILE = 'aiida.in'
     _DEFAULT_OUTPUT_FILE = 'aiida.out'
 
+    #not using symlink in pw to allow multiple nscf to run on top of the same scf
+    _default_symlink_usage = False
+
     @classmethod
     def define(cls, spec):
         super(PwCalculation, cls).define(spec)

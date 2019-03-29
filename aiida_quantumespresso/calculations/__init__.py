@@ -109,19 +109,19 @@ class BasePwCpInputGenerator(CalcJob):
         # operations for restart
         symlink = settings_dict.pop('PARENT_FOLDER_SYMLINK', self._default_symlink_usage)  # a boolean
         if symlink:
-            if 'parent_calc_folder' in self.inputs:
+            if 'parent_folder' in self.inputs:
                 # I put the symlink to the old parent ./out folder
                 remote_symlink_list.append((
-                    self.inputs.parent_calc_folder.get_computer().uuid,
-                    os.path.join(self.inputs.parent_calc_folder.get_remote_path(), self._restart_copy_from),
+                    self.inputs.parent_folder.computer.uuid,
+                    os.path.join(self.inputs.parent_folder.get_remote_path(), self._restart_copy_from),
                     self._restart_copy_to
                 ))
         else:
             # copy remote output dir, if specified
-            if 'parent_calc_folder' in self.inputs:
+            if 'parent_folder' in self.inputs:
                 remote_copy_list.append((
-                    self.inputs.parent_calc_folder.get_computer().uuid,
-                    os.path.join(self.inputs.parent_calc_folder.get_remote_path(), self._restart_copy_from),
+                    self.inputs.parent_folder.computer.uuid,
+                    os.path.join(self.inputs.parent_folder.get_remote_path(), self._restart_copy_from),
                     self._restart_copy_to
                 ))
 
