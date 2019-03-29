@@ -466,7 +466,7 @@ def xml_card_ions(parsed_data,dom,lattice_vectors,volume):
                 # If I can't parse the digit, it is probably not there: I add a None to the tagslist
                 tagslist.append(None)
             # I remove the symbols
-            chem_symbol = chem_symbol.translate(None, string.digits)
+            chem_symbol = ''.join(i for i in chem_symbol if not i.isdigit())
 
             tagname2='tau'
             b = a.getAttribute(tagname2)
