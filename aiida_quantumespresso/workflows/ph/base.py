@@ -1,16 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-from aiida.common.extendeddicts import AttributeDict
-from aiida.orm import Code
-from aiida.orm.nodes.data.base import Bool
-from aiida.orm.nodes.data.folder import FolderData
-from aiida.orm.nodes.data.remote import RemoteData
-from aiida.orm.nodes.data.dict import Dict
-from aiida.orm.nodes.data.array.kpoints import KpointsData
+
+from aiida import orm
+from aiida.common import AttributeDict
+from aiida.engine import while_
 from aiida.plugins import CalculationFactory
-from aiida.work.workchain import while_
-from aiida_quantumespresso.common.workchain.utils import ErrorHandlerReport
-from aiida_quantumespresso.common.workchain.utils import register_error_handler
+
+from aiida_quantumespresso.common.workchain.utils import ErrorHandlerReport, register_error_handler
 from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkChain
 from aiida_quantumespresso.utils.resources import get_default_options
 
@@ -34,13 +30,13 @@ class PhBaseWorkChain(BaseRestartWorkChain):
     @classmethod
     def define(cls, spec):
         super(PhBaseWorkChain, cls).define(spec)
-        spec.input('code', valid_type=Code)
-        spec.input('qpoints', valid_type=KpointsData)
-        spec.input('parent_folder', valid_type=RemoteData)
-        spec.input('parameters', valid_type=Dict, required=False)
-        spec.input('settings', valid_type=Dict, required=False)
-        spec.input('options', valid_type=Dict, required=False)
-        spec.input('only_initialization', valid_type=Bool, default=Bool(False))
+        spec.input('code', valid_type=orm.Code)
+        spec.input('qpoints', valid_type=orm.KpointsData)
+        spec.input('parent_folder', valid_type=orm.RemoteData)
+        spec.input('parameters', valid_type=orm.Dict, required=False)
+        spec.input('settings', valid_type=orm.Dict, required=False)
+        spec.input('options', valid_type=orm.Dict, required=False)
+        spec.input('only_initialization', valid_type=orm.Bool, default=orm.Bool(False))
         spec.outline(
             cls.setup,
             cls.validate_inputs,
@@ -53,9 +49,9 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         )
         spec.exit_code(402, 'ERROR_CALCULATION_INVALID_INPUT_FILE',
             message='the calculation failed because it had an invalid input file')
-        spec.output('output_parameters', valid_type=Dict)
-        spec.output('remote_folder', valid_type=RemoteData)
-        spec.output('retrieved', valid_type=FolderData)
+        spec.output('output_parameters', valid_type=orm.Dict)
+        spec.output('remote_folder', valid_type=orm.RemoteData)
+        spec.output('retrieved', valid_type=orm.FolderData)
 
     def validate_inputs(self):
         """

@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-from aiida.common.extendeddicts import AttributeDict
-from aiida.orm.node.process import CalcJobNode
-from aiida.orm.nodes.data.base import Bool, Float
-from aiida.orm.nodes.data.dict import Dict
-from aiida.orm.nodes.data.structure import StructureData
-from aiida.orm.nodes.data.array.bands import BandsData
+
+from six.moves import map
+
+from aiida import orm
+from aiida.common import AttributeDict
 from aiida.plugins import WorkflowFactory
-from aiida.work.workchain import WorkChain, ToContext, if_
+from aiida.engine import WorkChain, ToContext, if_
+
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 from aiida_quantumespresso.workflows.functions.seekpath_structure_analysis import seekpath_structure_analysis
-from six.moves import map
 
 
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
@@ -26,9 +25,9 @@ class PwBandsWorkChain(WorkChain):
         spec.expose_inputs(PwRelaxWorkChain, namespace='relax', exclude=('structure', 'clean_workdir'))
         spec.expose_inputs(PwBaseWorkChain, namespace='scf', exclude=('structure', 'clean_workdir'))
         spec.expose_inputs(PwBaseWorkChain, namespace='bands', exclude=('structure', 'clean_workdir'))
-        spec.input('structure', valid_type=StructureData)
-        spec.input('clean_workdir', valid_type=Bool, default=Bool(False))
-        spec.input('nbands_factor', valid_type=Float, default=Float(1.2))
+        spec.input('structure', valid_type=orm.StructureData)
+        spec.input('clean_workdir', valid_type=orm.Bool, default=orm.Bool(False))
+        spec.input('nbands_factor', valid_type=orm.Float, default=orm.Float(1.2))
         spec.outline(
             cls.setup,
             if_(cls.should_do_relax)(
@@ -48,11 +47,11 @@ class PwBandsWorkChain(WorkChain):
             message='the scf PwBasexWorkChain sub process failed')
         spec.exit_code(403, 'ERROR_SUB_PROCESS_FAILED_BANDS',
             message='the bands PwBasexWorkChain sub process failed')
-        spec.output('primitive_structure', valid_type=StructureData)
-        spec.output('seekpath_parameters', valid_type=Dict)
-        spec.output('scf_parameters', valid_type=Dict)
-        spec.output('band_parameters', valid_type=Dict)
-        spec.output('band_structure', valid_type=BandsData)
+        spec.output('primitive_structure', valid_type=orm.StructureData)
+        spec.output('seekpath_parameters', valid_type=orm.Dict)
+        spec.output('scf_parameters', valid_type=orm.Dict)
+        spec.output('band_parameters', valid_type=orm.Dict)
+        spec.output('band_structure', valid_type=orm.BandsData)
 
     def setup(self):
         """Define the current structure in the context to be the input structure."""
@@ -89,11 +88,11 @@ class PwBandsWorkChain(WorkChain):
         the symmetry of the cell changed in the cell relaxation step
         """
         if 'kpoints_distance' in self.inputs.bands:
-            seekpath_parameters = Dict(dict={
+            seekpath_parameters = orm.Dict(dict={
                 'reference_distance': self.inputs.bands.kpoints_distance.value
             })
         else:
-            seekpath_parameters = Dict(dict={})
+            seekpath_parameters = orm.Dict(dict={})
 
         result = seekpath_structure_analysis(self.ctx.current_structure, seekpath_parameters)
         self.ctx.current_structure = result['primitive_structure']
@@ -193,7 +192,7 @@ class PwBandsWorkChain(WorkChain):
         cleaned_calcs = []
 
         for called_descendant in self.calc.called_descendants:
-            if isinstance(called_descendant, CalcJobNode):
+            if isinstance(called_descendant, orm.CalcJobNode):
                 try:
                     called_descendant.out.remote_folder._clean()
                     cleaned_calcs.append(called_descendant.pk)

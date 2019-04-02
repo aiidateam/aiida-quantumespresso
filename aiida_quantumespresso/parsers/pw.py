@@ -58,7 +58,7 @@ class PwParser(Parser):
 
         # The stdout is required for parsing
         filename_stdout = self.node.get_attribute('output_filename')
-        filename_xml = self.node.load_process_class()._DATAFILE_XML_BASENAME
+        filename_xml = self.node.process_class._DATAFILE_XML_BASENAME
 
         if filename_stdout not in list_of_files:
             self.logger.error("The standard output file '{}' was not found but is required".format(filename_stdout))

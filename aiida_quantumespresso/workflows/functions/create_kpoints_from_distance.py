@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-from aiida.work import calcfunction
+from aiida.engine import calcfunction
 
 
 @calcfunction
@@ -15,7 +15,7 @@ def create_kpoints_from_distance(structure, distance, force_parity):
     :returns: a KpointsData with the generated mesh
     """
     from numpy import linalg
-    from aiida.orm.nodes.data.array.kpoints import KpointsData
+    from aiida.orm import KpointsData
 
     epsilon = 1E-5
 

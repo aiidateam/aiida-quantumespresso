@@ -63,6 +63,14 @@ class PwCalculation(BasePwCpInputGenerator):
             help='kpoint mesh or kpoint path')
         spec.input('hubbard_file', valid_type=orm.SinglefileData, required=False,
             help='SinglefileData node containing the output Hubbard parameters from a HpCalculation')
+        spec.output('output_parameters', valid_type=orm.Dict)
+        spec.output('output_structure', valid_type=orm.StructureData, required=False)
+        spec.output('output_trajectory', valid_type=orm.TrajectoryData, required=False)
+        spec.output('output_array', valid_type=orm.ArrayData, required=False)
+        spec.output('output_band', valid_type=orm.BandsData, required=False)
+        spec.output('output_kpoints', valid_type=orm.KpointsData, required=False)
+        spec.output('output_atomic_occupations', valid_type=orm.Dict, required=False)
+
         spec.exit_code(
             100, 'ERROR_NO_RETRIEVED_FOLDER', message='The retrieved folder data node could not be accessed.')
         spec.exit_code(

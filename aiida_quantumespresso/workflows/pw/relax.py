@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-from aiida.common.extendeddicts import AttributeDict
-from aiida.orm import CalcJobNode
-from aiida.orm.nodes.data.base import Bool, Float, Int, Str
-from aiida.orm.nodes.data.structure import StructureData
-from aiida.plugins import CalculationFactory, WorkflowFactory
-from aiida.work.workchain import WorkChain, ToContext, if_, while_, append_
-from aiida_quantumespresso.utils.mapping import prepare_process_inputs
+
 from six.moves import map
+
+from aiida import orm
+from aiida.common import AttributeDict
+from aiida.engine import WorkChain, ToContext, if_, while_, append_
+from aiida.plugins import CalculationFactory, WorkflowFactory
+from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
@@ -21,13 +21,13 @@ class PwRelaxWorkChain(WorkChain):
     def define(cls, spec):
         super(PwRelaxWorkChain, cls).define(spec)
         spec.expose_inputs(PwBaseWorkChain, namespace='base', exclude=('structure', 'clean_workdir'))
-        spec.input('structure', valid_type=StructureData)
-        spec.input('final_scf', valid_type=Bool, default=Bool(False))
-        spec.input('relaxation_scheme', valid_type=Str, default=Str('vc-relax'))
-        spec.input('meta_convergence', valid_type=Bool, default=Bool(True))
-        spec.input('max_meta_convergence_iterations', valid_type=Int, default=Int(5))
-        spec.input('volume_convergence', valid_type=Float, default=Float(0.01))
-        spec.input('clean_workdir', valid_type=Bool, default=Bool(False))
+        spec.input('structure', valid_type=orm.StructureData)
+        spec.input('final_scf', valid_type=orm.Bool, default=orm.Bool(False))
+        spec.input('relaxation_scheme', valid_type=orm.Str, default=orm.Str('vc-relax'))
+        spec.input('meta_convergence', valid_type=orm.Bool, default=orm.Bool(True))
+        spec.input('max_meta_convergence_iterations', valid_type=orm.Int, default=orm.Int(5))
+        spec.input('volume_convergence', valid_type=orm.Float, default=orm.Float(0.01))
+        spec.input('clean_workdir', valid_type=orm.Bool, default=orm.Bool(False))
         spec.outline(
             cls.setup,
             while_(cls.should_run_relax)(
@@ -45,7 +45,7 @@ class PwRelaxWorkChain(WorkChain):
         spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_FINAL_SCF',
             message='the final scf PwBaseWorkChain sub process failed')
         spec.expose_outputs(PwBaseWorkChain, exclude=['output_structure'])
-        spec.output('output_structure', valid_type=StructureData, required=True)
+        spec.output('output_structure', valid_type=orm.StructureData, required=True)
 
     def setup(self):
         """
@@ -206,7 +206,7 @@ class PwRelaxWorkChain(WorkChain):
         cleaned_calcs = []
 
         for called_descendant in self.calc.called_descendants:
-            if isinstance(called_descendant, CalcJobNode):
+            if isinstance(called_descendant, orm.CalcJobNode):
                 try:
                     called_descendant.out.remote_folder._clean()
                     cleaned_calcs.append(called_descendant.pk)
