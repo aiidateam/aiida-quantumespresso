@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-from aiida.common.extendeddicts import AttributeDict
-from aiida.orm import Code
-from aiida.orm.nodes.data.folder import FolderData
-from aiida.orm.nodes.data.remote import RemoteData
-from aiida.orm.nodes.data.dict import Dict
+
+from aiida import orm
+from aiida.common import AttributeDict
+from aiida.engine import while_
 from aiida.plugins import CalculationFactory
-from aiida.work.workchain import while_
+
 from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkChain
 from aiida_quantumespresso.data.forceconstants import ForceconstantsData
 from aiida_quantumespresso.utils.resources import get_default_options
@@ -25,11 +24,11 @@ class Q2rBaseWorkChain(BaseRestartWorkChain):
     @classmethod
     def define(cls, spec):
         super(Q2rBaseWorkChain, cls).define(spec)
-        spec.input('code', valid_type=Code)
-        spec.input('parent_folder', valid_type=FolderData)
-        spec.input('parameters', valid_type=Dict, required=False)
-        spec.input('settings', valid_type=Dict, required=False)
-        spec.input('options', valid_type=Dict, required=False)
+        spec.input('code', valid_type=orm.Code)
+        spec.input('parent_folder', valid_type=orm.FolderData)
+        spec.input('parameters', valid_type=orm.Dict, required=False)
+        spec.input('settings', valid_type=orm.Dict, required=False)
+        spec.input('options', valid_type=orm.Dict, required=False)
         spec.outline(
             cls.setup,
             cls.validate_inputs,
@@ -40,7 +39,7 @@ class Q2rBaseWorkChain(BaseRestartWorkChain):
             cls.results,
         )
         spec.output('force_constants', valid_type=ForceconstantsData)
-        spec.output('remote_folder', valid_type=RemoteData)
+        spec.output('remote_folder', valid_type=orm.RemoteData)
 
     def validate_inputs(self):
         """

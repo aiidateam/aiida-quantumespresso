@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
+
 from collections import namedtuple
 from functools import wraps
 
-from aiida.work import ExitCode
+from aiida.engine import ExitCode
 
 
 ErrorHandler = namedtuple('ErrorHandler', 'priority method')
 """
-A namedtuple to define an error handler for a :class:`~aiida.work.workchain.WorkChain`.
+A namedtuple to define an error handler for a :class:`~aiida.engine.processes.workchains.workchain.WorkChain`.
 
 The priority determines in which order the error handling methods are executed, with
 the higher priority being executed first. The method defines an unbound WorkChain method
@@ -23,7 +24,7 @@ as its sole argument. If the condition of the error handler is met, it should re
 ErrorHandlerReport = namedtuple('ErrorHandlerReport', 'is_handled do_break exit_code')
 ErrorHandlerReport.__new__.__defaults__ = (False, False, ExitCode())
 """
-A namedtuple to define an error handler report for a :class:`~aiida.work.workchain.WorkChain`.
+A namedtuple to define an error handler report for a :class:`~aiida.engine.processes.workchains.workchain.WorkChain`.
 
 This namedtuple should be returned by an error handling method of a workchain instance if
 the condition of the error handling was met by the failure mode of the calculation.
@@ -33,7 +34,7 @@ the 'do_break' field should be set to `True`
 
 :param is_handled: boolean, set to `True` when an error was handled, default is `False`
 :param do_break: boolean, set to `True` if no further error handling should be performed, default is `False`
-:param exit_code: an instance of the :class:`~aiida.work.ExitCode` tuple
+:param exit_code: an instance of the :class:`~aiida.engine.processes.exit_code.ExitCode` tuple
 """
 
 

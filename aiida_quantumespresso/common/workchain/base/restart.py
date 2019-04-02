@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-from aiida.common.exceptions import LoadingPluginFailed, MissingPluginError
-from aiida.orm import CalcJob, CalcJobNode
-from aiida.orm.nodes.data.base import Bool, Int
-from aiida.work.workchain import WorkChain, ToContext, append_
-from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
-from aiida_quantumespresso.common.pluginloader import get_plugin, get_plugins
-from aiida.common.lang import override
+
 import six
 from six.moves import map
+
+from aiida import orm
+from aiida.common import LoadingPluginFailed, MissingPluginError
+from aiida.common.lang import override
+from aiida.engine import CalcJob, WorkChain, ToContext, append_
+
+from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
+from aiida_quantumespresso.common.pluginloader import get_plugin, get_plugins
 
 
 class BaseRestartWorkChain(WorkChain):
@@ -84,9 +86,9 @@ class BaseRestartWorkChain(WorkChain):
     @classmethod
     def define(cls, spec):
         super(BaseRestartWorkChain, cls).define(spec)
-        spec.input('max_iterations', valid_type=Int, default=Int(5),
+        spec.input('max_iterations', valid_type=orm.Int, default=orm.Int(5),
             help='maximum number of iterations the workchain will restart the calculation to finish successfully')
-        spec.input('clean_workdir', valid_type=Bool, default=Bool(False),
+        spec.input('clean_workdir', valid_type=orm.Bool, default=orm.Bool(False),
             help='if True, work directories of all called calculation will be cleaned at the end of execution')
         spec.exit_code(100, 'ERROR_ITERATION_RETURNED_NO_CALCULATION',
             message='the run_calculation step did not successfully add a calculation node to the context')
@@ -214,7 +216,7 @@ class BaseRestartWorkChain(WorkChain):
         cleaned_calcs = []
 
         for called_descendant in self.calc.called_descendants:
-            if isinstance(called_descendant, CalcJobNode):
+            if isinstance(called_descendant, orm.CalcJobNode):
                 try:
                     called_descendant.out.remote_folder._clean()
                     cleaned_calcs.append(called_descendant.pk)

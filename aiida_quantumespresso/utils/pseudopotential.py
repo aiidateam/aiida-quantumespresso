@@ -22,12 +22,9 @@ def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=N
     :param pseudo_family: pseudopotential family name to use, should be Str node
     :raises: ValueError if neither pseudos or pseudo_family is specified or if no UpfData is found for
         every element in the structure
-    :returns: a dictionary of UpfData nodes where the key is a tuple with the kind name
+    :returns: a dictionary of UpfData nodes where the key is the kind name
     """
-    from aiida.orm.nodes.data.base import Str
-
-    result_pseudos = {}
-    unique_pseudos = {}
+    from aiida.orm import Str
 
     if pseudos and pseudo_family:
         raise ValueError('you cannot specify both "pseudos" and "pseudo_family"')
@@ -36,8 +33,7 @@ def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=N
     elif pseudo_family:
         # This will already raise some exceptions, potentially, like the ones below
         pseudos = get_pseudos_from_structure(structure, pseudo_family.value)
-
-    if isinstance(pseudos, (str, six.text_type, Str)):
+    elif isinstance(pseudos, (six.string_types, Str)):
         raise TypeError('you passed "pseudos" as a string - maybe you wanted to pass it as "pseudo_family" instead?')
 
     for kind in structure.get_kind_names():
@@ -46,13 +42,7 @@ def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=N
         elif not isinstance(pseudos[kind], UpfData):
             raise ValueError('pseudo for element {} is not of type UpfData'.format(kind))
 
-    for kind, pseudo in six.iteritems(pseudos):
-        unique_pseudos.setdefault(pseudo, []).append(kind)
-
-    for pseudo, kinds in six.iteritems(unique_pseudos):
-        result_pseudos[tuple(kinds)] = pseudo
-
-    return result_pseudos
+    return pseudos
 
 
 def get_pseudos_of_calc(calc):
@@ -99,7 +89,7 @@ def get_pseudos_from_dict(structure, pseudos_uuids):
     :raise NotExistent: if no UPF for an element in the group is
        found in the group.
     """
-    from aiida.common.exceptions import NotExistent
+    from aiida.common import NotExistent
     from aiida.orm import load_node
 
     pseudo_list = {}

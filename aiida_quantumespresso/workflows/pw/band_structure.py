@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-from aiida.orm import Code
-from aiida.orm.nodes.data.base import Str, Float, Bool
-from aiida.orm.nodes.data.dict import Dict
-from aiida.orm.nodes.data.structure import StructureData
-from aiida.orm.nodes.data.array.bands import BandsData
-from aiida.orm.nodes.data.array.kpoints import KpointsData
-from aiida.orm import WorkflowFactory
-from aiida.work.workchain import WorkChain, ToContext
+
+from aiida import orm
+from aiida.engine import WorkChain, ToContext
+from aiida.plugins import WorkflowFactory
+
 from aiida_quantumespresso.utils.mapping import update_mapping
 from aiida_quantumespresso.utils.protocols.pw import ProtocolManager
 from aiida_quantumespresso.utils.pseudopotential import get_pseudos_from_dict
@@ -21,10 +18,10 @@ class PwBandStructureWorkChain(WorkChain):
     @classmethod
     def define(cls, spec):
         super(PwBandStructureWorkChain, cls).define(spec)
-        spec.input('code', valid_type=Code)
-        spec.input('structure', valid_type=StructureData)
-        spec.input('protocol', valid_type=Dict)
-        spec.input('scf_options', valid_type=Dict)
+        spec.input('code', valid_type=orm.Code)
+        spec.input('structure', valid_type=orm.StructureData)
+        spec.input('protocol', valid_type=orm.Dict)
+        spec.input('scf_options', valid_type=orm.Dict)
         spec.outline(
             cls.setup_protocol,
             cls.setup_kpoints,
@@ -34,11 +31,11 @@ class PwBandStructureWorkChain(WorkChain):
         )
         spec.exit_code(101, 'ERROR_INVALID_INPUT_UNRECOGNIZED_KIND', message='The bands subworkchain failed')
         spec.exit_code(102, 'ERROR_SUB_PROCESS_FAILED_BANDS', message='the bands PwBasexWorkChain sub process failed')
-        spec.output('primitive_structure', valid_type=StructureData)
-        spec.output('seekpath_parameters', valid_type=Dict)
-        spec.output('scf_parameters', valid_type=Dict)
-        spec.output('band_parameters', valid_type=Dict)
-        spec.output('band_structure', valid_type=BandsData)
+        spec.output('primitive_structure', valid_type=orm.StructureData)
+        spec.output('seekpath_parameters', valid_type=orm.Dict)
+        spec.output('scf_parameters', valid_type=orm.Dict)
+        spec.output('band_parameters', valid_type=orm.Dict)
+        spec.output('band_structure', valid_type=orm.BandsData)
 
     def _get_protocol(self):
         """
@@ -65,7 +62,7 @@ class PwBandStructureWorkChain(WorkChain):
         """
         Define the k-point mesh for the relax and scf calculations.
         """
-        kpoints_mesh = KpointsData()
+        kpoints_mesh = orm.KpointsData()
         kpoints_mesh.set_cell_from_structure(self.inputs.structure)
         kpoints_mesh.set_kpoints_mesh_from_density(
             distance=self.ctx.protocol['kpoints_mesh_density'],
@@ -131,16 +128,16 @@ class PwBandStructureWorkChain(WorkChain):
             return {
                 'code': self.inputs.code,
                 'pseudos': pseudos,
-                'parameters': Dict(dict=self.ctx.parameters),
+                'parameters': orm.Dict(dict=self.ctx.parameters),
                 'options': self.inputs.scf_options,
             }
 
         relax_inputs = get_common_inputs()
         update_mapping(relax_inputs, {
             'kpoints': self.ctx.kpoints_mesh,
-            'relaxation_scheme': Str('vc-relax'),
-            'meta_convergence': Bool(self.ctx.protocol['meta_convergence']),
-            'volume_convergence': Float(self.ctx.protocol['volume_convergence']),
+            'relaxation_scheme': orm.Str('vc-relax'),
+            'meta_convergence': orm.Bool(self.ctx.protocol['meta_convergence']),
+            'volume_convergence': orm.Float(self.ctx.protocol['volume_convergence']),
         })
 
         scf_inputs = get_common_inputs()
@@ -152,10 +149,10 @@ class PwBandStructureWorkChain(WorkChain):
         num_bands_factor = self.ctx.protocol.get('num_bands_factor', None)
         bands_inputs = get_common_inputs()
         if num_bands_factor is not None:
-            bands_inputs['nbands_factor'] = Float(num_bands_factor)
+            bands_inputs['nbands_factor'] = orm.Float(num_bands_factor)
 
         update_mapping(bands_inputs, {
-            'kpoints_distance': Float(self.ctx.protocol['kpoints_distance_for_bands']),
+            'kpoints_distance': orm.Float(self.ctx.protocol['kpoints_distance_for_bands']),
         })
 
         # Final input preparation, wrapping dictionaries in Dict nodes

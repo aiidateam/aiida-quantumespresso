@@ -41,7 +41,7 @@ def _create_restart_pw_cp(parent_calc, force_restart, parent_folder_symlink,
     but not stored in DB.
     To submit it, simply call::
 
-        from aiida.work.launch import submit
+        from aiida.engine import submit
         submit(builder)
 
     :param parent_calc: the calculation you want to restart
@@ -166,7 +166,7 @@ def create_restart_pw(parent_calc, force_restart=False, parent_folder_symlink=No
     but not stored in DB.
     To submit it, simply call::
 
-        from aiida.work.launch import submit
+        from aiida.engine import submit
         submit(builder)
 
     :param parent_calc: the calculation you want to restart
@@ -203,7 +203,7 @@ def create_restart_cp(parent_calc, force_restart=False, parent_folder_symlink=No
     but not stored in DB.
     To submit it, simply call::
 
-        from aiida.work.launch import submit
+        from aiida.engine import submit
         submit(builder)
 
     :param parent_calc: the calculation you want to restart
@@ -237,7 +237,7 @@ def create_restart_neb(parent_calc, force_restart=False, parent_folder_symlink=N
     but not stored in DB.
     To submit it, simply call::
 
-        from aiida.work.launch import submit
+        from aiida.engine import submit
         submit(builder)
 
     :param parent_calc: the calculation you want to restart
@@ -346,7 +346,7 @@ def create_restart_ph(parent_calc, force_restart=False,
     but not stored in DB.
     To submit it, simply call::
 
-        from aiida.work.launch import submit
+        from aiida.engine import submit
         submit(builder)
 
     :param parent_calc: the calculation you want to restart

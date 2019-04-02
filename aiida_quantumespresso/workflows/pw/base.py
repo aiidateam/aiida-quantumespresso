@@ -1,17 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-from aiida.common.extendeddicts import AttributeDict
-from aiida.orm import Code
-from aiida.orm.nodes.data.base import Bool, Float, Str
-from aiida.orm.nodes.data.remote import RemoteData
-from aiida.orm.nodes.data.dict import Dict
-from aiida.orm.nodes.data.structure import StructureData
-from aiida.orm.nodes.data.array import ArrayData
-from aiida.orm.nodes.data.array.bands import BandsData
-from aiida.orm.nodes.data.array.kpoints import KpointsData
-from aiida.orm.nodes.data.singlefile import SinglefileData
+
+from aiida import orm
+from aiida.common import AttributeDict
+from aiida.engine import ToContext, if_, while_
 from aiida.plugins import CalculationFactory
-from aiida.work.workchain import ToContext, if_, while_
 from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
 from aiida_quantumespresso.common.workchain.utils import ErrorHandlerReport
 from aiida_quantumespresso.common.workchain.utils import register_error_handler
@@ -46,19 +39,19 @@ class PwBaseWorkChain(BaseRestartWorkChain):
     @classmethod
     def define(cls, spec):
         super(PwBaseWorkChain, cls).define(spec)
-        spec.input('code', valid_type=Code)
-        spec.input('structure', valid_type=StructureData)
-        spec.input('kpoints', valid_type=KpointsData, required=False)
-        spec.input('kpoints_distance', valid_type=Float, required=False)
-        spec.input('kpoints_force_parity', valid_type=Bool, required=False)
-        spec.input('parameters', valid_type=Dict)
-        spec.input_namespace('pseudo', required=False, dynamic=True)
-        spec.input('pseudo_family', valid_type=Str, required=False)
-        spec.input('parent_folder', valid_type=RemoteData, required=False)
-        spec.input('vdw_table', valid_type=SinglefileData, required=False)
-        spec.input('settings', valid_type=Dict, required=False)
-        spec.input('options', valid_type=Dict, required=False)
-        spec.input('automatic_parallelization', valid_type=Dict, required=False)
+        spec.input('code', valid_type=orm.Code)
+        spec.input('structure', valid_type=orm.StructureData)
+        spec.input('kpoints', valid_type=orm.KpointsData, required=False)
+        spec.input('kpoints_distance', valid_type=orm.Float, required=False)
+        spec.input('kpoints_force_parity', valid_type=orm.Bool, required=False)
+        spec.input('parameters', valid_type=orm.Dict)
+        spec.input_namespace('pseudos', required=False, dynamic=True)
+        spec.input('pseudo_family', valid_type=orm.Str, required=False)
+        spec.input('parent_folder', valid_type=orm.RemoteData, required=False)
+        spec.input('vdw_table', valid_type=orm.SinglefileData, required=False)
+        spec.input('settings', valid_type=orm.Dict, required=False)
+        spec.input('options', valid_type=orm.Dict, required=False)
+        spec.input('automatic_parallelization', valid_type=orm.Dict, required=False)
         spec.outline(
             cls.setup,
             cls.validate_inputs,
@@ -90,11 +83,11 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             message='the initialization calculation failed')
         spec.exit_code(402, 'ERROR_CALCULATION_INVALID_INPUT_FILE',
             message='the calculation failed because it had an invalid input file')
-        spec.output('output_array', valid_type=ArrayData, required=False)
-        spec.output('output_band', valid_type=BandsData, required=False)
-        spec.output('output_structure', valid_type=StructureData, required=False)
-        spec.output('output_parameters', valid_type=Dict)
-        spec.output('remote_folder', valid_type=RemoteData)
+        spec.output('output_array', valid_type=orm.ArrayData, required=False)
+        spec.output('output_band', valid_type=orm.BandsData, required=False)
+        spec.output('output_structure', valid_type=orm.StructureData, required=False)
+        spec.output('output_parameters', valid_type=orm.Dict)
+        spec.output('remote_folder', valid_type=orm.RemoteData)
 
     def validate_inputs(self):
         """
@@ -125,22 +118,23 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         else:
             self.ctx.inputs.settings = {}
 
+        self.ctx.inputs.metadata = AttributeDict()
         if 'options' in self.inputs:
-            self.ctx.inputs.options = self.inputs.options.get_dict()
+            self.ctx.inputs.metadata.options = self.inputs.options.get_dict()
         else:
-            self.ctx.inputs.options = {}
+            self.ctx.inputs.metadata = {'options', {}}
 
         if 'vdw_table' in self.inputs:
             self.ctx.inputs.vdw_table = self.inputs.vdw_table
 
         # Either automatic_parallelization or options has to be specified
-        if not any([key in self.inputs for key in ['options', 'automatic_parallelization']]):
+        if 'automatic_parallelization' not in self.inputs and 'options' not in self.ctx.inputs.metadata:
             return self.exit_codes.ERROR_INVALID_INPUT_RESOURCES
 
         # If automatic parallelization is not enabled, we better make sure that the options satisfy minimum requirements
         if 'automatic_parallelization' not in self.inputs:
-            num_machines = self.ctx.inputs.options.get('resources', {}).get('num_machines', None)
-            max_wallclock_seconds = self.ctx.inputs.options.get('max_wallclock_seconds', None)
+            num_machines = self.ctx.inputs.metadata['options'].get('resources', {}).get('num_machines', None)
+            max_wallclock_seconds = self.ctx.inputs.metadata['options'].get('max_wallclock_seconds', None)
 
             if num_machines is None or max_wallclock_seconds is None:
                 return self.exit_codes.ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED
@@ -154,16 +148,16 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         except AttributeError:
             structure = self.inputs.structure
             distance = self.inputs.kpoints_distance
-            force_parity = self.inputs.get('kpoints_force_parity', Bool(False))
+            force_parity = self.inputs.get('kpoints_force_parity', orm.Bool(False))
             self.ctx.inputs.kpoints = create_kpoints_from_distance(structure, distance, force_parity)
 
         # Validate the inputs related to pseudopotentials
         structure = self.inputs.structure
-        pseudos = self.inputs.get('pseudo', None)
+        pseudos = self.inputs.get('pseudos', None)
         pseudo_family = self.inputs.get('pseudo_family', None)
 
         try:
-            self.ctx.inputs.pseudo = validate_and_prepare_pseudos_inputs(structure, pseudos, pseudo_family)
+            self.ctx.inputs.pseudos = validate_and_prepare_pseudos_inputs(structure, pseudos, pseudo_family)
         except ValueError as exception:
             self.report('{}'.format(exception))
             return self.exit_codes.ERROR_INVALID_INPUT_PSEUDO_POTENTIALS
@@ -209,8 +203,9 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             'calculation_mode': self.ctx.inputs.parameters['CONTROL']['calculation']
         }
 
-        self.ctx.inputs.options.setdefault('resources', {})['num_machines'] = parallelization['max_num_machines']
-        self.ctx.inputs.options['max_wallclock_seconds'] = parallelization['max_wallclock_seconds']
+        options = self.ctx.inputs.metadata['options']
+        options.setdefault('resources', {})['num_machines'] = parallelization['max_num_machines']
+        options['max_wallclock_seconds'] = parallelization['max_wallclock_seconds']
 
     def run_init(self):
         """
@@ -222,7 +217,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
         # Set the initialization flag and the initial default options
         inputs.settings['ONLY_INITIALIZATION'] = True
-        inputs.options = update_mapping(inputs['options'], get_default_options())
+        inputs.metadata['options'] = update_mapping(inputs.metadata['options'], get_default_options())
 
         # Prepare the final input dictionary
         process = PwCalculation.process()
@@ -246,11 +241,11 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         # Get automated parallelization settings
         parallelization = get_pw_parallelization_parameters(calculation, **self.ctx.automatic_parallelization)
 
-        node = Dict(dict=parallelization)
+        node = orm.Dict(dict=parallelization)
         self.out('automatic_parallelization', node)
         self.report('results of automatic parallelization in {}<{}>'.format(node.__class__.__name__, node.pk))
 
-        options = self.ctx.inputs.options
+        options = self.ctx.inputs.metadata['options']
         base_resources = options.get('resources', {})
         goal_resources = parallelization['resources']
 
@@ -263,7 +258,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
         # Set the new cmdline setting and resource options
         self.ctx.inputs.settings['cmdline'] = cmdline
-        self.ctx.inputs.options = update_mapping(options, {'resources': resources})
+        self.ctx.inputs.metadata['options'] = update_mapping(options, {'resources': resources})
 
         # Remove the only initialization flag
         self.ctx.inputs.settings.pop('ONLY_INITIALIZATION')
@@ -284,7 +279,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         'max_wallclock_seconds' that will be given to the job via the 'options' dictionary. This will prevent the job
         from being prematurely terminated by the scheduler without getting the chance to exit cleanly.
         """
-        max_wallclock_seconds = inputs.options['max_wallclock_seconds']
+        max_wallclock_seconds = inputs.metadata['options']['max_wallclock_seconds']
         max_seconds_factor = self.defaults.delta_factor_max_seconds
         max_seconds = max_wallclock_seconds * max_seconds_factor
         inputs.parameters['CONTROL']['max_seconds'] = max_seconds
