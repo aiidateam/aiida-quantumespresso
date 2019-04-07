@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import xmlschema
+from xmlschema.exceptions import URLError
 from defusedxml import ElementTree
 import numpy as np
 
@@ -11,19 +12,21 @@ from .versions import get_schema_filepath, get_default_schema_filepath
 class QEXMLParsingError(QEOutputParsingError):
     pass
 
-def parser_assert(condition, message):
-    # TODO: can we use self.logger.error from here?
-    # Assert is not good! Raising unhandled exceptions isn't either!
-    if not condition:
-        raise QEXMLParsingError(message)
+def raise_parsing_error(message):
+    raise QEXMLParsingError(message)
 
-def parser_assert_equal(val1, val2, message):
+def parser_assert(condition, message, log_func=raise_parsing_error):
+    if not condition:
+        log_func(message)
+
+def parser_assert_equal(val1, val2, message, log_func=raise_parsing_error):
     if not (val1 == val2):
         msg = "Violated assert: {} == {}".format(val1, val2)
         if message:
             msg += " - "
             msg += message
-        raise QEXMLParsingError(msg)
+        log_func(msg)
+
 
 def cell_volume(a1, a2, a3):
     r"""Returns the volume of the primitive cell: :math:`|\vec a_1\cdot(\vec a_2\cross \vec a_3)|`"""
@@ -40,14 +43,22 @@ def cell_volume(a1, a2, a3):
 
 def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
     """
+    NOTE: the syntax for accessing the decoded XML dictionary (xml_dictionary)
+    is the following:
+          - If tag ['key'] is "simple", xml_dictionary['key'] returns its content;
+          - otherwise:
+            - xml_dictionary['key']['$'] returns its content
+            - xml_dictionary['key']['@attr'] returns its attribute 'attr'
+            - xml_dictionary['key']['nested_key'] goes one level deeper.
     """
     include_deprecated_v2_keys = parser_opts.get('include_deprecated_v2_keys', False)
     
     try:
         xml = ElementTree.parse(xml_file)
     except IOError:
-        raise ValueError('could not open and or parse the XML file {}'.format(xml_file))
+        raise QEXMLParsingError('Could not open or parse the XML file {}'.format(xml_file))
 
+    # detect schema name+path from XML contents
     schema_filepath = get_schema_filepath(xml)
 
     try:
@@ -55,21 +66,24 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
     except URLError:
 
         # If loading the XSD file specified in the XML file fails, we try the default
-        schema_filepath = get_default_schema_filepath()
+        schema_filepath_default = get_default_schema_filepath()
 
         try:
-            xsd = xmlschema.XMLSchema(schema_filepath)
+            xsd = xmlschema.XMLSchema(schema_filepath_default)
         except URLError:
-            raise ValueError('could not open and or parse the XSD file {}'.format(schema_filepath))
+            raise QEXMLParsingError('Could not open or parse the XSD files {} and {}'.format(schema_filepath, schema_filepath_default))
+        else:
+            schema_filepath = schema_filepath_default
     
+    # validate XML document against the schema
     xml_dictionary, errors = xsd.to_dict(xml, validation='lax')
-    
-    # NOTE: the syntax for accessing the decoded XML dictionary is the following.
-    #       - If tag ['key'] is "simple", xml_dictionary['key'] returns its content;
-    #       - otherwise:
-    #         - xml_dictionary['key']['$'] returns its content
-    #         - xml_dictionary['key']['@attr'] returns its attribute 'attr'
-    #         - xml_dictionary['key']['nested_key'] goes one level deeper.
+    if errors:
+        logger.error("{} XML schema validation error(s) (document: {} - schema: {}):".format(len(errors), xml_file, schema_filepath))
+        for err in errors:
+            logger.error(str(err))
+        #for err in errors:
+        #    logger.error("XML schema validation error (document: {} - schema: {})\n".format(xml_file, schema_filepath)
+        #                   + str(err))
 
     lattice_vectors = [
         map(lambda x: x * bohr_to_ang, xml_dictionary['output']['atomic_structure']['cell']['a1']),
@@ -123,7 +137,7 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
                 logger.error("occupations is {} but key 'smearing' is not present under input/bands"
                              "nor output/band_structure".format(occupations))
 
-    # Not including smearing type and width for now.
+    # NOTE: Not including smearing type and width for now.
     # In the old XML format they are under OCCUPATIONS as SMEARING_TYPE and SMEARING_PARAMETER,
     # but watch out: the value in the old format is half of that in the new format
     # (the code divides it by e2=2.0, see PW/src/pw_restart.f90:446) 
@@ -195,13 +209,13 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
         nspin = 1
 
     symmetries = []
-    lattice_symmetries = []
+    lattice_symmetries = []  # note: will only contain lattice symmetries that are NOT crystal symmetries
     inversion_symmetry = False
 
-    # TODO: parse nsym and nrot, and use them as extra validation
-    # NOTE: in the code (PW/src/setup.f90), there are the following variables (that may or may not match the XML tags):
-    #    nsym      number of crystal symmetry operations
-    #    nrot      number of lattice symmetry operations
+    # See also PW/src/setup.f90
+    nsym = xml_dictionary['output']['symmetries']['nsym']  # crystal symmetries
+    nrot = xml_dictionary['output']['symmetries']['nrot']  # lattice symmetries
+    
     for symmetry in xml_dictionary['output']['symmetries']['symmetry']:
 
         # There are two types of symmetries, lattice and crystal. The pure inversion (-I) is always a lattice symmetry,
@@ -219,14 +233,18 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
                 symmetry['rotation']['$'][6:9],
             ],
             'name': symmetry_name,
-            't_rev': '0' # TODO: ??
         }
-
+        
+        try:
+            sym['t_rev'] = u'1' if symmetry['info']['@time_reversal'] else u'0'
+        except KeyError:
+            sym['t_rev'] = u'0'
+        
         try:
             sym['equivalent_atoms'] = symmetry['equivalent_atoms']['$']
         except KeyError:
             pass
-
+        
         try:
             sym['fractional_translation'] = symmetry['fractional_translation']
         except KeyError:
@@ -238,6 +256,11 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
             lattice_symmetries.append(sym)
         else:
             raise QEXMLParsingError("Unexpected type of symmetry: {}".format(symmetry_type))
+    
+    if (nsym != len(symmetries)) or (nrot != len(symmetries)+len(lattice_symmetries)):
+        logger.warning("Inconsistent number of symmetries: nsym={}, nrot={}, len(symmetries)={}, len(lattice_symmetries)={}"
+                       .format(nsym, nrot, len(symmetries), len(lattice_symmetries))
+        )
     
     # Band structure
     num_k_points   = xml_dictionary['output']['band_structure']['nks']
@@ -260,7 +283,10 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
     k_points = []
     k_points_weights = []
     ks_states = xml_dictionary['output']['band_structure']['ks_energies']
-    output_alat_angstrom = xml_dictionary['output']['atomic_structure']['@alat'] * bohr_to_ang
+    # alat is technically an optional attribute according to the schema,
+    # but I don't know what to do if it's missing. atomic_structure is mandatory.
+    output_alat_bohr = xml_dictionary['output']['atomic_structure']['@alat']
+    output_alat_angstrom = output_alat_bohr * bohr_to_ang
     for ks_state in ks_states:
         k_points.append([kp*2*np.pi/output_alat_angstrom for kp in ks_state['k_point']['$']])
         k_points_weights.append(ks_state['k_point']['@weight'])
@@ -313,9 +339,6 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
         'charge_density': u'./charge-density.dat', # A file name. Not printed in the new format.
             # The filename and path are considered fixed: <outdir>/<prefix>.save/charge-density.dat
             # TODO: change to .hdf5 if output format is HDF5 (issue #222)
-        # 'linknames_band': # TODO: get bands from this xml and put them in a output_band object
-        # (well, to be precise: this function should return a bands dictionary, then the "parse_raw_output"
-        # function in pw.py will put merge it with the Kpoints data into a BandsData node)
         'xml_warnings': [],
         'rho_cutoff_units': 'eV',
         'wfc_cutoff_units': 'eV',
@@ -351,8 +374,8 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
         'no_time_rev_operations': xml_dictionary['input']['symmetry_flags']['no_t_rev'],
         'inversion_symmetry': inversion_symmetry,  # the old tag was INVERSION_SYMMETRY,
                     #and was set to (from the code): "invsym    if true the system has inversion symmetry"
-        'number_of_bravais_symmetries': xml_dictionary['output']['symmetries']['nrot'],
-        'number_of_symmetries': xml_dictionary['output']['symmetries']['nsym'],
+        'number_of_bravais_symmetries': nrot,  # lattice symmetries
+        'number_of_symmetries': nsym,          # crystal symmetries
         'wfc_cutoff': xml_dictionary['input']['basis']['ecutwfc'] * hartree_to_ev,
         'rho_cutoff': xml_dictionary['output']['basis_set']['ecutrho'] * hartree_to_ev, # not always printed in input->basis
         'smooth_fft_grid': xml_dictionary['output']['basis_set']['fft_smooth'].values(),
@@ -377,6 +400,33 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
     # This is not printed by QE 6.3, but will be re-added before the next version
     if 'real_space_beta' in xml_dictionary['output']['algorithmic_info']:
         xml_data['beta_real_space'] = xml_dictionary['output']['algorithmic_info']['real_space_beta']
+    
+    conv_info = {}
+    conv_info_scf = {}
+    conv_info_opt = {}
+    for key in ['convergence_achieved','n_scf_steps','scf_error']:
+        try:
+            conv_info_scf[key] = xml_dictionary['output']['convergence_info']['scf_conv'][key]
+        except KeyError:
+            pass
+    for key in ['convergence_achieved','n_opt_steps','grad_norm']:
+        try:
+            conv_info_opt[key] = xml_dictionary['output']['convergence_info']['opt_conv'][key]
+        except KeyError:
+            pass
+    if conv_info_scf:
+        conv_info['scf_conv'] = conv_info_scf
+    if conv_info_opt:
+        conv_info['opt_conv'] = conv_info_opt
+    if conv_info:
+        xml_data['convergence_info'] = conv_info
+    
+    if 'status' in xml_dictionary:
+        xml_data['exit_status'] = xml_dictionary['status']
+        # 0 = convergence reached;
+        # -1 = SCF convergence failed;
+        # 3 = ionic convergence failed
+        # These might be changed in the future. Also see PW/src/run_pwscf.f90
     
     if include_deprecated_v2_keys:
         xml_data['fixed_occupations'] = fixed_occupations
@@ -403,7 +453,7 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
             'volume': cell_volume(*lattice_vectors),
             'atoms': atoms,
         },
-        'lattice_parameter_xml': xml_dictionary['output']['atomic_structure']['@alat'],
+        'lattice_parameter_xml': output_alat_bohr,
         'number_of_species': xml_dictionary['output']['atomic_species']['@ntyp'],
         'species': {
             'index': [i + 1 for i,specie in enumerate(species)],

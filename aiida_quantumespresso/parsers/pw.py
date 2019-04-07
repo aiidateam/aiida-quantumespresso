@@ -179,8 +179,9 @@ class PwParser(Parser):
                     except KeyError:
                         self.logger.error("Warning: KeyError while parsing key '{}' from raw output dictionary".format(symmetry_type))
                 else:
-                    self.logger.error("Warning: key '{}' is not present in raw output dictionary".format(symmetry_type))
-                    # TODO: this might be fine if it's only 'lattice_symmetries'
+                    # backwards-compatiblity: 'lattice_symmetries' is not created in older versions of the parser
+                    if symmetry_type != 'lattice_symmetries':
+                        self.logger.error("Warning: key '{}' is not present in raw output dictionary".format(symmetry_type))
 
         # I eventually save the new structure. structure_data is unnecessary after this
         in_struc = self.node.get_incoming(link_label_filter='structure').one().node
@@ -227,6 +228,8 @@ class PwParser(Parser):
 
                 # Get the bands occupations and correct the occupations of QE:
                 # If it computes only one component, it occupies it with half number of electrons
+                # TODO: is this something we really want to correct?
+                # Probably yes for backwards compatiblity, but it might not be intuitive.
                 if len(bands_data['occupations'])>1:
                     the_occupations = bands_data['occupations']
                 else:

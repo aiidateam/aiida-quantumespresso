@@ -62,7 +62,8 @@ def parse_raw_output(out_file, input_dict, parser_opts, logger, xml_file=None, d
 
     job_successful = True
     parser_info = get_parser_info(parser_info_template='aiida-quantumespresso parser pw.x v{}')
-
+    
+    # Parse XML output file
     if xml_file is not None:
 
         try:
@@ -75,7 +76,7 @@ def parse_raw_output(out_file, input_dict, parser_opts, logger, xml_file=None, d
         elif xml_file_version == QeXmlVersion.PRE_6_2:
             xml_data, structure_data, bands_data = parse_pw_xml_pre_6_2(xml_file, dir_with_bands, parser_opts, logger)
         else:
-            raise ValueError('unrecognize XML file version')
+            raise ValueError('unrecognized XML file version')
 
     else:
         parser_info['parser_warnings'].append('Skipping the parsing of the xml file.')
