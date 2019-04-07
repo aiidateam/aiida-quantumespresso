@@ -74,8 +74,9 @@ class PwParser(Parser):
         out_file = os.path.join(output_folder._repository._get_base_folder().abspath, filename_stdout)
 
         # Call the raw parsing function
-        parsing_args = [out_file, parameters, parser_options, xml_file, dir_with_bands]
-        out_dict, trajectory_data, structure_data, bands_data, raw_successful = parse_raw_output(*parsing_args)
+        out_dict, trajectory_data, structure_data, bands_data, raw_successful = parse_raw_output(
+            out_file, parameters, parser_opts, self.logger, xml_file, dir_with_bands
+        )
 
         # If the parser option 'all_symmetries' is not set to True, we reduce the raw parsed symmetries to safe space
         all_symmetries = parser_options.get('all_symmetries', False)
@@ -196,7 +197,7 @@ class PwParser(Parser):
         if k_points_list is not None:
 
             # Build the kpoints object
-            if out_dict['k_points_units'] not in ['2 pi / Angstrom']:
+            if out_dict.pop('k_points_units') not in ['1 / angstrom']:
                 raise QEOutputParsingError('Error in kpoints units (should be cartesian)')
 
             kpoints_from_output = orm.KpointsData()
