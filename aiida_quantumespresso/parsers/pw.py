@@ -97,8 +97,9 @@ class PwParser(Parser):
             xml_file = os.path.join(out_folder.get_abs_path('.'), xml_files[0])
 
         # Call the raw parsing function
-        parsing_args = [out_file, parameters, parser_opts, xml_file, dir_with_bands]
-        out_dict, trajectory_data, structure_data, bands_data, raw_successful = parse_raw_output(*parsing_args)
+        out_dict, trajectory_data, structure_data, bands_data, raw_successful = parse_raw_output(
+            out_file, parameters, parser_opts, self.logger, xml_file, dir_with_bands
+        )
 
         # If calculation was not considered failed already, use the new value
         successful = raw_successful if successful else successful
@@ -224,7 +225,7 @@ class PwParser(Parser):
         if k_points_list is not None:
 
             # Build the kpoints object
-            if out_dict['k_points_units'] not in ['2 pi / Angstrom']:
+            if out_dict.pop('k_points_units') not in ['1 / angstrom']:
                 raise QEOutputParsingError('Error in kpoints units (should be cartesian)')
 
             kpoints_from_output = KpointsData()
