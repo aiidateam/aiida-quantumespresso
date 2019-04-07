@@ -5,7 +5,7 @@ from defusedxml import ElementTree
 import numpy as np
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers.constants import ry_to_ev, hartree_to_ev, bohr_to_ang, ry_si, bohr_si
+from aiida_quantumespresso.parsers.constants import ry_to_ev, hartree_to_ev, bohr_to_ang, ry_si, bohr_si, e_bohr2_to_coulomb_m2
 from .versions import get_schema_filepath, get_default_schema_filepath
 
 
@@ -21,7 +21,7 @@ def parser_assert(condition, message, log_func=raise_parsing_error):
 
 def parser_assert_equal(val1, val2, message, log_func=raise_parsing_error):
     if not (val1 == val2):
-        msg = "Violated assert: {} == {}".format(val1, val2)
+        msg = "Violated assertion: {} == {}".format(val1, val2)
         if message:
             msg += " - "
             msg += message
@@ -117,7 +117,7 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
         # NOTE: these flags are not super clear
         # TODO: remove them and just use 'occupations' as a string, with possible values "smearing","tetrahedra", ...
         
-        if occupations == 'from_input':  # False for 'fixed'
+        if occupations == 'from_input':  # False for 'fixed'  # TODO: does this make sense?
             fixed_occupations = True
         else:
             fixed_occupations = False
@@ -134,10 +134,14 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
         
         if smearing_method:
             if 'smearing' not in (xml_dictionary['output']['band_structure'].keys() + xml_dictionary['input']['bands'].keys()):
-                logger.error("occupations is {} but key 'smearing' is not present under input/bands"
-                             "nor output/band_structure".format(occupations))
-
-    # NOTE: Not including smearing type and width for now.
+                logger.error("occupations is '{}' but key 'smearing' is not present under input/bands "
+                             "nor under output/band_structure".format(occupations))
+            # TODO: this error is triggered if no smearing is specified in input. But this is a valid input, so we should't throw an error.
+            # Should we ask QE to print something nonetheless?
+            # Also happens if occupations='fixed'.
+            # (Example: occupations is 'fixed' but key 'smearing' is not present under input/bandsnor output/band_structure. See calculation 4940, versus 4981.)
+    
+    # TODO/NOTE: Not including smearing type and width for now.
     # In the old XML format they are under OCCUPATIONS as SMEARING_TYPE and SMEARING_PARAMETER,
     # but watch out: the value in the old format is half of that in the new format
     # (the code divides it by e2=2.0, see PW/src/pw_restart.f90:446) 
@@ -266,17 +270,20 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
     num_k_points   = xml_dictionary['output']['band_structure']['nks']
     num_electrons  = xml_dictionary['output']['band_structure']['nelec']
     num_atomic_wfc = xml_dictionary['output']['band_structure']['num_of_atomic_wfc']
-    num_bands      = xml_dictionary['output']['band_structure']['nbnd']
+    num_bands      = xml_dictionary['output']['band_structure'].get('nbnd')
     num_bands_up   = xml_dictionary['output']['band_structure'].get('nbnd_up')
     num_bands_down = xml_dictionary['output']['band_structure'].get('nbnd_dw')
     if (num_bands_up is None) and (num_bands_down is None):
-        spins = False
+        spins = False   # we are either in the non-polarized or non-collinear case
     else:
         # TODO: is it always nbnd_up==nbnd_dw ?
         parser_assert((num_bands_up is not None) and (num_bands_down is not None),
             "Only one of 'nbnd_up' and 'nbnd_dw' was found")
-        parser_assert(num_bands == num_bands_up + num_bands_down,
-            "Inconsistent number of bands: nbnd={}, nbnd_up={}, nbnd_down={}".format(num_bands, num_bands_up, num_bands_down))
+        if num_bands is not None:
+            parser_assert(num_bands == num_bands_up + num_bands_down,
+                "Inconsistent number of bands: nbnd={}, nbnd_up={}, nbnd_down={}".format(num_bands, num_bands_up, num_bands_down))
+        else:
+            num_bands = num_bands_up + num_bands_down   # backwards compatibility;
         spins = True
 
     # k-points
@@ -359,8 +366,6 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
         #       See line 43 in Modules/qexsd.f90
         'creator_name': xml_dictionary['general_info']['creator']['@NAME'].lower(),
         'creator_version': xml_dictionary['general_info']['creator']['@VERSION'],
-        'monkhorst_pack_grid': [xml_dictionary['input']['k_points_IBZ']['monkhorst_pack'][attr] for attr in ['@nk1','@nk2','@nk3']],
-        'monkhorst_pack_offset': [xml_dictionary['input']['k_points_IBZ']['monkhorst_pack'][attr] for attr in ['@k1','@k2','@k3']],
         'non_colinear_calculation': non_colinear_calculation,
         'do_magnetization': do_magnetization,
         'time_reversal_flag': time_reversal,
@@ -385,11 +390,32 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
         'number_of_atomic_wfc': num_atomic_wfc,
         'number_of_k_points': num_k_points,
         'number_of_electrons': num_electrons,
-        'number_of_bands': num_bands/2 if spins else num_bands,
         'k_points': k_points,
         'k_points_weights': k_points_weights,
         'q_real_space': xml_dictionary['output']['algorithmic_info']['real_space_q'],
     }
+    
+    try:
+        monkhorst_pack = xml_dictionary['input']['k_points_IBZ']['monkhorst_pack']
+    except KeyError:
+        pass  # not using Monkhorst pack
+    else:
+        xml_data['monkhorst_pack_grid'] = [monkhorst_pack[attr] for attr in ['@nk1','@nk2','@nk3']]
+        xml_data['monkhorst_pack_offset'] = [monkhorst_pack[attr] for attr in ['@k1','@k2','@k3']]
+    
+    if not spins:
+        xml_data['number_of_bands'] = num_bands
+    else:
+        # QE counts them twice if spin-collinear
+        # if non-collinear-spin, num_bands is None
+        if num_bands % 2:
+            xml_data['number_of_bands'] = float(num_bands)/2
+        else:
+            xml_data['number_of_bands'] = num_bands/2
+    
+    for key,value in [('number_of_bands_up',num_bands_up), ('number_of_bands_down',num_bands_down)]:
+        if value is not None:
+            xml_data[key] = value
 
     if 'boundary_conditions' in xml_dictionary['output'] and 'assume_isolated' in xml_dictionary['output']['boundary_conditions']:
         xml_data['assume_isolated'] = xml_dictionary['output']['boundary_conditions']['assume_isolated']
@@ -404,6 +430,9 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
     conv_info = {}
     conv_info_scf = {}
     conv_info_opt = {}
+    # NOTE: n_scf_steps refers to the number of SCF steps in the *last* loop only.
+    # To get the total number of SCF steps in the run you should sum up the individual steps.
+    # TODO: should we parse 'steps' too? Are they already added in the output trajectory?
     for key in ['convergence_achieved','n_scf_steps','scf_error']:
         try:
             conv_info_scf[key] = xml_dictionary['output']['convergence_info']['scf_conv'][key]
@@ -433,7 +462,50 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
         xml_data['tetrahedron_method'] = tetrahedron_method
         xml_data['smearing_method'] = smearing_method
     
-    # We should put the `non_periodic_cell_correction` string in
+    try:
+        berry_phase = xml_dictionary['output']['electric_field']['BerryPhase']
+    except KeyError:
+        pass
+    else:
+        # This is what I would like to do, but it's not retro-compatible
+        #xml_data['berry_phase'] = {}
+        #xml_data['berry_phase']['total_phase']         = berry_phase['totalPhase']['$']
+        #xml_data['berry_phase']['total_phase_modulus'] = berry_phase['totalPhase']['@modulus']
+        #xml_data['berry_phase']['total_ionic_phase']      = berry_phase['totalPhase']['@ionic']
+        #xml_data['berry_phase']['total_electronic_phase'] = berry_phase['totalPhase']['@electronic']
+        #xml_data['berry_phase']['total_polarization']           = berry_phase['totalPolarization']['polarization']['$']
+        #xml_data['berry_phase']['total_polarization_modulus']   = berry_phase['totalPolarization']['modulus']
+        #xml_data['berry_phase']['total_polarization_units']     = berry_phase['totalPolarization']['polarization']['@Units']
+        #xml_data['berry_phase']['total_polarization_direction'] = berry_phase['totalPolarization']['direction']
+        #parser_assert_equal(xml_data['berry_phase']['total_phase_modulus'].lower(), '(mod 2)',
+        #                    "Unexpected modulus for total phase")
+        #parser_assert_equal(xml_data['berry_phase']['total_polarization_units'].lower(), 'e/bohr^2',
+        #                    "Unsupported units for total polarization")
+        # Retro-compatible keys:
+        xml_data['total_phase']      = berry_phase['totalPhase']['$']
+        xml_data['total_phase_units']      = '2pi'
+        xml_data['ionic_phase']      = berry_phase['totalPhase']['@ionic']
+        xml_data['ionic_phase_units']      = '2pi'
+        xml_data['electronic_phase'] = berry_phase['totalPhase']['@electronic']
+        xml_data['electronic_phase_units'] = '2pi'
+        polarization = berry_phase['totalPolarization']['polarization']['$']
+        polarization_units = berry_phase['totalPolarization']['polarization']['@Units']
+        polarization_modulus = berry_phase['totalPolarization']['modulus']
+        parser_assert(polarization_units in ['e/bohr^2','C/m^2'],
+                      "Unsupported units '{}' of total polarization".format(polarization_units))
+        if polarization_units == 'e/bohr^2':
+            polarization *= e_bohr2_to_coulomb_m2
+            polarization_modulus *= e_bohr2_to_coulomb_m2
+        xml_data['polarization']        = polarization
+        xml_data['polarization_module'] = polarization_modulus # should be called "modulus"
+        xml_data['polarization_units']  = 'C / m^2'
+        xml_data['polarization_direction'] = berry_phase['totalPolarization']['direction']
+        # TODO: add conversion for (e/Omega).bohr (requires to know Omega, the volume of the cell)
+        # TODO (maybe): Not parsed:
+        # - individual ionic phases
+        # - individual electronic phases and weights
+    
+    # TODO: We should put the `non_periodic_cell_correction` string in (?)
     atoms = [[atom['@name'], [coord*bohr_to_ang for coord in atom['$']]] for atom in xml_dictionary['output']['atomic_structure']['atomic_positions']['atom']]
     species = xml_dictionary['output']['atomic_species']['species']
     structure_data = {

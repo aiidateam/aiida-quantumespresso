@@ -1258,56 +1258,57 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                 parsed_data['wall_time_seconds'] = convert_qe_time_to_sec(time)
             except ValueError:
                 raise QEOutputParsingError("Unable to convert wall_time in seconds.")
-
-        elif 'SUMMARY OF PHASES' in line:
-            try:
-                j = 0
-                while True:
-                    j+=1
-                    if 'Ionic Phase' in data_lines[count+j]:
-                        value = float(data_lines[count+j].split(':')[1].split('(')[0])
-                        mod = int(data_lines[count+j].split('(mod')[1].split(')')[0])
-                        if mod != 2:
-                            raise QEOutputParsingError("Units for polarization phase not supported")
-                        parsed_data['ionic_phase'] = value
-                        parsed_data['ionic_phase'+units_suffix] = '2pi'
-
-                    if 'Electronic Phase' in data_lines[count+j]:
-                        value = float(data_lines[count+j].split(':')[1].split('(')[0])
-                        mod = int(data_lines[count+j].split('(mod')[1].split(')')[0])
-                        if mod != 2:
-                            raise QEOutputParsingError("Units for polarization phase not supported")
-                        parsed_data['electronic_phase'] = value
-                        parsed_data['electronic_phase'+units_suffix] = '2pi'
-
-                    if 'Total Phase' in data_lines[count+j]:
-                        value = float(data_lines[count+j].split(':')[1].split('(')[0])
-                        mod = int(data_lines[count+j].split('(mod')[1].split(')')[0])
-                        if mod != 2:
-                            raise QEOutputParsingError("Units for polarization phase not supported")
-                        parsed_data['total_phase'] = value
-                        parsed_data['total_phase'+units_suffix] = '2pi'
-
-                    # TODO: decide a standard unit for e charge
-                    if "C/m^2" in data_lines[count+j]:
-                        value = float(data_lines[count+j].split('=')[1].split('(')[0])
-                        mod = float(data_lines[count+j].split('mod')[1].split(')')[0])
-                        units = data_lines[count+j].split(')')[1].strip()
-                        parsed_data['polarization'] = value
-                        parsed_data['polarization_module'] = mod
-                        parsed_data['polarization'+units_suffix] = default_polarization_units
-                        if 'C / m^2' not in default_polarization_units:
-                            raise  QEOutputParsingError("Units for polarization phase not supported")
-
-                    if 'polarization direction' in data_lines[count+j]:
-                        vec = [ float(s) for s in \
-                                data_lines[count+j].split('(')[1].split(')')[0].split(',') ]
-                        parsed_data['polarization_direction'] = vec
-
-            except Exception:
-                warning = 'Error while parsing polarization.'
-                parsed_data['warnings'].append(warning)
-
+        
+        # NOTE: skipping parsing of Berry phase info: we now take them from the XML output
+        #elif 'SUMMARY OF PHASES' in line:
+        #   try:
+        #       j = 0
+        #       while True:
+        #           j+=1
+        #           if 'Ionic Phase' in data_lines[count+j]:
+        #               value = float(data_lines[count+j].split(':')[1].split('(')[0])
+        #               mod = int(data_lines[count+j].split('(mod')[1].split(')')[0])
+        #               if mod != 2:
+        #                   raise QEOutputParsingError("Units for polarization phase not supported")
+        #               parsed_data['ionic_phase'] = value
+        #               parsed_data['ionic_phase'+units_suffix] = '2pi'
+        #
+        #           if 'Electronic Phase' in data_lines[count+j]:
+        #               value = float(data_lines[count+j].split(':')[1].split('(')[0])
+        #               mod = int(data_lines[count+j].split('(mod')[1].split(')')[0])
+        #               if mod != 2:
+        #                   raise QEOutputParsingError("Units for polarization phase not supported")
+        #               parsed_data['electronic_phase'] = value
+        #               parsed_data['electronic_phase'+units_suffix] = '2pi'
+        #
+        #           if 'Total Phase' in data_lines[count+j] or 'TOTAL PHASE' in data_lines[count+j]:
+        #               value = float(data_lines[count+j].split(':')[1].split('(')[0])
+        #               mod = int(data_lines[count+j].split('(mod')[1].split(')')[0])
+        #               if mod != 2:
+        #                   raise QEOutputParsingError("Units for polarization phase not supported")
+        #               parsed_data['total_phase'] = value
+        #               parsed_data['total_phase'+units_suffix] = '2pi'
+        #
+        #           # TODO: decide a standard unit for e charge
+        #           if "C/m^2" in data_lines[count+j]:
+        #               value = float(data_lines[count+j].split('=')[1].split('(')[0])
+        #               mod = float(data_lines[count+j].split('mod')[1].split(')')[0])
+        #               units = data_lines[count+j].split(')')[1].strip()
+        #               parsed_data['polarization'] = value
+        #               parsed_data['polarization_module'] = mod
+        #               parsed_data['polarization'+units_suffix] = default_polarization_units
+        #               if 'C / m^2' not in default_polarization_units:
+        #                   raise  QEOutputParsingError("Units for polarization phase not supported")
+        #
+        #           if 'polarization direction' in data_lines[count+j]:
+        #               vec = [ float(s) for s in \
+        #                       data_lines[count+j].split('(')[1].split(')')[0].split(',') ]
+        #               parsed_data['polarization_direction'] = vec
+        #
+        #   except Exception:
+        #       warning = 'Error while parsing polarization.'
+        #       parsed_data['warnings'].append(warning)
+        
         # for later control on relaxation-dynamics convergence
         elif 'nstep' in line and '=' in line:
             max_dynamic_iterations = int(line.split()[2])
