@@ -3,18 +3,27 @@ import xmlschema
 from defusedxml import ElementTree
 import numpy as np
 
+from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.constants import ry_to_ev, hartree_to_ev, bohr_to_ang, ry_si, bohr_si
 from .versions import get_schema_filepath, get_default_schema_filepath
 
 
-class QEXMLParsingError(ValueError):
+class QEXMLParsingError(QEOutputParsingError):
     pass
 
-def parser_assert(condition, message=''):
+def parser_assert(condition, message):
     # TODO: can we use self.logger.error from here?
     # Assert is not good! Raising unhandled exceptions isn't either!
     if not condition:
         raise QEXMLParsingError(message)
+
+def parser_assert_equal(val1, val2, message):
+    if not (val1 == val2):
+        msg = "Violated assert: {} == {}".format(val1, val2)
+        if message:
+            msg += " - "
+            msg += message
+        raise QEXMLParsingError(msg)
 
 def cell_volume(a1, a2, a3):
     r"""Returns the volume of the primitive cell: :math:`|\vec a_1\cdot(\vec a_2\cross \vec a_3)|`"""
@@ -140,6 +149,7 @@ def parse_pw_xml_post_6_2(xml_file):
     # Detect presence of inversion symmetry, which is the case if a `crystal` symmetry has the attribute `inversion`
     # Note that `lattice` symmetries will always have inversion symmetry and should therefore be ignored
     symmetries = []
+    lattice_symmetries = []
     inversion_symmetry = False
 
     # TODO: parse nsym and nrot, and use them as extra validation
@@ -151,7 +161,9 @@ def parse_pw_xml_post_6_2(xml_file):
         # There are two types of symmetries, lattice and crystal. The pure inversion (-I) is always a lattice symmetry,
         # so we don't care. But if the pure inversion is also a crystal symmetry, then then the system as a whole
         # has (by definition) inversion symmetry; so we set the global property inversion_symmetry = True.
-        if symmetry['info']['$'] == 'crystal_symmetry' and symmetry['info']['@name'].lower() == 'inversion':
+        symmetry_type = symmetry['info']['$']
+        symmetry_name = symmetry['info']['@name']
+        if symmetry_type == 'crystal_symmetry' and symmetry_name.lower() == 'inversion':
             inversion_symmetry = True
 
         sym = {
@@ -160,8 +172,8 @@ def parse_pw_xml_post_6_2(xml_file):
                 symmetry['rotation']['$'][3:6],
                 symmetry['rotation']['$'][6:9],
             ],
-            'name': symmetry['info']['@name'],
-            't_rev': '0'
+            'name': symmetry_name,
+            't_rev': '0' # TODO: ??
         }
 
         try:
@@ -173,9 +185,14 @@ def parse_pw_xml_post_6_2(xml_file):
             sym['fractional_translation'] = symmetry['fractional_translation']
         except KeyError:
             pass
-
-        symmetries.append(sym)
-
+        
+        if symmetry_type == 'crystal_symmetry':
+            symmetries.append(sym)
+        elif symmetry_type == 'lattice_symmetry':
+            lattice_symmetries.append(sym)
+        else:
+            raise QEXMLParsingError("Unexpected type of symmetry: {}".format(symmetry_type))
+    
     # Band structure
     num_k_points   = xml_dictionary['output']['band_structure']['nks']
     num_electrons  = xml_dictionary['output']['band_structure']['nelec']
@@ -202,11 +219,12 @@ def parse_pw_xml_post_6_2(xml_file):
         k_points_weights.append(ks_state['k_point']['@weight'])
     # bands
     if not spins:
-        band_eigenvalues = []
-        band_occupations = []
+        # Note: 'parse_with_retrieved' still expects a list of lists
+        band_eigenvalues = [[]]
+        band_occupations = [[]]
         for ks_state in ks_states:
-            band_eigenvalues.append(ks_state['eigenvalues']['$'])
-            band_occupations.append(ks_state['occupations']['$'])
+            band_eigenvalues[0].append(ks_state['eigenvalues']['$'])
+            band_occupations[0].append(ks_state['occupations']['$'])
     else:
         band_eigenvalues = [[],[]]
         band_occupations = [[],[]]
@@ -226,19 +244,15 @@ def parse_pw_xml_post_6_2(xml_file):
     print band_eigenvalues.shape, band_occupations.shape
     # TODO remove this ^
     if not spins:
-        parser_assert(band_eigenvalues.shape == (num_k_points,num_bands),
-                      "Unexpected shape of band_eigenvalues: {}, expected :{}?"
-                      .format(band_eigenvalues.shape, (num_k_points,num_bands)))
-        parser_assert(band_occupations.shape == (num_k_points,num_bands),
-                      "Unexpected shape of band_occupations: {}, expected :{}?"
-                      .format(band_occupations.shape, (num_k_points,num_bands)))
+        parser_assert_equal(band_eigenvalues.shape, (1,num_k_points,num_bands),
+                            "Unexpected shape of band_eigenvalues")
+        parser_assert_equal(band_occupations.shape, (1,num_k_points,num_bands),
+                            "Unexpected shape of band_occupations")
     else:
-        parser_assert(band_eigenvalues.shape == (2,num_k_points,num_bands_up),
-                      "Unexpected shape of band_eigenvalues: {}, expected :{}?"
-                      .format(band_eigenvalues.shape, (2,num_k_points,num_bands_up)))
-        parser_assert(band_occupations.shape == (2,num_k_points,num_bands_up),
-                      "Unexpected shape of band_occupations: {}, expected :{}?"
-                      .format(band_occupations.shape, (2,num_k_points,num_bands_up)))
+        parser_assert_equal(band_eigenvalues.shape, (2,num_k_points,num_bands_up),
+                            "Unexpected shape of band_eigenvalues")
+        parser_assert_equal(band_occupations.shape, (2,num_k_points,num_bands_up),
+                            "Unexpected shape of band_occupations")
     
     bands_dict = {
         'occupations': band_occupations,
@@ -283,12 +297,13 @@ def parse_pw_xml_post_6_2(xml_file):
         'format_version': xml_dictionary['general_info']['xml_format']['@VERSION'],
         'creator_name': xml_dictionary['general_info']['creator']['@NAME'].lower(),
         'creator_version': xml_dictionary['general_info']['creator']['@VERSION'],
-        'monkhorst_pack_offset': xml_dictionary['input']['k_points_IBZ']['monkhorst_pack'].values()[1:4],
-        'monkhorst_pack_grid': xml_dictionary['input']['k_points_IBZ']['monkhorst_pack'].values()[4:7],
+        'monkhorst_pack_grid': [xml_dictionary['input']['k_points_IBZ']['monkhorst_pack'][attr] for attr in ['@nk1','@nk2','@nk3']],
+        'monkhorst_pack_offset': [xml_dictionary['input']['k_points_IBZ']['monkhorst_pack'][attr] for attr in ['@k1','@k2','@k3']],
         'non_colinear_calculation': non_colinear_calculation,
         'do_magnetization': do_magnetization,
         'time_reversal_flag': time_reversal,
         'symmetries': symmetries,
+        'lattice_symmetries': lattice_symmetries,
         'do_not_use_time_reversal': xml_dictionary['input']['symmetry_flags']['noinv'],
         'spin_orbit_domag': xml_dictionary['output']['magnetization']['do_magnetization'],
         'fft_grid': xml_dictionary['output']['basis_set']['fft_grid'].values(),
@@ -320,6 +335,8 @@ def parse_pw_xml_post_6_2(xml_file):
         xml_data['fermi_energy'] = xml_dictionary['output']['band_structure']['fermi_energy'] * hartree_to_ev
 
     # We should put the `non_periodic_cell_correction` string in
+    atoms = [[atom['@name'], [coord*bohr_to_ang for coord in atom['$']]] for atom in xml_dictionary['output']['atomic_structure']['atomic_positions']['atom']]
+    species = xml_dictionary['output']['atomic_species']['species']
     structure_data = {
        'atomic_positions_units': 'Angstrom',
        'direct_lattice_vectors_units': 'Angstrom',
@@ -331,19 +348,19 @@ def parse_pw_xml_post_6_2(xml_file):
             xml_dictionary['output']['basis_set']['reciprocal_lattice']['b2'],
             xml_dictionary['output']['basis_set']['reciprocal_lattice']['b3']
         ],
-        'atoms': [[atom['@name'], atom['$']] for atom in xml_dictionary['output']['atomic_structure']['atomic_positions']['atom']],
+        'atoms': atoms,
         'cell': {
             'lattice_vectors': lattice_vectors,
             'volume': cell_volume(*lattice_vectors),
-            'atoms': [[atom['@name'], atom['$']] for atom in xml_dictionary['output']['atomic_structure']['atomic_positions']['atom']],
+            'atoms': atoms,
         },
         'lattice_parameter_xml': xml_dictionary['input']['atomic_structure']['@alat'],
         'number_of_species': xml_dictionary['input']['atomic_species']['@ntyp'],
         'species': {
-            'index': [i + 1 for i,specie in enumerate(xml_dictionary['output']['atomic_species']['species'])],
-            'pseudo': [specie['pseudo_file'] for specie in xml_dictionary['output']['atomic_species']['species']],
-            'mass': [specie['mass'] for specie in xml_dictionary['output']['atomic_species']['species']],
-            'type': [specie['@name'] for specie in xml_dictionary['output']['atomic_species']['species']]
+            'index': [i + 1 for i,specie in enumerate(species)],
+            'pseudo': [specie['pseudo_file'] for specie in species],
+            'mass': [specie['mass'] for specie in species],
+            'type': [specie['@name'] for specie in species]
         },
     }
 

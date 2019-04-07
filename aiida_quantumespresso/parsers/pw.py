@@ -131,52 +131,55 @@ class PwParser(Parser):
             cell = structure_data['cell']['lattice_vectors']
             cell_T = numpy.transpose(cell)
             cell_Tinv = numpy.linalg.inv(cell_T)
-            possible_symmetries = self._get_qe_symmetry_list()
-
-            try:
-                if 'symmetries' in list(out_dict.keys()):
-                    old_symmetries = out_dict['symmetries']
-                    new_symmetries = []
-                    for this_sym in old_symmetries:
-                        name = this_sym['name'].strip()
-                        for i, this in enumerate(possible_symmetries):
-                            # Since we do an exact comparison we strip the string name from whitespace
-                            # and as soon as it is matched, we break to prevent it from matching another
-                            if name == this['name'].strip():
-                                index = i
-                                break
-                        else:
-                            index = None
-                            self.logger.error('Symmetry {} not found'.format(name))
-
-                        new_dict = {}
-                        if index is not None:
-                            # The raw parsed rotation matrix is in crystal coordinates, whereas the mapped rotation
-                            # in possible_symmetries is in cartesian coordinates. To allow them to be compared
-                            # to make sure we matched the correct rotation symmetry, we first convert the parsed matrix
-                            # to cartesian coordinates. For explanation of the method, see comment above.
-                            rotation_cryst = this_sym['rotation']
-                            rotation_cart_new = possible_symmetries[index]['matrix']
-                            rotation_cart_old = numpy.dot(cell_T, numpy.dot(rotation_cryst, cell_Tinv))
-
-                            inversion = possible_symmetries[index]['inversion']
-                            if not are_matrices_equal(rotation_cart_old, rotation_cart_new, swap_sign_matrix_b=inversion):
-                                self.logger.error('Mapped rotation matrix {} does not match the original rotation {}'
-                                    .format(rotation_cart_new, rotation_cart_old))
-                                new_dict['all_symmetries'] = this_sym
+            
+            for symmetry_type in ['symmetries','lattice_symmetries']: # crystal vs. lattice symmetries
+                if symmetry_type in out_dict.keys():
+                    try:
+                        old_symmetries = out_dict[symmetry_type]
+                        new_symmetries = []
+                        for this_sym in old_symmetries:
+                            name = this_sym['name'].strip()
+                            for i, this in enumerate(self._possible_symmetries):
+                                # Since we do an exact comparison we strip the string name from whitespace
+                                # and as soon as it is matched, we break to prevent it from matching another
+                                if name == this['name'].strip():
+                                    index = i
+                                    break
                             else:
-                                # Note: here I lose the information about equivalent ions and fractional_translation,
-                                # since I don't copy them to new_dict.
-                                new_dict['t_rev'] = this_sym['t_rev']
-                                new_dict['symmetry_number'] = index
-                        else:
-                            new_dict['all_symmetries'] = this_sym
+                                index = None
+                                self.logger.error('Symmetry {} not found'.format(name))
 
-                        new_symmetries.append(new_dict)
+                            new_dict = {}
+                            if index is not None:
+                                # The raw parsed rotation matrix is in crystal coordinates, whereas the mapped rotation
+                                # in self._possible_symmetries is in cartesian coordinates. To allow them to be compared
+                                # to make sure we matched the correct rotation symmetry, we first convert the parsed matrix
+                                # to cartesian coordinates. For explanation of the method, see comment above.
+                                rotation_cryst = this_sym['rotation']
+                                rotation_cart_new = self._possible_symmetries[index]['matrix']
+                                rotation_cart_old = numpy.dot(cell_T, numpy.dot(rotation_cryst, cell_Tinv))
 
-                    out_dict['symmetries'] = new_symmetries  # and overwrite the old one
-            except KeyError:  # no symmetries were parsed (failed case, likely)
-                self.logger.error("No symmetries were found in output")
+                                inversion = self._possible_symmetries[index]['inversion']
+                                if not are_matrices_equal(rotation_cart_old, rotation_cart_new, swap_sign_matrix_b=inversion):
+                                    self.logger.error('Mapped rotation matrix {} does not match the original rotation {}'
+                                        .format(rotation_cart_new, rotation_cart_old))
+                                    new_dict['all_symmetries'] = this_sym
+                                else:
+                                    # Note: here I lose the information about equivalent ions and fractional_translation
+                                    # since I don't copy them to new_dict (but they can be reconstructed).
+                                    new_dict['t_rev'] = this_sym['t_rev']
+                                    new_dict['symmetry_number'] = index
+                            else:
+                                new_dict['all_symmetries'] = this_sym
+
+                            new_symmetries.append(new_dict)
+
+                        out_dict[symmetry_type] = new_symmetries  # and overwrite the old one
+                    except KeyError:
+                        self.logger.error("Warning: KeyError while parsing key '{}' from raw output dictionary".format(symmetry_type))
+                else:
+                    self.logger.error("Warning: key '{}' is not present in raw output dictionary".format(symmetry_type))
+                    # TODO: this might be fine if it's only 'lattice_symmetries'
 
         # I eventually save the new structure. structure_data is unnecessary after this
         in_struc = self.node.get_incoming(link_label_filter='structure').one().node
@@ -223,16 +226,14 @@ class PwParser(Parser):
 
                 # Get the bands occupations and correct the occupations of QE:
                 # If it computes only one component, it occupies it with half number of electrons
-                try:
-                    bands_data['occupations'][1]
+                if len(bands_data['occupations'])>1:
                     the_occupations = bands_data['occupations']
-                except IndexError:
+                else:
                     the_occupations = 2. * numpy.array(bands_data['occupations'][0])
 
-                try:
-                    bands_data['bands'][1]
+                if len(bands_data['bands'])>1:
                     bands_energies = bands_data['bands']
-                except IndexError:
+                else:
                     bands_energies = bands_data['bands'][0]
 
                 # TODO: replicate this in the new parser!
