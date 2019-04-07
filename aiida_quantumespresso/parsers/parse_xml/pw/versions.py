@@ -87,6 +87,8 @@ def is_valid_post_6_2_version(xml):
     KNOWN_SCHEMA_VERSIONS = [
         'qes-1.0.xsd',
         'qes_181201.xsd',
+        'qes_190207.xsd',
+        'qes_190304.xsd',  # changes n_opt_steps from positiveInteger to integer
     ]
 
     schema_filename = get_schema_filename(xml)
