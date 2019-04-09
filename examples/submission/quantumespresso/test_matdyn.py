@@ -70,7 +70,7 @@ parentcalc = load_node(parent_id)
 
 kpoints = KpointsData()
 try:
-    structure = parentcalc.inp.parent_calc_folder.inp.retrieved.inp.parent_calc_folder.inp.remote_folder.inp.structure
+    structure = parentcalc.inputs.parent_calc_folder.inputs.retrieved.inputs.parent_calc_folder.inputs.remote_folder.inputs.structure
     kpoints.set_cell_from_structure(structure)
     kpoints.set_kpoints_path()
 except AttributeError:

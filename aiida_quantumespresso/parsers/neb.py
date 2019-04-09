@@ -50,15 +50,15 @@ class NebParser(Parser):
 
         # look for eventual flags of the parser
         try:
-            parser_opts = self._calc.inp.settings.get_dict()[self.get_parser_settings_key()]
+            parser_opts = self._calc.inputs.settings.get_dict()[self.get_parser_settings_key()]
         except (AttributeError,KeyError):
             parser_opts = {}
         
         # load the pw input dictionary            
-        pw_input_dict = self._calc.inp.pw_parameters.get_dict()
+        pw_input_dict = self._calc.inputs.pw_parameters.get_dict()
        
         # load the pw input dictionary                
-        neb_input_dict = self._calc.inp.neb_parameters.get_dict()
+        neb_input_dict = self._calc.inputs.neb_parameters.get_dict()
         
         # Check that the retrieved folder is there 
         try:

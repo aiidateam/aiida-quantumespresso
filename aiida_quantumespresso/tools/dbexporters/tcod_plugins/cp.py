@@ -24,7 +24,7 @@ class CpTcodtranslator(BaseTcodtranslator):
         """
         Returns the number of electrons.
         """
-        parameters = calc.out.output_parameters
+        parameters = calc.outputs.output_parameters
         if 'number_of_electrons' not in parameters.attrs():
             return None
         return parameters.get_attr('number_of_electrons')
@@ -34,7 +34,7 @@ class CpTcodtranslator(BaseTcodtranslator):
         """
         Returns the computation wallclock time in seconds.
         """
-        parameters = calc.out.output_parameters
+        parameters = calc.outputs.output_parameters
         if 'wall_time_seconds' not in parameters.attrs():
             return None
         return parameters.get_attr('wall_time_seconds')

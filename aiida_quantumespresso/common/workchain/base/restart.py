@@ -218,7 +218,7 @@ class BaseRestartWorkChain(WorkChain):
         for called_descendant in self.calc.called_descendants:
             if isinstance(called_descendant, orm.CalcJobNode):
                 try:
-                    called_descendant.out.remote_folder._clean()
+                    called_descendant.outputs.remote_folder._clean()
                     cleaned_calcs.append(called_descendant.pk)
                 except (IOError, OSError, KeyError):
                     pass
@@ -274,7 +274,7 @@ class BaseRestartWorkChain(WorkChain):
         restart_calc, in all other cases we do not replace the restart_calc
         """
         try:
-            outputs = calculation.out.output_parameters.get_dict()
+            outputs = calculation.outputs.output_parameters.get_dict()
             _ = outputs['warnings']
             _ = outputs['parser_warnings']
         except (AttributeError, KeyError) as exception:

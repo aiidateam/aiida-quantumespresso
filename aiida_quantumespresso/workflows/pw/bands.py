@@ -80,7 +80,7 @@ class PwBandsWorkChain(WorkChain):
             self.report('PwRelaxWorkChain failed with exit status {}'.format(workchain.exit_status))
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
         else:
-            self.ctx.current_structure = workchain.out.output_structure
+            self.ctx.current_structure = workchain.outputs.output_structure
 
     def run_seekpath(self):
         """
@@ -124,13 +124,13 @@ class PwBandsWorkChain(WorkChain):
             self.report('scf PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_SCF
         else:
-            self.ctx.current_folder = workchain.out.remote_folder
+            self.ctx.current_folder = workchain.outputs.remote_folder
 
     def run_bands(self):
         """Run the PwBaseWorkChain in bands mode along the path of high-symmetry determined by seekpath."""
 
         # Get info from SCF on number of electrons and number of spin components
-        scf_out_dict = self.ctx.workchain_scf.out.output_parameters.get_dict()
+        scf_out_dict = self.ctx.workchain_scf.outputs.output_parameters.get_dict()
         nelectron = int(scf_out_dict['number_of_electrons'])
         nspin = int(scf_out_dict['number_of_spin_components'])
         nbands = max(
@@ -174,9 +174,9 @@ class PwBandsWorkChain(WorkChain):
     def results(self):
         """Attach the desired output nodes directly as outputs of the workchain."""
         self.report('workchain succesfully completed')
-        self.out('scf_parameters', self.ctx.workchain_scf.out.output_parameters)
-        self.out('band_parameters', self.ctx.workchain_bands.out.output_parameters)
-        self.out('band_structure', self.ctx.workchain_bands.out.output_band)
+        self.out('scf_parameters', self.ctx.workchain_scf.outputs.output_parameters)
+        self.out('band_parameters', self.ctx.workchain_bands.outputs.output_parameters)
+        self.out('band_structure', self.ctx.workchain_bands.outputs.output_band)
 
     def on_terminated(self):
         """
@@ -194,7 +194,7 @@ class PwBandsWorkChain(WorkChain):
         for called_descendant in self.calc.called_descendants:
             if isinstance(called_descendant, orm.CalcJobNode):
                 try:
-                    called_descendant.out.remote_folder._clean()
+                    called_descendant.outputs.remote_folder._clean()
                     cleaned_calcs.append(called_descendant.pk)
                 except (IOError, OSError, KeyError):
                     pass

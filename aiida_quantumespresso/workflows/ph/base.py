@@ -92,7 +92,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         """
         if isinstance(self.ctx.restart_calc, PhCalculation):
             self.ctx.inputs.parameters['INPUTPH']['recover'] = True
-            self.ctx.inputs.parent_folder = self.ctx.restart_calc.out.remote_folder
+            self.ctx.inputs.parent_folder = self.ctx.restart_calc.outputs.remote_folder
 
     def _prepare_process_inputs(self, process, inputs):
         """
@@ -136,7 +136,7 @@ def _handle_fatal_error_not_converged(self, calculation):
     The calculation failed because it could not read the generated input file
     """
     if ('Phonon did not reach end of self consistency' in calculation.res.warnings):
-        alpha_mix_old = calculation.inp.parameters.get_dict()['INPUTPH'].get('alpha_mix(1)', self.defaults.alpha_mix)
+        alpha_mix_old = calculation.inputs.parameters.get_dict()['INPUTPH'].get('alpha_mix(1)', self.defaults.alpha_mix)
         alpha_mix_new = 0.9 * alpha_mix_old
         self.ctx.inputs.parameters['INPUTPH']['alpha_mix(1)'] = alpha_mix_new
         self.ctx.restart_calc = calculation
@@ -152,7 +152,7 @@ def _handle_error_premature_termination(self, calculation):
     for running out of allotted walltime
     """
     if 'QE ph run did not reach the end of the execution.' in calculation.res.parser_warnings:
-        inputs = calculation.inp.parameters.get_dict()
+        inputs = calculation.inputs.parameters.get_dict()
         settings = self.ctx.inputs.settings
 
         factor = self.defaults.delta_factor_max_seconds

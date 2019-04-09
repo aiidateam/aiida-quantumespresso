@@ -29,7 +29,7 @@ def cli(code, calculation, clean_workdir, max_num_machines, max_wallclock_second
 
     inputs = {
         'code': code,
-        'parent_folder': calculation.out.retrieved,
+        'parent_folder': calculation.outputs.retrieved,
         'options': Dict(dict=get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)),
     }
 
