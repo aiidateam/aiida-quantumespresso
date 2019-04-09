@@ -74,7 +74,7 @@ class MatdynParser(Parser):
             return successful,new_nodes_list
         
         # extract the kpoints from the input data and create the kpointsdata for bands
-        kpointsdata = self._calc.inp.kpoints
+        kpointsdata = self._calc.inputs.kpoints
         try:
             kpoints = kpointsdata.get_kpoints()
             kpointsdata_for_bands = kpointsdata.clone()

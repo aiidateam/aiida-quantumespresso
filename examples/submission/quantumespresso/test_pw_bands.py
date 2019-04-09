@@ -69,12 +69,12 @@ else:
 
 ######
 try:
-    settings_dict = calc.inp.settings.get_dict()
+    settings_dict = calc.inputs.settings.get_dict()
 except AttributeError:
     settings_dict = {}
 settings_dict.update({'PARENT_FOLDER_SYMLINK': True})
 
-new_input_dict = calc.inp.parameters.get_dict()
+new_input_dict = calc.inputs.parameters.get_dict()
 if not parentcalc.res.smearing_method:
     num_elec = parentcalc.res.number_of_electrons
     new_input_dict['SYSTEM']['nbnd'] = int(num_elec/2)+max(4,int(0.125*num_elec))
@@ -86,7 +86,7 @@ except KeyError:
     new_input_dict['ELECTRONS'] = {'diago_full_acc': True}
 
 kpoints = KpointsData()
-kpoints.set_cell(calc.inp.structure.cell, calc.inp.structure.pbc)
+kpoints.set_cell(calc.inputs.structure.cell, calc.inputs.structure.pbc)
 kpoints.set_kpoints_path(kpoint_distance = 0.05)
 
 calc.use_kpoints(kpoints)

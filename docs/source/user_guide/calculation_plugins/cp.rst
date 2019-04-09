@@ -67,7 +67,7 @@ All output nodes can be accessed with the ``calculation.out`` method.
 * output_parameters :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>`
   Contains the scalar properties. Example: energies (in eV) of the last configuration, 
   wall_time, warnings (possible error messages generated in the run).
-  ``calculation.out.output_parameters`` can also be accessed by the ``calculation.res`` shortcut.
+  ``calculation.outputs.output_parameters`` can also be accessed by the ``calculation.res`` shortcut.
 * output_trajectory_array :py:class:`TrajectoryData <aiida.orm.nodes.data.array.trajectory.TrajectoryData>`
   Contains vectorial properties, too big to be put in the dictionary, like
   energies, positions, velocities, cells, at every saved step.  

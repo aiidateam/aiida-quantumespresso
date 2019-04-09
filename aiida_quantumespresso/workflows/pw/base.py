@@ -271,7 +271,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         """
         if self.ctx.restart_calc:
             self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'restart'
-            self.ctx.inputs.parent_folder = self.ctx.restart_calc.out.remote_folder
+            self.ctx.inputs.parent_folder = self.ctx.restart_calc.outputs.remote_folder
 
     def _prepare_process_inputs(self, process, inputs):
         """
@@ -314,7 +314,7 @@ def _handle_error_diagonalization(self, calculation):
     """
     Diagonalization failed with current scheme. Try to restart from previous clean calculation with different scheme
     """
-    input_parameters = calculation.inp.parameters.get_dict()
+    input_parameters = calculation.inputs.parameters.get_dict()
     input_electrons = input_parameters.get('ELECTRONS', {})
     diagonalization = input_electrons.get('diagonalization', self.defaults['qe']['diagonalization'])
 

@@ -43,7 +43,7 @@ All output nodes can be accessed with the ``calculation.out`` method.
     orbital descriptors as keys. These keys, and their values, can be found using orbital.get_orbital_dict(). For example
     running the following commands on the output of a projwfc output for BaTiO3::
 
-        projection = my_projwfc_calc.out.projections # the projection data
+        projection = my_projwfc_calc.outputs.projections # the projection data
         this_orbital = projection.get_orbitals()[0]  # first element in a list of orbitals
         this_orbital.get_orbital_dict() # retrieves the orbital dictionary
 

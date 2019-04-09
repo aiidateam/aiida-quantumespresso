@@ -109,7 +109,7 @@ class PwRelaxWorkChain(WorkChain):
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
 
         try:
-            structure = workchain.out.output_structure
+            structure = workchain.outputs.output_structure
         except AttributeError:
             self.report('relax PwBaseWorkChain finished successful but without output structure')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
@@ -118,7 +118,7 @@ class PwRelaxWorkChain(WorkChain):
         curr_cell_volume = structure.get_cell_volume()
 
         # Set relaxed structure as input structure for next iteration
-        self.ctx.current_parent_folder = workchain.out.remote_folder
+        self.ctx.current_parent_folder = workchain.outputs.remote_folder
         self.ctx.current_structure = structure
         self.report('after iteration {} cell volume of relaxed structure is {}'
             .format(self.ctx.iteration, curr_cell_volume))
@@ -184,10 +184,10 @@ class PwRelaxWorkChain(WorkChain):
         # Get the latest workchain, which is either the workchain_scf if it ran or otherwise the last regular workchain
         try:
             workchain = self.ctx.workchain_scf
-            structure = workchain.inp.structure
+            structure = workchain.inputs.structure
         except AttributeError:
             workchain = self.ctx.workchains[-1]
-            structure = workchain.out.output_structure
+            structure = workchain.outputs.output_structure
 
         self.out_many(self.exposed_outputs(workchain, PwBaseWorkChain))
         self.out('output_structure', structure)
@@ -208,7 +208,7 @@ class PwRelaxWorkChain(WorkChain):
         for called_descendant in self.calc.called_descendants:
             if isinstance(called_descendant, orm.CalcJobNode):
                 try:
-                    called_descendant.out.remote_folder._clean()
+                    called_descendant.outputs.remote_folder._clean()
                     cleaned_calcs.append(called_descendant.pk)
                 except (IOError, OSError, KeyError):
                     pass

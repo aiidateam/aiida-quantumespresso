@@ -33,7 +33,7 @@ def cli(code, calculation, kpoints_mesh, clean_workdir, max_num_machines, max_wa
     inputs = {
         'code': code,
         'qpoints': kpoints_mesh,
-        'parent_folder': calculation.out.remote_folder,
+        'parent_folder': calculation.outputs.remote_folder,
         'parameters': Dict(dict=parameters),
         'options': Dict(dict=get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)),
     }

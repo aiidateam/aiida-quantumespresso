@@ -42,7 +42,7 @@ There are several output nodes that can be created by the plugin, according to t
 All output nodes can be accessed with the ``calculation.out`` method.
 
 * output_parameters :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>`
-  Contains warnings. ``calculation.out.output_parameters`` can also be accessed
+  Contains warnings. ``calculation.outputs.output_parameters`` can also be accessed
   by the ``calculation.res`` shortcut.
 
 * output_phonon_bands :py:class:`BandsData <aiida.orm.nodes.data.array.bands.BandsData>`

@@ -62,7 +62,7 @@ def convert_qe2aiida_structure(output_dict, input_structure=None):
 
 def parse_raw_out_basic(out_file, calc_name):
     """
-    A very simple parser for the standard out, usually aiida.out. Currently
+    A very simple parser for the standard out, usually aiida.outputs. Currently
     only parses basic warnings and the walltime.
     :param out_file: the standard out to be parsed
     :param calc_name: the name of the calculation, e.g. PROJWFC

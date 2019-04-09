@@ -78,7 +78,7 @@ All output nodes can be accessed with the ``calculation.out`` method.
 * output_parameters :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>`
   Contains the scalar properties. Example: energy (in eV), 
   total_force (modulus of the sum of forces in eV/Angstrom),
-  warnings (possible error messages generated in the run). ``calculation.out.output_parameters`` can also be
+  warnings (possible error messages generated in the run). ``calculation.outputs.output_parameters`` can also be
   accessed by the ``calculation.res`` shortcut.
 * output_array :py:class:`ArrayData <aiida.orm.nodes.data.array.ArrayData>`
   Produced in case of calculations which do not change the structure, otherwise, 
@@ -112,7 +112,7 @@ Therefore, to retrieve the version of the parser that was used to parse a comple
 
 .. code:: python
 
-    parser_version = calculation.out.output_parameters.get_dict()['parser_version']
+    parser_version = calculation.outputs.output_parameters.get_dict()['parser_version']
 
 .. note:: The convention of tying the parser version to the version of the package was introduced in ``v2.1.0``.
     Before that version, the version of the parser was statically defined and included in the key ``parser_info`` of the ``output_parameters`` node.

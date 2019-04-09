@@ -97,7 +97,7 @@ def output_test(pk, testname, skip_uuids_from_inputs=[]):
     folder = Folder(outfolder)
     to_export = [c.dbnode] + inputs
     try:
-        to_export.append(c.out.retrieved.dbnode)
+        to_export.append(c.outputs.retrieved.dbnode)
     except AttributeError:
         raise ValueError("No output retrieved node; without it, we cannot "
                          "test the parser!")
@@ -163,7 +163,7 @@ class TestParsers(AiidaTestCase):
                 calc = c
                 break
 
-        retrieved = calc.out.retrieved
+        retrieved = calc.outputs.retrieved
         retrieve_temporary_list = calc.get_attr('retrieve_temporary_list', None)
 
         if retrieve_temporary_list:

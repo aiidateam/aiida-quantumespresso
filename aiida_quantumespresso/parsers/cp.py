@@ -43,11 +43,11 @@ class CpParser(Parser):
         successful = True
 
         # get the input structure
-        input_structure = self._calc.inp.structure
+        input_structure = self._calc.inputs.structure
 
         # load the input dictionary
         # TODO: pass this input_dict to the parser. It might need it.
-        input_dict = self._calc.inp.parameters.get_dict()
+        input_dict = self._calc.inputs.parameters.get_dict()
 
         # Check that the retrieved folder is there
         try:

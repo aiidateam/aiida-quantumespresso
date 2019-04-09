@@ -113,7 +113,7 @@ def _create_restart_pw_cp(parent_calc, force_restart, parent_folder_symlink,
     if use_output_structure:
         # use OUTPUT structure if available
         try:
-            builder.structure = parent_calc.out.output_structure
+            builder.structure = parent_calc.outputs.output_structure
         except AttributeError:
             builder.structure = inputs.get_node_by_label(parent_calc.get_linkname('structure'))
     else:

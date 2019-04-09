@@ -44,17 +44,17 @@ class BasicpwParser(Parser):
         successful = True
 
         # retrieve the input parameter
-        calc_input = self._calc.inp.parameters
+        calc_input = self._calc.inputs.parameters
 
         # look for eventual flags of the parser
         try:
-            parser_opts = self._calc.inp.settings.get_dict()[self.get_parser_settings_key()]
+            parser_opts = self._calc.inputs.settings.get_dict()[self.get_parser_settings_key()]
         except (AttributeError, KeyError):
             parser_opts = {}
 
         # load the input dictionary
         # TODO: pass this input_dict to the parser. It might need it.
-        input_dict = self._calc.inp.parameters.get_dict()
+        input_dict = self._calc.inputs.parameters.get_dict()
 
         # Check that the retrieved folder is there
         try:
@@ -131,7 +131,7 @@ class BasicpwParser(Parser):
             kpoints_from_output.set_cell_from_structure(struc)
             kpoints_from_output.set_kpoints(k_points_list, cartesian=True,
                                             weights=k_points_weights_list)
-            kpoints_from_input = self._calc.inp.kpoints
+            kpoints_from_input = self._calc.inputs.kpoints
             try:
                 kpoints_from_input.get_kpoints()
             except AttributeError:

@@ -49,7 +49,7 @@ class PwTcodtranslator(BaseTcodtranslator):
         """
         Returns the energy of defined type in eV.
         """
-        parameters = calc.out.output_parameters
+        parameters = calc.outputs.output_parameters
         if energy_type not in parameters.attrs():
             return None
         if energy_type + '_units' not in parameters.attrs():
@@ -70,7 +70,7 @@ class PwTcodtranslator(BaseTcodtranslator):
         axes.
         """
         try:
-            array = calc.out.output_array
+            array = calc.outputs.output_array
             return [x[index] for x in array.get_array('forces').tolist()[-1]]
         except KeyError:
             return None
@@ -82,7 +82,7 @@ class PwTcodtranslator(BaseTcodtranslator):
         vector of reciprocal lattice.
         """
         try:
-            array,_ = calc.inp.kpoints.get_kpoints_mesh()
+            array,_ = calc.inputs.kpoints.get_kpoints_mesh()
             return array
         except AttributeError:
             return None
@@ -96,7 +96,7 @@ class PwTcodtranslator(BaseTcodtranslator):
         vector of reciprocal lattice.
         """
         try:
-            _,array = calc.inp.kpoints.get_kpoints_mesh()
+            _,array = calc.inputs.kpoints.get_kpoints_mesh()
             return array
         except AttributeError:
             return None
@@ -112,7 +112,7 @@ class PwTcodtranslator(BaseTcodtranslator):
         value 'gaussian' is returned, as specified in
         http://www.quantum-espresso.org/wp-content/uploads/Doc/INPUT_PW.html
         """
-        parameters = calc.inp.parameters
+        parameters = calc.inputs.parameters
         smearing = None
         try:
             smearing = parameters.get_dict()['SYSTEM']['smearing']
@@ -173,7 +173,7 @@ class PwTcodtranslator(BaseTcodtranslator):
         """
         Returns the number of electrons.
         """
-        parameters = calc.out.output_parameters
+        parameters = calc.outputs.output_parameters
         if 'number_of_electrons' not in parameters.attrs():
             return None
         return parameters.get_attr('number_of_electrons')
@@ -183,7 +183,7 @@ class PwTcodtranslator(BaseTcodtranslator):
         """
         Returns the computation wallclock time in seconds.
         """
-        parameters = calc.out.output_parameters
+        parameters = calc.outputs.output_parameters
         if 'wall_time_seconds' not in parameters.attrs():
             return None
         return parameters.get_attr('wall_time_seconds')
@@ -329,7 +329,7 @@ class PwTcodtranslator(BaseTcodtranslator):
         Returns kinetic energy cutoff for wavefunctions in eV.
         """
         from aiida.common.constants import ry_to_ev
-        parameters = calc.inp.parameters
+        parameters = calc.inputs.parameters
         ecutwfc = None
         try:
             ecutwfc = parameters.get_dict()['SYSTEM']['ecutwfc']
@@ -349,7 +349,7 @@ class PwTcodtranslator(BaseTcodtranslator):
             http://www.quantum-espresso.org/wp-content/uploads/Doc/INPUT_PW.html
         """
         from aiida.common.constants import ry_to_ev
-        parameters = calc.inp.parameters
+        parameters = calc.inputs.parameters
         try:
             return parameters.get_dict()['SYSTEM']['ecutrho'] * ry_to_ev
         except KeyError:
@@ -370,7 +370,7 @@ class PwTcodtranslator(BaseTcodtranslator):
             http://www.quantum-espresso.org/wp-content/uploads/Doc/INPUT_PW.html
         """
         from aiida.common.constants import ry_to_ev
-        parameters = calc.inp.parameters
+        parameters = calc.inputs.parameters
         try:
             return parameters.get_dict()['SYSTEM']['ecutfock'] * ry_to_ev
         except KeyError:

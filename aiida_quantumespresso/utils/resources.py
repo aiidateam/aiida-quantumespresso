@@ -130,8 +130,8 @@ def get_pw_parallelization_parameters(calculation, max_num_machines, target_time
 
     default_num_mpiprocs_per_machine = calculation.get_computer().get_default_mpiprocs_per_machine()
 
-    input_parameters = calculation.inp.parameters.get_dict()
-    output_parameters = calculation.out.output_parameters.get_dict()
+    input_parameters = calculation.inputs.parameters.get_dict()
+    output_parameters = calculation.outputs.output_parameters.get_dict()
     electron_settings = input_parameters.get('ELECTRONS', {})
 
     nspin = output_parameters['number_of_spin_components']

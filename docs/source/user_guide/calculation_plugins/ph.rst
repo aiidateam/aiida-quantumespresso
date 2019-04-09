@@ -70,7 +70,7 @@ All output nodes can be accessed with the ``calculation.out`` method.
 * output_parameters :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>`
   Contains small properties. Example: dielectric constant, 
   warnings (possible error messages generated in the run).
-  ``calculation.out.output_parameters`` can also be accessed by the ``calculation.res`` shortcut.
+  ``calculation.outputs.output_parameters`` can also be accessed by the ``calculation.res`` shortcut.
   Furthermore, various ``dynamical_matrix_*`` keys are created, each is a dictionary containing
   the keys ``q_point`` and ``frequencies``.
 
