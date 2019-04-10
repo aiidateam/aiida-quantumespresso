@@ -157,7 +157,13 @@ def spin_dependent_subparcer(out_info_dict):
             # grabs band energy
             for j in range (i*od["num_bands"],(i+1)*od["num_bands"],1):
                 out_ind = od["e_lines"][j]
-                val = out_file[out_ind].split()[4]
+                try:
+                    # post ~6.3 output format "e ="
+                    val = out_file[out_ind].split()[2]
+                    float(val)
+                except ValueError:
+                    # pre ~6.3 output format? "==== e("
+                    val = out_file[out_ind].split()[4]
                 bands[i%od["k_states"]][j%od["num_bands"]] = val
                 #subloop grabs pdos
                 wave_fraction = []
@@ -395,7 +401,9 @@ class ProjwfcParser(Parser):
         for i in range(len(out_file)):
             if "k =" in out_file[i]:
                 out_info_dict["k_lines"].append(copy.deepcopy(i))
-            if "==== e(" in out_file[i]:
+            if "==== e(" in out_file[i] or out_file[i].strip().startswith("e ="):
+            # The energy format in output was changed around QE6.3
+            # this check supports old and new format
                 out_info_dict["e_lines"].append(i)
             if "|psi|^2" in out_file[i]:
                 out_info_dict["psi_lines"].append(i)
