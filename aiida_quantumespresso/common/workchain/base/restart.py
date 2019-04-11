@@ -5,7 +5,7 @@ import six
 from six.moves import map
 
 from aiida import orm
-from aiida.common import LoadingPluginFailed, MissingPluginError
+from aiida.common import EntryPointError
 from aiida.common.lang import override
 from aiida.engine import CalcJob, WorkChain, ToContext, append_
 
@@ -79,7 +79,7 @@ class BaseRestartWorkChain(WorkChain):
                     get_plugin(self._error_handler_entry_point, plugin)
                     self.logger.info("loaded the '{}' entry point for the '{}' error handlers category"
                         .format(plugin, self._error_handler_entry_point, plugin))
-                except (LoadingPluginFailed, MissingPluginError):
+                except EntryPointError:
                     self.logger.warning("failed to load the '{}' entry point for the '{}' error handlers"
                         .format(plugin, self._error_handler_entry_point))
 

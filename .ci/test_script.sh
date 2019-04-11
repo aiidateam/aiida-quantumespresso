@@ -5,12 +5,12 @@ set -ev
 
 case "$TEST_TYPE" in
     docs)
-        # Compile the docs (HTML format); -W to convert warnings in errors, 
+        # Compile the docs (HTML format); -W to convert warnings in errors,
         # -n to warn about all missing references
         SPHINXOPTS="-nW" make -C docs html
         ;;
     tests)
-        verdi -p test_$TEST_AIIDA_BACKEND devel tests db.quantumespresso
+        pytest -v ${TRAVIS_BUILD_DIR}/tests
 
         # Run the daemon tests using docker
         # verdi -p $TEST_AIIDA_BACKEND run ${TRAVIS_BUILD_DIR}/.ci/test_pw_with_daemon.py

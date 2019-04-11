@@ -37,13 +37,6 @@
             "quantumespresso.q2r = aiida_quantumespresso.parsers.q2r:Q2rParser",
             "quantumespresso.pw2wannier90 = aiida_quantumespresso.parsers.pw2wannier90:Pw2wannier90Parser"
         ],
-        "aiida.tests": [
-            "quantumespresso.parsers = tests.parsers.parsers",
-            "quantumespresso.pw = tests.parsers.quantumespressopw",
-            "quantumespresso.pw_input = tests.parsers.pwinputparser",
-            "quantumespresso.pw_immigrant = tests.parsers.quantumespressopwimmigrant",
-            "quantumespresso.tcodexporter = tests.parsers.tcodexporter"
-        ],
         "aiida.tools.dbexporters.tcod_plugins": [
             "quantumespresso.cp = aiida_quantumespresso.tools.dbexporters.tcod_plugins.cp:CpTcodtranslator",
             "quantumespresso.pw = aiida_quantumespresso.tools.dbexporters.tcod_plugins.pw:PwTcodtranslator"
@@ -75,6 +68,8 @@
             "pylint==1.9.4; python_version<'3.0'",
             "pylint==2.2.2; python_version>='3.0'",
             "astroid==2.1.0; python_version>='3.0'",
+            "pgtest==1.2.0",
+            "pytest==3.6.3",
             "yapf==0.26.0"
         ],
         "docs": [
