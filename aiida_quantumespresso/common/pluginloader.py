@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-from aiida.common import LoadingPluginFailed, MissingPluginError
+from aiida.common import EntryPointError
 
 try:
     from reentry import manager as epm
@@ -26,11 +26,11 @@ def get_plugin(category, name):
     eps = [ep for ep in epm.iter_entry_points(group=category) if ep.name == name]
 
     if not eps:
-        raise MissingPluginError(
+        raise EntryPointError(
             "No plugin named '{}' found for '{}'".format(name, category))
 
     if len(eps) > 1:
-        raise MissingPluginError(
+        raise EntryPointError(
             "Multiple plugins found for '{}' in '{}'".format(name, category))
 
     entrypoint = eps[0]
@@ -39,7 +39,7 @@ def get_plugin(category, name):
         plugin = entrypoint.load()
     except ImportError:
         import traceback
-        raise LoadingPluginFailed("Loading the plugin '{}' failed:\n{}"
+        raise EntryPointError("Loading the plugin '{}' failed:\n{}"
             .format(name, traceback.format_exc()))
 
     return plugin
