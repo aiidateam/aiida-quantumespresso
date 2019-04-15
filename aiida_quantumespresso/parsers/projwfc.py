@@ -7,9 +7,9 @@ import numpy as np
 from aiida.parsers.parser import Parser
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers import parse_raw_out_basic
-from aiida.common.exceptions import InvalidOperation
+from aiida.common import InvalidOperation
 from aiida.orm.nodes.data.dict import Dict
-from aiida.common.orbital import OrbitalFactory
+from aiida.tools.data.orbital import OrbitalFactory
 from aiida_quantumespresso.calculations.projwfc import ProjwfcCalculation
 from aiida.orm.nodes.data.array.projection import ProjectionData
 from aiida.orm.nodes.data.array.bands import BandsData
@@ -294,7 +294,7 @@ class ProjwfcParser(Parser):
         self._calc = calculation
         super(ProjwfcParser, self).__init__(calculation)
 
-    def parse_with_retrieved(self, retrieved):
+    def parse(self, **kwargs):
             """
             Parses the datafolder, stores results.
             Retrieves projwfc output, and some basic information from the

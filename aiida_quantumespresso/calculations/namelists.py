@@ -6,21 +6,21 @@ afterwards).
 """
 from __future__ import absolute_import
 import os
-from aiida.common.exceptions import InputValidationError
-from aiida.common.datastructures import CalcInfo, CodeInfo
+from aiida.common import InputValidationError
+from aiida.common import CalcInfo, CodeInfo
 from aiida.common.lang import classproperty
 from aiida.orm.nodes.data.dict import Dict 
 from aiida.orm.nodes.data.remote import RemoteData 
 from aiida.orm.nodes.data.folder import FolderData 
 from aiida.orm.nodes.data.singlefile import SinglefileData
-from aiida.orm.calculation.job import JobCalculation
-from aiida.common.datastructures import CodeInfo
+from aiida.engine import CalcJob
+from aiida.common import CodeInfo
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 import six
     
 
-class NamelistsCalculation(JobCalculation):   
+class NamelistsCalculation(CalcJob):   
     """
     Generic plugin to manage simple post-processing tools of the
     Quantum ESPRESSO distribution (http://www.quantum-espresso.org/)
@@ -98,7 +98,7 @@ class NamelistsCalculation(JobCalculation):
         """
         return ""
     
-    def _prepare_for_submission(self,tempfolder, inputdict):        
+    def prepare_for_submission(self,tempfolder, inputdict):        
         """
         This is the routine to be called when you want to create
         the input files and related stuff with a plugin.

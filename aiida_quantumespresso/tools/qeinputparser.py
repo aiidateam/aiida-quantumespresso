@@ -11,10 +11,10 @@ from __future__ import print_function
 import re
 import os
 import numpy as np
-from aiida.common.exceptions import ParsingError
+from aiida.common import ParsingError
 from aiida.orm.nodes.data.structure import StructureData, _valid_symbols
 from aiida.common.constants import bohr_to_ang
-from aiida.common.exceptions import InputValidationError
+from aiida.common import InputValidationError
 from aiida_quantumespresso.calculations import _uppercase_dict
 from aiida_quantumespresso.parsers.constants import bohr_to_ang
 import six

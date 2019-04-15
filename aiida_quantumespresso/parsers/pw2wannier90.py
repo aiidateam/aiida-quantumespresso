@@ -8,13 +8,13 @@ class Pw2wannier90Parser(Parser):
     """
     This class is the implementation of the Parser class for pw2wannier90.x
     """
-    def parse_with_retrieved(self,retrieved):
+    def parse(self, **kwargs):
         """      
         Parses the datafolder, stores results.
         This parser for this simple code does simply store in the DB a node
         representing the file of forces in real space
         """
-        from aiida.common.exceptions import InvalidOperation
+        from aiida.common import InvalidOperation
 
         # suppose at the start that the job is successful
         successful = True

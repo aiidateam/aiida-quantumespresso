@@ -6,7 +6,7 @@ from .qeinputparser import (
         QeInputFile,parse_namelists,parse_atomic_positions,
         parse_atomic_species,parse_cell_parameters, RE_FLAGS )
 from aiida.orm.nodes.data.array.kpoints import KpointsData
-from aiida.common.exceptions import ParsingError
+from aiida.common import ParsingError
 
 
 from .qeinputparser import (

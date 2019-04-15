@@ -32,7 +32,7 @@ class NebParser(Parser):
         super(NebParser, self).__init__(calc)
         
         
-    def parse_with_retrieved(self, retrieved):
+    def parse(self, **kwargs):
         """
         Parses the calculation-output datafolder, and stores
         results.
@@ -41,7 +41,7 @@ class NebParser(Parser):
             are the link names of retrieved nodes, and the values are the
             nodes.
         """
-        from aiida.common.exceptions import InvalidOperation
+        from aiida.common import InvalidOperation
         from aiida.orm.nodes.data.array.trajectory import TrajectoryData
         from aiida.orm.nodes.data.array import ArrayData
         import os 

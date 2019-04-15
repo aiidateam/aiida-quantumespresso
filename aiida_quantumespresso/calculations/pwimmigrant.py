@@ -11,7 +11,7 @@ from aiida.orm.nodes.data.remote import RemoteData
 from aiida.orm.nodes.data.dict import Dict
 from aiida.orm.nodes.data.upf import UpfData
 from aiida.common.folders import SandboxFolder
-from aiida.common.exceptions import (FeatureNotAvailable, InvalidOperation,
+from aiida.common import (FeatureNotAvailable, InvalidOperation,
                                      InputValidationError)
 from aiida.common.links import LinkType
 from aiida_quantumespresso.tools import pwinputparser

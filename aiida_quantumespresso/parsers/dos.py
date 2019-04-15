@@ -4,7 +4,7 @@ import numpy as np
 from aiida.parsers.parser import Parser
 from aiida.orm.nodes.data.array.xy import XyData
 from aiida.orm.nodes.data.dict import Dict
-from aiida.common.exceptions import InvalidOperation
+from aiida.common import InvalidOperation
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers import parse_raw_out_basic
 from aiida_quantumespresso.calculations.dos import DosCalculation
@@ -41,7 +41,7 @@ class DosParser(Parser):
         """
         return self._units_name
 
-    def parse_with_retrieved(self, retrieved):
+    def parse(self, **kwargs):
         """
         Parses the datafolder, stores results.
         Retrieves dos output, and some basic information from the

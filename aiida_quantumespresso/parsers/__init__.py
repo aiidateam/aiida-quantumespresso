@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-from aiida.common.exceptions import OutputParsingError
+from aiida.common import OutputParsingError
 import aiida_quantumespresso
 from six.moves import range
 

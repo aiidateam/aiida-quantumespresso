@@ -18,12 +18,12 @@ TODO: all a lot of logger.debug stuff
 from __future__ import absolute_import
 import os
 
-from aiida.orm.calculation.job import JobCalculation
+from aiida.engine import CalcJob
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 from aiida.common.lang import classproperty
 
 
-class CpCalculation(BasePwCpInputGenerator, JobCalculation):
+class CpCalculation(BasePwCpInputGenerator, CalcJob):
     """
     Car-Parrinello molecular dynamics code (cp.x) of the
     Quantum ESPRESSO distribution.

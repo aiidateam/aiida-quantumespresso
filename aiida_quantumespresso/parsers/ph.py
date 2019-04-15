@@ -24,12 +24,12 @@ class PhParser(Parser):
         
         super(PhParser, self).__init__(calculation)
         
-    def parse_with_retrieved(self,retrieved):
+    def parse(self, **kwargs):
         """
         Receives in input a dictionary of retrieved nodes.
         Does all the logic here.
         """       
-        from aiida.common.exceptions import InvalidOperation
+        from aiida.common import InvalidOperation
         import os
         
         successful = True

@@ -5,7 +5,7 @@ import xml.dom.minidom
 import os
 import difflib
 import copy
-from aiida.common.exceptions import InputValidationError, InternalError
+from aiida.common import InputValidationError, InternalError
 # Can also try to use LooseVersion instead, if more complicated things are 
 # required, e.g. with strings. But be careful, check if the behavior in 
 # this case is the intended one.

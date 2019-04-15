@@ -63,12 +63,12 @@ class Pw2wannier90Calculation(NamelistsCalculation):
         self.use_parent_folder(remote_folder)
 
 
-    def _prepare_for_submission(self, tempfolder, inputdict):
+    def prepare_for_submission(self, tempfolder, inputdict):
       """
       Create input, but also first perform additional operation like copying
       the input .nnkp
       """
-      from aiida.common.exceptions import InputValidationError
+      from aiida.common import InputValidationError
       try:
           nnkp_file = inputdict.pop(self.get_linkname('nnkp_file'))
       except KeyError:
@@ -78,7 +78,7 @@ class Pw2wannier90Calculation(NamelistsCalculation):
       ##
 
       # Run the global namelist logic
-      calcinfo = super(Pw2wannier90Calculation, self)._prepare_for_submission(tempfolder, inputdict)
+      calcinfo = super(Pw2wannier90Calculation, self).prepare_for_submission(tempfolder, inputdict)
 
       # Put the nnkp in the folder, with the correct filename
       calcinfo.local_copy_list.append(

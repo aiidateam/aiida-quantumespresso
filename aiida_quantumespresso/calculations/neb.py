@@ -5,8 +5,8 @@ Plugin to create a Quantum Espresso neb.x input file.
 from __future__ import absolute_import
 import os
 import copy
-from aiida.common.exceptions import InputValidationError
-from aiida.common.datastructures import CalcInfo, CodeInfo
+from aiida.common import InputValidationError
+from aiida.common import CalcInfo, CodeInfo
 from aiida.common.links import LinkType
 from aiida.common.lang import classproperty
 from aiida.orm.nodes.data.structure import StructureData
@@ -15,14 +15,14 @@ from aiida.orm.nodes.data.dict import Dict
 from aiida.orm.nodes.data.singlefile import SinglefileData
 from aiida.orm.nodes.data.upf import UpfData
 from aiida.orm.nodes.data.remote import RemoteData 
-from aiida.orm.calculation.job import JobCalculation
+from aiida.engine import CalcJob
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 from aiida_quantumespresso.calculations import _lowercase_dict,_uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 import six
 
 
-class NebCalculation(BasePwCpInputGenerator, JobCalculation):
+class NebCalculation(BasePwCpInputGenerator, CalcJob):
     """
     Nudged Elastic Band code (neb.x) of Quantum ESPRESSO distribution
     For more information, refer to http://www.quantum-espresso.org/
@@ -214,7 +214,7 @@ class NebCalculation(BasePwCpInputGenerator, JobCalculation):
 
         return inputfile
 
-    def _prepare_for_submission(self,tempfolder,inputdict):
+    def prepare_for_submission(self,tempfolder,inputdict):
         """
         This is the routine to be called when you want to create
         the input files and related stuff with a plugin.

@@ -7,7 +7,7 @@ from aiida.orm.nodes.data.dict import Dict
 from aiida.orm.nodes.data.folder import FolderData
 from aiida.parsers.parser import Parser  # , ParserParamManager
 from aiida_quantumespresso.parsers import convert_qe2aiida_structure
-from aiida.common.exceptions import UniquenessError
+from aiida.common import UniquenessError
 from aiida.orm.nodes.data.array import ArrayData
 from aiida.orm.nodes.data.array.kpoints import KpointsData
 import six
@@ -32,12 +32,12 @@ class BasicpwParser(Parser):
 
         super(BasicpwParser, self).__init__(calc)
 
-    def parse_with_retrieved(self, retrieved):
+    def parse(self, **kwargs):
         """
         Receives in input a dictionary of retrieved nodes.
         Does all the logic here.
         """
-        from aiida.common.exceptions import InvalidOperation
+        from aiida.common import InvalidOperation
         import os
         import glob
 

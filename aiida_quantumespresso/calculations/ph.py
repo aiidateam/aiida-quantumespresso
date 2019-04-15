@@ -7,11 +7,11 @@ import os
 import numpy
 from aiida.common.lang import classproperty
 from aiida.common import exceptions
-from aiida.common.datastructures import CalcInfo, CodeInfo
+from aiida.common import CalcInfo, CodeInfo
 from aiida.orm.nodes.data.remote import RemoteData
 from aiida.orm.nodes.data.dict import Dict
 from aiida.orm.nodes.data.array.kpoints import KpointsData
-from aiida.orm.calculation.job import JobCalculation
+from aiida.engine import CalcJob
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
@@ -23,7 +23,7 @@ import six
 _default_symlink_usage = False
 
 
-class PhCalculation(JobCalculation):
+class PhCalculation(CalcJob):
     """
     Phonon code (ph.x) of the Quantum ESPRESSO distribution.
     For more information, refer to http://www.quantum-espresso.org/
@@ -118,7 +118,7 @@ class PhCalculation(JobCalculation):
             })
         return retdict
     
-    def _prepare_for_submission(self,tempfolder,inputdict):        
+    def prepare_for_submission(self,tempfolder,inputdict):        
         """
         This is the routine to be called when you want to create
         the input files and related stuff with a plugin.

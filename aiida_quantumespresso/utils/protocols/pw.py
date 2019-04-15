@@ -169,7 +169,7 @@ class ProtocolManager(object):
               pseudos for which one (or more) pseudos were found with the same MD5, but associated to different elements
               (listed in `list-of-elements-found`)
         """
-        from aiida.orm import QueryBuilder, DataFactory
+        from aiida.plugins import QueryBuilder, DataFactory
         UpfData = DataFactory('upf')
 
         if modifier_name is None:
