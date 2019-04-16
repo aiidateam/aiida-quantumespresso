@@ -140,7 +140,7 @@ calc.set_option('max_wallclock_seconds', 30 * 60)  # 30 min
 # number_cpus_per_machine), change for SGE-like schedulers
 calc.set_option('resources', {"num_machines": 1})
 if run_in_serial_mode:
-    calc.set_option('withmpi', (False)
+    calc.set_option('withmpi', False)
 ## Otherwise, to specify a given # of cpus per machine, uncomment the following:
 # calc.set_option('resources', {"num_machines": 1, "num_mpiprocs_per_machine": 8})
 
