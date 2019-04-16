@@ -188,11 +188,11 @@ def pw_input_helper(input_params, structure,
     # TODO: possibly add here above also restart_mode?
 
     # List of the keywords that must ALWAYS appear in the input
-    compulsory_kws = set([i.lower() for i in 
+    compulsory_kws = {i.lower() for i in
                    ["calculation",
                     "ecutwfc",
                      ]
-                   ])
+                   }
     
     # ===================== PARSING OF THE XML DEFINITION FILE ===============    
     module_dir = os.path.dirname(__file__)

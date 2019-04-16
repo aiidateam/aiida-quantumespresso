@@ -375,7 +375,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         local_copy_pseudo_list = set(local_copy_pseudo_list)
         # We check that two different pseudopotentials are not copied 
         # with the same name (otherwise the first is overwritten)
-        if len(set([ pseudoname for local_path, pseudoname in local_copy_pseudo_list])) < len(local_copy_pseudo_list):
+        if len({ pseudoname for local_path, pseudoname in local_copy_pseudo_list}) < len(local_copy_pseudo_list):
             raise InputValidationError("Same filename for two different pseudopotentials")
 
         local_copy_list += local_copy_pseudo_list 
