@@ -141,7 +141,7 @@ def parse_raw_output(out_file, input_dict, parser_opts, logger, xml_file=None, d
     if any([x in out_data['warnings'] for x in critical_messages]):
         job_successful = False
 
-    for key in out_data.keys():
+    for key in list(out_data.keys()):
         if key in list(xml_data.keys()):
             if key == 'fermi_energy' or key == 'fermi_energy_units': # an exception for the (only?) key that may be found on both
                 del out_data[key]
