@@ -17,10 +17,12 @@ TODO: all a lot of logger.debug stuff
 """
 from __future__ import absolute_import
 from __future__ import print_function
+
 import os
 
+import six
+
 from aiida.common.lang import classproperty
-from aiida.engine import CalcJob
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 
 
@@ -34,9 +36,43 @@ class CpCalculation(BasePwCpInputGenerator):
     _CP_READ_UNIT_NUMBER = 50
     _CP_WRITE_UNIT_NUMBER = 51
 
-    def __init__(self, *args, **kwargs):
-        print('Ok at least I start here.')
-        super(CpCalculation, self).__init__(*args, **kwargs)
+    _automatic_namelists = {
+        'scf': ['CONTROL', 'SYSTEM', 'ELECTRONS'],
+        'nscf': ['CONTROL', 'SYSTEM', 'ELECTRONS'],
+        'relax': ['CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS'],
+        'cp': ['CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS'],
+        'vc-cp': ['CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', 'CELL'],
+        'vc-relax': ['CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', 'CELL'],
+        'vc-wf': ['CONTROL', 'SYSTEM', 'ELECTRONS', 'WANNIER'],
+    }
+
+    _blocked_keywords = [
+        ('CONTROL', 'pseudo_dir'),  # set later
+        ('CONTROL', 'outdir'),  # set later
+        ('CONTROL', 'prefix'),  # set later
+        ('SYSTEM', 'ibrav'),  # set later
+        ('SYSTEM', 'celldm'),
+        ('SYSTEM', 'nat'),  # set later
+        ('SYSTEM', 'ntyp'),  # set later
+        ('SYSTEM', 'a'),
+        ('SYSTEM', 'b'),
+        ('SYSTEM', 'c'),
+        ('SYSTEM', 'cosab'),
+        ('SYSTEM', 'cosac'),
+        ('SYSTEM', 'cosbc'),
+        ('CONTROL', 'ndr', _CP_READ_UNIT_NUMBER),
+        ('CONTROL', 'ndw', _CP_WRITE_UNIT_NUMBER),
+    ]
+
+    @classmethod
+    def define(cls, spec):
+        super(CpCalculation, cls).define(spec)
+        spec.input(
+            'metadata.options.input_filename', valid_type=six.string_types, default=cls._INPUT_FILE_NAME, non_db=True)
+        spec.input(
+            'metadata.options.output_filename', valid_type=six.string_types, default=cls._OUTPUT_FILE_NAME, non_db=True)
+        spec.input(
+            'metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.pw', non_db=True)
 
     @classproperty
     def xml_filepaths(cls):
@@ -55,39 +91,7 @@ class CpCalculation(BasePwCpInputGenerator):
 
         self._FILE_XML_PRINT_COUNTER = os.path.join(
             BasePwCpInputGenerator._OUTPUT_SUBFOLDER, '{}_{}.save'.format(
-                BasePwCpInputGenerator._PREFIX, _CP_WRITE_UNIT_NUMBER), self._FILE_XML_PRINT_COUNTER_BASENAME)
-
-        # Default output parser provided by AiiDA
-        self._default_parser = 'quantumespresso.cp'
-
-        self._automatic_namelists = {
-            'scf': ['CONTROL', 'SYSTEM', 'ELECTRONS'],
-            'nscf': ['CONTROL', 'SYSTEM', 'ELECTRONS'],
-            'relax': ['CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS'],
-            'cp': ['CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS'],
-            'vc-cp': ['CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', 'CELL'],
-            'vc-relax': ['CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', 'CELL'],
-            'vc-wf': ['CONTROL', 'SYSTEM', 'ELECTRONS', 'WANNIER'],
-        }
-
-        # Keywords that cannot be set
-        self._blocked_keywords = [
-            ('CONTROL', 'pseudo_dir'),  # set later
-            ('CONTROL', 'outdir'),  # set later
-            ('CONTROL', 'prefix'),  # set later
-            ('SYSTEM', 'ibrav'),  # set later
-            ('SYSTEM', 'celldm'),
-            ('SYSTEM', 'nat'),  # set later
-            ('SYSTEM', 'ntyp'),  # set later
-            ('SYSTEM', 'a'),
-            ('SYSTEM', 'b'),
-            ('SYSTEM', 'c'),
-            ('SYSTEM', 'cosab'),
-            ('SYSTEM', 'cosac'),
-            ('SYSTEM', 'cosbc'),
-            ('CONTROL', 'ndr', self._CP_READ_UNIT_NUMBER),
-            ('CONTROL', 'ndw', self._CP_WRITE_UNIT_NUMBER),
-        ]
+                BasePwCpInputGenerator._PREFIX, self._CP_WRITE_UNIT_NUMBER), self._FILE_XML_PRINT_COUNTER_BASENAME)
 
         # in restarts, it will copy from the parent the following
         self._restart_copy_from = os.path.join(
