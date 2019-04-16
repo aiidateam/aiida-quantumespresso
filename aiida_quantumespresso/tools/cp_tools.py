@@ -372,7 +372,7 @@ def import_table(fname):
     
     data = []
     
-    while 1:
+    while True:
         
         ## Buffer read
         lines = f.readlines(1000)
@@ -398,7 +398,7 @@ def import_array(fname, mul=1.0):
     pos_all = []
     pos_this = []
     
-    while 1:
+    while True:
         
         ## Buffer read
         lines = f.readlines(1000)
