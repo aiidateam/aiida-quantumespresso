@@ -9,6 +9,7 @@
 # For further information please visit http://www.aiida.net               #
 ###########################################################################
 from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import os
 
@@ -30,16 +31,16 @@ try:
     else:
         raise IndexError
 except IndexError:
-    print >> sys.stderr, ("The first parameter can only be either "
-                          "--send or --dont-send")
+    print(("The first parameter can only be either "
+                          "--send or --dont-send"), file=sys.stderr)
     sys.exit(1)
 
 try:
     parent_id = sys.argv[2]
     codename = sys.argv[3]
 except IndexError:
-    print >> sys.stderr, ("Must provide as further parameters the parent ID and "
-                     "a phonon codename")
+    print(("Must provide as further parameters the parent ID and "
+                     "a phonon codename"), file=sys.stderr)
     sys.exit(1)
 
 queue = None
@@ -90,16 +91,16 @@ if settings is not None:
 
 if submit_test:
     subfolder, script_filename = calc.submit_test()
-    print "Test_submit for calculation (uuid='{}')".format(
-        calc.uuid)
-    print "Submit file in {}".format(os.path.join(
+    print("Test_submit for calculation (uuid='{}')".format(
+        calc.uuid))
+    print("Submit file in {}".format(os.path.join(
         os.path.relpath(subfolder.abspath),
         script_filename
-        ))
+        )))
 else:
     calc.store_all()
-    print "created calculation; calc=Calculation(uuid='{}') # ID={}".format(
-        calc.uuid,calc.dbnode.pk)
+    print("created calculation; calc=Calculation(uuid='{}') # ID={}".format(
+        calc.uuid,calc.dbnode.pk))
     calc.submit()
-    print "submitted calculation; calc=Calculation(uuid='{}') # ID={}".format(
-        calc.uuid,calc.dbnode.pk)
+    print("submitted calculation; calc=Calculation(uuid='{}') # ID={}".format(
+        calc.uuid,calc.dbnode.pk))
