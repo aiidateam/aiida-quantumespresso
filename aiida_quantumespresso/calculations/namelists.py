@@ -98,7 +98,7 @@ class NamelistsCalculation(CalcJob):
         """
         return ""
     
-    def prepare_for_submission(self,tempfolder, inputdict):        
+    def prepare_for_submission(self, tempfolder, inputdict):
         """
         This is the routine to be called when you want to create
         the input files and related stuff with a plugin.
@@ -124,7 +124,7 @@ class NamelistsCalculation(CalcJob):
             raise InputValidationError("parameters is not of type Dict")
         
         # Settings can be undefined, and defaults to an empty dictionary
-        settings = inputdict.pop(self.get_linkname('settings'),None)
+        settings = inputdict.pop(self.get_linkname('settings'), None)
         if settings is None:
             settings_dict = {}
         else:
@@ -135,7 +135,7 @@ class NamelistsCalculation(CalcJob):
             settings_dict = _uppercase_dict(settings.get_dict(),
                                             dict_name='settings')
 
-        parent_calc_folder = inputdict.pop(self.get_linkname('parent_folder'),None)
+        parent_calc_folder = inputdict.pop(self.get_linkname('parent_folder'), None)
         
         if parent_calc_folder is not None:
             if not isinstance(parent_calc_folder, self._parent_folder_type):
@@ -200,7 +200,7 @@ class NamelistsCalculation(CalcJob):
                 infile.write("&{0}\n".format(namelist_name))
                 # namelist content; set to {} if not present, so that we leave an 
                 # empty namelist
-                namelist = input_params.pop(namelist_name,{})
+                namelist = input_params.pop(namelist_name, {})
                 for k, v in sorted(six.iteritems(namelist)):
                     infile.write(convert_input_to_namelist_entry(k,v))
                 infile.write("/\n")
@@ -217,7 +217,7 @@ class NamelistsCalculation(CalcJob):
         
         # copy remote output dir, if specified
         if parent_calc_folder is not None:
-            if isinstance(parent_calc_folder,RemoteData):
+            if isinstance(parent_calc_folder, RemoteData):
                 parent_calc_out_subfolder = settings_dict.pop('PARENT_CALC_OUT_SUBFOLDER',
                                               self._INPUT_SUBFOLDER)
                 remote_copy_list.append(
@@ -225,12 +225,12 @@ class NamelistsCalculation(CalcJob):
                           os.path.join(parent_calc_folder.get_remote_path(),
                                        parent_calc_out_subfolder),
                           self._OUTPUT_SUBFOLDER))
-            elif isinstance(parent_calc_folder,FolderData):
+            elif isinstance(parent_calc_folder, FolderData):
                 local_copy_list.append(
                     (parent_calc_folder.get_abs_path(self._INPUT_SUBFOLDER),
                         self._OUTPUT_SUBFOLDER)
                     )
-            elif isinstance(parent_calc_folder,SinglefileData):
+            elif isinstance(parent_calc_folder, SinglefileData):
                 filename =parent_calc_folder.get_file_abs_path() 
                 local_copy_list.append(
                     (filename, os.path.basename(filename))

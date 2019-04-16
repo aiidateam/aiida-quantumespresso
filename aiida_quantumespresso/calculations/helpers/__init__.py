@@ -20,7 +20,7 @@ class QEInputValidationError(InputValidationError):
     pass
 
 
-def _check_and_convert(kw,val,expected_type):
+def _check_and_convert(kw, val, expected_type):
     """
     val: the value to be read and converted to a Fortran-friendly string.
     expected_type: a string with the expected type. Can be:
@@ -33,14 +33,14 @@ def _check_and_convert(kw,val,expected_type):
     # Note that bool should come before integer, because a boolean matches also
     # isinstance(...,int)
     if expected_type.upper() == "LOGICAL":
-        if isinstance(val,bool):
+        if isinstance(val, bool):
             outval = val
         else:
             raise TypeError(
                 'Expected a boolean for keyword {}, found {} instead'.format(
                 kw, type(val)))
     elif expected_type.upper() == "REAL":
-        if isinstance(val,six.integer_types):
+        if isinstance(val, six.integer_types):
             outval = float(val)
         elif isinstance(val, float):
             outval = val
@@ -49,14 +49,14 @@ def _check_and_convert(kw,val,expected_type):
                 'Expected a float for keyword {}, found {} instead'.format(
                 kw, type(val)))
     elif expected_type.upper() == "INTEGER":
-        if isinstance(val,six.integer_types): 
+        if isinstance(val, six.integer_types):
             outval = val
         else:
             raise TypeError(
                 'Expected an integer for keyword {}, found {} instead'.format(
                 kw, type(val)))
     elif expected_type.upper() == "CHARACTER":
-        if isinstance(val,six.string_types):
+        if isinstance(val, six.string_types):
             outval = val
         else:
             raise TypeError(
@@ -136,12 +136,12 @@ def pw_input_helper(input_params, structure,
     compulsory_namelists = ['CONTROL', 'SYSTEM', 'ELECTRONS']
 
     valid_calculations_and_opt_namelists = {
-        'scf':[],
-        'nscf':[],
-        'bands':[],
-        'relax':['IONS'],
-        'md':['IONS'],
-        'vc-relax':['IONS', 'CELL'],
+        'scf': [],
+        'nscf': [],
+        'bands': [],
+        'relax': ['IONS'],
+        'md': ['IONS'],
+        'vc-relax': ['IONS', 'CELL'],
         'vc-md': ['IONS', 'CELL'],
         }
 
@@ -198,9 +198,9 @@ def pw_input_helper(input_params, structure,
     module_dir = os.path.dirname(__file__)
     if module_dir == '':
         module_dir = os.curdir
-    xml_path = os.path.join(module_dir,'INPUT_PW-{}.xml'.format(version))
+    xml_path = os.path.join(module_dir, 'INPUT_PW-{}.xml'.format(version))
     try:        
-        with open(xml_path,'r') as f:
+        with open(xml_path, 'r') as f:
             dom = xml.dom.minidom.parse(f)
     except IOError: 
         prefix = 'INPUT_PW-'
@@ -376,7 +376,7 @@ def pw_input_helper(input_params, structure,
                         errors_list.append(err_str)                    
             try:
                 internal_dict[namelist_name][kw] = _check_and_convert(
-                    kw,value, found_var['expected_type'])
+                    kw, value, found_var['expected_type'])
             except KeyError:
                 if namelist_name in all_namelists:
                     err_str = \
@@ -416,7 +416,7 @@ def pw_input_helper(input_params, structure,
                         errors_list.append(err_str)                    
             ## I accept only ntyp or an integer as end_val
             if found_var['end_val'] == 'ntyp':
-                if not isinstance(value,dict):
+                if not isinstance(value, dict):
                     err_str = \
                         "Error, expecting a dictionary to associate each " \
                         "specie to a value for keyword '{}'.".format(kw)
@@ -437,7 +437,7 @@ def pw_input_helper(input_params, structure,
                             errors_list.append(err_str)
                             continue
                     try:    
-                        outdict[kindname] = _check_and_convert(kw,found_item, 
+                        outdict[kindname] = _check_and_convert(kw, found_item,
                             found_var['expected_type'])
                     except TypeError:
                         if stop_at_first_error:
@@ -467,7 +467,7 @@ def pw_input_helper(input_params, structure,
                     else:
                         errors_list.append(err_str)
                         continue                        
-                if not isinstance(value,list) or len(value) != end_value:
+                if not isinstance(value, list) or len(value) != end_value:
                     err_str = \
                         "Error, expecting a list of length {} for keyword " \
                         "'{}'.".format(end_value, kw)
@@ -484,7 +484,7 @@ def pw_input_helper(input_params, structure,
                         outlist.append(None)
                     else:
                         try:
-                            outlist.append(_check_and_convert(kw,found_item, 
+                            outlist.append(_check_and_convert(kw, found_item,
                                 found_var['expected_type']))
                         except TypeError as e:
                             if stop_at_first_error:

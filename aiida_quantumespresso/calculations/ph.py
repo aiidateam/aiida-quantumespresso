@@ -118,7 +118,7 @@ class PhCalculation(CalcJob):
             })
         return retdict
     
-    def prepare_for_submission(self,tempfolder,inputdict):        
+    def prepare_for_submission(self, tempfolder, inputdict):
         """
         This is the routine to be called when you want to create
         the input files and related stuff with a plugin.
@@ -153,7 +153,7 @@ class PhCalculation(CalcJob):
 
         # Settings can be undefined, and defaults to an empty dictionary.
         # They will be used for any input that doen't fit elsewhere.
-        settings = inputdict.pop(self.get_linkname('settings'),None)
+        settings = inputdict.pop(self.get_linkname('settings'), None)
         if settings is None:
             settings_dict = {}
         else:
@@ -164,7 +164,7 @@ class PhCalculation(CalcJob):
             settings_dict = _uppercase_dict(settings.get_dict(),
                                             dict_name='settings')
 
-        parent_calc_folder = inputdict.pop(self.get_linkname('parent_folder'),None)
+        parent_calc_folder = inputdict.pop(self.get_linkname('parent_folder'), None)
         if parent_calc_folder is None:
             raise exceptions.InputValidationError("No parent calculation found, needed to "
                                        "compute phonons")
@@ -227,7 +227,7 @@ class PhCalculation(CalcJob):
         input_params = {k: _lowercase_dict(v, dict_name=k) 
                         for k, v in six.iteritems(input_params)}
 
-        prepare_for_d3 = settings_dict.pop('PREPARE_FOR_D3',False)
+        prepare_for_d3 = settings_dict.pop('PREPARE_FOR_D3', False)
         if prepare_for_d3:
             self._blocked_keywords += [('INPUTPH', 'fildrho'),
                                        ('INPUTPH', 'drho_star%open'),
@@ -259,7 +259,7 @@ class PhCalculation(CalcJob):
         
         # qpoints part
         try:
-            mesh,offset = qpoints.get_kpoints_mesh()
+            mesh, offset = qpoints.get_kpoints_mesh()
             
             if any([i!=0. for i in offset]):
                 raise NotImplementedError("Computation of phonons on a mesh with"
@@ -320,13 +320,13 @@ class PhCalculation(CalcJob):
             tempfolder.get_subfolder(self._FOLDER_DYNAMICAL_MATRIX,
                                      create=True)
         
-        with open(input_filename,'w') as infile:
+        with open(input_filename, 'w') as infile:
             infile.write('AiiDA calculation\n')
             for namelist_name in namelists_toprint:
                 infile.write("&{0}\n".format(namelist_name))
                 # namelist content; set to {} if not present, so that we leave an 
                 # empty namelist
-                namelist = input_params.pop(namelist_name,{})
+                namelist = input_params.pop(namelist_name, {})
                 for k, v in sorted(six.iteritems(namelist)):
                     infile.write(convert_input_to_namelist_entry(k,v))
                 infile.write("/\n")
@@ -401,11 +401,11 @@ class PhCalculation(CalcJob):
                 # no need to copy the _ph0, since I copied already the whole ./out folder
         
         # here we may create an aiida.EXIT file
-        create_exit_file = settings_dict.pop('ONLY_INITIALIZATION',False)
+        create_exit_file = settings_dict.pop('ONLY_INITIALIZATION', False)
         if create_exit_file:
             exit_filename = tempfolder.get_abs_path(
                              '{}.EXIT'.format(self._PREFIX))
-            with open(exit_filename,'w') as f:
+            with open(exit_filename, 'w') as f:
                 f.write('\n')
 
         calcinfo = CalcInfo()
@@ -458,7 +458,7 @@ class PhCalculation(CalcJob):
 
         self._set_parent_remotedata(remote_folder)
 
-    def _set_parent_remotedata(self,remotedata):
+    def _set_parent_remotedata(self, remotedata):
         """
         Used to set a parent remotefolder in the restart of ph.
         """
@@ -480,7 +480,7 @@ class PhCalculation(CalcJob):
         return self.get_attr("pseudo_folder",
                              BasePwCpInputGenerator._PSEUDO_SUBFOLDER)
 
-    def _set_pseudo_folder(self,pseudo_folder):
+    def _set_pseudo_folder(self, pseudo_folder):
         """
         Get the calculation-specific pseudo folder.
         
@@ -547,9 +547,9 @@ class PhCalculation(CalcJob):
         #    labelstring = c2.label + " Restart of ph.x"
         if not 'Restart' in c2.label:
             labelstring = c2.label + " Restart of {} {}.".format(
-                                        self.__class__.__name__,self.pk)
+                                        self.__class__.__name__, self.pk)
         else:
-            labelstring = " Restart of {} {}.".format(self.__class__.__name__,self.pk)
+            labelstring = " Restart of {} {}.".format(self.__class__.__name__, self.pk)
         c2.label = labelstring.lstrip()
         
         # set the parameters, code and q-points

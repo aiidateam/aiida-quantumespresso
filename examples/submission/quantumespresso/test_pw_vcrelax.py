@@ -14,6 +14,7 @@ import sys
 import os
 
 from aiida.common.example_helpers import test_and_get_code
+import six
 
 ################################################################
 
@@ -152,7 +153,7 @@ else:
             print "Using the pseudo for {} from DB: {}".format(elem, pseudo.pk)
         pseudos_to_use[elem] = pseudo
 
-    for k, v in pseudos_to_use.iteritems():
+    for k, v in six.iteritems(pseudos_to_use):
         calc.use_pseudo(v, kind=k)
 
 calc.use_kpoints(kpoints)

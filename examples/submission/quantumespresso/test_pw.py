@@ -16,6 +16,7 @@ import os
 from aiida.common.example_helpers import test_and_get_code
 from aiida.plugins import DataFactory
 from aiida.common.exceptions import NotExistent
+import six
 
 # If set to True, will ask AiiDA to run in serial mode (i.e., AiiDA will not
 # invoke the mpirun command in the submission script)
@@ -178,7 +179,7 @@ else:
             print "Using the pseudo for {} from DB: {}".format(elem, pseudo.pk)
         pseudos_to_use[elem] = pseudo
 
-    for k, v in pseudos_to_use.iteritems():
+    for k, v in six.iteritems(pseudos_to_use):
         calc.use_pseudo(v, kind=k)
 
 calc.use_kpoints(kpoints)
