@@ -1,6 +1,8 @@
 """
 Check that the CP calculation might not work.
 """
+from __future__ import print_function
+
 from aiida.plugins.factories import CalculationFactory
 from aiida.orm import Code, StructureData, Dict, KpointsData
 from aiida.orm.nodes.data.upf import get_pseudos_from_structure
@@ -58,9 +60,10 @@ def main():
                 "emass": 400.0,
                 "emass_cutoff": 3.0,
             },
-            "IONS": {"ion_dynamics": "none"},
-        }
-    )
+            "IONS": {
+                "ion_dynamics": "none"
+            },
+        })
     builder.parameters = parameters
 
     pseudos = get_pseudos_from_structure(structure, "SSSP-Efficiency")
@@ -71,7 +74,7 @@ def main():
     kpoints.store()
     # builder.kpoints = kpoints
 
-    builder.metadata.dry_run = True
+    builder.metadata.dry_run = False
     builder.metadata.store_provenance = True
     builder.metadata.options = {"resources": {"num_machines": 1}}
     results, node = run.get_node(builder)
