@@ -8,6 +8,7 @@
 # For further information on the license, see the LICENSE.txt file        #
 # For further information please visit http://www.aiida.net               #
 ###########################################################################
+from __future__ import absolute_import
 import sys, os, numpy
 from aiida.common.example_helpers import test_and_get_code
 from aiida.orm import load_node
