@@ -79,11 +79,10 @@ class BasePwCpInputGenerator(CalcJob):
         :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
         :return: `aiida.common.datastructures.CalcInfo` instance
         """
+        settings = {}
         if 'settings' in self.inputs:
             settings = self.inputs.settings.get_dict()
-            settings_dict = _uppercase_dict(settings, dict_name='settings')
-        else:
-            settings = {}
+        settings_dict = _uppercase_dict(settings, dict_name='settings')
 
         # Check that a pseudo potential was specified for each kind present in the `StructureData`
         kinds = [kind.name for kind in self.inputs.structure.kinds]
@@ -114,11 +113,7 @@ class BasePwCpInputGenerator(CalcJob):
             local_copy_list.append((src_path, dst_path))
 
         arguments = [
-            self.inputs.parameters,
-            settings_dict,
-            self.inputs.pseudos,
-            self.inputs.structure,
-            self.inputs.kpoints
+            self.inputs.parameters, settings_dict, self.inputs.pseudos, self.inputs.structure, self.inputs.kpoints
         ]
         input_filecontent, local_copy_pseudo_list = self._generate_PWCPinputdata(*arguments)
         local_copy_list += local_copy_pseudo_list
@@ -132,19 +127,15 @@ class BasePwCpInputGenerator(CalcJob):
         if symlink:
             if 'parent_folder' in self.inputs:
                 # I put the symlink to the old parent ./out folder
-                remote_symlink_list.append((
-                    self.inputs.parent_folder.computer.uuid,
-                    os.path.join(self.inputs.parent_folder.get_remote_path(), self._restart_copy_from),
-                    self._restart_copy_to
-                ))
+                remote_symlink_list.append((self.inputs.parent_folder.computer.uuid,
+                                            os.path.join(self.inputs.parent_folder.get_remote_path(),
+                                                         self._restart_copy_from), self._restart_copy_to))
         else:
             # copy remote output dir, if specified
             if 'parent_folder' in self.inputs:
-                remote_copy_list.append((
-                    self.inputs.parent_folder.computer.uuid,
-                    os.path.join(self.inputs.parent_folder.get_remote_path(), self._restart_copy_from),
-                    self._restart_copy_to
-                ))
+                remote_copy_list.append((self.inputs.parent_folder.computer.uuid,
+                                         os.path.join(self.inputs.parent_folder.get_remote_path(),
+                                                      self._restart_copy_from), self._restart_copy_to))
 
         # Create an `.EXIT` file if `only_initialization` flag in `settings` is set to `True`
         if settings_dict.pop('ONLY_INITIALIZATION', False):
@@ -182,12 +173,10 @@ class BasePwCpInputGenerator(CalcJob):
             from aiida.common.log import get_dblogger_extra
 
             logger = logging.LoggerAdapter(logger=self.logger, extra=get_dblogger_extra(self))
-            logger.warning(
-                "The '{}' setting is deprecated as bands are now parsed by default. "
-                "If you do not want the bands to be parsed set the '{}' to True {}. "
-                "Note that the eigenvalue.xml files are also no longer stored in the repository"
-                .format('also_bands', 'no_bands', type(self))
-            )
+            logger.warning("The '{}' setting is deprecated as bands are now parsed by default. "
+                           "If you do not want the bands to be parsed set the '{}' to True {}. "
+                           "Note that the eigenvalue.xml files are also no longer stored in the repository".format(
+                               'also_bands', 'no_bands', type(self)))
 
         calcinfo = datastructures.CalcInfo()
 
@@ -268,12 +257,10 @@ class BasePwCpInputGenerator(CalcJob):
             if nl in input_params:
                 # The following lines is meant to avoid putting in input the
                 # parameters like celldm(*)
-                stripped_inparams = [re.sub("[(0-9)]", "", _)
-                                     for _ in input_params[nl].keys()]
+                stripped_inparams = [re.sub("[(0-9)]", "", _) for _ in input_params[nl].keys()]
                 if flag in stripped_inparams:
-                    raise exceptions.InputValidationError(
-                        "You cannot specify explicitly the '{}' flag in the '{}' "
-                        "namelist or card.".format(flag, nl))
+                    raise exceptions.InputValidationError("You cannot specify explicitly the '{}' flag in the '{}' "
+                                                          "namelist or card.".format(flag, nl))
                 if defaultvalue is not None:
                     if nl not in input_params:
                         input_params[nl] = {}
@@ -285,14 +272,14 @@ class BasePwCpInputGenerator(CalcJob):
         input_params['CONTROL']['pseudo_dir'] = self._PSEUDO_SUBFOLDER
         input_params['CONTROL']['outdir'] = self._OUTPUT_SUBFOLDER
         input_params['CONTROL']['prefix'] = self._PREFIX
-        input_params['CONTROL']['verbosity'] = input_params['CONTROL'].get('verbosity', self._default_verbosity)  # Set to high if not specified
+        input_params['CONTROL']['verbosity'] = input_params['CONTROL'].get(
+            'verbosity', self._default_verbosity)  # Set to high if not specified
 
         # ============ I prepare the input site data =============
         # ------------ CELL_PARAMETERS -----------
         cell_parameters_card = "CELL_PARAMETERS angstrom\n"
         for vector in structure.cell:
-            cell_parameters_card += ("{0:18.10f} {1:18.10f} {2:18.10f}"
-                                     "\n".format(*vector))
+            cell_parameters_card += ("{0:18.10f} {1:18.10f} {2:18.10f}" "\n".format(*vector))
 
         # ------------- ATOMIC_SPECIES ------------
         atomic_species_card_list = []
@@ -312,8 +299,8 @@ class BasePwCpInputGenerator(CalcJob):
             ps = pseudos[kind.name]
             if kind.is_alloy or kind.has_vacancies:
                 raise exceptions.InputValidationError("Kind '{}' is an alloy or has "
-                                           "vacancies. This is not allowed for pw.x input structures."
-                                           "".format(kind.name))
+                                                      "vacancies. This is not allowed for pw.x input structures."
+                                                      "".format(kind.name))
 
             try:
                 # It it is the same pseudopotential file, use the same filename
@@ -330,17 +317,13 @@ class BasePwCpInputGenerator(CalcJob):
         # I join the lines, but I resort them using the alphabetical order of
         # species, given by the kind_names list. I also store the mapping_species
         # list, with the order of species used in the file
-        mapping_species, sorted_atomic_species_card_list = list(zip(
-            *sorted(zip(kind_names, atomic_species_card_list))))
+        mapping_species, sorted_atomic_species_card_list = list(zip(*sorted(zip(kind_names, atomic_species_card_list))))
         # The format of mapping_species required later is a dictionary, whose
         # values are the indices, so I convert to this format
         # Note the (idx+1) to convert to fortran 1-based lists
-        mapping_species = {sp_name: (idx + 1) for idx, sp_name
-                           in enumerate(mapping_species)}
+        mapping_species = {sp_name: (idx + 1) for idx, sp_name in enumerate(mapping_species)}
         # I add the first line
-        sorted_atomic_species_card_list = (["ATOMIC_SPECIES\n"] +
-                                           list(
-                                               sorted_atomic_species_card_list))
+        sorted_atomic_species_card_list = (["ATOMIC_SPECIES\n"] + list(sorted_atomic_species_card_list))
         atomic_species_card = "".join(sorted_atomic_species_card_list)
         # Free memory
         del sorted_atomic_species_card_list
@@ -357,32 +340,24 @@ class BasePwCpInputGenerator(CalcJob):
             fixed_coords_strings = [""] * len(structure.sites)
         else:
             if len(fixed_coords) != len(structure.sites):
-                raise exceptions.InputValidationError(
-                    "Input structure contains {:d} sites, but "
-                    "fixed_coords has length {:d}".format(len(structure.sites),
-                                                          len(fixed_coords)))
+                raise exceptions.InputValidationError("Input structure contains {:d} sites, but "
+                                                      "fixed_coords has length {:d}".format(
+                                                          len(structure.sites), len(fixed_coords)))
 
             for i, this_atom_fix in enumerate(fixed_coords):
                 if len(this_atom_fix) != 3:
-                    raise exceptions.InputValidationError(
-                        "fixed_coords({:d}) has not length three"
-                        "".format(i + 1))
+                    raise exceptions.InputValidationError("fixed_coords({:d}) has not length three" "".format(i + 1))
                 for fixed_c in this_atom_fix:
                     if not isinstance(fixed_c, bool):
-                        raise exceptions.InputValidationError(
-                            "fixed_coords({:d}) has non-boolean "
-                            "elements".format(i + 1))
+                        raise exceptions.InputValidationError("fixed_coords({:d}) has non-boolean "
+                                                              "elements".format(i + 1))
 
                 if_pos_values = [self._if_pos(_) for _ in this_atom_fix]
-                fixed_coords_strings.append(
-                    "  {:d} {:d} {:d}".format(*if_pos_values))
+                fixed_coords_strings.append("  {:d} {:d} {:d}".format(*if_pos_values))
 
-        for site, fixed_coords_string in zip(
-                structure.sites, fixed_coords_strings):
-            atomic_positions_card_list.append(
-                "{0} {1:18.10f} {2:18.10f} {3:18.10f} {4}\n".format(
-                    site.kind_name.ljust(6), site.position[0], site.position[1],
-                    site.position[2], fixed_coords_string))
+        for site, fixed_coords_string in zip(structure.sites, fixed_coords_strings):
+            atomic_positions_card_list.append("{0} {1:18.10f} {2:18.10f} {3:18.10f} {4}\n".format(
+                site.kind_name.ljust(6), site.position[0], site.position[1], site.position[2], fixed_coords_string))
         atomic_positions_card = "".join(atomic_positions_card_list)
         del atomic_positions_card_list
 
@@ -394,9 +369,7 @@ class BasePwCpInputGenerator(CalcJob):
             if len(atomic_forces) != len(structure.sites):
                 raise exceptions.InputValidationError(
                     'Input structure contains {:d} sites, but atomic forces has length {:d}'.format(
-                        len(structure.sites), len(atomic_forces)
-                    )
-                )
+                        len(structure.sites), len(atomic_forces)))
 
             lines = ['ATOMIC_FORCES\n']
             for site, vector in zip(structure.sites, atomic_forces):
@@ -419,16 +392,15 @@ class BasePwCpInputGenerator(CalcJob):
             if len(atomic_velocities) != len(structure.sites):
                 raise exceptions.InputValidationError(
                     'Input structure contains {:d} sites, but atomic velocities has length {:d}'.format(
-                        len(structure.sites), len(atomic_velocities)
-                    )
-                )
+                        len(structure.sites), len(atomic_velocities)))
 
             lines = ['ATOMIC_VELOCITIES\n']
             for site, vector in zip(structure.sites, atomic_velocities):
 
                 # Checking that all 3 dimensions are specified:
                 if len(vector) != 3:
-                    raise exceptions.InputValidationError('Velocities({}) for {} has not length three'.format(vector, site))
+                    raise exceptions.InputValidationError('Velocities({}) for {} has not length three'.format(
+                        vector, site))
 
                 lines.append('{0} {1:18.10f} {2:18.10f} {3:18.10f}\n'.format(site.kind_name.ljust(6), *vector))
 
@@ -463,12 +435,10 @@ class BasePwCpInputGenerator(CalcJob):
                     num_kpoints = len(kpoints_list)
                     has_mesh = False
                     if num_kpoints == 0:
-                        raise exceptions.InputValidationError(
-                            "At least one k point must be "
-                            "provided for non-gamma calculations")
+                        raise exceptions.InputValidationError("At least one k point must be "
+                                                              "provided for non-gamma calculations")
                 except AttributeError:
-                    raise exceptions.InputValidationError(
-                        "No valid kpoints have been found")
+                    raise exceptions.InputValidationError("No valid kpoints have been found")
 
                 try:
                     _, weights = kpoints.get_kpoints(also_weights=True)
@@ -479,17 +449,14 @@ class BasePwCpInputGenerator(CalcJob):
 
             if gamma_only:
                 if has_mesh:
-                    if tuple(mesh) != (1, 1, 1) or tuple(offset) != (
-                            0., 0., 0.):
-                        raise exceptions.InputValidationError(
-                            "If a gamma_only calculation is requested, the "
-                            "kpoint mesh must be (1,1,1),offset=(0.,0.,0.)")
+                    if tuple(mesh) != (1, 1, 1) or tuple(offset) != (0., 0., 0.):
+                        raise exceptions.InputValidationError("If a gamma_only calculation is requested, the "
+                                                              "kpoint mesh must be (1,1,1),offset=(0.,0.,0.)")
 
                 else:
                     if (len(kpoints_list) != 1 or tuple(kpoints_list[0]) != tuple(0., 0., 0.)):
-                        raise exceptions.InputValidationError(
-                            "If a gamma_only calculation is requested, the "
-                            "kpoints coordinates must only be (0.,0.,0.)")
+                        raise exceptions.InputValidationError("If a gamma_only calculation is requested, the "
+                                                              "kpoints coordinates must only be (0.,0.,0.)")
 
                 kpoints_type = "gamma"
 
@@ -503,12 +470,10 @@ class BasePwCpInputGenerator(CalcJob):
 
             if kpoints_type == "automatic":
                 if any([(i != 0. and i != 0.5) for i in offset]):
-                    raise exceptions.InputValidationError("offset list must only be made "
-                                               "of 0 or 0.5 floats")
+                    raise exceptions.InputValidationError("offset list must only be made " "of 0 or 0.5 floats")
                 the_offset = [0 if i == 0. else 1 for i in offset]
                 the_6_integers = list(mesh) + the_offset
-                kpoints_card_list.append("{:d} {:d} {:d} {:d} {:d} {:d}\n"
-                                         "".format(*the_6_integers))
+                kpoints_card_list.append("{:d} {:d} {:d} {:d} {:d} {:d}\n" "".format(*the_6_integers))
 
             elif kpoints_type == "gamma":
                 # nothing to be written in this case
@@ -516,9 +481,8 @@ class BasePwCpInputGenerator(CalcJob):
             else:
                 kpoints_card_list.append("{:d}\n".format(num_kpoints))
                 for kpoint, weight in zip(kpoints_list, weights):
-                    kpoints_card_list.append(
-                        "  {:18.10f} {:18.10f} {:18.10f} {:18.10f}"
-                        "\n".format(kpoint[0], kpoint[1], kpoint[2], weight))
+                    kpoints_card_list.append("  {:18.10f} {:18.10f} {:18.10f} {:18.10f}"
+                                             "\n".format(kpoint[0], kpoint[1], kpoint[2], weight))
 
             kpoints_card = "".join(kpoints_card_list)
             del kpoints_card_list
@@ -527,27 +491,25 @@ class BasePwCpInputGenerator(CalcJob):
         try:
             namelists_toprint = settings.pop('NAMELISTS')
             if not isinstance(namelists_toprint, list):
-                raise exceptions.InputValidationError(
-                    "The 'NAMELISTS' value, if specified in the settings input "
-                    "node, must be a list of strings")
+                raise exceptions.InputValidationError("The 'NAMELISTS' value, if specified in the settings input "
+                                                      "node, must be a list of strings")
         except KeyError:  # list of namelists not specified; do automatic detection
             try:
                 control_nl = input_params['CONTROL']
                 calculation_type = control_nl['calculation']
             except KeyError:
-                raise exceptions.InputValidationError(
-                    "No 'calculation' in CONTROL namelist."
-                    "It is required for automatic detection of the valid list "
-                    "of namelists. Otherwise, specify the list of namelists "
-                    "using the NAMELISTS key inside the 'settings' input node")
+                raise exceptions.InputValidationError("No 'calculation' in CONTROL namelist."
+                                                      "It is required for automatic detection of the valid list "
+                                                      "of namelists. Otherwise, specify the list of namelists "
+                                                      "using the NAMELISTS key inside the 'settings' input node")
 
             try:
                 namelists_toprint = self._automatic_namelists[calculation_type]
             except KeyError:
                 raise exceptions.InputValidationError("Unknown 'calculation' value in "
-                                           "CONTROL namelist {}. Otherwise, specify the list of "
-                                           "namelists using the NAMELISTS inside the 'settings' input "
-                                           "node".format(calculation_type))
+                                                      "CONTROL namelist {}. Otherwise, specify the list of "
+                                                      "namelists using the NAMELISTS inside the 'settings' input "
+                                                      "node".format(calculation_type))
 
         inputfile = u''
         for namelist_name in namelists_toprint:
@@ -566,10 +528,9 @@ class BasePwCpInputGenerator(CalcJob):
         inputfile += cell_parameters_card
 
         if input_params:
-            raise exceptions.InputValidationError(
-                "The following namelists are specified in input_params, but are "
-                "not valid namelists for the current type of calculation: "
-                "{}".format(",".join(list(input_params.keys()))))
+            raise exceptions.InputValidationError("The following namelists are specified in input_params, but are "
+                                                  "not valid namelists for the current type of calculation: "
+                                                  "{}".format(",".join(list(input_params.keys()))))
 
         return inputfile, local_copy_list_to_append
 
@@ -594,10 +555,9 @@ def _lowercase_dict(d, dict_name):
     if len(new_dict) != len(d):
         num_items = Counter(str(k).lower() for k in d.keys())
         double_keys = ",".join([k for k, v in num_items if v > 1])
-        raise exceptions.InputValidationError(
-            "Inside the dictionary '{}' there are the following keys that "
-            "are repeated more than once when compared case-insensitively: {}."
-            "This is not allowed.".format(dict_name, double_keys))
+        raise exceptions.InputValidationError("Inside the dictionary '{}' there are the following keys that "
+                                              "are repeated more than once when compared case-insensitively: {}."
+                                              "This is not allowed.".format(dict_name, double_keys))
     return new_dict
 
 
@@ -610,8 +570,7 @@ def _uppercase_dict(d, dict_name):
     if len(new_dict) != len(d):
         num_items = Counter(str(k).upper() for k in d.keys())
         double_keys = ",".join([k for k, v in num_items if v > 1])
-        raise exceptions.InputValidationError(
-            "Inside the dictionary '{}' there are the following keys that "
-            "are repeated more than once when compared case-insensitively: {}."
-            "This is not allowed.".format(dict_name, double_keys))
+        raise exceptions.InputValidationError("Inside the dictionary '{}' there are the following keys that "
+                                              "are repeated more than once when compared case-insensitively: {}."
+                                              "This is not allowed.".format(dict_name, double_keys))
     return new_dict

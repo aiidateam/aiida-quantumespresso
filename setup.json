@@ -79,7 +79,7 @@
         ]
     },
     "install_requires": [
-        "aiida_core[atomic_tools]>=1.0.0b1",
+        "aiida_core[atomic_tools]>=1.0.0b2",
         "matplotlib<3.0.0; python_version < '3'",
         "xmlschema==1.0.6"
     ],

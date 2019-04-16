@@ -18,12 +18,12 @@ TODO: all a lot of logger.debug stuff
 from __future__ import absolute_import
 import os
 
+from aiida.common.lang import classproperty
 from aiida.engine import CalcJob
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
-from aiida.common.lang import classproperty
 
 
-class CpCalculation(BasePwCpInputGenerator, CalcJob):
+class CpCalculation(BasePwCpInputGenerator):
     """
     Car-Parrinello molecular dynamics code (cp.x) of the
     Quantum ESPRESSO distribution.
@@ -33,13 +33,18 @@ class CpCalculation(BasePwCpInputGenerator, CalcJob):
     _CP_READ_UNIT_NUMBER = 50
     _CP_WRITE_UNIT_NUMBER = 51
 
+    def __init__(self, *args, **kwargs):
+        print('Ok at least I start here.')
+        super(CpCalculation, self).__init__(*args, **kwargs)
+
     @classproperty
     def xml_filepaths(cls):
         """Returns a list of relative filepaths of XML files."""
         filepaths = []
 
         for filename in cls.xml_filenames:
-            filepath = os.path.join(cls._OUTPUT_SUBFOLDER, '{}_{}.save'.format(cls._PREFIX, cls._CP_WRITE_UNIT_NUMBER), filename)
+            filepath = os.path.join(cls._OUTPUT_SUBFOLDER, '{}_{}.save'.format(cls._PREFIX, cls._CP_WRITE_UNIT_NUMBER),
+                                    filename)
             filepaths.append(filepath)
 
         return filepaths
@@ -48,9 +53,8 @@ class CpCalculation(BasePwCpInputGenerator, CalcJob):
         super(CpCalculation, self)._init_internal_params()
 
         self._FILE_XML_PRINT_COUNTER = os.path.join(
-            BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-            '{}_{}.save'.format(BasePwCpInputGenerator._PREFIX,
-                                _CP_WRITE_UNIT_NUMBER),
+            BasePwCpInputGenerator._OUTPUT_SUBFOLDER, '{}_{}.save'.format(BasePwCpInputGenerator._PREFIX,
+                                                                          _CP_WRITE_UNIT_NUMBER),
             self._FILE_XML_PRINT_COUNTER_BASENAME)
 
         # Default output parser provided by AiiDA
@@ -67,40 +71,42 @@ class CpCalculation(BasePwCpInputGenerator, CalcJob):
         }
 
         # Keywords that cannot be set
-        self._blocked_keywords = [('CONTROL', 'pseudo_dir'),  # set later
-                                  ('CONTROL', 'outdir'),  # set later
-                                  ('CONTROL', 'prefix'),  # set later
-                                  ('SYSTEM', 'ibrav'),  # set later
-                                  ('SYSTEM', 'celldm'),
-                                  ('SYSTEM', 'nat'),  # set later
-                                  ('SYSTEM', 'ntyp'),  # set later
-                                  ('SYSTEM', 'a'), ('SYSTEM', 'b'), ('SYSTEM', 'c'),
-                                  ('SYSTEM', 'cosab'), ('SYSTEM', 'cosac'), ('SYSTEM', 'cosbc'),
-                                  ('CONTROL', 'ndr', self._CP_READ_UNIT_NUMBER),
-                                  ('CONTROL', 'ndw', self._CP_WRITE_UNIT_NUMBER),
+        self._blocked_keywords = [
+            ('CONTROL', 'pseudo_dir'),  # set later
+            ('CONTROL', 'outdir'),  # set later
+            ('CONTROL', 'prefix'),  # set later
+            ('SYSTEM', 'ibrav'),  # set later
+            ('SYSTEM', 'celldm'),
+            ('SYSTEM', 'nat'),  # set later
+            ('SYSTEM', 'ntyp'),  # set later
+            ('SYSTEM', 'a'),
+            ('SYSTEM', 'b'),
+            ('SYSTEM', 'c'),
+            ('SYSTEM', 'cosab'),
+            ('SYSTEM', 'cosac'),
+            ('SYSTEM', 'cosbc'),
+            ('CONTROL', 'ndr', self._CP_READ_UNIT_NUMBER),
+            ('CONTROL', 'ndw', self._CP_WRITE_UNIT_NUMBER),
         ]
 
         self._use_kpoints = False
 
         # in restarts, it will copy from the parent the following
         self._restart_copy_from = os.path.join(
-            BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-            '{}_{}.save'.format(BasePwCpInputGenerator._PREFIX,
-                                self._CP_WRITE_UNIT_NUMBER))
+            BasePwCpInputGenerator._OUTPUT_SUBFOLDER, '{}_{}.save'.format(BasePwCpInputGenerator._PREFIX,
+                                                                          self._CP_WRITE_UNIT_NUMBER))
         # in restarts, it will copy the previous folder in the following one
         self._restart_copy_to = os.path.join(
-            BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-            '{}_{}.save'.format(BasePwCpInputGenerator._PREFIX,
-                                self._CP_READ_UNIT_NUMBER))
+            BasePwCpInputGenerator._OUTPUT_SUBFOLDER, '{}_{}.save'.format(BasePwCpInputGenerator._PREFIX,
+                                                                          self._CP_READ_UNIT_NUMBER))
 
-        _cp_ext_list = ['cel', 'con', 'eig', 'evp', 'for', 'nos', 'pol',
-                        'pos', 'spr', 'str', 'the', 'vel', 'wfc']
+        _cp_ext_list = ['cel', 'con', 'eig', 'evp', 'for', 'nos', 'pol', 'pos', 'spr', 'str', 'the', 'vel', 'wfc']
 
         # I retrieve them all, even if I don't parse all of them
-        self._internal_retrieve_list = [os.path.join(
-            BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-            '{}.{}'.format(BasePwCpInputGenerator._PREFIX,
-                           ext)) for ext in _cp_ext_list]
+        self._internal_retrieve_list = [
+            os.path.join(BasePwCpInputGenerator._OUTPUT_SUBFOLDER, '{}.{}'.format(BasePwCpInputGenerator._PREFIX, ext))
+            for ext in _cp_ext_list
+        ]
         self._internal_retrieve_list += [self._FILE_XML_PRINT_COUNTER]
 
         # Default input and output files
