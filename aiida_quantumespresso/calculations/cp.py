@@ -16,6 +16,7 @@ TODO: implement pre_... and post_... hooks to add arbitrary strings before
 TODO: all a lot of logger.debug stuff
 """
 from __future__ import absolute_import
+from __future__ import print_function
 import os
 
 from aiida.common.lang import classproperty
@@ -53,9 +54,8 @@ class CpCalculation(BasePwCpInputGenerator):
         super(CpCalculation, self)._init_internal_params()
 
         self._FILE_XML_PRINT_COUNTER = os.path.join(
-            BasePwCpInputGenerator._OUTPUT_SUBFOLDER, '{}_{}.save'.format(BasePwCpInputGenerator._PREFIX,
-                                                                          _CP_WRITE_UNIT_NUMBER),
-            self._FILE_XML_PRINT_COUNTER_BASENAME)
+            BasePwCpInputGenerator._OUTPUT_SUBFOLDER, '{}_{}.save'.format(
+                BasePwCpInputGenerator._PREFIX, _CP_WRITE_UNIT_NUMBER), self._FILE_XML_PRINT_COUNTER_BASENAME)
 
         # Default output parser provided by AiiDA
         self._default_parser = 'quantumespresso.cp'
@@ -88,8 +88,6 @@ class CpCalculation(BasePwCpInputGenerator):
             ('CONTROL', 'ndr', self._CP_READ_UNIT_NUMBER),
             ('CONTROL', 'ndw', self._CP_WRITE_UNIT_NUMBER),
         ]
-
-        self._use_kpoints = False
 
         # in restarts, it will copy from the parent the following
         self._restart_copy_from = os.path.join(

@@ -39,8 +39,6 @@ class PwCalculation(BasePwCpInputGenerator):
         ('SYSTEM', 'cosbc'),
     ]
 
-    _use_kpoints = True
-
     # Default input and output files
     _DEFAULT_INPUT_FILE = 'aiida.in'
     _DEFAULT_OUTPUT_FILE = 'aiida.out'
@@ -62,12 +60,23 @@ class PwCalculation(BasePwCpInputGenerator):
     @classmethod
     def define(cls, spec):
         super(PwCalculation, cls).define(spec)
-        spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE, non_db=True)
-        spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE, non_db=True)
-        spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.pw', non_db=True)
-        spec.input('kpoints', valid_type=orm.KpointsData,
-            help='kpoint mesh or kpoint path')
-        spec.input('hubbard_file', valid_type=orm.SinglefileData, required=False,
+        spec.input(
+            'metadata.options.input_filename',
+            valid_type=six.string_types,
+            default=cls._DEFAULT_INPUT_FILE,
+            non_db=True)
+        spec.input(
+            'metadata.options.output_filename',
+            valid_type=six.string_types,
+            default=cls._DEFAULT_OUTPUT_FILE,
+            non_db=True)
+        spec.input(
+            'metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.pw', non_db=True)
+        spec.input('kpoints', valid_type=orm.KpointsData, help='kpoint mesh or kpoint path')
+        spec.input(
+            'hubbard_file',
+            valid_type=orm.SinglefileData,
+            required=False,
             help='SinglefileData node containing the output Hubbard parameters from a HpCalculation')
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.output('output_structure', valid_type=orm.StructureData, required=False)
@@ -85,10 +94,8 @@ class PwCalculation(BasePwCpInputGenerator):
             110, 'ERROR_READING_OUTPUT_FILE', message='The output file could not be read from the retrieved folder.')
         spec.exit_code(
             115, 'ERROR_MISSING_XML_FILE', message='The required XML file is not present in the retrieved folder.')
-        spec.exit_code(
-            116, 'ERROR_MULTIPLE_XML_FILES', message='The retrieved folder contains multiple XML files.')
-        spec.exit_code(
-            117, 'ERROR_READING_XML_FILE', message='The required XML file could not be read.')
+        spec.exit_code(116, 'ERROR_MULTIPLE_XML_FILES', message='The retrieved folder contains multiple XML files.')
+        spec.exit_code(117, 'ERROR_READING_XML_FILE', message='The required XML file could not be read.')
         spec.exit_code(120, 'ERROR_INVALID_OUTPUT', message='The output file contains invalid output.')
 
     @classproperty

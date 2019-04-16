@@ -46,7 +46,9 @@ class BasePwCpInputGenerator(CalcJob):
     # Default verbosity; change in subclasses
     _default_verbosity = 'high'
 
-    _use_kpoints = False
+    @property
+    def _use_kpoints(self):
+        return 'kpoints' in self.inputs
 
     @classproperty
     def xml_filenames(cls):
@@ -113,8 +115,14 @@ class BasePwCpInputGenerator(CalcJob):
             local_copy_list.append((src_path, dst_path))
 
         arguments = [
-            self.inputs.parameters, settings_dict, self.inputs.pseudos, self.inputs.structure, self.inputs.kpoints
+            self.inputs.parameters,
+            settings_dict,
+            self.inputs.pseudos,
+            self.inputs.structure,
         ]
+        if self._use_kpoints:
+            arguments.append(self.inputs.kpoints)
+
         input_filecontent, local_copy_pseudo_list = self._generate_PWCPinputdata(*arguments)
         local_copy_list += local_copy_pseudo_list
 
