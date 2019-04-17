@@ -52,6 +52,7 @@
         ],
         "console_scripts": [
             "launch_calculation_pw = aiida_quantumespresso.cli.calculations.pw.base:cli",
+            "launch_calculation_dos = aiida_quantumespresso.cli.calculations.dos:cli",
             "launch_workflow_pw_band_structure = aiida_quantumespresso.cli.workflows.pw.band_structure:cli",
             "launch_workflow_pw_bands = aiida_quantumespresso.cli.workflows.pw.bands:cli",
             "launch_workflow_pw_relax = aiida_quantumespresso.cli.workflows.pw.relax:cli",
