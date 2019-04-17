@@ -70,7 +70,7 @@ class BasePwCpInputGenerator(CalcJob):
         spec.input('code', valid_type=orm.Code, help='')
         spec.input('structure', valid_type=orm.StructureData, help='')
         spec.input('parameters', valid_type=orm.Dict, help='')
-        spec.input('settings', valid_type=orm.Dict, required=False, help='')
+        spec.input('settings', valid_type=orm.Dict, required=False, help='', default=orm.Dict(dict={}))
         spec.input('parent_folder', valid_type=orm.RemoteData, required=False, help='')
         spec.input('vdw_table', valid_type=orm.SinglefileData, required=False, help='')
         spec.input_namespace('pseudos', valid_type=orm.UpfData, dynamic=True, help='')
