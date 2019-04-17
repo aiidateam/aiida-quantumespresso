@@ -67,12 +67,18 @@ class CpCalculation(BasePwCpInputGenerator):
     @classmethod
     def define(cls, spec):
         super(CpCalculation, cls).define(spec)
-        spec.input(
-            'metadata.options.input_filename', valid_type=six.string_types, default=cls._INPUT_FILE_NAME, non_db=True)
-        spec.input(
-            'metadata.options.output_filename', valid_type=six.string_types, default=cls._OUTPUT_FILE_NAME, non_db=True)
-        spec.input(
-            'metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.pw', non_db=True)
+        spec.input('metadata.options.input_filename',
+                   valid_type=six.string_types,
+                   default=cls._INPUT_FILE_NAME,
+                   non_db=True)
+        spec.input('metadata.options.output_filename',
+                   valid_type=six.string_types,
+                   default=cls._OUTPUT_FILE_NAME,
+                   non_db=True)
+        spec.input('metadata.options.parser_name',
+                   valid_type=six.string_types,
+                   default='quantumespresso.cp',
+                   non_db=True)
 
     @classproperty
     def xml_filepaths(cls):
@@ -90,8 +96,9 @@ class CpCalculation(BasePwCpInputGenerator):
         super(CpCalculation, self)._init_internal_params()
 
         self._FILE_XML_PRINT_COUNTER = os.path.join(
-            BasePwCpInputGenerator._OUTPUT_SUBFOLDER, '{}_{}.save'.format(
-                BasePwCpInputGenerator._PREFIX, self._CP_WRITE_UNIT_NUMBER), self._FILE_XML_PRINT_COUNTER_BASENAME)
+            BasePwCpInputGenerator._OUTPUT_SUBFOLDER, '{}_{}.save'.format(BasePwCpInputGenerator._PREFIX,
+                                                                          self._CP_WRITE_UNIT_NUMBER),
+            self._FILE_XML_PRINT_COUNTER_BASENAME)
 
         # in restarts, it will copy from the parent the following
         self._restart_copy_from = os.path.join(
