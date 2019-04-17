@@ -64,6 +64,9 @@ class CpCalculation(BasePwCpInputGenerator):
         ('CONTROL', 'ndw', _CP_WRITE_UNIT_NUMBER),
     ]
 
+    _FILE_XML_PRINT_COUNTER_BASENAME = 'print_counter.xml'
+    _DEFAULT_VERBOSITY = "low"
+
     @classmethod
     def define(cls, spec):
         super(CpCalculation, cls).define(spec)
@@ -121,21 +124,3 @@ class CpCalculation(BasePwCpInputGenerator):
         # Default input and output files
         self._DEFAULT_INPUT_FILE = 'aiida.in'
         self._DEFAULT_OUTPUT_FILE = 'aiida.out'
-
-    @classproperty
-    def _FILE_XML_PRINT_COUNTER_BASENAME(cls):
-        return 'print_counter.xml'
-
-    @classproperty
-    def _default_verbosity(cls):
-        return 'low'
-
-    @classproperty
-    def _use_methods(cls):
-        """
-        Extend the parent _use_methods with further keys.
-        """
-        retdict = JobCalculation._use_methods
-        retdict.update(BasePwCpInputGenerator._baseclass_use_methods)
-
-        return retdict
