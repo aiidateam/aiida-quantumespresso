@@ -33,8 +33,10 @@ class CpCalculation(BasePwCpInputGenerator):
     For more information, refer to http://www.quantum-espresso.org/
     """
 
+    _XML_PRINT_COUNTER_NAME = 'print_counter.xml'
     _CP_READ_UNIT_NUMBER = 50
     _CP_WRITE_UNIT_NUMBER = 51
+    _DEFAULT_VERBOSITY = "low"
 
     _automatic_namelists = {
         'scf': ['CONTROL', 'SYSTEM', 'ELECTRONS'],
@@ -64,9 +66,6 @@ class CpCalculation(BasePwCpInputGenerator):
         ('CONTROL', 'ndw', _CP_WRITE_UNIT_NUMBER),
     ]
 
-    _FILE_XML_PRINT_COUNTER_BASENAME = 'print_counter.xml'
-    _DEFAULT_VERBOSITY = "low"
-
     @classmethod
     def define(cls, spec):
         super(CpCalculation, cls).define(spec)
@@ -77,6 +76,12 @@ class CpCalculation(BasePwCpInputGenerator):
         spec.input('metadata.options.output_filename',
                    valid_type=six.string_types,
                    default=cls._OUTPUT_FILE_NAME,
+                   non_db=True)
+        spec.input('metadata.options.counter_filename',
+                   valid_type=six.string_types,
+                   default="{prefix}_{unit}.save/{name}".format(prefix=cls._PREFIX,
+                                                                unit=cls._CP_WRITE_UNIT_NUMBER,
+                                                                name=cls._XML_PRINT_COUNTER_NAME),
                    non_db=True)
         spec.input('metadata.options.parser_name',
                    valid_type=six.string_types,

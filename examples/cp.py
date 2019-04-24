@@ -7,10 +7,13 @@ from aiida.plugins.factories import CalculationFactory
 from aiida.orm import Code, StructureData, Dict, KpointsData
 from aiida.orm.nodes.data.upf import get_pseudos_from_structure
 from aiida.engine import run
-from ase.lattice.spacegroup import crystal
+from ase.spacegroup import crystal
 
 
 def main():
+    """
+    Little check on the cp calculation thing.
+    """
     alat = 5.4
     ase_structure = crystal(
         "Si",

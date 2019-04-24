@@ -224,8 +224,8 @@ class BasePwCpInputGenerator(CalcJob):
             calcinfo.retrieve_temporary_list = [[xmlpaths, '.', 2]]
 
         try:
-            Parserclass = self.get_parserclass()
-            parser = Parserclass(self)
+            ParserClass = self.get_parserclass()
+            parser = ParserClass(self)
             parser_opts = parser.get_parser_settings_key().upper()
             settings_dict.pop(parser_opts)
         except (KeyError, AttributeError):

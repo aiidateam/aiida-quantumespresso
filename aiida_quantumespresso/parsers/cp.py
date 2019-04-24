@@ -56,21 +56,21 @@ class CpParser(Parser):
         # if there is something more, I note it down, so to call the raw parser
         # with the right options
         # look for xml
-        out_file = out_folder.get_abs_path(self.node._OUTPUT_FILE_NAME)
+        out_file = out_folder.open(self.node.get_attribute('output_filename'))
 
+        list_of_files = self.node._repository.list_object_names()
+        print('***', list_of_files)
         xml_file = None
-        for xml_filename in self.nodes.xml_filenames:
+        for xml_filename in self.node.process_class.xml_filenames:
             if xml_filename in list_of_files:
-                xml_file = out_folder.get_abs_path(xml_filename)
+                xml_file = out_folder.open(xml_filename)
 
         xml_counter_file = None
         if self.node._FILE_XML_PRINT_COUNTER in list_of_files:
-            xml_counter_file = out_folder.get_abs_path(self.node._FILE_XML_PRINT_COUNTER)
-
-        parsing_args = [out_file, xml_file, xml_counter_file]
+            xml_counter_file = out_folder.open(self.node._FILE_XML_PRINT_COUNTER)
 
         # call the raw parsing function
-        out_dict, raw_successful = parse_cp_raw_output(*parsing_args)
+        out_dict, raw_successful = parse_cp_raw_output(out_file, xml_file, xml_counter_file)
 
         successful = True if raw_successful else False
 
