@@ -8,17 +8,17 @@ from __future__ import absolute_import
 import os
 from aiida.common import InputValidationError
 from aiida.common import CalcInfo, CodeInfo
-from aiida.common.lang import classproperty
-from aiida.orm.nodes.data.dict import Dict 
-from aiida.orm.nodes.data.remote import RemoteData 
-from aiida.orm.nodes.data.folder import FolderData 
-from aiida.orm.nodes.data.singlefile import SinglefileData
+from aiida.orm import Dict, Code
+from aiida.orm import RemoteData, FolderData, SinglefileData
 from aiida.engine import CalcJob
 from aiida.common import CodeInfo
+from aiida.plugins import ParserFactory
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 import six
-    
+
+# TODO: review usage of class variables and input names
+# TODO: add exit codes
 
 class NamelistsCalculation(CalcJob):   
     """
@@ -26,134 +26,70 @@ class NamelistsCalculation(CalcJob):
     Quantum ESPRESSO distribution (http://www.quantum-espresso.org/)
     that accept as input a Fortran-style namelist.
     """
-    def _init_internal_params(self):
-        super(NamelistsCalculation, self)._init_internal_params()
-                
-        # Default name of the subfolder inside 'parent_folder'
-        # from which you want to copy the files, in case
-        # the parent_folder is of type FolderData
-        self._INPUT_SUBFOLDER = "./out/"
-        # Default name of the subfolder inside 'parent_folder'
-        # from which you want to copy the files, in case
-        # the parent_folder is of type RemoteData,
-        # unless the user specified a SETTINGS->parent_calc_out_subfolder
-        # value
-        self._default_parent_output_folder = './out/'
-        # Default name of the subfolder that you want to create
-        # in the output and in which you want to place the files
-        # taken from parent_folder/INPUT_SUBFOLDER, in case
-        # the parent_folder is of type RemoteData or FolderData
-        self._OUTPUT_SUBFOLDER = './out/'
-        self._PREFIX = 'aiida'
-        self._INPUT_FILE_NAME = 'aiida.in'
-        self._OUTPUT_FILE_NAME = 'aiida.out'
-        self._internal_retrieve_list = []
-        self._default_namelists = ['INPUTPP']
-        self._blocked_keywords = [] # a list of tuples with key and value fixed
-        self._parent_folder_type = (RemoteData, FolderData, SinglefileData)
-        self._default_parser = None
-        self._retrieve_singlefile_list = []
+    
+    # Default name of the subfolder inside 'parent_folder'
+    # from which you want to copy the files, in case
+    # the parent_folder is of type FolderData
+    _INPUT_SUBFOLDER = "./out/"
+    # Default name of the subfolder inside 'parent_folder'
+    # from which you want to copy the files, in case
+    # the parent_folder is of type RemoteData,
+    # unless the user specified a SETTINGS->parent_calc_out_subfolder
+    # value
+    _default_parent_output_folder = './out/'
+    # Default name of the subfolder that you want to create
+    # in the output and in which you want to place the files
+    # taken from parent_folder/INPUT_SUBFOLDER, in case
+    # the parent_folder is of type RemoteData or FolderData
+    _OUTPUT_SUBFOLDER = './out/'
+    _PREFIX = 'aiida'
+    #_INPUT_FILE_NAME = 'aiida.in'
+    #_OUTPUT_FILE_NAME = 'aiida.out'
+    _internal_retrieve_list = []
+    _default_namelists = ['INPUTPP']
+    _blocked_keywords = [] # a list of tuples with key and value fixed
+    #_parent_folder_type = (RemoteData, FolderData, SinglefileData)
+    _retrieve_singlefile_list = []
 
-        # Default input and output files
-        self._DEFAULT_INPUT_FILE = 'aiida.in'
-        self._DEFAULT_OUTPUT_FILE = 'aiida.out'
+    # Default input and output files
+    _DEFAULT_INPUT_FILE = 'aiida.in'
+    _DEFAULT_OUTPUT_FILE = 'aiida.out'
+    
+    @classmethod
+    def define(cls, spec):
+        super(NamelistsCalculation, cls).define(spec)
+        spec.input('code', valid_type=Code, help='')
+        spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE, non_db=True)
+        spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE, non_db=True)
+        spec.input('metadata.options.parser_name', valid_type=six.string_types, required=False, non_db=True)
+        spec.input('parameters', valid_type=Dict, help='Use a node that specifies the input parameters for the namelists')
+        spec.input('settings', valid_type=Dict, required=False, default=Dict(dict={}), help='Use an additional node for special settings')
+        spec.input('parent_folder', valid_type=(RemoteData, FolderData, SinglefileData), required=False, help='Use a local or remote folder as parent folder (for restarts and similar)')
 
-    @classproperty
-    def _use_methods(cls):
+    def _get_following_text(self, settings_dict):
         """
-        Additional use_* methods for the namelists class.
-        """
-        retdict = JobCalculation._use_methods
-        retdict.update({
-            "settings": {
-               'valid_types': Dict,
-               'additional_parameter': None,
-               'linkname': 'settings',
-               'docstring': "Use an additional node for special settings",
-               },
-            "parameters": {
-               'valid_types': Dict,
-               'additional_parameter': None,
-               'linkname': 'parameters',
-               'docstring': ("Use a node that specifies the input parameters "
-                             "for the namelists"),
-               },
-            "parent_folder": {
-               'valid_types': (RemoteData, FolderData, SinglefileData),
-               'additional_parameter': None,
-               'linkname': 'parent_calc_folder',
-               'docstring': ("Use a remote folder as parent folder (for "
-                             "restarts and similar"),
-               },
-            })
-        return retdict
-
-    def _get_following_text(self, inputdict, settings):
-        """
-        By default, no text follows the namelists section.
-        This function should consume the content of inputdict (if it requires
-        a different node) or the keys inside settings, using the 'pop' method,
-        so that inputdict and settings should remain empty at the end of 
-        _prepare_for_submission, if all flags/nodes were recognized
+        By default, no text follows the namelists section. In case any additional information
+        needs to be added to the input file, a subclass can override this method.
+        If this function needs any data from the settings input, it should pop() them from settings_dict,
+        so that prepare_for_submission() can check if any keys are left and are therefore unrecognized.
         """
         return ""
     
-    def prepare_for_submission(self, tempfolder, inputdict):
-        """
-        This is the routine to be called when you want to create
-        the input files and related stuff with a plugin.
-        
-        :param tempfolder: a aiida.common.folders.Folder subclass where
-                           the plugin should put all its files.
-        :param inputdict: a dictionary with the input nodes, as they would
-                be returned by get_inputdata_dict (without the Code!)
+    def prepare_for_submission(self, folder):
+        """Create the input files from the input nodes passed to this instance of the `CalcJob`.
+    
+        :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
+        :return: `aiida.common.datastructures.CalcInfo` instance
         """
         local_copy_list = []
         remote_copy_list = []
-
-        try:
-            code = inputdict.pop(self.get_linkname('code'))
-        except KeyError:
-            raise InputValidationError("No code specified for this calculation")
         
-        try:
-            parameters = inputdict.pop(self.get_linkname('parameters'))
-        except KeyError:
-            raise InputValidationError("No parameters specified for this calculation")
-        if not isinstance(parameters, Dict):
-            raise InputValidationError("parameters is not of type Dict")
+        # Settings converted to uppercase
+        settings_dict = _uppercase_dict(self.inputs.settings.get_dict(),
+                                        dict_name='settings')
+
+        following_text = self._get_following_text(settings_dict)
         
-        # Settings can be undefined, and defaults to an empty dictionary
-        settings = inputdict.pop(self.get_linkname('settings'), None)
-        if settings is None:
-            settings_dict = {}
-        else:
-            if not isinstance(settings,  Dict):
-                raise InputValidationError("settings, if specified, must be of "
-                                           "type Dict")
-            # Settings converted to uppercase
-            settings_dict = _uppercase_dict(settings.get_dict(),
-                                            dict_name='settings')
-
-        parent_calc_folder = inputdict.pop(self.get_linkname('parent_folder'), None)
-        
-        if parent_calc_folder is not None:
-            if not isinstance(parent_calc_folder, self._parent_folder_type):
-                if not isinstance(self._parent_folder_type, tuple):
-                    possible_types = [self._parent_folder_type.__name__]
-                else:
-                    possible_types = [t.__name__ for t in self._parent_folder_type]
-                raise InputValidationError("parent_calc_folder, if specified,"
-                    "must be of type {}".format(
-                        " or ".join(possible_types)))
-
-        following_text = self._get_following_text(inputdict, settings)
-
-        # Here, there should be no more parameters...
-        if inputdict:
-            raise InputValidationError("The following input data nodes are "
-                "unrecognized: {}".format(list(inputdict.keys())))
-
         ##############################
         # END OF INITIAL INPUT CHECK #
         ##############################
@@ -161,7 +97,7 @@ class NamelistsCalculation(CalcJob):
         # I put the first-level keys as uppercase (i.e., namelist and card names)
         # and the second-level keys as lowercase
         # (deeper levels are unchanged)
-        input_params = _uppercase_dict(parameters.get_dict(),
+        input_params = _uppercase_dict(self.inputs.parameters.get_dict(),
                                        dict_name='parameters')
         input_params = {k: _lowercase_dict(v, dict_name=k) 
                         for k, v in six.iteritems(input_params)}
@@ -179,7 +115,7 @@ class NamelistsCalculation(CalcJob):
                         "namelist.".format(key, namelist))
                     
             # set to a default
-            if not input_params[namelist]:
+            if namelist not in input_params:
                 input_params[namelist] = {}
             input_params[namelist][key] = value
         
@@ -193,9 +129,8 @@ class NamelistsCalculation(CalcJob):
         except KeyError: # list of namelists not specified; do automatic detection
             namelists_toprint = self._default_namelists
         
-        input_filename = tempfolder.get_abs_path(self._INPUT_FILE_NAME)
-
-        with open(input_filename,'w') as infile:
+        input_filename = self.inputs.metadata.options.input_filename
+        with folder.open(input_filename,'w') as infile:
             for namelist_name in namelists_toprint:
                 infile.write("&{0}\n".format(namelist_name))
                 # namelist content; set to {} if not present, so that we leave an 
@@ -216,12 +151,13 @@ class NamelistsCalculation(CalcJob):
                 "{}".format(",".join(list(input_params.keys()))))
         
         # copy remote output dir, if specified
+        parent_calc_folder =  self.inputs.get('parent_folder', None)
         if parent_calc_folder is not None:
             if isinstance(parent_calc_folder, RemoteData):
                 parent_calc_out_subfolder = settings_dict.pop('PARENT_CALC_OUT_SUBFOLDER',
                                               self._INPUT_SUBFOLDER)
                 remote_copy_list.append(
-                         (parent_calc_folder.get_computer().uuid,
+                         (parent_calc_folder.computer.uuid,
                           os.path.join(parent_calc_folder.get_remote_path(),
                                        parent_calc_out_subfolder),
                           self._OUTPUT_SUBFOLDER))
@@ -231,7 +167,7 @@ class NamelistsCalculation(CalcJob):
                         self._OUTPUT_SUBFOLDER)
                     )
             elif isinstance(parent_calc_folder, SinglefileData):
-                filename =parent_calc_folder.get_file_abs_path() 
+                filename = parent_calc_folder.get_file_abs_path() 
                 local_copy_list.append(
                     (filename, os.path.basename(filename))
                  )
@@ -245,31 +181,37 @@ class NamelistsCalculation(CalcJob):
         
         codeinfo = CodeInfo()
         codeinfo.cmdline_params = settings_dict.pop('CMDLINE', [])
-        codeinfo.stdin_name = self._INPUT_FILE_NAME
-        codeinfo.stdout_name = self._OUTPUT_FILE_NAME
-        codeinfo.code_uuid = code.uuid
+        codeinfo.stdin_name = self.inputs.metadata.options.input_filename
+        codeinfo.stdout_name = self.inputs.metadata.options.output_filename
+        codeinfo.code_uuid = self.inputs.code.uuid
         calcinfo.codes_info = [codeinfo]
         
         # Retrieve by default the output file and the xml file
         calcinfo.retrieve_list = []        
-        calcinfo.retrieve_list.append(self._OUTPUT_FILE_NAME)
+        calcinfo.retrieve_list.append(self.inputs.metadata.options.output_filename)
         settings_retrieve_list = settings_dict.pop('ADDITIONAL_RETRIEVE_LIST', [])
         calcinfo.retrieve_list += settings_retrieve_list
         calcinfo.retrieve_list += self._internal_retrieve_list
         
         calcinfo.retrieve_singlefile_list = self._retrieve_singlefile_list
-
-        if settings_dict:
+        
+        # We might still have parser options in the settings dictionary: pop them
+        # We need an instance of the parser class to get the parser options key (typically 'parser_options')
+        parser_name = self.inputs.get('metadata.options.parser_name', None)
+        if parser_name is not None:
+            Parserclass = ParserFactory(parser_name)
+            parser = Parserclass(self)
             try:
-                Parserclass = self.get_parserclass()
-                parser = Parserclass(self)
-                parser_opts = parser.get_parser_settings_key()
+                parser_opts = parser.get_parser_settings_key().upper()
                 settings_dict.pop(parser_opts)
-            except (KeyError,AttributeError): # the key parser_opts isn't inside the dictionary, or it is set to None
-                raise InputValidationError("The following keys have been found in "
+            except (KeyError, AttributeError):
+                # the key parser_opts isn't inside the dictionary,
+                # or the parser doesn't have a method get_parser_settings_key().
+                pass
+        
+        if settings_dict:
+            raise InputValidationError("The following keys have been found in "
                   "the settings input node, but were not understood: {}".format(
                   ",".join(list(settings_dict.keys()))))
-        
+
         return calcinfo
-
-

@@ -225,7 +225,9 @@ class BasePwCpInputGenerator(CalcJob):
         if no_bands is False:
             xmlpaths = os.path.join(self._OUTPUT_SUBFOLDER, self._PREFIX + '.save', 'K*[0-9]', 'eigenval*.xml')
             calcinfo.retrieve_temporary_list = [[xmlpaths, '.', 2]]
-
+        
+        # TODO: self.get_parserclass() probably raises AttributeError, but is caught later!
+        #       Use self.input('metadata.options.parser_name') instead
         try:
             Parserclass = self.get_parserclass()
             parser = Parserclass(self)
@@ -586,29 +588,21 @@ class BasePwCpInputGenerator(CalcJob):
 
 
 def _lowercase_dict(d, dict_name):
-    from collections import Counter
-
-    if not isinstance(d, dict):
-        raise TypeError("_lowercase_dict accepts only dictionaries as argument, while you gave {}".format(type(d)))
-    new_dict = dict((str(k).lower(), v) for k, v in six.iteritems(d))
-    if len(new_dict) != len(d):
-        num_items = Counter(str(k).lower() for k in d.keys())
-        double_keys = ",".join([k for k, v in num_items if v > 1])
-        raise exceptions.InputValidationError(
-            "Inside the dictionary '{}' there are the following keys that "
-            "are repeated more than once when compared case-insensitively: {}."
-            "This is not allowed.".format(dict_name, double_keys))
-    return new_dict
+    return _case_transform_dict(d, dict_name, "_lowercase_dict", str.lower)
 
 
 def _uppercase_dict(d, dict_name):
+    return _case_transform_dict(d, dict_name, "_uppercase_dict", str.upper)
+
+
+def _case_transform_dict(d, dict_name, func_name, transform):
     from collections import Counter
 
     if not isinstance(d, dict):
-        raise TypeError("_uppercase_dict accepts only dictionaries as argument, while you gave {}".format(type(d)))
-    new_dict = dict((str(k).upper(), v) for k, v in six.iteritems(d))
+        raise TypeError("{} accepts only dictionaries as argument, while you gave {}".format(func_name, type(d)))
+    new_dict = dict((transform(str(k)), v) for k, v in six.iteritems(d))
     if len(new_dict) != len(d):
-        num_items = Counter(str(k).upper() for k in d.keys())
+        num_items = Counter(transform(str(k)) for k in d.keys())
         double_keys = ",".join([k for k, v in num_items if v > 1])
         raise exceptions.InputValidationError(
             "Inside the dictionary '{}' there are the following keys that "
