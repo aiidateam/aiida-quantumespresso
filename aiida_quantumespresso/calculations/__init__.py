@@ -72,6 +72,8 @@ class BasePwCpInputGenerator(CalcJob):
         spec.input('parent_folder', valid_type=orm.RemoteData, required=False, help='')
         spec.input('vdw_table', valid_type=orm.SinglefileData, required=False, help='')
         spec.input_namespace('pseudos', valid_type=orm.UpfData, dynamic=True, help='')
+        # Override default withmpi=False
+        spec.input('metadata.options.withmpi', valid_type=bool, default=True)
 
     def prepare_for_submission(self, folder):
         """Create the input files from the input nodes passed to this instance of the `CalcJob`.
@@ -84,6 +86,7 @@ class BasePwCpInputGenerator(CalcJob):
             settings_dict = _uppercase_dict(settings, dict_name='settings')
         else:
             settings = {}
+            settings_dict = {}
 
         # Check that a pseudo potential was specified for each kind present in the `StructureData`
         kinds = [kind.name for kind in self.inputs.structure.kinds]

@@ -76,6 +76,7 @@ class PwCalculation(BasePwCpInputGenerator):
         spec.output('output_band', valid_type=orm.BandsData, required=False)
         spec.output('output_kpoints', valid_type=orm.KpointsData, required=False)
         spec.output('output_atomic_occupations', valid_type=orm.Dict, required=False)
+        spec.default_output_node = 'output_parameters'
 
         spec.exit_code(
             100, 'ERROR_NO_RETRIEVED_FOLDER', message='The retrieved folder data node could not be accessed.')
