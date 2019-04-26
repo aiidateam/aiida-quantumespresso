@@ -54,7 +54,7 @@ class PwParser(Parser):
         else:
             dir_with_bands = None
 
-        list_of_files = output_folder._repository.list_object_names()
+        list_of_files = output_folder.list_object_names()
 
         # The stdout is required for parsing
         filename_stdout = self.node.get_attribute('output_filename')

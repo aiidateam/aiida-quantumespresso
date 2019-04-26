@@ -68,35 +68,34 @@ def parse_raw_out_basic(out_file, calc_name):
     :param calc_name: the name of the calculation, e.g. PROJWFC
     :return: parsed_data
     """
-
-    # read file
     parsed_data = {}
     parsed_data['warnings'] = []
+    
     # critical warnings: if any is found, the calculation status is FAILED
     critical_warnings = {'Maximum CPU time exceeded':'Maximum CPU time exceeded',
                          '%%%%%%%%%%%%%%':None,
                          }
-
     minor_warnings = {'Warning:':None,
                       'DEPRECATED:':None,
                       }
     all_warnings = dict(list(critical_warnings.items()) + list(minor_warnings.items()))
-    for count in range (len(out_file)):
-        line = out_file[count]
-        # parse the global file, for informations that are written only once
+    
+    # parse the standard output file, for informations that are written only once
+    for count,line in enumerate(out_file):
         if calc_name in line and 'WALL' in line:
             try:
                 time = line.split('CPU')[1].split('WALL')[0]
                 parsed_data['wall_time'] = time
-            except ValueError:
+            except (ValueError, IndexError):
                 parsed_data['warnings'].append('Error while parsing wall time.')
-            try:
-                parsed_data['wall_time_seconds'] = convert_qe_time_to_sec(time)
-            except ValueError:
-                raise QEOutputParsingError("Unable to convert wall_time in seconds.")
-            # Parsing of errors
-        elif any( i in line for i in all_warnings):
-            message = [ all_warnings[i] for i in all_warnings.keys() if i in line][0]
+            else:
+                try:
+                    parsed_data['wall_time_seconds'] = convert_qe_time_to_sec(time)
+                except ValueError:
+                    raise QEOutputParsingError("Unable to convert wall_time in seconds.")
+        # Parsing of errors
+        elif any(i in line for i in all_warnings):
+            message = [all_warnings[i] for i in all_warnings.keys() if i in line][0]
             if message is None:
                 message = line
             if '%%%%%%%%%%%%%%' in line:
