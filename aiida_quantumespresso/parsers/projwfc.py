@@ -1,19 +1,15 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 import re
-import copy
 import fnmatch
 import numpy as np
-from aiida.parsers.parser import Parser
+from aiida.common import NotExistent, LinkType
+from aiida.orm import Dict, ProjectionData, BandsData, XyData, CalcJobNode
+from aiida.parsers import Parser
+from aiida.plugins import OrbitalFactory
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers import parse_raw_out_basic
-from aiida.common import InvalidOperation
-from aiida.orm.nodes.data.dict import Dict
-from aiida.tools.data.orbital import OrbitalFactory
 from aiida_quantumespresso.calculations.projwfc import ProjwfcCalculation
-from aiida.orm.nodes.data.array.projection import ProjectionData
-from aiida.orm.nodes.data.array.bands import BandsData
-from aiida.orm.nodes.data.array.xy import XyData
 from six.moves import range
 
 
@@ -21,7 +17,7 @@ def find_orbitals_from_statelines(out_info_dict):
     """
     This function reads in all the state_lines, that is, the lines describing
     which atomic states, taken from the pseudopotential, are used for the
-    projection. Then it converts these state_lines into a set of orbitals
+    projection. Then it converts these state_lines into a set of orbitals.
 
     :param out_info_dict: contains various technical internals useful in parsing
     :return: orbitals, a list of orbitals suitable for setting ProjectionData
@@ -44,8 +40,7 @@ def find_orbitals_from_statelines(out_info_dict):
             state_dict["magnetic_number"] = int(mnum_re.findall(state_line)[0])
             state_dict["magnetic_number"] -= 1 # to keep with orbital indexing
         except ValueError:
-            raise QEOutputParsingError("State lines are not formatted "
-            "in a standard way.")
+            raise QEOutputParsingError("State lines are not formatted in a standard way.")
         state_dicts.append(state_dict)
 
     # here is some logic to figure out the value of radial_nodes to use
@@ -68,68 +63,14 @@ def find_orbitals_from_statelines(out_info_dict):
 
     # here we set the resulting state_dicts to a new set of orbitals
     orbitals = []
-    realh = OrbitalFactory("realhydrogen")
+    RealhydrogenOrbital = OrbitalFactory("realhydrogen")
     for state_dict in state_dicts:
-        this_orb = realh()
-        this_orb.set_orbital_dict(state_dict)
-        orbitals.append(this_orb)
+        orbitals.append(RealhydrogenOrbital(**state_dict))
+    
     return orbitals
 
-# def find_dicts_from_pdos_atm_filenames(out_info_dict):
-#     """
-#     Finds dicts that can be later matched
-#     :param out_info_dict: dictionary of paramters used for the parsing
-#     :return: pdos_atm_dicts a list of dicts describing the pdos_atm files
-#     """
-#     pdos_atm_array_dict = out_info_dict["pdos_atm_array_dict"]
-#     pdos_atm_names = [k for k in pdos_atm_array_dict]
-#     pdos_atm_names.sort()
-#     def extract_pdosatm_labeltag(pdos_name):
-#         """
-#         Extracts dictionary information from the pdos_name suitable for
-#         setting or matching to an orbital
-#         :param pdos_name: the pdos_atm file name to parse dict info from
-#         :return: pdos_labeldict a dict containing key orbital parameters
-#         """
-#         pdos_labeldict = {}
-#         spdf_dict = {'s':0,'p':1,'d':2,'f':3}
-#         num_re = re.compile('\d') #Finds all numbers in a string
-#         bracket_re = re.compile(r"\(([A-Za-z0-9_]+)\)") #finds bracket-enclosed
-#         nums = num_re.findall(pdos_name)       # all the numbers in name
-#         brackets = bracket_re.findall(pdos_name) #all bracket enclosed in name
-#         pdos_labeldict['atomnum'] = int(nums[0]) - 1
-#         pdos_labeldict['kind_name'] = brackets[0]
-#         pdos_labeldict['angular_momentum'] = int(spdf_dict[brackets[1]])
-#         # pdos_labeldict['filename'] = pdos_name # not needed, sorted filename
-#         return pdos_labeldict
-#
-#     pdos_namedicts = [extract_pdosatm_labeltag(name) for name
-#                           in pdos_atm_names]
-#
-#     # here is some logic to figure out the value of radial_nodes to use
-#     new_pdos_namedicts = []
-#     k1 = "angular_momentum"
-#     k2 = "atomnum"
-#     for i in range(len(pdos_namedicts)):
-#         radial_nodes = 0
-#         state_dict = pdos_namedicts[i].copy()
-#         for j in range(i-1, -1, -1):
-#             if state_dict[k1] == pdos_namedicts[j][k1] and (
-#                state_dict[k2] == pdos_namedicts[j][k2]):
-#                 radial_nodes += 1
-#         state_dict["radial_nodes"] = radial_nodes
-#         new_pdos_namedicts.append(state_dict)
-#     pdos_namedicts = new_pdos_namedicts
-#
-#     # here is some logic to assign positions based on the atom_index
-#     structure = out_info_dict["structure"]
-#     for state_dict in state_dicts:
-#         site_index = state_dict.pop("atomnum")
-#         state_dict["position"] = structure.sites[site_index].position
-#     return pdos_atm_namedicts
 
-
-def spin_dependent_subparcer(out_info_dict):
+def spin_dependent_subparser(out_info_dict):
     """
     This find the projection and bands arrays from the out_file and
     out_info_dict. Used to handle the different possible spin-cases in
@@ -183,7 +124,7 @@ def spin_dependent_subparcer(out_info_dict):
 
     bands_data = BandsData()
     try:
-    # Attempts to retrive the kpoints from the parent calc
+    # Attempts to retrieve the kpoints from the parent calc
         parent_calc = out_info_dict["parent_calc"]
         parent_kpoints = parent_calc.get_incoming(link_label_filter='kpoints').one().node
         if len(od['k_vect']) != len(parent_kpoints.get_kpoints()):
@@ -210,7 +151,7 @@ def spin_dependent_subparcer(out_info_dict):
 
 
     #insert here some logic to assign pdos to the orbitals
-    pdos_arrays = spin_dependent_pdos_subparcer(out_info_dict)
+    pdos_arrays = spin_dependent_pdos_subparser(out_info_dict)
     energy_arrays = [out_info_dict["energy"]]*len(orbitals)
     projection_data.set_projectiondata(orbitals,
                                        list_of_projections=projections,
@@ -218,7 +159,7 @@ def spin_dependent_subparcer(out_info_dict):
                                        list_of_pdos=pdos_arrays,
                                        bands_check=False)
     # pdos=pdos_arrays
-    return bands_data,  projection_data
+    return bands_data, projection_data
 
 
 def natural_sort_key(sort_key, _nsre=re.compile('([0-9]+)')):
@@ -238,7 +179,7 @@ def natural_sort_key(sort_key, _nsre=re.compile('([0-9]+)')):
     return keys
 
 
-def spin_dependent_pdos_subparcer(out_info_dict):
+def spin_dependent_pdos_subparser(out_info_dict):
     """
     Finds and labels the pdos arrays associated with the out_info_dict
 
@@ -272,9 +213,6 @@ def spin_dependent_pdos_subparcer(out_info_dict):
     return out_arrays
 
 
-
-
-
 class ProjwfcParser(Parser):
     """
     This class is the implementation of the Parser class for projwfc.x in
@@ -282,149 +220,128 @@ class ProjwfcParser(Parser):
     each point in the bands structure, as well as pdos arrays, which map
     the projected density of states onto an energy axis.
     """
-
-    def __init__(self, calculation):
-        """
-        Initialize the instance of ProjwfcParser
-        """
-        # check for valid input
-        if not isinstance(calculation, ProjwfcCalculation):
-            raise QEOutputParsingError("Input calc must be a "
-                                       "ProjwfcCalculation")
-        self._calc = calculation
-        super(ProjwfcParser, self).__init__(calculation)
-
+    
     def parse(self, **kwargs):
-            """
-            Parses the datafolder, stores results.
-            Retrieves projwfc output, and some basic information from the
-            out_file, such as warnings and wall_time
-            """
+        """
+        Parses the datafolder, stores results.
+        Retrieves projwfc output, and some basic information from the
+        out_file, such as warnings and wall_time
+        """
+        # Check that the retrieved folder is there
+        try:
+            out_folder = self.retrieved
+        except NotExistent:
+            return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
 
-            # job is unsuccessful until established otherwise
-            successful = False
-            new_nodes_list = []
+        # Read standard out
+        try:
+            filename_stdout = self.node.get_option('output_filename')  # or get_attribute(), but this is clearer
+            with out_folder.open(filename_stdout, 'r') as fil:
+                out_file = fil.readlines()
+        except OSError:
+            return self.exit_codes.ERROR_READING_OUTPUT_FILE
 
-            # Check that the retrieved folder is there
-            try:
-                out_folder = self._calc.get_retrieved_node()
-            except KeyError:
-                self.logger.error("No retrieved folder found")
-                return successful, new_nodes_list
+        job_done = False
+        for i in range(len(out_file)):
+            line = out_file[-i]
+            if "JOB DONE" in line:
+                job_done = True
+                break
+        if not job_done:
+            self.logger.error("Computation did not finish properly")
+            return self.exit_codes.ERROR_JOB_NOT_DONE
 
-
-            # Reading all the files produced during the calculation
-            # Read standard out
-            try:
-                filpath = out_folder.get_abs_path(self._calc._OUTPUT_FILE_NAME)
-                with open(filpath, 'r') as fil:
-                        out_file = fil.readlines()
-            except OSError:
-                self.logger.error("Standard output file could not be found.")
-                successful = False
-                return successful, new_nodes_list
-
-            # check that the file has finished i.e. JOB DONE is inside the file
-            for i in range(len(out_file)):
-                line = out_file[-i]
-                if "JOB DONE" in line:
-                    successful = True
-                    break
-            if not successful:
-                self.logger.error("Computation did not finish properly")
-            parsed_data = parse_raw_out_basic(out_file, "PROJWFC")
-            # Adds warnings
-            for message in parsed_data['warnings']:
-                self.logger.error(message)
-
-            # creating node list, setting initial parameters
-            output_params = Dict(dict=parsed_data)
-            new_nodes_list.append((self.get_linkname_outparams(), output_params))
-
-            # checks and reads pdos_tot file
-            out_filenames = out_folder.get_folder_list()
-            pdostot_filename = fnmatch.filter(out_filenames,'*pdos_tot*')[0]
-            try:
-                pdostot_path  = out_folder.get_abs_path(pdostot_filename)
-                # Energy(eV), Ldos, Pdos
-                pdostot_array = np.genfromtxt(pdostot_path)
+        # Parse basic info and warnings, and output them as output_parmeters
+        parsed_data = parse_raw_out_basic(out_file, "PROJWFC")
+        for message in parsed_data['warnings']:
+            self.logger.error(message)
+        output_params = Dict(dict=parsed_data)
+        self.out('output_parameters', output_params)
+        
+        # check and read pdos_tot file
+        out_filenames = out_folder.list_object_names()
+        try:
+            pdostot_filename = fnmatch.filter(out_filenames, '*pdos_tot*')[0]
+            with out_folder.open(pdostot_filename, 'r') as pdostot_file:
+                # Columns: Energy(eV), Ldos, Pdos
+                pdostot_array = np.genfromtxt(pdostot_file)
                 energy = pdostot_array[:,0]
                 dos = pdostot_array[:,1]
-            except OSError:
-                successful = False
-                self.logger.error("pdos_tot output file could not found")
-                return successful, new_nodes_list
+        except (OSError, KeyError):
+            self.logger.error("Error reading pdos_tot output file")
+            return self.exit_codes.ERROR_READING_PDOSTOT_FILE
 
-            # checks and reads all of the individual pdos_atm files
-            pdos_atm_filenames = fnmatch.filter(out_filenames,'*pdos_atm*')
-            pdos_atm_array_dict = {name:np.genfromtxt(out_folder.get_abs_path(
-                                   name)) for name in pdos_atm_filenames}
+        # check and read all of the individual pdos_atm files
+        pdos_atm_filenames = fnmatch.filter(out_filenames, '*pdos_atm*')
+        pdos_atm_array_dict = {}
+        for name in pdos_atm_filenames:
+            with out_folder.open(name, 'r') as pdosatm_file:
+                pdos_atm_array_dict[name] = np.genfromtxt(pdosatm_file)
 
-            # finding the bands and projections
-            out_info_dict = {}
-            out_info_dict["out_file"] = out_file
-            out_info_dict["energy"] = energy
-            out_info_dict["pdos_atm_array_dict"] = pdos_atm_array_dict
-            new_nodes_list += self._parse_bands_and_projections(out_info_dict)
+        # finding the bands and projections
+        # we create a dictionary the progressively accumulates more info
+        out_info_dict = {}
+        out_info_dict["out_file"] = out_file
+        out_info_dict["energy"] = energy
+        out_info_dict["pdos_atm_array_dict"] = pdos_atm_array_dict
+        new_nodes_list = self._parse_bands_and_projections(out_info_dict)
+        for linkname, node in new_nodes_list:
+            self.out(linkname, node)
 
-            Dos_out = XyData()
-            Dos_out.set_x(energy,"Energy","eV")
-            Dos_out.set_y(dos,"Dos","states/eV")
-            new_nodes_list += [("Dos",Dos_out)]
-
-            return successful, new_nodes_list
+        Dos_out = XyData()
+        Dos_out.set_x(energy, "Energy", "eV")
+        Dos_out.set_y(dos, "Dos", "states/eV")
+        self.out("Dos", Dos_out)
 
 
     def _parse_bands_and_projections(self, out_info_dict):
         """
-        Function that parsers the standard out into bands and projection
-        data.
-        :param standard_out: standard out file in form of a list
+        Function that parses the standard output into bands and projection data.
+        
         :param out_info_dict: used to pass technical internal variables
                               to helper functions in compact form
-
         :return: append_nodes_list a list containing BandsData and
                  ProjectionData parsed from standard_out
         """
-        out_file = out_info_dict["out_file"]
+        out_file = out_info_dict["out_file"]  # Note: we expect a list of lines
         out_info_dict["k_lines"] = []
         out_info_dict["e_lines"] = []
         out_info_dict["psi_lines"] = []
         out_info_dict["wfc_lines"] = []
         append_nodes_list = []
 
-        for i in range(len(out_file)):
-            if "k =" in out_file[i]:
-                out_info_dict["k_lines"].append(copy.deepcopy(i))
-            if "==== e(" in out_file[i]:
+        for i,line in enumerate(out_file):
+            if "k =" in line:
+                out_info_dict["k_lines"].append(i)
+            if "==== e(" in line:
                 out_info_dict["e_lines"].append(i)
-            if "|psi|^2" in out_file[i]:
+            if "|psi|^2" in line:
                 out_info_dict["psi_lines"].append(i)
-            if "state #" in out_file[i]:
+            if "state #" in line:
                 out_info_dict["wfc_lines"].append(i)
 
-        #Basic check
+        # Basic check
         if len(out_info_dict["e_lines"]) != len(out_info_dict["psi_lines"]):
-            raise QEOutputParsingError("Not formatted in a manner "
-            " that can be handled")
+            raise QEOutputParsingError("e-lines and psi-lines are in different number")
         if len(out_info_dict["psi_lines"]) % len(out_info_dict["k_lines"]) != 0:
-            raise QEOutputParsingError("Band Energy Points is not "
-            " a multiple of kpoints")
-        #calculates the number of bands
-        out_info_dict["num_bands"] = len(
-            out_info_dict["psi_lines"])/len(out_info_dict["k_lines"])
+            raise QEOutputParsingError("Band Energy Points is not a multiple of kpoints")
+        # calculates the number of bands
+        out_info_dict["num_bands"] = len(out_info_dict["psi_lines"]) // len(out_info_dict["k_lines"])
 
         # Uses the parent input parameters, and checks if the parent used
-        # spin calculations try to replace with a query, if possible.
-        parent_remote = self._calc.get_incoming(link_label_filter='parent_calc_folder').one().node
-        parent_calc = parent_remote.get_incoming(link_label_filter='remote_folder').one().node
+        # spin calculations. Try to replace with a query, if possible.
+        try:
+            parent_calc = (self.node.inputs.parent_folder
+                           .get_incoming(node_class=CalcJobNode, link_type=LinkType.CREATE).one().node)
+        except ValueError as e:
+            raise QEOutputParsingError("Could not get parent calculation of input folder: {}".format(e))
         out_info_dict["parent_calc"] = parent_calc
 
         parent_param = parent_calc.get_outgoing(link_label_filter='output_parameters').one().node
         try:
             structure = parent_calc.get_incoming(link_label_filter='structure').one().node
         except ValueError:
-            raise ValueError("The parent had no structure! Cannot parse from this!")
+            raise QEOutputParsingError("The parent had no structure! Cannot parse from this!")
         try:
             nspin = parent_param.get_dict()['number_of_spin_components']
             if nspin != 1:
@@ -435,13 +352,13 @@ class ProjwfcParser(Parser):
             spin = False
         out_info_dict["spin"] = spin
 
-        #changes k-numbers to match spin
-        #because if spin is on, k points double for up and down
+        # changes k-numbers to match spin
+        # because if spin is on, k points double for up and down
         out_info_dict["k_states"] = len(out_info_dict["k_lines"])
         if spin:
             if out_info_dict["k_states"] % 2 != 0:
-                raise ValueError("Internal formatting error regarding spin")
-            out_info_dict["k_states"] = out_info_dict["k_states"]/2
+                raise QEOutputParsingError("Internal formatting error regarding spin")
+            out_info_dict["k_states"] = out_info_dict["k_states"] // 2
 
         #   adds in the k-vector for each kpoint
         k_vect = [out_file[out_info_dict["k_lines"][i]].split()[2:]
@@ -464,21 +381,17 @@ class ProjwfcParser(Parser):
             # spin up states are written first, then spin down
             #
             out_info_dict["spin_down"] = False
-            bands_data1, projection_data1 = spin_dependent_subparcer(
-                out_info_dict)
+            bands_data1, projection_data1 = spin_dependent_subparser(out_info_dict)
             append_nodes_list += [("projections_up", projection_data1),
-                                     ("bands_up", bands_data1)]
+                                  ("bands_up", bands_data1)]
             out_info_dict["spin_down"] = True
-            bands_data2, projection_data2 = spin_dependent_subparcer(
-                out_info_dict)
+            bands_data2, projection_data2 = spin_dependent_subparser(out_info_dict)
             append_nodes_list += [("projections_down", projection_data2),
-                     ("bands_down", bands_data2)]
+                                  ("bands_down", bands_data2)]
         else:
             out_info_dict["spin_down"] = False
-            bands_data, projection_data = spin_dependent_subparcer(
-                out_info_dict)
+            bands_data, projection_data = spin_dependent_subparser(out_info_dict)
             append_nodes_list += [("projections", projection_data),
-                     ("bands", bands_data)]
+                                  ("bands", bands_data)]
 
         return append_nodes_list
-

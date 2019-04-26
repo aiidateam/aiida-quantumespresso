@@ -7,4 +7,5 @@ from .matdyn import launch_calculation
 from .ph import launch_calculation
 from .pw import launch_calculation
 from .pw2wannier90 import launch_calculation
+from .projwfc import launch_calculation
 from .q2r import launch_calculation
