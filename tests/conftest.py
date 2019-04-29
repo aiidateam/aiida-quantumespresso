@@ -6,8 +6,8 @@ import shutil
 import tempfile
 
 import pytest
-
 from aiida.manage.fixtures import fixture_manager
+from ase.spacegroup import crystal
 
 
 @pytest.fixture(scope='session')
@@ -141,6 +141,51 @@ def generate_inputs():
             inputs = AttributeDict({
                 'structure': structure,
                 'kpoints': kpoints,
+                'parameters': orm.Dict(dict=parameters),
+                'settings': orm.Dict()
+            })
+
+        if entry_point_name == 'quantumespresso.cp':
+            alat = 5.4
+            ase_structure = crystal(
+                "Si",
+                [(0, 0, 0)],
+                spacegroup=227,
+                cellpar=[alat, alat, alat, 90, 90, 90],
+                primitive_cell=True,
+            )
+            structure = orm.StructureData(ase=ase_structure)
+            structure.store()
+            parameters = {
+                'CONTROL': {
+                    'calculation': "cp",
+                    'restart_mode': "from_scratch",
+                    'wf_collect': False,
+                    'iprint': 1,
+                    'isave': 100,
+                    'dt': 3.0,
+                    'max_seconds': 25 * 60,
+                    'nstep': 10,
+                },
+                'SYSTEM': {
+                    'ecutwfc': 30.0,
+                    'ecutrho': 240.0,
+                    'nr1b': 24,
+                    'nr2b': 24,
+                    'nr3b': 24,
+                },
+                'ELECTRONS': {
+                    'electron_damping': 1.0e-1,
+                    'electron_dynamics': "damp",
+                    'emass': 400.0,
+                    'emass_cutoff': 3.0,
+                },
+                'IONS': {
+                    'ion_dynamics': "none"
+                },
+            }
+            inputs = AttributeDict({
+                'structure': structure,
                 'parameters': orm.Dict(dict=parameters),
                 'settings': orm.Dict()
             })
