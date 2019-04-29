@@ -28,7 +28,7 @@ class BasePwCpInputGenerator(CalcJob):
     # Additional files that should always be retrieved for the specific plugin
     _internal_retrieve_list = []
 
-    # Default PW output parser provided by AiiDA to be defined in the subclass
+    # Name lists to print by calculation type
     _automatic_namelists = {}
 
     # Blocked keywords that are to be specified in the subclass
@@ -121,8 +121,9 @@ class BasePwCpInputGenerator(CalcJob):
             settings_dict,
             self.inputs.pseudos,
             self.inputs.structure,
-            self.inputs.kpoints
         ]
+        if self._use_kpoints:
+            arguments.append(self.inputs.kpoints)
         input_filecontent, local_copy_pseudo_list = self._generate_PWCPinputdata(*arguments)
         local_copy_list += local_copy_pseudo_list
 
