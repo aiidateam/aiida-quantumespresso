@@ -20,7 +20,7 @@ class PwBandStructureWorkChain(WorkChain):
         super(PwBandStructureWorkChain, cls).define(spec)
         spec.input('code', valid_type=orm.Code)
         spec.input('structure', valid_type=orm.StructureData)
-        spec.input('protocol', valid_type=orm.Dict, required=False, default=orm.Dict(dict={'name':'theos-ht-1.0'}))
+        spec.input('protocol', valid_type=orm.Dict, default=orm.Dict(dict={'name':'theos-ht-1.0'}))
         spec.input('scf_options', valid_type=orm.Dict, required=False)
         spec.outline(
             cls.setup_protocol,
