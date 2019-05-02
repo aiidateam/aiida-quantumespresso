@@ -15,12 +15,17 @@ PwBandsWorkChain = WorkflowFactory('quantumespresso.pw.bands')
 
 def _validate_protocol(protocol_dict):
     """ Check that the protocol is one for which we have a definition. """
+    if protocol_dict == ():
+        # Work around this issue in plumpy: https://github.com/aiidateam/plumpy/issues/102
+        return
     try:
-        protocol = ProtocolManager(protocol_dict['name'])
-    except (KeyError, ValueError):
-        return False
-    else:
-        return True
+        protocol_name = protocol_dict['name']
+    except KeyError as e:
+        return "Couldn't find key " + str(e) + " in protocol dictionary"
+    try:
+        protocol = ProtocolManager(protocol_name)
+    except ValueError as e:
+        return str(e)  # "Unknown protocol '{}'".format(name)
 
 
 class PwBandStructureWorkChain(WorkChain):
