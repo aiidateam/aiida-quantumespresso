@@ -8,8 +8,19 @@ from aiida.plugins import WorkflowFactory
 from aiida_quantumespresso.utils.mapping import update_mapping
 from aiida_quantumespresso.utils.protocols.pw import ProtocolManager
 from aiida_quantumespresso.utils.pseudopotential import get_pseudos_from_dict
+from aiida_quantumespresso.utils.resources import get_default_options
 
 PwBandsWorkChain = WorkflowFactory('quantumespresso.pw.bands')
+
+
+def _validate_protocol(protocol_dict):
+    """ Check that the protocol is one for which we have a definition. """
+    try:
+        protocol = ProtocolManager(protocol_dict['name'])
+    except (KeyError, ValueError):
+        return False
+    else:
+        return True
 
 
 class PwBandStructureWorkChain(WorkChain):
@@ -20,8 +31,9 @@ class PwBandStructureWorkChain(WorkChain):
         super(PwBandStructureWorkChain, cls).define(spec)
         spec.input('code', valid_type=orm.Code)
         spec.input('structure', valid_type=orm.StructureData)
-        spec.input('protocol', valid_type=orm.Dict, default=orm.Dict(dict={'name':'theos-ht-1.0'}))
-        spec.input('scf_options', valid_type=orm.Dict, required=False)
+        spec.input('protocol', valid_type=orm.Dict, default=orm.Dict(dict={'name':'theos-ht-1.0'}),
+                   validator=_validate_protocol)
+        spec.input('scf_options', valid_type=orm.Dict, default=orm.Dict(dict=get_default_options(with_mpi=True)))
         spec.outline(
             cls.setup_protocol,
             cls.setup_kpoints,
