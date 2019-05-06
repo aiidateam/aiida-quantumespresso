@@ -4,25 +4,36 @@ import json
 import os
 import six
 
+
+def _load_pseudo_metadata(filename):
+    """
+    Load from the current folder a json file containing metadata (incl. suggested cutoffs)
+    for a library of pseudopotentials.
+    """
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)) as f:
+        return json.load(f)
+
 def _get_all_protocol_modifiers():
     """
     Return the information on all possibile modifiers for all known protocols.
     It is a function so we can lazily load the jsons.
     """
-    # SSSP Efficiency v1.0, see https://www.materialscloud.org/archive/2018.0001
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sssp_efficiency_1.0.json')) as f:
-        SSSP_1_0_eff = json.load(f)
-    # SSSP Accuracy v1.0, see https://www.materialscloud.org/archive/2018.0001
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sssp_precision_1.0.json')) as f:
-        SSSP_1_0_prec = json.load(f)
+    # SSSP Efficiency & Precision v1.0, see https://www.materialscloud.org/archive/2018.0001/v2
+    SSSP_1_0_eff = _load_pseudo_metadata('sssp_efficiency_1.0.json')
+    SSSP_1_0_prec = _load_pseudo_metadata('sssp_precision_1.0.json')
+    # SSSP Efficiency & Precision v1.1, see https://www.materialscloud.org/archive/2018.0001/v3
+    SSSP_1_1_eff = _load_pseudo_metadata('sssp_efficiency_1.1.json')
+    SSSP_1_1_prec = _load_pseudo_metadata('sssp_precision_1.1.json')
 
     protocols =  {
         'theos-ht-1.0': {
             'pseudo': {
                 'SSSP-efficiency-1.0': SSSP_1_0_eff,
                 'SSSP-precision-1.0': SSSP_1_0_prec,
+                'SSSP-efficiency-1.1': SSSP_1_1_eff,
+                'SSSP-precision-1.1': SSSP_1_1_prec,
             },
-            'pseudo_default': 'SSSP-efficiency-1.0',
+            'pseudo_default': 'SSSP-efficiency-1.1',
             'parameters': {
                 'fast': {
                     'kpoints_mesh_offset': [0., 0., 0.],
