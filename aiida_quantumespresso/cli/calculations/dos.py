@@ -9,17 +9,9 @@ from aiida.cmdline.utils import decorators
 
 from aiida_quantumespresso.cli.utils import options as options_qe
 
-# required inputs: code, input_parameters, (parent_calculation or parent_folder)
-# optional: settings
-
 
 @click.command()
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.dos'))
-# Note: you cannot ask for a CalcJobNode created by a specific plugin, because you can get subclasses of Process via the
-# entry point system, but not subclasses of Node. You could filter by process_type of the CalcJobNode, but this is
-# currently not implemented in IdentifierParamType.
-#@options.CALCULATION(required=True, type=types.CalculationParamType(
-#    sub_classes=('aiida.calculations:quantumespresso.pw',)))
 @options.CALCULATION(required=True)
 @options_qe.MAX_NUM_MACHINES()
 @options_qe.MAX_WALLCLOCK_SECONDS()
@@ -29,12 +21,14 @@ from aiida_quantumespresso.cli.utils import options as options_qe
 def cli(code, calculation, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
     """Run a DosCalculation."""
     from aiida.engine import launch
-    from aiida.orm import Dict
     from aiida.plugins import CalculationFactory
     from aiida_quantumespresso.utils.resources import get_default_options
 
     DosCalculation = CalculationFactory('quantumespresso.dos')  # pylint: disable=invalid-name
 
+    # Check that the parent calculation node comes from quantumespresso.pw.
+    # I cannot move this check into the option declaration, because CalcJobNode is not subclassed by the specific
+    # calculation plugins (only Process is), and there is no feature yet to filter by the associated process_type.
     expected_process_type = 'aiida.calculations:quantumespresso.pw'
     if calculation.process_type != expected_process_type:
         raise click.BadParameter('The input calculation node has a process_type: {}; should be {}'.format(
@@ -44,8 +38,6 @@ def cli(code, calculation, max_num_machines, max_wallclock_seconds, with_mpi, da
     inputs = {
         'code': code,
         'parent_folder': parent_folder,
-        'parameters': Dict(dict={}),
-        'settings': Dict(dict={}),
         'metadata': {
             'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
         }

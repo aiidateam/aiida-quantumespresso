@@ -78,7 +78,6 @@ def cli(code, structure, pseudo_family, kpoints_mesh, ecutwfc, ecutrho, hubbard_
         'pseudos': get_pseudos_from_structure(structure, pseudo_family),
         'kpoints': kpoints_mesh,
         'parameters': Dict(dict=parameters),
-        'settings': Dict(dict={}),
         'metadata': {
             'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
         }

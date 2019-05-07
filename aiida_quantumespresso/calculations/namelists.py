@@ -62,8 +62,8 @@ class NamelistsCalculation(CalcJob):
         spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE, non_db=True)
         spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE, non_db=True)
         spec.input('metadata.options.parser_name', valid_type=six.string_types, required=False, non_db=True)
-        spec.input('parameters', valid_type=Dict, help='Use a node that specifies the input parameters for the namelists')
-        spec.input('settings', valid_type=Dict, required=False, default=Dict(dict={}), help='Use an additional node for special settings')
+        spec.input('parameters', valid_type=Dict, required=False, help='Use a node that specifies the input parameters for the namelists')
+        spec.input('settings', valid_type=Dict, required=False, help='Use an additional node for special settings')
         spec.input('parent_folder', valid_type=(RemoteData, FolderData, SinglefileData), required=False, help='Use a local or remote folder as parent folder (for restarts and similar)')
 
     def _get_following_text(self, settings_dict):
@@ -85,9 +85,12 @@ class NamelistsCalculation(CalcJob):
         remote_copy_list = []
         
         # Settings converted to uppercase
-        settings_dict = _uppercase_dict(self.inputs.settings.get_dict(),
-                                        dict_name='settings')
-
+        if 'settings' in self.inputs:
+            settings_dict = _uppercase_dict(self.inputs.settings.get_dict(),
+                                            dict_name='settings')
+        else:
+            settings_dict = {}
+        
         following_text = self._get_following_text(settings_dict)
         
         ##############################
@@ -97,10 +100,13 @@ class NamelistsCalculation(CalcJob):
         # I put the first-level keys as uppercase (i.e., namelist and card names)
         # and the second-level keys as lowercase
         # (deeper levels are unchanged)
-        input_params = _uppercase_dict(self.inputs.parameters.get_dict(),
-                                       dict_name='parameters')
-        input_params = {k: _lowercase_dict(v, dict_name=k) 
-                        for k, v in six.iteritems(input_params)}
+        if 'parameters' in self.inputs:
+            input_params = _uppercase_dict(self.inputs.parameters.get_dict(),
+                                           dict_name='parameters')
+            input_params = {k: _lowercase_dict(v, dict_name=k)
+                            for k, v in six.iteritems(input_params)}
+        else:
+            input_params = {}
         
         # set default values. NOTE: this is different from PW/CP
         for blocked in self._blocked_keywords:
@@ -113,9 +119,7 @@ class NamelistsCalculation(CalcJob):
                     raise InputValidationError(
                         "You cannot specify explicitly the '{}' key in the '{}' "
                         "namelist.".format(key, namelist))
-                    
-            # set to a default
-            if namelist not in input_params:
+            else:
                 input_params[namelist] = {}
             input_params[namelist][key] = value
         
