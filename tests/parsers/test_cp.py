@@ -24,6 +24,7 @@ def test_cp_default(fixture_database, fixture_computer_localhost, generate_calc_
     assert calcfunction.is_finished_ok, calcfunction.exit_message
     assert 'output_parameters' in results
     assert 'output_trajectory' in results
-    trajectory = results['output_trajectory'].attributes
-    trajectory['symbols'] = [str(s) for s in trajectory['symbols']]
-    data_regression.check({'parameters': results['output_parameters'].get_dict(), 'trajectory': trajectory})
+    data_regression.check({
+        'parameters': results['output_parameters'].get_dict(),
+        'trajectory': results['output_trajectory'].attributes
+    })
