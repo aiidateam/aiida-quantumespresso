@@ -16,7 +16,6 @@
         aiida_quantumespresso/tools/.*|
         aiida_quantumespresso/utils/.*|
         aiida_quantumespresso/workflows/.*|
-        aiida_quantumespresso/cli/.*|
         docs/.*|
         examples/.*|
         tests/.*
