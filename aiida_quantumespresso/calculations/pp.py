@@ -1,37 +1,37 @@
 # -*- coding: utf-8 -*-
+
 from __future__ import absolute_import
-from aiida.common import exceptions
-from aiida.orm.nodes.data.remote import RemoteData
+from aiida.orm import RemoteData, FolderData
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
-from aiida_quantumespresso.calculations.pw import PwCalculation
 
 
 class PpCalculation(NamelistsCalculation):
     """
-    Pp.x code of the Quantum ESPRESSO distribution, handles the
+    `pp.x` code of the Quantum ESPRESSO distribution, handles the
     post-processing of charge-densities, potentials, ...
     For more information, refer to http://www.quantum-espresso.org/
     """
-    def _init_internal_params(self):
-        super(PpCalculation, self)._init_internal_params()
-        self._default_namelists = ['INPUTPP', 'PLOT']
-        self._FILPLOT = "aiida.filplot"
-        self._blocked_keywords = [
-            ('INPUTPP', 'outdir', self._OUTPUT_SUBFOLDER),
-            ('INPUTPP', 'prefix', self._PREFIX),
-            ('INPUTPP', 'filplot', self._FILPLOT),
-        ]
-        self._default_parser = None
-        self._internal_retrieve_list = [self._FILPLOT]
 
-    def use_parent_calculation(self, calc):
-        """Set the parent calculation."""
-        if not isinstance(calc, PwCalculation):
-            raise ValueError('Parent calculation must be a PwCalculation')
+    _FILPLOT = "aiida.filplot"
 
-        try:
-            remote_folder = calc.get_outgoing(node_class=RemoteData, link_label_filter='remote_folder').one().node
-        except ValueError:
-            raise exceptions.UniquenessError('Parent calculation does not have a remote folder output node.')
+    _default_namelists = ["INPUTPP", "PLOT"]
 
-        self.use_parent_folder(remote_folder)
+    _blocked_keywords = [
+        ("INPUTPP", "outdir", NamelistsCalculation._OUTPUT_SUBFOLDER),
+        ("INPUTPP", "prefix", NamelistsCalculation._PREFIX),
+        ("INPUTPP", "filplot", NamelistsCalculation._FILPLOT),
+    ]
+
+    _default_parser = None
+
+    _internal_retrieve_list = [_FILPLOT]
+
+    @classmethod
+    def define(cls, spec):
+        super(PpCalculation, cls).define(spec)
+        spec.input(
+            "parent_folder",
+            valid_type=(RemoteData, FolderData),
+            required=True,
+            help="Output folder of a PW calculation",
+        )
