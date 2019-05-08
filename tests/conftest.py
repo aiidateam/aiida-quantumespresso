@@ -7,7 +7,6 @@ import tempfile
 
 import pytest
 from aiida.manage.fixtures import fixture_manager
-from ase.spacegroup import crystal
 
 
 @pytest.fixture(scope='session')
@@ -108,88 +107,3 @@ def generate_parser():
         return ParserFactory(entry_point_name)
 
     return _generate_parser
-
-
-@pytest.fixture
-def generate_inputs():
-    """Fixture to define some basic inputs nodes that are used."""
-
-    def _generate_inputs(entry_point_name):
-        """Fixture to load a parser class for testing parsers.
-
-        :param entry_point_name: entry point name of the parser class
-        :return: the `Parser` sub class
-        """
-        from aiida import orm
-        from aiida.common import AttributeDict
-
-        if entry_point_name == 'quantumespresso.pw':
-            structure = orm.StructureData()
-            parameters = {
-                'CONTROL': {
-                    'calculation': 'scf'
-                },
-                'SYSTEM': {
-                    'ecutrho': 240.0,
-                    'ecutwfc': 30.0
-                }
-            }
-            kpoints = orm.KpointsData()
-            kpoints.set_cell_from_structure(structure)
-            kpoints.set_kpoints_mesh_from_density(0.15)
-
-            inputs = AttributeDict({
-                'structure': structure,
-                'kpoints': kpoints,
-                'parameters': orm.Dict(dict=parameters),
-                'settings': orm.Dict()
-            })
-
-        if entry_point_name == 'quantumespresso.cp':
-            alat = 5.4
-            ase_structure = crystal(
-                "Si",
-                [(0, 0, 0)],
-                spacegroup=227,
-                cellpar=[alat, alat, alat, 90, 90, 90],
-                primitive_cell=True,
-            )
-            structure = orm.StructureData(ase=ase_structure)
-            structure.store()
-            parameters = {
-                'CONTROL': {
-                    'calculation': "cp",
-                    'restart_mode': "from_scratch",
-                    'wf_collect': False,
-                    'iprint': 1,
-                    'isave': 100,
-                    'dt': 3.0,
-                    'max_seconds': 25 * 60,
-                    'nstep': 10,
-                },
-                'SYSTEM': {
-                    'ecutwfc': 30.0,
-                    'ecutrho': 240.0,
-                    'nr1b': 24,
-                    'nr2b': 24,
-                    'nr3b': 24,
-                },
-                'ELECTRONS': {
-                    'electron_damping': 1.0e-1,
-                    'electron_dynamics': "damp",
-                    'emass': 400.0,
-                    'emass_cutoff': 3.0,
-                },
-                'IONS': {
-                    'ion_dynamics': "none"
-                },
-            }
-            inputs = AttributeDict({
-                'structure': structure,
-                'parameters': orm.Dict(dict=parameters),
-                'settings': orm.Dict()
-            })
-
-        return inputs
-
-    return _generate_inputs
