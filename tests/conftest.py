@@ -74,6 +74,11 @@ def generate_calc_job_node():
         if attributes:
             node.set_attributes(attributes)
 
+        if inputs:
+            for link_label, input_node in inputs.items():
+                input_node.store()
+                node.add_incoming(input_node, link_type=LinkType.INPUT_CALC, link_label=link_label)
+
         node.store()
 
         basepath = os.path.dirname(os.path.abspath(__file__))
@@ -84,9 +89,6 @@ def generate_calc_job_node():
         retrieved.add_incoming(node, link_type=LinkType.CREATE, link_label='retrieved')
         retrieved.store()
 
-        if inputs:
-            for link_label, input_node in inputs.items():
-                node.add_incoming(input_node, link_type=LinkType.INPUT_CALC, link_label=link_label)
 
         return node
 
