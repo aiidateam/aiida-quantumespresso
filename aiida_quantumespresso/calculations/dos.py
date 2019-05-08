@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-from aiida.common import exceptions
-from aiida.orm.nodes.data.remote import RemoteData
+from aiida.orm import RemoteData, FolderData, CalcJobNode
+from aiida.orm import Dict, XyData
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
-from aiida_quantumespresso.calculations.pw import PwCalculation
+import six
 
 
 class DosCalculation(NamelistsCalculation):
@@ -14,27 +14,29 @@ class DosCalculation(NamelistsCalculation):
     For more information regarding dos.x
     refer to http://www.quantum-espresso.org/
     """
-    def _init_internal_params(self):
-        super(DosCalculation, self)._init_internal_params()
+    
+    _DOS_FILENAME = 'aiida.dos'
+    _default_namelists = ['DOS']
+    _blocked_keywords = [
+        ('DOS', 'fildos', _DOS_FILENAME),
+        ('DOS', 'outdir', NamelistsCalculation._OUTPUT_SUBFOLDER),
+        ('DOS', 'prefix', NamelistsCalculation._PREFIX),
+    ]
+    _internal_retrieve_list = [_DOS_FILENAME]
+    _default_parser = 'quantumespresso.dos'
 
-        self._DOS_FILENAME = 'aiida.dos'
-        self._default_namelists = ['DOS']
-        self._blocked_keywords = [
-            ('DOS', 'fildos', self._DOS_FILENAME),
-            ('DOS', 'outdir', self._OUTPUT_SUBFOLDER),
-            ('DOS', 'prefix', self._PREFIX),
-        ]
-        self._internal_retrieve_list = [self._DOS_FILENAME]
-        self._default_parser = 'quantumespresso.dos'
-
-    def use_parent_calculation(self, calc):
-        """Set the parent calculation."""
-        if not isinstance(calc, PwCalculation):
-            raise ValueError('Parent calculation must be a PwCalculation')
-
-        try:
-            remote_folder = calc.get_outgoing(node_class=RemoteData, link_label_filter='remote_folder').one().node
-        except ValueError:
-            raise exceptions.UniquenessError('Parent calculation does not have a remote folder output node.')
-
-        self.use_parent_folder(remote_folder)
+    @classmethod
+    def define(cls, spec):
+        super(DosCalculation, cls).define(spec)
+        spec.input('parent_folder', valid_type=(RemoteData, FolderData), required=True)
+        spec.output('output_parameters', valid_type=Dict)
+        spec.output('output_dos', valid_type=XyData)
+        spec.default_output_node = 'output_parameters'
+        spec.exit_code(
+            100, 'ERROR_NO_RETRIEVED_FOLDER', message='The retrieved folder data node could not be accessed.')
+        spec.exit_code(
+            110, 'ERROR_READING_OUTPUT_FILE', message='The output file could not be read from the retrieved folder.')
+        spec.exit_code(
+            111, 'ERROR_READING_DOS_FILE', message='The dos file could not be read from the retrieved folder.')
+        spec.exit_code(
+            130, 'ERROR_JOB_NOT_DONE', message='The computation did not finish properly (\'JOB DONE\' not found).')

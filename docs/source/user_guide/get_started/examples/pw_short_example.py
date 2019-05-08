@@ -13,7 +13,7 @@ from __future__ import print_function
 from aiida import load_dbenv
 load_dbenv()
 
-from aiida.orm import Code, DataFactory
+from aiida.plugins import Code, DataFactory
 StructureData = DataFactory('structure')
 Dict = DataFactory('dict')
 KpointsData = DataFactory('array.kpoints')

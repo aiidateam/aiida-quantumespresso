@@ -10,7 +10,7 @@ from aiida_quantumespresso.parsers.raw_parser_pw import (read_xml_card,
 from six.moves import range
 
 
-def parse_cp_traj_stanzas(num_elements, splitlines, prepend_name,rescale=1.):
+def parse_cp_traj_stanzas(num_elements, splitlines, prepend_name, rescale=1.):
     """
     num_elements: Number of lines (with three elements) between lines with two only
     elements (containing step number and time in ps).
@@ -58,7 +58,7 @@ def parse_cp_traj_stanzas(num_elements, splitlines, prepend_name,rescale=1.):
             '{}_data'.format(prepend_name): stanzas,
             }
     except Exception as e:
-        e.message = "At line {}: {}".format(linenum+1, e.message)
+        e.message = "At line {}: {}".format(linenum + 1, e)
         raise e
 
 def parse_cp_text_output(data,xml_data):
@@ -155,21 +155,13 @@ def parse_cp_xml_counter_output(data):
     return parsed_data
 
 
-def parse_cp_raw_output(out_file,xml_file=None,xml_counter_file=None):
+def parse_cp_raw_output(out_file, xml_file=None, xml_counter_file=None):
 
     parser_info = get_parser_info(parser_info_template='aiida-quantumespresso parser cp.x v{}')
 
     # analyze the xml
     if xml_file is not None:
-        try:
-            with open(xml_file,'r') as f:
-                xml_lines = f.read()
-        except IOError:
-            raise QEOutputParsingError("Failed to open xml file: %s."
-                                       .format(xml_file) )
-        # TODO: this function should probably be the same of pw.
-        # after all, the parser was fault-tolerant
-        xml_data=parse_cp_xml_output(xml_lines)
+        xml_data = parse_cp_xml_output(xml_file.read())
     else:
         parser_info['parser_warnings'].append('Skipping the parsing of the xml file.')
         xml_data = {}
@@ -177,31 +169,17 @@ def parse_cp_raw_output(out_file,xml_file=None,xml_counter_file=None):
 
     # analyze the counter file, which keeps info on the steps
     if xml_counter_file is not None:
-        try:
-            with open(xml_counter_file,'r') as f:
-                xml_counter_lines = f.read()
-        except IOError:
-            raise QEOutputParsingError("Failed to open xml counter file: %s."
-                                       .format(xml_file) )
-        xml_counter_data=parse_cp_xml_counter_output(xml_counter_lines)
+        xml_counter_data = parse_cp_xml_counter_output(xml_counter_file.read())
     else:
-        xml_counter_data={}
+        xml_counter_data = {}
 
     # analyze the standard output
-    try:
-        with open(out_file,'r') as f:
-            out_lines = f.readlines()
-    except IOError:
-        raise QEOutputParsingError("Failed to open output file: %s." % out_file)
+    out_lines = out_file.readlines()
 
     # understand if the job ended smoothly
-    job_successful=False
-    for line in reversed(out_lines):
-        if 'JOB DONE' in line:
-            job_successful=True
-            break
+    job_successful = any('JOB DONE' in line for line in reversed(out_lines))
 
-    out_data=parse_cp_text_output(out_lines,xml_data)
+    out_data = parse_cp_text_output(out_lines, xml_data)
 
     for key in out_data.keys():
         if key in list(xml_data.keys()):
@@ -210,13 +188,12 @@ def parse_cp_raw_output(out_file,xml_file=None,xml_counter_file=None):
             raise AssertionError('%s found in both dictionaries' % key)
         # out_data keys take precedence and overwrite xml_data keys,
         # if the same key name is shared by both (but this should not happen!)
+
     final_data = dict(list(xml_data.items()) + list(out_data.items()) + list(xml_counter_data.items()))
 
     # TODO: parse the trajectory and save them in a reasonable format
 
-    return final_data,job_successful
-
-
+    return final_data, job_successful
 
 
 # TODO: the xml has a lot in common with pw, maybe I should avoid duplication of code

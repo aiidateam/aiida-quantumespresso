@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from aiida.parsers.parser import Parser
-from aiida.common.exceptions import UniquenessError
+from aiida.common import UniquenessError
 from aiida.orm.nodes.data.folder import FolderData
 from aiida.orm.nodes.data.dict import Dict
 from aiida.orm.nodes.data.array.bands import BandsData
@@ -29,13 +29,13 @@ class MatdynParser(Parser):
         
         super(MatdynParser, self).__init__(calculation)
             
-    def parse_with_retrieved(self,retrieved):
+    def parse(self, **kwargs):
         """
         Parses the datafolder, stores results.
         This parser for this simple code does simply store in the DB a node
         representing the file of phonon frequencies
         """
-        from aiida.common.exceptions import InvalidOperation
+        from aiida.common import InvalidOperation
 
         # suppose at the start that the job is successful
         successful = True

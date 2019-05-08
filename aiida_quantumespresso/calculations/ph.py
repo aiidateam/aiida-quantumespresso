@@ -7,11 +7,11 @@ import os
 import numpy
 from aiida.common.lang import classproperty
 from aiida.common import exceptions
-from aiida.common.datastructures import CalcInfo, CodeInfo
+from aiida.common import CalcInfo, CodeInfo
 from aiida.orm.nodes.data.remote import RemoteData
 from aiida.orm.nodes.data.dict import Dict
 from aiida.orm.nodes.data.array.kpoints import KpointsData
-from aiida.orm.calculation.job import JobCalculation
+from aiida.engine import CalcJob
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
@@ -23,7 +23,7 @@ import six
 _default_symlink_usage = False
 
 
-class PhCalculation(JobCalculation):
+class PhCalculation(CalcJob):
     """
     Phonon code (ph.x) of the Quantum ESPRESSO distribution.
     For more information, refer to http://www.quantum-espresso.org/
@@ -118,7 +118,7 @@ class PhCalculation(JobCalculation):
             })
         return retdict
     
-    def _prepare_for_submission(self,tempfolder,inputdict):        
+    def prepare_for_submission(self, tempfolder, inputdict):
         """
         This is the routine to be called when you want to create
         the input files and related stuff with a plugin.
@@ -153,7 +153,7 @@ class PhCalculation(JobCalculation):
 
         # Settings can be undefined, and defaults to an empty dictionary.
         # They will be used for any input that doen't fit elsewhere.
-        settings = inputdict.pop(self.get_linkname('settings'),None)
+        settings = inputdict.pop(self.get_linkname('settings'), None)
         if settings is None:
             settings_dict = {}
         else:
@@ -164,7 +164,7 @@ class PhCalculation(JobCalculation):
             settings_dict = _uppercase_dict(settings.get_dict(),
                                             dict_name='settings')
 
-        parent_calc_folder = inputdict.pop(self.get_linkname('parent_folder'),None)
+        parent_calc_folder = inputdict.pop(self.get_linkname('parent_folder'), None)
         if parent_calc_folder is None:
             raise exceptions.InputValidationError("No parent calculation found, needed to "
                                        "compute phonons")
@@ -227,7 +227,7 @@ class PhCalculation(JobCalculation):
         input_params = {k: _lowercase_dict(v, dict_name=k) 
                         for k, v in six.iteritems(input_params)}
 
-        prepare_for_d3 = settings_dict.pop('PREPARE_FOR_D3',False)
+        prepare_for_d3 = settings_dict.pop('PREPARE_FOR_D3', False)
         if prepare_for_d3:
             self._blocked_keywords += [('INPUTPH', 'fildrho'),
                                        ('INPUTPH', 'drho_star%open'),
@@ -259,7 +259,7 @@ class PhCalculation(JobCalculation):
         
         # qpoints part
         try:
-            mesh,offset = qpoints.get_kpoints_mesh()
+            mesh, offset = qpoints.get_kpoints_mesh()
             
             if any([i!=0. for i in offset]):
                 raise NotImplementedError("Computation of phonons on a mesh with"
@@ -320,13 +320,13 @@ class PhCalculation(JobCalculation):
             tempfolder.get_subfolder(self._FOLDER_DYNAMICAL_MATRIX,
                                      create=True)
         
-        with open(input_filename,'w') as infile:
+        with open(input_filename, 'w') as infile:
             infile.write('AiiDA calculation\n')
             for namelist_name in namelists_toprint:
                 infile.write("&{0}\n".format(namelist_name))
                 # namelist content; set to {} if not present, so that we leave an 
                 # empty namelist
-                namelist = input_params.pop(namelist_name,{})
+                namelist = input_params.pop(namelist_name, {})
                 for k, v in sorted(six.iteritems(namelist)):
                     infile.write(convert_input_to_namelist_entry(k,v))
                 infile.write("/\n")
@@ -401,11 +401,11 @@ class PhCalculation(JobCalculation):
                 # no need to copy the _ph0, since I copied already the whole ./out folder
         
         # here we may create an aiida.EXIT file
-        create_exit_file = settings_dict.pop('ONLY_INITIALIZATION',False)
+        create_exit_file = settings_dict.pop('ONLY_INITIALIZATION', False)
         if create_exit_file:
             exit_filename = tempfolder.get_abs_path(
                              '{}.EXIT'.format(self._PREFIX))
-            with open(exit_filename,'w') as f:
+            with open(exit_filename, 'w') as f:
                 f.write('\n')
 
         calcinfo = CalcInfo()
@@ -458,7 +458,7 @@ class PhCalculation(JobCalculation):
 
         self._set_parent_remotedata(remote_folder)
 
-    def _set_parent_remotedata(self,remotedata):
+    def _set_parent_remotedata(self, remotedata):
         """
         Used to set a parent remotefolder in the restart of ph.
         """
@@ -480,7 +480,7 @@ class PhCalculation(JobCalculation):
         return self.get_attr("pseudo_folder",
                              BasePwCpInputGenerator._PSEUDO_SUBFOLDER)
 
-    def _set_pseudo_folder(self,pseudo_folder):
+    def _set_pseudo_folder(self, pseudo_folder):
         """
         Get the calculation-specific pseudo folder.
         
@@ -547,9 +547,9 @@ class PhCalculation(JobCalculation):
         #    labelstring = c2.label + " Restart of ph.x"
         if not 'Restart' in c2.label:
             labelstring = c2.label + " Restart of {} {}.".format(
-                                        self.__class__.__name__,self.pk)
+                                        self.__class__.__name__, self.pk)
         else:
-            labelstring = " Restart of {} {}.".format(self.__class__.__name__,self.pk)
+            labelstring = " Restart of {} {}.".format(self.__class__.__name__, self.pk)
         c2.label = labelstring.lstrip()
         
         # set the parameters, code and q-points

@@ -8,6 +8,8 @@
 # For further information on the license, see the LICENSE.txt file        #
 # For further information please visit http://www.aiida.net               #
 ###########################################################################
+from __future__ import absolute_import
+from __future__ import print_function
 import sys, os, numpy
 from aiida.common.example_helpers import test_and_get_code
 
@@ -22,8 +24,8 @@ try:
     else:
         raise IndexError
 except IndexError:
-    print >> sys.stderr, ("The first parameter can only be either "
-                          "--send or --dont-send")
+    print(("The first parameter can only be either "
+                          "--send or --dont-send"), file=sys.stderr)
     sys.exit(1)
 
 try:
@@ -31,9 +33,9 @@ try:
     nnkp_file_id = sys.argv[3]
     codename = sys.argv[4]
 except IndexError:
-    print >> sys.stderr, ("Must provide as further parameters:\n- the parent ID"
+    print(("Must provide as further parameters:\n- the parent ID"
         "\n- the nnkp SingleFile\n- "
-        "a pw2wannier90.x codename")
+        "a pw2wannier90.x codename"), file=sys.stderr)
     sys.exit(1)
 
 num_machines = 1 # node numbers
@@ -42,18 +44,18 @@ num_machines = 1 # node numbers
 try:
     parent_id = int(parent_id)
 except ValueError:
-    print >> sys.stderr, 'Parent_id not an integer: {}'.format(parent_id)
+    print('Parent_id not an integer: {}'.format(parent_id), file=sys.stderr)
     sys.exit(1)
 
 try:
     nnkp_file_id = int(nnkp_file_id)
 except ValueError:
-    print >> sys.stderr, 'nnkp_file_id not an integer: {}'.format(nnkp_file_id)
+    print('nnkp_file_id not an integer: {}'.format(nnkp_file_id), file=sys.stderr)
     sys.exit(1)
 
 nnkp_file = load_node(nnkp_file_id)
 if not isinstance(nnkp_file, DataFactory('singlefile')):
-    print >> sys.stderr, 'The provided nnkp_file is not an SinglefileData: {}'.format(nnkp_file_id)
+    print('The provided nnkp_file is not an SinglefileData: {}'.format(nnkp_file_id), file=sys.stderr)
     sys.exit(1)    
 
 code = test_and_get_code(codename, expected_code_type='quantumespresso.pw2wannier90')
@@ -83,16 +85,16 @@ calc.use_nnkp_file(nnkp_file)
 
 if submit_test:
     subfolder, script_filename = calc.submit_test()
-    print "Test_submit for calculation (uuid='{}')".format(
-        calc.uuid)
-    print "Submit file in {}".format(os.path.join(
+    print("Test_submit for calculation (uuid='{}')".format(
+        calc.uuid))
+    print("Submit file in {}".format(os.path.join(
         os.path.relpath(subfolder.abspath),
         script_filename
-        ))
+        )))
 else:
     calc.store_all()
-    print "created calculation; calc=Calculation(uuid='{}') # ID={}".format(
-        calc.uuid,calc.pk)
+    print("created calculation; calc=Calculation(uuid='{}') # ID={}".format(
+        calc.uuid,calc.pk))
     calc.submit()
-    print "submitted calculation; calc=Calculation(uuid='{}') # ID={}".format(
-        calc.uuid,calc.pk)
+    print("submitted calculation; calc=Calculation(uuid='{}') # ID={}".format(
+        calc.uuid,calc.pk))

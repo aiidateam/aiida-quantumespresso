@@ -10,6 +10,8 @@
 ###########################################################################
 
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import os
 
@@ -32,14 +34,14 @@ try:
     else:
         raise IndexError
 except IndexError:
-    print >> sys.stderr, ("The first parameter can only be either "
-                          "--send or --dont-send")
+    print(("The first parameter can only be either "
+                          "--send or --dont-send"), file=sys.stderr)
     sys.exit(1)
 
 try:
     codename = sys.argv[2]
 except IndexError:
-    print >> sys.stderr, ("The second parameter is the codename")
+    print(("The second parameter is the codename"), file=sys.stderr)
     codename = None
 
 queue = None
@@ -64,19 +66,19 @@ valid_pseudo_groups = UpfData.get_upf_groups(filter_elements=elements)
 try:
     pseudo_family = sys.argv[3]
 except IndexError:
-    print >> sys.stderr, "Error, you need to pass as third parameter"
-    print >> sys.stderr, "the pseudo family name."
-    print >> sys.stderr, "Valid UPF families are:"
-    print >> sys.stderr, "\n".join("* {}".format(i.name) for i in valid_pseudo_groups)
+    print("Error, you need to pass as third parameter", file=sys.stderr)
+    print("the pseudo family name.", file=sys.stderr)
+    print("Valid UPF families are:", file=sys.stderr)
+    print("\n".join("* {}".format(i.name) for i in valid_pseudo_groups), file=sys.stderr)
     sys.exit(1)
 
 try:
     UpfData.get_upf_group(pseudo_family)
 except NotExistent:
-    print >> sys.stderr, "pseudo_family='{}',".format(pseudo_family)
-    print >> sys.stderr, "but no group with such a name found in the DB."
-    print >> sys.stderr, "Valid UPF groups are:"
-    print >> sys.stderr, ",".join(i.name for i in valid_pseudo_groups)
+    print("pseudo_family='{}',".format(pseudo_family), file=sys.stderr)
+    print("but no group with such a name found in the DB.", file=sys.stderr)
+    print("Valid UPF groups are:", file=sys.stderr)
+    print(",".join(i.name for i in valid_pseudo_groups), file=sys.stderr)
     sys.exit(1)
 
 max_seconds = 1000
@@ -132,7 +134,7 @@ calc.use_parameters(parameters)
 
 try:
     calc.use_pseudos_from_family(pseudo_family)
-    print "Pseudos successfully loaded from family {}".format(pseudo_family)
+    print("Pseudos successfully loaded from family {}".format(pseudo_family))
 except NotExistent:
     print ("Pseudo or pseudo family not found. You may want to load the "
            "pseudo family, or set auto_pseudos to False.")
@@ -148,17 +150,17 @@ if settings is not None:
 
 if submit_test:
     subfolder, script_filename = calc.submit_test()
-    print "Test_submit for calculation (uuid='{}')".format(
-        calc.uuid)
-    print "Submit file in {}".format(os.path.join(
+    print("Test_submit for calculation (uuid='{}')".format(
+        calc.uuid))
+    print("Submit file in {}".format(os.path.join(
         os.path.relpath(subfolder.abspath),
         script_filename
-    ))
+    )))
 else:
     calc.store_all()
-    print "created calculation; calc=Calculation(uuid='{}') # ID={}".format(
-        calc.uuid, calc.dbnode.pk)
+    print("created calculation; calc=Calculation(uuid='{}') # ID={}".format(
+        calc.uuid, calc.dbnode.pk))
     calc.submit()
-    print "submitted calculation; calc=Calculation(uuid='{}') # ID={}".format(
-        calc.uuid, calc.dbnode.pk)
+    print("submitted calculation; calc=Calculation(uuid='{}') # ID={}".format(
+        calc.uuid, calc.dbnode.pk))
 

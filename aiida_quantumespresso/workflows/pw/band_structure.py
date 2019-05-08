@@ -8,8 +8,24 @@ from aiida.plugins import WorkflowFactory
 from aiida_quantumespresso.utils.mapping import update_mapping
 from aiida_quantumespresso.utils.protocols.pw import ProtocolManager
 from aiida_quantumespresso.utils.pseudopotential import get_pseudos_from_dict
+from aiida_quantumespresso.utils.resources import get_default_options
 
 PwBandsWorkChain = WorkflowFactory('quantumespresso.pw.bands')
+
+
+def _validate_protocol(protocol_dict):
+    """ Check that the protocol is one for which we have a definition. """
+    if protocol_dict == ():
+        # Work around this issue in plumpy: https://github.com/aiidateam/plumpy/issues/102
+        return
+    try:
+        protocol_name = protocol_dict['name']
+    except KeyError as e:
+        return "Couldn't find key " + str(e) + " in protocol dictionary"
+    try:
+        protocol = ProtocolManager(protocol_name)
+    except ValueError as e:
+        return str(e)  # "Unknown protocol '{}'".format(name)
 
 
 class PwBandStructureWorkChain(WorkChain):
@@ -20,8 +36,9 @@ class PwBandStructureWorkChain(WorkChain):
         super(PwBandStructureWorkChain, cls).define(spec)
         spec.input('code', valid_type=orm.Code)
         spec.input('structure', valid_type=orm.StructureData)
-        spec.input('protocol', valid_type=orm.Dict)
-        spec.input('scf_options', valid_type=orm.Dict)
+        spec.input('protocol', valid_type=orm.Dict, default=orm.Dict(dict={'name':'theos-ht-1.0'}),
+                   validator=_validate_protocol)
+        spec.input('scf_options', valid_type=orm.Dict, default=orm.Dict(dict=get_default_options(with_mpi=True)))
         spec.outline(
             cls.setup_protocol,
             cls.setup_kpoints,
@@ -125,31 +142,31 @@ class PwBandStructureWorkChain(WorkChain):
 
             pseudos = get_pseudos_from_dict(self.inputs.structure, known_pseudos)
 
-            return {
+            res = {
                 'code': self.inputs.code,
                 'pseudos': pseudos,
                 'parameters': orm.Dict(dict=self.ctx.parameters),
-                'options': self.inputs.scf_options,
             }
 
-        relax_inputs = get_common_inputs()
-        update_mapping(relax_inputs, {
-            'kpoints': self.ctx.kpoints_mesh,
+            if 'scf_options' in self.inputs:
+                res['options'] = self.inputs.scf_options
+
+            return res
+
+        relax_inputs = {
+            'base': get_common_inputs(),
             'relaxation_scheme': orm.Str('vc-relax'),
             'meta_convergence': orm.Bool(self.ctx.protocol['meta_convergence']),
             'volume_convergence': orm.Float(self.ctx.protocol['volume_convergence']),
-        })
+        }
+        relax_inputs['base']['kpoints'] = self.ctx.kpoints_mesh
 
         scf_inputs = get_common_inputs()
         update_mapping(scf_inputs, {
             'kpoints': self.ctx.kpoints_mesh,
         })
 
-        # Updating the number of bands to compute
-        num_bands_factor = self.ctx.protocol.get('num_bands_factor', None)
         bands_inputs = get_common_inputs()
-        if num_bands_factor is not None:
-            bands_inputs['nbands_factor'] = orm.Float(num_bands_factor)
 
         update_mapping(bands_inputs, {
             'kpoints_distance': orm.Float(self.ctx.protocol['kpoints_distance_for_bands']),
@@ -158,12 +175,15 @@ class PwBandStructureWorkChain(WorkChain):
         # Final input preparation, wrapping dictionaries in Dict nodes
         inputs = {
             'structure': self.inputs.structure,
-            'relax': {
-                'base': relax_inputs,
-            },
+            'relax': relax_inputs,
             'scf': scf_inputs,
             'bands': bands_inputs,
         }
+
+        # Updating the number of bands to compute
+        num_bands_factor = self.ctx.protocol.get('num_bands_factor', None)
+        if num_bands_factor is not None:
+            inputs['nbands_factor'] = orm.Float(num_bands_factor)
 
         running = self.submit(PwBandsWorkChain, **inputs)
 
@@ -195,7 +215,7 @@ class PwBandStructureWorkChain(WorkChain):
             'band_structure'
         ]
 
-        for link_triple in self.ctx.workchain_bands.get_outcoming().all():
+        for link_triple in self.ctx.workchain_bands.get_outgoing().all():
             if link_triple.link_label in link_labels:
                 self.out(link_triple.link_label, link_triple.node)
                 self.report("attaching {}<{}> as an output node with label '{}'"

@@ -10,12 +10,15 @@
 ###########################################################################
 
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import os
 
 from aiida.common.exceptions import NotExistent
 
 from aiida.common.example_helpers import test_and_get_code
+import six
 
 ################################################################
 UpfData = DataFactory('upf')
@@ -31,8 +34,8 @@ try:
     else:
         raise IndexError
 except IndexError:
-    print >> sys.stderr, ("The first parameter can only be either "
-                          "--send or --dont-send")
+    print(("The first parameter can only be either "
+                          "--send or --dont-send"), file=sys.stderr)
     sys.exit(1)
 
 try:
@@ -71,19 +74,19 @@ if auto_pseudos:
     try:
         pseudo_family = sys.argv[3]
     except IndexError:
-        print >> sys.stderr, "Error, auto_pseudos set to True. You therefore need to pass as second parameter"
-        print >> sys.stderr, "the pseudo family name."
-        print >> sys.stderr, "Valid groups containing at least one UPFData object are:"
-        print >> sys.stderr, "\n".join("* {}".format(i.name) for i in valid_pseudo_groups)
+        print("Error, auto_pseudos set to True. You therefore need to pass as second parameter", file=sys.stderr)
+        print("the pseudo family name.", file=sys.stderr)
+        print("Valid groups containing at least one UPFData object are:", file=sys.stderr)
+        print("\n".join("* {}".format(i.name) for i in valid_pseudo_groups), file=sys.stderr)
         sys.exit(1)
 
     try:
         UpfData.get_upf_group(pseudo_family)
     except NotExistent:
-        print >> sys.stderr, "auto_pseudos is set to True and pseudo_family='{}',".format(pseudo_family)
-        print >> sys.stderr, "but no group with such a name found in the DB."
-        print >> sys.stderr, "Valid UPF groups are:"
-        print >> sys.stderr, ",".join(i.name for i in valid_pseudo_groups)
+        print("auto_pseudos is set to True and pseudo_family='{}',".format(pseudo_family), file=sys.stderr)
+        print("but no group with such a name found in the DB.", file=sys.stderr)
+        print("Valid UPF groups are:", file=sys.stderr)
+        print(",".join(i.name for i in valid_pseudo_groups), file=sys.stderr)
         sys.exit(1)
 
 parameters = Dict(dict={
@@ -128,7 +131,7 @@ calc.use_parameters(parameters)
 if auto_pseudos:
     try:
         calc.use_pseudos_from_family(pseudo_family)
-        print "Pseudos successfully loaded from family {}".format(pseudo_family)
+        print("Pseudos successfully loaded from family {}".format(pseudo_family))
     except NotExistent:
         print ("Pseudo or pseudo family not found. You may want to load the "
                "pseudo family, or set auto_pseudos to False.")
@@ -146,12 +149,12 @@ else:
         pseudo, created = UpfData.get_or_create(
             absname, use_first=True)
         if created:
-            print "Created the pseudo for {}".format(elem)
+            print("Created the pseudo for {}".format(elem))
         else:
-            print "Using the pseudo for {} from DB: {}".format(elem, pseudo.pk)
+            print("Using the pseudo for {} from DB: {}".format(elem, pseudo.pk))
         pseudos_to_use[elem] = pseudo
 
-    for k, v in pseudos_to_use.iteritems():
+    for k, v in six.iteritems(pseudos_to_use):
         calc.use_pseudo(v, kind=k)
 
 # calc.use_settings(settings)
@@ -160,18 +163,18 @@ else:
 
 if submit_test:
     subfolder, script_filename = calc.submit_test()
-    print "Test_submit for calculation (uuid='{}')".format(
-        calc.uuid)
-    print "Submit file in {}".format(os.path.join(
+    print("Test_submit for calculation (uuid='{}')".format(
+        calc.uuid))
+    print("Submit file in {}".format(os.path.join(
         os.path.relpath(subfolder.abspath),
         script_filename
-    ))
+    )))
 else:
     calc.store_all()
-    print "created calculation; calc=Calculation(uuid='{}') # ID={}".format(
-        calc.uuid, calc.dbnode.pk)
+    print("created calculation; calc=Calculation(uuid='{}') # ID={}".format(
+        calc.uuid, calc.dbnode.pk))
     calc.submit()
-    print "submitted calculation; calc=Calculation(uuid='{}') # ID={}".format(
-        calc.uuid, calc.dbnode.pk)
+    print("submitted calculation; calc=Calculation(uuid='{}') # ID={}".format(
+        calc.uuid, calc.dbnode.pk))
 
 

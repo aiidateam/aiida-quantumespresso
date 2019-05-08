@@ -6,7 +6,6 @@ import shutil
 import tempfile
 
 import pytest
-
 from aiida.manage.fixtures import fixture_manager
 
 
@@ -75,6 +74,11 @@ def generate_calc_job_node():
         if attributes:
             node.set_attributes(attributes)
 
+        if inputs:
+            for link_label, input_node in inputs.items():
+                input_node.store()
+                node.add_incoming(input_node, link_type=LinkType.INPUT_CALC, link_label=link_label)
+
         node.store()
 
         basepath = os.path.dirname(os.path.abspath(__file__))
@@ -85,9 +89,6 @@ def generate_calc_job_node():
         retrieved.add_incoming(node, link_type=LinkType.CREATE, link_label='retrieved')
         retrieved.store()
 
-        if inputs:
-            for link_label, input_node in inputs.items():
-                node.add_incoming(input_node, link_type=LinkType.INPUT_CALC, link_label=link_label)
 
         return node
 
@@ -108,43 +109,3 @@ def generate_parser():
         return ParserFactory(entry_point_name)
 
     return _generate_parser
-
-
-@pytest.fixture
-def generate_inputs():
-    """Fixture to define some basic inputs nodes that are used."""
-
-    def _generate_inputs(entry_point_name):
-        """Fixture to load a parser class for testing parsers.
-
-        :param entry_point_name: entry point name of the parser class
-        :return: the `Parser` sub class
-        """
-        from aiida import orm
-        from aiida.common import AttributeDict
-
-        if entry_point_name == 'quantumespresso.pw':
-            structure = orm.StructureData()
-            parameters = {
-                'CONTROL': {
-                    'calculation': 'scf'
-                },
-                'SYSTEM': {
-                    'ecutrho': 240.0,
-                    'ecutwfc': 30.0
-                }
-            }
-            kpoints = orm.KpointsData()
-            kpoints.set_cell_from_structure(structure)
-            kpoints.set_kpoints_mesh_from_density(0.15)
-
-            inputs = AttributeDict({
-                'structure': structure,
-                'kpoints': kpoints,
-                'parameters': orm.Dict(dict=parameters),
-                'settings': orm.Dict()
-            })
-
-        return inputs
-
-    return _generate_inputs

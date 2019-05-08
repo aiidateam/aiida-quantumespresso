@@ -39,7 +39,7 @@ class PwParser(Parser):
         try:
             settings = self.node.inputs.settings.get_dict()
             parser_options = settings[self.get_parser_settings_key()]
-        except (AttributeError, KeyError):
+        except (AttributeError, KeyError, exceptions.NotExistent):
             settings = {}
             parser_options = {}
 

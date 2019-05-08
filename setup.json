@@ -4,6 +4,7 @@
     "classifiers": [
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.6",
         "Development Status :: 4 - Beta"
     ],
     "description": "The official AiiDA plugin for Quantum ESPRESSO",
@@ -52,6 +53,9 @@
         ],
         "console_scripts": [
             "launch_calculation_pw = aiida_quantumespresso.cli.calculations.pw.base:cli",
+            "launch_calculation_cp = aiida_quantumespresso.cli.calculations.cp:cli",
+            "launch_calculation_dos = aiida_quantumespresso.cli.calculations.dos:cli",
+            "launch_calculation_pw2wannier90 = aiida_quantumespresso.cli.calculations.pw2wannier90:cli",
             "launch_workflow_pw_band_structure = aiida_quantumespresso.cli.workflows.pw.band_structure:cli",
             "launch_workflow_pw_bands = aiida_quantumespresso.cli.workflows.pw.bands:cli",
             "launch_workflow_pw_relax = aiida_quantumespresso.cli.workflows.pw.relax:cli",
@@ -70,6 +74,7 @@
             "astroid==2.1.0; python_version>='3.0'",
             "pgtest==1.2.0",
             "pytest==3.6.3",
+            "pytest-regressions==1.0.5",
             "yapf==0.26.0"
         ],
         "docs": [

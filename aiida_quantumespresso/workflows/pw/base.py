@@ -122,7 +122,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         if 'options' in self.inputs:
             self.ctx.inputs.metadata.options = self.inputs.options.get_dict()
         else:
-            self.ctx.inputs.metadata = {'options', {}}
+            self.ctx.inputs.metadata.options = {}
 
         if 'vdw_table' in self.inputs:
             self.ctx.inputs.vdw_table = self.inputs.vdw_table

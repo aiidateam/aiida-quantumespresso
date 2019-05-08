@@ -16,7 +16,7 @@ class Q2rParser(Parser):
 
         super(Q2rParser, self).__init__(calculation)
 
-    def parse_with_retrieved(self, retrieved):
+    def parse(self, **kwargs):
         """Parse the output data stored in the retrieved folder."""
         successful = True
         nodes = []

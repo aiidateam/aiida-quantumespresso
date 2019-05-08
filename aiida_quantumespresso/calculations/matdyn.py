@@ -25,10 +25,10 @@ class MatdynCalculation(NamelistsCalculation):
     
         self._default_namelists = ['INPUT']   
         
-        self._blocked_keywords = [('INPUT','flfrq',self._PHONON_FREQUENCIES_NAME), # output freq.
-                                  ('INPUT','flvec',self._PHONON_MODES_NAME), # output displ.
-                                  ('INPUT','fldos',self._PHONON_DOS_NAME), # output dos
-                                  ('INPUT','q_in_cryst_coord',True), # kpoints always in crystal coordinates
+        self._blocked_keywords = [('INPUT', 'flfrq', self._PHONON_FREQUENCIES_NAME), # output freq.
+                                  ('INPUT', 'flvec', self._PHONON_MODES_NAME), # output displ.
+                                  ('INPUT', 'fldos', self._PHONON_DOS_NAME), # output dos
+                                  ('INPUT', 'q_in_cryst_coord', True), # kpoints always in crystal coordinates
                                   # this is dynamically added in the _prepare_for_submission
                                   #('INPUT','flfrc',Q2rCalculation.FORCE_CONSTANTS_NAME), # input
                                  ]
@@ -77,7 +77,7 @@ class MatdynCalculation(NamelistsCalculation):
         so that inputdict and settings should remain empty at the end of 
         _prepare_for_submission, if all flags/nodes were recognized
         """
-        from aiida.common.exceptions import InputValidationError
+        from aiida.common import InputValidationError
         
         try:
             kpoints = inputdict.pop(self.get_linkname('kpoints'))
@@ -97,7 +97,7 @@ class MatdynCalculation(NamelistsCalculation):
         
         return "\n".join(retlist)+"\n"
     
-    def _prepare_for_submission(self,tempfolder, inputdict): 
+    def prepare_for_submission(self, tempfolder, inputdict):
         from aiida.orm.nodes.data.singlefile import SinglefileData
         
         parent_calc_folder = inputdict.get(self.get_linkname('parent_folder'),
@@ -115,7 +115,7 @@ class MatdynCalculation(NamelistsCalculation):
             self._blocked_keywords.append(
                 ('INPUT', 'flfrc',  Q2rCalculation._FORCE_CONSTANTS_NAME ))
                 
-        calcinfo = super(MatdynCalculation, self)._prepare_for_submission(
+        calcinfo = super(MatdynCalculation, self).prepare_for_submission(
             tempfolder, inputdict)
         return calcinfo
         
