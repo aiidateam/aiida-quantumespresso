@@ -23,7 +23,6 @@ def cp_inputs():
         primitive_cell=True,
     )
     structure = orm.StructureData(ase=ase_structure)
-    structure.store()
     parameters = {
         'CONTROL': {
             'calculation': "cp",
@@ -55,7 +54,6 @@ def cp_inputs():
     return AttributeDict({
         'structure': structure,
         'parameters': orm.Dict(dict=parameters),
-        'settings': orm.Dict()
     })
 
 def test_cp_default(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
