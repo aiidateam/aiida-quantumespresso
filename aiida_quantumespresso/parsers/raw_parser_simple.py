@@ -5,7 +5,6 @@ A basic parser for the common format of QE
 from __future__ import absolute_import
 from aiida_quantumespresso.parsers import parse_QE_errors, convert_qe_time_to_sec
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
-from six.moves import range
 
 
 def parse_qe_simple(filecontent, codename=None):
@@ -26,7 +25,7 @@ def parse_qe_simple(filecontent, codename=None):
     parsed_data = {'warnings': []}
     parsed_data.update(parser_info)
 
-    error_message = "There was an error, please check the 'error_message' key"
+    generic_error_message = "There was an error, please check the 'error_message' key"
 
     if "JOB DONE" not in filecontent:
         successful = False
@@ -36,8 +35,7 @@ def parse_qe_simple(filecontent, codename=None):
     lines = filecontent.split('\n')
 
     if codename is not None:
-        for count in range(len(lines)):
-            line = lines[count]
+        for count,line in enumerate(lines):
 
             codestring = "Program {}".format(codename)
             if codestring in line and "starts on" in line:
@@ -50,14 +48,15 @@ def parse_qe_simple(filecontent, codename=None):
                     parsed_data['wall_time'] = time
                 except (ValueError, IndexError):
                     parsed_data['warnings'].append('Error while parsing wall time.')
-                try:
-                    parsed_data['wall_time_seconds'] = convert_qe_time_to_sec(time)
-                except ValueError:
-                    raise QEOutputParsingError("Unable to convert wall_time in seconds.")
+                else:
+                    try:
+                        parsed_data['wall_time_seconds'] = convert_qe_time_to_sec(time)
+                    except ValueError:
+                        raise QEOutputParsingError("Unable to convert wall_time in seconds.")
 
             if '%%%%%%%%%%%%%%' in line:
-                if error_message not in parsed_data['warnings']:
-                    parsed_data['warnings'].append(error_message)
+                if generic_error_message not in parsed_data['warnings']:
+                    parsed_data['warnings'].append(generic_error_message)
                 if 'error_message' not in parsed_data:
                     parsed_data['error_message'] = []
                 successful = False
