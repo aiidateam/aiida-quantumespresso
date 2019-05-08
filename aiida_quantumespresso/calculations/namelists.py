@@ -20,7 +20,7 @@ import six
 # TODO: review usage of class variables and input names
 # TODO: add exit codes
 
-class NamelistsCalculation(CalcJob):   
+class NamelistsCalculation(CalcJob):
     """
     Generic plugin to manage simple post-processing tools of the
     Quantum ESPRESSO distribution (http://www.quantum-espresso.org/)
@@ -38,7 +38,8 @@ class NamelistsCalculation(CalcJob):
     # value
     _default_parent_output_folder = './out/'
     # Default name of the subfolder that you want to create
-    # in the output and in which you want to place the files
+    # in the working directory, intended to contain the outputs
+    # of the code, and in which you want to place the files
     # taken from parent_folder/INPUT_SUBFOLDER, in case
     # the parent_folder is of type RemoteData or FolderData
     _OUTPUT_SUBFOLDER = './out/'
@@ -50,10 +51,11 @@ class NamelistsCalculation(CalcJob):
     _blocked_keywords = [] # a list of tuples with key and value fixed
     #_parent_folder_type = (RemoteData, FolderData, SinglefileData)
     _retrieve_singlefile_list = []
-
     # Default input and output files
     _DEFAULT_INPUT_FILE = 'aiida.in'
     _DEFAULT_OUTPUT_FILE = 'aiida.out'
+    # Default parser
+    _default_parser = None
     
     @classmethod
     def define(cls, spec):
@@ -61,7 +63,8 @@ class NamelistsCalculation(CalcJob):
         spec.input('code', valid_type=Code, help='')
         spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE, non_db=True)
         spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE, non_db=True)
-        spec.input('metadata.options.parser_name', valid_type=six.string_types, required=False, non_db=True)
+        spec.input('metadata.options.parser_name', valid_type=six.string_types, default=cls._default_parser, non_db=True)
+        spec.input('metadata.options.withmpi', valid_type=bool, default=True)  # Override default value False
         spec.input('parameters', valid_type=Dict, required=False, help='Use a node that specifies the input parameters for the namelists')
         spec.input('settings', valid_type=Dict, required=False, help='Use an additional node for special settings')
         spec.input('parent_folder', valid_type=(RemoteData, FolderData, SinglefileData), required=False, help='Use a local or remote folder as parent folder (for restarts and similar)')
@@ -166,14 +169,18 @@ class NamelistsCalculation(CalcJob):
                                        parent_calc_out_subfolder),
                           self._OUTPUT_SUBFOLDER))
             elif isinstance(parent_calc_folder, FolderData):
-                local_copy_list.append(
-                    (parent_calc_folder.get_abs_path(self._INPUT_SUBFOLDER),
-                        self._OUTPUT_SUBFOLDER)
+                # TODO: test me, especially with deep relative paths.
+                for filename in parent_calc_folder.list_object_names():
+                    local_copy_list.append(
+                        (parent_calc_folder.uuid,
+                         filename,
+                         os.path.join(self._OUTPUT_SUBFOLDER, filename))
                     )
             elif isinstance(parent_calc_folder, SinglefileData):
-                filename = parent_calc_folder.get_file_abs_path() 
+                # TODO: test me
+                single_file =  parent_calc_folder
                 local_copy_list.append(
-                    (filename, os.path.basename(filename))
+                    (single_file.uuid, single_file.filename, single_file.filename)
                  )
                 
         calcinfo = CalcInfo()

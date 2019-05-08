@@ -3,10 +3,9 @@ from __future__ import absolute_import
 import numpy as np
 from aiida.parsers import Parser
 from aiida.orm import Dict, XyData
-from aiida.common import InvalidOperation, NotExistent
+from aiida.common import NotExistent
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers import parse_raw_out_basic
-from aiida_quantumespresso.calculations.dos import DosCalculation
 from six.moves import range
 
 
@@ -26,13 +25,13 @@ class DosParser(Parser):
         out_file, such as warnings and wall_time
         """
         try:
-           out_folder = self.retrieved
+            out_folder = self.retrieved
         except NotExistent:
             return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
 
         # Read standard out
         try:
-            filename_stdout = self.node.get_attribute('output_filename')  # aka self.node.inputs.metadata.options.output_filename
+            filename_stdout = self.node.get_option('output_filename')  # or get_attribute(), but this is clearer
             with out_folder.open(filename_stdout, 'r') as fil:
                     out_file = fil.readlines()
         except OSError:
