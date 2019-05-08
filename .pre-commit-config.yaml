@@ -32,6 +32,7 @@
   - id: version-number
     name: Check consistency in version number
     entry: python ./.ci/validate_version_number.py
+    args: ['version']
     language: system
     files: '^(setup.json)'
     pass_filenames: false

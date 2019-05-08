@@ -56,8 +56,8 @@ number_of_k_points: 3
 number_of_species: 1
 number_of_spin_components: 1
 number_of_symmetries: 48
-parser_info: aiida-quantumespresso parser pw.x v3.0.0a1
-parser_version: 3.0.0a1
+parser_info: aiida-quantumespresso parser pw.x v3.0.0a2
+parser_version: 3.0.0a2
 parser_warnings: []
 pp_check_flag: true
 q_real_space: false
