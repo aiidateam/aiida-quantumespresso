@@ -1,62 +1,67 @@
 # -*- coding: utf-8 -*-
-"""
-Plugin to create a Quantum Espresso ph.x input file.
-"""
+"""Plugin to create a Quantum Espresso ph.x input file."""
 from __future__ import absolute_import
+
+import io
 import os
 import numpy
-from aiida.common.lang import classproperty
-from aiida.common import exceptions
-from aiida.common import CalcInfo, CodeInfo
-from aiida.orm.nodes.data.remote import RemoteData
-from aiida.orm.nodes.data.dict import Dict
-from aiida.orm.nodes.data.array.kpoints import KpointsData
-from aiida.engine import CalcJob
-from aiida_quantumespresso.calculations.pw import PwCalculation
-from aiida_quantumespresso.calculations import BasePwCpInputGenerator
-from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
-from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 import six
 
-# List of namelists (uppercase) that are allowed to be found in the
-# input_data, in the correct order in restarts, will not copy but use symlinks
-_default_symlink_usage = False
+from aiida import orm
+from aiida.common import datastructures, exceptions
+from aiida.common.lang import classproperty
+from aiida.engine import CalcJob
+
+from aiida_quantumespresso.calculations.pw import PwCalculation
+from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
+from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
 
 class PhCalculation(CalcJob):
-    """
-    Phonon code (ph.x) of the Quantum ESPRESSO distribution.
-    For more information, refer to http://www.quantum-espresso.org/
-    """
 
-    def _init_internal_params(self):
-        super(PhCalculation, self)._init_internal_params()
+    # Keywords that cannot be set by the user but will be set by the plugin
+    _blocked_keywords = [
+        ('INPUTPH', 'outdir'),
+        ('INPUTPH', 'iverbosity'),
+        ('INPUTPH', 'prefix'),
+        ('INPUTPH', 'fildyn'),
+        ('INPUTPH', 'ldisp'),
+        ('INPUTPH', 'nq1'),
+        ('INPUTPH', 'nq2'),
+        ('INPUTPH', 'nq3'),
+        ('INPUTPH', 'qplot')
+    ]
 
-        self._PREFIX = 'aiida'
-        self._INPUT_FILE_NAME = 'aiida.in'
-        self._OUTPUT_FILE_NAME = 'aiida.out'
-        self._OUTPUT_XML_TENSOR_FILE_NAME = 'tensors.xml'
-    
-        # Default PH output parser provided by AiiDA
-        self._default_parser = 'quantumespresso.ph'
+    _use_kpoints = True
 
-        self._compulsory_namelists = ['INPUTPH']
+    _compulsory_namelists = ['INPUTPH']
 
-        # Keywords that cannot be set manually, only by the plugin
-        self._blocked_keywords = [('INPUTPH', 'outdir'),
-                             ('INPUTPH', 'iverbosity'),
-                             ('INPUTPH', 'prefix'),
-                             ('INPUTPH', 'fildyn'),
-                             ('INPUTPH', 'ldisp'),
-                             ('INPUTPH', 'nq1'),
-                             ('INPUTPH', 'nq2'),
-                             ('INPUTPH', 'nq3'),
-                             ('INPUTPH', 'qplot'),
-                             ]
-        
-        # Default input and output files
-        self._DEFAULT_INPUT_FILE = 'aiida.in'
-        self._DEFAULT_OUTPUT_FILE = 'aiida.out'
+    # Default input and output files
+    _PREFIX = 'aiida'
+    _DEFAULT_INPUT_FILE = 'aiida.in'
+    _DEFAULT_OUTPUT_FILE = 'aiida.out'
+    _OUTPUT_XML_TENSOR_FILE_NAME = 'tensors.xml'
+
+    # Not using symlink in pw to allow multiple nscf to run on top of the same scf
+    _default_symlink_usage = False
+
+    @classmethod
+    def define(cls, spec):
+        super(PhCalculation, cls).define(spec)
+        spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
+        spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
+        spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.ph')
+        spec.input('qpoints', valid_type=orm.KpointsData, help='qpoint mesh')
+        spec.input('parameters', valid_type=orm.Dict, help='')
+        spec.input('settings', valid_type=orm.Dict, required=False, help='')
+        spec.input('parent_folder', valid_type=orm.RemoteData,
+            help='the folder of a completed `PwCalculation`')
+        spec.output('output_parameters', valid_type=orm.Dict)
+        spec.default_output_node = 'output_parameters'
+        spec.exit_code(
+            100, 'ERROR_NO_RETRIEVED_FOLDER', message='The retrieved folder data node could not be accessed.')
+        spec.exit_code(
+            110, 'ERROR_READING_OUTPUT_FILE', message='The output file could not be read from the retrieved folder.')
 
     @classproperty
     def _OUTPUT_SUBFOLDER(cls):
@@ -80,496 +85,247 @@ class PhCalculation(CalcJob):
 
     @classproperty
     def _OUTPUT_DYNAMICAL_MATRIX_PREFIX(cls):
-        return os.path.join(cls._FOLDER_DYNAMICAL_MATRIX,
-                                                      'dynamical-matrix-')
-    @classproperty
-    def _use_methods(cls):
-        """
-        Additional use_* methods for the ph class.
-        """
-        retdict = JobCalculation._use_methods
-        retdict.update({
-            "settings": {
-               'valid_types': Dict,
-               'additional_parameter': None,
-               'linkname': 'settings',
-               'docstring': "Use an additional node for special settings",
-               },
-            "parameters": {
-               'valid_types': Dict,
-               'additional_parameter': None,
-               'linkname': 'parameters',
-               'docstring': ("Use a node that specifies the input parameters "
-                             "for the namelists"),
-               },
-            "parent_folder": {
-               'valid_types': RemoteData,
-               'additional_parameter': None,
-               'linkname': 'parent_calc_folder',
-               'docstring': ("Use a remote folder as parent folder (for "
-                             "restarts and similar"),
-               },
-            "qpoints": {
-               'valid_types': KpointsData,
-               'additional_parameter': None,
-               'linkname': 'qpoints',
-               'docstring': ("Specify the Qpoints on which to compute phonons"),
-               },
-            })
-        return retdict
-    
-    def prepare_for_submission(self, tempfolder, inputdict):
-        """
-        This is the routine to be called when you want to create
-        the input files and related stuff with a plugin.
-        
-        :param tempfolder: a aiida.common.folders.Folder subclass where
-                           the plugin should put all its files.
-        :param inputdict: a dictionary with the input nodes, as they would
-                be returned by get_inputdata_dict (without the Code!)
-        """
-        try:
-            code = inputdict.pop(self.get_linkname('code'))
-        except KeyError:
-            raise exceptions.InputValidationError("No code specified for this calculation")
+        return os.path.join(cls._FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-')
 
+    def prepare_for_submission(self, folder):
+        """Create the input files from the input nodes passed to this instance of the `CalcJob`.
+
+        :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
+        :return: `aiida.common.datastructures.CalcInfo` instance
+        """
         local_copy_list = []
         remote_copy_list = []
         remote_symlink_list = []
-        
-        try:
-            parameters = inputdict.pop(self.get_linkname('parameters'))
-        except KeyError:
-            raise exceptions.InputValidationError("No parameters specified for this calculation")
-        if not isinstance(parameters, Dict):
-            raise exceptions.InputValidationError("parameters is not of type Dict")
-        
-        try:
-            qpoints = inputdict.pop(self.get_linkname('qpoints'))
-        except KeyError:
-            raise exceptions.InputValidationError("No qpoints specified for this calculation")
-        if not isinstance(qpoints, KpointsData):
-            raise exceptions.InputValidationError("qpoints is not of type KpointsData")
 
-        # Settings can be undefined, and defaults to an empty dictionary.
-        # They will be used for any input that doen't fit elsewhere.
-        settings = inputdict.pop(self.get_linkname('settings'), None)
-        if settings is None:
-            settings_dict = {}
+        if 'settings' in self.inputs:
+            settings = _uppercase_dict(self.inputs.settings.get_dict(), dict_name='settings')
         else:
-            if not isinstance(settings,  Dict):
-                raise exceptions.InputValidationError("settings, if specified, must be of "
-                                           "type Dict")
-            # Settings converted to uppercase
-            settings_dict = _uppercase_dict(settings.get_dict(),
-                                            dict_name='settings')
+            settings = {}
 
-        parent_calc_folder = inputdict.pop(self.get_linkname('parent_folder'), None)
-        if parent_calc_folder is None:
-            raise exceptions.InputValidationError("No parent calculation found, needed to "
-                                       "compute phonons")
-        # TODO: to be a PwCalculation is not sufficient: it could also be a nscf
-        # calculation that is invalid for phonons
-        
-        if not isinstance(parent_calc_folder, RemoteData):
-            raise exceptions.InputValidationError("parent_calc_folder, if specified,"
-                                       "must be of type RemoteData")
+        parent_folder = self.inputs.parent_folder
 
-        restart_flag = False
-        # extract parent calculation
         try:
-            parent_calc = parent_calc_folder.get_incoming(node_class=JobCalculation).one().node
+            parent_calc = parent_folder.get_incoming(node_class=orm.CalcJobNode).one().node
         except ValueError:
             raise exceptions.UniquenessError('Input RemoteData has multiple parents')
 
-        # check that it is a valid parent
-        self._check_valid_parent(parent_calc)
-        
-        if not isinstance(parent_calc, PwCalculation):
-            restart_flag = True
+        # If the parent calculation is a `PhCalculation` we are restarting
+        restart_flag = parent_calc.process_type == 'aiida.calculations:quantumespresso.ph'
 
         # Also, the parent calculation must be on the same computer
-        new_comp = self.get_computer()
-        old_comp = parent_calc.get_computer()
-        if ( not new_comp.uuid == old_comp.uuid ):
-            raise exceptions.InputValidationError("PhCalculation must be launched on the same computer"
-                          " of the parent: {}".format(old_comp.get_name()))
+        if not self.node.computer.uuid == parent_calc.computer.uuid:
+            raise exceptions.InputValidationError(
+                'Calculation has to be launched on the same computer as that of the parent: {}'.format(
+                    parent_calc.computer.get_name()))
 
         # put by default, default_parent_output_folder = ./out
         try:
-            default_parent_output_folder = parent_calc._OUTPUT_SUBFOLDER
+            default_parent_output_folder = parent_calc.process_class._OUTPUT_SUBFOLDER
         except AttributeError:
             try:
                 default_parent_output_folder = parent_calc._get_output_folder()
             except AttributeError:
-                raise exceptions.InputValidationError("Parent of PhCalculation  does not "
-                                           "have a default output subfolder")
-        #os.path.join(
-        #                   parent_calc.OUTPUT_SUBFOLDER, 
-        #                  '{}.save'.format(parent_calc.PREFIX))
-        parent_calc_out_subfolder = settings_dict.pop('PARENT_CALC_OUT_SUBFOLDER',
-                                                      default_parent_output_folder)      
+                raise exceptions.InputValidationError('parent calculation does not have a default output subfolder')
+        parent_calc_out_subfolder = settings.pop('PARENT_CALC_OUT_SUBFOLDER', default_parent_output_folder)
 
-        # Here, there should be no other inputs
-        if inputdict:
-            raise exceptions.InputValidationError("The following input data nodes are "
-                "unrecognized: {}".format(list(inputdict.keys())))
+        # I put the first-level keys as uppercase (i.e., namelist and card names) and the second-level keys as lowercase
+        parameters = _uppercase_dict(self.inputs.parameters.get_dict(), dict_name='parameters')
+        parameters = {k: _lowercase_dict(v, dict_name=k) for k, v in six.iteritems(parameters)}
 
-        ##############################
-        # END OF INITIAL INPUT CHECK #
-        ##############################
-
-        # I put the first-level keys as uppercase (i.e., namelist and card names)
-        # and the second-level keys as lowercase
-        # (deeper levels are unchanged)
-        input_params = _uppercase_dict(parameters.get_dict(),
-                                       dict_name='parameters')
-        input_params = {k: _lowercase_dict(v, dict_name=k) 
-                        for k, v in six.iteritems(input_params)}
-
-        prepare_for_d3 = settings_dict.pop('PREPARE_FOR_D3', False)
+        prepare_for_d3 = settings.pop('PREPARE_FOR_D3', False)
         if prepare_for_d3:
-            self._blocked_keywords += [('INPUTPH', 'fildrho'),
-                                       ('INPUTPH', 'drho_star%open'),
-                                       ('INPUTPH', 'drho_star%ext'),
-                                       ('INPUTPH', 'drho_star%dir')]
-        
-        # I remove unwanted elements (for the moment, instead, I stop; to change when
-        # we setup a reasonable logging)
-        for nl, flag in self._blocked_keywords:
-            if nl in input_params:
-                if flag in input_params[nl]:
+            self._blocked_keywords += [
+                ('INPUTPH', 'fildrho'),
+                ('INPUTPH', 'drho_star%open'),
+                ('INPUTPH', 'drho_star%ext'),
+                ('INPUTPH', 'drho_star%dir')
+            ]
+
+        for namelist, flag in self._blocked_keywords:
+            if namelist in parameters:
+                if flag in parameters[namelist]:
                     raise exceptions.InputValidationError(
-                        "You cannot specify explicitly the '{}' flag in the '{}' "
-                        "namelist or card.".format(flag, nl))
-        
-        # Set some variables (look out at the case! NAMELISTS should be uppercase,
-        # internal flag names must be lowercase)
-        if 'INPUTPH' not in input_params:
-            raise exceptions.InputValidationError("No namelist INPUTPH found in input") # I cannot decide what to do in the calculation
-        input_params['INPUTPH']['outdir'] = self._OUTPUT_SUBFOLDER
-        input_params['INPUTPH']['iverbosity'] = 1 # in human language 1=high
-        input_params['INPUTPH']['prefix'] = self._PREFIX
-        input_params['INPUTPH']['fildyn'] = self._OUTPUT_DYNAMICAL_MATRIX_PREFIX
+                        "Cannot specify explicitly the '{}' flag in the '{}' namelist or card.".format(flag, namelist))
+
+        if 'INPUTPH' not in parameters:
+            raise exceptions.InputValidationError('required namelist INPUTPH not specified')
+
+        parameters['INPUTPH']['outdir'] = self._OUTPUT_SUBFOLDER
+        parameters['INPUTPH']['iverbosity'] = 1
+        parameters['INPUTPH']['prefix'] = self._PREFIX
+        parameters['INPUTPH']['fildyn'] = self._OUTPUT_DYNAMICAL_MATRIX_PREFIX
+
         if prepare_for_d3:
-            input_params['INPUTPH']['fildrho'] = self._DRHO_PREFIX
-            input_params['INPUTPH']['drho_star%open'] = True
-            input_params['INPUTPH']['drho_star%ext'] = self._DRHO_STAR_EXT
-            input_params['INPUTPH']['drho_star%dir'] = self._FOLDER_DRHO
-        
-        # qpoints part
+            parameters['INPUTPH']['fildrho'] = self._DRHO_PREFIX
+            parameters['INPUTPH']['drho_star%open'] = True
+            parameters['INPUTPH']['drho_star%ext'] = self._DRHO_STAR_EXT
+            parameters['INPUTPH']['drho_star%dir'] = self._FOLDER_DRHO
+
         try:
-            mesh, offset = qpoints.get_kpoints_mesh()
-            
-            if any([i!=0. for i in offset]):
-                raise NotImplementedError("Computation of phonons on a mesh with"
-                    " non zero offset is not implemented, at the level of ph.x")
-            
-            input_params["INPUTPH"]["ldisp"] = True
-            input_params["INPUTPH"]["nq1"] = mesh[0]
-            input_params["INPUTPH"]["nq2"] = mesh[1]
-            input_params["INPUTPH"]["nq3"] = mesh[2]
-            
+            mesh, offset = self.inputs.qpoints.get_kpoints_mesh()
+
+            if any([i != 0. for i in offset]):
+                raise NotImplementedError(
+                    "Computation of phonons on a mesh with non zero offset is not implemented, at the level of ph.x")
+
+            parameters['INPUTPH']['ldisp'] = True
+            parameters['INPUTPH']['nq1'] = mesh[0]
+            parameters['INPUTPH']['nq2'] = mesh[1]
+            parameters['INPUTPH']['nq3'] = mesh[2]
+
             postpend_text = None
-            
+
         except AttributeError:
             # this is the case where no mesh was set. Maybe it's a list
             try:
-                list_of_points = qpoints.get_kpoints(cartesian=True)
-            except AttributeError as e:
+                list_of_points = self.inputs.qpoints.get_kpoints(cartesian=True)
+            except AttributeError:
                 # In this case, there are no info on the qpoints at all
-                raise exceptions.InputValidationError("Neither a qpoints mesh or a valid "
-                                           "list of qpoints was found in input",
-                                           e.message)
+                raise exceptions.InputValidationError('Input `qpoints` contains neither a mesh nor a list of points')
+
             # change to 2pi/a coordinates
-            lattice_parameter = numpy.linalg.norm(qpoints.cell[0])
-            list_of_points *= lattice_parameter / (2.*numpy.pi)
-            # add here the list of point coordinates            
-            if len(list_of_points)>1:
-                input_params["INPUTPH"]["qplot"] = True
-                input_params["INPUTPH"]["ldisp"] = True
-                postpend_text = "{}\n".format(len(list_of_points))
+            lattice_parameter = numpy.linalg.norm(self.inputs.qpoints.cell[0])
+            list_of_points *= lattice_parameter / (2. * numpy.pi)
+
+            # add here the list of point coordinates
+            if len(list_of_points) > 1:
+                parameters['INPUTPH']['qplot'] = True
+                parameters['INPUTPH']['ldisp'] = True
+                postpend_text = '{}\n'.format(len(list_of_points))
                 for points in list_of_points:
-                    postpend_text += "{}  {}  {}  1\n".format(*points)
-                # Note: the weight is fixed to 1, because ph.x calls these 
-                # things weights but they are not such. If they are going to 
+                    postpend_text += '{}  {}  {}  1\n'.format(*points)
+
+                # Note: the weight is fixed to 1, because ph.x calls these
+                # things weights but they are not such. If they are going to
                 # exist with the meaning of weights, they will be supported
             else:
-                input_params["INPUTPH"]["ldisp"] = False
-                postpend_text = ""
+                parameters['INPUTPH']['ldisp'] = False
+                postpend_text = ''
                 for points in list_of_points:
-                    postpend_text += "{}  {}  {}\n".format(*points)
-            
-        
-        # =================== NAMELISTS ========================
-        
+                    postpend_text += '{}  {}  {}\n'.format(*points)
+
         # customized namelists, otherwise not present in the distributed ph code
         try:
-            namelists_toprint = settings_dict.pop('NAMELISTS')
+            namelists_toprint = settings.pop('NAMELISTS')
             if not isinstance(namelists_toprint, list):
                 raise exceptions.InputValidationError(
                     "The 'NAMELISTS' value, if specified in the settings input "
                     "node, must be a list of strings")
-        except KeyError: # list of namelists not specified in the settings; do automatic detection
+        except KeyError:  # list of namelists not specified in the settings; do automatic detection
             namelists_toprint = self._compulsory_namelists
-        
-        input_filename = tempfolder.get_abs_path(self._INPUT_FILE_NAME)
 
         # create a folder for the dynamical matrices
-        if not restart_flag: # if it is a restart, it will be copied over
-            tempfolder.get_subfolder(self._FOLDER_DYNAMICAL_MATRIX,
-                                     create=True)
-        
-        with open(input_filename, 'w') as infile:
-            infile.write('AiiDA calculation\n')
+        if not restart_flag:  # if it is a restart, it will be copied over
+            folder.get_subfolder(self._FOLDER_DYNAMICAL_MATRIX, create=True)
+
+        input_filename = folder.get_abs_path(self.metadata.options.input_filename)
+        with io.open(input_filename, 'w') as infile:
             for namelist_name in namelists_toprint:
-                infile.write("&{0}\n".format(namelist_name))
-                # namelist content; set to {} if not present, so that we leave an 
-                # empty namelist
-                namelist = input_params.pop(namelist_name, {})
-                for k, v in sorted(six.iteritems(namelist)):
-                    infile.write(convert_input_to_namelist_entry(k,v))
-                infile.write("/\n")
-            
+                infile.write(u'&{0}\n'.format(namelist_name))
+                # namelist content; set to {} if not present, so that we leave an empty namelist
+                namelist = parameters.pop(namelist_name, {})
+                for key, value in sorted(six.iteritems(namelist)):
+                    infile.write(convert_input_to_namelist_entry(key, value))
+                infile.write(u'/\n')
+
             # add list of qpoints if required
             if postpend_text is not None:
                 infile.write(postpend_text)
-            
-            #TODO: write nat_todo
-            
-        if input_params:
+
+        if parameters:
             raise exceptions.InputValidationError(
-                "The following namelists are specified in input_params, but are "
+                "The following namelists are specified in parameters, but are "
                 "not valid namelists for the current type of calculation: "
-                "{}".format(",".join(list(input_params.keys()))))
-        
+                "{}".format(",".join(list(parameters.keys()))))
+
         # copy the parent scratch
-        symlink = settings_dict.pop('PARENT_FOLDER_SYMLINK',
-                                    _default_symlink_usage) # a boolean
+        symlink = settings.pop('PARENT_FOLDER_SYMLINK', self._default_symlink_usage)  # a boolean
         if symlink:
             # I create a symlink to each file/folder in the parent ./out
-            tempfolder.get_subfolder(self._OUTPUT_SUBFOLDER, create=True)
-            
-            remote_symlink_list.append( (parent_calc_folder.get_computer().uuid,
-                                         os.path.join(parent_calc_folder.get_remote_path(),
-                                                      parent_calc_out_subfolder,
-                                                      "*"),
-                                         self._OUTPUT_SUBFOLDER
-                                         ) )
-            
+            folder.get_subfolder(self._OUTPUT_SUBFOLDER, create=True)
+
+            remote_symlink_list.append((
+                parent_folder.computer.uuid,
+                os.path.join(parent_folder.get_remote_path(), parent_calc_out_subfolder, '*'),
+                self._OUTPUT_SUBFOLDER
+            ))
+
             # I also create a symlink for the ./pseudo folder
-            # TODO: suppress this when the recover option of QE will be fixed 
-            # (bug when trying to find pseudo file) 
-            remote_symlink_list.append((parent_calc_folder.get_computer().uuid,
-                                        os.path.join(parent_calc_folder.get_remote_path(),
-                                                     self._get_pseudo_folder()),
-                                        self._get_pseudo_folder()
-                                        ))
-            #pass
+            # TODO: suppress this when the recover option of QE will be fixed
+            # (bug when trying to find pseudo file)
+            remote_symlink_list.append((
+                parent_folder.computer.uuid,
+                os.path.join(parent_folder.get_remote_path(), self._get_pseudo_folder()),
+                self._get_pseudo_folder()
+            ))
         else:
             # here I copy the whole folder ./out
-            remote_copy_list.append(
-                (parent_calc_folder.get_computer().uuid,
-                 os.path.join(parent_calc_folder.get_remote_path(),
-                              parent_calc_out_subfolder),
-                 self._OUTPUT_SUBFOLDER))
+            remote_copy_list.append((
+                parent_folder.computer.uuid,
+                os.path.join(parent_folder.get_remote_path(), parent_calc_out_subfolder),
+                self._OUTPUT_SUBFOLDER
+            ))
             # I also copy the ./pseudo folder
-            # TODO: suppress this when the recover option of QE will be fixed 
-            # (bug when trying to find pseudo file) 
-            remote_copy_list.append(
-                (parent_calc_folder.get_computer().uuid,
-                 os.path.join(parent_calc_folder.get_remote_path(),
-                              self._get_pseudo_folder()),
-                        self._get_pseudo_folder()))
-            
-        
-        if restart_flag: # in this case, copy in addition also the dynamical matrices
+            # TODO: suppress this when the recover option of QE will be fixed
+            # (bug when trying to find pseudo file)
+            remote_copy_list.append((
+                parent_folder.computer.uuid,
+                os.path.join(parent_folder.get_remote_path(), self._get_pseudo_folder()),
+                self._get_pseudo_folder()
+            ))
+
+        if restart_flag:  # in this case, copy in addition also the dynamical matrices
             if symlink:
-                remote_symlink_list.append(
-                    (parent_calc_folder.get_computer().uuid,
-                     os.path.join(parent_calc_folder.get_remote_path(),
-                              self._FOLDER_DYNAMICAL_MATRIX),
-                     self._FOLDER_DYNAMICAL_MATRIX))
+                remote_symlink_list.append((
+                    parent_folder.computer.uuid,
+                    os.path.join(parent_folder.get_remote_path(), self._FOLDER_DYNAMICAL_MATRIX),
+                    self._FOLDER_DYNAMICAL_MATRIX
+                ))
 
             else:
                 # copy the dynamical matrices
-                remote_copy_list.append(
-                    (parent_calc_folder.get_computer().uuid,
-                     os.path.join(parent_calc_folder.get_remote_path(),
-                              self._FOLDER_DYNAMICAL_MATRIX),
-                     '.'))
                 # no need to copy the _ph0, since I copied already the whole ./out folder
-        
-        # here we may create an aiida.EXIT file
-        create_exit_file = settings_dict.pop('ONLY_INITIALIZATION', False)
-        if create_exit_file:
-            exit_filename = tempfolder.get_abs_path(
-                             '{}.EXIT'.format(self._PREFIX))
-            with open(exit_filename, 'w') as f:
-                f.write('\n')
+                remote_copy_list.append((
+                    parent_folder.computer.uuid,
+                    os.path.join(parent_folder.get_remote_path(), self._FOLDER_DYNAMICAL_MATRIX),
+                    '.'
+                ))
 
-        calcinfo = CalcInfo()
-        
-        calcinfo.uuid = self.uuid
-        # Empty command line by default
-        cmdline_params = settings_dict.pop('CMDLINE', [])
-        
+        # Create an `.EXIT` file if `only_initialization` flag in `settings` is set to `True`
+        if settings.pop('ONLY_INITIALIZATION', False):
+            exit_filename = folder.get_abs_path('{}.EXIT'.format(self._PREFIX))
+            with open(exit_filename, 'w') as handle:
+                handle.write('\n')
+
+        codeinfo = datastructures.CodeInfo()
+        codeinfo.cmdline_params = (list(settings.pop('CMDLINE', [])) + ['-in', self.metadata.options.input_filename])
+        codeinfo.stdout_name = self.metadata.options.output_filename
+        codeinfo.code_uuid = self.inputs.code.uuid
+
+        calcinfo = datastructures.CalcInfo()
+        calcinfo.uuid = str(self.uuid)
+        calcinfo.codes_info = [codeinfo]
         calcinfo.local_copy_list = local_copy_list
         calcinfo.remote_copy_list = remote_copy_list
         calcinfo.remote_symlink_list = remote_symlink_list
-        
-        codeinfo = CodeInfo()
-        codeinfo.cmdline_params = (list(cmdline_params)
-                                   + ["-in", self._INPUT_FILE_NAME])
-        codeinfo.stdout_name = self._OUTPUT_FILE_NAME
-        codeinfo.code_uuid = code.uuid
-        calcinfo.codes_info = [codeinfo]
-        
+
         # Retrieve by default the output file and the xml file
+        filepath_xml_tensor = os.path.join(self._OUTPUT_SUBFOLDER, '_ph0', '{}.phsave'.format(self._PREFIX))
         calcinfo.retrieve_list = []
-        calcinfo.retrieve_list.append(self._OUTPUT_FILE_NAME)
+        calcinfo.retrieve_list.append(self.metadata.options.output_filename)
         calcinfo.retrieve_list.append(self._FOLDER_DYNAMICAL_MATRIX)
-        calcinfo.retrieve_list.append(  
-                os.path.join(self._OUTPUT_SUBFOLDER,
-                             '_ph0',
-                             '{}.phsave'.format(self._PREFIX),
-                             self._OUTPUT_XML_TENSOR_FILE_NAME))
-        
-        extra_retrieved = settings_dict.pop('ADDITIONAL_RETRIEVE_LIST', [])
-        for extra in extra_retrieved:
-            calcinfo.retrieve_list.append( extra )
-        
-        if settings_dict:
-            raise exceptions.InputValidationError("The following keys have been found in "
-                "the settings input node, but were not understood: {}".format(
-                ",".join(list(settings_dict.keys()))))
-        
+        calcinfo.retrieve_list.append(os.path.join(filepath_xml_tensor, self._OUTPUT_XML_TENSOR_FILE_NAME))
+        calcinfo.retrieve_list += settings.pop('ADDITIONAL_RETRIEVE_LIST', [])
+
+        if settings:
+            unknown_keys = ', '.join(list(settings.keys()))
+            raise exceptions.InputValidationError('`settings` contained unknown keys: {}'.format(unknown_keys))
+
         return calcinfo
 
-    def use_parent_calculation(self, calc):
-        """Set the parent calculation."""
-        if not isinstance(calc, (PhCalculation, PwCalculation)):
-            raise ValueError('Parent calculation must be a PhCalculation or PwCalculation')
-
-        try:
-            remote_folder = calc.get_outgoing(node_class=RemoteData, link_label_filter='remote_folder').one().node
-        except ValueError:
-            raise exceptions.UniquenessError('Parent calculation does not have a remote folder output node.')
-
-        self._set_parent_remotedata(remote_folder)
-
-    def _set_parent_remotedata(self, remotedata):
-        """
-        Used to set a parent remotefolder in the restart of ph.
-        """
-        if not isinstance(remotedata, RemoteData):
-            raise ValueError('remotedata must be a RemoteData')
-
-        # complain if another remotedata is already found
-        input_remote = self.get_incoming(node_class=RemoteData).all()
-        if input_remote:
-            raise exceptions.ValidationError("Cannot set several parent calculation to a ph calculation")
-
-        self.use_parent_folder(remotedata)
-            
     def _get_pseudo_folder(self):
         """
         Get the calculation-specific pseudo folder (relative path).
         Default given by BasePwCpInputGenerator._PSEUDO_SUBFOLDER
         """
-        return self.get_attr("pseudo_folder",
-                             BasePwCpInputGenerator._PSEUDO_SUBFOLDER)
-
-    def _set_pseudo_folder(self, pseudo_folder):
-        """
-        Get the calculation-specific pseudo folder.
-        
-        :param pseudo_folder: a string with the relative path (in the remote 
-        directory) to the pseudo folder
-        """
-        self.set_attr("pseudo_folder", six.text_type(pseudo_folder))
-    
-    def create_restart(self,force_restart=False,
-                       parent_folder_symlink=_default_symlink_usage):
-        """
-        Function to restart a calculation that was not completed before 
-        (like max walltime reached...) i.e. not to restart a FAILED calculation.
-        Returns a calculation c2, with all links prepared but not stored in DB.
-        To submit it simply::
-
-            c2.store_all()
-            c2.submit()
-
-        .. deprecated:: 3.0
-           Use the helper method :py:func:`aiida_quantumespresso.utils.restart.create_restart_ph` instead,
-           that returns a calculation builder rather than a new, unstored calculation.
-
-        :param bool force_restart: restart also if parent is not in FINISHED 
-            state (e.g. FAILED, IMPORTED, etc.). Default=False.
-        """
-        from aiida_quantumespresso.utils.restart import clone_calculation
-        import warnings
-        warnings.warn('This method has been deprecated, use instead '
-                      'aiida_quantumespresso.utils.restart.create_restart_ph()', DeprecationWarning)
-
-        if not self.is_finished_ok:
-            if force_restart:
-                pass
-            else:
-                raise exceptions.InputValidationError(
-                    "Calculation to be restarted must be finshed ok. Otherwise, use the force_restart flag")
-        
-        inputs = self.get_incoming()
-        code = inputs.get_node_by_label('code')
-        qpoints = inputs.get_node_by_label('qpoints')
-        
-        old_inp_dict = inputs.get_node_by_label('parameters').get_dict()
-        # add the restart flag
-        old_inp_dict['INPUTPH']['recover'] = True
-        inp_dict = Dict(dict=old_inp_dict) 
-
-        try:
-            remote_folder = self.get_outgoing(node_class=RemoteData, link_label_filter='remote_folder').one().node
-        except ValueError:
-            raise InputValidationError("No or more than one output RemoteData found in calculation {}".format(self.pk))
-        
-        c2 = clone_calculation(self)
-        
-        #if 'Restart' in c2.label:
-        #    # increment by 1 the number of restart already done
-        #    l = c2.label.split('Restart')
-        #    try:
-        #        num_restart = int(l[1].split('of')[0])
-        #    except ValueError:
-        #        num_restart = 1
-        #    labelstring = "{0} Restart {1} of ph.x".format(l[0],num_restart+1)
-        #else:
-        #    labelstring = c2.label + " Restart of ph.x"
-        if not 'Restart' in c2.label:
-            labelstring = c2.label + " Restart of {} {}.".format(
-                                        self.__class__.__name__, self.pk)
-        else:
-            labelstring = " Restart of {} {}.".format(self.__class__.__name__, self.pk)
-        c2.label = labelstring.lstrip()
-        
-        # set the parameters, code and q-points
-        c2.use_parameters(inp_dict)
-        c2.use_code(code)
-        c2.use_qpoints(qpoints)
-        
-        # settings will use the logic for the usage of symlinks
-        try:
-            old_settings_dict = inputs.get_node_by_label('settings').get_dict()
-        except KeyError:
-            old_settings_dict = {}
-        if parent_folder_symlink:
-            old_settings_dict['PARENT_FOLDER_SYMLINK'] = True
-            
-        if old_settings_dict: # if not empty dictionary
-            settings = Dict(dict=old_settings_dict)
-            c2.use_settings(settings)
-        
-        c2._set_parent_remotedata( remote_folder )
-        
-        return c2
-    
+        return PwCalculation._PSEUDO_SUBFOLDER

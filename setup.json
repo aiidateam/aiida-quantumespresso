@@ -52,6 +52,7 @@
             "quantumespresso.matdyn.base = aiida_quantumespresso.workflows.matdyn.base:MatdynBaseWorkChain"
         ],
         "console_scripts": [
+            "launch_calculation_ph = aiida_quantumespresso.cli.calculations.ph:cli",
             "launch_calculation_pw = aiida_quantumespresso.cli.calculations.pw.base:cli",
             "launch_calculation_cp = aiida_quantumespresso.cli.calculations.cp:cli",
             "launch_calculation_dos = aiida_quantumespresso.cli.calculations.dos:cli",

@@ -65,15 +65,13 @@ class BasePwCpInputGenerator(CalcJob):
     @classmethod
     def define(cls, spec):
         super(BasePwCpInputGenerator, cls).define(spec)
-        spec.input('code', valid_type=orm.Code, help='')
+        spec.input('metadata.options.withmpi', valid_type=bool, default=True)  # Override default withmpi=False
         spec.input('structure', valid_type=orm.StructureData, help='')
         spec.input('parameters', valid_type=orm.Dict, help='')
         spec.input('settings', valid_type=orm.Dict, required=False, help='')
         spec.input('parent_folder', valid_type=orm.RemoteData, required=False, help='')
         spec.input('vdw_table', valid_type=orm.SinglefileData, required=False, help='')
         spec.input_namespace('pseudos', valid_type=orm.UpfData, dynamic=True, help='')
-        # Override default withmpi=False
-        spec.input('metadata.options.withmpi', valid_type=bool, default=True)
 
     def prepare_for_submission(self, folder):
         """Create the input files from the input nodes passed to this instance of the `CalcJob`.
@@ -82,11 +80,9 @@ class BasePwCpInputGenerator(CalcJob):
         :return: `aiida.common.datastructures.CalcInfo` instance
         """
         if 'settings' in self.inputs:
-            settings = self.inputs.settings.get_dict()
-            settings_dict = _uppercase_dict(settings, dict_name='settings')
+            settings = _uppercase_dict(self.inputs.settings.get_dict(), dict_name='settings')
         else:
             settings = {}
-            settings_dict = {}
 
         # Check that a pseudo potential was specified for each kind present in the `StructureData`
         kinds = [kind.name for kind in self.inputs.structure.kinds]
@@ -118,7 +114,7 @@ class BasePwCpInputGenerator(CalcJob):
 
         arguments = [
             self.inputs.parameters,
-            settings_dict,
+            settings,
             self.inputs.pseudos,
             self.inputs.structure,
         ]
@@ -132,7 +128,7 @@ class BasePwCpInputGenerator(CalcJob):
             handle.write(input_filecontent)
 
         # operations for restart
-        symlink = settings_dict.pop('PARENT_FOLDER_SYMLINK', self._default_symlink_usage)  # a boolean
+        symlink = settings.pop('PARENT_FOLDER_SYMLINK', self._default_symlink_usage)  # a boolean
         if symlink:
             if 'parent_folder' in self.inputs:
                 # I put the symlink to the old parent ./out folder
@@ -151,22 +147,22 @@ class BasePwCpInputGenerator(CalcJob):
                 ))
 
         # Create an `.EXIT` file if `only_initialization` flag in `settings` is set to `True`
-        if settings_dict.pop('ONLY_INITIALIZATION', False):
+        if settings.pop('ONLY_INITIALIZATION', False):
             exit_filename = folder.get_abs_path('{}.EXIT'.format(self._PREFIX))
             with open(exit_filename, 'w') as handle:
                 handle.write('\n')
 
         # Check if specific inputs for the ENVIRON module where specified
-        environ_namelist = settings_dict.pop('ENVIRON', None)
+        environ_namelist = settings.pop('ENVIRON', None)
         if environ_namelist is not None:
             if not isinstance(environ_namelist, dict):
                 raise exceptions.InputValidationError("ENVIRON namelist should be specified as a dictionary")
             # We first add the environ flag to the command-line options (if not already present)
             try:
-                if '-environ' not in settings_dict['CMDLINE']:
-                    settings_dict['CMDLINE'].append('-environ')
+                if '-environ' not in settings['CMDLINE']:
+                    settings['CMDLINE'].append('-environ')
             except KeyError:
-                settings_dict['CMDLINE'] = ['-environ']
+                settings['CMDLINE'] = ['-environ']
             # To create a mapping from the species to an incremental fortran 1-based index
             # we use the alphabetical order as in the inputdata generation
             kind_names = sorted([kind.name for kind in self.inputs.structure.kinds])
@@ -180,7 +176,7 @@ class BasePwCpInputGenerator(CalcJob):
                 handle.write('/\n')
 
         # Check for the deprecated 'ALSO_BANDS' setting and if present fire a deprecation log message
-        also_bands = settings_dict.pop('ALSO_BANDS', None)
+        also_bands = settings.pop('ALSO_BANDS', None)
         if also_bands:
             import logging
             from aiida.common.log import get_dblogger_extra
@@ -197,7 +193,7 @@ class BasePwCpInputGenerator(CalcJob):
 
         calcinfo.uuid = str(self.uuid)
         # Empty command line by default
-        cmdline_params = settings_dict.pop('CMDLINE', [])
+        cmdline_params = settings.pop('CMDLINE', [])
         # we commented calcinfo.stin_name and added it here in cmdline_params
         # in this way the mpirun ... pw.x ... < aiida.in
         # is replaced by mpirun ... pw.x ... -in aiida.in
@@ -219,30 +215,30 @@ class BasePwCpInputGenerator(CalcJob):
         calcinfo.retrieve_list = []
         calcinfo.retrieve_list.append(self._OUTPUT_FILE_NAME)
         calcinfo.retrieve_list.extend(self.xml_filepaths)
-        calcinfo.retrieve_list += settings_dict.pop('ADDITIONAL_RETRIEVE_LIST', [])
+        calcinfo.retrieve_list += settings.pop('ADDITIONAL_RETRIEVE_LIST', [])
         calcinfo.retrieve_list += self._internal_retrieve_list
 
         # Retrieve the k-point directories with the xml files to the temporary folder
         # to parse the band eigenvalues and occupations but not to have to save the raw files
         # if and only if the 'no_bands' key was not set to true in the settings
-        no_bands = settings_dict.pop('NO_BANDS', False)
+        no_bands = settings.pop('NO_BANDS', False)
         if no_bands is False:
             xmlpaths = os.path.join(self._OUTPUT_SUBFOLDER, self._PREFIX + '.save', 'K*[0-9]', 'eigenval*.xml')
             calcinfo.retrieve_temporary_list = [[xmlpaths, '.', 2]]
-        
+
         # TODO: self.get_parserclass() probably raises AttributeError, but is caught later!
         #       Use self.input('metadata.options.parser_name') instead
         try:
             Parserclass = self.get_parserclass()
             parser = Parserclass(self)
             parser_opts = parser.get_parser_settings_key().upper()
-            settings_dict.pop(parser_opts)
+            settings.pop(parser_opts)
         except (KeyError, AttributeError):
             # the key parser_opts isn't inside the dictionary
             pass
 
-        if settings_dict:
-            unknown_keys = ', '.join(list(settings_dict.keys()))
+        if settings:
+            unknown_keys = ', '.join(list(settings.keys()))
             raise exceptions.InputValidationError('`settings` contained unknown keys: {}'.format(unknown_keys))
 
         return calcinfo
