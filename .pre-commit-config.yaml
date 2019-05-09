@@ -12,7 +12,6 @@
         aiida_quantumespresso/calculations.*|
         aiida_quantumespresso/common/.*|
         aiida_quantumespresso/parsers/.*|
-        aiida_quantumespresso/tests/.*|
         aiida_quantumespresso/tools/.*|
         aiida_quantumespresso/utils/.*|
         aiida_quantumespresso/workflows/.*|
