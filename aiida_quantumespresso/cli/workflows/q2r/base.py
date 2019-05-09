@@ -6,10 +6,11 @@ import click
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
-from aiida_quantumespresso.cli.utils import options as options_qe
+from ...cli import workflow_launch
+from ...utils import options as options_qe
 
 
-@click.command()
+@workflow_launch.command('q2r-base')
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.q2r'))
 @options.CALCULATION(type=types.CalculationParamType(sub_classes=('aiida.calculations:quantumespresso.ph',)))
 @options_qe.CLEAN_WORKDIR()
@@ -18,7 +19,7 @@ from aiida_quantumespresso.cli.utils import options as options_qe
 @options_qe.WITH_MPI()
 @options_qe.DAEMON()
 @decorators.with_dbenv()
-def cli(code, calculation, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
+def launch_workflow(code, calculation, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
     """Run the `Q2rBaseWorkChain` for a previously completed `PhCalculation`."""
     from aiida.engine import launch
     from aiida.orm import Bool, Dict

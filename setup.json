@@ -52,20 +52,7 @@
             "quantumespresso.matdyn.base = aiida_quantumespresso.workflows.matdyn.base:MatdynBaseWorkChain"
         ],
         "console_scripts": [
-            "launch_calculation_ph = aiida_quantumespresso.cli.calculations.ph:cli",
-            "launch_calculation_pw = aiida_quantumespresso.cli.calculations.pw.base:cli",
-            "launch_calculation_cp = aiida_quantumespresso.cli.calculations.cp:cli",
-            "launch_calculation_dos = aiida_quantumespresso.cli.calculations.dos:cli",
-            "launch_calculation_q2r = aiida_quantumespresso.cli.calculations.q2r:cli",
-            "launch_calculation_matdyn = aiida_quantumespresso.cli.calculations.matdyn:cli",
-            "launch_calculation_pw2wannier90 = aiida_quantumespresso.cli.calculations.pw2wannier90:cli",
-            "launch_workflow_pw_band_structure = aiida_quantumespresso.cli.workflows.pw.band_structure:cli",
-            "launch_workflow_pw_bands = aiida_quantumespresso.cli.workflows.pw.bands:cli",
-            "launch_workflow_pw_relax = aiida_quantumespresso.cli.workflows.pw.relax:cli",
-            "launch_workflow_pw_base = aiida_quantumespresso.cli.workflows.pw.base:cli",
-            "launch_workflow_ph_base = aiida_quantumespresso.cli.workflows.ph.base:cli",
-            "launch_workflow_q2r_base = aiida_quantumespresso.cli.workflows.q2r.base:cli",
-            "launch_workflow_matdyn_base = aiida_quantumespresso.cli.workflows.matdyn.base:cli"
+            "aiida-quantumespresso = aiida_quantumespresso.cli.cli:root"
         ]
     },
     "extras_require": {

@@ -6,11 +6,12 @@ import click
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
-from aiida_quantumespresso.cli.utils import options as options_qe
-from aiida_quantumespresso.cli.utils import validate
+from ...cli import workflow_launch
+from ...utils import options as options_qe
+from ...utils import validate
 
 
-@click.command()
+@workflow_launch.command('pw-base')
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.pw'))
 @options_qe.STRUCTURE(required=True)
 @options_qe.PSEUDO_FAMILY(required=True)
@@ -29,9 +30,9 @@ from aiida_quantumespresso.cli.utils import validate
 @options_qe.WITH_MPI()
 @options_qe.DAEMON()
 @decorators.with_dbenv()
-def cli(code, structure, pseudo_family, kpoints_distance, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file_pk,
-        starting_magnetization, smearing, automatic_parallelization, clean_workdir, max_num_machines,
-        max_wallclock_seconds, with_mpi, daemon):
+def launch_workflow(code, structure, pseudo_family, kpoints_distance, ecutwfc, ecutrho, hubbard_u, hubbard_v,
+                    hubbard_file_pk, starting_magnetization, smearing, automatic_parallelization, clean_workdir,
+                    max_num_machines, max_wallclock_seconds, with_mpi, daemon):
     """Run a `PwBaseWorkChain`."""
     from aiida.engine import launch
     from aiida.orm import Bool, Float, Str, Dict

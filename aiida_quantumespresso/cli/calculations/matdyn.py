@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 """Command line scripts to launch a `MatdynCalculation` for testing and demonstration purposes."""
 from __future__ import absolute_import
+
 import click
 
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
-from aiida_quantumespresso.cli.utils import options as options_qe
+from ..cli import calculation_launch
+from ..utils import options as options_qe
 
 
-@click.command()
+@calculation_launch.command('matdyn')
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.matdyn'))
 @options.DATUM(
     required=True,
@@ -21,7 +23,7 @@ from aiida_quantumespresso.cli.utils import options as options_qe
 @options_qe.WITH_MPI()
 @options_qe.DAEMON()
 @decorators.with_dbenv()
-def cli(code, datum, kpoints_mesh, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
+def launch_calculation(code, datum, kpoints_mesh, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
     """Run a MatdynCalculation."""
     from aiida.engine import launch
     from aiida.plugins import CalculationFactory
