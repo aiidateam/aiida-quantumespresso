@@ -94,7 +94,7 @@ class NamelistsCalculation(CalcJob):
         else:
             settings_dict = {}
 
-        following_text = self._get_following_text(settings_dict)
+        following_text = self._get_following_text()
 
         ##############################
         # END OF INITIAL INPUT CHECK #
