@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 """Command line scripts to launch a `PwCalculation` for testing and demonstration purposes."""
 from __future__ import absolute_import
+
 import click
 
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
-from aiida_quantumespresso.cli.utils import options as options_qe
-from aiida_quantumespresso.cli.utils import validate
+from ..cli import calculation_launch
+from ..utils import options as options_qe
+from ..utils import validate
 
 
-@click.command()
+@calculation_launch.command('pw')
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.pw'))
 @options_qe.STRUCTURE(required=True)
 @options_qe.PSEUDO_FAMILY(required=True)
@@ -35,8 +37,9 @@ from aiida_quantumespresso.cli.utils import validate
     show_default=True,
     help='select the calculation mode')
 @decorators.with_dbenv()
-def cli(code, structure, pseudo_family, kpoints_mesh, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file_pk,
-        starting_magnetization, smearing, max_num_machines, max_wallclock_seconds, with_mpi, daemon, mode):
+def launch_calculation(code, structure, pseudo_family, kpoints_mesh, ecutwfc, ecutrho, hubbard_u, hubbard_v,
+                       hubbard_file_pk, starting_magnetization, smearing, max_num_machines, max_wallclock_seconds,
+                       with_mpi, daemon, mode):
     """Run a PwCalculation."""
     from aiida.engine import launch
     from aiida.orm import Dict

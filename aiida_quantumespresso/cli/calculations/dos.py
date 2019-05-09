@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 """Command line scripts to launch a `DosCalculation` for testing and demonstration purposes."""
 from __future__ import absolute_import
+
 import click
 
-from aiida.orm import RemoteData
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
-from aiida_quantumespresso.cli.utils import options as options_qe
+from ..cli import calculation_launch
+from ..utils import options as options_qe
 
 
-@click.command()
+@calculation_launch.command('dos')
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.dos'))
 @options.CALCULATION(required=True)
 @options_qe.MAX_NUM_MACHINES()
@@ -18,9 +19,10 @@ from aiida_quantumespresso.cli.utils import options as options_qe
 @options_qe.WITH_MPI()
 @options_qe.DAEMON()
 @decorators.with_dbenv()
-def cli(code, calculation, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
+def launch_calculation(code, calculation, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
     """Run a DosCalculation."""
     from aiida.engine import launch
+    from aiida.orm import RemoteData
     from aiida.plugins import CalculationFactory
     from aiida_quantumespresso.utils.resources import get_default_options
 
