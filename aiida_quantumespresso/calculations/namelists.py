@@ -26,7 +26,7 @@ class NamelistsCalculation(CalcJob):
     Quantum ESPRESSO distribution (http://www.quantum-espresso.org/)
     that accept as input a Fortran-style namelist.
     """
-    
+
     # Default name of the subfolder inside 'parent_folder'
     # from which you want to copy the files, in case
     # the parent_folder is of type FolderData
@@ -56,7 +56,7 @@ class NamelistsCalculation(CalcJob):
     _DEFAULT_OUTPUT_FILE = 'aiida.out'
     # Default parser
     _default_parser = None
-    
+
     @classmethod
     def define(cls, spec):
         super(NamelistsCalculation, cls).define(spec)
@@ -76,26 +76,26 @@ class NamelistsCalculation(CalcJob):
         If this function needs any data from the settings input, it should pop() them from settings_dict,
         so that prepare_for_submission() can check if any keys are left and are therefore unrecognized.
         """
-        return ""
-    
+        return u''
+
     def prepare_for_submission(self, folder):
         """Create the input files from the input nodes passed to this instance of the `CalcJob`.
-    
+
         :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
         :return: `aiida.common.datastructures.CalcInfo` instance
         """
         local_copy_list = []
         remote_copy_list = []
-        
+
         # Settings converted to uppercase
         if 'settings' in self.inputs:
             settings_dict = _uppercase_dict(self.inputs.settings.get_dict(),
                                             dict_name='settings')
         else:
             settings_dict = {}
-        
+
         following_text = self._get_following_text(settings_dict)
-        
+
         ##############################
         # END OF INITIAL INPUT CHECK #
         ##############################
@@ -110,13 +110,13 @@ class NamelistsCalculation(CalcJob):
                             for k, v in six.iteritems(input_params)}
         else:
             input_params = {}
-        
+
         # set default values. NOTE: this is different from PW/CP
         for blocked in self._blocked_keywords:
             namelist = blocked[0].upper()
             key = blocked[1].lower()
             value = blocked[2]
-            
+
             if namelist in input_params:
                 if key in input_params[namelist]:
                     raise InputValidationError(
@@ -125,7 +125,7 @@ class NamelistsCalculation(CalcJob):
             else:
                 input_params[namelist] = {}
             input_params[namelist][key] = value
-        
+
         # =================== NAMELISTS AND CARDS ========================
         try:
             namelists_toprint = settings_dict.pop('NAMELISTS')
@@ -135,17 +135,17 @@ class NamelistsCalculation(CalcJob):
                     "node, must be a list of strings")
         except KeyError: # list of namelists not specified; do automatic detection
             namelists_toprint = self._default_namelists
-        
+
         input_filename = self.inputs.metadata.options.input_filename
         with folder.open(input_filename,'w') as infile:
             for namelist_name in namelists_toprint:
-                infile.write("&{0}\n".format(namelist_name))
-                # namelist content; set to {} if not present, so that we leave an 
+                infile.write(u"&{0}\n".format(namelist_name))
+                # namelist content; set to {} if not present, so that we leave an
                 # empty namelist
                 namelist = input_params.pop(namelist_name, {})
                 for k, v in sorted(six.iteritems(namelist)):
                     infile.write(convert_input_to_namelist_entry(k,v))
-                infile.write("/\n")
+                infile.write(u"/\n")
 
             # Write remaning text now, if any
             infile.write(following_text)
@@ -156,7 +156,7 @@ class NamelistsCalculation(CalcJob):
                 "The following namelists are specified in input_params, but are "
                 "not valid namelists for the current type of calculation: "
                 "{}".format(",".join(list(input_params.keys()))))
-        
+
         # copy remote output dir, if specified
         parent_calc_folder =  self.inputs.get('parent_folder', None)
         if parent_calc_folder is not None:
@@ -182,30 +182,30 @@ class NamelistsCalculation(CalcJob):
                 local_copy_list.append(
                     (single_file.uuid, single_file.filename, single_file.filename)
                  )
-                
+
         calcinfo = CalcInfo()
-        
+
         calcinfo.uuid = self.uuid
         # Empty command line by default
         calcinfo.local_copy_list = local_copy_list
         calcinfo.remote_copy_list = remote_copy_list
-        
+
         codeinfo = CodeInfo()
         codeinfo.cmdline_params = settings_dict.pop('CMDLINE', [])
         codeinfo.stdin_name = self.inputs.metadata.options.input_filename
         codeinfo.stdout_name = self.inputs.metadata.options.output_filename
         codeinfo.code_uuid = self.inputs.code.uuid
         calcinfo.codes_info = [codeinfo]
-        
+
         # Retrieve by default the output file and the xml file
-        calcinfo.retrieve_list = []        
+        calcinfo.retrieve_list = []
         calcinfo.retrieve_list.append(self.inputs.metadata.options.output_filename)
         settings_retrieve_list = settings_dict.pop('ADDITIONAL_RETRIEVE_LIST', [])
         calcinfo.retrieve_list += settings_retrieve_list
         calcinfo.retrieve_list += self._internal_retrieve_list
-        
+
         calcinfo.retrieve_singlefile_list = self._retrieve_singlefile_list
-        
+
         # We might still have parser options in the settings dictionary: pop them
         # We need an instance of the parser class to get the parser options key (typically 'parser_options')
         parser_name = self.inputs.get('metadata.options.parser_name', None)
@@ -219,7 +219,7 @@ class NamelistsCalculation(CalcJob):
                 # the key parser_opts isn't inside the dictionary,
                 # or the parser doesn't have a method get_parser_settings_key().
                 pass
-        
+
         if settings_dict:
             raise InputValidationError("The following keys have been found in "
                   "the settings input node, but were not understood: {}".format(

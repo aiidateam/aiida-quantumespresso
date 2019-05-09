@@ -18,6 +18,7 @@ from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
 
 class PhCalculation(CalcJob):
+    """`CalcJob` implementation for the ph.x code of Quantum ESPRESSO."""
 
     # Keywords that cannot be set by the user but will be set by the plugin
     _blocked_keywords = [

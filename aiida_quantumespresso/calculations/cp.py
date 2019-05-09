@@ -28,11 +28,7 @@ from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 
 
 class CpCalculation(BasePwCpInputGenerator, CalcJob):
-    """
-    Car-Parrinello molecular dynamics code (cp.x) of the
-    Quantum ESPRESSO distribution.
-    For more information, refer to http://www.quantum-espresso.org/
-    """
+    """`CalcJob` implementation for the cp.x code of Quantum ESPRESSO."""
 
     # Constants to use in the calculation
     _CP_READ_UNIT_NUMBER = 50

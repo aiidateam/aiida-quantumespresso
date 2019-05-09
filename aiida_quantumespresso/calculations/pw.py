@@ -11,6 +11,7 @@ from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 
 
 class PwCalculation(BasePwCpInputGenerator):
+    """`CalcJob` implementation for the pw.x code of Quantum ESPRESSO."""
 
     _automatic_namelists = {
         'scf': ['CONTROL', 'SYSTEM', 'ELECTRONS'],
