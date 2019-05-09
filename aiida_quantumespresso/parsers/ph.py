@@ -14,13 +14,7 @@ class PhParser(Parser):
     """`Parser` implementation for the `PhCalculation` calculation job class."""
 
     def parse(self, **kwargs):
-        """
-        Parse the output nodes for a PhCalculation from a dictionary of retrieved nodes.
-        Two nodes that are expected are the default 'retrieved' FolderData node which will
-        store the retrieved files permanently in the repository. The second required node
-        is the unstored FolderData node with the temporary retrieved files, which should
-        be passed under the key 'retrieved_temporary_folder_key' of the Parser class.
-        """
+        """Parse the retrieved files from a `PhCalculation`."""
         try:
             output_folder = self.retrieved
         except exceptions.NotExistent:

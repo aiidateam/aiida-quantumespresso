@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=unused-argument
-"""Tests for the `PwParser`."""
+"""Tests for the `CpParser`."""
 from __future__ import absolute_import
 
 from aiida import orm
@@ -10,23 +10,21 @@ import pytest
 
 
 @pytest.fixture
-def cp_inputs():
-    """
-    Minimal input for cp calculations.
-    """
+def generate_inputs():
+    """Return only those inputs that the parser will expect to be there."""
     alat = 5.4
-    ase_structure = crystal(
-        "Si",
+    ase = crystal(
+        'Si',
         [(0, 0, 0)],
         spacegroup=227,
         cellpar=[alat, alat, alat, 90, 90, 90],
         primitive_cell=True,
     )
-    structure = orm.StructureData(ase=ase_structure)
+    structure = orm.StructureData(ase=ase)
     parameters = {
         'CONTROL': {
-            'calculation': "cp",
-            'restart_mode': "from_scratch",
+            'calculation': 'cp',
+            'restart_mode': 'from_scratch',
             'wf_collect': False,
             'iprint': 1,
             'isave': 100,
@@ -43,12 +41,12 @@ def cp_inputs():
         },
         'ELECTRONS': {
             'electron_damping': 1.0e-1,
-            'electron_dynamics': "damp",
+            'electron_dynamics': 'damp',
             'emass': 400.0,
             'emass_cutoff': 3.0,
         },
         'IONS': {
-            'ion_dynamics': "none"
+            'ion_dynamics': 'none'
         },
     }
     return AttributeDict({
@@ -56,17 +54,14 @@ def cp_inputs():
         'parameters': orm.Dict(dict=parameters),
     })
 
-def test_cp_default(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
-                    cp_inputs, data_regression):
-    """Test a default `cp.x` calculation.
 
-    The output is created by renning a dead simple SCF calculation for a silicon structure.
-    This test should test the standard parsing of the stdout content and XML file stored in the standard results node.
-    """
+def test_cp_default(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
+                    generate_inputs, data_regression):
+    """Test a default `cp.x` calculation."""
     entry_point_calc_job = 'quantumespresso.cp'
     entry_point_parser = 'quantumespresso.cp'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, 'default', cp_inputs)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, 'default', generate_inputs)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 

@@ -1,20 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-from aiida.orm import RemoteData, FolderData, CalcJobNode
-from aiida.orm import Dict, XyData
+
+from aiida import orm
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
-import six
 
 
 class DosCalculation(NamelistsCalculation):
-    """
-    Plugin for the dos.x code of the Quantum ESPRESSO distribution. Handles
-    density of states calculations, and stores the resulting dos arrays and
-    integrated dos arrays.
-    For more information regarding dos.x
-    refer to http://www.quantum-espresso.org/
-    """
-    
+    """`CalcJob` implementation for the dos.x code of Quantum ESPRESSO."""
+
     _DOS_FILENAME = 'aiida.dos'
     _default_namelists = ['DOS']
     _blocked_keywords = [
@@ -28,9 +21,9 @@ class DosCalculation(NamelistsCalculation):
     @classmethod
     def define(cls, spec):
         super(DosCalculation, cls).define(spec)
-        spec.input('parent_folder', valid_type=(RemoteData, FolderData), required=True)
-        spec.output('output_parameters', valid_type=Dict)
-        spec.output('output_dos', valid_type=XyData)
+        spec.input('parent_folder', valid_type=(orm.RemoteData, orm.FolderData), required=True)
+        spec.output('output_parameters', valid_type=orm.Dict)
+        spec.output('output_dos', valid_type=orm.XyData)
         spec.default_output_node = 'output_parameters'
         spec.exit_code(
             100, 'ERROR_NO_RETRIEVED_FOLDER', message='The retrieved folder data node could not be accessed.')
@@ -39,4 +32,4 @@ class DosCalculation(NamelistsCalculation):
         spec.exit_code(
             111, 'ERROR_READING_DOS_FILE', message='The dos file could not be read from the retrieved folder.')
         spec.exit_code(
-            130, 'ERROR_JOB_NOT_DONE', message='The computation did not finish properly (\'JOB DONE\' not found).')
+            130, 'ERROR_JOB_NOT_DONE', message='The computation did not finish properly ("JOB DONE" not found).')
