@@ -27,7 +27,6 @@
             "quantumespresso.forceconstants = aiida_quantumespresso.data.forceconstants:ForceconstantsData"
         ],
         "aiida.parsers": [
-            "quantumespresso.basicpw = aiida_quantumespresso.parsers.basicpw:BasicpwParser",
             "quantumespresso.cp = aiida_quantumespresso.parsers.cp:CpParser",
             "quantumespresso.dos = aiida_quantumespresso.parsers.dos:DosParser",
             "quantumespresso.matdyn = aiida_quantumespresso.parsers.matdyn:MatdynParser",
@@ -75,7 +74,7 @@
     },
     "install_requires": [
         "aiida_core[atomic_tools]>=1.0.0b2",
-        "matplotlib<3.0.0; python_version < '3'",
+        "matplotlib<3.0.0; python_version<'3'",
         "xmlschema==1.0.6"
     ],
     "license": "MIT License",
