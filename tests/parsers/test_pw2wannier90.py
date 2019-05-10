@@ -14,7 +14,7 @@ def pw2wannier90_inputs():
     Minimal input for pw2wannier90 calculations.
     """
     basepath = os.path.dirname(os.path.abspath(__file__))
-    nnkp_filepath = os.path.join(basepath, 'fixtures', 'pw2wannier90', 'default', 'aiida.nnkp')
+    nnkp_filepath = os.path.join(basepath, 'fixtures', 'pw2wannier90', 'inputs', 'aiida.nnkp')
     
     parameters = {
         'inputpp': {
