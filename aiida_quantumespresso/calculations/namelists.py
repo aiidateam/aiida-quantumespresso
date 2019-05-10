@@ -52,8 +52,9 @@ class NamelistsCalculation(CalcJob):
         super(NamelistsCalculation, cls).define(spec)
         spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
-        spec.input('metadata.options.parser_name', valid_type=six.string_types, default=cls._default_parser)
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)  # Override default value False
+        if cls._default_parser is not None:
+            spec.input('metadata.options.parser_name', valid_type=six.string_types, default=cls._default_parser)
         spec.input('parameters', valid_type=Dict, required=False,
             help='Use a node that specifies the input parameters for the namelists')
         spec.input('settings', valid_type=Dict, required=False,
