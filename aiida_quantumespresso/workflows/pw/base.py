@@ -220,9 +220,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         inputs.metadata['options'] = update_mapping(inputs.metadata['options'], get_default_options())
 
         # Prepare the final input dictionary
-        process = PwCalculation.process()
-        inputs = self._prepare_process_inputs(process, inputs)
-        running = self.submit(process, **inputs)
+        inputs = self._prepare_process_inputs(PwCalculation, inputs)
+        running = self.submit(PwCalculation, **inputs)
 
         self.report('launching initialization PwCalculation<{}>'.format(running.pk))
 
