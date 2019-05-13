@@ -1,0 +1,91 @@
+<UPF version="2.0.1">
+  <PP_INFO>
+    WARNING: this is a modified dummy pseudo for unit testing purposes only
+    Author: ADC
+    Generation date: 10Oct2014
+    Pseudopotential type: USPP
+    Element: Si
+    Functional: PBE
+
+    Suggested minimum cutoff for wavefunctions:  44. Ry
+    Suggested minimum cutoff for charge density: 175. Ry
+    The Pseudo was generated with a Scalar-Relativistic Calculation
+    Local Potential by smoothing AE potential with Bessel fncs, cutoff radius:   1.9000
+
+    Valence configuration:
+    nl pn  l   occ       Rcut    Rcut US       E pseu
+    3S  1  0  2.00      1.600      1.800    -0.794728
+    3P  2  1  2.00      1.600      1.800    -0.299965
+    Generation configuration:
+    3S  1  0  2.00      1.600      1.800    -0.794724
+    3S  1  0  0.00      1.600      1.800     6.000000
+    3P  2  1  2.00      1.600      1.800    -0.299964
+    3P  2  1  0.00      1.600      1.800     6.000000
+    3D  3  2  0.00      1.600      1.800     0.100000
+    3D  3  2  0.00      1.600      1.800     0.300000
+
+    Pseudization used: troullier-martins
+<PP_INPUTFILE>
+ &amp;input
+   title='Si',
+   zed=14.,
+   rel=1,
+   config='[Ne] 3s2 3p2 3d-1',
+   iswitch=3,
+   dft='PBE'
+ /
+ &amp;inputp
+   lpaw=.false.,
+   pseudotype=3,
+   file_pseudopw='Si.pbe-n-rrkjus_psl.1.0.0.UPF',
+   author='ADC',
+   lloc=-1,
+   rcloc=1.9,
+   which_augfun='PSQ',
+   rmatch_augfun_nc=.true.,
+   nlcc=.true.,
+   new_core_ps=.true.,
+   rcore=1.3,
+   tm=.true.
+ /
+6
+3S  1  0  2.00  0.00  1.60  1.80  0.0
+3S  1  0  0.00  6.00  1.60  1.80  0.0
+3P  2  1  2.00  0.00  1.60  1.80  0.0
+3P  2  1  0.00  6.00  1.60  1.80  0.0
+3D  3  2  0.00  0.10  1.60  1.80  0.0
+3D  3  2  0.00  0.30  1.60  1.80  0.0
+</PP_INPUTFILE>
+  </PP_INFO>
+  <!--                               -->
+  <!-- END OF HUMAN READABLE SECTION -->
+  <!--                               -->
+  <PP_HEADER generated='Generated using "atomic" code by A. Dal Corso  v.5.1'
+             author="ADC"
+             date="10Oct2014"
+             comment=""
+             element="Si"
+             pseudo_type="USPP"
+             relativistic="scalar"
+             is_ultrasoft="T"
+             is_paw="F"
+             is_coulomb="F"
+             has_so="F"
+             has_wfc="F"
+             has_gipaw="F"
+             paw_as_gipaw="F"
+             core_correction="T"
+             functional="PBE"
+             z_valence="4.000000000000000E+000"
+             total_psenergy="-1.102230803678973E+001"
+             wfc_cutoff="4.374353160781668E+001"
+             rho_cutoff="1.749741264312667E+002"
+             l_max="2"
+             l_max_rho="4"
+             l_local="-1"
+             mesh_size="1141"
+             number_of_wfc="2"
+             number_of_proj="6"/>
+  <PP_MESH dx="1.250000000000000E-002" mesh="1141" xmin="-7.000000000000000E+000" rmax="1.000000000000000E+002"
+zmesh="1.400000000000000E+001">
+</UPF>
