@@ -19,6 +19,24 @@ from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
 
+def get_folderdata_files(folder_data, subpath=''):
+    from aiida.orm.utils.repository import FileType
+    
+    filepaths = []
+    for obj in folder_data.list_objects(subpath):
+        if obj.type == FileType.FILE:
+            filepaths.append(os.path.join(subpath,obj.name))
+        elif obj.type == FileType.DIRECTORY:
+            filepaths.extend(
+                get_folderdata_files(folder_data, os.path.join(subpath, obj.name))
+            )
+        else:
+            raise ValueError("Object of unexpected type {} in FolderData {}".format(
+                obj.type, folder_data.uuid
+            ))
+    return filepaths
+
+
 class NamelistsCalculation(CalcJob):
     """`CalcJob` implementation to serve as base class for simple post-processing tools of Quantum ESPRESSO."""
 
@@ -142,22 +160,28 @@ class NamelistsCalculation(CalcJob):
             if isinstance(parent_calc_folder, RemoteData):
                 parent_calc_out_subfolder = settings.pop('PARENT_CALC_OUT_SUBFOLDER', self._INPUT_SUBFOLDER)
                 remote_copy_list.append((
+                    # remote computer UUID, source absolute path, destination relative path
                     parent_calc_folder.computer.uuid,
                     os.path.join(parent_calc_folder.get_remote_path(), parent_calc_out_subfolder),
                     self._OUTPUT_SUBFOLDER
                 ))
             elif isinstance(parent_calc_folder, FolderData):
-                # TODO: test me, especially with deep relative paths.
-                for filename in parent_calc_folder.list_object_names():
+                parent_calc_out_subfolder = settings.pop('PARENT_CALC_OUT_SUBFOLDER', self._INPUT_SUBFOLDER)
+                filepaths = get_folderdata_files(parent_calc_folder, subpath=parent_calc_out_subfolder)
+                for filepath in filepaths:
+                    # we must remove the parent calc subfolder and attach the output calc subfolder
+                    # (although in practice they will both be 'out')
+                    dest_filepath = os.path.join(self._OUTPUT_SUBFOLDER, os.path.relpath(filepath, parent_calc_out_subfolder))
                     local_copy_list.append((
+                        # Data node UUID, source relative path, destination relative path
                         parent_calc_folder.uuid,
-                        filename,
-                        os.path.join(self._OUTPUT_SUBFOLDER, filename)
+                        filepath,
+                        dest_filepath
                     ))
             elif isinstance(parent_calc_folder, SinglefileData):
-                # TODO: test me
                 single_file = parent_calc_folder
                 local_copy_list.append(
+                    # Data node UUID, source relative path, destination relative path
                     (single_file.uuid, single_file.filename, single_file.filename)
                 )
 
