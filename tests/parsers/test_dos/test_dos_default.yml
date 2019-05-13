@@ -1,0 +1,15 @@
+dos:
+  labels:
+  - dos_energy
+  - integrated_dos
+  - dos_spin_up
+  - dos_spin_down
+  units:
+  - eV
+  - states
+  - states/eV
+  - states/eV
+parameters:
+  wall_time: '      0.41s '
+  wall_time_seconds: 0.41
+  warnings: []
