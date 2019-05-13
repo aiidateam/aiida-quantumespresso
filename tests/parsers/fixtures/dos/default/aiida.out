@@ -1,0 +1,45 @@
+
+     Program DOS v.6.4.1 starts on 13May2019 at 10:57:48 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI), running on     1 processors
+
+     MPI processes distributed on     1 nodes
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation      = PBE ( 1  4  3  4 0 0)
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum         333     333    101                 6119     6119    1067
+
+     Generating pointlists ...
+     new r_m :   0.4034 (alat units)  2.0559 (a.u.) for type    1
+     new r_m :   0.4034 (alat units)  2.0559 (a.u.) for type    2
+
+     Check: negative core charge=   -0.000042
+
+     negative rho (up, down):  1.737E-01 0.000E+00
+
+     Gaussian broadening (read from file): ngauss,degauss=  -1    0.010000
+
+
+     DOS          :      0.32s CPU      0.41s WALL
+
+
+   This run was terminated on:  10:57:48  13May2019            
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=
