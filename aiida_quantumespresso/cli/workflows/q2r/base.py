@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """Command line scripts to launch a `Q2rBaseWorkChain` for testing and demonstration purposes."""
 from __future__ import absolute_import
-import click
 
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
 from ...cli import workflow_launch
+from ...utils import launch
 from ...utils import options as options_qe
 
 
@@ -21,12 +21,9 @@ from ...utils import options as options_qe
 @decorators.with_dbenv()
 def launch_workflow(code, calculation, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
     """Run the `Q2rBaseWorkChain` for a previously completed `PhCalculation`."""
-    from aiida.engine import launch
     from aiida.orm import Bool, Dict
     from aiida.plugins import WorkflowFactory
     from aiida_quantumespresso.utils.resources import get_default_options
-
-    Q2rBaseWorkChain = WorkflowFactory('quantumespresso.q2r.base')  # pylint: disable=invalid-name
 
     inputs = {
         'code': code,
@@ -37,8 +34,4 @@ def launch_workflow(code, calculation, clean_workdir, max_num_machines, max_wall
     if clean_workdir:
         inputs['clean_workdir'] = Bool(True)
 
-    if daemon:
-        workchain = launch.submit(Q2rBaseWorkChain, **inputs)
-        click.echo('Submitted {}<{}> to the daemon'.format(Q2rBaseWorkChain.__name__, workchain.pk))
-    else:
-        launch.run(Q2rBaseWorkChain, **inputs)
+    launch.launch_process(WorkflowFactory('quantumespresso.q2r.base'), daemon, **inputs)
