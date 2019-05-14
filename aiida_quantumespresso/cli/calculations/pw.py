@@ -8,6 +8,7 @@ from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
 from ..cli import calculation_launch
+from ..utils import launch
 from ..utils import options as options_qe
 from ..utils import validate
 
@@ -41,13 +42,10 @@ def launch_calculation(code, structure, pseudo_family, kpoints_mesh, ecutwfc, ec
                        hubbard_file_pk, starting_magnetization, smearing, max_num_machines, max_wallclock_seconds,
                        with_mpi, daemon, mode):
     """Run a PwCalculation."""
-    from aiida.engine import launch
     from aiida.orm import Dict
     from aiida.orm.nodes.data.upf import get_pseudos_from_structure
     from aiida.plugins import CalculationFactory
     from aiida_quantumespresso.utils.resources import get_default_options
-
-    PwCalculation = CalculationFactory('quantumespresso.pw')  # pylint: disable=invalid-name
 
     parameters = {
         'CONTROL': {
@@ -89,14 +87,4 @@ def launch_calculation(code, structure, pseudo_family, kpoints_mesh, ecutwfc, ec
     if hubbard_file:
         inputs['hubbard_file'] = hubbard_file
 
-    if daemon:
-        calculation = launch.submit(PwCalculation, **inputs)
-        click.echo('Submitted {}<{}> to the daemon'.format(PwCalculation.__name__, calculation.pk))
-    else:
-        click.echo('Running a pw.x calculation in the {} mode... '.format(mode))
-        _, calculation = launch.run_get_node(PwCalculation, **inputs)
-        click.echo('PwCalculation<{}> terminated with state: {}'.format(calculation.pk, calculation.process_state))
-        click.echo('\n{link:25s} {node}'.format(link='Output link', node='Node pk and type'))
-        click.echo('{s}'.format(s='-' * 60))
-        for triple in sorted(calculation.get_outgoing().all(), key=lambda triple: triple.link_label):
-            click.echo('{:25s} {}<{}> '.format(triple.link_label, triple.node.__class__.__name__, triple.node.pk))
+    launch.launch_process(CalculationFactory('quantumespresso.pw'), daemon, **inputs)

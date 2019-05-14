@@ -7,13 +7,13 @@ are the same as those hardcoded in the Pw2wannier90Calculation class.
 We also hardcode some parameters and options.
 """
 from __future__ import absolute_import
-import click
 
 from aiida.cmdline.params import options, types
 from aiida.cmdline.params.options import OverridableOption
 from aiida.cmdline.utils import decorators
 
 from ..cli import calculation_launch
+from ..utils import launch
 from ..utils import options as options_qe
 
 PARENT_FOLDER = OverridableOption(
@@ -44,12 +44,9 @@ SINGLE_FILE = OverridableOption(
 @decorators.with_dbenv()
 def launch_calculation(code, parent_folder, single_file, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
     """Run a Pw2wannier90Calculation with some sample parameters and the provided inputs."""
-    from aiida.engine import launch
     from aiida.orm import Dict
     from aiida.plugins import CalculationFactory
     from aiida_quantumespresso.utils.resources import get_default_options
-
-    Pw2wannier90Calculation = CalculationFactory('quantumespresso.pw2wannier90')  # pylint: disable=invalid-name
 
     parameters = {
         'inputpp': {
@@ -74,15 +71,4 @@ def launch_calculation(code, parent_folder, single_file, max_num_machines, max_w
         }
     }
 
-    if daemon:
-        new_calc = launch.submit(Pw2wannier90Calculation, **inputs)
-        click.echo('Submitted {}<{}> to the daemon'.format(Pw2wannier90Calculation.__name__, new_calc.pk))
-    else:
-        click.echo('Running a pw2wannier90.x calculation from parent {}<{}>... '.format(
-            parent_folder.__class__.__name__, parent_folder.pk))
-        _, new_calc = launch.run_get_node(Pw2wannier90Calculation, **inputs)
-        click.echo('Pw2wannier90Calculation<{}> terminated with state: {}'.format(new_calc.pk, new_calc.process_state))
-        click.echo('\n{link:25s} {node}'.format(link='Output link', node='Node pk and type'))
-        click.echo('{s}'.format(s='-' * 60))
-        for triple in sorted(new_calc.get_outgoing().all(), key=lambda triple: triple.link_label):
-            click.echo('{:25s} {}<{}> '.format(triple.link_label, triple.node.__class__.__name__, triple.node.pk))
+    launch.launch_process(CalculationFactory('quantumespresso.pw2wannier90'), daemon, **inputs)

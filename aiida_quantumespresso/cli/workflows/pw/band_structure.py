@@ -7,6 +7,7 @@ from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
 from ...cli import workflow_launch
+from ...utils import launch
 from ...utils import options as options_qe
 
 
@@ -24,10 +25,8 @@ from ...utils import options as options_qe
 @decorators.with_dbenv()
 def launch_workflow(code, structure, daemon, protocol):
     """Run a `PwBandStructureWorkChain`."""
-    from aiida.engine import launch
     from aiida.plugins import DataFactory, WorkflowFactory
 
-    PwBandStructureWorkChain = WorkflowFactory('quantumespresso.pw.band_structure')  # pylint: disable=invalid-name
     Dict = DataFactory('dict')  # pylint: disable=invalid-name
 
     inputs = {
@@ -36,8 +35,4 @@ def launch_workflow(code, structure, daemon, protocol):
         'protocol': Dict(dict={'name': protocol}),
     }
 
-    if daemon:
-        workchain = launch.submit(PwBandStructureWorkChain, **inputs)
-        click.echo('Submitted {}<{}> to the daemon'.format(PwBandStructureWorkChain.__name__, workchain.pk))
-    else:
-        launch.run(PwBandStructureWorkChain, **inputs)
+    launch.launch_process(WorkflowFactory('quantumespresso.pw.band_structure'), daemon, **inputs)

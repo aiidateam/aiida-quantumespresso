@@ -8,6 +8,7 @@ from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
 from ..cli import calculation_launch
+from ..utils import launch
 from ..utils import options as options_qe
 
 
@@ -23,11 +24,8 @@ from ..utils import options as options_qe
 def launch_calculation(code, kpoints_mesh, calculation, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
     """Run a PhCalculation."""
     from aiida import orm
-    from aiida.engine import launch
     from aiida.plugins import CalculationFactory
     from aiida_quantumespresso.utils.resources import get_default_options
-
-    PhCalculation = CalculationFactory('quantumespresso.ph')  # pylint: disable=invalid-name
 
     # Check that the parent calculation node comes from quantumespresso.pw.
     # I cannot move this check into the option declaration, because CalcJobNode is not subclassed by the specific
@@ -49,15 +47,4 @@ def launch_calculation(code, kpoints_mesh, calculation, max_num_machines, max_wa
         }
     }
 
-    if daemon:
-        new_calc = launch.submit(PhCalculation, **inputs)
-        click.echo('Submitted {}<{}> to the daemon'.format(PhCalculation.__name__, new_calc.pk))
-    else:
-        click.echo('Running a ph.x calculation from parent {}<{}>... '.format(calculation.__class__.__name__,
-                                                                              calculation.pk))
-        _, new_calc = launch.run_get_node(PhCalculation, **inputs)
-        click.echo('PhCalculation<{}> terminated with state: {}'.format(new_calc.pk, new_calc.process_state))
-        click.echo('\n{link:25s} {node}'.format(link='Output link', node='Node pk and type'))
-        click.echo('{s}'.format(s='-' * 60))
-        for triple in sorted(new_calc.get_outgoing().all(), key=lambda triple: triple.link_label):
-            click.echo('{:25s} {}<{}> '.format(triple.link_label, triple.node.__class__.__name__, triple.node.pk))
+    launch.launch_process(CalculationFactory('quantumespresso.ph'), daemon, **inputs)

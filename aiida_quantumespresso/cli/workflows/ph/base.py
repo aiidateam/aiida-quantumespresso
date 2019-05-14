@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """Command line scripts to launch a `PhBaseWorkChain` for testing and demonstration purposes."""
 from __future__ import absolute_import
-import click
 
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
 from ...cli import workflow_launch
+from ...utils import launch
 from ...utils import options as options_qe
 
 
@@ -23,12 +23,9 @@ from ...utils import options as options_qe
 def launch_workflow(code, calculation, kpoints_mesh, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi,
                     daemon):
     """Run the `PhBaseWorkChain` for a previously completed `PwCalculation`."""
-    from aiida.engine import launch
     from aiida.orm import Bool, Dict
     from aiida.plugins import WorkflowFactory
     from aiida_quantumespresso.utils.resources import get_default_options
-
-    PhBaseWorkChain = WorkflowFactory('quantumespresso.ph.base')  # pylint: disable=invalid-name
 
     parameters = {'INPUTPH': {}}
 
@@ -43,8 +40,4 @@ def launch_workflow(code, calculation, kpoints_mesh, clean_workdir, max_num_mach
     if clean_workdir:
         inputs['clean_workdir'] = Bool(True)
 
-    if daemon:
-        workchain = launch.submit(PhBaseWorkChain, **inputs)
-        click.echo('Submitted {}<{}> to the daemon'.format(PhBaseWorkChain.__name__, workchain.pk))
-    else:
-        launch.run(PhBaseWorkChain, **inputs)
+    launch.launch_process(WorkflowFactory('quantumespresso.ph.base'), daemon, **inputs)

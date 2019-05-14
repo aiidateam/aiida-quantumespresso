@@ -2,12 +2,11 @@
 """Command line scripts to launch a `CpCalculation` for testing and demonstration purposes."""
 from __future__ import absolute_import
 
-import click
-
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
 from ..cli import calculation_launch
+from ..utils import launch
 from ..utils import options as options_qe
 
 
@@ -54,13 +53,10 @@ def silicon_structure():
 @decorators.with_dbenv()
 def launch_calculation(code, structure, pseudo_family, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
     """Run a CpCalculation."""
-    from aiida.engine import launch
     from aiida.orm import Dict
     from aiida.orm.nodes.data.upf import get_pseudos_from_structure
     from aiida.plugins import CalculationFactory
     from aiida_quantumespresso.utils.resources import get_default_options
-
-    PhCalculation = CalculationFactory('quantumespresso.ph')  # pylint: disable=invalid-name
 
     parameters = {
         'CONTROL': {
@@ -101,14 +97,4 @@ def launch_calculation(code, structure, pseudo_family, max_num_machines, max_wal
         }
     }
 
-    if daemon:
-        node = launch.submit(PhCalculation, **inputs)
-        click.echo('Submitted {}<{}> to the daemon'.format(PhCalculation.__name__, node.pk))
-    else:
-        click.echo('Running a ph.x calculation')
-        _, node = launch.run_get_node(PhCalculation, **inputs)
-        click.echo('PhCalculation<{}> terminated with state: {}'.format(node.pk, node.process_state))
-        click.echo('\n{link:25s} {node}'.format(link='Output link', node='Node pk and type'))
-        click.echo('{s}'.format(s='-' * 60))
-        for triple in sorted(node.get_outgoing().all(), key=lambda triple: triple.link_label):
-            click.echo('{:25s} {}<{}> '.format(triple.link_label, triple.node.__class__.__name__, triple.node.pk))
+    launch.launch_process(CalculationFactory('quantumespresso.cp'), daemon, **inputs)

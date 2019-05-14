@@ -8,6 +8,7 @@ from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
 
 from ...cli import workflow_launch
+from ...utils import launch
 from ...utils import options as options_qe
 from ...utils import validate
 
@@ -35,12 +36,9 @@ def launch_workflow(code, structure, pseudo_family, kpoints_distance, ecutwfc, e
                     hubbard_file_pk, starting_magnetization, smearing, automatic_parallelization, clean_workdir,
                     max_num_machines, max_wallclock_seconds, with_mpi, daemon):
     """Run a `PwBandsWorkChain`."""
-    from aiida.engine import launch
     from aiida.orm import Bool, Float, Str, Dict
     from aiida.plugins import WorkflowFactory
     from aiida_quantumespresso.utils.resources import get_default_options, get_automatic_parallelization_options
-
-    PwBandsWorkChain = WorkflowFactory('quantumespresso.pw.bands')  # pylint: disable=invalid-name
 
     parameters = {
         'SYSTEM': {
@@ -112,8 +110,4 @@ def launch_workflow(code, structure, pseudo_family, kpoints_distance, ecutwfc, e
     if clean_workdir:
         inputs['clean_workdir'] = Bool(True)
 
-    if daemon:
-        workchain = launch.submit(PwBandsWorkChain, **inputs)
-        click.echo('Submitted {}<{}> to the daemon'.format(PwBandsWorkChain.__name__, workchain.pk))
-    else:
-        launch.run(PwBandsWorkChain, **inputs)
+    launch.launch_process(WorkflowFactory('quantumespresso.pw.bands'), daemon, **inputs)
