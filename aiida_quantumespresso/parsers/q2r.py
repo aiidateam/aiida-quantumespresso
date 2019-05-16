@@ -32,7 +32,7 @@ class Q2rParser(Parser):
             self.logger.error('Computation did not finish properly')
             return self.exit_codes.ERROR_JOB_NOT_DONE
 
-        with output_folder.open(filename_force_constants) as handle:
+        with output_folder.open(filename_force_constants, 'rb') as handle:
             self.out('forceconstants', ForceconstantsData(file=handle))
 
         return
