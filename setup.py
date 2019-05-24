@@ -4,7 +4,7 @@ from __future__ import absolute_import
 import json
 
 # pylint: disable=wrong-import-order,unused-import
-import fastentrypoints
+from utils import fastentrypoints
 from setuptools import setup, find_packages
 
 if __name__ == '__main__':
