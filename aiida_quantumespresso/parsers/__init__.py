@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
+
 from aiida.common import OutputParsingError
-import aiida_quantumespresso
-from six.moves import range
 
 
 class QEOutputParsingError(OutputParsingError):
@@ -19,6 +18,8 @@ def get_parser_info(parser_info_template=None):
     :param parser_info_template: template string with single placeholder to be replaced by current version number
     :returns: dictionary with parser name, version and empty list for warnings
     """
+    import aiida_quantumespresso
+
     parser_version = aiida_quantumespresso.__version__
     parser_info = {}
     parser_info['parser_warnings'] = []
@@ -70,7 +71,7 @@ def parse_raw_out_basic(out_file, calc_name):
     """
     parsed_data = {}
     parsed_data['warnings'] = []
-    
+
     # critical warnings: if any is found, the calculation status is FAILED
     critical_warnings = {'Maximum CPU time exceeded':'Maximum CPU time exceeded',
                          '%%%%%%%%%%%%%%':None,
@@ -79,7 +80,7 @@ def parse_raw_out_basic(out_file, calc_name):
                       'DEPRECATED:':None,
                       }
     all_warnings = dict(list(critical_warnings.items()) + list(minor_warnings.items()))
-    
+
     # parse the standard output file, for informations that are written only once
     for count,line in enumerate(out_file):
         if calc_name in line and 'WALL' in line:
