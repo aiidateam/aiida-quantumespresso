@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 from xml.dom.minidom import parseString
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
-from aiida_quantumespresso.parsers.raw_parser_pw import (read_xml_card,
+from aiida_quantumespresso.parsers.parse_xml.pw.legacy import (read_xml_card,
                    parse_xml_child_integer,xml_card_header,parse_xml_child_bool,
                    parse_xml_child_str,parse_xml_child_float,
                    parse_xml_child_attribute_str,xml_card_cell,xml_card_ions,
