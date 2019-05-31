@@ -20,7 +20,7 @@ PwCalculation = CalculationFactory('quantumespresso.pw')
 
 
 class PwBaseWorkChain(BaseRestartWorkChain):
-    """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts"""
+    """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts."""
 
     _calculation_class = PwCalculation
     _error_handler_entry_point = 'aiida_quantumespresso.workflow_error_handlers.pw.base'
