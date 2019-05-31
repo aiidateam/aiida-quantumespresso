@@ -11,22 +11,19 @@ from aiida.common import exceptions
 from aiida.engine import ExitCode
 from aiida.parsers import Parser
 from aiida_quantumespresso.parsers import convert_qe2aiida_structure
-from aiida_quantumespresso.parsers.raw_parser_pw import parse_raw_output, QEOutputParsingError
+from aiida_quantumespresso.parsers.raw_parser_pw import parse_raw_output
 from aiida_quantumespresso.utils.linalg import are_matrices_equal
 
 
 class PwParser(Parser):
     """`Parser` implementation for the `PwCalculation` calculation job class."""
 
-    _setting_key = 'parser_options'
-
     def parse(self, **kwargs):
-        """
-        Parse the output nodes for a PwCalculations from a dictionary of retrieved nodes.
-        Two nodes that are expected are the default 'retrieved' FolderData node which will
-        store the retrieved files permanently in the repository. The second required node
-        is the unstored FolderData node with the temporary retrieved files, which should
-        be passed under the key 'retrieved_temporary_folder_key' of the Parser class.
+        """Parse the output nodes for a PwCalculations from a dictionary of retrieved nodes.
+
+        Two nodes that are expected are the default 'retrieved' `FolderData` node which will store the retrieved files
+        permanently in the repository. The second required node is a filepath under the key `retrieved_temporary_files`
+        which should contain the temporary retrieved files.
         """
         try:
             output_folder = self.retrieved
@@ -67,7 +64,6 @@ class PwParser(Parser):
 
         # The xml file is required for successful parsing, but if it does not exist, we still try to parse the out file
         xml_files = [xml_file for xml_file in self.node.process_class.xml_filenames if xml_file in list_of_files]
-        xml_file = None
 
         if not xml_files:
             self.logger.error('no XML output files found, which is required for parsing')
@@ -80,7 +76,12 @@ class PwParser(Parser):
 
         # Call the raw parsing function
         parsing_args = [filepath_stdout, parameters, parser_options, self.logger, xml_file, dir_with_bands]
-        out_dict, trajectory_data, structure_data, bands_data, raw_successful = parse_raw_output(*parsing_args)
+
+        try:
+            out_dict, trajectory_data, structure_data, bands_data, raw_successful = parse_raw_output(*parsing_args)
+        except Exception:
+            self.logger.error('parsing of output files raised an exception')
+            self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
 
         # If the parser option 'all_symmetries' is not set to True, we reduce the raw parsed symmetries to safe space
         all_symmetries = parser_options.get('all_symmetries', False)
@@ -138,7 +139,7 @@ class PwParser(Parser):
             cell_Tinv = numpy.linalg.inv(cell_T)
             possible_symmetries = self._get_qe_symmetry_list()
 
-            for symmetry_type in ['symmetries','lattice_symmetries']: # crystal vs. lattice symmetries
+            for symmetry_type in ['symmetries','lattice_symmetries']:  # crystal vs. lattice symmetries
                 if symmetry_type in list(out_dict.keys()):
                     try:
                         old_symmetries = out_dict[symmetry_type]
@@ -182,20 +183,20 @@ class PwParser(Parser):
 
                         out_dict[symmetry_type] = new_symmetries  # and overwrite the old one
                     except KeyError:
-                        self.logger.error("Warning: KeyError while parsing key '{}' from raw output dictionary".format(symmetry_type))
+                        self.logger.warning("key '{}' is not present in raw output dictionary".format(symmetry_type))
                 else:
                     # backwards-compatiblity: 'lattice_symmetries' is not created in older versions of the parser
                     if symmetry_type != 'lattice_symmetries':
-                        self.logger.error("Warning: key '{}' is not present in raw output dictionary".format(symmetry_type))
+                        self.logger.warning("key '{}' is not present in raw output dictionary".format(symmetry_type))
 
         # I eventually save the new structure. structure_data is unnecessary after this
-        in_struc = self.node.get_incoming(link_label_filter='structure').one().node
+        input_structure = self.node.get_incoming(link_label_filter='structure').one().node
         type_calc = parameters['CONTROL']['calculation']
-        struc = in_struc
+        output_structure = input_structure
         if type_calc in ['relax', 'vc-relax', 'md', 'vc-md']:
             if 'cell' in list(structure_data.keys()):
-                struc = convert_qe2aiida_structure(structure_data, input_structure=in_struc)
-                self.out(self.get_linkname_outstructure(), struc)
+                output_structure = convert_qe2aiida_structure(structure_data, input_structure=input_structure)
+                self.out(self.get_linkname_outstructure(), output_structure)
 
         k_points_list = trajectory_data.pop('k_points', None)
         k_points_weights_list = trajectory_data.pop('k_points_weights', None)
@@ -203,11 +204,11 @@ class PwParser(Parser):
         if k_points_list is not None:
 
             # Build the kpoints object
-            if out_dict.pop('k_points_units') not in ['1 / angstrom']:
+            if out_dict.pop('k_points_units') != '1 / angstrom':
                 raise QEOutputParsingError('Error in kpoints units (should be cartesian)')
 
             kpoints_from_output = orm.KpointsData()
-            kpoints_from_output.set_cell_from_structure(struc)
+            kpoints_from_output.set_cell_from_structure(output_structure)
             kpoints_from_output.set_kpoints(k_points_list, cartesian=True, weights=k_points_weights_list)
             kpoints_from_input = self.node.inputs.kpoints
 
@@ -235,12 +236,12 @@ class PwParser(Parser):
                 # If it computes only one component, it occupies it with half number of electrons
                 # TODO: is this something we really want to correct?
                 # Probably yes for backwards compatiblity, but it might not be intuitive.
-                if len(bands_data['occupations'])>1:
+                if len(bands_data['occupations']) > 1:
                     the_occupations = bands_data['occupations']
                 else:
                     the_occupations = 2. * numpy.array(bands_data['occupations'][0])
 
-                if len(bands_data['bands'])>1:
+                if len(bands_data['bands']) > 1:
                     bands_energies = bands_data['bands']
                 else:
                     bands_energies = bands_data['bands'][0]
@@ -257,14 +258,11 @@ class PwParser(Parser):
                 # TODO: replicate this in the new parser!
 
         # Separate the atomic_occupations dictionary in its own node if it is present
-        atomic_occupations = out_dict.get('atomic_occupations', {})
+        atomic_occupations = out_dict.pop('atomic_occupations', None)
         if atomic_occupations:
-            out_dict.pop('atomic_occupations')
-            atomic_occupations_node = orm.Dict(dict=atomic_occupations)
-            self.out('output_atomic_occupations', atomic_occupations_node)
+            self.out('output_atomic_occupations', orm.Dict(dict=atomic_occupations))
 
-        output_params = orm.Dict(dict=out_dict)
-        self.out('output_parameters', output_params)
+        self.out('output_parameters', orm.Dict(dict=out_dict))
 
         if trajectory_data:
             try:
@@ -276,9 +274,9 @@ class PwParser(Parser):
                         cells = numpy.array([cells[0]] * len(positions))
                 # if KeyError (the cell is never printed), the MD/relax was at fixed cell
                 except KeyError:
-                    cells = numpy.array([in_struc.cell] * len(positions))
+                    cells = numpy.array([input_structure.cell] * len(positions))
 
-                symbols = numpy.array([str(i.kind_name) for i in in_struc.sites])
+                symbols = [str(i.kind_name) for i in input_structure.sites]
                 stepids = numpy.arange(len(positions))  # a growing integer per step
                 # I will insert time parsing when they fix their issues about time
                 # printing (logic is broken if restart is on)
@@ -290,6 +288,7 @@ class PwParser(Parser):
                     symbols=symbols,
                     positions=positions,
                 )
+
                 for x in six.iteritems(trajectory_data):
                     traj.set_array(x[0], numpy.array(x[1]))
                 self.out(self.get_linkname_outtrajectory(), traj)
