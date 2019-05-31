@@ -209,10 +209,8 @@ output_parameters:
   volume: 44.18270955953583
   wall_time: '        25.16s '
   wall_time_seconds: 25.16
-  warnings: []
   wfc_cutoff: 408.170751759
   wfc_cutoff_units: eV
-  xml_warnings: []
 output_structure:
   cell:
   - - 2.805912454646174

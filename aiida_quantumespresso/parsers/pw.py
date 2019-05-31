@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-import os
+import copy
 import numpy
 import six
 from six.moves import zip
@@ -26,11 +26,11 @@ class PwParser(Parser):
         which should contain the temporary retrieved files.
         """
         try:
-            output_folder = self.retrieved
+            retrieved = self.retrieved
         except exceptions.NotExistent:
             return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
 
-        parameters = self.node.inputs.parameters.get_dict()
+        input_parameters = self.node.inputs.parameters.get_dict()
 
         # Look for optional settings input node and potential 'parser_options' dictionary within it
         try:
@@ -51,16 +51,14 @@ class PwParser(Parser):
         else:
             dir_with_bands = None
 
-        list_of_files = output_folder.list_object_names()
+        list_of_files = retrieved.list_object_names()
 
-        # The stdout is required for parsing
-        filename_stdout = self.node.get_attribute('output_filename')
-
-        if filename_stdout not in list_of_files:
-            self.logger.error("The standard output file '{}' was not found but is required".format(filename_stdout))
+        try:
+            filename_stdout = self.node.get_attribute('output_filename')
+            stdout = retrieved.get_object_content(filename_stdout)
+        except IOError:
+            self.logger.error("The required standard output file '{}' could not be read".format(filename_stdout))
             return self.exit_codes.ERROR_READING_OUTPUT_FILE
-
-        filepath_stdout = os.path.join(output_folder._repository._get_base_folder().abspath, filename_stdout)
 
         # The xml file is required for successful parsing, but if it does not exist, we still try to parse the out file
         xml_files = [xml_file for xml_file in self.node.process_class.xml_filenames if xml_file in list_of_files]
@@ -71,27 +69,58 @@ class PwParser(Parser):
         elif len(xml_files) > 1:
             self.logger.error('more than one XML file retrieved, which should never happen')
             return self.exit_codes.ERROR_MULTIPLE_XML_FILES
-        else:
-            xml_file = os.path.join(output_folder._repository._get_base_folder().abspath, xml_files[0])
 
-        # Call the raw parsing function
-        parsing_args = [filepath_stdout, parameters, parser_options, self.logger, xml_file, dir_with_bands]
+        with retrieved.open(xml_files[0]) as xml_file:
+            parsing_args = [stdout, xml_file, input_parameters, parser_options, dir_with_bands]
+            try:
+                parsed_data, logs = parse_raw_output(*parsing_args)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self.logger.error('parsing of output files raised an exception')
+                return self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
 
-        try:
-            out_dict, trajectory_data, structure_data, bands_data, raw_successful = parse_raw_output(*parsing_args)
-        except Exception:
-            self.logger.error('parsing of output files raised an exception')
-            self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
+        # Log the messages returned by the parser through the logger of the parser. This will ensure that they get
+        # attached to the report of the corresponding node.
+        for level, messages in logs.items():
+            for message in messages:
+                getattr(self.logger, level)(message)
+
+        bands_data = parsed_data['bands']
+        parameters = parsed_data['parameters']
+        structure_data = parsed_data['structure']
+        trajectory_data = parsed_data['trajectory']
+
+        # I add in the parsed_stdout all the last elements of trajectory_data values,
+        # except for some large arrays, that I will likely never query.
+        skip_keys = ['forces', 'atomic_magnetic_moments', 'atomic_charges', 'lattice_vectors_relax',
+                     'atomic_positions_relax', 'atomic_species_name']
+        tmp_trajectory_data = copy.copy(trajectory_data)
+        for x in six.iteritems(tmp_trajectory_data):
+            if x[0] in skip_keys:
+                continue
+            parameters[x[0]] = x[1][-1]
+            if len(x[1]) == 1:  # delete eventual keys that are not arrays (scf cycles)
+                trajectory_data.pop(x[0])
+            # note: if an array is empty, there will be KeyError
+
+        # As the k points are an array that is rather large, and again it's not something I'm going to parse likely
+        # since it's an info mainly contained in the input file, I move it to the trajectory data
+        for key in ['k_points', 'k_points_weights']:
+            try:
+                trajectory_data[key] = parameters.pop(key)
+            except KeyError:
+                pass
 
         # If the parser option 'all_symmetries' is not set to True, we reduce the raw parsed symmetries to safe space
         all_symmetries = parser_options.get('all_symmetries', False)
 
         if not all_symmetries and 'cell' in structure_data:
-            self.reduce_symmetries(out_dict, structure_data)
+            self.reduce_symmetries(parameters, structure_data)
 
         # I eventually save the new structure. structure_data is unnecessary after this
         input_structure = self.node.get_incoming(link_label_filter='structure').one().node
-        type_calc = parameters['CONTROL']['calculation']
+        type_calc = input_parameters['CONTROL']['calculation']
         output_structure = input_structure
         if type_calc in ['relax', 'vc-relax', 'md', 'vc-md']:
             if 'cell' in list(structure_data.keys()):
@@ -103,7 +132,7 @@ class PwParser(Parser):
 
         if k_points_list is not None:
 
-            if out_dict.pop('k_points_units') != '1 / angstrom':
+            if parameters.pop('k_points_units') != '1 / angstrom':
                 self.logger.error('Error in kpoints units (should be cartesian)')
                 return self.exit_codes.ERROR_INVALID_KPOINT_UNITS
 
@@ -154,15 +183,15 @@ class PwParser(Parser):
                                          occupations=the_occupations)
 
                 self.out('output_band', the_bands_data)
-                out_dict['linknames_band'] = ['output_band']
+                parameters['linknames_band'] = ['output_band']
                 # TODO: replicate this in the new parser!
 
         # Separate the atomic_occupations dictionary in its own node if it is present
-        atomic_occupations = out_dict.pop('atomic_occupations', None)
+        atomic_occupations = parameters.pop('atomic_occupations', None)
         if atomic_occupations:
             self.out('output_atomic_occupations', orm.Dict(dict=atomic_occupations))
 
-        self.out('output_parameters', orm.Dict(dict=out_dict))
+        self.out('output_parameters', orm.Dict(dict=parameters))
 
         if trajectory_data:
             try:
