@@ -11,7 +11,7 @@ from aiida.common import exceptions
 from aiida.engine import ExitCode
 from aiida.parsers import Parser
 from aiida_quantumespresso.parsers import convert_qe2aiida_structure
-from aiida_quantumespresso.parsers.raw_parser_pw import parse_raw_output
+from aiida_quantumespresso.parsers.parse_raw.pw import parse_raw_output
 from aiida_quantumespresso.utils.linalg import are_matrices_equal
 
 
