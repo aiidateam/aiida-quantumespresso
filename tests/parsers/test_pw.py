@@ -90,6 +90,26 @@ def test_pw_default(fixture_database, fixture_computer_localhost, generate_calc_
     data_regression.check(results['output_parameters'].get_dict())
 
 
+def test_pw_default_xml_new(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
+                    generate_inputs_default, data_regression):
+    """Test a `pw.x` calculation in `scf` mode that produced the XML output in the new schema-based format.
+
+    The output is created by running a dead simple SCF calculation for a silicon structure.
+    This test should test the standard parsing of the stdout content and XML file stored in the standard results node.
+    """
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, 'default_xml_new', generate_inputs_default)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_parameters' in results
+    data_regression.check(results['output_parameters'].get_dict())
+
+
 def test_pw_relax(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
                   generate_inputs_relax, data_regression):
     """Test a `pw.x` calculation in `relax` mode.

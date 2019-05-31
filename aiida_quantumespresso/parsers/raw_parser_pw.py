@@ -10,9 +10,10 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import re
-import six
 from six.moves import range
+from defusedxml import ElementTree
 
+from aiida.common.extendeddicts import AttributeDict
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
 from aiida_quantumespresso.parsers.constants import ry_to_ev, bohr_to_ang, ry_si, bohr_si
 from aiida_quantumespresso.parsers.parse_xml.pw.parse import parse_pw_xml_post_6_2
@@ -32,7 +33,7 @@ default_polarization_units = 'C / m^2'
 default_stress_units = 'GPascal'
 
 
-def parse_raw_output(out_file, input_dict, parser_opts, logger, xml_file=None, dir_with_bands=None):
+def parse_raw_output(stdout, xml_file, input_dict, parser_options, dir_with_bands=None):
     """
     Parses the output of a calculation
     Receives in input the paths to the output file and the xml file.
@@ -41,144 +42,105 @@ def parse_raw_output(out_file, input_dict, parser_opts, logger, xml_file=None, d
     On an upper level, these flags MUST be checked.
     The first two are expected to be empty unless QE failures or unfinished jobs.
 
-    :param out_file: path to pw std output
+    :param stdout: the content of the stdout
+    :param xml_file: filelike to the XML output file
     :param input_dict: dictionary with the input parameters
-    :param parser_opts: dictionary with parser options
-    :param logger: aiida logger object
-    :param xml_file: optional path to the XML output file
+    :param parser_options: dictionary with parser options
     :param dir_with_bands: path to directory with all k-points (Kxxxxx) folders
 
     :return parameter_data: a dictionary with parsed parameters
     :return trajectory_data: a dictionary with arrays (for relax & md calcs.)
     :return structure_data: a dictionary with data for the output structure
     :return bands_data: a dictionary with data for bands (for bands calcs.)
-    :return job_successful: a boolean that is False in case of failed calculations
 
     :raises QEOutputParsingError: for errors in the parsing
     :raises AssertionError: if two keys in the parsed dicts are found to be equal
     """
-    import copy
-
-    job_successful = True
     parser_info = get_parser_info(parser_info_template='aiida-quantumespresso parser pw.x v{}')
-
-    # Parse XML output file
-    if xml_file is not None:
-
-        try:
-            xml_file_version = get_xml_file_version(xml_file)
-        except ValueError as exception:
-            raise QEOutputParsingError('failed to determine XML output file version: {}'.format(exception))
-
-        if xml_file_version == QeXmlVersion.POST_6_2:
-            xml_data, structure_data, bands_data = parse_pw_xml_post_6_2(xml_file, parser_opts, logger)
-        elif xml_file_version == QeXmlVersion.PRE_6_2:
-            xml_data, structure_data, bands_data = parse_pw_xml_pre_6_2(xml_file, dir_with_bands, parser_opts, logger)
-        else:
-            raise ValueError('unrecognized XML file version')
-
-    else:
-        parser_info['parser_warnings'].append('Skipping the parsing of the xml file.')
-        xml_data = {}
-        bands_data = {}
-        structure_data = {}
-
-    # load QE out file
-    try:
-        with open(out_file, 'r') as f:
-            out_lines = f.read()
-    except IOError:  # non existing output file -> job crashed
-        raise QEOutputParsingError("Failed to open output file: {}.".format(out_file))
-
-    if not out_lines:  # there is an output file, but it's empty -> crash
-        job_successful = False
-
-    # check if the job has finished (that doesn't mean without errors)
-    finished_run = False
-    for line in out_lines.split('\n')[::-1]:
-        if 'JOB DONE' in line:
-            finished_run = True
-            break
-
-    if not finished_run:  # error if the job has not finished
-        warning = 'QE pw run did not reach the end of the execution.'
-        parser_info['parser_warnings'].append(warning)
-        job_successful = False
+    include_deprecated_keys = parser_options.pop('include_deprecated_v2_keys', False)
 
     try:
-        out_data, trajectory_data, critical_messages = parse_pw_text_output(out_lines, xml_data, structure_data, input_dict, parser_opts)
-    except QEOutputParsingError as e:
-        if not finished_run:  # I try to parse it as much as possible
-            parser_info['parser_warnings'].append('Error while parsing the output file')
-            out_data = {}
-            trajectory_data = {}
-            critical_messages = []
-        else:  # if it was finished and I got error, it's a mistake of the parser
-            raise QEOutputParsingError('Error while parsing QE output. Exception message: {}'.format(e.message))
+        xml = ElementTree.parse(xml_file)
+    except IOError:
+        raise ValueError('could not open and or parse the XML file {}'.format(xml_file))
 
-    # I add in the out_data all the last elements of trajectory_data values,
-    # except for some large arrays, that I will likely never query.
-    skip_keys = ['forces', 'atomic_magnetic_moments', 'atomic_charges', 'lattice_vectors_relax',
-                 'atomic_positions_relax', 'atomic_species_name']
-    tmp_trajectory_data = copy.copy(trajectory_data)
-    for x in six.iteritems(tmp_trajectory_data):
-        if x[0] in skip_keys:
-            continue
-        out_data[x[0]] = x[1][-1]
-        if len(x[1]) == 1:  # delete eventual keys that are not arrays (scf cycles)
-            trajectory_data.pop(x[0])
-        # note: if an array is empty, there will be KeyError
-    for key in ['k_points', 'k_points_weights']:
-        try:
-            trajectory_data[key] = xml_data.pop(key)
-        except KeyError:
-            pass
-    # As the k points are an array that is rather large, and again it's not something I'm going to parse likely
-    # since it's an info mainly contained in the input file, I move it to the trajectory data
+    try:
+        xml_file_version = get_xml_file_version(xml)
+    except ValueError:
+        raise ValueError('unrecognized XML file version')
 
-    # if there is a severe error, the calculation is FAILED
-    if any([x in out_data['warnings'] for x in critical_messages]):
-        job_successful = False
+    xml_file.seek(0)
 
-    for key in list(out_data.keys()):
-        if key in list(xml_data.keys()):
+    if xml_file_version == QeXmlVersion.POST_6_2:
+        parsed_xml, logs_xml = parse_pw_xml_post_6_2(xml_file, include_deprecated_keys)
+    elif xml_file_version == QeXmlVersion.PRE_6_2:
+        parsed_xml, logs_xml = parse_pw_xml_pre_6_2(xml_file, dir_with_bands, include_deprecated_keys)
+
+    try:
+        parsed_stdout, logs_stdout = parse_pw_text_output(stdout, parsed_xml, input_dict, parser_options)
+    except QEOutputParsingError:
+        parsed_stdout = {}
+        logs_stdout = {}
+
+    bands_data = parsed_stdout.pop('bands', {})
+    structure_data = parsed_stdout.pop('structure', {})
+    trajectory_data = parsed_stdout.pop('trajectory', {})
+
+    for key in list(parsed_stdout.keys()):
+        if key in list(parsed_xml.keys()):
             if key == 'fermi_energy' or key == 'fermi_energy_units':  # an exception for the (only?) key that may be found on both
-                del out_data[key]
+                del parsed_stdout[key]
             else:
-                raise AssertionError('{} found in both dictionaries, values: {} vs. {}'.format(key, out_data[key], xml_data[key]))  # this shouldn't happen!
-        # out_data keys take precedence and overwrite xml_data keys, if the same key name is shared by both
+                raise AssertionError('{} found in both dictionaries, values: {} vs. {}'.format(key, parsed_stdout[key], parsed_xml[key]))  # this shouldn't happen!
+        # parsed_stdout keys take precedence and overwrite parsed_xml keys, if the same key name is shared by both
         # dictionaries (but this should not happen!)
-    parameter_data = dict(list(xml_data.items()) + list(out_data.items()) + list(parser_info.items()))
+    parameter_data = dict(list(parsed_xml.items()) + list(parsed_stdout.items()) + list(parser_info.items()))
 
-    # return various data.
-    # parameter data will be mapped in Dict
-    # trajectory_data in ArrayData
-    # structure_data in a Structure
-    # bands_data should probably be merged in ArrayData
-    return parameter_data, trajectory_data, structure_data, bands_data, job_successful
+    logs = {
+        'error': logs_xml.error + logs_stdout.error,
+        'warning': logs_xml.warning + logs_stdout.warning,
+    }
+
+    parsed_data = {
+        'bands': bands_data,
+        'parameters': parameter_data,
+        'structure': structure_data,
+        'trajectory': trajectory_data,
+    }
+
+    return parsed_data, logs
 
 
-def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, parser_opts={}):
-    """
-    Parses the text output of QE-PWscf.
+def parse_pw_text_output(stdout, parsed_xml=None, input_dict=None, parser_options=None):
+    """Parses the stdout content of a Quantum ESPRESSO `pw.x` calculation.
 
-    :param data: a string, the file as read by read()
-    :param xml_data: the dictionary with the keys read from xml.
-    :param structure_data: dictionary, coming from the xml, with info on the structure
+    :param stdout: the stdout content as a string
+    :param parsed_xml: dictionary with data parsed from the XML output file
     :param input_dict: dictionary with the input parameters
-    :param parser_opts: the parser options from the settings input parameter node
-    :return parsed_data: dictionary with key values, referring to quantities at the last scf step
-    :return trajectory_data: key,values referring to intermediate scf steps,
-        as in the case of vc-relax. Empty dictionary if no value is present.
-    :return critical_messages: a list with critical messages. If any is found in
-        parsed_data['warnings'], the calculation is FAILED!
+    :param parser_options: the parser options from the settings input parameter node
+    :returns: tuple of two dictionaries, with the parsed data and log messages, respectively
     """
+    if parsed_xml is None:
+        parsed_xml = {}
+
+    if input_dict is None:
+        input_dict = {}
+
+    if parser_options is None:
+        parser_options = {}
+
     # Separate the input string into separate lines
-    data_lines = data.split('\n')
+    data_lines = stdout.split('\n')
+
+    logs = AttributeDict({
+        'warning': [],
+        'error': [],
+    })
 
     parsed_data = {}
-    parsed_data['warnings'] = []
     vdw_correction = False
+    bands_data = parsed_xml.pop('bands', {})
+    structure_data = parsed_xml.pop('structure', {})
     trajectory_data = {}
 
     # critical warnings: if any is found, the calculation status is FAILED
@@ -203,9 +165,9 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
     lelfield = input_dict.get('CONTROL', {}).get('lelfield', False)
 
     # Find some useful quantities.
-    if not xml_data.get('number_of_bands', None) and not structure_data:
+    if not parsed_xml.get('number_of_bands', None) and not structure_data:
         try:
-            for line in data.split('\n'):
+            for line in stdout.split('\n'):
                 if 'lattice parameter (alat)' in line:
                     alat = float(line.split('=')[1].split('a.u')[0])
                 elif 'number of atoms/cell' in line:
@@ -235,7 +197,6 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
             alat *= bohr_to_ang
             volume *= bohr_to_ang**3
             parsed_data['lattice_parameter_initial'] = alat
-            parsed_data['warnings'].append('Xml data not found: parsing only the text output')
             parsed_data['number_of_bands'] = nbnd
             try:
                 parsed_data['number_of_k_points'] = nk
@@ -246,7 +207,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
         except NameError:  # nat or other variables where not found, and thus not initialized
 
             # Try to get some error messages
-            lines = data.split('\n')
+            lines = stdout.split('\n')
 
             for line_number, line in enumerate(lines):
 
@@ -255,17 +216,18 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                 elif any(i in line for i in all_warnings):
                     messages = [message for marker, message in all_warnings.items() if marker in line]
 
-                parsed_data['warnings'].extend(set(messages))
+                logs.warning.extend(set(messages))
 
-            if len(parsed_data['warnings']) > 0:
-                return parsed_data, trajectory_data, list(critical_warnings.values())
+            if len(logs.warning) > 0:
+                parsed_data['trajectory'] = trajectory_data
+                return parsed_data, logs
             else:
                 # did not find any error message -> raise an Error and do not return anything
                 raise QEOutputParsingError('Parser cannot load basic info.')
     else:
         nat = structure_data['number_of_atoms']
         ntyp = structure_data['number_of_species']
-        nbnd = xml_data['number_of_bands']
+        nbnd = parsed_xml['number_of_bands']
         alat = structure_data['lattice_parameter_xml']
         volume = structure_data['cell']['volume']
     # NOTE: lattice_parameter_xml is the lattice parameter of the xml file
@@ -308,7 +270,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                 time = line.split('CPU')[1].split('WALL')[0]
                 parsed_data['wall_time'] = time
             except Exception:
-                parsed_data['warnings'].append('Error while parsing wall time.')
+                logs.warning.append('Error while parsing wall time.')
             try:
                 parsed_data['wall_time_seconds'] = convert_qe_time_to_sec(time)
             except ValueError:
@@ -383,7 +345,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
 
                 except Exception:
                     warning = "Problem parsing point group, I found: {}".format(line.strip())
-                    parsed_data['warnings'].append(warning)
+                    logs.warning.append(warning)
 
         # special parsing of c_bands error
         elif 'c_bands' in line and 'eigenvalues not converged' in line:
@@ -403,8 +365,8 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
 
         # If the line is the marker for a Quantum ESPRESSO exception we parse the warnings between those markers
         elif '%%%%%%%%%%%%%%' in line:
-                messages = parse_QE_errors(data_lines, count, all_warnings)
-                parsed_data['warnings'].extend(set(messages))
+            messages = parse_QE_errors(data_lines, count, all_warnings)
+            logs.warning.extend(set(messages))
 
         # Alternatively, get all messages of the warnings whose marker is found in the line
         elif any(i in line for i in all_warnings):
@@ -425,17 +387,17 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                 if max_dynamic_iterations != dynamic_iterations:
                     messages = []
 
-            parsed_data['warnings'].extend(set(messages))
+            logs.warning.extend(set(messages))
 
     if c_bands_error:
-        parsed_data['warnings'].append("c_bands: at least 1 eigenvalues not converged")
+        logs.warning.append("c_bands: at least 1 eigenvalues not converged")
 
     # I split the output text in the atomic SCF calculations.
     # the initial part should be things already contained in the xml.
     # (cell, initial positions, kpoints, ...) and I skip them.
     # In case, parse for them before this point.
     # Put everything in a trajectory_data dictionary
-    relax_steps = data.split('Self-consistent Calculation')[1:]
+    relax_steps = stdout.split('Self-consistent Calculation')[1:]
     relax_steps = [i.split('\n') for i in relax_steps]
 
     # now I create a bunch of arrays for every step.
@@ -475,7 +437,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                         trajectory_data['lattice_vectors_relax'] = [[a1, a2, a3]]
 
                 except Exception:
-                    parsed_data['warnings'].append('Error while parsing relaxation cell parameters.')
+                    logs.warning.append('Error while parsing relaxation cell parameters.')
 
             elif 'ATOMIC_POSITIONS' in line:
                 try:
@@ -500,7 +462,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                     except KeyError:
                         trajectory_data[this_key] = [positions]
                 except Exception:
-                    parsed_data['warnings'].append('Error while parsing relaxation atomic positions.')
+                    logs.warning.append('Error while parsing relaxation atomic positions.')
 
             # NOTE: in the above, the chemical symbols are not those of AiiDA
             # since the AiiDA structure is different. So, I assume now that the
@@ -541,7 +503,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                     except KeyError:
                         trajectory_data['scf_iterations'] = [scf_iterations]
                 except Exception:
-                    parsed_data['warnings'].append('Error while parsing scf iterations.')
+                    logs.warning.append('Error while parsing scf iterations.')
 
             elif 'End of self-consistent calculation' in line:
                 # parse energy threshold for diagonalization algorithm
@@ -558,7 +520,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                     except KeyError:
                         trajectory_data['energy_threshold'] = [value]
                 except Exception:
-                    parsed_data['warnings'].append('Error while parsing ethr.')
+                    logs.warning.append('Error while parsing ethr.')
 
                 # parse final magnetic moments, if present
                 try:
@@ -670,7 +632,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                                 break
                         parsed_data['energy_vdw' + units_suffix] = default_energy_units
                 except Exception:
-                    parsed_data['warnings'].append('Error while parsing for energy terms.')
+                    logs.warning.append('Error while parsing for energy terms.')
 
             elif 'the Fermi energy is' in line:
                 try:
@@ -681,7 +643,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                         trajectory_data['fermi_energy'] = [value]
                     parsed_data['fermi_energy' + units_suffix] = default_energy_units
                 except Exception:
-                    parsed_data['warnings'].append('Error while parsing Fermi energy from the output file.')
+                    logs.warning.append('Error while parsing Fermi energy from the output file.')
 
             elif 'Forces acting on atoms' in line:
                 try:
@@ -703,7 +665,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                         trajectory_data['forces'] = [forces]
                     parsed_data['forces' + units_suffix] = default_force_units
                 except Exception:
-                    parsed_data['warnings'].append('Error while parsing forces.')
+                    logs.warning.append('Error while parsing forces.')
 
             # TODO: adding the parsing support for the decomposition of the forces
 
@@ -716,7 +678,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                         trajectory_data['total_force'] = [value]
                     parsed_data['total_force' + units_suffix] = default_force_units
                 except Exception:
-                    parsed_data['warnings'].append('Error while parsing total force.')
+                    logs.warning.append('Error while parsing total force.')
 
             elif ('entering subroutine stress ...' in line) or ('Computing stress (Cartesian axis) and pressure' in line):
                 try:
@@ -736,7 +698,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                         trajectory_data['stress'] = [stress]
                     parsed_data['stress' + units_suffix] = default_stress_units
                 except Exception:
-                    parsed_data['warnings'].append('Error while parsing stress tensor.')
+                    logs.warning.append('Error while parsing stress tensor.')
 
             # Electronic and ionic dipoles when 'lelfield' was set to True in input parameters
             elif lelfield is True:
@@ -789,7 +751,7 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
                 trajectory_data.setdefault('ionic_dipole_cartesian_axes', []).append(id_axes)
 
     # If specified in the parser options, parse the atomic occupations
-    parse_atomic_occupations = parser_opts.get('parse_atomic_occupations', False)
+    parse_atomic_occupations = parser_options.get('parse_atomic_occupations', False)
 
     if parse_atomic_occupations:
 
@@ -819,10 +781,14 @@ def parse_pw_text_output(data, xml_data={}, structure_data={}, input_dict={}, pa
 
         parsed_data['atomic_occupations'] = atomic_occupations
 
-    # Remove duplicate warning messages from the parsed data dictionary by turning it into a set
-    parsed_data['warnings'] = set(parsed_data['warnings'])
+    # Remove duplicate log messages by turning it into a set. Then convert back to list as that is what is expected
+    logs.error = list(set(logs.error))
+    logs.warning = list(set(logs.warning))
 
-    return parsed_data, trajectory_data, list(critical_warnings.values())
+    parsed_data['structure'] = structure_data
+    parsed_data['trajectory'] = trajectory_data
+
+    return parsed_data, logs
 
 
 def grep_energy_from_line(line):
