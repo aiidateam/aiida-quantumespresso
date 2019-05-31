@@ -5,9 +5,10 @@ from __future__ import print_function
 
 import os
 import string
-import xml.dom.minidom
+from xml.dom.minidom import parse, parseString, Element
 from six.moves import range
 
+from aiida.common.extendeddicts import AttributeDict
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.constants import ry_to_ev, hartree_to_ev, bohr_to_ang
 
@@ -17,32 +18,34 @@ default_k_points_units = '1 / angstrom'
 default_length_units = 'Angstrom'
 
 
-def parse_pw_xml_pre_6_2(xml_file, dir_with_bands, parser_opts, logger):
-    """
-    Parse the XML output file of Quantum ESPRESSO with the format from before the XSD schema file
-    Returns a dictionary with parsed values
+def parse_pw_xml_pre_6_2(xml_file, dir_with_bands, include_deprecated_keys=False):
+    """Parse the content of XML output file written by `pw.x` with the old schema-less XML format.
+
+    :param xml_file: filelike object to the XML output file
+    :param dir_with_bands: absolute filepath to directory containing k-point XML files
+    :param include_deprecated_v2_keys: boolean, if True, includes deprecated keys from old parser v2
+    :returns: tuple of two dictionaries, with the parsed data and log messages, respectively
     """
     import copy
     from xml.parsers.expat import ExpatError
-    # NOTE : I often assume that if the xml file has been written, it has no
-    # internal errors.
 
-    include_deprecated_v2_keys = parser_opts.get('include_deprecated_v2_keys', False)
+    logs = AttributeDict({
+        'warning': [],
+        'error': [],
+    })
 
+    # NOTE : I often assume that if the xml file has been written, it has no internal errors.
     try:
-        with open(xml_file, 'r') as handle:
-            data = handle.read()
-    except IOError:
-        raise QEOutputParsingError("Failed to open xml file: {}.".format(xml_file))
-
-    try:
-        dom = xml.dom.minidom.parseString(data)
+        dom = parse(xml_file)
     except ExpatError:
-        return {'xml_warnings':"Error in XML parseString: bad format"},{},{}
+        logs.error.append('Error in XML parseString: bad format')
+        parsed = {
+            'bands': {},
+            'structure': {},
+        }
+        return parsed, logs
 
     parsed_data = {}
-
-    parsed_data['xml_warnings'] = []
 
     structure_dict = {}
     # CARD CELL
@@ -52,7 +55,7 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands, parser_opts, logger):
     structure_dict = copy.deepcopy(xml_card_ions(structure_dict,dom,lattice_vectors,volume))
 
     #CARD HEADER
-    parsed_data = copy.deepcopy(xml_card_header(parsed_data,dom))
+    parsed_data = copy.deepcopy(xml_card_header(parsed_data, dom))
 
     # CARD CONTROL
     cardname='CONTROL'
@@ -141,8 +144,7 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands, parser_opts, logger):
         parsed_data['k_points'+units_suffix] = default_k_points_units
         parsed_data['k_points_weights'] = kpoints_weights
     except Exception:
-        raise QEOutputParsingError('Error parsing tag K-POINT.{} '
-                                   'inside {}.'.format(i+1,target_tags.tagName) )
+        raise QEOutputParsingError('Error parsing tag K-POINT.{} inside {}.'.format(i+1,target_tags.tagName) )
 
 
     # I skip this card until someone will have a need for this.
@@ -202,8 +204,7 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands, parser_opts, logger):
     attrname = 'UNITS'
     units = parse_xml_child_attribute_str(tagname,attrname,target_tags)
     if units not in ['hartree']:
-        raise QEOutputParsingError('Expected energy units in Hartree.' + \
-                                   'Got instead {}'.format(parsed_data['energy_units']) )
+        raise QEOutputParsingError('Expected energy units in Hartree. Got instead {}'.format(parsed_data['energy_units']))
 
     try:
         tagname='TWO_FERMI_ENERGIES'
@@ -262,7 +263,7 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands, parser_opts, logger):
         parsed_data['occupations'] = 'tetrahedra'  # TODO: might also be tetrahedra_lin or tetrahedra_opt: check input?
     elif parsed_data['fixed_occupations']:
         parsed_data['occupations'] = 'fixed'
-    if not include_deprecated_v2_keys:
+    if not include_deprecated_keys:
         for tagname in ['SMEARING_METHOD','TETRAHEDRON_METHOD','FIXED_OCCUPATIONS']:
             parsed_data.pop(tagname.lower())
 
@@ -298,7 +299,7 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands, parser_opts, logger):
                     with open(eigenval_n,'r') as eigenval_f:
                         f = eigenval_f.read()
 
-                    eig_dom = xml.dom.minidom.parseString(f)
+                    eig_dom = parseString(f)
 
                     tagname = 'UNITS_FOR_ENERGIES'
                     a = eig_dom.getElementsByTagName(tagname)[0]
@@ -390,7 +391,11 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands, parser_opts, logger):
     # CARD EXCHANGE_CORRELATION
     parsed_data = copy.deepcopy(xml_card_exchangecorrelation(parsed_data,dom))
 
-    return parsed_data,structure_dict,bands_dict
+    parsed_data['bands'] = bands_dict
+    parsed_data['structure'] = structure_dict
+
+    return parsed_data, logs
+
 
 def cell_volume(a1,a2,a3):
     r"""
@@ -407,7 +412,7 @@ def cell_volume(a1,a2,a3):
 def read_xml_card(dom,cardname):
     try:
         root_node = [_ for _ in dom.childNodes if
-                    isinstance(_, xml.dom.minidom.Element)
+                    isinstance(_, Element)
                         and _.nodeName == "Root"][0]
         the_card = [_ for _ in root_node.childNodes if _.nodeName == cardname][0]
         #the_card = dom.getElementsByTagName(cardname)[0]

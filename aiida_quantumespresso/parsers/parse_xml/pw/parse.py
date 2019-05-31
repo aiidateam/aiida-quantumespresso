@@ -6,8 +6,9 @@ from xmlschema.exceptions import URLError
 from defusedxml import ElementTree
 import numpy as np
 
+from aiida.common.extendeddicts import AttributeDict
 from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers.constants import hartree_to_ev, bohr_to_ang, ry_si, bohr_si, e_bohr2_to_coulomb_m2
+from aiida_quantumespresso.parsers.constants import hartree_to_ev, bohr_to_ang, e_bohr2_to_coulomb_m2
 from .versions import get_schema_filepath, get_default_schema_filepath
 
 
@@ -42,22 +43,22 @@ def cell_volume(a1, a2, a3):
     return abs(float(a1[0] * a_mid_0 + a1[1] * a_mid_1 + a1[2] * a_mid_2))
 
 
-def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
+def parse_pw_xml_post_6_2(xml_file, include_deprecated_v2_keys=False):
+    """Parse the content of XML output file written by `pw.x` with the new schema-based XML format.
+
+    :param xml_file: filelike object to the XML output file
+    :param include_deprecated_v2_keys: boolean, if True, includes deprecated keys from old parser v2
+    :returns: tuple of two dictionaries, with the parsed data and log messages, respectively
     """
-    NOTE: the syntax for accessing the decoded XML dictionary (xml_dictionary)
-    is the following:
-          - If tag ['key'] is "simple", xml_dictionary['key'] returns its content;
-          - otherwise:
-            - xml_dictionary['key']['$'] returns its content
-            - xml_dictionary['key']['@attr'] returns its attribute 'attr'
-            - xml_dictionary['key']['nested_key'] goes one level deeper.
-    """
-    include_deprecated_v2_keys = parser_opts.get('include_deprecated_v2_keys', False)
+    logs = AttributeDict({
+        'warning': [],
+        'error': [],
+    })
 
     try:
         xml = ElementTree.parse(xml_file)
     except IOError:
-        raise QEXMLParsingError('Could not open or parse the XML file {}'.format(xml_file))
+        raise ValueError('could not open and or parse the XML file {}'.format(xml_file))
 
     # detect schema name+path from XML contents
     schema_filepath = get_schema_filepath(xml)
@@ -76,12 +77,19 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
         else:
             schema_filepath = schema_filepath_default
 
-    # validate XML document against the schema
+    # Validate XML document against the schema
+    # Returned dictionary has a structure where, if tag ['key'] is "simple", xml_dictionary['key'] returns its content.
+    # Otherwise, the following keys are available:
+    #
+    #  xml_dictionary['key']['$'] returns its content
+    #  xml_dictionary['key']['@attr'] returns its attribute 'attr'
+    #  xml_dictionary['key']['nested_key'] goes one level deeper.
+
     xml_dictionary, errors = xsd.to_dict(xml, validation='lax')
     if errors:
-        logger.error("{} XML schema validation error(s) (document: {} - schema: {}):".format(len(errors), xml_file, schema_filepath))
+        logs.error.append("{} XML schema validation error(s) (document: {} - schema: {}):".format(len(errors), xml_file.filename, schema_filepath))
         for err in errors:
-            logger.error(str(err))
+            logs.error.append(str(err))
 
     lattice_vectors = [
         [x * bohr_to_ang for x in xml_dictionary['output']['atomic_structure']['cell']['a1']],
@@ -102,7 +110,7 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
     else:
         has_dipole_correction = False
 
-    #if 'bands' in xml_dictionary['input'] and 'occupations' in xml_dictionary['input']['bands']:
+    # if 'bands' in xml_dictionary['input'] and 'occupations' in xml_dictionary['input']['bands']:
     # the above condition is always true, according to the new schema
 
     try:
@@ -132,8 +140,8 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
 
         if smearing_method:
             if 'smearing' not in (list(xml_dictionary['output']['band_structure'].keys()) + list(xml_dictionary['input']['bands'].keys())):
-                logger.error("occupations is '{}' but key 'smearing' is not present under input/bands "
-                             "nor under output/band_structure".format(occupations))
+                logs.error.append("occupations is '{}' but key 'smearing' is not present under input/bands "
+                                  "nor under output/band_structure".format(occupations))
             # TODO: this error is triggered if no smearing is specified in input. But this is a valid input, so we should't throw an error.
             # Should we ask QE to print something nonetheless?
             # Also happens if occupations='fixed'.
@@ -260,7 +268,7 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
             raise QEXMLParsingError("Unexpected type of symmetry: {}".format(symmetry_type))
 
     if (nsym != len(symmetries)) or (nrot != len(symmetries)+len(lattice_symmetries)):
-        logger.warning("Inconsistent number of symmetries: nsym={}, nrot={}, len(symmetries)={}, len(lattice_symmetries)={}"
+        logs.warning.append("Inconsistent number of symmetries: nsym={}, nrot={}, len(symmetries)={}, len(lattice_symmetries)={}"
                        .format(nsym, nrot, len(symmetries), len(lattice_symmetries))
         )
 
@@ -344,7 +352,6 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
         'charge_density': u'./charge-density.dat', # A file name. Not printed in the new format.
             # The filename and path are considered fixed: <outdir>/<prefix>.save/charge-density.dat
             # TODO: change to .hdf5 if output format is HDF5 (issue #222)
-        'xml_warnings': [],
         'rho_cutoff_units': 'eV',
         'wfc_cutoff_units': 'eV',
         'fermi_energy_units': 'eV',
@@ -533,4 +540,7 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
         },
     }
 
-    return xml_data, structure_data, bands_dict
+    xml_data['bands'] = bands_dict
+    xml_data['structure'] = structure_data
+
+    return xml_data, logs

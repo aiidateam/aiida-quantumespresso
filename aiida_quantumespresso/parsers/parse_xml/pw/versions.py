@@ -4,7 +4,6 @@ from __future__ import absolute_import
 import enum
 import os
 
-from defusedxml import ElementTree
 
 DEFAULT_SCHEMA_FILENAME = 'qes-1.0.xsd'
 DIRNAME_SCHEMAS = 'schemas'
@@ -18,17 +17,12 @@ class QeXmlVersion(enum.Enum):
     POST_6_2 = 1
 
 
-def get_xml_file_version(xml_file):
+def get_xml_file_version(xml):
     """Return the version of the Quantum ESPRESSO pw.x XML output file
 
-    :param xml_file: absolute path to the XML file
+    :param xml: the pre-parsed XML object
     :raises ValueError: if the file cannot be read, parsed or if the version cannot be determined
     """
-    try:
-        xml = ElementTree.parse(xml_file)
-    except IOError:
-        raise ValueError('could not open and or parse the XML file {}'.format(xml_file))
-
     if is_valid_post_6_2_version(xml):
         return QeXmlVersion.POST_6_2
     elif is_valid_pre_6_2_version(xml):
