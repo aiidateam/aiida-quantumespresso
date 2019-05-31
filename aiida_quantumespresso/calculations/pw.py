@@ -95,7 +95,10 @@ class PwCalculation(BasePwCpInputGenerator):
             116, 'ERROR_MULTIPLE_XML_FILES', message='The retrieved folder contains multiple XML files.')
         spec.exit_code(
             117, 'ERROR_READING_XML_FILE', message='The required XML file could not be read.')
-        spec.exit_code(120, 'ERROR_INVALID_OUTPUT', message='The output file contains invalid output.')
+        spec.exit_code(
+            120, 'ERROR_INVALID_OUTPUT', message='The output file contains invalid output.')
+        spec.exit_code(
+            210, 'ERROR_UNEXPECTED_PARSER_EXCEPTION', message='The parser raised an unexpected exception.')
 
     @classproperty
     def input_file_name_hubbard_file(cls):
