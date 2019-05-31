@@ -7,7 +7,7 @@ from defusedxml import ElementTree
 import numpy as np
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers.constants import ry_to_ev, hartree_to_ev, bohr_to_ang, ry_si, bohr_si, e_bohr2_to_coulomb_m2
+from aiida_quantumespresso.parsers.constants import hartree_to_ev, bohr_to_ang, ry_si, bohr_si, e_bohr2_to_coulomb_m2
 from .versions import get_schema_filepath, get_default_schema_filepath
 
 
