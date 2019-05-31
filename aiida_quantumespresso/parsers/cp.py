@@ -12,7 +12,7 @@ from six.moves import zip
 from aiida_quantumespresso.parsers.constants import (bohr_to_ang,
                                                      hartree_to_ev,
                                                      timeau_to_sec)
-from aiida_quantumespresso.parsers.raw_parser_cp import (parse_cp_raw_output,
+from aiida_quantumespresso.parsers.parse_raw.cp import (parse_cp_raw_output,
                                                          parse_cp_traj_stanzas)
 
 
