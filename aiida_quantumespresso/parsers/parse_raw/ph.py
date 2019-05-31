@@ -10,7 +10,7 @@ from xml.dom.minidom import parseString
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
 from aiida_quantumespresso.parsers.constants import *
 from aiida_quantumespresso.parsers.parse_xml.pw.legacy import parse_xml_child_bool, read_xml_card
-from aiida_quantumespresso.parsers.raw_parser_pw import convert_qe_time_to_sec
+from aiida_quantumespresso.parsers.parse_raw.pw import convert_qe_time_to_sec
 from six.moves import zip
 
 
@@ -201,7 +201,7 @@ def parse_ph_text_output(lines):
     :return critical_messages: a list with critical messages. If any is found in
                                parsed_data['warnings'], the calculation is FAILED!
     """
-    from aiida_quantumespresso.parsers.raw_parser_pw import parse_QE_errors
+    from aiida_quantumespresso.parsers.parse_raw.pw import parse_QE_errors
 
     parsed_data = {}
     parsed_data['warnings'] = []
