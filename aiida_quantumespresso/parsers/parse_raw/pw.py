@@ -11,14 +11,10 @@ from __future__ import print_function
 
 import re
 from six.moves import range
-from defusedxml import ElementTree
 
-from aiida.common.extendeddicts import AttributeDict
-from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
+from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.constants import ry_to_ev, bohr_to_ang, ry_si, bohr_si
-from aiida_quantumespresso.parsers.parse_xml.pw.parse import parse_pw_xml_post_6_2
-from aiida_quantumespresso.parsers.parse_xml.pw.legacy import parse_pw_xml_pre_6_2
-from aiida_quantumespresso.parsers.parse_xml.pw.versions import get_xml_file_version, QeXmlVersion
+from aiida_quantumespresso.utils.mapping import get_logging_container
 
 lattice_tolerance = 1.e-5
 units_suffix = '_units'
@@ -33,109 +29,25 @@ default_polarization_units = 'C / m^2'
 default_stress_units = 'GPascal'
 
 
-def parse_raw_output(stdout, xml_file, input_dict, parser_options, dir_with_bands=None):
-    """
-    Parses the output of a calculation
-    Receives in input the paths to the output file and the xml file.
-
-    3 different keys to check in output: parser_warnings, xml_warnings and warnings.
-    On an upper level, these flags MUST be checked.
-    The first two are expected to be empty unless QE failures or unfinished jobs.
-
-    :param stdout: the content of the stdout
-    :param xml_file: filelike to the XML output file
-    :param input_dict: dictionary with the input parameters
-    :param parser_options: dictionary with parser options
-    :param dir_with_bands: path to directory with all k-points (Kxxxxx) folders
-
-    :return parameter_data: a dictionary with parsed parameters
-    :return trajectory_data: a dictionary with arrays (for relax & md calcs.)
-    :return structure_data: a dictionary with data for the output structure
-    :return bands_data: a dictionary with data for bands (for bands calcs.)
-
-    :raises QEOutputParsingError: for errors in the parsing
-    :raises AssertionError: if two keys in the parsed dicts are found to be equal
-    """
-    parser_info = get_parser_info(parser_info_template='aiida-quantumespresso parser pw.x v{}')
-    include_deprecated_keys = parser_options.pop('include_deprecated_v2_keys', False)
-
-    try:
-        xml = ElementTree.parse(xml_file)
-    except IOError:
-        raise ValueError('could not open and or parse the XML file {}'.format(xml_file))
-
-    try:
-        xml_file_version = get_xml_file_version(xml)
-    except ValueError:
-        raise ValueError('unrecognized XML file version')
-
-    xml_file.seek(0)
-
-    if xml_file_version == QeXmlVersion.POST_6_2:
-        parsed_xml, logs_xml = parse_pw_xml_post_6_2(xml_file, include_deprecated_keys)
-    elif xml_file_version == QeXmlVersion.PRE_6_2:
-        parsed_xml, logs_xml = parse_pw_xml_pre_6_2(xml_file, dir_with_bands, include_deprecated_keys)
-
-    try:
-        parsed_stdout, logs_stdout = parse_pw_text_output(stdout, parsed_xml, input_dict, parser_options)
-    except QEOutputParsingError:
-        parsed_stdout = {}
-        logs_stdout = {}
-
-    bands_data = parsed_stdout.pop('bands', {})
-    structure_data = parsed_stdout.pop('structure', {})
-    trajectory_data = parsed_stdout.pop('trajectory', {})
-
-    for key in list(parsed_stdout.keys()):
-        if key in list(parsed_xml.keys()):
-            if key == 'fermi_energy' or key == 'fermi_energy_units':  # an exception for the (only?) key that may be found on both
-                del parsed_stdout[key]
-            else:
-                raise AssertionError('{} found in both dictionaries, values: {} vs. {}'.format(key, parsed_stdout[key], parsed_xml[key]))  # this shouldn't happen!
-        # parsed_stdout keys take precedence and overwrite parsed_xml keys, if the same key name is shared by both
-        # dictionaries (but this should not happen!)
-    parameter_data = dict(list(parsed_xml.items()) + list(parsed_stdout.items()) + list(parser_info.items()))
-
-    logs = {
-        'error': logs_xml.error + logs_stdout.error,
-        'warning': logs_xml.warning + logs_stdout.warning,
-    }
-
-    parsed_data = {
-        'bands': bands_data,
-        'parameters': parameter_data,
-        'structure': structure_data,
-        'trajectory': trajectory_data,
-    }
-
-    return parsed_data, logs
-
-
-def parse_pw_text_output(stdout, parsed_xml=None, input_dict=None, parser_options=None):
+def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None):
     """Parses the stdout content of a Quantum ESPRESSO `pw.x` calculation.
 
     :param stdout: the stdout content as a string
-    :param parsed_xml: dictionary with data parsed from the XML output file
-    :param input_dict: dictionary with the input parameters
+    :param input_parameters: dictionary with the input parameters
     :param parser_options: the parser options from the settings input parameter node
+    :param parsed_xml: dictionary with data parsed from the XML output file
     :returns: tuple of two dictionaries, with the parsed data and log messages, respectively
     """
-    if parsed_xml is None:
-        parsed_xml = {}
-
-    if input_dict is None:
-        input_dict = {}
-
     if parser_options is None:
         parser_options = {}
+
+    if parsed_xml is None:
+        parsed_xml = {}
 
     # Separate the input string into separate lines
     data_lines = stdout.split('\n')
 
-    logs = AttributeDict({
-        'warning': [],
-        'error': [],
-    })
+    logs = get_logging_container()
 
     parsed_data = {}
     vdw_correction = False
@@ -161,8 +73,15 @@ def parse_pw_text_output(stdout, parsed_xml=None, input_dict=None, parser_option
 
     all_warnings = dict(list(critical_warnings.items()) + list(minor_warnings.items()))
 
+    # First check whether the `JOB DONE` message was written, otherwise the job was interrupted
+    for line in data_lines:
+        if 'JOB DONE' in line:
+            break
+    else:
+        logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
+
     # Determine whether the input switched on an electric field
-    lelfield = input_dict.get('CONTROL', {}).get('lelfield', False)
+    lelfield = input_parameters.get('CONTROL', {}).get('lelfield', False)
 
     # Find some useful quantities.
     if not parsed_xml.get('number_of_bands', None) and not structure_data:
@@ -184,7 +103,7 @@ def parse_pw_text_output(stdout, parsed_xml=None, input_dict=None, parser_option
                     nbnd = int(line.split('=')[1])
                 elif "number of k points" in line:
                     nk = int(line.split('=')[1].split()[0])
-                    if input_dict.get('SYSTEM', {}).get('nspin', 1) > 1:
+                    if input_parameters.get('SYSTEM', {}).get('nspin', 1) > 1:
                         # QE counts twice each k-point in spin-polarized calculations
                         nk /= 2
                 elif "Dense  grid" in line:
@@ -379,7 +298,7 @@ def parse_pw_text_output(stdout, parsed_xml=None, input_dict=None, parser_option
 
             # If the run is a molecular dynamics, I ignore that I reached the last iteration step.
             if ('The maximum number of steps has been reached.' in line and
-                    'md' in input_dict.get('CONTROL', {}).get('calculation', '')):
+                    'md' in input_parameters.get('CONTROL', {}).get('calculation', '')):
                 messages = []
 
             if 'iterations completed, stopping' in line and 'Wentzcovitch Damped Dynamics:' in line:
@@ -756,7 +675,7 @@ def parse_pw_text_output(stdout, parsed_xml=None, input_dict=None, parser_option
     if parse_atomic_occupations:
 
         atomic_occupations = {}
-        hubbard_blocks = data.split('LDA+U parameters')
+        hubbard_blocks = stdout.split('LDA+U parameters')
 
         for line in hubbard_blocks[-1].split('\n'):
 
@@ -785,6 +704,7 @@ def parse_pw_text_output(stdout, parsed_xml=None, input_dict=None, parser_option
     logs.error = list(set(logs.error))
     logs.warning = list(set(logs.warning))
 
+    parsed_data['bands'] = bands_data
     parsed_data['structure'] = structure_data
     parsed_data['trajectory'] = trajectory_data
 
