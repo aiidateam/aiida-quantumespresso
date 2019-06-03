@@ -4,6 +4,9 @@ from __future__ import absolute_import
 import enum
 import os
 
+from .exceptions import XMLUnsupportedFormatError
+
+
 DEFAULT_SCHEMA_FILENAME = 'qes-1.0.xsd'
 DIRNAME_SCHEMAS = 'schemas'
 DIRPATH_SCHEMAS = os.path.join(os.path.dirname(os.path.abspath(__file__)), DIRNAME_SCHEMAS)
@@ -20,14 +23,14 @@ def get_xml_file_version(xml):
     """Return the version of the Quantum ESPRESSO pw.x XML output file
 
     :param xml: the pre-parsed XML object
-    :raises ValueError: if the file cannot be read, parsed or if the version cannot be determined
+    :raises XMLUnsupportedFormatError: if the file cannot be read, parsed or if the version cannot be determined
     """
     if is_valid_post_6_2_version(xml):
         return QeXmlVersion.POST_6_2
     elif is_valid_pre_6_2_version(xml):
         return QeXmlVersion.PRE_6_2
     else:
-        raise ValueError('unrecognized XML file version')
+        raise XMLUnsupportedFormatError('unrecognized XML file version')
 
 
 def get_schema_filepath(xml):

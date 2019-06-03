@@ -1,235 +1,369 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-import copy
 import numpy
-import six
 from six.moves import zip
 
 from aiida import orm
 from aiida.common import exceptions
-from aiida.engine import ExitCode
 from aiida.parsers import Parser
-from aiida_quantumespresso.parsers import convert_qe2aiida_structure
-from aiida_quantumespresso.parsers.parse_raw.pw import parse_raw_output
-from aiida_quantumespresso.utils.linalg import are_matrices_equal
+
+from aiida_quantumespresso.utils.mapping import get_logging_container
 
 
 class PwParser(Parser):
     """`Parser` implementation for the `PwCalculation` calculation job class."""
 
     def parse(self, **kwargs):
-        """Parse the output nodes for a PwCalculations from a dictionary of retrieved nodes.
+        """Parse the retrieved files of a completed `PwCalculation` into output nodes.
 
         Two nodes that are expected are the default 'retrieved' `FolderData` node which will store the retrieved files
         permanently in the repository. The second required node is a filepath under the key `retrieved_temporary_files`
         which should contain the temporary retrieved files.
         """
-        try:
-            retrieved = self.retrieved
-        except exceptions.NotExistent:
-            return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
+        dir_with_bands = None
+        self.exit_code_xml = None
+        self.exit_code_stdout = None
+        self.exit_code_parser = None
 
-        input_parameters = self.node.inputs.parameters.get_dict()
+        try:
+            self.retrieved
+        except exceptions.NotExistent:
+            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
 
         # Look for optional settings input node and potential 'parser_options' dictionary within it
         try:
-            settings = self.node.inputs.settings.get_dict()
-            parser_options = settings[self.get_parser_settings_key()]
-        except (AttributeError, KeyError, exceptions.NotExistent):
-            settings = {}
-            parser_options = {}
+            parser_options = self.node.inputs.settings.get_dict()[self.get_parser_settings_key()]
+        except (KeyError, exceptions.NotExistent):
+            parser_options = None
 
         # Verify that the retrieved_temporary_folder is within the arguments if temporary files were specified
         if self.node.get_attribute('retrieve_temporary_list', None):
             try:
-                temporary_folder = kwargs['retrieved_temporary_folder']
-                dir_with_bands = temporary_folder
+                dir_with_bands = kwargs['retrieved_temporary_folder']
             except KeyError:
-                self.logger.error('the `retrieved_temporary_folder` was not passed as an argument')
-                return self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER
-        else:
-            dir_with_bands = None
+                return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
 
-        list_of_files = retrieved.list_object_names()
+        parameters = self.node.inputs.parameters.get_dict()
+        parsed_xml, logs_xml = self.parse_xml(dir_with_bands)
+        parsed_stdout, logs_stdout = self.parse_stdout(parameters, parser_options, parsed_xml)
 
-        try:
-            filename_stdout = self.node.get_attribute('output_filename')
-            stdout = retrieved.get_object_content(filename_stdout)
-        except IOError:
-            self.logger.error("The required standard output file '{}' could not be read".format(filename_stdout))
-            return self.exit_codes.ERROR_READING_OUTPUT_FILE
+        parsed_bands = parsed_stdout.pop('bands', {})
+        parsed_structure = parsed_stdout.pop('structure', {})
+        parsed_trajectory = parsed_stdout.pop('trajectory', {})
+        parsed_parameters = self.build_output_parameters(parsed_xml, parsed_stdout)
 
-        # The xml file is required for successful parsing, but if it does not exist, we still try to parse the out file
-        xml_files = [xml_file for xml_file in self.node.process_class.xml_filenames if xml_file in list_of_files]
-
-        if not xml_files:
-            self.logger.error('no XML output files found, which is required for parsing')
-            return self.exit_codes.ERROR_MISSING_XML_FILE
-        elif len(xml_files) > 1:
-            self.logger.error('more than one XML file retrieved, which should never happen')
-            return self.exit_codes.ERROR_MULTIPLE_XML_FILES
-
-        with retrieved.open(xml_files[0]) as xml_file:
-            parsing_args = [stdout, xml_file, input_parameters, parser_options, dir_with_bands]
-            try:
-                parsed_data, logs = parse_raw_output(*parsing_args)
-            except Exception:
-                import traceback
-                traceback.print_exc()
-                self.logger.error('parsing of output files raised an exception')
-                return self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
-
-        # Log the messages returned by the parser through the logger of the parser. This will ensure that they get
-        # attached to the report of the corresponding node.
-        for level, messages in logs.items():
-            for message in messages:
-                getattr(self.logger, level)(message)
-
-        bands_data = parsed_data['bands']
-        parameters = parsed_data['parameters']
-        structure_data = parsed_data['structure']
-        trajectory_data = parsed_data['trajectory']
-
-        # I add in the parsed_stdout all the last elements of trajectory_data values,
-        # except for some large arrays, that I will likely never query.
-        skip_keys = ['forces', 'atomic_magnetic_moments', 'atomic_charges', 'lattice_vectors_relax',
-                     'atomic_positions_relax', 'atomic_species_name']
-        tmp_trajectory_data = copy.copy(trajectory_data)
-        for x in six.iteritems(tmp_trajectory_data):
-            if x[0] in skip_keys:
-                continue
-            parameters[x[0]] = x[1][-1]
-            if len(x[1]) == 1:  # delete eventual keys that are not arrays (scf cycles)
-                trajectory_data.pop(x[0])
-            # note: if an array is empty, there will be KeyError
-
-        # As the k points are an array that is rather large, and again it's not something I'm going to parse likely
-        # since it's an info mainly contained in the input file, I move it to the trajectory data
-        for key in ['k_points', 'k_points_weights']:
-            try:
-                trajectory_data[key] = parameters.pop(key)
-            except KeyError:
-                pass
+        # Append the last frame of some of the smaller trajectory arrays to the parameters for easy querying
+        self.final_trajectory_frame_to_parameters(parsed_parameters, parsed_trajectory)
 
         # If the parser option 'all_symmetries' is not set to True, we reduce the raw parsed symmetries to safe space
-        all_symmetries = parser_options.get('all_symmetries', False)
+        self.reduce_symmetries(parsed_parameters, parsed_structure, parser_options)
 
-        if not all_symmetries and 'cell' in structure_data:
-            self.reduce_symmetries(parameters, structure_data)
+        structure = self.build_output_structure(parsed_structure)
+        kpoints = self.build_output_kpoints(parsed_parameters, structure)
+        bands = self.build_output_bands(parsed_bands, kpoints)
+        array = self.build_output_array(parsed_trajectory)
+        trajectory = self.build_output_trajectory(parsed_trajectory, structure)
 
-        # I eventually save the new structure. structure_data is unnecessary after this
-        input_structure = self.node.get_incoming(link_label_filter='structure').one().node
-        type_calc = input_parameters['CONTROL']['calculation']
-        output_structure = input_structure
-        if type_calc in ['relax', 'vc-relax', 'md', 'vc-md']:
-            if 'cell' in list(structure_data.keys()):
-                output_structure = convert_qe2aiida_structure(structure_data, input_structure=input_structure)
-                self.out('output_structure', output_structure)
+        # Determine whether the input kpoints were defined as a mesh or as an explicit list
+        try:
+            self.node.inputs.kpoints.get_kpoints()
+        except AttributeError:
+            input_kpoints_explicit = False
+        else:
+            input_kpoints_explicit = True
 
-        k_points_list = trajectory_data.pop('k_points', None)
-        k_points_weights_list = trajectory_data.pop('k_points_weights', None)
+        # Only attach the `KpointsData` as output if there will be no `BandsData` output and inputs were defined as mesh
+        if kpoints and not bands and not input_kpoints_explicit:
+            self.out('output_kpoints', kpoints)
 
-        if k_points_list is not None:
+        if bands:
+            self.out('output_band', bands)
 
-            if parameters.pop('k_points_units') != '1 / angstrom':
-                self.logger.error('Error in kpoints units (should be cartesian)')
-                return self.exit_codes.ERROR_INVALID_KPOINT_UNITS
+        if trajectory:
+            self.out('output_trajectory', trajectory)
 
-            kpoints_from_output = orm.KpointsData()
-            kpoints_from_output.set_cell_from_structure(output_structure)
-            kpoints_from_output.set_kpoints(k_points_list, cartesian=True, weights=k_points_weights_list)
-            kpoints_from_input = self.node.inputs.kpoints
+        if array:
+            self.out('output_array', array)
 
-            if not bands_data:
-                try:
-                    kpoints_from_input.get_kpoints()
-                except AttributeError:
-                    self.out('output_kpoints', kpoints_from_output)
-
-            # Converting bands into a BandsData object (including the kpoints)
-            if bands_data:
-                kpoints_for_bands = kpoints_from_output
-
-                try:
-                    kpoints_from_input.get_kpoints()
-                    kpoints_for_bands.labels = kpoints_from_input.labels
-                except (AttributeError, ValueError, TypeError):
-                    # AttributeError: no list of kpoints in input
-                    # ValueError: labels from input do not match the output
-                    #      list of kpoints (some kpoints are missing)
-                    # TypeError: labels are not set, so kpoints_from_input.labels=None
-                    pass
-
-                # Get the bands occupations and correct the occupations of QE:
-                # If it computes only one component, it occupies it with half number of electrons
-                # TODO: is this something we really want to correct?
-                # Probably yes for backwards compatiblity, but it might not be intuitive.
-                if len(bands_data['occupations']) > 1:
-                    the_occupations = bands_data['occupations']
-                else:
-                    the_occupations = 2. * numpy.array(bands_data['occupations'][0])
-
-                if len(bands_data['bands']) > 1:
-                    bands_energies = bands_data['bands']
-                else:
-                    bands_energies = bands_data['bands'][0]
-
-                # TODO: replicate this in the new parser!
-                the_bands_data = orm.BandsData()
-                the_bands_data.set_kpointsdata(kpoints_for_bands)
-                the_bands_data.set_bands(bands_energies,
-                                         units=bands_data['bands_units'],
-                                         occupations=the_occupations)
-
-                self.out('output_band', the_bands_data)
-                parameters['linknames_band'] = ['output_band']
-                # TODO: replicate this in the new parser!
+        if not structure.is_stored:
+            self.out('output_structure', structure)
 
         # Separate the atomic_occupations dictionary in its own node if it is present
-        atomic_occupations = parameters.pop('atomic_occupations', None)
+        atomic_occupations = parsed_parameters.pop('atomic_occupations', None)
         if atomic_occupations:
             self.out('output_atomic_occupations', orm.Dict(dict=atomic_occupations))
 
-        self.out('output_parameters', orm.Dict(dict=parameters))
+        self.out('output_parameters', orm.Dict(dict=parsed_parameters))
 
-        if trajectory_data:
-            try:
-                positions = numpy.array(trajectory_data.pop('atomic_positions_relax'))
-                try:
-                    cells = numpy.array(trajectory_data.pop('lattice_vectors_relax'))
-                    # if the cell is only printed once, the MD/relax was at fixed cell
-                    if len(cells) == 1 and len(positions) > 1:
-                        cells = numpy.array([cells[0]] * len(positions))
-                # if KeyError (the cell is never printed), the MD/relax was at fixed cell
-                except KeyError:
-                    cells = numpy.array([input_structure.cell] * len(positions))
+        # Emit the logs returned by the XML and stdout parsing through the logger
+        self.emit_logs(logs_stdout, logs_xml)
 
-                symbols = [str(i.kind_name) for i in input_structure.sites]
-                stepids = numpy.arange(len(positions))  # a growing integer per step
-                # I will insert time parsing when they fix their issues about time
-                # printing (logic is broken if restart is on)
+        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs_stdout['error']:
+            self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
 
-                traj = orm.TrajectoryData()
-                traj.set_trajectory(
-                    stepids=stepids,
-                    cells=cells,
-                    symbols=symbols,
-                    positions=positions,
-                )
+        if self.exit_code_stdout and self.exit_code_xml:
+            return self.exit(self.exit_codes.ERROR_OUTPUT_FILES)
 
-                for x in six.iteritems(trajectory_data):
-                    traj.set_array(x[0], numpy.array(x[1]))
-                self.out('output_trajectory', traj)
+        if self.exit_code_stdout:
+            return self.exit(self.exit_code_stdout)
 
-            except KeyError:
-                # forces, atomic charges and atomic mag. moments, in scf calculation (when outputed)
-                arraydata = orm.ArrayData()
-                for x in six.iteritems(trajectory_data):
-                    arraydata.set_array(x[0], numpy.array(x[1]))
-                self.out('output_array', arraydata)
+        if self.exit_code_xml:
+            return self.exit(self.exit_code_xml)
 
-        return ExitCode(0)
+    def exit(self, exit_code):
+        """Log the exit message of the give exit code with level `ERROR` and return the exit code.
+
+        This is a utility function if one wants to return from the parse method and automically add the exit message
+        associated to the exit code as a log message to the node: e.g. `return self.exit(self.exit_codes.LABEL))`
+
+        :param exit_code: an `ExitCode`
+        :return: the exit code
+        """
+        self.logger.error(exit_code.message)
+        return exit_code
+
+    def parse_xml(self, dir_with_bands=None):
+        """Parse the XML output file.
+
+        :param dir_with_bands: absolute path to directory containing individual k-point XML files for old XML format.
+        :return: tuple of two dictionaries, first with raw parsed data and second with log messages
+        """
+        from .parse_xml.pw.exceptions import XMLParseError, XMLUnsupportedFormatError
+        from .parse_xml.pw.parse import parse_xml
+
+        logs = get_logging_container()
+        parsed_data = {}
+
+        object_names = self.retrieved.list_object_names()
+        xml_files = [xml_file for xml_file in self.node.process_class.xml_filenames if xml_file in object_names]
+
+        if not xml_files:
+            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_MISSING
+            return parsed_data, logs
+        elif len(xml_files) > 1:
+            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_MULTIPLE
+            return parsed_data, logs
+
+        try:
+            with self.retrieved.open(xml_files[0]) as xml_file:
+                parsed_data, logs = parse_xml(xml_file, dir_with_bands)
+        except IOError:
+            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_READ
+        except XMLParseError:
+            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_PARSE
+        except XMLUnsupportedFormatError:
+            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_FORMAT
+        except Exception:
+            import traceback
+            traceback.print_exc()
+            self.exit_code_xml = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
+
+        return parsed_data, logs
+
+    def parse_stdout(self, parameters, parser_options=None, parsed_xml=None):
+        """Parse the stdout output file.
+
+        :param parameters: the input parameters dictionary
+        :param parser_options: optional dictionary with parser options
+        :param parsed_xml: the raw parsed data from the XML output
+        :return: tuple of two dictionaries, first with raw parsed data and second with log messages
+        """
+        from aiida_quantumespresso.parsers.parse_raw.pw import parse_stdout
+
+        logs = get_logging_container()
+        parsed_data = {}
+
+        filename_stdout = self.node.get_attribute('output_filename')
+
+        if filename_stdout not in self.retrieved.list_object_names():
+            self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_MISSING
+            return parsed_data, logs
+
+        try:
+            stdout = self.retrieved.get_object_content(filename_stdout)
+        except IOError:
+            self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_READ
+            return parsed_data, logs
+
+        try:
+            parsed_data, logs = parse_stdout(stdout, parameters, parser_options, parsed_xml)
+        except Exception:
+            import traceback
+            traceback.print_exc()
+            self.exit_code_stdout = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
+
+        return parsed_data, logs
+
+    def emit_logs(self, *args):
+        """Emit the messages in one or multiple "log dictionaries" through the logger of the parser.
+
+        A log dictionary is expected to have the following structure: each key must correspond to a log level of the
+        python logging module, e.g. `error` or `warning` and its values must be a list of string messages. The method
+        will loop over all log dictionaries and emit the messages it contains with the log level indicated by the key.
+
+        Example log dictionary structure::
+
+            logs = {
+                'warning': ['Could not parse the `etot_threshold` variable from the stdout.'],
+                'error': ['Self-consistency was not achieved']
+            }
+
+        :param args: log dictionaries
+        """
+        for logs in args:
+            for level, messages in logs.items():
+                for message in messages:
+                    if message is None or not message.strip():
+                        continue
+                    try:
+                        getattr(self.logger, level)(message)
+                    except AttributeError:
+                        pass
+
+    def build_output_parameters(self, parsed_stdout, parsed_xml):
+        """Build the dictionary of output parameters from the raw parsed data.
+
+        The output parameters are based on the union of raw parsed data from the XML and stdout output files.
+        Currently, if both raw parsed data dictionaries contain the same key, the stdout version takes precedence, but
+        this should not occur as the `parse_stdout` method should already have solved these conflicts.
+
+        :param parsed_stdout: the raw parsed data dictionary from the stdout output file
+        :param parsed_xml: the raw parsed data dictionary from the XML output file
+        :return: the union of the two parsed raw and information about the parser
+        """
+        from aiida_quantumespresso.parsers import get_parser_info
+
+        parsed_info = get_parser_info(parser_info_template='aiida-quantumespresso parser pw.x v{}')
+
+        for key in list(parsed_stdout.keys()):
+            if key in list(parsed_xml.keys()):
+                if key == 'fermi_energy' or key == 'fermi_energy_units':  # an exception for the (only?) key that may be found on both
+                    del parsed_stdout[key]
+                else:
+                    raise AssertionError('{} found in both dictionaries, values: {} vs. {}'.format(
+                        key, parsed_stdout[key], parsed_xml[key]))  # this shouldn't happen!
+
+        parameters = dict(list(parsed_xml.items()) + list(parsed_stdout.items()) + list(parsed_info.items()))
+
+        return parameters
+
+    def build_output_structure(self, parsed_structure):
+        """Build the output structure from the raw parsed data.
+
+        :param parsed_structure: the dictionary with raw parsed structure data
+        :return: a new `StructureData` created from the parsed data iff the calculation type produces a new structure
+            and the parsed data contained a cell definition. In all other cases, the input structure will be returned.
+        """
+        from aiida_quantumespresso.parsers import convert_qe2aiida_structure
+
+        type_calc = self.node.inputs.parameters.get_dict()['CONTROL']['calculation']
+
+        if type_calc not in ['relax', 'vc-relax', 'md', 'vc-md'] or 'cell' not in list(parsed_structure.keys()):
+            return self.node.inputs.structure
+
+        return convert_qe2aiida_structure(parsed_structure)
+
+    def build_output_array(self, parsed_trajectory):
+        """Build the output array from the raw parsed trajectory data.
+
+        :param parsed_trajectory: the raw parsed trajectory data
+        :return: an `ArrayData` node
+        """
+        if not parsed_trajectory or 'atomic_positions_relax' in parsed_trajectory:
+            return None
+
+        array = orm.ArrayData()
+
+        for frame in parsed_trajectory.items():
+            array.set_array(frame[0], numpy.array(frame[1]))
+
+        return array
+
+    def build_output_trajectory(self, parsed_trajectory, structure):
+        """Build the output trajectory from the raw parsed trajectory data.
+
+        :param parsed_trajectory: the raw parsed trajectory data
+        :return: a `TrajectoryData` or None
+        """
+        if not parsed_trajectory or 'atomic_positions_relax' not in parsed_trajectory:
+            return None
+
+        positions = numpy.array(parsed_trajectory.pop('atomic_positions_relax'))
+        try:
+            cells = numpy.array(parsed_trajectory.pop('lattice_vectors_relax'))
+            # if the cell is only printed once, the MD/relax was at fixed cell
+            if len(cells) == 1 and len(positions) > 1:
+                cells = numpy.array([cells[0]] * len(positions))
+        except KeyError:
+            # The cell is never printed, the MD/relax was at fixed cell
+            cells = numpy.array([structure.cell] * len(positions))
+
+        symbols = [str(site.kind_name) for site in structure.sites]
+        stepids = numpy.arange(len(positions))
+
+        trajectory = orm.TrajectoryData()
+        trajectory.set_trajectory(
+            stepids=stepids,
+            cells=cells,
+            symbols=symbols,
+            positions=positions,
+        )
+
+        for frame in parsed_trajectory.items():
+            trajectory.set_array(frame[0], numpy.array(frame[1]))
+
+        return trajectory
+
+    def build_output_kpoints(self, parsed_parameters, structure):
+        """Build the output kpoints from the raw parsed data.
+
+        :param parsed_parameters: the raw parsed data
+        :return: a `KpointsData` or None
+        """
+        k_points_list = parsed_parameters.pop('k_points', None)
+        k_points_units = parsed_parameters.pop('k_points_units', None)
+        k_points_weights_list = parsed_parameters.pop('k_points_weights', None)
+
+        if k_points_list is None or k_points_weights_list is None:
+            return None
+
+        if k_points_units != '1 / angstrom':
+            self.logger.error('Error in kpoints units (should be cartesian)')
+            self.exit_code_parser.ERROR_INVALID_KPOINT_UNITS
+
+        kpoints = orm.KpointsData()
+        kpoints.set_cell_from_structure(structure)
+        kpoints.set_kpoints(k_points_list, cartesian=True, weights=k_points_weights_list)
+
+        return kpoints
+
+    def build_output_bands(self, parsed_bands, parsed_kpoints=None):
+        """Build the output bands from the raw parsed bands data.
+
+        :param parsed_bands: the raw parsed bands data
+        :param parsed_kpoints: the `KpointsData` to use for the bands
+        :return: a `BandsData` or None
+        """
+        if not parsed_bands or not parsed_kpoints:
+            return
+
+        # Correct the occupation for nspin=1 calculations where Quantum ESPRESSO populates each band only halfway
+        if len(parsed_bands['occupations']) > 1:
+            occupations = parsed_bands['occupations']
+        else:
+            occupations = 2. * numpy.array(parsed_bands['occupations'][0])
+
+        if len(parsed_bands['bands']) > 1:
+            bands_energies = parsed_bands['bands']
+        else:
+            bands_energies = parsed_bands['bands'][0]
+
+        bands = orm.BandsData()
+        bands.set_kpointsdata(parsed_kpoints)
+        bands.set_bands(bands_energies, units=parsed_bands['bands_units'], occupations=occupations)
+
+        return bands
 
     def get_parser_settings_key(self):
         """
@@ -238,34 +372,32 @@ class PwParser(Parser):
         """
         return 'parser_options'
 
-    def get_extended_symmetries(self):
-        """Return the extended dictionary of symmetries based on reduced symmetries stored in output parameters."""
-        possible_symmetries = self._get_qe_symmetry_list()
-        parameters = self.node.get_outgoing(node_class=orm.Dict).get_node_by_label('output_parameters')
+    def final_trajectory_frame_to_parameters(self, parameters, parsed_trajectory):
+        """."""
+        ignore_keys = [
+            'atomic_charges',
+            'atomic_magnetic_moments',
+            'atomic_positions_relax',
+            'atomic_species_name',
+            'forces',
+            'lattice_vectors_relax',
+        ]
 
-        symmetries_extended = []
-        symmetries_reduced = parameters.get_dict()['symmetries']  # rimetti lo zero
+        # Have to iterate over a static list of keys since we are mutating `parsed_trajectory` within the loop
+        for property_key in list(parsed_trajectory.keys()):
 
-        for element in symmetries_reduced:
+            property_values = parsed_trajectory[property_key]
 
-            symmetry = {}
+            if property_key in ignore_keys:
+                continue
 
-            for keys in ['t_rev', 'equivalent_ions', 'fractional_translation']:
-                try:
-                    symmetry[keys] = element[keys]
-                except KeyError:
-                    pass
+            parameters[property_key] = property_values[-1]
 
-            # expand the rest
-            symmetry['name'] = possible_symmetries[element['symmetry_number']]['name']
-            symmetry['rotation'] = possible_symmetries[element['symmetry_number']]['matrix']
-            symmetry['inversion'] = possible_symmetries[element['symmetry_number']]['inversion']
+            # Delete properties whose values list has but a single value
+            if len(property_values) == 1:
+                parsed_trajectory.pop(property_key)
 
-            symmetries_extended.append(symmetry)
-
-        return symmetries_extended
-
-    def reduce_symmetries(self, out_dict, structure_data):
+    def reduce_symmetries(self, parsed_parameters, parsed_structure, parser_options=None):
         """Reduce the symmetry information parsed from the output to save space.
 
         In the standard output, each symmetry operation print two rotation matrices:
@@ -315,15 +447,22 @@ class PwParser(Parser):
         the parsed rotation matrices, which are in crystal coordinates, to cartesian coordinates, which are the
         matrices that are returned by the _get_qe_symmetry_list staticmethod
         """
-        cell = structure_data['cell']['lattice_vectors']
+        from aiida_quantumespresso.utils.linalg import are_matrices_equal
+
+        all_symmetries = False if parser_options is None else parser_options.get('all_symmetries', False)
+
+        if all_symmetries or 'cell' not in parsed_structure:
+            return
+
+        cell = parsed_structure['cell']['lattice_vectors']
         cell_T = numpy.transpose(cell)
         cell_Tinv = numpy.linalg.inv(cell_T)
         possible_symmetries = self._get_qe_symmetry_list()
 
         for symmetry_type in ['symmetries', 'lattice_symmetries']:  # crystal vs. lattice symmetries
-            if symmetry_type in list(out_dict.keys()):
+            if symmetry_type in list(parsed_parameters.keys()):
                 try:
-                    old_symmetries = out_dict[symmetry_type]
+                    old_symmetries = parsed_parameters[symmetry_type]
                     new_symmetries = []
                     for this_sym in old_symmetries:
                         name = this_sym['name'].strip()
@@ -362,13 +501,40 @@ class PwParser(Parser):
 
                         new_symmetries.append(new_dict)
 
-                    out_dict[symmetry_type] = new_symmetries  # and overwrite the old one
+                    parsed_parameters[symmetry_type] = new_symmetries  # and overwrite the old one
                 except KeyError:
                     self.logger.warning("key '{}' is not present in raw output dictionary".format(symmetry_type))
             else:
                 # backwards-compatiblity: 'lattice_symmetries' is not created in older versions of the parser
                 if symmetry_type != 'lattice_symmetries':
                     self.logger.warning("key '{}' is not present in raw output dictionary".format(symmetry_type))
+
+    def get_extended_symmetries(self):
+        """Return the extended dictionary of symmetries based on reduced symmetries stored in output parameters."""
+        possible_symmetries = self._get_qe_symmetry_list()
+        parameters = self.node.get_outgoing(node_class=orm.Dict).get_node_by_label('output_parameters')
+
+        symmetries_extended = []
+        symmetries_reduced = parameters.get_dict()['symmetries']  # rimetti lo zero
+
+        for element in symmetries_reduced:
+
+            symmetry = {}
+
+            for keys in ['t_rev', 'equivalent_ions', 'fractional_translation']:
+                try:
+                    symmetry[keys] = element[keys]
+                except KeyError:
+                    pass
+
+            # expand the rest
+            symmetry['name'] = possible_symmetries[element['symmetry_number']]['name']
+            symmetry['rotation'] = possible_symmetries[element['symmetry_number']]['matrix']
+            symmetry['inversion'] = possible_symmetries[element['symmetry_number']]['inversion']
+
+            symmetries_extended.append(symmetry)
+
+        return symmetries_extended
 
     @staticmethod
     def _get_qe_symmetry_list():

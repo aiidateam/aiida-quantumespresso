@@ -8,17 +8,15 @@ from xmlschema.etree import ElementTree
 from xmlschema.exceptions import URLError
 
 from aiida.common.extendeddicts import AttributeDict
-from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.constants import hartree_to_ev, bohr_to_ang, e_bohr2_to_coulomb_m2
-from .versions import get_schema_filepath, get_default_schema_filepath
 
-
-class QEXMLParsingError(QEOutputParsingError):
-    pass
+from .exceptions import XMLParseError
+from .legacy import parse_pw_xml_pre_6_2
+from .versions import get_xml_file_version, get_schema_filepath, get_default_schema_filepath, QeXmlVersion
 
 
 def raise_parsing_error(message):
-    raise QEXMLParsingError(message)
+    raise XMLParseError(message)
 
 
 def parser_assert(condition, message, log_func=raise_parsing_error):
@@ -44,10 +42,31 @@ def cell_volume(a1, a2, a3):
     return abs(float(a1[0] * a_mid_0 + a1[1] * a_mid_1 + a1[2] * a_mid_2))
 
 
-def parse_pw_xml_post_6_2(xml_file, include_deprecated_v2_keys=False):
+def parse_xml(xml_file, dir_with_bands=None, include_deprecated_keys=False):
+    try:
+        xml_parsed = ElementTree.parse(xml_file)
+    except ElementTree.ParseError:
+        raise XMLParseError('error while parsing XML file')
+
+    xml_file_version = get_xml_file_version(xml_parsed)
+
+    try:
+        if xml_file_version == QeXmlVersion.POST_6_2:
+            parsed_data, logs = parse_pw_xml_post_6_2(xml_parsed, include_deprecated_keys)
+        elif xml_file_version == QeXmlVersion.PRE_6_2:
+            xml_file.seek(0)
+            parsed_data, logs = parse_pw_xml_pre_6_2(xml_file, dir_with_bands, include_deprecated_keys)
+    except Exception:
+        parsed_data = None
+        logs = None
+
+    return parsed_data, logs
+
+
+def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
     """Parse the content of XML output file written by `pw.x` with the new schema-based XML format.
 
-    :param xml_file: filelike object to the XML output file
+    :param xml: parsed XML
     :param include_deprecated_v2_keys: boolean, if True, includes deprecated keys from old parser v2
     :returns: tuple of two dictionaries, with the parsed data and log messages, respectively
     """
@@ -55,11 +74,6 @@ def parse_pw_xml_post_6_2(xml_file, include_deprecated_v2_keys=False):
         'warning': [],
         'error': [],
     })
-
-    try:
-        xml = ElementTree.parse(xml_file)
-    except IOError:
-        raise ValueError('could not open and or parse the XML file {}'.format(xml_file))
 
     # detect schema name+path from XML contents
     schema_filepath = get_schema_filepath(xml)
@@ -74,7 +88,7 @@ def parse_pw_xml_post_6_2(xml_file, include_deprecated_v2_keys=False):
         try:
             xsd = XMLSchema(schema_filepath_default)
         except URLError:
-            raise QEXMLParsingError('Could not open or parse the XSD files {} and {}'.format(schema_filepath, schema_filepath_default))
+            raise XMLParseError('Could not open or parse the XSD files {} and {}'.format(schema_filepath, schema_filepath_default))
         else:
             schema_filepath = schema_filepath_default
 
@@ -88,7 +102,7 @@ def parse_pw_xml_post_6_2(xml_file, include_deprecated_v2_keys=False):
 
     xml_dictionary, errors = xsd.to_dict(xml, validation='lax')
     if errors:
-        logs.error.append("{} XML schema validation error(s) (document: {} - schema: {}):".format(len(errors), xml_file.filename, schema_filepath))
+        logs.error.append("{} XML schema validation error(s) schema: {}:".format(len(errors), schema_filepath))
         for err in errors:
             logs.error.append(str(err))
 
@@ -266,7 +280,7 @@ def parse_pw_xml_post_6_2(xml_file, include_deprecated_v2_keys=False):
         elif symmetry_type == 'lattice_symmetry':
             lattice_symmetries.append(sym)
         else:
-            raise QEXMLParsingError("Unexpected type of symmetry: {}".format(symmetry_type))
+            raise XMLParseError("Unexpected type of symmetry: {}".format(symmetry_type))
 
     if (nsym != len(symmetries)) or (nrot != len(symmetries)+len(lattice_symmetries)):
         logs.warning.append("Inconsistent number of symmetries: nsym={}, nrot={}, len(symmetries)={}, len(lattice_symmetries)={}"
