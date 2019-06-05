@@ -8,9 +8,9 @@ from aiida import orm
 from aiida.common import EntryPointError
 from aiida.common.lang import override
 from aiida.engine import CalcJob, WorkChain, ToContext, append_
+from aiida.plugins.entry_point import get_entry_point_names, load_entry_point
 
 from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
-from aiida_quantumespresso.common.pluginloader import get_plugin, get_plugins
 
 
 class BaseRestartWorkChain(WorkChain):
@@ -74,14 +74,14 @@ class BaseRestartWorkChain(WorkChain):
     def _load_error_handlers(self):
         # If an error handler entry point is defined, load them. If the plugin cannot be loaded log it and pass
         if self._error_handler_entry_point is not None:
-            for plugin in get_plugins(self._error_handler_entry_point):
+            for entry_point_name in get_entry_point_names(self._error_handler_entry_point):
                 try:
-                    get_plugin(self._error_handler_entry_point, plugin)
+                    load_entry_point(self._error_handler_entry_point, entry_point_name)
                     self.logger.info("loaded the '{}' entry point for the '{}' error handlers category"
-                        .format(plugin, self._error_handler_entry_point, plugin))
-                except EntryPointError:
-                    self.logger.warning("failed to load the '{}' entry point for the '{}' error handlers"
-                        .format(plugin, self._error_handler_entry_point))
+                        .format(entry_point_name, self._error_handler_entry_point))
+                except EntryPointError as exception:
+                    self.logger.warning("failed to load the '{}' entry point for the '{}' error handlers: {}"
+                        .format(entry_point_name, self._error_handler_entry_point, exception))
 
     @classmethod
     def define(cls, spec):
