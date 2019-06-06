@@ -101,11 +101,11 @@ Where in the last line we just load the database object representing the code.
   to not do this! This is not an error, but does not allow to use the
   ``.get_from_string()`` method to get those calculations). 
   In this case, you can use directly the ``.get()`` method, for instance::
-  
+
     code = Code.get(label='pw-5.1', machinename='TheHive')
 
   or even more generally get the code from its (integer) PK::
-    
+
     code = load_node(PK)
 
 Structure
@@ -115,7 +115,7 @@ We now proceed in setting up the structure.
 
 .. note:: Here we discuss only the main features of structures in AiiDA, needed
     to run a Quantum ESPRESSO PW calculation.
-     
+
     For more detailed information, give a look to the 
     :ref:`structure_tutorial`.
 
@@ -126,7 +126,7 @@ We do it in the following way: we load the DataFactory, which is a tool to load 
 (NB: it's not yet a class instance!) 
 (If you are not familiar with the terminology of object programming, we could take `Wikipedia <http://en.wikipedia.org/wiki/Object_(computer_science)>`_ and see their short explanation: in common speech that one refers to *a* file as a class, while *the* file is the object or the class instance. In other words, the class is our definition of the object Structure, while its instance is what will be saved as an object in the database)::
 
-  from aiida.orm import DataFactory
+  from aiida.plugins import DataFactory
   StructureData = DataFactory('structure')
 
 We define the cell with a 3x3 matrix (we choose the convention where each ROW represents a lattice vector), which in this case is just a cube of size 4 Angstroms::
@@ -178,39 +178,40 @@ Parameters
 Now we need to provide also the parameters of a Quantum Espresso calculation,
 like the cutoff for the wavefunctions, some convergence threshold, etc...
 The Quantum ESPRESSO pw.x plugin requires to pass this information within a
-ParameterData object, that is a specific AiiDA data node that can store a
+Dict object, that is a specific AiiDA data node that can store a
 dictionary (even nested) of basic data types: integers, floats, strings, lists,
 dates, ...
 We first load the class through the DataFactory, just like we did for the Structure.
 Then we create the instance of the object ``parameter``.
 To represent closely the structure of the QE input file,
-ParameterData is a nested dictionary, at the first level the namelists
+Dict is a nested dictionary, at the first level the namelists
 (capitalized), and then the variables with their values (in lower case).
 
 Note also that numbers and booleans are written in Python, i.e. ``False`` and
 not the Fortran string ``.false.``!
 ::
 
-  ParameterData = DataFactory('parameter')
+    Dict = DataFactory('dict')
 
-  parameters = ParameterData(dict={
-            'CONTROL': {
-                'calculation': 'scf',
-                'restart_mode': 'from_scratch',
-                'wf_collect': True,
-                },
-            'SYSTEM': {
-                'ecutwfc': 30.,
-                'ecutrho': 240.,
-                },
-            'ELECTRONS': {
-                'conv_thr': 1.e-6,
-                }})
+    parameters = Dict(dict={
+        'CONTROL': {
+            'calculation': 'scf',
+            'restart_mode': 'from_scratch',
+            'wf_collect': True,
+        },
+        'SYSTEM': {
+            'ecutwfc': 30.,
+            'ecutrho': 240.,
+        },
+        'ELECTRONS': {
+            'conv_thr': 1.e-6,
+        }
+    })
 
 .. note:: also in this case, we chose not to store the ``parameters`` node.
   If we wanted, we could even have done it in a single line::
     
-    parameters = ParameterData(dict={...}).store()
+    parameters = Dict(dict={...}).store()
 
 The experienced QE user will have noticed also that a couple of variables
 are missing: the prefix, the pseudo directory and the scratch directory are
@@ -231,16 +232,17 @@ without remembering in which namelists the keywords are located.
 
 You can access this function as follows. First, you define the input dictionary::
 
-  test_dict = {
-            'CONTROL': {
-                'calculation': 'scf',
-                },
-            'SYSTEM': {
-                'ecutwfc': 30.,
-                },
-            'ELECTRONS': {
-                'conv_thr': 1.e-6,
-                }}
+    test_dict = {
+        'CONTROL': {
+            'calculation': 'scf',
+        },
+        'SYSTEM': {
+            'ecutwfc': 30.,
+        },
+        'ELECTRONS': {
+            'conv_thr': 1.e-6,
+        }
+    }
 
 Then, you can verify if the input is correct by using the 
 :py:func:`~aiida_quantumespresso.calculations.helpers.pw_input_helper` function,
@@ -253,26 +255,27 @@ exception, and the error message will have a verbose explanation of the possible
 errors, and in many cases it will suggest how to fix them. Otherwise, in ``resdict``
 you will find the same dictionary you passed in input, potentially slightly modified
 to fix some small mistakes (e.g., if you pass an integer value where a float is expected,
-the type will be converted). You can then use the output for the input ParameterData node::
+the type will be converted). You can then use the output for the input Dict node::
 
-  parameters = ParameterData(dict=resdict)
+  parameters = Dict(dict=resdict)
 
 As an example, if you pass an incorrect input, e.g. the following where we have introduced 
 a few errors::
 
-  test_dict = {
-            'CONTROL': {
-                'calculation': 'scf',
-                },
-            'SYSTEM': {
-                'ecutwfc': 30.,
-		'cosab': 10.,
-		'nosym': 1,
-                },
-            'ELECTRONS': {
-                'convthr': 1.e-6,
-                'ecutrho': 100.
-                }}
+    test_dict = {
+        'CONTROL': {
+            'calculation': 'scf',
+        },
+        'SYSTEM': {
+            'ecutwfc': 30.,
+            'cosab': 10.,
+            'nosym': 1,
+        },
+        'ELECTRONS': {
+            'convthr': 1.e-6,
+            'ecutrho': 100.
+        }
+    }
 
 After running the ``input_helper`` method, you will get an exception with a message
 similar to the following::
@@ -293,26 +296,27 @@ There are a few additional options that are useful:
     validation, the function will reconstruct the correct dictionary to pass as input for
     the AiiDA QE calculation. Example::
 
-      test_dict_flat = {
-          'calculation': 'scf',
-          'ecutwfc': 30.,
-          'conv_thr': 1.e-6,
-          }
-      resdict = CalculationFactory('quantumespresso.pw').input_helper(
-          test_dict_flat, structure=s, flat_mode = True)
+        test_dict_flat = {
+            'calculation': 'scf',
+            'ecutwfc': 30.,
+            'conv_thr': 1.e-6,
+        }
+        resdict = CalculationFactory('quantumespresso.pw').input_helper(
+            test_dict_flat, structure=s, flat_mode = True)
 
     and after running, ``resdict`` will contain::
      
-       test_dict = {
+        test_dict = {
             'CONTROL': {
                 'calculation': 'scf',
-                },
+            },
             'SYSTEM': {
                 'ecutwfc': 30.,
-                },
+            },
             'ELECTRONS': {
                 'conv_thr': 1.e-6,
-                }}
+            }
+        }
 
     where the namelists have been automatically generated.
 
@@ -334,6 +338,100 @@ There are a few additional options that are useful:
    This applies in particular if you are using very old versions of QE, or customized versions
    that accept different parameters.
 
+
+Multi-dimensional variables
+///////////////////////////
+The input format of pw.x contains various keywords that do not simply take the format of a key value pair, but
+rather there will some indices in the key itself. Take for example the ``Hubbard_U(i)`` keyword of the ``SYSTEM`` card.
+The Hubbard U value needs to be applied to a specific species and therefore the index ``i`` is required to be able to
+make this distinction. Note that the value of ``i`` needs to correspond to the index of the species to which the
+Hubbard U value needs to be applied.
+
+The ``PwCalculation`` plugin makes this easy as it will do the conversion from kind name to species index automatically.
+This allows you to specify a Hubbard U value by using a dictionary notation, where the key is the kind name to which
+it should be applied. For example, if you have a structure with the kind ``Co`` and what it to have a Hubbard U value,
+one can add the following in the parameter data dictionary::
+
+    parameters = {
+        'SYSTEM': {
+            'hubbard_u': {
+                'Co': 4.5
+            }
+        }
+    }
+
+This part of the parameters dictionary will be transformed by the plugin into the following input file::
+
+    &SYSTEM
+        hubbard_u(1) = 4.5
+    /
+    ATOMIC_SPECIES
+    Co     58.933195 Co_pbe_v1.2.uspp.F.UPF
+    Li     6.941 li_pbe_v1.4.uspp.F.UPF
+    O      15.9994 O_pbe_v1.2.uspp.F.UPF
+
+Note that since ``Co`` is listed as the first atomic species, the index in the ``hubbard_u(1)`` keyword reflects this.
+The usage of a dictionary where the keys correspond to a kind of the input structure, will work for any keyword where
+the index should correspond to the index of the atomic species. Examples of keywords where this approach will work::
+
+    angle1(i)
+    angle2(i)
+    hubbard_alpha(i)
+    hubbard_beta(i)
+    hubbard_j0(i)
+    hubbard_u(i)
+    london_c6(i)
+    london_rvdw(i)
+    starting_charge(i)
+    starting_magnetization(i)
+
+However, there are also keywords that require more than index, or where the single index actually does not correspond
+to the index of an atomic species. The list of keywords that match this description::
+
+    efield_cart(i)
+    fixed_magnetization(i)
+    hubbard_j(i,ityp)
+    starting_ns_eigenvalue(m,ispin,I)
+
+To allow one to define these keywords, one can use nested lists, where the first few elements constitute all the index
+values and the final element corresponds to the actual value. For example the following::
+
+    parameters = {
+        'SYSTEM': {
+            'starting_ns_eigenvalue': [
+                [1, 1, 3, 3.5],
+                [2, 1, 1, 2.8]
+            ]
+        }
+    }
+
+will result in the following input file::
+
+    &SYSTEM
+        starting_ns_eigenvalue(1,1,3) = 3.5
+        starting_ns_eigenvalue(2,1,1) = 2.8
+    /
+
+Note that any of the values within the lists that correspond to a kind in the input structure, will be replaced with the
+index of the corresponding atomic species. For example::
+
+    hubbard_j: [
+        [2, 'Ni', 3.5],
+        [2, 'Fe', 7.4],
+    ]
+
+would be formatted as::
+
+    hubbard_j(2, 1) = 3.5
+    hubbard_j(2, 3) = 7.4
+
+Assuming the input structure contained the kinds 'Ni' and 'Fe', which would have received the atomic species indices 1
+and 3 in the ultimate input file, respectively.
+
+.. note::
+
+    Nota bene: The code will not verify that a keyword actually requires an atomic species index in a certain position,
+    and will indiscriminately map the value to an atomic species index if that value corresponds to a kind name.
 
 
 Other inputs
@@ -361,10 +459,10 @@ in crystal coordinates (here they all have equal weights)::
 
 .. _gamma-only:
 .. note:: It is also possible to generate a gamma-only computation. To do so 
-  one has to specify additional settings, of type ParameterData, putting 
+  one has to specify additional settings, of type Dict, putting 
   gamma-only to True::
     
-    settings = ParameterData(dict={'gamma_only':True})
+    settings = Dict(dict={'gamma_only':True})
 
   then set the kpoints mesh to a single point (gamma)::
 
@@ -377,7 +475,7 @@ in crystal coordinates (here they all have equal weights)::
     
 As a further comment, this is specific to the way the plugin
 for Quantum Espresso works.
-Other codes may need more than two ParameterData, or even none of them.
+Other codes may need more than two Dict, or even none of them.
 And also how this parameters have to be written depends on the plugin: 
 what is discussed here is just the format that we decided for
 the Quantum Espresso plugins.
@@ -399,10 +497,10 @@ of nodes (``num_machines``), possibly the number of MPI processes per node
 of MPI processes with respect to the default value configured when setting up
 the computer in AiiDA, the job walltime, the queue name (if desired), ...::
 
-  calc.set_max_wallclock_seconds(30*60) # 30 min
-  calc.set_resources({"num_machines": 1})
+  calc.set_option('max_wallclock_seconds', 30*60) # 30 min
+  calc.set_option('resources', {"num_machines": 1})
   ## OPTIONAL, use only if you need to explicitly specify a queue name
-  # calc.set_queue_name("the_queue_name")
+  # calc.set_option('queue_name', "the_queue_name")
 
 (For the complete scheduler documentation, see :ref:`my-reference-to-scheduler`)
 
@@ -411,8 +509,8 @@ the computer in AiiDA, the job walltime, the queue name (if desired), ...::
   is to say that the following lines::
   
     calc = code.new_calc()
-    calc.set_max_wallclock_seconds(3600)
-    calc.set_resources({"num_machines": 1})
+    calc.set_option('max_wallclock_seconds', 3600)
+    calc.set_option('resources', {"num_machines": 1})
     
   is equivalent to::
   
@@ -580,7 +678,7 @@ Download: :download:`this example script <pw_short_example.py>`
   
   from aiida.orm import Code, DataFactory
   StructureData = DataFactory('structure')
-  ParameterData = DataFactory('parameter')
+  Dict = DataFactory('dict')
   KpointsData = DataFactory('array.kpoints')
   
   ###############################
@@ -604,7 +702,7 @@ Download: :download:`this example script <pw_short_example.py>`
   s.append_atom(position=(alat/2.,0.,alat/2.),symbols='O')
   s.append_atom(position=(0.,alat/2.,alat/2.),symbols='O')
   
-  parameters = ParameterData(dict={
+  parameters = Dict(dict={
             'CONTROL': {
                 'calculation': 'scf',
                 'restart_mode': 'from_scratch',

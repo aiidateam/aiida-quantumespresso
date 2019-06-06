@@ -8,12 +8,14 @@
 # For further information on the license, see the LICENSE.txt file        #
 # For further information please visit http://www.aiida.net               #
 ###########################################################################
+from __future__ import absolute_import
+from __future__ import print_function
 from aiida import load_dbenv
 load_dbenv()
 
-from aiida.orm import Code, DataFactory
+from aiida.plugins import Code, DataFactory
 StructureData = DataFactory('structure')
-ParameterData = DataFactory('parameter')
+Dict = DataFactory('dict')
 KpointsData = DataFactory('array.kpoints')
 
 ###############################
@@ -37,7 +39,7 @@ s.append_atom(position=(alat/2.,alat/2.,0.),symbols='O')
 s.append_atom(position=(alat/2.,0.,alat/2.),symbols='O')
 s.append_atom(position=(0.,alat/2.,alat/2.),symbols='O')
 
-parameters = ParameterData(dict={
+parameters = Dict(dict={
           'CONTROL': {
               'calculation': 'scf',
               'restart_mode': 'from_scratch',
@@ -66,6 +68,6 @@ calc.use_kpoints(kpoints)
 calc.use_pseudos_from_family(pseudo_family)
 
 calc.store_all()
-print "created calculation with PK={}".format(calc.pk)
+print("created calculation with PK={}".format(calc.pk))
 calc.submit()
 

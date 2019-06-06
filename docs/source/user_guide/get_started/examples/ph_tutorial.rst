@@ -43,7 +43,7 @@ We first load a couple of useful modules that you already met in the previous tu
     load_dbenv()
 
     from aiida.orm import Code
-    from aiida.orm import CalculationFactory, DataFactory
+    from aiida.plugins import CalculationFactory, DataFactory
 
 
 
@@ -61,14 +61,14 @@ Then we load the ``Code`` class-instance from the database::
 Parameter
 ---------
 
-Just like the *PWscf* calculation, here we load the class ParameterData and we instanciate it in parameters.
-Again, ``ParameterData`` will simply represent a nested dictionary in the database, namelists at the first level, and then variables and values.
+Just like the *PWscf* calculation, here we load the class Dict and we instanciate it in parameters.
+Again, ``Dict`` will simply represent a nested dictionary in the database, namelists at the first level, and then variables and values.
 But this time of course, we need to use the variables of *PHonon*!
 
 ::
 
-    ParameterData = DataFactory('parameter')
-    parameters = ParameterData(dict={
+    Dict = DataFactory('dict')
+    parameters = Dict(dict={
 		'INPUTPH': {
 		    'tr2_ph' : 1.0e-8,
 		    'epsil' : True,
@@ -92,8 +92,8 @@ for the PBSpro and slurm schedulers only, see :ref:`my-reference-to-scheduler`).
     
 ::
     
-    calc.set_max_wallclock_seconds(30*60) # 30 min
-    calc.set_resources({"num_machines": 1})
+    calc.set_option('max_wallclock_seconds', 30*60) # 30 min
+    calc.set_option('resources', {"num_machines": 1})
 
 We then tell the calculation to use the code and the parameters that we prepared above::
 
@@ -115,7 +115,7 @@ before (let's say it's #6): so that you can load the class of *a*
 QE-PWscf calculation (with the CalculationFactory),
 and load the object that represent *the* QE-PWscf calculation with ID #6::
 
-    from aiida.orm import CalculationFactory
+    from aiida.plugins import CalculationFactory
     PwCalculation = CalculationFactory('quantumespresso.pw')
     parent_id = 6
     parentcalc = load_node(parent_id)
@@ -156,7 +156,7 @@ the code, and the proper scheduler info.
     load_dbenv()
 
     from aiida.orm import Code
-    from aiida.orm import CalculationFactory, DataFactory
+    from aiida.plugins import CalculationFactory, DataFactory
 
     #####################
     # ADAPT TO YOUR NEEDS
@@ -166,8 +166,8 @@ the code, and the proper scheduler info.
 
     code = Code.get_from_string(codename)
 
-    ParameterData = DataFactory('parameter')
-    parameters = ParameterData(dict={
+    Dict = DataFactory('dict')
+    parameters = Dict(dict={
 		'INPUTPH': {
 		    'tr2_ph' : 1.0e-8,
 		    'epsil' : True,
@@ -181,8 +181,8 @@ the code, and the proper scheduler info.
     parentcalc = load_node(parent_id)
 
     calc = code.new_calc()
-    calc.set_max_wallclock_seconds(30*60) # 30 min
-    calc.set_resources({"num_machines": 1})
+    calc.set_option('max_wallclock_seconds', 30*60) # 30 min
+    calc.set_option('resources', {"num_machines": 1})
 
     calc.use_parameters(parameters)
     calc.use_code(code)

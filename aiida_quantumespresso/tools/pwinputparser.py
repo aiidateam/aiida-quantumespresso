@@ -7,13 +7,15 @@ TODO: Parse CONSTRAINTS, OCCUPATIONS, ATOMIC_FORCES once they are implemented
       in AiiDA
 """
 
+from __future__ import absolute_import
 import re
 import numpy as np
-from qeinputparser import (
+from .qeinputparser import (
         QeInputFile,parse_namelists,parse_atomic_positions,
         parse_atomic_species,parse_cell_parameters, RE_FLAGS )
-from aiida.orm.data.array.kpoints import KpointsData
-from aiida.common.exceptions import ParsingError
+from aiida.orm.nodes.data.array.kpoints import KpointsData
+from aiida.common import ParsingError
+from six.moves import map
 
 
 class PwInputFile(QeInputFile):
@@ -176,7 +178,7 @@ class PwInputFile(QeInputFile):
         settings node to the calculation with `gamma_only = True`.
 
         :return: KpointsData object of the kpoints in the input file
-        :rtype: aiida.orm.data.array.kpoints.KpointsData
+        :rtype: aiida.orm.nodes.data.array.kpoints.KpointsData
         :raises NotImplementedError: if the kpoints are
             in a format not yet supported.
         """
@@ -296,7 +298,7 @@ def parse_k_points(txt):
         points = []
         weights = []
         for match in k_points_special_re.finditer(blockstr):
-            points.append(map(float, match.group(1, 2, 3)))
+            points.append(list(map(float, match.group(1, 2, 3))))
             weights.append(float(match.group(4)))
         info_dict['points'] = points
         info_dict['weights'] = weights
@@ -304,7 +306,7 @@ def parse_k_points(txt):
         match = k_points_automatic_block_re.search(txt)
         if match:
             info_dict['type'] = 'automatic'
-            info_dict['points'] = map(int, match.group(1, 2, 3))
+            info_dict['points'] = list(map(int, match.group(1, 2, 3)))
             info_dict['offset'] = [0. if x == 0 else 0.5
                                    for x in map(int, match.group(4, 5, 6))]
         else:

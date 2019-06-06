@@ -1,11 +1,16 @@
+dist: trusty
+sudo: required
+
 language: python
 
 python:
     - "2.7"
+    - "3.6"
 
 cache: pip
 
 services:
+    - rabbitmq
     - postgresql
     - docker
 
@@ -30,26 +35,27 @@ before_install:
     - ssh-keyscan -H localhost >> "${HOME}/.ssh/known_hosts"
 
     # Build the docker image if needed
-    - .travis-data/before_install.sh
+    - .ci/before_install.sh
 
 install:
     # Upgrade pip setuptools and wheel to be able to run the next command
-    - pip install -U pip wheel setuptools reentry
+    - pip install -U pip==18.1 wheel setuptools reentry
 
     # Install the repository with some optional dependencies
-    - pip install .[docs,dev_precommit]
+    - pip install .[dev,docs]
 
 env:
-- TEST_TYPE="pre-commit"
-- TEST_AIIDA_BACKEND=django TEST_TYPE="docs"
-- TEST_AIIDA_BACKEND=django TEST_TYPE="tests"
-- TEST_AIIDA_BACKEND=sqlalchemy TEST_TYPE="tests"
+    - TEST_TYPE="pre-commit"
+    - TEST_AIIDA_BACKEND=django TEST_TYPE="docs"
+    - TEST_AIIDA_BACKEND=django TEST_TYPE="tests"
+    - TEST_AIIDA_BACKEND=sqlalchemy TEST_TYPE="tests"
 
 before_script:
-    - .travis-data/setup_profiles.sh
-    - .travis-data/before_script.sh
+    - .ci/setup_profiles.sh
+    - .ci/before_script.sh
 
-script: .travis-data/test_script.sh
+script:
+    - .ci/test_script.sh
 
 git:
   depth: 3

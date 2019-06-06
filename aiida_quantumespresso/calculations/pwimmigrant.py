@@ -3,19 +3,19 @@
 Plugin to immigrate a Quantum Espresso pw.x job that was not run using AiiDa.
 """
 # TODO: Document the current limitations (e.g. ibrav == 0)
+from __future__ import absolute_import
 import os
 from copy import deepcopy
 from aiida_quantumespresso.calculations.pw import PwCalculation
-from aiida.orm.calculation.job import _input_subfolder
-from aiida.orm.data.remote import RemoteData
-from aiida.orm.data.parameter import ParameterData
-from aiida.orm.data.upf import UpfData
+from aiida.orm.nodes.data.remote import RemoteData
+from aiida.orm.nodes.data.dict import Dict
+from aiida.orm.nodes.data.upf import UpfData
 from aiida.common.folders import SandboxFolder
-from aiida.common.datastructures import calc_states
-from aiida.common.exceptions import (FeatureNotAvailable, InvalidOperation,
+from aiida.common import (FeatureNotAvailable, InvalidOperation,
                                      InputValidationError)
 from aiida.common.links import LinkType
 from aiida_quantumespresso.tools import pwinputparser
+from six.moves import zip
 
 
 class PwimmigrantCalculation(PwCalculation):
@@ -68,7 +68,7 @@ class PwimmigrantCalculation(PwCalculation):
         create the input nodes that would exist if the calculation were
         submitted using AiiDa. These nodes are
 
-            * a ``'parameters'`` ParameterData node, based on the namelists and
+            * a ``'parameters'`` Dict node, based on the namelists and
               their variable-value pairs;
             * a ``'kpoints'`` KpointsData node, based on the *K_POINTS* card;
             * a ``'structure'`` StructureData node, based on the
@@ -76,10 +76,10 @@ class PwimmigrantCalculation(PwCalculation):
             * one ``'pseudo_X'`` UpfData node for the pseudopotential used for
               the atomic species with name ``X``, as specified in the
               *ATOMIC_SPECIES* card;
-            * a ``'settings'`` ParameterData node, if there are any fixed
+            * a ``'settings'`` Dict node, if there are any fixed
               coordinates, or if the gamma kpoint is used;
 
-        and can be retrieved as a dictionary using the ``get_inputs_dict()``
+        and can be retrieved as a dictionary using the ``get_incoming()``
         method. *These input links are cached-links; nothing is stored by this
         method (including the calculation node itself).*
 
@@ -252,7 +252,7 @@ class PwimmigrantCalculation(PwCalculation):
                     'Currently, AiiDa only supports ibrav = 0.'
                 )
 
-            # Create ParameterData node based on the namelist and link as input.
+            # Create Dict node based on the namelist and link as input.
 
             # First, strip the namelist items that aiida doesn't allow or sets
             # later.
@@ -262,13 +262,13 @@ class PwimmigrantCalculation(PwCalculation):
             # we are safe to fake that they were never there in the first place.
             parameters_dict = deepcopy(pwinputfile.namelists)
             for namelist, blocked_key in self._blocked_keywords:
-                keys = parameters_dict[namelist].keys()
+                keys = list(parameters_dict[namelist].keys())
                 for this_key in parameters_dict[namelist].keys():
                     # take into account that celldm and celldm(*) must be blocked
                     if re.sub("[(0-9)]", "", this_key) == blocked_key:
                         parameters_dict[namelist].pop(this_key, None)
 
-            parameters = ParameterData(dict=parameters_dict)
+            parameters = Dict(dict=parameters_dict)
             self.use_parameters(parameters)
 
             # Initialize the dictionary for settings parameter data for possible
@@ -299,19 +299,19 @@ class PwimmigrantCalculation(PwCalculation):
                 self.use_pseudo(pseudo, kind=name)
 
         # If there are any fixed coordinates (i.e. force modification
-        # present in the input file, create a ParameterData node for these
+        # present in the input file, create a Dict node for these
         # special settings.
         fixed_coords = pwinputfile.atomic_positions['fixed_coords']
         # NOTE: any() only works for 1-dimensional lists.
         if any((any(fc_xyz) for fc_xyz in fixed_coords)):
             settings_dict['FIXED_COORDS'] = fixed_coords
 
-        # If the settings_dict has been filled in, create a ParameterData
+        # If the settings_dict has been filled in, create a Dict
         # node from it and link as input.
         if settings_dict:
-            self.use_settings(ParameterData(dict=settings_dict))
+            self.use_settings(Dict(dict=settings_dict))
 
-        self._set_attr('input_nodes_created', True)
+        self.set_attribute('input_nodes_created', True)
 
     def _prepare_for_retrieval(self, open_transport):
         """
@@ -334,9 +334,8 @@ class PwimmigrantCalculation(PwCalculation):
         # Manually set the files that will be copied to the repository and that
         # the parser will extract the results from. This would normally be
         # performed in self._prepare_for_submission prior to submission.
-        self._set_attr('retrieve_list',
-                       [self._OUTPUT_FILE_NAME, self._DATAFILE_XML])
-        self._set_attr('retrieve_singlefile_list', [])
+        self.set_attribute('retrieve_list', [self._OUTPUT_FILE_NAME] + self.xml_filenames)
+        self.set_attribute('retrieve_singlefile_list', [])
 
         # Make sure the calculation and input links are stored.
         self.store_all()
@@ -344,13 +343,11 @@ class PwimmigrantCalculation(PwCalculation):
         # Store the original input file in the calculation's repository folder.
         remote_path = os.path.join(self._get_remote_workdir(),
                                    self._INPUT_FILE_NAME)
-        raw_input_folder = self.folder.get_subfolder(_input_subfolder,
-                                                     create=True)
+        raw_input_folder = self.folder.get_subfolder('raw_input', create=True)
         open_transport.get(remote_path, raw_input_folder.abspath)
 
         # Manually add the remote working directory as a RemoteData output
         # node.
-        self._set_state(calc_states.SUBMITTING)
         remotedata = RemoteData(computer=self.get_computer(),
                                 remote_path=self._get_remote_workdir())
         remotedata.add_link_from(self, label='remote_folder',
@@ -413,11 +410,6 @@ class PwimmigrantCalculation(PwCalculation):
         # Prepare the calculation for retrieval
         self._prepare_for_retrieval(open_transport)
 
-        # Manually set the state of the calculation to "COMPUTED", so that it
-        # will be retrieved and parsed the next time the daemon updates the
-        # status of calculations.
-        self._set_state(calc_states.COMPUTED)
-
     def set_remote_workdir(self, remote_workdir):
         """
         Set the job's remote working directory.
@@ -428,7 +420,7 @@ class PwimmigrantCalculation(PwCalculation):
         """
         # This is the functionality as self._set_remote_workir, but it bypasses
         # the need to have the calculation state set as SUBMITTING.
-        self._set_attr('remote_workdir', remote_workdir)
+        self.set_attribute('remote_workdir', remote_workdir)
 
     def set_output_subfolder(self, output_subfolder):
         """
@@ -497,7 +489,7 @@ class PwimmigrantCalculation(PwCalculation):
 
     @_OUTPUT_SUBFOLDER.setter
     def _OUTPUT_SUBFOLDER(self, value):
-        self._set_attr('output_subfolder', value)
+        self.set_attribute('output_subfolder', value)
 
     @property
     def _PREFIX(self):
@@ -505,7 +497,7 @@ class PwimmigrantCalculation(PwCalculation):
 
     @_PREFIX.setter
     def _PREFIX(self, value):
-        self._set_attr('prefix', value)
+        self.set_attribute('prefix', value)
 
     @property
     def _INPUT_FILE_NAME(self):
@@ -513,7 +505,7 @@ class PwimmigrantCalculation(PwCalculation):
 
     @_INPUT_FILE_NAME.setter
     def _INPUT_FILE_NAME(self, value):
-        self._set_attr('input_file_name', value)
+        self.set_attribute('input_file_name', value)
 
     @property
     def _OUTPUT_FILE_NAME(self):
@@ -521,17 +513,4 @@ class PwimmigrantCalculation(PwCalculation):
 
     @_OUTPUT_FILE_NAME.setter
     def _OUTPUT_FILE_NAME(self, value):
-        self._set_attr('output_file_name', value)
-
-    @property
-    def _DATAFILE_XML(self):
-        path = os.path.join(self._OUTPUT_SUBFOLDER,
-                            '{}.save'.format(self._PREFIX),
-                            self._DATAFILE_XML_BASENAME)
-        return path
-
-    @_DATAFILE_XML.setter
-    def _DATAFILE_XML(self, value):
-        # Don't store this value in the db, since it gets set to the Aiida
-        # default in the parent class.
-        pass
+        self.set_attribute('output_file_name', value)

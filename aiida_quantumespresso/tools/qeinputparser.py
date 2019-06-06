@@ -6,15 +6,21 @@ them.
 TODO: Parse CONSTRAINTS, OCCUPATIONS, ATOMIC_FORCES once they are implemented
       in AiiDA
 """
+from __future__ import absolute_import
+from __future__ import print_function
 import re
 import os
 import numpy as np
-from aiida.common.exceptions import ParsingError
-from aiida.orm.data.structure import StructureData, _valid_symbols
+from aiida.common import ParsingError
+from aiida.orm.nodes.data.structure import StructureData, _valid_symbols
 from aiida.common.constants import bohr_to_ang
-from aiida.common.exceptions import InputValidationError
+from aiida.common import InputValidationError
 from aiida_quantumespresso.calculations import _uppercase_dict
 from aiida_quantumespresso.parsers.constants import bohr_to_ang
+import six
+from six.moves import map
+from six.moves import range
+from six.moves import zip
 
 
 RE_FLAGS = re.M | re.X | re.I
@@ -153,18 +159,9 @@ class QeInputFile(object):
             parsing the pwinput.
         """
         # Get the text of the pwinput file as a single string.
-        # File.
-        if isinstance(pwinput, file):
-            try:
-                self.input_txt = pwinput.read()
-            except IOError:
-                raise IOError(
-                    'Unable to open the provided pwinput, {}'
-                    ''.format(file.name)
-                )
         # List.
-        elif isinstance(pwinput, list):
-            if all((issubclass(type(s), basestring) for s in pwinput)):
+        if isinstance(pwinput, list):
+            if all((issubclass(type(s), six.string_types) for s in pwinput)):
                 self.input_txt = ''.join(pwinput)
             else:
                 raise TypeError(
@@ -172,7 +169,7 @@ class QeInputFile(object):
                     'strings. Each element should be a string containing a line'
                     'of the pwinput file.')
         # Path or string of the text.
-        elif issubclass(type(pwinput), basestring):
+        elif issubclass(type(pwinput), six.string_types):
             if os.path.isfile(pwinput):
                 if os.path.exists(pwinput) and os.path.isabs(pwinput):
                     self.input_txt = open(pwinput).read()
@@ -183,6 +180,15 @@ class QeInputFile(object):
                     )
             else:
                 self.input_txt = pwinput
+        # File.
+        else:
+            try:
+                self.input_txt = pwinput.read()
+            except IOError:
+                raise IOError(
+                    'Unable to open the provided pwinput, {}'
+                    ''.format(file.name)
+                )
 
         # Check that pwinput is not empty.
         if len(self.input_txt.strip()) == 0:
@@ -204,7 +210,7 @@ class QeInputFile(object):
         wish to use different pseudo's for two or more of the same atom).
     
         :return: StructureData object of the structure in the input file
-        :rtype: aiida.orm.data.structure.StructureData
+        :rtype: aiida.orm.nodes.data.structure.StructureData
         :raises aiida.common.exceptions.ParsingError: if there are issues
             parsing the input.
         """
@@ -256,7 +262,7 @@ def str2val(valstr):
             try:
                 val = conversion_fn(valstr)
             except ValueError as error:
-                print 'Error converting {} to a value'.format(repr(valstr))
+                print('Error converting {} to a value'.format(repr(valstr)))
                 raise error
     if val is None:
         raise ValueError('Unable to convert {} to a python variable.\n'
@@ -322,7 +328,7 @@ def parse_namelists(txt):
             nmlst_dict[key.lower()] = str2val(valstr)
         # ...and, store nmlst_dict as a value in params_dict with the namelist
         # as the key.
-        if len(nmlst_dict.keys()) > 0:
+        if len(list(nmlst_dict.keys())) > 0:
             params_dict[nmlst.upper()] = nmlst_dict
     if len(params_dict) == 0:
         raise ParsingError(
@@ -371,7 +377,7 @@ def parse_atomic_positions(txt):
         Map strings '0', '1' strings to bools: '0' --> True; '1' --> False.
 
         While this is opposite to the QE standard, this mapping is what needs to
-        be passed to aiida in a 'settings' ParameterData object.
+        be passed to aiida in a 'settings' Dict object.
         (See the _if_pos method of BasePwCpInputGenerator)
         """
         if s == '0':
@@ -504,9 +510,9 @@ def parse_atomic_positions(txt):
         #~ fixed_coords.append(3 * [False])  # False <--> not fixed (the default)
     # Next, try using the re for lines with force modifications.
     for match in atomic_positions_w_constraints_re.finditer(blockstr):
-        positions.append(map(fortfloat, match.group('x', 'y', 'z')))
+        positions.append(list(map(fortfloat, match.group('x', 'y', 'z'))))
         fixed_coords_this_pos = [f or '1' for f in match.group('fx', 'fy', 'fz')] # False <--> not fixed (the default)
-        fixed_coords.append(map(str01_to_bool, fixed_coords_this_pos)) 
+        fixed_coords.append(list(map(str01_to_bool, fixed_coords_this_pos))) 
         names.append(match.group('name'))
 
     # Check that the number of atomic positions parsed is equal to the number of
@@ -655,7 +661,7 @@ def parse_cell_parameters(txt):
     # Now, extract the lattice vectors.
     lattice_vectors = []
     for match in cell_vector_regex.finditer(blockstr):
-        lattice_vectors.append(map(fortfloat, (match.group('x'),match.group('y'),match.group('z'))))
+        lattice_vectors.append(list(map(fortfloat, (match.group('x'),match.group('y'),match.group('z')))))
     info_dict = dict(units=units, cell=lattice_vectors)
     return info_dict
 
@@ -743,7 +749,7 @@ def get_cell_from_parameters(cell_parameters, system_dict, alat, using_celldm):
     """
     ibrav = system_dict['ibrav']
 
-    valid_ibravs = range(15) + [-5, -9, -12]
+    valid_ibravs = list(range(15)) + [-5, -9, -12]
     if ibrav not in valid_ibravs:
         raise InputValidationError(
             'I found ibrav = {} in input, \n'
@@ -1035,12 +1041,12 @@ def get_structuredata_from_qeinput(
     Function that receives either
     :param filepath: the filepath storing **or**
     :param text: the string of a standard QE-input file.
-    An instance of :py:class:`~aiida.orm.data.structure.StructureData` is initialized with kinds, positions and cell
+    An instance of :py:class:`~aiida.orm.nodes.data.structure.StructureData` is initialized with kinds, positions and cell
     as defined in the input file.
     This function can deal with ibrav being set different from 0 and the cell being defined
     with celldm(n) or A,B,C, cosAB etc.
     """
-    from aiida.orm.data.structure import StructureData, Kind, Site
+    from aiida.orm.nodes.data.structure import StructureData, Kind, Site
     #~ from aiida.common.utils import get_fortfloat
 
     valid_elements_regex = re.compile("""
@@ -1102,7 +1108,7 @@ Ac | Th | Pa | U  | Np | Pu | Am | Cm | Bk | Cf | Es | Fm | Md | No | Lr | # Act
 
     # instance and set the cell
     structuredata = StructureData()
-    structuredata._set_attr('cell', cell.tolist())
+    structuredata.set_attribute('cell', cell.tolist())
 
     #################  KINDS ##########################
 

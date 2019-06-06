@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from aiida.common.exceptions import AiidaException
+from __future__ import absolute_import
+from aiida.common import AiidaException
+
 
 class UnexpectedCalculationFailure(AiidaException):
-    """
-    Raised when a Calculation has failed for an unknown reason
-    """
+    """Raised when a calculation has failed for an unknown reason."""
     pass

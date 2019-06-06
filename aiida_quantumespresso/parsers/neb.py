@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from aiida.parsers.parser import Parser
-from aiida.common.datastructures import calc_states
-from aiida.orm.data.array.bands import KpointsData
-from aiida.orm.data.parameter import ParameterData
+from aiida.orm.nodes.data.array.bands import KpointsData
+from aiida.orm.nodes.data.dict import Dict
 from aiida_quantumespresso.parsers import convert_qe2aiida_structure
-from aiida_quantumespresso.parsers.raw_parser_pw import (
-    parse_pw_xml_output, parse_pw_text_output, QEOutputParsingError)
+from aiida_quantumespresso.parsers.parse_xml.pw.parse import parse_pw_xml_post_6_2
+from aiida_quantumespresso.parsers.parse_xml.pw.versions import get_xml_file_version, QeXmlVersion
+from aiida_quantumespresso.parsers.raw_parser_pw import parse_pw_xml_pre_6_2, parse_pw_text_output
+from aiida_quantumespresso.parsers.raw_parser_pw import QEOutputParsingError
 from aiida_quantumespresso.parsers.raw_parser_neb import parse_raw_output_neb
 from aiida_quantumespresso.calculations.neb import NebCalculation
+import six
+from six.moves import range
 
 
 class NebParser(Parser):
@@ -28,7 +32,7 @@ class NebParser(Parser):
         super(NebParser, self).__init__(calc)
         
         
-    def parse_with_retrieved(self, retrieved):
+    def parse(self, **kwargs):
         """
         Parses the calculation-output datafolder, and stores
         results.
@@ -37,9 +41,9 @@ class NebParser(Parser):
             are the link names of retrieved nodes, and the values are the
             nodes.
         """
-        from aiida.common.exceptions import InvalidOperation
-        from aiida.orm.data.array.trajectory import TrajectoryData
-        from aiida.orm.data.array import ArrayData
+        from aiida.common import InvalidOperation
+        from aiida.orm.nodes.data.array.trajectory import TrajectoryData
+        from aiida.orm.nodes.data.array import ArrayData
         import os 
         import numpy
         import copy
@@ -48,15 +52,15 @@ class NebParser(Parser):
 
         # look for eventual flags of the parser
         try:
-            parser_opts = self._calc.inp.settings.get_dict()[self.get_parser_settings_key()]
+            parser_opts = self._calc.inputs.settings.get_dict()[self.get_parser_settings_key()]
         except (AttributeError,KeyError):
             parser_opts = {}
         
         # load the pw input dictionary            
-        pw_input_dict = self._calc.inp.pw_parameters.get_dict()
+        pw_input_dict = self._calc.inputs.pw_parameters.get_dict()
        
         # load the pw input dictionary                
-        neb_input_dict = self._calc.inp.neb_parameters.get_dict()
+        neb_input_dict = self._calc.inputs.neb_parameters.get_dict()
         
         # Check that the retrieved folder is there 
         try:
@@ -100,20 +104,30 @@ class NebParser(Parser):
         cells = []
         for i in range(num_images):
             # look for xml and parse
-            xml_file = os.path.join(out_folder.get_abs_path('.'),
-                                    self._calc._PREFIX +'_{}'.format(i+1),self._calc._PREFIX+'.save',
-                                    self._calc._DATAFILE_XML_BASENAME)
-            try:
-                with open(xml_file,'r') as f:                
-                    xml_lines = f.read() # Note: read() and not readlines()
-            except IOError:
-                self.logger.error("No xml file found for image {} at {}".format(i+1,xml_file))
+
+            for xml_filename in self._calc.xml_filenames:
+                if xml_filename in list_of_files:
+                    xml_file = os.path.join(out_folder.get_abs_path('.'),
+                                            self._calc._PREFIX +'_{}'.format(i+1),self._calc._PREFIX+'.save',
+                                            xml_filename)
+
+                    try:
+                        xml_file_version = get_xml_file_version(xml_file)
+                    except ValueError as exception:
+                        raise QEOutputParsingError('failed to determine XML output file version: {}'.format(exception))
+
+                    if xml_file_version == QeXmlVersion.POST_6_2:
+                        xml_data, structure_dict, bands_data = parse_pw_xml_post_6_2(xml_file)
+                    elif xml_file_version == QeXmlVersion.PRE_6_2:
+                        xml_data, structure_dict, bands_data = parse_pw_xml_pre_6_2(xml_file, dir_with_bands)
+                    else:
+                        raise ValueError('unrecognize XML file version')
+
+                    structure_data = convert_qe2aiida_structure(structure_dict)
+            else:
+                self.logger.error("No xml output file found for image {}".format(i+1))
                 successful = False
                 return successful, ()
-            xml_data,structure_dict,bands_data = parse_pw_xml_output(xml_lines)
-            
-            # convert the dictionary obtained from parsing the xml to an AiiDA StructureData
-            structure_data = convert_qe2aiida_structure(structure_dict)
             
             # look for pw output and parse it
             pw_out_file = os.path.join(out_folder.get_abs_path('.'),
@@ -135,7 +149,7 @@ class NebParser(Parser):
                          'lattice_vectors_relax','atomic_positions_relax',
                          'atomic_species_name']
             tmp_trajectory_data = copy.copy(trajectory_data)
-            for x in tmp_trajectory_data.iteritems():
+            for x in six.iteritems(tmp_trajectory_data):
                 if x[0] in skip_keys:
                     continue
                 pw_out_data[x[0]] = x[1][-1]
@@ -150,7 +164,7 @@ class NebParser(Parser):
                     pass
     
             key = 'pw_output_image_{}'.format(i+1)
-            image_data[key] = dict(pw_out_data.items() + xml_data.items())
+            image_data[key] = dict(list(pw_out_data.items()) + list(xml_data.items()))
             
             positions.append([site.position for site in structure_data.sites])
             cells.append(structure_data.cell)
@@ -168,7 +182,7 @@ class NebParser(Parser):
         new_nodes_list = []
         
         # convert the dictionary into an AiiDA object
-        output_params = ParameterData(dict=dict(neb_out_dict.items()+image_data.items()))
+        output_params = Dict(dict=dict(list(neb_out_dict.items())+list(image_data.items())))
         
         # return it to the execmanager
         new_nodes_list.append((self.get_linkname_outparams(),output_params))
@@ -186,10 +200,10 @@ class NebParser(Parser):
         
         if parser_opts.get('all_iterations',False):
             if iteration_data:           
-                from aiida.orm.data.array import ArrayData
+                from aiida.orm.nodes.data.array import ArrayData
             
                 arraydata = ArrayData()
-                for x in iteration_data.iteritems():
+                for x in six.iteritems(iteration_data):
                     arraydata.set_array(x[0],numpy.array(x[1]))               
                 new_nodes_list.append((self.get_linkname_iterationarray(),arraydata))
         

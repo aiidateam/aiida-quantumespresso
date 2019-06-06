@@ -18,12 +18,12 @@ Inputs
   a link to the RemoteFolder attached to that calculation. Alternatively, the method **use_parent_folder**
   can be used to set this link directly.
   
-* **qpoints**, class :py:class:`KpointsData <aiida.orm.data.array.kpoints.KpointsData>`
+* **qpoints**, class :py:class:`KpointsData <aiida.orm.nodes.data.array.kpoints.KpointsData>`
   Reciprocal space points on which to build the dynamical matrices. Can either be 
   a mesh or a list of points. Note: up to QE 5.1 only either an explicit list
   of 1 qpoint (1 point only) can be provided, or a mesh (containing gamma).
 
-* **parameters**, class :py:class:`ParameterData <aiida.orm.data.parameter.ParameterData>`
+* **parameters**, class :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>`
   Input parameters of ph.x, as a nested dictionary, mapping the input of QE.
   Example::
     
@@ -46,7 +46,7 @@ Inputs
       'INPUTPH', 'nq3': q-mesh on b3
       'INPUTPH', 'qplot': flag for list of qpoints
      
-* **settings**, class :py:class:`ParameterData <aiida.orm.data.parameter.ParameterData>` (optional)
+* **settings**, class :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>` (optional)
   An optional dictionary that activates non-default operations. Possible values are:
     
     *  **'PARENT_CALC_OUT_SUBFOLDER'**: string. The subfolder of the parent 
@@ -67,10 +67,10 @@ Outputs
 There are several output nodes that can be created by the plugin, according to the calculation details.
 All output nodes can be accessed with the ``calculation.out`` method.
 
-* output_parameters :py:class:`ParameterData <aiida.orm.data.parameter.ParameterData>`
+* output_parameters :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>`
   Contains small properties. Example: dielectric constant, 
   warnings (possible error messages generated in the run).
-  ``calculation.out.output_parameters`` can also be accessed by the ``calculation.res`` shortcut.
+  ``calculation.outputs.output_parameters`` can also be accessed by the ``calculation.res`` shortcut.
   Furthermore, various ``dynamical_matrix_*`` keys are created, each is a dictionary containing
   the keys ``q_point`` and ``frequencies``.
 
@@ -78,5 +78,5 @@ Errors
 ------
 Errors of the parsing are reported in the log of the calculation (accessible 
 with the ``verdi calculation logshow`` command). 
-Moreover, they are stored in the ParameterData under the key ``warnings``, and are
+Moreover, they are stored in the Dict under the key ``warnings``, and are
 accessible with ``Calculation.res.warnings``.

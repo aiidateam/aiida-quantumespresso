@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import os
 import aiida.common
+from six.moves import range
+from six.moves import zip
 
 logger = aiida.common.aiidalogger.getChild('input')
 
@@ -11,7 +14,7 @@ def import_qeinput(fname):
     
     :param fname: the file name that should be read
     """
-    import aiida.orm.data.structure as struct
+    import aiida.orm.nodes.data.structure as struct
     
     
     bohr          = 0.52917720859
@@ -166,7 +169,7 @@ def import_qeinput(fname):
         Return the atomic number given a symbol string, or return zero if
         the symbol is not recognized
         """
-        from aiida.orm.data.structure import _atomic_numbers
+        from aiida.orm.nodes.data.structure import _atomic_numbers
 
         return _atomic_numbers.get(name, 0)
     
@@ -355,7 +358,7 @@ def import_qeinput(fname):
     for k in atomic_kinds:
         the_struc.append_kind(k)
      
-    sites = zip(atomic_kindnames, atomic_pos)
+    sites = list(zip(atomic_kindnames, atomic_pos))
      
     for kindname, pos in sites:
         the_struc.append_site(struct.Site(kind_name = kindname, position=pos))

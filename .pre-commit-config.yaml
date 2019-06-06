@@ -1,9 +1,47 @@
 - repo: local
-  hooks: 
+  hooks:
+
+  - id: yapf
+    name: yapf
+    entry: yapf
+    language: system
+    types: [python]
+    args: ['-i']
+    exclude: &exclude_files >
+      (?x)^(
+        aiida_quantumespresso/calculations.*|
+        aiida_quantumespresso/common/.*|
+        aiida_quantumespresso/parsers/.*|
+        aiida_quantumespresso/tools/.*|
+        aiida_quantumespresso/utils/.*|
+        aiida_quantumespresso/workflows/.*|
+        docs/.*|
+        examples/.*|
+        tests/.*
+      )$
+
+  - id: prospector
+    language: system
+    types: [file, python]
+    exclude: *exclude_files
+    name: prospector
+    description: 'This hook runs Prospector: https://github.com/landscapeio/prospector'
+    entry: prospector
+
   - id: version-number
     name: Check consistency in version number
-    entry: python ./.travis-data/precommit/fix_setup_version.py
+    entry: python ./.ci/validate_version_number.py
+    args: ['version']
     language: system
     files: '^(setup.json)'
     pass_filenames: false
 
+- repo: https://github.com/python-modernize/python-modernize.git
+  sha: a234ce4e185cf77a55632888f1811d83b4ad9ef2
+  hooks:
+  - id: python-modernize
+    exclude: ^docs/
+    exclude: ^examples/
+    args:
+      - --write
+      - --nobackups

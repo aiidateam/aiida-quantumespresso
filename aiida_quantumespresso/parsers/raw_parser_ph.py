@@ -4,11 +4,13 @@ A collection of function that are used to parse the output of Quantum Espresso P
 The function that needs to be called from outside is parse_raw_ph_output().
 Ideally, the functions should work even without aiida and will return a dictionary with parsed keys.
 """
+from __future__ import absolute_import
 import numpy
 from xml.dom.minidom import parseString
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
 from aiida_quantumespresso.parsers.constants import *
 from aiida_quantumespresso.parsers.raw_parser_pw import parse_xml_child_bool,read_xml_card,convert_qe_time_to_sec
+from six.moves import zip
 
 
 def parse_raw_ph_output(out_file, tensor_file=None, dynmat_files=[]):
@@ -111,18 +113,18 @@ def parse_raw_ph_output(out_file, tensor_file=None, dynmat_files=[]):
 
     # join dictionaries, there should not be any twice repeated key
     for key in out_data.keys():
-        if key in tensor_data.keys():
+        if key in list(tensor_data.keys()):
             raise AssertionError('{} found in two dictionaries'.format(key))
     for key in out_data.keys():
-        if key in dynmat_data.keys():
+        if key in list(dynmat_data.keys()):
             if key=='warnings': # this ke can be found in both, but is not a problem
                 out_data['warnings'] += dynmat_data['warnings']
                 del dynmat_data['warnings']
             else:
                 raise AssertionError('{} found in two dictionaries'.format(key))
     # I don't check the dynmat_data and parser_info keys 
-    final_data = dict(dynmat_data.items() + out_data.items() + 
-                      tensor_data.items() + parser_info.items())
+    final_data = dict(list(dynmat_data.items()) + list(out_data.items()) + 
+                      list(tensor_data.items()) + list(parser_info.items()))
 
     return final_data,job_successful
 
@@ -185,7 +187,7 @@ def parse_xml_matrices(tagname,target_tags):
     flat_array = b.data.split()
     # convert to float, then into a list of tuples, then into a list of lists
     flat_array = [float(i) for i in flat_array]
-    list_tuple = zip(*[iter(flat_array)]*3)
+    list_tuple = list(zip(*[iter(flat_array)]*3))
     return [list(i) for i in list_tuple]
 
 def parse_ph_text_output(lines):
@@ -224,7 +226,7 @@ def parse_ph_text_output(lines):
         if 'q-points for this run' in line:
             try:
                 num_qpoints = int(line.split('/')[1].split('q-points')[0])
-                if ( 'number_of_qpoints' in parsed_data.keys() and 
+                if ( 'number_of_qpoints' in list(parsed_data.keys()) and 
                      num_qpoints != parsed_data['number_of_qpoints']):
                     parsed_data['warnings'].append("Number q-points found "
                                                    "several times with different"
@@ -239,7 +241,7 @@ def parse_ph_text_output(lines):
             # case of a 'only_wfc' calculation
             try:
                 num_qpoints = int(line.split('q-points')[0].split('(')[1])
-                if ( 'number_of_qpoints' in parsed_data.keys() and 
+                if ( 'number_of_qpoints' in list(parsed_data.keys()) and 
                      num_qpoints != parsed_data['number_of_qpoints']):
                     parsed_data['warnings'].append("Number q-points found "
                                                    "several times with different"
@@ -259,7 +261,7 @@ def parse_ph_text_output(lines):
                                                "atoms.")
         
         elif "irreducible representations" in line:
-            if 'number_of_irr_representations_for_each_q' not in parsed_data.keys():
+            if 'number_of_irr_representations_for_each_q' not in list(parsed_data.keys()):
                 parsed_data['number_of_irr_representations_for_each_q'] = []
             try:
                 num_irr_repr = int(line.split('irreducible')[0].split('are')[1])
@@ -288,7 +290,7 @@ def parse_ph_text_output(lines):
     minor_warnings = {'Warning:':None,
                       }
     
-    all_warnings = dict(critical_warnings.items() + minor_warnings.items())
+    all_warnings = dict(list(critical_warnings.items()) + list(minor_warnings.items()))
 
     for count,line in enumerate(lines):
 
@@ -304,7 +306,7 @@ def parse_ph_text_output(lines):
             if len(messages)>0:
                 parsed_data['warnings'].extend(messages)
             
-    return parsed_data,critical_warnings.values()
+    return parsed_data,list(critical_warnings.values())
 
 def parse_ph_dynmat(data,lattice_parameter=None,also_eigenvectors=False,
                     parse_header=False):
@@ -493,7 +495,7 @@ def parse_ph_dynmat(data,lattice_parameter=None,also_eigenvectors=False,
                     this_eigenvectors.append([[None,None]]*3)
                     continue
                 
-                list_tuples = zip(*[iter(this_flatlist)]*2)
+                list_tuples = list(zip(*[iter(this_flatlist)]*2))
                 # I save every complex number as a list of two numbers
                 this_eigenvectors.append( [ [i[0],i[1]] for i in list_tuples ] )
                 

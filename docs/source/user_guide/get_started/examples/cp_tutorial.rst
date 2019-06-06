@@ -81,7 +81,7 @@ the database::
   codename = 'my_cp'
   code = Code.get_from_string(codename)
 
-Then create the StructureData with the structure, and a ParameterData 
+Then create the StructureData with the structure, and a Dict 
 node for the inputs. This time, of course, you have to specify the correct
 variables for a ``cp.x`` calculation::
 
@@ -98,8 +98,8 @@ variables for a ``cp.x`` calculation::
   s.append_atom(position=(alat/2.,0.,alat/2.),symbols=['O'])
   s.append_atom(position=(0.,alat/2.,alat/2.),symbols=['O'])
 
-  ParameterData = DataFactory('parameter')
-  parameters = ParameterData(dict={
+  Dict = DataFactory('dict')
+  parameters = Dict(dict={
             'CONTROL': {
                 'calculation': 'cp',
                 'restart_mode': 'from_scratch',
@@ -130,8 +130,8 @@ variables for a ``cp.x`` calculation::
 We then create a new calculation with the proper settings::
   
   calc = code.new_calc()
-  calc.set_max_wallclock_seconds(30*60) # 30 min
-  calc.set_resources({"num_machines": 1, "num_mpiprocs_per_machine": 16})
+  calc.set_option('max_wallclock_seconds', 30*60) # 30 min
+  calc.set_option('resources', {"num_machines": 1, "num_mpiprocs_per_machine": 16})
 
 And we link the input data to the calculation
 (and therefore set the links in the database). The main difference

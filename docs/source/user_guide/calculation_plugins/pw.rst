@@ -7,20 +7,40 @@ Use the plugin to support inputs of Quantum Espresso pw.x executable.
 
 Supported codes
 ---------------
-* tested from pw.x v5.0 onwards.
+
+==========  ================================================================
+QE version   Support by aiida-quantumespresso
+==========  ================================================================
+< 5.0       Not supported
+5.0 to 5.4  Legacy support [#legacy]_
+6.0, 6.1    Supported (with old XML) [#oldxml1]_
+6.2, 6.3    Supported (with old XML; requires compilation flag) [#oldxml2]_
+6.4         Supported [#newxml]_
+==========  ================================================================
+
+Notes:
+
+.. [#legacy] These versions were originally compatible, but are not continuously tested any more; therefore their compatibility is not guaranteed. We welcome pull requests that maintain or improve compatibility with these versions.
+
+.. [#oldxml1] QE 6.0 and 6.1 optionally provide a new output format (schema-based XML), disabled by default, which is not supported by aiida-quantumespresso.
+
+.. [#oldxml2] In QE 6.2 and 6.3, the new schema-based XML output format is enabled by default. This is still not supported by aiida-quantumespresso, so **you must disable it when compiling QE**: either run ``./configure`` with the option ``--disable-xml``, or add ``-D__OLDXML`` to ``MANUAL_FLAGS`` in ``make.inc``.
+
+.. [#newxml] Since version 6.4, the schema-based XML output is mandatory and fully supported by aiida-quantumespresso.
+
 
 Inputs
 ------
-* **pseudo**, class :py:class:`UpfData <aiida.orm.data.upf.UpfData>`
+* **pseudo**, class :py:class:`UpfData <aiida.orm.nodes.data.upf.UpfData>`
   One pseudopotential file per atomic species.
   
   Alternatively, pseudo for every atomic species can be set with the **use_pseudos_from_family**
   method, if a family of pseudopotentials has been installed.
   
-* **kpoints**, class :py:class:`KpointsData <aiida.orm.data.array.kpoints.KpointsData>`
+* **kpoints**, class :py:class:`KpointsData <aiida.orm.nodes.data.array.kpoints.KpointsData>`
   Reciprocal space points on which to build the wavefunctions. Can either be 
   a mesh or a list of points with/without weights
-* **parameters**, class :py:class:`ParameterData <aiida.orm.data.parameter.ParameterData>`
+* **parameters**, class :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>`
   Input parameters of pw.x, as a nested dictionary, mapping the input of QE.
   Example::
     
@@ -56,14 +76,14 @@ Inputs
 
   Those keywords should not be specified, otherwise the submission will fail.
      
-* **structure**, class :py:class:`StructureData <aiida.orm.data.structure.StructureData>`
-* **settings**, class :py:class:`ParameterData <aiida.orm.data.parameter.ParameterData>` (optional)
+* **structure**, class :py:class:`StructureData <aiida.orm.nodes.data.structure.StructureData>`
+* **settings**, class :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>` (optional)
   An optional dictionary that activates non-default operations. For a list of possible
   values to pass, see the section on the :ref:`advanced features <pw-advanced-features>`.
-* **parent_folder**, class :py:class:`RemoteData <aiida.orm.data.parameter.ParameterData>` (optional)
+* **parent_folder**, class :py:class:`RemoteData <aiida.orm.nodes.data.dict.Dict>` (optional)
   If specified, the scratch folder coming from a previous QE calculation is 
   copied in the scratch of the new calculation.
-* **vdw_table**, class :py:class:`SinglefileData <aiida.orm.data.singlefile.SinglefileData>` (optional)
+* **vdw_table**, class :py:class:`SinglefileData <aiida.orm.nodes.data.singlefile.SinglefileData>` (optional)
   If specified, it should be a file for the van der Waals kernel table.
   The file is copied in the pseudo subfolder, without changing its name, and
   without any check, so it is your responsibility to select the correct file
@@ -75,31 +95,31 @@ Outputs
 There are several output nodes that can be created by the plugin, according to the calculation details.
 All output nodes can be accessed with the ``calculation.out`` method.
 
-* output_parameters :py:class:`ParameterData <aiida.orm.data.parameter.ParameterData>`
+* output_parameters :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>`
   Contains the scalar properties. Example: energy (in eV), 
   total_force (modulus of the sum of forces in eV/Angstrom),
-  warnings (possible error messages generated in the run). ``calculation.out.output_parameters`` can also be
+  warnings (possible error messages generated in the run). ``calculation.outputs.output_parameters`` can also be
   accessed by the ``calculation.res`` shortcut.
-* output_array :py:class:`ArrayData <aiida.orm.data.array.ArrayData>`
+* output_array :py:class:`ArrayData <aiida.orm.nodes.data.array.ArrayData>`
   Produced in case of calculations which do not change the structure, otherwise, 
   an ``output_trajectory`` is produced.
   Contains vectorial properties, too big to be put in the dictionary.
   Example: forces (eV/Angstrom), stresses, ionic positions.
   Quantities are parsed at every step of the ionic-relaxation / molecular-dynamics run.
-* output_trajectory :py:class:`ArrayData <aiida.orm.data.array.ArrayData>`
+* output_trajectory :py:class:`ArrayData <aiida.orm.nodes.data.array.ArrayData>`
   Produced in case of calculations which change the structure, otherwise an
   ``output_array`` is produced. Contains vectorial properties, too big to be put 
   in the dictionary. Example: forces (eV/Angstrom), stresses, ionic positions.
   Quantities are parsed at every step of the ionic-relaxation / molecular-dynamics run.
 * output_band (non spin polarized calculations)) or output_band1 + output_band2 
-  (spin polarized calculations) :py:class:`BandsData <aiida.orm.data.array.bands.BandsData>`
+  (spin polarized calculations) :py:class:`BandsData <aiida.orm.nodes.data.array.bands.BandsData>`
   The default parsing can be deactivated with the **`no_bands`** :ref:`setting <no-bands-setting>`.
   Contains the list band energies and occupations at every k-point.
   If calculation is a molecular dynamics or a relaxation run, bands refer only to the last ionic configuration.
-* output_structure :py:class:`StructureData <aiida.orm.data.structure.StructureData>`
+* output_structure :py:class:`StructureData <aiida.orm.nodes.data.structure.StructureData>`
   Present only if the calculation is moving the ions.
   Cell and ionic positions refer to the last configuration.
-* output_kpoints :py:class:`KpointsData <aiida.orm.data.array.kpoints.KpointsData>`
+* output_kpoints :py:class:`KpointsData <aiida.orm.nodes.data.array.kpoints.KpointsData>`
   Present only if the calculation changes the cell shape.
   Kpoints refer to the last structure.
 
@@ -107,12 +127,12 @@ All output nodes can be accessed with the ``calculation.out`` method.
 
 Parser version
 --------------
-The parser shares the version of the package and it will be stored in the `output_parameters` node of the calculation under the key ``parser_version``.
+The parser shares the version of the package and it will be stored in the ``output_parameters`` node of the calculation under the key ``parser_version``.
 Therefore, to retrieve the version of the parser that was used to parse a completed calculation, you can do:
 
 .. code:: python
 
-    parser_version = calculation.out.output_parameters.get_dict()['parser_version']
+    parser_version = calculation.outputs.output_parameters.get_dict()['parser_version']
 
 .. note:: The convention of tying the parser version to the version of the package was introduced in ``v2.1.0``.
     Before that version, the version of the parser was statically defined and included in the key ``parser_info`` of the ``output_parameters`` node.
@@ -121,7 +141,7 @@ Errors
 ------
 Errors of the parsing are reported in the log of the calculation (accessible 
 with the ``verdi calculation logshow`` command). 
-Moreover, they are stored in the ParameterData under the key ``warnings``, and are
+Moreover, they are stored in the Dict under the key ``warnings``, and are
 accessible with ``Calculation.res.warnings``.
 
 .. _pw-advanced-features:
@@ -134,12 +154,12 @@ Quantum ESPRESSO pw.x plugin (note that most of them apply also to the
 cp.x plugin).
 
 While the input link with name 'parameters' is used for the content of the 
-Quantum Espresso namelists, additional parameters can be specified in the 'settings' input, also as ParameterData.
+Quantum Espresso namelists, additional parameters can be specified in the 'settings' input, also as Dict.
 
 After having defined the content of ``settings_dict``, you can use
 it as input of a calculation ``calc`` by doing::
 
-    calc.use_settings(ParameterData(dict=settings_dict))
+    calc.use_settings(Dict(dict=settings_dict))
 
 The different options are described below.
 
@@ -319,13 +339,13 @@ those files as a list as follows (here in the case of a file named
 
 Parser options
 --------------
-To customize the parsing, the ``settings`` input ``ParameterData`` node provides
+To customize the parsing, the ``settings`` input ``Dict`` node provides
 the special key ``parser_options`` which has the options discussed below.
 
 Parsing atomic occupations
 ..........................
 For DFT+U calculations, ``pw.x`` will also print atomic electron occupations to the standard
-output. This flag enables or disables the parsing of this information into a ``ParameterData``
+output. This flag enables or disables the parsing of this information into a ``Dict``
 output node with the link name ``output_atomic_occupations``. The value should be a boolean, with
 ``False`` being the default. Setting it to ``True`` will enable the parsing of the atomic
 occupations::
@@ -338,3 +358,17 @@ occupations::
 
 Note that for ``pw.x`` to print the required information, the flag ``lda_plus_u`` has to be
 set to ``True`` in the ``SYSTEM`` card of the input ``parameters`` node.
+
+Include deprecated output keys
+..........................
+In version 3 of the plugin, some keys have been deprecated and removed by default
+from the ``output_parameters`` node, often replaced by more appropriate keys.
+To also include the deprecated keys, add ``include_deprecated_v2_keys: True``
+to the ``parser_options`` element of the settings dictionary.
+The default value of this options is ``False``. Example::
+
+    settings_dict = {
+        'parser_options': {
+            'include_deprecated_v2_keys': True,
+        }
+    }

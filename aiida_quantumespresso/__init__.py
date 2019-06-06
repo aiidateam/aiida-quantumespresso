@@ -1,1 +1,2 @@
-__version__ = "2.1.0"
+"""The official AiiDA plugin for Quantum ESPRESSO."""
+__version__ = "3.0.0a3"

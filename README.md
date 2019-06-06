@@ -1,50 +1,56 @@
 # AiiDA Quantum ESPRESSO
-This is the official Quantum ESPRESSO plugin for AiiDA that used to be contained within the aiida_core package.
-It is now maintained as a separate package and for AiiDA >= v0.9.0 the new plugin system will ensure that the
-entry points are automatically registered upon installation.
+This is the official Quantum ESPRESSO plugin for AiiDA.
+
+The `develop` branch, which will become `aiida-quantumespresso v3.0.0`,  is only compatible with `aiida-core v1.0.0` and up.
+For support for older versions of `aiida-core` use `aiida-quantumespresso v2.*`.
 
 # Documentation
-The documentation for this package can be found on Read the Docs at 
+The documentation for this package can be found on Read the Docs at
 http://aiida-quantumespresso.readthedocs.io/en/latest/
 
-# Command line interface scripts
-The plugin provides several cli scripts that make it easy to quickly launch some of the calculations and workchains
-that are implemented. If you install the package with pip, the scripts will automatically be registered in your path
-and you should be able to call them directly. The names can be found in the 'setup.json' under the key 'console_scripts'.
+# Command line interface tool
+The plugin comes with a builtin CLI tool: `aiida-quantumespresso`.
+This tool is built using the `click` library and supports tab-completion.
+To enable it, add the following to your shell loading script, e.g. the `.bashrc` or virtual environment activate script:
 
+    eval "$(_AIIDA_QUANTUMESPRESSO_COMPLETE=source aiida-quantumespresso)"
+
+The tool comes with various sub commands, for example to quickly launch some calculations and workchains
 For example, to launch a test `PwCalculation` you can run the following command:
 
-	launch_calculation_pw -c pw-v6.1 -p SSSP_v0.7_eff_PBE -s 134
+    aiida-quantumespresso calculation launch pw -X pw-v6.1 -p SSSP_v0.7_eff_PBE -s 134
 
-Each cli script has a fully documented command line interface, which can be printed to screen with:
+Note that this requires the code `pw-v6.1` and pseudo potential family `SSSP_v1.1_eff_PBE` to be configured and a structure with pk `134` to be present in your database.
+Each command has a fully documented command line interface, which can be printed to screen with the help flag:
 
-	launch_calculation_pw --help
+    aiida-quantumespresso calculation launch ph --help
 
 which should print something like the following:
 
-	Usage: launch_calculation_pw [OPTIONS]
+    Usage: aiida-quantumespresso calculation launch ph [OPTIONS]
 
-	  Run a PwCalculation for a given input structure
+      Run a PhCalculation.
 
-	Options:
-	  -c, --code TEXT                 the label of the AiiDA code object to use
-	                                  [required]
-	  -s, --structure INTEGER         the node pk of the structure  [required]
-	  -p, --pseudo-family TEXT        the name of the pseudo potential family to
-	                                  use  [required]
-	  -k, --kpoint-mesh INTEGER...    the number of points in the kpoint mesh
-	                                  along each basis vector  [default: 2, 2, 2]
-	  -m, --max-num-machines INTEGER  the maximum number of machines (nodes) to
-	                                  use for the calculations  [default: 1]
-	  -w, --max-wallclock-seconds INTEGER
-	                                  the maximum wallclock time in seconds to set
-	                                  for the calculations  [default: 1800]
-	  -z, --calculation-mode [scf|vc-relax]
-	                                  select the calculation mode  [default: scf]
-	  --help                          Show this message and exit.
+    Options:
+      -X, --code CODE                 A single code identified by its ID, UUID or
+                                      label.  [required]
+      -C, --calculation CALCULATION   A single calculation identified by its ID or
+                                      UUID.  [required]
+      -k, --kpoints-mesh INTEGER...   The number of points in the kpoint mesh
+                                      along each basis vector.  [default: 1, 1, 1]
+      -m, --max-num-machines INTEGER  The maximum number of machines (nodes) to
+                                      use for the calculations.  [default: 1]
+      -w, --max-wallclock-seconds INTEGER
+                                      the maximum wallclock time in seconds to set
+                                      for the calculations.  [default: 1800]
+      -i, --with-mpi                  Run the calculations with MPI enabled.
+                                      [default: False]
+      -d, --daemon                    Submit the process to the daemon instead of
+                                      running it locally.  [default: False]
+      -h, --help                      Show this message and exit.
 
 # License
-The aiida-quantumespresso set of plugins are released under a MIT license. See 
+The aiida-quantumespresso set of plugins are released under a MIT license. See
 the LICENSE.txt file for more details.
 
 # Acknowlegements

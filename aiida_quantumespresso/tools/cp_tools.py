@@ -5,6 +5,10 @@ Car-Parrinello cp.x code of Quantum ESPRESSO.
 Currently unmantained, may be removed or reused at any time!
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import range
+from six.moves import zip
 RyToBhor         = 0.52917720859
 k_boltzmann_si   = 1.3806504E-23
 hartree_si       = 4.35974394E-18
@@ -19,7 +23,7 @@ amu_au           = amu_si / electronmass_si
 def generate_cp_velocities(s, temp, force_kind_order = False, seed=None):
     
     import numpy as np
-    import aiida.orm.data.structure as struct
+    import aiida.orm.nodes.data.structure as struct
     
     if not isinstance(s, struct.StructureData):
         return
@@ -43,7 +47,7 @@ def generate_cp_velocities(s, temp, force_kind_order = False, seed=None):
     
     vi = MaxwellBoltzmannDistribution(np.array(masses), temp, seed=seed)
     
-    return zip(elements, vi[:])
+    return list(zip(elements, vi[:]))
 
 class StepArray(object):
     
@@ -100,7 +104,7 @@ class SimpleTrajectory(object):
                     self.ordering[k].append(s)
                     count+=1
         
-        print self.ordering
+        print(self.ordering)
         
     def append(self, step, time, cell, pos, data, vel=None):
         
@@ -228,7 +232,7 @@ class SimpleTrajectory(object):
                 ion_key        = w_name+"_"+str(self.ordering[i][at])
                 
                 if "ekin_"+ion_key not in self.df:
-                    print "Generating"
+                    print("Generating")
                     self.generate_species_data()
                     
                 ekins.append("ekin_"+ion_key)
@@ -368,7 +372,7 @@ def import_table(fname):
     
     data = []
     
-    while 1:
+    while True:
         
         ## Buffer read
         lines = f.readlines(1000)
@@ -394,7 +398,7 @@ def import_array(fname, mul=1.0):
     pos_all = []
     pos_this = []
     
-    while 1:
+    while True:
         
         ## Buffer read
         lines = f.readlines(1000)
@@ -431,12 +435,12 @@ def import_array(fname, mul=1.0):
 
 def import_cp(s, dir, prefix, vel=False):
     
-    import aiida.orm.data.structure as struct
+    import aiida.orm.nodes.data.structure as struct
     import ase.atoms as atoms
     import os
     
     if not isinstance(s, struct.StructureData):
-        print "Not an aiida structure"
+        print("Not an aiida structure")
         return
         
 #     if not isinstance(s, struct.StructureData):
@@ -465,10 +469,10 @@ def import_cp(s, dir, prefix, vel=False):
            not pos_all[i+shift].get_step()==evp[i][0]:
             
             shift+=1
-            print "Files not synced, trying to add some shit to pos, cel and vel {0}".format(shift)
+            print("Files not synced, trying to add some shit to pos, cel and vel {0}".format(shift))
             
             if (i+shift>=len(pos_all)):
-                print "Something went wrong, files are not synced at {0} even with shift".format(i)
+                print("Something went wrong, files are not synced at {0} even with shift".format(i))
                 break
             
         new_step = pos_all[i].get_step()
