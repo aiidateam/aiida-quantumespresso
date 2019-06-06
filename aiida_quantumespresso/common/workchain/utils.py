@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
+"""Utilities for `WorkChain` implementations."""
 from __future__ import absolute_import
 
 from collections import namedtuple
 from functools import wraps
 
 from aiida.engine import ExitCode
-
 
 ErrorHandler = namedtuple('ErrorHandler', 'priority method')
 """
@@ -19,7 +19,6 @@ as its sole argument. If the condition of the error handler is met, it should re
 :param priority: integer denoting the error handlers priority
 :param method: the workchain class method
 """
-
 
 ErrorHandlerReport = namedtuple('ErrorHandlerReport', 'is_handled do_break exit_code')
 ErrorHandlerReport.__new__.__defaults__ = (False, False, ExitCode())
@@ -64,19 +63,22 @@ def register_error_handler(cls, priority):
     :param priority: an integer that defines the order in which registered handlers will be called
         during the handling of a failed calculation. Higher priorities will be handled first
     """
+
     def error_handler_decorator(handler):
+        """Decorator to dynamically register an error handler to a `WorkChain` class."""
 
         @wraps(handler)
         def error_handler(self, calculation):
-            if hasattr(cls, '_verbose') and cls._verbose:
+            """Wrapped error handler to add a log to the report if the handler is called and verbosity is turned on."""
+            if hasattr(cls, '_verbose') and cls._verbose:  # pylint: disable=protected-access
                 self.report('({}){}'.format(priority, handler.__name__))
             return handler(self, calculation)
 
         setattr(cls, handler.__name__, error_handler)
 
         if not hasattr(cls, '_error_handlers'):
-            cls._error_handlers = []
-        cls._error_handlers.append(ErrorHandler(priority, error_handler))
+            cls._error_handlers = []  # pylint: disable=protected-access
+        cls._error_handlers.append(ErrorHandler(priority, error_handler))  # pylint: disable=protected-access
 
         return error_handler
 

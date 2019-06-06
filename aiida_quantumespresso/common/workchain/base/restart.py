@@ -1,34 +1,31 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=inconsistent-return-statements,no-member
+"""Base implementation of `WorkChain` class that implements a simple automated restart mechanism for calculations."""
 from __future__ import absolute_import
 
-import six
-from six.moves import map
-
 from aiida import orm
-from aiida.common import EntryPointError
+from aiida.common import exceptions
 from aiida.common.lang import override
-from aiida.engine import CalcJob, WorkChain, ToContext, append_
+from aiida.engine import ExitCode, CalcJob, WorkChain, ToContext, append_
 from aiida.plugins.entry_point import get_entry_point_names, load_entry_point
 
 from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
 
 
 class BaseRestartWorkChain(WorkChain):
-    """
-    Base restart workchain
+    """Base restart work chain
 
-    This workchain serves as the starting point for more complex workchains that will be designed to
-    run a calculation that might need multiple restarts to come to a successful end. These restarts
-    may be necessary because a single calculation run is not sufficient to achieve a fully converged
-    result, or certain errors maybe encountered which are recoverable.
+    This work chain serves as the starting point for more complex work chains that will be designed to run a calculation
+    that might need multiple restarts to come to a successful end. These restarts may be necessary because a single
+    calculation run is not sufficient to achieve a fully converged result, or certain errors maybe encountered which
+    are recoverable.
 
-    This workchain implements the most basic functionality to achieve this goal. It will launch
-    calculations, restarting until it is completed successfully or the maximum number of iterations
-    is reached. It can recover from simple submission failures and will handle any other errors through
-    any of the error handlers that have been provided.
+    This work chain implements the most basic functionality to achieve this goal. It will launch calculations,
+    restarting until it is completed successfully or the maximum number of iterations is reached. It can recover from
+    errors through error handlers that can be attached dynamically through the `register_error_handler` decorator.
 
-    The idea is to subclass this workchain and leverage the generic error handling that is implemented
-    in the few outline methods. Part of the suggested outline would look something like the following::
+    The idea is to sub class this work chain and leverage the generic error handling that is implemented in the few
+    outline methods. The minimally required outline would look something like the following::
 
         cls.setup
         while_(cls.should_run_calculation)(
@@ -36,12 +33,11 @@ class BaseRestartWorkChain(WorkChain):
             cls.inspect_calculation,
         )
 
-    Each of these methods can of course be overriden but they should be general enough to fit most
-    calculation cycles. The run_calculation method will take the inputs for the calculation process
-    from the context under the key 'inputs'. The user should therefore make sure that before the
-    run_calculation method is called, that the to be used inputs are stored under self.ctx.inputs.
-    One can update the inputs based on the results from a prior calculation by calling an outline
-    method just before the run_calculation step, for example::
+    Each of these methods can of course be overriden but they should be general enough to fit most calculation cycles.
+    The `run_calculation` method will take the inputs for the calculation process from the context under the key
+    `inputs`. The user should therefore make sure that before the `run_calculation` method is called, that the to be
+    used inputs are stored under `self.ctx.inputs`. One can update the inputs based on the results from a prior
+    calculation by calling an outline method just before the `run_calculation` step, for example::
 
         cls.setup
         while_(cls.should_run_calculation)(
@@ -50,8 +46,10 @@ class BaseRestartWorkChain(WorkChain):
             cls.inspect_calculation,
         )
 
-    Where in the prepare_calculation method, the inputs dictionary at self.ctx.inputs is updated
-    before the next calculation will be run with those inputs.
+    Where in the `prepare_calculation` method, the inputs dictionary at `self.ctx.inputs` is updated before the next
+    calculation will be run with those inputs.
+
+    The `_calculation_class` attribute should be set to the `CalcJob` class that should be run in the loop.
     """
     _verbose = False
     _calculation_class = None
@@ -61,10 +59,9 @@ class BaseRestartWorkChain(WorkChain):
         super(BaseRestartWorkChain, self).__init__(*args, **kwargs)
 
         if self._calculation_class is None or not issubclass(self._calculation_class, CalcJob):
-            raise ValueError('no valid CalcJob class defined for _calculation_class attribute')
+            raise ValueError('no valid CalcJob class defined for `_calculation_class` attribute')
 
         self._load_error_handlers()
-        return
 
     @override
     def load_instance_state(self, saved_state, load_context):
@@ -77,63 +74,54 @@ class BaseRestartWorkChain(WorkChain):
             for entry_point_name in get_entry_point_names(self._error_handler_entry_point):
                 try:
                     load_entry_point(self._error_handler_entry_point, entry_point_name)
-                    self.logger.info("loaded the '{}' entry point for the '{}' error handlers category"
-                        .format(entry_point_name, self._error_handler_entry_point))
-                except EntryPointError as exception:
-                    self.logger.warning("failed to load the '{}' entry point for the '{}' error handlers: {}"
-                        .format(entry_point_name, self._error_handler_entry_point, exception))
+                    self.logger.info("loaded the '%s' entry point for the '%s' error handlers category",
+                                     entry_point_name, self._error_handler_entry_point)
+                except exceptions.EntryPointError as exception:
+                    self.logger.warning("failed to load the '%s' entry point for the '%s' error handlers: %s",
+                                        entry_point_name, self._error_handler_entry_point, exception)
 
     @classmethod
     def define(cls, spec):
+        # yapf: disable
+        # pylint: disable=bad-continuation
         super(BaseRestartWorkChain, cls).define(spec)
         spec.input('max_iterations', valid_type=orm.Int, default=orm.Int(5),
-            help='maximum number of iterations the workchain will restart the calculation to finish successfully')
+            help='Maximum number of iterations the work chain will restart the calculation to finish successfully.')
         spec.input('clean_workdir', valid_type=orm.Bool, default=orm.Bool(False),
-            help='if True, work directories of all called calculation will be cleaned at the end of execution')
-        spec.exit_code(100, 'ERROR_ITERATION_RETURNED_NO_CALCULATION',
-            message='the run_calculation step did not successfully add a calculation node to the context')
+            help='If `True`, work directories of all called calculation will be cleaned at the end of execution.')
         spec.exit_code(101, 'ERROR_MAXIMUM_ITERATIONS_EXCEEDED',
-            message='the maximum number of iterations was exceeded')
-        spec.exit_code(102, 'ERROR_UNEXPECTED_CALCULATION_STATE',
-            message='the calculation finished with an unexpected calculation state')
-        spec.exit_code(103, 'ERROR_SECOND_CONSECUTIVE_SUBMISSION_FAILURE',
-            message='the calculation failed to submit, twice in a row')
-        spec.exit_code(104, 'ERROR_SECOND_CONSECUTIVE_UNHANDLED_FAILURE',
-            message='the calculation failed for an unknown reason, twice in a row')
+            message='The maximum number of iterations was exceeded.')
+        spec.exit_code(102, 'ERROR_SECOND_CONSECUTIVE_UNHANDLED_FAILURE',
+            message='The calculation failed for an unknown reason, twice in a row.')
 
     def setup(self):
-        """
-        Initialize context variables that are used during the logical flow of the BaseRestartWorkChain
-        """
+        """Initialize context variables that are used during the logical flow of the `BaseRestartWorkChain`."""
         self.ctx.calc_name = self._calculation_class.__name__
         self.ctx.unexpected_failure = False
-        self.ctx.submission_failure = False
         self.ctx.restart_calc = None
         self.ctx.is_finished = False
         self.ctx.iteration = 0
 
-        return
-
     def should_run_calculation(self):
-        """
-        Return whether a new calculation should be run, which is the case as long as the last
-        calculation has not finished successfully and the maximum number of restarts has not yet
-        been exceeded
+        """Return whether a new calculation should be run.
+
+        This is the case as long as the last calculation has not finished successfully and the maximum number of
+        restarts has not yet been exceeded.
         """
         return not self.ctx.is_finished and self.ctx.iteration < self.inputs.max_iterations.value
 
     def run_calculation(self):
-        """
-        Run a new calculation, taking the input dictionary from the context at self.ctx.inputs
-        """
+        """Run the next calculation, taking the input dictionary from the context at `self.ctx.inputs`."""
+        from aiida_quantumespresso.utils.mapping import prepare_process_inputs
+
         self.ctx.iteration += 1
 
         try:
             unwrapped_inputs = self.ctx.inputs
         except AttributeError:
-            raise ValueError('no calculation input dictionary was defined in self.ctx.inputs')
+            raise AttributeError('no calculation input dictionary was defined in `self.ctx.inputs`')
 
-        inputs = self._prepare_process_inputs(self._calculation_class, unwrapped_inputs)
+        inputs = prepare_process_inputs(self._calculation_class, unwrapped_inputs)
         calculation = self.submit(self._calculation_class, **inputs)
 
         self.report('launching {}<{}> iteration #{}'.format(self.ctx.calc_name, calculation.pk, self.ctx.iteration))
@@ -141,72 +129,69 @@ class BaseRestartWorkChain(WorkChain):
         return ToContext(calculations=append_(calculation))
 
     def inspect_calculation(self):
-        """
-        Analyse the results of the previous calculation, checking whether it finished successfully
-        or if not troubleshoot the cause and handle the errors, or abort if unrecoverable error was found
-        """
-        try:
-            calculation = self.ctx.calculations[self.ctx.iteration - 1]
-        except IndexError:
-            self.report('iteration {} finished without returning a {}'.format(self.ctx.iteration, self.ctx.calc_name))
-            return self.exit_codes.ERROR_ITERATION_RETURNED_NO_CALCULATION
-
-        exit_code = None
+        """Analyse the results of the previous calculation and call the error handlers when necessary."""
+        calculation = self.ctx.calculations[self.ctx.iteration - 1]
 
         # Done: successful completion of last calculation
         if calculation.is_finished_ok:
+
+            # Perform an optional sanity check. If it returns an `ExitCode` this means an unrecoverable situation was
+            # detected and the work chain should be aborted. If it returns `False`, the sanity check detected a problem
+            # but has handled the problem and we should restart the cycle.
+            result = self._handle_calculation_sanity_checks(calculation)  # pylint: disable=assignment-from-no-return
+
+            if isinstance(result, ExitCode):
+                self.report('{}<{}> finished successfully, but sanity check detected unrecoverable problem'.format(
+                    self.ctx.calc_name, calculation.pk))
+                return result
+
+            if result is False:
+                self.report('{}<{}> finished successfully, but sanity check failed, restarting'.format(
+                    self.ctx.calc_name, calculation.pk))
+                return
+
             self.report('{}<{}> completed successfully'.format(self.ctx.calc_name, calculation.pk))
             self.ctx.restart_calc = calculation
             self.ctx.is_finished = True
+            return
 
         # Abort: exceeded maximum number of retries
-        elif self.ctx.iteration >= self.inputs.max_iterations.value:
-            self.report('reached the maximumm number of iterations {}: last ran {}<{}>'
-                .format(self.inputs.max_iterations.value, self.ctx.calc_name, calculation.pk))
-            exit_code = self.exit_codes.ERROR_MAXIMUM_ITERATIONS_EXCEEDED
+        if self.ctx.iteration >= self.inputs.max_iterations.value:
+            self.report('reached the maximumm number of iterations {}: last ran {}<{}>'.format(
+                self.inputs.max_iterations.value, self.ctx.calc_name, calculation.pk))
+            return self.exit_codes.ERROR_MAXIMUM_ITERATIONS_EXCEEDED
 
-        # Retry or abort: calculation finished or failed
-        else:
+        # Unexpected: calculation was killed or an exception occurred, trigger unexpected failure handling
+        if calculation.is_excepted or calculation.is_killed:
+            return self._handle_unexpected_failure(calculation)
 
-            # Calculation was at least submitted successfully, so we reset the flag
-            self.ctx.submission_failure = False
-
-            # Check output for problems independent on calculation state and that do not trigger parser warnings
-            exit_code = self._handle_calculation_sanity_checks(calculation)
-
-            # Calculation failed, try to salvage it or handle any unexpected failures
-            try:
-                exit_code = self._handle_calculation_failure(calculation)
-            except UnexpectedCalculationFailure as exception:
-                exit_code = self._handle_unexpected_failure(calculation, exception)
-                self.ctx.unexpected_failure = True
+        # Failed: here the calculation is `Finished` but has a non-zero exit status, initiate the error handling
+        try:
+            exit_code = self._handle_calculation_failure(calculation)
+        except UnexpectedCalculationFailure as exception:
+            exit_code = self._handle_unexpected_failure(calculation, exception)
 
         return exit_code
 
     def results(self):
-        """
-        Attach the outputs specified in the output specification from the last completed calculation
-        """
-        self.report('workchain completed after {} iterations'.format(self.ctx.iteration))
+        """Attach the outputs specified in the output specification from the last completed calculation."""
+        self.report('work chain completed after {} iterations'.format(self.ctx.iteration))
 
-        for name, port in six.iteritems(self.spec().outputs):
+        for name, port in self.spec().outputs.items():
 
             try:
                 node = self.ctx.restart_calc.get_outgoing(link_label_filter=name).one().node
             except ValueError:
                 if port.required:
-                    self.report("the process spec specifies the output '{}' as required but was not an output of {}<{}>"
-                        .format(name, self.ctx.calc_name, self.ctx.restart_calc.pk))
+                    self.report("required output '{}' was not an output of {}<{}>".format(
+                        name, self.ctx.calc_name, self.ctx.restart_calc.pk))
             else:
                 self.out(name, node)
                 if self._verbose:
                     self.report("attaching the node {}<{}> as '{}'".format(node.__class__.__name__, node.pk, name))
 
     def on_terminated(self):
-        """
-        If the clean_workdir input was set to True, recursively collect all called Calculations by
-        ourselves and our called descendants, and clean the remote folder for the CalcJobNode instances
-        """
+        """Clean the working directories of all child calculations if `clean_workdir=True` in the inputs."""
         super(BaseRestartWorkChain, self).on_terminated()
 
         if self.inputs.clean_workdir.value is False:
@@ -215,71 +200,43 @@ class BaseRestartWorkChain(WorkChain):
 
         cleaned_calcs = []
 
-        for called_descendant in self.calc.called_descendants:
+        for called_descendant in self.node.called_descendants:
             if isinstance(called_descendant, orm.CalcJobNode):
                 try:
-                    called_descendant.outputs.remote_folder._clean()
-                    cleaned_calcs.append(called_descendant.pk)
+                    called_descendant.outputs.remote_folder._clean()  # pylint: disable=protected-access
+                    cleaned_calcs.append(str(called_descendant.pk))
                 except (IOError, OSError, KeyError):
                     pass
 
         if cleaned_calcs:
-            self.report('cleaned remote folders of calculations: {}'.format(' '.join(map(str, cleaned_calcs))))
+            self.report('cleaned remote folders of calculations: {}'.format(' '.join(cleaned_calcs)))
 
     def _handle_calculation_sanity_checks(self, calculation):
-        """
-        Calculations that run successfully may still have problems that can only be determined when inspecting
-        the output. The same problems may also be the hidden root of a calculation failure. For that reason,
-        after verifying that the calculation ran, regardless of its calculation state, we perform some sanity
-        checks.
-        """
-        pass
+        """Perform a sanity check of a calculation that finished ok.
 
-    def _handle_submission_failure(self, calculation):
-        """
-        The submission of the calculation has failed. If the submission_failure flag is set to true, this
-        is the second consecutive submission failure and we abort the workchain Otherwise we restart once more.
-        """
-        if self.ctx.submission_failure:
-            self.report('submission for {}<{}> failed for the second consecutive time'
-                .format(self.ctx.calc_name, calculation.pk))
-            return self.exit_codes.ERROR_SECOND_CONSECUTIVE_SUBMISSION_FAILURE
+        Calculations that were marked as successful by the parser may still have produced outputs that do not make sense
+        but were not detected by the code and so were not highlighted as warnings or errors. The consistency of the
+        outputs can be checked here. If an unrecoverable problem is found, the function should return the appropriate
+        exit code to abort the work chain. If the probem can be fixed with a restart calculation, this function should
+        adapt the inputs as an error handler would and return `False`. This will signal to the work chain that a new
+        calculation should be started. If `None` is returned, the work chain assumes that the outputs produced by the
+        calculation are good and nothing will be done.
 
-        else:
-            self.report('submission for {}<{}> failed, restarting once more'
-                .format(self.ctx.calc_name, calculation.pk))
-
-    def _handle_unexpected_failure(self, calculation, exception=None):
+        :param calculation: the calculation whose outputs should be checked for consistency
+        :return: `ExitCode` if the work chain is to be aborted, `False` if a new calculation should be launched
         """
-        The calculation has failed for an unknown reason and could not be handled. If the unexpected_failure
-        flag is true, this is the second consecutive unexpected failure and we abort the workchain.
-        Otherwise we restart once more.
-        """
-        if exception:
-            self.report('{}'.format(exception))
-
-        if self.ctx.unexpected_failure:
-            self.report('failure of {}<{}> could not be handled for the second consecutive time'
-                .format(self.ctx.calc_name, calculation.pk))
-            return self.exit_codes.ERROR_SECOND_CONSECUTIVE_UNHANDLED_FAILURE
-
-        else:
-            self.report('failure of {}<{}> could not be handled, restarting once more'
-                .format(self.ctx.calc_name, calculation.pk))
 
     def _handle_calculation_failure(self, calculation):
-        """
-        The calculation has failed so we try to analyze the reason and change the inputs accordingly
-        for the next calculation. If the calculation failed, but did so cleanly, we set it as the
-        restart_calc, in all other cases we do not replace the restart_calc
-        """
-        try:
-            outputs = calculation.outputs.output_parameters.get_dict()
-            _ = outputs['warnings']
-            _ = outputs['parser_warnings']
-        except (AttributeError, KeyError) as exception:
-            raise UnexpectedCalculationFailure(exception)
+        """Call the attached error handlers if any to attempt to correct the cause of the calculation failure.
 
+        The registered error handlers will be called in order based on their priority until a handler returns a report
+        that instructs to break. If the last executed error handler defines an exit code, that will be returned to
+        instruct the work chain abort. Otherwise the work chain will continue the cycle.
+
+        :param calculation: the calculation that finished with a non-zero exit status
+        :return: `ExitCode` if the work chain is to be aborted
+        :raises `UnexpectedCalculationFailure`: if no error handlers were registered or no errors were handled.
+        """
         is_handled = False
         handler_report = None
 
@@ -310,13 +267,24 @@ class BaseRestartWorkChain(WorkChain):
 
         return
 
-    def _prepare_process_inputs(self, process, inputs):
+    def _handle_unexpected_failure(self, calculation, exception=None):
+        """Handle an unexpected failure.
+
+        This occurs when a calculation excepted, was killed or finished with a non-zero exit status but no errors were
+        handled. If this is the second consecutive unexpected failure the work chain is aborted.
+
+        :param calculation: the calculation that failed in an unexpected way
+        :param exception: optional exception message to log to the report
+        :return: `ExitCode` if this is the second consecutive unexpected failure
         """
-        Prepare the inputs dictionary for a calculation process. Any remaining bare dictionaries in the inputs
-        dictionary will be wrapped in a Dict data node except for the 'options' key which should remain
-        a standard dictionary. Another exception are dictionaries whose keys are not strings but for example tuples.
-        This is the format used by input groups as in for example the explicit pseudo dictionary where the key is
-        a tuple of kind to which the UpfData corresponds.
-        """
-        from aiida_quantumespresso.utils.mapping import prepare_process_inputs
-        return prepare_process_inputs(process, inputs)
+        if exception:
+            self.report('{}'.format(exception))
+
+        if self.ctx.unexpected_failure:
+            self.report('failure of {}<{}> could not be handled for the second consecutive time'.format(
+                self.ctx.calc_name, calculation.pk))
+            return self.exit_codes.ERROR_SECOND_CONSECUTIVE_UNHANDLED_FAILURE
+
+        self.ctx.unexpected_failure = True
+        self.report('failure of {}<{}> could not be handled, restarting once more'.format(
+            self.ctx.calc_name, calculation.pk))
