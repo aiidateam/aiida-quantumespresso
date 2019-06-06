@@ -191,7 +191,7 @@ class PwBandsWorkChain(WorkChain):
 
         cleaned_calcs = []
 
-        for called_descendant in self.calc.called_descendants:
+        for called_descendant in self.node.called_descendants:
             if isinstance(called_descendant, orm.CalcJobNode):
                 try:
                     called_descendant.outputs.remote_folder._clean()
