@@ -10,7 +10,6 @@
     exclude: &exclude_files >
       (?x)^(
         aiida_quantumespresso/calculations.*|
-        aiida_quantumespresso/common/.*|
         aiida_quantumespresso/parsers/.*|
         aiida_quantumespresso/tools/.*|
         aiida_quantumespresso/utils/.*|
