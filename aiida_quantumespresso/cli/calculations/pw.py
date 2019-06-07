@@ -37,7 +37,7 @@ CALCS_REQUIRING_PARENT = set(['nscf'])
     '-z',
     '--calculation-mode',
     'mode',
-    type=click.Choice(['scf', 'nscf', 'vc-relax']),
+    type=click.Choice(['scf', 'nscf', 'relax', 'vc-relax']),
     default='scf',
     show_default=True,
     help='Select the calculation mode.')
@@ -64,7 +64,7 @@ def launch_calculation(code, structure, pseudo_family, kpoints_mesh, ecutwfc, ec
         'SYSTEM': {
             'ecutwfc': ecutwfc,
             'ecutrho': ecutrho,
-        },
+        }
     }
 
     try:
