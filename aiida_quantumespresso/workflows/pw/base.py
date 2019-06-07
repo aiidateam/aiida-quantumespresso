@@ -10,7 +10,7 @@ from aiida_quantumespresso.common.workchain.utils import ErrorHandlerReport
 from aiida_quantumespresso.common.workchain.utils import register_error_handler
 from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkChain
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
-from aiida_quantumespresso.utils.mapping import update_mapping
+from aiida_quantumespresso.utils.mapping import update_mapping, prepare_process_inputs
 from aiida_quantumespresso.utils.pseudopotential import validate_and_prepare_pseudos_inputs
 from aiida_quantumespresso.utils.resources import get_default_options
 from aiida_quantumespresso.utils.resources import get_pw_parallelization_parameters
@@ -38,20 +38,41 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
     @classmethod
     def define(cls, spec):
+        # yapf: disable
         super(PwBaseWorkChain, cls).define(spec)
-        spec.input('code', valid_type=orm.Code)
-        spec.input('structure', valid_type=orm.StructureData)
-        spec.input('kpoints', valid_type=orm.KpointsData, required=False)
-        spec.input('kpoints_distance', valid_type=orm.Float, required=False)
-        spec.input('kpoints_force_parity', valid_type=orm.Bool, required=False)
-        spec.input('parameters', valid_type=orm.Dict)
-        spec.input_namespace('pseudos', required=False, dynamic=True)
-        spec.input('pseudo_family', valid_type=orm.Str, required=False)
-        spec.input('parent_folder', valid_type=orm.RemoteData, required=False)
-        spec.input('vdw_table', valid_type=orm.SinglefileData, required=False)
-        spec.input('settings', valid_type=orm.Dict, required=False)
-        spec.input('options', valid_type=orm.Dict, required=False)
-        spec.input('automatic_parallelization', valid_type=orm.Dict, required=False)
+        spec.input('code', valid_type=orm.Code,
+            help='The code to use for the calculation which is configured to a Quantum ESPRESSO `pw.x` executable.')
+        spec.input('structure', valid_type=orm.StructureData,
+            help='The input structure.')
+        spec.input('kpoints', valid_type=orm.KpointsData, required=False,
+            help='An explicit k-points list or mesh. Either this or `kpoints_distance` has to be provided.')
+        spec.input('kpoints_distance', valid_type=orm.Float, required=False,
+            help='The minimum desired distance in 1/Å between k-points in reciprocal space. The explicit k-points will '
+                 'be generated automatically by a calculation function based on the input structure.')
+        spec.input('kpoints_force_parity', valid_type=orm.Bool, required=False,
+            help='Optional input when constructing the k-points based on a desired `kpoints_distance`. Setting this to '
+                 '`True` will force the k-point mesh to have an even number of points along each lattice vector except '
+                 'for any non-periodic directions.')
+        spec.input('parameters', valid_type=orm.Dict,
+            help='The input parameters that are to be used to construct the input file for `pw.x`.')
+        spec.input_namespace('pseudos', valid_type=orm.UpfData, required=False, dynamic=True,
+            help='A mapping of `UpfData` nodes onto the kind name to which they should apply.')
+        spec.input('pseudo_family', valid_type=orm.Str, required=False,
+            help='An alternative to specifying the pseudo potentials manually in `pseudos`: one can specify the name '
+                 'of an existing pseudo potential family and the work chain will generate the pseudos automatically '
+                 'based on the input structure.')
+        spec.input('parent_folder', valid_type=orm.RemoteData, required=False,
+            help='An optional working directory of a previously completed calculation to restart from.')
+        spec.input('vdw_table', valid_type=orm.SinglefileData, required=False,
+            help='Optional van der Waals table contained in a `SinglefileData`.')
+        spec.input('settings', valid_type=orm.Dict, required=False,
+            help='Optional parameters to affect the way the calculation job and the parsing are performed.')
+        spec.input('options', valid_type=orm.Dict, required=False,
+            help='The metadata options that are to be passed to the calculation job.')
+        spec.input('automatic_parallelization', valid_type=orm.Dict, required=False,
+            help='When defined, the work chain will first launch an initialization calculation to determine the '
+                 'dimensions of the problem, and based on this it will try to set optimal parallelization flags.')
+
         spec.outline(
             cls.setup,
             cls.validate_inputs,
@@ -67,33 +88,42 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             ),
             cls.results,
         )
+
+        spec.output('automatic_parallelization', valid_type=orm.Dict, required=False,
+            help='The results of the automatic parallelization analysis if performed.')
+        spec.output('output_array', valid_type=orm.ArrayData, required=False,
+            help='The `output_array` output node of the successful calculation if present.')
+        spec.output('output_band', valid_type=orm.BandsData, required=False,
+            help='The `output_band` output node of the successful calculation if present.')
+        spec.output('output_structure', valid_type=orm.StructureData, required=False,
+            help='The `output_structure` output node of the successful calculation if present.')
+        spec.output('output_parameters', valid_type=orm.Dict,
+            help='The `output_parameters` output node of the successful calculation.')
+        spec.output('remote_folder', valid_type=orm.RemoteData,
+            help='The `remote_folder` output node of the successful calculation.')
+
         spec.exit_code(301, 'ERROR_INVALID_INPUT_PSEUDO_POTENTIALS',
-            message="the explicitly passed 'pseudos' or 'pseudo_family' could not be used to get the necessary potentials")
+            message='The explicit `pseudos` or `pseudo_family` could not be used to get the necessary pseudos.')
         spec.exit_code(302, 'ERROR_INVALID_INPUT_KPOINTS',
-            message="neither the 'kpoints' nor the 'kpoints_distance' input was specified")
+            message='Neither the `kpoints` nor the `kpoints_distance` input was specified.')
         spec.exit_code(303, 'ERROR_INVALID_INPUT_RESOURCES',
-            message="neither the 'options' nor 'automatic_parallelization' input was specified")
+            message='Neither the `options` nor `automatic_parallelization` input was specified.')
         spec.exit_code(304, 'ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED',
-            message="the 'options' do not specify both 'num_machines' and 'max_wallclock_seconds'")
+            message='The `options` do not specify both `num_machines` and `max_wallclock_seconds`.')
         spec.exit_code(310, 'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY',
-            message="required key for 'automatic_parallelization' was not specified")
+            message='Required key for `automatic_parallelization` was not specified.')
         spec.exit_code(311, 'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY',
-            message="unrecognized keys were specified for 'automatic_parallelization'")
+            message='Unrecognized keys were specified for `automatic_parallelization`.')
         spec.exit_code(401, 'ERROR_INITIALIZATION_CALCULATION_FAILED',
-            message='the initialization calculation failed')
+            message='The initialization calculation failed.')
         spec.exit_code(402, 'ERROR_CALCULATION_INVALID_INPUT_FILE',
-            message='the calculation failed because it had an invalid input file')
-        spec.output('output_array', valid_type=orm.ArrayData, required=False)
-        spec.output('output_band', valid_type=orm.BandsData, required=False)
-        spec.output('output_structure', valid_type=orm.StructureData, required=False)
-        spec.output('output_parameters', valid_type=orm.Dict)
-        spec.output('remote_folder', valid_type=orm.RemoteData)
+            message='The calculation failed because it had an invalid input file.')
 
     def validate_inputs(self):
-        """
-        Validate inputs that depend might depend on each other and cannot be validated by the spec. Also define
-        dictionary `inputs` in the context, that will contain the inputs for the calculation that will be launched
-        in the `run_calculation` step.
+        """Validate inputs that might depend on each other and cannot be validated by the spec.
+
+        Also define dictionary `inputs` in the context, that will contain the inputs for the calculation that will be
+        launched in the `run_calculation` step.
         """
         self.ctx.inputs = AttributeDict({
             'code': self.inputs.code,
@@ -139,6 +169,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             if num_machines is None or max_wallclock_seconds is None:
                 return self.exit_codes.ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED
 
+            self.set_max_seconds(max_wallclock_seconds)
+
         # Either a KpointsData with given mesh/path, or a desired distance between k-points should be specified
         if all([key not in self.inputs for key in ['kpoints', 'kpoints_distance']]):
             return self.exit_codes.ERROR_INVALID_INPUT_KPOINTS
@@ -162,17 +194,26 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             self.report('{}'.format(exception))
             return self.exit_codes.ERROR_INVALID_INPUT_PSEUDO_POTENTIALS
 
-    def should_run_init(self):
+    def set_max_seconds(self, max_wallclock_seconds):
+        """Set the `max_seconds` to a fraction of `max_wallclock_seconds` option to prevent out-of-walltime problems.
+
+        :param max_wallclock_seconds: the maximum wallclock time that will be set in the scheduler settings.
         """
-        Return whether an initialization calculation should be run, which is the case if the user wants
-        to use automatic parallelization and has specified the Dict node in the inputs
+        max_seconds_factor = self.defaults.delta_factor_max_seconds
+        max_seconds = max_wallclock_seconds * max_seconds_factor
+        self.ctx.inputs.parameters['CONTROL']['max_seconds'] = max_seconds
+
+    def should_run_init(self):
+        """Return whether an initialization calculation should be run.
+
+        :return: boolean, `True` if `automatic_parallelization` was specified in the inputs, `False` otherwise.
         """
         return 'automatic_parallelization' in self.inputs
 
     def validate_init_inputs(self):
-        """
-        Validate the inputs that are required for the initialization calculation. The automatic_parallelization
-        input expects a Dict node with the following keys:
+        """Validate the inputs that are required for the initialization calculation.
+
+        The `automatic_parallelization` input expects a `Dict` node with the following keys:
 
             * max_wallclock_seconds
             * target_time_seconds
@@ -186,8 +227,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         received_keys = [(key, parallelization.get(key, None)) for key in expected_keys]
         remaining_keys = [key for key in parallelization.keys() if key not in expected_keys]
 
-        for k, v in [(key, value) for key, value in received_keys if value is None]:
-            self.report('required key "{}" in automatic_parallelization input not found'.format(k))
+        for key, value in [(key, value) for key, value in received_keys if value is None]:
+            self.report('required key "{}" in automatic_parallelization input not found'.format(key))
             return self.exit_codes.ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY
 
         if remaining_keys:
@@ -208,10 +249,10 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         options['max_wallclock_seconds'] = parallelization['max_wallclock_seconds']
 
     def run_init(self):
-        """
-        Run a first dummy pw calculation that will exit straight after initialization. At that
-        point it will have generated some general output pertaining to the dimensions of the
-        calculation which we can use to distribute available computational resources
+        """Run an initialization `PwCalculation` that will exit after the preamble.
+
+        In the preamble, all the relevant dimensions of the problem are computed which allows us to make an estimate of
+        the required resources and what parallelization flags need to be set.
         """
         inputs = self.ctx.inputs
 
@@ -220,19 +261,15 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         inputs.metadata['options'] = update_mapping(inputs.metadata['options'], get_default_options())
 
         # Prepare the final input dictionary
-        process = PwCalculation.process()
-        inputs = self._prepare_process_inputs(process, inputs)
-        running = self.submit(process, **inputs)
+        inputs = prepare_process_inputs(PwCalculation, inputs)
+        running = self.submit(PwCalculation, **inputs)
 
         self.report('launching initialization PwCalculation<{}>'.format(running.pk))
 
         return ToContext(calculation_init=running)
 
     def inspect_init(self):
-        """
-        Use the initialization PwCalculation to determine the required resource settings for the
-        requested calculation based on the settings in the automatic_parallelization input
-        """
+        """Use the initialization `PwCalculation` to determine the required resource and parallelization settings."""
         calculation = self.ctx.calculation_init
 
         if not calculation.is_finished_ok:
@@ -241,7 +278,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         # Get automated parallelization settings
         parallelization = get_pw_parallelization_parameters(calculation, **self.ctx.automatic_parallelization)
 
-        node = orm.Dict(dict=parallelization)
+        # Note: don't do this at home, we are losing provenance here. This should be done by a calculation function
+        node = orm.Dict(dict=parallelization).store()
         self.out('automatic_parallelization', node)
         self.report('results of automatic parallelization in {}<{}>'.format(node.__class__.__name__, node.pk))
 
@@ -249,7 +287,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         base_resources = options.get('resources', {})
         goal_resources = parallelization['resources']
 
-        scheduler = calculation.get_computer().get_scheduler()
+        scheduler = calculation.computer.get_scheduler()
         resources = create_scheduler_resources(scheduler, base_resources, goal_resources)
 
         cmdline = self.ctx.inputs.settings.get('cmdline', [])
@@ -266,25 +304,14 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         return
 
     def prepare_calculation(self):
-        """
-        Prepare the inputs for the next calculation
+        """Prepare the inputs for the next calculation.
+
+        If a `restart_calc` has been set in the context, its `remote_folder` will be used as the `parent_folder` input
+        for the next calculation and the `restart_mode` is set to `restart`.
         """
         if self.ctx.restart_calc:
             self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'restart'
             self.ctx.inputs.parent_folder = self.ctx.restart_calc.outputs.remote_folder
-
-    def _prepare_process_inputs(self, process, inputs):
-        """
-        The 'max_seconds' setting in the 'CONTROL' card of the parameters will be set to a fraction of the
-        'max_wallclock_seconds' that will be given to the job via the 'options' dictionary. This will prevent the job
-        from being prematurely terminated by the scheduler without getting the chance to exit cleanly.
-        """
-        max_wallclock_seconds = inputs.metadata['options']['max_wallclock_seconds']
-        max_seconds_factor = self.defaults.delta_factor_max_seconds
-        max_seconds = max_wallclock_seconds * max_seconds_factor
-        inputs.parameters['CONTROL']['max_seconds'] = max_seconds
-
-        return super(PwBaseWorkChain, self)._prepare_process_inputs(process, inputs)
 
 
 @register_error_handler(PwBaseWorkChain, 500)

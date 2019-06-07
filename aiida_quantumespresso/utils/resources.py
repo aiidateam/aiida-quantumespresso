@@ -128,7 +128,7 @@ def get_pw_parallelization_parameters(calculation, max_num_machines, target_time
     """
     from fractions import gcd
 
-    default_num_mpiprocs_per_machine = calculation.get_computer().get_default_mpiprocs_per_machine()
+    default_num_mpiprocs_per_machine = calculation.computer.get_default_mpiprocs_per_machine()
 
     input_parameters = calculation.inputs.parameters.get_dict()
     output_parameters = calculation.outputs.output_parameters.get_dict()
@@ -188,7 +188,7 @@ def get_pw_parallelization_parameters(calculation, max_num_machines, target_time
 
     # Increase the number of machines in case of memory problem during initialization
     # TODO: make it more general and less dependent on the scheduler exact message
-    if calculation.get_scheduler_error() and 'OOM' in calculation.get_scheduler_error():
+    if calculation.get_scheduler_stderr() and 'OOM' in calculation.get_scheduler_stderr():
         num_machines = max([i for i in range(num_machines, max_num_machines + 1) if i % num_machines == 0])
 
     estimated_time = time_single_cpu / (num_mpiprocs_per_machine * num_machines)
