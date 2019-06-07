@@ -141,11 +141,14 @@ class BaseRestartWorkChain(WorkChain):
             result = self._handle_calculation_sanity_checks(calculation)  # pylint: disable=assignment-from-no-return
 
             if isinstance(result, ExitCode):
+                # No need to reset the `unexpected_failure` because the work chain will terminate due to the exit code
                 self.report('{}<{}> finished successfully, but sanity check detected unrecoverable problem'.format(
                     self.ctx.calc_name, calculation.pk))
                 return result
 
             if result is False:
+                # Reset the `unexpected_failure` since we are restarting the calculation loop
+                self.ctx.unexpected_failure = False
                 self.report('{}<{}> finished successfully, but sanity check failed, restarting'.format(
                     self.ctx.calc_name, calculation.pk))
                 return
@@ -231,7 +234,7 @@ class BaseRestartWorkChain(WorkChain):
 
         The registered error handlers will be called in order based on their priority until a handler returns a report
         that instructs to break. If the last executed error handler defines an exit code, that will be returned to
-        instruct the work chain abort. Otherwise the work chain will continue the cycle.
+        instruct the work chain to abort. Otherwise the work chain will continue the cycle.
 
         :param calculation: the calculation that finished with a non-zero exit status
         :return: `ExitCode` if the work chain is to be aborted
@@ -249,8 +252,9 @@ class BaseRestartWorkChain(WorkChain):
         for handler in handlers:
             handler_report = handler.method(self, calculation)
 
-            # If at least one error is handled, we consider the calculation failure handled
+            # If at least one error is handled, we consider the calculation failure handled.
             if handler_report and handler_report.is_handled:
+                self.ctx.unexpected_failure = False
                 is_handled = True
 
             # After certain error handlers, we may want to skip all other error handling
@@ -274,7 +278,7 @@ class BaseRestartWorkChain(WorkChain):
         handled. If this is the second consecutive unexpected failure the work chain is aborted.
 
         :param calculation: the calculation that failed in an unexpected way
-        :param exception: optional exception message to log to the report
+        :param exception: optional exception or error message to log to the report
         :return: `ExitCode` if this is the second consecutive unexpected failure
         """
         if exception:
