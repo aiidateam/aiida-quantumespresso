@@ -126,37 +126,6 @@ def test_pw_default_xml_new(fixture_database, fixture_computer_localhost, genera
     })
 
 
-def test_pw_relax(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
-                  generate_inputs_relax, data_regression):
-    """Test a `pw.x` calculation in `relax` mode.
-
-    The output is created by running a dead 'relax' calculation for a silicon structure.
-    Note that `output_band` will not be there, because the bands are only parsed if the `retrieved_temporary_folder` is
-    passed containing the necessary files. Since we don't pass those in this test, the output node will not be created.
-    """
-    name = 'relax'
-    entry_point_calc_job = 'quantumespresso.pw'
-    entry_point_parser = 'quantumespresso.pw'
-
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_relax)
-    parser = generate_parser(entry_point_parser)
-    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
-
-    assert calcfunction.is_finished, calcfunction.exception
-    assert calcfunction.is_finished_ok, calcfunction.exit_message
-    assert 'output_kpoints' in results
-    assert 'output_parameters' in results
-    assert 'output_structure' in results
-    assert 'output_trajectory' in results
-    assert 'output_array' not in results  # The `ArrayData` and `TrajectoryData` outputs are mutually exclusive
-    data_regression.check({
-        'output_kpoints': results['output_kpoints'].attributes,
-        'output_parameters': results['output_parameters'].get_dict(),
-        'output_structure': results['output_structure'].attributes,
-        'output_trajectory': results['output_trajectory'].attributes,
-    })
-
-
 def test_pw_failed_missing(fixture_database, fixture_computer_localhost, generate_calc_job_node,
                            generate_parser, generate_inputs_default, data_regression):
     """Test the parsing of a calculation that was interrupted before output files could even be written.
@@ -262,3 +231,56 @@ def test_pw_failed_interrupted_xml(fixture_database, fixture_computer_localhost,
     assert 'output_array' in results
     assert 'output_parameters' in results
     data_regression.check(results['output_parameters'].get_dict())
+
+
+def test_pw_failed_scf_not_converged(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+                                   generate_parser, generate_inputs_default, data_regression):
+    """Test the parsing of an scf calculation that ran nominally but did not reach convergence."""
+    name = 'failed_scf_not_converged'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_default)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_ACHIEVED.status
+    assert 'output_array' in results
+    assert 'output_parameters' in results
+    data_regression.check({
+        'output_array': results['output_array'].attributes,
+        'output_parameters': results['output_parameters'].get_dict(),
+    })
+
+
+def test_pw_relax(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
+                  generate_inputs_relax, data_regression):
+    """Test a `pw.x` calculation in `relax` mode.
+
+    The output is created by running a dead 'relax' calculation for a silicon structure.
+    Note that `output_band` will not be there, because the bands are only parsed if the `retrieved_temporary_folder` is
+    passed containing the necessary files. Since we don't pass those in this test, the output node will not be created.
+    """
+    name = 'relax'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_relax)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_kpoints' in results
+    assert 'output_parameters' in results
+    assert 'output_structure' in results
+    assert 'output_trajectory' in results
+    assert 'output_array' not in results  # The `ArrayData` and `TrajectoryData` outputs are mutually exclusive
+    data_regression.check({
+        'output_kpoints': results['output_kpoints'].attributes,
+        'output_parameters': results['output_parameters'].get_dict(),
+        'output_structure': results['output_structure'].attributes,
+        'output_trajectory': results['output_trajectory'].attributes,
+    })
