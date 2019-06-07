@@ -29,6 +29,34 @@ default_polarization_units = 'C / m^2'
 default_stress_units = 'GPascal'
 
 
+def detect_important_message(logs, line):
+    message_map ={
+        'error': {
+            'Maximum CPU time exceeded': 'ERROR_OUT_OF_WALLTIME',
+            'convergence NOT achieved after': 'ERROR_ELECTRONIC_CONVERGENCE_NOT_ACHIEVED',
+            'The maximum number of steps has been reached.': 'ERROR_IONIC_CONVERGENCE_NOT_ACHIEVED',
+            'problems computing cholesky': 'ERROR_DIAGONALIZATION_CHOLESKY_DECOMPOSITION',
+        },
+        'warning': {
+            'Warning:': None,
+            'DEPRECATED:': None,
+        }
+    }
+
+    # Match any known error and warning messages
+    for marker, message in message_map['error'].items():
+        if marker in line:
+            if message is None:
+                message = line
+            logs.error.append(message)
+
+    for marker, message in message_map['warning'].items():
+        if marker in line:
+            if message is None:
+                message = line
+            logs.warning.append(message)
+
+
 def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None):
     """Parses the stdout content of a Quantum ESPRESSO `pw.x` calculation.
 
@@ -54,24 +82,6 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
     bands_data = parsed_xml.pop('bands', {})
     structure_data = parsed_xml.pop('structure', {})
     trajectory_data = {}
-
-    # critical warnings: if any is found, the calculation status is FAILED
-    critical_warnings = {
-        'The maximum number of steps has been reached.': "The maximum step of the ionic/electronic relaxation has been reached.",
-        'convergence NOT achieved after': "The scf cycle did not reach convergence.",
-        'iterations completed, stopping': 'Maximum number of iterations reached in Wentzcovitch Damped Dynamics.',
-        'Maximum CPU time exceeded': 'Maximum CPU time exceeded',
-        'problems computing cholesky': 'ERROR_DIAGONALIZATION_CHOLESKY_DECOMPOSITION',
-    }
-
-    minor_warnings = {
-        'Warning:': None,
-        'DEPRECATED:': None,
-        'incommensurate with FFT grid': 'The FFT is incommensurate: some symmetries may be lost.',
-        'SCF correction compared to forces is too large, reduce conv_thr': 'Forces are inaccurate (SCF correction is large): reduce conv_thr.',
-    }
-
-    all_warnings = dict(list(critical_warnings.items()) + list(minor_warnings.items()))
 
     # First check whether the `JOB DONE` message was written, otherwise the job was interrupted
     for line in data_lines:
@@ -129,20 +139,15 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
             lines = stdout.split('\n')
 
             for line_number, line in enumerate(lines):
+                # Compare the line to the known set of error and warning messages and add them to the log container
+                detect_important_message(logs, line)
 
-                if '%%%%%%%%%%%%%%' in line:
-                    messages = parse_QE_errors(lines, line_number, all_warnings)
-                elif any(i in line for i in all_warnings):
-                    messages = [message for marker, message in all_warnings.items() if marker in line]
-
-                logs.warning.extend(set(messages))
-
-            if len(logs.warning) > 0:
+            if len(logs.error) or len(logs.warning) > 0:
                 parsed_data['trajectory'] = trajectory_data
                 return parsed_data, logs
-            else:
-                # did not find any error message -> raise an Error and do not return anything
-                raise QEOutputParsingError('Parser cannot load basic info.')
+
+            # did not find any error message -> raise an Error and do not return anything
+            raise QEOutputParsingError('Parser cannot load basic info.')
     else:
         nat = structure_data['number_of_atoms']
         ntyp = structure_data['number_of_species']
@@ -162,6 +167,9 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
 
     # now grep quantities that can be considered isolated informations.
     for count, line in enumerate(data_lines):
+
+        # Compare the line to the known set of error and warning messages and add them to the log container
+        detect_important_message(logs, line)
 
         # to be used for later
         if 'Carrying out vdW-DF run using the following parameters:' in line:
@@ -281,32 +289,6 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                 # if there is another iteration, c_bands is not necessarily a problem
                 # I put a warning only if c_bands error appears in the last iteration
                 c_bands_error = False
-
-        # If the line is the marker for a Quantum ESPRESSO exception we parse the warnings between those markers
-        elif '%%%%%%%%%%%%%%' in line:
-            messages = parse_QE_errors(data_lines, count, all_warnings)
-            logs.warning.extend(set(messages))
-
-        # Alternatively, get all messages of the warnings whose marker is found in the line
-        elif any(i in line for i in all_warnings):
-
-            messages = [message for marker, message in all_warnings.items() if marker in line]
-
-            # If no explicit warnings are matched, we turn the line itself as the message
-            if not messages:
-                messages = [line.strip()]
-
-            # If the run is a molecular dynamics, I ignore that I reached the last iteration step.
-            if ('The maximum number of steps has been reached.' in line and
-                    'md' in input_parameters.get('CONTROL', {}).get('calculation', '')):
-                messages = []
-
-            if 'iterations completed, stopping' in line and 'Wentzcovitch Damped Dynamics:' in line:
-                dynamic_iterations = int(line.split()[3])
-                if max_dynamic_iterations != dynamic_iterations:
-                    messages = []
-
-            logs.warning.extend(set(messages))
 
     if c_bands_error:
         logs.warning.append("c_bands: at least 1 eigenvalues not converged")

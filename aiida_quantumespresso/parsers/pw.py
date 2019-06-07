@@ -99,11 +99,16 @@ class PwParser(Parser):
         # Emit the logs returned by the XML and stdout parsing through the logger
         self.emit_logs(logs_stdout, logs_xml)
 
+        # If the stdout was incomplete, most likely the job was interrupted before it could cleanly finish, so the
+        # output files are most likely corrupt and cannot be restarted from
         if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs_stdout['error']:
             self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
 
         if self.exit_code_stdout and self.exit_code_xml:
             return self.exit(self.exit_codes.ERROR_OUTPUT_FILES)
+
+        if 'ERROR_ELECTRONIC_CONVERGENCE_NOT_ACHIEVED' in logs_stdout['error']:
+            self.exit_code_stdout = self.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_ACHIEVED
 
         if self.exit_code_stdout:
             return self.exit(self.exit_code_stdout)
@@ -217,7 +222,7 @@ class PwParser(Parser):
                     if message is None or not message.strip():
                         continue
                     try:
-                        getattr(self.logger, level)(message)
+                        getattr(self.logger, level)(message.strip())
                     except AttributeError:
                         pass
 
