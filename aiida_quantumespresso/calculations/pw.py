@@ -66,6 +66,7 @@ class PwCalculation(BasePwCpInputGenerator):
         spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.pw')
+        spec.input('metadata.options.require_xml', valid_type=bool, default=True)
         spec.input('kpoints', valid_type=orm.KpointsData,
             help='kpoint mesh or kpoint path')
         spec.input('hubbard_file', valid_type=orm.SinglefileData, required=False,

@@ -70,8 +70,9 @@ class PwParser(Parser):
         xml_file = None
 
         if not xml_files:
-            self.logger.error('no XML output files found, which is required for parsing')
-            return self.exit_codes.ERROR_MISSING_XML_FILE
+            if self.node.get_option("require_xml"):
+                self.logger.error('no XML output files found, which is required for parsing')
+                return self.exit_codes.ERROR_MISSING_XML_FILE
         elif len(xml_files) > 1:
             self.logger.error('more than one XML file retrieved, which should never happen')
             return self.exit_codes.ERROR_MULTIPLE_XML_FILES
