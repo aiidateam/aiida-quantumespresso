@@ -107,7 +107,10 @@ class PwParser(Parser):
         if self.exit_code_stdout and self.exit_code_xml:
             return self.exit(self.exit_codes.ERROR_OUTPUT_FILES)
 
-        if 'ERROR_ELECTRONIC_CONVERGENCE_NOT_ACHIEVED' in logs_stdout['error']:
+        if 'ERROR_OUT_OF_WALLTIME' in logs_stdout['error']:
+            self.exit_code_stdout = self.exit_codes.ERROR_OUT_OF_WALLTIME
+
+        elif 'ERROR_ELECTRONIC_CONVERGENCE_NOT_ACHIEVED' in logs_stdout['error']:
             self.exit_code_stdout = self.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_ACHIEVED
 
         if self.exit_code_stdout:
@@ -216,13 +219,25 @@ class PwParser(Parser):
 
         :param args: log dictionaries
         """
+        ignore = [
+            'Error while parsing ethr.',
+            'DEPRECATED: symmetry with ibrav=0, use correct ibrav instead'
+        ]
+
         for logs in args:
             for level, messages in logs.items():
                 for message in messages:
-                    if message is None or not message.strip():
+
+                    if message is None:
                         continue
+
+                    stripped = message.strip()
+
+                    if not stripped or stripped in ignore:
+                        continue
+
                     try:
-                        getattr(self.logger, level)(message.strip())
+                        getattr(self.logger, level)(stripped)
                     except AttributeError:
                         pass
 
