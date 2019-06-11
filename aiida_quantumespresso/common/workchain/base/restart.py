@@ -243,11 +243,11 @@ class BaseRestartWorkChain(WorkChain):
         is_handled = False
         handler_report = None
 
+        if not hasattr(self, '_error_handlers') or not self._error_handlers:
+            raise UnexpectedCalculationFailure('no calculation error handlers were registered')
+
         # Sort the handlers based on their priority in reverse order
         handlers = sorted(self._error_handlers, key=lambda x: x.priority, reverse=True)
-
-        if not handlers:
-            raise UnexpectedCalculationFailure('no calculation error handlers were registered')
 
         for handler in handlers:
             handler_report = handler.method(self, calculation)
