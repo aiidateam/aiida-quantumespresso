@@ -30,7 +30,8 @@ default_stress_units = 'GPascal'
 
 
 def detect_important_message(logs, line):
-    message_map ={
+
+    message_map = {
         'error': {
             'Maximum CPU time exceeded': 'ERROR_OUT_OF_WALLTIME',
             'convergence NOT achieved after': 'ERROR_ELECTRONIC_CONVERGENCE_NOT_ACHIEVED',

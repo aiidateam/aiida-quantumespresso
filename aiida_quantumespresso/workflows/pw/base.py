@@ -5,9 +5,8 @@ from aiida import orm
 from aiida.common import AttributeDict
 from aiida.engine import ToContext, if_, while_
 from aiida.plugins import CalculationFactory
-from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
-from aiida_quantumespresso.common.workchain.utils import ErrorHandlerReport
-from aiida_quantumespresso.common.workchain.utils import register_error_handler
+
+from aiida_quantumespresso.common.workchain.utils import register_error_handler, ErrorHandlerReport
 from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkChain
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 from aiida_quantumespresso.utils.mapping import update_mapping, prepare_process_inputs
@@ -31,6 +30,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         'delta_factor_degauss': 0.1,
         'delta_factor_mixing_beta': 0.8,
         'delta_factor_max_seconds': 0.95,
+        'delta_factor_nbnd': 0.05,
+        'delta_minimum_nbnd': 4,
     })
 
     @classmethod
@@ -91,10 +92,10 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             message='Required key for `automatic_parallelization` was not specified.')
         spec.exit_code(211, 'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY',
             message='Unrecognized keys were specified for `automatic_parallelization`.')
-        spec.exit_code(301, 'ERROR_INITIALIZATION_CALCULATION_FAILED',
+        spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
+            message='The calculation failed with an unrecoverable error.')
+        spec.exit_code(320, 'ERROR_INITIALIZATION_CALCULATION_FAILED',
             message='The initialization calculation failed.')
-        spec.exit_code(302, 'ERROR_CALCULATION_INVALID_INPUT_FILE',
-            message='The calculation failed because it had an invalid input file.')
 
     def setup(self):
         """Call the `setup` of the `BaseRestartWorkChain` and then create the inputs dictionary in `self.ctx.inputs`.
@@ -114,11 +115,11 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         self.ctx.inputs.parameters = self.ctx.inputs.parameters.get_dict()
         self.ctx.inputs.settings = self.ctx.inputs.settings.get_dict() if 'settings' in self.ctx.inputs else {}
 
-        restart_mode = 'restart' if 'parent_folder' in self.ctx.inputs else 'from_scratch'
+        if 'parent_folder' in self.ctx.inputs:
+            self.ctx.restart_calc = self.ctx.inputs.parent_folder.creator
 
         self.ctx.inputs.parameters.setdefault('CONTROL', {})
         self.ctx.inputs.parameters['CONTROL'].setdefault('calculation', 'scf')
-        self.ctx.inputs.parameters['CONTROL']['restart_mode'] = restart_mode
 
     def validate_kpoints(self):
         """Validate the inputs related to k-points.
@@ -133,8 +134,13 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         try:
             kpoints = self.inputs.kpoints
         except AttributeError:
-            force_parity = self.inputs.get('kpoints_force_parity', orm.Bool(False))
-            kpoints = create_kpoints_from_distance(self.inputs.pw.structure, self.inputs.kpoints_distance, force_parity)
+            inputs = {
+                'structure': self.inputs.pw.structure,
+                'distance': self.inputs.kpoints_distance,
+                'force_parity': self.inputs.get('kpoints_force_parity', orm.Bool(False)),
+                'metadata': {'call_link_label': 'create_kpoints_from_distance'}
+            }
+            kpoints = create_kpoints_from_distance(**inputs)
 
         self.ctx.inputs.kpoints = kpoints
 
@@ -288,76 +294,92 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         """Prepare the inputs for the next calculation.
 
         If a `restart_calc` has been set in the context, its `remote_folder` will be used as the `parent_folder` input
-        for the next calculation and the `restart_mode` is set to `restart`.
+        for the next calculation and the `restart_mode` is set to `restart`. Otherwise, no `parent_folder` is used and
+        `restart_mode` is set to `from_scratch`.
         """
         if self.ctx.restart_calc:
             self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'restart'
             self.ctx.inputs.parent_folder = self.ctx.restart_calc.outputs.remote_folder
+        else:
+            self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'from_scratch'
+            self.ctx.inputs.pop('parent_folder', None)
+
+    def _handle_calculation_sanity_checks(self, calculation):
+        """The current `calculation` has finished successfully according to the parser, but double-check.
+
+        Verify that the occupation of the last band is below a certain threshold, unless `occupations` was explicitly
+        set to `fixed` in the input parameters. If this is violated, the calculation used too few bands and cannot be
+        trusted. The number of bands is increased and the calculation is restarted, starting from the current `calculation`.
+        """
+        from aiida_quantumespresso.utils.bands import get_highest_occupied_band
+
+        # Only skip the check on the highest band occupation if `occupations` was explicitly set to `fixed`.
+        if calculation.inputs.parameters.get_attribute('SYSTEM', {}).get('occupations', None) == 'fixed':
+            return
+
+        try:
+            bands = calculation.outputs.output_band
+            get_highest_occupied_band(bands)
+        except ValueError as exception:
+            self.report('calculation<{}> run with smearing and highest band is occupied'.format(calculation.pk))
+            self.report('BandsData<{}> has invalid occupations: {}'.format(bands.pk, exception))
+            return self._handle_insufficient_bands(calculation)
+
+    def report_error_handled(self, calculation, action):
+        """Report an action taken for a calculation that has failed.
+
+        This should be called in a registered error handler if its condition is met and an action was taken.
+
+        :param calculation: the failed calculation node
+        :param action: a string message with the action taken
+        """
+        arguments = [calculation.process_label, calculation.pk, calculation.exit_status, calculation.exit_message]
+        self.report('{}<{}> failed with exit status {}: {}'.format(*arguments))
+        self.report('Action taken: {}'.format(action))
 
 
 @register_error_handler(PwBaseWorkChain, 500)
-def _handle_error_read_namelists(self, calculation):
-    """
-    The calculation failed because it could not read the generated input file
-    """
-    if any(['read_namelists' in w for w in calculation.res.warnings]):
-        self.report('PwCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
-        return ErrorHandlerReport(True, True, self.exit_codes.ERROR_CALCULATION_INVALID_INPUT_FILE)
+def _handle_unrecoverable_failure(self, calculation):
+    """Calculations with an exit status below 400 are unrecoverable, so abort the work chain."""
+    if calculation.exit_status < 400:
+        self.report_error_handled(calculation, 'unrecoverable error, aborting...')
+        return ErrorHandlerReport(True, True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
 
 
-@register_error_handler(PwBaseWorkChain, 400)
-def _handle_error_exceeded_maximum_walltime(self, calculation):
-    """
-    Calculation ended nominally but ran out of allotted wall time
-    """
-    if 'Maximum CPU time exceeded' in calculation.res.warnings:
+@register_error_handler(PwBaseWorkChain, 420)
+def _handle_out_of_walltime(self, calculation):
+    """In the case of `ERROR_OUT_OF_WALLTIME` calculation shut down neatly and we can simply restart."""
+    if calculation.exit_status == PwCalculation.spec().exit_codes.ERROR_OUT_OF_WALLTIME.status:
         self.ctx.restart_calc = calculation
-        self.report('PwCalculation<{}> terminated because maximum wall time was exceeded, restarting'
-            .format(calculation.pk))
+        self.report_error_handled(calculation, 'simply restart from the last calculation')
         return ErrorHandlerReport(True, True)
 
 
-@register_error_handler(PwBaseWorkChain, 300)
-def _handle_error_diagonalization(self, calculation):
-    """
-    Diagonalization failed with current scheme. Try to restart from previous clean calculation with different scheme
-    """
-    input_parameters = calculation.inputs.parameters.get_dict()
-    input_electrons = input_parameters.get('ELECTRONS', {})
-    diagonalization = input_electrons.get('diagonalization', self.defaults['qe']['diagonalization'])
+@register_error_handler(PwBaseWorkChain, 410)
+def _handle_electronic_convergence_not_achieved(self, calculation):
+    """In the case of `ERROR_ELECTRONIC_CONVERGENCE_NOT_ACHIEVED` decrease the mixing beta and restart from scratch."""
+    if calculation.exit_status == PwCalculation.spec().exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_ACHIEVED.status:
+        factor = self.defaults.delta_factor_mixing_beta
+        mixing_beta = self.ctx.inputs.parameters.get('ELECTRONS', {}).get('mixing_beta', self.defaults.qe.mixing_beta)
+        mixing_beta_new = mixing_beta * factor
 
-    if ((
-        any(['too many bands are not converged' in w for w in calculation.res.warnings]) or
-        any(['eigenvalues not converged' in w for w in calculation.res.warnings])
-    ) and (
-        diagonalization == 'david'
-    )):
-        new_diagonalization = 'cg'
-        self.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = 'cg'
-        self.ctx.restart_calc = calculation
-        self.report('PwCalculation<{}> failed to diagonalize with "{}" scheme'.format(calculation.pk, diagonalization))
-        self.report('Restarting with diagonalization scheme "{}"'.format(new_diagonalization))
+        self.ctx.restart_calc = None
+        self.ctx.inputs.parameters.setdefault('ELECTRONS', {})['mixing_beta'] = mixing_beta_new
+
+        action = 'reduced beta mixing from {} to {} and restarting from scratch'.format(mixing_beta, mixing_beta_new)
+        self.report_error_handled(calculation, action)
         return ErrorHandlerReport(True, True)
 
 
-@register_error_handler(PwBaseWorkChain, 200)
-def _handle_error_convergence_not_reached(self, calculation):
-    """
-    At the end of the scf cycle, the convergence threshold was not reached. We simply restart
-    from the previous calculation without changing any of the input parameters
-    """
-    if 'The scf cycle did not reach convergence.' in calculation.res.warnings:
-        self.ctx.restart_calc = calculation
-        self.report('PwCalculation<{}> did not converge, restart from previous calculation'.format(calculation.pk))
-        return ErrorHandlerReport(True, True)
+@register_error_handler(PwBaseWorkChain)
+def _handle_insufficient_bands(self, calculation):
+    """Calculation successfully converged but included to few bands, so increase them and restart from scratch."""
+    nbnd_cur = calculation.outputs.output_parameters.get_dict()['number_of_bands']
+    nbnd_new = nbnd_cur + max(int(nbnd_cur * self.defaults.delta_factor_nbnd), self.defaults.delta_minimum_nbnd)
 
+    self.ctx.inputs.parameters.setdefault('SYSTEM', {})['nbnd'] = nbnd_new
+    self.ctx.restart_calc = None
 
-@register_error_handler(PwBaseWorkChain, 100)
-def _handle_error_unrecognized_by_parser(self, calculation):
-    """
-    Calculation failed with an error that was not recognized by the parser and was attached
-    wholesale to the warnings. We treat it as an unexpected failure and raise the exception
-    """
-    warnings = calculation.res.warnings
-    if (any(['%%%' in w for w in warnings]) or any(['Error' in w for w in warnings])):
-        raise UnexpectedCalculationFailure('PwCalculation<{}> failed due to an unknown reason'.format(calculation.pk))
+    self.report('{}<{}> had insufficient bands'.format(calculation.process_label, calculation.pk))
+    self.report('Action taken: increased the number of bands to {} and restarting from scratch'.format(nbnd_new))
+    return ErrorHandlerReport(True, True)
