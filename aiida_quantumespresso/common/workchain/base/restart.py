@@ -122,6 +122,9 @@ class BaseRestartWorkChain(WorkChain):
         except AttributeError:
             raise AttributeError('no calculation input dictionary was defined in `self.ctx.inputs`')
 
+        # Set the `CALL` link label
+        unwrapped_inputs['metadata']['call_link_label'] = 'iteration_{:02d}'.format(self.ctx.iteration)
+
         inputs = prepare_process_inputs(self._calculation_class, unwrapped_inputs)
         calculation = self.submit(self._calculation_class, **inputs)
 
