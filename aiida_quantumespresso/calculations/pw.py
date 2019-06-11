@@ -103,7 +103,7 @@ class PwCalculation(BasePwCpInputGenerator):
         spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE',
             message='The stdout output file could not be parsed.')
         spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
-            message='The stdout output file could was incomplete.')
+            message='The stdout output file was incomplete.')
         spec.exit_code(320, 'ERROR_OUTPUT_XML_READ',
             message='The XML output file could not be read.')
         spec.exit_code(321, 'ERROR_OUTPUT_XML_PARSE',
@@ -114,7 +114,9 @@ class PwCalculation(BasePwCpInputGenerator):
             message='The parser raised an unexpected exception.')
 
         # Significant errors but calculation can be used to restart
-        spec.exit_code(400, 'ERROR_ELECTRONIC_CONVERGENCE_NOT_ACHIEVED',
+        spec.exit_code(400, 'ERROR_OUT_OF_WALLTIME',
+            message='The calculation stopped prematurely because it ran out of walltime.')
+        spec.exit_code(410, 'ERROR_ELECTRONIC_CONVERGENCE_NOT_ACHIEVED',
             message='The electronic minimization cycle did not reach self-consistency.')
         spec.exit_code(420, 'ERROR_IONIC_CONVERGENCE_NOT_ACHIEVED',
             message='The ionic minimization cycle did not reach self-consistency.')

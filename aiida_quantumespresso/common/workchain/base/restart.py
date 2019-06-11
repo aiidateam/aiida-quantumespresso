@@ -122,6 +122,9 @@ class BaseRestartWorkChain(WorkChain):
         except AttributeError:
             raise AttributeError('no calculation input dictionary was defined in `self.ctx.inputs`')
 
+        # Set the `CALL` link label
+        unwrapped_inputs['metadata']['call_link_label'] = 'iteration_{:02d}'.format(self.ctx.iteration)
+
         inputs = prepare_process_inputs(self._calculation_class, unwrapped_inputs)
         calculation = self.submit(self._calculation_class, **inputs)
 
@@ -152,7 +155,8 @@ class BaseRestartWorkChain(WorkChain):
                 self.report('{}<{}> finished successfully, but sanity check detected unrecoverable problem'.format(
                     self.ctx.calc_name, calculation.pk))
                 return handler.exit_code
-            elif isinstance(handler, ErrorHandlerReport):
+
+            if isinstance(handler, ErrorHandlerReport):
                 # Reset the `unexpected_failure` since we are restarting the calculation loop
                 self.ctx.unexpected_failure = False
                 self.report('{}<{}> finished successfully, but sanity check failed, restarting'.format(

@@ -107,7 +107,10 @@ class PwParser(Parser):
         if self.exit_code_stdout and self.exit_code_xml:
             return self.exit(self.exit_codes.ERROR_OUTPUT_FILES)
 
-        if 'ERROR_ELECTRONIC_CONVERGENCE_NOT_ACHIEVED' in logs_stdout['error']:
+        if 'ERROR_OUT_OF_WALLTIME' in logs_stdout['error']:
+            self.exit_code_stdout = self.exit_codes.ERROR_OUT_OF_WALLTIME
+
+        elif 'ERROR_ELECTRONIC_CONVERGENCE_NOT_ACHIEVED' in logs_stdout['error']:
             self.exit_code_stdout = self.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_ACHIEVED
 
         if self.exit_code_stdout:

@@ -233,6 +233,28 @@ def test_pw_failed_interrupted_xml(fixture_database, fixture_computer_localhost,
     data_regression.check(results['output_parameters'].get_dict())
 
 
+def test_pw_failed_out_of_walltime(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+                                   generate_parser, generate_inputs_default, data_regression):
+    """Test the parsing of an scf calculation that ran nominally but was cut short because it ran out of walltime."""
+    name = 'failed_out_of_walltime'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_default)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUT_OF_WALLTIME.status
+    assert 'output_array' in results
+    assert 'output_parameters' in results
+    data_regression.check({
+        'output_array': results['output_array'].attributes,
+        'output_parameters': results['output_parameters'].get_dict(),
+    })
+
+
 def test_pw_failed_scf_not_converged(fixture_database, fixture_computer_localhost, generate_calc_job_node,
                                    generate_parser, generate_inputs_default, data_regression):
     """Test the parsing of an scf calculation that ran nominally but did not reach convergence."""
