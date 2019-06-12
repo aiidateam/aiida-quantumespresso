@@ -301,7 +301,10 @@ class PwParser(Parser):
                     arraydata.set_array(x[0], numpy.array(x[1]))
                 self.out(self.get_linkname_outarray(), arraydata)
 
-        return ExitCode(0)
+        if raw_successful:
+            return ExitCode(0)
+        else:
+            return self.exit_codes.ERROR_CRITICAL_COMPUTATION_WARNING
 
     def get_parser_settings_key(self):
         """

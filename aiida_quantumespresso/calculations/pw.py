@@ -92,6 +92,8 @@ class PwCalculation(BasePwCpInputGenerator):
         spec.exit_code(
             117, 'ERROR_READING_XML_FILE', message='The required XML file could not be read.')
         spec.exit_code(120, 'ERROR_INVALID_OUTPUT', message='The output file contains invalid output.')
+        spec.exit_code(200, 'ERROR_CRITICAL_COMPUTATION_WARNING',
+                       message='a critical warning was encountered in the parsed output')
 
     @classproperty
     def input_file_name_hubbard_file(cls):
