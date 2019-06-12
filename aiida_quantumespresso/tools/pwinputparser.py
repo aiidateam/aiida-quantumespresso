@@ -8,14 +8,20 @@ TODO: Parse CONSTRAINTS, OCCUPATIONS, ATOMIC_FORCES once they are implemented
 """
 
 from __future__ import absolute_import
+from copy import deepcopy
 import re
 import numpy as np
-from .qeinputparser import (
-        QeInputFile,parse_namelists,parse_atomic_positions,
-        parse_atomic_species,parse_cell_parameters, RE_FLAGS )
+import six
+from six.moves import map
+
+from aiida.orm import Code, Dict, UpfData
 from aiida.orm.nodes.data.array.kpoints import KpointsData
 from aiida.common import ParsingError
-from six.moves import map
+from aiida.common.folders import Folder
+from aiida.plugins import CalculationFactory
+
+from .qeinputparser import (QeInputFile, parse_namelists, parse_atomic_positions, parse_atomic_species,
+                            parse_cell_parameters, RE_FLAGS)
 
 
 class PwInputFile(QeInputFile):
@@ -23,7 +29,7 @@ class PwInputFile(QeInputFile):
     Class used for parsing Quantum Espresso pw.x input files and using the info.
 
     Members:
-    
+
     * ``namelists``:
         A nested dictionary of the namelists and their key-value
         pairs. The namelists will always be upper-case keys, while the parameter
@@ -86,7 +92,7 @@ class PwInputFile(QeInputFile):
               'gamma' or type = 'automatic')
             * weights: a 1xN list of the kpoint weights (will not be present if
               type = 'gamma' or type = 'automatic')
-            * mesh: a 1x3 list of the number of equally-spaced points in each 
+            * mesh: a 1x3 list of the number of equally-spaced points in each
               direction of the Brillouin zone, as in Monkhorst-Pack grids (only
               present if type = 'automatic')
             * offset: a 1x3 list of the grid offsets in each direction of the
@@ -96,7 +102,7 @@ class PwInputFile(QeInputFile):
               This differs from the Quantum Espresso convention, where an offset
               value of ``1`` corresponds to a half-grid-step offset, but adheres
               to the current AiiDa convention.
-            
+
 
         Examples::
 
@@ -151,7 +157,7 @@ class PwInputFile(QeInputFile):
         :raises aiida.common.exceptions.ParsingError: if there are issues
             parsing the pwinput.
         """
-        
+
         super(PwInputFile, self).__init__(pwinput)
 
         # Parse the namelists.
@@ -191,25 +197,20 @@ class PwInputFile(QeInputFile):
 
         # Set the kpoints and weights, doing any necessary units conversion.
         if self.k_points['type'] == 'crystal':  # relative to recip latt vecs
-            kpointsdata.set_kpoints(self.k_points['points'],
-                                    weights=self.k_points['weights'])
+            kpointsdata.set_kpoints(self.k_points['points'], weights=self.k_points['weights'])
         elif self.k_points['type'] == 'tpiba':  # cartesian; units of 2*pi/alat
             alat = np.linalg.norm(structuredata.cell[0])  # alat in Angstrom
             kpointsdata.set_kpoints(
                 np.array(self.k_points['points']) * (2. * np.pi / alat),
                 weights=self.k_points['weights'],
-                cartesian=True
-            )
+                cartesian=True)
         elif self.k_points['type'] == 'automatic':
-            kpointsdata.set_kpoints_mesh(self.k_points['points'],
-                                         offset=self.k_points['offset'])
+            kpointsdata.set_kpoints_mesh(self.k_points['points'], offset=self.k_points['offset'])
         elif self.k_points['type'] == 'gamma':
             kpointsdata.set_kpoints_mesh([1, 1, 1])
         else:
-            raise NotImplementedError(
-                'Support for creating KpointsData from input units of {} is'
-                'not yet implemented'.format(self.k_points['type'])
-            )
+            raise NotImplementedError('Support for creating KpointsData from input units of {} is'
+                                      'not yet implemented'.format(self.k_points['type']))
 
         return kpointsdata
 
@@ -262,7 +263,8 @@ def parse_k_points(txt):
         parsing the input.
     """
     # Define re for the special-type card block.
-    k_points_special_block_re = re.compile(r"""
+    k_points_special_block_re = re.compile(
+        r"""
         ^ [ \t]* K_POINTS [ \t]*
             [{(]? [ \t]* (?P<type>\S+?)? [ \t]* [)}]? [ \t]* $\n
         ^ [ \t]* \S+ [ \t]* $\n  # nks
@@ -277,13 +279,15 @@ def parse_k_points(txt):
     ^ [ \t]* (\S+) [ \t]+ (\S+) [ \t]+ (\S+) [ \t]+ (\S+) [ \t]* $\n?
     """, RE_FLAGS)
     # Define re for the automatic-type card block and its line of info.
-    k_points_automatic_block_re = re.compile(r"""
+    k_points_automatic_block_re = re.compile(
+        r"""
         ^ [ \t]* K_POINTS [ \t]* [{(]? [ \t]* automatic [ \t]* [)}]? [ \t]* $\n
         ^ [ \t]* (\S+) [ \t]+ (\S+) [ \t]+ (\S+) [ \t]+ (\S+) [ \t]+ (\S+)
             [ \t]+ (\S+) [ \t]* $\n?
         """, RE_FLAGS)
     # Define re for the gamma-type card block. (There is no block info.)
-    k_points_gamma_block_re = re.compile(r"""
+    k_points_gamma_block_re = re.compile(
+        r"""
         ^ [ \t]* K_POINTS [ \t]* [{(]? [ \t]* gamma [ \t]* [)}]? [ \t]* $\n
         """, RE_FLAGS)
     # Try finding the card block using all three types.
@@ -307,8 +311,7 @@ def parse_k_points(txt):
         if match:
             info_dict['type'] = 'automatic'
             info_dict['points'] = list(map(int, match.group(1, 2, 3)))
-            info_dict['offset'] = [0. if x == 0 else 0.5
-                                   for x in map(int, match.group(4, 5, 6))]
+            info_dict['offset'] = [0. if x == 0 else 0.5 for x in map(int, match.group(4, 5, 6))]
         else:
             match = k_points_gamma_block_re.search(txt)
             if match:
@@ -318,3 +321,96 @@ def parse_k_points(txt):
     return info_dict
 
 
+def create_builder_from_file(input_folder, input_file_name, code, metadata, pseudo_folder_path=None, use_first=False):
+    """Create a populated process builder for a Pw calculation,
+    from a standard QE input file and pseudo (upf) files
+
+    :param input_folder: the folder containing the input file
+    :type input_folder: aiida.common.folders.Folder or str
+    :param input_file_name: the name of the input file
+    :type input_file_name: str
+    :param code: the code associated with the calculation
+    :type code: aiida.orm.Code
+    :param metadata: metadata values for the calculation (e.g. resources)
+    :type metadata: dict
+    :param pseudo_folder_path: the folder containing the upf files (if None, then input_folder is used)
+    :type pseudo_folder_path: aiida.common.folders.Folder or str or None
+    :param use_first: parsed to UpfData.get_or_create
+    :type use_first: bool
+    :raises NotImplementedError: if the structure is not ibrav=0
+    :return: a builder instance for PwCalculation
+
+    """
+    pw_calc_cls = CalculationFactory('quantumespresso.pw')
+
+    inputs = {}
+    inputs["metadata"] = metadata
+
+    # set code
+    if isinstance(code, six.string_types):
+        code = Code.get_from_string(code)
+    inputs["code"] = code
+
+    # read input_file
+    if isinstance(input_folder, six.string_types):
+        input_folder = Folder(input_folder)
+    with input_folder.open(input_file_name) as input_file:
+        parsed_file = PwInputFile(input_file)
+
+    inputs["structure"] = parsed_file.get_structuredata()
+    inputs["kpoints"] = parsed_file.get_kpointsdata()
+
+    # create paramaters node
+    # First check ibrav is 0
+    if parsed_file.namelists['SYSTEM']['ibrav'] != 0:
+        raise NotImplementedError('Found ibrav !=0 while parsing the input file. '
+                                  'Currently, AiiDa only supports ibrav = 0.')
+    # Then, strip the namelist items that aiida doesn't allow or sets
+    # later.
+    # NOTE: If any of the position or cell units are in alat or crystal
+    # units, that will be taken care of by the input parsing tools, and
+    # we are safe to fake that they were never there in the first place.
+    parameters_dict = deepcopy(parsed_file.namelists)
+    for namelist, blocked_key in pw_calc_cls._blocked_keywords:  # pylint: disable=protected-access
+        for this_key in list(parameters_dict[namelist].keys()):
+            # take into account that celldm and celldm(*) must be blocked
+            if re.sub("[(0-9)]", "", this_key) == blocked_key:
+                parameters_dict[namelist].pop(this_key, None)
+    inputs["parameters"] = Dict(dict=parameters_dict)
+
+    # Get or create a UpfData node for the pseudopotentials used for
+    # the calculation.
+    pseudos_map = {}
+    if pseudo_folder_path is None:
+        pseudo_folder_path = input_folder
+    if isinstance(pseudo_folder_path, six.string_types):
+        pseudo_folder_path = Folder(pseudo_folder_path)
+    names = parsed_file.atomic_species['names']
+    pseudo_file_names = parsed_file.atomic_species['pseudo_file_names']
+    pseudo_file_map = {}
+    for name, fname in zip(names, pseudo_file_names):
+        if fname not in pseudo_file_map:
+            local_path = pseudo_folder_path.get_abs_path(fname)
+            upf_node, _ = UpfData.get_or_create(local_path, use_first=use_first, store_upf=False)
+            pseudo_file_map[fname] = upf_node
+        pseudos_map[name] = pseudo_file_map[fname]
+    inputs["pseudos"] = pseudos_map
+
+    # create settings node, if necessary
+    settings_dict = {}
+    # If only the gamma kpoint is used, specify in settings.
+    if parsed_file.k_points['type'] == 'gamma':
+        settings_dict['gamma_only'] = True
+    # If there are any fixed coordinates (i.e. force modification)
+    # present in the input file, specify in settings
+    fixed_coords = parsed_file.atomic_positions['fixed_coords']
+    # NOTE: any() only works for 1-dimensional lists.
+    if any((any(fc_xyz) for fc_xyz in fixed_coords)):
+        settings_dict['FIXED_COORDS'] = fixed_coords
+    if settings_dict:
+        inputs["settings"] = settings_dict
+
+    builder = pw_calc_cls.get_builder()
+    builder._update(inputs)  # pylint: disable=protected-access
+
+    return builder
