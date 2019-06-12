@@ -34,6 +34,7 @@ class PwParser(Parser):
             return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
 
         parameters = self.node.inputs.parameters.get_dict()
+        in_struc = self.node.inputs.structure
 
         # Look for optional settings input node and potential 'parser_options' dictionary within it
         try:
@@ -80,7 +81,7 @@ class PwParser(Parser):
             xml_file = os.path.join(output_folder._repository._get_base_folder().abspath, xml_files[0])
 
         # Call the raw parsing function
-        parsing_args = [filepath_stdout, parameters, parser_options, self.logger, xml_file, dir_with_bands]
+        parsing_args = [filepath_stdout, parameters, parser_options, self.logger, xml_file, dir_with_bands, in_struc]
         out_dict, trajectory_data, structure_data, bands_data, raw_successful = parse_raw_output(*parsing_args)
 
         # If the parser option 'all_symmetries' is not set to True, we reduce the raw parsed symmetries to safe space
@@ -190,7 +191,6 @@ class PwParser(Parser):
                         self.logger.error("Warning: key '{}' is not present in raw output dictionary".format(symmetry_type))
 
         # I eventually save the new structure. structure_data is unnecessary after this
-        in_struc = self.node.get_incoming(link_label_filter='structure').one().node
         type_calc = parameters['CONTROL']['calculation']
         struc = in_struc
         if type_calc in ['relax', 'vc-relax', 'md', 'vc-md']:
