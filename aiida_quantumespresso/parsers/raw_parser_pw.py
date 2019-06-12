@@ -13,7 +13,7 @@ import re
 import string
 import xml.dom.minidom
 import six
-from six.moves import range
+from six.moves import range, zip
 
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
 from aiida_quantumespresso.parsers.constants import ry_to_ev, hartree_to_ev, bohr_to_ang, ry_si, bohr_si
@@ -33,7 +33,7 @@ default_stress_units = 'GPascal'
 default_polarization_units = 'C / m^2'
 
 
-def parse_raw_output(out_file, input_dict, parser_opts, logger, xml_file=None, dir_with_bands=None):
+def parse_raw_output(out_file, input_dict, parser_opts, logger, xml_file=None, dir_with_bands=None, in_struct=None):
     """
     Parses the output of a calculation
     Receives in input the paths to the output file and the xml file.
@@ -48,6 +48,7 @@ def parse_raw_output(out_file, input_dict, parser_opts, logger, xml_file=None, d
     :param logger: aiida logger object
     :param xml_file: optional path to the XML output file
     :param dir_with_bands: path to directory with all k-points (Kxxxxx) folders
+    :param in_struct: the input StructureData object (used if xml not available)
 
     :return parameter_data: a dictionary with parsed parameters
     :return trajectory_data: a dictionary with arrays (for relax & md calcs.)
@@ -115,6 +116,27 @@ def parse_raw_output(out_file, input_dict, parser_opts, logger, xml_file=None, d
             critical_messages = []
         else: # if it was finished and I got error, it's a mistake of the parser
             raise QEOutputParsingError('Error while parsing QE output. Exception message: {}'.format(e.message))
+
+    if xml_file is None and not structure_data and trajectory_data:
+        # if there is no xml available, we get the final structure from the text output + initial structure
+        init_ase = in_struct.get_ase()
+        structure_data["cell"] = {}
+
+        if trajectory_data.get("lattice_vectors_relax", False):
+            latt_vectors = trajectory_data["lattice_vectors_relax"][-1]
+        else:
+            latt_vectors = init_ase.cell.tolist()
+
+        structure_data["cell"]["lattice_vectors"] = latt_vectors
+
+        if trajectory_data.get("atomic_positions_relax", False):
+            positions = trajectory_data["atomic_positions_relax"][-1]
+        else:
+            positions = init_ase.positions.tolist()
+
+        symbols = init_ase.get_chemical_symbols()
+
+        structure_data["cell"]["atoms"] = list(zip(symbols, positions))
 
     # I add in the out_data all the last elements of trajectory_data values,
     # except for some large arrays, that I will likely never query.
