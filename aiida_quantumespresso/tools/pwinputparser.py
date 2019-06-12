@@ -12,7 +12,7 @@ from copy import deepcopy
 import re
 import numpy as np
 import six
-from six.moves import map
+from six.moves import map, zip
 
 from aiida.orm import Code, Dict, UpfData
 from aiida.orm.nodes.data.array.kpoints import KpointsData
@@ -330,7 +330,7 @@ def create_builder_from_file(input_folder, input_file_name, code, metadata, pseu
     :param input_file_name: the name of the input file
     :type input_file_name: str
     :param code: the code associated with the calculation
-    :type code: aiida.orm.Code
+    :type code: aiida.orm.Code or str
     :param metadata: metadata values for the calculation (e.g. resources)
     :type metadata: dict
     :param pseudo_folder_path: the folder containing the upf files (if None, then input_folder is used)
