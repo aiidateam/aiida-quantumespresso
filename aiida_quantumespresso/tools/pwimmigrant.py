@@ -18,7 +18,7 @@ from aiida.plugins import CalculationFactory
 import six
 
 
-def immigrate_existing(builder, folder, infile, outfile, xml_file=None, remote_path=None):
+def immigrate_existing(builder, folder, outfile, xml_file=None, remote_path=None):
     """Immigrate a Quantum Espresso pw.x job that was not run using AiiDa.
 
     Note, it is intended that this function is used in conjunction with
@@ -27,8 +27,6 @@ def immigrate_existing(builder, folder, infile, outfile, xml_file=None, remote_p
     :param builder: a populated builder instance for PwCalculation
     :param folder: the folder containing the input and output files
     :type folder: aiida.common.folders.Folder or str
-    :param infile: the file name of the input file
-    :type infile: str
     :param outfile: the file name of the output file
     :type outfile: str
     :param xml_file: the file name of the XML file
@@ -48,25 +46,33 @@ def immigrate_existing(builder, folder, infile, outfile, xml_file=None, remote_p
     process = instantiate_process(runner, pw_calc_cls, **builder)
     calc_node = process.node
 
-    # create and populate retrieved folder
+    # create retrieved folder
     retrieve_list = [
         process.metadata.options.input_filename,
         process.metadata.options.output_filename]
     retrieved_files = FolderData()
-    retrieved_files.put_object_from_file(
-        folder.get_abs_path(infile), process.metadata.options.input_filename)
+
+    # create input file and add to retrieved
+    with SandboxFolder() as temp_submission:
+        process.prepare_for_submission(temp_submission)
+        inpath = temp_submission.get_abs_path(process.metadata.options.input_filename)
+        retrieved_files.put_object_from_file(inpath, process.metadata.options.input_filename)
+
+    # add output files to retrieved
     retrieved_files.put_object_from_file(
         folder.get_abs_path(outfile), process.metadata.options.output_filename)
     if xml_file is not None:
         retrieve_list.append(pw_calc_cls._DATAFILE_XML_POST_6_2)
         retrieved_files.put_object_from_file(
             folder.get_abs_path(xml_file), pw_calc_cls._DATAFILE_XML_POST_6_2)
+
+    # connect and store retrieved folder
     retrieved_files.add_incoming(calc_node, link_type=LinkType.CREATE,
                                  link_label=calc_node.link_label_retrieved)
     retrieved_files.store()
     calc_node.set_retrieve_list(retrieve_list)
 
-    # create remote data folder
+    # create and connect remote data folder
     if remote_path is not None:
         calc_node.set_remote_workdir(remote_path)
         remotedata = RemoteData(computer=calc_node.computer, remote_path=remote_path)

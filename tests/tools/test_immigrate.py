@@ -91,11 +91,10 @@ def test_immigrate_existing(fixture_database, fixture_computer_localhost,
     builder = create_builder_from_file(in_folderpath, 'test_pw_default.in', code, metadata, upf_folderpath)
 
     with SandboxFolder() as folder:
-        folder.insert_path(os.path.join(in_folderpath, 'test_pw_default.in'))
         folder.insert_path(os.path.join(out_folderpath, 'aiida.out'))
         folder.insert_path(os.path.join(out_folderpath, 'data-file.xml'))
 
-        calc_node = immigrate_existing(builder, folder, 'test_pw_default.in', 'aiida.out',
+        calc_node = immigrate_existing(builder, folder, 'aiida.out',
                                        'data-file.xml', 'path/to/remote')
 
     data_regression.check(calc_node.attributes)
