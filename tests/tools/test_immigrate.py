@@ -103,3 +103,6 @@ def test_immigrate_existing(fixture_database, fixture_computer_localhost,
     assert set(outputs.all_link_labels()) == set(
         ['retrieved', 'remote_folder', 'output_array',
          'output_parameters', 'output_kpoints'])
+
+    assert calc_node.outputs.output_parameters.get_dict()['warnings'] == []
+    assert calc_node.outputs.output_parameters.get_dict()['parser_warnings'] == []
