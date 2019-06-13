@@ -35,10 +35,10 @@ def test_create_builder(fixture_database, fixture_computer_localhost, generate_c
 
     builder = create_builder_from_file(in_folderpath, 'test_pw_default.in', code, metadata, upf_folderpath)
 
-    assert builder["code"] == code
-    assert builder["metadata"] == metadata
-    assert builder["pseudos"]["Si"].id == si_upf.id
-    assert builder["parameters"].get_dict() == {
+    assert builder['code'] == code
+    assert builder['metadata'] == metadata
+    assert builder['pseudos']['Si'].id == si_upf.id
+    assert builder['parameters'].get_dict() == {
         'CONTROL': {
             'calculation': 'scf',
             'verbosity': 'high'
@@ -48,7 +48,7 @@ def test_create_builder(fixture_database, fixture_computer_localhost, generate_c
             'ecutwfc': 30.0
         }
     }
-    assert "kpoints" in builder
-    assert "structure" in builder
+    assert 'kpoints' in builder
+    assert 'structure' in builder
 
     generate_calc_job(fixture_sandbox_folder, entry_point_name, builder)

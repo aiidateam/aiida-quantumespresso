@@ -343,13 +343,13 @@ def create_builder_from_file(input_folder, input_file_name, code, metadata, pseu
     """
     pw_calc_cls = CalculationFactory('quantumespresso.pw')
 
-    inputs = {}
-    inputs["metadata"] = metadata
+    builder = pw_calc_cls.get_builder()
+    builder['metadata'] = metadata
 
     # set code
     if isinstance(code, six.string_types):
         code = Code.get_from_string(code)
-    inputs["code"] = code
+    builder['code'] = code
 
     # read input_file
     if isinstance(input_folder, six.string_types):
@@ -357,8 +357,8 @@ def create_builder_from_file(input_folder, input_file_name, code, metadata, pseu
     with input_folder.open(input_file_name) as input_file:
         parsed_file = PwInputFile(input_file)
 
-    inputs["structure"] = parsed_file.get_structuredata()
-    inputs["kpoints"] = parsed_file.get_kpointsdata()
+    builder['structure'] = parsed_file.get_structuredata()
+    builder['kpoints'] = parsed_file.get_kpointsdata()
 
     # create paramaters node
     # First check ibrav is 0
@@ -376,7 +376,7 @@ def create_builder_from_file(input_folder, input_file_name, code, metadata, pseu
             # take into account that celldm and celldm(*) must be blocked
             if re.sub("[(0-9)]", "", this_key) == blocked_key:
                 parameters_dict[namelist].pop(this_key, None)
-    inputs["parameters"] = Dict(dict=parameters_dict)
+    builder['parameters'] = Dict(dict=parameters_dict)
 
     # Get or create a UpfData node for the pseudopotentials used for
     # the calculation.
@@ -394,7 +394,7 @@ def create_builder_from_file(input_folder, input_file_name, code, metadata, pseu
             upf_node, _ = UpfData.get_or_create(local_path, use_first=use_first, store_upf=False)
             pseudo_file_map[fname] = upf_node
         pseudos_map[name] = pseudo_file_map[fname]
-    inputs["pseudos"] = pseudos_map
+    builder['pseudos'] = pseudos_map
 
     # create settings node, if necessary
     settings_dict = {}
@@ -408,9 +408,6 @@ def create_builder_from_file(input_folder, input_file_name, code, metadata, pseu
     if any((any(fc_xyz) for fc_xyz in fixed_coords)):
         settings_dict['FIXED_COORDS'] = fixed_coords
     if settings_dict:
-        inputs["settings"] = settings_dict
-
-    builder = pw_calc_cls.get_builder()
-    builder._update(inputs)  # pylint: disable=protected-access
+        builder['settings'] = settings_dict
 
     return builder
