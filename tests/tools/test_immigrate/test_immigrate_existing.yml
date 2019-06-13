@@ -1,0 +1,27 @@
+append_text: ''
+custom_scheduler_commands: ''
+environment_variables: {}
+exit_status: 0
+import_sys_environment: true
+input_filename: aiida.in
+max_memory_kb: 1000
+max_wallclock_seconds: 43200
+mpirun_extra_params: []
+output_filename: aiida.out
+parser_name: quantumespresso.pw
+prepend_text: ''
+process_label: PwCalculation
+process_state: finished
+remote_workdir: path/to/remote
+resources:
+  default_mpiprocs_per_machine: 1
+  num_machines: 1
+  num_mpiprocs_per_machine: 32
+retrieve_list:
+- aiida.in
+- aiida.out
+- data-file-schema.xml
+scheduler_stderr: _scheduler-stderr.txt
+scheduler_stdout: _scheduler-stdout.txt
+sealed: true
+withmpi: true
