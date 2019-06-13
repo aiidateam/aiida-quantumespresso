@@ -4,7 +4,7 @@ from __future__ import absolute_import
 import click
 
 from aiida.engine import launch
-from .display import echo_calculation_results
+from .display import echo_process_results
 
 
 def launch_process(process, daemon, **inputs):
@@ -22,4 +22,4 @@ def launch_process(process, daemon, **inputs):
     else:
         click.echo('Running a {}...'.format(process.__name__))
         _, node = launch.run_get_node(process, **inputs)
-        echo_calculation_results(node)
+        echo_process_results(node)
