@@ -158,12 +158,6 @@ class BaseRestartWorkChain(WorkChain):
             self.ctx.is_finished = True
             return
 
-        # Abort: exceeded maximum number of retries
-        if self.ctx.iteration >= self.inputs.max_iterations.value:
-            self.report('reached the maximumm number of iterations {}: last ran {}<{}>'.format(
-                self.inputs.max_iterations.value, self.ctx.calc_name, calculation.pk))
-            return self.exit_codes.ERROR_MAXIMUM_ITERATIONS_EXCEEDED
-
         # Unexpected: calculation was killed or an exception occurred, trigger unexpected failure handling
         if calculation.is_excepted or calculation.is_killed:
             return self._handle_unexpected_failure(calculation)
@@ -178,16 +172,24 @@ class BaseRestartWorkChain(WorkChain):
 
     def results(self):
         """Attach the outputs specified in the output specification from the last completed calculation."""
+        calculation = self.ctx.calculations[self.ctx.iteration - 1]
+
+        if calculation.is_failed and self.ctx.iteration >= self.inputs.max_iterations.value:
+            # Abort: exceeded maximum number of retries
+            self.report('reached the maximum number of iterations {}: last ran {}<{}>'.format(
+                self.inputs.max_iterations.value, self.ctx.calc_name, calculation.pk))
+            return self.exit_codes.ERROR_MAXIMUM_ITERATIONS_EXCEEDED
+
         self.report('work chain completed after {} iterations'.format(self.ctx.iteration))
 
         for name, port in self.spec().outputs.items():
 
             try:
-                node = self.ctx.restart_calc.get_outgoing(link_label_filter=name).one().node
+                node = calculation.get_outgoing(link_label_filter=name).one().node
             except ValueError:
                 if port.required:
                     self.report("required output '{}' was not an output of {}<{}>".format(
-                        name, self.ctx.calc_name, self.ctx.restart_calc.pk))
+                        name, self.ctx.calc_name, calculation.pk))
             else:
                 self.out(name, node)
                 if self._verbose:
