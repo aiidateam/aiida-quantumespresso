@@ -12,12 +12,9 @@ from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkC
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 from aiida_quantumespresso.utils.mapping import update_mapping, prepare_process_inputs
 from aiida_quantumespresso.utils.pseudopotential import validate_and_prepare_pseudos_inputs
-from aiida_quantumespresso.utils.resources import get_default_options
-from aiida_quantumespresso.utils.resources import get_pw_parallelization_parameters
-from aiida_quantumespresso.utils.resources import cmdline_remove_npools
-from aiida_quantumespresso.utils.resources import create_scheduler_resources
+from aiida_quantumespresso.utils.resources import get_default_options, get_pw_parallelization_parameters
+from aiida_quantumespresso.utils.resources import cmdline_remove_npools, create_scheduler_resources
 from aiida_quantumespresso.workflows.functions.create_kpoints_from_distance import create_kpoints_from_distance
-
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
 
@@ -40,10 +37,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
     def define(cls, spec):
         # yapf: disable
         super(PwBaseWorkChain, cls).define(spec)
-        spec.input('code', valid_type=orm.Code,
-            help='The code to use for the calculation which is configured to a Quantum ESPRESSO `pw.x` executable.')
-        spec.input('structure', valid_type=orm.StructureData,
-            help='The input structure.')
+        spec.expose_inputs(PwCalculation, namespace='pw', exclude=('kpoints',))
+        spec.input('pw.metadata.options.resources', valid_type=dict, required=False)
         spec.input('kpoints', valid_type=orm.KpointsData, required=False,
             help='An explicit k-points list or mesh. Either this or `kpoints_distance` has to be provided.')
         spec.input('kpoints_distance', valid_type=orm.Float, required=False,
@@ -53,29 +48,20 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             help='Optional input when constructing the k-points based on a desired `kpoints_distance`. Setting this to '
                  '`True` will force the k-point mesh to have an even number of points along each lattice vector except '
                  'for any non-periodic directions.')
-        spec.input('parameters', valid_type=orm.Dict,
-            help='The input parameters that are to be used to construct the input file for `pw.x`.')
-        spec.input_namespace('pseudos', valid_type=orm.UpfData, required=False, dynamic=True,
-            help='A mapping of `UpfData` nodes onto the kind name to which they should apply.')
         spec.input('pseudo_family', valid_type=orm.Str, required=False,
             help='An alternative to specifying the pseudo potentials manually in `pseudos`: one can specify the name '
                  'of an existing pseudo potential family and the work chain will generate the pseudos automatically '
                  'based on the input structure.')
-        spec.input('parent_folder', valid_type=orm.RemoteData, required=False,
-            help='An optional working directory of a previously completed calculation to restart from.')
-        spec.input('vdw_table', valid_type=orm.SinglefileData, required=False,
-            help='Optional van der Waals table contained in a `SinglefileData`.')
-        spec.input('settings', valid_type=orm.Dict, required=False,
-            help='Optional parameters to affect the way the calculation job and the parsing are performed.')
-        spec.input('options', valid_type=orm.Dict, required=False,
-            help='The metadata options that are to be passed to the calculation job.')
         spec.input('automatic_parallelization', valid_type=orm.Dict, required=False,
             help='When defined, the work chain will first launch an initialization calculation to determine the '
                  'dimensions of the problem, and based on this it will try to set optimal parallelization flags.')
 
         spec.outline(
             cls.setup,
-            cls.validate_inputs,
+            cls.validate_parameters,
+            cls.validate_kpoints,
+            cls.validate_pseudos,
+            cls.validate_resources,
             if_(cls.should_run_init)(
                 cls.validate_init_inputs,
                 cls.run_init,
@@ -89,103 +75,78 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             cls.results,
         )
 
+        spec.expose_outputs(PwCalculation, exclude=('retrieved_folder',))
         spec.output('automatic_parallelization', valid_type=orm.Dict, required=False,
             help='The results of the automatic parallelization analysis if performed.')
-        spec.output('output_array', valid_type=orm.ArrayData, required=False,
-            help='The `output_array` output node of the successful calculation if present.')
-        spec.output('output_band', valid_type=orm.BandsData, required=False,
-            help='The `output_band` output node of the successful calculation if present.')
-        spec.output('output_structure', valid_type=orm.StructureData, required=False,
-            help='The `output_structure` output node of the successful calculation if present.')
-        spec.output('output_parameters', valid_type=orm.Dict,
-            help='The `output_parameters` output node of the successful calculation.')
-        spec.output('remote_folder', valid_type=orm.RemoteData,
-            help='The `remote_folder` output node of the successful calculation.')
 
-        spec.exit_code(301, 'ERROR_INVALID_INPUT_PSEUDO_POTENTIALS',
+        spec.exit_code(201, 'ERROR_INVALID_INPUT_PSEUDO_POTENTIALS',
             message='The explicit `pseudos` or `pseudo_family` could not be used to get the necessary pseudos.')
-        spec.exit_code(302, 'ERROR_INVALID_INPUT_KPOINTS',
+        spec.exit_code(202, 'ERROR_INVALID_INPUT_KPOINTS',
             message='Neither the `kpoints` nor the `kpoints_distance` input was specified.')
-        spec.exit_code(303, 'ERROR_INVALID_INPUT_RESOURCES',
+        spec.exit_code(203, 'ERROR_INVALID_INPUT_RESOURCES',
             message='Neither the `options` nor `automatic_parallelization` input was specified.')
-        spec.exit_code(304, 'ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED',
-            message='The `options` do not specify both `num_machines` and `max_wallclock_seconds`.')
-        spec.exit_code(310, 'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY',
+        spec.exit_code(204, 'ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED',
+            message='The `metadata.options` did not specify both `resources.num_machines` and `max_wallclock_seconds`.')
+        spec.exit_code(210, 'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY',
             message='Required key for `automatic_parallelization` was not specified.')
-        spec.exit_code(311, 'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY',
+        spec.exit_code(211, 'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY',
             message='Unrecognized keys were specified for `automatic_parallelization`.')
-        spec.exit_code(401, 'ERROR_INITIALIZATION_CALCULATION_FAILED',
+        spec.exit_code(301, 'ERROR_INITIALIZATION_CALCULATION_FAILED',
             message='The initialization calculation failed.')
-        spec.exit_code(402, 'ERROR_CALCULATION_INVALID_INPUT_FILE',
+        spec.exit_code(302, 'ERROR_CALCULATION_INVALID_INPUT_FILE',
             message='The calculation failed because it had an invalid input file.')
 
-    def validate_inputs(self):
+    def setup(self):
+        """Call the `setup` of the `BaseRestartWorkChain` and then create the inputs dictionary in `self.ctx.inputs`.
+
+        This `self.ctx.inputs` dictionary will be used by the `BaseRestartWorkChain` to submit the calculations in the
+        internal loop.
+        """
+        super(PwBaseWorkChain, self).setup()
+        self.ctx.inputs = AttributeDict(self.exposed_inputs(PwCalculation, 'pw'))
+
+    def validate_parameters(self):
         """Validate inputs that might depend on each other and cannot be validated by the spec.
 
         Also define dictionary `inputs` in the context, that will contain the inputs for the calculation that will be
         launched in the `run_calculation` step.
         """
-        self.ctx.inputs = AttributeDict({
-            'code': self.inputs.code,
-            'structure': self.inputs.structure,
-            'parameters': self.inputs.parameters.get_dict()
-        })
+        self.ctx.inputs.parameters = self.ctx.inputs.parameters.get_dict()
+        self.ctx.inputs.settings = self.ctx.inputs.settings.get_dict() if 'settings' in self.ctx.inputs else {}
 
-        if 'CONTROL'not in self.ctx.inputs.parameters:
-            self.ctx.inputs.parameters['CONTROL'] = {}
+        restart_mode = 'restart' if 'parent_folder' in self.ctx.inputs else 'from_scratch'
 
-        if 'calculation' not in self.ctx.inputs.parameters['CONTROL']:
-            self.ctx.inputs.parameters['CONTROL']['calculation'] = 'scf'
+        self.ctx.inputs.parameters.setdefault('CONTROL', {})
+        self.ctx.inputs.parameters['CONTROL'].setdefault('calculation', 'scf')
+        self.ctx.inputs.parameters['CONTROL']['restart_mode'] = restart_mode
 
-        if 'parent_folder' in self.inputs:
-            self.ctx.inputs.parent_folder = self.inputs.parent_folder
-            self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'restart'
-        else:
-            self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'from_scratch'
+    def validate_kpoints(self):
+        """Validate the inputs related to k-points.
 
-        if 'settings' in self.inputs:
-            self.ctx.inputs.settings = self.inputs.settings.get_dict()
-        else:
-            self.ctx.inputs.settings = {}
-
-        self.ctx.inputs.metadata = AttributeDict()
-        if 'options' in self.inputs:
-            self.ctx.inputs.metadata.options = self.inputs.options.get_dict()
-        else:
-            self.ctx.inputs.metadata.options = {}
-
-        if 'vdw_table' in self.inputs:
-            self.ctx.inputs.vdw_table = self.inputs.vdw_table
-
-        # Either automatic_parallelization or options has to be specified
-        if 'automatic_parallelization' not in self.inputs and 'options' not in self.ctx.inputs.metadata:
-            return self.exit_codes.ERROR_INVALID_INPUT_RESOURCES
-
-        # If automatic parallelization is not enabled, we better make sure that the options satisfy minimum requirements
-        if 'automatic_parallelization' not in self.inputs:
-            num_machines = self.ctx.inputs.metadata['options'].get('resources', {}).get('num_machines', None)
-            max_wallclock_seconds = self.ctx.inputs.metadata['options'].get('max_wallclock_seconds', None)
-
-            if num_machines is None or max_wallclock_seconds is None:
-                return self.exit_codes.ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED
-
-            self.set_max_seconds(max_wallclock_seconds)
-
-        # Either a KpointsData with given mesh/path, or a desired distance between k-points should be specified
+        Either an explicit `KpointsData` with given mesh/path, or a desired k-points distance should be specified.
+        In the case of the latter, the `KpointsData` will be constructed for the input `StructureData` using the
+        `create_kpoints_from_distance` calculation function.
+        """
         if all([key not in self.inputs for key in ['kpoints', 'kpoints_distance']]):
             return self.exit_codes.ERROR_INVALID_INPUT_KPOINTS
 
         try:
-            self.ctx.inputs.kpoints = self.inputs.kpoints
+            kpoints = self.inputs.kpoints
         except AttributeError:
-            structure = self.inputs.structure
-            distance = self.inputs.kpoints_distance
             force_parity = self.inputs.get('kpoints_force_parity', orm.Bool(False))
-            self.ctx.inputs.kpoints = create_kpoints_from_distance(structure, distance, force_parity)
+            kpoints = create_kpoints_from_distance(self.inputs.pw.structure, self.inputs.kpoints_distance, force_parity)
 
-        # Validate the inputs related to pseudopotentials
-        structure = self.inputs.structure
-        pseudos = self.inputs.get('pseudos', None)
+        self.ctx.inputs.kpoints = kpoints
+
+    def validate_pseudos(self):
+        """Validate the inputs related to pseudopotentials.
+
+        Either the pseudo potentials should be defined explicitly in the `pseudos` namespace, or alternatively, a family
+        can be defined in `pseudo_family` that will be used together with the input `StructureData` to generate the
+        required mapping.
+        """
+        structure = self.ctx.inputs.structure
+        pseudos = self.ctx.inputs.get('pseudos', None)
         pseudo_family = self.inputs.get('pseudo_family', None)
 
         try:
@@ -193,6 +154,26 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         except ValueError as exception:
             self.report('{}'.format(exception))
             return self.exit_codes.ERROR_INVALID_INPUT_PSEUDO_POTENTIALS
+
+    def validate_resources(self):
+        """Validate the inputs related to the resources.
+
+        One can omit the normally required `options.resources` input for the `PwCalculation`, as long as the input
+        `automatic_parallelization` is specified. If this is not the case, the `metadata.options` should at least
+        contain the options `resources` and `max_wallclock_seconds`, where `resources` should define the `num_machines`.
+        """
+        if 'automatic_parallelization' not in self.inputs and 'options' not in self.ctx.inputs.metadata:
+            return self.exit_codes.ERROR_INVALID_INPUT_RESOURCES
+
+        # If automatic parallelization is not enabled, we better make sure that the options satisfy minimum requirements
+        if 'automatic_parallelization' not in self.inputs:
+            num_machines = self.ctx.inputs.metadata.options.get('resources', {}).get('num_machines', None)
+            max_wallclock_seconds = self.ctx.inputs.metadata.options.get('max_wallclock_seconds', None)
+
+            if num_machines is None or max_wallclock_seconds is None:
+                return self.exit_codes.ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED
+
+            self.set_max_seconds(max_wallclock_seconds)
 
     def set_max_seconds(self, max_wallclock_seconds):
         """Set the `max_seconds` to a fraction of `max_wallclock_seconds` option to prevent out-of-walltime problems.
@@ -232,8 +213,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             return self.exit_codes.ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY
 
         if remaining_keys:
-            self.report('detected unrecognized keys in the automatic_parallelization input: {}'
-                .format(' '.join(remaining_keys)))
+            self.report('detected unrecognized keys in the automatic_parallelization input: {}'.format(
+                ' '.join(remaining_keys)))
             return self.exit_codes.ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY
 
         # Add the calculation mode to the automatic parallelization dictionary
