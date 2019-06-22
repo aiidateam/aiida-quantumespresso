@@ -70,6 +70,43 @@ def generate_inputs_relax():
     })
 
 
+@pytest.fixture
+def generate_inputs_vcrelax():
+    """Return only those inputs that the parser will expect to be there.
+
+    This needs a separate input generation function from the default one, because the parser depends on certain values
+    in the input parameters to determine what kind of calculation it was. For example, it will check the card
+    `CONTROL.calculation` to determine whether the `TrajectoryData` should be attached. If we would not set it to
+    `relax`, the parser would not parse that output node and the test would fail. Until we can make the raw output
+    parser independent of the input parameters, this will have to remain a separate test inputs generator.
+    """
+    a = 5.43
+    structure = orm.StructureData(cell=[[a / 2., a / 2., 0], [a / 2., 0, a / 2.], [0, a / 2., a / 2.]])
+    structure.append_atom(position=(0., 0., 0.), symbols='Si')
+    structure.append_atom(position=(a / 4., a / 4., a / 4.), symbols='Si')
+    structure.store()
+
+    parameters = {
+        'CONTROL': {
+            'calculation': 'vc-relax'
+        },
+        'SYSTEM': {
+            'ecutrho': 240.0,
+            'ecutwfc': 30.0
+        }
+    }
+    kpoints = orm.KpointsData()
+    kpoints.set_cell_from_structure(structure)
+    kpoints.set_kpoints_mesh((4, 4, 4))
+
+    return AttributeDict({
+        'structure': structure,
+        'kpoints': kpoints,
+        'parameters': orm.Dict(dict=parameters),
+        'settings': orm.Dict()
+    })
+
+
 def test_pw_default(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
                     generate_inputs_default, data_regression):
     """Test a `pw.x` calculation in `scf` mode.
@@ -305,4 +342,39 @@ def test_pw_relax(fixture_database, fixture_computer_localhost, generate_calc_jo
         'output_parameters': results['output_parameters'].get_dict(),
         'output_structure': results['output_structure'].attributes,
         'output_trajectory': results['output_trajectory'].attributes,
+    })
+
+
+def test_pw_vc_relax_crystal_units(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+                                   generate_parser, generate_inputs_vcrelax, data_regression):
+    """Test a `pw.x` calculation in `vc-relax` mode.
+
+    The output is created by running a dead 'vc-relax' calculation for a silicon structure.
+    Note that `output_band` will not be there, because the bands are only parsed if the `retrieved_temporary_folder` is
+    passed containing the necessary files. Since we don't pass those in this test, the output node will not be created.
+
+    The input atomic positions have been defined using `ATOMIC_POSITIONS crystal`.
+    This necessitates a conversion from fractional to cartesian positions, for the trajectory positions
+    """
+    name = 'vc_relax_crystal_units'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_vcrelax)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_kpoints' in results
+    assert 'output_parameters' in results
+    assert 'output_structure' in results
+    assert 'output_trajectory' in results
+    assert 'output_array' not in results  # The `ArrayData` and `TrajectoryData` outputs are mutually exclusive
+    data_regression.check({
+        'output_kpoints': results['output_kpoints'].attributes,
+        'output_structure': results['output_structure'].attributes,
+        'output_trajectory': results['output_trajectory'].attributes,
+        'initial_trajectory': results['output_trajectory'].get_step_structure(0).attributes,
+        'output_parameters': results['output_parameters'].get_dict()
     })

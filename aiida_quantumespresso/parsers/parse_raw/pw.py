@@ -347,7 +347,9 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                     # the inizialization of tau prevent parsed_data to be associated
                     # to the pointer of the previous iteration
                     metric = line.split('(')[1].split(')')[0]
-                    if metric not in ['alat', 'bohr', 'angstrom']:
+                    if metric == 'crystal':
+                        this_key = 'atomic_fractionals_relax'
+                    elif metric not in ['alat', 'bohr', 'angstrom']:
                         raise QEOutputParsingError('Error while parsing atomic_positions: units not supported.')
                     # TODO: check how to map the atoms in the original scheme
                     positions = []

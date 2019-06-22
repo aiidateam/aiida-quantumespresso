@@ -278,7 +278,11 @@ class PwParser(Parser):
         :param parsed_trajectory: the raw parsed trajectory data
         :return: an `ArrayData` node
         """
-        if not parsed_trajectory or 'atomic_positions_relax' in parsed_trajectory:
+        if not parsed_trajectory:
+            return None
+        if 'atomic_positions_relax' in parsed_trajectory:
+            return None
+        if 'atomic_fractionals_relax' in parsed_trajectory:
             return None
 
         array = orm.ArrayData()
@@ -294,10 +298,18 @@ class PwParser(Parser):
         :param parsed_trajectory: the raw parsed trajectory data
         :return: a `TrajectoryData` or None
         """
-        if not parsed_trajectory or 'atomic_positions_relax' not in parsed_trajectory:
+        if not parsed_trajectory:
             return None
 
-        positions = numpy.array(parsed_trajectory.pop('atomic_positions_relax'))
+        if 'atomic_positions_relax' in parsed_trajectory:
+            fractional = False
+            positions = numpy.array(parsed_trajectory.pop('atomic_positions_relax'))
+        elif 'atomic_fractionals_relax' in parsed_trajectory:
+            fractional = True
+            positions = numpy.array(parsed_trajectory.pop('atomic_fractionals_relax'))
+        else:
+            return None
+
         try:
             cells = numpy.array(parsed_trajectory.pop('lattice_vectors_relax'))
             # if the cell is only printed once, the MD/relax was at fixed cell
@@ -307,7 +319,10 @@ class PwParser(Parser):
             # The cell is never printed, the MD/relax was at fixed cell
             cells = numpy.array([structure.cell] * len(positions))
 
-        symbols = [str(site.kind_name) for site in structure.sites]
+        if fractional:
+            positions = numpy.einsum("ijk, ikm -> ijm", positions, cells)
+
+        symbols = [str(structure.get_kind(site.kind_name).symbol) for site in structure.sites]
         stepids = numpy.arange(len(positions))
 
         trajectory = orm.TrajectoryData()
@@ -386,6 +401,7 @@ class PwParser(Parser):
             'atomic_charges',
             'atomic_magnetic_moments',
             'atomic_positions_relax',
+            'atomic_fractional_relax',
             'atomic_species_name',
             'forces',
             'lattice_vectors_relax',
