@@ -50,13 +50,6 @@ output_kpoints:
   pbc2: true
   pbc3: true
 output_parameters:
-  atomic_fractionals_relax:
-  - - -0.0
-    - -0.0
-    - 0.0
-  - - 0.25
-    - 0.25
-    - 0.25
   beta_real_space: false
   charge_density: ./charge-density.dat
   constraint_mag: 0

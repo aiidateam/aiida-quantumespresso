@@ -401,7 +401,7 @@ class PwParser(Parser):
             'atomic_charges',
             'atomic_magnetic_moments',
             'atomic_positions_relax',
-            'atomic_fractional_relax',
+            'atomic_fractionals_relax',
             'atomic_species_name',
             'forces',
             'lattice_vectors_relax',
