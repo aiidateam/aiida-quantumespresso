@@ -4,7 +4,7 @@ from __future__ import absolute_import
 import enum
 import os
 
-from defusedxml import ElementTree
+from xmlschema.etree import ElementTree
 
 DEFAULT_SCHEMA_FILENAME = 'qes-1.0.xsd'
 DIRNAME_SCHEMAS = 'schemas'
