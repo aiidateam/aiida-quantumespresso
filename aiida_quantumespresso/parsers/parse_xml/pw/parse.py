@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from __future__ import print_function
-import xmlschema
-from xmlschema.exceptions import URLError
-from defusedxml import ElementTree
+
 import numpy as np
+from xmlschema import XMLSchema
+from xmlschema.etree import ElementTree
+from xmlschema.exceptions import URLError
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.constants import ry_to_ev, hartree_to_ev, bohr_to_ang, ry_si, bohr_si, e_bohr2_to_coulomb_m2
@@ -63,14 +64,14 @@ def parse_pw_xml_post_6_2(xml_file, parser_opts, logger):
     schema_filepath = get_schema_filepath(xml)
 
     try:
-        xsd = xmlschema.XMLSchema(schema_filepath)
+        xsd = XMLSchema(schema_filepath)
     except URLError:
 
         # If loading the XSD file specified in the XML file fails, we try the default
         schema_filepath_default = get_default_schema_filepath()
 
         try:
-            xsd = xmlschema.XMLSchema(schema_filepath_default)
+            xsd = XMLSchema(schema_filepath_default)
         except URLError:
             raise QEXMLParsingError('Could not open or parse the XSD files {} and {}'.format(schema_filepath, schema_filepath_default))
         else:

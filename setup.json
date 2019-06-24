@@ -73,9 +73,9 @@
         ]
     },
     "install_requires": [
-        "aiida_core[atomic_tools]>=1.0.0b3",
+        "aiida_core[atomic_tools]>=1.0.0b4",
         "matplotlib<3.0.0; python_version<'3'",
-        "xmlschema==1.0.6"
+        "xmlschema==1.0.13"
     ],
     "license": "MIT License",
     "name": "aiida_quantumespresso",

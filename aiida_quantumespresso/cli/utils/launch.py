@@ -3,7 +3,7 @@
 from __future__ import absolute_import
 import click
 
-from aiida.engine import launch, Process
+from aiida.engine import launch, Process, ProcessBuilder
 from .display import echo_process_results
 
 
@@ -16,10 +16,12 @@ def launch_process(process, daemon, **inputs):
     :param daemon: boolean, if True will submit to the daemon instead of running in current interpreter
     :param inputs: inputs for the process
     """
-    if isinstance(process, Process):
+    if isinstance(process, ProcessBuilder):
+        process_name = process.process_class.__name__
+    elif issubclass(process, Process):
         process_name = process.__name__
     else:
-        process_name = process.process_class.__name__
+        raise TypeError('invalid type for process: {}'.format(process))
 
     if daemon:
         node = launch.submit(process, **inputs)
