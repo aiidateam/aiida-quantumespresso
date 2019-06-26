@@ -155,7 +155,8 @@ class BaseRestartWorkChain(WorkChain):
                 self.report('{}<{}> finished successfully, but sanity check detected unrecoverable problem'.format(
                     self.ctx.calc_name, calculation.pk))
                 return handler.exit_code
-            elif isinstance(handler, ErrorHandlerReport):
+
+            if isinstance(handler, ErrorHandlerReport):
                 # Reset the `unexpected_failure` since we are restarting the calculation loop
                 self.ctx.unexpected_failure = False
                 self.report('{}<{}> finished successfully, but sanity check failed, restarting'.format(
