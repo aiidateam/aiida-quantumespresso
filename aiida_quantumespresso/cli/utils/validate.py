@@ -52,7 +52,7 @@ def validate_hubbard_parameters(structure, parameters, hubbard_u=None, hubbard_v
     """
     from aiida.orm import load_node, SinglefileData
 
-    if [v is None for v in [hubbard_u, hubbard_v, hubbard_file_pk]].count(True) > 1:
+    if [v is not None for v in [hubbard_u, hubbard_v, hubbard_file_pk]].count(True) > 1:
         raise ValueError('the hubbard_u, hubbard_v and hubbard_file_pk options are mutually exclusive')
 
     hubbard_file = None
