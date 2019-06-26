@@ -282,7 +282,7 @@ class PwParser(Parser):
         if type_calc not in ['relax', 'vc-relax', 'md', 'vc-md'] or 'cell' not in list(parsed_structure.keys()):
             return self.node.inputs.structure
 
-        return convert_qe2aiida_structure(parsed_structure)
+        return convert_qe2aiida_structure(parsed_structure, self.node.inputs.structure)
 
     def build_output_array(self, parsed_trajectory):
         """Build the output array from the raw parsed trajectory data.

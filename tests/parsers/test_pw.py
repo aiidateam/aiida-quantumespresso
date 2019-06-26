@@ -45,8 +45,8 @@ def generate_inputs_relax():
     """
     a = 5.43
     structure = orm.StructureData(cell=[[a / 2., a / 2., 0], [a / 2., 0, a / 2.], [0, a / 2., a / 2.]])
-    structure.append_atom(position=(0., 0., 0.), symbols='Si')
-    structure.append_atom(position=(a / 4., a / 4., a / 4.), symbols='Si')
+    structure.append_atom(position=(0., 0., 0.), symbols='Si', name="Si1")
+    structure.append_atom(position=(a / 4., a / 4., a / 4.), symbols='Si', name="Si2")
     structure.store()
 
     parameters = {
