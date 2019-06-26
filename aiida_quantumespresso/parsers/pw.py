@@ -322,7 +322,7 @@ class PwParser(Parser):
         if fractional:
             positions = numpy.einsum("ijk, ikm -> ijm", positions, cells)
 
-        symbols = [str(structure.get_kind(site.kind_name).symbol) for site in structure.sites]
+        symbols = [str(site.kind_name) for site in structure.sites]
         stepids = numpy.arange(len(positions))
 
         trajectory = orm.TrajectoryData()
