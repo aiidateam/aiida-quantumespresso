@@ -4,7 +4,7 @@ from __future__ import absolute_import
 from aiida.common import NotExistent
 from aiida.orm import Dict
 from aiida.parsers import Parser
-from aiida_quantumespresso.parsers.parse_raw.simple import parse_qe_simple
+from aiida_quantumespresso.parsers.raw_parser_simple import parse_qe_simple
 
 
 class Pw2wannier90Parser(Parser):

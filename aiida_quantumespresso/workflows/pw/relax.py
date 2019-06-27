@@ -20,7 +20,7 @@ class PwRelaxWorkChain(WorkChain):
     @classmethod
     def define(cls, spec):
         super(PwRelaxWorkChain, cls).define(spec)
-        spec.expose_inputs(PwBaseWorkChain, namespace='base', exclude=('clean_workdir', 'pw.structure'))
+        spec.expose_inputs(PwBaseWorkChain, namespace='base', exclude=('structure', 'clean_workdir'))
         spec.input('structure', valid_type=orm.StructureData)
         spec.input('final_scf', valid_type=orm.Bool, default=orm.Bool(False))
         spec.input('relaxation_scheme', valid_type=orm.Str, default=orm.Str('vc-relax'))
@@ -44,7 +44,7 @@ class PwRelaxWorkChain(WorkChain):
             message='the relax PwBaseWorkChain sub process failed')
         spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_FINAL_SCF',
             message='the final scf PwBaseWorkChain sub process failed')
-        spec.expose_outputs(PwBaseWorkChain, exclude=('output_structure',))
+        spec.expose_outputs(PwBaseWorkChain, exclude=['output_structure'])
         spec.output('output_structure', valid_type=orm.StructureData, required=True)
 
     def setup(self):
@@ -80,11 +80,11 @@ class PwRelaxWorkChain(WorkChain):
         self.ctx.iteration += 1
 
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base'))
-        inputs.pw.structure = self.ctx.current_structure
-        inputs.pw.parameters = inputs.pw.parameters.get_dict()
+        inputs.structure = self.ctx.current_structure
+        inputs.parameters = inputs.parameters.get_dict()
 
-        inputs.pw.parameters.setdefault('CONTROL', {})
-        inputs.pw.parameters['CONTROL']['calculation'] = self.inputs.relaxation_scheme.value
+        inputs.parameters.setdefault('CONTROL', {})
+        inputs.parameters['CONTROL']['calculation'] = self.inputs.relaxation_scheme.value
 
         # Do not clean workdirs of sub workchains, because then we won't be able to restart from them
         inputs.pop('clean_workdir', None)
@@ -151,13 +151,13 @@ class PwRelaxWorkChain(WorkChain):
     def run_final_scf(self):
         """Run the PwBaseWorkChain to run a final scf PwCalculation for the relaxed structure."""
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base'))
-        inputs.pw.structure = self.ctx.current_structure
-        inputs.pw.parent_folder = self.ctx.current_parent_folder
-        inputs.pw.parameters = inputs.pw.parameters.get_dict()
+        inputs.structure = self.ctx.current_structure
+        inputs.parent_folder = self.ctx.current_parent_folder
+        inputs.parameters = inputs.parameters.get_dict()
 
-        inputs.pw.parameters.setdefault('CONTROL', {})
-        inputs.pw.parameters['CONTROL']['calculation'] = 'scf'
-        inputs.pw.parameters['CONTROL']['restart_mode'] = 'restart'
+        inputs.parameters.setdefault('CONTROL', {})
+        inputs.parameters['CONTROL']['calculation'] = 'scf'
+        inputs.parameters['CONTROL']['restart_mode'] = 'restart'
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
@@ -184,7 +184,7 @@ class PwRelaxWorkChain(WorkChain):
         # Get the latest workchain, which is either the workchain_scf if it ran or otherwise the last regular workchain
         try:
             workchain = self.ctx.workchain_scf
-            structure = workchain.inputs.pw.structure
+            structure = workchain.inputs.structure
         except AttributeError:
             workchain = self.ctx.workchains[-1]
             structure = workchain.outputs.output_structure

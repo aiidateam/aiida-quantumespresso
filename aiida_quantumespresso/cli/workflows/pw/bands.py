@@ -36,12 +36,9 @@ def launch_workflow(code, structure, pseudo_family, kpoints_distance, ecutwfc, e
                     hubbard_file_pk, starting_magnetization, smearing, automatic_parallelization, clean_workdir,
                     max_num_machines, max_wallclock_seconds, with_mpi, daemon):
     """Run a `PwBandsWorkChain`."""
-    # pylint: disable=too-many-statements
     from aiida.orm import Bool, Float, Str, Dict
     from aiida.plugins import WorkflowFactory
     from aiida_quantumespresso.utils.resources import get_default_options, get_automatic_parallelization_options
-
-    builder = WorkflowFactory('quantumespresso.pw.bands').get_builder()
 
     parameters = {
         'SYSTEM': {
@@ -69,38 +66,48 @@ def launch_workflow(code, structure, pseudo_family, kpoints_distance, ecutwfc, e
     pseudo_family = Str(pseudo_family)
     parameters = Dict(dict=parameters)
 
-    builder.structure = structure
-    builder.relax.base.pw.code = code
-    builder.relax.base.pw.parameters = parameters
-    builder.relax.base.pseudo_family = pseudo_family
-    builder.relax.base.kpoints_distance = Float(kpoints_distance)
-    builder.relax.meta_convergence = Bool(False)
-    builder.scf.pw.code = code
-    builder.scf.pw.parameters = parameters
-    builder.scf.pseudo_family = pseudo_family
-    builder.scf.kpoints_distance = Float(kpoints_distance)
-    builder.bands.pw.code = code
-    builder.bands.pw.parameters = parameters
-    builder.bands.pseudo_family = pseudo_family
-    builder.bands.kpoints_distance = Float(kpoints_distance)
+    inputs = {
+        'structure': structure,
+        'relax': {
+            'base': {
+                'code': code,
+                'pseudo_family': pseudo_family,
+                'kpoints_distance': Float(kpoints_distance),
+                'parameters': parameters,
+            },
+            'meta_convergence': Bool(False),
+        },
+        'scf': {
+            'code': code,
+            'pseudo_family': pseudo_family,
+            'kpoints_distance': Float(kpoints_distance),
+            'parameters': parameters,
+        },
+        'bands': {
+            'code': code,
+            'pseudo_family': pseudo_family,
+            'kpoints_distance': Float(kpoints_distance),
+            'parameters': parameters,
+        }
+    }
 
     if hubbard_file:
-        builder.relax.base.pw.hubbard_file = hubbard_file
-        builder.scf.base.pw.hubbard_file = hubbard_file
-        builder.bands.base.pw.hubbard_file = hubbard_file
+        inputs['relax']['base']['hubbard_file'] = hubbard_file
+        inputs['scf']['base']['hubbard_file'] = hubbard_file
+        inputs['bands']['base']['hubbard_file'] = hubbard_file
 
     if automatic_parallelization:
         auto_para = Dict(dict=get_automatic_parallelization_options(max_num_machines, max_wallclock_seconds))
-        builder.relax.base.automatic_parallelization = auto_para
-        builder.scf.automatic_parallelization = auto_para
-        builder.bands.automatic_parallelization = auto_para
+        inputs['relax']['base']['automatic_parallelization'] = auto_para
+        inputs['scf']['automatic_parallelization'] = auto_para
+        inputs['bands']['automatic_parallelization'] = auto_para
     else:
-        options = get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)
-        builder.relax.base.pw.metadata.options = options
-        builder.scf.pw.metadata.options = options
-        builder.bands.pw.metadata.options = options
+        options = Dict(dict=get_default_options(max_num_machines, max_wallclock_seconds, with_mpi))
+        inputs['relax']['base']['options'] = options
+        inputs['scf']['options'] = options
+        inputs['bands']['options'] = options
 
     if clean_workdir:
-        builder.clean_workdir = Bool(True)
+        inputs['clean_workdir'] = Bool(True)
 
-    launch.launch_process(builder, daemon)
+    launch.launch_process(WorkflowFactory('quantumespresso.pw.bands'), daemon, **inputs)

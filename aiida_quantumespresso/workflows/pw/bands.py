@@ -22,9 +22,9 @@ class PwBandsWorkChain(WorkChain):
     @classmethod
     def define(cls, spec):
         super(PwBandsWorkChain, cls).define(spec)
-        spec.expose_inputs(PwRelaxWorkChain, namespace='relax', exclude=('clean_workdir', 'structure'))
-        spec.expose_inputs(PwBaseWorkChain, namespace='scf', exclude=('clean_workdir', 'pw.structure'))
-        spec.expose_inputs(PwBaseWorkChain, namespace='bands', exclude=('clean_workdir', 'pw.structure'))
+        spec.expose_inputs(PwRelaxWorkChain, namespace='relax', exclude=('structure', 'clean_workdir'))
+        spec.expose_inputs(PwBaseWorkChain, namespace='scf', exclude=('structure', 'clean_workdir'))
+        spec.expose_inputs(PwBaseWorkChain, namespace='bands', exclude=('structure', 'clean_workdir'))
         spec.input('structure', valid_type=orm.StructureData)
         spec.input('clean_workdir', valid_type=orm.Bool, default=orm.Bool(False))
         spec.input('nbands_factor', valid_type=orm.Float, default=orm.Float(1.2))
@@ -104,10 +104,10 @@ class PwBandsWorkChain(WorkChain):
     def run_scf(self):
         """Run the PwBaseWorkChain in scf mode on the primitive cell of (optionally relaxed) input structure"""
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='scf'))
-        inputs.pw.structure = self.ctx.current_structure
-        inputs.pw.parameters = inputs.pw.parameters.get_dict()
-        inputs.pw.parameters.setdefault('CONTROL', {})
-        inputs.pw.parameters['CONTROL']['calculation'] = 'scf'
+        inputs.structure = self.ctx.current_structure
+        inputs.parameters = inputs.parameters.get_dict()
+        inputs.parameters.setdefault('CONTROL', {})
+        inputs.parameters['CONTROL']['calculation'] = 'scf'
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
@@ -138,23 +138,23 @@ class PwBandsWorkChain(WorkChain):
             int(0.5 * nelectron * nspin) + 4 * nspin)
 
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='bands'))
-        inputs.pw.parameters = inputs.pw.parameters.get_dict()
+        inputs.parameters = inputs.parameters.get_dict()
 
-        inputs.pw.parameters.setdefault('CONTROL', {})
-        inputs.pw.parameters.setdefault('SYSTEM', {})
-        inputs.pw.parameters.setdefault('ELECTRONS', {})
+        inputs.parameters.setdefault('CONTROL', {})
+        inputs.parameters.setdefault('SYSTEM', {})
+        inputs.parameters.setdefault('ELECTRONS', {})
 
-        inputs.pw.parameters['CONTROL']['restart_mode'] = 'restart'
-        inputs.pw.parameters['CONTROL']['calculation'] = 'bands'
-        inputs.pw.parameters['ELECTRONS']['diagonalization'] = 'cg'
-        inputs.pw.parameters['ELECTRONS']['diago_full_acc'] = True
-        inputs.pw.parameters['SYSTEM']['nbnd'] = nbands
+        inputs.parameters['CONTROL']['restart_mode'] = 'restart'
+        inputs.parameters['CONTROL']['calculation'] = 'bands'
+        inputs.parameters['ELECTRONS']['diagonalization'] = 'cg'
+        inputs.parameters['ELECTRONS']['diago_full_acc'] = True
+        inputs.parameters['SYSTEM']['nbnd'] = nbands
 
         if 'kpoints' not in self.inputs.bands:
             inputs.kpoints = self.ctx.kpoints_path
 
-        inputs.pw.structure = self.ctx.current_structure
-        inputs.pw.parent_folder = self.ctx.current_folder
+        inputs.structure = self.ctx.current_structure
+        inputs.parent_folder = self.ctx.current_folder
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)

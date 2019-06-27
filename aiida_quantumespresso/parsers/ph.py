@@ -7,7 +7,7 @@ from aiida import orm
 from aiida.common import exceptions
 from aiida.parsers.parser import Parser
 from aiida_quantumespresso.calculations.ph import PhCalculation
-from aiida_quantumespresso.parsers.parse_raw.ph import parse_raw_ph_output
+from aiida_quantumespresso.parsers.raw_parser_ph import parse_raw_ph_output
 
 
 class PhParser(Parser):

@@ -39,8 +39,6 @@ def launch_workflow(code, structure, pseudo_family, kpoints_distance, ecutwfc, e
     from aiida.plugins import WorkflowFactory
     from aiida_quantumespresso.utils.resources import get_default_options, get_automatic_parallelization_options
 
-    builder = WorkflowFactory('quantumespresso.pw.base').get_builder()
-
     parameters = {
         'SYSTEM': {
             'ecutwfc': ecutwfc,
@@ -64,22 +62,24 @@ def launch_workflow(code, structure, pseudo_family, kpoints_distance, ecutwfc, e
     except ValueError as exception:
         raise click.BadParameter(str(exception))
 
-    builder.pw.code = code
-    builder.pw.structure = structure
-    builder.pw.parameters = Dict(dict=parameters)
-    builder.pseudo_family = Str(pseudo_family)
-    builder.kpoints_distance = Float(kpoints_distance)
+    inputs = {
+        'code': code,
+        'structure': structure,
+        'pseudo_family': Str(pseudo_family),
+        'kpoints_distance': Float(kpoints_distance),
+        'parameters': Dict(dict=parameters),
+    }
 
     if hubbard_file:
-        builder.hubbard_file = hubbard_file
+        inputs['hubbard_file'] = hubbard_file
 
     if automatic_parallelization:
         automatic_parallelization = get_automatic_parallelization_options(max_num_machines, max_wallclock_seconds)
-        builder.automatic_parallelization = Dict(dict=automatic_parallelization)
+        inputs['automatic_parallelization'] = Dict(dict=automatic_parallelization)
     else:
-        builder.pw.metadata.options = get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)
+        inputs['options'] = Dict(dict=get_default_options(max_num_machines, max_wallclock_seconds, with_mpi))
 
     if clean_workdir:
-        builder.clean_workdir = Bool(True)
+        inputs['clean_workdir'] = Bool(True)
 
-    launch.launch_process(builder, daemon)
+    launch.launch_process(WorkflowFactory('quantumespresso.pw.base'), daemon, **inputs)

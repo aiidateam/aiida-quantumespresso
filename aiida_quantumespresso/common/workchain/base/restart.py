@@ -6,11 +6,10 @@ from __future__ import absolute_import
 from aiida import orm
 from aiida.common import exceptions
 from aiida.common.lang import override
-from aiida.engine import CalcJob, WorkChain, ToContext, append_
+from aiida.engine import ExitCode, CalcJob, WorkChain, ToContext, append_
 from aiida.plugins.entry_point import get_entry_point_names, load_entry_point
 
 from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
-from aiida_quantumespresso.common.workchain.utils import ErrorHandlerReport
 
 
 class BaseRestartWorkChain(WorkChain):
@@ -122,17 +121,8 @@ class BaseRestartWorkChain(WorkChain):
         except AttributeError:
             raise AttributeError('no calculation input dictionary was defined in `self.ctx.inputs`')
 
-        # Set the `CALL` link label
-        unwrapped_inputs['metadata']['call_link_label'] = 'iteration_{:02d}'.format(self.ctx.iteration)
-
         inputs = prepare_process_inputs(self._calculation_class, unwrapped_inputs)
         calculation = self.submit(self._calculation_class, **inputs)
-
-        # Add a new empty list to the `errors_handled` extra. If any errors handled registered through the
-        # `register_error_handler` decorator return an `ErrorHandlerReport`, their name will be appended to that list.
-        errors_handled = self.node.get_extra('errors_handled', [])
-        errors_handled.append([])
-        self.node.set_extra('errors_handled', errors_handled)
 
         self.report('launching {}<{}> iteration #{}'.format(self.ctx.calc_name, calculation.pk, self.ctx.iteration))
 
@@ -148,15 +138,15 @@ class BaseRestartWorkChain(WorkChain):
             # Perform an optional sanity check. If it returns an `ExitCode` this means an unrecoverable situation was
             # detected and the work chain should be aborted. If it returns `False`, the sanity check detected a problem
             # but has handled the problem and we should restart the cycle.
-            handler = self._handle_calculation_sanity_checks(calculation)  # pylint: disable=assignment-from-no-return
+            result = self._handle_calculation_sanity_checks(calculation)  # pylint: disable=assignment-from-no-return
 
-            if isinstance(handler, ErrorHandlerReport) and handler.exit_code.status != 0:
-                # Sanity check returned a handler with an exit code that is non-zero, so we abort
+            if isinstance(result, ExitCode):
+                # No need to reset the `unexpected_failure` because the work chain will terminate due to the exit code
                 self.report('{}<{}> finished successfully, but sanity check detected unrecoverable problem'.format(
                     self.ctx.calc_name, calculation.pk))
-                return handler.exit_code
+                return result
 
-            if isinstance(handler, ErrorHandlerReport):
+            if result is False:
                 # Reset the `unexpected_failure` since we are restarting the calculation loop
                 self.ctx.unexpected_failure = False
                 self.report('{}<{}> finished successfully, but sanity check failed, restarting'.format(
@@ -167,6 +157,12 @@ class BaseRestartWorkChain(WorkChain):
             self.ctx.restart_calc = calculation
             self.ctx.is_finished = True
             return
+
+        # Abort: exceeded maximum number of retries
+        if self.ctx.iteration >= self.inputs.max_iterations.value:
+            self.report('reached the maximumm number of iterations {}: last ran {}<{}>'.format(
+                self.inputs.max_iterations.value, self.ctx.calc_name, calculation.pk))
+            return self.exit_codes.ERROR_MAXIMUM_ITERATIONS_EXCEEDED
 
         # Unexpected: calculation was killed or an exception occurred, trigger unexpected failure handling
         if calculation.is_excepted or calculation.is_killed:
@@ -182,24 +178,16 @@ class BaseRestartWorkChain(WorkChain):
 
     def results(self):
         """Attach the outputs specified in the output specification from the last completed calculation."""
-        calculation = self.ctx.calculations[self.ctx.iteration - 1]
-
-        if calculation.is_failed and self.ctx.iteration >= self.inputs.max_iterations.value:
-            # Abort: exceeded maximum number of retries
-            self.report('reached the maximum number of iterations {}: last ran {}<{}>'.format(
-                self.inputs.max_iterations.value, self.ctx.calc_name, calculation.pk))
-            return self.exit_codes.ERROR_MAXIMUM_ITERATIONS_EXCEEDED
-
         self.report('work chain completed after {} iterations'.format(self.ctx.iteration))
 
         for name, port in self.spec().outputs.items():
 
             try:
-                node = calculation.get_outgoing(link_label_filter=name).one().node
+                node = self.ctx.restart_calc.get_outgoing(link_label_filter=name).one().node
             except ValueError:
                 if port.required:
                     self.report("required output '{}' was not an output of {}<{}>".format(
-                        name, self.ctx.calc_name, calculation.pk))
+                        name, self.ctx.calc_name, self.ctx.restart_calc.pk))
             else:
                 self.out(name, node)
                 if self._verbose:
@@ -238,7 +226,7 @@ class BaseRestartWorkChain(WorkChain):
         calculation are good and nothing will be done.
 
         :param calculation: the calculation whose outputs should be checked for consistency
-        :return: `ErrorHandlerReport` if a new calculation should be launched or abort if it includes an exit code
+        :return: `ExitCode` if the work chain is to be aborted, `False` if a new calculation should be launched
         """
 
     def _handle_calculation_failure(self, calculation):
@@ -258,12 +246,10 @@ class BaseRestartWorkChain(WorkChain):
         if not hasattr(self, '_error_handlers') or not self._error_handlers:
             raise UnexpectedCalculationFailure('no calculation error handlers were registered')
 
-        # Sort the handlers with a priority defined, based on their priority in reverse order
-        handlers = [handler for handler in self._error_handlers if handler.priority]
-        handlers = sorted(handlers, key=lambda x: x.priority, reverse=True)
+        # Sort the handlers based on their priority in reverse order
+        handlers = sorted(self._error_handlers, key=lambda x: x.priority, reverse=True)
 
         for handler in handlers:
-
             handler_report = handler.method(self, calculation)
 
             # If at least one error is handled, we consider the calculation failure handled.

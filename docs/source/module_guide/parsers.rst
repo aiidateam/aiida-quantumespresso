@@ -21,7 +21,15 @@ Pw Parser
 Raw Pw Parser
 -------------
 
-.. automodule:: aiida_quantumespresso.parsers.parse_raw.pw
+.. automodule:: aiida_quantumespresso.parsers.raw_parser_pw
+   :members:
+
+Basic Raw Pw Parser
+-------------------
+
+This is just a minimal parser for basic quantities.
+
+.. automodule:: aiida_quantumespresso.parsers.basic_raw_parser_pw
    :members:
 
 Cp Parser
@@ -33,8 +41,17 @@ Cp Parser
 Raw Cp Parser
 -------------
 
-.. automodule:: aiida_quantumespresso.parsers.parse_raw.cp
+.. automodule:: aiida_quantumespresso.parsers.raw_parser_cp
    :members:
+
+Basic Raw Cp Parser
+-------------------
+
+This is just a minimal parser for basic quantities.
+
+.. automodule:: aiida_quantumespresso.parsers.basic_raw_parser_cp
+   :members:
+
 
 Constants
 ---------
