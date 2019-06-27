@@ -743,6 +743,6 @@ so convenient that you will use it for all your calculations.
 At the beginning, however, you may have some calculations that you already have
 run and are sitting in some folders, and that you want to import inside AiiDA.
 
-This can be achieved with the ``PwImmigrant`` class described below,
+This can be achieved with the immigration tools described below,
 for which you can find a tutorial :ref:`here <pwimmigrant-tutorial>`.
 

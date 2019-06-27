@@ -27,9 +27,3 @@ Quantum Espresso - projwfc.x
 .. automodule:: aiida_quantumespresso.calculations.projwfc
    :members:
    :special-members: __init__
-
-Quantum Espresso - PW immigrant
--------------------------------
-.. automodule:: aiida_quantumespresso.calculations.pwimmigrant
-   :members:
-   :special-members: __init__
