@@ -23,6 +23,7 @@ retrieve_list:
 - ./out/aiida.save/data-file.xml
 - _scheduler-stdout.txt
 - _scheduler-stderr.txt
+retrieve_singlefile_list: []
 retrieve_temporary_list: []
 scheduler_stderr: _scheduler-stderr.txt
 scheduler_stdout: _scheduler-stdout.txt
