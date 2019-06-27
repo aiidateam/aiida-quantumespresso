@@ -18,9 +18,12 @@ resources:
   num_machines: 1
   num_mpiprocs_per_machine: 32
 retrieve_list:
-- aiida.in
 - aiida.out
-- data-file-schema.xml
+- ./out/aiida.save/data-file-schema.xml
+- ./out/aiida.save/data-file.xml
+- _scheduler-stdout.txt
+- _scheduler-stderr.txt
+retrieve_temporary_list: []
 scheduler_stderr: _scheduler-stderr.txt
 scheduler_stdout: _scheduler-stdout.txt
 sealed: true

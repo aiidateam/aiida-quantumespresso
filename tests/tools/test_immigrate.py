@@ -5,9 +5,10 @@ from __future__ import absolute_import
 import os
 
 from aiida.common.folders import SandboxFolder
+from aiida.orm import Dict, RemoteData
 
 from aiida_quantumespresso.tools.pwinputparser import create_builder_from_file
-from aiida_quantumespresso.tools.pwimmigrant import immigrate_existing
+from aiida_quantumespresso.tools.immigrate_calc import immigrate_existing
 
 
 def test_create_builder(fixture_database, fixture_computer_localhost, generate_code_localhost, generate_upf_data,
@@ -57,8 +58,8 @@ def test_create_builder(fixture_database, fixture_computer_localhost, generate_c
     generate_calc_job(fixture_sandbox_folder, entry_point_name, builder)
 
 
-def test_immigrate_existing(fixture_database, fixture_computer_localhost,
-                            generate_code_localhost, generate_upf_data, data_regression):
+def test_immigrate_calc_pw(fixture_database, fixture_computer_localhost,
+                           generate_code_localhost, generate_upf_data, data_regression):
     """ this test uses the input file generated from tests.calculations.test_pw.test_pw_default,
     and input file generated from tests.parsers.test_pw.test_pw_default
     """
@@ -89,15 +90,21 @@ def test_immigrate_existing(fixture_database, fixture_computer_localhost,
     out_folderpath = os.path.abspath(out_foldername)
 
     builder = create_builder_from_file(in_folderpath, 'test_pw_default.in', code, metadata, upf_folderpath)
+    builder.settings = Dict(dict={'NO_BANDS': True})
+    fixture_computer_localhost.configure()
 
     with SandboxFolder() as folder:
         folder.insert_path(os.path.join(out_folderpath, 'aiida.out'))
-        folder.insert_path(os.path.join(out_folderpath, 'data-file.xml'))
+        outfolder = folder.get_subfolder('out/aiida.save/', create=True)
+        outfolder.insert_path(os.path.join(out_folderpath, 'data-file.xml'))
 
-        calc_node = immigrate_existing(builder, folder, 'aiida.out',
-                                       'data-file.xml', 'path/to/remote')
+        remote = RemoteData(remote_path=folder.abspath, computer=fixture_computer_localhost)
+        calc_node = immigrate_existing(builder, remote)
 
-    data_regression.check(calc_node.attributes)
+    attributes = calc_node.attributes
+    attributes["remote_workdir"] = "path/to/remote"
+
+    data_regression.check(attributes)
 
     outputs = calc_node.get_outgoing()
     assert set(outputs.all_link_labels()) == set(
