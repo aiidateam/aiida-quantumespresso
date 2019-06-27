@@ -103,6 +103,7 @@ def test_immigrate_calc_pw(fixture_database, fixture_computer_localhost,
 
     attributes = calc_node.attributes
     attributes["remote_workdir"] = "path/to/remote"
+    attributes.pop("retrieve_singlefile_list", None)  # removed post v1.0.0b4
 
     data_regression.check(attributes)
 

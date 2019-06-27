@@ -34,6 +34,7 @@ def immigrate_existing(builder, remote_data):
     # prepare for submission
     with SandboxFolder() as temp_folder:
         calc_info = process.presubmit(temp_folder)
+        calc_node.put_object_from_tree(temp_folder.abspath, force=True)
 
     # link remote folder to calc_node
     if not remote_data.is_stored:
