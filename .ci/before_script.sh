@@ -19,7 +19,7 @@ then
     verdi -p $TEST_AIIDA_BACKEND computer setup --non-interactive --label=torquessh --hostname=localhost --transport=ssh --scheduler=torque --mpiprocs-per-machine=1 --prepend-text="" --append-text="" --work-dir='/scratch/{username}/aiida_run' --mpirun-command='mpirun -np {tot_num_mpiprocs}'
 
     # Configure the torquessh computer - this one is custom, using port 22
-    verdi -p $TEST_AIIDA_BACKEND computer configure ssh torquessh --non-interactive --username=app --port=10022 --key-filename=~/.ssh/id_rsa --timeout=60 --compress --gss-host=localhost --load-system-host-keys --key-policy=RejectPolicy
+    verdi -p $TEST_AIIDA_BACKEND computer configure ssh torquessh --non-interactive --safe-interval 0 --username=app --port=10022 --key-filename=~/.ssh/id_rsa --timeout=60 --compress --gss-host=localhost --load-system-host-keys --key-policy=RejectPolicy
 
     # Configure the 'add' code inside torquessh, which is only required for the integrations test on Jenkins
     verdi -p $TEST_AIIDA_BACKEND code setup -n -L qe-pw \

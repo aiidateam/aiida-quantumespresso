@@ -66,12 +66,18 @@ class BasePwCpInputGenerator(CalcJob):
     def define(cls, spec):
         super(BasePwCpInputGenerator, cls).define(spec)
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)  # Override default withmpi=False
-        spec.input('structure', valid_type=orm.StructureData, help='')
-        spec.input('parameters', valid_type=orm.Dict, help='')
-        spec.input('settings', valid_type=orm.Dict, required=False, help='')
-        spec.input('parent_folder', valid_type=orm.RemoteData, required=False, help='')
-        spec.input('vdw_table', valid_type=orm.SinglefileData, required=False, help='')
-        spec.input_namespace('pseudos', valid_type=orm.UpfData, dynamic=True, help='')
+        spec.input('structure', valid_type=orm.StructureData,
+            help='The input structure.')
+        spec.input('parameters', valid_type=orm.Dict,
+            help='The input parameters that are to be used to construct the input file.')
+        spec.input('settings', valid_type=orm.Dict, required=False,
+            help='Optional parameters to affect the way the calculation job and the parsing are performed.')
+        spec.input('parent_folder', valid_type=orm.RemoteData, required=False,
+            help='An optional working directory of a previously completed calculation to restart from.')
+        spec.input('vdw_table', valid_type=orm.SinglefileData, required=False,
+            help='Optional van der Waals table contained in a `SinglefileData`.')
+        spec.input_namespace('pseudos', valid_type=orm.UpfData, dynamic=True,
+            help='A mapping of `UpfData` nodes onto the kind name to which they should apply.')
 
     def prepare_for_submission(self, folder):
         """Create the input files from the input nodes passed to this instance of the `CalcJob`.

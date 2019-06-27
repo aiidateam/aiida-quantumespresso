@@ -9,7 +9,8 @@ import numpy
 from xml.dom.minidom import parseString
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
 from aiida_quantumespresso.parsers.constants import *
-from aiida_quantumespresso.parsers.raw_parser_pw import parse_xml_child_bool,read_xml_card,convert_qe_time_to_sec
+from aiida_quantumespresso.parsers.parse_xml.pw.legacy import parse_xml_child_bool, read_xml_card
+from aiida_quantumespresso.parsers.parse_raw.pw import convert_qe_time_to_sec
 from six.moves import zip
 
 
@@ -17,17 +18,17 @@ def parse_raw_ph_output(out_file, tensor_file=None, dynmat_files=[]):
     """
     Parses the output of a calculation
     Receives in input the paths to the output file and the xml file.
-    
-    Args: 
-        out_file 
+
+    Args:
+        out_file
             path to ph std output
-    
+
     Returns:
         out_dict
             a dictionary with parsed data
         successful
             a boolean that is False in case of failed calculations
-            
+
     Raises:
         QEOutputParsingError
             for errors in the parsing
@@ -36,10 +37,10 @@ def parse_raw_ph_output(out_file, tensor_file=None, dynmat_files=[]):
     On an upper level, these flags MUST be checked.
     The first two are expected to be empty unless QE failures or unfinished jobs.
     """
-    
+
     job_successful = True
     parser_info = get_parser_info(parser_info_template='aiida-quantumespresso parser ph.x v{}')
-    
+
     # load QE out file
     try:
         with open(out_file,'r') as f:
@@ -47,23 +48,23 @@ def parse_raw_ph_output(out_file, tensor_file=None, dynmat_files=[]):
     except IOError:
         # if the file cannot be open, the error is severe.
         raise QEOutputParsingError("Failed to open output file: {}.".format(out_file))
-    
+
     # in case of executable failures, check if there is any output at all
     if not out_lines:
         job_successful = False
-    
+
     # check if the job has finished (that doesn't mean without errors)
     finished_run = False
     for line in out_lines[::-1]:
         if 'JOB DONE' in line:
             finished_run = True
             break
-    
+
     if not finished_run:
         warning = 'QE ph run did not reach the end of the execution.'
-        parser_info['parser_warnings'].append(warning)        
+        parser_info['parser_warnings'].append(warning)
         job_successful = False
-    
+
     # parse tensors, if present
     tensor_data = {}
     if tensor_file:
@@ -74,16 +75,16 @@ def parse_raw_ph_output(out_file, tensor_file=None, dynmat_files=[]):
         except QEOutputParsingError:
             parser_info['parser_warnings'].append('Error while parsing the tensor files')
             pass
-    
+
     # parse ph output
     with open(out_file,'r') as f:
         out_lines = f.readlines()
     out_data,critical_messages = parse_ph_text_output(out_lines)
-    
+
     # if there is a severe error, the calculation is FAILED
     if any([x in out_data['warnings'] for x in critical_messages]):
         job_successful = False
-    
+
     # parse dynamical matrices if present
     dynmat_data = {}
     if dynmat_files:
@@ -92,7 +93,7 @@ def parse_raw_ph_output(out_file, tensor_file=None, dynmat_files=[]):
             # read it
             with open(this_dynmat,'r') as f:
                 lines = f.readlines()
-            
+
             # check if the file contains frequencies (i.e. is useful) or not
             dynmat_to_parse = False
             if not lines:
@@ -103,10 +104,10 @@ def parse_raw_ph_output(out_file, tensor_file=None, dynmat_files=[]):
                 dynmat_to_parse = True
             if not dynmat_to_parse:
                 continue
-            
+
             # parse it
-            this_dynmat_data = parse_ph_dynmat(lines) 
-            
+            this_dynmat_data = parse_ph_dynmat(lines)
+
             # join it with the previous dynmat info
             dynmat_data['dynamical_matrix_%s' % dynmat_counter] = this_dynmat_data
             # TODO: use the bands format?
@@ -122,8 +123,8 @@ def parse_raw_ph_output(out_file, tensor_file=None, dynmat_files=[]):
                 del dynmat_data['warnings']
             else:
                 raise AssertionError('{} found in two dictionaries'.format(key))
-    # I don't check the dynmat_data and parser_info keys 
-    final_data = dict(list(dynmat_data.items()) + list(out_data.items()) + 
+    # I don't check the dynmat_data and parser_info keys
+    final_data = dict(list(dynmat_data.items()) + list(out_data.items()) +
                       list(tensor_data.items()) + list(parser_info.items()))
 
     return final_data,job_successful
@@ -134,31 +135,31 @@ def parse_ph_tensor(data):
     Parse the xml tensor file of QE v5.0.3
     data must be read from the file with the .read() function (avoid readlines)
     """
-    
+
     dom = parseString(data)
-    
+
     parsed_data = {}
-    
+
     parsed_data['xml_warnings'] = []
-    
+
     # card EF_TENSORS
     cardname = 'EF_TENSORS'
     target_tags = read_xml_card(dom,cardname)
-    
+
     tagname='DONE_ELECTRIC_FIELD'
     parsed_data[tagname.lower()]=parse_xml_child_bool(tagname,target_tags)
-    
+
     if parsed_data[tagname.lower()]:
         try:
-            second_tagname = 'DIELECTRIC_CONSTANT'  
+            second_tagname = 'DIELECTRIC_CONSTANT'
             parsed_data[second_tagname.lower()] = parse_xml_matrices(second_tagname,
                                                                      target_tags)
         except:
             raise QEOutputParsingError('Failed to parse Dielectric constant')
-    
+
     tagname='DONE_EFFECTIVE_CHARGE_EU'
     parsed_data[tagname.lower()]=parse_xml_child_bool(tagname,target_tags)
-    
+
     if parsed_data[tagname.lower()]:
         try:
             second_tagname = 'EFFECTIVE_CHARGES_EU'
@@ -171,13 +172,13 @@ def parse_ph_tensor(data):
                 if len(this_at) == 3:
                     new_matrix.append(this_at)
                     this_at = []
-                    
+
             parsed_data[second_tagname.lower()] = new_matrix
         except:
             raise QEOutputParsingError('Failed to parse effective charges eu')
 
     return parsed_data
-    
+
 def parse_xml_matrices(tagname,target_tags):
     """
     Can be used to load the disordered matrices of the QE XML file
@@ -193,14 +194,14 @@ def parse_xml_matrices(tagname,target_tags):
 def parse_ph_text_output(lines):
     """
     Parses the stdout of QE-PH.
-    
+
     :param lines: list of strings, the file as read by readlines()
-    
+
     :return parsed_data: dictionary with parsed values.
     :return critical_messages: a list with critical messages. If any is found in
                                parsed_data['warnings'], the calculation is FAILED!
     """
-    from aiida_quantumespresso.parsers.raw_parser_pw import parse_QE_errors
+    from aiida_quantumespresso.parsers.parse_raw.pw import parse_QE_errors
 
     parsed_data = {}
     parsed_data['warnings'] = []
@@ -213,20 +214,20 @@ def parse_ph_text_output(lines):
                 parsed_data['wall_time'] = time
             except Exception:
                 parsed_data['warnings'].append('Error while parsing wall time.')
-                
+
             try:
                 parsed_data['wall_time_seconds'] = \
                     convert_qe_time_to_sec(parsed_data['wall_time'])
             except ValueError:
                 raise QEOutputParsingError("Unable to convert wall_time in seconds.")
             break
-        
+
     # parse number of q-points and number of atoms
     for count,line in enumerate(lines):
         if 'q-points for this run' in line:
             try:
                 num_qpoints = int(line.split('/')[1].split('q-points')[0])
-                if ( 'number_of_qpoints' in list(parsed_data.keys()) and 
+                if ( 'number_of_qpoints' in list(parsed_data.keys()) and
                      num_qpoints != parsed_data['number_of_qpoints']):
                     parsed_data['warnings'].append("Number q-points found "
                                                    "several times with different"
@@ -236,12 +237,12 @@ def parse_ph_text_output(lines):
             except Exception:
                 parsed_data['warnings'].append("Error while parsing number of "
                                                "q points.")
-        
+
         elif 'q-points)' in line:
             # case of a 'only_wfc' calculation
             try:
                 num_qpoints = int(line.split('q-points')[0].split('(')[1])
-                if ( 'number_of_qpoints' in list(parsed_data.keys()) and 
+                if ( 'number_of_qpoints' in list(parsed_data.keys()) and
                      num_qpoints != parsed_data['number_of_qpoints']):
                     parsed_data['warnings'].append("Number q-points found "
                                                    "several times with different"
@@ -251,7 +252,7 @@ def parse_ph_text_output(lines):
             except Exception:
                 parsed_data['warnings'].append("Error while parsing number of "
                                                "q points.")
-            
+
         elif "number of atoms/cell" in line:
             try:
                 num_atoms = int(line.split('=')[1])
@@ -259,7 +260,7 @@ def parse_ph_text_output(lines):
             except Exception:
                 parsed_data['warnings'].append("Error while parsing number of "
                                                "atoms.")
-        
+
         elif "irreducible representations" in line:
             if 'number_of_irr_representations_for_each_q' not in list(parsed_data.keys()):
                 parsed_data['number_of_irr_representations_for_each_q'] = []
@@ -268,44 +269,44 @@ def parse_ph_text_output(lines):
                 parsed_data['number_of_irr_representations_for_each_q'].append(num_irr_repr)
             except Exception:
                 pass
-            
+
         #elif "lattice parameter (alat)" in line:
         #    lattice_parameter = float(line.split('=')[1].split('a.u.')[0])*bohr_to_ang
-            
+
         #elif ('cell' not in parsed_data.keys() and
         #      "crystal axes: (cart. coord. in units of alat)" in line):
         #    cell = [ [float(e)*lattice_parameter for e in li.split("a({}) = (".format(i+1)
         #            )[1].split(")")[0].split()] for i,li in enumerate(lines[count+1:count+4])]
         #    parsed_data['cell'] = cell
-            
+
     # TODO: find a more exhaustive list of the common errors of ph
-    
+
     # critical warnings: if any is found, the calculation status is FAILED
     critical_warnings = {'No convergence has been achieved':
                          'Phonon did not reach end of self consistency',
                          'Maximum CPU time exceeded':'Maximum CPU time exceeded',
                          '%%%%%%%%%%%%%%':None,
                          }
-    
+
     minor_warnings = {'Warning:':None,
                       }
-    
+
     all_warnings = dict(list(critical_warnings.items()) + list(minor_warnings.items()))
 
     for count,line in enumerate(lines):
 
         if any( i in line for i in all_warnings):
-            messages = [ all_warnings[i] if all_warnings[i] is not None 
-                            else line for i in all_warnings.keys() 
+            messages = [ all_warnings[i] if all_warnings[i] is not None
+                            else line for i in all_warnings.keys()
                             if i in line]
-                                               
+
             if '%%%%%%%%%%%%%%' in line:
-                messages = parse_QE_errors(lines,count,parsed_data['warnings']) 
-                        
+                messages = parse_QE_errors(lines,count,parsed_data['warnings'])
+
             # if it found something, add to log
             if len(messages)>0:
                 parsed_data['warnings'].extend(messages)
-            
+
     return parsed_data,list(critical_warnings.values())
 
 def parse_ph_dynmat(data,lattice_parameter=None,also_eigenvectors=False,
@@ -313,9 +314,9 @@ def parse_ph_dynmat(data,lattice_parameter=None,also_eigenvectors=False,
     """
     parses frequencies and eigenvectors of a single dynamical matrix
     :param data: the text read with the function readlines()
-    :param lattice_parameter: the lattice_parameter ('alat' in QE jargon). If 
+    :param lattice_parameter: the lattice_parameter ('alat' in QE jargon). If
         None, q_point is kept in 2pi/a coordinates as in the dynmat file.
-    :param also_eigenvectors: if True, return an additional 'eigenvectors' 
+    :param also_eigenvectors: if True, return an additional 'eigenvectors'
         array in output, containing also the eigenvectors. This will be
         a list of lists, that when converted to a numpy array has 4 indices,
         with shape Neigenstates x Natoms x 3(xyz) x 2 (re,im)
@@ -327,14 +328,14 @@ def parse_ph_dynmat(data,lattice_parameter=None,also_eigenvectors=False,
         parsed_data dictionary, including information from the header
 
     :return parsed_data: a dictionary with parsed values and units
-    
+
     """
     parsed_data = {}
     parsed_data['warnings'] = []
-    
+
     if 'Dynamical matrix file' not in data[0]:
-        raise QEOutputParsingError('Dynamical matrix is not in the expected format') 
-        
+        raise QEOutputParsingError('Dynamical matrix is not in the expected format')
+
     frequencies = []
     eigenvectors = []
 
@@ -396,7 +397,7 @@ def parse_ph_dynmat(data,lattice_parameter=None,also_eigenvectors=False,
                                     float(pieces[2])/amu_Ry])
                 except ValueError:
                     raise QEOutputParsingError("Error parsing the species")
-            
+
             masses = dict(species)
             header_dict['masses'] = masses
 
@@ -434,14 +435,14 @@ def parse_ph_dynmat(data,lattice_parameter=None,also_eigenvectors=False,
             header_dict['atoms_labels'] = atoms_labels
             header_dict['atoms_coords'] = atoms_coords
             header_dict['atoms_coords_units'] = "angstrom"
-            
+
             starting_line += num_atoms
-            
+
             starting_line += 1 # Got to the next line to check
             if 'Dynamical' not in data[starting_line]:
                 raise QEOutputParsingError(
-                    "Wrong format (no 'Dynamical  Matrix' line)")            
-            
+                    "Wrong format (no 'Dynamical  Matrix' line)")
+
             ## Here I finish the header parsing
 
         except QEOutputParsingError as e:
@@ -455,7 +456,7 @@ def parse_ph_dynmat(data,lattice_parameter=None,also_eigenvectors=False,
 
         # I store what I got
         parsed_data['header'] = header_dict
-    
+
     for line_counter,line in enumerate(data[starting_line:],
                                        start=starting_line):
         if 'q = ' in line:
@@ -469,17 +470,17 @@ def parse_ph_dynmat(data,lattice_parameter=None,also_eigenvectors=False,
                 else:
                     parsed_data['q_point'] = q_point
                     parsed_data['q_point_units'] = '2pi/lattice_parameter'
-        
+
         if 'freq' in line or 'omega' in line:
             this_freq = line.split('[cm-1]')[0].split('=')[-1]
-            
+
             # exception for bad fortran coding: *** could be written instead of the number
             if '*' in this_freq:
                 frequencies.append(None)
                 parsed_data['warnings'].append('Wrong fortran formatting found while parsing frequencies')
             else:
                 frequencies.append( float(this_freq) )
-            
+
             this_eigenvectors = []
             for new_line in data[line_counter+1:]:
                 if ('freq' in new_line or 'omega' in new_line or
@@ -494,13 +495,13 @@ def parse_ph_dynmat(data,lattice_parameter=None,also_eigenvectors=False,
                     # then save the three (xyz) complex numbers as [None,None]
                     this_eigenvectors.append([[None,None]]*3)
                     continue
-                
+
                 list_tuples = list(zip(*[iter(this_flatlist)]*2))
                 # I save every complex number as a list of two numbers
                 this_eigenvectors.append( [ [i[0],i[1]] for i in list_tuples ] )
-                
+
             eigenvectors.append(this_eigenvectors)
-            
+
     parsed_data['frequencies'] = frequencies
     parsed_data['frequencies_units'] = 'cm-1'
     # TODO: the eigenvectors should be written in the database according to a parser_opts.
@@ -508,7 +509,7 @@ def parse_ph_dynmat(data,lattice_parameter=None,also_eigenvectors=False,
     # We implement anyway the possibility to get it with an optional parameter
     if also_eigenvectors:
         parsed_data['eigenvectors'] = eigenvectors
-    
+
     return parsed_data
 
 

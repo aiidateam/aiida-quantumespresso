@@ -33,7 +33,7 @@ from ..utils import validate
     '-z',
     '--calculation-mode',
     'mode',
-    type=click.Choice(['scf', 'vc-relax']),
+    type=click.Choice(['scf', 'relax', 'vc-relax']),
     default='scf',
     show_default=True,
     help='select the calculation mode')
@@ -54,7 +54,7 @@ def launch_calculation(code, structure, pseudo_family, kpoints_mesh, ecutwfc, ec
         'SYSTEM': {
             'ecutwfc': ecutwfc,
             'ecutrho': ecutrho,
-        },
+        }
     }
 
     try:

@@ -37,7 +37,7 @@ the 'do_break' field should be set to `True`
 """
 
 
-def register_error_handler(cls, priority):
+def register_error_handler(cls, priority=None):
     """
     Decorator that will turn any function in an error handler for workchain that inherits from
     the :class:`.BaseRestartWorkChain`. The function expects two arguments, a workchain class and a priortity.
@@ -60,8 +60,11 @@ def register_error_handler(cls, priority):
     it should set `is_handled` to `True`. If no other error handlers should be considered set `do_break` to `True`.
 
     :param cls: the workchain class to register the error handler with
-    :param priority: an integer that defines the order in which registered handlers will be called
-        during the handling of a failed calculation. Higher priorities will be handled first
+    :param priority: optional integer that defines the order in which registered handlers will be called
+        during the handling of a failed calculation. Higher priorities will be handled first. If the priority is `None`
+        the handler will not be automatically called during calculation failure handling. This is useful to define
+        handlers that one only wants to call manually, for example in the `_handle_sanity_checks` and still profit
+        from the other features of this decorator.
     """
 
     def error_handler_decorator(handler):
@@ -71,8 +74,27 @@ def register_error_handler(cls, priority):
         def error_handler(self, calculation):
             """Wrapped error handler to add a log to the report if the handler is called and verbosity is turned on."""
             if hasattr(cls, '_verbose') and cls._verbose:  # pylint: disable=protected-access
-                self.report('({}){}'.format(priority, handler.__name__))
-            return handler(self, calculation)
+                if priority:
+                    self.report('({}){}'.format(priority, handler.__name__))
+                else:
+                    self.report('{}'.format(handler.__name__))
+
+            result = handler(self, calculation)
+
+            # If a handler report is returned, attach the handler's name to node's attributes
+            if isinstance(result, ErrorHandlerReport):
+                try:
+                    errors_handled = self.node.get_extra('errors_handled', [])
+                    current_calculation = errors_handled[-1]
+                except IndexError:
+                    # The extra was never initialized, so we skip this functionality
+                    pass
+                else:
+                    # Append the name of the handler to the last list in `errors_handled` and save it
+                    current_calculation.append(handler.__name__)
+                    self.node.set_extra('errors_handled', errors_handled)
+
+            return result
 
         setattr(cls, handler.__name__, error_handler)
 
