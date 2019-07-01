@@ -7,14 +7,9 @@ import os
 import copy
 from aiida.common import InputValidationError
 from aiida.common import CalcInfo, CodeInfo
-from aiida.common.links import LinkType
+from aiida.common import LinkType
 from aiida.common.lang import classproperty
-from aiida.orm.nodes.data.structure import StructureData
-from aiida.orm.nodes.data.array.kpoints import KpointsData
-from aiida.orm.nodes.data.dict import Dict
-from aiida.orm.nodes.data.singlefile import SinglefileData
-from aiida.orm.nodes.data.upf import UpfData
-from aiida.orm.nodes.data.remote import RemoteData
+from aiida.orm import StructureData, KpointsData, Dict, SinglefileData, UpfData, RemoteData
 from aiida.engine import CalcJob
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
@@ -27,6 +22,8 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
     Nudged Elastic Band code (neb.x) of Quantum ESPRESSO distribution
     For more information, refer to http://www.quantum-espresso.org/
     """
+
+    _PREFIX = BasePwCpInputGenerator._PREFIX
 
     # in restarts, will not copy but use symlinks
     _default_symlink_usage = False
@@ -42,41 +39,28 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
 
         return filepaths
 
-    def _init_internal_params(self):
-        super(NebCalculation, self)._init_internal_params()
-
-        self._PREFIX = 'aiida'
-        self._INPUT_FILE_NAME = 'neb.dat'
-        self._OUTPUT_FILE_NAME = 'aiida.out'
-
-        # Default NEB output parser provided by AiiDA
-        self._default_parser = 'quantumespresso.neb'
-
-        self._DEFAULT_INPUT_FILE = 'neb.dat'
-        self._DEFAULT_OUTPUT_FILE = 'aiida.out'
-
-        self._automatic_namelists = {
-            'scf': ['CONTROL', 'SYSTEM', 'ELECTRONS'],
-        }
-
-        # Keywords that cannot be set
-        self._blocked_keywords = [('CONTROL', 'pseudo_dir'),  # set later
-                                  ('CONTROL', 'outdir'),  # set later
-                                  ('CONTROL', 'prefix'),  # set later
-                                  ('SYSTEM', 'ibrav'),  # set later
-                                  ('SYSTEM', 'celldm'),
-                                  ('SYSTEM', 'nat'),  # set later
-                                  ('SYSTEM', 'ntyp'),  # set later
-                                  ('SYSTEM', 'a'), ('SYSTEM', 'b'), ('SYSTEM', 'c'),
-                                  ('SYSTEM', 'cosab'), ('SYSTEM', 'cosac'), ('SYSTEM', 'cosbc'),
-                                  ]
-
-        _neb_ext_list = ['path', 'dat', 'int']
-
-        # I retrieve them all, even if I don't parse all of them
-        self._internal_retrieve_list = [ '{}.{}'.format(self._PREFIX, ext) for ext in _neb_ext_list]
-
-        self._use_kpoints = True
+    @classmethod
+    def define(cls, spec):
+        super(NebCalculation, cls).define(spec)
+        spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
+        spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
+        spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.neb')
+        # spec.input('kpoints', valid_type=orm.KpointsData,
+        #     help='kpoint mesh or kpoint path')
+        # spec.input('hubbard_file', valid_type=orm.SinglefileData, required=False,
+        #     help='SinglefileData node containing the output Hubbard parameters from a HpCalculation')
+        # spec.output('output_parameters', valid_type=orm.Dict,
+        #     help='The `output_parameters` output node of the successful calculation.')
+        # spec.output('output_structure', valid_type=orm.StructureData, required=False,
+        #     help='The `output_structure` output node of the successful calculation if present.')
+        # spec.output('output_trajectory', valid_type=orm.TrajectoryData, required=False)
+        # spec.output('output_array', valid_type=orm.ArrayData, required=False,
+        #     help='The `output_array` output node of the successful calculation if present.')
+        # spec.output('output_band', valid_type=orm.BandsData, required=False,
+        #     help='The `output_band` output node of the successful calculation if present.')
+        # spec.output('output_kpoints', valid_type=orm.KpointsData, required=False)
+        # spec.output('output_atomic_occupations', valid_type=orm.Dict, required=False)
+        # spec.default_output_node = 'output_parameters'
 
     @classproperty
     def _use_methods(cls):
@@ -85,73 +69,73 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         """
         retdict = JobCalculation._use_methods
 
-        retdict.update({
-                'settings': {
+        retdict.update({                
+                "settings": {
                     'valid_types': Dict,
                     'additional_parameter': None,
                     'linkname': 'settings',
-                    'docstring': 'Use an additional node for special settings',
+                    'docstring': "Use an additional node for special settings",
                     },
-                'first_structure': {
+                "first_structure": {
                     'valid_types': StructureData,
                     'additional_parameter': None,
                     'linkname': 'first_structure',
-                    'docstring': 'Choose the first structure to use',
+                    'docstring': "Choose the first structure to use",
                     },
-                'last_structure': {
+                "last_structure": {
                     'valid_types': StructureData,
                     'additional_parameter': None,
                     'linkname': 'last_structure',
-                    'docstring': 'Choose the last structure to use',
+                    'docstring': "Choose the last structure to use",
                     },
-                'kpoints': {
+                "kpoints": {
                     'valid_types': KpointsData,
                     'additional_parameter': None,
                     'linkname': 'kpoints',
-                    'docstring': 'Use the node defining the kpoint sampling to use',
+                    'docstring': "Use the node defining the kpoint sampling to use",
                     },
-                'pw_parameters': {
+                "pw_parameters": {
                     'valid_types': Dict,
                     'additional_parameter': None,
                     'linkname': 'pw_parameters',
-                    'docstring': ('Use a node that specifies the input parameters '
-                                  'for the PW namelists'),
+                    'docstring': ("Use a node that specifies the input parameters "
+                                  "for the PW namelists"),
                     },
-                'neb_parameters': {
+                "neb_parameters": {
                     'valid_types': Dict,
                     'additional_parameter': None,
                     'linkname': 'neb_parameters',
-                    'docstring':('Use a node that specifies the input parameters '
-                                 'for the NEB PATH namelist')
-                    },
-                'parent_folder': {
+                    'docstring':("Use a node that specifies the input parameters "
+                                 "for the NEB PATH namelist")
+                    },      
+                "parent_folder": {
                     'valid_types': RemoteData,
                     'additional_parameter': None,
                     'linkname': 'parent_calc_folder',
-                    'docstring': ('Use a remote folder as parent folder (for '
-                                  'restarts and similar'),
+                    'docstring': ("Use a remote folder as parent folder (for "
+                                  "restarts and similar"),
                     },
-                'pseudo': {
+                "pseudo": {
                     'valid_types': UpfData,
-                    'additional_parameter': 'kind',
+                    'additional_parameter': "kind",
                     'linkname': cls._get_linkname_pseudo,
-                    'docstring': ('Use a node for the UPF pseudopotential of one of '
-                                  'the elements in the structure. You have to pass '
+                    'docstring': ("Use a node for the UPF pseudopotential of one of "
+                                  "the elements in the structure. You have to pass "
                                   "an additional parameter ('kind') specifying the "
-                                  'name of the structure kind (i.e., the name of '
-                                  'the species) for which you want to use this '
-                                  'pseudo. You can pass either a string, or a '
-                                  'list of strings if more than one kind uses the '
-                                  'same pseudo'),
+                                  "name of the structure kind (i.e., the name of "
+                                  "the species) for which you want to use this "
+                                  "pseudo. You can pass either a string, or a "
+                                  "list of strings if more than one kind uses the "
+                                  "same pseudo"),
                     },
-                'vdw_table': {
+                "vdw_table": {
                     'valid_types': SinglefileData,
                     'additional_parameter': None,
                     'linkname': 'vdw_table',
-                    'docstring': ('Use a Van der Waals kernel table. It should be '
-                              'a SinglefileData, with the table provided '
-                              '(note that the filename is not checked but it '
-                              'should be the name expected by QE.'),
+                    'docstring': ("Use a Van der Waals kernel table. It should be "
+                              "a SinglefileData, with the table provided "
+                              "(note that the filename is not checked but it "
+                              "should be the name expected by QE."),
                     },
                 })
         return retdict
@@ -167,9 +151,9 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
                                        dict_name='parameters')
         input_params = {k: _lowercase_dict(v, dict_name=k)
                         for k, v in six.iteritems(input_params)}
-
+        
         # For the neb input there is no blocked keyword
-
+        
         # Create an empty dictionary for the compulsory namelist 'PATH'
         # if not present
         if 'PATH' not in input_params:
@@ -179,28 +163,28 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         climbing_image = False
         if input_params['PATH'].get('ci_scheme', 'no-ci').lower()  in ['manual']:
             climbing_image = True
-            try:
-                climbing_image_list = settings_dict.pop('CLIMBING_IMAGES')
+            try: 
+                climbing_image_list = settings_dict.pop("CLIMBING_IMAGES")
             except KeyError:
-                raise InputValidationError('No climbing image specified for this calculation')
+                raise InputValidationError("No climbing image specified for this calculation")
             if not isinstance(climbing_image_list, list):
-                raise InputValidationError('Climbing images should be provided as a list')
+                raise InputValidationError("Climbing images should be provided as a list")
             if [ i  for i in climbing_image_list if i<2 or i >= input_params['PATH'].get('num_of_images', 2)]:
-                raise InputValidationError('The climbing images should be in the range between the first '
-                                           'and the last image')
+                raise InputValidationError("The climbing images should be in the range between the first "
+                                           "and the last image")
 
-            climbing_image_card = 'CLIMBING_IMAGES\n'
-            climbing_image_card += ', '.join([str(_) for _ in climbing_image_list]) + '\n'
+            climbing_image_card = "CLIMBING_IMAGES\n"
+            climbing_image_card += ", ".join([str(_) for _ in climbing_image_list]) + "\n"
+ 
 
-
-        inputfile = ''
-        inputfile += '&PATH\n'
-        # namelist content; set to {} if not present, so that we leave an
+        inputfile = ""    
+        inputfile += "&PATH\n"
+        # namelist content; set to {} if not present, so that we leave an 
         # empty namelist
         namelist = input_params.pop('PATH', {})
         for k, v in sorted(six.iteritems(namelist)):
             inputfile += convert_input_to_namelist_entry(k, v)
-        inputfile += '/\n'
+        inputfile += "/\n"
 
         # Write cards now
         if climbing_image:
@@ -208,9 +192,9 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
 
         if input_params:
             raise InputValidationError(
-                'The following namelists are specified in input_params, but are '
-                'not valid namelists for the current type of calculation: '
-                '{}'.format(','.join(list(input_params.keys()))))
+                "The following namelists are specified in input_params, but are "
+                "not valid namelists for the current type of calculation: "
+                "{}".format(",".join(list(input_params.keys()))))
 
         return inputfile
 
@@ -218,7 +202,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         """
         This is the routine to be called when you want to create
         the input files and related stuff with a plugin.
-
+        
         :param tempfolder: a aiida.common.folders.Folder subclass where
                            the plugin should put all its files.
         :param inputdict: a dictionary with the input nodes, as they would
@@ -233,51 +217,51 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         try:
             code = inputdict.pop(self.get_linkname('code'))
         except KeyError:
-            raise InputValidationError('No code specified for this calculation')
-
+            raise InputValidationError("No code specified for this calculation")
+        
         try:
             pw_parameters = inputdict.pop(self.get_linkname('pw_parameters'))
         except KeyError:
-            raise InputValidationError('No PW parameters specified for this calculation')
+            raise InputValidationError("No PW parameters specified for this calculation")
         if not isinstance(pw_parameters, Dict):
-            raise InputValidationError('PW parameters is not of type Dict')
+            raise InputValidationError("PW parameters is not of type Dict")
 
         try:
             neb_parameters = inputdict.pop(self.get_linkname('neb_parameters'))
         except KeyError:
-            raise InputValidationError('No NEB parameters specified for this calculation')
+            raise InputValidationError("No NEB parameters specified for this calculation")
         if not isinstance(neb_parameters, Dict):
-            raise InputValidationError('NEB parameters is not of type Dict')
+            raise InputValidationError("NEB parameters is not of type Dict")
 
         try:
             first_structure = inputdict.pop(self.get_linkname('first_structure'))
         except KeyError:
-            raise InputValidationError('No initial structure specified for this calculation')
+            raise InputValidationError("No initial structure specified for this calculation")
         if not isinstance(first_structure, StructureData):
-            raise InputValidationError('Initial structure is not of type StructureData')
+            raise InputValidationError("Initial structure is not of type StructureData")
 
         try:
             last_structure = inputdict.pop(self.get_linkname('last_structure'))
         except KeyError:
-            raise InputValidationError('No final structure specified for this calculation')
+            raise InputValidationError("No final structure specified for this calculation")
         if not isinstance(last_structure, StructureData):
-            raise InputValidationError('Final structure is not of type StructureData')
+            raise InputValidationError("Final structure is not of type StructureData")
 
         try:
             kpoints = inputdict.pop(self.get_linkname('kpoints'))
         except KeyError:
-            raise InputValidationError('No kpoints specified for this calculation')
+            raise InputValidationError("No kpoints specified for this calculation")
         if not isinstance(kpoints, KpointsData):
-            raise InputValidationError('kpoints is not of type KpointsData')
-
+            raise InputValidationError("kpoints is not of type KpointsData")
+        
         # Settings can be undefined, and defaults to an empty dictionary
         settings = inputdict.pop(self.get_linkname('settings'), None)
         if settings is None:
             settings_dict = {}
         else:
             if not isinstance(settings,  Dict):
-                raise InputValidationError('settings, if specified, must be of '
-                                           'type Dict')
+                raise InputValidationError("settings, if specified, must be of "
+                                           "type Dict")
             # Settings converted to uppercase
             settings_dict = _uppercase_dict(settings.get_dict(),
                                             dict_name='settings')
@@ -290,51 +274,51 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
                 kinds = kindstring.split('_')
                 the_pseudo = inputdict.pop(link)
                 if not isinstance(the_pseudo, UpfData):
-                    raise InputValidationError('Pseudo for kind(s) {} is not of '
-                                               'type UpfData'.format(','.join(kinds)))
+                    raise InputValidationError("Pseudo for kind(s) {} is not of "
+                                               "type UpfData".format(",".join(kinds)))
                 for kind in kinds:
                     if kind in pseudos:
-                        raise InputValidationError('Pseudo for kind {} passed '
-                                                   'more than one time'.format(kind))
+                        raise InputValidationError("Pseudo for kind {} passed "
+                                                   "more than one time".format(kind))
                     pseudos[kind] = the_pseudo
 
         parent_calc_folder = inputdict.pop(self.get_linkname('parent_folder'), None)
         if parent_calc_folder is not None:
             if not isinstance(parent_calc_folder, RemoteData):
-                raise InputValidationError('parent_calc_folder, if specified, '
-                                           'must be of type RemoteData')
+                raise InputValidationError("parent_calc_folder, if specified, "
+                                           "must be of type RemoteData")
 
         vdw_table = inputdict.pop(self.get_linkname('vdw_table'), None)
         if vdw_table is not None:
             if not isinstance(vdw_table, SinglefileData):
-                raise InputValidationError('vdw_table, if specified, '
-                                           'must be of type SinglefileData')
+                raise InputValidationError("vdw_table, if specified, "
+                                           "must be of type SinglefileData")            
 
         # Here, there should be no more parameters...
         if inputdict:
-            raise InputValidationError('The following input data nodes are '
-                                       'unrecognized: {}'.format(list(inputdict.keys())))
+            raise InputValidationError("The following input data nodes are "
+                                       "unrecognized: {}".format(list(inputdict.keys())))
 
         # Check that the first and last image have the same cell
         if abs(np.array(first_structure.cell)-
                np.array(last_structure.cell)).max() > 1.e-4:
-            raise InputValidationError('Different cell in the fist and last image')
+            raise InputValidationError("Different cell in the fist and last image")
 
         # Check that the first and last image have the same number of sites
         if len(first_structure.sites) != len(last_structure.sites):
-            raise InputValidationError('Different number of sites in the fist and last image')
+            raise InputValidationError("Different number of sites in the fist and last image")
 
         # Check that sites in the initial and final structure have the same kinds
         if not first_structure.get_site_kindnames() == last_structure.get_site_kindnames():
-            raise InputValidationError('Mismatch between the kind names and/or oder between '
-                                       'the first and final image')
+            raise InputValidationError("Mismatch between the kind names and/or oder between "
+                                       "the first and final image")
 
         # Check structure, get species, check peudos
         kindnames = [k.name for k in first_structure.kinds]
         if set(kindnames) != set(pseudos.keys()):
-            err_msg = ('Mismatch between the defined pseudos and the list of '
-                       'kinds of the structure. Pseudos: {}; kinds: {}'.format(
-                ','.join(list(pseudos.keys())), ','.join(list(kindnames))))
+            err_msg = ("Mismatch between the defined pseudos and the list of "
+                       "kinds of the structure. Pseudos: {}; kinds: {}".format(
+                ",".join(list(pseudos.keys())), ",".join(list(kindnames))))
             raise InputValidationError(err_msg)
 
         ##############################
@@ -346,17 +330,17 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         # Espresso codes crash if an empty folder is not already there
         tempfolder.get_subfolder(self._OUTPUT_SUBFOLDER, create=True)
 
-        # We first prepare the NEB-specific input file
+        # We first prepare the NEB-specific input file 
         input_filecontent = self._generate_NEBinputdata(neb_parameters, settings_dict)
 
         input_filename = tempfolder.get_abs_path(self._INPUT_FILE_NAME)
         with open(input_filename, 'w') as infile:
             infile.write(input_filecontent)
-
+            
         # We now generate the PW input files for each input structure
         local_copy_pseudo_list = []
-        for i, structure in enumerate([first_structure, last_structure]):
-            # We need to a pass a copy of the settings_dict for each structure
+        for i, structure in enumerate([first_structure, last_structure]): 
+            # We need to a pass a copy of the settings_dict for each structure 
             this_settings_dict = copy.deepcopy(settings_dict)
             input_filecontent, this_local_copy_pseudo_list = self._generate_PWCPinputdata(pw_parameters, this_settings_dict,
                                                                                      pseudos, structure, kpoints)
@@ -373,15 +357,15 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
 
         # We avoid to copy twice the same pseudopotential to the same filename
         local_copy_pseudo_list = set(local_copy_pseudo_list)
-        # We check that two different pseudopotentials are not copied
+        # We check that two different pseudopotentials are not copied 
         # with the same name (otherwise the first is overwritten)
         if len({ pseudoname for local_path, pseudoname in local_copy_pseudo_list}) < len(local_copy_pseudo_list):
-            raise InputValidationError('Same filename for two different pseudopotentials')
+            raise InputValidationError("Same filename for two different pseudopotentials")
 
-        local_copy_list += local_copy_pseudo_list
+        local_copy_list += local_copy_pseudo_list 
 
         # If present, add also the Van der Waals table to the pseudo dir
-        # Note that the name of the table is not checked but should be the
+        # Note that the name of the table is not checked but should be the 
         # one expected by QE.
         if vdw_table:
             local_copy_list.append(
@@ -409,7 +393,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
                      os.path.join(parent_calc_folder.get_remote_path(),
                                   '{}.path'.format(self._PREFIX)),
                      '{}.path'.format(self._PREFIX)
-                    ))
+                    )) 
         else:
             # copy remote output dir and .path file, if specified
             if parent_calc_folder is not None:
@@ -425,7 +409,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
                      os.path.join(parent_calc_folder.get_remote_path(),
                                   '{}.path'.format(self._PREFIX)),
                      '{}.path'.format(self._PREFIX)
-                    ))
+                    ))     
 
         # here we may create an aiida.EXIT file
         create_exit_file = settings_dict.pop('ONLY_INITIALIZATION', False)
@@ -434,7 +418,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
                              '{}.EXIT'.format(self._PREFIX))
             with open(exit_filename, 'w') as f:
                 f.write('\n')
-
+                
         calcinfo = CalcInfo()
         codeinfo=CodeInfo()
 
@@ -445,14 +429,14 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         calcinfo.local_copy_list = local_copy_list
         calcinfo.remote_copy_list = remote_copy_list
         calcinfo.remote_symlink_list = remote_symlink_list
-        # In neb calculations there is no input read from standard input!!
-
-        codeinfo.cmdline_params = (['-input_images', '2']
+        # In neb calculations there is no input read from standard input!! 
+        
+        codeinfo.cmdline_params = (["-input_images", "2"]
                                    + list(cmdline_params))
         codeinfo.stdout_name = self._OUTPUT_FILE_NAME
         codeinfo.code_uuid = code.uuid
         calcinfo.codes_info = [codeinfo]
-
+        
         # Retrieve by default the output file and ...
         calcinfo.retrieve_list = []
         calcinfo.retrieve_list.append(self._OUTPUT_FILE_NAME)
@@ -475,25 +459,25 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
                 parser_opts = parser.get_parser_settings_key()
                 settings_dict.pop(parser_opts)
             except (KeyError, AttributeError):  # the key parser_opts isn't inside the dictionary
-                raise InputValidationError('The following keys have been found in '
-                                           'the settings input node, but were not understood: {}'.format(
-                    ','.join(list(settings_dict.keys()))))
+                raise InputValidationError("The following keys have been found in "
+                                           "the settings input node, but were not understood: {}".format(
+                    ",".join(list(settings_dict.keys()))))
 
         return calcinfo
 
     def _get_reference_structure(self):
         """
-        Used to get the reference structure to obtain which
-        pseudopotentials to use from a given family using
-        use_pseudos_from_family.
+        Used to get the reference structure to obtain which 
+        pseudopotentials to use from a given family using 
+        use_pseudos_from_family. 
         This is a redefinition of the method in the BaseClass
         The first structure is used to choose the pseudopotentials
         """
         return self.get_incoming(link_label_filter=self.get_linkname('first_structure')).one().node
-
+    
     def create_restart(self, force_restart=False, parent_folder_symlink=None):
         """
-        Function to restart a calculation that was not completed before
+        Function to restart a calculation that was not completed before 
         (like max walltime reached...) i.e. not to restart a really FAILED calculation.
         Returns a calculation c2, with all links prepared but not stored in DB.
         To submit it, simply do::
@@ -506,10 +490,10 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
            that returns a calculation builder rather than a new, unstored calculation.
 
 
-        :param bool force_restart: restart also if parent is not in FINISHED
+        :param bool force_restart: restart also if parent is not in FINISHED 
         state (e.g. FAILED, IMPORTED, etc.). Default=False.
         :param bool parent_folder_symlink: if True, symlinks are used
-        instead of hard copies of the files. Default given by
+        instead of hard copies of the files. Default given by 
         self._default_symlink_usage.
         """
         from aiida_quantumespresso.utils.restart import clone_calculation
@@ -522,7 +506,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         if not self.is_finished_ok:
             if not force_restart:
                 raise InputValidationError(
-                    'Calculation to be restarted must be finshed ok. Otherwise, use the force_restart flag')
+                    "Calculation to be restarted must be finshed ok. Otherwise, use the force_restart flag")
 
         if parent_folder_symlink is None:
             parent_folder_symlink = self._default_symlink_usage
@@ -537,7 +521,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         try:
             remote_folder = self.get_outgoing(node_class=RemoteData, link_label_filter='remote_folder').one().node
         except ValueError:
-            raise InputValidationError('No or more than one output RemoteData found in calculation {}'.format(self.pk))
+            raise InputValidationError("No or more than one output RemoteData found in calculation {}".format(self.pk))
 
         c2 = clone_calculation(self)
 
@@ -550,9 +534,9 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
 
         # set the new links
         c2.use_neb_parameters(inp_dict)
-
+        
         c2.use_pw_parameters(inputs.get_node_by_label(self.get_linkname('pw_parameters')))
-
+        
         c2.use_first_structure(inputs.get_node_by_label(self.get_linkname('first_structure')))
         c2.use_last_structure(inputs.get_node_by_label(self.get_linkname('last_structure')))
 
