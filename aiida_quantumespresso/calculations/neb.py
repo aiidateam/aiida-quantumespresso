@@ -9,7 +9,7 @@ from aiida.common import InputValidationError
 from aiida.common import CalcInfo, CodeInfo
 from aiida.common import LinkType
 from aiida.common.lang import classproperty
-from aiida.orm import StructureData, KpointsData, Dict, SinglefileData, UpfData, RemoteData
+from aiida import orm
 from aiida.engine import CalcJob
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
@@ -45,8 +45,15 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.neb')
-        # spec.input('kpoints', valid_type=orm.KpointsData,
-        #     help='kpoint mesh or kpoint path')
+        spec.input('first_structure', valid_type=orm.StructureData, help='Choose the initial structure to use')  # TODO: better help strings
+        spec.input('last_structure', valid_type=orm.StructureData, help='Choose the final structure to use')
+        spec.input('kpoints', valid_type=orm.KpointsData, help='kpoint mesh or kpoint path to use')
+        # TODO: how do I delete input 'parameters' from the base class?
+        spec.input('pw_parameters', valid_type=orm.Dict,
+            help='Input parameters used to construct the PW input file(s).')
+        spec.input('neb_parameters', valid_type=orm.Dict,
+            help='Input parameters used to construct the NEB input file.')
+        # TODO: outputs, exit codes
         # spec.input('hubbard_file', valid_type=orm.SinglefileData, required=False,
         #     help='SinglefileData node containing the output Hubbard parameters from a HpCalculation')
         # spec.output('output_parameters', valid_type=orm.Dict,
@@ -61,84 +68,6 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         # spec.output('output_kpoints', valid_type=orm.KpointsData, required=False)
         # spec.output('output_atomic_occupations', valid_type=orm.Dict, required=False)
         # spec.default_output_node = 'output_parameters'
-
-    @classproperty
-    def _use_methods(cls):
-        """
-        Extend the parent _use_methods with further keys.
-        """
-        retdict = JobCalculation._use_methods
-
-        retdict.update({                
-                "settings": {
-                    'valid_types': Dict,
-                    'additional_parameter': None,
-                    'linkname': 'settings',
-                    'docstring': "Use an additional node for special settings",
-                    },
-                "first_structure": {
-                    'valid_types': StructureData,
-                    'additional_parameter': None,
-                    'linkname': 'first_structure',
-                    'docstring': "Choose the first structure to use",
-                    },
-                "last_structure": {
-                    'valid_types': StructureData,
-                    'additional_parameter': None,
-                    'linkname': 'last_structure',
-                    'docstring': "Choose the last structure to use",
-                    },
-                "kpoints": {
-                    'valid_types': KpointsData,
-                    'additional_parameter': None,
-                    'linkname': 'kpoints',
-                    'docstring': "Use the node defining the kpoint sampling to use",
-                    },
-                "pw_parameters": {
-                    'valid_types': Dict,
-                    'additional_parameter': None,
-                    'linkname': 'pw_parameters',
-                    'docstring': ("Use a node that specifies the input parameters "
-                                  "for the PW namelists"),
-                    },
-                "neb_parameters": {
-                    'valid_types': Dict,
-                    'additional_parameter': None,
-                    'linkname': 'neb_parameters',
-                    'docstring':("Use a node that specifies the input parameters "
-                                 "for the NEB PATH namelist")
-                    },      
-                "parent_folder": {
-                    'valid_types': RemoteData,
-                    'additional_parameter': None,
-                    'linkname': 'parent_calc_folder',
-                    'docstring': ("Use a remote folder as parent folder (for "
-                                  "restarts and similar"),
-                    },
-                "pseudo": {
-                    'valid_types': UpfData,
-                    'additional_parameter': "kind",
-                    'linkname': cls._get_linkname_pseudo,
-                    'docstring': ("Use a node for the UPF pseudopotential of one of "
-                                  "the elements in the structure. You have to pass "
-                                  "an additional parameter ('kind') specifying the "
-                                  "name of the structure kind (i.e., the name of "
-                                  "the species) for which you want to use this "
-                                  "pseudo. You can pass either a string, or a "
-                                  "list of strings if more than one kind uses the "
-                                  "same pseudo"),
-                    },
-                "vdw_table": {
-                    'valid_types': SinglefileData,
-                    'additional_parameter': None,
-                    'linkname': 'vdw_table',
-                    'docstring': ("Use a Van der Waals kernel table. It should be "
-                              "a SinglefileData, with the table provided "
-                              "(note that the filename is not checked but it "
-                              "should be the name expected by QE."),
-                    },
-                })
-        return retdict
 
     def _generate_NEBinputdata(self, neb_parameters, settings_dict):
         """
@@ -198,119 +127,56 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
 
         return inputfile
 
-    def prepare_for_submission(self, tempfolder, inputdict):
+    def prepare_for_submission(self, folder):
+        """Create the input files from the input nodes passed to this instance of the `CalcJob`.
+
+        :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
+        :return: `aiida.common.datastructures.CalcInfo` instance
         """
-        This is the routine to be called when you want to create
-        the input files and related stuff with a plugin.
         
-        :param tempfolder: a aiida.common.folders.Folder subclass where
-                           the plugin should put all its files.
-        :param inputdict: a dictionary with the input nodes, as they would
-                be returned by get_inputdata_dict (without the Code!)
-        """
+        # TODO: call BasePwCpInputGenerator.prepare_for_submission (!?)
+        
         import numpy as np
 
         local_copy_list = []
         remote_copy_list = []
         remote_symlink_list = []
-
-        try:
-            code = inputdict.pop(self.get_linkname('code'))
-        except KeyError:
-            raise InputValidationError("No code specified for this calculation")
         
-        try:
-            pw_parameters = inputdict.pop(self.get_linkname('pw_parameters'))
-        except KeyError:
-            raise InputValidationError("No PW parameters specified for this calculation")
-        if not isinstance(pw_parameters, Dict):
-            raise InputValidationError("PW parameters is not of type Dict")
-
-        try:
-            neb_parameters = inputdict.pop(self.get_linkname('neb_parameters'))
-        except KeyError:
-            raise InputValidationError("No NEB parameters specified for this calculation")
-        if not isinstance(neb_parameters, Dict):
-            raise InputValidationError("NEB parameters is not of type Dict")
-
-        try:
-            first_structure = inputdict.pop(self.get_linkname('first_structure'))
-        except KeyError:
-            raise InputValidationError("No initial structure specified for this calculation")
-        if not isinstance(first_structure, StructureData):
-            raise InputValidationError("Initial structure is not of type StructureData")
-
-        try:
-            last_structure = inputdict.pop(self.get_linkname('last_structure'))
-        except KeyError:
-            raise InputValidationError("No final structure specified for this calculation")
-        if not isinstance(last_structure, StructureData):
-            raise InputValidationError("Final structure is not of type StructureData")
-
-        try:
-            kpoints = inputdict.pop(self.get_linkname('kpoints'))
-        except KeyError:
-            raise InputValidationError("No kpoints specified for this calculation")
-        if not isinstance(kpoints, KpointsData):
-            raise InputValidationError("kpoints is not of type KpointsData")
-        
-        # Settings can be undefined, and defaults to an empty dictionary
-        settings = inputdict.pop(self.get_linkname('settings'), None)
-        if settings is None:
-            settings_dict = {}
+        # Convert settings dictionary to have uppercase keys, or create an empty one if none was given.
+        if 'settings' in self.inputs:
+            settings = _uppercase_dict(self.inputs.settings.get_dict(), dict_name='settings')
         else:
-            if not isinstance(settings,  Dict):
-                raise InputValidationError("settings, if specified, must be of "
-                                           "type Dict")
-            # Settings converted to uppercase
-            settings_dict = _uppercase_dict(settings.get_dict(),
-                                            dict_name='settings')
+            settings = {}
 
-        pseudos = {}
-        # I create here a dictionary that associates each kind name to a pseudo
-        for link in inputdict.keys():
-            if link.startswith(self._get_linkname_pseudo_prefix()):
-                kindstring = link[len(self._get_linkname_pseudo_prefix()):]
-                kinds = kindstring.split('_')
-                the_pseudo = inputdict.pop(link)
-                if not isinstance(the_pseudo, UpfData):
-                    raise InputValidationError("Pseudo for kind(s) {} is not of "
-                                               "type UpfData".format(",".join(kinds)))
-                for kind in kinds:
-                    if kind in pseudos:
-                        raise InputValidationError("Pseudo for kind {} passed "
-                                                   "more than one time".format(kind))
-                    pseudos[kind] = the_pseudo
+        # TODO: remove debug logging
+        self.logger.debug('self.input.pseudos has type <{}>', type(self.input.pseudos))
+        pseudos = self.inputs.pseudos  # This is a PortNamespace, but can be used as a dict
+        
+        # TODO: should I check that I was passed all kinds used in the first and last structures,
+        #  like BasePwCpInputGenerator does?
+        # # Check that a pseudo potential was specified for each kind present in the `StructureData`
+        # kinds = [kind.name for kind in self.inputs.structure.kinds]
+        # if set(kinds) != set(self.inputs.pseudos.keys()):
+        #     raise exceptions.InputValidationError(
+        #         'Mismatch between the defined pseudos and the list of kinds of the structure.\n'
+        #         'Pseudos: {};\nKinds: {}'.format(', '.join(list(self.inputs.pseudos.keys())), ', '.join(list(kinds))))
 
-        parent_calc_folder = inputdict.pop(self.get_linkname('parent_folder'), None)
-        if parent_calc_folder is not None:
-            if not isinstance(parent_calc_folder, RemoteData):
-                raise InputValidationError("parent_calc_folder, if specified, "
-                                           "must be of type RemoteData")
+        parent_calc_folder = self.inputs.get('parent_folder', None)
+        vdw_table = self.inputs.get('vdw_table', None)
 
-        vdw_table = inputdict.pop(self.get_linkname('vdw_table'), None)
-        if vdw_table is not None:
-            if not isinstance(vdw_table, SinglefileData):
-                raise InputValidationError("vdw_table, if specified, "
-                                           "must be of type SinglefileData")            
-
-        # Here, there should be no more parameters...
-        if inputdict:
-            raise InputValidationError("The following input data nodes are "
-                                       "unrecognized: {}".format(list(inputdict.keys())))
-
+        # TODO: image != structure ?
         # Check that the first and last image have the same cell
-        if abs(np.array(first_structure.cell)-
-               np.array(last_structure.cell)).max() > 1.e-4:
+        if abs(np.array(self.inputs.first_structure.cell)-
+               np.array(self.inputs.last_structure.cell)).max() > 1.e-4:
             raise InputValidationError("Different cell in the fist and last image")
 
         # Check that the first and last image have the same number of sites
-        if len(first_structure.sites) != len(last_structure.sites):
+        if len(self.inputs.first_structure.sites) != len(self.inputs.last_structure.sites):
             raise InputValidationError("Different number of sites in the fist and last image")
 
         # Check that sites in the initial and final structure have the same kinds
-        if not first_structure.get_site_kindnames() == last_structure.get_site_kindnames():
-            raise InputValidationError("Mismatch between the kind names and/or oder between "
+        if self.inputs.first_structure.get_site_kindnames() != self.inputs.last_structure.get_site_kindnames():
+            raise InputValidationError("Mismatch between the kind names and/or order between "
                                        "the first and final image")
 
         # Check structure, get species, check peudos
