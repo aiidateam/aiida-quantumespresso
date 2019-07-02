@@ -18,7 +18,7 @@ from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 import six
 
 
-class NebCalculation(BasePwCpInputGenerator, CalcJob):
+class NebCalculation(CalcJob):
     """
     Nudged Elastic Band code (neb.x) of Quantum ESPRESSO distribution
     For more information, refer to http://www.quantum-espresso.org/
@@ -51,7 +51,6 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         ('SYSTEM', 'cosab'), ('SYSTEM', 'cosac'), ('SYSTEM', 'cosbc'),
     ]
 
-    # TODO: turn into input?
     _use_kpoints = True
 
     @classproperty
@@ -73,7 +72,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
 
     @classmethod
     def define(cls, spec):
-        CalcJob.define(spec)
+        super(NebCalculation, cls).define(spec)
         spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.neb')
@@ -82,9 +81,11 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         spec.input('parameters', valid_type=orm.Dict, help='NEB-specific input parameters')
         spec.input('settings', valid_type=orm.Dict, required=False,
             help='Optional parameters to affect the way the calculation job and the parsing are performed.')
-        # We reuse some inputs from PwCalculation to construct the PW-specific parts of the input files:
-        # 'parameters', 'pseudos', 'kpoints', ... TODO: what about settings?
-        spec.expose_inputs(PwCalculation, namespace='pw', exclude=('structure','settings'))
+        spec.input('parent_folder', valid_type=orm.RemoteData, required=False,
+            help='An optional working directory of a previously completed calculation to restart from.')
+        # We reuse some inputs from PwCalculation to construct the PW-specific parts of the input files
+        #spec.expose_inputs(PwCalculation, namespace='pw', exclude=('structure','settings','hubbard_file','metadata','code'))
+        spec.expose_inputs(PwCalculation, namespace='pw', include=('parameters','pseudos','settings','kpoints','vdw_table'))
         # TODO: outputs, exit codes
 
     # @classmethod
@@ -117,7 +118,8 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
     #     # spec.output('output_atomic_occupations', valid_type=orm.Dict, required=False)
     #     # spec.default_output_node = 'output_parameters'
 
-    def _generate_NEBinputdata(self, neb_parameters, settings_dict):
+    @classmethod
+    def _generate_NEBinputdata(cls, neb_parameters, settings_dict):
         """ 
         This methods generate the input data for the NEB part of the calculation
         """
@@ -177,15 +179,15 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
         :return: `aiida.common.datastructures.CalcInfo` instance
         """
-        
-        # TODO: call BasePwCpInputGenerator.prepare_for_submission (!?)
-        
+
+        # TODO: reuse more parts of BasePwCpInputGenerator.prepare_for_submission() ?
+
         import numpy as np
 
         local_copy_list = []
         remote_copy_list = []
         remote_symlink_list = []
-        
+
         # Convert settings dictionary to have uppercase keys, or create an empty one if none was given.
         if 'settings' in self.inputs:
             settings_dict = _uppercase_dict(self.inputs.settings.get_dict(), dict_name='settings')
@@ -196,7 +198,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         self.logger.debug('self.inputs.pw.pseudos has type <{}>', type(self.inputs.pw.pseudos))
         pseudos = self.inputs.pw.pseudos  # This is a PortNamespace, but can be used as a dict
         parent_calc_folder = self.inputs.get('parent_folder', None)
-        vdw_table = self.inputs.get('vdw_table', None)
+        vdw_table = self.inputs.get('pw.vdw_table', None)
 
         # TODO: image != structure ?
         # Check that the first and last image have the same cell
@@ -241,7 +243,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         for i, structure in enumerate([self.inputs.first_structure, self.inputs.last_structure]):
             # We need to a pass a copy of the settings_dict for each structure
             this_settings_dict = copy.deepcopy(settings_dict)
-            input_filecontent, this_local_copy_pseudo_list = self._generate_PWCPinputdata(
+            input_filecontent, this_local_copy_pseudo_list = PwCalculation._generate_PWCPinputdata(
                 self.inputs.pw.parameters, this_settings_dict, self.inputs.pw.pseudos, structure, self.inputs.pw.kpoints
             )
             local_copy_pseudo_list += this_local_copy_pseudo_list
@@ -338,8 +340,8 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         calcinfo.retrieve_list.append(self._OUTPUT_FILE_NAME)
         calcinfo.retrieve_list.append((
             os.path.join(self._OUTPUT_SUBFOLDER, self._PREFIX + '_*[0-9]', 'PW.out'),  # source relative path (globbing)
-             '.',  # destination relative path
-             2  # depth to preserve
+            '.',  # destination relative path
+            2  # depth to preserve
         ))
 
         # TODO: check if anything has changed in the xml output (formats, names, contents)

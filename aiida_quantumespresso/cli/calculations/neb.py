@@ -25,9 +25,6 @@ from ..utils import validate
 @options_qe.KPOINTS_MESH(default=[2, 2, 2])
 @options_qe.ECUTWFC()
 @options_qe.ECUTRHO()
-@options_qe.HUBBARD_U()
-@options_qe.HUBBARD_V()
-@options_qe.HUBBARD_FILE()
 @options_qe.STARTING_MAGNETIZATION()
 @options_qe.SMEARING()
 @options_qe.MAX_NUM_MACHINES()
@@ -35,9 +32,8 @@ from ..utils import validate
 @options_qe.WITH_MPI()
 @options_qe.DAEMON()
 @decorators.with_dbenv()
-def launch_calculation(code, structures, pseudo_family, kpoints_mesh, ecutwfc, ecutrho, hubbard_u, hubbard_v,
-                       hubbard_file_pk, starting_magnetization, smearing, max_num_machines, max_wallclock_seconds,
-                       with_mpi, daemon):
+def launch_calculation(code, structures, pseudo_family, kpoints_mesh, ecutwfc, ecutrho, starting_magnetization,
+                       smearing, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
     """Run a NebCalculation."""
     from aiida.orm import Dict
     from aiida.orm.nodes.data.upf import get_pseudos_from_structure
@@ -46,7 +42,6 @@ def launch_calculation(code, structures, pseudo_family, kpoints_mesh, ecutwfc, e
 
     pw_parameters = {
         'CONTROL': {
-            #'calculation': mode,
         },
         'SYSTEM': {
             'ecutwfc': ecutwfc,
@@ -55,16 +50,9 @@ def launch_calculation(code, structures, pseudo_family, kpoints_mesh, ecutwfc, e
     }
 
     neb_parameters = {
-
     }
 
     for structure in structures:
-        try:
-            hubbard_file = validate.validate_hubbard_parameters(structure, pw_parameters, hubbard_u, hubbard_v,
-                                                                hubbard_file_pk)
-        except ValueError as exception:
-            raise click.BadParameter(str(exception))
-
         try:
             validate.validate_starting_magnetization(structure, pw_parameters, starting_magnetization)
         except ValueError as exception:
@@ -89,10 +77,5 @@ def launch_calculation(code, structures, pseudo_family, kpoints_mesh, ecutwfc, e
             'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
         }
     }
-
-    if hubbard_file:
-        inputs['pw']['hubbard_file'] = hubbard_file
-
-    # TODO: HUbbard file????
 
     launch.launch_process(CalculationFactory('quantumespresso.neb'), daemon, **inputs)
