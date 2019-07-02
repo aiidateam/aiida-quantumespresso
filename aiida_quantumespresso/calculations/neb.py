@@ -12,6 +12,7 @@ from aiida.common.lang import classproperty
 from aiida import orm
 from aiida.engine import CalcJob
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
+from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 import six
@@ -23,7 +24,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
     For more information, refer to http://www.quantum-espresso.org/
     """
 
-    _PREFIX = BasePwCpInputGenerator._PREFIX
+    _PREFIX = 'aiida'
 
     # in restarts, will not copy but use symlinks
     _default_symlink_usage = False
@@ -50,12 +51,14 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         ('SYSTEM', 'cosab'), ('SYSTEM', 'cosac'), ('SYSTEM', 'cosbc'),
     ]
 
-    # I retrieve them all, even if I don't parse all of them
-    _neb_ext_list = ['path', 'dat', 'int']
-    _internal_retrieve_list = [ '{}.{}'.format(_PREFIX, ext) for ext in _neb_ext_list]
-
     # TODO: turn into input?
     _use_kpoints = True
+
+    @classproperty
+    def _internal_retrieve_list(cls):
+        # I retrieve them all, even if I don't parse all of them
+        _neb_ext_list = ['path', 'dat', 'int']
+        return [ '{}.{}'.format(cls._PREFIX, ext) for ext in _neb_ext_list]
 
     @classproperty
     def xml_filepaths(cls):
@@ -70,33 +73,49 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
 
     @classmethod
     def define(cls, spec):
-        super(NebCalculation, cls).define(spec)
+        CalcJob.define(spec)
         spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.neb')
-        spec.input('first_structure', valid_type=orm.StructureData, help='Choose the initial structure to use')  # TODO: better help strings
-        spec.input('last_structure', valid_type=orm.StructureData, help='Choose the final structure to use')
-        spec.input('kpoints', valid_type=orm.KpointsData, help='kpoint mesh or kpoint path to use')
-        # TODO: how do I delete input 'parameters' from the base class?
-        spec.input('pw_parameters', valid_type=orm.Dict,
-            help='Input parameters used to construct the PW input file(s).')
-        spec.input('neb_parameters', valid_type=orm.Dict,
-            help='Input parameters used to construct the NEB input file.')
+        spec.input('first_structure', valid_type=orm.StructureData, help='Initial structure')
+        spec.input('last_structure', valid_type=orm.StructureData, help='Final structure')
+        spec.input('parameters', valid_type=orm.Dict, help='NEB-specific input parameters')
+        spec.input('settings', valid_type=orm.Dict, required=False,
+            help='Optional parameters to affect the way the calculation job and the parsing are performed.')
+        # We reuse some inputs from PwCalculation to construct the PW-specific parts of the input files:
+        # 'parameters', 'pseudos', 'kpoints', ... TODO: what about settings?
+        spec.expose_inputs(PwCalculation, namespace='pw', exclude=('structure','settings'))
         # TODO: outputs, exit codes
-        # spec.input('hubbard_file', valid_type=orm.SinglefileData, required=False,
-        #     help='SinglefileData node containing the output Hubbard parameters from a HpCalculation')
-        # spec.output('output_parameters', valid_type=orm.Dict,
-        #     help='The `output_parameters` output node of the successful calculation.')
-        # spec.output('output_structure', valid_type=orm.StructureData, required=False,
-        #     help='The `output_structure` output node of the successful calculation if present.')
-        # spec.output('output_trajectory', valid_type=orm.TrajectoryData, required=False)
-        # spec.output('output_array', valid_type=orm.ArrayData, required=False,
-        #     help='The `output_array` output node of the successful calculation if present.')
-        # spec.output('output_band', valid_type=orm.BandsData, required=False,
-        #     help='The `output_band` output node of the successful calculation if present.')
-        # spec.output('output_kpoints', valid_type=orm.KpointsData, required=False)
-        # spec.output('output_atomic_occupations', valid_type=orm.Dict, required=False)
-        # spec.default_output_node = 'output_parameters'
+
+    # @classmethod
+    # def define(cls, spec):
+    #     super(NebCalculation, cls).define(spec)
+    #     spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
+    #     spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
+    #     spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.neb')
+    #     spec.input('first_structure', valid_type=orm.StructureData, help='Choose the initial structure to use')  # TODO: better help strings
+    #     spec.input('last_structure', valid_type=orm.StructureData, help='Choose the final structure to use')
+    #     spec.input('kpoints', valid_type=orm.KpointsData, help='kpoint mesh or kpoint path to use')
+    #     # TODO: how do I delete input 'parameters' from the base class?
+    #     spec.input('pw_parameters', valid_type=orm.Dict,
+    #         help='Input parameters used to construct the PW input file(s).')
+    #     spec.input('neb_parameters', valid_type=orm.Dict,
+    #         help='Input parameters used to construct the NEB input file.')
+    #     # TODO: outputs, exit codes
+    #     # spec.input('hubbard_file', valid_type=orm.SinglefileData, required=False,
+    #     #     help='SinglefileData node containing the output Hubbard parameters from a HpCalculation')
+    #     # spec.output('output_parameters', valid_type=orm.Dict,
+    #     #     help='The `output_parameters` output node of the successful calculation.')
+    #     # spec.output('output_structure', valid_type=orm.StructureData, required=False,
+    #     #     help='The `output_structure` output node of the successful calculation if present.')
+    #     # spec.output('output_trajectory', valid_type=orm.TrajectoryData, required=False)
+    #     # spec.output('output_array', valid_type=orm.ArrayData, required=False,
+    #     #     help='The `output_array` output node of the successful calculation if present.')
+    #     # spec.output('output_band', valid_type=orm.BandsData, required=False,
+    #     #     help='The `output_band` output node of the successful calculation if present.')
+    #     # spec.output('output_kpoints', valid_type=orm.KpointsData, required=False)
+    #     # spec.output('output_atomic_occupations', valid_type=orm.Dict, required=False)
+    #     # spec.default_output_node = 'output_parameters'
 
     def _generate_NEBinputdata(self, neb_parameters, settings_dict):
         """ 
@@ -173,9 +192,9 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         else:
             settings_dict = {}
 
-        # TODO: remove this debug line
-        self.logger.debug('self.input.pseudos has type <{}>', type(self.input.pseudos))
-        pseudos = self.inputs.pseudos  # This is a PortNamespace, but can be used as a dict
+        # TODO: remove these debug lines
+        self.logger.debug('self.inputs.pw.pseudos has type <{}>', type(self.inputs.pw.pseudos))
+        pseudos = self.inputs.pw.pseudos  # This is a PortNamespace, but can be used as a dict
         parent_calc_folder = self.inputs.get('parent_folder', None)
         vdw_table = self.inputs.get('vdw_table', None)
 
@@ -196,10 +215,10 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
 
         # Check that a pseudo potential was specified for each kind present in the `StructureData`
         kindnames = [kind.name for kind in self.inputs.first_structure.kinds]
-        if set(kindnames) != set(self.inputs.pseudos.keys()):
+        if set(kindnames) != set(self.inputs.pw.pseudos.keys()):
             raise InputValidationError(
                 'Mismatch between the defined pseudos and the list of kinds of the structure.\n'
-                'Pseudos: {};\nKinds: {}'.format(', '.join(list(self.inputs.pseudos.keys())), ', '.join(list(kindnames))))
+                'Pseudos: {};\nKinds: {}'.format(', '.join(list(self.inputs.pw.pseudos.keys())), ', '.join(list(kindnames))))
 
         ##############################
         # END OF INITIAL INPUT CHECK #
@@ -211,7 +230,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         folder.get_subfolder(self._OUTPUT_SUBFOLDER, create=True)
 
         # We first prepare the NEB-specific input file.
-        input_filecontent = self._generate_NEBinputdata(self.inputs.neb_parameters, settings_dict)
+        input_filecontent = self._generate_NEBinputdata(self.inputs.parameters, settings_dict)
 
         input_filename = folder.get_abs_path(self._INPUT_FILE_NAME)
         with open(input_filename, 'w') as handle:
@@ -223,7 +242,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
             # We need to a pass a copy of the settings_dict for each structure
             this_settings_dict = copy.deepcopy(settings_dict)
             input_filecontent, this_local_copy_pseudo_list = self._generate_PWCPinputdata(
-                self.inputs.pw_parameters, this_settings_dict, pseudos, structure, self.inputs.kpoints
+                self.inputs.pw.parameters, this_settings_dict, self.inputs.pw.pseudos, structure, self.inputs.pw.kpoints
             )
             local_copy_pseudo_list += this_local_copy_pseudo_list
 
