@@ -111,14 +111,16 @@ class BasePwCpInputGenerator(CalcJob):
         # If present, add also the Van der Waals table to the pseudo dir. Note that the name of the table is not checked
         # but should be the one expected by Quantum ESPRESSO.
         if 'vdw_table' in self.inputs:
-            src_path = self.inputs.vdw_table.get_file_abs_path()
-            dst_path = os.path.join(self._PSEUDO_SUBFOLDER, os.path.split(self.inputs.vdw_table.get_file_abs_path())[1])
-            local_copy_list.append((src_path, dst_path))
+            uuid = self.inputs.vdw_table.uuid
+            src_path = self.inputs.vdw_table.filename
+            dst_path = os.path.join(self._PSEUDO_SUBFOLDER, self.inputs.vdw_table.filename)
+            local_copy_list.append((uuid, src_path, dst_path))
 
         if 'hubbard_file' in self.inputs:
-            src_path = self.inputs.hubbard_file.get_file_abs_path()
+            uuid = self.inputs.hubbard_file.filename
+            src_path = self.inputs.hubbard_file.filename
             dst_path = self.input_file_name_hubbard_file
-            local_copy_list.append((src_path, dst_path))
+            local_copy_list.append((uuid, src_path, dst_path))
 
         arguments = [
             self.inputs.parameters,
@@ -238,7 +240,8 @@ class BasePwCpInputGenerator(CalcJob):
             parser_opts = parser.get_parser_settings_key().upper()
             settings.pop(parser_opts)
         except (KeyError, AttributeError):
-            # the key parser_opts isn't inside the dictionary
+            # the settings dictionary has no key 'parser_options',
+            # or some methods don't exist
             pass
 
         if settings:
@@ -318,7 +321,7 @@ class BasePwCpInputGenerator(CalcJob):
                                            ''.format(kind.name))
 
             try:
-                # It it is the same pseudopotential file, use the same filename
+                # If it is the same pseudopotential file, use the same filename
                 filename = pseudo_filenames[ps.pk]
             except KeyError:
                 # The pseudo was not encountered yet; use a new name and also add it to the local copy list

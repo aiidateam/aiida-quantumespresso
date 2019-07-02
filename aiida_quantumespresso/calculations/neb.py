@@ -28,6 +28,35 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
     # in restarts, will not copy but use symlinks
     _default_symlink_usage = False
 
+    # Default input and output file names
+    # TODO: fix this mess: https://github.com/aiidateam/aiida-quantumespresso/issues/351
+    _DEFAULT_INPUT_FILE = 'neb.dat'
+    _DEFAULT_OUTPUT_FILE = 'aiida.out'
+
+    _automatic_namelists = {
+        'scf': ['CONTROL', 'SYSTEM', 'ELECTRONS'],
+    }
+
+    # Keywords that cannot be set (for the PW input)
+    _blocked_keywords = [
+        ('CONTROL', 'pseudo_dir'),  # set later
+        ('CONTROL', 'outdir'),  # set later
+        ('CONTROL', 'prefix'),  # set later
+        ('SYSTEM', 'ibrav'),  # set later
+        ('SYSTEM', 'celldm'),
+        ('SYSTEM', 'nat'),  # set later
+        ('SYSTEM', 'ntyp'),  # set later
+        ('SYSTEM', 'a'), ('SYSTEM', 'b'), ('SYSTEM', 'c'),
+        ('SYSTEM', 'cosab'), ('SYSTEM', 'cosac'), ('SYSTEM', 'cosbc'),
+    ]
+
+    # I retrieve them all, even if I don't parse all of them
+    _neb_ext_list = ['path', 'dat', 'int']
+    _internal_retrieve_list = [ '{}.{}'.format(_PREFIX, ext) for ext in _neb_ext_list]
+
+    # TODO: turn into input?
+    _use_kpoints = True
+
     @classproperty
     def xml_filepaths(cls):
         """Returns a list of relative filepaths of XML files."""
@@ -70,50 +99,46 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         # spec.default_output_node = 'output_parameters'
 
     def _generate_NEBinputdata(self, neb_parameters, settings_dict):
-        """
+        """ 
         This methods generate the input data for the NEB part of the calculation
         """
         # I put the first-level keys as uppercase (i.e., namelist and card names)
         # and the second-level keys as lowercase
         # (deeper levels are unchanged)
-        input_params = _uppercase_dict(neb_parameters.get_dict(),
-                                       dict_name='parameters')
-        input_params = {k: _lowercase_dict(v, dict_name=k)
-                        for k, v in six.iteritems(input_params)}
+        input_params = _uppercase_dict(neb_parameters.get_dict(), dict_name='parameters')
+        input_params = {k: _lowercase_dict(v, dict_name=k) for k, v in six.iteritems(input_params)}
         
-        # For the neb input there is no blocked keyword
+        # For the neb input there are no blocked keywords
         
-        # Create an empty dictionary for the compulsory namelist 'PATH'
-        # if not present
+        # Create an empty dictionary for the compulsory namelist 'PATH' if not present
         if 'PATH' not in input_params:
             input_params['PATH'] = {}
 
         # In case of climbing image, we need the corresponding card
         climbing_image = False
-        if input_params['PATH'].get('ci_scheme', 'no-ci').lower()  in ['manual']:
+        if input_params['PATH'].get('ci_scheme', 'no-ci').lower() in ['manual']:
+            # TODO: why not 'auto' ?
             climbing_image = True
-            try: 
+            try:
                 climbing_image_list = settings_dict.pop("CLIMBING_IMAGES")
             except KeyError:
                 raise InputValidationError("No climbing image specified for this calculation")
             if not isinstance(climbing_image_list, list):
                 raise InputValidationError("Climbing images should be provided as a list")
-            if [ i  for i in climbing_image_list if i<2 or i >= input_params['PATH'].get('num_of_images', 2)]:
+            num_of_images = input_params['PATH'].get('num_of_images', 2)
+            if any([ (i<2 or i>=num_of_images) for i in climbing_image_list ]):
                 raise InputValidationError("The climbing images should be in the range between the first "
                                            "and the last image")
 
             climbing_image_card = "CLIMBING_IMAGES\n"
             climbing_image_card += ", ".join([str(_) for _ in climbing_image_list]) + "\n"
  
-
-        inputfile = ""    
-        inputfile += "&PATH\n"
-        # namelist content; set to {} if not present, so that we leave an 
-        # empty namelist
+        inputfile = u"&PATH\n"
+        # namelist content; set to {} if not present, so that we leave an empty namelist
         namelist = input_params.pop('PATH', {})
         for k, v in sorted(six.iteritems(namelist)):
             inputfile += convert_input_to_namelist_entry(k, v)
-        inputfile += "/\n"
+        inputfile += u"/\n"
 
         # Write cards now
         if climbing_image:
@@ -144,23 +169,13 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         
         # Convert settings dictionary to have uppercase keys, or create an empty one if none was given.
         if 'settings' in self.inputs:
-            settings = _uppercase_dict(self.inputs.settings.get_dict(), dict_name='settings')
+            settings_dict = _uppercase_dict(self.inputs.settings.get_dict(), dict_name='settings')
         else:
-            settings = {}
+            settings_dict = {}
 
-        # TODO: remove debug logging
+        # TODO: remove this debug line
         self.logger.debug('self.input.pseudos has type <{}>', type(self.input.pseudos))
         pseudos = self.inputs.pseudos  # This is a PortNamespace, but can be used as a dict
-        
-        # TODO: should I check that I was passed all kinds used in the first and last structures,
-        #  like BasePwCpInputGenerator does?
-        # # Check that a pseudo potential was specified for each kind present in the `StructureData`
-        # kinds = [kind.name for kind in self.inputs.structure.kinds]
-        # if set(kinds) != set(self.inputs.pseudos.keys()):
-        #     raise exceptions.InputValidationError(
-        #         'Mismatch between the defined pseudos and the list of kinds of the structure.\n'
-        #         'Pseudos: {};\nKinds: {}'.format(', '.join(list(self.inputs.pseudos.keys())), ', '.join(list(kinds))))
-
         parent_calc_folder = self.inputs.get('parent_folder', None)
         vdw_table = self.inputs.get('vdw_table', None)
 
@@ -179,42 +194,42 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
             raise InputValidationError("Mismatch between the kind names and/or order between "
                                        "the first and final image")
 
-        # Check structure, get species, check peudos
-        kindnames = [k.name for k in first_structure.kinds]
-        if set(kindnames) != set(pseudos.keys()):
-            err_msg = ("Mismatch between the defined pseudos and the list of "
-                       "kinds of the structure. Pseudos: {}; kinds: {}".format(
-                ",".join(list(pseudos.keys())), ",".join(list(kindnames))))
-            raise InputValidationError(err_msg)
+        # Check that a pseudo potential was specified for each kind present in the `StructureData`
+        kindnames = [kind.name for kind in self.inputs.first_structure.kinds]
+        if set(kindnames) != set(self.inputs.pseudos.keys()):
+            raise InputValidationError(
+                'Mismatch between the defined pseudos and the list of kinds of the structure.\n'
+                'Pseudos: {};\nKinds: {}'.format(', '.join(list(self.inputs.pseudos.keys())), ', '.join(list(kindnames))))
 
         ##############################
         # END OF INITIAL INPUT CHECK #
         ##############################
-        # I create the subfolder that will contain the pseudopotentials
-        tempfolder.get_subfolder(self._PSEUDO_SUBFOLDER, create=True)
-        # I create the subfolder with the output data (sometimes Quantum
-        # Espresso codes crash if an empty folder is not already there
-        tempfolder.get_subfolder(self._OUTPUT_SUBFOLDER, create=True)
 
-        # We first prepare the NEB-specific input file 
-        input_filecontent = self._generate_NEBinputdata(neb_parameters, settings_dict)
+        # Create the subfolder that will contain the pseudopotentials
+        folder.get_subfolder(self._PSEUDO_SUBFOLDER, create=True)
+        # Create the subfolder for the output data (sometimes Quantum ESPRESSO codes crash if the folder does not exist)
+        folder.get_subfolder(self._OUTPUT_SUBFOLDER, create=True)
 
-        input_filename = tempfolder.get_abs_path(self._INPUT_FILE_NAME)
-        with open(input_filename, 'w') as infile:
-            infile.write(input_filecontent)
-            
+        # We first prepare the NEB-specific input file.
+        input_filecontent = self._generate_NEBinputdata(self.inputs.neb_parameters, settings_dict)
+
+        input_filename = folder.get_abs_path(self._INPUT_FILE_NAME)
+        with open(input_filename, 'w') as handle:
+            handle.write(input_filecontent)
+
         # We now generate the PW input files for each input structure
         local_copy_pseudo_list = []
-        for i, structure in enumerate([first_structure, last_structure]): 
-            # We need to a pass a copy of the settings_dict for each structure 
+        for i, structure in enumerate([self.inputs.first_structure, self.inputs.last_structure]):
+            # We need to a pass a copy of the settings_dict for each structure
             this_settings_dict = copy.deepcopy(settings_dict)
-            input_filecontent, this_local_copy_pseudo_list = self._generate_PWCPinputdata(pw_parameters, this_settings_dict,
-                                                                                     pseudos, structure, kpoints)
+            input_filecontent, this_local_copy_pseudo_list = self._generate_PWCPinputdata(
+                self.inputs.pw_parameters, this_settings_dict, pseudos, structure, self.inputs.kpoints
+            )
             local_copy_pseudo_list += this_local_copy_pseudo_list
 
-            input_filename = tempfolder.get_abs_path('pw_{}.in'.format(i+1))
-            with open(input_filename, 'w') as infile:
-                infile.write(input_filecontent)
+            input_filename = folder.get_abs_path('pw_{}.in'.format(i+1))
+            with open(input_filename, 'w') as handle:
+                handle.write(input_filecontent)
 
         # We need to pop the settings that were used in the PW calculations
         for key in settings_dict.keys():
@@ -225,68 +240,64 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         local_copy_pseudo_list = set(local_copy_pseudo_list)
         # We check that two different pseudopotentials are not copied 
         # with the same name (otherwise the first is overwritten)
-        if len({ pseudoname for local_path, pseudoname in local_copy_pseudo_list}) < len(local_copy_pseudo_list):
+        if len({ filename for (uuid, filename, local_path) in local_copy_pseudo_list}) < len(local_copy_pseudo_list):
             raise InputValidationError("Same filename for two different pseudopotentials")
 
         local_copy_list += local_copy_pseudo_list 
 
-        # If present, add also the Van der Waals table to the pseudo dir
-        # Note that the name of the table is not checked but should be the 
-        # one expected by QE.
+        # If present, add also the Van der Waals table to the pseudo dir. Note that the name of the table is not checked
+        # but should be the one expected by Quantum ESPRESSO.
         if vdw_table:
-            local_copy_list.append(
-                (
-                vdw_table.get_file_abs_path(),
-                os.path.join(self._PSEUDO_SUBFOLDER,
-                    os.path.split(vdw_table.get_file_abs_path())[1])
-                )
-                )
+            local_copy_list.append((
+                vdw_table.uuid,
+                vdw_table.filename,
+                os.path.join(self._PSEUDO_SUBFOLDER, vdw_table.filename)
+            ))
 
         # operations for restart
         symlink = settings_dict.pop('PARENT_FOLDER_SYMLINK', self._default_symlink_usage)  # a boolean
         if symlink:
             if parent_calc_folder is not None:
                 # I put the symlink to the old parent ./out folder
-                remote_symlink_list.append(
-                    (parent_calc_folder.get_computer().uuid,
-                     os.path.join(parent_calc_folder.get_remote_path(),
-                                  self._OUTPUT_SUBFOLDER, '*'),
-                     self._OUTPUT_SUBFOLDER
-                    ))
+                remote_symlink_list.append((
+                    parent_calc_folder.computer.uuid,
+                    os.path.join(parent_calc_folder.get_remote_path(),
+                                 self._OUTPUT_SUBFOLDER, '*'),  # asterisk: make individual symlinks for each file
+                    self._OUTPUT_SUBFOLDER
+                ))
                 # and to the old parent prefix.path
-                remote_symlink_list.append(
-                    (parent_calc_folder.get_computer().uuid,
-                     os.path.join(parent_calc_folder.get_remote_path(),
-                                  '{}.path'.format(self._PREFIX)),
-                     '{}.path'.format(self._PREFIX)
-                    )) 
+                remote_symlink_list.append((
+                    parent_calc_folder.computer.uuid,
+                    os.path.join(parent_calc_folder.get_remote_path(),
+                                 '{}.path'.format(self._PREFIX)),
+                    '{}.path'.format(self._PREFIX)
+                ))
         else:
             # copy remote output dir and .path file, if specified
             if parent_calc_folder is not None:
-                remote_copy_list.append(
-                    (parent_calc_folder.get_computer().uuid,
-                     os.path.join(parent_calc_folder.get_remote_path(),
-                                  self._OUTPUT_SUBFOLDER, '*'),
-                     self._OUTPUT_SUBFOLDER
-                    ))
-                # and to the old parent prefix.path
-                remote_copy_list.append(
-                    (parent_calc_folder.get_computer().uuid,
-                     os.path.join(parent_calc_folder.get_remote_path(),
-                                  '{}.path'.format(self._PREFIX)),
-                     '{}.path'.format(self._PREFIX)
-                    ))     
+                remote_copy_list.append((
+                    parent_calc_folder.computer.uuid,
+                    os.path.join(parent_calc_folder.get_remote_path(),
+                                 self._OUTPUT_SUBFOLDER, '*'),
+                    self._OUTPUT_SUBFOLDER
+                ))
+                # and copy the old parent prefix.path
+                remote_copy_list.append((
+                    parent_calc_folder.computer.uuid,
+                    os.path.join(parent_calc_folder.get_remote_path(),
+                                 '{}.path'.format(self._PREFIX)),
+                    '{}.path'.format(self._PREFIX)
+                ))
 
         # here we may create an aiida.EXIT file
         create_exit_file = settings_dict.pop('ONLY_INITIALIZATION', False)
         if create_exit_file:
-            exit_filename = tempfolder.get_abs_path(
-                             '{}.EXIT'.format(self._PREFIX))
-            with open(exit_filename, 'w') as f:
+            exit_filename = '{}.EXIT'.format(self._PREFIX)
+            with folder.open(exit_filename, 'w') as f:
                 f.write('\n')
-                
+
         calcinfo = CalcInfo()
-        codeinfo=CodeInfo()
+        codeinfo = CodeInfo()
 
         calcinfo.uuid = self.uuid
         # Empty command line by default
@@ -296,51 +307,48 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         calcinfo.remote_copy_list = remote_copy_list
         calcinfo.remote_symlink_list = remote_symlink_list
         # In neb calculations there is no input read from standard input!! 
-        
+
         codeinfo.cmdline_params = (["-input_images", "2"]
                                    + list(cmdline_params))
         codeinfo.stdout_name = self._OUTPUT_FILE_NAME
-        codeinfo.code_uuid = code.uuid
+        codeinfo.code_uuid = self.inputs.code.uuid
         calcinfo.codes_info = [codeinfo]
-        
-        # Retrieve by default the output file and ...
+
+        # Retrieve the output files and the xml files
         calcinfo.retrieve_list = []
         calcinfo.retrieve_list.append(self._OUTPUT_FILE_NAME)
-        calcinfo.retrieve_list.append([os.path.join(self._OUTPUT_SUBFOLDER,
-                                                    self._PREFIX + '_*[0-9]', 'PW.out'),
-                                       '.',
-                                       2])
+        calcinfo.retrieve_list.append((
+            os.path.join(self._OUTPUT_SUBFOLDER, self._PREFIX + '_*[0-9]', 'PW.out'),  # source relative path (globbing)
+             '.',  # destination relative path
+             2  # depth to preserve
+        ))
 
+        # TODO: check if anything has changed in the xml output (formats, names, contents)
         for xml_filepath in self.xml_filepaths:
             calcinfo.retrieve_list.append([xml_filepath, '.', 3])
 
-        settings_retrieve_list = settings_dict.pop('ADDITIONAL_RETRIEVE_LIST', [])
-        calcinfo.retrieve_list += settings_retrieve_list
+        calcinfo.retrieve_list += settings_dict.pop('ADDITIONAL_RETRIEVE_LIST', [])
         calcinfo.retrieve_list += self._internal_retrieve_list
 
+        # TODO: self.get_parserclass() probably raises AttributeError, but is caught later!
+        #       Use self.input('metadata.options.parser_name') instead
         if settings_dict:
             try:
                 Parserclass = self.get_parserclass()
                 parser = Parserclass(self)
                 parser_opts = parser.get_parser_settings_key()
                 settings_dict.pop(parser_opts)
-            except (KeyError, AttributeError):  # the key parser_opts isn't inside the dictionary
-                raise InputValidationError("The following keys have been found in "
-                                           "the settings input node, but were not understood: {}".format(
-                    ",".join(list(settings_dict.keys()))))
+            except (KeyError, AttributeError):
+                # the settings dictionary has no key 'parser_options',
+                # or some methods don't exist
+                pass
+
+        if settings_dict:
+            unknown_keys = ', '.join(list(settings_dict.keys()))
+            raise InputValidationError('`settings` contained unknown keys: {}'.format(unknown_keys))
 
         return calcinfo
 
-    def _get_reference_structure(self):
-        """
-        Used to get the reference structure to obtain which 
-        pseudopotentials to use from a given family using 
-        use_pseudos_from_family. 
-        This is a redefinition of the method in the BaseClass
-        The first structure is used to choose the pseudopotentials
-        """
-        return self.get_incoming(link_label_filter=self.get_linkname('first_structure')).one().node
-    
     def create_restart(self, force_restart=False, parent_folder_symlink=None):
         """
         Function to restart a calculation that was not completed before 
