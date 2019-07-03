@@ -184,7 +184,7 @@ class PwRelaxWorkChain(WorkChain):
         # Get the latest workchain, which is either the workchain_scf if it ran or otherwise the last regular workchain
         try:
             workchain = self.ctx.workchain_scf
-            structure = workchain.inputs.pw.structure
+            structure = workchain.inputs.pw__structure
         except AttributeError:
             workchain = self.ctx.workchains[-1]
             structure = workchain.outputs.output_structure

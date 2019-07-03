@@ -146,24 +146,26 @@ class PwBandStructureWorkChain(WorkChain):
             }
 
             if 'scf_options' in self.inputs:
-                res['options'] = self.inputs.scf_options
+                res['metadata'] = {'options': self.inputs.scf_options.attributes}
 
             return res
 
         relax_inputs = {
-            'base': get_common_inputs(),
+            'base': {
+                'pw': get_common_inputs()
+            },
             'relaxation_scheme': orm.Str('vc-relax'),
             'meta_convergence': orm.Bool(self.ctx.protocol['meta_convergence']),
             'volume_convergence': orm.Float(self.ctx.protocol['volume_convergence']),
         }
         relax_inputs['base']['kpoints'] = self.ctx.kpoints_mesh
 
-        scf_inputs = get_common_inputs()
+        scf_inputs = {'pw': get_common_inputs()}
         update_mapping(scf_inputs, {
             'kpoints': self.ctx.kpoints_mesh,
         })
 
-        bands_inputs = get_common_inputs()
+        bands_inputs = {'pw': get_common_inputs()}
 
         update_mapping(bands_inputs, {
             'kpoints_distance': orm.Float(self.ctx.protocol['kpoints_distance_for_bands']),
