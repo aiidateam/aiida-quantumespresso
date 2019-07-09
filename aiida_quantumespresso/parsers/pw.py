@@ -99,25 +99,113 @@ class PwParser(Parser):
         # Emit the logs returned by the XML and stdout parsing through the logger
         self.emit_logs(logs_stdout, logs_xml)
 
-        # If the stdout was incomplete, most likely the job was interrupted before it could cleanly finish, so the
-        # output files are most likely corrupt and cannot be restarted from
-        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs_stdout['error']:
-            self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
-
+        # If the both stdout and xml exit codes are set, there was a basic problem with both output files and there
+        # is no need to investigate any further.
         if self.exit_code_stdout and self.exit_code_xml:
             return self.exit(self.exit_codes.ERROR_OUTPUT_FILES)
-
-        if 'ERROR_OUT_OF_WALLTIME' in logs_stdout['error']:
-            self.exit_code_stdout = self.exit_codes.ERROR_OUT_OF_WALLTIME
-
-        elif 'ERROR_ELECTRONIC_CONVERGENCE_NOT_ACHIEVED' in logs_stdout['error']:
-            self.exit_code_stdout = self.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_ACHIEVED
 
         if self.exit_code_stdout:
             return self.exit(self.exit_code_stdout)
 
         if self.exit_code_xml:
             return self.exit(self.exit_code_xml)
+
+        # First determine issues that can occurr for all calculation types. Note that the generic errors, that are
+        # common to all types are done first. If a problem is found there, we return the exit code and don't continue
+        for validator in [self.validate_generic, self.validate_electronic, self.validate_dynamics, self.validate_ionic]:
+            exit_code = validator(array, trajectory, parsed_parameters, logs_stdout)
+            if exit_code:
+                return self.exit(exit_code)
+
+    def validate_generic(self, array, trajectory, parameters, logs):
+        """Analyze generic problems that are common to all types of calculations."""
+        if 'ERROR_OUT_OF_WALLTIME' in logs['error']:
+            return self.exit_codes.ERROR_OUT_OF_WALLTIME
+
+    def validate_electronic(self, array, trajectory, parameters, logs):
+        """Analyze problems that are specific to `electronic` type calculations: i.e. `scf`, `nscf` and `bands`."""
+        if array is None:
+            return
+
+        if 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED' in logs['error']:
+            return self.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED
+
+    def validate_dynamics(self, array, trajectory, parameters, logs):
+        """Analyze problems that are specific to `dynamics` type calculations: i.e. `md` and `vc-md`."""
+
+    def validate_ionic(self, array, trajectory, parameters, logs):
+        """Analyze problems that are specific to `ionic` type calculations: i.e. `relax` and `vc-relax`."""
+        from aiida_quantumespresso.utils.defaults.calculation import pw
+        from aiida_quantumespresso.utils.validation.trajectory import verify_convergence_trajectory
+
+        if trajectory is None:
+            return
+
+        electronic_convergence_reached = 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED' not in logs.error
+        ionic_convergence_reached = 'ERROR_IONIC_CONVERGENCE_NOT_REACHED' not in logs.error
+        bfgs_history_failure = 'ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE' in logs.error
+        maximum_ionic_steps_reached = 'ERROR_MAXIMUM_IONIC_STEPS_REACHED' in logs.warning
+        final_scf = parameters.get('final_scf', False)
+
+        # The electronic self-consistency cycle failed before reaching ionic convergence
+        if not ionic_convergence_reached and not electronic_convergence_reached:
+            return self.exit_codes.ERROR_IONIC_CYCLE_ELECTRONIC_CONVERGENCE_NOT_REACHED
+
+        # Ionic convergence was not reached because maximum number of steps was exceeded
+        if not ionic_convergence_reached and maximum_ionic_steps_reached:
+            return self.exit_codes.ERROR_IONIC_CYCLE_EXCEEDED_NSTEP
+
+        # BFGS fails twice in a row in which case QE will print that convergence is reached while it is not
+        if ionic_convergence_reached and bfgs_history_failure:
+
+            # If electronic convergence was not reached, this had to have been a `vc-relax` where final SCF failed
+            if not electronic_convergence_reached:
+                return self.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE
+
+            return self.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE
+
+        threshold_forces = parameters.get('CONTROL', {}).get('forc_conv_thr', pw.forc_conv_thr)
+        threshold_stress = parameters.get('CELL', {}).get('press_conv_thr', pw.press_conv_thr)
+        thresholds = [threshold_forces, threshold_stress]
+
+        # Here we are converged ionically: if there is no final scf, this was a `relax` run
+        if ionic_convergence_reached and not final_scf:
+
+            # Manually verify convergence of total energy and forces
+            converged = verify_convergence_trajectory(trajectory, -1, threshold_forces)
+
+            if converged is None or not converged:
+                # This should never happen: apparently there was data missing or not converged despite QE saying so
+                return self.exit_codes.ERROR_IONIC_CONVERGENCE_NOT_REACHED
+
+        # Ionic convergence was reached in `vc-relax` run, but electronic convergence in final SCF failed
+        elif ionic_convergence_reached and not electronic_convergence_reached:
+
+            # Manually verify convergence of total energy and forces
+            converged = verify_convergence_trajectory(trajectory, -1, *thresholds)
+
+            if converged is None or not converged:
+                # This should never happen: apparently there was data missing or not converged despite QE saying so
+                return self.exit_codes.ERROR_IONIC_CONVERGENCE_NOT_REACHED
+            else:
+                return self.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_FINAL_SCF_FAILED
+
+        # Ionic convergence was reached in `vc-relax` run, and electronic convergence was reached in final SCF
+        elif ionic_convergence_reached and electronic_convergence_reached:
+
+            converged_relax = verify_convergence_trajectory(trajectory, -2, *thresholds)
+            converged_final = verify_convergence_trajectory(trajectory, -1, *thresholds)
+
+            if converged_final is None or converged_relax is None or not converged_relax:
+                # This should never happen: apparently there was data missing or not converged despite QE saying so
+                return self.exit_codes.ERROR_IONIC_CONVERGENCE_NOT_REACHED
+
+            if not converged_final:
+                # The forces and stresses of ionic cycle are below threshold, but those of the final SCF exceed them.
+                # This is not necessarily a problem since the calculation starts from scratch after the variable cell
+                # relaxation and the forces and stresses can be slightly different. Still it is useful to distinguish
+                # these calculations so we return a special exit code.
+                return self.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF
 
     def exit(self, exit_code):
         """Log the exit message of the give exit code with level `ERROR` and return the exit code.
@@ -200,6 +288,11 @@ class PwParser(Parser):
             import traceback
             traceback.print_exc()
             self.exit_code_stdout = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
+
+        # If the stdout was incomplete, most likely the job was interrupted before it could cleanly finish, so the
+        # output files are most likely corrupt and cannot be restarted from
+        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs['error']:
+            self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
 
         return parsed_data, logs
 
@@ -393,13 +486,17 @@ class PwParser(Parser):
         return 'parser_options'
 
     def final_trajectory_frame_to_parameters(self, parameters, parsed_trajectory):
-        """."""
+        """Move the last frame of certain properties from the `TrajectoryData` to the outputs parameters.
+
+        This makes these properties queryable.
+        """
         ignore_keys = [
             'atomic_charges',
             'atomic_magnetic_moments',
             'atomic_positions_relax',
             'atomic_species_name',
             'forces',
+            'stress',
             'lattice_vectors_relax',
         ]
 

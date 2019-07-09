@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-import os
 
+import os
 import six
 
 from aiida import orm
@@ -116,10 +116,25 @@ class PwCalculation(BasePwCpInputGenerator):
         # Significant errors but calculation can be used to restart
         spec.exit_code(400, 'ERROR_OUT_OF_WALLTIME',
             message='The calculation stopped prematurely because it ran out of walltime.')
-        spec.exit_code(410, 'ERROR_ELECTRONIC_CONVERGENCE_NOT_ACHIEVED',
+        spec.exit_code(410, 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED',
             message='The electronic minimization cycle did not reach self-consistency.')
-        spec.exit_code(420, 'ERROR_IONIC_CONVERGENCE_NOT_ACHIEVED',
-            message='The ionic minimization cycle did not reach self-consistency.')
+        spec.exit_code(500, 'ERROR_IONIC_CONVERGENCE_NOT_REACHED',
+            message='The ionic minimization cycle did not converge for the given thresholds.')
+        spec.exit_code(501, 'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
+            message='Then ionic minimization cycle converged but the thresholds are exceeded in the final SCF.')
+        spec.exit_code(502, 'ERROR_IONIC_CYCLE_EXCEEDED_NSTEP',
+            message='The ionic minimization cycle did not converge after the maximum number of steps.')
+        spec.exit_code(510, 'ERROR_IONIC_CYCLE_ELECTRONIC_CONVERGENCE_NOT_REACHED',
+            message='The electronic minimization cycle failed during an ionic minimization cycle.')
+        spec.exit_code(511, 'ERROR_IONIC_CONVERGENCE_REACHED_FINAL_SCF_FAILED',
+            message='The ionic minimization cycle converged, but electronic convergence was not reached in the '
+                    'final SCF.')
+        spec.exit_code(520, 'ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE',
+            message='The ionic minimization cycle terminated prematurely because of two consecutive failures in the '
+                    'BFGS algorithm.')
+        spec.exit_code(521, 'ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE',
+            message='The ionic minimization cycle terminated prematurely because of two consecutive failures in the '
+                    'BFGS algorithm and electronic convergence failed in the final SCF.')
 
     @classproperty
     def input_file_name_hubbard_file(cls):
@@ -144,8 +159,7 @@ class PwCalculation(BasePwCpInputGenerator):
         or if the flag flat_mode is specified, puts the keywords in the right
         namelists).
 
-        This function calls
-        :py:func:`aiida_quantumespresso.calculations.helpers.pw_input_helper`,
+        This function calls :py:func:`aiida_quantumespresso.calculations.helpers.pw_input_helper`,
         see its docstring for further information.
         """
         from . import helpers

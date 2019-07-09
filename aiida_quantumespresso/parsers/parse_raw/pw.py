@@ -34,8 +34,8 @@ def detect_important_message(logs, line):
     message_map = {
         'error': {
             'Maximum CPU time exceeded': 'ERROR_OUT_OF_WALLTIME',
-            'convergence NOT achieved after': 'ERROR_ELECTRONIC_CONVERGENCE_NOT_ACHIEVED',
-            'The maximum number of steps has been reached.': 'ERROR_IONIC_CONVERGENCE_NOT_ACHIEVED',
+            'convergence NOT achieved after': 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED',
+            'history already reset at previous step: stopping': 'ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE',
             'problems computing cholesky': 'ERROR_DIAGONALIZATION_CHOLESKY_DECOMPOSITION',
         },
         'warning': {
@@ -83,6 +83,9 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
     bands_data = parsed_xml.pop('bands', {})
     structure_data = parsed_xml.pop('structure', {})
     trajectory_data = {}
+
+    maximum_ionic_steps = None
+    marker_bfgs_converged = False
 
     # First check whether the `JOB DONE` message was written, otherwise the job was interrupted
     for line in data_lines:
@@ -204,59 +207,21 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
             except ValueError:
                 raise QEOutputParsingError("Unable to convert wall_time in seconds.")
 
-        # NOTE: skipping parsing of Berry phase info: we now take them from the XML output
-        #elif 'SUMMARY OF PHASES' in line:
-        #   try:
-        #       j = 0
-        #       while True:
-        #           j+=1
-        #           if 'Ionic Phase' in data_lines[count+j]:
-        #               value = float(data_lines[count+j].split(':')[1].split('(')[0])
-        #               mod = int(data_lines[count+j].split('(mod')[1].split(')')[0])
-        #               if mod != 2:
-        #                   raise QEOutputParsingError("Units for polarization phase not supported")
-        #               parsed_data['ionic_phase'] = value
-        #               parsed_data['ionic_phase'+units_suffix] = '2pi'
-        #
-        #           if 'Electronic Phase' in data_lines[count+j]:
-        #               value = float(data_lines[count+j].split(':')[1].split('(')[0])
-        #               mod = int(data_lines[count+j].split('(mod')[1].split(')')[0])
-        #               if mod != 2:
-        #                   raise QEOutputParsingError("Units for polarization phase not supported")
-        #               parsed_data['electronic_phase'] = value
-        #               parsed_data['electronic_phase'+units_suffix] = '2pi'
-        #
-        #           if 'Total Phase' in data_lines[count+j] or 'TOTAL PHASE' in data_lines[count+j]:
-        #               value = float(data_lines[count+j].split(':')[1].split('(')[0])
-        #               mod = int(data_lines[count+j].split('(mod')[1].split(')')[0])
-        #               if mod != 2:
-        #                   raise QEOutputParsingError("Units for polarization phase not supported")
-        #               parsed_data['total_phase'] = value
-        #               parsed_data['total_phase'+units_suffix] = '2pi'
-        #
-        #           # TODO: decide a standard unit for e charge
-        #           if "C/m^2" in data_lines[count+j]:
-        #               value = float(data_lines[count+j].split('=')[1].split('(')[0])
-        #               mod = float(data_lines[count+j].split('mod')[1].split(')')[0])
-        #               units = data_lines[count+j].split(')')[1].strip()
-        #               parsed_data['polarization'] = value
-        #               parsed_data['polarization_module'] = mod
-        #               parsed_data['polarization'+units_suffix] = default_polarization_units
-        #               if 'C / m^2' not in default_polarization_units:
-        #                   raise  QEOutputParsingError("Units for polarization phase not supported")
-        #
-        #           if 'polarization direction' in data_lines[count+j]:
-        #               vec = [ float(s) for s in \
-        #                       data_lines[count+j].split('(')[1].split(')')[0].split(',') ]
-        #               parsed_data['polarization_direction'] = vec
-        #
-        #   except Exception:
-        #       warning = 'Error while parsing polarization.'
-        #       parsed_data['warnings'].append(warning)
-
         # for later control on relaxation-dynamics convergence
         elif 'nstep' in line and '=' in line:
-            max_dynamic_iterations = int(line.split()[2])
+            maximum_ionic_steps = int(line.split()[2])
+
+        elif 'bfgs converged in' in line:
+            marker_bfgs_converged = True
+
+        elif 'number of bfgs steps' in line:
+            try:
+                parsed_data['number_ionic_steps'] += 1
+            except KeyError:
+                parsed_data['number_ionic_steps'] = 1
+
+        elif 'A final scf calculation at the relaxed structure' in line:
+            parsed_data['final_scf'] = True
 
         elif 'point group' in line:
             if 'k-point group' not in line:
@@ -682,6 +647,15 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                     continue
 
         parsed_data['atomic_occupations'] = atomic_occupations
+
+    # Ionic calculations and BFGS algorithm did not print that calculation is converged
+    if 'atomic_positions_relax' in trajectory_data and not marker_bfgs_converged:
+        logs.error.append('ERROR_IONIC_CONVERGENCE_NOT_REACHED')
+
+    # Ionic calculation that hit the maximum number of ionic steps. Note: does not necessarily mean that convergence was
+    # not reached as it could have occurred in the last step.
+    if maximum_ionic_steps is not None and maximum_ionic_steps == parsed_data.get('number_ionic_steps', None):
+        logs.warning.append('ERROR_MAXIMUM_IONIC_STEPS_REACHED')
 
     # Remove duplicate log messages by turning it into a set. Then convert back to list as that is what is expected
     logs.error = list(set(logs.error))
