@@ -1,0 +1,260 @@
+output_kpoints:
+  array|kpoints:
+  - 3
+  - 3
+  array|weights:
+  - 3
+  cell:
+  - - 2.715
+    - 2.715
+    - 0.0
+  - - 2.715
+    - 0.0
+    - 2.715
+  - - 0.0
+    - 2.715
+    - 2.715
+  pbc1: true
+  pbc2: true
+  pbc3: true
+output_parameters:
+  beta_real_space: false
+  charge_density: ./charge-density.dat
+  constraint_mag: 0
+  creator_name: pwscf
+  creator_version: '6.1'
+  dft_exchange_correlation: PBE
+  do_not_use_time_reversal: false
+  energy: -308.19187541409156
+  energy_accuracy: 7.3470735316620004e-06
+  energy_accuracy_units: eV
+  energy_ewald: -228.56124874864287
+  energy_ewald_units: eV
+  energy_hartree: 17.268075769566853
+  energy_hartree_units: eV
+  energy_one_electron: 71.73308779934625
+  energy_one_electron_units: eV
+  energy_threshold: 3.84e-06
+  energy_units: eV
+  energy_xc: -168.63179023436172
+  energy_xc_units: eV
+  fermi_energy: 6.5091589497144975
+  fermi_energy_units: eV
+  fft_grid:
+  - 36
+  - 36
+  - 36
+  forces_units: ev / angstrom
+  format_name: qexml
+  format_version: 1.4.0
+  has_dipole_correction: false
+  has_electric_field: false
+  init_wall_time_seconds: 0.9
+  inversion_symmetry: true
+  lda_plus_u_calculation: false
+  lkpoint_dir: true
+  lsda: false
+  magnetization_angle1:
+  - 0.0
+  magnetization_angle2:
+  - 0.0
+  monkhorst_pack_grid:
+  - 2
+  - 2
+  - 2
+  monkhorst_pack_offset:
+  - 0
+  - 0
+  - 0
+  no_time_rev_operations: false
+  non_colinear_calculation: false
+  number_of_atomic_wfc: 8
+  number_of_atoms: 2
+  number_of_bands: 4
+  number_of_bravais_symmetries: 48
+  number_of_electrons: 8.0
+  number_of_k_points: 3
+  number_of_species: 1
+  number_of_spin_components: 1
+  number_of_symmetries: 48
+  parser_info: aiida-quantumespresso parser pw.x v3.0.0a3
+  parser_version: 3.0.0a3
+  parser_warnings: []
+  pp_check_flag: true
+  q_real_space: false
+  rho_cutoff: 3265.366014072
+  rho_cutoff_units: eV
+  scf_iterations: 5
+  smooth_fft_grid:
+  - 25
+  - 25
+  - 25
+  spin_orbit_calculation: false
+  spin_orbit_domag: false
+  starting_magnetization:
+  - 0.0
+  symmetries:
+  - symmetry_number: 0
+    t_rev: '0'
+  - symmetry_number: 1
+    t_rev: '0'
+  - symmetry_number: 2
+    t_rev: '0'
+  - symmetry_number: 3
+    t_rev: '0'
+  - symmetry_number: 4
+    t_rev: '0'
+  - symmetry_number: 5
+    t_rev: '0'
+  - symmetry_number: 6
+    t_rev: '0'
+  - symmetry_number: 7
+    t_rev: '0'
+  - symmetry_number: 8
+    t_rev: '0'
+  - symmetry_number: 9
+    t_rev: '0'
+  - symmetry_number: 10
+    t_rev: '0'
+  - symmetry_number: 11
+    t_rev: '0'
+  - symmetry_number: 12
+    t_rev: '0'
+  - symmetry_number: 13
+    t_rev: '0'
+  - symmetry_number: 14
+    t_rev: '0'
+  - symmetry_number: 15
+    t_rev: '0'
+  - symmetry_number: 16
+    t_rev: '0'
+  - symmetry_number: 17
+    t_rev: '0'
+  - symmetry_number: 18
+    t_rev: '0'
+  - symmetry_number: 19
+    t_rev: '0'
+  - symmetry_number: 20
+    t_rev: '0'
+  - symmetry_number: 21
+    t_rev: '0'
+  - symmetry_number: 22
+    t_rev: '0'
+  - symmetry_number: 23
+    t_rev: '0'
+  - symmetry_number: 32
+    t_rev: '0'
+  - symmetry_number: 33
+    t_rev: '0'
+  - symmetry_number: 34
+    t_rev: '0'
+  - symmetry_number: 35
+    t_rev: '0'
+  - symmetry_number: 36
+    t_rev: '0'
+  - symmetry_number: 37
+    t_rev: '0'
+  - symmetry_number: 38
+    t_rev: '0'
+  - symmetry_number: 39
+    t_rev: '0'
+  - symmetry_number: 40
+    t_rev: '0'
+  - symmetry_number: 41
+    t_rev: '0'
+  - symmetry_number: 42
+    t_rev: '0'
+  - symmetry_number: 43
+    t_rev: '0'
+  - symmetry_number: 44
+    t_rev: '0'
+  - symmetry_number: 45
+    t_rev: '0'
+  - symmetry_number: 46
+    t_rev: '0'
+  - symmetry_number: 47
+    t_rev: '0'
+  - symmetry_number: 48
+    t_rev: '0'
+  - symmetry_number: 49
+    t_rev: '0'
+  - symmetry_number: 50
+    t_rev: '0'
+  - symmetry_number: 51
+    t_rev: '0'
+  - symmetry_number: 52
+    t_rev: '0'
+  - symmetry_number: 53
+    t_rev: '0'
+  - symmetry_number: 54
+    t_rev: '0'
+  - symmetry_number: 55
+    t_rev: '0'
+  symmetries_units: crystal
+  time_reversal_flag: true
+  total_force: 0.0
+  total_force_units: ev / angstrom
+  total_number_of_scf_iterations: 5
+  volume: 40.02575174999999
+  wall_time: '         2.04s '
+  wall_time_seconds: 2.04
+  wfc_cutoff: 408.170751759
+  wfc_cutoff_units: eV
+output_structure:
+  cell:
+  - - 2.715
+    - 2.715
+    - 0.0
+  - - 2.715
+    - 0.0
+    - 2.715
+  - - 0.0
+    - 2.715
+    - 2.715
+  kinds:
+  - mass: 28.0855
+    name: Si1
+    symbols:
+    - Si
+    weights:
+    - 1.0
+  - mass: 28.0855
+    name: Si2
+    symbols:
+    - Si
+    weights:
+    - 1.0
+  pbc1: true
+  pbc2: true
+  pbc3: true
+  sites:
+  - kind_name: Si1
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+  - kind_name: Si2
+    position:
+    - 1.3575000000000002
+    - 1.3575000000000002
+    - 1.3575000000000002
+output_trajectory:
+  array|atomic_species_name:
+  - 2
+  array|cells:
+  - 1
+  - 3
+  - 3
+  array|forces:
+  - 1
+  - 2
+  - 3
+  array|positions:
+  - 1
+  - 2
+  - 3
+  array|steps:
+  - 1
+  symbols:
+  - Si1
+  - Si2

@@ -357,8 +357,8 @@ def _handle_out_of_walltime(self, calculation):
 
 @register_error_handler(PwBaseWorkChain, 410)
 def _handle_electronic_convergence_not_achieved(self, calculation):
-    """In the case of `ERROR_ELECTRONIC_CONVERGENCE_NOT_ACHIEVED` decrease the mixing beta and restart from scratch."""
-    if calculation.exit_status == PwCalculation.spec().exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_ACHIEVED.status:
+    """In the case of `ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED` decrease the mixing beta and restart from scratch."""
+    if calculation.exit_status == PwCalculation.spec().exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED.status:
         factor = self.defaults.delta_factor_mixing_beta
         mixing_beta = self.ctx.inputs.parameters.get('ELECTRONS', {}).get('mixing_beta', self.defaults.qe.mixing_beta)
         mixing_beta_new = mixing_beta * factor
