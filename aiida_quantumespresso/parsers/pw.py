@@ -576,7 +576,8 @@ class PwParser(Parser):
         cell_Tinv = numpy.linalg.inv(cell_T)
         possible_symmetries = self._get_qe_symmetry_list()
 
-        for symmetry_type in ['symmetries', 'lattice_symmetries']:  # crystal vs. lattice symmetries
+        # for symmetry_type in ['symmetries', 'lattice_symmetries']:  # crystal vs. lattice symmetries
+        for symmetry_type in ['symmetries']:  # crystal vs. lattice symmetries
             if symmetry_type in list(parsed_parameters.keys()):
                 try:
                     old_symmetries = parsed_parameters[symmetry_type]
