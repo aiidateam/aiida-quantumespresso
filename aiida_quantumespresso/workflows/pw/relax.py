@@ -4,7 +4,7 @@ from __future__ import absolute_import
 from six.moves import map
 
 from aiida import orm
-from aiida.common import AttributeDict
+from aiida.common import AttributeDict, exceptions
 from aiida.engine import WorkChain, ToContext, if_, while_, append_
 from aiida.plugins import CalculationFactory, WorkflowFactory
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
@@ -20,7 +20,7 @@ class PwRelaxWorkChain(WorkChain):
     @classmethod
     def define(cls, spec):
         super(PwRelaxWorkChain, cls).define(spec)
-        spec.expose_inputs(PwBaseWorkChain, namespace='base', exclude=('clean_workdir', 'pw.structure'))
+        spec.expose_inputs(PwBaseWorkChain, namespace='base', exclude=('clean_workdir', 'pw.structure', 'pw.parent_folder'))
         spec.input('structure', valid_type=orm.StructureData)
         spec.input('final_scf', valid_type=orm.Bool, default=orm.Bool(False))
         spec.input('relaxation_scheme', valid_type=orm.Str, default=orm.Str('vc-relax'))
@@ -51,8 +51,8 @@ class PwRelaxWorkChain(WorkChain):
         """
         Input validation and context setup
         """
+        self.ctx.current_number_of_bands = None
         self.ctx.current_structure = self.inputs.structure
-        self.ctx.current_parent_folder = None
         self.ctx.current_cell_volume = None
         self.ctx.is_converged = False
         self.ctx.iteration = 0
@@ -74,9 +74,7 @@ class PwRelaxWorkChain(WorkChain):
         return self.inputs.final_scf.value and self.ctx.is_converged
 
     def run_relax(self):
-        """
-        Run the PwBaseWorkChain to run a relax PwCalculation
-        """
+        """Run the `PwBaseWorkChain` to run a relax `PwCalculation`."""
         self.ctx.iteration += 1
 
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base'))
@@ -85,9 +83,14 @@ class PwRelaxWorkChain(WorkChain):
 
         inputs.pw.parameters.setdefault('CONTROL', {})
         inputs.pw.parameters['CONTROL']['calculation'] = self.inputs.relaxation_scheme.value
+        inputs.pw.parameters['CONTROL']['restart_mode'] = 'from_scratch'
 
-        # Do not clean workdirs of sub workchains, because then we won't be able to restart from them
-        inputs.pop('clean_workdir', None)
+        # If one of the nested `PwBaseWorkChains` changed the number of bands, apply it here
+        if self.ctx.current_number_of_bands is not None:
+            inputs.pw.parameters.setdefault('SYSTEM', {})['nbnd'] = self.ctx.current_number_of_bands
+
+        # Set the `CALL` link label
+        inputs.metadata.call_link_label = 'iteration_{:02d}'.format(self.ctx.iteration)
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
@@ -104,13 +107,21 @@ class PwRelaxWorkChain(WorkChain):
         """
         workchain = self.ctx.workchains[-1]
 
-        if not workchain.is_finished_ok:
+        acceptable_statuses = [
+            'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF'
+        ]
+
+        if workchain.is_excepted or workchain.is_killed:
+            self.report('relax PwBaseWorkChain was excepted or killed')
+            return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
+
+        if workchain.is_failed and workchain.exit_status not in PwBaseWorkChain.get_exit_statuses(acceptable_statuses):
             self.report('relax PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
 
         try:
             structure = workchain.outputs.output_structure
-        except AttributeError:
+        except exceptions.NotExistent:
             self.report('relax PwBaseWorkChain finished successful but without output structure')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
 
@@ -118,8 +129,8 @@ class PwRelaxWorkChain(WorkChain):
         curr_cell_volume = structure.get_cell_volume()
 
         # Set relaxed structure as input structure for next iteration
-        self.ctx.current_parent_folder = workchain.outputs.remote_folder
         self.ctx.current_structure = structure
+        self.ctx.current_number_of_bands = workchain.outputs.output_parameters.get_dict()['number_of_bands']
         self.report('after iteration {} cell volume of relaxed structure is {}'
             .format(self.ctx.iteration, curr_cell_volume))
 
@@ -152,12 +163,16 @@ class PwRelaxWorkChain(WorkChain):
         """Run the PwBaseWorkChain to run a final scf PwCalculation for the relaxed structure."""
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base'))
         inputs.pw.structure = self.ctx.current_structure
-        inputs.pw.parent_folder = self.ctx.current_parent_folder
         inputs.pw.parameters = inputs.pw.parameters.get_dict()
 
         inputs.pw.parameters.setdefault('CONTROL', {})
         inputs.pw.parameters['CONTROL']['calculation'] = 'scf'
-        inputs.pw.parameters['CONTROL']['restart_mode'] = 'restart'
+        inputs.pw.parameters['CONTROL']['restart_mode'] = 'from_scratch'
+        inputs.pw.parameters.pop('CELL', None)
+        inputs.metadata.call_link_label = 'final_scf'
+
+        if self.ctx.current_number_of_bands is not None:
+            inputs.pw.parameters.setdefault('SYSTEM', {})['nbnd'] = self.ctx.current_number_of_bands
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
@@ -184,7 +199,7 @@ class PwRelaxWorkChain(WorkChain):
         # Get the latest workchain, which is either the workchain_scf if it ran or otherwise the last regular workchain
         try:
             workchain = self.ctx.workchain_scf
-            structure = workchain.inputs.pw.structure
+            structure = workchain.inputs.pw__structure
         except AttributeError:
             workchain = self.ctx.workchains[-1]
             structure = workchain.outputs.output_structure
