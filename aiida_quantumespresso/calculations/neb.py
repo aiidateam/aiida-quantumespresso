@@ -31,8 +31,11 @@ class NebCalculation(CalcJob):
 
     # Default input and output file names
     # TODO: fix this mess: https://github.com/aiidateam/aiida-quantumespresso/issues/351
+    # TODO: also check instances of 'input_filename': it's used inconsistently
     _DEFAULT_INPUT_FILE = 'neb.dat'
     _DEFAULT_OUTPUT_FILE = 'aiida.out'
+    _PSEUDO_SUBFOLDER = PwCalculation._PSEUDO_SUBFOLDER
+    _OUTPUT_SUBFOLDER = PwCalculation._OUTPUT_SUBFOLDER
 
     _automatic_namelists = {
         'scf': ['CONTROL', 'SYSTEM', 'ELECTRONS'],
@@ -64,7 +67,7 @@ class NebCalculation(CalcJob):
         """Returns a list of relative filepaths of XML files."""
         filepaths = []
 
-        for filename in cls.xml_filenames:
+        for filename in PwCalculation.xml_filenames:
             filepath = os.path.join(cls._OUTPUT_SUBFOLDER, '{}_*[0-9].save'.format(cls._PREFIX), filename)
             filepaths.append(filepath)
 
@@ -84,8 +87,25 @@ class NebCalculation(CalcJob):
         spec.input('parent_folder', valid_type=orm.RemoteData, required=False,
             help='An optional working directory of a previously completed calculation to restart from.')
         # We reuse some inputs from PwCalculation to construct the PW-specific parts of the input files
+        spec.expose_inputs(PwCalculation, namespace='pw', include=('parameters','pseudos','kpoints','vdw_table'))
         #spec.expose_inputs(PwCalculation, namespace='pw', exclude=('structure','settings','hubbard_file','metadata','code'))
-        spec.expose_inputs(PwCalculation, namespace='pw', include=('parameters','pseudos','settings','kpoints','vdw_table'))
+        spec.exit_code(
+            100, 'ERROR_NO_RETRIEVED_FOLDER', message='The retrieved folder data node could not be accessed.')
+        #spec.exit_code(
+        #    101, 'ERROR_NO_RETRIEVED_TEMPORARY_FOLDER', message='The retrieved temporary folder could not be accessed.')
+        spec.exit_code(
+            110, 'ERROR_READING_OUTPUT_FILE', message='The output file could not be read from the retrieved folder.')
+        spec.exit_code(
+            115, 'ERROR_MISSING_XML_FILE', message='The required XML file is not present in the retrieved folder.')
+        #spec.exit_code(
+        #    116, 'ERROR_MULTIPLE_XML_FILES', message='The retrieved folder contains multiple XML files.')
+        #spec.exit_code(
+        #    117, 'ERROR_READING_XML_FILE', message='The required XML file could not be read.')
+        spec.exit_code(
+            120, 'ERROR_INVALID_OUTPUT', message='The output file contains invalid output.')
+        #spec.exit_code(
+        #    130, 'ERROR_JOB_NOT_DONE', message='The computation did not finish properly (\'JOB DONE\' not found).')
+        
         # TODO: outputs, exit codes
 
     # @classmethod
@@ -234,7 +254,7 @@ class NebCalculation(CalcJob):
         # We first prepare the NEB-specific input file.
         input_filecontent = self._generate_NEBinputdata(self.inputs.parameters, settings_dict)
 
-        input_filename = folder.get_abs_path(self._INPUT_FILE_NAME)
+        input_filename = folder.get_abs_path(self.inputs.metadata.options.input_filename)
         with open(input_filename, 'w') as handle:
             handle.write(input_filecontent)
 
@@ -331,13 +351,13 @@ class NebCalculation(CalcJob):
 
         codeinfo.cmdline_params = (["-input_images", "2"]
                                    + list(cmdline_params))
-        codeinfo.stdout_name = self._OUTPUT_FILE_NAME
+        codeinfo.stdout_name = self.inputs.metadata.options.output_filename
         codeinfo.code_uuid = self.inputs.code.uuid
         calcinfo.codes_info = [codeinfo]
 
         # Retrieve the output files and the xml files
         calcinfo.retrieve_list = []
-        calcinfo.retrieve_list.append(self._OUTPUT_FILE_NAME)
+        calcinfo.retrieve_list.append(self.inputs.metadata.options.output_filename)
         calcinfo.retrieve_list.append((
             os.path.join(self._OUTPUT_SUBFOLDER, self._PREFIX + '_*[0-9]', 'PW.out'),  # source relative path (globbing)
             '.',  # destination relative path

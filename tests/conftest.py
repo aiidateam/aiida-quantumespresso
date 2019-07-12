@@ -173,19 +173,53 @@ def generate_upf_data():
 def generate_structure():
     """Return a `StructureData` representing bulk silicon."""
 
-    def _generate_structure(element):
+    def _generate_structure(element='Si'):
         """Return a `StructureData` representing bulk silicon."""
         from aiida.orm import StructureData
 
         a = 5.43
         cell = [[a / 2., a / 2., 0], [a / 2., 0, a / 2.], [0, a / 2., a / 2.]]
         structure = StructureData(cell=cell)
-        structure.append_atom(position=(0., 0., 0.), symbols='Si')
-        structure.append_atom(position=(a / 4., a / 4., a / 4.), symbols='Si')
+        structure.append_atom(position=(0., 0., 0.), symbols=element)
+        structure.append_atom(position=(a / 4., a / 4., a / 4.), symbols=element)
 
         return structure
 
     return _generate_structure
+
+
+@pytest.fixture
+def generate_neb_structures():
+    """Return 2 `StructureData` objects that can be used as first and last images for a NEB calculation."""
+
+    def _generate_neb_structures(element='H'):
+        """Return 2 `StructureData` objects that can be used as first and last images for a NEB calculation."""
+        from aiida.orm import StructureData
+        from aiida_quantumespresso.parsers.constants import bohr_to_ang
+        import numpy as np
+
+        # TODO (not here)
+        # pw_settings_1['fixed_coords'] = {
+        #     [[True, False, False],
+        #      [False, False, False],
+        #      [True, False, False]]
+        # }
+
+        cell = np.array([[12, 0, 0], [0, 5, 0], [0, 0, 5]]) * bohr_to_ang
+
+        structure_1 = StructureData(cell=cell)
+        structure_1.append_atom(position=np.array([-4.56670009, 0., 0.])*bohr_to_ang, symbols=element)
+        structure_1.append_atom(position=(0., 0., 0.), symbols=element)
+        structure_1.append_atom(position=np.array([1.55776676, 0., 0.])*bohr_to_ang, symbols=element)
+
+        structure_2 = StructureData(cell=cell)
+        structure_2.append_atom(position=np.array([-1.55776676, 0., 0.])*bohr_to_ang, symbols=element)
+        structure_2.append_atom(position=(0., 0., 0.), symbols=element)
+        structure_2.append_atom(position=np.array([4.56670009, 0., 0.])*bohr_to_ang, symbols=element)
+
+        return structure_1, structure_2
+
+    return _generate_neb_structures
 
 
 @pytest.fixture

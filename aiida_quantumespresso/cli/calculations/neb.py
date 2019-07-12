@@ -40,16 +40,37 @@ def launch_calculation(code, structures, pseudo_family, kpoints_mesh, ecutwfc, e
     from aiida.plugins import CalculationFactory
     from aiida_quantumespresso.utils.resources import get_default_options
 
+    # TODO: move some hardcoded parameters to unit tests
+    # TODO: add force constraints (first image only):
+    # pw_settings_1['fixed_coords'] = {
+    #     [[True, False, False],
+    #      [False, False, False],
+    #      [True, False, False]]
+    # }
+
+
     pw_parameters = {
         'CONTROL': {
+            'calculation': 'relax'
         },
         'SYSTEM': {
             'ecutwfc': ecutwfc,
             'ecutrho': ecutrho,
+            'occupations': 'smearing',
+            'degauss': 0.003,
+            #'nspin': 2,
+            #'starting_magnetization': 0.5,
         },
+        'ELECTRONS': {
+            'conv_thr': 1e-8,
+            'mixing_beta': 0.3,
+        }
     }
 
     neb_parameters = {
+        'PATH': {
+            'num_of_images': 2  # TODO: fix this in the calculation class, and make it a forbidden variable
+        }
     }
 
     for structure in structures:
