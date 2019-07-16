@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 
 from aiida import orm
-from aiida.common import AttributeDict
+from aiida.common import AttributeDict, exceptions
 from aiida.engine import ToContext, if_, while_
 from aiida.plugins import CalculationFactory
 
@@ -96,6 +96,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             message='The calculation failed with an unrecoverable error.')
         spec.exit_code(320, 'ERROR_INITIALIZATION_CALCULATION_FAILED',
             message='The initialization calculation failed.')
+        spec.exit_code(501, 'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
+            message='Then ionic minimization cycle converged but the thresholds are exceeded in the final SCF.')
 
     def setup(self):
         """Call the `setup` of the `BaseRestartWorkChain` and then create the inputs dictionary in `self.ctx.inputs`.
@@ -338,7 +340,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         self.report('Action taken: {}'.format(action))
 
 
-@register_error_handler(PwBaseWorkChain, 500)
+@register_error_handler(PwBaseWorkChain, 600)
 def _handle_unrecoverable_failure(self, calculation):
     """Calculations with an exit status below 400 are unrecoverable, so abort the work chain."""
     if calculation.exit_status < 400:
@@ -346,12 +348,84 @@ def _handle_unrecoverable_failure(self, calculation):
         return ErrorHandlerReport(True, True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
 
 
-@register_error_handler(PwBaseWorkChain, 420)
+@register_error_handler(PwBaseWorkChain, 580)
 def _handle_out_of_walltime(self, calculation):
     """In the case of `ERROR_OUT_OF_WALLTIME` calculation shut down neatly and we can simply restart."""
     if calculation.exit_status == PwCalculation.spec().exit_codes.ERROR_OUT_OF_WALLTIME.status:
+        try:
+            self.ctx.inputs.structure = calculation.outputs.output_structure
+        except exceptions.NotExistent:
+            self.ctx.restart_calc = calculation
+            self.report_error_handled(calculation, 'simply restart from the last calculation')
+        else:
+            self.ctx.restart_calc = None
+            self.report_error_handled(calculation, 'out of walltime: structure changed so restarting from scratch')
+
+        return ErrorHandlerReport(True, True)
+
+
+@register_error_handler(PwBaseWorkChain, 570)
+def _handle_vcrelax_converged_except_final_scf(self, calculation):
+    """Convergence reached in `vc-relax` except thresholds exceeded in final scf: consider as converged."""
+    exit_code_labels = [
+        'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
+    ]
+
+    if calculation.exit_status in PwCalculation.get_exit_statuses(exit_code_labels):
+        self.ctx.is_finished = True
         self.ctx.restart_calc = calculation
-        self.report_error_handled(calculation, 'simply restart from the last calculation')
+        action = 'ionic convergence thresholds met except in final scf: consider structure relaxed.'
+        self.report_error_handled(calculation, action)
+        self.results()  # Call the results method to attach the output nodes
+        return ErrorHandlerReport(True, True, self.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF)
+
+
+@register_error_handler(PwBaseWorkChain, 560)
+def _handle_relax_recoverable_ionic_convergence_error(self, calculation):
+    """Various exit codes for recoverable `vc-relax` or `relax` calculations with failed ionic convergence.
+
+    These exit codes signify that the ionic convergence thresholds were not met, but the output structure is usable, so
+    the solution is to simply restart from scratch but from the output structure.
+    """
+    exit_code_labels = [
+        'ERROR_IONIC_CONVERGENCE_NOT_REACHED',
+        'ERROR_IONIC_CYCLE_EXCEEDED_NSTEP',
+        'ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE',
+        'ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE',
+    ]
+
+    if calculation.exit_status in PwCalculation.get_exit_statuses(exit_code_labels):
+        self.ctx.restart_calc = None
+        self.ctx.inputs.structure = calculation.outputs.output_structure
+        action = 'no ionic convergence but clean shutdown: restarting from scratch but using output structure.'
+        self.report_error_handled(calculation, action)
+        return ErrorHandlerReport(True, True)
+
+
+@register_error_handler(PwBaseWorkChain, 550)
+def _handle_relax_recoverable_electronic_convergence_error(self, calculation):
+    """Various exit codes for recoverable `vc-relax` or `relax` calculations with failed electronic convergence.
+
+    These exit codes signify that the electronic convergence thresholds were not met, but the output structure is
+    usable, so the solution is to simply restart from scratch but from the output structure.
+    """
+    exit_code_labels = [
+        'ERROR_IONIC_CYCLE_ELECTRONIC_CONVERGENCE_NOT_REACHED',
+        'ERROR_IONIC_CONVERGENCE_REACHED_FINAL_SCF_FAILED',
+    ]
+
+    if calculation.exit_status in PwCalculation.get_exit_statuses(exit_code_labels):
+
+        factor = self.defaults.delta_factor_mixing_beta
+        mixing_beta = self.ctx.inputs.parameters.get('ELECTRONS', {}).get('mixing_beta', self.defaults.qe.mixing_beta)
+        mixing_beta_new = mixing_beta * factor
+
+        self.ctx.restart_calc = None
+        self.ctx.inputs.parameters.setdefault('ELECTRONS', {})['mixing_beta'] = mixing_beta_new
+        self.ctx.inputs.structure = calculation.outputs.output_structure
+        action = 'no electronic convergence but clean shutdown: reduced beta mixing from {} to {} restarting from ' \
+                 'scratch but using output structure.'.format(mixing_beta, mixing_beta_new)
+        self.report_error_handled(calculation, action)
         return ErrorHandlerReport(True, True)
 
 
