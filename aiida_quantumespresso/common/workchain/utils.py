@@ -5,8 +5,6 @@ from __future__ import absolute_import
 from collections import namedtuple
 from functools import wraps
 
-from aiida.engine import ExitCode
-
 ErrorHandler = namedtuple('ErrorHandler', 'priority method')
 """
 A namedtuple to define an error handler for a :class:`~aiida.engine.processes.workchains.workchain.WorkChain`.
@@ -21,7 +19,7 @@ as its sole argument. If the condition of the error handler is met, it should re
 """
 
 ErrorHandlerReport = namedtuple('ErrorHandlerReport', 'is_handled do_break exit_code')
-ErrorHandlerReport.__new__.__defaults__ = (False, False, ExitCode())
+ErrorHandlerReport.__new__.__defaults__ = (False, False, None)
 """
 A namedtuple to define an error handler report for a :class:`~aiida.engine.processes.workchains.workchain.WorkChain`.
 
