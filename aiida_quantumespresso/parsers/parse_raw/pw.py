@@ -37,6 +37,8 @@ def detect_important_message(logs, line):
             'convergence NOT achieved after': 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED',
             'history already reset at previous step: stopping': 'ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE',
             'problems computing cholesky': 'ERROR_DIAGONALIZATION_CHOLESKY_DECOMPOSITION',
+            'charge is wrong': 'ERROR_CHARGE_IS_WRONG',
+            'not orthogonal operation': 'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION',
         },
         'warning': {
             'Warning:': None,

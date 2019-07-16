@@ -104,6 +104,11 @@ class PwParser(Parser):
         if self.exit_code_stdout and self.exit_code_xml:
             return self.exit(self.exit_codes.ERROR_OUTPUT_FILES)
 
+        # First check for specific known problems that can cause a pre-mature termination of the calculation
+        exit_code = self.validate_premature_exit(logs_stdout)
+        if exit_code:
+            return self.exit(exit_code)
+
         if self.exit_code_stdout:
             return self.exit(self.exit_code_stdout)
 
@@ -112,15 +117,21 @@ class PwParser(Parser):
 
         # First determine issues that can occurr for all calculation types. Note that the generic errors, that are
         # common to all types are done first. If a problem is found there, we return the exit code and don't continue
-        for validator in [self.validate_generic, self.validate_electronic, self.validate_dynamics, self.validate_ionic]:
+        for validator in [self.validate_electronic, self.validate_dynamics, self.validate_ionic]:
             exit_code = validator(array, trajectory, parsed_parameters, logs_stdout)
             if exit_code:
                 return self.exit(exit_code)
 
-    def validate_generic(self, array, trajectory, parameters, logs):
-        """Analyze generic problems that are common to all types of calculations."""
+    def validate_premature_exit(self, logs):
+        """Analyze problems that will cause a pre-mature termination of the calculation, controlled or not."""
         if 'ERROR_OUT_OF_WALLTIME' in logs['error']:
             return self.exit_codes.ERROR_OUT_OF_WALLTIME
+
+        if 'ERROR_CHARGE_IS_WRONG' in logs['error']:
+            return self.exit_codes.ERROR_CHARGE_IS_WRONG
+
+        if 'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION' in logs['error']:
+            return self.exit_codes.ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION
 
     def validate_electronic(self, array, trajectory, parameters, logs):
         """Analyze problems that are specific to `electronic` type calculations: i.e. `scf`, `nscf` and `bands`."""

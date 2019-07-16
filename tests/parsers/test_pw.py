@@ -371,6 +371,42 @@ def test_pw_vcrelax_success(fixture_database, fixture_computer_localhost, genera
     })
 
 
+def test_pw_vcrelax_failed_charge_wrong(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+        generate_parser, generate_inputs_relax, data_regression):
+    """Test a `vc-relax` that failed because the integrated charge is different from the expected one."""
+    name = 'vcrelax_failed_charge_wrong'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_relax)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+    expected_exit_status = node.process_class.exit_codes.ERROR_CHARGE_IS_WRONG.status
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == expected_exit_status
+    assert 'output_parameters' in results
+
+
+def test_pw_vcrelax_failed_symmetry_not_orthogonal(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+        generate_parser, generate_inputs_relax, data_regression):
+    """Test a `vc-relax` that failed because original symmetries no longer map onto new structure."""
+    name = 'vcrelax_failed_symmetry_not_orthogonal'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_relax)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+    expected_exit_status = node.process_class.exit_codes.ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION.status
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == expected_exit_status
+    assert 'output_parameters' in results
+
+
 def test_pw_vcrelax_failed_bfgs_history(fixture_database, fixture_computer_localhost, generate_calc_job_node,
         generate_parser, generate_inputs_relax, data_regression):
     """Test a `vc-relax` that failed to converge due to two consecutive failures of BFGS."""
