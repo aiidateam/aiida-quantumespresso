@@ -6,7 +6,7 @@ from __future__ import absolute_import
 from aiida import orm
 from aiida.common import exceptions
 from aiida.common.lang import override
-from aiida.engine import CalcJob, WorkChain, ToContext, append_
+from aiida.engine import CalcJob, WorkChain, ExitCode, ToContext, append_
 from aiida.plugins.entry_point import get_entry_point_names, load_entry_point
 
 from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
@@ -150,7 +150,8 @@ class BaseRestartWorkChain(WorkChain):
             # but has handled the problem and we should restart the cycle.
             handler = self._handle_calculation_sanity_checks(calculation)  # pylint: disable=assignment-from-no-return
 
-            if isinstance(handler, ErrorHandlerReport) and handler.exit_code.status != 0:
+            if (isinstance(handler, ErrorHandlerReport) and
+                    handler.exit_code is not None and handler.exit_code.status != 0):
                 # Sanity check returned a handler with an exit code that is non-zero, so we abort
                 self.report('{}<{}> finished successfully, but sanity check detected unrecoverable problem'.format(
                     self.ctx.calc_name, calculation.pk))
@@ -178,13 +179,20 @@ class BaseRestartWorkChain(WorkChain):
         except UnexpectedCalculationFailure as exception:
             exit_code = self._handle_unexpected_failure(calculation, exception)
 
+        # If the exit code returned actually has status `0` that means we consider the calculation as successful
+        if isinstance(exit_code, ExitCode) and exit_code.status == 0:
+            self.ctx.is_finished = True
+
         return exit_code
 
     def results(self):
         """Attach the outputs specified in the output specification from the last completed calculation."""
         calculation = self.ctx.calculations[self.ctx.iteration - 1]
 
-        if calculation.is_failed and self.ctx.iteration >= self.inputs.max_iterations.value:
+        # We check the `is_finished` attribute of the work chain and not the successfulness of the last calculation
+        # because the error handlers in the last iteration can have qualified a "failed" calculation as satisfactory
+        # for the outcome of the work chain and so have marked it as `is_finished=True`.
+        if not self.ctx.is_finished and self.ctx.iteration >= self.inputs.max_iterations.value:
             # Abort: exceeded maximum number of retries
             self.report('reached the maximum number of iterations {}: last ran {}<{}>'.format(
                 self.inputs.max_iterations.value, self.ctx.calc_name, calculation.pk))
