@@ -136,6 +136,11 @@ class PwCalculation(BasePwCpInputGenerator):
             message='The ionic minimization cycle terminated prematurely because of two consecutive failures in the '
                     'BFGS algorithm and electronic convergence failed in the final SCF.')
 
+        spec.exit_code(531, 'ERROR_CHARGE_IS_WRONG',
+            message='The electronic minimization cycle did not reach self-consistency.')
+        spec.exit_code(541, 'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION',
+            message='The variable cell optimization broke the symmetry of the k-points.')
+
     @classproperty
     def input_file_name_hubbard_file(cls):
         """
