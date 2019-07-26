@@ -68,6 +68,7 @@ class NebParser(Parser):
         # First parse the Neb output
         try:
             neb_out_dict, iteration_data, raw_successful = parse_raw_output_neb(filepath_stdout, neb_input_dict)
+            # TODO: why do we ignore raw_successful ?
         except QEOutputParsingError as exc:
             self.logger.error("QEOutputParsingError in parse_raw_output_neb: {}".format(exc))
             return self.exit_codes.ERROR_READING_OUTPUT_FILE

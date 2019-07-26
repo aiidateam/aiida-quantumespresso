@@ -240,13 +240,13 @@ class NebCalculation(CalcJob):
                 handle.write(pw_input_filecontent)
 
         # We need to pop the settings that were used in the PW calculations
-        for key in settings_dict.keys():
+        for key in list(settings_dict.keys()):
             if key not in list(this_settings_dict.keys()):
                 settings_dict.pop(key)
 
         # We avoid to copy twice the same pseudopotential to the same filename
         local_copy_pseudo_list = set(local_copy_pseudo_list)
-        # We check that two different pseudopotentials are not copied 
+        # We check that two different pseudopotentials are not copied
         # with the same name (otherwise the first is overwritten)
         if len({ filename for (uuid, filename, local_path) in local_copy_pseudo_list}) < len(local_copy_pseudo_list):
             raise InputValidationError("Same filename for two different pseudopotentials")
@@ -314,7 +314,7 @@ class NebCalculation(CalcJob):
         calcinfo.local_copy_list = local_copy_list
         calcinfo.remote_copy_list = remote_copy_list
         calcinfo.remote_symlink_list = remote_symlink_list
-        # In neb calculations there is no input read from standard input!! 
+        # In neb calculations there is no input read from standard input!!
 
         codeinfo.cmdline_params = (["-input_images", "2"]
                                    + list(cmdline_params))

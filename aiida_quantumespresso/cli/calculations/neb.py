@@ -44,13 +44,14 @@ def launch_calculation(code, structures, pseudo_family, kpoints_mesh, ecutwfc, e
     from aiida_quantumespresso.utils.resources import get_default_options
 
     # TODO: move some hardcoded parameters to unit tests
-    # TODO: add force constraints (first image only):
-    # pw_settings_1['fixed_coords'] = {
-    #     [[True, False, False],
-    #      [False, False, False],
-    #      [True, False, False]]
-    # }
-
+    # TODO: because I cannot give a structure-specific settings dict, I can't apply these constraints only to one of the
+    #  two boundary images. Do I need to?
+    settings = {
+        'fixed_coords':
+            [[False, True, True],
+             [True, True, True],
+             [False, True, True]],
+    }
 
     pw_parameters = {
         'CONTROL': {
@@ -104,6 +105,7 @@ def launch_calculation(code, structures, pseudo_family, kpoints_mesh, ecutwfc, e
             'parameters': Dict(dict=pw_parameters),
         },
         'parameters': Dict(dict=neb_parameters),
+        'settings': Dict(dict=settings),
         'metadata': {
             'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
         }
