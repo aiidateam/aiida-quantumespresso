@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Module with launch utitlies for the CLI."""
 from __future__ import absolute_import
+from __future__ import print_function
 import click
 
 from aiida.engine import launch, Process, ProcessBuilder
@@ -27,6 +28,9 @@ def launch_process(process, daemon, **inputs):
         node = launch.submit(process, **inputs)
         click.echo('Submitted {}<{}> to the daemon'.format(process_name, node.pk))
     else:
-        click.echo('Running a {}...'.format(process_name))
+        if inputs.get('metadata', {}).get('dry_run', False):
+            click.echo('Running a dry run for {}...'.format(process_name))
+        else:
+            click.echo('Running a {}...'.format(process_name))
         _, node = launch.run_get_node(process, **inputs)
         echo_process_results(node)

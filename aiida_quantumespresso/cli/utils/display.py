@@ -2,6 +2,8 @@
 """Module with display utitlies for the CLI."""
 from __future__ import absolute_import
 
+import os
+
 import click
 
 
@@ -14,6 +16,13 @@ def echo_process_results(node):
 
     class_name = node.process_class.__name__
     outputs = node.get_outgoing(link_type=(LinkType.CREATE, LinkType.RETURN)).all()
+
+    if hasattr(node, 'dry_run_info'):
+        # It is a dry-run: get the information and print it
+        rel_path = os.path.relpath(node.dry_run_info['folder'])
+        click.echo("-> Files created in folder '{}'".format(rel_path))
+        click.echo("-> Submission script filename: '{}'".format(node.dry_run_info['script_filename']))
+        return
 
     if node.is_finished and node.exit_message:
         state = '{} [{}] `{}`'.format(node.process_state.value, node.exit_status, node.exit_message)
