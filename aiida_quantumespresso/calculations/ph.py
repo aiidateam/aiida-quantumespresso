@@ -239,8 +239,7 @@ class PhCalculation(CalcJob):
         if not restart_flag:  # if it is a restart, it will be copied over
             folder.get_subfolder(self._FOLDER_DYNAMICAL_MATRIX, create=True)
 
-        input_filename = folder.get_abs_path(self.metadata.options.input_filename)
-        with io.open(input_filename, 'w') as infile:
+        with folder.open(self.metadata.options.input_filename, 'w') as infile:
             for namelist_name in namelists_toprint:
                 infile.write(u'&{0}\n'.format(namelist_name))
                 # namelist content; set to {} if not present, so that we leave an empty namelist
@@ -314,8 +313,7 @@ class PhCalculation(CalcJob):
 
         # Create an `.EXIT` file if `only_initialization` flag in `settings` is set to `True`
         if settings.pop('ONLY_INITIALIZATION', False):
-            exit_filename = folder.get_abs_path('{}.EXIT'.format(self._PREFIX))
-            with open(exit_filename, 'w') as handle:
+            with folder.open('{}.EXIT'.format(self._PREFIX), 'w') as handle:
                 handle.write('\n')
 
         codeinfo = datastructures.CodeInfo()

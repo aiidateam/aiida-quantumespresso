@@ -2,16 +2,17 @@
 from __future__ import absolute_import
 
 import abc
-import io
 import os
+import six
+from six.moves import zip
 
 from aiida import orm
 from aiida.common import datastructures, exceptions
 from aiida.common.lang import classproperty
 from aiida.engine import CalcJob
+from aiida.plugins import ParserFactory
+
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
-import six
-from six.moves import zip
 
 
 class BasePwCpInputGenerator(CalcJob):
@@ -133,8 +134,7 @@ class BasePwCpInputGenerator(CalcJob):
         input_filecontent, local_copy_pseudo_list = self._generate_PWCPinputdata(*arguments)
         local_copy_list += local_copy_pseudo_list
 
-        input_filename = folder.get_abs_path(self.metadata.options.input_filename)
-        with io.open(input_filename, 'w') as handle:
+        with folder.open(self.metadata.options.input_filename, 'w') as handle:
             handle.write(input_filecontent)
 
         # operations for restart
@@ -158,15 +158,14 @@ class BasePwCpInputGenerator(CalcJob):
 
         # Create an `.EXIT` file if `only_initialization` flag in `settings` is set to `True`
         if settings.pop('ONLY_INITIALIZATION', False):
-            exit_filename = folder.get_abs_path('{}.EXIT'.format(self._PREFIX))
-            with open(exit_filename, 'w') as handle:
+            with folder.open('{}.EXIT'.format(self._PREFIX), 'w') as handle:
                 handle.write('\n')
 
         # Check if specific inputs for the ENVIRON module where specified
         environ_namelist = settings.pop('ENVIRON', None)
         if environ_namelist is not None:
             if not isinstance(environ_namelist, dict):
-                raise exceptions.InputValidationError('ENVIRON namelist should be specified as a dictionary')
+                raise exceptions.InputValidationError("ENVIRON namelist should be specified as a dictionary")
             # We first add the environ flag to the command-line options (if not already present)
             try:
                 if '-environ' not in settings['CMDLINE']:
@@ -177,9 +176,8 @@ class BasePwCpInputGenerator(CalcJob):
             # we use the alphabetical order as in the inputdata generation
             kind_names = sorted([kind.name for kind in self.inputs.structure.kinds])
             mapping_species = {kind_name: (index + 1) for index, kind_name in enumerate(kind_names)}
-            environ_input_filename = folder.get_abs_path(self._ENVIRON_INPUT_FILE_NAME)
 
-            with open(environ_input_filename, 'w') as handle:
+            with folder.open(self._ENVIRON_INPUT_FILE_NAME, 'w') as handle:
                 handle.write('&ENVIRON\n')
                 for k, v in sorted(six.iteritems(environ_namelist)):
                     handle.write(convert_input_to_namelist_entry(k, v, mapping=mapping_species))
@@ -232,17 +230,8 @@ class BasePwCpInputGenerator(CalcJob):
             xmlpaths = os.path.join(self._OUTPUT_SUBFOLDER, self._PREFIX + '.save', 'K*[0-9]', 'eigenval*.xml')
             calcinfo.retrieve_temporary_list = [[xmlpaths, '.', 2]]
 
-        # TODO: self.get_parserclass() probably raises AttributeError, but is caught later!
-        #       Use self.input('metadata.options.parser_name') instead
-        try:
-            Parserclass = self.get_parserclass()
-            parser = Parserclass(self)
-            parser_opts = parser.get_parser_settings_key().upper()
-            settings.pop(parser_opts)
-        except (KeyError, AttributeError):
-            # the settings dictionary has no key 'parser_options',
-            # or some methods don't exist
-            pass
+        # We might still have parser options in the settings dictionary: pop them.
+        _pop_parser_options(self, settings)
 
         if settings:
             unknown_keys = ', '.join(list(settings.keys()))
@@ -278,7 +267,7 @@ class BasePwCpInputGenerator(CalcJob):
                 if flag in stripped_inparams:
                     raise exceptions.InputValidationError(
                         "You cannot specify explicitly the '{}' flag in the '{}' "
-                        'namelist or card.'.format(flag, nl))
+                        "namelist or card.".format(flag, nl))
                 if defaultvalue is not None:
                     if nl not in input_params:
                         input_params[nl] = {}
@@ -552,7 +541,7 @@ class BasePwCpInputGenerator(CalcJob):
                     "No 'calculation' in CONTROL namelist."
                     "It is required for automatic detection of the valid list "
                     "of namelists. Otherwise, specify the list of namelists "
-                    "using the NAMELISTS key inside the 'settings' input node")
+                    "using the NAMELISTS key inside the 'settings' input node.")
 
             try:
                 namelists_toprint = cls._automatic_namelists[calculation_type]
@@ -621,3 +610,19 @@ def _case_transform_dict(d, dict_name, func_name, transform):
             "are repeated more than once when compared case-insensitively: {}."
             "This is not allowed.".format(dict_name, double_keys))
     return new_dict
+
+
+def _pop_parser_options(calc_job_instance, settings_dict):
+    # We need an instance of the parser class to get the parser options key (which is typically 'parser_options')
+    from aiida.plugins import ParserFactory
+    parser_name = calc_job_instance.inputs.get('metadata.options.parser_name', None)
+    if parser_name is not None:
+        ParserClass = ParserFactory(parser_name)
+        parser = ParserClass(calc_job_instance)
+        try:
+            parser_opts_key = parser.get_parser_settings_key().upper()
+            settings_dict.pop(parser_opts_key)
+        except (KeyError, AttributeError):
+            # the key parser_opts isn't inside the dictionary,
+            # or the parser doesn't have a method get_parser_settings_key().
+            pass

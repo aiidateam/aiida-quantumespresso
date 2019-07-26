@@ -5,17 +5,19 @@ Plugin to create a Quantum Espresso neb.x input file.
 from __future__ import absolute_import
 import os
 import copy
+import six
+
 from aiida.common import InputValidationError
 from aiida.common import CalcInfo, CodeInfo
 from aiida.common import LinkType
 from aiida.common.lang import classproperty
 from aiida import orm
 from aiida.engine import CalcJob
+
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 from aiida_quantumespresso.calculations.pw import PwCalculation
-from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
+from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict, _pop_parser_options
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
-import six
 
 
 class NebCalculation(CalcJob):
@@ -31,7 +33,6 @@ class NebCalculation(CalcJob):
 
     # Default input and output file names
     # TODO: fix this mess: https://github.com/aiidateam/aiida-quantumespresso/issues/351
-    # TODO: also check instances of 'input_filename': it's used inconsistently
     _DEFAULT_INPUT_FILE = 'neb.dat'
     _DEFAULT_OUTPUT_FILE = 'aiida.out'
     _PSEUDO_SUBFOLDER = PwCalculation._PSEUDO_SUBFOLDER
@@ -112,7 +113,7 @@ class NebCalculation(CalcJob):
             120, 'ERROR_INVALID_OUTPUT', message='The output file contains invalid output.')
         #spec.exit_code(
         #    130, 'ERROR_JOB_NOT_DONE', message='The computation did not finish properly (\'JOB DONE\' not found).')
-        # TODO: check error logic and use these exit codes if necessary
+        # TODO: check error logic and maybe use these commented-out exit codes
 
     @classmethod
     def _generate_NEBinputdata(cls, neb_parameters, settings_dict):
@@ -132,10 +133,9 @@ class NebCalculation(CalcJob):
             input_params['PATH'] = {}
 
         # In case of climbing image, we need the corresponding card
-        climbing_image = False
+        manual_climbing_image = False
         if input_params['PATH'].get('ci_scheme', 'no-ci').lower() in ['manual']:
-            # TODO: why not 'auto' ?
-            climbing_image = True
+            manual_climbing_image = True
             try:
                 climbing_image_list = settings_dict.pop("CLIMBING_IMAGES")
             except KeyError:
@@ -146,20 +146,19 @@ class NebCalculation(CalcJob):
             if any([ (i<2 or i>=num_of_images) for i in climbing_image_list ]):
                 raise InputValidationError("The climbing images should be in the range between the first "
                                            "and the last image")
-
             climbing_image_card = "CLIMBING_IMAGES\n"
             climbing_image_card += ", ".join([str(_) for _ in climbing_image_list]) + "\n"
  
-        inputfile = u"&PATH\n"
+        input_data = u"&PATH\n"
         # namelist content; set to {} if not present, so that we leave an empty namelist
         namelist = input_params.pop('PATH', {})
         for k, v in sorted(six.iteritems(namelist)):
-            inputfile += convert_input_to_namelist_entry(k, v)
-        inputfile += u"/\n"
+            input_data += convert_input_to_namelist_entry(k, v)
+        input_data += u"/\n"
 
-        # Write cards now
-        if climbing_image:
-            inputfile += climbing_image_card
+        # Write CI cards now
+        if manual_climbing_image:
+            input_data += climbing_image_card
 
         if input_params:
             raise InputValidationError(
@@ -167,7 +166,7 @@ class NebCalculation(CalcJob):
                 "not valid namelists for the current type of calculation: "
                 "{}".format(",".join(list(input_params.keys()))))
 
-        return inputfile
+        return input_data
 
     def prepare_for_submission(self, folder):
         """Create the input files from the input nodes passed to this instance of the `CalcJob`.
@@ -175,8 +174,6 @@ class NebCalculation(CalcJob):
         :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
         :return: `aiida.common.datastructures.CalcInfo` instance
         """
-
-        # TODO: reuse more parts of BasePwCpInputGenerator.prepare_for_submission() ?
 
         import numpy as np
 
@@ -190,13 +187,9 @@ class NebCalculation(CalcJob):
         else:
             settings_dict = {}
 
-        # TODO: remove these debug lines
-        self.logger.debug('self.inputs.pw.pseudos has type <{}>', type(self.inputs.pw.pseudos))
-        pseudos = self.inputs.pw.pseudos  # This is a PortNamespace, but can be used as a dict
         parent_calc_folder = self.inputs.get('parent_folder', None)
         vdw_table = self.inputs.get('pw.vdw_table', None)
 
-        # TODO: image != structure ?
         # Check that the first and last image have the same cell
         if abs(np.array(self.inputs.first_structure.cell)-
                np.array(self.inputs.last_structure.cell)).max() > 1.e-4:
@@ -212,6 +205,7 @@ class NebCalculation(CalcJob):
                                        "the first and final image")
 
         # Check that a pseudo potential was specified for each kind present in the `StructureData`
+        # self.inputs.pw.pseudos is a plumpy.utils.AttributesFrozendict
         kindnames = [kind.name for kind in self.inputs.first_structure.kinds]
         if set(kindnames) != set(self.inputs.pw.pseudos.keys()):
             raise InputValidationError(
@@ -228,25 +222,21 @@ class NebCalculation(CalcJob):
         folder.get_subfolder(self._OUTPUT_SUBFOLDER, create=True)
 
         # We first prepare the NEB-specific input file.
-        input_filecontent = self._generate_NEBinputdata(self.inputs.parameters, settings_dict)
-
-        input_filename = folder.get_abs_path(self.inputs.metadata.options.input_filename)
-        with open(input_filename, 'w') as handle:
-            handle.write(input_filecontent)
+        neb_input_filecontent = self._generate_NEBinputdata(self.inputs.parameters, settings_dict)
+        with folder.open(self.inputs.metadata.options.input_filename, 'w') as handle:
+            handle.write(neb_input_filecontent)
 
         # We now generate the PW input files for each input structure
         local_copy_pseudo_list = []
         for i, structure in enumerate([self.inputs.first_structure, self.inputs.last_structure]):
             # We need to a pass a copy of the settings_dict for each structure
             this_settings_dict = copy.deepcopy(settings_dict)
-            input_filecontent, this_local_copy_pseudo_list = PwCalculation._generate_PWCPinputdata(
+            pw_input_filecontent, this_local_copy_pseudo_list = PwCalculation._generate_PWCPinputdata(
                 self.inputs.pw.parameters, this_settings_dict, self.inputs.pw.pseudos, structure, self.inputs.pw.kpoints
             )
             local_copy_pseudo_list += this_local_copy_pseudo_list
-
-            input_filename = folder.get_abs_path('pw_{}.in'.format(i+1))
-            with open(input_filename, 'w') as handle:
-                handle.write(input_filecontent)
+            with folder.open('pw_{}.in'.format(i+1), 'w') as handle:
+                handle.write(pw_input_filecontent)
 
         # We need to pop the settings that were used in the PW calculations
         for key in settings_dict.keys():
@@ -346,18 +336,8 @@ class NebCalculation(CalcJob):
         calcinfo.retrieve_list += settings_dict.pop('ADDITIONAL_RETRIEVE_LIST', [])
         calcinfo.retrieve_list += self._internal_retrieve_list
 
-        # TODO: self.get_parserclass() probably raises AttributeError, but is caught later!
-        #       Use self.input('metadata.options.parser_name') instead
-        if settings_dict:
-            try:
-                Parserclass = self.get_parserclass()
-                parser = Parserclass(self)
-                parser_opts = parser.get_parser_settings_key()
-                settings_dict.pop(parser_opts)
-            except (KeyError, AttributeError):
-                # the settings dictionary has no key 'parser_options',
-                # or some methods don't exist
-                pass
+        # We might still have parser options in the settings dictionary: pop them.
+        _pop_parser_options(self, settings_dict)
 
         if settings_dict:
             unknown_keys = ', '.join(list(settings_dict.keys()))
@@ -365,6 +345,7 @@ class NebCalculation(CalcJob):
 
         return calcinfo
 
+    # TODO: what about restart?
     def create_restart(self, force_restart=False, parent_folder_symlink=None):
         """
         Function to restart a calculation that was not completed before 

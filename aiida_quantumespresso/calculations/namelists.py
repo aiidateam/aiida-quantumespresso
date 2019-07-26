@@ -15,7 +15,7 @@ from aiida.orm import Dict
 from aiida.orm import RemoteData, FolderData, SinglefileData
 from aiida.plugins import ParserFactory
 
-from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
+from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict, _pop_parser_options
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
 
@@ -182,19 +182,8 @@ class NamelistsCalculation(CalcJob):
 
         calcinfo.retrieve_singlefile_list = self._retrieve_singlefile_list
 
-        # We might still have parser options in the settings dictionary: pop them
-        # We need an instance of the parser class to get the parser options key (typically 'parser_options')
-        parser_name = self.inputs.get('metadata.options.parser_name', None)
-        if parser_name is not None:
-            Parserclass = ParserFactory(parser_name)
-            parser = Parserclass(self)
-            try:
-                parser_opts = parser.get_parser_settings_key().upper()
-                settings.pop(parser_opts)
-            except (KeyError, AttributeError):
-                # the key parser_opts isn't inside the dictionary,
-                # or the parser doesn't have a method get_parser_settings_key().
-                pass
+        # We might still have parser options in the settings dictionary: pop them.
+        _pop_parser_options(self, settings)
 
         if settings:
             unknown_keys = ', '.join(list(settings.keys()))
