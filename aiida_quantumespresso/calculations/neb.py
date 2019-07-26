@@ -146,7 +146,7 @@ class NebCalculation(CalcJob):
             num_of_images = input_params['PATH'].get('num_of_images', 2)
             if any([ (i<2 or i>=num_of_images) for i in climbing_image_list ]):
                 raise InputValidationError("The climbing images should be in the range between the first "
-                                           "and the last image")
+                                           "and the last image (excluded)")
             climbing_image_card = "CLIMBING_IMAGES\n"
             climbing_image_card += ", ".join([str(_) for _ in climbing_image_list]) + "\n"
  

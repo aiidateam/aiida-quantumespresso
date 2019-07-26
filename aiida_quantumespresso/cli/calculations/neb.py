@@ -51,6 +51,7 @@ def launch_calculation(code, structures, pseudo_family, kpoints_mesh, ecutwfc, e
             [[False, True, True],
              [True, True, True],
              [False, True, True]],
+        'CLIMBING_IMAGES': [5],
     }
 
     pw_parameters = {
@@ -76,12 +77,12 @@ def launch_calculation(code, structures, pseudo_family, kpoints_mesh, ecutwfc, e
             'nstep_path': 20,
             'ds': 2.,
             'opt_scheme': 'broyden',
-            'num_of_images': 7,
+            'num_of_images': 8,
             'k_max': 0.3,
             'k_min': 0.2,
-            'CI_scheme': "auto",
-            'path_thr': 0.1,
-        }
+            'CI_scheme': "manual",
+            'path_thr': 0.05,
+        },
     }
 
     for structure in structures:

@@ -189,40 +189,6 @@ def generate_structure():
 
 
 @pytest.fixture
-def generate_neb_structures():
-    """Return 2 `StructureData` objects that can be used as first and last images for a NEB calculation."""
-
-    def _generate_neb_structures(element='H'):
-        """Return 2 `StructureData` objects that can be used as first and last images for a NEB calculation."""
-        from aiida.orm import StructureData
-        from aiida_quantumespresso.parsers.constants import bohr_to_ang
-        import numpy as np
-
-        # TODO (not here)
-        # pw_settings_1['fixed_coords'] = {
-        #     [[True, False, False],
-        #      [False, False, False],
-        #      [True, False, False]]
-        # }
-
-        cell = np.array([[12, 0, 0], [0, 5, 0], [0, 0, 5]]) * bohr_to_ang
-
-        structure_1 = StructureData(cell=cell)
-        structure_1.append_atom(position=np.array([-4.56670009, 0., 0.])*bohr_to_ang, symbols=element)
-        structure_1.append_atom(position=(0., 0., 0.), symbols=element)
-        structure_1.append_atom(position=np.array([1.55776676, 0., 0.])*bohr_to_ang, symbols=element)
-
-        structure_2 = StructureData(cell=cell)
-        structure_2.append_atom(position=np.array([-1.55776676, 0., 0.])*bohr_to_ang, symbols=element)
-        structure_2.append_atom(position=(0., 0., 0.), symbols=element)
-        structure_2.append_atom(position=np.array([4.56670009, 0., 0.])*bohr_to_ang, symbols=element)
-
-        return structure_1, structure_2
-
-    return _generate_neb_structures
-
-
-@pytest.fixture
 def generate_kpoints_mesh():
     """Return a `KpointsData` node."""
 
