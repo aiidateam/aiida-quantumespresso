@@ -68,7 +68,7 @@ class NebCalculation(CalcJob):
         filepaths = []
 
         for filename in PwCalculation.xml_filenames:
-            filepath = os.path.join(cls._OUTPUT_SUBFOLDER, '{}_*[0-9].save'.format(cls._PREFIX), filename)
+            filepath = os.path.join(cls._OUTPUT_SUBFOLDER, cls._PREFIX+'_*[0-9]', cls._PREFIX+'.save', filename)
             filepaths.append(filepath)
 
         return filepaths
@@ -89,6 +89,13 @@ class NebCalculation(CalcJob):
         # We reuse some inputs from PwCalculation to construct the PW-specific parts of the input files
         spec.expose_inputs(PwCalculation, namespace='pw', include=('parameters','pseudos','kpoints','vdw_table'))
         #spec.expose_inputs(PwCalculation, namespace='pw', exclude=('structure','settings','hubbard_file','metadata','code'))
+        spec.output('output_parameters', valid_type=orm.Dict,
+            help='The output parameters dictionary of the NEB calculation')
+        spec.output('output_trajectory', valid_type=orm.TrajectoryData)
+        spec.output('iteration_array', valid_type=orm.ArrayData, required=False)
+        spec.output('output_mep', valid_type=orm.ArrayData,
+            help='ArrayData containing the original and interpolated energy profiles along the minimum-energy path (mep)')
+        spec.default_output_node = 'output_parameters'
         spec.exit_code(
             100, 'ERROR_NO_RETRIEVED_FOLDER', message='The retrieved folder data node could not be accessed.')
         #spec.exit_code(
@@ -105,38 +112,7 @@ class NebCalculation(CalcJob):
             120, 'ERROR_INVALID_OUTPUT', message='The output file contains invalid output.')
         #spec.exit_code(
         #    130, 'ERROR_JOB_NOT_DONE', message='The computation did not finish properly (\'JOB DONE\' not found).')
-        
-        # TODO: outputs, exit codes
-
-    # @classmethod
-    # def define(cls, spec):
-    #     super(NebCalculation, cls).define(spec)
-    #     spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
-    #     spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
-    #     spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.neb')
-    #     spec.input('first_structure', valid_type=orm.StructureData, help='Choose the initial structure to use')  # TODO: better help strings
-    #     spec.input('last_structure', valid_type=orm.StructureData, help='Choose the final structure to use')
-    #     spec.input('kpoints', valid_type=orm.KpointsData, help='kpoint mesh or kpoint path to use')
-    #     # TODO: how do I delete input 'parameters' from the base class?
-    #     spec.input('pw_parameters', valid_type=orm.Dict,
-    #         help='Input parameters used to construct the PW input file(s).')
-    #     spec.input('neb_parameters', valid_type=orm.Dict,
-    #         help='Input parameters used to construct the NEB input file.')
-    #     # TODO: outputs, exit codes
-    #     # spec.input('hubbard_file', valid_type=orm.SinglefileData, required=False,
-    #     #     help='SinglefileData node containing the output Hubbard parameters from a HpCalculation')
-    #     # spec.output('output_parameters', valid_type=orm.Dict,
-    #     #     help='The `output_parameters` output node of the successful calculation.')
-    #     # spec.output('output_structure', valid_type=orm.StructureData, required=False,
-    #     #     help='The `output_structure` output node of the successful calculation if present.')
-    #     # spec.output('output_trajectory', valid_type=orm.TrajectoryData, required=False)
-    #     # spec.output('output_array', valid_type=orm.ArrayData, required=False,
-    #     #     help='The `output_array` output node of the successful calculation if present.')
-    #     # spec.output('output_band', valid_type=orm.BandsData, required=False,
-    #     #     help='The `output_band` output node of the successful calculation if present.')
-    #     # spec.output('output_kpoints', valid_type=orm.KpointsData, required=False)
-    #     # spec.output('output_atomic_occupations', valid_type=orm.Dict, required=False)
-    #     # spec.default_output_node = 'output_parameters'
+        # TODO: check error logic and use these exit codes if necessary
 
     @classmethod
     def _generate_NEBinputdata(cls, neb_parameters, settings_dict):
@@ -364,7 +340,6 @@ class NebCalculation(CalcJob):
             2  # depth to preserve
         ))
 
-        # TODO: check if anything has changed in the xml output (formats, names, contents)
         for xml_filepath in self.xml_filepaths:
             calcinfo.retrieve_list.append([xml_filepath, '.', 3])
 

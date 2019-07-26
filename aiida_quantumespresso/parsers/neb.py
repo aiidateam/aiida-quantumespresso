@@ -23,10 +23,6 @@ class NebParser(Parser):
         """
         Parses the calculation-output datafolder, and stores
         results.
-
-        :param retrieved: a dictionary of retrieved nodes, where the keys
-            are the link names of retrieved nodes, and the values are the
-            nodes.
         """
         from aiida.common import InvalidOperation
         from aiida.orm import TrajectoryData, ArrayData
@@ -42,7 +38,7 @@ class NebParser(Parser):
         except NotExistent:
             return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
 
-        list_of_files = out_folder.list_object_names()
+        list_of_files = out_folder.list_object_names()  # Note: this includes folders, but not the files they contain.
 
         # The stdout is required for parsing
         filename_stdout = self.node.get_attribute('output_filename')
@@ -93,29 +89,31 @@ class NebParser(Parser):
         image_data = {}
         positions = []
         cells = []
+        # for each image...
         for i in range(num_images):
-            # look for xml and parse
+            # check if any of the known XML output file names are present, and parse the first that we find
+            relative_output_folder = os.path.join('{}_{}'.format(PREFIX, i+1), '{}.save'.format(PREFIX))
+            retrieved_files = self.retrieved.list_object_names(relative_output_folder)
             for xml_filename in PwCalculation.xml_filenames:
-                if xml_filename in list_of_files:
-                    xml_file = os.path.join(out_folder._repository._get_base_folder().abspath,
-                                            '{}_{}'.format(PREFIX, i+1),
-                                            '{}.save'.format(PREFIX),
-                                            xml_filename)
-
+                if xml_filename in retrieved_files:
+                    xml_file_abspath = os.path.join(out_folder._repository._get_base_folder().abspath,
+                                                    relative_output_folder,
+                                                    xml_filename)
                     try:
-                        xml_file_version = get_xml_file_version(xml_file)
+                        xml_file_version = get_xml_file_version(xml_file_abspath)
                     except ValueError as exception:
                         raise QEOutputParsingError('failed to determine XML output file version: {}'.format(exception))
 
                     if xml_file_version == QeXmlVersion.POST_6_2:
-                        xml_data, structure_dict, bands_data = parse_pw_xml_post_6_2(xml_file, parser_options, self.logger)
+                        xml_data, structure_dict, bands_data = parse_pw_xml_post_6_2(xml_file_abspath, parser_options, self.logger)
                     elif xml_file_version == QeXmlVersion.PRE_6_2:
-                        xml_data, structure_dict, bands_data = parse_pw_xml_pre_6_2(xml_file, None, parser_options, self.logger)
+                        xml_data, structure_dict, bands_data = parse_pw_xml_pre_6_2(xml_file_abspath, None, parser_options, self.logger)
                     else:
                         raise ValueError('unrecognized XML file version')
                     
                     structure_data = convert_qe2aiida_structure(structure_dict)
                     break
+            # otherwise, if none of the filenames we tried exists, exit with an error
             else:
                 self.logger.error("No xml output file found for image {}".format(i+1))
                 return self.exit_codes.ERROR_MISSING_XML_FILE
