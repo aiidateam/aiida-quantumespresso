@@ -32,7 +32,6 @@ class NebCalculation(CalcJob):
     _default_symlink_usage = False
 
     # Default input and output file names
-    # TODO: fix this mess: https://github.com/aiidateam/aiida-quantumespresso/issues/351
     _DEFAULT_INPUT_FILE = 'neb.dat'
     _DEFAULT_OUTPUT_FILE = 'aiida.out'
     _PSEUDO_SUBFOLDER = PwCalculation._PSEUDO_SUBFOLDER
@@ -43,17 +42,7 @@ class NebCalculation(CalcJob):
     }
 
     # Keywords that cannot be set (for the PW input)
-    _blocked_keywords = [
-        ('CONTROL', 'pseudo_dir'),  # set later
-        ('CONTROL', 'outdir'),  # set later
-        ('CONTROL', 'prefix'),  # set later
-        ('SYSTEM', 'ibrav'),  # set later
-        ('SYSTEM', 'celldm'),
-        ('SYSTEM', 'nat'),  # set later
-        ('SYSTEM', 'ntyp'),  # set later
-        ('SYSTEM', 'a'), ('SYSTEM', 'b'), ('SYSTEM', 'c'),
-        ('SYSTEM', 'cosab'), ('SYSTEM', 'cosac'), ('SYSTEM', 'cosbc'),
-    ]
+    _blocked_keywords = []
 
     _use_kpoints = True
 
@@ -125,9 +114,21 @@ class NebCalculation(CalcJob):
         # (deeper levels are unchanged)
         input_params = _uppercase_dict(neb_parameters.get_dict(), dict_name='parameters')
         input_params = {k: _lowercase_dict(v, dict_name=k) for k, v in six.iteritems(input_params)}
-        
-        # For the neb input there are no blocked keywords
-        
+
+        # Force default values for blocked keywords. NOTE: this is different from PW/CP
+        for blocked in cls._blocked_keywords:
+            namelist = blocked[0].upper()
+            key = blocked[1].lower()
+            value = blocked[2]
+            if namelist in input_params:
+                if key in input_params[namelist]:
+                    raise InputValidationError(
+                        "You cannot specify explicitly the '{}' key in the '{}' "
+                        "namelist.".format(key, namelist))
+            else:
+                input_params[namelist] = {}
+            input_params[namelist][key] = value
+
         # Create an empty dictionary for the compulsory namelist 'PATH' if not present
         if 'PATH' not in input_params:
             input_params['PATH'] = {}

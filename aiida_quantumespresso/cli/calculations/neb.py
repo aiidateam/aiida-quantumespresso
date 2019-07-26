@@ -34,7 +34,10 @@ from ..utils import validate
 @decorators.with_dbenv()
 def launch_calculation(code, structures, pseudo_family, kpoints_mesh, ecutwfc, ecutrho, starting_magnetization,
                        smearing, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
-    """Run a NebCalculation."""
+    """
+    Run a NebCalculation.
+    Note that some parameters are hardcoded.
+    """
     from aiida.orm import Dict
     from aiida.orm.nodes.data.upf import get_pseudos_from_structure
     from aiida.plugins import CalculationFactory
@@ -58,8 +61,8 @@ def launch_calculation(code, structures, pseudo_family, kpoints_mesh, ecutwfc, e
             'ecutrho': ecutrho,
             'occupations': 'smearing',
             'degauss': 0.003,
-            #'nspin': 2,
-            #'starting_magnetization': 0.5,
+            'nspin': 2,
+            'starting_magnetization': 0.5,
         },
         'ELECTRONS': {
             'conv_thr': 1e-8,
@@ -69,7 +72,14 @@ def launch_calculation(code, structures, pseudo_family, kpoints_mesh, ecutwfc, e
 
     neb_parameters = {
         'PATH': {
-            'num_of_images': 2  # TODO: fix this in the calculation class, and make it a forbidden variable
+            'nstep_path': 20,
+            'ds': 2.,
+            'opt_scheme': 'broyden',
+            'num_of_images': 7,
+            'k_max': 0.3,
+            'k_min': 0.2,
+            'CI_scheme': "auto",
+            'path_thr': 0.1,
         }
     }
 

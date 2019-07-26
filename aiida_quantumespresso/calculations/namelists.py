@@ -89,12 +89,11 @@ class NamelistsCalculation(CalcJob):
         else:
             parameters = {}
 
-        # set default values. NOTE: this is different from PW/CP
+        # Force default values for blocked keywords. NOTE: this is different from PW/CP
         for blocked in self._blocked_keywords:
             namelist = blocked[0].upper()
             key = blocked[1].lower()
             value = blocked[2]
-
             if namelist in parameters:
                 if key in parameters[namelist]:
                     raise exceptions.InputValidationError(
