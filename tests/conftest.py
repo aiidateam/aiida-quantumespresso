@@ -6,9 +6,22 @@ import io
 import os
 import shutil
 import tempfile
-
+import collections
 import pytest
+import six
+
 from aiida.manage.fixtures import fixture_manager
+
+
+def flatten_inputs(inputs, prefix=''):
+    ''' Follows roughly the same logic as aiida.engine.processes.process::Process._flatten_inputs '''
+    flat_inputs = []
+    for k, v in six.iteritems(inputs):
+        if isinstance(v, collections.Mapping):
+            flat_inputs.extend(flatten_inputs(v, prefix=prefix+k+'__'))
+        else:
+            flat_inputs.append((prefix+k, v))
+    return flat_inputs
 
 
 @pytest.fixture(scope='session')
@@ -114,7 +127,7 @@ def generate_calc_job_node():
             node.set_attributes(attributes)
 
         if inputs:
-            for link_label, input_node in inputs.items():
+            for link_label, input_node in flatten_inputs(inputs):
                 input_node.store()
                 node.add_incoming(input_node, link_type=LinkType.INPUT_CALC, link_label=link_label)
 

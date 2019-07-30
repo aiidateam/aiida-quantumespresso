@@ -31,9 +31,11 @@ from ..utils import validate
 @options_qe.MAX_WALLCLOCK_SECONDS()
 @options_qe.WITH_MPI()
 @options_qe.DAEMON()
+@options_qe.PARENT_FOLDER()
+@options.DRY_RUN()
 @decorators.with_dbenv()
 def launch_calculation(code, structures, pseudo_family, kpoints_mesh, ecutwfc, ecutrho, starting_magnetization,
-                       smearing, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
+                       smearing, max_num_machines, max_wallclock_seconds, with_mpi, daemon, parent_folder, dry_run):
     """
     Run a NebCalculation.
     Note that some parameters are hardcoded.
@@ -111,5 +113,17 @@ def launch_calculation(code, structures, pseudo_family, kpoints_mesh, ecutwfc, e
             'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
         }
     }
+
+    if parent_folder:
+        inputs['parent_folder'] = parent_folder
+
+    if dry_run:
+        if daemon:
+            # .submit() would forward to .run(), but it's better to stop here,
+            # since it's a bit unexpected and the log messages output to screen
+            # would be confusing ("Submitted PwCalculation<None> to the daemon")
+            raise click.BadParameter("cannot send to the daemon if in dry_run mode", param_hint='--daemon')
+        inputs.setdefault('metadata', {})['store_provenance'] = False
+        inputs['metadata']['dry_run'] = True
 
     launch.launch_process(CalculationFactory('quantumespresso.neb'), daemon, **inputs)

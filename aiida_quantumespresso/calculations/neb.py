@@ -251,7 +251,7 @@ class NebCalculation(CalcJob):
         if len({ filename for (uuid, filename, local_path) in local_copy_pseudo_list}) < len(local_copy_pseudo_list):
             raise InputValidationError("Same filename for two different pseudopotentials")
 
-        local_copy_list += local_copy_pseudo_list 
+        local_copy_list += local_copy_pseudo_list
 
         # If present, add also the Van der Waals table to the pseudo dir. Note that the name of the table is not checked
         # but should be the one expected by Quantum ESPRESSO.

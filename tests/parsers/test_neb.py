@@ -4,6 +4,8 @@
 from __future__ import absolute_import
 
 import pytest
+from tests import flatten_array_to_dict
+
 from aiida import orm
 from aiida.common import AttributeDict
 
@@ -37,82 +39,108 @@ def generate_neb_structures():
 
 @pytest.fixture
 def generate_inputs(generate_neb_structures):
-    """Return only those inputs that the parser will expect to be there."""
-    first_structure, last_structure = generate_neb_structures()
 
-    parameters = {
-        'PATH': {
-            'ds': 2.0,
-            'k_max': 0.3,
-            'k_min': 0.2,
-            'path_thr': 0.1, #0.05
-            'CI_scheme': 'auto', #'manual'
-            'nstep_path': 20,
-            'opt_scheme': 'broyden',
-            'num_of_images': 7, #8
+    def _generate_inputs(ci_scheme='auto'):
+        """Return only those inputs that the parser will expect to be there."""
+        first_structure, last_structure = generate_neb_structures()
+
+        if ci_scheme == 'auto':
+            num_images = 5
+        elif ci_scheme == 'manual':
+            num_images = 6
+        else:
+            raise ValueError("Unexpected ci_scheme")
+
+        settings = {
+            'fixed_coords':
+                [[False, True, True],
+                 [True, True, True],
+                 [False, True, True]],
+            'parser_options': {
+                'include_deprecated_v2_keys': True,
+                'all_iterations': True,
+            }
         }
-    }
+        if num_images == 'manual':
+            settings['CLIMBING_IMAGES'] = [num_images//2+1]
 
-    pw_parameters = {
-        'SYSTEM': {
-            'nspin': 2,
-            'degauss': 0.003,
-            'ecutrho': 100.0,
-            'ecutwfc': 20.0,
-            'occupations': 'smearing',
-            'starting_magnetization': 0.5
-        },
-        'CONTROL': {
-            'calculation': 'relax'
-        },
-        'ELECTRONS': {
-            'conv_thr': 1e-08, 'mixing_beta': 0.3
+        neb_parameters = {
+            'PATH': {
+                'nstep_path': 20,
+                'ds': 2.,
+                'opt_scheme': 'broyden',
+                'num_of_images': num_images,
+                'k_max': 0.3,
+                'k_min': 0.2,
+                'CI_scheme': ci_scheme,
+                'path_thr': 0.05,
+            },
         }
-    }
 
-    settings = {
-        'fixed_coords':
-            [[False, True, True],
-             [True, True, True],
-             [False, True, True]],
-        #'CLIMBING_IMAGES': [5],
-    }
+        pw_parameters = {
+            'CONTROL': {
+                'calculation': 'relax'
+            },
+            'SYSTEM': {
+                'ecutwfc': 20,
+                'ecutrho': 100,
+                'occupations': 'smearing',
+                'degauss': 0.003,
+                'nspin': 2,
+                'starting_magnetization': 0.5,
+            },
+            'ELECTRONS': {
+                'conv_thr': 1e-8,
+                'mixing_beta': 0.3,
+            }
+        }
 
-    kpoints = orm.KpointsData()
-    #kpoints.set_cell_from_structure(structure)
-    kpoints.set_kpoints_mesh([2,2,2])
+        kpoints = orm.KpointsData()
+        kpoints.set_kpoints_mesh([2,2,2])
 
-    return AttributeDict({
-        'parameters': orm.Dict(dict=parameters),
-        'pw': {
-            'parameters': orm.Dict(dict=pw_parameters),
-            'kpoints': kpoints,
-        },
-        'first_structure': first_structure,
-        'last_structure': last_structure,
-        'settings': orm.Dict(dict=settings)
-    })
+        return AttributeDict({
+            'parameters': orm.Dict(dict=neb_parameters),
+            'pw': {
+                'parameters': orm.Dict(dict=pw_parameters),
+                'kpoints': kpoints,
+            },
+            'first_structure': first_structure,
+            'last_structure': last_structure,
+            'settings': orm.Dict(dict=settings)
+        })
+
+    return _generate_inputs
 
 
-def test_neb_h2h(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
-                 generate_inputs, data_regression):
-    """Test a default `pw.x` calculation.
+@pytest.mark.parametrize('ci_scheme,fixture_data_folder',
+                         [('auto','h2h_symm'),('manual','h2h_asymm')])
+def test_neb_h2h(ci_scheme, fixture_data_folder, fixture_database, fixture_computer_localhost, generate_calc_job_node,
+                 generate_parser, generate_inputs, data_regression, num_regression):
+    """ Test a NEB calculation with symmetric images and automatic climbing image. """
+    
+    entry_point_calc_job = 'quantumespresso.neb'
+    entry_point_parser = 'quantumespresso.neb'
 
-    The output is created by running a dead simple SCF calculation for a silicon structure.
-    This test should test the standard parsing of the stdout content and XML file stored in the standard results node.
-    """
-    entry_point_calc_job = 'quantumespresso.pw'
-    entry_point_parser = 'quantumespresso.pw'
-
-    # inputs = generate_inputs
-    # first_structure, last_structure = generate_neb_structures()
-    # inputs.first_structure = first_structure
-    # inputs.last_structure = last_structure
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, 'default', generate_inputs)
+    inputs = generate_inputs(ci_scheme=ci_scheme)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, fixture_data_folder, inputs)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
     assert 'output_parameters' in results
-    data_regression.check(results['output_parameters'].get_dict())
+
+    data_dict = {'parameters': results['output_parameters'].get_dict()}
+    data_regression.check(data_dict)
+
+    num_data_dict = {}
+    num_data_dict.update({
+        arr: results['output_mep'].get_array(arr).flatten() for arr in ['mep', 'interpolated_mep']
+    })
+    num_data_dict.update({
+        arr: results['output_trajectory'].get_array(arr).flatten() for arr in ['cells', 'positions']
+    })
+    num_data_dict.update({
+        arr: results['iteration_array'].get_array(arr).flatten() for arr in results['iteration_array'].get_arraynames()
+    })
+    num_regression.check(num_data_dict, default_tolerance=dict(atol=0, rtol=1e-18))
