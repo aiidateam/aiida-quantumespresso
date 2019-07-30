@@ -62,7 +62,6 @@ class PwParser(Parser):
         structure = self.build_output_structure(parsed_structure)
         kpoints = self.build_output_kpoints(parsed_parameters, structure)
         bands = self.build_output_bands(parsed_bands, kpoints)
-        array = self.build_output_array(parsed_trajectory)
         trajectory = self.build_output_trajectory(parsed_trajectory, structure)
 
         # Determine whether the input kpoints were defined as a mesh or as an explicit list
@@ -82,9 +81,6 @@ class PwParser(Parser):
 
         if trajectory:
             self.out('output_trajectory', trajectory)
-
-        if array:
-            self.out('output_array', array)
 
         if not structure.is_stored:
             self.out('output_structure', structure)
@@ -118,9 +114,13 @@ class PwParser(Parser):
         # First determine issues that can occurr for all calculation types. Note that the generic errors, that are
         # common to all types are done first. If a problem is found there, we return the exit code and don't continue
         for validator in [self.validate_electronic, self.validate_dynamics, self.validate_ionic]:
-            exit_code = validator(array, trajectory, parsed_parameters, logs_stdout)
+            exit_code = validator(trajectory, parsed_parameters, logs_stdout)
             if exit_code:
                 return self.exit(exit_code)
+
+    def get_calculation_type(self):
+        """Return the type of the calculation."""
+        return self.node.inputs.parameters.get_attribute('CONTROL', {}).get('calculation', 'scf')
 
     def validate_premature_exit(self, logs):
         """Analyze problems that will cause a pre-mature termination of the calculation, controlled or not."""
@@ -133,23 +133,25 @@ class PwParser(Parser):
         if 'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION' in logs['error']:
             return self.exit_codes.ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION
 
-    def validate_electronic(self, array, trajectory, parameters, logs):
+    def validate_electronic(self, trajectory, parameters, logs):
         """Analyze problems that are specific to `electronic` type calculations: i.e. `scf`, `nscf` and `bands`."""
-        if array is None:
+        if self.get_calculation_type() not in ['scf', 'nscf', 'bands']:
             return
 
         if 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED' in logs['error']:
             return self.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED
 
-    def validate_dynamics(self, array, trajectory, parameters, logs):
+    def validate_dynamics(self, trajectory, parameters, logs):
         """Analyze problems that are specific to `dynamics` type calculations: i.e. `md` and `vc-md`."""
+        if self.get_calculation_type() not in ['md', 'vc-md']:
+            return
 
-    def validate_ionic(self, array, trajectory, parameters, logs):
+    def validate_ionic(self, trajectory, parameters, logs):
         """Analyze problems that are specific to `ionic` type calculations: i.e. `relax` and `vc-relax`."""
         from aiida_quantumespresso.utils.defaults.calculation import pw
         from aiida_quantumespresso.utils.validation.trajectory import verify_convergence_trajectory
 
-        if trajectory is None:
+        if self.get_calculation_type() not in ['relax', 'vc-relax']:
             return
 
         electronic_convergence_reached = 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED' not in logs.error
@@ -388,40 +390,27 @@ class PwParser(Parser):
 
         return convert_qe2aiida_structure(parsed_structure, self.node.inputs.structure)
 
-    def build_output_array(self, parsed_trajectory):
-        """Build the output array from the raw parsed trajectory data.
-
-        :param parsed_trajectory: the raw parsed trajectory data
-        :return: an `ArrayData` node
-        """
-        if not parsed_trajectory or 'atomic_positions_relax' in parsed_trajectory:
-            return None
-
-        array = orm.ArrayData()
-
-        for frame in parsed_trajectory.items():
-            array.set_array(frame[0], numpy.array(frame[1]))
-
-        return array
-
     def build_output_trajectory(self, parsed_trajectory, structure):
         """Build the output trajectory from the raw parsed trajectory data.
 
         :param parsed_trajectory: the raw parsed trajectory data
         :return: a `TrajectoryData` or None
         """
-        if not parsed_trajectory or 'atomic_positions_relax' not in parsed_trajectory:
-            return None
+        try:
+            positions = numpy.array(parsed_trajectory.pop('atomic_positions_relax'))
+        except KeyError:
+            # The positions were never printed, the calculation did not change the structure
+            positions = numpy.array([[site.position for site in structure.sites]])
 
-        positions = numpy.array(parsed_trajectory.pop('atomic_positions_relax'))
         try:
             cells = numpy.array(parsed_trajectory.pop('lattice_vectors_relax'))
-            # if the cell is only printed once, the MD/relax was at fixed cell
-            if len(cells) == 1 and len(positions) > 1:
-                cells = numpy.array([cells[0]] * len(positions))
         except KeyError:
-            # The cell is never printed, the MD/relax was at fixed cell
-            cells = numpy.array([structure.cell] * len(positions))
+            # The cell is never printed, the calculation was at fixed cell
+            cells = numpy.array([structure.cell])
+
+        # Ensure there are as many frames for cell as positions, even when the calculation was done at fixed cell
+        if len(cells) == 1 and len(positions) > 1:
+            cells = numpy.array([cells[0]] * len(positions))
 
         symbols = [str(site.kind_name) for site in structure.sites]
         stepids = numpy.arange(len(positions))
@@ -434,8 +423,8 @@ class PwParser(Parser):
             positions=positions,
         )
 
-        for frame in parsed_trajectory.items():
-            trajectory.set_array(frame[0], numpy.array(frame[1]))
+        for key, value in parsed_trajectory.items():
+            trajectory.set_array(key, numpy.array(value))
 
         return trajectory
 
@@ -490,40 +479,36 @@ class PwParser(Parser):
         return bands
 
     def get_parser_settings_key(self):
-        """
-        Return the name of the key to be used in the calculation settings, that
-        contains the dictionary with the parser_options
-        """
+        """Return the key that contains the optional parser options in the `settings` input node."""
         return 'parser_options'
 
     def final_trajectory_frame_to_parameters(self, parameters, parsed_trajectory):
-        """Move the last frame of certain properties from the `TrajectoryData` to the outputs parameters.
+        """Copy the last frame of certain properties from the `TrajectoryData` to the outputs parameters.
 
         This makes these properties queryable.
         """
-        ignore_keys = [
-            'atomic_charges',
-            'atomic_magnetic_moments',
-            'atomic_positions_relax',
-            'atomic_species_name',
-            'forces',
-            'stress',
-            'lattice_vectors_relax',
+        include_keys = [
+            'energy',
+            'energy_accuracy',
+            'energy_ewald',
+            'energy_hartree',
+            'energy_one_electron',
+            'energy_threshold',
+            'energy_vdw',
+            'energy_xc',
+            'scf_iterations',
+            'fermi_energy',
+            'total_force',
+            'total_magnetization',
+            'absolute_magnetization',
         ]
 
-        # Have to iterate over a static list of keys since we are mutating `parsed_trajectory` within the loop
-        for property_key in list(parsed_trajectory.keys()):
+        for property_key, property_values in parsed_trajectory.items():
 
-            property_values = parsed_trajectory[property_key]
-
-            if property_key in ignore_keys:
+            if property_key not in include_keys:
                 continue
 
             parameters[property_key] = property_values[-1]
-
-            # Delete properties whose values list has but a single value
-            if len(property_values) == 1:
-                parsed_trajectory.pop(property_key)
 
     def reduce_symmetries(self, parsed_parameters, parsed_structure, parser_options=None):
         """Reduce the symmetry information parsed from the output to save space.
