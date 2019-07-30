@@ -1,6 +1,3 @@
-output_array:
-  array|atomic_species_name:
-  - 2
 output_kpoints:
   array|kpoints:
   - 3
@@ -8,15 +5,15 @@ output_kpoints:
   array|weights:
   - 3
   cell:
-  - - 1.0
+  - - 2.715
+    - 2.715
     - 0.0
+  - - 2.715
     - 0.0
+    - 2.715
   - - 0.0
-    - 1.0
-    - 0.0
-  - - 0.0
-    - 0.0
-    - 1.0
+    - 2.715
+    - 2.715
   pbc1: true
   pbc2: true
   pbc3: true
@@ -200,3 +197,35 @@ output_parameters:
   wall_time_seconds: 1.86
   wfc_cutoff: 408.170751759
   wfc_cutoff_units: eV
+output_trajectory:
+  array|atomic_species_name:
+  - 2
+  array|cells:
+  - 1
+  - 3
+  - 3
+  array|energy:
+  - 1
+  array|energy_accuracy:
+  - 1
+  array|energy_ewald:
+  - 1
+  array|energy_hartree:
+  - 1
+  array|energy_one_electron:
+  - 1
+  array|energy_threshold:
+  - 1
+  array|energy_xc:
+  - 1
+  array|positions:
+  - 1
+  - 2
+  - 3
+  array|scf_iterations:
+  - 1
+  array|steps:
+  - 1
+  symbols:
+  - Si1
+  - Si2

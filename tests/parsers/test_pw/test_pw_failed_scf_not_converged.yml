@@ -1,6 +1,3 @@
-output_array:
-  array|atomic_species_name:
-  - 2
 output_parameters:
   beta_real_space: false
   charge_density: ./charge-density.dat
@@ -169,3 +166,23 @@ output_parameters:
   wall_time_seconds: 1.51
   wfc_cutoff: 408.170751759
   wfc_cutoff_units: eV
+output_trajectory:
+  array|atomic_species_name:
+  - 2
+  array|cells:
+  - 1
+  - 3
+  - 3
+  array|energy_threshold:
+  - 1
+  array|positions:
+  - 1
+  - 2
+  - 3
+  array|scf_iterations:
+  - 1
+  array|steps:
+  - 1
+  symbols:
+  - Si1
+  - Si2
