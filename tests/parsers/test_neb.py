@@ -4,7 +4,6 @@
 from __future__ import absolute_import
 
 import pytest
-from tests import flatten_array_to_dict
 
 from aiida import orm
 from aiida.common import AttributeDict
@@ -98,7 +97,7 @@ def generate_inputs(generate_neb_structures):
         kpoints = orm.KpointsData()
         kpoints.set_kpoints_mesh([2,2,2])
 
-        return AttributeDict({
+        inputs = {
             'parameters': orm.Dict(dict=neb_parameters),
             'pw': {
                 'parameters': orm.Dict(dict=pw_parameters),
@@ -107,7 +106,8 @@ def generate_inputs(generate_neb_structures):
             'first_structure': first_structure,
             'last_structure': last_structure,
             'settings': orm.Dict(dict=settings)
-        })
+        }
+        return AttributeDict(inputs)
 
     return _generate_inputs
 
@@ -116,8 +116,10 @@ def generate_inputs(generate_neb_structures):
                          [('auto','h2h_symm'),('manual','h2h_asymm')])
 def test_neb_h2h(ci_scheme, fixture_data_folder, fixture_database, fixture_computer_localhost, generate_calc_job_node,
                  generate_parser, generate_inputs, data_regression, num_regression):
-    """ Test a NEB calculation with symmetric images and automatic climbing image. """
-    
+    """
+    Test a NEB calculation with symmetric images and automatic climbing image,
+    and with asymmetric images and manual climbing image.
+    """
     entry_point_calc_job = 'quantumespresso.neb'
     entry_point_parser = 'quantumespresso.neb'
 

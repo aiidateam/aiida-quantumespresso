@@ -53,12 +53,12 @@ def launch_calculation(code, structures, pseudo_family, kpoints_mesh, ecutwfc, e
             [[False, True, True],
              [True, True, True],
              [False, True, True]],
-        'CLIMBING_IMAGES': [5],
+        'CLIMBING_IMAGES': [4],
     }
 
     pw_parameters = {
         'CONTROL': {
-            'calculation': 'relax'
+            'calculation': 'relax',  # TODO: this needs to be set automatically by the calculation class (is relax correct?)
         },
         'SYSTEM': {
             'ecutwfc': ecutwfc,
@@ -76,13 +76,14 @@ def launch_calculation(code, structures, pseudo_family, kpoints_mesh, ecutwfc, e
 
     neb_parameters = {
         'PATH': {
+            'restart_mode': ('restart' if parent_folder else 'from_scratch'),
             'nstep_path': 20,
             'ds': 2.,
             'opt_scheme': 'broyden',
-            'num_of_images': 8,
+            'num_of_images': 6,
             'k_max': 0.3,
             'k_min': 0.2,
-            'CI_scheme': "manual",
+            'CI_scheme': 'manual',  # 'manual', 'auto', or 'no-CI'
             'path_thr': 0.05,
         },
     }

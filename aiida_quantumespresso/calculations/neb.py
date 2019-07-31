@@ -25,7 +25,6 @@ class NebCalculation(CalcJob):
     Nudged Elastic Band code (neb.x) of Quantum ESPRESSO distribution
     For more information, refer to http://www.quantum-espresso.org/
     """
-
     _PREFIX = 'aiida'
 
     # in restarts, will not copy but use symlinks
