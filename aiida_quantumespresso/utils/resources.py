@@ -38,9 +38,7 @@ def create_scheduler_resources(scheduler, base, goal):
     try:
         job_resource = scheduler.create_job_resource(**resources)
     except TypeError as exception:
-        raise ValueError(
-            'failed to create job resources for the {} scheduler: {}'.format(scheduler.__class__, exception.message)
-        )
+        raise ValueError('failed to create job resources for {} scheduler: {}'.format(scheduler.__class__, exception))
 
     return {key: value for key, value in six.iteritems(job_resource) if value is not None}
 
@@ -139,7 +137,7 @@ def get_pw_parallelization_parameters(
     .. note:: If there was an out-of-memory problem during the initial
         calculation, the number of machines is increased.
     """
-    # pylint: disable=invalid-name
+    # pylint: disable=invalid-name,deprecated-method
     from fractions import gcd
 
     default_num_mpiprocs_per_machine = calculation.computer.get_default_mpiprocs_per_machine()

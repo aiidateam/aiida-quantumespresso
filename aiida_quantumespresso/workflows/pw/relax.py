@@ -19,8 +19,10 @@ class PwRelaxWorkChain(WorkChain):
 
     @classmethod
     def define(cls, spec):
+        # yapf: disable
         super(PwRelaxWorkChain, cls).define(spec)
-        spec.expose_inputs(PwBaseWorkChain, namespace='base', exclude=('clean_workdir', 'pw.structure', 'pw.parent_folder'))
+        spec.expose_inputs(PwBaseWorkChain, namespace='base',
+            exclude=('clean_workdir', 'pw.structure', 'pw.parent_folder'))
         spec.input('structure', valid_type=orm.StructureData)
         spec.input('final_scf', valid_type=orm.Bool, default=orm.Bool(False))
         spec.input('relaxation_scheme', valid_type=orm.Str, default=orm.Str('vc-relax'))
@@ -48,9 +50,7 @@ class PwRelaxWorkChain(WorkChain):
         spec.output('output_structure', valid_type=orm.StructureData, required=True)
 
     def setup(self):
-        """
-        Input validation and context setup
-        """
+        """Input validation and context setup."""
         self.ctx.current_number_of_bands = None
         self.ctx.current_structure = self.inputs.structure
         self.ctx.current_cell_volume = None
@@ -58,18 +58,18 @@ class PwRelaxWorkChain(WorkChain):
         self.ctx.iteration = 0
 
     def should_run_relax(self):
-        """
-        Return whether a relaxation workchain should be run, which is the case as long as the volume
-        change between two consecutive relaxation runs is larger than the specified volume convergence
-        threshold value and the maximum number of meta convergence iterations is not exceeded
+        """Return whether a relaxation workchain should be run.
+
+        This is the case as long as the volume change between two consecutive relaxation runs is larger than the volume
+        convergence threshold value and the maximum number of meta convergence iterations is not exceeded.
         """
         return not self.ctx.is_converged and self.ctx.iteration < self.inputs.max_meta_convergence_iterations.value
 
     def should_run_final_scf(self):
-        """
-        Return whether after successful relaxation a final scf calculation should be run. If the maximum number of
-        meta convergence iterations has been exceeded and convergence has not been reached, the structure cannot be
-        considered to be relaxed and the final scf should not be run
+        """Return whether after successful relaxation a final scf calculation should be run.
+
+        If the maximum number of meta convergence iterations has been exceeded and convergence has not been reached, the
+        structure cannot be considered to be relaxed and the final scf should not be run.
         """
         return self.inputs.final_scf.value and self.ctx.is_converged
 
@@ -100,10 +100,10 @@ class PwRelaxWorkChain(WorkChain):
         return ToContext(workchains=append_(running))
 
     def inspect_relax(self):
-        """
-        Compare the cell volume of the relaxed structure of the last completed workchain with the previous.
-        If the difference ratio is less than the volume convergence threshold we consider the cell relaxation
-        converged and can quit the workchain.
+        """Inspect the results of the last `PwBaseWorkChain`.
+
+        Compare the cell volume of the relaxed structure of the last completed workchain with the previous. If the
+        difference ratio is less than the volume convergence threshold we consider the cell relaxation converged.
         """
         workchain = self.ctx.workchains[-1]
 
@@ -160,7 +160,7 @@ class PwRelaxWorkChain(WorkChain):
         return
 
     def run_final_scf(self):
-        """Run the PwBaseWorkChain to run a final scf PwCalculation for the relaxed structure."""
+        """Run the `PwBaseWorkChain` to run a final scf `PwCalculation` for the relaxed structure."""
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base'))
         inputs.pw.structure = self.ctx.current_structure
         inputs.pw.parameters = inputs.pw.parameters.get_dict()
@@ -182,7 +182,7 @@ class PwRelaxWorkChain(WorkChain):
         return ToContext(workchain_scf=running)
 
     def inspect_final_scf(self):
-        """Inspect the result of the final scf PwBaseWorkChain."""
+        """Inspect the result of the final scf `PwBaseWorkChain`."""
         workchain = self.ctx.workchain_scf
 
         if not workchain.is_finished_ok:
@@ -208,10 +208,7 @@ class PwRelaxWorkChain(WorkChain):
         self.out('output_structure', structure)
 
     def on_terminated(self):
-        """
-        If the clean_workdir input was set to True, recursively collect all called Calculations by
-        ourselves and our called descendants, and clean the remote folder for the CalcJobNode instances
-        """
+        """Clean the working directories of all child calculations if `clean_workdir=True` in the inputs."""
         super(PwRelaxWorkChain, self).on_terminated()
 
         if self.inputs.clean_workdir.value is False:

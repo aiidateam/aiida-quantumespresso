@@ -19,8 +19,8 @@ class BasePwCpInputGenerator(CalcJob):
     _PSEUDO_SUBFOLDER = './pseudo/'
     _OUTPUT_SUBFOLDER = './out/'
     _PREFIX = 'aiida'
-    _INPUT_FILE_NAME = 'aiida.in'
-    _OUTPUT_FILE_NAME = 'aiida.out'
+    _DEFAULT_INPUT_FILE = 'aiida.in'
+    _DEFAULT_OUTPUT_FILE = 'aiida.out'
     _DATAFILE_XML_PRE_6_2 = 'data-file.xml'
     _DATAFILE_XML_POST_6_2 = 'data-file-schema.xml'
     _ENVIRON_INPUT_FILE_NAME = 'environ.in'
@@ -65,6 +65,8 @@ class BasePwCpInputGenerator(CalcJob):
     @classmethod
     def define(cls, spec):
         super(BasePwCpInputGenerator, cls).define(spec)
+        spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
+        spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)  # Override default withmpi=False
         spec.input('structure', valid_type=orm.StructureData,
             help='The input structure.')
@@ -129,7 +131,7 @@ class BasePwCpInputGenerator(CalcJob):
         input_filecontent, local_copy_pseudo_list = self._generate_PWCPinputdata(*arguments)
         local_copy_list += local_copy_pseudo_list
 
-        input_filename = folder.get_abs_path(self._INPUT_FILE_NAME)
+        input_filename = folder.get_abs_path(self.metadata.options.input_filename)
         with io.open(input_filename, 'w') as handle:
             handle.write(input_filecontent)
 
@@ -184,11 +186,7 @@ class BasePwCpInputGenerator(CalcJob):
         # Check for the deprecated 'ALSO_BANDS' setting and if present fire a deprecation log message
         also_bands = settings.pop('ALSO_BANDS', None)
         if also_bands:
-            import logging
-            from aiida.common.log import get_dblogger_extra
-
-            logger = logging.LoggerAdapter(logger=self.logger, extra=get_dblogger_extra(self))
-            logger.warning(
+            self.node.logger.warning(
                 "The '{}' setting is deprecated as bands are now parsed by default. "
                 "If you do not want the bands to be parsed set the '{}' to True {}. "
                 'Note that the eigenvalue.xml files are also no longer stored in the repository'
@@ -205,11 +203,11 @@ class BasePwCpInputGenerator(CalcJob):
         # is replaced by mpirun ... pw.x ... -in aiida.in
         # in the scheduler, _get_run_line, if cmdline_params is empty, it
         # simply uses < calcinfo.stin_name
-        calcinfo.cmdline_params = (list(cmdline_params) + ['-in', self._INPUT_FILE_NAME])
+        calcinfo.cmdline_params = (list(cmdline_params) + ['-in', self.metadata.options.input_filename])
 
         codeinfo = datastructures.CodeInfo()
-        codeinfo.cmdline_params = (list(cmdline_params) + ['-in', self._INPUT_FILE_NAME])
-        codeinfo.stdout_name = self._OUTPUT_FILE_NAME
+        codeinfo.cmdline_params = (list(cmdline_params) + ['-in', self.metadata.options.input_filename])
+        codeinfo.stdout_name = self.metadata.options.output_filename
         codeinfo.code_uuid = self.inputs.code.uuid
         calcinfo.codes_info = [codeinfo]
 
@@ -219,7 +217,7 @@ class BasePwCpInputGenerator(CalcJob):
 
         # Retrieve by default the output file and the xml file
         calcinfo.retrieve_list = []
-        calcinfo.retrieve_list.append(self._OUTPUT_FILE_NAME)
+        calcinfo.retrieve_list.append(self.metadata.options.output_filename)
         calcinfo.retrieve_list.extend(self.xml_filepaths)
         calcinfo.retrieve_list += settings.pop('ADDITIONAL_RETRIEVE_LIST', [])
         calcinfo.retrieve_list += self._internal_retrieve_list

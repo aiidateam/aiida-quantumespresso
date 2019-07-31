@@ -327,6 +327,6 @@ class PhCalculation(CalcJob):
     def _get_pseudo_folder(self):
         """
         Get the calculation-specific pseudo folder (relative path).
-        Default given by BasePwCpInputGenerator._PSEUDO_SUBFOLDER
+        Default given by PwCalculation._PSEUDO_SUBFOLDER
         """
         return PwCalculation._PSEUDO_SUBFOLDER

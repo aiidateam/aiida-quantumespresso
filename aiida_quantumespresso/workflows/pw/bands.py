@@ -21,6 +21,7 @@ class PwBandsWorkChain(WorkChain):
 
     @classmethod
     def define(cls, spec):
+        # yapf: disable
         super(PwBandsWorkChain, cls).define(spec)
         spec.expose_inputs(PwRelaxWorkChain, namespace='relax', exclude=('clean_workdir', 'structure'))
         spec.expose_inputs(PwBaseWorkChain, namespace='scf', exclude=('clean_workdir', 'pw.structure'))
@@ -179,10 +180,7 @@ class PwBandsWorkChain(WorkChain):
         self.out('band_structure', self.ctx.workchain_bands.outputs.output_band)
 
     def on_terminated(self):
-        """
-        If the clean_workdir input was set to True, recursively collect all called Calculations by
-        ourselves and our called descendants, and clean the remote folder for the CalcJobNode instances
-        """
+        """Clean the working directories of all child calculations if `clean_workdir=True` in the inputs."""
         super(PwBandsWorkChain, self).on_terminated()
 
         if self.inputs.clean_workdir.value is False:

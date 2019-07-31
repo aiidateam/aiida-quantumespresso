@@ -159,7 +159,7 @@ def convert_input_to_namelist_entry(key, val, mapping=None):
 
         This will map every occurrence of 'Fe' and 'O' in the values to the corresponding integer.
     """
-    # pylint: disable=too-many-branches,too-many-nested-blocks
+    # pylint: disable=too-many-branches,too-many-nested-blocks,no-else-return
     # I don't try to do iterator=iter(val) and catch TypeError because it would also match strings
     # I check first the dictionary, because it would also match hasattr(__iter__)
     if isinstance(val, dict):

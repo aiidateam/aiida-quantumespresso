@@ -42,10 +42,6 @@ class PwCalculation(BasePwCpInputGenerator):
 
     _use_kpoints = True
 
-    # Default input and output files
-    _DEFAULT_INPUT_FILE = 'aiida.in'
-    _DEFAULT_OUTPUT_FILE = 'aiida.out'
-
     # Not using symlink in pw to allow multiple nscf to run on top of the same scf
     _default_symlink_usage = False
 
@@ -62,9 +58,8 @@ class PwCalculation(BasePwCpInputGenerator):
 
     @classmethod
     def define(cls, spec):
+        # yapf:disable
         super(PwCalculation, cls).define(spec)
-        spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
-        spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.pw')
         spec.input('kpoints', valid_type=orm.KpointsData,
             help='kpoint mesh or kpoint path')
