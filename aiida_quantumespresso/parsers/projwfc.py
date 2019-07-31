@@ -66,7 +66,7 @@ def find_orbitals_from_statelines(out_info_dict):
     RealhydrogenOrbital = OrbitalFactory("realhydrogen")
     for state_dict in state_dicts:
         orbitals.append(RealhydrogenOrbital(**state_dict))
-    
+
     return orbitals
 
 
@@ -226,7 +226,7 @@ class ProjwfcParser(Parser):
     each point in the bands structure, as well as pdos arrays, which map
     the projected density of states onto an energy axis.
     """
-    
+
     def parse(self, **kwargs):
         """
         Parses the datafolder, stores results.
@@ -263,7 +263,7 @@ class ProjwfcParser(Parser):
             self.logger.error(message)
         output_params = Dict(dict=parsed_data)
         self.out('output_parameters', output_params)
-        
+
         # check and read pdos_tot file
         out_filenames = out_folder.list_object_names()
         try:
@@ -303,7 +303,7 @@ class ProjwfcParser(Parser):
     def _parse_bands_and_projections(self, out_info_dict):
         """
         Function that parses the standard output into bands and projection data.
-        
+
         :param out_info_dict: used to pass technical internal variables
                               to helper functions in compact form
         :return: append_nodes_list a list containing BandsData and

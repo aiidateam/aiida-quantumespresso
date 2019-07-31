@@ -5,7 +5,7 @@ PWscf
 
 .. toctree::
    :maxdepth: 2
-   
+
 This chapter will show how to launch a single PWscf (``pw.x``) calculation. It is assumed that you have already performed the installation, and that you already setup a computer (with ``verdi``), installed Quantum Espresso on the cluster and in AiiDA. Although the code could be quite readable, a basic knowledge of Python and object programming is useful.
 
 Your classic pw.x input file
@@ -39,11 +39,11 @@ This is the input file of Quantum Espresso that we will try to execute. It consi
     Ti     47.88     Ti.pbesol-spn-rrkjus_psl.0.2.3-tot-pslib030.UPF
     O      15.9994   O.pbesol-n-rrkjus_psl.0.1-tested-pslib030.UPF
     ATOMIC_POSITIONS angstrom
-    Ba           0.0000000000       0.0000000000       0.0000000000 
-    Ti           2.0000000000       2.0000000000       2.0000000000 
-    O            2.0000000000       2.0000000000       0.0000000000 
-    O            2.0000000000       0.0000000000       2.0000000000 
-    O            0.0000000000       2.0000000000       2.0000000000 
+    Ba           0.0000000000       0.0000000000       0.0000000000
+    Ti           2.0000000000       2.0000000000       2.0000000000
+    O            2.0000000000       2.0000000000       0.0000000000
+    O            2.0000000000       0.0000000000       2.0000000000
+    O            0.0000000000       2.0000000000       2.0000000000
     K_POINTS automatic
     4 4 4 0 0 0
     CELL_PARAMETERS angstrom
@@ -99,7 +99,7 @@ Where in the last line we just load the database object representing the code.
   simple way (duplicated labels, code names
   that are an integer number, code names containing the '@' symbol, ...: try
   to not do this! This is not an error, but does not allow to use the
-  ``.get_from_string()`` method to get those calculations). 
+  ``.get_from_string()`` method to get those calculations).
   In this case, you can use directly the ``.get()`` method, for instance::
 
     code = Code.get(label='pw-5.1', machinename='TheHive')
@@ -111,19 +111,19 @@ Where in the last line we just load the database object representing the code.
 Structure
 ---------
 
-We now proceed in setting up the structure. 
+We now proceed in setting up the structure.
 
 .. note:: Here we discuss only the main features of structures in AiiDA, needed
     to run a Quantum ESPRESSO PW calculation.
 
-    For more detailed information, give a look to the 
+    For more detailed information, give a look to the
     :ref:`structure_tutorial`.
 
 There are two ways to do that in AiiDA, a first one is to use the AiiDA Structure, which we will explain in the following; the second choice is the `Atomic Simulation Environment (ASE) <http://wiki.fysik.dtu.dk/ase/>`_ which provides excellent tools to manipulate structures (the ASE Atoms object needs to be converted into an AiiDA Structure, see the note at the end of the section).
 
-We first have to load the abstract object class that describes a structure. 
-We do it in the following way: we load the DataFactory, which is a tool to load the classes by their name, and then call StructureData the abstract class that we loaded. 
-(NB: it's not yet a class instance!) 
+We first have to load the abstract object class that describes a structure.
+We do it in the following way: we load the DataFactory, which is a tool to load the classes by their name, and then call StructureData the abstract class that we loaded.
+(NB: it's not yet a class instance!)
 (If you are not familiar with the terminology of object programming, we could take `Wikipedia <http://en.wikipedia.org/wiki/Object_(computer_science)>`_ and see their short explanation: in common speech that one refers to *a* file as a class, while *the* file is the object or the class instance. In other words, the class is our definition of the object Structure, while its instance is what will be saved as an object in the database)::
 
   from aiida.plugins import DataFactory
@@ -137,7 +137,7 @@ We define the cell with a 3x3 matrix (we choose the convention where each ROW re
           [0., 0., alat,],
          ]
 
-Now, we create the StructureData instance, assigning immediately the cell. 
+Now, we create the StructureData instance, assigning immediately the cell.
 Then, we append to the empty crystal cell the atoms, specifying their element name and their positions::
 
   # BaTiO3 cubic structure
@@ -150,17 +150,17 @@ Then, we append to the empty crystal cell the atoms, specifying their element na
 
 To see more methods associated to the class StructureData, look at the :ref:`my-ref-to-structure` documentation.
 
-.. note:: When you create a node (in this case a ``StructureData`` node) as 
-  described above, you are just creating it in the computer memory, and not 
+.. note:: When you create a node (in this case a ``StructureData`` node) as
+  described above, you are just creating it in the computer memory, and not
   in the database. This is particularly useful to run tests without filling
   the AiiDA database with garbage.
-  
+
   You will see how to store all the nodes in one shot toward the end of this
   tutorial; if, however, you want to directly store the structure in the
   database for later use, you can just call the ``store()`` method of the Node::
-  
+
     s.store()
-    
+
 For an extended tutorial about the creation of Structure objects,
 check :ref:`this tutorial on the AiiDA-core documentation <aiida:structure_tutorial>`.
 
@@ -210,7 +210,7 @@ not the Fortran string ``.false.``!
 
 .. note:: also in this case, we chose not to store the ``parameters`` node.
   If we wanted, we could even have done it in a single line::
-    
+
     parameters = Dict(dict={...}).store()
 
 The experienced QE user will have noticed also that a couple of variables
@@ -227,7 +227,7 @@ becomes impossible (e.g. if different units are used for the same flags,
 if the same input is provided in different formats, ...).
 
 In the PW input plugin, we provide a function that will help you in
-both validating the input, and creating the input in the expected format 
+both validating the input, and creating the input in the expected format
 without remembering in which namelists the keywords are located.
 
 You can access this function as follows. First, you define the input dictionary::
@@ -244,7 +244,7 @@ You can access this function as follows. First, you define the input dictionary:
         }
     }
 
-Then, you can verify if the input is correct by using the 
+Then, you can verify if the input is correct by using the
 :py:func:`~aiida_quantumespresso.calculations.helpers.pw_input_helper` function,
 conveniently exposes also as a ``input_helper`` class method of the ``PwCalculation`` class::
 
@@ -259,7 +259,7 @@ the type will be converted). You can then use the output for the input Dict node
 
   parameters = Dict(dict=resdict)
 
-As an example, if you pass an incorrect input, e.g. the following where we have introduced 
+As an example, if you pass an incorrect input, e.g. the following where we have introduced
 a few errors::
 
     test_dict = {
@@ -286,11 +286,11 @@ similar to the following::
   * Expected a boolean for keyword nosym, found <type 'int'> instead
   * Error, keyword 'ecutrho' specified in namelist 'ELECTRONS', but it should be instead in 'SYSTEM'
 
-As you see, a quite large number of checks are done, and if a name is not provided, a list of 
+As you see, a quite large number of checks are done, and if a name is not provided, a list of
 similar valid names is provided (e.g. for the wrong keyword "convthr" above).
 
 There are a few additional options that are useful:
-  
+
   - If you don't want to remember the namelists, you can pass a 'flat' dictionary, without
     namelists, and add the ``flat_mode=True`` option to ``input_helper``. Beside the usual
     validation, the function will reconstruct the correct dictionary to pass as input for
@@ -305,7 +305,7 @@ There are a few additional options that are useful:
             test_dict_flat, structure=s, flat_mode = True)
 
     and after running, ``resdict`` will contain::
-     
+
         test_dict = {
             'CONTROL': {
                 'calculation': 'scf',
@@ -332,7 +332,7 @@ There are a few additional options that are useful:
 
 
 .. note:: We will try to maintain the input_helper every time a new version of Quantum ESPRESSO
-   is released, but consider the ``input_helper`` function as a utility, rather than the 
+   is released, but consider the ``input_helper`` function as a utility, rather than the
    official way to provide the input -- the only officially supported way to provide
    an input to pw.x is through a direct dictionary, as described earlier in the section "Parameters".
    This applies in particular if you are using very old versions of QE, or customized versions
@@ -438,12 +438,12 @@ Other inputs
 ------------
 
 The k-points have to be saved in another kind of data, namely KpointsData::
-                
+
   KpointsData = DataFactory('array.kpoints')
   kpoints = KpointsData()
   kpoints.set_kpoints_mesh([4,4,4])
-  
-In this case it generates a 4*4*4 mesh without offset. To add an offset one 
+
+In this case it generates a 4*4*4 mesh without offset. To add an offset one
 can replace the last line by::
 
   kpoints.set_kpoints_mesh([4,4,4],offset=(0.5,0.5,0.5))
@@ -458,25 +458,25 @@ in crystal coordinates (here they all have equal weights)::
         weights = [1. for i in range(10)])
 
 .. _gamma-only:
-.. note:: It is also possible to generate a gamma-only computation. To do so 
-  one has to specify additional settings, of type Dict, putting 
+.. note:: It is also possible to generate a gamma-only computation. To do so
+  one has to specify additional settings, of type Dict, putting
   gamma-only to True::
-    
+
     settings = Dict(dict={'gamma_only':True})
 
   then set the kpoints mesh to a single point (gamma)::
 
     kpoints.set_kpoints_mesh([1,1,1])
-    
+
   and in the end add (after ``calc = code.new_calc()``, see below) a line to use
   these settings::
-  
+
     calc.use_settings(settings)
-    
+
 As a further comment, this is specific to the way the plugin
 for Quantum Espresso works.
 Other codes may need more than two Dict, or even none of them.
-And also how this parameters have to be written depends on the plugin: 
+And also how this parameters have to be written depends on the plugin:
 what is discussed here is just the format that we decided for
 the Quantum Espresso plugins.
 
@@ -507,19 +507,19 @@ the computer in AiiDA, the job walltime, the queue name (if desired), ...::
 .. note:: an alternative way of calling a method starting with the string
   ``set_``, is to pass directly the value to the ``.new_calc()`` method. This
   is to say that the following lines::
-  
+
     calc = code.new_calc()
     calc.set_option('max_wallclock_seconds', 3600)
     calc.set_option('resources', {"num_machines": 1})
-    
+
   is equivalent to::
-  
+
     calc = code.new_calc(max_wallclock_seconds=3600,
         resources={"num_machines": 1})
 
-At this point, we just created a "lone" calculation, that still does not know 
-anything about the inputs that we created before. We need therefore to  
-tell the calculation to use the parameters that we prepared before, by 
+At this point, we just created a "lone" calculation, that still does not know
+anything about the inputs that we created before. We need therefore to
+tell the calculation to use the parameters that we prepared before, by
 properly linking them using the ``use_`` methods::
 
   calc.use_structure(s)
@@ -527,16 +527,16 @@ properly linking them using the ``use_`` methods::
   calc.use_parameters(parameters)
   calc.use_kpoints(kpoints)
 
-In practice, when you say ``calc.use_structure(s)``, you are setting a link 
-between the two nodes (``s`` and ``calc``), that means that 
+In practice, when you say ``calc.use_structure(s)``, you are setting a link
+between the two nodes (``s`` and ``calc``), that means that
 ``s`` is the input *structure* for *calculation* ``calc``. Also these links
 are cached and do not require to store anything in the database yet.
 
-In the case of the gamma-only computation (see :ref:`above <gamma-only>`), you 
+In the case of the gamma-only computation (see :ref:`above <gamma-only>`), you
 also need to add::
 
   calc.use_settings(settings)
-  
+
 Pseudopotentials
 ----------------
 
@@ -600,19 +600,19 @@ The comments can be accessed with this function::
 Execute
 -------
 If we are satisfied with what you created, it is time to store everything
-in the database. 
+in the database.
 Note that after storing it, it will not be possible to modify it
 (nor you should: you risk of compromising the integrity of the database)!
 
-Unless you already stored all the inputs beforehand, you will need to store 
+Unless you already stored all the inputs beforehand, you will need to store
 the inputs before being able to store the calculation itself.
 Since this is a very common operation, there is an utility method that will
-automatically store both all the input nodes of ``calc`` and then ``calc`` 
+automatically store both all the input nodes of ``calc`` and then ``calc``
 itself::
 
   calc.store_all()
 
-Once we store the calculation, it is useful to print its PK (principal key, 
+Once we store the calculation, it is useful to print its PK (principal key,
 that is its identifier) that is useful in the following to interact with it::
 
   print "created calculation; with uuid='{}' and PK={}".format(calc.uuid,calc.pk)
@@ -627,7 +627,7 @@ We then created the calculation, where we specified that it is a PW calculation
 and we specified the details of the remote cluster.
 We set the links between the inputs and the calculation (``calc.use_***``)
 and finally we stored all this objects in the database (``.store_all()``).
- 
+
 That's all that the calculation needs.  Now we just need to submit it::
 
    calc.submit()
@@ -675,20 +675,20 @@ Download: :download:`this example script <pw_short_example.py>`
   #!/usr/bin/env python
   from aiida import load_dbenv
   load_dbenv()
-  
+
   from aiida.orm import Code, DataFactory
   StructureData = DataFactory('structure')
   Dict = DataFactory('dict')
   KpointsData = DataFactory('array.kpoints')
-  
+
   ###############################
   # Set your values here
   codename = 'pw-5.1@TheHive'
   pseudo_family = 'lda_pslibrary'
   ###############################
-  
+
   code = Code.get_from_string(codename)
-  
+
   # BaTiO3 cubic structure
   alat = 4. # angstrom
   cell = [[alat, 0., 0.,],
@@ -701,7 +701,7 @@ Download: :download:`this example script <pw_short_example.py>`
   s.append_atom(position=(alat/2.,alat/2.,0.),symbols='O')
   s.append_atom(position=(alat/2.,0.,alat/2.),symbols='O')
   s.append_atom(position=(0.,alat/2.,alat/2.),symbols='O')
-  
+
   parameters = Dict(dict={
             'CONTROL': {
                 'calculation': 'scf',
@@ -715,25 +715,25 @@ Download: :download:`this example script <pw_short_example.py>`
             'ELECTRONS': {
                 'conv_thr': 1.e-6,
                 }})
-  
+
   kpoints = KpointsData()
   kpoints.set_kpoints_mesh([4,4,4])
-  
+
   calc = code.new_calc(max_wallclock_seconds=3600,
       resources={"num_machines": 1})
   calc.label = "A generic title"
   calc.description = "A much longer description"
-  
+
   calc.use_structure(s)
   calc.use_code(code)
   calc.use_parameters(parameters)
   calc.use_kpoints(kpoints)
   calc.use_pseudos_from_family(pseudo_family)
-  
+
   calc.store_all()
   print "created calculation with PK={}".format(calc.pk)
   calc.submit()
-  
+
 
 
 
@@ -755,7 +755,7 @@ Importing previously run Quantum ESPRESSO pw.x calculations: PwImmigrant
 ------------------------------------------------------------------------
 
 Once you start using AiiDA to run simulations, we believe that you will find it
-so convenient that you will use it for all your calculations. 
+so convenient that you will use it for all your calculations.
 
 At the beginning, however, you may have some calculations that you already have
 run and are sitting in some folders, and that you want to import inside AiiDA.

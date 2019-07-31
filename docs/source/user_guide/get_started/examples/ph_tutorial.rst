@@ -5,12 +5,12 @@ Phonon
 
 .. toctree::
    :maxdepth: 2
-   
+
 In this chapter will get you through the launching of a phonon calculation with Quantum Espresso, with ``ph.x``, a density functional perturbation theory code.
 For this tutorial, it is required that you managed to launch the ``pw.x`` calculation, which is at the base of the phonon code; and of course it is assumed that you already know how to use the QE code.
 
 The input of a phonon calculation can be actually simple, the only care that has to be taken, is to point to the same scratch of the previous pw calculation.
-Here we will try to compute the dynamical matrix on a mesh of points (actually consisting of a 1x1x1 mesh for brevity). 
+Here we will try to compute the dynamical matrix on a mesh of points (actually consisting of a 1x1x1 mesh for brevity).
 The input file that we should create is more or less this one::
 
   AiiDA calculation
@@ -47,7 +47,7 @@ We first load a couple of useful modules that you already met in the previous tu
 
 
 
-So, you were able to launch previously a ``pw.x`` calculation. 
+So, you were able to launch previously a ``pw.x`` calculation.
 
 Code
 ----
@@ -85,13 +85,13 @@ Now we create the object PH-calculation.
 As for ``pw.x``, we simply do::
 
     calc = code.new_calc()
-    
+
 and we set the parameters of the scheduler
 (and just like the PWscf, this is a configuration valid
 for the PBSpro and slurm schedulers only, see :ref:`my-reference-to-scheduler`).
-    
+
 ::
-    
+
     calc.set_option('max_wallclock_seconds', 30*60) # 30 min
     calc.set_option('resources', {"num_machines": 1})
 
@@ -122,7 +122,7 @@ and load the object that represent *the* QE-PWscf calculation with ID #6::
 
 Now that we loaded the parent calculation, we can set the phonon calc to
 inherit the right information from it::
-    
+
     calc.use_parent_calculation( parentcalc )
 
 Note that in our database schema relations between two calculation
@@ -198,4 +198,4 @@ You can find a more sophisticated example, that checks the possible exceptions
 and prints nice error messages inside your AiiDA folder, under
 ``examples/submission/quantumespresso/test_ph.py``.
 
- 
+

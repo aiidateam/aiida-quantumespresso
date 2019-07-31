@@ -60,7 +60,7 @@ where:
 * the (optional) ``skip_uuids_from_inputs`` is a list of UUIDs of input nodes that
   will *not* be exported.
 
-The script will create a new folder, containing the exported content of the calculation, 
+The script will create a new folder, containing the exported content of the calculation,
 its direct inputs (except those listed in the
 ``skip_uuids_from_inputs`` list), and the output ``retrieved`` node.
 The format of the exported data is the same of the export files of
@@ -89,7 +89,7 @@ JSON file inside the folder. The syntax is the following:
   "comparison", a string to specifies the type of comparison.
   The other keys depend on the type of comparison, and typically
   there is at least a "value" key, the value to compare with. An example::
-  
+
     {
       "output_parameters": {
         "energy": [
@@ -104,7 +104,7 @@ JSON file inside the folder. The syntax is the following:
             "value": "eV"
           }
 	]
-      }, 
+      },
       "output_array": {
       }
     }
@@ -120,5 +120,5 @@ Finally, in order to run all tests contained in the folder ``aiida/backends/test
 one can use the following ``verdi`` command::
 
   verdi devel tests db.parsers
-  
-If no fail message appears it means that the test was successful. 
+
+If no fail message appears it means that the test was successful.

@@ -125,7 +125,7 @@ class PwTcodtranslator(BaseTcodtranslator):
             except KeyError as e:
                 pass
         return smearing
-        
+
     @classmethod
     def get_total_energy(cls,calc,**kwargs):
         """

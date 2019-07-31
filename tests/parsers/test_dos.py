@@ -14,7 +14,7 @@ def dos_inputs():
     inputs = {
         'parent_folder': FolderData().store(),
     }
-    
+
     return AttributeDict(inputs)
 
 
@@ -29,7 +29,7 @@ def test_dos_default(fixture_database, fixture_computer_localhost, generate_calc
     node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, 'default', dos_inputs)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
-    
+
     out_params = results['output_parameters'].get_dict()
     out_dos_x = results['output_dos'].get_x()
     out_dos_y = results['output_dos'].get_y()

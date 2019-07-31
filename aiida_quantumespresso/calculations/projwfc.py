@@ -24,7 +24,7 @@ class ProjwfcCalculation(NamelistsCalculation):
     ]
     _default_parser = 'quantumespresso.projwfc'
     _internal_retrieve_list = [NamelistsCalculation._PREFIX + ".pdos*"]
-    
+
     @classmethod
     def define(cls, spec):
         from aiida.orm import ProjectionData, BandsData

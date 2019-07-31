@@ -30,7 +30,7 @@ class QeInputFile(object):
     Class used for parsing Quantum Espresso pw.x input files and using the info.
 
     Members:
-    
+
     * ``namelists``:
         A nested dictionary of the namelists and their key-value
         pairs. The namelists will always be upper-case keys, while the parameter
@@ -93,7 +93,7 @@ class QeInputFile(object):
               'gamma' or type = 'automatic')
             * weights: a 1xN list of the kpoint weights (will not be present if
               type = 'gamma' or type = 'automatic')
-            * mesh: a 1x3 list of the number of equally-spaced points in each 
+            * mesh: a 1x3 list of the number of equally-spaced points in each
               direction of the Brillouin zone, as in Monkhorst-Pack grids (only
               present if type = 'automatic')
             * offset: a 1x3 list of the grid offsets in each direction of the
@@ -103,7 +103,7 @@ class QeInputFile(object):
               This differs from the Quantum Espresso convention, where an offset
               value of ``1`` corresponds to a half-grid-step offset, but adheres
               to the current AiiDa convention.
-            
+
 
         Examples::
 
@@ -199,16 +199,16 @@ class QeInputFile(object):
     def get_structuredata(self):
         """
         Return a StructureData object based on the data in the input file.
-        
-        This uses all of the data in the input file to do the necessary unit 
+
+        This uses all of the data in the input file to do the necessary unit
         conversion, ect. and then creates an AiiDA StructureData object.
-    
-        All of the names corresponding of the Kind objects composing the 
-        StructureData object will match those found in the ATOMIC_SPECIES 
-        block, so the pseudopotentials can be linked to the calculation using 
-        the kind.name for each specific type of atom (in the event that you 
+
+        All of the names corresponding of the Kind objects composing the
+        StructureData object will match those found in the ATOMIC_SPECIES
+        block, so the pseudopotentials can be linked to the calculation using
+        the kind.name for each specific type of atom (in the event that you
         wish to use different pseudo's for two or more of the same atom).
-    
+
         :return: StructureData object of the structure in the input file
         :rtype: aiida.orm.nodes.data.structure.StructureData
         :raises aiida.common.exceptions.ParsingError: if there are issues
@@ -277,7 +277,7 @@ def str2val(valstr):
 def parse_namelists(txt):
     """
     Parse txt to extract a dictionary of the namelist info.
-    
+
     :param txt: A single string containing the QE input text to be parsed.
     :type txt: str
 
@@ -390,7 +390,7 @@ def parse_atomic_positions(txt):
             raise ParsingError(
                 'Unable to convert if_pos = "{}" to bool'.format(s)
             )
-    
+
     # Define re for the card block.
     # NOTE: This will match card block lines w/ or w/out force modifications.
     atomic_positions_block_re = re.compile(r"""
@@ -451,7 +451,7 @@ def parse_atomic_positions(txt):
         """, RE_FLAGS)
     # Define re for atomic positions without force modifications.
 
-    
+
     atomic_positions_w_constraints_re = re.compile(r"""
         ^                                       # Linestart
         [ \t]*                                  # Optional white space
@@ -497,7 +497,7 @@ def parse_atomic_positions(txt):
 
     # Define a small helper function to convert if_pos strings to bools that
     # correspond to the mapping of BasePwCpInputGenerator._if_pos method.
-    
+
     # Define a small helper function to convert strings of fortran-type floats.
     fortfloat = lambda s: float(s.replace('d', 'e').replace('D', 'E'))
     # Parse the lines of the card block, extracting an atom name, position
@@ -514,7 +514,7 @@ def parse_atomic_positions(txt):
     for match in atomic_positions_w_constraints_re.finditer(blockstr):
         positions.append(list(map(fortfloat, match.group('x', 'y', 'z'))))
         fixed_coords_this_pos = [f or '1' for f in match.group('fx', 'fy', 'fz')] # False <--> not fixed (the default)
-        fixed_coords.append(list(map(str01_to_bool, fixed_coords_this_pos))) 
+        fixed_coords.append(list(map(str01_to_bool, fixed_coords_this_pos)))
         names.append(match.group('name'))
 
     # Check that the number of atomic positions parsed is equal to the number of
@@ -583,7 +583,7 @@ def parse_cell_parameters(txt):
                         [\.]?    # an optional dot
                         \d*)     # followed by optional decimals
                         ([E|e|d|D][+|-]?\d+)?  # optional exponents E+03, e-05, d0, D0
-                    
+
                         (
                             \s+      # White space between numbers
                             [-|+]?   # Plus or minus in front of the number (optional)
@@ -610,8 +610,8 @@ def parse_cell_parameters(txt):
         ){3}                     # I need exactly 3 vectors
     )
     """, RE_FLAGS)
-    
-    
+
+
     cell_vector_regex = re.compile(r"""
         ^                        # Linestart
         [ \t]*                   # Optional white space
@@ -629,7 +629,7 @@ def parse_cell_parameters(txt):
             [\-|\+]? (\d*[\.]\d+ | \d+[\.]?\d*)
             ([E|e|d|D][+|-]?\d+)?
         )
-        """, re.X | re.M) 
+        """, re.X | re.M)
     #~ cell_parameters_block_re = re.compile(r"""
         #~ ^ [ \t]* CELL_PARAMETERS [ \t]*
             #~ [{(]? [ \t]* (?P<units>\S+?)? [ \t]* [)}]? [ \t]* $\n
@@ -742,7 +742,7 @@ def parse_atomic_species(txt):
 
 def get_cell_from_parameters(cell_parameters, system_dict, alat, using_celldm):
     """
-    A function to get the cell from cell parameters and SYSTEM card dictionary as read by 
+    A function to get the cell from cell parameters and SYSTEM card dictionary as read by
     parse_namelists.
     :param cell_parameters: The parameters as returned by parse_cell_parameters
     :param system_dict: the dictionary for card SYSTEM
@@ -765,7 +765,7 @@ def get_cell_from_parameters(cell_parameters, system_dict, alat, using_celldm):
         # to define the necessary cell geometry factors
         # NOT both
         # I am only going to this for the important first lattice vector
-      
+
         if alat is None:
             raise Exception('You have to define lattice vector'
                             'celldm(1) or A'
@@ -1037,7 +1037,7 @@ def get_cell_from_parameters(cell_parameters, system_dict, alat, using_celldm):
 def get_structuredata_from_qeinput(
         filepath=None, text=None, namelists=None,
         atomic_species=None, atomic_positions=None, cell_parameters=None
-        
+
     ):
     """
     Function that receives either
@@ -1086,7 +1086,7 @@ Ac | Th | Pa | U  | Np | Pu | Am | Cm | Bk | Cf | Es | Fm | Md | No | Lr | # Act
         cell_parameters = parse_cell_parameters(txt)
     if atomic_positions is None:
         atomic_positions = parse_atomic_positions(txt)
-    
+
 
     # First, I'm trying to figure out whether alat was specified:
     system_dict = namelists['SYSTEM']
@@ -1095,7 +1095,7 @@ Ac | Th | Pa | U  | Np | Pu | Am | Cm | Bk | Cf | Es | Fm | Md | No | Lr | # Act
         # The user should define exclusively in celldm or ABC-system
         raise InputValidationError(
                 'Both a and celldm(1) specified'
-            )        
+            )
     elif 'a' in system_dict:
         alat = system_dict['a']
         using_celldm = False
@@ -1106,7 +1106,7 @@ Ac | Th | Pa | U  | Np | Pu | Am | Cm | Bk | Cf | Es | Fm | Md | No | Lr | # Act
         alat = None
         using_celldm=None
 
-    cell = get_cell_from_parameters(cell_parameters, system_dict, alat, using_celldm)   
+    cell = get_cell_from_parameters(cell_parameters, system_dict, alat, using_celldm)
 
     # instance and set the cell
     structuredata = StructureData()
@@ -1115,7 +1115,7 @@ Ac | Th | Pa | U  | Np | Pu | Am | Cm | Bk | Cf | Es | Fm | Md | No | Lr | # Act
     #################  KINDS ##########################
 
 
-    
+
     for mass, name, pseudo in zip(
             atomic_species['masses'],
             atomic_species['names'],

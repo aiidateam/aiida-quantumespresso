@@ -54,17 +54,17 @@ def _get_all_protocol_modifiers():
                     'degauss': 0.02,
                     'occupations': 'smearing',
                     'meta_convergence': True,
-                    'volume_convergence': 0.01, 
+                    'volume_convergence': 0.01,
                     'tstress': True,
                     'tprnfor': True,
                     'num_bands_factor':None,     #number of bands wrt number of occupied bands
-                },         
+                },
             },
             'parameters_default': 'default'
         }
     }
     protocols['theos-ht-1.0']['parameters']['scdm'] = protocols['theos-ht-1.0']['parameters']['default']
-    protocols['theos-ht-1.0']['parameters']['scdm']['num_bands_factor'] = 3.0    
+    protocols['theos-ht-1.0']['parameters']['scdm']['num_bands_factor'] = 3.0
     return protocols
 
 class ProtocolManager(object):
@@ -87,14 +87,14 @@ class ProtocolManager(object):
         Return the full info on the specific protocol, using the (optional) modifiers
 
         :param modifiers: should be a dictionary with (optional) keys 'parameters' and 'pseudo', and
-          whose value is the modifier name for that category. 
-          If the key-value pair is not specified, the default for the protocol will be used. 
+          whose value is the modifier name for that category.
+          If the key-value pair is not specified, the default for the protocol will be used.
           In this case, if no default is specified, a ValueError is thrown.
 
         .. note:: If you pass 'custom' as the modifier name for 'pseudo',
           then you have to pass an additional key, called 'pseudo_data', that will be
           used to populate the output.
-        """ 
+        """
         modifiers_copy = modifiers.copy()
         parameters_modifier_name = modifiers_copy.pop('parameters', self.get_default_parameters_modifier_name())
         pseudo_modifier_name = modifiers_copy.pop('pseudo', self.get_default_pseudo_modifier_name())
@@ -130,13 +130,13 @@ class ProtocolManager(object):
     def get_parameters_modifier_names(self):
         """Get all valid parameters modifier names"""
         return list(self.modifiers['parameters'].keys())
- 
+
     def get_default_parameters_modifier_name(self):
         """
-        Return the default parameter modifier name 
+        Return the default parameter modifier name
         (or None if no default is specified).
         """
-        return self.modifiers.get('parameters_default', None)  
+        return self.modifiers.get('parameters_default', None)
 
     def get_parameters_data(self, modifier_name):
         """
@@ -150,7 +150,7 @@ class ProtocolManager(object):
 
     def get_default_pseudo_modifier_name(self):
         """
-        Return the default pseudopotential modifier name 
+        Return the default pseudopotential modifier name
         (or None if no default is specified).
         """
         return self.modifiers.get('pseudo_default', None)
@@ -160,7 +160,7 @@ class ProtocolManager(object):
         Given a pseudo modifier name, return the ``pseudo_data`` associated to it.
         """
         return self.modifiers['pseudo'][modifier_name]
-    
+
     def check_pseudos(self, modifier_name=None, pseudo_data=None):
         """
         Given a pseudo modifier name, checks which pseudos exist in the DB.
@@ -207,7 +207,7 @@ class ProtocolManager(object):
 
         for element, this_pseudo_data in six.iteritems(pseudo_data):
             md5 = this_pseudo_data['md5']
-            
+
             qb = QueryBuilder()
             qb.append(UpfData, filters={'attributes.md5': md5}, project=['uuid', 'attributes.element'])
             res = qb.all()

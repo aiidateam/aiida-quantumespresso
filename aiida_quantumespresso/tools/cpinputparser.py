@@ -44,4 +44,4 @@ class CpInputFile(QeInputFile):
         self.cell_parameters = parse_cell_parameters(self.input_txt)
         # Parse the ATOMIC_SPECIES card.
         self.atomic_species = parse_atomic_species(self.input_txt)
-    
+
