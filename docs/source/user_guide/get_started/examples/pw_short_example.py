@@ -57,9 +57,9 @@ kpoints = KpointsData()
 kpoints.set_kpoints_mesh([4,4,4])
 
 calc = code.new_calc(max_wallclock_seconds=3600,
-    resources={"num_machines": 1})
-calc.label = "A generic title"
-calc.description = "A much longer description"
+    resources={'num_machines': 1})
+calc.label = 'A generic title'
+calc.description = 'A much longer description'
 
 calc.use_structure(s)
 calc.use_code(code)
@@ -68,6 +68,6 @@ calc.use_kpoints(kpoints)
 calc.use_pseudos_from_family(pseudo_family)
 
 calc.store_all()
-print("created calculation with PK={}".format(calc.pk))
+print('created calculation with PK={}'.format(calc.pk))
 calc.submit()
 

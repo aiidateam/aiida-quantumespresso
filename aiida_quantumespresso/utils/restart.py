@@ -67,15 +67,15 @@ def _create_restart_pw_cp(parent_calc, force_restart, parent_folder_symlink,
 
     if not isinstance(parent_calc, (CalculationFactory('quantumespresso.cp'), CalculationFactory('quantumespresso.pw'))):
         raise TypeError(
-            "This function can only deal with restarts of PwCalculations or CpCalculations (QE pw.x or cp.x codes), "
-            "but I got {} instead".format(parent_calc.__class__.__name__))
+            'This function can only deal with restarts of PwCalculations or CpCalculations (QE pw.x or cp.x codes), '
+            'but I got {} instead'.format(parent_calc.__class__.__name__))
 
     # Check the calculation's state using ``from_attribute=True`` to
     # correctly handle IMPORTED calculations.
     if not parent_calc.is_finished_ok:
         if not force_restart:
             raise InputValidationError(
-                "Calculation to be restarted must be finished ok. Otherwise, use the force_restart flag")
+                'Calculation to be restarted must be finished ok. Otherwise, use the force_restart flag')
 
     inputs = parent_calc.get_incoming(link_type=LinkType.INPUT_CALC)
 
@@ -90,7 +90,7 @@ def _create_restart_pw_cp(parent_calc, force_restart, parent_folder_symlink,
     try:
         remote_folder = parent_calc.get_outcoming(node_class=RemoteData, link_type=LinkType.CREATE).one().node
     except ValueError:
-        raise InputValidationError("No or more than one output RemoteData found in calculation {}".format(parent_calc.pk))
+        raise InputValidationError('No or more than one output RemoteData found in calculation {}'.format(parent_calc.pk))
 
     builder = parent_calc.__class__.get_builder()
 
@@ -104,7 +104,7 @@ def _create_restart_pw_cp(parent_calc, force_restart, parent_folder_symlink,
             setattr(builder.options, option, option_val)
 
     builder.label = parent_calc.label
-    builder.description = "[Restart of {} {}]\n{}".format(
+    builder.description = '[Restart of {} {}]\n{}'.format(
         parent_calc.__class__.__name__, parent_calc.uuid,
         parent_calc.description)
 
@@ -255,14 +255,14 @@ def create_restart_neb(parent_calc, force_restart=False, parent_folder_symlink=N
 
     if not isinstance(parent_calc, CalculationFactory('quantumespresso.neb')):
         raise TypeError(
-            "This function can only deal with restarts of NebCalculations (QE neb.x), "
-            "but I got {} instead".format(parent_calc.__class__.__name__))
+            'This function can only deal with restarts of NebCalculations (QE neb.x), '
+            'but I got {} instead'.format(parent_calc.__class__.__name__))
 
     # Check the calculation's state using ``from_attribute=True`` to
     # correctly handle IMPORTED calculations.
     if not force_restart and not parent_calc.is_finished_ok:
         raise exceptions.InputValidationError(
-            "Calculation to be restarted must be finshed ok. Otherwise, use the force_restart flag")
+            'Calculation to be restarted must be finshed ok. Otherwise, use the force_restart flag')
 
     inputs = parent_calc.get_incoming(link_type=LinkType.INPUT_CALC)
 
@@ -274,7 +274,7 @@ def create_restart_neb(parent_calc, force_restart=False, parent_folder_symlink=N
     try:
         remote_folder = parent_calc.get_outcoming(node_class=RemoteData, link_type=LinkType.CREATE).one().node
     except ValueError:
-        raise InputValidationError("No or more than one output RemoteData found in calculation {}".format(parent_calc.pk))
+        raise InputValidationError('No or more than one output RemoteData found in calculation {}'.format(parent_calc.pk))
 
     builder = parent_calc.__class__.get_builder()
 
@@ -288,7 +288,7 @@ def create_restart_neb(parent_calc, force_restart=False, parent_folder_symlink=N
             setattr(builder.options, option, option_val)
 
     builder.label = parent_calc.label
-    builder.description = "[Restart of {} {}]\n{}".format(
+    builder.description = '[Restart of {} {}]\n{}'.format(
         parent_calc.__class__.__name__, parent_calc.uuid,
         parent_calc.description)
 
@@ -363,12 +363,12 @@ def create_restart_ph(parent_calc, force_restart=False,
 
     if not isinstance(parent_calc, CalculationFactory('quantumespresso.ph')):
         raise TypeError(
-            "This function can only deal with restarts of PhCalculations (QE ph.x codes), "
-            "but I got {} instead".format(parent_calc.__class__.__name__))
+            'This function can only deal with restarts of PhCalculations (QE ph.x codes), '
+            'but I got {} instead'.format(parent_calc.__class__.__name__))
 
     if not force_restart and not parent_calc.is_finished_ok:
         raise exceptions.InputValidationError(
-            "Calculation to be restarted must be finshed ok. Otherwise, use the force_restart flag")
+            'Calculation to be restarted must be finshed ok. Otherwise, use the force_restart flag')
 
     inputs = parent_calc.get_incoming(link_type=LinkType.INPUT_CALC)
     code = inputs.get_node_by_label('code')
@@ -382,7 +382,7 @@ def create_restart_ph(parent_calc, force_restart=False,
     try:
         remote_folder = parent_calc.get_outcoming(node_class=RemoteData, link_type=LinkType.CREATE).one().node
     except ValueError:
-        raise InputValidationError("No or more than one output RemoteData found in calculation {}".format(parent_calc.pk))
+        raise InputValidationError('No or more than one output RemoteData found in calculation {}'.format(parent_calc.pk))
 
     builder = parent_calc.__class__.get_builder()
 
@@ -396,7 +396,7 @@ def create_restart_ph(parent_calc, force_restart=False,
             setattr(builder.options, option, option_val)
 
     builder.label = parent_calc.label
-    builder.description = "[Restart of {} {}]\n{}".format(
+    builder.description = '[Restart of {} {}]\n{}'.format(
         parent_calc.__class__.__name__, parent_calc.uuid,
         parent_calc.description)
 

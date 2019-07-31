@@ -31,7 +31,7 @@ def validate_kpoints_mesh(ctx, param, value):
         kpoints = KpointsData()
         kpoints.set_kpoints_mesh(value)
     except ValueError as exception:
-        raise click.BadParameter("failed to create a KpointsData mesh out of {}\n{}".format(value, exception))
+        raise click.BadParameter('failed to create a KpointsData mesh out of {}\n{}'.format(value, exception))
 
     return kpoints
 

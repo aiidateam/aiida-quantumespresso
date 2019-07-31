@@ -47,7 +47,7 @@ def parse_raw_ph_output(out_file, tensor_file=None, dynmat_files=[]):
             out_lines = f.readlines()
     except IOError:
         # if the file cannot be open, the error is severe.
-        raise QEOutputParsingError("Failed to open output file: {}.".format(out_file))
+        raise QEOutputParsingError('Failed to open output file: {}.'.format(out_file))
 
     # in case of executable failures, check if there is any output at all
     if not out_lines:
@@ -219,7 +219,7 @@ def parse_ph_text_output(lines):
                 parsed_data['wall_time_seconds'] = \
                     convert_qe_time_to_sec(parsed_data['wall_time'])
             except ValueError:
-                raise QEOutputParsingError("Unable to convert wall_time in seconds.")
+                raise QEOutputParsingError('Unable to convert wall_time in seconds.')
             break
 
     # parse number of q-points and number of atoms
@@ -229,14 +229,14 @@ def parse_ph_text_output(lines):
                 num_qpoints = int(line.split('/')[1].split('q-points')[0])
                 if ( 'number_of_qpoints' in list(parsed_data.keys()) and
                      num_qpoints != parsed_data['number_of_qpoints']):
-                    parsed_data['warnings'].append("Number q-points found "
-                                                   "several times with different"
-                                                   " values")
+                    parsed_data['warnings'].append('Number q-points found '
+                                                   'several times with different'
+                                                   ' values')
                 else:
                     parsed_data['number_of_qpoints'] = num_qpoints
             except Exception:
-                parsed_data['warnings'].append("Error while parsing number of "
-                                               "q points.")
+                parsed_data['warnings'].append('Error while parsing number of '
+                                               'q points.')
 
         elif 'q-points)' in line:
             # case of a 'only_wfc' calculation
@@ -244,24 +244,24 @@ def parse_ph_text_output(lines):
                 num_qpoints = int(line.split('q-points')[0].split('(')[1])
                 if ( 'number_of_qpoints' in list(parsed_data.keys()) and
                      num_qpoints != parsed_data['number_of_qpoints']):
-                    parsed_data['warnings'].append("Number q-points found "
-                                                   "several times with different"
-                                                   " values")
+                    parsed_data['warnings'].append('Number q-points found '
+                                                   'several times with different'
+                                                   ' values')
                 else:
                     parsed_data['number_of_qpoints'] = num_qpoints
             except Exception:
-                parsed_data['warnings'].append("Error while parsing number of "
-                                               "q points.")
+                parsed_data['warnings'].append('Error while parsing number of '
+                                               'q points.')
 
-        elif "number of atoms/cell" in line:
+        elif 'number of atoms/cell' in line:
             try:
                 num_atoms = int(line.split('=')[1])
                 parsed_data['number_of_atoms'] = num_atoms
             except Exception:
-                parsed_data['warnings'].append("Error while parsing number of "
-                                               "atoms.")
+                parsed_data['warnings'].append('Error while parsing number of '
+                                               'atoms.')
 
-        elif "irreducible representations" in line:
+        elif 'irreducible representations' in line:
             if 'number_of_irr_representations_for_each_q' not in list(parsed_data.keys()):
                 parsed_data['number_of_irr_representations_for_each_q'] = []
             try:
@@ -341,11 +341,11 @@ def parse_ph_dynmat(data,lattice_parameter=None,also_eigenvectors=False,
 
     starting_line = 1
     if parse_header:
-        header_dict = {"warnings": []}
+        header_dict = {'warnings': []}
         try:
             pieces = data[2].split()
             if len(pieces) != 9:
-                raise QEOutputParsingError("Wrong # of elements on line 3")
+                raise QEOutputParsingError('Wrong # of elements on line 3')
             try:
                 num_species = int(pieces[0])
                 num_atoms = int(pieces[1])
@@ -355,12 +355,12 @@ def parse_ph_dynmat(data,lattice_parameter=None,also_eigenvectors=False,
                 alat = header_dict['celldm'][0] * bohr_to_ang
                 if abs(alat) < 1.e-5:
                     raise QEOutputParsingError(
-                        "Lattice constant=0! Probably you are using an "
-                        "old Quantum ESPRESSO version?")
-                header_dict["alat"] = alat
-                header_dict["alat_units"] = "angstrom"
+                        'Lattice constant=0! Probably you are using an '
+                        'old Quantum ESPRESSO version?')
+                header_dict['alat'] = alat
+                header_dict['alat_units'] = 'angstrom'
             except ValueError:
-                raise QEOutputParsingError("Wrong data on line 3")
+                raise QEOutputParsingError('Wrong data on line 3')
 
             starting_line = 3
             if header_dict['ibrav'] == 0:
@@ -373,11 +373,11 @@ def parse_ph_dynmat(data,lattice_parameter=None,also_eigenvectors=False,
                     v3 = [float(_)*alat for _ in data[6].split()]
                     if len(v1) != 3 or len(v2) != 3 or len(v3) != 3:
                         raise QEOutputParsingError(
-                            "Wrong length for basis vectors")
+                            'Wrong length for basis vectors')
                     header_dict['lattice_vectors'] = [v1,v2,v3]
-                    header_dict['lattice_vectors_units'] = "angstrom"
+                    header_dict['lattice_vectors_units'] = 'angstrom'
                 except ValueError:
-                    raise QEOutputParsingError("Wrong data for basis vectors")
+                    raise QEOutputParsingError('Wrong data for basis vectors')
                 starting_line += 4
 
             species_info = {}
@@ -388,15 +388,15 @@ def parse_ph_dynmat(data,lattice_parameter=None,also_eigenvectors=False,
                 pieces = sp_line.split("'")
                 if len(pieces) != 3:
                     raise QEOutputParsingError(
-                        "Wrong # of elements for one of the species")
+                        'Wrong # of elements for one of the species')
                 try:
                     if int(pieces[0]) != idx:
                         raise QEOutputParsingError(
-                            "Error with the indices of the species")
+                            'Error with the indices of the species')
                     species.append([pieces[1].strip(),
                                     float(pieces[2])/amu_Ry])
                 except ValueError:
-                    raise QEOutputParsingError("Error parsing the species")
+                    raise QEOutputParsingError('Error parsing the species')
 
             masses = dict(species)
             header_dict['masses'] = masses
@@ -410,31 +410,31 @@ def parse_ph_dynmat(data,lattice_parameter=None,also_eigenvectors=False,
                 pieces = atom_line.split()
                 if len(pieces) != 5:
                     raise QEOutputParsingError(
-                        "Wrong # of elements for one of the atoms: {}, "
-                        "line {}: {}".format(
+                        'Wrong # of elements for one of the atoms: {}, '
+                        'line {}: {}'.format(
                             len(pieces), starting_line+idx, pieces))
                 try:
                     if int(pieces[0]) != idx:
                         raise QEOutputParsingError(
-                            "Error with the indices of the atoms: "
-                            "{} vs {}".format(int(pieces[0]), idx))
+                            'Error with the indices of the atoms: '
+                            '{} vs {}'.format(int(pieces[0]), idx))
                     sp_idx = int(pieces[1])
                     if sp_idx > len(species):
-                        raise QEOutputParsingError("Wrong index for the species: "
-                                            "{}, but max={}".format(
+                        raise QEOutputParsingError('Wrong index for the species: '
+                                            '{}, but max={}'.format(
                                 sp_idx, len(species)))
                     atoms_labels.append(species[sp_idx-1][0])
                     atoms_coords.append([float(pieces[2])*alat,
                                          float(pieces[3])*alat,
                                          float(pieces[4])*alat])
                 except ValueError:
-                    raise QEOutputParsingError("Error parsing the atoms")
+                    raise QEOutputParsingError('Error parsing the atoms')
                 except IndexError:
                     raise QEOutputParsingError(
-                        "Error with the indices in the atoms section")
+                        'Error with the indices in the atoms section')
             header_dict['atoms_labels'] = atoms_labels
             header_dict['atoms_coords'] = atoms_coords
-            header_dict['atoms_coords_units'] = "angstrom"
+            header_dict['atoms_coords_units'] = 'angstrom'
 
             starting_line += num_atoms
 
@@ -447,12 +447,12 @@ def parse_ph_dynmat(data,lattice_parameter=None,also_eigenvectors=False,
 
         except QEOutputParsingError as e:
             parsed_data['warnings'].append(
-                "Problem parsing the header of the matdyn file! (msg: {}). "
-                "Storing only the information I managed to retrieve".format(
+                'Problem parsing the header of the matdyn file! (msg: {}). '
+                'Storing only the information I managed to retrieve'.format(
                     e.message))
             header_dict['warnings'].append(
-                "There was some parsing error and this dictionary is "
-                "not complete, see the warnings of the top parsed_data dict")
+                'There was some parsing error and this dictionary is '
+                'not complete, see the warnings of the top parsed_data dict')
 
         # I store what I got
         parsed_data['header'] = header_dict

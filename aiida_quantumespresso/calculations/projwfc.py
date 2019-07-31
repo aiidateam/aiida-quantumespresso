@@ -23,7 +23,7 @@ class ProjwfcCalculation(NamelistsCalculation):
         ('PROJWFC', 'plotboxes', False),
     ]
     _default_parser = 'quantumespresso.projwfc'
-    _internal_retrieve_list = [NamelistsCalculation._PREFIX + ".pdos*"]
+    _internal_retrieve_list = [NamelistsCalculation._PREFIX + '.pdos*']
 
     @classmethod
     def define(cls, spec):
@@ -33,13 +33,13 @@ class ProjwfcCalculation(NamelistsCalculation):
         spec.output('output_parameters', valid_type=Dict)
         spec.output('Dos', valid_type=XyData)
         # if spin
-        spec.output("projections_up",   valid_type=ProjectionData, required=False)
-        spec.output("projections_down", valid_type=ProjectionData, required=False)
-        spec.output("bands_up",   valid_type=BandsData, required=False)
-        spec.output("bands_down", valid_type=BandsData, required=False)
+        spec.output('projections_up',   valid_type=ProjectionData, required=False)
+        spec.output('projections_down', valid_type=ProjectionData, required=False)
+        spec.output('bands_up',   valid_type=BandsData, required=False)
+        spec.output('bands_down', valid_type=BandsData, required=False)
         # if non-spin
-        spec.output("projections", valid_type=ProjectionData, required=False)
-        spec.output("bands", valid_type=BandsData, required=False)
+        spec.output('projections', valid_type=ProjectionData, required=False)
+        spec.output('bands', valid_type=BandsData, required=False)
         spec.default_output_node = 'output_parameters'
         spec.exit_code(
             100, 'ERROR_NO_RETRIEVED_FOLDER', message='The retrieved folder data node could not be accessed.')

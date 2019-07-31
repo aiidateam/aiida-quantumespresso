@@ -27,7 +27,7 @@ class NebParser(Parser):
         """
         # check for valid input
         if not isinstance(calc,NebCalculation):
-            raise QEOutputParsingError("Input calc must be a NebCalculation")
+            raise QEOutputParsingError('Input calc must be a NebCalculation')
 
         super(NebParser, self).__init__(calc)
 
@@ -66,7 +66,7 @@ class NebParser(Parser):
         try:
             out_folder = retrieved[self._calc._get_linkname_retrieved()]
         except KeyError:
-            self.logger.error("No retrieved folder found")
+            self.logger.error('No retrieved folder found')
             successful = False
             return successful, ()
 
@@ -74,7 +74,7 @@ class NebParser(Parser):
         list_of_files = out_folder.get_folder_list()
         # at least the stdout should exist
         if not self._calc._OUTPUT_FILE_NAME in list_of_files:
-            self.logger.error("Standard output not found")
+            self.logger.error('Standard output not found')
             successful = False
             return successful,()
 
@@ -94,7 +94,7 @@ class NebParser(Parser):
             try:
                 num_images = neb_out_dict['num_of_images']
             except KeyError:
-                self.logger.error("Impossible to understand the number of images")
+                self.logger.error('Impossible to understand the number of images')
                 successful = False
                 return successful, ()
 
@@ -125,7 +125,7 @@ class NebParser(Parser):
 
                     structure_data = convert_qe2aiida_structure(structure_dict)
             else:
-                self.logger.error("No xml output file found for image {}".format(i+1))
+                self.logger.error('No xml output file found for image {}'.format(i+1))
                 successful = False
                 return successful, ()
 
@@ -136,7 +136,7 @@ class NebParser(Parser):
                 with open(pw_out_file,'r') as f:
                     pw_out_lines = f.read() # Note: read() and not readlines()
             except IOError:
-                self.logger.error("No pw output file found for image {}".format(i+1))
+                self.logger.error('No pw output file found for image {}'.format(i+1))
                 successful = False
                 return successful, ()
 
@@ -213,8 +213,8 @@ class NebParser(Parser):
                                                 self._calc._PREFIX + '.dat' )
             mep = numpy.loadtxt(mep_file)
         except Exception:
-            self.logger.warning("Impossible to find the file with image energies "
-                                "versus reaction coordinate.")
+            self.logger.warning('Impossible to find the file with image energies '
+                                'versus reaction coordinate.')
             mep = numpy.array([[]])
 
         try:
@@ -222,8 +222,8 @@ class NebParser(Parser):
                                                 self._calc._PREFIX + '.int' )
             interp_mep = numpy.loadtxt(interp_mep_file)
         except Exception:
-            self.logger.warning("Impossible to find the file with the interpolation "
-                                "of image energies versus reaction coordinate.")
+            self.logger.warning('Impossible to find the file with the interpolation '
+                                'of image energies versus reaction coordinate.')
             interp_mep = numpy.array([[]])
         # Create an ArrayData with the energy profiles
         mep_arraydata = ArrayData()

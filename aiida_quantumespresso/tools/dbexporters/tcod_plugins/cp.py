@@ -8,7 +8,7 @@ class CpTcodtranslator(BaseTcodtranslator):
     Quantum ESPRESSO's CP-specific input and output parameter translator
     to TCOD CIF dictionary tags.
     """
-    _plugin_type_string = "quantumespresso.cp.CpCalculation"
+    _plugin_type_string = 'quantumespresso.cp.CpCalculation'
 
     @classmethod
     def get_software_package(cls,calc,**kwargs):

@@ -129,7 +129,7 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands, include_deprecated_keys=False
     try:
         import numpy
         for i in range(parsed_data['number_of_k_points']):
-            tagname = "{}{}".format(tagname_prefix,i+1)
+            tagname = '{}{}'.format(tagname_prefix,i+1)
             #a = target_tags.getElementsByTagName(tagname)[0]
             a=a_dict[tagname]
             b = a.getAttribute('XYZ').replace('\n','').rsplit()
@@ -413,7 +413,7 @@ def read_xml_card(dom,cardname):
     try:
         root_node = [_ for _ in dom.childNodes if
                     isinstance(_, Element)
-                        and _.nodeName == "Root"][0]
+                        and _.nodeName == 'Root'][0]
         the_card = [_ for _ in root_node.childNodes if _.nodeName == cardname][0]
         #the_card = dom.getElementsByTagName(cardname)[0]
         return the_card
@@ -453,8 +453,8 @@ def parse_xml_child_bool(tagname,target_tags):
 
 def str2bool(string):
     try:
-        false_items=["f","0","false","no"]
-        true_items=["t","1","true","yes"]
+        false_items=['f','0','false','no']
+        true_items=['t','1','true','yes']
         string=str(string.lower().strip())
         if string in false_items:
             return False
@@ -658,9 +658,9 @@ def xml_card_ions(parsed_data,dom,lattice_vectors,volume):
             atoms_index_list.append(b)
             tagname2='SPECIES'
 
-            chem_symbol=str(a.getAttribute(tagname2)).rstrip().replace("\n","")
+            chem_symbol=str(a.getAttribute(tagname2)).rstrip().replace('\n','')
             # I check if it is a subspecie
-            chem_symbol_digits = "".join([i for i in chem_symbol if i in string.digits])
+            chem_symbol_digits = ''.join([i for i in chem_symbol if i in string.digits])
             try:
                 tagslist.append(int(chem_symbol_digits))
             except ValueError:
@@ -671,7 +671,7 @@ def xml_card_ions(parsed_data,dom,lattice_vectors,volume):
 
             tagname2='tau'
             b = a.getAttribute(tagname2)
-            tau = [float(s) for s in b.rstrip().replace("\n","").split()]
+            tau = [float(s) for s in b.rstrip().replace('\n','').split()]
             metric = parsed_data['units_for_atomic_positions']
             if metric not in ['alat','bohr','angstrom']: # REMEMBER TO CONVERT AT THE END
                 raise QEOutputParsingError('Error parsing tag %s inside %s'% (tagname, target_tags.tagName ) )
@@ -682,7 +682,7 @@ def xml_card_ions(parsed_data,dom,lattice_vectors,volume):
             atomlist.append([chem_symbol,tau])
             tagname2='if_pos'
             b=a.getAttribute(tagname2)
-            if_pos=[int(s) for s in b.rstrip().replace("\n","").split()]
+            if_pos=[int(s) for s in b.rstrip().replace('\n','').split()]
             atoms_if_pos_list.append(if_pos)
         parsed_data['atoms']=atomlist
         parsed_data['atoms_index_list']=atoms_index_list
@@ -737,7 +737,7 @@ def xml_card_planewaves(parsed_data,dom,calctype):
     units = parse_xml_child_attribute_str(tagname,attrname,target_tags).lower()
     if 'hartree' not in units:
         if 'rydberg' not in units:
-            raise QEOutputParsingError("Units {} are not supported by parser".format(units))
+            raise QEOutputParsingError('Units {} are not supported by parser'.format(units))
     else:
         if 'hartree' in units:
             conv_fac = hartree_to_ev

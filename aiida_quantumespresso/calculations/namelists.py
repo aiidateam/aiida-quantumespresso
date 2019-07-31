@@ -100,7 +100,7 @@ class NamelistsCalculation(CalcJob):
                 if key in parameters[namelist]:
                     raise exceptions.InputValidationError(
                         "You cannot specify explicitly the '{}' key in the '{}' "
-                        "namelist.".format(key, namelist))
+                        'namelist.'.format(key, namelist))
             else:
                 parameters[namelist] = {}
             parameters[namelist][key] = value
@@ -130,9 +130,9 @@ class NamelistsCalculation(CalcJob):
         # Check for specified namelists that are not expected
         if parameters:
             raise exceptions.InputValidationError(
-                "The following namelists are specified in parameters, but are "
-                "not valid namelists for the current type of calculation: "
-                "{}".format(",".join(list(parameters.keys()))))
+                'The following namelists are specified in parameters, but are '
+                'not valid namelists for the current type of calculation: '
+                '{}'.format(','.join(list(parameters.keys()))))
 
         remote_copy_list = []
         local_copy_list = []

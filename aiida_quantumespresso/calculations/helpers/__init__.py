@@ -32,14 +32,14 @@ def _check_and_convert(kw, val, expected_type):
 
     # Note that bool should come before integer, because a boolean matches also
     # isinstance(...,int)
-    if expected_type.upper() == "LOGICAL":
+    if expected_type.upper() == 'LOGICAL':
         if isinstance(val, bool):
             outval = val
         else:
             raise TypeError(
                 'Expected a boolean for keyword {}, found {} instead'.format(
                 kw, type(val)))
-    elif expected_type.upper() == "REAL":
+    elif expected_type.upper() == 'REAL':
         if isinstance(val, six.integer_types):
             outval = float(val)
         elif isinstance(val, float):
@@ -48,14 +48,14 @@ def _check_and_convert(kw, val, expected_type):
             raise TypeError(
                 'Expected a float for keyword {}, found {} instead'.format(
                 kw, type(val)))
-    elif expected_type.upper() == "INTEGER":
+    elif expected_type.upper() == 'INTEGER':
         if isinstance(val, six.integer_types):
             outval = val
         else:
             raise TypeError(
                 'Expected an integer for keyword {}, found {} instead'.format(
                 kw, type(val)))
-    elif expected_type.upper() == "CHARACTER":
+    elif expected_type.upper() == 'CHARACTER':
         if isinstance(val, six.string_types):
             outval = val
         else:
@@ -69,7 +69,7 @@ def _check_and_convert(kw, val, expected_type):
     return outval
 
 def pw_input_helper(input_params, structure,
-    stop_at_first_error=False, flat_mode=False, version="6.2"):
+    stop_at_first_error=False, flat_mode=False, version='6.2'):
     """
     Validate if the input dictionary for Quantum ESPRESSO is valid.
     Return the dictionary (possibly with small variations: e.g. convert
@@ -158,13 +158,13 @@ def pw_input_helper(input_params, structure,
             if not isinstance(content, dict):
                 raise QEInputValidationError(
                     "The content associated to the namelist '{}' must be a "
-                    "dictionary".format(nl))
+                    'dictionary'.format(nl))
             all_input_namelists.add(nl)
             for k, v in six.iteritems(content):
                 input_params_internal[k] = copy.deepcopy(v)
                 if k in input_original_namelists:
                     err_str = "The keyword '{}' was specified both in the "
-                    "namelist {} and {}.".format(k,
+                    'namelist {} and {}.'.format(k,
                         input_original_namelists[k], nl)
                     if stop_at_first_error:
                         raise QEInputValidationError(err_str)
@@ -175,22 +175,22 @@ def pw_input_helper(input_params, structure,
     # List of the keywords that must not appear in the input
     # (e.g. because they are automatically filled in by the plugin)
     blocked_kws = [i.lower() for i in
-                   ["pseudo_dir",
-                    "outdir",
-                    "ibrav",
-                    "celldm",
-                    "nat",
-                    "ntyp",
-                    "prefix",
-                    "a", "b", "c", "cosab", "cosac", "cosbc",
+                   ['pseudo_dir',
+                    'outdir',
+                    'ibrav',
+                    'celldm',
+                    'nat',
+                    'ntyp',
+                    'prefix',
+                    'a', 'b', 'c', 'cosab', 'cosac', 'cosbc',
                     ]
                    ]
     # TODO: possibly add here above also restart_mode?
 
     # List of the keywords that must ALWAYS appear in the input
     compulsory_kws = {i.lower() for i in
-                   ["calculation",
-                    "ecutwfc",
+                   ['calculation',
+                    'ecutwfc',
                      ]
                    }
 
@@ -213,13 +213,13 @@ def pw_input_helper(input_params, structure,
         strictversions = sorted(strictversions, key=lambda x: StrictVersion(x))
         pos = strictversions.index(version)
         if pos == 0:
-            add_str = " (the version you specified is too old)"
+            add_str = ' (the version you specified is too old)'
         else:
-            add_str = " (the older, closest version you can use is {})".format(
+            add_str = ' (the older, closest version you can use is {})'.format(
                 strictversions[pos-1])
         raise QEInputValidationError(
-            "Unknown Quantum Espresso version: {}. "
-            "Available versions: {};{}".format(version, ", ".join(versions),
+            'Unknown Quantum Espresso version: {}. '
+            'Available versions: {};{}'.format(version, ', '.join(versions),
             add_str))
 
 
@@ -228,7 +228,7 @@ def pw_input_helper(input_params, structure,
     valid_kws = {}
     for kw in known_kws:
         if kw in valid_kws:
-            raise InternalError("Something strange, I found more than one "
+            raise InternalError('Something strange, I found more than one '
                                 "keyword '{}' in the XML description...".format(
                                 kw))
 
@@ -238,7 +238,7 @@ def pw_input_helper(input_params, structure,
             while True:
                 parent = parent.parentNode
                 if parent.tagName == 'namelist':
-                    valid_kws[kw.getAttribute('name').lower()]["namelist"] = \
+                    valid_kws[kw.getAttribute('name').lower()]['namelist'] = \
                         parent.getAttribute('name').upper()
                     break
         except AttributeError:
@@ -261,7 +261,7 @@ def pw_input_helper(input_params, structure,
     valid_dims = {}
     for dim in known_dims:
         if dim in valid_dims:
-            raise InternalError("Something strange, I found more than one "
+            raise InternalError('Something strange, I found more than one '
                 "keyword '{}' in the XML description...".format(dim))
 
         valid_dims[dim.getAttribute('name').lower()] = {}
@@ -270,7 +270,7 @@ def pw_input_helper(input_params, structure,
             while True:
                 parent = parent.parentNode
                 if parent.tagName == 'namelist':
-                    valid_dims[dim.getAttribute('name').lower()]["namelist"] = \
+                    valid_dims[dim.getAttribute('name').lower()]['namelist'] = \
                         parent.getAttribute('name').upper()
                     break
         except AttributeError:
@@ -323,16 +323,16 @@ def pw_input_helper(input_params, structure,
     try:
         calculation_type = input_params_internal['calculation']
     except KeyError:
-        raise QEInputValidationError("Error, you need to specify at least the "
-            "calculation type (among {})".format(
-            ", ".join(list(valid_calculations_and_opt_namelists.keys()))))
+        raise QEInputValidationError('Error, you need to specify at least the '
+            'calculation type (among {})'.format(
+            ', '.join(list(valid_calculations_and_opt_namelists.keys()))))
 
     try:
         opt_namelists = valid_calculations_and_opt_namelists[calculation_type]
     except KeyError:
-        raise QEInputValidationError("Error, {} is not a valid value for "
-            "the calculation type (valid values: {})".format(calculation_type,
-            ", ".join(list(valid_calculations_and_opt_namelists.keys()))))
+        raise QEInputValidationError('Error, {} is not a valid value for '
+            'the calculation type (valid values: {})'.format(calculation_type,
+            ', '.join(list(valid_calculations_and_opt_namelists.keys()))))
 
     internal_dict = {i: {} for i in compulsory_namelists + opt_namelists}
     all_namelists = set(compulsory_namelists)
@@ -343,9 +343,9 @@ def pw_input_helper(input_params, structure,
         # Unexpected namelists specified by the user
         additional_namelists = sorted(all_input_namelists - set(all_namelists))
         if additional_namelists:
-            err_str = "Error, the following namelists were specified but are " \
-                "not expected: {}".format(
-                    ", ".join(additional_namelists))
+            err_str = 'Error, the following namelists were specified but are ' \
+                'not expected: {}'.format(
+                    ', '.join(additional_namelists))
             if stop_at_first_error:
                 raise QEInputValidationError(err_str)
             else:
@@ -380,15 +380,15 @@ def pw_input_helper(input_params, structure,
             except KeyError:
                 if namelist_name in all_namelists:
                     err_str = \
-                        "Error, namelist {} not valid for calculation type " \
-                        "{}".format(namelist_name, calculation_type)
+                        'Error, namelist {} not valid for calculation type ' \
+                        '{}'.format(namelist_name, calculation_type)
                     if stop_at_first_error:
                         raise QEInputValidationError(err_str)
                     else:
                         errors_list.append(err_str)
                 else:
-                    err_str = "Error, unknown namelist " \
-                        "{}".format(namelist_name)
+                    err_str = 'Error, unknown namelist ' \
+                        '{}'.format(namelist_name)
                     if stop_at_first_error:
                         raise QEInputValidationError(err_str)
                     else:
@@ -418,7 +418,7 @@ def pw_input_helper(input_params, structure,
             if found_var['end_val'] == 'ntyp':
                 if not isinstance(value, dict):
                     err_str = \
-                        "Error, expecting a dictionary to associate each " \
+                        'Error, expecting a dictionary to associate each ' \
                         "specie to a value for keyword '{}'.".format(kw)
                     if stop_at_first_error:
                         raise QEInputValidationError(err_str)
@@ -449,7 +449,7 @@ def pw_input_helper(input_params, structure,
                     internal_dict[namelist_name][kw] = outdict
                 except KeyError:
                     err_str = \
-                        "Error, unknown namelist {}".format(namelist_name)
+                        'Error, unknown namelist {}'.format(namelist_name)
                     if stop_at_first_error:
                         raise QEInputValidationError(err_str)
                     else:
@@ -469,7 +469,7 @@ def pw_input_helper(input_params, structure,
                         continue
                 if not isinstance(value, list) or len(value) != end_value:
                     err_str = \
-                        "Error, expecting a list of length {} for keyword " \
+                        'Error, expecting a list of length {} for keyword ' \
                         "'{}'.".format(end_value, kw)
                     if stop_at_first_error:
                         raise QEInputValidationError(err_str)
@@ -497,7 +497,7 @@ def pw_input_helper(input_params, structure,
                     internal_dict[namelist_name][kw] = outlist
                 except KeyError:
                     err_str = \
-                        "Error, unknown namelist {}".format(namelist_name)
+                        'Error, unknown namelist {}'.format(namelist_name)
                     if stop_at_first_error:
                         raise QEInputValidationError(err_str)
                     else:
@@ -505,16 +505,16 @@ def pw_input_helper(input_params, structure,
                         continue
         else:
             # Neither a variable nor an array
-            err_str = "Problem parsing keyword {}. ".format(kw)
+            err_str = 'Problem parsing keyword {}. '.format(kw)
             similar_kws = difflib.get_close_matches(kw, valid_invars_list)
             if len(similar_kws)==1:
-                err_str += "Maybe you wanted to specify {}?".format(
+                err_str += 'Maybe you wanted to specify {}?'.format(
                     similar_kws[0])
             elif len(similar_kws) > 1:
-                err_str += "Maybe you wanted to specify one of these: " \
-                    "{}?".format(", ".join(similar_kws))
+                err_str += 'Maybe you wanted to specify one of these: ' \
+                    '{}?'.format(', '.join(similar_kws))
             else:
-                err_str += "(No similar keywords found...)"
+                err_str += '(No similar keywords found...)'
             if stop_at_first_error:
                 raise QEInputValidationError(err_str)
             else:
@@ -526,8 +526,8 @@ def pw_input_helper(input_params, structure,
     # ============== I check here compulsory variables ===========
     missing_kws = compulsory_kws - set(inserted_kws)
     if len(missing_kws) != 0:
-        err_str = "Missing compulsory variables: {}.".format(
-            ", ".join(missing_kws))
+        err_str = 'Missing compulsory variables: {}.'.format(
+            ', '.join(missing_kws))
         if stop_at_first_error:
             raise QEInputValidationError(err_str)
         else:
@@ -535,13 +535,13 @@ def pw_input_helper(input_params, structure,
 
     if errors_list:
         raise QEInputValidationError(
-            "Errors! {} issues found:\n* ".format(len(errors_list)) +
-            "\n* ".join(errors_list))
+            'Errors! {} issues found:\n* '.format(len(errors_list)) +
+            '\n* '.join(errors_list))
 
     return internal_dict
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
      # An example of usage
      from aiida.orm import load_node
      structure = DataFactory('structure')(cell=[[1,0,0],[0,1,0],[0,0,1]])
@@ -561,9 +561,9 @@ if __name__ == "__main__":
              structure, flat_mode = True,
              version = '5.1'))
      except QEInputValidationError as e:
-         print("*"*72)
-         print("* ERROR !")
-         print("*"*72)
+         print('*'*72)
+         print('* ERROR !')
+         print('*'*72)
          print(e.message)
 
      try:
@@ -587,9 +587,9 @@ if __name__ == "__main__":
              },
              structure, flat_mode = False))
      except QEInputValidationError as e:
-         print("*"*72)
-         print("* ERROR !")
-         print("*"*72)
+         print('*'*72)
+         print('* ERROR !')
+         print('*'*72)
          print(e.message)
 
 

@@ -18,7 +18,7 @@ def _validate_protocol(protocol_dict):
     try:
         protocol_name = protocol_dict['name']
     except KeyError as e:
-        return "Couldn't find key " + str(e) + " in protocol dictionary"
+        return "Couldn't find key " + str(e) + ' in protocol dictionary'
     try:
         protocol = ProtocolManager(protocol_name)
     except ValueError as e:

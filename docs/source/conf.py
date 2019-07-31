@@ -315,7 +315,7 @@ else:
     # Back-end settings for readthedocs online documentation.
     from aiida.manage import configuration
     configuration.IN_RT_DOC_MODE = True
-    configuration.BACKEND = "django"
+    configuration.BACKEND = 'django'
 
 
 # Warnings to ignore when using the -n (nitpicky) option
