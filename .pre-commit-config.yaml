@@ -25,7 +25,7 @@
         aiida_quantumespresso/calculations.*|
         aiida_quantumespresso/parsers/.*|
         aiida_quantumespresso/tools/.*|
-        aiida_quantumespresso/utils/.*|
+        aiida_quantumespresso/utils/restart.py|
         aiida_quantumespresso/workflows/.*|
         docs/.*|
         tests/.*

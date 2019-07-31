@@ -1,3 +1,8 @@
 [style]
 based_on_style = google
 column_limit = 120
+coalesce_brackets = true
+dedent_closing_brackets = true
+indent_dictionary_value = false
+split_arguments_when_comma_terminated = true
+align_closing_bracket_with_visual_indent = true

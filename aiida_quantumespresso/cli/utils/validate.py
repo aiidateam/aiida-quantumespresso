@@ -146,8 +146,11 @@ def validate_smearing(parameters, smearing=None):
         if smearing[0] in options:
             break
     else:
-        raise ValueError('the smearing type "{}" is invalid, choose from {}'.format(
-            smearing[0], ', '.join(list(valid_smearing_types.keys()))))
+        raise ValueError(
+            'the smearing type "{}" is invalid, choose from {}'.format(
+                smearing[0], ', '.join(list(valid_smearing_types.keys()))
+            )
+        )
 
     if not isinstance(smearing[1], float):
         raise ValueError('the smearing value should be a float')

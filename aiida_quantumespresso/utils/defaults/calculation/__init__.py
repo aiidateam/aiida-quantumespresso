@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=invalid-name
+"""Module with default values of parameters used in Quantum ESPRESSO."""
 from __future__ import absolute_import
+
 from aiida.common.extendeddicts import AttributeDict
 
 pw = AttributeDict({
@@ -9,7 +12,6 @@ pw = AttributeDict({
     'electron_maxstep': 100,
     'etot_conv_thr': 1e-4,
     'forc_conv_thr': 1e-3,
-    'press_conv_thr': 0.5,
     'mixing_beta': 0.7,
     'mixing_mode': 'plain',
     'mixing_ndim': 8,

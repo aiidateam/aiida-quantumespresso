@@ -22,7 +22,8 @@ PARENT_FOLDER = OverridableOption(
     'parent_folder',
     metavar='RemoteData/FolderData',  # placeholder in the help text
     type=types.NodeParamType(sub_classes=('aiida.data:remote', 'aiida.data:folder')),
-    help='A RemoteData or FolderData node identified by its ID or UUID.')
+    help='A RemoteData or FolderData node identified by its ID or UUID.'
+)
 
 SINGLE_FILE = OverridableOption(
     '-S',
@@ -30,7 +31,8 @@ SINGLE_FILE = OverridableOption(
     'single_file',
     metavar='SinglefileData',  # placeholder in the help text
     type=types.NodeParamType(sub_classes=('aiida.data:singlefile',)),
-    help='A SinglefileData node identified by its ID or UUID.')
+    help='A SinglefileData node identified by its ID or UUID.'
+)
 
 
 @calculation_launch.command('pw2wannier90')

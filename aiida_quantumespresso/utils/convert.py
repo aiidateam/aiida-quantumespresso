@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-
+"""Utilties to convert between python and fortran data types and formats."""
 from __future__ import absolute_import
 from __future__ import print_function
+
 import numbers
 import six
 from six.moves import zip
@@ -30,8 +31,11 @@ def conv_to_fortran(val, quote_strings=True):
         else:
             val_str = '{!s}'.format(val)
     else:
-        raise ValueError("Invalid value '{}' of type '{}' passed, accepts only bools, ints, floats and strings".format(
-            val, type(val)))
+        raise ValueError(
+            "Invalid value '{}' of type '{}' passed, accepts only bools, ints, floats and strings".format(
+                val, type(val)
+            )
+        )
 
     return val_str
 
@@ -155,6 +159,7 @@ def convert_input_to_namelist_entry(key, val, mapping=None):
 
         This will map every occurrence of 'Fe' and 'O' in the values to the corresponding integer.
     """
+    # pylint: disable=too-many-branches,too-many-nested-blocks
     # I don't try to do iterator=iter(val) and catch TypeError because it would also match strings
     # I check first the dictionary, because it would also match hasattr(__iter__)
     if isinstance(val, dict):
@@ -200,8 +205,10 @@ def convert_input_to_namelist_entry(key, val, mapping=None):
                             raise ValueError('cannot map the string value because no mapping was defined')
 
                         if value not in mapping:
-                            raise ValueError('the nested list contained string {} but this is not a key in the mapping'
-                                .format(value))
+                            raise ValueError(
+                                'the nested list contained string {} but this is not a key in the mapping'.
+                                format(value)
+                            )
                         else:
                             values.append(str(mapping[value]))
                     else:

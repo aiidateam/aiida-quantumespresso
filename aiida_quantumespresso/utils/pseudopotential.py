@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
+"""Utilities for pseudo potentials."""
 from __future__ import absolute_import
-from aiida.orm.nodes.data.upf import UpfData, get_pseudos_from_structure
+
 import six
 
+from aiida.orm.nodes.data.upf import UpfData, get_pseudos_from_structure
 
-def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=None):
+
+def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=None):  # pylint: disable=invalid-name
     """
     Use the explicitly passed pseudos dictionary or use the pseudo_family in combination with
     the structure to obtain that dictionary.
@@ -60,11 +63,11 @@ def get_pseudos_of_calc(calc):
     # I create here a dictionary that associates each kind name to a pseudo
     inputs = calc.get_incoming(link_type=LinkType.INPUT_CALC)
     for linkname in inputs.keys():
-        if linkname.startswith(calc._get_linkname_pseudo_prefix()):
+        if linkname.startswith(calc._get_linkname_pseudo_prefix()):  # pylint: disable=protected-access
             # Note that this string might be a sequence of kind names
             # concatenated by an underscore, see implementation in the
             # input plugin implementation.
-            multiplekindstring = linkname[len(calc._get_linkname_pseudo_prefix()):]
+            multiplekindstring = linkname[len(calc._get_linkname_pseudo_prefix()):]  # pylint: disable=protected-access
             pseudos[multiplekindstring] = inputs[linkname]
     return pseudos
 
@@ -98,19 +101,20 @@ def get_pseudos_from_dict(structure, pseudos_uuids):
         try:
             uuid = pseudos_uuids[symbol]
         except KeyError:
-            raise NotExistent('No UPF for element {} found in the provided pseudos_uuids dictionary'.format(
-                symbol))
+            raise NotExistent('No UPF for element {} found in the provided pseudos_uuids dictionary'.format(symbol))
         try:
             upf = load_node(uuid)
         except NotExistent:
             raise NotExistent(
                 'No node found associated to the UUID {} given for element {} '
-                'in the provided pseudos_uuids dictionary'.format(uuid, symbol))
+                'in the provided pseudos_uuids dictionary'.format(uuid, symbol)
+            )
         if not isinstance(upf, UpfData):
             raise ValueError('Node with UUID {} is not a UpfData'.format(uuid))
         if upf.element != symbol:
             raise ValueError(
-                'Node<{}> is associated to element {} and not to {} as expected'.format(uuid, upf.element, symbol))
+                'Node<{}> is associated to element {} and not to {} as expected'.format(uuid, upf.element, symbol)
+            )
 
         pseudo_list[kind.name] = upf
 

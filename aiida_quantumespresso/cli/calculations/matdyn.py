@@ -15,7 +15,8 @@ from ..utils import options as options_qe
 @options.DATUM(
     required=True,
     type=types.DataParamType(sub_classes=('aiida.data:quantumespresso.forceconstants',)),
-    help='A ForceconstantsData node produced by a `Q2rCalculation`')
+    help='A ForceconstantsData node produced by a `Q2rCalculation`'
+)
 @options_qe.KPOINTS_MESH(default=[1, 1, 1])
 @options_qe.MAX_NUM_MACHINES()
 @options_qe.MAX_WALLCLOCK_SECONDS()

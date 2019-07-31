@@ -31,9 +31,11 @@ from ...utils import validate
 @options_qe.WITH_MPI()
 @options_qe.DAEMON()
 @decorators.with_dbenv()
-def launch_workflow(code, structure, pseudo_family, kpoints_distance, ecutwfc, ecutrho, hubbard_u, hubbard_v,
-                    hubbard_file_pk, starting_magnetization, smearing, automatic_parallelization, clean_workdir,
-                    max_num_machines, max_wallclock_seconds, with_mpi, daemon):
+def launch_workflow(
+    code, structure, pseudo_family, kpoints_distance, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file_pk,
+    starting_magnetization, smearing, automatic_parallelization, clean_workdir, max_num_machines, max_wallclock_seconds,
+    with_mpi, daemon
+):
     """Run a `PwBaseWorkChain`."""
     from aiida.orm import Bool, Float, Str, Dict
     from aiida.plugins import WorkflowFactory
@@ -49,8 +51,9 @@ def launch_workflow(code, structure, pseudo_family, kpoints_distance, ecutwfc, e
     }
 
     try:
-        hubbard_file = validate.validate_hubbard_parameters(structure, parameters, hubbard_u, hubbard_v,
-                                                            hubbard_file_pk)
+        hubbard_file = validate.validate_hubbard_parameters(
+            structure, parameters, hubbard_u, hubbard_v, hubbard_file_pk
+        )
     except ValueError as exception:
         raise click.BadParameter(str(exception))
 

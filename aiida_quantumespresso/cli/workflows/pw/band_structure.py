@@ -21,7 +21,8 @@ from ...utils import options as options_qe
     type=click.Choice(['theos-ht-1.0']),
     default='theos-ht-1.0',
     show_default=True,
-    help='the protocol to use for the workflow')
+    help='the protocol to use for the workflow'
+)
 @decorators.with_dbenv()
 def launch_workflow(code, structure, daemon, protocol):
     """Run a `PwBandStructureWorkChain`."""
