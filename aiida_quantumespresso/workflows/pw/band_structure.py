@@ -14,15 +14,15 @@ PwBandsWorkChain = WorkflowFactory('quantumespresso.pw.bands')
 
 
 def _validate_protocol(protocol_dict):
-    """ Check that the protocol is one for which we have a definition. """
+    """Check that the protocol is one for which we have a definition."""
     try:
         protocol_name = protocol_dict['name']
-    except KeyError as e:
-        return "Couldn't find key " + str(e) + ' in protocol dictionary'
+    except KeyError as exception:
+        return 'Missing key `name` in protocol dictionary'
     try:
-        protocol = ProtocolManager(protocol_name)
-    except ValueError as e:
-        return str(e)  # "Unknown protocol '{}'".format(name)
+        ProtocolManager(protocol_name)
+    except ValueError as exception:
+        return str(exception)
 
 
 class PwBandStructureWorkChain(WorkChain):
@@ -33,15 +33,15 @@ class PwBandStructureWorkChain(WorkChain):
         super(PwBandStructureWorkChain, cls).define(spec)
         spec.input('code', valid_type=orm.Code)
         spec.input('structure', valid_type=orm.StructureData)
-        spec.input('protocol', valid_type=orm.Dict, default=orm.Dict(dict={'name':'theos-ht-1.0'}),
-                   validator=_validate_protocol)
+        spec.input('protocol', valid_type=orm.Dict, default=orm.Dict(dict={'name': 'theos-ht-1.0'}),
+            validator=_validate_protocol)
         spec.input('scf_options', valid_type=orm.Dict, default=orm.Dict(dict=get_default_options(with_mpi=True)))
         spec.outline(
             cls.setup_protocol,
             cls.setup_kpoints,
             cls.setup_parameters,
             cls.run_bands,
-            cls.run_results,
+            cls.results,
         )
         spec.exit_code(101, 'ERROR_INVALID_INPUT_UNRECOGNIZED_KIND', message='The bands subworkchain failed')
         spec.exit_code(102, 'ERROR_SUB_PROCESS_FAILED_BANDS', message='the bands PwBasexWorkChain sub process failed')
@@ -52,9 +52,7 @@ class PwBandStructureWorkChain(WorkChain):
         spec.output('band_structure', valid_type=orm.BandsData)
 
     def _get_protocol(self):
-        """
-        Return a ProtocolManager class and a dictionary of modifiers
-        """
+        """Return a `ProtocolManager` instance and a dictionary of modifiers."""
         protocol_data = self.inputs.protocol.get_dict()
         protocol_name = protocol_data['name']
         protocol = ProtocolManager(protocol_name)
@@ -64,18 +62,16 @@ class PwBandStructureWorkChain(WorkChain):
         return protocol, protocol_modifiers
 
     def setup_protocol(self):
-        """
-        Setup of context variables and inputs for the PwBandsWorkChain. Based on the specified
-        protocol, we define values for variables that affect the execution of the calculations
+        """Setup of context variables and inputs for the `PwBandsWorkChain`.
+
+        Based on the specified protocol, we define values for variables that affect the execution of the calculations.
         """
         protocol, protocol_modifiers = self._get_protocol()
         self.report('running the workchain in the "{}" protocol'.format(protocol.name))
         self.ctx.protocol = protocol.get_protocol_data(modifiers=protocol_modifiers)
 
     def setup_kpoints(self):
-        """
-        Define the k-point mesh for the relax and scf calculations.
-        """
+        """Define the k-point mesh for the relax and scf calculations."""
         kpoints_mesh = orm.KpointsData()
         kpoints_mesh.set_cell_from_structure(self.inputs.structure)
         kpoints_mesh.set_kpoints_mesh_from_density(
@@ -86,9 +82,7 @@ class PwBandStructureWorkChain(WorkChain):
         self.ctx.kpoints_mesh = kpoints_mesh
 
     def setup_parameters(self):
-        """
-        Setup the default input parameters required for the PwBandsWorkChain
-        """
+        """Setup the default input parameters required for the `PwBandsWorkChain`."""
         structure = self.inputs.structure
         ecutwfc = []
         ecutrho = []
@@ -126,9 +120,8 @@ class PwBandStructureWorkChain(WorkChain):
         }
 
     def run_bands(self):
-        """
-        Run the PwBandsWorkChain to compute the band structure
-        """
+        """Run the `PwBandsWorkChain` to compute the band structure."""
+
         def get_common_inputs():
 
             protocol, protocol_modifiers = self._get_protocol()
@@ -139,16 +132,19 @@ class PwBandStructureWorkChain(WorkChain):
 
             pseudos = get_pseudos_from_dict(self.inputs.structure, known_pseudos)
 
-            res = {
-                'code': self.inputs.code,
-                'pseudos': pseudos,
-                'parameters': orm.Dict(dict=self.ctx.parameters),
+            result = {
+                'pw': {
+                    'code': self.inputs.code,
+                    'pseudos': pseudos,
+                    'parameters': orm.Dict(dict=self.ctx.parameters),
+                    'metadata': {},
+                }
             }
 
             if 'scf_options' in self.inputs:
-                res['options'] = self.inputs.scf_options
+                result['metadata']['options'] = self.inputs.scf_options
 
-            return res
+            return result
 
         relax_inputs = {
             'base': get_common_inputs(),
@@ -188,20 +184,16 @@ class PwBandStructureWorkChain(WorkChain):
 
         return ToContext(workchain_bands=running)
 
-    def run_results(self):
-        """
-        Attach the relevant output nodes from the band calculation to the workchain outputs
-        for convenience
-        """
+    def results(self):
+        """Attach the relevant output nodes from the band calculation to the workchain outputs for convenience."""
         exit_code = 0
 
         if self.ctx.workchain_bands.is_finished_ok:
             self.report('workchain succesfully completed')
         else:
             wc_bands = self.ctx.workchain_bands
-            self.report('bands sub-workchain failed (process state: {}, '
-                        'exit message: {}, '
-                        'exit status: {})'.format(wc_bands.process_state, wc_bands.exit_message, wc_bands.exit_status))
+            self.report('bands sub-workchain failed (process state: {}, exit message: {}, exit status: {})'.format(
+                wc_bands.process_state, wc_bands.exit_message, wc_bands.exit_status))
             exit_code = self.exit_codes.ERROR_SUB_PROCESS_FAILED_BANDS
 
         link_labels = [
