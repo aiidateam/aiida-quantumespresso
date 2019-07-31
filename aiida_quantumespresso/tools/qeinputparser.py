@@ -249,10 +249,10 @@ def str2val(valstr):
     # Define a tuple of regular expressions to match and their corresponding
     # conversion functions.
     re_fn_tuple = (
-        (re.compile(r"[.](true|t)[.]", re.I), lambda s: True),
-        (re.compile(r"[.](false|f)[.]", re.I), lambda s: False),
+        (re.compile(r'[.](true|t)[.]', re.I), lambda s: True),
+        (re.compile(r'[.](false|f)[.]', re.I), lambda s: False),
         (float_re, lambda s: float(s.replace('d', 'e').replace('D', 'E'))),
-        (re.compile(r"[-+]?\d+$"), lambda s: int(s)),
+        (re.compile(r'[-+]?\d+$'), lambda s: int(s)),
         (re.compile(r"""['"].+['"]"""), lambda s: str(s.strip("\'\"")))
     )
     # Convert valstr to a value.
@@ -337,7 +337,7 @@ def parse_namelists(txt):
             'No data was found while parsing the namelist in the following '
             'text\n' + txt
         )
-    return _uppercase_dict(params_dict, "params_dict")
+    return _uppercase_dict(params_dict, 'params_dict')
 
 
 def parse_atomic_positions(txt):
@@ -836,8 +836,8 @@ def get_cell_from_parameters(cell_parameters, system_dict, alat, using_celldm):
             cell = bohr_to_ang * cell
         elif cell_unit == 'alat':
             if alat is None:
-                raise InputValidationError("You have specified units of alat for the cell, \n"
-                    "but you have not provided a value for alat")
+                raise InputValidationError('You have specified units of alat for the cell, \n'
+                    'but you have not provided a value for alat')
             cell = alat * cell
         elif cell_unit == '':
             # Now here comes some piece of retardedness in QE:
@@ -848,7 +848,7 @@ def get_cell_from_parameters(cell_parameters, system_dict, alat, using_celldm):
             else:
                 cell = alat * cell
         else:
-            raise InputValidationError("Unknown unit for CELL_PARAMETERS {}".format(cell_unit))
+            raise InputValidationError('Unknown unit for CELL_PARAMETERS {}'.format(cell_unit))
 
 
     if ibrav == 1:
@@ -1138,9 +1138,9 @@ Ac | Th | Pa | U  | Np | Pu | Am | Cm | Bk | Cf | Es | Fm | Md | No | Lr | # Act
     positions = np.array(atomic_positions['positions'])
 
     if positions_units is None:
-        raise InputValidationError("There is no unit for positions\n"
-                "This is deprecated behavior for QE.\n"
-                "In addition the default values by CP and PW differ (bohr and alat)"
+        raise InputValidationError('There is no unit for positions\n'
+                'This is deprecated behavior for QE.\n'
+                'In addition the default values by CP and PW differ (bohr and alat)'
             )
     elif positions_units == 'angstrom':
         pass

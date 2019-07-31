@@ -9,6 +9,7 @@
           tests/parsers/fixtures/.*|
           tests/parsers/*.yml
       )$
+  - id: double-quote-string-fixer
 
 - repo: local
   hooks:

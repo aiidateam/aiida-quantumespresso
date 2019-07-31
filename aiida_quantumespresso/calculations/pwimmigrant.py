@@ -180,21 +180,21 @@ class PwimmigrantCalculation(PwCalculation):
         # Check that open_transport is the correct transport type.
         if type(open_transport) is not self.get_computer().get_transport_class():
             raise InputValidationError(
-                "The transport passed as the `open_transport` parameter is "
-                "not the same transport type linked to the computer. Please "
-                "obtain the correct transport class using the "
+                'The transport passed as the `open_transport` parameter is '
+                'not the same transport type linked to the computer. Please '
+                'obtain the correct transport class using the '
                 "`get_transport_class` method of the calculation's computer. "
-                "See the tutorial for more information."
+                'See the tutorial for more information.'
             )
 
         # Check that open_transport is actually open.
         if not open_transport._is_open:
             raise InvalidOperation(
-                "The transport passed as the `open_transport` parameter is "
+                'The transport passed as the `open_transport` parameter is '
                 "not open. Please execute the open the transport using it's "
-                "`open` method, or execute the call to this method within a "
-                "`with` statement context guard. See the tutorial for more "
-                "information."
+                '`open` method, or execute the call to this method within a '
+                '`with` statement context guard. See the tutorial for more '
+                'information.'
             )
 
         # Copy the input file and psuedo files to a temp folder for parsing.
@@ -265,7 +265,7 @@ class PwimmigrantCalculation(PwCalculation):
                 keys = list(parameters_dict[namelist].keys())
                 for this_key in parameters_dict[namelist].keys():
                     # take into account that celldm and celldm(*) must be blocked
-                    if re.sub("[(0-9)]", "", this_key) == blocked_key:
+                    if re.sub('[(0-9)]', '', this_key) == blocked_key:
                         parameters_dict[namelist].pop(this_key, None)
 
             parameters = Dict(dict=parameters_dict)
@@ -383,28 +383,28 @@ class PwimmigrantCalculation(PwCalculation):
         # Check that the create_input_nodes method has run successfully.
         if not self.get_attr('input_nodes_created', False):
             raise InvalidOperation(
-                "You must run the create_input_nodes method before calling "
-                "prepare_for_retrieval_and_parsing!"
+                'You must run the create_input_nodes method before calling '
+                'prepare_for_retrieval_and_parsing!'
             )
 
         # Check that open_transport is the correct transport type.
         if type(open_transport) is not self.get_computer().get_transport_class():
             raise InputValidationError(
-                "The transport passed as the `open_transport` parameter is "
-                "not the same transport type linked to the computer. Please "
-                "obtain the correct transport class using the "
+                'The transport passed as the `open_transport` parameter is '
+                'not the same transport type linked to the computer. Please '
+                'obtain the correct transport class using the '
                 "`get_transport_class` method of the calculation's computer. "
-                "See the tutorial for more information."
+                'See the tutorial for more information.'
             )
 
         # Check that open_transport is actually open.
         if not open_transport._is_open:
             raise InvalidOperation(
-                "The transport passed as the `open_transport` parameter is "
+                'The transport passed as the `open_transport` parameter is '
                 "not open. Please execute the open the transport using it's "
-                "`open` method, or execute the call to this method within a "
-                "`with` statement context guard. See the tutorial for more "
-                "information."
+                '`open` method, or execute the call to this method within a '
+                '`with` statement context guard. See the tutorial for more '
+                'information.'
             )
 
         # Prepare the calculation for retrieval

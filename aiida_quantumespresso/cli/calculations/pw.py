@@ -114,7 +114,7 @@ def launch_calculation(code, structure, pseudo_family, kpoints_mesh, ecutwfc, ec
             # .submit() would forward to .run(), but it's better to stop here,
             # since it's a bit unexpected and the log messages output to screen
             # would be confusing ("Submitted PwCalculation<None> to the daemon")
-            raise click.BadParameter("cannot send to the daemon if in dry_run mode", param_hint='--daemon')
+            raise click.BadParameter('cannot send to the daemon if in dry_run mode', param_hint='--daemon')
         inputs.setdefault('metadata', {})['store_provenance'] = False
         inputs['metadata']['dry_run'] = True
 

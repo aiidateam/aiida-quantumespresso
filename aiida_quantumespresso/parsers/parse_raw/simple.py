@@ -27,9 +27,9 @@ def parse_qe_simple(filecontent, codename=None):
 
     generic_error_message = "There was an error, please check the 'error_message' key"
 
-    if "JOB DONE" not in filecontent:
+    if 'JOB DONE' not in filecontent:
         successful = False
-        msg = "Computation did not finish properly"
+        msg = 'Computation did not finish properly'
         parsed_data['warnings'].append(msg)
 
     lines = filecontent.split('\n')
@@ -37,9 +37,9 @@ def parse_qe_simple(filecontent, codename=None):
     if codename is not None:
         for count,line in enumerate(lines):
 
-            codestring = "Program {}".format(codename)
-            if codestring in line and "starts on" in line:
-                parsed_data['code_version'] = line.split(codestring)[1].split("starts on")[0].strip()
+            codestring = 'Program {}'.format(codename)
+            if codestring in line and 'starts on' in line:
+                parsed_data['code_version'] = line.split(codestring)[1].split('starts on')[0].strip()
 
             # parse the global file, for informations that are written only once
             if codename in line and 'WALL' in line:
@@ -52,7 +52,7 @@ def parse_qe_simple(filecontent, codename=None):
                     try:
                         parsed_data['wall_time_seconds'] = convert_qe_time_to_sec(time)
                     except ValueError:
-                        raise QEOutputParsingError("Unable to convert wall_time in seconds.")
+                        raise QEOutputParsingError('Unable to convert wall_time in seconds.')
 
             if '%%%%%%%%%%%%%%' in line:
                 if generic_error_message not in parsed_data['warnings']:

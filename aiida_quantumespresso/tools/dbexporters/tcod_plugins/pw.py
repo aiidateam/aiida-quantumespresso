@@ -10,7 +10,7 @@ class PwTcodtranslator(BaseTcodtranslator):
     Quantum ESPRESSO's PW-specific input and output parameter translator
     to TCOD CIF dictionary tags.
     """
-    _plugin_type_string = "quantumespresso.pw.PwCalculation"
+    _plugin_type_string = 'quantumespresso.pw.PwCalculation'
 
     _smearing_aliases = {
         'gaussian': 'Gaussian',
@@ -53,13 +53,13 @@ class PwTcodtranslator(BaseTcodtranslator):
         if energy_type not in parameters.attrs():
             return None
         if energy_type + '_units' not in parameters.attrs():
-            raise ValueError("energy units for {} are "
-                             "unknown".format(energy_type))
+            raise ValueError('energy units for {} are '
+                             'unknown'.format(energy_type))
         if parameters.get_attr(energy_type + '_units') != 'eV':
-            raise ValueError("energy units for {} are {} "
-                             "instead of eV -- unit "
-                             "conversion is not possible "
-                             "yet".format(energy_type,
+            raise ValueError('energy units for {} are {} '
+                             'instead of eV -- unit '
+                             'conversion is not possible '
+                             'yet'.format(energy_type,
                                           parameters.get_attr(energy_type + '_units')))
         return parameters.get_attr(energy_type)
 
@@ -386,7 +386,7 @@ class PwTcodtranslator(BaseTcodtranslator):
         for node in calc.get_incoming(node_class=UpfData).all_nodes():
             element = node.element
             parsed = parse_upf(node.get_file_abs_path())
-            if parsed['version'] != "2":
+            if parsed['version'] != '2':
                 types[element] = None
                 continue
             upf_type = None

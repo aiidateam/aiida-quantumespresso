@@ -20,8 +20,8 @@ def import_qeinput(fname):
     bohr          = 0.52917720859
     one_over_bohr = 1.0/bohr
 
-    cell_types      = ["alat","bohr","angstrom"]
-    pos_types       = ["alat","bohr","angstrom","crystal"]
+    cell_types      = ['alat','bohr','angstrom']
+    pos_types       = ['alat','bohr','angstrom','crystal']
 
     def generate_cell(ibrav, parameters):
 
@@ -151,7 +151,7 @@ def import_qeinput(fname):
             cellAlat[2][2] = parameters[2]*np.sqrt(1+2*np.cos(alpha)*np.cos(beta)*np.cos(gamma) - (np.cos(beta)*np.cos(beta))-(np.cos(alpha)*np.cos(alpha))-(np.cos(gamma)*np.cos(gamma)))/(np.sin(gamma));
 
         else:
-            raise Exception("ibrav [{0}] is not defined !".format(ibrav))
+            raise Exception('ibrav [{0}] is not defined !'.format(ibrav))
 
         cell_angstrom = cellAlat * parameters[0] * bohr
         return cell_angstrom
@@ -188,9 +188,9 @@ def import_qeinput(fname):
 
     def sanitize(line_raw, sec=None):
         if sec is not None:
-            return line_raw.split("!")[0].split(sec)[0]
+            return line_raw.split('!')[0].split(sec)[0]
         else:
-            return line_raw.split("!")[0]
+            return line_raw.split('!')[0]
 
     import re
     import numpy as np
@@ -238,7 +238,7 @@ def import_qeinput(fname):
 
     ff_float = FortranRecordReader('F15.9')
 
-    f = open(fname, "rw+")
+    f = open(fname, 'rw+')
     line = sanitize(f.readline())
     while line:
 
@@ -263,7 +263,7 @@ def import_qeinput(fname):
         if cell_parameters.search(line) and nat>0 and ibrav==0 and cell is None:
 
             if celldm is not None and a is not None:
-                raise Exception("Cannot declare both celldm and A, B, C, cosAB, cosAC, cosBC (a={}, celldm={})".format(a, celldm))
+                raise Exception('Cannot declare both celldm and A, B, C, cosAB, cosAC, cosBC (a={}, celldm={})'.format(a, celldm))
 
             if a is not None:
                 alat = a
@@ -280,7 +280,7 @@ def import_qeinput(fname):
             cell_ax = 0
             while cell_ax<3:
                 line = sanitize(f.readline())
-                while (line.strip()=="" or line.strip().startswith("!"))=="": line = sanitize(f.readline(), sec="#")
+                while (line.strip()=='' or line.strip().startswith('!'))=='': line = sanitize(f.readline(), sec='#')
                 cell_ax_val = np.array([ff_float.read(p)[0] for p in line.strip().split()])
 
                 if cell_type==cell_types[0]: cell_ax_val*=alat*bohr
@@ -297,7 +297,7 @@ def import_qeinput(fname):
             type_count = 0
             while type_count<ntyp:
                 line = sanitize(f.readline())
-                while (line.strip()=="" or line.strip().startswith("!")): line = sanitize(f.readline(), sec="#")
+                while (line.strip()=='' or line.strip().startswith('!')): line = sanitize(f.readline(), sec='#')
                 p = line.strip().split()
 
                 raw = {'symbols':p[0],'weights':1.0,'name':p[0],'mass':float(p[1])}
@@ -311,7 +311,7 @@ def import_qeinput(fname):
                 type_count+=1
 
         if atomic_position.search(line) and nat>0:
-            pos_type = "alat"
+            pos_type = 'alat'
             for pt in pos_types:
                 if pt in line.lower(): pos_type = pt
 
@@ -322,7 +322,7 @@ def import_qeinput(fname):
             while pos_count<nat:
 
                 line = sanitize(f.readline())
-                while (line.strip()=="" or line.strip().startswith("!")): line = sanitize(f.readline(), sec="#")
+                while (line.strip()=='' or line.strip().startswith('!')): line = sanitize(f.readline(), sec='#')
 
                 p = line.strip().split()
                 atomic_kindnames[pos_count] = p[0]
@@ -334,7 +334,7 @@ def import_qeinput(fname):
 
     # Cell generation
     if celldm is not None and a is not None:
-                raise Exception("Cannot declare both celldm and A, B, C, cosAB, cosAC, cosBC (a={}, celldm={})".format(a, celldm))
+                raise Exception('Cannot declare both celldm and A, B, C, cosAB, cosAC, cosBC (a={}, celldm={})'.format(a, celldm))
 
     if a is not None and \
        b is not None and \

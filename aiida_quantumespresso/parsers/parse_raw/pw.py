@@ -117,15 +117,15 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                         volume = float(line.split('=')[1].split('a.u.^3')[0])
                 elif 'number of Kohn-Sham states' in line:
                     nbnd = int(line.split('=')[1])
-                elif "number of k points" in line:
+                elif 'number of k points' in line:
                     nk = int(line.split('=')[1].split()[0])
                     if input_parameters.get('SYSTEM', {}).get('nspin', 1) > 1:
                         # QE counts twice each k-point in spin-polarized calculations
                         nk /= 2
-                elif "Dense  grid" in line:
+                elif 'Dense  grid' in line:
                     FFT_grid = [int(g) for g in
                                 line.split('(')[1].split(')')[0].split(',')]
-                elif "Smooth grid" in line:
+                elif 'Smooth grid' in line:
                     smooth_FFT_grid = [int(g) for g in
                                        line.split('(')[1].split(')')[0].split(',')]
                     break
@@ -192,8 +192,8 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                 trajectory_data['atomic_species_name'] = [data_lines[i + 1 + j].split()[1] for j in range(nat)]
 
         # parse the initialization time (take only first occurence)
-        elif ('init_wall_time_seconds' not in parsed_data and "total cpu time spent up to now is" in line):
-            init_time = float(line.split("total cpu time spent up to now is"
+        elif ('init_wall_time_seconds' not in parsed_data and 'total cpu time spent up to now is' in line):
+            init_time = float(line.split('total cpu time spent up to now is'
                                          )[1].split('secs')[0])
             parsed_data['init_wall_time_seconds'] = init_time
 
@@ -207,7 +207,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
             try:
                 parsed_data['wall_time_seconds'] = convert_qe_time_to_sec(time)
             except ValueError:
-                raise QEOutputParsingError("Unable to convert wall_time in seconds.")
+                raise QEOutputParsingError('Unable to convert wall_time in seconds.')
 
         # for later control on relaxation-dynamics convergence
         elif 'nstep' in line and '=' in line:
@@ -239,14 +239,14 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                     parsed_data['pointgroup_schoenflies'] = pg_schoenflies
 
                 except Exception:
-                    warning = "Problem parsing point group, I found: {}".format(line.strip())
+                    warning = 'Problem parsing point group, I found: {}'.format(line.strip())
                     logs.warning.append(warning)
 
         # special parsing of c_bands error
         elif 'c_bands' in line and 'eigenvalues not converged' in line:
             c_bands_error = True
 
-        elif "iteration #" in line:
+        elif 'iteration #' in line:
             if 'Calculation restarted' not in line and 'Calculation stopped' not in line:
                 try:
                     parsed_data['total_number_of_scf_iterations'] += 1
@@ -259,7 +259,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                 c_bands_error = False
 
     if c_bands_error:
-        logs.warning.append("c_bands: at least 1 eigenvalues not converged")
+        logs.warning.append('c_bands: at least 1 eigenvalues not converged')
 
     # I split the output text in the atomic SCF calculations.
     # the initial part should be things already contained in the xml.
@@ -293,8 +293,8 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                         a3 = [alat * bohr_to_ang * float(s) for s in a3]
                         lattice_parameter_b = float(lattice[1])
                         if abs(lattice_parameter_b - alat) > lattice_tolerance:
-                            raise QEOutputParsingError("Lattice parameters mismatch! " +
-                                                       "{} vs {}".format(lattice_parameter_b, alat))
+                            raise QEOutputParsingError('Lattice parameters mismatch! ' +
+                                                       '{} vs {}'.format(lattice_parameter_b, alat))
                     elif 'bohr' in lattice[0].lower():
                         lattice_parameter_b *= bohr_to_ang
                         a1 = [bohr_to_ang * float(s) for s in a1]
@@ -345,7 +345,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                 try:
                     units = line2.split()[-1]
                     if default_dipole_units.lower() not in units.lower():  # only debye
-                        raise QEOutputParsingError("Error parsing the dipole correction. Units {} are not supported.".format(units))
+                        raise QEOutputParsingError('Error parsing the dipole correction. Units {} are not supported.'.format(units))
                     value = float(line2.split()[-2])
                 except IndexError:  # on units
                     pass
@@ -366,7 +366,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
 
             elif 'convergence has been achieved in' in line or 'convergence NOT achieved after' in line:
                 try:
-                    scf_iterations = int(line.split("iterations")[0].split()[-1])
+                    scf_iterations = int(line.split('iterations')[0].split()[-1])
                     try:
                         trajectory_data['scf_iterations'].append(scf_iterations)
                     except KeyError:
@@ -553,7 +553,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                 try:
                     stress = []
                     for k in range(10 + 5 * vdw_correction):
-                        if "P=" in data_step[count + k + 1]:
+                        if 'P=' in data_step[count + k + 1]:
                             count2 = count + k + 1
                     if '(Ry/bohr**3)' not in data_step[count2]:
                         raise QEOutputParsingError('Error while parsing stress: unexpected units.')

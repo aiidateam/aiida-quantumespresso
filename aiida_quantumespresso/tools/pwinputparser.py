@@ -374,7 +374,7 @@ def create_builder_from_file(input_folder, input_file_name, code, metadata, pseu
     for namelist, blocked_key in pw_calc_cls._blocked_keywords:  # pylint: disable=protected-access
         for this_key in list(parameters_dict[namelist].keys()):
             # take into account that celldm and celldm(*) must be blocked
-            if re.sub("[(0-9)]", "", this_key) == blocked_key:
+            if re.sub('[(0-9)]', '', this_key) == blocked_key:
                 parameters_dict[namelist].pop(this_key, None)
     builder['parameters'] = Dict(dict=parameters_dict)
 

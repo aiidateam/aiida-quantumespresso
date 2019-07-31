@@ -94,12 +94,12 @@ def main():
     settings = Dict(dict=settings_dict)
 
     calc = code.new_calc()
-    calc.label = "Test QE pw.x"
-    calc.description = "Test calculation with the Quantum ESPRESSO pw.x code"
+    calc.label = 'Test QE pw.x'
+    calc.description = 'Test calculation with the Quantum ESPRESSO pw.x code'
     calc.set_option('max_wallclock_seconds', 30 * 60)  # 30 min
     # Valid only for Slurm and PBS (using default values for the
     # number_cpus_per_machine), change for SGE-like schedulers
-    calc.set_option('resources', {"num_machines": 1})
+    calc.set_option('resources', {'num_machines': 1})
     if run_in_serial_mode:
         calc.set_option('withmpi', False)
 
@@ -109,18 +109,18 @@ def main():
     calc.use_structure(structure)
     calc.use_parameters(parameters)
 
-    raw_pseudos = [("Ba.pbesol-spn-rrkjus_psl.0.2.3-tot-pslib030.UPF", 'Ba', 'pbesol'),
-                   ("Ti.pbesol-spn-rrkjus_psl.0.2.3-tot-pslib030.UPF", 'Ti', 'pbesol'),
-                   ("O.pbesol-n-rrkjus_psl.0.1-tested-pslib030.UPF", 'O', 'pbesol')]
+    raw_pseudos = [('Ba.pbesol-spn-rrkjus_psl.0.2.3-tot-pslib030.UPF', 'Ba', 'pbesol'),
+                   ('Ti.pbesol-spn-rrkjus_psl.0.2.3-tot-pslib030.UPF', 'Ti', 'pbesol'),
+                   ('O.pbesol-n-rrkjus_psl.0.1-tested-pslib030.UPF', 'O', 'pbesol')]
 
     pseudos_to_use = {}
     for fname, elem, _ in raw_pseudos:
-        absname = os.path.realpath(os.path.join(os.path.dirname(__file__), "data", fname))
+        absname = os.path.realpath(os.path.join(os.path.dirname(__file__), 'data', fname))
         pseudo, created = UpfData.get_or_create(absname, use_first=True)
         if created:
-            print("Created the pseudo for {}".format(elem))
+            print('Created the pseudo for {}'.format(elem))
         else:
-            print("Using the pseudo for {} from DB: {}".format(elem, pseudo.pk))
+            print('Using the pseudo for {} from DB: {}'.format(elem, pseudo.pk))
         pseudos_to_use[elem] = pseudo
 
     for kind, pseudo in six.iteritems(pseudos_to_use):
@@ -136,7 +136,7 @@ def main():
     calc.submit()
     print("submitted calculation; calc=Calculation(uuid='{}') # ID={}".format(calc.uuid, calc.dbnode.pk))
 
-    print("Wating for end of execution...")
+    print('Wating for end of execution...')
     start_time = time.time()
     exited_with_timeout = True
     while time.time() - start_time < timeout_secs:
@@ -145,34 +145,34 @@ def main():
         # print some debug info, both for debugging reasons and to avoid
         # that the test machine is shut down because there is no output
 
-        print("#" * 78)
-        print("####### TIME ELAPSED: {} s".format(time.time() - start_time))
-        print("#" * 78)
+        print('#' * 78)
+        print('####### TIME ELAPSED: {} s'.format(time.time() - start_time))
+        print('#' * 78)
         print("Output of 'verdi calculation list':")
         try:
             print(subprocess.check_output(
-                ["verdi", "calculation", "list"],
+                ['verdi', 'calculation', 'list'],
                 stderr=subprocess.STDOUT,
             ))
         except subprocess.CalledProcessError as exception:
-            print("Note: the command failed, message: {}".format(str(exception)))
+            print('Note: the command failed, message: {}'.format(str(exception)))
 
         if calc.is_terminated:
-            print("Calculation terminated its execution")
+            print('Calculation terminated its execution')
             exited_with_timeout = False
             break
 
     if exited_with_timeout:
-        print("Timeout!! Calculation did not complete after {} seconds".format(timeout_secs))
+        print('Timeout!! Calculation did not complete after {} seconds'.format(timeout_secs))
         sys.exit(2)
     else:
         if abs(calc.res.energy - expected_energy) < 1.e-3:
-            print("OK, energy has the expected value")
+            print('OK, energy has the expected value')
             sys.exit(0)
         else:
-            print("ERROR!")
-            print("Expected energy value: {}".format(expected_energy))
-            print("Actual energy value: {}".format(calc.res.energy))
+            print('ERROR!')
+            print('Expected energy value: {}'.format(expected_energy))
+            print('Actual energy value: {}'.format(calc.res.energy))
             sys.exit(3)
 
 

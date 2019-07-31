@@ -108,7 +108,7 @@ class ProtocolManager(object):
                 "You did not specify a modifier name for 'pseudo', but no default "
                 "modifier name exists for protocol '{}'.".format(self.name))
 
-        if pseudo_modifier_name == "custom":
+        if pseudo_modifier_name == 'custom':
             try:
                 pseudo_data = modifiers_copy.pop('pseudo_data')
             except KeyError:
@@ -120,7 +120,7 @@ class ProtocolManager(object):
 
         # Check that there are no unknown modifiers
         if modifiers_copy:
-            raise ValueError("Unknown modifiers specified: {}".format(",".join(sorted(modifiers_copy))))
+            raise ValueError('Unknown modifiers specified: {}'.format(','.join(sorted(modifiers_copy))))
 
         retdata = self.get_parameters_data(parameters_modifier_name)
         retdata['pseudo_data'] = pseudo_data
@@ -184,14 +184,14 @@ class ProtocolManager(object):
             modifier_name = self.get_default_pseudo_modifier_name()
         if modifier_name is None:
             raise ValueError(
-                "You did not specify a modifier name, but no default "
+                'You did not specify a modifier name, but no default '
                 "modifier name exists for protocol '{}'.".format(self.name))
 
         if modifier_name == 'custom':
             if pseudo_data is None:
                 raise ValueError(
                     "You chose 'custom' as modifier_name, but did not provide a "
-                    "pseudo_data!")
+                    'pseudo_data!')
         else:
             if pseudo_data is not None:
                 raise ValueError(
@@ -230,7 +230,7 @@ class ProtocolManager(object):
             'mismatch': mismatch
         }
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     p = ProtocolManager('theos-ht-1.0')
     print(p.check_pseudos())
     print(p.get_protocol_data())

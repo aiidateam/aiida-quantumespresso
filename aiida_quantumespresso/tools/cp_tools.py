@@ -82,7 +82,7 @@ class SimpleTrajectory(object):
         self.struct = aiida_struct
         self.generate_kind_ordering()
 
-        self.datas_attrs = ["n","ekinc","temph","tempp","etot","enthal","econs","econt","a","b","c"]
+        self.datas_attrs = ['n','ekinc','temph','tempp','etot','enthal','econs','econt','a','b','c']
 
         self.cells = []
         self.pos   = []
@@ -131,7 +131,7 @@ class SimpleTrajectory(object):
     def __getattr__(self, name):
 
         import pandas as pd
-        if name=="df":
+        if name=='df':
 
             if hasattr(self, 'df'):
                 return self.df
@@ -173,22 +173,22 @@ class SimpleTrajectory(object):
 
                 for at in range(len(self.ordering[i])):
 
-                    ion_key        = w_name+"_"+str(self.ordering[i][at])
+                    ion_key        = w_name+'_'+str(self.ordering[i][at])
 
-                    if "ekin_"+ion_key not in ekins:
-                        ekins["ekin_"+ion_key] = []
+                    if 'ekin_'+ion_key not in ekins:
+                        ekins['ekin_'+ion_key] = []
 
-                    if "temp_"+ion_key not in et:
-                        et["temp_"+ion_key]    = []
+                    if 'temp_'+ion_key not in et:
+                        et['temp_'+ion_key]    = []
 
                     mi  = np.array([_masses[self.ordering[i][at]]])
                     vi  = np.array([self.velocities[t].get_array()[self.ordering[i][at]]])
 
                     eki = getIonEkin_SI(mi,vi)
-                    ekins["ekin_"+ion_key].append(eki)
+                    ekins['ekin_'+ion_key].append(eki)
 
                     eti = getIonT_K(mi,vi)
-                    et["temp_"+ion_key].append(eti)
+                    et['temp_'+ion_key].append(eti)
 
 
         for k in ekins.keys():
@@ -207,7 +207,7 @@ class SimpleTrajectory(object):
         ax2 = plt.subplot2grid((2,2), (1,0))
         ax3 = plt.subplot2grid((2,2), (1,1))
 
-        self.df[start:len(self.df)][["etot", "econt", "econs"]].plot(ax=ax1)
+        self.df[start:len(self.df)][['etot', 'econt', 'econs']].plot(ax=ax1)
         ((self.df[start:len(self.df)].etot-self.df[start:len(self.df)].econs)/(self.df[start:len(self.df)].econs-self.df[start:len(self.df)].econt)).plot(ax=ax2)
         self.df.tempp[start:len(self.df)].plot(ax3)
         plt.show()
@@ -229,14 +229,14 @@ class SimpleTrajectory(object):
             w_name   = ase.data.chemical_symbols[at_num]
 
             for at in range(len(self.ordering[i])):
-                ion_key        = w_name+"_"+str(self.ordering[i][at])
+                ion_key        = w_name+'_'+str(self.ordering[i][at])
 
-                if "ekin_"+ion_key not in self.df:
-                    print("Generating")
+                if 'ekin_'+ion_key not in self.df:
+                    print('Generating')
                     self.generate_species_data()
 
-                ekins.append("ekin_"+ion_key)
-                et.append("temp_"+ion_key)
+                ekins.append('ekin_'+ion_key)
+                et.append('temp_'+ion_key)
 
         self.df[et].plot(ax=ax1, legend=False)
         self.df[et].mean().plot(kind='bar', ax=ax2, yerr=self.df[et].std())
@@ -266,8 +266,8 @@ class SimpleTrajectory(object):
             w_name   = ase.data.chemical_symbols[at_num]
 
             for at in range(len(self.ordering[i])):
-                ion_key        = w_name+"_"+str(self.ordering[i][at])
-                et.append("temp_"+ion_key)
+                ion_key        = w_name+'_'+str(self.ordering[i][at])
+                et.append('temp_'+ion_key)
 
 
             self.df[et].plot(ax=axes[i], legend=False)
@@ -289,7 +289,7 @@ class SimpleTrajectory(object):
             start = nums[0]
             end   = nums[0]
 
-            output = ""
+            output = ''
 
             step = 1
             for i in range(1, len(nums)):
@@ -301,9 +301,9 @@ class SimpleTrajectory(object):
                     end = nums[i-1]
 
                     if start==end:
-                        output+=("" if output=="" else ",")+str(start)
+                        output+=('' if output=='' else ',')+str(start)
                     else:
-                        output+=("" if output=="" else ",")+str(start)+":"+str(end)
+                        output+=('' if output=='' else ',')+str(start)+':'+str(end)
 
                     start = nums[i]
                     end   = nums[i]
@@ -312,15 +312,15 @@ class SimpleTrajectory(object):
                 if (i==len(nums)-1):
 
                     if start==end:
-                        output+=("" if output=="" else ",")+str(start)
+                        output+=('' if output=='' else ',')+str(start)
                     else:
-                        output+=("" if output=="" else ",")+str(start)+":"+str(end)
+                        output+=('' if output=='' else ',')+str(start)+':'+str(end)
 
             return output
 
         output = StringIO.StringIO()
 
-        output.write("# STRUCTURE BLOCK\n")
+        output.write('# STRUCTURE BLOCK\n')
         #atom 0,2,4      radius 1.0 name N
 
         for t in range(len(self.ordering)):
@@ -334,23 +334,23 @@ class SimpleTrajectory(object):
                 w_radius = ase.data.covalent_radii[at_num]
 
 
-            output.write("atom {0} radius {1} name {2} atomicnumber {3}\n".format(w_ids, w_radius, w_name, t))
+            output.write('atom {0} radius {1} name {2} atomicnumber {3}\n'.format(w_ids, w_radius, w_name, t))
 
-        output.write("# TIMESTEP BLOCKS\n")
+        output.write('# TIMESTEP BLOCKS\n')
 
         for i in range(len(self.pos)):
 
-            w_cell = " ".join(["{0:.8f}".format(ap) for ap in cell.cell_to_cellpar(self.cells[i])])
+            w_cell = ' '.join(['{0:.8f}'.format(ap) for ap in cell.cell_to_cellpar(self.cells[i])])
 
-            output.write("timestep\n")
-            output.write("pbc {0}\n".format(w_cell))
+            output.write('timestep\n')
+            output.write('pbc {0}\n'.format(w_cell))
 
             for kind_order in self.ordering:
 
                 for o in kind_order:
                     ordered_pos = self.pos[i][o]
-                    a_pos       = " ".join(["{0:.8f}".format(ap) for ap in ordered_pos])
-                    output.write("{0}\n".format(a_pos))
+                    a_pos       = ' '.join(['{0:.8f}'.format(ap) for ap in ordered_pos])
+                    output.write('{0}\n'.format(a_pos))
 
         try:
             if not fname == None:
@@ -440,18 +440,18 @@ def import_cp(s, dir, prefix, vel=False):
     import os
 
     if not isinstance(s, struct.StructureData):
-        print("Not an aiida structure")
+        print('Not an aiida structure')
         return
 
 #     if not isinstance(s, struct.StructureData):
 #         return
 #
-    pos_all  = import_array(dir+os.sep+prefix+".pos", mul=RyToBhor)
-    cell_all = import_array(dir+os.sep+prefix+".cel", mul=RyToBhor)
-    evp      = import_table(dir+os.sep+prefix+".evp")
+    pos_all  = import_array(dir+os.sep+prefix+'.pos', mul=RyToBhor)
+    cell_all = import_array(dir+os.sep+prefix+'.cel', mul=RyToBhor)
+    evp      = import_table(dir+os.sep+prefix+'.evp')
 
     vel_all = None
-    if vel: vel_all  = import_array(dir+os.sep+prefix+".vel")
+    if vel: vel_all  = import_array(dir+os.sep+prefix+'.vel')
 
     old_step = 0
     trajectories_all = []
@@ -469,10 +469,10 @@ def import_cp(s, dir, prefix, vel=False):
            not pos_all[i+shift].get_step()==evp[i][0]:
 
             shift+=1
-            print("Files not synced, trying to add some shit to pos, cel and vel {0}".format(shift))
+            print('Files not synced, trying to add some shit to pos, cel and vel {0}'.format(shift))
 
             if (i+shift>=len(pos_all)):
-                print("Something went wrong, files are not synced at {0} even with shift".format(i))
+                print('Something went wrong, files are not synced at {0} even with shift'.format(i))
                 break
 
         new_step = pos_all[i].get_step()

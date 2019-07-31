@@ -36,29 +36,29 @@ def parse_cp_traj_stanzas(num_elements, splitlines, prepend_name, rescale=1.):
                 times.append(float(l[1]))
                 start_stanza = True
                 if len(this_stanza) != 0:
-                    raise ValueError("Wrong position of short line.")
+                    raise ValueError('Wrong position of short line.')
             elif len(l) == 3:
                 if len(this_stanza) == 0 and not start_stanza:
-                    raise ValueError("Wrong position of long line.")
+                    raise ValueError('Wrong position of long line.')
                 start_stanza = False
                 this_stanza.append([float(l[0])*rescale,float(l[1])*rescale,float(l[2])*rescale])
                 if len(this_stanza) == num_elements:
                     stanzas.append(this_stanza)
                     this_stanza = []
             else:
-                raise ValueError("Wrong line length ({})".format(len(l)))
+                raise ValueError('Wrong line length ({})'.format(len(l)))
         if len(this_stanza) != 0:
-            raise ValueError("Wrong length of last block ({} lines instead of 0)."
+            raise ValueError('Wrong length of last block ({} lines instead of 0).'
                              .format(len(this_stanza)))
         if len(steps) != len(stanzas):
-            raise ValueError("Length mismatch between number of steps and number of defined stanzas.")
+            raise ValueError('Length mismatch between number of steps and number of defined stanzas.')
         return {
             '{}_steps'.format(prepend_name): steps,
             '{}_times'.format(prepend_name): times,
             '{}_data'.format(prepend_name): stanzas,
             }
     except Exception as e:
-        e.message = "At line {}: {}".format(linenum + 1, e)
+        e.message = 'At line {}: {}'.format(linenum + 1, e)
         raise e
 
 def parse_cp_text_output(data,xml_data):
@@ -237,7 +237,7 @@ def parse_cp_xml_output(data):
     value=parse_xml_child_float(tagname,target_tags)
     units = parse_xml_child_attribute_str(tagname,attrname,target_tags)
     if units not in ['pico-seconds']:
-        raise QEOutputParsingError("Units {} are not supported by parser".format(units))
+        raise QEOutputParsingError('Units {} are not supported by parser'.format(units))
     parsed_data[tagname.lower()]=value
 
     tagname = 'TITLE'

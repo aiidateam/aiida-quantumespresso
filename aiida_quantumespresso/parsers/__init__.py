@@ -93,7 +93,7 @@ def parse_raw_out_basic(out_file, calc_name):
                 try:
                     parsed_data['wall_time_seconds'] = convert_qe_time_to_sec(time)
                 except ValueError:
-                    raise QEOutputParsingError("Unable to convert wall_time in seconds.")
+                    raise QEOutputParsingError('Unable to convert wall_time in seconds.')
         # Parsing of errors
         elif any(i in line for i in all_warnings):
             message = [all_warnings[i] for i in all_warnings.keys() if i in line][0]
@@ -168,7 +168,7 @@ def ldlparse_QE_errors(lines,count,warnings):
     init_problem = count
     for count2,line2 in enumerate(lines[count+1:]):
         end_problem = count + count2 + 1
-        if "%%%%%%%%%%%%" in line2:
+        if '%%%%%%%%%%%%' in line2:
             found_endpoint = True
             break
     messages = []
@@ -200,7 +200,7 @@ def parse_QE_errors(lines,count,warnings):
     init_problem = count
     for count2,line2 in enumerate(lines[count+1:]):
         end_problem = count + count2 + 1
-        if "%%%%%%%%%%%%" in line2:
+        if '%%%%%%%%%%%%' in line2:
             found_endpoint = True
             break
     messages = []

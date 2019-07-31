@@ -26,9 +26,9 @@ def parser_assert(condition, message, log_func=raise_parsing_error):
 
 def parser_assert_equal(val1, val2, message, log_func=raise_parsing_error):
     if not (val1 == val2):
-        msg = "Violated assertion: {} == {}".format(val1, val2)
+        msg = 'Violated assertion: {} == {}'.format(val1, val2)
         if message:
-            msg += " - "
+            msg += ' - '
             msg += message
         log_func(msg)
 
@@ -102,7 +102,7 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
 
     xml_dictionary, errors = xsd.to_dict(xml, validation='lax')
     if errors:
-        logs.error.append("{} XML schema validation error(s) schema: {}:".format(len(errors), schema_filepath))
+        logs.error.append('{} XML schema validation error(s) schema: {}:'.format(len(errors), schema_filepath))
         for err in errors:
             logs.error.append(str(err))
 
@@ -156,7 +156,7 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         if smearing_method:
             if 'smearing' not in (list(xml_dictionary['output']['band_structure'].keys()) + list(xml_dictionary['input']['bands'].keys())):
                 logs.error.append("occupations is '{}' but key 'smearing' is not present under input/bands "
-                                  "nor under output/band_structure".format(occupations))
+                                  'nor under output/band_structure'.format(occupations))
             # TODO: this error is triggered if no smearing is specified in input. But this is a valid input, so we should't throw an error.
             # Should we ask QE to print something nonetheless?
             # Also happens if occupations='fixed'.
@@ -280,10 +280,10 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         elif symmetry_type == 'lattice_symmetry':
             lattice_symmetries.append(sym)
         else:
-            raise XMLParseError("Unexpected type of symmetry: {}".format(symmetry_type))
+            raise XMLParseError('Unexpected type of symmetry: {}'.format(symmetry_type))
 
     if (nsym != len(symmetries)) or (nrot != len(symmetries)+len(lattice_symmetries)):
-        logs.warning.append("Inconsistent number of symmetries: nsym={}, nrot={}, len(symmetries)={}, len(lattice_symmetries)={}"
+        logs.warning.append('Inconsistent number of symmetries: nsym={}, nrot={}, len(symmetries)={}, len(lattice_symmetries)={}'
                        .format(nsym, nrot, len(symmetries), len(lattice_symmetries))
         )
 
@@ -302,7 +302,7 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
             "Only one of 'nbnd_up' and 'nbnd_dw' was found")
         if num_bands is not None:
             parser_assert(num_bands == num_bands_up + num_bands_down,
-                "Inconsistent number of bands: nbnd={}, nbnd_up={}, nbnd_down={}".format(num_bands, num_bands_up, num_bands_down))
+                'Inconsistent number of bands: nbnd={}, nbnd_up={}, nbnd_down={}'.format(num_bands, num_bands_up, num_bands_down))
         else:
             num_bands = num_bands_up + num_bands_down   # backwards compatibility;
         spins = True
@@ -340,14 +340,14 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
 
     if not spins:
         parser_assert_equal(band_eigenvalues.shape, (1,num_k_points,num_bands),
-                            "Unexpected shape of band_eigenvalues")
+                            'Unexpected shape of band_eigenvalues')
         parser_assert_equal(band_occupations.shape, (1,num_k_points,num_bands),
-                            "Unexpected shape of band_occupations")
+                            'Unexpected shape of band_occupations')
     else:
         parser_assert_equal(band_eigenvalues.shape, (2,num_k_points,num_bands_up),
-                            "Unexpected shape of band_eigenvalues")
+                            'Unexpected shape of band_eigenvalues')
         parser_assert_equal(band_occupations.shape, (2,num_k_points,num_bands_up),
-                            "Unexpected shape of band_occupations")
+                            'Unexpected shape of band_occupations')
 
     bands_dict = {
         'occupations': band_occupations,
