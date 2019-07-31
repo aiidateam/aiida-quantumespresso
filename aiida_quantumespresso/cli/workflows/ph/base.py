@@ -20,8 +20,9 @@ from ...utils import options as options_qe
 @options_qe.WITH_MPI()
 @options_qe.DAEMON()
 @decorators.with_dbenv()
-def launch_workflow(code, calculation, kpoints_mesh, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi,
-                    daemon):
+def launch_workflow(
+    code, calculation, kpoints_mesh, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi, daemon
+):
     """Run the `PhBaseWorkChain` for a previously completed `PwCalculation`."""
     from aiida.orm import Bool, Dict
     from aiida.plugins import WorkflowFactory

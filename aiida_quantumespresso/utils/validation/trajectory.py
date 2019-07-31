@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Utilities for the validation of `TrajectoryData` content."""
 from __future__ import absolute_import
 from __future__ import division
 

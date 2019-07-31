@@ -40,17 +40,21 @@ CALCS_REQUIRING_PARENT = set(['nscf'])
     type=click.Choice(['scf', 'nscf', 'relax', 'vc-relax']),
     default='scf',
     show_default=True,
-    help='Select the calculation mode.')
+    help='Select the calculation mode.'
+)
 @click.option(
     '-u',
     '--unfolded-kpoints',
     'unfolded_kpoints',
     is_flag=True,
-    help='Unfold the k-points grid to the whole grid without reducing it by symmetry (useful mainly for NSCF).')
+    help='Unfold the k-points grid to the whole grid without reducing it by symmetry (useful mainly for NSCF).'
+)
 @decorators.with_dbenv()
-def launch_calculation(code, structure, pseudo_family, kpoints_mesh, ecutwfc, ecutrho, hubbard_u, hubbard_v,
-                       hubbard_file_pk, starting_magnetization, smearing, max_num_machines, max_wallclock_seconds,
-                       with_mpi, daemon, parent_folder, dry_run, mode, unfolded_kpoints):
+def launch_calculation(
+    code, structure, pseudo_family, kpoints_mesh, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file_pk,
+    starting_magnetization, smearing, max_num_machines, max_wallclock_seconds, with_mpi, daemon, parent_folder, dry_run,
+    mode, unfolded_kpoints
+):
     """Run a PwCalculation."""
     from aiida.orm import Dict
     from aiida.orm.nodes.data.upf import get_pseudos_from_structure
@@ -68,8 +72,9 @@ def launch_calculation(code, structure, pseudo_family, kpoints_mesh, ecutwfc, ec
     }
 
     try:
-        hubbard_file = validate.validate_hubbard_parameters(structure, parameters, hubbard_u, hubbard_v,
-                                                            hubbard_file_pk)
+        hubbard_file = validate.validate_hubbard_parameters(
+            structure, parameters, hubbard_u, hubbard_v, hubbard_file_pk
+        )
     except ValueError as exception:
         raise click.BadParameter(str(exception))
 

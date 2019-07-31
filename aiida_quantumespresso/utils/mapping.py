@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Utilities to deal with various mapping data structures."""
 from __future__ import absolute_import
 
 from collections import Mapping
@@ -42,11 +43,7 @@ def update_mapping(original, source):
         source = source.get_dict()
 
     for key, value in source.items():
-        if (
-            key in original and
-            (isinstance(value, Mapping) or isinstance(value, Dict)) and
-            (isinstance(original[key], Mapping) or isinstance(original[key], Dict))
-        ):
+        if key in original and isinstance(value, (Dict, Mapping)) and isinstance(original[key], (Dict, Mapping)):
             original[key] = update_mapping(original[key], value)
         else:
             original[key] = value

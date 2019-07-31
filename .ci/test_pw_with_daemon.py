@@ -82,7 +82,8 @@ def main():
             'ELECTRONS': {
                 'conv_thr': 1.e-10,
             }
-        })
+        }
+    )
 
     kpoints = KpointsData()
     kpoints_mesh = 2

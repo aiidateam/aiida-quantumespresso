@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+"""Protocol definitions for workflow input generation."""
 from __future__ import absolute_import
 from __future__ import print_function
 import json
@@ -10,8 +12,9 @@ def _load_pseudo_metadata(filename):
     Load from the current folder a json file containing metadata (incl. suggested cutoffs)
     for a library of pseudopotentials.
     """
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)) as f:
-        return json.load(f)
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)) as handle:
+        return json.load(handle)
+
 
 def _get_all_protocol_modifiers():
     """
@@ -19,15 +22,15 @@ def _get_all_protocol_modifiers():
     It is a function so we can lazily load the jsons.
     """
 
-    protocols =  {
+    protocols = {
         'theos-ht-1.0': {
             'pseudo': {
                 # SSSP Efficiency & Precision v1.0, see https://www.materialscloud.org/archive/2018.0001/v2
                 'SSSP-efficiency-1.0': _load_pseudo_metadata('sssp_efficiency_1.0.json'),
-                'SSSP-precision-1.0':  _load_pseudo_metadata('sssp_precision_1.0.json'),
+                'SSSP-precision-1.0': _load_pseudo_metadata('sssp_precision_1.0.json'),
                 # SSSP Efficiency & Precision v1.1, see https://www.materialscloud.org/archive/2018.0001/v3
                 'SSSP-efficiency-1.1': _load_pseudo_metadata('sssp_efficiency_1.1.json'),
-                'SSSP-precision-1.1':  _load_pseudo_metadata('sssp_precision_1.1.json'),
+                'SSSP-precision-1.1': _load_pseudo_metadata('sssp_precision_1.1.json'),
             },
             'pseudo_default': 'SSSP-efficiency-1.1',
             'parameters': {
@@ -43,7 +46,7 @@ def _get_all_protocol_modifiers():
                     'volume_convergence': 0.01,
                     'tstress': True,
                     'tprnfor': True,
-                    'num_bands_factor':None,     #number of bands wrt number of occupied bands
+                    'num_bands_factor': None,  # number of bands wrt number of occupied bands
                 },
                 'default': {
                     'kpoints_mesh_offset': [0., 0., 0.],
@@ -57,7 +60,7 @@ def _get_all_protocol_modifiers():
                     'volume_convergence': 0.01,
                     'tstress': True,
                     'tprnfor': True,
-                    'num_bands_factor':None,     #number of bands wrt number of occupied bands
+                    'num_bands_factor': None,  # number of bands wrt number of occupied bands
                 },
             },
             'parameters_default': 'default'
@@ -66,6 +69,7 @@ def _get_all_protocol_modifiers():
     protocols['theos-ht-1.0']['parameters']['scdm'] = protocols['theos-ht-1.0']['parameters']['default']
     protocols['theos-ht-1.0']['parameters']['scdm']['num_bands_factor'] = 3.0
     return protocols
+
 
 class ProtocolManager(object):
     """
@@ -82,7 +86,7 @@ class ProtocolManager(object):
         except KeyError:
             raise ValueError("Unknown protocol '{}'".format(name))
 
-    def get_protocol_data(self, modifiers={}):
+    def get_protocol_data(self, modifiers=None):
         """
         Return the full info on the specific protocol, using the (optional) modifiers
 
@@ -95,6 +99,9 @@ class ProtocolManager(object):
           then you have to pass an additional key, called 'pseudo_data', that will be
           used to populate the output.
         """
+        if modifiers is None:
+            modifiers = {}
+
         modifiers_copy = modifiers.copy()
         parameters_modifier_name = modifiers_copy.pop('parameters', self.get_default_parameters_modifier_name())
         pseudo_modifier_name = modifiers_copy.pop('pseudo', self.get_default_pseudo_modifier_name())
@@ -102,11 +109,13 @@ class ProtocolManager(object):
         if parameters_modifier_name is None:
             raise ValueError(
                 "You did not specify a modifier name for 'parameters', but no default "
-                "modifier name exists for protocol '{}'.".format(self.name))
+                "modifier name exists for protocol '{}'.".format(self.name)
+            )
         if pseudo_modifier_name is None:
             raise ValueError(
                 "You did not specify a modifier name for 'pseudo', but no default "
-                "modifier name exists for protocol '{}'.".format(self.name))
+                "modifier name exists for protocol '{}'.".format(self.name)
+            )
 
         if pseudo_modifier_name == 'custom':
             try:
@@ -114,7 +123,8 @@ class ProtocolManager(object):
             except KeyError:
                 raise ValueError(
                     "You specified 'custom' as a modifier name for 'pseudo', but you did not provide "
-                    "a 'pseudo_data' key.")
+                    "a 'pseudo_data' key."
+                )
         else:
             pseudo_data = self.get_pseudo_data(pseudo_modifier_name)
 
@@ -131,7 +141,7 @@ class ProtocolManager(object):
         """Get all valid parameters modifier names"""
         return list(self.modifiers['parameters'].keys())
 
-    def get_default_parameters_modifier_name(self):
+    def get_default_parameters_modifier_name(self):  # pylint: disable=invalid-name
         """
         Return the default parameter modifier name
         (or None if no default is specified).
@@ -148,7 +158,7 @@ class ProtocolManager(object):
         """Get all valid pseudopotential modifier names"""
         return list(self.modifiers['pseudo'].keys())
 
-    def get_default_pseudo_modifier_name(self):
+    def get_default_pseudo_modifier_name(self):  # pylint: disable=invalid-name
         """
         Return the default pseudopotential modifier name
         (or None if no default is specified).
@@ -178,24 +188,23 @@ class ProtocolManager(object):
         """
         from aiida.orm import QueryBuilder
         from aiida.plugins import DataFactory
-        UpfData = DataFactory('upf')
+
+        UpfData = DataFactory('upf')  # pylint: disable=invalid-name
 
         if modifier_name is None:
             modifier_name = self.get_default_pseudo_modifier_name()
         if modifier_name is None:
             raise ValueError(
                 'You did not specify a modifier name, but no default '
-                "modifier name exists for protocol '{}'.".format(self.name))
+                "modifier name exists for protocol '{}'.".format(self.name)
+            )
 
         if modifier_name == 'custom':
             if pseudo_data is None:
-                raise ValueError(
-                    "You chose 'custom' as modifier_name, but did not provide a "
-                    'pseudo_data!')
+                raise ValueError("You chose 'custom' as modifier_name, but did not provide a " 'pseudo_data!')
         else:
             if pseudo_data is not None:
-                raise ValueError(
-                    "You passed a pseudo_data, but the modifier name is not 'custom'!")
+                raise ValueError("You passed a pseudo_data, but the modifier name is not 'custom'!")
             pseudo_data = self.get_pseudo_data(modifier_name)
 
         # No pseudo found
@@ -208,9 +217,9 @@ class ProtocolManager(object):
         for element, this_pseudo_data in six.iteritems(pseudo_data):
             md5 = this_pseudo_data['md5']
 
-            qb = QueryBuilder()
-            qb.append(UpfData, filters={'attributes.md5': md5}, project=['uuid', 'attributes.element'])
-            res = qb.all()
+            builder = QueryBuilder()
+            builder.append(UpfData, filters={'attributes.md5': md5}, project=['uuid', 'attributes.element'])
+            res = builder.all()
             if len(res) >= 1:
                 this_mismatch_elements = []
                 for this_uuid, this_element in res:
@@ -224,13 +233,10 @@ class ProtocolManager(object):
             else:
                 missing.add(element)
 
-        return {
-            'missing': missing,
-            'found': found,
-            'mismatch': mismatch
-        }
+        return {'missing': missing, 'found': found, 'mismatch': mismatch}
+
 
 if __name__ == '__main__':
-    p = ProtocolManager('theos-ht-1.0')
-    print(p.check_pseudos())
-    print(p.get_protocol_data())
+    MANAGER = ProtocolManager('theos-ht-1.0')
+    print(MANAGER.check_pseudos())
+    print(MANAGER.get_protocol_data())

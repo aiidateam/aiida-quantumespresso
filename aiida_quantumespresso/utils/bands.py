@@ -16,6 +16,7 @@ def get_highest_occupied_band(bands, threshold=0.01):
     :raises ValueError: if the occupations are not monotonically decreasing at all k-points between LUMO and HOMO
     :raises ValueError: if the last band has an occupation above the threshold
     """
+    # pylint: disable=invalid-name
     from numpy import shape
     from aiida.orm import BandsData
 
@@ -52,7 +53,7 @@ def get_highest_occupied_band(bands, threshold=0.01):
                     lumo_index = n
                     lumo_occupation = occupation
                     lumo_indices.append(lumo_index)
-            else:
+            else:  # pylint: disable=useless-else-on-loop
                 if kpoint[-1] >= threshold:
                     warning_args = [kpoint[-1], l, k, len(kpoint)]
                     raise ValueError('Occupation of {} at last band lkn<{},{},{}>'.format(*warning_args))

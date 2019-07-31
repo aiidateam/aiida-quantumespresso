@@ -36,11 +36,14 @@ from ...utils import validate
     is_flag=True,
     default=False,
     show_default=True,
-    help='Run a final scf calculation for the final relaxed structure.')
+    help='Run a final scf calculation for the final relaxed structure.'
+)
 @decorators.with_dbenv()
-def launch_workflow(code, structure, pseudo_family, kpoints_distance, ecutwfc, ecutrho, hubbard_u, hubbard_v,
-                    hubbard_file_pk, starting_magnetization, smearing, automatic_parallelization, clean_workdir,
-                    max_num_machines, max_wallclock_seconds, with_mpi, daemon, final_scf):
+def launch_workflow(
+    code, structure, pseudo_family, kpoints_distance, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file_pk,
+    starting_magnetization, smearing, automatic_parallelization, clean_workdir, max_num_machines, max_wallclock_seconds,
+    with_mpi, daemon, final_scf
+):
     """Run a `PwRelaxWorkChain`."""
     from aiida.orm import Bool, Float, Str, Dict
     from aiida.plugins import WorkflowFactory
@@ -56,8 +59,9 @@ def launch_workflow(code, structure, pseudo_family, kpoints_distance, ecutwfc, e
     }
 
     try:
-        hubbard_file = validate.validate_hubbard_parameters(structure, parameters, hubbard_u, hubbard_v,
-                                                            hubbard_file_pk)
+        hubbard_file = validate.validate_hubbard_parameters(
+            structure, parameters, hubbard_u, hubbard_v, hubbard_file_pk
+        )
     except ValueError as exception:
         raise click.BadParameter(str(exception))
 

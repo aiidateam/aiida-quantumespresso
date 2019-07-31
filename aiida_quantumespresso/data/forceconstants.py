@@ -150,7 +150,8 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
 
         # read cell data
         cell = tuple(
-            tuple(float(c) * celldm[0] * bohr_to_ang for c in l.split()) for l in lines[current_line:current_line + 3])
+            tuple(float(c) * celldm[0] * bohr_to_ang for c in l.split()) for l in lines[current_line:current_line + 3]
+        )
         parsed_data['cell'] = cell
         current_line += 3
 
@@ -190,7 +191,8 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
             for _ in range(nat):
                 current_line += 1
                 effective_charges_eu.append(
-                    tuple(tuple(float(c) for c in l.split()) for l in lines[current_line:current_line + 3]))
+                    tuple(tuple(float(c) for c in l.split()) for l in lines[current_line:current_line + 3])
+                )
                 current_line += 3
 
             parsed_data['dielectric_tensor'] = dielectric_tensor

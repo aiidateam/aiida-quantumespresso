@@ -75,11 +75,15 @@ class BaseRestartWorkChain(WorkChain):
             for entry_point_name in get_entry_point_names(self._error_handler_entry_point):
                 try:
                     load_entry_point(self._error_handler_entry_point, entry_point_name)
-                    self.logger.info("loaded the '%s' entry point for the '%s' error handlers category",
-                                     entry_point_name, self._error_handler_entry_point)
+                    self.logger.info(
+                        "loaded the '%s' entry point for the '%s' error handlers category", entry_point_name,
+                        self._error_handler_entry_point
+                    )
                 except exceptions.EntryPointError as exception:
-                    self.logger.warning("failed to load the '%s' entry point for the '%s' error handlers: %s",
-                                        entry_point_name, self._error_handler_entry_point, exception)
+                    self.logger.warning(
+                        "failed to load the '%s' entry point for the '%s' error handlers: %s", entry_point_name,
+                        self._error_handler_entry_point, exception
+                    )
 
     @classmethod
     def define(cls, spec):
