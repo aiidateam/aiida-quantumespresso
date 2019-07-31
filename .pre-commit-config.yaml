@@ -1,3 +1,15 @@
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v2.2.3
+  hooks:
+  - id: trailing-whitespace
+    exclude: &exclude >
+      (?x)^(
+          tests/calculations/test_pw/.*.in|
+          tests/fixtures/.*|
+          tests/parsers/fixtures/.*|
+          tests/parsers/*.yml
+      )$
+
 - repo: local
   hooks:
 

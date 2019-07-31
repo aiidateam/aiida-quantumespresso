@@ -15,7 +15,7 @@ def pw2wannier90_inputs():
     """
     basepath = os.path.dirname(os.path.abspath(__file__))
     nnkp_filepath = os.path.join(basepath, 'fixtures', 'pw2wannier90', 'inputs', 'aiida.nnkp')
-    
+
     parameters = {
         'inputpp': {
             'write_amn': False,
@@ -36,7 +36,7 @@ def pw2wannier90_inputs():
         'parameters': Dict(dict=parameters),
         'settings': Dict(dict=settings),
     }
-    
+
     return AttributeDict(inputs)
 
 

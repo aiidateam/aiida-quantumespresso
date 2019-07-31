@@ -11,10 +11,10 @@ from aiida.common.links import LinkType
 from aiida.common.lang import classproperty
 from aiida.orm.nodes.data.structure import StructureData
 from aiida.orm.nodes.data.array.kpoints import KpointsData
-from aiida.orm.nodes.data.dict import Dict 
+from aiida.orm.nodes.data.dict import Dict
 from aiida.orm.nodes.data.singlefile import SinglefileData
 from aiida.orm.nodes.data.upf import UpfData
-from aiida.orm.nodes.data.remote import RemoteData 
+from aiida.orm.nodes.data.remote import RemoteData
 from aiida.engine import CalcJob
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
@@ -26,7 +26,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
     """
     Nudged Elastic Band code (neb.x) of Quantum ESPRESSO distribution
     For more information, refer to http://www.quantum-espresso.org/
-    """ 
+    """
 
     # in restarts, will not copy but use symlinks
     _default_symlink_usage = False
@@ -41,7 +41,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
             filepaths.append(filepath)
 
         return filepaths
-    
+
     def _init_internal_params(self):
         super(NebCalculation, self)._init_internal_params()
 
@@ -51,7 +51,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
 
         # Default NEB output parser provided by AiiDA
         self._default_parser = 'quantumespresso.neb'
-                
+
         self._DEFAULT_INPUT_FILE = 'neb.dat'
         self._DEFAULT_OUTPUT_FILE = 'aiida.out'
 
@@ -85,7 +85,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         """
         retdict = JobCalculation._use_methods
 
-        retdict.update({                
+        retdict.update({
                 "settings": {
                     'valid_types': Dict,
                     'additional_parameter': None,
@@ -123,7 +123,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
                     'linkname': 'neb_parameters',
                     'docstring':("Use a node that specifies the input parameters "
                                  "for the NEB PATH namelist")
-                    },      
+                    },
                 "parent_folder": {
                     'valid_types': RemoteData,
                     'additional_parameter': None,
@@ -157,7 +157,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         return retdict
 
     def _generate_NEBinputdata(self, neb_parameters, settings_dict):
-        """ 
+        """
         This methods generate the input data for the NEB part of the calculation
         """
         # I put the first-level keys as uppercase (i.e., namelist and card names)
@@ -167,9 +167,9 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
                                        dict_name='parameters')
         input_params = {k: _lowercase_dict(v, dict_name=k)
                         for k, v in six.iteritems(input_params)}
-        
+
         # For the neb input there is no blocked keyword
-        
+
         # Create an empty dictionary for the compulsory namelist 'PATH'
         # if not present
         if 'PATH' not in input_params:
@@ -179,7 +179,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         climbing_image = False
         if input_params['PATH'].get('ci_scheme', 'no-ci').lower()  in ['manual']:
             climbing_image = True
-            try: 
+            try:
                 climbing_image_list = settings_dict.pop("CLIMBING_IMAGES")
             except KeyError:
                 raise InputValidationError("No climbing image specified for this calculation")
@@ -191,11 +191,11 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
 
             climbing_image_card = "CLIMBING_IMAGES\n"
             climbing_image_card += ", ".join([str(_) for _ in climbing_image_list]) + "\n"
- 
 
-        inputfile = ""    
+
+        inputfile = ""
         inputfile += "&PATH\n"
-        # namelist content; set to {} if not present, so that we leave an 
+        # namelist content; set to {} if not present, so that we leave an
         # empty namelist
         namelist = input_params.pop('PATH', {})
         for k, v in sorted(six.iteritems(namelist)):
@@ -218,7 +218,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         """
         This is the routine to be called when you want to create
         the input files and related stuff with a plugin.
-        
+
         :param tempfolder: a aiida.common.folders.Folder subclass where
                            the plugin should put all its files.
         :param inputdict: a dictionary with the input nodes, as they would
@@ -234,7 +234,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
             code = inputdict.pop(self.get_linkname('code'))
         except KeyError:
             raise InputValidationError("No code specified for this calculation")
-        
+
         try:
             pw_parameters = inputdict.pop(self.get_linkname('pw_parameters'))
         except KeyError:
@@ -269,7 +269,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
             raise InputValidationError("No kpoints specified for this calculation")
         if not isinstance(kpoints, KpointsData):
             raise InputValidationError("kpoints is not of type KpointsData")
-        
+
         # Settings can be undefined, and defaults to an empty dictionary
         settings = inputdict.pop(self.get_linkname('settings'), None)
         if settings is None:
@@ -308,7 +308,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         if vdw_table is not None:
             if not isinstance(vdw_table, SinglefileData):
                 raise InputValidationError("vdw_table, if specified, "
-                                           "must be of type SinglefileData")            
+                                           "must be of type SinglefileData")
 
         # Here, there should be no more parameters...
         if inputdict:
@@ -346,17 +346,17 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         # Espresso codes crash if an empty folder is not already there
         tempfolder.get_subfolder(self._OUTPUT_SUBFOLDER, create=True)
 
-        # We first prepare the NEB-specific input file 
+        # We first prepare the NEB-specific input file
         input_filecontent = self._generate_NEBinputdata(neb_parameters, settings_dict)
 
         input_filename = tempfolder.get_abs_path(self._INPUT_FILE_NAME)
         with open(input_filename, 'w') as infile:
             infile.write(input_filecontent)
-            
+
         # We now generate the PW input files for each input structure
         local_copy_pseudo_list = []
-        for i, structure in enumerate([first_structure, last_structure]): 
-            # We need to a pass a copy of the settings_dict for each structure 
+        for i, structure in enumerate([first_structure, last_structure]):
+            # We need to a pass a copy of the settings_dict for each structure
             this_settings_dict = copy.deepcopy(settings_dict)
             input_filecontent, this_local_copy_pseudo_list = self._generate_PWCPinputdata(pw_parameters, this_settings_dict,
                                                                                      pseudos, structure, kpoints)
@@ -373,15 +373,15 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
 
         # We avoid to copy twice the same pseudopotential to the same filename
         local_copy_pseudo_list = set(local_copy_pseudo_list)
-        # We check that two different pseudopotentials are not copied 
+        # We check that two different pseudopotentials are not copied
         # with the same name (otherwise the first is overwritten)
         if len({ pseudoname for local_path, pseudoname in local_copy_pseudo_list}) < len(local_copy_pseudo_list):
             raise InputValidationError("Same filename for two different pseudopotentials")
 
-        local_copy_list += local_copy_pseudo_list 
+        local_copy_list += local_copy_pseudo_list
 
         # If present, add also the Van der Waals table to the pseudo dir
-        # Note that the name of the table is not checked but should be the 
+        # Note that the name of the table is not checked but should be the
         # one expected by QE.
         if vdw_table:
             local_copy_list.append(
@@ -409,7 +409,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
                      os.path.join(parent_calc_folder.get_remote_path(),
                                   '{}.path'.format(self._PREFIX)),
                      '{}.path'.format(self._PREFIX)
-                    )) 
+                    ))
         else:
             # copy remote output dir and .path file, if specified
             if parent_calc_folder is not None:
@@ -425,7 +425,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
                      os.path.join(parent_calc_folder.get_remote_path(),
                                   '{}.path'.format(self._PREFIX)),
                      '{}.path'.format(self._PREFIX)
-                    ))     
+                    ))
 
         # here we may create an aiida.EXIT file
         create_exit_file = settings_dict.pop('ONLY_INITIALIZATION', False)
@@ -434,7 +434,7 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
                              '{}.EXIT'.format(self._PREFIX))
             with open(exit_filename, 'w') as f:
                 f.write('\n')
-                
+
         calcinfo = CalcInfo()
         codeinfo=CodeInfo()
 
@@ -445,14 +445,14 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
         calcinfo.local_copy_list = local_copy_list
         calcinfo.remote_copy_list = remote_copy_list
         calcinfo.remote_symlink_list = remote_symlink_list
-        # In neb calculations there is no input read from standard input!! 
-        
+        # In neb calculations there is no input read from standard input!!
+
         codeinfo.cmdline_params = (["-input_images", "2"]
                                    + list(cmdline_params))
         codeinfo.stdout_name = self._OUTPUT_FILE_NAME
         codeinfo.code_uuid = code.uuid
         calcinfo.codes_info = [codeinfo]
-        
+
         # Retrieve by default the output file and ...
         calcinfo.retrieve_list = []
         calcinfo.retrieve_list.append(self._OUTPUT_FILE_NAME)
@@ -483,17 +483,17 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
 
     def _get_reference_structure(self):
         """
-        Used to get the reference structure to obtain which 
-        pseudopotentials to use from a given family using 
-        use_pseudos_from_family. 
+        Used to get the reference structure to obtain which
+        pseudopotentials to use from a given family using
+        use_pseudos_from_family.
         This is a redefinition of the method in the BaseClass
         The first structure is used to choose the pseudopotentials
         """
         return self.get_incoming(link_label_filter=self.get_linkname('first_structure')).one().node
-    
+
     def create_restart(self, force_restart=False, parent_folder_symlink=None):
         """
-        Function to restart a calculation that was not completed before 
+        Function to restart a calculation that was not completed before
         (like max walltime reached...) i.e. not to restart a really FAILED calculation.
         Returns a calculation c2, with all links prepared but not stored in DB.
         To submit it, simply do::
@@ -506,10 +506,10 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
            that returns a calculation builder rather than a new, unstored calculation.
 
 
-        :param bool force_restart: restart also if parent is not in FINISHED 
+        :param bool force_restart: restart also if parent is not in FINISHED
         state (e.g. FAILED, IMPORTED, etc.). Default=False.
         :param bool parent_folder_symlink: if True, symlinks are used
-        instead of hard copies of the files. Default given by 
+        instead of hard copies of the files. Default given by
         self._default_symlink_usage.
         """
         from aiida_quantumespresso.utils.restart import clone_calculation
@@ -550,9 +550,9 @@ class NebCalculation(BasePwCpInputGenerator, CalcJob):
 
         # set the new links
         c2.use_neb_parameters(inp_dict)
-        
+
         c2.use_pw_parameters(inputs.get_node_by_label(self.get_linkname('pw_parameters')))
-        
+
         c2.use_first_structure(inputs.get_node_by_label(self.get_linkname('first_structure')))
         c2.use_last_structure(inputs.get_node_by_label(self.get_linkname('last_structure')))
 

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Utility functions to return builders ready to be submitted 
-for restarting a Quantum ESPRESSO calculation (or to apply small 
+Utility functions to return builders ready to be submitted
+for restarting a Quantum ESPRESSO calculation (or to apply small
 modifications).
 """
 from __future__ import absolute_import
-from aiida.common import InputValidationError 
+from aiida.common import InputValidationError
 from aiida.common.links import LinkType
 
 def clone_calculation(calculation):
@@ -338,11 +338,11 @@ def create_restart_neb(parent_calc, force_restart=False, parent_folder_symlink=N
 def create_restart_ph(parent_calc, force_restart=False,
                       parent_folder_symlink=None):
     """
-    This function creates a builder to restart a ph.x Quantum ESPRESSO 
+    This function creates a builder to restart a ph.x Quantum ESPRESSO
     calculation that was not completed before (like max walltime reached...).
     This means that it might not be useful to restart a FAILED calculation.
 
-    It returns a `builder` for a new calculation, with all links prepared 
+    It returns a `builder` for a new calculation, with all links prepared
     but not stored in DB.
     To submit it, simply call::
 
@@ -350,9 +350,9 @@ def create_restart_ph(parent_calc, force_restart=False,
         submit(builder)
 
     :param parent_calc: the calculation you want to restart
-    :param bool force_restart: restart also if parent is not in FINISHED 
+    :param bool force_restart: restart also if parent is not in FINISHED
         state (e.g. FAILED, IMPORTED, etc.). Default=False.
-    :param bool parent_folder_symlink: sets the value of the 
+    :param bool parent_folder_symlink: sets the value of the
         `PARENT_FOLDER_SYMLINK` in the `settings` input. Default: the value specified
         in aiida_quantumespresso.calculations.ph._default_symlink_usage.
     """
@@ -369,21 +369,21 @@ def create_restart_ph(parent_calc, force_restart=False,
     if not force_restart and not parent_calc.is_finished_ok:
         raise exceptions.InputValidationError(
             "Calculation to be restarted must be finshed ok. Otherwise, use the force_restart flag")
-    
+
     inputs = parent_calc.get_incoming(link_type=LinkType.INPUT_CALC)
     code = inputs.get_node_by_label('code')
     qpoints = inputs.get_node_by_label('qpoints')
-    
+
     old_inp_dict = inputs.get_node_by_label('parameters').get_dict()
     # add the restart flag
     old_inp_dict['INPUTPH']['recover'] = True
-    inp_dict = Dict(dict=old_inp_dict) 
+    inp_dict = Dict(dict=old_inp_dict)
 
     try:
         remote_folder = parent_calc.get_outcoming(node_class=RemoteData, link_type=LinkType.CREATE).one().node
     except ValueError:
         raise InputValidationError("No or more than one output RemoteData found in calculation {}".format(parent_calc.pk))
-    
+
     builder = parent_calc.__class__.get_builder()
 
     # Set the same options
@@ -399,7 +399,7 @@ def create_restart_ph(parent_calc, force_restart=False,
     builder.description = "[Restart of {} {}]\n{}".format(
         parent_calc.__class__.__name__, parent_calc.uuid,
         parent_calc.description)
-    
+
     # set the parameters, and the (same) code and q-points
     builder.parameters = Dict(inp_dict)
     builder.code = code
@@ -415,11 +415,11 @@ def create_restart_ph(parent_calc, force_restart=False,
     if ('PARENT_FOLDER_SYMLINK' in old_settings_dict
             or parent_folder_symlink != parent_calc._default_symlink_usage):
         old_settings_dict['PARENT_FOLDER_SYMLINK'] = parent_folder_symlink
-        
+
     if old_settings_dict: # if not empty dictionary
         settings = Dict(dict=old_settings_dict)
         builder.settings = settings
-    
+
     builder.parent_folder = remote_folder
-    
+
     return builder

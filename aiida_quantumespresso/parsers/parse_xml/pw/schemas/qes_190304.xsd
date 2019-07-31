@@ -472,13 +472,13 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
       <element type="positiveInteger" name="mixing_ndim"/>
       <element type="positiveInteger" name="max_nstep"/>
       <element type="boolean" name="real_space_q" minOccurs="0" default="false" />
-      <element type="boolean" name="real_space_beta" minOccurs="0" default ="false"/> 
+      <element type="boolean" name="real_space_beta" minOccurs="0" default ="false"/>
       <element type="boolean" name="tq_smoothing"/>
       <element type="boolean" name="tbeta_smoothing"/>
       <element type="double" name="diago_thr_init"/>
       <element type="boolean" name="diago_full_acc"/>
       <element type="nonNegativeInteger" name="diago_cg_maxiter" minOccurs="0"/>
-      <element type="nonNegativeInteger" name="diago_ppcg_maxiter" minOccurs="0"/> 
+      <element type="nonNegativeInteger" name="diago_ppcg_maxiter" minOccurs="0"/>
       <element type="positiveInteger" name="diago_david_ndim"    minOccurs="0"/>
     </sequence>
   </complexType>
@@ -521,7 +521,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
     <simpleContent>
       <extension base="qes:d3vectorType">
         <attribute type="double" name="weight" use="optional"/>
-        <attribute type="string" name="label" use = "optional"/>  
+        <attribute type="string" name="label" use = "optional"/>
       </extension>
     </simpleContent>
   </complexType>
@@ -560,7 +560,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   <complexType name="cell_controlType">
     <sequence>
       <element type="string" name="cell_dynamics"/>
-      <element type="double" name="pressure" default="0.0" /> 
+      <element type="double" name="pressure" default="0.0" />
       <element type="double" name="wmass" minOccurs="0" />
       <element type="double" name="cell_factor" minOccurs="0" />
       <element type="boolean" name="fix_volume" minOccurs="0" />
@@ -584,7 +584,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
       <element type="string" name="assume_isolated"/>
       <element type="qes:esmType" name="esm" minOccurs = "0"/>
       <element type="boolean"     name="fcp_opt" minOccurs = "0"/>
-      <element type="double" name="fcp_mu" minOccurs ="0" /> 
+      <element type="double" name="fcp_mu" minOccurs ="0" />
     </sequence>
   </complexType>
   <complexType name="esmType">
@@ -724,7 +724,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
     </sequence>
   </complexType>
 
- 
+
 
   <complexType name="polarizationType">
     <sequence>
@@ -742,7 +742,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
       <element name="phase"  type="qes:phaseType"/>
     </sequence>
   </complexType>
- 
+
   <complexType name="electronicPolarizationType">
     <sequence>
       <element name="firstKeyPoint" type="qes:k_pointType"/>
@@ -764,7 +764,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   <complexType name="gateInfoType">
     <sequence>
       <element name="pot_prefactor" type="double" minOccurs="1" maxOccurs="1"/>
-      <element name="gate_zpos" type="double" minOccurs="1" maxOccurs="1"/>      
+      <element name="gate_zpos" type="double" minOccurs="1" maxOccurs="1"/>
       <element name="gate_gate_term" type="double" minOccurs="1" maxOccurs="1"/>
       <element name="gatefieldEnergy" type="double" minOccurs="1" maxOccurs="1"/>
     </sequence>
@@ -878,7 +878,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
       <element type="qes:k_points_IBZType" name="starting_k_points" />
       <element type="positiveInteger" name="nks"/>
       <element type="qes:occupationsType" name="occupations_kind" />
-      <element type="qes:smearingType"    name="smearing" minOccurs="0" /> 
+      <element type="qes:smearingType"    name="smearing" minOccurs="0" />
       <element type="qes:ks_energiesType" name="ks_energies" maxOccurs="unbounded"/>
     </sequence>
   </complexType>
