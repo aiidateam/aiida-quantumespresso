@@ -48,7 +48,7 @@ def generate_inputs(generate_neb_structures):
         elif ci_scheme == 'manual':
             num_images = 6
         else:
-            raise ValueError("Unexpected ci_scheme")
+            raise ValueError('Unexpected ci_scheme')
 
         settings = {
             'fixed_coords':
@@ -146,3 +146,4 @@ def test_neb_h2h(ci_scheme, fixture_data_folder, fixture_database, fixture_compu
         arr: results['iteration_array'].get_array(arr).flatten() for arr in results['iteration_array'].get_arraynames()
     })
     num_regression.check(num_data_dict, default_tolerance=dict(atol=0, rtol=1e-18))
+    # TODO: also check in trajectory data the columns ['k_points','k_points_weights']

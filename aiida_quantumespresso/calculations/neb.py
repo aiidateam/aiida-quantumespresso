@@ -102,10 +102,20 @@ class NebCalculation(CalcJob):
         #spec.exit_code(
         #    130, 'ERROR_JOB_NOT_DONE', message='The computation did not finish properly (\'JOB DONE\' not found).')
         # TODO: check error logic and maybe use these commented-out exit codes
+        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
+            message='The stdout output file was incomplete.')
+        spec.exit_code(320, 'ERROR_OUTPUT_XML_READ',
+            message='The XML output file could not be read.')
+        spec.exit_code(321, 'ERROR_OUTPUT_XML_PARSE',
+            message='The XML output file could not be parsed.')
+        spec.exit_code(322, 'ERROR_OUTPUT_XML_FORMAT',
+            message='The XML output file has an unsupported format.')
+        spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
+            message='The parser raised an unexpected exception.')
 
     @classmethod
     def _generate_NEBinputdata(cls, neb_parameters, settings_dict):
-        """ 
+        """
         This methods generate the input data for the NEB part of the calculation
         """
         # I put the first-level keys as uppercase (i.e., namelist and card names)
@@ -123,7 +133,7 @@ class NebCalculation(CalcJob):
                 if key in input_params[namelist]:
                     raise InputValidationError(
                         "You cannot specify explicitly the '{}' key in the '{}' "
-                        "namelist.".format(key, namelist))
+                        'namelist.'.format(key, namelist))
             else:
                 input_params[namelist] = {}
             input_params[namelist][key] = value
@@ -137,24 +147,24 @@ class NebCalculation(CalcJob):
         if input_params['PATH'].get('ci_scheme', 'no-ci').lower() in ['manual']:
             manual_climbing_image = True
             try:
-                climbing_image_list = settings_dict.pop("CLIMBING_IMAGES")
+                climbing_image_list = settings_dict.pop('CLIMBING_IMAGES')
             except KeyError:
-                raise InputValidationError("No climbing image specified for this calculation")
+                raise InputValidationError('No climbing image specified for this calculation')
             if not isinstance(climbing_image_list, list):
-                raise InputValidationError("Climbing images should be provided as a list")
+                raise InputValidationError('Climbing images should be provided as a list')
             num_of_images = input_params['PATH'].get('num_of_images', 2)
             if any([ (i<2 or i>=num_of_images) for i in climbing_image_list ]):
-                raise InputValidationError("The climbing images should be in the range between the first "
-                                           "and the last image (excluded)")
-            climbing_image_card = "CLIMBING_IMAGES\n"
-            climbing_image_card += ", ".join([str(_) for _ in climbing_image_list]) + "\n"
- 
-        input_data = u"&PATH\n"
+                raise InputValidationError('The climbing images should be in the range between the first '
+                                           'and the last image (excluded)')
+            climbing_image_card = 'CLIMBING_IMAGES\n'
+            climbing_image_card += ', '.join([str(_) for _ in climbing_image_list]) + '\n'
+
+        input_data = u'&PATH\n'
         # namelist content; set to {} if not present, so that we leave an empty namelist
         namelist = input_params.pop('PATH', {})
         for k, v in sorted(six.iteritems(namelist)):
             input_data += convert_input_to_namelist_entry(k, v)
-        input_data += u"/\n"
+        input_data += u'/\n'
 
         # Write CI cards now
         if manual_climbing_image:
@@ -162,9 +172,9 @@ class NebCalculation(CalcJob):
 
         if input_params:
             raise InputValidationError(
-                "The following namelists are specified in input_params, but are "
-                "not valid namelists for the current type of calculation: "
-                "{}".format(",".join(list(input_params.keys()))))
+                'The following namelists are specified in input_params, but are '
+                'not valid namelists for the current type of calculation: '
+                '{}'.format(','.join(list(input_params.keys()))))
 
         return input_data
 
@@ -193,16 +203,16 @@ class NebCalculation(CalcJob):
         # Check that the first and last image have the same cell
         if abs(np.array(self.inputs.first_structure.cell)-
                np.array(self.inputs.last_structure.cell)).max() > 1.e-4:
-            raise InputValidationError("Different cell in the fist and last image")
+            raise InputValidationError('Different cell in the fist and last image')
 
         # Check that the first and last image have the same number of sites
         if len(self.inputs.first_structure.sites) != len(self.inputs.last_structure.sites):
-            raise InputValidationError("Different number of sites in the fist and last image")
+            raise InputValidationError('Different number of sites in the fist and last image')
 
         # Check that sites in the initial and final structure have the same kinds
         if self.inputs.first_structure.get_site_kindnames() != self.inputs.last_structure.get_site_kindnames():
-            raise InputValidationError("Mismatch between the kind names and/or order between "
-                                       "the first and final image")
+            raise InputValidationError('Mismatch between the kind names and/or order between '
+                                       'the first and final image')
 
         # Check that a pseudo potential was specified for each kind present in the `StructureData`
         # self.inputs.pw.pseudos is a plumpy.utils.AttributesFrozendict
@@ -248,7 +258,7 @@ class NebCalculation(CalcJob):
         # We check that two different pseudopotentials are not copied
         # with the same name (otherwise the first is overwritten)
         if len({ filename for (uuid, filename, local_path) in local_copy_pseudo_list}) < len(local_copy_pseudo_list):
-            raise InputValidationError("Same filename for two different pseudopotentials")
+            raise InputValidationError('Same filename for two different pseudopotentials')
 
         local_copy_list += local_copy_pseudo_list
 
@@ -315,7 +325,7 @@ class NebCalculation(CalcJob):
         calcinfo.remote_symlink_list = remote_symlink_list
         # In neb calculations there is no input read from standard input!!
 
-        codeinfo.cmdline_params = (["-input_images", "2"]
+        codeinfo.cmdline_params = (['-input_images', '2']
                                    + list(cmdline_params))
         codeinfo.stdout_name = self.inputs.metadata.options.output_filename
         codeinfo.code_uuid = self.inputs.code.uuid

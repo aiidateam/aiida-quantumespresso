@@ -77,7 +77,7 @@ parameters:
     energy_xc: -25.552118459412615
     energy_xc_units: eV
     exit_status: 0
-    fermi_energy: -4.881992893994388
+    fermi_energy: -4.882
     fermi_energy_units: eV
     fft_grid:
     - 40
@@ -218,6 +218,9 @@ parameters:
     number_of_spin_components: 2
     number_of_symmetries: 8
     occupations: smearing
+    parser_info: aiida-quantumespresso parser pw.x v3.0.0a3
+    parser_version: 3.0.0a3
+    parser_warnings: []
     q_real_space: false
     rho_cutoff: 1360.56917253
     rho_cutoff_units: eV
@@ -401,10 +404,8 @@ parameters:
     total_magnetization_units: Bohrmag / cell
     total_number_of_scf_iterations: 9
     volume: 44.45541285717334
-    warnings: []
     wfc_cutoff: 272.113834506
     wfc_cutoff_units: eV
-    xml_warnings: []
   pw_output_image_2:
     absolute_magnetization: 0.51
     absolute_magnetization_units: Bohrmag / cell
@@ -443,7 +444,7 @@ parameters:
     energy_xc: -26.160569075075543
     energy_xc_units: eV
     exit_status: 0
-    fermi_energy: -4.530963840678013
+    fermi_energy: -4.531
     fermi_energy_units: eV
     fft_grid:
     - 40
@@ -584,6 +585,9 @@ parameters:
     number_of_spin_components: 2
     number_of_symmetries: 8
     occupations: smearing
+    parser_info: aiida-quantumespresso parser pw.x v3.0.0a3
+    parser_version: 3.0.0a3
+    parser_warnings: []
     q_real_space: false
     rho_cutoff: 1360.56917253
     rho_cutoff_units: eV
@@ -767,10 +771,8 @@ parameters:
     total_magnetization_units: Bohrmag / cell
     total_number_of_scf_iterations: 108
     volume: 44.45541285717334
-    warnings: []
     wfc_cutoff: 272.113834506
     wfc_cutoff_units: eV
-    xml_warnings: []
   pw_output_image_3:
     absolute_magnetization: 0.54
     absolute_magnetization_units: Bohrmag / cell
@@ -809,7 +811,7 @@ parameters:
     energy_xc: -26.30654114017336
     energy_xc_units: eV
     exit_status: 0
-    fermi_energy: -3.1899218092219885
+    fermi_energy: -3.1899
     fermi_energy_units: eV
     fft_grid:
     - 40
@@ -854,6 +856,9 @@ parameters:
     number_of_spin_components: 2
     number_of_symmetries: 16
     occupations: smearing
+    parser_info: aiida-quantumespresso parser pw.x v3.0.0a3
+    parser_version: 3.0.0a3
+    parser_warnings: []
     q_real_space: false
     rho_cutoff: 1360.56917253
     rho_cutoff_units: eV
@@ -1197,10 +1202,8 @@ parameters:
     total_magnetization_units: Bohrmag / cell
     total_number_of_scf_iterations: 131
     volume: 44.45541285717334
-    warnings: []
     wfc_cutoff: 272.113834506
     wfc_cutoff_units: eV
-    xml_warnings: []
   pw_output_image_4:
     absolute_magnetization: 0.51
     absolute_magnetization_units: Bohrmag / cell
@@ -1239,7 +1242,7 @@ parameters:
     energy_xc: -26.160569075075543
     energy_xc_units: eV
     exit_status: 0
-    fermi_energy: -4.530963827144448
+    fermi_energy: -4.531
     fermi_energy_units: eV
     fft_grid:
     - 40
@@ -1380,6 +1383,9 @@ parameters:
     number_of_spin_components: 2
     number_of_symmetries: 8
     occupations: smearing
+    parser_info: aiida-quantumespresso parser pw.x v3.0.0a3
+    parser_version: 3.0.0a3
+    parser_warnings: []
     q_real_space: false
     rho_cutoff: 1360.56917253
     rho_cutoff_units: eV
@@ -1563,10 +1569,8 @@ parameters:
     total_magnetization_units: Bohrmag / cell
     total_number_of_scf_iterations: 108
     volume: 44.45541285717334
-    warnings: []
     wfc_cutoff: 272.113834506
     wfc_cutoff_units: eV
-    xml_warnings: []
   pw_output_image_5:
     absolute_magnetization: 0.51
     absolute_magnetization_units: Bohrmag / cell
@@ -1605,7 +1609,7 @@ parameters:
     energy_xc: -25.552115874331182
     energy_xc_units: eV
     exit_status: 0
-    fermi_energy: -4.881982888146377
+    fermi_energy: -4.882
     fermi_energy_units: eV
     fft_grid:
     - 40
@@ -1746,6 +1750,9 @@ parameters:
     number_of_spin_components: 2
     number_of_symmetries: 8
     occupations: smearing
+    parser_info: aiida-quantumespresso parser pw.x v3.0.0a3
+    parser_version: 3.0.0a3
+    parser_warnings: []
     q_real_space: false
     rho_cutoff: 1360.56917253
     rho_cutoff_units: eV
@@ -1929,10 +1936,8 @@ parameters:
     total_magnetization_units: Bohrmag / cell
     total_number_of_scf_iterations: 9
     volume: 44.45541285717334
-    warnings: []
     wfc_cutoff: 272.113834506
     wfc_cutoff_units: eV
-    xml_warnings: []
   restart_mode: from_scratch
   string_method: neb
   suggested_k_max_au: 0.1542
@@ -1940,4 +1945,6 @@ parameters:
   use_freezing: false
   wall_time: 31.59s
   wall_time_seconds: 31.59
-  warnings: []
+  warnings:
+  - 'error: ERROR_OUTPUT_STDOUT_INCOMPLETE'
+  - 'error: ERROR_IONIC_CONVERGENCE_NOT_REACHED'

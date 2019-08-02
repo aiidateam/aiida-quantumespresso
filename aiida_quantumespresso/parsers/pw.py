@@ -45,7 +45,7 @@ class PwParser(Parser):
                 return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
 
         parameters = self.node.inputs.parameters.get_dict()
-        parsed_xml, logs_xml = self.parse_xml(dir_with_bands)
+        parsed_xml, logs_xml = self.parse_xml(dir_with_bands, parser_options)
         parsed_stdout, logs_stdout = self.parse_stdout(parameters, parser_options, parsed_xml)
 
         parsed_bands = parsed_stdout.pop('bands', {})
@@ -232,10 +232,11 @@ class PwParser(Parser):
         self.logger.error(exit_code.message)
         return exit_code
 
-    def parse_xml(self, dir_with_bands=None):
+    def parse_xml(self, dir_with_bands=None, parser_options=None):
         """Parse the XML output file.
 
         :param dir_with_bands: absolute path to directory containing individual k-point XML files for old XML format.
+        :param parser_options: optional dictionary with parser options
         :return: tuple of two dictionaries, first with raw parsed data and second with log messages
         """
         from .parse_xml.pw.exceptions import XMLParseError, XMLUnsupportedFormatError
@@ -250,13 +251,18 @@ class PwParser(Parser):
         if not xml_files:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_MISSING
             return parsed_data, logs
-        elif len(xml_files) > 1:
+        if len(xml_files) > 1:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_MULTIPLE
             return parsed_data, logs
 
         try:
+            include_deprecated_keys = parser_options['include_deprecated_v2_keys']
+        except (TypeError,KeyError):
+            include_deprecated_keys = False
+
+        try:
             with self.retrieved.open(xml_files[0]) as xml_file:
-                parsed_data, logs = parse_xml(xml_file, dir_with_bands)
+                parsed_data, logs = parse_xml(xml_file, dir_with_bands, include_deprecated_keys)
         except IOError:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_READ
         except XMLParseError:
@@ -343,7 +349,8 @@ class PwParser(Parser):
                     except AttributeError:
                         pass
 
-    def build_output_parameters(self, parsed_stdout, parsed_xml):
+    @staticmethod
+    def build_output_parameters(parsed_stdout, parsed_xml):
         """Build the dictionary of output parameters from the raw parsed data.
 
         The output parameters are based on the union of raw parsed data from the XML and stdout output files.
@@ -386,7 +393,8 @@ class PwParser(Parser):
 
         return convert_qe2aiida_structure(parsed_structure, self.node.inputs.structure)
 
-    def build_output_trajectory(self, parsed_trajectory, structure):
+    @staticmethod
+    def build_output_trajectory(parsed_trajectory, structure):
         """Build the output trajectory from the raw parsed trajectory data.
 
         :param parsed_trajectory: the raw parsed trajectory data
@@ -500,7 +508,8 @@ class PwParser(Parser):
         """Return the key that contains the optional parser options in the `settings` input node."""
         return 'parser_options'
 
-    def final_trajectory_frame_to_parameters(self, parameters, parsed_trajectory):
+    @staticmethod
+    def final_trajectory_frame_to_parameters(parameters, parsed_trajectory):
         """Copy the last frame of certain properties from the `TrajectoryData` to the outputs parameters.
 
         This makes these properties queryable.
@@ -514,6 +523,10 @@ class PwParser(Parser):
             'energy_threshold',
             'energy_vdw',
             'energy_xc',
+            'energy_smearing',
+            'energy_one_center_paw',
+            'energy_est_exchange',
+            'energy_fock',
             'scf_iterations',
             'fermi_energy',
             'total_force',
