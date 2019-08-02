@@ -400,7 +400,7 @@ class PwParser(Parser):
 
         if 'atomic_positions_relax' in parsed_trajectory:
             positions = numpy.array(parsed_trajectory.pop('atomic_positions_relax'))
-        if 'atomic_fractionals_relax' in parsed_trajectory:
+        elif 'atomic_fractionals_relax' in parsed_trajectory:
             fractional = True
             positions = numpy.array(parsed_trajectory.pop('atomic_fractionals_relax'))
         else:
