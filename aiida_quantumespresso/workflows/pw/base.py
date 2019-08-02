@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts."""
 from __future__ import absolute_import
 
 from aiida import orm
@@ -142,7 +143,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
                 'force_parity': self.inputs.get('kpoints_force_parity', orm.Bool(False)),
                 'metadata': {'call_link_label': 'create_kpoints_from_distance'}
             }
-            kpoints = create_kpoints_from_distance(**inputs)
+            kpoints = create_kpoints_from_distance(**inputs)  # pylint: disable=unexpected-keyword-arg
 
         self.ctx.inputs.kpoints = kpoints
 
@@ -311,7 +312,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
         Verify that the occupation of the last band is below a certain threshold, unless `occupations` was explicitly
         set to `fixed` in the input parameters. If this is violated, the calculation used too few bands and cannot be
-        trusted. The number of bands is increased and the calculation is restarted, starting from the current `calculation`.
+        trusted. The number of bands is increased and the calculation is restarted, starting from the last.
         """
         from aiida_quantumespresso.utils.bands import get_highest_occupied_band
 

@@ -189,7 +189,7 @@ class ProtocolManager(object):
         from aiida.orm import QueryBuilder
         from aiida.plugins import DataFactory
 
-        UpfData = DataFactory('upf')  # pylint: disable=invalid-name
+        UpfData = DataFactory('upf')
 
         if modifier_name is None:
             modifier_name = self.get_default_pseudo_modifier_name()

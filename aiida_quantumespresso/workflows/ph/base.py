@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Workchain to run a Quantum ESPRESSO ph.x calculation with automated error handling and restarts."""
 from __future__ import absolute_import
 
 from aiida import orm
@@ -10,16 +11,13 @@ from aiida_quantumespresso.common.workchain.utils import ErrorHandlerReport, reg
 from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkChain
 from aiida_quantumespresso.utils.resources import get_default_options
 
-
 PhCalculation = CalculationFactory('quantumespresso.ph')
 PwCalculation = CalculationFactory('quantumespresso.pw')
 
 
 class PhBaseWorkChain(BaseRestartWorkChain):
-    """
-    Base Workchain to launch a Quantum Espresso phonon ph.x calculation and restart it until
-    successfully converged or until the maximum number of restarts is exceeded
-    """
+    """Workchain to run a Quantum ESPRESSO ph.x calculation with automated error handling and restarts."""
+
     _calculation_class = PhCalculation
 
     defaults = AttributeDict({
@@ -29,6 +27,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
 
     @classmethod
     def define(cls, spec):
+        # yapf: disable
         super(PhBaseWorkChain, cls).define(spec)
         spec.input('code', valid_type=orm.Code)
         spec.input('qpoints', valid_type=orm.KpointsData)
@@ -47,8 +46,10 @@ class PhBaseWorkChain(BaseRestartWorkChain):
             ),
             cls.results,
         )
-        spec.exit_code(402, 'ERROR_CALCULATION_INVALID_INPUT_FILE',
-            message='the calculation failed because it had an invalid input file')
+        spec.exit_code(
+            402, 'ERROR_CALCULATION_INVALID_INPUT_FILE',
+            message='the calculation failed because it had an invalid input file'
+        )
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.output('remote_folder', valid_type=orm.RemoteData)
         spec.output('retrieved', valid_type=orm.FolderData)
@@ -125,8 +126,9 @@ def _handle_error_exceeded_maximum_walltime(self, calculation):
     """
     if 'Maximum CPU time exceeded' in calculation.res.warnings:
         self.ctx.restart_calc = calculation
-        self.report('PhCalculation<{}> terminated because maximum wall time was exceeded, restarting'
-            .format(calculation.pk))
+        self.report(
+            'PhCalculation<{}> terminated because maximum wall time was exceeded, restarting'.format(calculation.pk)
+        )
         return ErrorHandlerReport(True, True)
 
 
@@ -135,13 +137,15 @@ def _handle_fatal_error_not_converged(self, calculation):
     """
     The calculation failed because it could not read the generated input file
     """
-    if ('Phonon did not reach end of self consistency' in calculation.res.warnings):
+    if 'Phonon did not reach end of self consistency' in calculation.res.warnings:
         alpha_mix_old = calculation.inputs.parameters.get_dict()['INPUTPH'].get('alpha_mix(1)', self.defaults.alpha_mix)
         alpha_mix_new = 0.9 * alpha_mix_old
         self.ctx.inputs.parameters['INPUTPH']['alpha_mix(1)'] = alpha_mix_new
         self.ctx.restart_calc = calculation
-        self.report('PhCalculation<{}> terminated without reaching convergence, '
-            'setting alpha_mix to {} and restarting'.format(calculation.pk, alpha_mix_new))
+        self.report(
+            'PhCalculation<{}> terminated without reaching convergence, '
+            'setting alpha_mix to {} and restarting'.format(calculation.pk, alpha_mix_new)
+        )
         return ErrorHandlerReport(True, True)
 
 
@@ -161,6 +165,9 @@ def _handle_error_premature_termination(self, calculation):
         self.ctx.inputs.parameters['INPUTPH']['max_seconds'] = max_seconds_reduced
 
         self.ctx.restart_calc = calculation
-        self.report('PwCalculation<{}> was terminated prematurely, reducing "max_seconds" from {} to {}'
-            .format(calculation.pk, max_seconds, max_seconds_reduced))
+        self.report(
+            'PwCalculation<{}> was terminated prematurely, reducing "max_seconds" from {} to {}'.format(
+                calculation.pk, max_seconds, max_seconds_reduced
+            )
+        )
         return ErrorHandlerReport(True, True)

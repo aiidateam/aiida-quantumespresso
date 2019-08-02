@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Workchain to compute a band structure for a given structure using Quantum ESPRESSO pw.x"""
 from __future__ import absolute_import
 
 from six.moves import map
@@ -10,7 +11,6 @@ from aiida.engine import WorkChain, ToContext, if_
 
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 from aiida_quantumespresso.workflows.functions.seekpath_structure_analysis import seekpath_structure_analysis
-
 
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
@@ -91,8 +91,8 @@ class PwBandsWorkChain(WorkChain):
         if not workchain.is_finished_ok:
             self.report('PwRelaxWorkChain failed with exit status {}'.format(workchain.exit_status))
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
-        else:
-            self.ctx.current_structure = workchain.outputs.output_structure
+
+        self.ctx.current_structure = workchain.outputs.output_structure
 
     def run_seekpath(self):
         """Run the structure through SeeKpath to get the primitive and normalized structure.
@@ -135,8 +135,8 @@ class PwBandsWorkChain(WorkChain):
         if not workchain.is_finished_ok:
             self.report('scf PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_SCF
-        else:
-            self.ctx.current_folder = workchain.outputs.remote_folder
+
+        self.ctx.current_folder = workchain.outputs.remote_folder
 
     def run_bands(self):
         """Run the PwBaseWorkChain in bands mode along the path of high-symmetry determined by seekpath."""
@@ -203,7 +203,7 @@ class PwBandsWorkChain(WorkChain):
         for called_descendant in self.node.called_descendants:
             if isinstance(called_descendant, orm.CalcJobNode):
                 try:
-                    called_descendant.outputs.remote_folder._clean()
+                    called_descendant.outputs.remote_folder._clean()  # pylint: disable=protected-access
                     cleaned_calcs.append(called_descendant.pk)
                 except (IOError, OSError, KeyError):
                     pass

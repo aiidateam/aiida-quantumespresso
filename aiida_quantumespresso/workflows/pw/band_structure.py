@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Workchain to automatically compute a band structure for a given structure using Quantum ESPRESSO pw.x"""
 from __future__ import absolute_import
 
 from aiida import orm
@@ -114,6 +115,7 @@ class PwBandStructureWorkChain(WorkChain):
         """Run the `PwBandsWorkChain` to compute the band structure."""
 
         def get_common_inputs():
+            """Return the dictionary of inputs to be used as the basis for each `PwBaseWorkChain`."""
             protocol, protocol_modifiers = self._get_protocol()
             checked_pseudos = protocol.check_pseudos(
                 modifier_name=protocol_modifiers.get('pseudo', None),

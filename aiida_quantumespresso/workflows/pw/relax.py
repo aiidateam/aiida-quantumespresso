@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Workchain to relax a structure using Quantum ESPRESSO pw.x"""
 from __future__ import absolute_import
 
 from six.moves import map
@@ -8,7 +9,6 @@ from aiida.common import AttributeDict, exceptions
 from aiida.engine import WorkChain, ToContext, if_, while_, append_
 from aiida.plugins import CalculationFactory, WorkflowFactory
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
-
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
@@ -228,7 +228,7 @@ class PwRelaxWorkChain(WorkChain):
         for called_descendant in self.node.called_descendants:
             if isinstance(called_descendant, orm.CalcJobNode):
                 try:
-                    called_descendant.outputs.remote_folder._clean()
+                    called_descendant.outputs.remote_folder._clean()  # pylint: disable=protected-access
                     cleaned_calcs.append(called_descendant.pk)
                 except (IOError, OSError, KeyError):
                     pass
