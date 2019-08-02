@@ -22,14 +22,21 @@ class PwRelaxWorkChain(WorkChain):
         # yapf: disable
         super(PwRelaxWorkChain, cls).define(spec)
         spec.expose_inputs(PwBaseWorkChain, namespace='base',
-            exclude=('clean_workdir', 'pw.structure', 'pw.parent_folder'))
-        spec.input('structure', valid_type=orm.StructureData)
-        spec.input('final_scf', valid_type=orm.Bool, default=orm.Bool(False))
-        spec.input('relaxation_scheme', valid_type=orm.Str, default=orm.Str('vc-relax'))
-        spec.input('meta_convergence', valid_type=orm.Bool, default=orm.Bool(True))
-        spec.input('max_meta_convergence_iterations', valid_type=orm.Int, default=orm.Int(5))
-        spec.input('volume_convergence', valid_type=orm.Float, default=orm.Float(0.01))
-        spec.input('clean_workdir', valid_type=orm.Bool, default=orm.Bool(False))
+            exclude=('clean_workdir', 'pw.structure', 'pw.parent_folder'),
+            namespace_options={'help': 'Inputs for the `PwBaseWorkChain`.'})
+        spec.input('structure', valid_type=orm.StructureData, help='The inputs structure.')
+        spec.input('final_scf', valid_type=orm.Bool, default=orm.Bool(False),
+            help='If `True`, a final SCF calculation will be performed on the successfully relaxed structure.')
+        spec.input('relaxation_scheme', valid_type=orm.Str, default=orm.Str('vc-relax'),
+            help='The relaxation scheme to use: choose either `relax` or `vc-relax` for variable cell relax.')
+        spec.input('meta_convergence', valid_type=orm.Bool, default=orm.Bool(True),
+            help='If `True` the workchain will perform a meta-convergence on the cell volume.')
+        spec.input('max_meta_convergence_iterations', valid_type=orm.Int, default=orm.Int(5),
+            help='The maximum number of variable cell relax iterations in the meta convergence cycle.')
+        spec.input('volume_convergence', valid_type=orm.Float, default=orm.Float(0.01),
+            help='The volume difference threshold between two consecutive meta convergence iterations.')
+        spec.input('clean_workdir', valid_type=orm.Bool, default=orm.Bool(False),
+            help='If `True`, work directories of all called calculation will be cleaned at the end of execution.')
         spec.outline(
             cls.setup,
             while_(cls.should_run_relax)(
@@ -47,7 +54,8 @@ class PwRelaxWorkChain(WorkChain):
         spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_FINAL_SCF',
             message='the final scf PwBaseWorkChain sub process failed')
         spec.expose_outputs(PwBaseWorkChain, exclude=('output_structure',))
-        spec.output('output_structure', valid_type=orm.StructureData, required=True)
+        spec.output('output_structure', valid_type=orm.StructureData, required=True,
+            help='The successfully relaxed structure.')
 
     def setup(self):
         """Input validation and context setup."""
