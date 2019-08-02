@@ -1,17 +1,22 @@
 # -*- coding: utf-8 -*-
-
+"""TCOD export plugin for `CpCalculations`."""
 from __future__ import absolute_import
-from aiida.tools.dbexporters.tcod_plugins import BaseTcodtranslator
+
+try:
+    from aiida_tcod.tools.dbexporters.tcod import BaseTcodtranslator  # pylint: disable=import-error
+except ImportError:
+    raise ImportError('dependency `aiida-tcod` not installed; run `pip install aiida-tcod` to do so.')
+
 
 class CpTcodtranslator(BaseTcodtranslator):
-    """
-    Quantum ESPRESSO's CP-specific input and output parameter translator
-    to TCOD CIF dictionary tags.
-    """
+    """TCOD export plugin for `CpCalculations`."""
+
+    # pylint: disable=abstract-method
+
     _plugin_type_string = 'quantumespresso.cp.CpCalculation'
 
     @classmethod
-    def get_software_package(cls,calc,**kwargs):
+    def get_software_package(cls, calc, **kwargs):  # pylint: disable=unused-argument
         """
         Returns the package or program name that was used to produce
         the structure. Only package or program name should be used,
@@ -20,7 +25,7 @@ class CpTcodtranslator(BaseTcodtranslator):
         return 'Quantum ESPRESSO'
 
     @classmethod
-    def get_number_of_electrons(cls,calc,**kwargs):
+    def get_number_of_electrons(cls, calc, **kwargs):  # pylint: disable=unused-argument
         """
         Returns the number of electrons.
         """
@@ -30,7 +35,7 @@ class CpTcodtranslator(BaseTcodtranslator):
         return parameters.get_attr('number_of_electrons')
 
     @classmethod
-    def get_computation_wallclock_time(cls,calc,**kwargs):
+    def get_computation_wallclock_time(cls, calc, **kwargs):  # pylint: disable=unused-argument
         """
         Returns the computation wallclock time in seconds.
         """

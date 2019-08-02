@@ -65,6 +65,9 @@
             "pytest-regressions==1.0.5",
             "yapf==0.28.0"
         ],
+        "tcod": [
+            "aiida-tcod"
+        ],
         "docs": [
             "Sphinx",
             "docutils",
