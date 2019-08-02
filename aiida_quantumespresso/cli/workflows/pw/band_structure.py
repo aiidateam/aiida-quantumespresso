@@ -21,19 +21,18 @@ from ...utils import options as options_qe
     type=click.Choice(['theos-ht-1.0']),
     default='theos-ht-1.0',
     show_default=True,
-    help='the protocol to use for the workflow'
+    help='The protocol to use for the workflow.'
 )
 @decorators.with_dbenv()
 def launch_workflow(code, structure, daemon, protocol):
     """Run a `PwBandStructureWorkChain`."""
-    from aiida.plugins import DataFactory, WorkflowFactory
-
-    Dict = DataFactory('dict')  # pylint: disable=invalid-name
+    from aiida import orm
+    from aiida.plugins import WorkflowFactory
 
     inputs = {
         'code': code,
         'structure': structure,
-        'protocol': Dict(dict={'name': protocol}),
+        'protocol': orm.Dict(dict={'name': protocol}),
     }
 
     launch.launch_process(WorkflowFactory('quantumespresso.pw.band_structure'), daemon, **inputs)
