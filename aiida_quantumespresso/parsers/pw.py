@@ -396,9 +396,14 @@ class PwParser(Parser):
         :param parsed_trajectory: the raw parsed trajectory data
         :return: a `TrajectoryData` or None
         """
-        try:
+        fractional = False
+
+        if 'atomic_positions_relax' in parsed_trajectory:
             positions = numpy.array(parsed_trajectory.pop('atomic_positions_relax'))
-        except KeyError:
+        if 'atomic_fractionals_relax' in parsed_trajectory:
+            fractional = True
+            positions = numpy.array(parsed_trajectory.pop('atomic_fractionals_relax'))
+        else:
             # The positions were never printed, the calculation did not change the structure
             positions = numpy.array([[site.position for site in structure.sites]])
 
@@ -411,6 +416,10 @@ class PwParser(Parser):
         # Ensure there are as many frames for cell as positions, even when the calculation was done at fixed cell
         if len(cells) == 1 and len(positions) > 1:
             cells = numpy.array([cells[0]] * len(positions))
+
+        if fractional:
+            # convert positions to cartesian
+            positions = numpy.einsum('ijk, ikm -> ijm', positions, cells)
 
         symbols = [str(site.kind_name) for site in structure.sites]
         stepids = numpy.arange(len(positions))
