@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=inconsistent-return-statements,no-member
 """Base implementation of `WorkChain` class that implements a simple automated restart mechanism for calculations."""
 from __future__ import absolute_import
 
@@ -88,7 +87,6 @@ class BaseRestartWorkChain(WorkChain):
     @classmethod
     def define(cls, spec):
         # yapf: disable
-        # pylint: disable=bad-continuation
         super(BaseRestartWorkChain, cls).define(spec)
         spec.input('max_iterations', valid_type=orm.Int, default=orm.Int(5),
             help='Maximum number of iterations the work chain will restart the calculation to finish successfully.')

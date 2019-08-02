@@ -31,11 +31,11 @@ def main():
 
     ################################################################
 
-    UpfData = DataFactory('upf')  # pylint: disable=invalid-name
-    Dict = DataFactory('dict')  # pylint: disable=invalid-name
-    KpointsData = DataFactory('array.kpoints')  # pylint: disable=invalid-name
-    StructureData = DataFactory('structure')  # pylint: disable=invalid-name
-    Code = DataFactory('code')  # pylint: disable=invalid-name
+    UpfData = DataFactory('upf')
+    Dict = DataFactory('dict')
+    KpointsData = DataFactory('array.kpoints')
+    StructureData = DataFactory('structure')
+    Code = DataFactory('code')
 
     code = Code.get_from_string(codename)
 

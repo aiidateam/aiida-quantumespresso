@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Calculation function to compute a k-point mesh for a structure with a guaranteed minimum k-point distance."""
 from __future__ import absolute_import
 from aiida.engine import calcfunction
 
@@ -31,7 +32,7 @@ def create_kpoints_from_distance(structure, distance, force_parity):
 
     # If the vectors of the cell all have the same length, the kpoint mesh should be isotropic as well
     if is_symmetric_cell and not is_symmetric_mesh:
-        nk = max(lengths_kpoint)
-        kpoints.set_kpoints_mesh([nk, nk, nk])
+        nkpoints = max(lengths_kpoint)
+        kpoints.set_kpoints_mesh([nkpoints, nkpoints, nkpoints])
 
     return kpoints
