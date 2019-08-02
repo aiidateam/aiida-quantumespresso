@@ -34,8 +34,26 @@ Inputs
 * **pseudo**, class :py:class:`UpfData <aiida.orm.nodes.data.upf.UpfData>`
   One pseudopotential file per atomic species.
 
-  Alternatively, pseudo for every atomic species can be set with the **use_pseudos_from_family**
-  method, if a family of pseudopotentials has been installed.
+ If a pseudo potential family is uploaded, the :py:func:`~aiida.orm.nodes.data.upf.get_pseudos_from_structure`
+ function can be used to automatically get the mapping of UpfData nodes for each kind in the StructureData one wants to use.
+For example: ::
+
+    from aiida.orm.nodes.data.upf import get_pseudos_from_structure
+    pseudo_potential_family = 'SSSP_efficiency'
+    structure = StructureData()  # Let's say this is a GaAs structure
+    pseudos = get_pseudos_from_structure(structure, pseudo_potential_family)
+
+The pseudos variable will now be a dictionary of the form: ::
+
+    pseudos = {
+        'Ga': UpfData(),
+        'As': UpfData()
+    }
+
+This can then be used directly in the process builder of for example a ``PwCalculation``.  ::
+
+    builder = PwCalculation.get_builder()
+    builder.pseudos = pseudos
 
 * **kpoints**, class :py:class:`KpointsData <aiida.orm.nodes.data.array.kpoints.KpointsData>`
   Reciprocal space points on which to build the wavefunctions. Can either be
@@ -56,7 +74,7 @@ Inputs
 
   A full list of variables and their meaning is found in the `pw.x documentation`_.
 
-  .. _pw.x documentation: http://www.quantum-espresso.org/wp-content/uploads/Doc/INPUT_PW.html
+   .. _pw.x documentation: https://www.quantum-espresso.org/Doc/INPUT_PW.html
 
   Following keywords, related to the structure or to the file paths, are already taken care of by AiiDA::
 
@@ -88,17 +106,21 @@ Inputs
   The file is copied in the pseudo subfolder, without changing its name, and
   without any check, so it is your responsibility to select the correct file
   that you want to use.
+* **hubbard file**, class  :py:class:`SinglefileData <aiida.orm.nodes.data.singlefile.SinglefileData>` (optional)
+  The file containing the Hubbard parameters, if they have to be read from a file. It requires the
+  *aiida-quantumespresso-hp* plugin.
 
 Outputs
 -------
 
 There are several output nodes that can be created by the plugin, according to the calculation details.
-All output nodes can be accessed with the ``calculation.out`` method.
+All output nodes can be accessed with the ``calculation.outputs`` namespace.
 
 * output_parameters :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>`
   Contains the scalar properties. Example: energy (in eV),
-  total_force (modulus of the sum of forces in eV/Angstrom),
-  warnings (possible error messages generated in the run). ``calculation.outputs.output_parameters`` can also be
+  energy_units (eV),
+  warnings (possible error messages generated in the run).
+  ``calculation.outputs.output_parameters`` can also be
   accessed by the ``calculation.res`` shortcut.
 * output_array :py:class:`ArrayData <aiida.orm.nodes.data.array.ArrayData>`
   Produced in case of calculations which do not change the structure, otherwise,
@@ -154,12 +176,13 @@ Quantum ESPRESSO pw.x plugin (note that most of them apply also to the
 cp.x plugin).
 
 While the input link with name 'parameters' is used for the content of the
-Quantum Espresso namelists, additional parameters can be specified in the 'settings' input, also as Dict.
+Quantum Espresso namelists, additional parameters can be specified in the 'settings' input, also as
+:py:class:`Dict <aiida.orm.nodes.data.dict.Dict>`.
 
-After having defined the content of ``settings_dict``, you can use
-it as input of a calculation ``calc`` by doing::
+After having defined the content of ``settings_dict``,
+you can use it as an input by adding it to the process builder::
 
-    calc.use_settings(Dict(dict=settings_dict))
+    builder.settings = Dict(dict=settings_dict)
 
 The different options are described below.
 
