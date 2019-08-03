@@ -443,7 +443,8 @@ class PwParser(Parser):
 
         if k_points_units != '1 / angstrom':
             self.logger.error('Error in kpoints units (should be cartesian)')
-            self.exit_code_parser.ERROR_INVALID_KPOINT_UNITS
+            self.exit_code_parser = self.exit_codes.ERROR_INVALID_KPOINT_UNITS
+            return None
 
         kpoints = orm.KpointsData()
         kpoints.set_cell_from_structure(structure)
