@@ -102,15 +102,15 @@ def test_immigrate_calc_pw(fixture_database, fixture_computer_localhost,
         calc_node = immigrate_existing(builder, remote)
 
     attributes = calc_node.attributes
-    attributes["remote_workdir"] = "path/to/remote"
-    attributes.pop("retrieve_singlefile_list", None)  # removed post v1.0.0b4
+    attributes['remote_workdir'] = 'path/to/remote'
+    attributes.pop('retrieve_singlefile_list', None)  # removed post v1.0.0b4
+    attributes.pop('version', None)
 
     data_regression.check(attributes)
 
     outputs = calc_node.get_outgoing()
     assert set(outputs.all_link_labels()) == set(
-        ['retrieved', 'remote_folder', 'output_array',
+        ['retrieved', 'remote_folder', 'output_trajectory',
          'output_parameters', 'output_kpoints'])
 
-    assert calc_node.outputs.output_parameters.get_dict()['warnings'] == []
     assert calc_node.outputs.output_parameters.get_dict()['parser_warnings'] == []
