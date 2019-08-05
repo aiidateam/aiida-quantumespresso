@@ -14,13 +14,15 @@ from aiida.engine.utils import instantiate_process
 from aiida.manage.manager import get_manager
 
 
-def immigrate_existing(builder, remote_data):
+def immigrate_existing(builder, remote_data, seal_node=True):
     """Immigrate a Calculation that was not run using AiiDa.
 
     :param builder: a populated builder instance for a CalcJob
     :type builder: aiida.engine.processes.builder.ProcessBuilder
     :param remote_data: a remote data folder, containing the output files required for parsing
     :type remote_data: aiida.orm.RemoteData
+    :param seal_node: seal the node, so that its attributes can no longer be altered
+    :type seal_node: bool
 
     :rtype: aiida.orm.CalcJobNode
 
@@ -58,7 +60,9 @@ def immigrate_existing(builder, remote_data):
     calc_node.set_process_state(ProcessState.FINISHED)
     calc_node.set_exit_status(exit_code.status)
     calc_node.set_exit_message(exit_code.message)
-    calc_node.seal()
+
+    if seal_node:
+        calc_node.seal()
 
     # record that the node was created via immigration
     calc_node.set_extra('immigrated', True)
