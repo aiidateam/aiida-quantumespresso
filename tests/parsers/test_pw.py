@@ -369,6 +369,33 @@ def test_pw_vcrelax_success(fixture_database, fixture_computer_localhost, genera
     })
 
 
+def test_pw_vcrelax_fractional_success(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
+        generate_inputs_relax, data_regression):
+    """Test a `vc-relax`, that successfully converges and the final scf also converges.
+    In this case the input atomic positions were defined using 'crystal' (i.e. fractional) units.
+    """
+    name = 'vcrelax_fractional_success'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_relax)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_kpoints' in results
+    assert 'output_parameters' in results
+    assert 'output_structure' in results
+    assert 'output_trajectory' in results
+    data_regression.check({
+        'output_kpoints': results['output_kpoints'].attributes,
+        'output_parameters': results['output_parameters'].get_dict(),
+        'output_structure': results['output_structure'].attributes,
+        'output_trajectory': results['output_trajectory'].attributes,
+    })
+
+
 def test_pw_vcrelax_failed_charge_wrong(fixture_database, fixture_computer_localhost, generate_calc_job_node,
         generate_parser, generate_inputs_relax, data_regression):
     """Test a `vc-relax` that failed because the integrated charge is different from the expected one."""
