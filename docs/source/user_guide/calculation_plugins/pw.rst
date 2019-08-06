@@ -33,17 +33,35 @@ Inputs
 ------
 * **pseudo**, class :py:class:`UpfData <aiida.orm.nodes.data.upf.UpfData>`
   One pseudopotential file per atomic species.
-  
-  Alternatively, pseudo for every atomic species can be set with the **use_pseudos_from_family**
-  method, if a family of pseudopotentials has been installed.
-  
+
+ If a pseudo potential family is uploaded, the :py:func:`~aiida.orm.nodes.data.upf.get_pseudos_from_structure`
+ function can be used to automatically get the mapping of UpfData nodes for each kind in the StructureData one wants to use.
+For example: ::
+
+    from aiida.orm.nodes.data.upf import get_pseudos_from_structure
+    pseudo_potential_family = 'SSSP_efficiency'
+    structure = StructureData()  # Let's say this is a GaAs structure
+    pseudos = get_pseudos_from_structure(structure, pseudo_potential_family)
+
+The pseudos variable will now be a dictionary of the form: ::
+
+    pseudos = {
+        'Ga': UpfData(),
+        'As': UpfData()
+    }
+
+This can then be used directly in the process builder of for example a ``PwCalculation``.  ::
+
+    builder = PwCalculation.get_builder()
+    builder.pseudos = pseudos
+
 * **kpoints**, class :py:class:`KpointsData <aiida.orm.nodes.data.array.kpoints.KpointsData>`
-  Reciprocal space points on which to build the wavefunctions. Can either be 
+  Reciprocal space points on which to build the wavefunctions. Can either be
   a mesh or a list of points with/without weights
 * **parameters**, class :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>`
   Input parameters of pw.x, as a nested dictionary, mapping the input of QE.
   Example::
-    
+
     {
         "CONTROL":{
             "calculation":"scf"
@@ -56,10 +74,10 @@ Inputs
 
   A full list of variables and their meaning is found in the `pw.x documentation`_.
 
-  .. _pw.x documentation: http://www.quantum-espresso.org/wp-content/uploads/Doc/INPUT_PW.html
+   .. _pw.x documentation: https://www.quantum-espresso.org/Doc/INPUT_PW.html
 
   Following keywords, related to the structure or to the file paths, are already taken care of by AiiDA::
-    
+
     'CONTROL', 'pseudo_dir': pseudopotential directory
     'CONTROL', 'outdir': scratch directory
     'CONTROL', 'prefix': file prefix
@@ -75,43 +93,47 @@ Inputs
     'SYSTEM', 'cosbc': cell parameters
 
   Those keywords should not be specified, otherwise the submission will fail.
-     
+
 * **structure**, class :py:class:`StructureData <aiida.orm.nodes.data.structure.StructureData>`
 * **settings**, class :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>` (optional)
   An optional dictionary that activates non-default operations. For a list of possible
   values to pass, see the section on the :ref:`advanced features <pw-advanced-features>`.
 * **parent_folder**, class :py:class:`RemoteData <aiida.orm.nodes.data.dict.Dict>` (optional)
-  If specified, the scratch folder coming from a previous QE calculation is 
+  If specified, the scratch folder coming from a previous QE calculation is
   copied in the scratch of the new calculation.
 * **vdw_table**, class :py:class:`SinglefileData <aiida.orm.nodes.data.singlefile.SinglefileData>` (optional)
   If specified, it should be a file for the van der Waals kernel table.
   The file is copied in the pseudo subfolder, without changing its name, and
   without any check, so it is your responsibility to select the correct file
   that you want to use.
+* **hubbard file**, class  :py:class:`SinglefileData <aiida.orm.nodes.data.singlefile.SinglefileData>` (optional)
+  The file containing the Hubbard parameters, if they have to be read from a file. It requires the
+  *aiida-quantumespresso-hp* plugin.
 
 Outputs
 -------
 
 There are several output nodes that can be created by the plugin, according to the calculation details.
-All output nodes can be accessed with the ``calculation.out`` method.
+All output nodes can be accessed with the ``calculation.outputs`` namespace.
 
 * output_parameters :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>`
-  Contains the scalar properties. Example: energy (in eV), 
-  total_force (modulus of the sum of forces in eV/Angstrom),
-  warnings (possible error messages generated in the run). ``calculation.outputs.output_parameters`` can also be
+  Contains the scalar properties. Example: energy (in eV),
+  energy_units (eV),
+  warnings (possible error messages generated in the run).
+  ``calculation.outputs.output_parameters`` can also be
   accessed by the ``calculation.res`` shortcut.
 * output_array :py:class:`ArrayData <aiida.orm.nodes.data.array.ArrayData>`
-  Produced in case of calculations which do not change the structure, otherwise, 
+  Produced in case of calculations which do not change the structure, otherwise,
   an ``output_trajectory`` is produced.
   Contains vectorial properties, too big to be put in the dictionary.
   Example: forces (eV/Angstrom), stresses, ionic positions.
   Quantities are parsed at every step of the ionic-relaxation / molecular-dynamics run.
 * output_trajectory :py:class:`ArrayData <aiida.orm.nodes.data.array.ArrayData>`
   Produced in case of calculations which change the structure, otherwise an
-  ``output_array`` is produced. Contains vectorial properties, too big to be put 
+  ``output_array`` is produced. Contains vectorial properties, too big to be put
   in the dictionary. Example: forces (eV/Angstrom), stresses, ionic positions.
   Quantities are parsed at every step of the ionic-relaxation / molecular-dynamics run.
-* output_band (non spin polarized calculations)) or output_band1 + output_band2 
+* output_band (non spin polarized calculations)) or output_band1 + output_band2
   (spin polarized calculations) :py:class:`BandsData <aiida.orm.nodes.data.array.bands.BandsData>`
   The default parsing can be deactivated with the **`no_bands`** :ref:`setting <no-bands-setting>`.
   Contains the list band energies and occupations at every k-point.
@@ -139,8 +161,8 @@ Therefore, to retrieve the version of the parser that was used to parse a comple
 
 Errors
 ------
-Errors of the parsing are reported in the log of the calculation (accessible 
-with the ``verdi calculation logshow`` command). 
+Errors of the parsing are reported in the log of the calculation (accessible
+with the ``verdi calculation logshow`` command).
 Moreover, they are stored in the Dict under the key ``warnings``, and are
 accessible with ``Calculation.res.warnings``.
 
@@ -150,16 +172,17 @@ Additional advanced features (settings)
 ---------------------------------------
 
 In this section we describe how to use some advanced functionality in the
-Quantum ESPRESSO pw.x plugin (note that most of them apply also to the 
+Quantum ESPRESSO pw.x plugin (note that most of them apply also to the
 cp.x plugin).
 
-While the input link with name 'parameters' is used for the content of the 
-Quantum Espresso namelists, additional parameters can be specified in the 'settings' input, also as Dict.
+While the input link with name 'parameters' is used for the content of the
+Quantum Espresso namelists, additional parameters can be specified in the 'settings' input, also as
+:py:class:`Dict <aiida.orm.nodes.data.dict.Dict>`.
 
-After having defined the content of ``settings_dict``, you can use
-it as input of a calculation ``calc`` by doing::
+After having defined the content of ``settings_dict``,
+you can use it as an input by adding it to the process builder::
 
-    calc.use_settings(Dict(dict=settings_dict))
+    builder.settings = Dict(dict=settings_dict)
 
 The different options are described below.
 
@@ -195,7 +218,7 @@ list of lists::
         ],
     }
 
-the list of lists (of booleans) must be of length N times 3, where N is the 
+the list of lists (of booleans) must be of length N times 3, where N is the
 number of sites (i.e., atoms) in the input structure. ``False`` means that
 the coordinate is free to move, ``True`` blocks that coordinate.
 
@@ -245,10 +268,10 @@ When passed as an input to the calculation, this will result in the following ca
 
 Passing an explicit list of kpoints on a grid
 .............................................
-Some codes (e.g., Wannier90) require that a QE calculation is run with 
+Some codes (e.g., Wannier90) require that a QE calculation is run with
 an explicit grid of points (i.e., all points in a grid, even if they are
 equivalent by symmetry). Instead of generating it manually, you can
-pass a usual KpointsData specifying a mesh, and then pass the following 
+pass a usual KpointsData specifying a mesh, and then pass the following
 variable::
 
     settings_dict = {
@@ -294,8 +317,8 @@ of namelists you want to produce as follows::
 
 Adding command-line options
 ...........................
-If you want to add command-line options to the executable (particularly 
-relevant e.g. to tune the parallelization level), you can pass each option 
+If you want to add command-line options to the executable (particularly
+relevant e.g. to tune the parallelization level), you can pass each option
 as a string in a list, as follows::
 
     settings_dict = {
@@ -306,12 +329,12 @@ Using symlinks for the restarts
 ...............................
 During a restart, the output directory of QE (stored by default in the subfolder
 ``./out``) containing charge density, wavefunctions, ...is copied over.
-This is done in order to make sure one can perform multiple restarts of the 
-same calculation without affecting it (QE often changes/replaces the content 
+This is done in order to make sure one can perform multiple restarts of the
+same calculation without affecting it (QE often changes/replaces the content
 of that folder).
 
 However, for big calculations this may take time at each restart, or fill the
-scratch directory of your computing cluster. If you prefer to use symlinks, 
+scratch directory of your computing cluster. If you prefer to use symlinks,
 pass::
 
 
@@ -319,9 +342,9 @@ pass::
         'parent_folder_symlink': True,
     }
 
-.. note:: Use this flag ONLY IF YOU KNOW WHAT YOU ARE DOING. In particular, 
+.. note:: Use this flag ONLY IF YOU KNOW WHAT YOU ARE DOING. In particular,
   if you run a NSCF with this flag after a SCF calculation, the scratch directory
-  of the SCF will change and you may have problems restarting other calculations 
+  of the SCF will change and you may have problems restarting other calculations
   from the SCF.
 
 

@@ -167,7 +167,7 @@ class PhCalculation(CalcJob):
 
             if any([i != 0. for i in offset]):
                 raise NotImplementedError(
-                    "Computation of phonons on a mesh with non zero offset is not implemented, at the level of ph.x")
+                    'Computation of phonons on a mesh with non zero offset is not implemented, at the level of ph.x')
 
             parameters['INPUTPH']['ldisp'] = True
             parameters['INPUTPH']['nq1'] = mesh[0]
@@ -211,7 +211,7 @@ class PhCalculation(CalcJob):
             if not isinstance(namelists_toprint, list):
                 raise exceptions.InputValidationError(
                     "The 'NAMELISTS' value, if specified in the settings input "
-                    "node, must be a list of strings")
+                    'node, must be a list of strings')
         except KeyError:  # list of namelists not specified in the settings; do automatic detection
             namelists_toprint = self._compulsory_namelists
 
@@ -235,9 +235,9 @@ class PhCalculation(CalcJob):
 
         if parameters:
             raise exceptions.InputValidationError(
-                "The following namelists are specified in parameters, but are "
-                "not valid namelists for the current type of calculation: "
-                "{}".format(",".join(list(parameters.keys()))))
+                'The following namelists are specified in parameters, but are '
+                'not valid namelists for the current type of calculation: '
+                '{}'.format(','.join(list(parameters.keys()))))
 
         # copy the parent scratch
         symlink = settings.pop('PARENT_FOLDER_SYMLINK', self._default_symlink_usage)  # a boolean
@@ -327,6 +327,6 @@ class PhCalculation(CalcJob):
     def _get_pseudo_folder(self):
         """
         Get the calculation-specific pseudo folder (relative path).
-        Default given by BasePwCpInputGenerator._PSEUDO_SUBFOLDER
+        Default given by PwCalculation._PSEUDO_SUBFOLDER
         """
         return PwCalculation._PSEUDO_SUBFOLDER

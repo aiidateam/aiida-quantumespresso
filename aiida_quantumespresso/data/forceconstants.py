@@ -140,9 +140,9 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
         if len(celldm) != 6:
             warnings.append('Wrong length for celldm')
         if ibrav != 0:
-            warnings.append("ibrav ({}) is not 0; q-points path for phonon " "dispersion might be wrong".format(ibrav))
+            warnings.append('ibrav ({}) is not 0; q-points path for phonon ' 'dispersion might be wrong'.format(ibrav))
         if any([item != 0 for item in celldm[1:]]):
-            warnings.append("celldm[1:] are not all zero; only celldm[0] will " "be used")
+            warnings.append('celldm[1:] are not all zero; only celldm[0] will ' 'be used')
 
         parsed_data['number_of_species'] = ntyp
         parsed_data['number_of_atoms'] = nat
@@ -150,7 +150,8 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
 
         # read cell data
         cell = tuple(
-            tuple(float(c) * celldm[0] * bohr_to_ang for c in l.split()) for l in lines[current_line:current_line + 3])
+            tuple(float(c) * celldm[0] * bohr_to_ang for c in l.split()) for l in lines[current_line:current_line + 3]
+        )
         parsed_data['cell'] = cell
         current_line += 3
 
@@ -190,7 +191,8 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
             for _ in range(nat):
                 current_line += 1
                 effective_charges_eu.append(
-                    tuple(tuple(float(c) for c in l.split()) for l in lines[current_line:current_line + 3]))
+                    tuple(tuple(float(c) for c in l.split()) for l in lines[current_line:current_line + 3])
+                )
                 current_line += 3
 
             parsed_data['dielectric_tensor'] = dielectric_tensor
@@ -213,7 +215,7 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
                             indices = tuple([int(c) for c in lines[current_line].split()])
                             current_line += 1
                             if (ji1 + 1, ji2 + 1, na1 + 1, na2 + 1) != indices:
-                                raise ValueError("Wrong indices in force constants")
+                                raise ValueError('Wrong indices in force constants')
 
                             for mi3 in range(qpoints_mesh[2]):
                                 for mi2 in range(qpoints_mesh[1]):

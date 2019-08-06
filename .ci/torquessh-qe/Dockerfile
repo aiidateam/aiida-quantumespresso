@@ -5,7 +5,7 @@ MAINTAINER AiiDA Team <info@aiida.net>
 CMD ["/sbin/my_init"]
 
 # Install required packages
-RUN apt-get update \ 
+RUN apt-get update \
     && apt-get install -y \
     openmpi-bin \
     quantum-espresso \

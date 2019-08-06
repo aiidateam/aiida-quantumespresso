@@ -41,6 +41,8 @@ install:
     # Upgrade pip setuptools and wheel to be able to run the next command
     - pip install -U pip==18.1 wheel setuptools reentry
 
+    - pip install "numpy==1.16.4"  # see https://github.com/materialsproject/pymatgen/issues/1520
+
     # Install the repository with some optional dependencies
     - pip install .[dev,docs]
 

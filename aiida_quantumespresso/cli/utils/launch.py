@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """Module with launch utitlies for the CLI."""
 from __future__ import absolute_import
+from __future__ import print_function
 import click
 
-from aiida.engine import launch
-from .display import echo_calculation_results
+from aiida.engine import launch, Process, ProcessBuilder
+from .display import echo_process_results
 
 
 def launch_process(process, daemon, **inputs):
@@ -16,10 +17,20 @@ def launch_process(process, daemon, **inputs):
     :param daemon: boolean, if True will submit to the daemon instead of running in current interpreter
     :param inputs: inputs for the process
     """
+    if isinstance(process, ProcessBuilder):
+        process_name = process.process_class.__name__
+    elif issubclass(process, Process):
+        process_name = process.__name__
+    else:
+        raise TypeError('invalid type for process: {}'.format(process))
+
     if daemon:
         node = launch.submit(process, **inputs)
-        click.echo('Submitted {}<{}> to the daemon'.format(process.__name__, node.pk))
+        click.echo('Submitted {}<{}> to the daemon'.format(process_name, node.pk))
     else:
-        click.echo('Running a {}...'.format(process.__name__))
+        if inputs.get('metadata', {}).get('dry_run', False):
+            click.echo('Running a dry run for {}...'.format(process_name))
+        else:
+            click.echo('Running a {}...'.format(process_name))
         _, node = launch.run_get_node(process, **inputs)
-        echo_calculation_results(node)
+        echo_process_results(node)

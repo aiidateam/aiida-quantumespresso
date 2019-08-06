@@ -12,7 +12,7 @@ from six.moves import zip
 from aiida_quantumespresso.parsers.constants import (bohr_to_ang,
                                                      hartree_to_ev,
                                                      timeau_to_sec)
-from aiida_quantumespresso.parsers.raw_parser_cp import (parse_cp_raw_output,
+from aiida_quantumespresso.parsers.parse_raw.cp import (parse_cp_raw_output,
                                                          parse_cp_traj_stanzas)
 
 
@@ -29,7 +29,7 @@ class CpParser(Parser):
         try:
             out_folder = self.retrieved
         except NotExistent:
-            self.logger.error("No retrieved folder found")
+            self.logger.error('No retrieved folder found')
             return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
 
         # check what is inside the folder
@@ -39,7 +39,7 @@ class CpParser(Parser):
         stdout_filename = self.node.get_attribute('output_filename')
         # at least the stdout should exist
         if stdout_filename not in list_of_files:
-            self.logger.error("Standard output not found")
+            self.logger.error('Standard output not found')
             return self.exit_codes.ERROR_READING_OUTPUT_FILE
 
         # This should match 1 file
@@ -81,7 +81,7 @@ class CpParser(Parser):
 
         pos_filename = '{}.{}'.format(self.node.process_class._PREFIX, 'pos')
         if pos_filename not in list_of_files:
-            out_dict['warnings'].append("Unable to open the POS file... skipping.")
+            out_dict['warnings'].append('Unable to open the POS file... skipping.')
             return self.exit_codes.ERROR_READING_POS_FILE
 
         trajectories = [
@@ -113,7 +113,7 @@ class CpParser(Parser):
                 if extension == 'pos':
                     raw_trajectory['times'] = numpy.array(traj_data['{}_traj_times'.format(name)])
             except IOError:
-                out_dict['warnings'].append("Unable to open the {} file... skipping.".format(extension.upper()))
+                out_dict['warnings'].append('Unable to open the {} file... skipping.'.format(extension.upper()))
 
         # =============== EVP trajectory ============================
         try:
@@ -124,7 +124,7 @@ class CpParser(Parser):
             except IndexError:
                 matrix = numpy.array(numpy.matrix(matrix))
 
-            if LooseVersion(out_dict['creator_version']) > LooseVersion("5.1"):
+            if LooseVersion(out_dict['creator_version']) > LooseVersion('5.1'):
                 # Between version 5.1 and 5.1.1, someone decided to change
                 # the .evp output format, without any way to know that this
                 # happened... SVN commit 11158.
@@ -173,7 +173,7 @@ class CpParser(Parser):
             # Delete evp_times in any case, it's a duplicate of 'times'
             del raw_trajectory['evp_times']
         except IOError:
-            out_dict['warnings'].append("Unable to open the EVP file... skipping.")
+            out_dict['warnings'].append('Unable to open the EVP file... skipping.')
 
         # get the symbols from the input
         # TODO: I should have kinds in TrajectoryData

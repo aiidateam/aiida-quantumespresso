@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Workchain to compute a band structure for a given structure using Quantum ESPRESSO pw.x"""
 from __future__ import absolute_import
 
 from six.moves import map
@@ -11,7 +12,6 @@ from aiida.engine import WorkChain, ToContext, if_
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 from aiida_quantumespresso.workflows.functions.seekpath_structure_analysis import seekpath_structure_analysis
 
-
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
 
@@ -21,13 +21,20 @@ class PwBandsWorkChain(WorkChain):
 
     @classmethod
     def define(cls, spec):
+        # yapf: disable
         super(PwBandsWorkChain, cls).define(spec)
-        spec.expose_inputs(PwRelaxWorkChain, namespace='relax', exclude=('structure', 'clean_workdir'))
-        spec.expose_inputs(PwBaseWorkChain, namespace='scf', exclude=('structure', 'clean_workdir'))
-        spec.expose_inputs(PwBaseWorkChain, namespace='bands', exclude=('structure', 'clean_workdir'))
-        spec.input('structure', valid_type=orm.StructureData)
-        spec.input('clean_workdir', valid_type=orm.Bool, default=orm.Bool(False))
-        spec.input('nbands_factor', valid_type=orm.Float, default=orm.Float(1.2))
+        spec.expose_inputs(PwRelaxWorkChain, namespace='relax', exclude=('clean_workdir', 'structure'),
+            namespace_options={'required': False, 'populate_defaults': False,
+            'help': 'Inputs for the `PwRelaxWorkChain`, if not specified at all, the relaxation step is skipped.'})
+        spec.expose_inputs(PwBaseWorkChain, namespace='scf', exclude=('clean_workdir', 'pw.structure'),
+            namespace_options={'help': 'Inputs for the `PwBaseWorkChain` for the SCF calculation.'})
+        spec.expose_inputs(PwBaseWorkChain, namespace='bands', exclude=('clean_workdir', 'pw.structure'),
+            namespace_options={'help': 'Inputs for the `PwBaseWorkChain` for the BANDS calculation.'})
+        spec.input('structure', valid_type=orm.StructureData, help='The inputs structure.')
+        spec.input('clean_workdir', valid_type=orm.Bool, default=orm.Bool(False),
+            help='If `True`, work directories of all called calculation will be cleaned at the end of execution.')
+        spec.input('nbands_factor', valid_type=orm.Float, default=orm.Float(1.2),
+            help='The number of bands for the BANDS calculation is that used for the SCF multiplied by this factor.')
         spec.outline(
             cls.setup,
             if_(cls.should_do_relax)(
@@ -47,11 +54,16 @@ class PwBandsWorkChain(WorkChain):
             message='the scf PwBasexWorkChain sub process failed')
         spec.exit_code(403, 'ERROR_SUB_PROCESS_FAILED_BANDS',
             message='the bands PwBasexWorkChain sub process failed')
-        spec.output('primitive_structure', valid_type=orm.StructureData)
-        spec.output('seekpath_parameters', valid_type=orm.Dict)
-        spec.output('scf_parameters', valid_type=orm.Dict)
-        spec.output('band_parameters', valid_type=orm.Dict)
-        spec.output('band_structure', valid_type=orm.BandsData)
+        spec.output('primitive_structure', valid_type=orm.StructureData,
+            help='The normalized and primitivized structure for which the bands are computed.')
+        spec.output('seekpath_parameters', valid_type=orm.Dict,
+            help='The parameters used in the SeeKpath call to normalize the input or relaxed structure.')
+        spec.output('scf_parameters', valid_type=orm.Dict,
+            help='The output parameters of the SCF `PwBaseWorkChain`.')
+        spec.output('band_parameters', valid_type=orm.Dict,
+            help='The output parameters of the BANDS `PwBaseWorkChain`.')
+        spec.output('band_structure', valid_type=orm.BandsData,
+            help='The computed band structure.')
 
     def setup(self):
         """Define the current structure in the context to be the input structure."""
@@ -79,13 +91,13 @@ class PwBandsWorkChain(WorkChain):
         if not workchain.is_finished_ok:
             self.report('PwRelaxWorkChain failed with exit status {}'.format(workchain.exit_status))
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
-        else:
-            self.ctx.current_structure = workchain.outputs.output_structure
+
+        self.ctx.current_structure = workchain.outputs.output_structure
 
     def run_seekpath(self):
-        """
-        Run the relaxed structure through SeeKPath to get the new primitive structure, just in case
-        the symmetry of the cell changed in the cell relaxation step
+        """Run the structure through SeeKpath to get the primitive and normalized structure.
+
+        This is performed regardless of whether the inputs structure was relaxed.
         """
         if 'kpoints_distance' in self.inputs.bands:
             seekpath_parameters = orm.Dict(dict={
@@ -104,10 +116,10 @@ class PwBandsWorkChain(WorkChain):
     def run_scf(self):
         """Run the PwBaseWorkChain in scf mode on the primitive cell of (optionally relaxed) input structure"""
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='scf'))
-        inputs.structure = self.ctx.current_structure
-        inputs.parameters = inputs.parameters.get_dict()
-        inputs.parameters.setdefault('CONTROL', {})
-        inputs.parameters['CONTROL']['calculation'] = 'scf'
+        inputs.pw.structure = self.ctx.current_structure
+        inputs.pw.parameters = inputs.pw.parameters.get_dict()
+        inputs.pw.parameters.setdefault('CONTROL', {})
+        inputs.pw.parameters['CONTROL']['calculation'] = 'scf'
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
@@ -123,8 +135,8 @@ class PwBandsWorkChain(WorkChain):
         if not workchain.is_finished_ok:
             self.report('scf PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_SCF
-        else:
-            self.ctx.current_folder = workchain.outputs.remote_folder
+
+        self.ctx.current_folder = workchain.outputs.remote_folder
 
     def run_bands(self):
         """Run the PwBaseWorkChain in bands mode along the path of high-symmetry determined by seekpath."""
@@ -138,23 +150,23 @@ class PwBandsWorkChain(WorkChain):
             int(0.5 * nelectron * nspin) + 4 * nspin)
 
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='bands'))
-        inputs.parameters = inputs.parameters.get_dict()
+        inputs.pw.parameters = inputs.pw.parameters.get_dict()
 
-        inputs.parameters.setdefault('CONTROL', {})
-        inputs.parameters.setdefault('SYSTEM', {})
-        inputs.parameters.setdefault('ELECTRONS', {})
+        inputs.pw.parameters.setdefault('CONTROL', {})
+        inputs.pw.parameters.setdefault('SYSTEM', {})
+        inputs.pw.parameters.setdefault('ELECTRONS', {})
 
-        inputs.parameters['CONTROL']['restart_mode'] = 'restart'
-        inputs.parameters['CONTROL']['calculation'] = 'bands'
-        inputs.parameters['ELECTRONS']['diagonalization'] = 'cg'
-        inputs.parameters['ELECTRONS']['diago_full_acc'] = True
-        inputs.parameters['SYSTEM']['nbnd'] = nbands
+        inputs.pw.parameters['CONTROL']['restart_mode'] = 'restart'
+        inputs.pw.parameters['CONTROL']['calculation'] = 'bands'
+        inputs.pw.parameters['ELECTRONS']['diagonalization'] = 'cg'
+        inputs.pw.parameters['ELECTRONS']['diago_full_acc'] = True
+        inputs.pw.parameters['SYSTEM']['nbnd'] = nbands
 
         if 'kpoints' not in self.inputs.bands:
             inputs.kpoints = self.ctx.kpoints_path
 
-        inputs.structure = self.ctx.current_structure
-        inputs.parent_folder = self.ctx.current_folder
+        inputs.pw.structure = self.ctx.current_structure
+        inputs.pw.parent_folder = self.ctx.current_folder
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
@@ -179,10 +191,7 @@ class PwBandsWorkChain(WorkChain):
         self.out('band_structure', self.ctx.workchain_bands.outputs.output_band)
 
     def on_terminated(self):
-        """
-        If the clean_workdir input was set to True, recursively collect all called Calculations by
-        ourselves and our called descendants, and clean the remote folder for the CalcJobNode instances
-        """
+        """Clean the working directories of all child calculations if `clean_workdir=True` in the inputs."""
         super(PwBandsWorkChain, self).on_terminated()
 
         if self.inputs.clean_workdir.value is False:
@@ -194,7 +203,7 @@ class PwBandsWorkChain(WorkChain):
         for called_descendant in self.node.called_descendants:
             if isinstance(called_descendant, orm.CalcJobNode):
                 try:
-                    called_descendant.outputs.remote_folder._clean()
+                    called_descendant.outputs.remote_folder._clean()  # pylint: disable=protected-access
                     cleaned_calcs.append(called_descendant.pk)
                 except (IOError, OSError, KeyError):
                     pass

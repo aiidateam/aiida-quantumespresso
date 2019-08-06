@@ -40,7 +40,7 @@ class DosParser(Parser):
         job_done = False
         for i in range(len(out_file)):
             line = out_file[-i]
-            if "JOB DONE" in line:
+            if 'JOB DONE' in line:
                 job_done = True
                 break
         if not job_done:
@@ -70,32 +70,32 @@ class DosParser(Parser):
         # TODO: should I catch any QEOutputParsingError from parse_raw_dos,
         #       log an error and return an exit code?
         array_data, spin = parse_raw_dos(dos_file, array_names, array_units)
-        
+
         energy_units = 'eV'
         dos_units = 'states/eV'
-        int_dos_units = 'states'        
+        int_dos_units = 'states'
         xy_data = XyData()
-        xy_data.set_x(array_data["dos_energy"],"dos_energy", energy_units)
+        xy_data.set_x(array_data['dos_energy'],'dos_energy', energy_units)
         y_arrays = []
         y_names = []
         y_units = []
-        y_arrays  += [array_data["integrated_dos"]]
-        y_names += ["integrated_dos"]
-        y_units += ["states"]
+        y_arrays  += [array_data['integrated_dos']]
+        y_names += ['integrated_dos']
+        y_units += ['states']
         if spin:
-            y_arrays  += [array_data["dos_spin_up"]]
-            y_arrays  += [array_data["dos_spin_down"]]
-            y_names += ["dos_spin_up"]
-            y_names += ["dos_spin_down"]
-            y_units += ["states/eV"]*2
+            y_arrays  += [array_data['dos_spin_up']]
+            y_arrays  += [array_data['dos_spin_down']]
+            y_names += ['dos_spin_up']
+            y_names += ['dos_spin_down']
+            y_units += ['states/eV']*2
         else:
-            y_arrays  += [array_data["dos"]]
-            y_names += ["dos"]
-            y_units += ["states/eV"]
+            y_arrays  += [array_data['dos']]
+            y_names += ['dos']
+            y_units += ['states/eV']
         xy_data.set_y(y_arrays,y_names,y_units)
 
         # grabs the parsed data from aiida.out
-        parsed_data = parse_raw_out_basic(out_file, "DOS")
+        parsed_data = parse_raw_out_basic(out_file, 'DOS')
         output_params = Dict(dict=parsed_data)
         # Adds warnings
         for message in parsed_data['warnings']:
@@ -109,7 +109,7 @@ def parse_raw_dos(dos_file, array_names, array_units):
     """
     This function takes as input the dos_file as a list of filelines along
     with information on how to give labels and units to the parsed data
-    
+
     :param dos_file: dos file lines in the form of a list
     :type dos_file: list
     :param array_names: list of all array names, note that array_names[0]
@@ -122,11 +122,11 @@ def parse_raw_dos(dos_file, array_names, array_units):
                         array_units[1] is for the case with spin-polarized
                         calculation
     :type array_units: list
-    
+
     :return array_data: narray, a dictionary for ArrayData type, which contains
                         all parsed dos output along with labels and units
     :return spin: boolean, indicates whether the parsed results are spin
-                  polarized 
+                  polarized
     """
 
     dos_header = dos_file[0]
@@ -136,9 +136,9 @@ def parse_raw_dos(dos_file, array_names, array_units):
         raise QEOutputParsingError('dosfile could not be loaded '
         ' using genfromtxt')
     if len(dos_data) == 0:
-        raise QEOutputParsingError("Dos file is empty.")
+        raise QEOutputParsingError('Dos file is empty.')
     if np.isnan(dos_data).any():
-        raise QEOutputParsingError("Dos file contains non-numeric elements.")
+        raise QEOutputParsingError('Dos file contains non-numeric elements.')
 
     # Checks the number of columns, essentially to see whether spin was used
     if len(dos_data[0]) == 3:
@@ -150,10 +150,10 @@ def parse_raw_dos(dos_file, array_names, array_units):
         # spin is used
         array_names = array_names[1]
         array_units = array_units[1]
-        spin = True 
+        spin = True
     else:
-        raise QEOutputParsingError("Dos file in format that the parser is not "
-                                   "designed to handle.")
+        raise QEOutputParsingError('Dos file in format that the parser is not '
+                                   'designed to handle.')
 
     i = 0
     array_data = {}

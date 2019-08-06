@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Workchain to run a Quantum ESPRESSO q2r.x calculation with automated error handling and restarts."""
 from __future__ import absolute_import
 
 from aiida import orm
@@ -10,15 +11,12 @@ from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkC
 from aiida_quantumespresso.data.forceconstants import ForceconstantsData
 from aiida_quantumespresso.utils.resources import get_default_options
 
-
 Q2rCalculation = CalculationFactory('quantumespresso.q2r')
 
 
 class Q2rBaseWorkChain(BaseRestartWorkChain):
-    """
-    Base Workchain to launch a Quantum Espresso q2r.x calculation and restart it until
-    successfully finished or until the maximum number of restarts is exceeded
-    """
+    """Workchain to run a Quantum ESPRESSO q2r.x calculation with automated error handling and restarts."""
+
     _calculation_class = Q2rCalculation
 
     @classmethod

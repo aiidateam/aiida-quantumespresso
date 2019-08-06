@@ -31,7 +31,7 @@ def validate_kpoints_mesh(ctx, param, value):
         kpoints = KpointsData()
         kpoints.set_kpoints_mesh(value)
     except ValueError as exception:
-        raise click.BadParameter("failed to create a KpointsData mesh out of {}\n{}".format(value, exception))
+        raise click.BadParameter('failed to create a KpointsData mesh out of {}\n{}'.format(value, exception))
 
     return kpoints
 
@@ -52,7 +52,7 @@ def validate_hubbard_parameters(structure, parameters, hubbard_u=None, hubbard_v
     """
     from aiida.orm import load_node, SinglefileData
 
-    if [v is None for v in [hubbard_u, hubbard_v, hubbard_file_pk]].count(True) > 1:
+    if len([value for value in [hubbard_u, hubbard_v, hubbard_file_pk] if value]) > 1:
         raise ValueError('the hubbard_u, hubbard_v and hubbard_file_pk options are mutually exclusive')
 
     hubbard_file = None
@@ -146,8 +146,11 @@ def validate_smearing(parameters, smearing=None):
         if smearing[0] in options:
             break
     else:
-        raise ValueError('the smearing type "{}" is invalid, choose from {}'.format(
-            smearing[0], ', '.join(list(valid_smearing_types.keys()))))
+        raise ValueError(
+            'the smearing type "{}" is invalid, choose from {}'.format(
+                smearing[0], ', '.join(list(valid_smearing_types.keys()))
+            )
+        )
 
     if not isinstance(smearing[1], float):
         raise ValueError('the smearing value should be a float')

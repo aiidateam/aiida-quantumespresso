@@ -1,3 +1,16 @@
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v2.2.3
+  hooks:
+  - id: trailing-whitespace
+    exclude: &exclude >
+      (?x)^(
+          tests/calculations/test_pw/.*.in|
+          tests/fixtures/.*|
+          tests/parsers/fixtures/.*|
+          tests/parsers/*.yml
+      )$
+  - id: double-quote-string-fixer
+
 - repo: local
   hooks:
 
@@ -10,13 +23,10 @@
     exclude: &exclude_files >
       (?x)^(
         aiida_quantumespresso/calculations.*|
-        aiida_quantumespresso/common/.*|
         aiida_quantumespresso/parsers/.*|
         aiida_quantumespresso/tools/.*|
-        aiida_quantumespresso/utils/.*|
-        aiida_quantumespresso/workflows/.*|
+        aiida_quantumespresso/utils/restart.py|
         docs/.*|
-        examples/.*|
         tests/.*
       )$
 
@@ -37,11 +47,14 @@
     pass_filenames: false
 
 - repo: https://github.com/python-modernize/python-modernize.git
-  sha: a234ce4e185cf77a55632888f1811d83b4ad9ef2
+  rev: a234ce4e185cf77a55632888f1811d83b4ad9ef2
   hooks:
   - id: python-modernize
-    exclude: ^docs/
-    exclude: ^examples/
+    exclude: >
+      (?x)^(
+        docs/.*|
+        examples/.*
+      )$
     args:
       - --write
       - --nobackups

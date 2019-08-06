@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
+"""Workchain to relax a structure using Quantum ESPRESSO pw.x"""
 from __future__ import absolute_import
 
 from six.moves import map
 
 from aiida import orm
-from aiida.common import AttributeDict
+from aiida.common import AttributeDict, exceptions
 from aiida.engine import WorkChain, ToContext, if_, while_, append_
 from aiida.plugins import CalculationFactory, WorkflowFactory
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
-
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
@@ -19,15 +19,24 @@ class PwRelaxWorkChain(WorkChain):
 
     @classmethod
     def define(cls, spec):
+        # yapf: disable
         super(PwRelaxWorkChain, cls).define(spec)
-        spec.expose_inputs(PwBaseWorkChain, namespace='base', exclude=('structure', 'clean_workdir'))
-        spec.input('structure', valid_type=orm.StructureData)
-        spec.input('final_scf', valid_type=orm.Bool, default=orm.Bool(False))
-        spec.input('relaxation_scheme', valid_type=orm.Str, default=orm.Str('vc-relax'))
-        spec.input('meta_convergence', valid_type=orm.Bool, default=orm.Bool(True))
-        spec.input('max_meta_convergence_iterations', valid_type=orm.Int, default=orm.Int(5))
-        spec.input('volume_convergence', valid_type=orm.Float, default=orm.Float(0.01))
-        spec.input('clean_workdir', valid_type=orm.Bool, default=orm.Bool(False))
+        spec.expose_inputs(PwBaseWorkChain, namespace='base',
+            exclude=('clean_workdir', 'pw.structure', 'pw.parent_folder'),
+            namespace_options={'help': 'Inputs for the `PwBaseWorkChain`.'})
+        spec.input('structure', valid_type=orm.StructureData, help='The inputs structure.')
+        spec.input('final_scf', valid_type=orm.Bool, default=orm.Bool(False),
+            help='If `True`, a final SCF calculation will be performed on the successfully relaxed structure.')
+        spec.input('relaxation_scheme', valid_type=orm.Str, default=orm.Str('vc-relax'),
+            help='The relaxation scheme to use: choose either `relax` or `vc-relax` for variable cell relax.')
+        spec.input('meta_convergence', valid_type=orm.Bool, default=orm.Bool(True),
+            help='If `True` the workchain will perform a meta-convergence on the cell volume.')
+        spec.input('max_meta_convergence_iterations', valid_type=orm.Int, default=orm.Int(5),
+            help='The maximum number of variable cell relax iterations in the meta convergence cycle.')
+        spec.input('volume_convergence', valid_type=orm.Float, default=orm.Float(0.01),
+            help='The volume difference threshold between two consecutive meta convergence iterations.')
+        spec.input('clean_workdir', valid_type=orm.Bool, default=orm.Bool(False),
+            help='If `True`, work directories of all called calculation will be cleaned at the end of execution.')
         spec.outline(
             cls.setup,
             while_(cls.should_run_relax)(
@@ -44,50 +53,52 @@ class PwRelaxWorkChain(WorkChain):
             message='the relax PwBaseWorkChain sub process failed')
         spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_FINAL_SCF',
             message='the final scf PwBaseWorkChain sub process failed')
-        spec.expose_outputs(PwBaseWorkChain, exclude=['output_structure'])
-        spec.output('output_structure', valid_type=orm.StructureData, required=True)
+        spec.expose_outputs(PwBaseWorkChain, exclude=('output_structure',))
+        spec.output('output_structure', valid_type=orm.StructureData, required=True,
+            help='The successfully relaxed structure.')
 
     def setup(self):
-        """
-        Input validation and context setup
-        """
+        """Input validation and context setup."""
+        self.ctx.current_number_of_bands = None
         self.ctx.current_structure = self.inputs.structure
-        self.ctx.current_parent_folder = None
         self.ctx.current_cell_volume = None
         self.ctx.is_converged = False
         self.ctx.iteration = 0
 
     def should_run_relax(self):
-        """
-        Return whether a relaxation workchain should be run, which is the case as long as the volume
-        change between two consecutive relaxation runs is larger than the specified volume convergence
-        threshold value and the maximum number of meta convergence iterations is not exceeded
+        """Return whether a relaxation workchain should be run.
+
+        This is the case as long as the volume change between two consecutive relaxation runs is larger than the volume
+        convergence threshold value and the maximum number of meta convergence iterations is not exceeded.
         """
         return not self.ctx.is_converged and self.ctx.iteration < self.inputs.max_meta_convergence_iterations.value
 
     def should_run_final_scf(self):
-        """
-        Return whether after successful relaxation a final scf calculation should be run. If the maximum number of
-        meta convergence iterations has been exceeded and convergence has not been reached, the structure cannot be
-        considered to be relaxed and the final scf should not be run
+        """Return whether after successful relaxation a final scf calculation should be run.
+
+        If the maximum number of meta convergence iterations has been exceeded and convergence has not been reached, the
+        structure cannot be considered to be relaxed and the final scf should not be run.
         """
         return self.inputs.final_scf.value and self.ctx.is_converged
 
     def run_relax(self):
-        """
-        Run the PwBaseWorkChain to run a relax PwCalculation
-        """
+        """Run the `PwBaseWorkChain` to run a relax `PwCalculation`."""
         self.ctx.iteration += 1
 
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base'))
-        inputs.structure = self.ctx.current_structure
-        inputs.parameters = inputs.parameters.get_dict()
+        inputs.pw.structure = self.ctx.current_structure
+        inputs.pw.parameters = inputs.pw.parameters.get_dict()
 
-        inputs.parameters.setdefault('CONTROL', {})
-        inputs.parameters['CONTROL']['calculation'] = self.inputs.relaxation_scheme.value
+        inputs.pw.parameters.setdefault('CONTROL', {})
+        inputs.pw.parameters['CONTROL']['calculation'] = self.inputs.relaxation_scheme.value
+        inputs.pw.parameters['CONTROL']['restart_mode'] = 'from_scratch'
 
-        # Do not clean workdirs of sub workchains, because then we won't be able to restart from them
-        inputs.pop('clean_workdir', None)
+        # If one of the nested `PwBaseWorkChains` changed the number of bands, apply it here
+        if self.ctx.current_number_of_bands is not None:
+            inputs.pw.parameters.setdefault('SYSTEM', {})['nbnd'] = self.ctx.current_number_of_bands
+
+        # Set the `CALL` link label
+        inputs.metadata.call_link_label = 'iteration_{:02d}'.format(self.ctx.iteration)
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
@@ -97,20 +108,28 @@ class PwRelaxWorkChain(WorkChain):
         return ToContext(workchains=append_(running))
 
     def inspect_relax(self):
-        """
-        Compare the cell volume of the relaxed structure of the last completed workchain with the previous.
-        If the difference ratio is less than the volume convergence threshold we consider the cell relaxation
-        converged and can quit the workchain.
+        """Inspect the results of the last `PwBaseWorkChain`.
+
+        Compare the cell volume of the relaxed structure of the last completed workchain with the previous. If the
+        difference ratio is less than the volume convergence threshold we consider the cell relaxation converged.
         """
         workchain = self.ctx.workchains[-1]
 
-        if not workchain.is_finished_ok:
+        acceptable_statuses = [
+            'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF'
+        ]
+
+        if workchain.is_excepted or workchain.is_killed:
+            self.report('relax PwBaseWorkChain was excepted or killed')
+            return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
+
+        if workchain.is_failed and workchain.exit_status not in PwBaseWorkChain.get_exit_statuses(acceptable_statuses):
             self.report('relax PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
 
         try:
             structure = workchain.outputs.output_structure
-        except AttributeError:
+        except exceptions.NotExistent:
             self.report('relax PwBaseWorkChain finished successful but without output structure')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
 
@@ -118,8 +137,8 @@ class PwRelaxWorkChain(WorkChain):
         curr_cell_volume = structure.get_cell_volume()
 
         # Set relaxed structure as input structure for next iteration
-        self.ctx.current_parent_folder = workchain.outputs.remote_folder
         self.ctx.current_structure = structure
+        self.ctx.current_number_of_bands = workchain.outputs.output_parameters.get_dict()['number_of_bands']
         self.report('after iteration {} cell volume of relaxed structure is {}'
             .format(self.ctx.iteration, curr_cell_volume))
 
@@ -149,15 +168,19 @@ class PwRelaxWorkChain(WorkChain):
         return
 
     def run_final_scf(self):
-        """Run the PwBaseWorkChain to run a final scf PwCalculation for the relaxed structure."""
+        """Run the `PwBaseWorkChain` to run a final scf `PwCalculation` for the relaxed structure."""
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base'))
-        inputs.structure = self.ctx.current_structure
-        inputs.parent_folder = self.ctx.current_parent_folder
-        inputs.parameters = inputs.parameters.get_dict()
+        inputs.pw.structure = self.ctx.current_structure
+        inputs.pw.parameters = inputs.pw.parameters.get_dict()
 
-        inputs.parameters.setdefault('CONTROL', {})
-        inputs.parameters['CONTROL']['calculation'] = 'scf'
-        inputs.parameters['CONTROL']['restart_mode'] = 'restart'
+        inputs.pw.parameters.setdefault('CONTROL', {})
+        inputs.pw.parameters['CONTROL']['calculation'] = 'scf'
+        inputs.pw.parameters['CONTROL']['restart_mode'] = 'from_scratch'
+        inputs.pw.parameters.pop('CELL', None)
+        inputs.metadata.call_link_label = 'final_scf'
+
+        if self.ctx.current_number_of_bands is not None:
+            inputs.pw.parameters.setdefault('SYSTEM', {})['nbnd'] = self.ctx.current_number_of_bands
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
@@ -167,7 +190,7 @@ class PwRelaxWorkChain(WorkChain):
         return ToContext(workchain_scf=running)
 
     def inspect_final_scf(self):
-        """Inspect the result of the final scf PwBaseWorkChain."""
+        """Inspect the result of the final scf `PwBaseWorkChain`."""
         workchain = self.ctx.workchain_scf
 
         if not workchain.is_finished_ok:
@@ -184,7 +207,7 @@ class PwRelaxWorkChain(WorkChain):
         # Get the latest workchain, which is either the workchain_scf if it ran or otherwise the last regular workchain
         try:
             workchain = self.ctx.workchain_scf
-            structure = workchain.inputs.structure
+            structure = workchain.inputs.pw__structure
         except AttributeError:
             workchain = self.ctx.workchains[-1]
             structure = workchain.outputs.output_structure
@@ -193,10 +216,7 @@ class PwRelaxWorkChain(WorkChain):
         self.out('output_structure', structure)
 
     def on_terminated(self):
-        """
-        If the clean_workdir input was set to True, recursively collect all called Calculations by
-        ourselves and our called descendants, and clean the remote folder for the CalcJobNode instances
-        """
+        """Clean the working directories of all child calculations if `clean_workdir=True` in the inputs."""
         super(PwRelaxWorkChain, self).on_terminated()
 
         if self.inputs.clean_workdir.value is False:
@@ -208,7 +228,7 @@ class PwRelaxWorkChain(WorkChain):
         for called_descendant in self.node.called_descendants:
             if isinstance(called_descendant, orm.CalcJobNode):
                 try:
-                    called_descendant.outputs.remote_folder._clean()
+                    called_descendant.outputs.remote_folder._clean()  # pylint: disable=protected-access
                     cleaned_calcs.append(called_descendant.pk)
                 except (IOError, OSError, KeyError):
                     pass

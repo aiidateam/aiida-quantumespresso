@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-
+"""Utilties to convert between python and fortran data types and formats."""
 from __future__ import absolute_import
 from __future__ import print_function
+
 import numbers
 import six
 from six.moves import zip
@@ -21,17 +22,20 @@ def conv_to_fortran(val, quote_strings=True):
         else:
             val_str = '.false.'
     elif isinstance(val, numbers.Integral):
-        val_str = "{:d}".format(val)
+        val_str = '{:d}'.format(val)
     elif isinstance(val, numbers.Real):
-        val_str = ("{:18.10e}".format(val)).replace('e', 'd')
+        val_str = ('{:18.10e}'.format(val)).replace('e', 'd')
     elif isinstance(val, six.string_types):
         if quote_strings:
             val_str = "'{!s}'".format(val)
         else:
-            val_str = "{!s}".format(val)
+            val_str = '{!s}'.format(val)
     else:
-        raise ValueError("Invalid value '{}' of type '{}' passed, accepts only bools, ints, floats and strings".format(
-            val, type(val)))
+        raise ValueError(
+            "Invalid value '{}' of type '{}' passed, accepts only bools, ints, floats and strings".format(
+                val, type(val)
+            )
+        )
 
     return val_str
 
@@ -46,7 +50,7 @@ def conv_to_fortran_withlists(val, quote_strings=True):
     # Note that bool should come before integer, because a boolean matches also
     # isinstance(...,int)
     if isinstance(val, (list, tuple)):
-        val_str = ", ".join(conv_to_fortran(thing, quote_strings=quote_strings) for thing in val)
+        val_str = ', '.join(conv_to_fortran(thing, quote_strings=quote_strings) for thing in val)
         return val_str
 
     if isinstance(val, bool):
@@ -56,18 +60,18 @@ def conv_to_fortran_withlists(val, quote_strings=True):
         return '.false.'
 
     if isinstance(val, six.integer_types):
-        return "{:d}".format(val)
+        return '{:d}'.format(val)
 
     if isinstance(val, float):
-        return "{:18.10e}".format(val).replace('e', 'd')
+        return '{:18.10e}'.format(val).replace('e', 'd')
 
     if isinstance(val, six.string_types):
         if quote_strings:
             return "'{!s}'".format(val)
 
-        return "{!s}".format(val)
+        return '{!s}'.format(val)
 
-    raise ValueError("Invalid value passed, accepts only bools, ints, floats and strings")
+    raise ValueError('Invalid value passed, accepts only bools, ints, floats and strings')
 
 
 def convert_input_to_namelist_entry(key, val, mapping=None):
@@ -155,6 +159,7 @@ def convert_input_to_namelist_entry(key, val, mapping=None):
 
         This will map every occurrence of 'Fe' and 'O' in the values to the corresponding integer.
     """
+    # pylint: disable=too-many-branches,too-many-nested-blocks,no-else-return
     # I don't try to do iterator=iter(val) and catch TypeError because it would also match strings
     # I check first the dictionary, because it would also match hasattr(__iter__)
     if isinstance(val, dict):
@@ -200,8 +205,10 @@ def convert_input_to_namelist_entry(key, val, mapping=None):
                             raise ValueError('cannot map the string value because no mapping was defined')
 
                         if value not in mapping:
-                            raise ValueError('the nested list contained string {} but this is not a key in the mapping'
-                                .format(value))
+                            raise ValueError(
+                                'the nested list contained string {} but this is not a key in the mapping'.
+                                format(value)
+                            )
                         else:
                             values.append(str(mapping[value]))
                     else:

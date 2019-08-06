@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
+"""Utilities for calculation job resources."""
 from __future__ import absolute_import
-import numpy as np
+
 from math import exp, ceil
-from aiida_quantumespresso.utils.defaults.calculation import pw as pw_defaults
+import numpy as np
 import six
 from six.moves import range
+
+from aiida_quantumespresso.utils.defaults.calculation import pw as pw_defaults
 
 
 def create_scheduler_resources(scheduler, base, goal):
@@ -29,14 +32,13 @@ def create_scheduler_resources(scheduler, base, goal):
 
     resources = {}
     for key, value in six.iteritems(base):
-        if key in scheduler._job_resource_class.get_valid_keys():
+        if key in scheduler._job_resource_class.get_valid_keys():  # pylint: disable=protected-access
             resources[key] = value
 
     try:
         job_resource = scheduler.create_job_resource(**resources)
     except TypeError as exception:
-        raise ValueError('failed to create job resources for the {} scheduler: {}'
-            .format(scheduler.__class__, exception.message))
+        raise ValueError('failed to create job resources for {} scheduler: {}'.format(scheduler.__class__, exception))
 
     return {key: value for key, value in six.iteritems(job_resource) if value is not None}
 
@@ -55,8 +57,10 @@ def cmdline_remove_npools(cmdline):
     :param cmdline: the cmdline setting which is a list of string directives
     :return: the new cmdline setting
     """
-    return [e for i, e in enumerate(cmdline) if (e not in ('-npools', '-npool', '-nk') and
-        cmdline[i - 1] not in ('-npools', '-npool', '-nk'))]
+    return [
+        e for i, e in enumerate(cmdline)
+        if (e not in ('-npools', '-npool', '-nk') and cmdline[i - 1] not in ('-npools', '-npool', '-nk'))
+    ]
 
 
 def get_default_options(max_num_machines=1, max_wallclock_seconds=1800, with_mpi=False):
@@ -77,7 +81,7 @@ def get_default_options(max_num_machines=1, max_wallclock_seconds=1800, with_mpi
     }
 
 
-def get_automatic_parallelization_options(max_num_machines=1, max_wallclock_seconds=1800):
+def get_automatic_parallelization_options(max_num_machines=1, max_wallclock_seconds=1800):  # pylint: disable=invalid-name
     """
     Return an instance of the automatic parallelization options dictionary
 
@@ -91,8 +95,15 @@ def get_automatic_parallelization_options(max_num_machines=1, max_wallclock_seco
     }
 
 
-def get_pw_parallelization_parameters(calculation, max_num_machines, target_time_seconds, max_wallclock_seconds,
-    calculation_mode='scf', round_interval=1800, scaling_law=(exp(-16.1951988), 1.22535849)):
+def get_pw_parallelization_parameters(
+    calculation,
+    max_num_machines,
+    target_time_seconds,
+    max_wallclock_seconds,
+    calculation_mode='scf',
+    round_interval=1800,
+    scaling_law=(exp(-16.1951988), 1.22535849)
+):
     """
     Guess an optimal choice of parallelzation parameters for a PwCalculation based
     on a completed initialization PwCalculation run
@@ -126,9 +137,10 @@ def get_pw_parallelization_parameters(calculation, max_num_machines, target_time
     .. note:: If there was an out-of-memory problem during the initial
         calculation, the number of machines is increased.
     """
+    # pylint: disable=invalid-name,deprecated-method
     from fractions import gcd
 
-    default_num_mpiprocs_per_machine = calculation.get_computer().get_default_mpiprocs_per_machine()
+    default_num_mpiprocs_per_machine = calculation.computer.get_default_mpiprocs_per_machine()
 
     input_parameters = calculation.inputs.parameters.get_dict()
     output_parameters = calculation.outputs.output_parameters.get_dict()
@@ -150,16 +162,14 @@ def get_pw_parallelization_parameters(calculation, max_num_machines, target_time
         niterations = 1
 
     # Compute an estimate single-CPU time
-    time_single_cpu = np.prod(fft_grid) * nspin * nkpoints * niterations * scaling_law[0] * nbands ** scaling_law[1]
+    time_single_cpu = np.prod(fft_grid) * nspin * nkpoints * niterations * scaling_law[0] * nbands**scaling_law[1]
 
     # The number of nodes is the maximum number we can use that is dividing nkpoints
     num_machines = max([m for m in range(1, max_num_machines + 1) if nkpoints % m == 0])
 
     # If possible try to make number of kpoints even by changing the number of machines
     if (
-        num_machines == 1 and
-        nkpoints > 6 and
-        max_num_machines > 1 and
+        num_machines == 1 and nkpoints > 6 and max_num_machines > 1 and
         time_single_cpu / default_num_mpiprocs_per_machine > target_time_seconds
     ):
         num_machines = max([m for m in range(1, max_num_machines + 1) if (nkpoints + 1) % m == 0])
@@ -187,8 +197,7 @@ def get_pw_parallelization_parameters(calculation, max_num_machines, target_time
             npools = num_machines * gcd(num_mpiprocs_per_machine, nkpoints / num_machines)
 
     # Increase the number of machines in case of memory problem during initialization
-    # TODO: make it more general and less dependent on the scheduler exact message
-    if calculation.get_scheduler_error() and 'OOM' in calculation.get_scheduler_error():
+    if calculation.get_scheduler_stderr() and 'OOM' in calculation.get_scheduler_stderr():
         num_machines = max([i for i in range(num_machines, max_num_machines + 1) if i % num_machines == 0])
 
     estimated_time = time_single_cpu / (num_mpiprocs_per_machine * num_machines)

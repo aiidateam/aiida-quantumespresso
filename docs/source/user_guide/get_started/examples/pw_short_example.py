@@ -10,21 +10,29 @@
 ###########################################################################
 from __future__ import absolute_import
 from __future__ import print_function
-from aiida import load_dbenv
-load_dbenv()
+from aiida import load_profile
 
-from aiida.plugins import Code, DataFactory
+from aiida.orm import Code
+from aiida.plugins import DataFactory
+from aiida.engine import submit
+from aiida.orm.nodes.data.upf import get_pseudos_from_structure
+
+load_profile()
+
+
 StructureData = DataFactory('structure')
 Dict = DataFactory('dict')
 KpointsData = DataFactory('array.kpoints')
 
 ###############################
 # Set your values here
-codename = 'pw-5.1@TheHive'
-pseudo_family = 'lda_pslibrary'
+codename = 'pw-6.3@TheHive'
+pseudo_family = 'SSSP_efficiency'
 ###############################
 
+
 code = Code.get_from_string(codename)
+builder = code.get_builder()
 
 # BaTiO3 cubic structure
 alat = 4. # angstrom
@@ -56,18 +64,18 @@ parameters = Dict(dict={
 kpoints = KpointsData()
 kpoints.set_kpoints_mesh([4,4,4])
 
-calc = code.new_calc(max_wallclock_seconds=3600,
-    resources={"num_machines": 1})
-calc.label = "A generic title"
-calc.description = "A much longer description"
+builder.pseudos = get_pseudos_from_structure(s,pseudo_family)
 
-calc.use_structure(s)
-calc.use_code(code)
-calc.use_parameters(parameters)
-calc.use_kpoints(kpoints)
-calc.use_pseudos_from_family(pseudo_family)
+builder.metadata.options.resources = {'num_machines': 1}
+builder.metadata.options.max_wallclock_seconds = 1800
 
-calc.store_all()
-print("created calculation with PK={}".format(calc.pk))
-calc.submit()
+builder.metadata.label = 'My generic title'
+builder.metadata.description ='My generic description'
 
+builder.structure = s
+builder.parameters = parameters
+builder.kpoints = kpoints
+
+calc = submit(builder)
+
+print('created calculation with PK={}'.format(calc.pk))

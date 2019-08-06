@@ -1,7 +1,7 @@
 
 .. _sec.quantumespresso:
 
-Avaliable calculation plugins
+Available calculation plugins
 -----------------------------
 
 Description

@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Utility functions to return builders ready to be submitted 
-for restarting a Quantum ESPRESSO calculation (or to apply small 
+Utility functions to return builders ready to be submitted
+for restarting a Quantum ESPRESSO calculation (or to apply small
 modifications).
 """
 from __future__ import absolute_import
-from aiida.common import InputValidationError 
+from aiida.common import InputValidationError
 from aiida.common.links import LinkType
+
 
 def clone_calculation(calculation):
     """
@@ -30,9 +31,10 @@ def clone_calculation(calculation):
 
     return clone
 
-def _create_restart_pw_cp(parent_calc, force_restart, parent_folder_symlink,
-                   use_output_structure,
-                   restart_from_beginning):
+
+def _create_restart_pw_cp(
+    parent_calc, force_restart, parent_folder_symlink, use_output_structure, restart_from_beginning
+):
     """
     Function to restart a pw.x or cp.x calculation that was not completed before
     (like max walltime reached...) i.e. not to restart a really FAILED calculation.
@@ -65,17 +67,21 @@ def _create_restart_pw_cp(parent_calc, force_restart, parent_folder_symlink,
     Dict = DataFactory('dict')
     RemoteData = DataFactory('remote')
 
-    if not isinstance(parent_calc, (CalculationFactory('quantumespresso.cp'), CalculationFactory('quantumespresso.pw'))):
+    if not isinstance(
+        parent_calc, (CalculationFactory('quantumespresso.cp'), CalculationFactory('quantumespresso.pw'))
+    ):
         raise TypeError(
-            "This function can only deal with restarts of PwCalculations or CpCalculations (QE pw.x or cp.x codes), "
-            "but I got {} instead".format(parent_calc.__class__.__name__))
+            'This function can only deal with restarts of PwCalculations or CpCalculations (QE pw.x or cp.x codes), '
+            'but I got {} instead'.format(parent_calc.__class__.__name__)
+        )
 
     # Check the calculation's state using ``from_attribute=True`` to
     # correctly handle IMPORTED calculations.
     if not parent_calc.is_finished_ok:
         if not force_restart:
             raise InputValidationError(
-                "Calculation to be restarted must be finished ok. Otherwise, use the force_restart flag")
+                'Calculation to be restarted must be finished ok. Otherwise, use the force_restart flag'
+            )
 
     inputs = parent_calc.get_incoming(link_type=LinkType.INPUT_CALC)
 
@@ -90,7 +96,9 @@ def _create_restart_pw_cp(parent_calc, force_restart, parent_folder_symlink,
     try:
         remote_folder = parent_calc.get_outcoming(node_class=RemoteData, link_type=LinkType.CREATE).one().node
     except ValueError:
-        raise InputValidationError("No or more than one output RemoteData found in calculation {}".format(parent_calc.pk))
+        raise InputValidationError(
+            'No or more than one output RemoteData found in calculation {}'.format(parent_calc.pk)
+        )
 
     builder = parent_calc.__class__.get_builder()
 
@@ -104,9 +112,9 @@ def _create_restart_pw_cp(parent_calc, force_restart, parent_folder_symlink,
             setattr(builder.options, option, option_val)
 
     builder.label = parent_calc.label
-    builder.description = "[Restart of {} {}]\n{}".format(
-        parent_calc.__class__.__name__, parent_calc.uuid,
-        parent_calc.description)
+    builder.description = '[Restart of {} {}]\n{}'.format(
+        parent_calc.__class__.__name__, parent_calc.uuid, parent_calc.description
+    )
 
     # set the new links
     builder.parameters = inp_dict
@@ -132,8 +140,7 @@ def _create_restart_pw_cp(parent_calc, force_restart, parent_folder_symlink,
     if parent_folder_symlink is None:
         parent_folder_symlink = parent_calc._default_symlink_usage
     # Always set if it was already set. Otherwise, if it wasn't set, just set it if it's not the default
-    if ('PARENT_FOLDER_SYMLINK' in old_settings_dict
-            or parent_folder_symlink != parent_calc._default_symlink_usage):
+    if ('PARENT_FOLDER_SYMLINK' in old_settings_dict or parent_folder_symlink != parent_calc._default_symlink_usage):
         old_settings_dict['PARENT_FOLDER_SYMLINK'] = parent_folder_symlink
 
     if old_settings_dict:  # if not empty dictionary
@@ -155,9 +162,14 @@ def _create_restart_pw_cp(parent_calc, force_restart, parent_folder_symlink,
 
     return builder
 
-def create_restart_pw(parent_calc, force_restart=False, parent_folder_symlink=None,
-                   use_output_structure=False,
-                   restart_from_beginning=False):
+
+def create_restart_pw(
+    parent_calc,
+    force_restart=False,
+    parent_folder_symlink=None,
+    use_output_structure=False,
+    restart_from_beginning=False
+):
     """
     Function to restart a pw.x calculation that was not completed before
     (like max walltime reached...) i.e. not to restart a really FAILED calculation.
@@ -186,15 +198,21 @@ def create_restart_pw(parent_calc, force_restart=False, parent_folder_symlink=No
        external reasons. Default=False
     """
     return _create_restart_pw_cp(
-        parent_calc=parent_calc, force_restart=force_restart,
+        parent_calc=parent_calc,
+        force_restart=force_restart,
         parent_folder_symlink=parent_folder_symlink,
         use_output_structure=use_output_structure,
-        restart_from_beginning=restart_from_beginning)
+        restart_from_beginning=restart_from_beginning
+    )
 
 
-def create_restart_cp(parent_calc, force_restart=False, parent_folder_symlink=None,
-                   use_output_structure=False,
-                   restart_from_beginning=False):
+def create_restart_cp(
+    parent_calc,
+    force_restart=False,
+    parent_folder_symlink=None,
+    use_output_structure=False,
+    restart_from_beginning=False
+):
     """
     Function to restart a cp.x calculation that was not completed before
     (like max walltime reached...) i.e. not to restart a really FAILED calculation.
@@ -223,10 +241,13 @@ def create_restart_cp(parent_calc, force_restart=False, parent_folder_symlink=No
        external reasons. Default=False
     """
     return _create_restart_pw_cp(
-        parent_calc=parent_calc, force_restart=force_restart,
+        parent_calc=parent_calc,
+        force_restart=force_restart,
         parent_folder_symlink=parent_folder_symlink,
         use_output_structure=use_output_structure,
-        restart_from_beginning=restart_from_beginning)
+        restart_from_beginning=restart_from_beginning
+    )
+
 
 def create_restart_neb(parent_calc, force_restart=False, parent_folder_symlink=None):
     """
@@ -255,14 +276,16 @@ def create_restart_neb(parent_calc, force_restart=False, parent_folder_symlink=N
 
     if not isinstance(parent_calc, CalculationFactory('quantumespresso.neb')):
         raise TypeError(
-            "This function can only deal with restarts of NebCalculations (QE neb.x), "
-            "but I got {} instead".format(parent_calc.__class__.__name__))
+            'This function can only deal with restarts of NebCalculations (QE neb.x), '
+            'but I got {} instead'.format(parent_calc.__class__.__name__)
+        )
 
     # Check the calculation's state using ``from_attribute=True`` to
     # correctly handle IMPORTED calculations.
     if not force_restart and not parent_calc.is_finished_ok:
         raise exceptions.InputValidationError(
-            "Calculation to be restarted must be finshed ok. Otherwise, use the force_restart flag")
+            'Calculation to be restarted must be finshed ok. Otherwise, use the force_restart flag'
+        )
 
     inputs = parent_calc.get_incoming(link_type=LinkType.INPUT_CALC)
 
@@ -274,7 +297,9 @@ def create_restart_neb(parent_calc, force_restart=False, parent_folder_symlink=N
     try:
         remote_folder = parent_calc.get_outcoming(node_class=RemoteData, link_type=LinkType.CREATE).one().node
     except ValueError:
-        raise InputValidationError("No or more than one output RemoteData found in calculation {}".format(parent_calc.pk))
+        raise InputValidationError(
+            'No or more than one output RemoteData found in calculation {}'.format(parent_calc.pk)
+        )
 
     builder = parent_calc.__class__.get_builder()
 
@@ -288,9 +313,9 @@ def create_restart_neb(parent_calc, force_restart=False, parent_folder_symlink=N
             setattr(builder.options, option, option_val)
 
     builder.label = parent_calc.label
-    builder.description = "[Restart of {} {}]\n{}".format(
-        parent_calc.__class__.__name__, parent_calc.uuid,
-        parent_calc.description)
+    builder.description = '[Restart of {} {}]\n{}'.format(
+        parent_calc.__class__.__name__, parent_calc.uuid, parent_calc.description
+    )
 
     # set the new links
     builder.neb_parameters = inp_dict
@@ -311,8 +336,7 @@ def create_restart_neb(parent_calc, force_restart=False, parent_folder_symlink=N
     if parent_folder_symlink is None:
         parent_folder_symlink = parent_calc._default_symlink_usage
     # Always set if it was already set. Otherwise, if it wasn't set, just set it if it's not the default
-    if ('PARENT_FOLDER_SYMLINK' in old_settings_dict
-            or parent_folder_symlink != parent_calc._default_symlink_usage):
+    if ('PARENT_FOLDER_SYMLINK' in old_settings_dict or parent_folder_symlink != parent_calc._default_symlink_usage):
         old_settings_dict['PARENT_FOLDER_SYMLINK'] = parent_folder_symlink
 
     if old_settings_dict:  # if not empty dictionary
@@ -335,14 +359,13 @@ def create_restart_neb(parent_calc, force_restart=False, parent_folder_symlink=N
     return builder
 
 
-def create_restart_ph(parent_calc, force_restart=False,
-                      parent_folder_symlink=None):
+def create_restart_ph(parent_calc, force_restart=False, parent_folder_symlink=None):
     """
-    This function creates a builder to restart a ph.x Quantum ESPRESSO 
+    This function creates a builder to restart a ph.x Quantum ESPRESSO
     calculation that was not completed before (like max walltime reached...).
     This means that it might not be useful to restart a FAILED calculation.
 
-    It returns a `builder` for a new calculation, with all links prepared 
+    It returns a `builder` for a new calculation, with all links prepared
     but not stored in DB.
     To submit it, simply call::
 
@@ -350,9 +373,9 @@ def create_restart_ph(parent_calc, force_restart=False,
         submit(builder)
 
     :param parent_calc: the calculation you want to restart
-    :param bool force_restart: restart also if parent is not in FINISHED 
+    :param bool force_restart: restart also if parent is not in FINISHED
         state (e.g. FAILED, IMPORTED, etc.). Default=False.
-    :param bool parent_folder_symlink: sets the value of the 
+    :param bool parent_folder_symlink: sets the value of the
         `PARENT_FOLDER_SYMLINK` in the `settings` input. Default: the value specified
         in aiida_quantumespresso.calculations.ph._default_symlink_usage.
     """
@@ -363,27 +386,31 @@ def create_restart_ph(parent_calc, force_restart=False,
 
     if not isinstance(parent_calc, CalculationFactory('quantumespresso.ph')):
         raise TypeError(
-            "This function can only deal with restarts of PhCalculations (QE ph.x codes), "
-            "but I got {} instead".format(parent_calc.__class__.__name__))
+            'This function can only deal with restarts of PhCalculations (QE ph.x codes), '
+            'but I got {} instead'.format(parent_calc.__class__.__name__)
+        )
 
     if not force_restart and not parent_calc.is_finished_ok:
         raise exceptions.InputValidationError(
-            "Calculation to be restarted must be finshed ok. Otherwise, use the force_restart flag")
-    
+            'Calculation to be restarted must be finshed ok. Otherwise, use the force_restart flag'
+        )
+
     inputs = parent_calc.get_incoming(link_type=LinkType.INPUT_CALC)
     code = inputs.get_node_by_label('code')
     qpoints = inputs.get_node_by_label('qpoints')
-    
+
     old_inp_dict = inputs.get_node_by_label('parameters').get_dict()
     # add the restart flag
     old_inp_dict['INPUTPH']['recover'] = True
-    inp_dict = Dict(dict=old_inp_dict) 
+    inp_dict = Dict(dict=old_inp_dict)
 
     try:
         remote_folder = parent_calc.get_outcoming(node_class=RemoteData, link_type=LinkType.CREATE).one().node
     except ValueError:
-        raise InputValidationError("No or more than one output RemoteData found in calculation {}".format(parent_calc.pk))
-    
+        raise InputValidationError(
+            'No or more than one output RemoteData found in calculation {}'.format(parent_calc.pk)
+        )
+
     builder = parent_calc.__class__.get_builder()
 
     # Set the same options
@@ -396,10 +423,10 @@ def create_restart_ph(parent_calc, force_restart=False,
             setattr(builder.options, option, option_val)
 
     builder.label = parent_calc.label
-    builder.description = "[Restart of {} {}]\n{}".format(
-        parent_calc.__class__.__name__, parent_calc.uuid,
-        parent_calc.description)
-    
+    builder.description = '[Restart of {} {}]\n{}'.format(
+        parent_calc.__class__.__name__, parent_calc.uuid, parent_calc.description
+    )
+
     # set the parameters, and the (same) code and q-points
     builder.parameters = Dict(inp_dict)
     builder.code = code
@@ -412,14 +439,13 @@ def create_restart_ph(parent_calc, force_restart=False,
     if parent_folder_symlink is None:
         parent_folder_symlink = parent_calc._default_symlink_usage
     # Always set if it was already set. Otherwise, if it wasn't set, just set it if it's not the default
-    if ('PARENT_FOLDER_SYMLINK' in old_settings_dict
-            or parent_folder_symlink != parent_calc._default_symlink_usage):
+    if ('PARENT_FOLDER_SYMLINK' in old_settings_dict or parent_folder_symlink != parent_calc._default_symlink_usage):
         old_settings_dict['PARENT_FOLDER_SYMLINK'] = parent_folder_symlink
-        
-    if old_settings_dict: # if not empty dictionary
+
+    if old_settings_dict:  # if not empty dictionary
         settings = Dict(dict=old_settings_dict)
         builder.settings = settings
-    
+
     builder.parent_folder = remote_folder
-    
+
     return builder

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Physical or mathematical constants. 
+Physical or mathematical constants.
 Since every code has its own conversion units, this module defines what
 QE understands as for an eV or other quantities.
 Whenever possible, we try to use the constants defined in
 :py:mod:aiida.common.constants:, but if some constants are slightly different
-among different codes (e.g., different standard definition), we define 
+among different codes (e.g., different standard definition), we define
 the constants in this file.
 """
 

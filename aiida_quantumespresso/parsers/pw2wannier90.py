@@ -4,7 +4,7 @@ from __future__ import absolute_import
 from aiida.common import NotExistent
 from aiida.orm import Dict
 from aiida.parsers import Parser
-from aiida_quantumespresso.parsers.raw_parser_simple import parse_qe_simple
+from aiida_quantumespresso.parsers.parse_raw.simple import parse_qe_simple
 
 
 class Pw2wannier90Parser(Parser):
@@ -33,14 +33,14 @@ class Pw2wannier90Parser(Parser):
             return self.exit_codes.ERROR_READING_OUTPUT_FILE
 
         # check that the file has finished (i.e. JOB DONE is inside the file)
-        successful_raw, out_dict = parse_qe_simple(out_file, codename="PW2WANNIER")
+        successful_raw, out_dict = parse_qe_simple(out_file, codename='PW2WANNIER')
 
         # Output a Dict with whatever has been parsed
         self.out('output_parameters', Dict(dict=out_dict))
 
         # In case of parsing error or calculation error, return an exit code
         if not successful_raw:
-            if "Computation did not finish properly" in out_dict['warnings']:
+            if 'Computation did not finish properly' in out_dict['warnings']:
                 return self.exit_codes.ERROR_JOB_NOT_DONE
             elif 'error_message' in list(out_dict.keys()):
                 return self.exit_codes.ERROR_GENERIC_QE_ERROR

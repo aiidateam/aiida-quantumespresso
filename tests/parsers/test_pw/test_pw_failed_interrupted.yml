@@ -1,0 +1,33 @@
+energy: -308.19187541409156
+energy_accuracy: 7.3470735316620004e-06
+energy_accuracy_units: eV
+energy_ewald: -228.56124874864287
+energy_ewald_units: eV
+energy_hartree: 17.268075769566853
+energy_hartree_units: eV
+energy_one_electron: 71.73308779934625
+energy_one_electron_units: eV
+energy_threshold: 3.84e-06
+energy_units: eV
+energy_xc: -168.63179023436172
+energy_xc_units: eV
+fft_grid:
+- 36
+- 36
+- 36
+init_wall_time_seconds: 0.9
+lattice_parameter_initial: 3.8396039900873213
+number_of_atoms: 2
+number_of_bands: 4
+number_of_k_points: 3
+number_of_species: 1
+parser_info: aiida-quantumespresso parser pw.x v3.0.0a3
+parser_version: 3.0.0a3
+parser_warnings: []
+scf_iterations: 5
+smooth_fft_grid:
+- 25
+- 25
+- 25
+total_number_of_scf_iterations: 5
+volume: 40.02575697370363

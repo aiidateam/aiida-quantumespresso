@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-import os
 
+import os
 import six
 
 from aiida import orm
@@ -42,10 +42,6 @@ class PwCalculation(BasePwCpInputGenerator):
 
     _use_kpoints = True
 
-    # Default input and output files
-    _DEFAULT_INPUT_FILE = 'aiida.in'
-    _DEFAULT_OUTPUT_FILE = 'aiida.out'
-
     # Not using symlink in pw to allow multiple nscf to run on top of the same scf
     _default_symlink_usage = False
 
@@ -62,36 +58,81 @@ class PwCalculation(BasePwCpInputGenerator):
 
     @classmethod
     def define(cls, spec):
+        # yapf:disable
         super(PwCalculation, cls).define(spec)
-        spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
-        spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.pw')
         spec.input('kpoints', valid_type=orm.KpointsData,
             help='kpoint mesh or kpoint path')
         spec.input('hubbard_file', valid_type=orm.SinglefileData, required=False,
             help='SinglefileData node containing the output Hubbard parameters from a HpCalculation')
-        spec.output('output_parameters', valid_type=orm.Dict)
-        spec.output('output_structure', valid_type=orm.StructureData, required=False)
+        spec.output('output_parameters', valid_type=orm.Dict,
+            help='The `output_parameters` output node of the successful calculation.')
+        spec.output('output_structure', valid_type=orm.StructureData, required=False,
+            help='The `output_structure` output node of the successful calculation if present.')
         spec.output('output_trajectory', valid_type=orm.TrajectoryData, required=False)
-        spec.output('output_array', valid_type=orm.ArrayData, required=False)
-        spec.output('output_band', valid_type=orm.BandsData, required=False)
+        spec.output('output_band', valid_type=orm.BandsData, required=False,
+            help='The `output_band` output node of the successful calculation if present.')
         spec.output('output_kpoints', valid_type=orm.KpointsData, required=False)
         spec.output('output_atomic_occupations', valid_type=orm.Dict, required=False)
         spec.default_output_node = 'output_parameters'
 
-        spec.exit_code(
-            100, 'ERROR_NO_RETRIEVED_FOLDER', message='The retrieved folder data node could not be accessed.')
-        spec.exit_code(
-            101, 'ERROR_NO_RETRIEVED_TEMPORARY_FOLDER', message='The retrieved temporary folder could not be accessed.')
-        spec.exit_code(
-            110, 'ERROR_READING_OUTPUT_FILE', message='The output file could not be read from the retrieved folder.')
-        spec.exit_code(
-            115, 'ERROR_MISSING_XML_FILE', message='The required XML file is not present in the retrieved folder.')
-        spec.exit_code(
-            116, 'ERROR_MULTIPLE_XML_FILES', message='The retrieved folder contains multiple XML files.')
-        spec.exit_code(
-            117, 'ERROR_READING_XML_FILE', message='The required XML file could not be read.')
-        spec.exit_code(120, 'ERROR_INVALID_OUTPUT', message='The output file contains invalid output.')
+        # Unrecoverable errors: resources like the retrieved folder or its expected contents are missing
+        spec.exit_code(200, 'ERROR_NO_RETRIEVED_FOLDER',
+            message='The retrieved folder data node could not be accessed.')
+        spec.exit_code(201, 'ERROR_NO_RETRIEVED_TEMPORARY_FOLDER',
+            message='The retrieved temporary folder could not be accessed.')
+        spec.exit_code(210, 'ERROR_OUTPUT_STDOUT_MISSING',
+            message='The retrieved folder did not contain the required stdout output file.')
+        spec.exit_code(220, 'ERROR_OUTPUT_XML_MISSING',
+            message='The retrieved folder did not contain the required required XML file.')
+        spec.exit_code(221, 'ERROR_OUTPUT_XML_MULTIPLE',
+            message='The retrieved folder contained multiple XML files.')
+
+        # Unrecoverable errors: required retrieved files could not be read, parsed or are otherwise incomplete
+        spec.exit_code(300, 'ERROR_OUTPUT_FILES',
+            message='Both the stdout and XML output files could not be read or parsed.')
+        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
+            message='The stdout output file could not be read.')
+        spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE',
+            message='The stdout output file could not be parsed.')
+        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
+            message='The stdout output file was incomplete.')
+        spec.exit_code(320, 'ERROR_OUTPUT_XML_READ',
+            message='The XML output file could not be read.')
+        spec.exit_code(321, 'ERROR_OUTPUT_XML_PARSE',
+            message='The XML output file could not be parsed.')
+        spec.exit_code(322, 'ERROR_OUTPUT_XML_FORMAT',
+            message='The XML output file has an unsupported format.')
+        spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
+            message='The parser raised an unexpected exception.')
+
+        # Significant errors but calculation can be used to restart
+        spec.exit_code(400, 'ERROR_OUT_OF_WALLTIME',
+            message='The calculation stopped prematurely because it ran out of walltime.')
+        spec.exit_code(410, 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED',
+            message='The electronic minimization cycle did not reach self-consistency.')
+        spec.exit_code(500, 'ERROR_IONIC_CONVERGENCE_NOT_REACHED',
+            message='The ionic minimization cycle did not converge for the given thresholds.')
+        spec.exit_code(501, 'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
+            message='Then ionic minimization cycle converged but the thresholds are exceeded in the final SCF.')
+        spec.exit_code(502, 'ERROR_IONIC_CYCLE_EXCEEDED_NSTEP',
+            message='The ionic minimization cycle did not converge after the maximum number of steps.')
+        spec.exit_code(510, 'ERROR_IONIC_CYCLE_ELECTRONIC_CONVERGENCE_NOT_REACHED',
+            message='The electronic minimization cycle failed during an ionic minimization cycle.')
+        spec.exit_code(511, 'ERROR_IONIC_CONVERGENCE_REACHED_FINAL_SCF_FAILED',
+            message='The ionic minimization cycle converged, but electronic convergence was not reached in the '
+                    'final SCF.')
+        spec.exit_code(520, 'ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE',
+            message='The ionic minimization cycle terminated prematurely because of two consecutive failures in the '
+                    'BFGS algorithm.')
+        spec.exit_code(521, 'ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE',
+            message='The ionic minimization cycle terminated prematurely because of two consecutive failures in the '
+                    'BFGS algorithm and electronic convergence failed in the final SCF.')
+
+        spec.exit_code(531, 'ERROR_CHARGE_IS_WRONG',
+            message='The electronic minimization cycle did not reach self-consistency.')
+        spec.exit_code(541, 'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION',
+            message='The variable cell optimization broke the symmetry of the k-points.')
 
     @classproperty
     def input_file_name_hubbard_file(cls):
@@ -116,8 +157,7 @@ class PwCalculation(BasePwCpInputGenerator):
         or if the flag flat_mode is specified, puts the keywords in the right
         namelists).
 
-        This function calls
-        :py:func:`aiida_quantumespresso.calculations.helpers.pw_input_helper`,
+        This function calls :py:func:`aiida_quantumespresso.calculations.helpers.pw_input_helper`,
         see its docstring for further information.
         """
         from . import helpers
