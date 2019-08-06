@@ -247,7 +247,7 @@ class BasePwCpInputGenerator(CalcJob):
 
         return calcinfo
 
-    def _generate_PWCPinputdata(self, parameters, settings, pseudos, structure, kpoints=None):
+    def _generate_PWCPinputdata(self, parameters, settings, pseudos, structure, kpoints=None, use_fractional=False):
         """
         This method creates the content of an input file
         in the PW/CP format.
@@ -353,8 +353,6 @@ class BasePwCpInputGenerator(CalcJob):
         del atomic_species_card_list
 
         # ------------ ATOMIC_POSITIONS -----------
-        atomic_positions_card_list = ['ATOMIC_POSITIONS angstrom\n']
-
         # Check on validity of FIXED_COORDS
         fixed_coords_strings = []
         fixed_coords = settings.pop('FIXED_COORDS', None)
@@ -383,12 +381,22 @@ class BasePwCpInputGenerator(CalcJob):
                 fixed_coords_strings.append(
                     '  {:d} {:d} {:d}'.format(*if_pos_values))
 
-        for site, fixed_coords_string in zip(
-                structure.sites, fixed_coords_strings):
+        abs_pos = [_.position for _ in structure.sites]
+        if use_fractional:
+            import numpy as np
+            atomic_positions_card_list = ['ATOMIC_POSITIONS crystal\n']
+            coordinates = np.dot(np.array(abs_pos), np.linalg.inv(np.array(structure.cell)))
+        else:
+            atomic_positions_card_list = ['ATOMIC_POSITIONS angstrom\n']
+            coordinates = abs_pos
+
+        for site, site_coords, fixed_coords_string in zip(
+                structure.sites, coordinates, fixed_coords_strings):
             atomic_positions_card_list.append(
                 '{0} {1:18.10f} {2:18.10f} {3:18.10f} {4}\n'.format(
-                    site.kind_name.ljust(6), site.position[0], site.position[1],
-                    site.position[2], fixed_coords_string))
+                    site.kind_name.ljust(6), site_coords[0], site_coords[1],
+                    site_coords[2], fixed_coords_string))
+
         atomic_positions_card = ''.join(atomic_positions_card_list)
         del atomic_positions_card_list
 
