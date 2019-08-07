@@ -247,12 +247,9 @@ class BasePwCpInputGenerator(CalcJob):
 
         return calcinfo
 
-    def _generate_PWCPinputdata(self, parameters, settings, pseudos, structure, kpoints=None, use_fractional=False):
-        """
-        This method creates the content of an input file
-        in the PW/CP format.
-        :
-        """
+    @classmethod
+    def _generate_PWCPinputdata(cls, parameters, settings, pseudos, structure, kpoints=None, use_fractional=False):
+        """Create the input file in string format for a pw.x or cp.x calculation for the given inputs."""
         from aiida.common.utils import get_unique_filename
         import re
         local_copy_list_to_append = []
@@ -263,9 +260,8 @@ class BasePwCpInputGenerator(CalcJob):
         input_params = _uppercase_dict(parameters.get_dict(), dict_name='parameters')
         input_params = {k: _lowercase_dict(v, dict_name=k) for k, v in six.iteritems(input_params)}
 
-        # I remove unwanted elements (for the moment, instead, I stop; to change when
-        # we setup a reasonable logging)
-        for blocked in self._blocked_keywords:
+        # I remove unwanted elements (for the moment, instead, I stop; to change when we setup a reasonable logging)
+        for blocked in cls._blocked_keywords:
             nl = blocked[0].upper()
             flag = blocked[1].lower()
             defaultvalue = None
@@ -288,10 +284,10 @@ class BasePwCpInputGenerator(CalcJob):
         # Set some variables (look out at the case! NAMELISTS should be uppercase,
         # internal flag names must be lowercase)
         input_params.setdefault('CONTROL', {})
-        input_params['CONTROL']['pseudo_dir'] = self._PSEUDO_SUBFOLDER
-        input_params['CONTROL']['outdir'] = self._OUTPUT_SUBFOLDER
-        input_params['CONTROL']['prefix'] = self._PREFIX
-        input_params['CONTROL']['verbosity'] = input_params['CONTROL'].get('verbosity', self._default_verbosity)  # Set to high if not specified
+        input_params['CONTROL']['pseudo_dir'] = cls._PSEUDO_SUBFOLDER
+        input_params['CONTROL']['outdir'] = cls._OUTPUT_SUBFOLDER
+        input_params['CONTROL']['prefix'] = cls._PREFIX
+        input_params['CONTROL']['verbosity'] = input_params['CONTROL'].get('verbosity', cls._default_verbosity)  # Set to high if not specified
 
         # ============ I prepare the input site data =============
         # ------------ CELL_PARAMETERS -----------
@@ -328,7 +324,7 @@ class BasePwCpInputGenerator(CalcJob):
                 # The pseudo was not encountered yet; use a new name and also add it to the local copy list
                 filename = get_unique_filename(ps.filename, list(pseudo_filenames.values()))
                 pseudo_filenames[ps.pk] = filename
-                local_copy_list_to_append.append((ps.uuid, ps.filename, os.path.join(self._PSEUDO_SUBFOLDER, filename)))
+                local_copy_list_to_append.append((ps.uuid, ps.filename, os.path.join(cls._PSEUDO_SUBFOLDER, filename)))
 
             kind_names.append(kind.name)
             atomic_species_card_list.append('{} {} {}\n'.format(kind.name.ljust(6), kind.mass, filename))
@@ -377,7 +373,7 @@ class BasePwCpInputGenerator(CalcJob):
                             'fixed_coords({:d}) has non-boolean '
                             'elements'.format(i + 1))
 
-                if_pos_values = [self._if_pos(_) for _ in this_atom_fix]
+                if_pos_values = [cls._if_pos(_) for _ in this_atom_fix]
                 fixed_coords_strings.append(
                     '  {:d} {:d} {:d}'.format(*if_pos_values))
 
@@ -459,7 +455,7 @@ class BasePwCpInputGenerator(CalcJob):
         input_params['SYSTEM']['ntyp'] = len(structure.kinds)
 
         # ============ I prepare the k-points =============
-        if self._use_kpoints:
+        if cls._use_kpoints:
             try:
                 mesh, offset = kpoints.get_kpoints_mesh()
                 has_mesh = True
@@ -556,7 +552,7 @@ class BasePwCpInputGenerator(CalcJob):
                     "using the NAMELISTS key inside the 'settings' input node")
 
             try:
-                namelists_toprint = self._automatic_namelists[calculation_type]
+                namelists_toprint = cls._automatic_namelists[calculation_type]
             except KeyError:
                 raise exceptions.InputValidationError("Unknown 'calculation' value in "
                                            'CONTROL namelist {}. Otherwise, specify the list of '
@@ -575,7 +571,7 @@ class BasePwCpInputGenerator(CalcJob):
         # Write cards now
         inputfile += atomic_species_card
         inputfile += atomic_positions_card
-        if self._use_kpoints:
+        if cls._use_kpoints:
             inputfile += kpoints_card
         inputfile += cell_parameters_card
 
@@ -587,7 +583,8 @@ class BasePwCpInputGenerator(CalcJob):
 
         return inputfile, local_copy_list_to_append
 
-    def _if_pos(self, fixed):
+    @staticmethod
+    def _if_pos(fixed):
         """
         Simple function that returns 0 if fixed is True, 1 otherwise.
         Useful to convert from the boolean value of fixed_coords to the value required
