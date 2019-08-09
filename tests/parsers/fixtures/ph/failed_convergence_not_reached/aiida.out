@@ -1,0 +1,1071 @@
+
+     Program PHONON v.6.1 (svn rev. 13369) starts on 26Aug2019 at 12:11: 9
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+          URL http://www.quantum-espresso.org",
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI), running on     1 processors
+      Title line not specified: using 'default'.
+     Message from routine phq_readin:
+     iverbosity is obsolete, use "verbosity" instead
+
+     Reading data from directory:
+     ./out/aiida.save
+
+   Info: using nr1, nr2, nr3 values from input
+
+   Info: using nr1, nr2, nr3 values from input
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation      = PBE ( 1  4  3  4 0 0)
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum         859     433    151                16889     5985    1139
+
+
+
+     Dynamical matrices for ( 4, 4, 4)  uniform grid of q-points
+     (   8q-points):
+       N         xq(1)         xq(2)         xq(3)
+       1   0.000000000   0.000000000   0.000000000
+       2  -0.176776695   0.176776695   0.176776695
+       3   0.353553391  -0.353553391  -0.353553391
+       4   0.000000000   0.000000000   0.353553391
+       5   0.530330086  -0.530330086  -0.176776695
+       6   0.353553391  -0.353553391   0.000000000
+       7   0.000000000   0.000000000  -0.707106781
+       8   0.000000000   0.353553391  -0.707106781
+  autoval = -.5718E+00
+     Irreps are as follows:
+
+                     mode #   1
+                     (  -0.17908  -0.00000   )
+                     (   0.20054   0.00000   )
+                     (  -0.65400  -0.00000   )
+                     (  -0.17908  -0.00000   )
+                     (   0.20054   0.00000   )
+                     (  -0.65400  -0.00000   )
+  autoval = -.5718E+00
+     Irreps are as follows:
+
+                     mode #   2
+                     (  -0.26949  -0.00000   )
+                     (   0.60068  -0.00000   )
+                     (   0.25798  -0.00000   )
+                     (  -0.26949  -0.00000   )
+                     (   0.60068  -0.00000   )
+                     (   0.25798  -0.00000   )
+  autoval = -.5718E+00
+     Irreps are as follows:
+
+                     mode #   3
+                     (  -0.62874  -0.00000   )
+                     (  -0.31458  -0.00000   )
+                     (   0.07570  -0.00000   )
+                     (  -0.62874  -0.00000   )
+                     (  -0.31458  -0.00000   )
+                     (   0.07570  -0.00000   )
+  autoval = 0.2518E+00
+     Irreps are as follows:
+
+                     mode #   4
+                     (  -0.60213  -0.00000   )
+                     (  -0.20810  -0.00000   )
+                     (   0.30680  -0.00000   )
+                     (   0.60213  -0.00000   )
+                     (   0.20810  -0.00000   )
+                     (  -0.30680  -0.00000   )
+  autoval = 0.2518E+00
+     Irreps are as follows:
+
+                     mode #   5
+                     (  -0.26890  -0.00000   )
+                     (  -0.15766  -0.00000   )
+                     (  -0.63469  -0.00000   )
+                     (   0.26890  -0.00000   )
+                     (   0.15766  -0.00000   )
+                     (   0.63469  -0.00000   )
+  autoval = 0.2518E+00
+     Irreps are as follows:
+
+                     mode #   6
+                     (  -0.25520  -0.00000   )
+                     (   0.65714   0.00000   )
+                     (  -0.05512  -0.00000   )
+                     (   0.25520   0.00000   )
+                     (  -0.65714  -0.00000   )
+                     (   0.05512   0.00000   )
+  autoval = -.1167E+01
+     Irreps are as follows:
+
+                     mode #   1
+                     (  -0.00000  -0.00000   )
+                     (  -0.00000  -0.00000   )
+                     (  -0.00000  -0.00000   )
+                     (  -0.57119  -0.00000   )
+                     (   0.21969   0.00000   )
+                     (  -0.79087   0.00000   )
+  autoval = -.1167E+01
+     Irreps are as follows:
+
+                     mode #   2
+                     (  -0.00000  -0.00000   )
+                     (  -0.00000  -0.00000   )
+                     (  -0.00000  -0.00000   )
+                     (  -0.58345  -0.00000   )
+                     (  -0.78639  -0.00000   )
+                     (   0.20294  -0.00000   )
+  autoval = -.7914E+00
+     Irreps are as follows:
+
+                     mode #   3
+                     (  -0.00000   0.00000   )
+                     (  -0.00000   0.00000   )
+                     (  -0.00000   0.00000   )
+                     (  -0.57735  -0.00000   )
+                     (   0.57735   0.00000   )
+                     (   0.57735  -0.00000   )
+  autoval = -.1659E+00
+     Irreps are as follows:
+
+                     mode #   4
+                     (  -0.63784  -0.00000   )
+                     (  -0.49178   0.40619   )
+                     (  -0.14606  -0.40619   )
+                     (  -0.00000   0.00000   )
+                     (  -0.00000   0.00000   )
+                     (  -0.00000   0.00000   )
+  autoval = -.1659E+00
+     Irreps are as follows:
+
+                     mode #   5
+                     (  -0.50973  -0.00000   )
+                     (  -0.03856  -0.50827   )
+                     (  -0.47117   0.50827   )
+                     (  -0.00000  -0.00000   )
+                     (  -0.00000  -0.00000   )
+                     (  -0.00000  -0.00000   )
+  autoval = 0.9675E-01
+     Irreps are as follows:
+
+                     mode #   6
+                     (  -0.57735  -0.00000   )
+                     (   0.57735  -0.00000   )
+                     (   0.57735  -0.00000   )
+                     (   0.00000  -0.00000   )
+                     (   0.00000  -0.00000   )
+                     (   0.00000  -0.00000   )
+  autoval = -.2217E+01
+     Irreps are as follows:
+
+                     mode #   1
+                     (  -0.40825  -0.00000   )
+                     (   0.40825   0.00000   )
+                     (   0.40825   0.00000   )
+                     (   0.40825   0.00000   )
+                     (  -0.40825  -0.00000   )
+                     (  -0.40825  -0.00000   )
+  autoval = -.6642E+00
+     Irreps are as follows:
+
+                     mode #   2
+                     (  -0.40825  -0.00000   )
+                     (   0.40825   0.00000   )
+                     (   0.40825   0.00000   )
+                     (  -0.40825  -0.00000   )
+                     (   0.40825  -0.00000   )
+                     (   0.40825  -0.00000   )
+  autoval = 0.1045E+00
+     Irreps are as follows:
+
+                     mode #   3
+                     (  -0.39629  -0.00000   )
+                     (  -0.56176  -0.00000   )
+                     (   0.16547  -0.00000   )
+                     (  -0.39629  -0.00000   )
+                     (  -0.56176  -0.00000   )
+                     (   0.16547  -0.00000   )
+  autoval = 0.1045E+00
+     Irreps are as follows:
+
+                     mode #   4
+                     (  -0.41986  -0.00000   )
+                     (   0.13327   0.00000   )
+                     (  -0.55313  -0.00000   )
+                     (  -0.41986  -0.00000   )
+                     (   0.13327   0.00000   )
+                     (  -0.55313  -0.00000   )
+  autoval = 0.3151E+00
+     Irreps are as follows:
+
+                     mode #   5
+                     (  -0.25982  -0.00000   )
+                     (  -0.57642  -0.00000   )
+                     (   0.31660   0.00000   )
+                     (   0.25982   0.00000   )
+                     (   0.57642   0.00000   )
+                     (  -0.31660  -0.00000   )
+  autoval = 0.3151E+00
+     Irreps are as follows:
+
+                     mode #   6
+                     (  -0.51558  -0.00000   )
+                     (  -0.03278  -0.00000   )
+                     (  -0.48280  -0.00000   )
+                     (   0.51558  -0.00000   )
+                     (   0.03278  -0.00000   )
+                     (   0.48280  -0.00000   )
+  autoval = -.1992E+01
+     Irreps are as follows:
+
+                     mode #   1
+                     (  -0.62742  -0.00000   )
+                     (  -0.55369  -0.16149   )
+                     (   0.00000  -0.00000   )
+                     (   0.35324   0.21052   )
+                     (   0.05582   0.31857   )
+                     (  -0.00000  -0.00000   )
+  autoval = -.1992E+01
+     Irreps are as follows:
+
+                     mode #   2
+                     (  -0.32611  -0.00000   )
+                     (   0.26612   0.31070   )
+                     (   0.00000   0.00000   )
+                     (   0.24560   0.52018   )
+                     (  -0.09941  -0.62090   )
+                     (   0.00000   0.00000   )
+  autoval = -.1216E+00
+     Irreps are as follows:
+
+                     mode #   3
+                     (   0.00000  -0.00000   )
+                     (  -0.00000   0.00000   )
+                     (  -0.70711  -0.00000   )
+                     (  -0.00000   0.00000   )
+                     (  -0.00000   0.00000   )
+                     (   0.50000   0.50000   )
+  autoval = 0.6371E+00
+     Irreps are as follows:
+
+                     mode #   4
+                     (  -0.50142  -0.00000   )
+                     (   0.64659   0.18066   )
+                     (  -0.00000  -0.00000   )
+                     (  -0.21019  -0.05967   )
+                     (   0.16900   0.47071   )
+                     (   0.00000   0.00000   )
+  autoval = 0.6371E+00
+     Irreps are as follows:
+
+                     mode #   5
+                     (  -0.49858  -0.00000   )
+                     (  -0.12757  -0.18169   )
+                     (  -0.00000  -0.00000   )
+                     (  -0.39378  -0.54516   )
+                     (  -0.17518  -0.46817   )
+                     (  -0.00000  -0.00000   )
+  autoval = 0.7901E+00
+     Irreps are as follows:
+
+                     mode #   6
+                     (   0.00000  -0.00000   )
+                     (   0.00000   0.00000   )
+                     (  -0.70711  -0.00000   )
+                     (   0.00000   0.00000   )
+                     (   0.00000   0.00000   )
+                     (  -0.50000  -0.50000   )
+  autoval = -.3152E+01
+     Irreps are as follows:
+
+                     mode #   1
+                     (  -0.00000  -0.00000   )
+                     (  -0.00000  -0.00000   )
+                     (  -0.00000  -0.00000   )
+                     (  -0.45036  -0.00000   )
+                     (   0.45036  -0.00000   )
+                     (  -0.35413   0.68480   )
+  autoval = -.1432E+01
+     Irreps are as follows:
+
+                     mode #   2
+                     (  -0.27768  -0.00000   )
+                     (   0.27768  -0.00000   )
+                     (   0.49122   0.77749   )
+                     (  -0.00000  -0.00000   )
+                     (  -0.00000  -0.00000   )
+                     (  -0.00000  -0.00000   )
+  autoval = -.8985E+00
+     Irreps are as follows:
+
+                     mode #   3
+                     (  -0.70711  -0.00000   )
+                     (  -0.70711   0.00000   )
+                     (  -0.00000  -0.00000   )
+                     (  -0.00000  -0.00000   )
+                     (  -0.00000  -0.00000   )
+                     (  -0.00000  -0.00000   )
+  autoval = 0.6150E-02
+     Irreps are as follows:
+
+                     mode #   4
+                     (   0.00000  -0.00000   )
+                     (   0.00000  -0.00000   )
+                     (   0.00000  -0.00000   )
+                     (  -0.70711  -0.00000   )
+                     (  -0.70711   0.00000   )
+                     (   0.00000  -0.00000   )
+  autoval = 0.2049E-01
+     Irreps are as follows:
+
+                     mode #   5
+                     (  -0.00000   0.00000   )
+                     (  -0.00000   0.00000   )
+                     (  -0.00000   0.00000   )
+                     (  -0.54514  -0.00000   )
+                     (   0.54514  -0.00000   )
+                     (   0.29256  -0.56573   )
+  autoval = 0.2095E+01
+     Irreps are as follows:
+
+                     mode #   6
+                     (  -0.65030  -0.00000   )
+                     (   0.65030  -0.00000   )
+                     (  -0.20975  -0.33199   )
+                     (  -0.00000  -0.00000   )
+                     (  -0.00000  -0.00000   )
+                     (  -0.00000  -0.00000   )
+  autoval = -.2572E+01
+     Irreps are as follows:
+
+                     mode #   1
+                     (  -0.48666   0.00000   )
+                     (   0.48666   0.00000   )
+                     (   0.13633  -0.08794   )
+                     (   0.48666  -0.00000   )
+                     (  -0.48666   0.00000   )
+                     (   0.13633  -0.08794   )
+  autoval = -.6511E+00
+     Irreps are as follows:
+
+                     mode #   2
+                     (  -0.44975  -0.00000   )
+                     (   0.44975  -0.00000   )
+                     (  -0.30738   0.03115   )
+                     (  -0.44975  -0.00000   )
+                     (   0.44975  -0.00000   )
+                     (   0.30738  -0.03115   )
+  autoval = -.1449E+00
+     Irreps are as follows:
+
+                     mode #   3
+                     (  -0.50000  -0.00000   )
+                     (  -0.50000   0.00000   )
+                     (   0.00000  -0.00000   )
+                     (  -0.50000   0.00000   )
+                     (  -0.50000   0.00000   )
+                     (  -0.00000  -0.00000   )
+  autoval = 0.1835E+00
+     Irreps are as follows:
+
+                     mode #   4
+                     (  -0.11472  -0.00000   )
+                     (   0.11472  -0.00000   )
+                     (  -0.57836   0.37307   )
+                     (   0.11472  -0.00000   )
+                     (  -0.11472   0.00000   )
+                     (  -0.57836   0.37307   )
+  autoval = 0.2108E+00
+     Irreps are as follows:
+
+                     mode #   5
+                     (  -0.50000  -0.00000   )
+                     (  -0.50000   0.00000   )
+                     (  -0.00000  -0.00000   )
+                     (   0.50000  -0.00000   )
+                     (   0.50000  -0.00000   )
+                     (   0.00000  -0.00000   )
+  autoval = 0.9324E+00
+     Irreps are as follows:
+
+                     mode #   6
+                     (  -0.21846  -0.00000   )
+                     (   0.21846  -0.00000   )
+                     (   0.63280  -0.06412   )
+                     (  -0.21846   0.00000   )
+                     (   0.21846   0.00000   )
+                     (  -0.63280   0.06412   )
+  autoval = -.1286E+01
+     Irreps are as follows:
+
+                     mode #   1
+                     (  -0.27154  -0.00000   )
+                     (  -0.65289   0.00000   )
+                     (   0.00000  -0.00000   )
+                     (  -0.65289   0.00000   )
+                     (  -0.27154  -0.00000   )
+                     (   0.00000   0.00000   )
+  autoval = -.1286E+01
+     Irreps are as follows:
+
+                     mode #   2
+                     (  -0.65289  -0.00000   )
+                     (   0.27154  -0.00000   )
+                     (  -0.00000   0.00000   )
+                     (   0.27154  -0.00000   )
+                     (  -0.65289  -0.00000   )
+                     (   0.00000  -0.00000   )
+  autoval = -.6903E-01
+     Irreps are as follows:
+
+                     mode #   3
+                     (  -0.67047  -0.00000   )
+                     (   0.22465   0.00000   )
+                     (  -0.00000   0.00000   )
+                     (  -0.22465  -0.00000   )
+                     (   0.67047  -0.00000   )
+                     (  -0.00000  -0.00000   )
+  autoval = -.6903E-01
+     Irreps are as follows:
+
+                     mode #   4
+                     (  -0.22465  -0.00000   )
+                     (  -0.67047  -0.00000   )
+                     (  -0.00000  -0.00000   )
+                     (   0.67047   0.00000   )
+                     (   0.22465  -0.00000   )
+                     (   0.00000   0.00000   )
+  autoval = 0.3343E+00
+     Irreps are as follows:
+
+                     mode #   5
+                     (   0.00000   0.00000   )
+                     (   0.00000   0.00000   )
+                     (  -0.85065  -0.00000   )
+                     (  -0.00000  -0.00000   )
+                     (  -0.00000  -0.00000   )
+                     (   0.52573   0.00000   )
+  autoval = 0.3343E+00
+     Irreps are as follows:
+
+                     mode #   6
+                     (   0.00000  -0.00000   )
+                     (   0.00000   0.00000   )
+                     (  -0.52573  -0.00000   )
+                     (   0.00000  -0.00000   )
+                     (  -0.00000  -0.00000   )
+                     (  -0.85065  -0.00000   )
+  autoval = -.1240E+01
+     Irreps are as follows:
+
+                     mode #   1
+                     (  -0.64863  -0.00000   )
+                     (  -0.00000   0.00000   )
+                     (  -0.00000   0.64863   )
+                     (  -0.27783  -0.04578   )
+                     (  -0.00000   0.00000   )
+                     (   0.04578  -0.27783   )
+  autoval = -.1240E+01
+     Irreps are as follows:
+
+                     mode #   2
+                     (  -0.28157   0.00000   )
+                     (   0.00000  -0.00000   )
+                     (   0.00000   0.28157   )
+                     (   0.64000   0.10545   )
+                     (  -0.00000  -0.00000   )
+                     (  -0.10545   0.64000   )
+  autoval = -.5159E+00
+     Irreps are as follows:
+
+                     mode #   3
+                     (  -0.18205  -0.00000   )
+                     (   0.09178  -0.37494   )
+                     (   0.00000  -0.18205   )
+                     (   0.61456   0.09095   )
+                     (  -0.11262  -0.01052   )
+                     (   0.09095  -0.61456   )
+  autoval = -.5159E+00
+     Irreps are as follows:
+
+                     mode #   4
+                     (  -0.62125  -0.00000   )
+                     (  -0.02690   0.10987   )
+                     (  -0.00000  -0.62125   )
+                     (  -0.18009  -0.02665   )
+                     (  -0.38434  -0.03590   )
+                     (  -0.02665   0.18009   )
+  autoval = 0.7354E+00
+     Irreps are as follows:
+
+                     mode #   5
+                     (  -0.15721  -0.00000   )
+                     (  -0.24773   0.72165   )
+                     (  -0.00000  -0.15721   )
+                     (   0.23038   0.05578   )
+                     (   0.50382   0.04706   )
+                     (   0.05578  -0.23038   )
+  autoval = 0.7354E+00
+     Irreps are as follows:
+
+                     mode #   6
+                     (  -0.23704   0.00000   )
+                     (   0.16429  -0.47860   )
+                     (  -0.00000  -0.23704   )
+                     (  -0.15279  -0.03699   )
+                     (   0.75968   0.07096   )
+                     (  -0.03699   0.15279   )
+
+     Calculation of q =    0.0000000   0.0000000   0.0000000
+
+
+
+     bravais-lattice index     =            0
+     lattice parameter (alat)  =       7.2558  a.u.
+     unit-cell volume          =     270.1072 (a.u.)^3
+     number of atoms/cell      =            2
+     number of atomic types    =            1
+     kinetic-energy cut-off    =      30.0000  Ry
+     charge density cut-off    =     240.0000  Ry
+     convergence threshold     =      1.0E-12
+     beta                      =       0.7000
+     number of iterations used =            4
+     Exchange-correlation      = PBE ( 1  4  3  4 0 0)
+
+
+     celldm(1)=    7.25577  celldm(2)=    0.00000  celldm(3)=    0.00000
+     celldm(4)=    0.00000  celldm(5)=    0.00000  celldm(6)=    0.00000
+
+     crystal axes: (cart. coord. in units of alat)
+               a(1) = (  0.7071  0.7071  0.0000 )
+               a(2) = (  0.7071  0.0000  0.7071 )
+               a(3) = (  0.0000  0.7071  0.7071 )
+
+     reciprocal axes: (cart. coord. in units 2 pi/alat)
+               b(1) = (  0.7071  0.7071 -0.7071 )
+               b(2) = (  0.7071 -0.7071  0.7071 )
+               b(3) = ( -0.7071  0.7071  0.7071 )
+
+
+     Atoms inside the unit cell:
+
+     Cartesian axes
+
+     site n.  atom      mass           positions (alat units)
+        1     Si  28.0855   tau(    1) = (    0.00000    0.00000    0.00000  )
+        2     Si  28.0855   tau(    2) = (    0.35355    0.35355    0.35355  )
+
+     Computing dynamical matrix for
+                    q = (   0.0000000   0.0000000   0.0000000 )
+...
+
+     point group O_h (m-3m)
+     there are 10 classes
+     the character table:
+
+       E     8C3   3C2   6C4   6C2'  i     8S6   3s_h  6S4   6s_d
+A_1g   1.00  1.00  1.00  1.00  1.00  1.00  1.00  1.00  1.00  1.00
+A_2g   1.00  1.00  1.00 -1.00 -1.00  1.00  1.00  1.00 -1.00 -1.00
+E_g    2.00 -1.00  2.00  0.00  0.00  2.00 -1.00  2.00  0.00  0.00
+T_1g   3.00  0.00 -1.00  1.00 -1.00  3.00  0.00 -1.00  1.00 -1.00
+T_2g   3.00  0.00 -1.00 -1.00  1.00  3.00  0.00 -1.00 -1.00  1.00
+A_1u   1.00  1.00  1.00  1.00  1.00 -1.00 -1.00 -1.00 -1.00 -1.00
+A_2u   1.00  1.00  1.00 -1.00 -1.00 -1.00 -1.00 -1.00  1.00  1.00
+E_u    2.00 -1.00  2.00  0.00  0.00 -2.00  1.00 -2.00  0.00  0.00
+T_1u   3.00  0.00 -1.00  1.00 -1.00 -3.00  0.00  1.00 -1.00  1.00
+T_2u   3.00  0.00 -1.00 -1.00  1.00 -3.00  0.00  1.00  1.00 -1.00
+
+     the symmetry operations in each class and the name of the first element:
+
+     E        1
+
+     8C3     17   19   18   20   22   21   24   31
+
+     3C2      4   13   16
+
+     6C4     12   28   38   32   42   47
+
+     6C2'     5    6   30   29   10   11
+
+     i        9
+
+     8S6     23   44   41   43   26   48   45   46
+
+     3s_h     2    3   33
+
+     6S4      7    8   40   39   15   14
+
+     6s_d    25   34   27   37   35   36
+
+
+
+     Electric field:
+     Dielectric constant
+     Born effective charges in two ways
+
+
+     Atomic displacements:
+     There are   2 irreducible representations
+
+     Representation     1      3 modes -T_2g G_25' G_5+  To be done
+     Irreps are as follows:
+
+     mode #   1              mode #   2              mode #   3
+     (  -0.60213  -0.00000 ) (  -0.26890  -0.00000 ) (  -0.25520  -0.00000 )
+     (  -0.20810  -0.00000 ) (  -0.15766  -0.00000 ) (   0.65714   0.00000 )
+     (   0.30680  -0.00000 ) (  -0.63469  -0.00000 ) (  -0.05512  -0.00000 )
+     (   0.60213  -0.00000 ) (   0.26890  -0.00000 ) (   0.25520   0.00000 )
+     (   0.20810  -0.00000 ) (   0.15766  -0.00000 ) (  -0.65714  -0.00000 )
+     (  -0.30680  -0.00000 ) (   0.63469  -0.00000 ) (   0.05512   0.00000 )
+
+     Representation     2      3 modes -T_1u G_15  G_4-  To be done
+     Irreps are as follows:
+
+     mode #   4              mode #   5              mode #   6
+     (  -0.17908  -0.00000 ) (  -0.26949  -0.00000 ) (  -0.62874  -0.00000 )
+     (   0.20054   0.00000 ) (   0.60068  -0.00000 ) (  -0.31458  -0.00000 )
+     (  -0.65400  -0.00000 ) (   0.25798  -0.00000 ) (   0.07570  -0.00000 )
+     (  -0.17908  -0.00000 ) (  -0.26949  -0.00000 ) (  -0.62874  -0.00000 )
+     (   0.20054   0.00000 ) (   0.60068  -0.00000 ) (  -0.31458  -0.00000 )
+     (  -0.65400  -0.00000 ) (   0.25798  -0.00000 ) (   0.07570  -0.00000 )
+
+
+
+     Alpha used in Ewald sum =   2.5000
+     PHONON       :     4.66s CPU         4.76s WALL
+
+
+     Electric Fields Calculation
+
+      iter #   1 total cpu time :    19.4 secs   av.it.:   6.5
+      thresh= 1.000E-02 alpha_mix =  0.700 |ddv_scf|^2 =  2.720E-07
+
+      iter #   2 total cpu time :    26.1 secs   av.it.:  10.8
+      thresh= 5.216E-05 alpha_mix =  0.700 |ddv_scf|^2 =  1.522E-08
+
+      iter #   3 total cpu time :    32.7 secs   av.it.:  10.5
+      thresh= 1.234E-05 alpha_mix =  0.700 |ddv_scf|^2 =  9.189E-10
+
+      iter #   4 total cpu time :    39.1 secs   av.it.:  10.2
+      thresh= 3.031E-06 alpha_mix =  0.700 |ddv_scf|^2 =  6.224E-12
+
+      iter #   5 total cpu time :    45.6 secs   av.it.:  10.4
+      thresh= 2.495E-07 alpha_mix =  0.700 |ddv_scf|^2 =  5.151E-15
+
+     End of electric fields calculation
+
+          Dielectric constant in cartesian axis
+
+          (      13.130013939      -0.000000000       0.000000000 )
+          (      -0.000000000      13.130013939      -0.000000000 )
+          (       0.000000000      -0.000000000      13.130013939 )
+
+          Effective charges (d Force / dE) in cartesian axis
+
+           atom      1   Si
+      Ex  (        0.00682        0.00000       -0.00000 )
+      Ey  (        0.00000        0.00682        0.00000 )
+      Ez  (       -0.00000        0.00000        0.00682 )
+           atom      2   Si
+      Ex  (        0.00682        0.00000        0.00000 )
+      Ey  (        0.00000        0.00682        0.00000 )
+      Ez  (        0.00000        0.00000        0.00682 )
+
+
+     Representation #  1 modes #   1  2  3
+
+     Self-consistent Calculation
+
+      iter #   1 total cpu time :    56.4 secs   av.it.:   5.4
+      thresh= 1.000E-02 alpha_mix =  0.700 |ddv_scf|^2 =  3.413E-08
+
+      iter #   2 total cpu time :    63.3 secs   av.it.:  10.8
+      thresh= 1.847E-05 alpha_mix =  0.700 |ddv_scf|^2 =  2.253E-09
+
+      iter #   3 total cpu time :    69.9 secs   av.it.:  10.5
+      thresh= 4.747E-06 alpha_mix =  0.700 |ddv_scf|^2 =  1.013E-10
+
+      iter #   4 total cpu time :    76.6 secs   av.it.:  10.2
+      thresh= 1.007E-06 alpha_mix =  0.700 |ddv_scf|^2 =  1.941E-13
+
+     End of self-consistent calculation
+
+     Convergence has been achieved
+
+
+     Representation #  2 modes #   4  5  6
+
+     Self-consistent Calculation
+
+      iter #   1 total cpu time :    83.7 secs   av.it.:   5.5
+      thresh= 1.000E-02 alpha_mix =  0.700 |ddv_scf|^2 =  3.157E-08
+
+      iter #   2 total cpu time :    90.5 secs   av.it.:  10.6
+      thresh= 1.777E-05 alpha_mix =  0.700 |ddv_scf|^2 =  2.392E-09
+
+      iter #   3 total cpu time :    97.0 secs   av.it.:  10.4
+      thresh= 4.891E-06 alpha_mix =  0.700 |ddv_scf|^2 =  8.600E-11
+
+      iter #   4 total cpu time :   103.9 secs   av.it.:  10.7
+      thresh= 9.274E-07 alpha_mix =  0.700 |ddv_scf|^2 =  2.341E-13
+
+     End of self-consistent calculation
+
+     Convergence has been achieved
+
+     Number of q in the star =    1
+     List of q in the star:
+          1   0.000000000   0.000000000   0.000000000
+
+          Dielectric constant in cartesian axis
+
+          (      13.130013939      -0.000000000       0.000000000 )
+          (      -0.000000000      13.130013939      -0.000000000 )
+          (       0.000000000      -0.000000000      13.130013939 )
+
+          Effective charges (d Force / dE) in cartesian axis
+
+           atom      1   Si
+      Ex  (        0.00682        0.00000       -0.00000 )
+      Ey  (        0.00000        0.00682        0.00000 )
+      Ez  (       -0.00000        0.00000        0.00682 )
+           atom      2   Si
+      Ex  (        0.00682        0.00000        0.00000 )
+      Ey  (        0.00000        0.00682        0.00000 )
+      Ez  (        0.00000        0.00000        0.00682 )
+
+          Effective charges (d P / du) in cartesian axis
+
+           atom      1   Si
+      Px  (       -0.01282       -0.00000       -0.00000 )
+      Py  (       -0.00000       -0.01282        0.00000 )
+      Pz  (       -0.00000        0.00000       -0.01282 )
+           atom      2   Si
+      Px  (       -0.01282        0.00000        0.00000 )
+      Py  (        0.00000       -0.01282        0.00000 )
+      Pz  (        0.00000        0.00000       -0.01282 )
+
+     Diagonalizing the dynamical matrix
+
+     q = (    0.000000000   0.000000000   0.000000000 )
+
+ **************************************************************************
+     freq (    1) =      -0.566912 [THz] =     -18.910151 [cm-1]
+     freq (    2) =      -0.566912 [THz] =     -18.910151 [cm-1]
+     freq (    3) =      -0.566912 [THz] =     -18.910151 [cm-1]
+     freq (    4) =      15.407797 [THz] =     513.948770 [cm-1]
+     freq (    5) =      15.407797 [THz] =     513.948770 [cm-1]
+     freq (    6) =      15.407797 [THz] =     513.948770 [cm-1]
+ **************************************************************************
+
+     Mode symmetry, O_h (m-3m)  point group:
+
+     freq (  1 -  3) =        -18.9  [cm-1]   --> T_1u G_15  G_4- I
+     freq (  4 -  6) =        513.9  [cm-1]   --> T_2g G_25' G_5+ R
+
+     Calculation of q =   -0.1767767   0.1767767   0.1767767
+
+   Info: using nr1, nr2, nr3 values from input
+
+   Info: using nr1, nr2, nr3 values from input
+
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum         859     433    151                16889     5985    1243
+
+
+
+     bravais-lattice index     =            0
+     lattice parameter (alat)  =       7.2558  a.u.
+     unit-cell volume          =     270.1072 (a.u.)^3
+     number of atoms/cell      =            2
+     number of atomic types    =            1
+     number of electrons       =         8.00
+     number of Kohn-Sham states=            4
+     kinetic-energy cutoff     =      30.0000  Ry
+     charge density cutoff     =     240.0000  Ry
+     Exchange-correlation      = PBE ( 1  4  3  4 0 0)
+
+     celldm(1)=   7.255773  celldm(2)=   0.000000  celldm(3)=   0.000000
+     celldm(4)=   0.000000  celldm(5)=   0.000000  celldm(6)=   0.000000
+
+     crystal axes: (cart. coord. in units of alat)
+               a(1) = (   0.707107   0.707107   0.000000 )
+               a(2) = (   0.707107   0.000000   0.707107 )
+               a(3) = (   0.000000   0.707107   0.707107 )
+
+     reciprocal axes: (cart. coord. in units 2 pi/alat)
+               b(1) = (  0.707107  0.707107 -0.707107 )
+               b(2) = (  0.707107 -0.707107  0.707107 )
+               b(3) = ( -0.707107  0.707107  0.707107 )
+
+
+     PseudoPot. # 1 for Si read from file:
+     ./pseudo/Si.pbe-n-rrkjus_psl.1.0.0.UPF
+     MD5 check sum: 0b0bb1205258b0d07b9f9672cf965d36
+     Pseudo is Ultrasoft + core correction, Zval =  4.0
+     Generated using "atomic" code by A. Dal Corso  v.5.1
+     Using radial grid of 1141 points,  6 beta functions with:
+                l(1) =   0
+                l(2) =   0
+                l(3) =   1
+                l(4) =   1
+                l(5) =   2
+                l(6) =   2
+     Q(r) pseudized with 0 coefficients
+
+...
+
+     The potential is recalculated from file :
+     ./out/_ph0/aiida.save/charge-density.dat
+
+     Starting wfc are    8 atomic wfcs
+
+     Band Structure Calculation
+     Davidson diagonalization with overlap
+
+...
+
+     End of band structure calculation
+
+...
+
+     Writing output data file aiida.save
+
+
+
+     bravais-lattice index     =            0
+     lattice parameter (alat)  =       7.2558  a.u.
+     unit-cell volume          =     270.1072 (a.u.)^3
+     number of atoms/cell      =            2
+     number of atomic types    =            1
+     kinetic-energy cut-off    =      30.0000  Ry
+     charge density cut-off    =     240.0000  Ry
+     convergence threshold     =      1.0E-12
+     beta                      =       0.7000
+     number of iterations used =            4
+     Exchange-correlation      = PBE ( 1  4  3  4 0 0)
+
+
+     celldm(1)=    7.25577  celldm(2)=    0.00000  celldm(3)=    0.00000
+     celldm(4)=    0.00000  celldm(5)=    0.00000  celldm(6)=    0.00000
+
+     crystal axes: (cart. coord. in units of alat)
+               a(1) = (  0.7071  0.7071  0.0000 )
+               a(2) = (  0.7071  0.0000  0.7071 )
+               a(3) = (  0.0000  0.7071  0.7071 )
+
+     reciprocal axes: (cart. coord. in units 2 pi/alat)
+               b(1) = (  0.7071  0.7071 -0.7071 )
+               b(2) = (  0.7071 -0.7071  0.7071 )
+               b(3) = ( -0.7071  0.7071  0.7071 )
+
+
+     Atoms inside the unit cell:
+
+     Cartesian axes
+
+     site n.  atom      mass           positions (alat units)
+        1     Si  28.0855   tau(    1) = (    0.00000    0.00000    0.00000  )
+        2     Si  28.0855   tau(    2) = (    0.35355    0.35355    0.35355  )
+
+     Computing dynamical matrix for
+                    q = (  -0.1767767   0.1767767   0.1767767 )
+
+...
+
+     point group C_3v (3m)
+     there are  3 classes
+     the character table:
+
+       E     2C3   3s_v
+A_1    1.00  1.00  1.00
+A_2    1.00  1.00 -1.00
+E      2.00 -1.00  0.00
+
+     the symmetry operations in each class and the name of the first element:
+
+     E        1
+
+     2C3      2    5
+
+     3s_v     3    4    6
+
+
+
+     Atomic displacements:
+     There are   4 irreducible representations
+
+     Representation     1      1 modes -A_1  L_1  To be done
+     Irreps are as follows:
+
+                     mode #   1
+                     (  -0.00000   0.00000   )
+                     (  -0.00000   0.00000   )
+                     (  -0.00000   0.00000   )
+                     (  -0.57735  -0.00000   )
+                     (   0.57735   0.00000   )
+                     (   0.57735  -0.00000   )
+
+     Representation     2      1 modes -A_1  L_1  To be done
+     Irreps are as follows:
+
+                     mode #   2
+                     (  -0.57735  -0.00000   )
+                     (   0.57735  -0.00000   )
+                     (   0.57735  -0.00000   )
+                     (   0.00000  -0.00000   )
+                     (   0.00000  -0.00000   )
+                     (   0.00000  -0.00000   )
+
+     Representation     3      2 modes -E    L_3  To be done
+     Irreps are as follows:
+
+           mode #   3                           mode #   4
+           (  -0.00000  -0.00000   )            (  -0.00000  -0.00000   )
+           (  -0.00000  -0.00000   )            (  -0.00000  -0.00000   )
+           (  -0.00000  -0.00000   )            (  -0.00000  -0.00000   )
+           (  -0.57119  -0.00000   )            (  -0.58345  -0.00000   )
+           (   0.21969   0.00000   )            (  -0.78639  -0.00000   )
+           (  -0.79087   0.00000   )            (   0.20294  -0.00000   )
+
+     Representation     4      2 modes -E    L_3  To be done
+     Irreps are as follows:
+
+           mode #   5                           mode #   6
+           (  -0.63784  -0.00000   )            (  -0.50973  -0.00000   )
+           (  -0.49178   0.40619   )            (  -0.03856  -0.50827   )
+           (  -0.14606  -0.40619   )            (  -0.47117   0.50827   )
+           (  -0.00000   0.00000   )            (  -0.00000  -0.00000   )
+           (  -0.00000   0.00000   )            (  -0.00000  -0.00000   )
+           (  -0.00000   0.00000   )            (  -0.00000  -0.00000   )
+
+
+
+     Alpha used in Ewald sum =   2.5000
+     PHONON       :  2m16.34s CPU     2m17.98s WALL
+
+
+
+     Representation #  1 mode #   1
+
+     Self-consistent Calculation
+
+      iter #   1 total cpu time :   145.4 secs   av.it.:   6.2
+      thresh= 1.000E-02 alpha_mix =  0.700 |ddv_scf|^2 =  4.359E-04
+
+      iter #   2 total cpu time :   154.5 secs   av.it.:   8.7
+      thresh= 2.088E-03 alpha_mix =  0.700 |ddv_scf|^2 =  6.617E-03
+
+      iter #   3 total cpu time :   162.7 secs   av.it.:   7.1
+      thresh= 8.134E-03 alpha_mix =  0.700 |ddv_scf|^2 =  2.661E-07
+
+      iter #   4 total cpu time :   172.4 secs   av.it.:   9.3
+      thresh= 5.159E-05 alpha_mix =  0.700 |ddv_scf|^2 =  1.841E-08
+
+      iter #   5 total cpu time :   182.7 secs   av.it.:   9.3
+      thresh= 1.357E-05 alpha_mix =  0.700 |ddv_scf|^2 =  5.785E-10
+
+      iter #   6 total cpu time :   192.4 secs   av.it.:   9.3
+      thresh= 2.405E-06 alpha_mix =  0.700 |ddv_scf|^2 =  6.332E-11
+
+      iter #   7 total cpu time :   201.6 secs   av.it.:   8.7
+      thresh= 7.958E-07 alpha_mix =  0.700 |ddv_scf|^2 =  1.100E-10
+
+     End of self-consistent calculation
+
+     No convergence has been achieved
+
+     PHONON       :  3m19.18s CPU     3m21.58s WALL
+
+     INITIALIZATION:
+     phq_setup    :      0.18s CPU      0.19s WALL (       2 calls)
+     phq_init     :     10.07s CPU     10.16s WALL (       2 calls)
+
+     phq_init     :     10.07s CPU     10.16s WALL (       2 calls)
+     set_drhoc    :      2.16s CPU      2.16s WALL (       6 calls)
+     init_vloc    :      0.01s CPU      0.01s WALL (       2 calls)
+     init_us_1    :      0.80s CPU      0.81s WALL (       2 calls)
+     newd         :      0.09s CPU      0.13s WALL (       2 calls)
+     dvanqq       :      1.45s CPU      1.45s WALL (       2 calls)
+     drho         :      4.78s CPU      4.84s WALL (       2 calls)
+
+     DYNAMICAL MATRIX:
+     dynmat0      :      2.21s CPU      2.22s WALL (       2 calls)
+     phqscf       :    116.29s CPU    117.71s WALL (       2 calls)
+     dynmatrix    :      0.00s CPU      0.00s WALL (       1 calls)
+
+     phqscf       :    116.29s CPU    117.71s WALL (       3 calls)
+     solve_linter :    112.16s CPU    113.45s WALL (       3 calls)
+     drhodv       :      0.30s CPU      0.29s WALL (       2 calls)
+
+     dynmat0      :      2.21s CPU      2.22s WALL (       2 calls)
+     dynmat_us    :      0.69s CPU      0.70s WALL (       2 calls)
+     d2ionq       :      0.03s CPU      0.03s WALL (       2 calls)
+     dynmatcc     :      1.48s CPU      1.48s WALL (       2 calls)
+
+     dynmat_us    :      0.69s CPU      0.70s WALL (       2 calls)
+     addusdynmat  :      0.00s CPU      0.00s WALL (       2 calls)
+
+     phqscf       :    116.29s CPU    117.71s WALL (       4 calls)
+     solve_linter :    112.16s CPU    113.45s WALL (       3 calls)
+
+     solve_linter :    112.16s CPU    113.45s WALL (       3 calls)
+     dvqpsi_us    :      3.28s CPU      3.31s WALL (     958 calls)
+     ortho        :      1.36s CPU      1.48s WALL (    4354 calls)
+     cgsolve      :    123.06s CPU    123.90s WALL (    4354 calls)
+     incdrhoscf   :      9.72s CPU     10.02s WALL (    4354 calls)
+     addusddens   :      2.28s CPU      2.31s WALL (      21 calls)
+     vpsifft      :      5.47s CPU      5.63s WALL (    2724 calls)
+     dv_of_drho   :      0.67s CPU      0.68s WALL (      49 calls)
+     mix_pot      :      0.08s CPU      0.13s WALL (      20 calls)
+     psymdvscf    :      1.33s CPU      1.33s WALL (      15 calls)
+     newdq        :      2.90s CPU      2.92s WALL (      20 calls)
+     adddvscf     :      0.42s CPU      0.52s WALL (    3396 calls)
+     drhodvus     :      0.01s CPU      0.00s WALL (       2 calls)
+
+     dvqpsi_us    :      3.28s CPU      3.31s WALL (     958 calls)
+     dvqpsi_us_on :      0.90s CPU      0.85s WALL (     958 calls)
+
+     cgsolve      :    123.06s CPU    123.90s WALL (    4354 calls)
+     ch_psi       :    121.73s CPU    122.44s WALL (   49094 calls)
+
+     ch_psi       :    121.73s CPU    122.44s WALL (   49094 calls)
+     h_psi        :    120.46s CPU    121.38s WALL (   57899 calls)
+     last         :     14.73s CPU     14.76s WALL (   49094 calls)
+
+     h_psi        :    120.46s CPU    121.38s WALL (   57899 calls)
+     add_vuspsi   :      6.80s CPU      6.89s WALL (   57899 calls)
+
+     incdrhoscf   :      9.72s CPU     10.02s WALL (    4354 calls)
+     addusdbec    :      1.09s CPU      1.11s WALL (    6406 calls)
+
+     drhodvus     :      0.01s CPU      0.00s WALL (       2 calls)
+
+      General routines
+     calbec       :     20.11s CPU     20.35s WALL (  140125 calls)
+     fft          :      0.92s CPU      1.01s WALL (    1089 calls)
+     ffts         :      0.37s CPU      0.40s WALL (    1092 calls)
+     fftw         :    114.80s CPU    115.54s WALL (  484192 calls)
+     davcio       :      0.38s CPU      0.53s WALL (   27425 calls)
+     write_rec    :      0.01s CPU      0.05s WALL (      22 calls)
+
+
+     PHONON       :  3m19.18s CPU     3m21.58s WALL
+
+
+   This run was terminated on:  12:14:31  26Aug2019
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=
