@@ -59,10 +59,30 @@ class PhCalculation(CalcJob):
             help='the folder of a completed `PwCalculation`')
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.default_output_node = 'output_parameters'
-        spec.exit_code(
-            100, 'ERROR_NO_RETRIEVED_FOLDER', message='The retrieved folder data node could not be accessed.')
-        spec.exit_code(
-            110, 'ERROR_READING_OUTPUT_FILE', message='The output file could not be read from the retrieved folder.')
+
+        # Unrecoverable errors: resources like the retrieved folder or its expected contents are missing
+        spec.exit_code(200, 'ERROR_NO_RETRIEVED_FOLDER',
+            message='The retrieved folder data node could not be accessed.')
+        spec.exit_code(210, 'ERROR_OUTPUT_STDOUT_MISSING',
+            message='The retrieved folder did not contain the required stdout output file.')
+
+        # Unrecoverable errors: required retrieved files could not be read, parsed or are otherwise incomplete
+        spec.exit_code(300, 'ERROR_OUTPUT_FILES',
+            message='Both the stdout and XML output files could not be read or parsed.')
+        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
+            message='The stdout output file could not be read.')
+        spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE',
+            message='The stdout output file could not be parsed.')
+        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
+            message='The stdout output file was incomplete.')
+        spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
+            message='The parser raised an unexpected exception.')
+
+        # Significant errors but calculation can be used to restart
+        spec.exit_code(400, 'ERROR_OUT_OF_WALLTIME',
+            message='The calculation stopped prematurely because it ran out of walltime.')
+        spec.exit_code(410, 'ERROR_CONVERGENCE_NOT_REACHED',
+            message='The minimization cycle did not reach self-consistency.')
 
     @classproperty
     def _OUTPUT_SUBFOLDER(cls):

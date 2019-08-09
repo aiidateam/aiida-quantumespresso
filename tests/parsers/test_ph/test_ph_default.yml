@@ -24,7 +24,6 @@ dynamical_matrix_1:
   - 0.0
   - 0.0
   q_point_units: 2pi/lattice_parameter
-  warnings: []
 effective_charges_eu:
 - - - -5.351339397285841
     - 2.664535259100376e-15
@@ -53,5 +52,3 @@ parser_version: 3.0.0a4
 parser_warnings: []
 wall_time: '        15.25s '
 wall_time_seconds: 15.25
-warnings: []
-xml_warnings: []
