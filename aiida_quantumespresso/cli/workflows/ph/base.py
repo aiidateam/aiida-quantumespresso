@@ -12,7 +12,7 @@ from .. import cmd_launch
 
 @cmd_launch.command('ph-base')
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.ph'))
-@options.CALCULATION(type=types.CalculationParamType(sub_classes=('aiida.calculations:quantumespresso.pw',)))
+@options.CALCULATION(required=True)
 @options_qe.KPOINTS_MESH(default=[2, 2, 2])
 @options_qe.CLEAN_WORKDIR()
 @options_qe.MAX_NUM_MACHINES()
@@ -28,14 +28,16 @@ def launch_workflow(
     from aiida.plugins import WorkflowFactory
     from aiida_quantumespresso.utils.resources import get_default_options
 
-    parameters = {'INPUTPH': {}}
-
     inputs = {
-        'code': code,
-        'qpoints': kpoints_mesh,
-        'parent_folder': calculation.outputs.remote_folder,
-        'parameters': Dict(dict=parameters),
-        'options': Dict(dict=get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)),
+        'ph': {
+            'code': code,
+            'qpoints': kpoints_mesh,
+            'parent_folder': calculation.outputs.remote_folder,
+            'parameters': Dict(dict={'INPUTPH': {}}),
+            'metadata': {
+                'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
+            }
+        }
     }
 
     if clean_workdir:
