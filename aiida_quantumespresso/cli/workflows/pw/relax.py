@@ -6,13 +6,13 @@ import click
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
-from ...cli import workflow_launch
 from ...utils import launch
 from ...utils import options as options_qe
 from ...utils import validate
+from .. import cmd_launch
 
 
-@workflow_launch.command('pw-relax')
+@cmd_launch.command('pw-relax')
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.pw'))
 @options_qe.STRUCTURE(required=True)
 @options_qe.PSEUDO_FAMILY(required=True)

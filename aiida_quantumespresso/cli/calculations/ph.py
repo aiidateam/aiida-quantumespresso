@@ -7,12 +7,12 @@ import click
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
-from ..cli import calculation_launch
 from ..utils import launch
 from ..utils import options as options_qe
+from . import cmd_launch
 
 
-@calculation_launch.command('ph')
+@cmd_launch.command('ph')
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.ph'))
 @options.CALCULATION(required=True)
 @options_qe.KPOINTS_MESH(default=[1, 1, 1])

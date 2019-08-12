@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """Module with launch utitlies for the CLI."""
 from __future__ import absolute_import
-from __future__ import print_function
+
 import click
 
-from aiida.engine import launch, Process, ProcessBuilder
 from .display import echo_process_results
 
 
@@ -17,6 +16,8 @@ def launch_process(process, daemon, **inputs):
     :param daemon: boolean, if True will submit to the daemon instead of running in current interpreter
     :param inputs: inputs for the process
     """
+    from aiida.engine import launch, Process, ProcessBuilder
+
     if isinstance(process, ProcessBuilder):
         process_name = process.process_class.__name__
     elif issubclass(process, Process):

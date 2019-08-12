@@ -5,12 +5,12 @@ from __future__ import absolute_import
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
-from ...cli import workflow_launch
 from ...utils import launch
 from ...utils import options as options_qe
+from .. import cmd_launch
 
 
-@workflow_launch.command('q2r-base')
+@cmd_launch.command('q2r-base')
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.q2r'))
 @options.CALCULATION(type=types.CalculationParamType(sub_classes=('aiida.calculations:quantumespresso.ph',)))
 @options_qe.CLEAN_WORKDIR()
