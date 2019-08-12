@@ -24,7 +24,7 @@
       (?x)^(
         aiida_quantumespresso/calculations.*|
         aiida_quantumespresso/parsers/.*|
-        aiida_quantumespresso/tools/.*|
+        aiida_quantumespresso/tools/dbexporters/.*|
         aiida_quantumespresso/utils/restart.py|
         docs/.*|
         tests/.*
