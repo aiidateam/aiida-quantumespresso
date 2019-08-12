@@ -7,15 +7,15 @@ import click
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
-from ..cli import calculation_launch
 from ..utils import launch
 from ..utils import options as options_qe
 from ..utils import validate
+from . import cmd_launch
 
 CALCS_REQUIRING_PARENT = set(['nscf'])
 
 
-@calculation_launch.command('pw')
+@cmd_launch.command('pw')
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.pw'))
 @options_qe.STRUCTURE(required=True)
 @options_qe.PSEUDO_FAMILY(required=True)

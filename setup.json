@@ -51,7 +51,7 @@
             "quantumespresso.matdyn.base = aiida_quantumespresso.workflows.matdyn.base:MatdynBaseWorkChain"
         ],
         "console_scripts": [
-            "aiida-quantumespresso = aiida_quantumespresso.cli.cli:root"
+            "aiida-quantumespresso = aiida_quantumespresso.cli:cmd_root"
         ]
     },
     "extras_require": {

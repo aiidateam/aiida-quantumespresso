@@ -7,12 +7,12 @@ import click
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
-from ..cli import calculation_launch
 from ..utils import launch
 from ..utils import options as options_qe
+from . import cmd_launch
 
 
-@calculation_launch.command('q2r')
+@cmd_launch.command('q2r')
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.q2r'))
 @options.CALCULATION(required=True)
 @options_qe.MAX_NUM_MACHINES()

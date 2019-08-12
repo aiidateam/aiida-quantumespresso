@@ -7,6 +7,7 @@ from aiida.cmdline.utils import decorators
 from aiida.common import exceptions
 
 
+@decorators.with_dbenv()
 def validate_kpoints_mesh(ctx, param, value):
     """
     Command line option validator for a kpoints mesh tuple. The value should be a tuple

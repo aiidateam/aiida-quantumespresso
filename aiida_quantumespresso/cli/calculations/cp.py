@@ -5,9 +5,9 @@ from __future__ import absolute_import
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
-from ..cli import calculation_launch
 from ..utils import launch
 from ..utils import options as options_qe
+from . import cmd_launch
 
 
 def silicon_structure():
@@ -42,7 +42,7 @@ def silicon_structure():
     return structure.uuid
 
 
-@calculation_launch.command('cp')
+@cmd_launch.command('cp')
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.cp'))
 @options_qe.STRUCTURE(default=silicon_structure)
 @options_qe.PSEUDO_FAMILY(required=True)
