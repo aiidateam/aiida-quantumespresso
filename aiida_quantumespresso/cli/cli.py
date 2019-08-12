@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=wrong-import-position,unused-import
 """Module for the command line interface."""
 from __future__ import absolute_import
 
@@ -31,3 +32,6 @@ def workflow():
 @workflow.group('launch')
 def workflow_launch():
     """Launch workflows."""
+
+
+from .data import cmd_structure
