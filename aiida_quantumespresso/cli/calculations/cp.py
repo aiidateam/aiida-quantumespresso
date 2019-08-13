@@ -5,46 +5,15 @@ from __future__ import absolute_import
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
+from ..utils import defaults
 from ..utils import launch
 from ..utils import options as options_qe
 from . import cmd_launch
 
 
-def silicon_structure():
-    """Return a `StructureData` representing bulk silicon.
-
-    The database will first be queried for the existence of the structure in case it might have already been created
-    before. If nothing is found, a new structure will be created
-
-    :return: a `StructureData` representing bulk silicon
-    """
-    from ase.spacegroup import crystal
-    from aiida.orm import QueryBuilder, StructureData
-
-    label = '__example__{name}'.format(name=__name__)
-    structure = QueryBuilder().append(StructureData, filters={'label': label}).first()
-    if not structure:
-        alat = 5.4
-        ase_structure = crystal(
-            'Si',
-            [(0, 0, 0)],
-            spacegroup=227,
-            cellpar=[alat, alat, alat, 90, 90, 90],
-            primitive_cell=True,
-        )
-        structure = StructureData(ase=ase_structure)
-        structure.label = label
-        structure.store()
-    else:
-        # .first() returns none if it doesn't exist or a list of one item if objects exist
-        structure = structure[0]
-
-    return structure.uuid
-
-
 @cmd_launch.command('cp')
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.cp'))
-@options_qe.STRUCTURE(default=silicon_structure)
+@options_qe.STRUCTURE(default=defaults.get_structure)
 @options_qe.PSEUDO_FAMILY(required=True)
 @options_qe.MAX_NUM_MACHINES()
 @options_qe.MAX_WALLCLOCK_SECONDS()
