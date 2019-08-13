@@ -7,6 +7,7 @@ import click
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
+from ..utils import defaults
 from ..utils import launch
 from ..utils import options as options_qe
 from ..utils import validate
@@ -17,7 +18,7 @@ CALCS_REQUIRING_PARENT = set(['nscf'])
 
 @cmd_launch.command('pw')
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.pw'))
-@options_qe.STRUCTURE(required=True)
+@options_qe.STRUCTURE(default=defaults.get_structure)
 @options_qe.PSEUDO_FAMILY(required=True)
 @options_qe.KPOINTS_MESH(default=[2, 2, 2])
 @options_qe.ECUTWFC()
@@ -71,6 +72,9 @@ def launch_calculation(
         }
     }
 
+    if mode in CALCS_REQUIRING_PARENT and not parent_folder:
+        raise click.BadParameter("calculation '{}' requires a parent folder".format(mode), param_hint='--parent-folder')
+
     try:
         hubbard_file = validate.validate_hubbard_parameters(
             structure, parameters, hubbard_u, hubbard_v, hubbard_file_pk
@@ -104,9 +108,6 @@ def launch_calculation(
             'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
         }
     }
-
-    if mode in CALCS_REQUIRING_PARENT and not parent_folder:
-        raise click.BadParameter("calculation '{}' requires a parent folder".format(mode), param_hint='--parent-folder')
 
     if parent_folder:
         inputs['parent_folder'] = parent_folder

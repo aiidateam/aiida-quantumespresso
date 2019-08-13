@@ -6,6 +6,7 @@ import click
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
+from ...utils import defaults
 from ...utils import launch
 from ...utils import options as options_qe
 from ...utils import validate
@@ -14,7 +15,7 @@ from .. import cmd_launch
 
 @cmd_launch.command('pw-base')
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.pw'))
-@options_qe.STRUCTURE(required=True)
+@options_qe.STRUCTURE(default=defaults.get_structure)
 @options_qe.PSEUDO_FAMILY(required=True)
 @options_qe.KPOINTS_DISTANCE()
 @options_qe.ECUTWFC()
