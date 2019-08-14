@@ -128,6 +128,10 @@ def generate_calc_job_node():
         retrieved.add_incoming(node, link_type=LinkType.CREATE, link_label='retrieved')
         retrieved.store()
 
+        remote_folder = orm.RemoteData(computer=computer, remote_path='/tmp')
+        remote_folder.add_incoming(node, link_type=LinkType.CREATE, link_label='remote_folder')
+        remote_folder.store()
+
         return node
 
     return _generate_calc_job_node
