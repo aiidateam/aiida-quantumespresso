@@ -22,7 +22,6 @@ from . import cmd_launch
 @decorators.with_dbenv()
 def launch_calculation(code, calculation, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
     """Run a Q2rCalculation."""
-    from aiida import orm
     from aiida.plugins import CalculationFactory
     from aiida_quantumespresso.utils.resources import get_default_options
 
@@ -37,11 +36,9 @@ def launch_calculation(code, calculation, max_num_machines, max_wallclock_second
             )
         )
 
-    parent_folder = calculation.get_outgoing(node_class=orm.RemoteData, link_label_filter='remote_folder').one().node
-
     inputs = {
         'code': code,
-        'parent_folder': parent_folder,
+        'parent_folder': calculation.outputs.remote_folder,
         'metadata': {
             'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
         }

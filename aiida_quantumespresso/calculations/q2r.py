@@ -27,14 +27,15 @@ class Q2rCalculation(NamelistsCalculation):
 
     @classmethod
     def define(cls, spec):
+        # yapf: disable
         super(Q2rCalculation, cls).define(spec)
         spec.input('parent_folder', valid_type=(orm.RemoteData, orm.FolderData), required=True)
-        spec.output('output_parameters', valid_type=orm.Dict)
         spec.output('forceconstants', valid_type=ForceconstantsData)
-        spec.default_output_node = 'output_parameters'
-        spec.exit_code(
-            100, 'ERROR_NO_RETRIEVED_FOLDER', message='The retrieved folder data node could not be accessed.')
-        spec.exit_code(
-            110, 'ERROR_READING_OUTPUT_FILE', message='The output file could not be read from the retrieved folder.')
-        spec.exit_code(
-            130, 'ERROR_JOB_NOT_DONE', message='The computation did not finish properly ("JOB DONE" not found).')
+        spec.exit_code(100, 'ERROR_NO_RETRIEVED_FOLDER',
+            message='The retrieved folder data node could not be accessed.')
+        spec.exit_code(110, 'ERROR_READING_OUTPUT_FILE',
+            message='The output file could not be read from the retrieved folder.')
+        spec.exit_code(120, 'ERROR_READING_FORCE_CONSTANTS_FILE',
+            message='The force constants file could not be read.')
+        spec.exit_code(130, 'ERROR_JOB_NOT_DONE',
+            message='The computation did not finish properly ("JOB DONE" not found).')

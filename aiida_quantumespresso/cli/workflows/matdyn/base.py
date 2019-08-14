@@ -12,7 +12,7 @@ from .. import cmd_launch
 
 @cmd_launch.command('matdyn-base')
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.matdyn'))
-@options.CALCULATION(type=types.CalculationParamType(sub_classes=('aiida.calculations:quantumespresso.q2r',)))
+@options.CALCULATION()
 @options_qe.KPOINTS_MESH(default=[2, 2, 2])
 @options_qe.CLEAN_WORKDIR()
 @options_qe.MAX_NUM_MACHINES()
@@ -24,15 +24,19 @@ def launch_workflow(
     code, calculation, kpoints_mesh, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi, daemon
 ):
     """Run the `MatdynBaseWorkChain` for a previously completed `Q2rCalculation`."""
-    from aiida.orm import Bool, Dict
+    from aiida.orm import Bool
     from aiida.plugins import WorkflowFactory
     from aiida_quantumespresso.utils.resources import get_default_options
 
     inputs = {
-        'code': code,
-        'kpoints': kpoints_mesh,
-        'parent_folder': calculation.outputs.force_constants,
-        'options': Dict(dict=get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)),
+        'matdyn': {
+            'code': code,
+            'kpoints': kpoints_mesh,
+            'parent_folder': calculation.outputs.forceconstants,
+            'metadata': {
+                'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
+            }
+        }
     }
 
     if clean_workdir:
