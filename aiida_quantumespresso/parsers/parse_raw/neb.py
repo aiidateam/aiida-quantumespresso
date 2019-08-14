@@ -46,7 +46,7 @@ def parse_raw_output_neb(out_file, input_dict, parser_opts=None):
         with open(out_file,'r') as f:
             out_lines = f.read()
     except IOError:  # non existing output file -> job crashed
-        raise QEOutputParsingError("Failed to open output file: {}.".format(out_file))
+        raise QEOutputParsingError('Failed to open output file: {}.'.format(out_file))
 
     if not out_lines:  # there is an output file, but it's empty -> crash
         job_successful = False
@@ -118,7 +118,7 @@ def parse_neb_text_output(data, input_dict={}):
     critical_warnings = {'scf convergence NOT achieved on image':
                          'SCF did not converge for a given image',
                          'Maximum CPU time exceeded':'Maximum CPU time exceeded',
-                         'reached the maximum number of steps': 'Maximum number of iterations reached in the image optimization',       
+                         'reached the maximum number of steps': 'Maximum number of iterations reached in the image optimization',
                          '%%%%%%%%%%%%%%':None,
                          }
 
@@ -145,7 +145,7 @@ def parse_neb_text_output(data, input_dict={}):
                 parsed_data['wall_time_seconds'] = \
                     convert_qe_time_to_sec(parsed_data['wall_time'])
             except ValueError:
-                raise QEOutputParsingError("Unable to convert wall_time in seconds.")
+                raise QEOutputParsingError('Unable to convert wall_time in seconds.')
             break
 
     # set by default the calculation as not converged.
@@ -213,8 +213,8 @@ def parse_neb_text_output(data, input_dict={}):
         try:
             num_images = input_dict['PATH']['num_of_images']
         except KeyError:
-            raise QEOutputParsingError("No information on the number "
-                                       "of images available (neither in input nor in output")
+            raise QEOutputParsingError('No information on the number '
+                                       'of images available (neither in input nor in output')
 
     iteration_lines = data.split('-- iteration')[1:]
     iteration_lines = [ i.split('\n') for i in iteration_lines]

@@ -12,6 +12,7 @@ from ..utils import launch
 from ..utils import options as options_qe
 from ..utils import validate
 
+
 @calculation_launch.command('neb')
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.neb'))
 @click.option(
@@ -20,7 +21,8 @@ from ..utils import validate
     nargs=2,
     type=types.DataParamType(sub_classes=('aiida.data:structure',)),
     help='Two StructureData nodes, the initial and final structures',
-    required=True)
+    required=True
+)
 @options_qe.PSEUDO_FAMILY(required=True)
 @options_qe.KPOINTS_MESH(default=[2, 2, 2])
 @options_qe.ECUTWFC()
@@ -34,8 +36,10 @@ from ..utils import validate
 @options_qe.PARENT_FOLDER()
 @options.DRY_RUN()
 @decorators.with_dbenv()
-def launch_calculation(code, structures, pseudo_family, kpoints_mesh, ecutwfc, ecutrho, starting_magnetization,
-                       smearing, max_num_machines, max_wallclock_seconds, with_mpi, daemon, parent_folder, dry_run):
+def launch_calculation(
+    code, structures, pseudo_family, kpoints_mesh, ecutwfc, ecutrho, starting_magnetization, smearing, max_num_machines,
+    max_wallclock_seconds, with_mpi, daemon, parent_folder, dry_run
+):
     """
     Run a NebCalculation.
     Note that some parameters are hardcoded.
@@ -123,7 +127,7 @@ def launch_calculation(code, structures, pseudo_family, kpoints_mesh, ecutwfc, e
             # .submit() would forward to .run(), but it's better to stop here,
             # since it's a bit unexpected and the log messages output to screen
             # would be confusing ("Submitted PwCalculation<None> to the daemon")
-            raise click.BadParameter("cannot send to the daemon if in dry_run mode", param_hint='--daemon')
+            raise click.BadParameter('cannot send to the daemon if in dry_run mode', param_hint='--daemon')
         inputs.setdefault('metadata', {})['store_provenance'] = False
         inputs['metadata']['dry_run'] = True
 
