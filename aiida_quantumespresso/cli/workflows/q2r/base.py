@@ -2,6 +2,8 @@
 """Command line scripts to launch a `Q2rBaseWorkChain` for testing and demonstration purposes."""
 from __future__ import absolute_import
 
+import click
+
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
@@ -12,7 +14,7 @@ from .. import cmd_launch
 
 @cmd_launch.command('q2r-base')
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.q2r'))
-@options.CALCULATION()
+@options.CALCULATION(required=True)
 @options_qe.CLEAN_WORKDIR()
 @options_qe.MAX_NUM_MACHINES()
 @options_qe.MAX_WALLCLOCK_SECONDS()
@@ -24,6 +26,14 @@ def launch_workflow(code, calculation, clean_workdir, max_num_machines, max_wall
     from aiida.orm import Bool
     from aiida.plugins import WorkflowFactory
     from aiida_quantumespresso.utils.resources import get_default_options
+
+    expected_process_type = 'aiida.calculations:quantumespresso.ph'
+    if calculation.process_type != expected_process_type:
+        raise click.BadParameter(
+            'The input calculation node has a process_type: {}; should be {}'.format(
+                calculation.process_type, expected_process_type
+            )
+        )
 
     inputs = {
         'q2r': {

@@ -22,7 +22,7 @@ class MatdynBaseWorkChain(BaseRestartWorkChain):
         # yapf: disable
         super(MatdynBaseWorkChain, cls).define(spec)
         spec.expose_inputs(MatdynCalculation, namespace='matdyn')
-        spec.expose_outputs(MatdynCalculation, exclude=('remote_folder',))
+        spec.expose_outputs(MatdynCalculation)
         spec.outline(
             cls.setup,
             while_(cls.should_run_calculation)(

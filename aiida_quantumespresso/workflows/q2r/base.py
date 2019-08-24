@@ -22,7 +22,7 @@ class Q2rBaseWorkChain(BaseRestartWorkChain):
         # yapf: disable
         super(Q2rBaseWorkChain, cls).define(spec)
         spec.expose_inputs(Q2rCalculation, namespace='q2r')
-        spec.expose_outputs(Q2rCalculation, exclude=('remote_folder',))
+        spec.expose_outputs(Q2rCalculation)
         spec.outline(
             cls.setup,
             while_(cls.should_run_calculation)(
