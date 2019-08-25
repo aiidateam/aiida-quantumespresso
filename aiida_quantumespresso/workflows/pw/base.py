@@ -77,7 +77,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             cls.results,
         )
 
-        spec.expose_outputs(PwCalculation, exclude=('retrieved_folder',))
+        spec.expose_outputs(PwCalculation)
         spec.output('automatic_parallelization', valid_type=orm.Dict, required=False,
             help='The results of the automatic parallelization analysis if performed.')
 

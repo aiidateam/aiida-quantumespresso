@@ -2,6 +2,8 @@
 """Command line scripts to launch a `Q2rBaseWorkChain` for testing and demonstration purposes."""
 from __future__ import absolute_import
 
+import click
+
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
@@ -12,7 +14,7 @@ from .. import cmd_launch
 
 @cmd_launch.command('q2r-base')
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.q2r'))
-@options.CALCULATION(type=types.CalculationParamType(sub_classes=('aiida.calculations:quantumespresso.ph',)))
+@options.CALCULATION(required=True)
 @options_qe.CLEAN_WORKDIR()
 @options_qe.MAX_NUM_MACHINES()
 @options_qe.MAX_WALLCLOCK_SECONDS()
@@ -21,14 +23,26 @@ from .. import cmd_launch
 @decorators.with_dbenv()
 def launch_workflow(code, calculation, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
     """Run the `Q2rBaseWorkChain` for a previously completed `PhCalculation`."""
-    from aiida.orm import Bool, Dict
+    from aiida.orm import Bool
     from aiida.plugins import WorkflowFactory
     from aiida_quantumespresso.utils.resources import get_default_options
 
+    expected_process_type = 'aiida.calculations:quantumespresso.ph'
+    if calculation.process_type != expected_process_type:
+        raise click.BadParameter(
+            'The input calculation node has a process_type: {}; should be {}'.format(
+                calculation.process_type, expected_process_type
+            )
+        )
+
     inputs = {
-        'code': code,
-        'parent_folder': calculation.outputs.retrieved,
-        'options': Dict(dict=get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)),
+        'q2r': {
+            'code': code,
+            'parent_folder': calculation.outputs.remote_folder,
+            'metadata': {
+                'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
+            }
+        }
     }
 
     if clean_workdir:
