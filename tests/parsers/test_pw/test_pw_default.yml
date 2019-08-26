@@ -76,8 +76,8 @@ output_parameters:
   number_of_species: 1
   number_of_spin_components: 1
   number_of_symmetries: 48
-  parser_info: aiida-quantumespresso parser pw.x v3.0.0a3
-  parser_version: 3.0.0a3
+  parser_info: aiida-quantumespresso parser pw.x v3.0.0a4
+  parser_version: 3.0.0a4
   parser_warnings: []
   pp_check_flag: true
   q_real_space: false
