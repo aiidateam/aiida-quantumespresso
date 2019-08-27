@@ -30,8 +30,9 @@ class MatdynCalculation(NamelistsCalculation):
     @classmethod
     def define(cls, spec):
         super(MatdynCalculation, cls).define(spec)
-        spec.input('parent_folder', valid_type=ForceConstantsData, required=True)
+        spec.input('force_constants', valid_type=ForceConstantsData, required=True)
         spec.input('kpoints', valid_type=orm.KpointsData, help='Kpoints on which to calculate the phonon frequencies.')
+        spec.inputs.pop('parent_folder')
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.output('output_phonon_bands', valid_type=orm.BandsData)
         spec.default_output_node = 'output_parameters'
@@ -65,8 +66,10 @@ class MatdynCalculation(NamelistsCalculation):
         :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
         :return: `aiida.common.datastructures.CalcInfo` instance
         """
-        parent_folder = self.inputs.parent_folder
+        force_constants = self.inputs.force_constants
+        self._blocked_keywords.append(('INPUT', 'flfrc', force_constants.filename))
 
-        self._blocked_keywords.append(('INPUT', 'flfrc', parent_folder.filename))
+        calcinfo = super(MatdynCalculation, self).prepare_for_submission(folder)
+        calcinfo.local_copy_list.append((force_constants.uuid, force_constants.filename, force_constants.filename))
 
-        return super(MatdynCalculation, self).prepare_for_submission(folder)
+        return calcinfo

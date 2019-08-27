@@ -11,7 +11,7 @@ import six
 
 from aiida.common import datastructures, exceptions
 from aiida.engine import CalcJob
-from aiida.orm import Dict, Code
+from aiida.orm import Dict
 from aiida.orm import RemoteData, FolderData, SinglefileData
 from aiida.plugins import ParserFactory
 
@@ -39,7 +39,6 @@ class NamelistsCalculation(CalcJob):
     _default_namelists = ['INPUTPP']
     _blocked_keywords = []  # a list of tuples with key and value fixed
 
-    # _parent_folder_type = (RemoteData, FolderData, SinglefileData)
     _retrieve_singlefile_list = []
 
     _DEFAULT_INPUT_FILE = 'aiida.in'
