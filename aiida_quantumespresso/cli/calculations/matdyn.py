@@ -14,8 +14,8 @@ from . import cmd_launch
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.matdyn'))
 @options.DATUM(
     required=True,
-    type=types.DataParamType(sub_classes=('aiida.data:quantumespresso.forceconstants',)),
-    help='A ForceconstantsData node produced by a `Q2rCalculation`'
+    type=types.DataParamType(sub_classes=('aiida.data:quantumespresso.force_constants',)),
+    help='A ForceConstantsData node produced by a `Q2rCalculation`'
 )
 @options_qe.KPOINTS_MESH(default=[1, 1, 1])
 @options_qe.MAX_NUM_MACHINES()

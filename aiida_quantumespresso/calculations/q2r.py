@@ -6,7 +6,7 @@ import os
 from aiida import orm
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 from aiida_quantumespresso.calculations.ph import PhCalculation
-from aiida_quantumespresso.data.forceconstants import ForceconstantsData
+from aiida_quantumespresso.data.force_constants import ForceConstantsData
 
 
 class Q2rCalculation(NamelistsCalculation):
@@ -30,7 +30,7 @@ class Q2rCalculation(NamelistsCalculation):
         # yapf: disable
         super(Q2rCalculation, cls).define(spec)
         spec.input('parent_folder', valid_type=(orm.RemoteData, orm.FolderData), required=True)
-        spec.output('forceconstants', valid_type=ForceconstantsData)
+        spec.output('force_constants', valid_type=ForceConstantsData)
         spec.exit_code(100, 'ERROR_NO_RETRIEVED_FOLDER',
             message='The retrieved folder data node could not be accessed.')
         spec.exit_code(110, 'ERROR_READING_OUTPUT_FILE',

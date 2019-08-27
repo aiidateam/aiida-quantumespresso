@@ -42,7 +42,7 @@ def launch_workflow(
         'matdyn': {
             'code': code,
             'kpoints': kpoints_mesh,
-            'parent_folder': calculation.outputs.forceconstants,
+            'parent_folder': calculation.outputs.force_constants,
             'metadata': {
                 'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
             }

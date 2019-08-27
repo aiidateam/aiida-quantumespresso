@@ -9,7 +9,7 @@ from aiida.orm import SinglefileData
 from aiida_quantumespresso.parsers.constants import bohr_to_ang
 
 
-class ForceconstantsData(SinglefileData):
+class ForceConstantsData(SinglefileData):
     """Class to handle interatomic force constants from the Quantum ESPRESSO q2r.x code"""
 
     def set_file(self, file):
@@ -18,7 +18,7 @@ class ForceconstantsData(SinglefileData):
         :param file: absolute path to the file or a filelike object
         """
         # pylint: disable=redefined-builtin,arguments-differ
-        super(ForceconstantsData, self).set_file(file)
+        super(ForceConstantsData, self).set_file(file)
 
         # Parse the force constants file
         dictionary, _, _ = parse_q2r_force_constants_file(self.get_content().splitlines(), also_force_constants=False)

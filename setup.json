@@ -24,7 +24,7 @@
             "quantumespresso.pwimmigrant = aiida_quantumespresso.calculations.pwimmigrant:PwimmigrantCalculation"
         ],
         "aiida.data": [
-            "quantumespresso.forceconstants = aiida_quantumespresso.data.forceconstants:ForceconstantsData"
+            "quantumespresso.force_constants = aiida_quantumespresso.data.force_constants:ForceConstantsData"
         ],
         "aiida.parsers": [
             "quantumespresso.cp = aiida_quantumespresso.parsers.cp:CpParser",

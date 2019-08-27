@@ -3,7 +3,7 @@ from __future__ import absolute_import
 
 from aiida import orm
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
-from aiida_quantumespresso.data.forceconstants import ForceconstantsData
+from aiida_quantumespresso.data.force_constants import ForceConstantsData
 
 
 class MatdynCalculation(NamelistsCalculation):
@@ -30,7 +30,7 @@ class MatdynCalculation(NamelistsCalculation):
     @classmethod
     def define(cls, spec):
         super(MatdynCalculation, cls).define(spec)
-        spec.input('parent_folder', valid_type=ForceconstantsData, required=True)
+        spec.input('parent_folder', valid_type=ForceConstantsData, required=True)
         spec.input('kpoints', valid_type=orm.KpointsData, help='Kpoints on which to calculate the phonon frequencies.')
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.output('output_phonon_bands', valid_type=orm.BandsData)
