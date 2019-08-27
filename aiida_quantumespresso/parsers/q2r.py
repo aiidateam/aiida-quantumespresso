@@ -4,7 +4,7 @@ from __future__ import absolute_import
 from aiida.common import exceptions
 from aiida.parsers import Parser
 from aiida_quantumespresso.calculations.q2r import Q2rCalculation
-from aiida_quantumespresso.data.forceconstants import ForceconstantsData
+from aiida_quantumespresso.data.force_constants import ForceConstantsData
 
 
 class Q2rParser(Parser):
@@ -33,6 +33,6 @@ class Q2rParser(Parser):
             return self.exit_codes.ERROR_JOB_NOT_DONE
 
         with output_folder.open(filename_force_constants, 'rb') as handle:
-            self.out('forceconstants', ForceconstantsData(file=handle))
+            self.out('force_constants', ForceConstantsData(file=handle))
 
         return

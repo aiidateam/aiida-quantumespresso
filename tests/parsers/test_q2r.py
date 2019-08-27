@@ -24,5 +24,5 @@ def test_q2r_default(fixture_database, fixture_computer_localhost, generate_calc
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
-    assert 'forceconstants' in results
-    data_regression.check(results['forceconstants'].get_content())
+    assert 'force_constants' in results
+    data_regression.check(results['force_constants'].get_content())
