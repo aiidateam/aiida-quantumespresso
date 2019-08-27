@@ -31,7 +31,7 @@ def launch_calculation(code, datum, kpoints_mesh, max_num_machines, max_wallcloc
     inputs = {
         'code': code,
         'kpoints': kpoints_mesh,
-        'parent_folder': datum,
+        'force_constants': datum,
         'metadata': {
             'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
         }
