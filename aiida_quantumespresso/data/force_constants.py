@@ -5,8 +5,8 @@ from __future__ import absolute_import
 import numpy
 from six.moves import range
 
+from qe_tools.constants import bohr_to_ang
 from aiida.orm import SinglefileData
-from aiida_quantumespresso.parsers.constants import bohr_to_ang
 
 
 class ForceConstantsData(SinglefileData):

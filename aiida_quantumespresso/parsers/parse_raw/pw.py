@@ -13,8 +13,8 @@ import re
 from six.moves import range
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers.constants import ry_to_ev, bohr_to_ang, ry_si, bohr_si
 from aiida_quantumespresso.utils.mapping import get_logging_container
+from qe_tools.constants import ry_to_ev, bohr_to_ang, ry_si, bohr_si
 
 lattice_tolerance = 1.e-5
 units_suffix = '_units'

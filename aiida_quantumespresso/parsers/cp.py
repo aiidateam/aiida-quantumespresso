@@ -9,11 +9,8 @@ from aiida.orm import Dict, TrajectoryData
 from aiida.parsers import Parser
 from six.moves import zip
 
-from aiida_quantumespresso.parsers.constants import (bohr_to_ang,
-                                                     hartree_to_ev,
-                                                     timeau_to_sec)
-from aiida_quantumespresso.parsers.parse_raw.cp import (parse_cp_raw_output,
-                                                         parse_cp_traj_stanzas)
+from qe_tools.constants import bohr_to_ang, hartree_to_ev, timeau_to_sec
+from aiida_quantumespresso.parsers.parse_raw.cp import parse_cp_raw_output, parse_cp_traj_stanzas
 
 
 class CpParser(Parser):

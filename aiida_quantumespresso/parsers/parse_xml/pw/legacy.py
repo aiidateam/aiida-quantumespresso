@@ -10,7 +10,7 @@ from six.moves import range
 
 from aiida.common.extendeddicts import AttributeDict
 from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers.constants import ry_to_ev, hartree_to_ev, bohr_to_ang
+from qe_tools.constants import ry_to_ev, hartree_to_ev, bohr_to_ang
 
 units_suffix = '_units'
 default_energy_units = 'eV'

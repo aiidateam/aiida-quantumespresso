@@ -320,7 +320,7 @@ class PwTcodtranslator(BaseTcodtranslator):
         """
         Returns kinetic energy cutoff for wavefunctions in eV.
         """
-        from aiida.common.constants import ry_to_ev
+        from qe_tools.constants import ry_to_ev
         parameters = calc.inputs.parameters
         ecutwfc = None
         try:
@@ -339,7 +339,7 @@ class PwTcodtranslator(BaseTcodtranslator):
         .. note :: by default returns 4 * ecutwfc, as indicated in
             http://www.quantum-espresso.org/wp-content/uploads/Doc/INPUT_PW.html
         """
-        from aiida.common.constants import ry_to_ev
+        from qe_tools.constants import ry_to_ev
         parameters = calc.inputs.parameters
         try:
             return parameters.get_dict()['SYSTEM']['ecutrho'] * ry_to_ev
@@ -359,7 +359,7 @@ class PwTcodtranslator(BaseTcodtranslator):
         .. note :: by default returns ecutrho, as indicated in
             http://www.quantum-espresso.org/wp-content/uploads/Doc/INPUT_PW.html
         """
-        from aiida.common.constants import ry_to_ev
+        from qe_tools.constants import ry_to_ev
         parameters = calc.inputs.parameters
         try:
             return parameters.get_dict()['SYSTEM']['ecutfock'] * ry_to_ev

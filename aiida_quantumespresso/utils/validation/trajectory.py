@@ -44,7 +44,7 @@ def verify_convergence_forces(trajectory, index=-1, threshold=None):
     :param threshold: the force threshold in Ry / bohr
     :return: `None` if the `forces` array or given index does not exist, `True` if threshold is valid, `False` otherwise
     """
-    from aiida.common.constants import ry_to_ev, bohr_to_ang
+    from qe_tools.constants import ry_to_ev, bohr_to_ang
 
     if threshold is None:
         return None
