@@ -6,7 +6,7 @@ from six.moves import range
 from aiida import orm
 from aiida.common import exceptions
 from aiida.parsers.parser import Parser
-from aiida_quantumespresso.parsers.constants import invcm_to_THz
+from qe_tools.constants import invcm_to_THz
 from aiida_quantumespresso.calculations.matdyn import MatdynCalculation
 
 

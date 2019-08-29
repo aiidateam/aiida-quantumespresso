@@ -8,7 +8,7 @@ from xmlschema.etree import ElementTree
 from xmlschema.exceptions import URLError
 
 from aiida.common.extendeddicts import AttributeDict
-from aiida_quantumespresso.parsers.constants import hartree_to_ev, bohr_to_ang, e_bohr2_to_coulomb_m2
+from qe_tools.constants import hartree_to_ev, bohr_to_ang
 
 from .exceptions import XMLParseError
 from .legacy import parse_pw_xml_pre_6_2
@@ -70,6 +70,8 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
     :param include_deprecated_v2_keys: boolean, if True, includes deprecated keys from old parser v2
     :returns: tuple of two dictionaries, with the parsed data and log messages, respectively
     """
+    e_bohr2_to_coulomb_m2 = 57.214766  # e/a0^2 to C/m^2 (electric polarization) from Wolfram Alpha
+
     logs = AttributeDict({
         'warning': [],
         'error': [],

@@ -10,7 +10,7 @@ import numpy
 from six.moves import zip
 
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
-from aiida_quantumespresso.parsers.constants import *
+from qe_tools.constants import *
 from aiida_quantumespresso.parsers.parse_xml.pw.legacy import parse_xml_child_bool, read_xml_card
 from aiida_quantumespresso.parsers.parse_raw.pw import convert_qe_time_to_sec
 from aiida_quantumespresso.utils.mapping import get_logging_container

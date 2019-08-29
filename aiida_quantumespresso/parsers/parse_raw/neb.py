@@ -11,7 +11,7 @@ import xml.dom.minidom
 import os
 import string
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
-from aiida_quantumespresso.parsers.constants import ry_to_ev,hartree_to_ev,bohr_to_ang,ry_si,bohr_si
+from qe_tools.constants import ry_to_ev,hartree_to_ev,bohr_to_ang,ry_si,bohr_si
 from aiida_quantumespresso.parsers.parse_raw.pw import convert_qe_time_to_sec
 import six
 from six.moves import range
