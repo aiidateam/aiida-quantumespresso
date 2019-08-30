@@ -467,6 +467,18 @@ class PwParser(Parser):
         if not parsed_bands or not parsed_kpoints:
             return
 
+        # In the case of input kpoints that define a list of k-points, i.e. along high-symmetry path, and explicit
+        # labels, set those labels also on the output kpoints to be used for the bands. This will allow plotting
+        # utilities to place k-point labels along the x-axis.
+        try:
+            self.node.inputs.kpoints.get_kpoints()
+            parsed_kpoints.labels = self.node.inputs.kpoints.labels
+        except (AttributeError, ValueError, TypeError):
+            # AttributeError: input kpoints defines a mesh, not an explicit list
+            # TypeError: inputs kpoints do not define any labels
+            # ValueError: input kpoints labels are not commensurate with `parsed_kpoints`
+            pass
+
         # Correct the occupation for nspin=1 calculations where Quantum ESPRESSO populates each band only halfway
         if len(parsed_bands['occupations']) > 1:
             occupations = parsed_bands['occupations']
