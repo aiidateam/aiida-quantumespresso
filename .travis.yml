@@ -84,7 +84,7 @@ jobs:
               skip_existing: true
               username: aiida-bot
               password:
-                  secure: NhV11e1kVJaumNMb7YGENngZwa6qJjzoGWzmzqdU5BwFgpXaxbaFAk2fn+Cckrkz4MmNJaW1HaKEAhn07WsbrkjOXK7QVNK48/eagiquKbCQbyNZNjzF+C24EYQHI93y40JQcl2JaCahSqKXbYQCpLlX0Rbtob4psQH29uHRcbq4lm5t3Jmb8WckEzcDLMZX3+uPFwDJxMbbsDW+pONGF1z2/B0j+7m4beTgCepuvIEaXS97rTQj2egKYEJV+V3DbH2o2nr0+3z4lzH2FAdoAnZMlFwHfWoY3WIuYcHcwXDWyLGWQKvncaoh1sLU7gfjjup3dZ4Iq74Zp43x2eXUhbmZBp2cPN3CZpN9baE4NE6MNKeQ/erkg31qdq50OG/rjGgPKyfg5ShO3Kt1CyVbSJX5dqPxtDQblYE8TAGhHfO2O8M1kLhyWvrV5TaQuVB/IAsTkRC+t1NtdWTxaU6wdMz36O5so89oKbFljjk9744m4Ei8DCgc98WH6b96qn0VifjxGuBs6o1aqRoa8O7e29a0TwDVAwxkczgjxbXkP6okRY5IAxsr5Rsbm8urXEo874uQA8n1gGyN6+YKSbjvPbHD9RIRl9IddC6y2wKTv/1JBifNjHcLhadl7RVRPSU7vFSs2cknN+5Gkw3FgZ/jA8SoMxMLFsvHcFxchrurAkE=
+                  secure: lz5/r+5BndjUEuJsbvMd+4HYb4tdbIiseea8GxmmAu6D7uzch3W40/16npd+/yshtSEMyarpJ2ksW1G99YUPsU29mTwm7y4ODXvU3S4VfJjk3gCuNwagD3hDYv2rMkGGUONIl51NO2PbDKkNqpmUQ/sYZs6D4GFjjiTvc5leXIm+D3s/4MCpNke+90bS/wjJAsFhA1qXZoDndq5oB7rUYwO4na9UlgT3SIRXQaw4vq4RhvqK9eSr63ZNw4naoQU1LkHYPVYlJpANcwkQ6LoQY+IqMNdNb5vlQJTwF74FJgORmAi7UZPqIl7NtPEsECYU10GuLfgTDVsbdE9zKRVQHt8JwsG9udxAO+B7xr5vFGZutibmbZIcmy1IQiOkyhX5L5uGtd+vFCpxHY2iinooTquPGGpexpdqa0pdoBP3ynz0bueLHmG8Quh/3MTr6EyeqB0pxITGlw+tkI0EdMYm1eUxnpEf7lHmx1F1J2l3BIZRiA+F+Dv0zJKKDwb+37/oOFiE//LpEPJ8DavshiwJ+s+pNATAL1YsUOngaoO7U4nyMRHqhBYz3Up9YCC+GDH2wG1loF7QNNXIyGpZ4k3+Rd4sY+DSoXS5TRhtR60a2yGTiQ3LTpbTuCzr592a1BAymbAwTCDMzKiVIhtqgepx6d7VgxRQenrCMwKse973KNI=
               on:
                   repo: aiidateam/aiida-quantumespresso
                   all_branches: true
