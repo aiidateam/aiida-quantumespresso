@@ -41,7 +41,12 @@
     entry: python ./.ci/validate_version_number.py
     args: ['version']
     language: system
-    files: '^(setup.json)'
+    files: >-
+      (?x)^(
+        setup.json|
+        aiida_quantumespresso/__init__.py|
+        ./.ci/validate_version_number.py|
+      )$
     pass_filenames: false
 
 - repo: https://github.com/python-modernize/python-modernize.git
