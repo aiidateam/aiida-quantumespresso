@@ -12,7 +12,7 @@ def get_builder_restart(node, from_scratch=False, use_symlink=False):
     """Create a restart `ProcessBuilder` from a completed `CalcJobNode`.
 
     The restart builder will be ready to be launched but of course one can further update the inputs before doing so.
-    To launch the restart calculation, simply run or submit it you would normally::
+    To launch the restart calculation, simply run or submit it like you would normally::
 
         from aiida.engine import submit
         builder = get_builder_restart(node)

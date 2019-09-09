@@ -14,13 +14,13 @@ from aiida.manage.fixtures import fixture_manager
 
 
 def flatten_inputs(inputs, prefix=''):
-    ''' Follows roughly the same logic as aiida.engine.processes.process::Process._flatten_inputs '''
+    """This function follows roughly the same logic as `aiida.engine.processes.process::Process._flatten_inputs`."""
     flat_inputs = []
-    for k, v in six.iteritems(inputs):
-        if isinstance(v, collections.Mapping):
-            flat_inputs.extend(flatten_inputs(v, prefix=prefix+k+'__'))
+    for key, value in six.iteritems(inputs):
+        if isinstance(value, collections.Mapping):
+            flat_inputs.extend(flatten_inputs(value, prefix=prefix + key + '__'))
         else:
-            flat_inputs.append((prefix+k, v))
+            flat_inputs.append((prefix + key, value))
     return flat_inputs
 
 

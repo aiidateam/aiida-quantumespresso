@@ -144,7 +144,7 @@ class NebCalculation(CalcJob):
 
         # In case of climbing image, we need the corresponding card
         manual_climbing_image = False
-        if input_params['PATH'].get('ci_scheme', 'no-ci').lower() in ['manual']:
+        if input_params['PATH'].get('ci_scheme', 'no-ci').lower() == 'manual':
             manual_climbing_image = True
             try:
                 climbing_image_list = settings_dict.pop('CLIMBING_IMAGES')
@@ -199,24 +199,26 @@ class NebCalculation(CalcJob):
 
         parent_calc_folder = self.inputs.get('parent_folder', None)
         vdw_table = self.inputs.get('pw.vdw_table', None)
+        first_structure = self.inputs.first_structure
+        last_structure = self.inputs.last_structure
 
         # Check that the first and last image have the same cell
-        if abs(np.array(self.inputs.first_structure.cell)-
-               np.array(self.inputs.last_structure.cell)).max() > 1.e-4:
+        if abs(np.array(first_structure.cell)-
+               np.array(last_structure.cell)).max() > 1.e-4:
             raise InputValidationError('Different cell in the fist and last image')
 
         # Check that the first and last image have the same number of sites
-        if len(self.inputs.first_structure.sites) != len(self.inputs.last_structure.sites):
+        if len(first_structure.sites) != len(last_structure.sites):
             raise InputValidationError('Different number of sites in the fist and last image')
 
         # Check that sites in the initial and final structure have the same kinds
-        if self.inputs.first_structure.get_site_kindnames() != self.inputs.last_structure.get_site_kindnames():
+        if first_structure.get_site_kindnames() != last_structure.get_site_kindnames():
             raise InputValidationError('Mismatch between the kind names and/or order between '
                                        'the first and final image')
 
         # Check that a pseudo potential was specified for each kind present in the `StructureData`
         # self.inputs.pw.pseudos is a plumpy.utils.AttributesFrozendict
-        kindnames = [kind.name for kind in self.inputs.first_structure.kinds]
+        kindnames = [kind.name for kind in first_structure.kinds]
         if set(kindnames) != set(self.inputs.pw.pseudos.keys()):
             raise InputValidationError(
                 'Mismatch between the defined pseudos and the list of kinds of the structure.\n'
@@ -238,7 +240,7 @@ class NebCalculation(CalcJob):
 
         # We now generate the PW input files for each input structure
         local_copy_pseudo_list = []
-        for i, structure in enumerate([self.inputs.first_structure, self.inputs.last_structure]):
+        for i, structure in enumerate([first_structure, last_structure]):
             # We need to a pass a copy of the settings_dict for each structure
             this_settings_dict = copy.deepcopy(settings_dict)
             pw_input_filecontent, this_local_copy_pseudo_list = PwCalculation._generate_PWCPinputdata(

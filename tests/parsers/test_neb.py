@@ -16,7 +16,7 @@ def generate_neb_structures():
     def _generate_neb_structures(element='H'):
         """Return 2 `StructureData` objects that can be used as first and last images for a NEB calculation."""
         from aiida.orm import StructureData
-        from aiida_quantumespresso.parsers.constants import bohr_to_ang
+        from qe_tools.constants import bohr_to_ang
         import numpy as np
 
         cell = np.array([[12, 0, 0], [0, 5, 0], [0, 0, 5]]) * bohr_to_ang

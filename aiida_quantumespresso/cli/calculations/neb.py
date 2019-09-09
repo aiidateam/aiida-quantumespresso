@@ -7,13 +7,13 @@ import click
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
-from ..cli import calculation_launch
 from ..utils import launch
 from ..utils import options as options_qe
 from ..utils import validate
+from . import cmd_launch
 
 
-@calculation_launch.command('neb')
+@cmd_launch.command('neb')
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.neb'))
 @click.option(
     '-s',
@@ -58,11 +58,12 @@ def launch_calculation(
              [True, True, True],
              [False, True, True]],
         'CLIMBING_IMAGES': [4],
-    }
+    }  # yapf: disable
 
     pw_parameters = {
         'CONTROL': {
-            'calculation': 'relax',  # TODO: this needs to be set automatically by the calculation class (is relax correct?)
+            'calculation': 'relax',
+            # TODO: this needs to be set automatically by the calculation class (is relax correct?)
         },
         'SYSTEM': {
             'ecutwfc': ecutwfc,
@@ -98,10 +99,10 @@ def launch_calculation(
         except ValueError as exception:
             raise click.BadParameter(str(exception))
 
-        try:
-            validate.validate_smearing(pw_parameters, smearing)
-        except ValueError as exception:
-            raise click.BadParameter(str(exception))
+    try:
+        validate.validate_smearing(pw_parameters, smearing)
+    except ValueError as exception:
+        raise click.BadParameter(str(exception))
 
     inputs = {
         'code': code,
@@ -128,7 +129,7 @@ def launch_calculation(
             # since it's a bit unexpected and the log messages output to screen
             # would be confusing ("Submitted PwCalculation<None> to the daemon")
             raise click.BadParameter('cannot send to the daemon if in dry_run mode', param_hint='--daemon')
-        inputs.setdefault('metadata', {})['store_provenance'] = False
+        inputs['metadata']['store_provenance'] = False
         inputs['metadata']['dry_run'] = True
 
     launch.launch_process(CalculationFactory('quantumespresso.neb'), daemon, **inputs)

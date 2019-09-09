@@ -37,8 +37,8 @@ parameters:
   nstep_path: 20
   num_of_images: 6
   opt_scheme: broyden
-  parser_info: aiida-quantumespresso parser neb.x v3.0.0a3
-  parser_version: 3.0.0a3
+  parser_info: aiida-quantumespresso parser neb.x v3.0.0a5
+  parser_version: 3.0.0a5
   parser_warnings: []
   path_length: 2.9845594564475997
   path_thr: 0.05
@@ -221,8 +221,8 @@ parameters:
     number_of_spin_components: 2
     number_of_symmetries: 8
     occupations: smearing
-    parser_info: aiida-quantumespresso parser pw.x v3.0.0a3
-    parser_version: 3.0.0a3
+    parser_info: aiida-quantumespresso parser pw.x v3.0.0a5
+    parser_version: 3.0.0a5
     parser_warnings: []
     q_real_space: false
     rho_cutoff: 1360.56917253
@@ -588,8 +588,8 @@ parameters:
     number_of_spin_components: 2
     number_of_symmetries: 8
     occupations: smearing
-    parser_info: aiida-quantumespresso parser pw.x v3.0.0a3
-    parser_version: 3.0.0a3
+    parser_info: aiida-quantumespresso parser pw.x v3.0.0a5
+    parser_version: 3.0.0a5
     parser_warnings: []
     q_real_space: false
     rho_cutoff: 1360.56917253
@@ -955,8 +955,8 @@ parameters:
     number_of_spin_components: 2
     number_of_symmetries: 8
     occupations: smearing
-    parser_info: aiida-quantumespresso parser pw.x v3.0.0a3
-    parser_version: 3.0.0a3
+    parser_info: aiida-quantumespresso parser pw.x v3.0.0a5
+    parser_version: 3.0.0a5
     parser_warnings: []
     q_real_space: false
     rho_cutoff: 1360.56917253
@@ -1322,8 +1322,8 @@ parameters:
     number_of_spin_components: 2
     number_of_symmetries: 8
     occupations: smearing
-    parser_info: aiida-quantumespresso parser pw.x v3.0.0a3
-    parser_version: 3.0.0a3
+    parser_info: aiida-quantumespresso parser pw.x v3.0.0a5
+    parser_version: 3.0.0a5
     parser_warnings: []
     q_real_space: false
     rho_cutoff: 1360.56917253
@@ -1689,8 +1689,8 @@ parameters:
     number_of_spin_components: 2
     number_of_symmetries: 8
     occupations: smearing
-    parser_info: aiida-quantumespresso parser pw.x v3.0.0a3
-    parser_version: 3.0.0a3
+    parser_info: aiida-quantumespresso parser pw.x v3.0.0a5
+    parser_version: 3.0.0a5
     parser_warnings: []
     q_real_space: false
     rho_cutoff: 1360.56917253
@@ -2056,8 +2056,8 @@ parameters:
     number_of_spin_components: 2
     number_of_symmetries: 8
     occupations: smearing
-    parser_info: aiida-quantumespresso parser pw.x v3.0.0a3
-    parser_version: 3.0.0a3
+    parser_info: aiida-quantumespresso parser pw.x v3.0.0a5
+    parser_version: 3.0.0a5
     parser_warnings: []
     q_real_space: false
     rho_cutoff: 1360.56917253

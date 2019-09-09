@@ -504,7 +504,8 @@ class PwParser(Parser):
 
         return bands
 
-    def get_parser_settings_key(self):
+    @staticmethod
+    def get_parser_settings_key():
         """Return the key that contains the optional parser options in the `settings` input node."""
         return 'parser_options'
 

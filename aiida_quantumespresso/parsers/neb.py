@@ -69,11 +69,11 @@ class NebParser(Parser):
         # load the neb input parameters dictionary
         neb_input_dict = self.node.inputs.parameters.get_dict()
 
-        filepath_stdout = os.path.join(out_folder._repository._get_base_folder().abspath, filename_stdout)
+        stdout_abspath = os.path.join(out_folder._repository._get_base_folder().abspath, filename_stdout)
 
         # First parse the Neb output
         try:
-            neb_out_dict, iteration_data, raw_successful = parse_raw_output_neb(filepath_stdout, neb_input_dict)
+            neb_out_dict, iteration_data, raw_successful = parse_raw_output_neb(stdout_abspath, neb_input_dict)
             # TODO: why do we ignore raw_successful ?
         except QEOutputParsingError as exc:
             self.logger.error('QEOutputParsingError in parse_raw_output_neb: {}'.format(exc))
@@ -110,11 +110,9 @@ class NebParser(Parser):
             retrieved_files = self.retrieved.list_object_names(relative_output_folder)
             for xml_filename in PwCalculation.xml_filenames:
                 if xml_filename in retrieved_files:
-                    xml_file_abspath = os.path.join(out_folder._repository._get_base_folder().abspath,
-                                                    relative_output_folder,
-                                                    xml_filename)
+                    xml_file_path = os.path.join(relative_output_folder, xml_filename)
                     try:
-                        with open(xml_file_abspath) as xml_file:
+                        with out_folder.open(xml_file_path) as xml_file:
                             parsed_data_xml, logs_xml = parse_pw_xml(xml_file, None, include_deprecated_v2_keys)
                     except IOError:
                         return self.exit_codes.ERROR_OUTPUT_XML_READ
@@ -134,11 +132,9 @@ class NebParser(Parser):
                 return self.exit_codes.ERROR_MISSING_XML_FILE
 
             # look for pw output and parse it
-            pw_out_file = os.path.join(out_folder._repository._get_base_folder().abspath,
-                                       '{}_{}'.format(PREFIX, i+1),
-                                       'PW.out')
+            pw_out_file = os.path.join('{}_{}'.format(PREFIX, i+1), 'PW.out')
             try:
-                with open(pw_out_file,'r') as f:
+                with out_folder.open(pw_out_file,'r') as f:
                     pw_out_text = f.read()  # Note: read() and not readlines()
             except IOError:
                 self.logger.error('No pw output file found for image {}'.format(i+1))
@@ -237,18 +233,14 @@ class NebParser(Parser):
 
         # Load the original and interpolated energy profile along the minimum-energy path (mep)
         try:
-            mep_file = os.path.join( out_folder._repository._get_base_folder().abspath,
-                                     PREFIX + '.dat' )
-            mep = numpy.loadtxt(mep_file)
+            mep = numpy.loadtxt(out_folder.open(PREFIX + '.dat', 'r'))
         except Exception:
             self.logger.warning('Impossible to find the file with image energies '
                                 'versus reaction coordinate.')
             mep = numpy.array([[]])
 
         try:
-            interp_mep_file = os.path.join( out_folder._repository._get_base_folder().abspath,
-                                            PREFIX + '.int' )
-            interp_mep = numpy.loadtxt(interp_mep_file)
+            interp_mep = numpy.loadtxt(out_folder.open(PREFIX + '.int', 'r'))
         except Exception:
             self.logger.warning('Impossible to find the file with the interpolation '
                                 'of image energies versus reaction coordinate.')
@@ -262,9 +254,7 @@ class NebParser(Parser):
 
         return
 
-    def get_parser_settings_key(self):
-        """
-        Return the name of the key to be used in the calculation settings, that
-        contains the dictionary with the parser_options
-        """
+    @staticmethod
+    def get_parser_settings_key():
+        """Return the key that contains the optional parser options in the `settings` input node."""
         return 'parser_options'
