@@ -143,21 +143,25 @@ class NebCalculation(CalcJob):
             input_params['PATH'] = {}
 
         # In case of climbing image, we need the corresponding card
-        manual_climbing_image = False
-        if input_params['PATH'].get('ci_scheme', 'no-ci').lower() == 'manual':
+        ci_scheme = input_params['PATH'].get('ci_scheme', 'no-ci').lower()
+        climbing_image_list = settings_dict.pop('CLIMBING_IMAGES', None)
+        if ci_scheme == 'manual':
             manual_climbing_image = True
-            try:
-                climbing_image_list = settings_dict.pop('CLIMBING_IMAGES')
-            except KeyError:
-                raise InputValidationError('No climbing image specified for this calculation')
+            if climbing_image_list is None:
+                raise InputValidationError("'ci_scheme' is {}, but no climbing images were specified for this "
+                                           'calculation.'.format(ci_scheme))
             if not isinstance(climbing_image_list, list):
-                raise InputValidationError('Climbing images should be provided as a list')
+                raise InputValidationError('Climbing images should be provided as a list.')
             num_of_images = input_params['PATH'].get('num_of_images', 2)
             if any([ (i<2 or i>=num_of_images) for i in climbing_image_list ]):
                 raise InputValidationError('The climbing images should be in the range between the first '
-                                           'and the last image (excluded)')
+                                           'and the last image (excluded).')
             climbing_image_card = 'CLIMBING_IMAGES\n'
             climbing_image_card += ', '.join([str(_) for _ in climbing_image_list]) + '\n'
+        else:
+            manual_climbing_image = False
+            if climbing_image_list is not None:
+                raise InputValidationError("Climbing images are not accepted when 'ci_scheme' is {}.".format(ci_scheme))
 
         input_data = u'&PATH\n'
         # namelist content; set to {} if not present, so that we leave an empty namelist
@@ -353,7 +357,7 @@ class NebCalculation(CalcJob):
 
         if settings_dict:
             unknown_keys = ', '.join(list(settings_dict.keys()))
-            raise InputValidationError('`settings` contained unknown keys: {}'.format(unknown_keys))
+            raise InputValidationError('`settings` contained unexpected keys: {}'.format(unknown_keys))
 
         return calcinfo
 

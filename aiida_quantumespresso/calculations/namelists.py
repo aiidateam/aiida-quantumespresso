@@ -186,6 +186,6 @@ class NamelistsCalculation(CalcJob):
 
         if settings:
             unknown_keys = ', '.join(list(settings.keys()))
-            raise exceptions.InputValidationError('`settings` contained unknown keys: {}'.format(unknown_keys))
+            raise exceptions.InputValidationError('`settings` contained unexpected keys: {}'.format(unknown_keys))
 
         return calcinfo
