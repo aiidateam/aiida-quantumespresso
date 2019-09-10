@@ -1,0 +1,1210 @@
+parameters:
+  backward_activation_energy: 0.0
+  ci_scheme: auto
+  climbing_image_auto:
+  - 1
+  converged:
+  - true
+  - 13
+  ds_au: 2.0
+  first_last_opt: false
+  forward_activation_energy: 0.0
+  image_dist: 1.4790502980090499
+  image_energies:
+  - -44.6242679
+  - -44.9089522
+  - -44.6242679
+  image_forces:
+  - 2.419674
+  - 0.037855
+  - 2.176416
+  image_frozen:
+  - true
+  - false
+  - true
+  initial_image_dist: 1.125877428996084
+  initial_path_length: 2.251807775713027
+  k_max: 0.3
+  nstep_path: 20
+  num_of_images: 3
+  opt_scheme: broyden
+  parser_info: aiida-quantumespresso parser neb.x v3.0.0a5
+  parser_version: 3.0.0a5
+  parser_warnings: []
+  path_length: 2.95757141880951
+  path_thr: 0.05
+  pw_output_image_1:
+    absolute_magnetization: 0.51
+    absolute_magnetization_units: Bohrmag / cell
+    atomic_charges_units: e
+    atomic_magnetic_moments_units: Bohrmag / cell
+    beta_real_space: false
+    charge_density: ./charge-density.dat
+    constraint_mag: 0
+    convergence_info:
+      opt_conv:
+        convergence_achieved: false
+        grad_norm: 0.0
+        n_opt_steps: 0
+      scf_conv:
+        convergence_achieved: true
+        n_scf_steps: 9
+        scf_error: 2.251833940343682e-10
+    creator_name: pwscf
+    creator_version: 6.4.1
+    dft_exchange_correlation: PBE
+    do_magnetization: false
+    do_not_use_time_reversal: false
+    energy: -44.624267182280654
+    energy_accuracy: 3.129309096819e-09
+    energy_accuracy_units: eV
+    energy_ewald: -14.711614186417856
+    energy_ewald_units: eV
+    energy_hartree: 14.829921118246032
+    energy_hartree_units: eV
+    energy_one_electron: -19.190455518639293
+    energy_one_electron_units: eV
+    energy_smearing: -0.0
+    energy_smearing_units: eV
+    energy_threshold: 1.04e-09
+    energy_units: eV
+    energy_xc: -25.552118459412615
+    energy_xc_units: eV
+    exit_status: 0
+    fermi_energy: -4.882
+    fermi_energy_units: eV
+    fft_grid:
+    - 40
+    - 15
+    - 15
+    fixed_occupations: false
+    forces_units: ev / angstrom
+    format_name: QEXSD
+    format_version: '19.03'
+    has_dipole_correction: false
+    has_electric_field: false
+    init_wall_time_seconds: 0.1
+    inversion_symmetry: false
+    k_points_units: 1 / angstrom
+    lattice_symmetries:
+    - name: inversion
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      t_rev: '0'
+    - name: 180 deg rotation - cart. axis [0,1,1]
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      t_rev: '0'
+    - name: 180 deg rotation - cart. axis [0,1,-1]
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      t_rev: '0'
+    - name: inv. 180 deg rotation - cart. axis [1,0,0]
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      t_rev: '0'
+    - name: 180 deg rotation - cart. axis [0,1,0]
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      t_rev: '0'
+    - name: 180 deg rotation - cart. axis [0,0,1]
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      t_rev: '0'
+    - name: inv.  90 deg rotation - cart. axis [-1,0,0]
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      t_rev: '0'
+    - name: inv.  90 deg rotation - cart. axis [1,0,0]
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      t_rev: '0'
+    lda_plus_u_calculation: false
+    lkpoint_dir: false
+    lsda: true
+    magnetization_angle1:
+    - 0.0
+    magnetization_angle2:
+    - 0.0
+    monkhorst_pack_grid:
+    - 2
+    - 2
+    - 2
+    monkhorst_pack_offset:
+    - 0
+    - 0
+    - 0
+    no_time_rev_operations: false
+    non_colinear_calculation: false
+    number_of_atomic_wfc: 3
+    number_of_atoms: 3
+    number_of_bands: 6.0
+    number_of_bands_down: 6
+    number_of_bands_up: 6
+    number_of_bravais_symmetries: 16
+    number_of_electrons: 3.0
+    number_of_k_points: 6
+    number_of_species: 1
+    number_of_spin_components: 2
+    number_of_symmetries: 8
+    occupations: smearing
+    parser_info: aiida-quantumespresso parser pw.x v3.0.0a5
+    parser_version: 3.0.0a5
+    parser_warnings: []
+    q_real_space: false
+    rho_cutoff: 1360.56917253
+    rho_cutoff_units: eV
+    scf_iterations: 9
+    smearing_method: true
+    smooth_fft_grid:
+    - 36
+    - 15
+    - 15
+    spin_orbit_calculation: false
+    spin_orbit_domag: false
+    starting_magnetization:
+    - 0.5
+    symmetries:
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: identity
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: 180 deg rotation - cart. axis [1,0,0]
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: ' 90 deg rotation - cart. axis [-1,0,0]'
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: ' 90 deg rotation - cart. axis [1,0,0]'
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: inv. 180 deg rotation - cart. axis [0,0,1]
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: inv. 180 deg rotation - cart. axis [0,1,0]
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: inv. 180 deg rotation - cart. axis [0,1,1]
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: inv. 180 deg rotation - cart. axis [0,1,-1]
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      t_rev: '0'
+    symmetries_units: crystal
+    tetrahedron_method: false
+    time_reversal_flag: true
+    total_force: 2.176515924959634
+    total_force_units: ev / angstrom
+    total_magnetization: 0.5
+    total_magnetization_units: Bohrmag / cell
+    total_number_of_scf_iterations: 9
+    volume: 44.45541285717334
+    wfc_cutoff: 272.113834506
+    wfc_cutoff_units: eV
+  pw_output_image_2:
+    absolute_magnetization: 0.54
+    absolute_magnetization_units: Bohrmag / cell
+    atomic_charges_units: e
+    atomic_magnetic_moments_units: Bohrmag / cell
+    beta_real_space: false
+    charge_density: ./charge-density.dat
+    constraint_mag: 0
+    convergence_info:
+      opt_conv:
+        convergence_achieved: false
+        grad_norm: 0.008222749820632114
+        n_opt_steps: 0
+      scf_conv:
+        convergence_achieved: true
+        n_scf_steps: 6
+        scf_error: 2.987478357372217e-09
+    creator_name: pwscf
+    creator_version: 6.4.1
+    dft_exchange_correlation: PBE
+    do_magnetization: false
+    do_not_use_time_reversal: false
+    energy: -44.90895158748549
+    energy_accuracy: 4.08170751759e-08
+    energy_accuracy_units: eV
+    energy_ewald: -1.351004371247114
+    energy_ewald_units: eV
+    energy_hartree: 25.51983541831449
+    energy_hartree_units: eV
+    energy_one_electron: -42.80506674063469
+    energy_one_electron_units: eV
+    energy_smearing: -0.0
+    energy_smearing_units: eV
+    energy_threshold: 6.92e-10
+    energy_units: eV
+    energy_xc: -26.272715893918175
+    energy_xc_units: eV
+    exit_status: 0
+    fermi_energy: -3.1641
+    fermi_energy_units: eV
+    fft_grid:
+    - 40
+    - 15
+    - 15
+    fixed_occupations: false
+    forces_units: ev / angstrom
+    format_name: QEXSD
+    format_version: '19.03'
+    has_dipole_correction: false
+    has_electric_field: false
+    init_wall_time_seconds: 0.8
+    inversion_symmetry: true
+    k_points_units: 1 / angstrom
+    lattice_symmetries: []
+    lda_plus_u_calculation: false
+    lkpoint_dir: false
+    lsda: true
+    magnetization_angle1:
+    - 0.0
+    magnetization_angle2:
+    - 0.0
+    monkhorst_pack_grid:
+    - 2
+    - 2
+    - 2
+    monkhorst_pack_offset:
+    - 0
+    - 0
+    - 0
+    no_time_rev_operations: false
+    non_colinear_calculation: false
+    number_of_atomic_wfc: 3
+    number_of_atoms: 3
+    number_of_bands: 6.0
+    number_of_bands_down: 6
+    number_of_bands_up: 6
+    number_of_bravais_symmetries: 16
+    number_of_electrons: 3.0
+    number_of_k_points: 6
+    number_of_species: 1
+    number_of_spin_components: 2
+    number_of_symmetries: 16
+    occupations: smearing
+    parser_info: aiida-quantumespresso parser pw.x v3.0.0a5
+    parser_version: 3.0.0a5
+    parser_warnings: []
+    q_real_space: false
+    rho_cutoff: 1360.56917253
+    rho_cutoff_units: eV
+    scf_iterations: 6
+    smearing_method: true
+    smooth_fft_grid:
+    - 36
+    - 15
+    - 15
+    spin_orbit_calculation: false
+    spin_orbit_domag: false
+    starting_magnetization:
+    - 0.5
+    symmetries:
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: identity
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 3
+      - 2
+      - 1
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: 180 deg rotation - cart. axis [0,0,1]
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 3
+      - 2
+      - 1
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: 180 deg rotation - cart. axis [0,1,0]
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: 180 deg rotation - cart. axis [1,0,0]
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 3
+      - 2
+      - 1
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: 180 deg rotation - cart. axis [0,1,1]
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 3
+      - 2
+      - 1
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: 180 deg rotation - cart. axis [0,1,-1]
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: ' 90 deg rotation - cart. axis [-1,0,0]'
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: ' 90 deg rotation - cart. axis [1,0,0]'
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 3
+      - 2
+      - 1
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: inversion
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: inv. 180 deg rotation - cart. axis [0,0,1]
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: inv. 180 deg rotation - cart. axis [0,1,0]
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 3
+      - 2
+      - 1
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: inv. 180 deg rotation - cart. axis [1,0,0]
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: inv. 180 deg rotation - cart. axis [0,1,1]
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: inv. 180 deg rotation - cart. axis [0,1,-1]
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 3
+      - 2
+      - 1
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: inv.  90 deg rotation - cart. axis [-1,0,0]
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 3
+      - 2
+      - 1
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: inv.  90 deg rotation - cart. axis [1,0,0]
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      t_rev: '0'
+    symmetries_units: crystal
+    tetrahedron_method: false
+    time_reversal_flag: true
+    total_force: 0.05353036697773213
+    total_force_units: ev / angstrom
+    total_magnetization: 0.5
+    total_magnetization_units: Bohrmag / cell
+    total_number_of_scf_iterations: 110
+    volume: 44.45541285717334
+    wfc_cutoff: 272.113834506
+    wfc_cutoff_units: eV
+  pw_output_image_3:
+    absolute_magnetization: 0.51
+    absolute_magnetization_units: Bohrmag / cell
+    atomic_charges_units: e
+    atomic_magnetic_moments_units: Bohrmag / cell
+    beta_real_space: false
+    charge_density: ./charge-density.dat
+    constraint_mag: 0
+    convergence_info:
+      opt_conv:
+        convergence_achieved: false
+        grad_norm: 0.1268153988343472
+        n_opt_steps: 0
+      scf_conv:
+        convergence_achieved: true
+        n_scf_steps: 9
+        scf_error: 2.80245941733356e-10
+    creator_name: pwscf
+    creator_version: 6.4.1
+    dft_exchange_correlation: PBE
+    do_magnetization: false
+    do_not_use_time_reversal: false
+    energy: -44.624267182280654
+    energy_accuracy: 3.809593683084e-09
+    energy_accuracy_units: eV
+    energy_ewald: -14.711614186417856
+    energy_ewald_units: eV
+    energy_hartree: 14.829900573651525
+    energy_hartree_units: eV
+    energy_one_electron: -19.19044381774441
+    energy_one_electron_units: eV
+    energy_smearing: -0.0
+    energy_smearing_units: eV
+    energy_threshold: 1.01e-09
+    energy_units: eV
+    energy_xc: -25.55210975176991
+    energy_xc_units: eV
+    exit_status: 0
+    fermi_energy: -4.882
+    fermi_energy_units: eV
+    fft_grid:
+    - 40
+    - 15
+    - 15
+    fixed_occupations: false
+    forces_units: ev / angstrom
+    format_name: QEXSD
+    format_version: '19.03'
+    has_dipole_correction: false
+    has_electric_field: false
+    init_wall_time_seconds: 1.8
+    inversion_symmetry: false
+    k_points_units: 1 / angstrom
+    lattice_symmetries:
+    - name: inversion
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      t_rev: '0'
+    - name: 180 deg rotation - cart. axis [0,1,1]
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      t_rev: '0'
+    - name: 180 deg rotation - cart. axis [0,1,-1]
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      t_rev: '0'
+    - name: inv. 180 deg rotation - cart. axis [1,0,0]
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      t_rev: '0'
+    - name: 180 deg rotation - cart. axis [0,1,0]
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      t_rev: '0'
+    - name: 180 deg rotation - cart. axis [0,0,1]
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      t_rev: '0'
+    - name: inv.  90 deg rotation - cart. axis [-1,0,0]
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      t_rev: '0'
+    - name: inv.  90 deg rotation - cart. axis [1,0,0]
+      rotation:
+      - - -1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      t_rev: '0'
+    lda_plus_u_calculation: false
+    lkpoint_dir: false
+    lsda: true
+    magnetization_angle1:
+    - 0.0
+    magnetization_angle2:
+    - 0.0
+    monkhorst_pack_grid:
+    - 2
+    - 2
+    - 2
+    monkhorst_pack_offset:
+    - 0
+    - 0
+    - 0
+    no_time_rev_operations: false
+    non_colinear_calculation: false
+    number_of_atomic_wfc: 3
+    number_of_atoms: 3
+    number_of_bands: 6.0
+    number_of_bands_down: 6
+    number_of_bands_up: 6
+    number_of_bravais_symmetries: 16
+    number_of_electrons: 3.0
+    number_of_k_points: 6
+    number_of_species: 1
+    number_of_spin_components: 2
+    number_of_symmetries: 8
+    occupations: smearing
+    parser_info: aiida-quantumespresso parser pw.x v3.0.0a5
+    parser_version: 3.0.0a5
+    parser_warnings: []
+    q_real_space: false
+    rho_cutoff: 1360.56917253
+    rho_cutoff_units: eV
+    scf_iterations: 9
+    smearing_method: true
+    smooth_fft_grid:
+    - 36
+    - 15
+    - 15
+    spin_orbit_calculation: false
+    spin_orbit_domag: false
+    starting_magnetization:
+    - 0.5
+    symmetries:
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: identity
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: 180 deg rotation - cart. axis [1,0,0]
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: ' 90 deg rotation - cart. axis [-1,0,0]'
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: ' 90 deg rotation - cart. axis [1,0,0]'
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: inv. 180 deg rotation - cart. axis [0,0,1]
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: inv. 180 deg rotation - cart. axis [0,1,0]
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: inv. 180 deg rotation - cart. axis [0,1,1]
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - -1.0
+      - - 0.0
+        - -1.0
+        - 0.0
+      t_rev: '0'
+    - equivalent_atoms:
+      - 1
+      - 2
+      - 3
+      fractional_translation:
+      - 0.0
+      - 0.0
+      - 0.0
+      name: inv. 180 deg rotation - cart. axis [0,1,-1]
+      rotation:
+      - - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+      - - 0.0
+        - 1.0
+        - 0.0
+      t_rev: '0'
+    symmetries_units: crystal
+    tetrahedron_method: false
+    time_reversal_flag: true
+    total_force: 2.176515924959634
+    total_force_units: ev / angstrom
+    total_magnetization: 0.5
+    total_magnetization_units: Bohrmag / cell
+    total_number_of_scf_iterations: 9
+    volume: 44.45541285717334
+    wfc_cutoff: 272.113834506
+    wfc_cutoff_units: eV
+  restart_mode: from_scratch
+  string_method: neb
+  suggested_k_max_au: 0.1542
+  suggested_k_min_au: 0.1028
+  use_freezing: false
+  wall_time: 11.44s
+  wall_time_seconds: 11.44
+  warnings:
+  - 'error: ERROR_OUTPUT_STDOUT_INCOMPLETE'
+  - 'error: ERROR_IONIC_CONVERGENCE_NOT_REACHED'

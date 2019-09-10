@@ -57,7 +57,11 @@ def launch_calculation(
             [[False, True, True],
              [True, True, True],
              [False, True, True]],
-        'CLIMBING_IMAGES': [4],
+        'CLIMBING_IMAGES': [2],
+        'parser_options': {
+            'include_deprecated_v2_keys': True,
+            'all_iterations': True,
+        },
     }  # yapf: disable
 
     pw_parameters = {
@@ -85,7 +89,7 @@ def launch_calculation(
             'nstep_path': 20,
             'ds': 2.,
             'opt_scheme': 'broyden',
-            'num_of_images': 6,
+            'num_of_images': 3,
             'k_max': 0.3,
             'k_min': 0.2,
             'CI_scheme': 'manual',  # 'manual', 'auto', or 'no-CI'

@@ -39,14 +39,14 @@ def generate_neb_structures():
 @pytest.fixture
 def generate_inputs(generate_neb_structures):
 
-    def _generate_inputs(ci_scheme='auto'):
+    def _generate_inputs(ci_scheme='auto', parser_options=None):
         """Return only those inputs that the parser will expect to be there."""
         first_structure, last_structure = generate_neb_structures()
 
-        if ci_scheme == 'auto':
-            num_images = 5
+        if ci_scheme in ['auto','no-CI']:
+            num_images = 3
         elif ci_scheme == 'manual':
-            num_images = 6
+            num_images = 4
         else:
             raise ValueError('Unexpected ci_scheme')
 
@@ -55,10 +55,7 @@ def generate_inputs(generate_neb_structures):
                 [[False, True, True],
                  [True, True, True],
                  [False, True, True]],
-            'parser_options': {
-                'include_deprecated_v2_keys': True,
-                'all_iterations': True,
-            }
+            'parser_options': parser_options,
         }
         if num_images == 'manual':
             settings['CLIMBING_IMAGES'] = [num_images//2+1]
@@ -112,10 +109,10 @@ def generate_inputs(generate_neb_structures):
     return _generate_inputs
 
 
-@pytest.mark.parametrize('ci_scheme,fixture_data_folder',
-                         [('auto','h2h_symm'),('manual','h2h_asymm')])
-def test_neb_h2h(ci_scheme, fixture_data_folder, fixture_database, fixture_computer_localhost, generate_calc_job_node,
-                 generate_parser, generate_inputs, data_regression, num_regression):
+@pytest.mark.parametrize('ci_scheme, symmetry, depr_keys, all_iter',
+                         [('auto','symm',True,True),('manual','asymm',True,True),('no-CI','symm',True,True)])
+def test_neb_h2h(ci_scheme, symmetry, depr_keys, all_iter, fixture_database, fixture_computer_localhost,
+                 generate_calc_job_node, generate_parser, generate_inputs, data_regression, num_regression):
     """
     Test a NEB calculation with symmetric images and automatic climbing image,
     and with asymmetric images and manual climbing image.
@@ -123,7 +120,13 @@ def test_neb_h2h(ci_scheme, fixture_data_folder, fixture_database, fixture_compu
     entry_point_calc_job = 'quantumespresso.neb'
     entry_point_parser = 'quantumespresso.neb'
 
-    inputs = generate_inputs(ci_scheme=ci_scheme)
+    fixture_data_folder = 'h2h_{}_{}'.format(ci_scheme, symmetry)
+    parser_options = {
+        'include_deprecated_v2_keys': depr_keys,
+        'all_iterations': all_iter,
+    }
+
+    inputs = generate_inputs(ci_scheme=ci_scheme, parser_options=parser_options)
     node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, fixture_data_folder, inputs)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
