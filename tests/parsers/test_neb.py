@@ -7,6 +7,7 @@ import pytest
 
 from aiida import orm
 from aiida.common import AttributeDict
+import numpy as np
 
 
 @pytest.fixture
@@ -148,4 +149,11 @@ def test_neb_h2h(ci_scheme, symmetry, depr_keys, all_iter, fixture_database, fix
     num_data_dict.update({
         arr: results['iteration_array'].get_array(arr).flatten() for arr in results['iteration_array'].get_arraynames()
     })
+
+    # Convert all arrays to floats, to get around this change that disallows diffent-sized arrays for non-float types:
+    # https://github.com/ESSS/pytest-regressions/pull/18
+    for key, val in num_data_dict.items():
+        if not (np.issubdtype(val.dtype, np.floating) or np.issubdtype(val.dtype, np.complexfloating)):
+            num_data_dict[key] = val.astype(np.float64)
+
     num_regression.check(num_data_dict, default_tolerance=dict(atol=0, rtol=1e-18))
