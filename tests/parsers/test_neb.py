@@ -110,34 +110,28 @@ def generate_inputs(generate_neb_structures):
     return _generate_inputs
 
 
-@pytest.mark.parametrize('ci_scheme, symmetry, depr_keys, all_iter',
-                         [('auto','symm',True,True),('manual','asymm',True,True),('no-CI','symm',True,True)])
-def test_neb_h2h(ci_scheme, symmetry, depr_keys, all_iter, fixture_database, fixture_computer_localhost,
-                 generate_calc_job_node, generate_parser, generate_inputs, data_regression, num_regression):
-    """
-    Test a NEB calculation with symmetric images and automatic climbing image,
-    and with asymmetric images and manual climbing image.
-    """
+def test_neb_default(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
+                     generate_inputs, data_regression, num_regression):
+    """Test a NEB calculation with symmetric images and automatic climbing image."""
+    name = 'default'
     entry_point_calc_job = 'quantumespresso.neb'
     entry_point_parser = 'quantumespresso.neb'
 
-    fixture_data_folder = 'h2h_{}_{}'.format(ci_scheme, symmetry)
-    parser_options = {
-        'include_deprecated_v2_keys': depr_keys,
-        'all_iterations': all_iter,
-    }
-
-    inputs = generate_inputs(ci_scheme=ci_scheme, parser_options=parser_options)
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, fixture_data_folder, inputs)
+    inputs = generate_inputs(ci_scheme='auto', parser_options=None)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, inputs)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
     assert 'output_parameters' in results
+    assert 'output_mep' in results
+    assert 'output_trajectory' in results
+    assert 'iteration_array' not in results
 
-    data_dict = {'parameters': results['output_parameters'].get_dict()}
-    data_regression.check(data_dict)
+    data_regression.check({
+        'parameters': results['output_parameters'].get_dict()
+    })
 
     num_data_dict = {}
     num_data_dict.update({
@@ -145,9 +139,6 @@ def test_neb_h2h(ci_scheme, symmetry, depr_keys, all_iter, fixture_database, fix
     })
     num_data_dict.update({
         arr: results['output_trajectory'].get_array(arr).flatten() for arr in ['cells', 'positions']
-    })
-    num_data_dict.update({
-        arr: results['iteration_array'].get_array(arr).flatten() for arr in results['iteration_array'].get_arraynames()
     })
 
     # Convert all arrays to floats, to get around this change that disallows diffent-sized arrays for non-float types:
@@ -157,3 +148,61 @@ def test_neb_h2h(ci_scheme, symmetry, depr_keys, all_iter, fixture_database, fix
             num_data_dict[key] = val.astype(np.float64)
 
     num_regression.check(num_data_dict, default_tolerance=dict(atol=0, rtol=1e-18))
+
+
+def test_neb_all_iterations(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
+                            generate_inputs, data_regression, num_regression):
+    """Test a NEB calculation with symmetric images and automatic climbing image."""
+    name = 'default'
+    entry_point_calc_job = 'quantumespresso.neb'
+    entry_point_parser = 'quantumespresso.neb'
+
+    inputs = generate_inputs(ci_scheme='auto', parser_options={'all_iterations': True})
+    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, inputs)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_parameters' in results
+    assert 'output_mep' in results
+    assert 'output_trajectory' in results
+    assert 'iteration_array' in results
+
+    num_data_dict = {
+        arr: results['iteration_array'].get_array(arr).flatten() for arr in results['iteration_array'].get_arraynames()
+    }
+
+    # Convert all arrays to floats, to get around this change that disallows diffent-sized arrays for non-float types:
+    # https://github.com/ESSS/pytest-regressions/pull/18
+    for key, val in num_data_dict.items():
+        if not (np.issubdtype(val.dtype, np.floating) or np.issubdtype(val.dtype, np.complexfloating)):
+            num_data_dict[key] = val.astype(np.float64)
+
+    num_regression.check(num_data_dict, default_tolerance=dict(atol=0, rtol=1e-18))
+
+
+def test_neb_deprecated_keys(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
+                             generate_inputs, data_regression, num_regression):
+    """Test a NEB calculation with symmetric images and automatic climbing image."""
+    name = 'default'
+    entry_point_calc_job = 'quantumespresso.neb'
+    entry_point_parser = 'quantumespresso.neb'
+
+    inputs = generate_inputs(ci_scheme='auto', parser_options={'include_deprecated_v2_keys': True})
+    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, inputs)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_parameters' in results
+    assert 'output_mep' in results
+    assert 'output_trajectory' in results
+    assert 'iteration_array' not in results
+
+    for img in [1,2,3]:
+        pw_params = results['output_parameters']['pw_output_image_{}'.format(img)]
+        assert pw_params['fixed_occupations'] == False
+        assert pw_params['smearing_method'] == True
+        assert pw_params['tetrahedron_method'] == False

@@ -124,7 +124,7 @@ class NebParser(Parser):
                         import traceback
                         traceback.print_exc()
                         return self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
-                    # this image is dealt with, go to next image
+                    # this image is dealt with, so break the inner loop and go to the next image
                     break
             # otherwise, if none of the filenames we tried exists, exit with an error
             else:
@@ -224,7 +224,7 @@ class NebParser(Parser):
                             )
         self.out('output_trajectory', traj)
 
-        if parser_options.get('all_iterations', False):
+        if (parser_options is not None) and (parser_options.get('all_iterations', False)):
             if iteration_data:
                 arraydata = ArrayData()
                 for k, v in six.iteritems(iteration_data):
