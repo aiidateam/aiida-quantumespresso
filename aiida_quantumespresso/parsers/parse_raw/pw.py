@@ -506,10 +506,15 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
     relax_steps = [i.split('\n') for i in relax_steps]
 
     # now I create a bunch of arrays for every step.
+
+    # initialize the scf_index counter for the next cycle
+    scf_index = 0
     for data_step in relax_steps:
-
         trajectory_frame = {}
-
+        try:
+            trajectory_data['scf_accuracy_index'].append(scf_index)
+        except KeyError:
+            trajectory_data['scf_accuracy_index'] = [0]
         for count, line in enumerate(data_step):
 
             if 'CELL_PARAMETERS' in line:
@@ -601,6 +606,22 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                             trajectory_data['dipole'] = [value]
                         parsed_data['dipole' + units_suffix] = default_dipole_units
                         break
+
+            # saving the SCF convergence accuracy for each SCF cycle
+            # this is not always present in the block starting with 'iteration #'
+            # so the array might be of different size for each relax cycle
+            elif 'estimated scf accuracy' in line:
+                try:
+                    value = float(line.split()[-2])* ry_to_ev
+                    scf_index += 1
+                    trajectory_data['scf_accuracy_index'][-1] += 1
+                    try:
+                        trajectory_data['scf_accuracy'].append(value)
+                    except KeyError:
+                        trajectory_data['scf_accuracy'] = [value]
+                except Exception:
+                    logs.warning.append('Error while parsing scf accuracy.')
+
 
             elif 'convergence has been achieved in' in line or 'convergence NOT achieved after' in line:
                 try:

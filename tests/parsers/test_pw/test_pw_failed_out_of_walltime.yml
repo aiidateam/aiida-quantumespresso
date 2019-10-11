@@ -175,6 +175,10 @@ output_trajectory:
   - 1
   - 2
   - 3
+  array|scf_accuracy:
+  - 12
+  array|scf_accuracy_index:
+  - 1
   array|steps:
   - 1
   symbols:

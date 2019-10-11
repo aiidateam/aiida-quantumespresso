@@ -272,6 +272,10 @@ output_trajectory:
   - 4
   - 2
   - 3
+  array|scf_accuracy:
+  - 33
+  array|scf_accuracy_index:
+  - 5
   array|scf_iterations:
   - 5
   array|steps:
