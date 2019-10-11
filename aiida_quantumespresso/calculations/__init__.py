@@ -612,7 +612,7 @@ def _case_transform_dict(d, dict_name, func_name, transform):
     return new_dict
 
 
-def _pop_parser_options(calc_job_instance, settings_dict):
+def _pop_parser_options(calc_job_instance, settings_dict, ignore_errors=True):
     """This deletes any parser options from the settings dictionary. The parser options key is found
     via the get_parser_settings_key() method of the parser class specified as a metadata input."""
     from aiida.plugins import ParserFactory
@@ -621,10 +621,13 @@ def _pop_parser_options(calc_job_instance, settings_dict):
         parser_name = calc_job_instance.inputs['metadata']['options']['parser_name']
         ParserClass = ParserFactory(parser_name)
         parser_opts_key = ParserClass.get_parser_settings_key().upper()
-        settings_dict.pop(parser_opts_key, None)
-    except (KeyError, EntryPointError, AttributeError):
+        return settings_dict.pop(parser_opts_key, None)
+    except (KeyError, EntryPointError, AttributeError) as exc:
         # KeyError: input 'metadata.options.parser_name' is not defined;
         # EntryPointError: there was an error loading the parser class form its entry point
         #   (this will probably cause errors elsewhere too);
         # AttributeError: the parser class doesn't have a method get_parser_settings_key().
-        pass
+        if ignore_errors:
+            pass
+        else:
+            raise exc
