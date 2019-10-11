@@ -68,7 +68,7 @@ def parse_raw_output_neb(out_file, input_dict, parser_opts=None):
     except QEOutputParsingError as exc:
         if not finished_run:  # I try to parse it as much as possible
             parser_info['parser_warnings'].append('Error while parsing the output file')
-            out_data = {}
+            out_data = {'warnings': []}
             iteration_data = {}
             critical_messages = []
         else:  # if it was finished and I got an error, it's a mistake of the parser

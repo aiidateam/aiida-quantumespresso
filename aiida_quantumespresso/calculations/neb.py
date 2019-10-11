@@ -36,10 +36,6 @@ class NebCalculation(CalcJob):
     _PSEUDO_SUBFOLDER = PwCalculation._PSEUDO_SUBFOLDER
     _OUTPUT_SUBFOLDER = PwCalculation._OUTPUT_SUBFOLDER
 
-    _automatic_namelists = {
-        'scf': ['CONTROL', 'SYSTEM', 'ELECTRONS'],
-    }
-
     # Keywords that cannot be set (for the PW input)
     _blocked_keywords = []
 
@@ -77,7 +73,6 @@ class NebCalculation(CalcJob):
             help='An optional working directory of a previously completed calculation to restart from.')
         # We reuse some inputs from PwCalculation to construct the PW-specific parts of the input files
         spec.expose_inputs(PwCalculation, namespace='pw', include=('parameters','pseudos','kpoints','vdw_table'))
-        #spec.expose_inputs(PwCalculation, namespace='pw', exclude=('structure','settings','hubbard_file','metadata','code'))
         spec.output('output_parameters', valid_type=orm.Dict,
             help='The output parameters dictionary of the NEB calculation')
         spec.output('output_trajectory', valid_type=orm.TrajectoryData)
@@ -201,8 +196,6 @@ class NebCalculation(CalcJob):
         else:
             settings_dict = {}
 
-        parent_calc_folder = self.inputs.get('parent_folder', None)
-        vdw_table = self.inputs.get('pw.vdw_table', None)
         first_structure = self.inputs.first_structure
         last_structure = self.inputs.last_structure
 
@@ -270,6 +263,7 @@ class NebCalculation(CalcJob):
 
         # If present, add also the Van der Waals table to the pseudo dir. Note that the name of the table is not checked
         # but should be the one expected by Quantum ESPRESSO.
+        vdw_table = self.inputs.get('pw.vdw_table', None)
         if vdw_table:
             local_copy_list.append((
                 vdw_table.uuid,
@@ -278,6 +272,7 @@ class NebCalculation(CalcJob):
             ))
 
         # operations for restart
+        parent_calc_folder = self.inputs.get('parent_folder', None)
         symlink = settings_dict.pop('PARENT_FOLDER_SYMLINK', self._default_symlink_usage)  # a boolean
         if symlink:
             if parent_calc_folder is not None:
