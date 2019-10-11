@@ -23,14 +23,14 @@ def generate_neb_structures():
         cell = np.array([[12, 0, 0], [0, 5, 0], [0, 0, 5]]) * bohr_to_ang
 
         structure_1 = StructureData(cell=cell)
-        structure_1.append_atom(position=np.array([-4.56670009, 0., 0.])*bohr_to_ang, symbols=element)
+        structure_1.append_atom(position=np.array([-4.56670009, 0., 0.]) * bohr_to_ang, symbols=element)
         structure_1.append_atom(position=(0., 0., 0.), symbols=element)
-        structure_1.append_atom(position=np.array([1.55776676, 0., 0.])*bohr_to_ang, symbols=element)
+        structure_1.append_atom(position=np.array([1.55776676, 0., 0.]) * bohr_to_ang, symbols=element)
 
         structure_2 = StructureData(cell=cell)
-        structure_2.append_atom(position=np.array([-1.55776676, 0., 0.])*bohr_to_ang, symbols=element)
+        structure_2.append_atom(position=np.array([-1.55776676, 0., 0.]) * bohr_to_ang, symbols=element)
         structure_2.append_atom(position=(0., 0., 0.), symbols=element)
-        structure_2.append_atom(position=np.array([4.56670009, 0., 0.])*bohr_to_ang, symbols=element)
+        structure_2.append_atom(position=np.array([4.56670009, 0., 0.]) * bohr_to_ang, symbols=element)
 
         return structure_1, structure_2
 
@@ -44,7 +44,7 @@ def generate_inputs(generate_neb_structures):
         """Return only those inputs that the parser will expect to be there."""
         first_structure, last_structure = generate_neb_structures()
 
-        if ci_scheme in ['auto','no-CI']:
+        if ci_scheme in ['auto', 'no-CI']:
             num_images = 3
         elif ci_scheme == 'manual':
             num_images = 4
@@ -57,9 +57,9 @@ def generate_inputs(generate_neb_structures):
                  [True, True, True],
                  [False, True, True]],
             'parser_options': parser_options,
-        }
+        }  # yapf: disable
         if num_images == 'manual':
-            settings['CLIMBING_IMAGES'] = [num_images//2+1]
+            settings['CLIMBING_IMAGES'] = [num_images // 2 + 1]
 
         neb_parameters = {
             'PATH': {
@@ -93,7 +93,7 @@ def generate_inputs(generate_neb_structures):
         }
 
         kpoints = orm.KpointsData()
-        kpoints.set_kpoints_mesh([2,2,2])
+        kpoints.set_kpoints_mesh([2, 2, 2])
 
         inputs = {
             'parameters': orm.Dict(dict=neb_parameters),
@@ -201,7 +201,7 @@ def test_neb_deprecated_keys(fixture_database, fixture_computer_localhost, gener
     assert 'output_trajectory' in results
     assert 'iteration_array' not in results
 
-    for img in [1,2,3]:
+    for img in [1, 2, 3]:
         pw_params = results['output_parameters']['pw_output_image_{}'.format(img)]
         assert pw_params['fixed_occupations'] == False
         assert pw_params['smearing_method'] == True
