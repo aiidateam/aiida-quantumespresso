@@ -438,10 +438,11 @@ def _handle_electronic_convergence_not_achieved(self, calculation):
         mixing_beta = self.ctx.inputs.parameters.get('ELECTRONS', {}).get('mixing_beta', self.defaults.qe.mixing_beta)
         mixing_beta_new = mixing_beta * factor
 
-        self.ctx.restart_calc = None
+        self.ctx.restart_calc = calculation
         self.ctx.inputs.parameters.setdefault('ELECTRONS', {})['mixing_beta'] = mixing_beta_new
 
-        action = 'reduced beta mixing from {} to {} and restarting from scratch'.format(mixing_beta, mixing_beta_new)
+        action = 'reduced beta mixing from {} to {} and restarting from the last ' \
+            'calculation'.format(mixing_beta, mixing_beta_new)
         self.report_error_handled(calculation, action)
         return ErrorHandlerReport(True, True)
 
