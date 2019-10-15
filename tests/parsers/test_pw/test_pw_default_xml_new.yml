@@ -54,7 +54,7 @@ output_parameters:
   exit_status: 0
   fermi_energy_units: eV
   fft_grid:
-  - 36
+  - 48
   - 36
   - 36
   format_name: QEXSD
@@ -99,7 +99,7 @@ output_parameters:
   rho_cutoff_units: eV
   scf_iterations: 5
   smooth_fft_grid:
-  - 25
+  - 32
   - 25
   - 25
   spin_orbit_calculation: false

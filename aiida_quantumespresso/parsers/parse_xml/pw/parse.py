@@ -407,7 +407,7 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         'lattice_symmetries': lattice_symmetries,
         'do_not_use_time_reversal': xml_dictionary['input']['symmetry_flags']['noinv'],
         'spin_orbit_domag': xml_dictionary['output']['magnetization']['do_magnetization'],
-        'fft_grid': list(xml_dictionary['output']['basis_set']['fft_grid'].values()),
+        'fft_grid': [value for _, value in sorted(xml_dictionary['output']['basis_set']['fft_grid'].items())],
         'lsda': lsda,
         'number_of_spin_components': nspin,
         'no_time_rev_operations': xml_dictionary['input']['symmetry_flags']['no_t_rev'],
@@ -417,7 +417,7 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         'number_of_symmetries': nsym,          # crystal symmetries
         'wfc_cutoff': xml_dictionary['input']['basis']['ecutwfc'] * hartree_to_ev,
         'rho_cutoff': xml_dictionary['output']['basis_set']['ecutrho'] * hartree_to_ev, # not always printed in input->basis
-        'smooth_fft_grid': list(xml_dictionary['output']['basis_set']['fft_smooth'].values()),
+        'smooth_fft_grid': [value for _, value in sorted(xml_dictionary['output']['basis_set']['fft_smooth'].items())],
         'dft_exchange_correlation': xml_dictionary['input']['dft']['functional'],  # TODO: also parse optional elements of 'dft' tag
             # WARNING: this is different between old XML and new XML
         'spin_orbit_calculation': spin_orbit_calculation,
