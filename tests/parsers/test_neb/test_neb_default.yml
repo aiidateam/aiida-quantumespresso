@@ -180,7 +180,7 @@ parameters:
     non_colinear_calculation: false
     number_of_atomic_wfc: 3
     number_of_atoms: 3
-    number_of_bands: 6.0
+    number_of_bands: 6
     number_of_bands_down: 6
     number_of_bands_up: 6
     number_of_bravais_symmetries: 16
@@ -422,7 +422,7 @@ parameters:
     non_colinear_calculation: false
     number_of_atomic_wfc: 3
     number_of_atoms: 3
-    number_of_bands: 6.0
+    number_of_bands: 6
     number_of_bands_down: 6
     number_of_bands_up: 6
     number_of_bravais_symmetries: 16
@@ -920,7 +920,7 @@ parameters:
     non_colinear_calculation: false
     number_of_atomic_wfc: 3
     number_of_atoms: 3
-    number_of_bands: 6.0
+    number_of_bands: 6
     number_of_bands_down: 6
     number_of_bands_up: 6
     number_of_bravais_symmetries: 16
