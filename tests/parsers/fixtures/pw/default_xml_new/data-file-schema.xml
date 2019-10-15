@@ -627,8 +627,8 @@
       <gamma_only>false</gamma_only>
       <ecutwfc>1.500000000000000e1</ecutwfc>
       <ecutrho>1.200000000000000e2</ecutrho>
-      <fft_grid nr1="36" nr2="36" nr3="36"/>
-      <fft_smooth nr1="25" nr2="25" nr3="25"/>
+      <fft_grid nr1="48" nr2="36" nr3="36"/>
+      <fft_smooth nr1="32" nr2="25" nr3="25"/>
       <ngm>16889</ngm>
       <ngms>5985</ngms>
       <npwx>754</npwx>
