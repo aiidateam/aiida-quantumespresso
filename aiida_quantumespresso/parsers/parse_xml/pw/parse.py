@@ -285,29 +285,41 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
             raise XMLParseError('Unexpected type of symmetry: {}'.format(symmetry_type))
 
     if (nsym != len(symmetries)) or (nrot != len(symmetries)+len(lattice_symmetries)):
-        logs.warning.append('Inconsistent number of symmetries: nsym={}, nrot={}, len(symmetries)={}, len(lattice_symmetries)={}'
-                       .format(nsym, nrot, len(symmetries), len(lattice_symmetries))
+        logs.warning.append(
+            'Inconsistent number of symmetries: nsym={}, nrot={}, len(symmetries)={}, len(lattice_symmetries)={}'.format(
+                nsym, nrot, len(symmetries), len(lattice_symmetries))
         )
 
     # Band structure
-    num_k_points   = xml_dictionary['output']['band_structure']['nks']
-    num_electrons  = xml_dictionary['output']['band_structure']['nelec']
+    num_k_points = xml_dictionary['output']['band_structure']['nks']
+    num_electrons = xml_dictionary['output']['band_structure']['nelec']
     num_atomic_wfc = xml_dictionary['output']['band_structure']['num_of_atomic_wfc']
-    num_bands      = xml_dictionary['output']['band_structure'].get('nbnd')
-    num_bands_up   = xml_dictionary['output']['band_structure'].get('nbnd_up')
-    num_bands_down = xml_dictionary['output']['band_structure'].get('nbnd_dw')
-    if (num_bands_up is None) and (num_bands_down is None):
-        spins = False   # we are either in the non-polarized or non-collinear case
+    num_bands = xml_dictionary['output']['band_structure'].get('nbnd', None)
+    num_bands_up = xml_dictionary['output']['band_structure'].get('nbnd_up', None)
+    num_bands_down = xml_dictionary['output']['band_structure'].get('nbnd_dw', None)
+
+    if num_bands is None and num_bands_up is None and num_bands_down is None:
+        raise XMLParseError('None of `nbnd`, `nbnd_up` or `nbdn_dw` could be parsed.')
+
+    # If both channels are `None` we are dealing with a non spin-polarized or non-collinear calculation
+    elif num_bands_up is None and num_bands_down is None:
+        spins = False
+
+    # If only one of the channels is `None` we raise, because that is an inconsistent result
+    elif num_bands_up is None or num_bands_down is None:
+        raise XMLParseError('Only one of `nbnd_up` and `nbnd_dw` could be parsed')
+
+    # Here it is a spin-polarized calculation, where for pw.x the number of bands in each channel should be identical.
     else:
-        # TODO: is it always nbnd_up==nbnd_dw ?
-        parser_assert((num_bands_up is not None) and (num_bands_down is not None),
-            "Only one of 'nbnd_up' and 'nbnd_dw' was found")
-        if num_bands is not None:
-            parser_assert(num_bands == num_bands_up + num_bands_down,
-                'Inconsistent number of bands: nbnd={}, nbnd_up={}, nbnd_down={}'.format(num_bands, num_bands_up, num_bands_down))
-        else:
-            num_bands = num_bands_up + num_bands_down   # backwards compatibility;
         spins = True
+        if num_bands_up != num_bands_down:
+            raise XMLParseError('different number of bands for spin channels: {} and {}'.format(num_bands_up, num_bands_down))
+
+        if num_bands is not None and num_bands != num_bands_up + num_bands_down:
+            raise XMLParseError('Inconsistent number of bands: nbnd={}, nbnd_up={}, nbnd_down={}'.format(num_bands, num_bands_up, num_bands_down))
+
+        if num_bands is None:
+            num_bands = num_bands_up + num_bands_down   # backwards compatibility;
 
     # k-points
     k_points = []
@@ -395,7 +407,7 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         'lattice_symmetries': lattice_symmetries,
         'do_not_use_time_reversal': xml_dictionary['input']['symmetry_flags']['noinv'],
         'spin_orbit_domag': xml_dictionary['output']['magnetization']['do_magnetization'],
-        'fft_grid': list(xml_dictionary['output']['basis_set']['fft_grid'].values()),
+        'fft_grid': [value for _, value in sorted(xml_dictionary['output']['basis_set']['fft_grid'].items())],
         'lsda': lsda,
         'number_of_spin_components': nspin,
         'no_time_rev_operations': xml_dictionary['input']['symmetry_flags']['no_t_rev'],
@@ -405,7 +417,7 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         'number_of_symmetries': nsym,          # crystal symmetries
         'wfc_cutoff': xml_dictionary['input']['basis']['ecutwfc'] * hartree_to_ev,
         'rho_cutoff': xml_dictionary['output']['basis_set']['ecutrho'] * hartree_to_ev, # not always printed in input->basis
-        'smooth_fft_grid': list(xml_dictionary['output']['basis_set']['fft_smooth'].values()),
+        'smooth_fft_grid': [value for _, value in sorted(xml_dictionary['output']['basis_set']['fft_smooth'].items())],
         'dft_exchange_correlation': xml_dictionary['input']['dft']['functional'],  # TODO: also parse optional elements of 'dft' tag
             # WARNING: this is different between old XML and new XML
         'spin_orbit_calculation': spin_orbit_calculation,
@@ -422,20 +434,17 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
     except KeyError:
         pass  # not using Monkhorst pack
     else:
-        xml_data['monkhorst_pack_grid'] = [monkhorst_pack[attr] for attr in ['@nk1','@nk2','@nk3']]
-        xml_data['monkhorst_pack_offset'] = [monkhorst_pack[attr] for attr in ['@k1','@k2','@k3']]
+        xml_data['monkhorst_pack_grid'] = [monkhorst_pack[attr] for attr in ['@nk1', '@nk2', '@nk3']]
+        xml_data['monkhorst_pack_offset'] = [monkhorst_pack[attr] for attr in ['@k1', '@k2', '@k3']]
 
     if not spins:
         xml_data['number_of_bands'] = num_bands
     else:
-        # QE counts them twice if spin-collinear
-        # if non-collinear-spin, num_bands is None
-        if num_bands % 2:
-            xml_data['number_of_bands'] = float(num_bands)/2
-        else:
-            xml_data['number_of_bands'] = num_bands/2
+        # For collinear spin-polarized calculations `spins=True` and `num_bands` is sum of both channels. To get the
+        # actual number of bands, we divide by two using integer division
+        xml_data['number_of_bands'] = num_bands // 2
 
-    for key,value in [('number_of_bands_up',num_bands_up), ('number_of_bands_down',num_bands_down)]:
+    for key, value in [('number_of_bands_up', num_bands_up), ('number_of_bands_down', num_bands_down)]:
         if value is not None:
             xml_data[key] = value
 
