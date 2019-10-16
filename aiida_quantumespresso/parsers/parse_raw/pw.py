@@ -337,7 +337,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
     lelfield = input_parameters.get('CONTROL', {}).get('lelfield', False)
 
     # Find some useful quantities.
-    if not parsed_xml.get('number_of_bands', None) and not structure_data:
+    if not parsed_xml.get('number_of_bands', None):
         try:
             for line in stdout.split('\n'):
                 if 'lattice parameter (alat)' in line:
@@ -394,7 +394,6 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
     else:
         nat = structure_data['number_of_atoms']
         ntyp = structure_data['number_of_species']
-        nbnd = parsed_xml['number_of_bands']
         alat = structure_data['lattice_parameter_xml']
         volume = structure_data['cell']['volume']
     # NOTE: lattice_parameter_xml is the lattice parameter of the xml file

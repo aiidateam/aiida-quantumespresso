@@ -18,8 +18,11 @@ def get_logging_container():
     :return: :py:class:`~aiida.common.extendeddicts.AttributeDict`
     """
     return AttributeDict({
+        'debug': [],
+        'info': [],
         'warning': [],
         'error': [],
+        'critical': [],
     })
 
 
