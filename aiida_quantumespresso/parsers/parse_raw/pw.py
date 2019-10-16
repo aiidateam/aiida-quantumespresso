@@ -508,13 +508,12 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
     # now I create a bunch of arrays for every step.
 
     # initialize the scf_index counter for the next cycle
-    scf_index = 0
     for data_step in relax_steps:
         trajectory_frame = {}
-        try:
-            trajectory_data['scf_accuracy_index'].append(scf_index)
-        except KeyError:
-            trajectory_data['scf_accuracy_index'] = [0]
+
+        current_index = len(trajectory_data.get('scf_accuracy', []))
+        trajectory_data.setdefault('scf_accuracy_index', []).append(current_index)
+
         for count, line in enumerate(data_step):
 
             if 'CELL_PARAMETERS' in line:
@@ -613,8 +612,6 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
             elif 'estimated scf accuracy' in line:
                 try:
                     value = float(line.split()[-2])* ry_to_ev
-                    scf_index += 1
-                    trajectory_data['scf_accuracy_index'][-1] += 1
                     try:
                         trajectory_data['scf_accuracy'].append(value)
                     except KeyError:
