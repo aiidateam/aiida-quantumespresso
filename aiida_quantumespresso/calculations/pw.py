@@ -136,6 +136,8 @@ class PwCalculation(BasePwCpInputGenerator):
         spec.exit_code(541, 'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION',
             message='The variable cell optimization broke the symmetry of the k-points.')
 
+        spec.exit_code(551, 'ERROR_DEXX_IS_NEGATIVE', message='The code failed with negative dexx in the exchange calculation.')
+
     @classproperty
     def input_file_name_hubbard_file(cls):
         """The relative file name of the file containing the Hubbard parameters if they should be read from file instead

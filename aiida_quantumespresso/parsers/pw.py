@@ -141,6 +141,9 @@ class PwParser(Parser):
         if 'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION' in logs['error']:
             return self.exit_codes.ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION
 
+        if 'ERROR_DEXX_IS_NEGATIVE' in logs['error']:
+            return self.exit_codes.ERROR_DEXX_IS_NEGATIVE
+
     def validate_electronic(self, trajectory, parameters, logs):
         """Analyze problems that are specific to `electronic` type calculations: i.e. `scf`, `nscf` and `bands`."""
         if self.get_calculation_type() not in ['scf', 'nscf', 'bands']:
