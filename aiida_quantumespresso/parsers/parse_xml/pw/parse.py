@@ -107,13 +107,15 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         for err in errors:
             logs.error.append(str(err))
 
+    inputs = xml_dictionary['input']
+    outputs = xml_dictionary['output']
+
     lattice_vectors = [
-        [x * bohr_to_ang for x in xml_dictionary['output']['atomic_structure']['cell']['a1']],
-        [x * bohr_to_ang for x in xml_dictionary['output']['atomic_structure']['cell']['a2']],
-        [x * bohr_to_ang for x in xml_dictionary['output']['atomic_structure']['cell']['a3']],
+        [x * bohr_to_ang for x in outputs['atomic_structure']['cell']['a1']],
+        [x * bohr_to_ang for x in outputs['atomic_structure']['cell']['a2']],
+        [x * bohr_to_ang for x in outputs['atomic_structure']['cell']['a3']],
     ]
 
-    inputs = xml_dictionary['input']
     has_electric_field = inputs.get('electric_field', {}).get('electric_potential', None) == 'sawtooth_potential'
     has_dipole_correction = inputs.get('electric_field', {}).get('dipole_correction', False)
 
@@ -146,21 +148,21 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
             smearing_method = True
 
         if smearing_method:
-            if 'smearing' not in (list(xml_dictionary['output']['band_structure'].keys()) + list(inputs.keys())):
+            if 'smearing' not in (list(outputs['band_structure'].keys()) + list(inputs.keys())):
                 logs.error.append("occupations is '{}' but key 'smearing' is not present under input/bands "
                                   'nor under output/band_structure'.format(occupations))
             # TODO: this error is triggered if no smearing is specified in input. But this is a valid input, so we should't throw an error.
             # Should we ask QE to print something nonetheless?
             # Also happens if occupations='fixed'.
-            # (Example: occupations is 'fixed' but key 'smearing' is not present under input/bandsnor output/band_structure. See calculation 4940, versus 4981.)
+            # (Example: occupations is 'fixed' but key 'smearing' is not present under input/bands nor output/band_structure. See calculation 4940, versus 4981.)
 
     # TODO/NOTE: Not including smearing type and width for now.
     # In the old XML format they are under OCCUPATIONS as SMEARING_TYPE and SMEARING_PARAMETER,
     # but watch out: the value in the old format is half of that in the new format
     # (the code divides it by e2=2.0, see PW/src/pw_restart.f90:446)
     '''
-    if 'smearing' in xml_dictionary['output']['band_structure']:
-        smearing_xml = xml_dictionary['output']['band_structure']['smearing']
+    if 'smearing' in outputs['band_structure']:
+        smearing_xml = outputs['band_structure']['smearing']
     elif 'smearing' in inputs:
         smearing_xml = inputs['smearing']
     try:
@@ -187,7 +189,7 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
     magnetization_angle1 = []
     magnetization_angle2 = []
 
-    for specie in xml_dictionary['output']['atomic_species']['species']:
+    for specie in outputs['atomic_species']['species']:
         starting_magnetization.append(specie.get('starting_magnetization', 0.0))
         magnetization_angle1.append(specie.get('magnetization_angle1', 0.0))
         magnetization_angle2.append(specie.get('magnetization_angle2', 0.0))
@@ -203,10 +205,10 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
     elif spin_constraints == 'total direction':
         constraint_mag = 6
 
-    lsda = xml_dictionary['input']['spin']['lsda']
+    lsda = inputs['spin']['lsda']
     spin_orbit_calculation = inputs['spin']['spinorbit']
-    non_colinear_calculation = xml_dictionary['output']['magnetization']['noncolin']
-    do_magnetization = xml_dictionary['output']['magnetization']['do_magnetization']
+    non_colinear_calculation = outputs['magnetization']['noncolin']
+    do_magnetization = outputs['magnetization']['do_magnetization']
 
     # Time reversal symmetry of the system
     if non_colinear_calculation and do_magnetization:
@@ -227,10 +229,10 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
     inversion_symmetry = False
 
     # See also PW/src/setup.f90
-    nsym = xml_dictionary['output']['symmetries']['nsym']  # crystal symmetries
-    nrot = xml_dictionary['output']['symmetries']['nrot']  # lattice symmetries
+    nsym = outputs['symmetries']['nsym']  # crystal symmetries
+    nrot = outputs['symmetries']['nrot']  # lattice symmetries
 
-    for symmetry in xml_dictionary['output']['symmetries']['symmetry']:
+    for symmetry in outputs['symmetries']['symmetry']:
 
         # There are two types of symmetries, lattice and crystal. The pure inversion (-I) is always a lattice symmetry,
         # so we don't care. But if the pure inversion is also a crystal symmetry, then then the system as a whole
@@ -300,7 +302,7 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         'starting_magnetization': starting_magnetization,
         'has_electric_field': has_electric_field,
         'has_dipole_correction': has_dipole_correction,
-        'lda_plus_u_calculation': 'dftU' in xml_dictionary['output'],
+        'lda_plus_u_calculation': 'dftU' in outputs,
         'format_name': xml_dictionary['general_info']['xml_format']['@NAME'],
         'format_version': xml_dictionary['general_info']['xml_format']['@VERSION'],
         # TODO: check that format version: a) matches the XSD schema version; b) is updated as well
@@ -312,32 +314,32 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         'time_reversal_flag': time_reversal,
         'symmetries': symmetries,
         'lattice_symmetries': lattice_symmetries,
-        'do_not_use_time_reversal': xml_dictionary['input']['symmetry_flags']['noinv'],
-        'spin_orbit_domag': xml_dictionary['output']['magnetization']['do_magnetization'],
-        'fft_grid': [value for _, value in sorted(xml_dictionary['output']['basis_set']['fft_grid'].items())],
+        'do_not_use_time_reversal': inputs['symmetry_flags']['noinv'],
+        'spin_orbit_domag': outputs['magnetization']['do_magnetization'],
+        'fft_grid': [value for _, value in sorted(outputs['basis_set']['fft_grid'].items())],
         'lsda': lsda,
         'number_of_spin_components': nspin,
-        'no_time_rev_operations': xml_dictionary['input']['symmetry_flags']['no_t_rev'],
+        'no_time_rev_operations': inputs['symmetry_flags']['no_t_rev'],
         'inversion_symmetry': inversion_symmetry,  # the old tag was INVERSION_SYMMETRY and was set to (from the code): "invsym    if true the system has inversion symmetry"
         'number_of_bravais_symmetries': nrot,  # lattice symmetries
         'number_of_symmetries': nsym,          # crystal symmetries
-        'wfc_cutoff': xml_dictionary['input']['basis']['ecutwfc'] * hartree_to_ev,
-        'rho_cutoff': xml_dictionary['output']['basis_set']['ecutrho'] * hartree_to_ev,  # not always printed in input->basis
-        'smooth_fft_grid': [value for _, value in sorted(xml_dictionary['output']['basis_set']['fft_smooth'].items())],
-        'dft_exchange_correlation': xml_dictionary['input']['dft']['functional'],  # TODO: also parse optional elements of 'dft' tag
+        'wfc_cutoff': inputs['basis']['ecutwfc'] * hartree_to_ev,
+        'rho_cutoff': outputs['basis_set']['ecutrho'] * hartree_to_ev,  # not always printed in input->basis
+        'smooth_fft_grid': [value for _, value in sorted(outputs['basis_set']['fft_smooth'].items())],
+        'dft_exchange_correlation': inputs['dft']['functional'],  # TODO: also parse optional elements of 'dft' tag
             # WARNING: this is different between old XML and new XML
         'spin_orbit_calculation': spin_orbit_calculation,
-        'q_real_space': xml_dictionary['output']['algorithmic_info']['real_space_q'],
+        'q_real_space': outputs['algorithmic_info']['real_space_q'],
     }
 
     # alat is technically an optional attribute according to the schema,
     # but I don't know what to do if it's missing. atomic_structure is mandatory.
-    output_alat_bohr = xml_dictionary['output']['atomic_structure']['@alat']
+    output_alat_bohr = outputs['atomic_structure']['@alat']
     output_alat_angstrom = output_alat_bohr * bohr_to_ang
 
     # Band structure
-    if 'band_structure' in xml_dictionary['output']:
-        band_structure = xml_dictionary['output']['band_structure']
+    if 'band_structure' in outputs:
+        band_structure = outputs['band_structure']
         num_k_points = band_structure['nks']
         num_electrons = band_structure['nelec']
         num_atomic_wfc = band_structure['num_of_atomic_wfc']
@@ -432,7 +434,7 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         xml_data['bands'] = bands_dict
 
     try:
-        monkhorst_pack = xml_dictionary['input']['k_points_IBZ']['monkhorst_pack']
+        monkhorst_pack = inputs['k_points_IBZ']['monkhorst_pack']
     except KeyError:
         pass  # not using Monkhorst pack
     else:
@@ -442,12 +444,12 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
     if occupations is not None:
         xml_data['occupations'] = occupations
 
-    if 'boundary_conditions' in xml_dictionary['output'] and 'assume_isolated' in xml_dictionary['output']['boundary_conditions']:
-        xml_data['assume_isolated'] = xml_dictionary['output']['boundary_conditions']['assume_isolated']
+    if 'boundary_conditions' in outputs and 'assume_isolated' in outputs['boundary_conditions']:
+        xml_data['assume_isolated'] = outputs['boundary_conditions']['assume_isolated']
 
     # This is not printed by QE 6.3, but will be re-added before the next version
-    if 'real_space_beta' in xml_dictionary['output']['algorithmic_info']:
-        xml_data['beta_real_space'] = xml_dictionary['output']['algorithmic_info']['real_space_beta']
+    if 'real_space_beta' in outputs['algorithmic_info']:
+        xml_data['beta_real_space'] = outputs['algorithmic_info']['real_space_beta']
 
     conv_info = {}
     conv_info_scf = {}
@@ -457,12 +459,12 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
     # TODO: should we parse 'steps' too? Are they already added in the output trajectory?
     for key in ['convergence_achieved', 'n_scf_steps', 'scf_error']:
         try:
-            conv_info_scf[key] = xml_dictionary['output']['convergence_info']['scf_conv'][key]
+            conv_info_scf[key] = outputs['convergence_info']['scf_conv'][key]
         except KeyError:
             pass
     for key in ['convergence_achieved', 'n_opt_steps', 'grad_norm']:
         try:
-            conv_info_opt[key] = xml_dictionary['output']['convergence_info']['opt_conv'][key]
+            conv_info_opt[key] = outputs['convergence_info']['opt_conv'][key]
         except KeyError:
             pass
     if conv_info_scf:
@@ -485,7 +487,7 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         xml_data['smearing_method'] = smearing_method
 
     try:
-        berry_phase = xml_dictionary['output']['electric_field']['BerryPhase']
+        berry_phase = outputs['electric_field']['BerryPhase']
     except KeyError:
         pass
     else:
@@ -529,18 +531,18 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         # - individual electronic phases and weights
 
     # TODO: We should put the `non_periodic_cell_correction` string in (?)
-    atoms = [[atom['@name'], [coord * bohr_to_ang for coord in atom['$']]] for atom in xml_dictionary['output']['atomic_structure']['atomic_positions']['atom']]
-    species = xml_dictionary['output']['atomic_species']['species']
+    atoms = [[atom['@name'], [coord * bohr_to_ang for coord in atom['$']]] for atom in outputs['atomic_structure']['atomic_positions']['atom']]
+    species = outputs['atomic_species']['species']
     structure_data = {
         'atomic_positions_units': 'Angstrom',
         'direct_lattice_vectors_units': 'Angstrom',
         # ??? 'atoms_if_pos_list': [[1, 1, 1], [1, 1, 1]],
-        'number_of_atoms': xml_dictionary['output']['atomic_structure']['@nat'],
+        'number_of_atoms': outputs['atomic_structure']['@nat'],
         'lattice_parameter': output_alat_angstrom,
         'reciprocal_lattice_vectors': [
-            xml_dictionary['output']['basis_set']['reciprocal_lattice']['b1'],
-            xml_dictionary['output']['basis_set']['reciprocal_lattice']['b2'],
-            xml_dictionary['output']['basis_set']['reciprocal_lattice']['b3']
+            outputs['basis_set']['reciprocal_lattice']['b1'],
+            outputs['basis_set']['reciprocal_lattice']['b2'],
+            outputs['basis_set']['reciprocal_lattice']['b3']
         ],
         'atoms': atoms,
         'cell': {
@@ -549,7 +551,7 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
             'atoms': atoms,
         },
         'lattice_parameter_xml': output_alat_bohr,
-        'number_of_species': xml_dictionary['output']['atomic_species']['@ntyp'],
+        'number_of_species': outputs['atomic_species']['@ntyp'],
         'species': {
             'index': [i + 1 for i, specie in enumerate(species)],
             'pseudo': [specie['pseudo_file'] for specie in species],
