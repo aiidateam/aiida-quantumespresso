@@ -27,6 +27,31 @@ def generate_inputs():
     return _generate_inputs
 
 
+def build_num_regression_dictionary(arrays, array_names):
+    """Build a dictionary that can be passed to `num_regression`.
+
+    :param arrays: a list of `ArrayData` nodes
+    :param array_names: a list of array name lists, should have same length as `arrays`
+    :return: dictionary
+    """
+    if len(arrays) != len(array_names):
+        raise ValueError('length of `arrays` and `array_names` should be equal.')
+
+    result = {}
+
+    for index, array in enumerate(arrays):
+        for names in array_names:
+            result[names[index]] = array.get_array(names[index]).flatten()
+
+    # Convert all arrays to floats, to get around this change that disallows diffent-sized arrays for non-float types:
+    # https://github.com/ESSS/pytest-regressions/pull/18
+    for key, val in result.items():
+        if not (np.issubdtype(val.dtype, np.floating) or np.issubdtype(val.dtype, np.complexfloating)):
+            result[key] = val.astype(np.float64)
+
+    return result
+
+
 def test_neb_default(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
         generate_inputs, data_regression, num_regression):
     """Test a NEB calculation with symmetric images and automatic climbing image."""
@@ -53,22 +78,8 @@ def test_neb_default(fixture_database, fixture_computer_localhost, generate_calc
     }
     data_regression.check(data)
 
-    num_data_dict = {}
-
-    num_data_dict.update({
-        arr: results['output_mep'].get_array(arr).flatten() for arr in ['mep', 'interpolated_mep']
-    })
-    num_data_dict.update({
-        arr: results['output_trajectory'].get_array(arr).flatten() for arr in ['cells', 'positions']
-    })
-
-    # Convert all arrays to floats, to get around this change that disallows diffent-sized arrays for non-float types:
-    # https://github.com/ESSS/pytest-regressions/pull/18
-    for key, val in num_data_dict.items():
-        if not (np.issubdtype(val.dtype, np.floating) or np.issubdtype(val.dtype, np.complexfloating)):
-            num_data_dict[key] = val.astype(np.float64)
-
-    num_regression.check(num_data_dict, default_tolerance=dict(atol=0, rtol=1e-18))
+    data = build_num_regression_dictionary([results['output_mep']], [['mep', 'interpolated_mep']])
+    num_regression.check(data, default_tolerance=dict(atol=0, rtol=1e-18))
 
 
 def test_neb_all_iterations(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
@@ -90,22 +101,11 @@ def test_neb_all_iterations(fixture_database, fixture_computer_localhost, genera
     assert 'output_trajectory' in results
     assert 'iteration_array' in results
 
-    data = {
-        'iteration_array': results['iteration_array'].attributes,
-    }
+    data = {'iteration_array': results['iteration_array'].attributes}
     data_regression.check(data)
 
-    num_data_dict = {
-        arr: results['iteration_array'].get_array(arr).flatten() for arr in results['iteration_array'].get_arraynames()
-    }
-
-    # Convert all arrays to floats, to get around this change that disallows diffent-sized arrays for non-float types:
-    # https://github.com/ESSS/pytest-regressions/pull/18
-    for key, val in num_data_dict.items():
-        if not (np.issubdtype(val.dtype, np.floating) or np.issubdtype(val.dtype, np.complexfloating)):
-            num_data_dict[key] = val.astype(np.float64)
-
-    num_regression.check(num_data_dict, default_tolerance=dict(atol=0, rtol=1e-18))
+    data = build_num_regression_dictionary([results['iteration_array']], [results['iteration_array'].get_arraynames()])
+    num_regression.check(data, default_tolerance=dict(atol=0, rtol=1e-18))
 
 
 def test_neb_deprecated_keys(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
