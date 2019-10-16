@@ -58,8 +58,8 @@ class BaseRestartWorkChain(WorkChain):
     def __init__(self, *args, **kwargs):
         super(BaseRestartWorkChain, self).__init__(*args, **kwargs)
 
-        if self._calculation_class is None or not issubclass(self._calculation_class, CalcJob):
-            raise ValueError('no valid CalcJob class defined for `_calculation_class` attribute')
+        if self._calculation_class is None or not issubclass(self._calculation_class, (CalcJob, WorkChain)):
+            raise ValueError('no valid CalcJob or WorkChain class defined for `_calculation_class` attribute')
 
         self._load_error_handlers()
 
