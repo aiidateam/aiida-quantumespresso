@@ -1,91 +1,90 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-from aiida.parsers.parser import Parser
-from aiida.orm.nodes.data.array.bands import KpointsData
-from aiida.orm.nodes.data.dict import Dict
-from aiida_quantumespresso.parsers import convert_qe2aiida_structure
-from aiida_quantumespresso.parsers.parse_xml.pw.parse import parse_pw_xml_post_6_2
-from aiida_quantumespresso.parsers.parse_xml.pw.versions import get_xml_file_version, QeXmlVersion
-from aiida_quantumespresso.parsers.parse_raw.pw import parse_pw_xml_pre_6_2, parse_pw_text_output
-from aiida_quantumespresso.parsers.parse_raw.pw import QEOutputParsingError
-from aiida_quantumespresso.parsers.parse_raw.neb import parse_raw_output_neb
-from aiida_quantumespresso.calculations.neb import NebCalculation
+
 import six
 from six.moves import range
 
+from aiida.common import NotExistent
+from aiida.orm import Dict
+from aiida.parsers.parser import Parser
+from aiida_quantumespresso.parsers import convert_qe2aiida_structure, QEOutputParsingError
+from aiida_quantumespresso.parsers.parse_raw.pw import reduce_symmetries
+from aiida_quantumespresso.parsers.parse_raw.pw import parse_stdout as parse_pw_stdout
+from aiida_quantumespresso.parsers.parse_xml.pw.parse import parse_xml as parse_pw_xml
+from aiida_quantumespresso.parsers.parse_xml.pw.exceptions import XMLParseError, XMLUnsupportedFormatError
+from aiida_quantumespresso.parsers.parse_raw.neb import parse_raw_output_neb
+from aiida_quantumespresso.parsers.pw import PwParser
+from aiida_quantumespresso.calculations.pw import PwCalculation
+
 
 class NebParser(Parser):
-    """
-    This class is the implementation of the Parser class for Neb.
-    """
-
-    _setting_key = 'parser_options'
-
-    def __init__(self,calc):
-        """
-        Initialize the instance of NebParser
-        """
-        # check for valid input
-        if not isinstance(calc,NebCalculation):
-            raise QEOutputParsingError('Input calc must be a NebCalculation')
-
-        super(NebParser, self).__init__(calc)
-
+    """`Parser` implementation for the `NebCalculation` calculation job class."""
 
     def parse(self, **kwargs):
-        """
-        Parses the calculation-output datafolder, and stores
-        results.
+        """Parse the retrieved files of a completed `NebCalculation` into output nodes.
 
-        :param retrieved: a dictionary of retrieved nodes, where the keys
-            are the link names of retrieved nodes, and the values are the
-            nodes.
+        Two nodes that are expected are the default 'retrieved' `FolderData` node which will store the retrieved files
+        permanently in the repository. The second required node is a filepath under the key `retrieved_temporary_files`
+        which should contain the temporary retrieved files.
         """
-        from aiida.common import InvalidOperation
-        from aiida.orm.nodes.data.array.trajectory import TrajectoryData
-        from aiida.orm.nodes.data.array import ArrayData
+        from aiida.orm import TrajectoryData, ArrayData
         import os
         import numpy
-        import copy
 
-        successful = True
-
-        # look for eventual flags of the parser
-        try:
-            parser_opts = self._calc.inputs.settings.get_dict()[self.get_parser_settings_key()]
-        except (AttributeError,KeyError):
-            parser_opts = {}
-
-        # load the pw input dictionary
-        pw_input_dict = self._calc.inputs.pw_parameters.get_dict()
-
-        # load the pw input dictionary
-        neb_input_dict = self._calc.inputs.neb_parameters.get_dict()
+        PREFIX = self.node.process_class._PREFIX
 
         # Check that the retrieved folder is there
         try:
-            out_folder = retrieved[self._calc._get_linkname_retrieved()]
-        except KeyError:
-            self.logger.error('No retrieved folder found')
-            successful = False
-            return successful, ()
+            out_folder = self.retrieved
+        except NotExistent:
+            return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
 
-        # check what is inside the folder
-        list_of_files = out_folder.get_folder_list()
-        # at least the stdout should exist
-        if not self._calc._OUTPUT_FILE_NAME in list_of_files:
-            self.logger.error('Standard output not found')
-            successful = False
-            return successful,()
+        list_of_files = out_folder.list_object_names()  # Note: this includes folders, but not the files they contain.
 
-        out_file = os.path.join( out_folder.get_abs_path('.'),
-                                 self._calc._OUTPUT_FILE_NAME )
+        # The stdout is required for parsing
+        filename_stdout = self.node.get_attribute('output_filename')
+
+        if filename_stdout not in list_of_files:
+            self.logger.error("The standard output file '{}' was not found but is required".format(filename_stdout))
+            return self.exit_codes.ERROR_READING_OUTPUT_FILE
+
+        # Look for optional settings input node and potential 'parser_options' dictionary within it
+        # Note that we look for both NEB and PW parser options under "inputs.settings.parser_options";
+        # we don't even have a namespace "inputs.pw.settings".
+        try:
+            settings = self.node.inputs.settings.get_dict()
+            parser_options = settings[self.get_parser_settings_key()]
+        except (AttributeError, KeyError, NotExistent):
+            settings = {}
+            parser_options = {}
+
+        try:
+            include_deprecated_v2_keys = parser_options['include_deprecated_v2_keys']
+        except (TypeError, KeyError):
+            include_deprecated_v2_keys = False
+
+        # load the pw input parameters dictionary
+        pw_input_dict = self.node.inputs.pw__parameters.get_dict()
+
+        # load the neb input parameters dictionary
+        neb_input_dict = self.node.inputs.parameters.get_dict()
+
+        stdout_abspath = os.path.join(out_folder._repository._get_base_folder().abspath, filename_stdout)
 
         # First parse the Neb output
-        neb_out_dict,iteration_data,raw_successful = parse_raw_output_neb(out_file,neb_input_dict)
+        try:
+            neb_out_dict, iteration_data, raw_successful = parse_raw_output_neb(stdout_abspath, neb_input_dict)
+            # TODO: why do we ignore raw_successful ?
+        except QEOutputParsingError as exc:
+            self.logger.error('QEOutputParsingError in parse_raw_output_neb: {}'.format(exc))
+            return self.exit_codes.ERROR_READING_OUTPUT_FILE
 
-        # if calculation was not considered failed already, use the new value
-        successful = raw_successful if successful else successful
+        for warn_type in ['warnings', 'parser_warnings']:
+            for message in neb_out_dict[warn_type]:
+                self.logger.warning('parsing NEB output: {}'.format(message))
+
+        if 'QE neb run did not reach the end of the execution.' in neb_out_dict['parser_warnings']:
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
 
         # Retrieve the number of images
         try:
@@ -95,168 +94,142 @@ class NebParser(Parser):
                 num_images = neb_out_dict['num_of_images']
             except KeyError:
                 self.logger.error('Impossible to understand the number of images')
-                successful = False
-                return successful, ()
+                return self.exit_codes.ERROR_INVALID_OUTPUT
+        if num_images < 2:
+            self.logger.error('Too few images: {}'.format(num_images))
+            return self.exit_codes.ERROR_INVALID_OUTPUT
 
-        # Now parse the information from the single pw calculations for the different images
+        # Now parse the information from the individual pw calculations for the different images
         image_data = {}
         positions = []
         cells = []
+        # for each image...
         for i in range(num_images):
-            # look for xml and parse
-
-            for xml_filename in self._calc.xml_filenames:
-                if xml_filename in list_of_files:
-                    xml_file = os.path.join(out_folder.get_abs_path('.'),
-                                            self._calc._PREFIX +'_{}'.format(i+1),self._calc._PREFIX+'.save',
-                                            xml_filename)
-
+            # check if any of the known XML output file names are present, and parse the first that we find
+            relative_output_folder = os.path.join('{}_{}'.format(PREFIX, i + 1), '{}.save'.format(PREFIX))
+            retrieved_files = self.retrieved.list_object_names(relative_output_folder)
+            for xml_filename in PwCalculation.xml_filenames:
+                if xml_filename in retrieved_files:
+                    xml_file_path = os.path.join(relative_output_folder, xml_filename)
                     try:
-                        xml_file_version = get_xml_file_version(xml_file)
-                    except ValueError as exception:
-                        raise QEOutputParsingError('failed to determine XML output file version: {}'.format(exception))
-
-                    if xml_file_version == QeXmlVersion.POST_6_2:
-                        xml_data, structure_dict, bands_data = parse_pw_xml_post_6_2(xml_file)
-                    elif xml_file_version == QeXmlVersion.PRE_6_2:
-                        xml_data, structure_dict, bands_data = parse_pw_xml_pre_6_2(xml_file, dir_with_bands)
-                    else:
-                        raise ValueError('unrecognize XML file version')
-
-                    structure_data = convert_qe2aiida_structure(structure_dict)
+                        with out_folder.open(xml_file_path) as xml_file:
+                            parsed_data_xml, logs_xml = parse_pw_xml(xml_file, None, include_deprecated_v2_keys)
+                    except IOError:
+                        return self.exit_codes.ERROR_OUTPUT_XML_READ
+                    except XMLParseError:
+                        return self.exit_codes.ERROR_OUTPUT_XML_PARSE
+                    except XMLUnsupportedFormatError:
+                        return self.exit_codes.ERROR_OUTPUT_XML_FORMAT
+                    except Exception:
+                        import traceback
+                        traceback.print_exc()
+                        return self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
+                    # this image is dealt with, so break the inner loop and go to the next image
+                    break
+            # otherwise, if none of the filenames we tried exists, exit with an error
             else:
-                self.logger.error('No xml output file found for image {}'.format(i+1))
-                successful = False
-                return successful, ()
+                self.logger.error('No xml output file found for image {}'.format(i + 1))
+                return self.exit_codes.ERROR_MISSING_XML_FILE
 
             # look for pw output and parse it
-            pw_out_file = os.path.join(out_folder.get_abs_path('.'),
-                                    self._calc._PREFIX +'_{}'.format(i+1),'PW.out')
+            pw_out_file = os.path.join('{}_{}'.format(PREFIX, i + 1), 'PW.out')
             try:
-                with open(pw_out_file,'r') as f:
-                    pw_out_lines = f.read() # Note: read() and not readlines()
+                with out_folder.open(pw_out_file, 'r') as f:
+                    pw_out_text = f.read()  # Note: read() and not readlines()
             except IOError:
-                self.logger.error('No pw output file found for image {}'.format(i+1))
-                successful = False
-                return successful, ()
+                self.logger.error('No pw output file found for image {}'.format(i + 1))
+                return self.exit_codes.ERROR_READING_OUTPUT_FILE
 
-            pw_out_data,trajectory_data,critical_messages = parse_pw_text_output(pw_out_lines,xml_data,
-                                                                                 structure_dict,pw_input_dict)
+            try:
+                parsed_data_stdout, logs_stdout = parse_pw_stdout(pw_out_text, pw_input_dict, parser_options, parsed_data_xml)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                return self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
 
-            # I add in the out_data all the last elements of trajectory_data values.
-            # Safe for some large arrays, that I will likely never query.
-            skip_keys = ['forces','atomic_magnetic_moments','atomic_charges',
-                         'lattice_vectors_relax','atomic_positions_relax',
-                         'atomic_species_name']
-            tmp_trajectory_data = copy.copy(trajectory_data)
-            for x in six.iteritems(tmp_trajectory_data):
-                if x[0] in skip_keys:
-                    continue
-                pw_out_data[x[0]] = x[1][-1]
-                if len(x[1])==1: # delete eventual keys that are not arrays
-                    trajectory_data.pop(x[0])
-            # As the k points are an array that is rather large, and again it's not something I'm going to parse likely
-            # since it's an info mainly contained in the input file, I move it to the trajectory data
-            for key in ['k_points','k_points_weights']:
-                try:
-                    trajectory_data[key] = xml_data.pop(key)
-                except KeyError:
-                    pass
+            parsed_structure = parsed_data_stdout.pop('structure', {})
+            parsed_trajectory = parsed_data_stdout.pop('trajectory', {})
+            parsed_parameters = PwParser.build_output_parameters(parsed_data_xml, parsed_data_stdout)
 
-            key = 'pw_output_image_{}'.format(i+1)
-            image_data[key] = dict(list(pw_out_data.items()) + list(xml_data.items()))
+            # Explicit information about k-points does not need to be queryable so we remove it from the parameters
+            parsed_parameters.pop('k_points', None)
+            parsed_parameters.pop('k_points_units', None)
+            parsed_parameters.pop('k_points_weights', None)
+
+            # Delete bands # TODO: this is just to make pytest happy; do we want to keep them instead?
+            parsed_parameters.pop('bands', None)
+
+            # Append the last frame of some of the smaller trajectory arrays to the parameters for easy querying
+            PwParser.final_trajectory_frame_to_parameters(parsed_parameters, parsed_trajectory)
+
+            # If the parser option 'all_symmetries' is False, we reduce the raw parsed symmetries to save space
+            all_symmetries = False if parser_options is None else parser_options.get('all_symmetries', False)
+            if not all_symmetries and 'cell' in parsed_structure:
+                reduce_symmetries(parsed_parameters, parsed_structure, self.logger)
+
+            structure_data = convert_qe2aiida_structure(parsed_structure)
+
+            key = 'pw_output_image_{}'.format(i + 1)
+            image_data[key] = parsed_parameters
 
             positions.append([site.position for site in structure_data.sites])
             cells.append(structure_data.cell)
 
-            # If a warning was already present in the NEB, add also PW warnings to the neb output data,
-            # avoiding repetitions.
-            if neb_out_dict['warnings']:
-                for warning in pw_out_data['warnings']:
-                    if warning not in neb_out_dict['warnings']:
-                        neb_out_dict['warnings'].append(warning)
+            # Add also PW warnings and errors to the neb output data, avoiding repetitions.
+            for log_type in ['warning', 'error']:
+                for message in logs_stdout[log_type]:
+                    formatted_message = '{}: {}'.format(log_type, message)
+                    if formatted_message not in neb_out_dict['warnings']:
+                        neb_out_dict['warnings'].append(formatted_message)
 
         # Symbols can be obtained simply from the last image
-        symbols = [ str(site.kind_name) for site in structure_data.sites]
+        symbols = [str(site.kind_name) for site in structure_data.sites]
 
-        new_nodes_list = []
+        output_params = Dict(dict=dict(list(neb_out_dict.items()) + list(image_data.items())))
+        self.out('output_parameters', output_params)
 
-        # convert the dictionary into an AiiDA object
-        output_params = Dict(dict=dict(list(neb_out_dict.items())+list(image_data.items())))
+        trajectory = TrajectoryData()
+        trajectory.set_trajectory(
+            stepids=numpy.arange(1, num_images + 1),
+            cells=numpy.array(cells),
+            symbols=symbols,
+            positions=numpy.array(positions),
+        )
+        self.out('output_trajectory', trajectory)
 
-        # return it to the execmanager
-        new_nodes_list.append((self.get_linkname_outparams(),output_params))
-
-        # convert data on structure of images into a TrajectoryData
-        traj = TrajectoryData()
-        traj.set_trajectory(stepids = numpy.arange(1,num_images+1),
-                            cells = numpy.array(cells),
-                            symbols = numpy.array(symbols),
-                            positions = numpy.array(positions),
-                            )
-
-        # return it to the execmanager
-        new_nodes_list.append((self.get_linkname_outtrajectory(),traj))
-
-        if parser_opts.get('all_iterations',False):
+        if parser_options is not None and parser_options.get('all_iterations', False):
             if iteration_data:
-                from aiida.orm.nodes.data.array import ArrayData
-
                 arraydata = ArrayData()
-                for x in six.iteritems(iteration_data):
-                    arraydata.set_array(x[0],numpy.array(x[1]))
-                new_nodes_list.append((self.get_linkname_iterationarray(),arraydata))
+                for k, v in six.iteritems(iteration_data):
+                    arraydata.set_array(k, numpy.array(v))
+                self.out('iteration_array', arraydata)
 
         # Load the original and interpolated energy profile along the minimum-energy path (mep)
         try:
-            mep_file = os.path.join( out_folder.get_abs_path('.'),
-                                                self._calc._PREFIX + '.dat' )
-            mep = numpy.loadtxt(mep_file)
+            filename = PREFIX + '.dat'
+            with out_folder.open(filename, 'r') as handle:
+                mep = numpy.loadtxt(handle)
         except Exception:
-            self.logger.warning('Impossible to find the file with image energies '
-                                'versus reaction coordinate.')
+            self.logger.warning('could not open expected output file `{}`.'.format(filename))
             mep = numpy.array([[]])
 
         try:
-            interp_mep_file = os.path.join( out_folder.get_abs_path('.'),
-                                                self._calc._PREFIX + '.int' )
-            interp_mep = numpy.loadtxt(interp_mep_file)
+            filename = PREFIX + '.int'
+            with out_folder.open(filename, 'r') as handle:
+                interp_mep = numpy.loadtxt(handle)
         except Exception:
-            self.logger.warning('Impossible to find the file with the interpolation '
-                                'of image energies versus reaction coordinate.')
+            self.logger.warning('could not open expected output file `{}`.'.format(filename))
             interp_mep = numpy.array([[]])
+
         # Create an ArrayData with the energy profiles
         mep_arraydata = ArrayData()
         mep_arraydata.set_array('mep', mep)
         mep_arraydata.set_array('interpolated_mep', interp_mep)
-        new_nodes_list.append((self.get_linkname_meparray(),mep_arraydata))
+        self.out('output_mep', mep_arraydata)
 
-        return successful,new_nodes_list
+        return
 
-    def get_parser_settings_key(self):
-        """
-        Return the name of the key to be used in the calculation settings, that
-        contains the dictionary with the parser_options
-        """
+    @staticmethod
+    def get_parser_settings_key():
+        """Return the key that contains the optional parser options in the `settings` input node."""
         return 'parser_options'
-
-    def get_linkname_iterationarray(self):
-        """
-        Returns the name of the link to the ArrayData
-        containing data from neb iterations
-        """
-        return 'iteration_array'
-
-    def get_linkname_outtrajectory(self):
-        """
-        Returns the name of the link to the output_trajectory.
-        """
-        return 'output_trajectory'
-
-    def get_linkname_meparray(self):
-        """
-        Returns the name of the link to the ArrayData
-        with the information on the minimum energy path
-        (energy versus reaction coordinate, original and interpolated)
-        """
-        return 'output_mep'

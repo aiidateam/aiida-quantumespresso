@@ -2,12 +2,12 @@
 from __future__ import absolute_import
 
 import numpy
-from six.moves import zip
 
 from aiida import orm
 from aiida.common import exceptions
 from aiida.parsers import Parser
 
+from aiida_quantumespresso.parsers.parse_raw.pw import reduce_symmetries
 from aiida_quantumespresso.utils.mapping import get_logging_container
 
 
@@ -45,7 +45,7 @@ class PwParser(Parser):
                 return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
 
         parameters = self.node.inputs.parameters.get_dict()
-        parsed_xml, logs_xml = self.parse_xml(dir_with_bands)
+        parsed_xml, logs_xml = self.parse_xml(dir_with_bands, parser_options)
         parsed_stdout, logs_stdout = self.parse_stdout(parameters, parser_options, parsed_xml)
 
         parsed_bands = parsed_stdout.pop('bands', {})
@@ -56,8 +56,10 @@ class PwParser(Parser):
         # Append the last frame of some of the smaller trajectory arrays to the parameters for easy querying
         self.final_trajectory_frame_to_parameters(parsed_parameters, parsed_trajectory)
 
-        # If the parser option 'all_symmetries' is not set to True, we reduce the raw parsed symmetries to safe space
-        self.reduce_symmetries(parsed_parameters, parsed_structure, parser_options)
+        # If the parser option 'all_symmetries' is False, we reduce the raw parsed symmetries to save space
+        all_symmetries = False if parser_options is None else parser_options.get('all_symmetries', False)
+        if not all_symmetries and 'cell' in parsed_structure:
+            reduce_symmetries(parsed_parameters, parsed_structure, self.logger)
 
         structure = self.build_output_structure(parsed_structure)
         kpoints = self.build_output_kpoints(parsed_parameters, structure)
@@ -232,10 +234,11 @@ class PwParser(Parser):
         self.logger.error(exit_code.message)
         return exit_code
 
-    def parse_xml(self, dir_with_bands=None):
+    def parse_xml(self, dir_with_bands=None, parser_options=None):
         """Parse the XML output file.
 
         :param dir_with_bands: absolute path to directory containing individual k-point XML files for old XML format.
+        :param parser_options: optional dictionary with parser options
         :return: tuple of two dictionaries, first with raw parsed data and second with log messages
         """
         from .parse_xml.pw.exceptions import XMLParseError, XMLUnsupportedFormatError
@@ -250,13 +253,18 @@ class PwParser(Parser):
         if not xml_files:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_MISSING
             return parsed_data, logs
-        elif len(xml_files) > 1:
+        if len(xml_files) > 1:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_MULTIPLE
             return parsed_data, logs
 
         try:
+            include_deprecated_keys = parser_options['include_deprecated_v2_keys']
+        except (TypeError,KeyError):
+            include_deprecated_keys = False
+
+        try:
             with self.retrieved.open(xml_files[0]) as xml_file:
-                parsed_data, logs = parse_xml(xml_file, dir_with_bands)
+                parsed_data, logs = parse_xml(xml_file, dir_with_bands, include_deprecated_keys)
         except IOError:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_READ
         except XMLParseError:
@@ -343,7 +351,8 @@ class PwParser(Parser):
                     except AttributeError:
                         pass
 
-    def build_output_parameters(self, parsed_stdout, parsed_xml):
+    @staticmethod
+    def build_output_parameters(parsed_stdout, parsed_xml):
         """Build the dictionary of output parameters from the raw parsed data.
 
         The output parameters are based on the union of raw parsed data from the XML and stdout output files.
@@ -386,7 +395,8 @@ class PwParser(Parser):
 
         return convert_qe2aiida_structure(parsed_structure, self.node.inputs.structure)
 
-    def build_output_trajectory(self, parsed_trajectory, structure):
+    @staticmethod
+    def build_output_trajectory(parsed_trajectory, structure):
         """Build the output trajectory from the raw parsed trajectory data.
 
         :param parsed_trajectory: the raw parsed trajectory data
@@ -496,11 +506,13 @@ class PwParser(Parser):
 
         return bands
 
-    def get_parser_settings_key(self):
+    @staticmethod
+    def get_parser_settings_key():
         """Return the key that contains the optional parser options in the `settings` input node."""
         return 'parser_options'
 
-    def final_trajectory_frame_to_parameters(self, parameters, parsed_trajectory):
+    @staticmethod
+    def final_trajectory_frame_to_parameters(parameters, parsed_trajectory):
         """Copy the last frame of certain properties from the `TrajectoryData` to the outputs parameters.
 
         This makes these properties queryable.
@@ -514,6 +526,10 @@ class PwParser(Parser):
             'energy_threshold',
             'energy_vdw',
             'energy_xc',
+            'energy_smearing',
+            'energy_one_center_paw',
+            'energy_est_exchange',
+            'energy_fock',
             'scf_iterations',
             'fermi_energy',
             'total_force',
@@ -528,122 +544,11 @@ class PwParser(Parser):
 
             parameters[property_key] = property_values[-1]
 
-    def reduce_symmetries(self, parsed_parameters, parsed_structure, parser_options=None):
-        """Reduce the symmetry information parsed from the output to save space.
-
-        In the standard output, each symmetry operation print two rotation matrices:
-
-            * S_cryst^T: matrix in crystal coordinates, transposed
-            * S_cart: matrix in cartesian coordinates,
-
-        The XML files only print one matrix:
-
-            * S_cryst: matrix in crystal coordinates
-
-        The raw parsed symmetry information from the XML is large and will load the database heavily if stored as
-        is for each calculation. Instead, we will map these dictionaries onto a static dictionary of rotation
-        matrices generated by the _get_qe_symmetry_list static method. This dictionary will return the rotation
-        matrices in cartesian coordinates, i.e. S_cart. In order to compare the raw matrices from the XML to these
-        static matrices we have to convert S_cryst into S_cart. We derive here how that is done:
-
-            S_cryst * v_cryst = v_cryst'
-
-        where v_cryst' is the rotated vector v_cryst under S_cryst
-        We define `cell` where cell vectors are rows. Converting a vector from crystal to cartesian
-        coordinates is defined as:
-
-            cell^T * v_cryst = v_cart
-
-        The inverse of this operation is defined as
-
-            v_cryst = cell^Tinv * v_cart
-
-        Replacing the last equation into the first we find:
-
-            S_cryst * cell^Tinv * v_cart = cell^Tinv * v_cart'
-
-        Multiply on the left with cell^T gives:
-
-            cell^T * S_cryst * cell^Tinv * v_cart = v_cart'
-
-        which can be rewritten as:
-
-            S_cart * v_cart = v_cart'
-
-        where:
-
-            S_cart = cell^T * S_cryst * cell^Tinv
-
-        We compute here the transpose and its inverse of the structure cell basis, which is needed to transform
-        the parsed rotation matrices, which are in crystal coordinates, to cartesian coordinates, which are the
-        matrices that are returned by the _get_qe_symmetry_list staticmethod
-        """
-        from aiida_quantumespresso.utils.linalg import are_matrices_equal
-
-        all_symmetries = False if parser_options is None else parser_options.get('all_symmetries', False)
-
-        if all_symmetries or 'cell' not in parsed_structure:
-            return
-
-        cell = parsed_structure['cell']['lattice_vectors']
-        cell_T = numpy.transpose(cell)
-        cell_Tinv = numpy.linalg.inv(cell_T)
-        possible_symmetries = self._get_qe_symmetry_list()
-
-        # for symmetry_type in ['symmetries', 'lattice_symmetries']:  # crystal vs. lattice symmetries
-        for symmetry_type in ['symmetries']:  # crystal vs. lattice symmetries
-            if symmetry_type in list(parsed_parameters.keys()):
-                try:
-                    old_symmetries = parsed_parameters[symmetry_type]
-                    new_symmetries = []
-                    for this_sym in old_symmetries:
-                        name = this_sym['name'].strip()
-                        for i, this in enumerate(possible_symmetries):
-                            # Since we do an exact comparison we strip the string name from whitespace
-                            # and as soon as it is matched, we break to prevent it from matching another
-                            if name == this['name'].strip():
-                                index = i
-                                break
-                        else:
-                            index = None
-                            self.logger.error('Symmetry {} not found'.format(name))
-
-                        new_dict = {}
-                        if index is not None:
-                            # The raw parsed rotation matrix is in crystal coordinates, whereas the mapped rotation
-                            # in possible_symmetries is in cartesian coordinates. To allow them to be compared
-                            # to make sure we matched the correct rotation symmetry, we first convert the parsed matrix
-                            # to cartesian coordinates. For explanation of the method, see comment above.
-                            rotation_cryst = this_sym['rotation']
-                            rotation_cart_new = possible_symmetries[index]['matrix']
-                            rotation_cart_old = numpy.dot(cell_T, numpy.dot(rotation_cryst, cell_Tinv))
-
-                            inversion = possible_symmetries[index]['inversion']
-                            if not are_matrices_equal(rotation_cart_old, rotation_cart_new, swap_sign_matrix_b=inversion):
-                                self.logger.error('Mapped rotation matrix {} does not match the original rotation {}'
-                                    .format(rotation_cart_new, rotation_cart_old))
-                                new_dict['all_symmetries'] = this_sym
-                            else:
-                                # Note: here I lose the information about equivalent ions and fractional_translation
-                                # since I don't copy them to new_dict (but they can be reconstructed).
-                                new_dict['t_rev'] = this_sym['t_rev']
-                                new_dict['symmetry_number'] = index
-                        else:
-                            new_dict['all_symmetries'] = this_sym
-
-                        new_symmetries.append(new_dict)
-
-                    parsed_parameters[symmetry_type] = new_symmetries  # and overwrite the old one
-                except KeyError:
-                    self.logger.warning("key '{}' is not present in raw output dictionary".format(symmetry_type))
-            else:
-                # backwards-compatiblity: 'lattice_symmetries' is not created in older versions of the parser
-                if symmetry_type != 'lattice_symmetries':
-                    self.logger.warning("key '{}' is not present in raw output dictionary".format(symmetry_type))
-
     def get_extended_symmetries(self):
         """Return the extended dictionary of symmetries based on reduced symmetries stored in output parameters."""
-        possible_symmetries = self._get_qe_symmetry_list()
+        from aiida_quantumespresso.parsers.parse_raw.pw import get_symmetry_mapping
+
+        possible_symmetries = get_symmetry_mapping()
         parameters = self.node.get_outgoing(node_class=orm.Dict).get_node_by_label('output_parameters')
 
         symmetries_extended = []
@@ -667,132 +572,3 @@ class PwParser(Parser):
             symmetries_extended.append(symmetry)
 
         return symmetries_extended
-
-    @staticmethod
-    def _get_qe_symmetry_list():
-        """
-        Hard coded names and rotation matrices + inversion from QE v 5.0.2
-        Function for Parser class usage only.
-
-        :return: a list of dictionaries, each containing name (string),
-            inversion (boolean) and matrix (list of lists)
-        """
-        sin3 = 0.866025403784438597
-        cos3 = 0.5
-        msin3 = -0.866025403784438597
-        mcos3 = -0.5
-
-        # 32 rotations that are checked + inversion taken from symm_base.f90 from the QE source code
-        # They are in Fortran format and therefore transposed with respect to the default python format
-        transposed_matrices_cartesian = [
-            [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]],
-            [[-1., 0., 0.], [0., -1., 0.], [0., 0., 1.]],
-            [[-1., 0., 0.], [0., 1., 0.], [0., 0., -1.]],
-            [[1., 0., 0.], [0., -1., 0.], [0., 0., -1.]],
-            [[0., 1., 0.], [1., 0., 0.], [0., 0., -1.]],
-            [[0., -1., 0.], [-1., 0., 0.], [0., 0., -1.]],
-            [[0., -1., 0.], [1., 0., 0.], [0., 0., 1.]],
-            [[0., 1., 0.], [-1., 0., 0.], [0., 0., 1.]],
-            [[0., 0., 1.], [0., -1., 0.], [1., 0., 0.]],
-            [[0., 0., -1.], [0., -1., 0.], [-1., 0., 0.]],
-            [[0., 0., -1.], [0., 1., 0.], [1., 0., 0.]],
-            [[0., 0., 1.], [0., 1., 0.], [-1., 0., 0.]],
-            [[-1., 0., 0.], [0., 0., 1.], [0., 1., 0.]],
-            [[-1., 0., 0.], [0., 0., -1.], [0., -1., 0.]],
-            [[1., 0., 0.], [0., 0., -1.], [0., 1., 0.]],
-            [[1., 0., 0.], [0., 0., 1.], [0., -1., 0.]],
-            [[0., 0., 1.], [1., 0., 0.], [0., 1., 0.]],
-            [[0., 0., -1.], [-1., 0., 0.], [0., 1., 0.]],
-            [[0., 0., -1.], [1., 0., 0.], [0., -1., 0.]],
-            [[0., 0., 1.], [-1., 0., 0.], [0., -1., 0.]],
-            [[0., 1., 0.], [0., 0., 1.], [1., 0., 0.]],
-            [[0., -1., 0.], [0., 0., -1.], [1., 0., 0.]],
-            [[0., -1., 0.], [0., 0., 1.], [-1., 0., 0.]],
-            [[0., 1., 0.], [0., 0., -1.], [-1., 0., 0.]],
-            [[cos3, sin3, 0.], [msin3, cos3, 0.], [0., 0., 1.]],
-            [[cos3, msin3, 0.], [sin3, cos3, 0.], [0., 0., 1.]],
-            [[mcos3, sin3, 0.], [msin3, mcos3, 0.], [0., 0., 1.]],
-            [[mcos3, msin3, 0.], [sin3, mcos3, 0.], [0., 0., 1.]],
-            [[cos3, msin3, 0.], [msin3, mcos3, 0.], [0., 0., -1.]],
-            [[cos3, sin3, 0.], [sin3, mcos3, 0.], [0., 0., -1.]],
-            [[mcos3, msin3, 0.], [msin3, cos3, 0.], [0., 0., -1.]],
-            [[mcos3, sin3, 0.], [sin3, cos3, 0.], [0., 0., -1.]],
-        ]
-
-        # Names for the 32 matrices, with and without inversion
-        matrices_name = [
-            'identity                                     ',
-            '180 deg rotation - cart. axis [0,0,1]        ',
-            '180 deg rotation - cart. axis [0,1,0]        ',
-            '180 deg rotation - cart. axis [1,0,0]        ',
-            '180 deg rotation - cart. axis [1,1,0]        ',
-            '180 deg rotation - cart. axis [1,-1,0]       ',
-            ' 90 deg rotation - cart. axis [0,0,-1]       ',
-            ' 90 deg rotation - cart. axis [0,0,1]        ',
-            '180 deg rotation - cart. axis [1,0,1]        ',
-            '180 deg rotation - cart. axis [-1,0,1]       ',
-            ' 90 deg rotation - cart. axis [0,1,0]        ',
-            ' 90 deg rotation - cart. axis [0,-1,0]       ',
-            '180 deg rotation - cart. axis [0,1,1]        ',
-            '180 deg rotation - cart. axis [0,1,-1]       ',
-            ' 90 deg rotation - cart. axis [-1,0,0]       ',
-            ' 90 deg rotation - cart. axis [1,0,0]        ',
-            '120 deg rotation - cart. axis [-1,-1,-1]     ',
-            '120 deg rotation - cart. axis [-1,1,1]       ',
-            '120 deg rotation - cart. axis [1,1,-1]       ',
-            '120 deg rotation - cart. axis [1,-1,1]       ',
-            '120 deg rotation - cart. axis [1,1,1]        ',
-            '120 deg rotation - cart. axis [-1,1,-1]      ',
-            '120 deg rotation - cart. axis [1,-1,-1]      ',
-            '120 deg rotation - cart. axis [-1,-1,1]      ',
-            ' 60 deg rotation - cryst. axis [0,0,1]       ',
-            ' 60 deg rotation - cryst. axis [0,0,-1]      ',
-            '120 deg rotation - cryst. axis [0,0,1]       ',
-            '120 deg rotation - cryst. axis [0,0,-1]      ',
-            '180 deg rotation - cryst. axis [1,-1,0]      ',
-            '180 deg rotation - cryst. axis [2,1,0]       ',
-            '180 deg rotation - cryst. axis [0,1,0]       ',
-            '180 deg rotation - cryst. axis [1,1,0]       ',
-            'inversion                                    ',
-            'inv. 180 deg rotation - cart. axis [0,0,1]   ',
-            'inv. 180 deg rotation - cart. axis [0,1,0]   ',
-            'inv. 180 deg rotation - cart. axis [1,0,0]   ',
-            'inv. 180 deg rotation - cart. axis [1,1,0]   ',
-            'inv. 180 deg rotation - cart. axis [1,-1,0]  ',
-            'inv.  90 deg rotation - cart. axis [0,0,-1]  ',
-            'inv.  90 deg rotation - cart. axis [0,0,1]   ',
-            'inv. 180 deg rotation - cart. axis [1,0,1]   ',
-            'inv. 180 deg rotation - cart. axis [-1,0,1]  ',
-            'inv.  90 deg rotation - cart. axis [0,1,0]   ',
-            'inv.  90 deg rotation - cart. axis [0,-1,0]  ',
-            'inv. 180 deg rotation - cart. axis [0,1,1]   ',
-            'inv. 180 deg rotation - cart. axis [0,1,-1]  ',
-            'inv.  90 deg rotation - cart. axis [-1,0,0]  ',
-            'inv.  90 deg rotation - cart. axis [1,0,0]   ',
-            'inv. 120 deg rotation - cart. axis [-1,-1,-1]',
-            'inv. 120 deg rotation - cart. axis [-1,1,1]  ',
-            'inv. 120 deg rotation - cart. axis [1,1,-1]  ',
-            'inv. 120 deg rotation - cart. axis [1,-1,1]  ',
-            'inv. 120 deg rotation - cart. axis [1,1,1]   ',
-            'inv. 120 deg rotation - cart. axis [-1,1,-1] ',
-            'inv. 120 deg rotation - cart. axis [1,-1,-1] ',
-            'inv. 120 deg rotation - cart. axis [-1,-1,1] ',
-            'inv.  60 deg rotation - cryst. axis [0,0,1]  ',
-            'inv.  60 deg rotation - cryst. axis [0,0,-1] ',
-            'inv. 120 deg rotation - cryst. axis [0,0,1]  ',
-            'inv. 120 deg rotation - cryst. axis [0,0,-1] ',
-            'inv. 180 deg rotation - cryst. axis [1,-1,0] ',
-            'inv. 180 deg rotation - cryst. axis [2,1,0]  ',
-            'inv. 180 deg rotation - cryst. axis [0,1,0]  ',
-            'inv. 180 deg rotation - cryst. axis [1,1,0]  '
-        ]
-
-        rotations = []
-
-        for key, value in zip(matrices_name[:len(transposed_matrices_cartesian)], transposed_matrices_cartesian):
-            rotations.append({'name': key, 'matrix': numpy.transpose(value), 'inversion': False})
-
-        for key, value in zip(matrices_name[len(transposed_matrices_cartesian):], transposed_matrices_cartesian):
-            rotations.append({'name': key, 'matrix': numpy.transpose(value), 'inversion': True})
-
-        return rotations

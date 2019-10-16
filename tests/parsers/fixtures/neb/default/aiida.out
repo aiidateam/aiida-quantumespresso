@@ -1,0 +1,317 @@
+
+     Program NEB v.6.4.1 starts on  9Sep2019 at 21: 3:57 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI), running on     1 processors
+
+     MPI processes distributed on     1 nodes
+
+     No input file found, assuming nothing to parse
+     Searching argument -input_images or --input_images
+     Reading input from pw_1.in
+     Reading input from pw_2.in
+
+     initial path length           =  4.2553 bohr
+     initial inter-image distance  =  2.1276 bohr
+
+     string_method                 =    neb
+     restart_mode                  =    from_scratch
+     opt_scheme                    =    broyden
+     num_of_images                 =    3
+     nstep_path                    =    20
+     CI_scheme                     =    auto
+     first_last_opt                =    F
+     use_freezing                  =    F
+     ds                            =    2.0000 a.u.
+     k_max                         =    0.3000 a.u.
+     k_min                         =    0.2000 a.u.
+     suggested k_max               =    0.1542 a.u.
+     suggested k_min               =    0.1028 a.u.
+     path_thr                      =    0.0500 eV / A
+
+     ------------------------------ iteration   1 ------------------------------
+
+     tcpu =      0.2    self-consistency for image   1
+     Message from routine setup:
+     DEPRECATED: symmetry with ibrav=0, use correct ibrav instead
+     tcpu =      0.9    self-consistency for image   2
+     Message from routine setup:
+     DEPRECATED: symmetry with ibrav=0, use correct ibrav instead
+     tcpu =      1.8    self-consistency for image   3
+     Message from routine setup:
+     DEPRECATED: symmetry with ibrav=0, use correct ibrav instead
+
+     activation energy (->) =   2.487921 eV
+     activation energy (<-) =   2.487921 eV
+
+     image        energy (eV)        error (eV/A)        frozen
+
+         1        -44.6242679            2.176428            T
+         2        -42.1363465            2.305560            F
+         3        -44.6242679            2.176416            T
+
+     climbing image =  2
+
+     path length          =  4.255 bohr
+     inter-image distance =  2.128 bohr
+
+     ------------------------------ iteration   2 ------------------------------
+
+     tcpu =      2.6    self-consistency for image   2
+     Message from routine setup:
+     DEPRECATED: symmetry with ibrav=0, use correct ibrav instead
+
+     activation energy (->) =   2.035025 eV
+     activation energy (<-) =   2.035025 eV
+
+     image        energy (eV)        error (eV/A)        frozen
+
+         1        -44.6242679            2.176428            T
+         2        -42.5892425            2.460480            F
+         3        -44.6242679            2.176416            T
+
+     climbing image =  2
+
+     path length          =  4.285 bohr
+     inter-image distance =  2.143 bohr
+
+     ------------------------------ iteration   3 ------------------------------
+
+     tcpu =      3.5    self-consistency for image   2
+     Message from routine setup:
+     DEPRECATED: symmetry with ibrav=0, use correct ibrav instead
+
+     activation energy (->) =   1.525016 eV
+     activation energy (<-) =   1.525016 eV
+
+     image        energy (eV)        error (eV/A)        frozen
+
+         1        -44.6242679            2.176428            T
+         2        -43.0992523            2.556790            F
+         3        -44.6242679            2.176416            T
+
+     climbing image =  2
+
+     path length          =  4.383 bohr
+     inter-image distance =  2.191 bohr
+
+     ------------------------------ iteration   4 ------------------------------
+
+     tcpu =      4.5    self-consistency for image   2
+     Message from routine setup:
+     DEPRECATED: symmetry with ibrav=0, use correct ibrav instead
+
+     activation energy (->) =   0.447076 eV
+     activation energy (<-) =   0.447076 eV
+
+     image        energy (eV)        error (eV/A)        frozen
+
+         1        -44.6242679            2.176428            T
+         2        -44.1771919            2.253546            F
+         3        -44.6242679            2.176416            T
+
+     climbing image =  2
+
+     path length          =  4.796 bohr
+     inter-image distance =  2.398 bohr
+
+     ------------------------------ iteration   5 ------------------------------
+
+     tcpu =      5.3    self-consistency for image   2
+     Message from routine setup:
+     DEPRECATED: symmetry with ibrav=0, use correct ibrav instead
+
+     activation energy (->) =   0.000000 eV
+     activation energy (<-) =   0.000000 eV
+
+     image        energy (eV)        error (eV/A)        frozen
+
+         1        -44.6242679            3.249031            T
+         2        -44.8839649            0.577080            F
+         3        -44.6242679            2.176416            T
+
+     climbing image =  1
+
+     path length          =  5.454 bohr
+     inter-image distance =  2.727 bohr
+
+     ------------------------------ iteration   6 ------------------------------
+
+     tcpu =      6.1    self-consistency for image   2
+     Message from routine setup:
+     DEPRECATED: symmetry with ibrav=0, use correct ibrav instead
+
+     activation energy (->) =   0.396607 eV
+     activation energy (<-) =   0.396607 eV
+
+     image        energy (eV)        error (eV/A)        frozen
+
+         1        -44.6242679            2.176428            T
+         2        -44.2276605            4.438232            F
+         3        -44.6242679            2.176416            T
+
+     climbing image =  2
+
+     path length          =  6.275 bohr
+     inter-image distance =  3.137 bohr
+
+     ------------------------------ iteration   7 ------------------------------
+
+     tcpu =      7.0    self-consistency for image   2
+     Message from routine setup:
+     DEPRECATED: symmetry with ibrav=0, use correct ibrav instead
+
+     activation energy (->) =   0.000000 eV
+     activation energy (<-) =   0.000000 eV
+
+     image        energy (eV)        error (eV/A)        frozen
+
+         1        -44.6242679            2.844563            T
+         2        -44.9016945            0.317440            F
+         3        -44.6242679            2.176416            T
+
+     climbing image =  1
+
+     path length          =  5.520 bohr
+     inter-image distance =  2.760 bohr
+
+     ------------------------------ iteration   8 ------------------------------
+
+     tcpu =      7.7    self-consistency for image   2
+     Message from routine setup:
+     DEPRECATED: symmetry with ibrav=0, use correct ibrav instead
+
+     activation energy (->) =   0.000000 eV
+     activation energy (<-) =   0.000000 eV
+
+     image        energy (eV)        error (eV/A)        frozen
+
+         1        -44.6242679            2.749293            T
+         2        -44.9043340            0.258570            F
+         3        -44.6242679            2.176416            T
+
+     climbing image =  1
+
+     path length          =  5.536 bohr
+     inter-image distance =  2.768 bohr
+
+     ------------------------------ iteration   9 ------------------------------
+
+     tcpu =      8.3    self-consistency for image   2
+     Message from routine setup:
+     DEPRECATED: symmetry with ibrav=0, use correct ibrav instead
+
+     activation energy (->) =   0.000000 eV
+     activation energy (<-) =   0.000000 eV
+
+     image        energy (eV)        error (eV/A)        frozen
+
+         1        -44.6242679            2.685185            T
+         2        -44.9057771            0.215664            F
+         3        -44.6242679            2.176416            T
+
+     climbing image =  1
+
+     path length          =  5.546 bohr
+     inter-image distance =  2.773 bohr
+
+     ------------------------------ iteration  10 ------------------------------
+
+     tcpu =      8.8    self-consistency for image   2
+     Message from routine setup:
+     DEPRECATED: symmetry with ibrav=0, use correct ibrav instead
+
+     activation energy (->) =   0.000000 eV
+     activation energy (<-) =   0.000000 eV
+
+     image        energy (eV)        error (eV/A)        frozen
+
+         1        -44.6242679            2.639147            T
+         2        -44.9066490            0.185069            F
+         3        -44.6242679            2.176416            T
+
+     climbing image =  1
+
+     path length          =  5.554 bohr
+     inter-image distance =  2.777 bohr
+
+     ------------------------------ iteration  11 ------------------------------
+
+     tcpu =      9.4    self-consistency for image   2
+     Message from routine setup:
+     DEPRECATED: symmetry with ibrav=0, use correct ibrav instead
+
+     activation energy (->) =   0.000000 eV
+     activation energy (<-) =   0.000000 eV
+
+     image        energy (eV)        error (eV/A)        frozen
+
+         1        -44.6242679            2.180484            T
+         2        -44.9079701            0.126805            F
+         3        -44.6242679            2.176416            T
+
+     climbing image =  1
+
+     path length          =  5.628 bohr
+     inter-image distance =  2.814 bohr
+
+     ------------------------------ iteration  12 ------------------------------
+
+     tcpu =     10.0    self-consistency for image   2
+     Message from routine setup:
+     DEPRECATED: symmetry with ibrav=0, use correct ibrav instead
+
+     activation energy (->) =   0.000000 eV
+     activation energy (<-) =   0.000000 eV
+
+     image        energy (eV)        error (eV/A)        frozen
+
+         1        -44.6242679            2.586315            T
+         2        -44.9074826            0.149493            F
+         3        -44.6242679            2.176416            T
+
+     climbing image =  1
+
+     path length          =  5.562 bohr
+     inter-image distance =  2.781 bohr
+
+     ------------------------------ iteration  13 ------------------------------
+
+     tcpu =     10.8    self-consistency for image   2
+     Message from routine setup:
+     DEPRECATED: symmetry with ibrav=0, use correct ibrav instead
+
+     activation energy (->) =   0.000000 eV
+     activation energy (<-) =   0.000000 eV
+
+     image        energy (eV)        error (eV/A)        frozen
+
+         1        -44.6242679            2.419674            T
+         2        -44.9089522            0.037855            F
+         3        -44.6242679            2.176416            T
+
+     climbing image =  1
+
+     path length          =  5.589 bohr
+     inter-image distance =  2.795 bohr
+
+     ---------------------------------------------------------------------------
+
+
+     neb: convergence achieved in  13 iterations
+
+     NEB          :     10.54s CPU     11.44s WALL
+
+
+   This run was terminated on:  21: 4: 8   9Sep2019            
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=

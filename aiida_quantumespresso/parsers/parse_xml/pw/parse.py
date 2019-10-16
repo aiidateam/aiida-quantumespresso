@@ -42,7 +42,7 @@ def cell_volume(a1, a2, a3):
     return abs(float(a1[0] * a_mid_0 + a1[1] * a_mid_1 + a1[2] * a_mid_2))
 
 
-def parse_xml(xml_file, dir_with_bands=None, include_deprecated_keys=False):
+def parse_xml(xml_file, dir_with_bands=None, include_deprecated_v2_keys=False):
     try:
         xml_parsed = ElementTree.parse(xml_file)
     except ElementTree.ParseError:
@@ -52,10 +52,10 @@ def parse_xml(xml_file, dir_with_bands=None, include_deprecated_keys=False):
 
     try:
         if xml_file_version == QeXmlVersion.POST_6_2:
-            parsed_data, logs = parse_pw_xml_post_6_2(xml_parsed, include_deprecated_keys)
+            parsed_data, logs = parse_pw_xml_post_6_2(xml_parsed, include_deprecated_v2_keys)
         elif xml_file_version == QeXmlVersion.PRE_6_2:
             xml_file.seek(0)
-            parsed_data, logs = parse_pw_xml_pre_6_2(xml_file, dir_with_bands, include_deprecated_keys)
+            parsed_data, logs = parse_pw_xml_pre_6_2(xml_file, dir_with_bands, include_deprecated_v2_keys)
     except Exception:
         parsed_data = None
         logs = None

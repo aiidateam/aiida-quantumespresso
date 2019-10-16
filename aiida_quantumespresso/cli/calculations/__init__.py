@@ -18,6 +18,7 @@ def cmd_launch():
 from .cp import launch_calculation
 from .dos import launch_calculation
 from .matdyn import launch_calculation
+from .neb import launch_calculation
 from .ph import launch_calculation
 from .pp import launch_calculation
 from .pw import launch_calculation

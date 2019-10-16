@@ -16,7 +16,8 @@ from aiida_quantumespresso.parsers.parse_raw.pw import convert_qe_time_to_sec
 import six
 from six.moves import range
 
-def parse_raw_output_neb(out_file, input_dict,parser_opts=None):
+
+def parse_raw_output_neb(out_file, input_dict, parser_opts=None):
     """
     Parses the output of a neb calculation
     Receives in input the paths to the output file.
@@ -27,11 +28,9 @@ def parse_raw_output_neb(out_file, input_dict,parser_opts=None):
 
     :return parameter_data: a dictionary with parsed parameters
     :return iteration_data: a dictionary with arrays (for relax & md calcs.)
-    :return structure_data: a dictionary with data for the output structure
     :return job_successful: a boolean that is False in case of failed calculations
 
     :raises QEOutputParsingError: for errors in the parsing,
-    :raises AssertionError: if two keys in the parsed dicts are found to be qual
 
     2 different keys to check in output: parser_warnings and warnings.
     On an upper level, these flags MUST be checked.
@@ -42,14 +41,14 @@ def parse_raw_output_neb(out_file, input_dict,parser_opts=None):
     job_successful = True
     parser_info = get_parser_info(parser_info_template='aiida-quantumespresso parser neb.x v{}')
 
-    # load NEB out file
+    # load NEB output file
     try:
         with open(out_file,'r') as f:
             out_lines = f.read()
-    except IOError: # non existing output file -> job crashed
+    except IOError:  # non existing output file -> job crashed
         raise QEOutputParsingError('Failed to open output file: {}.'.format(out_file))
 
-    if not out_lines: # there is an output file, but it's empty -> crash
+    if not out_lines:  # there is an output file, but it's empty -> crash
         job_successful = False
 
     # check if the job has finished (that doesn't mean without errors)
@@ -58,34 +57,34 @@ def parse_raw_output_neb(out_file, input_dict,parser_opts=None):
         if 'JOB DONE' in line:
             finished_run = True
             break
-    if not finished_run: # error if the job has not finished
+    if not finished_run:  # error if the job has not finished
         warning = 'QE neb run did not reach the end of the execution.'
         parser_info['parser_warnings'].append(warning)
         job_successful = False
 
     # parse the text output of the neb calculation
     try:
-        out_data,iteration_data,critical_messages = parse_neb_text_output(out_lines,input_dict)
-    except QEOutputParsingError:
-        if not finished_run: # I try to parse it as much as possible
+        out_data, iteration_data, critical_messages = parse_neb_text_output(out_lines, input_dict)
+    except QEOutputParsingError as exc:
+        if not finished_run:  # I try to parse it as much as possible
             parser_info['parser_warnings'].append('Error while parsing the output file')
-            out_data = {}
+            out_data = {'warnings': []}
             iteration_data = {}
             critical_messages = []
-        else: # if it was finished and I got error, it's a mistake of the parser
-            raise QEOutputParsingError('Error while parsing NEB output')
+        else:  # if it was finished and I got an error, it's a mistake of the parser
+            raise QEOutputParsingError('Error while parsing NEB text output: {}'.format(exc))
 
     # I add in the out_data all the last elements of iteration_data values.
     # I leave the possibility to skip some large arrays (None for the time being).
     skip_keys = []
     tmp_iteration_data = copy.copy(iteration_data)
-    for x in six.iteritems(tmp_iteration_data):
-        if x[0] in skip_keys:
+    for k, v in six.iteritems(tmp_iteration_data):
+        if k in skip_keys:
             continue
-        out_data[x[0]] = x[1][-1]
+        out_data[k] = v[-1]
 
     # if there is a severe error, the calculation is FAILED
-    if any([ x in out_data['warnings'] for x in critical_messages]):
+    if any([x in out_data['warnings'] for x in critical_messages]):
         job_successful = False
 
     parameter_data = dict(list(out_data.items()) + list(parser_info.items()))
@@ -93,9 +92,10 @@ def parse_raw_output_neb(out_file, input_dict,parser_opts=None):
     # return various data.
     # parameter data will be mapped in Dict
     # iteration_data in ArrayData
-    return parameter_data,iteration_data,job_successful
+    return parameter_data, iteration_data, job_successful
 
-def parse_neb_text_output(data,input_dict={}):
+
+def parse_neb_text_output(data, input_dict={}):
     """
     Parses the text output of QE Neb.
 

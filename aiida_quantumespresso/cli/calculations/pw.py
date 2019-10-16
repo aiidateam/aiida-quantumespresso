@@ -121,7 +121,7 @@ def launch_calculation(
             # since it's a bit unexpected and the log messages output to screen
             # would be confusing ("Submitted PwCalculation<None> to the daemon")
             raise click.BadParameter('cannot send to the daemon if in dry_run mode', param_hint='--daemon')
-        inputs.setdefault('metadata', {})['store_provenance'] = False
+        inputs['metadata']['store_provenance'] = False
         inputs['metadata']['dry_run'] = True
 
     launch.launch_process(CalculationFactory('quantumespresso.pw'), daemon, **inputs)

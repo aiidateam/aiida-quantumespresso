@@ -6,9 +6,22 @@ import io
 import os
 import shutil
 import tempfile
-
+import collections
 import pytest
+import six
+
 from aiida.manage.fixtures import fixture_manager
+
+
+def flatten_inputs(inputs, prefix=''):
+    """This function follows roughly the same logic as `aiida.engine.processes.process::Process._flatten_inputs`."""
+    flat_inputs = []
+    for key, value in six.iteritems(inputs):
+        if isinstance(value, collections.Mapping):
+            flat_inputs.extend(flatten_inputs(value, prefix=prefix + key + '__'))
+        else:
+            flat_inputs.append((prefix + key, value))
+    return flat_inputs
 
 
 @pytest.fixture(scope='session')
@@ -114,7 +127,7 @@ def generate_calc_job_node():
             node.set_attributes(attributes)
 
         if inputs:
-            for link_label, input_node in inputs.items():
+            for link_label, input_node in flatten_inputs(inputs):
                 input_node.store()
                 node.add_incoming(input_node, link_type=LinkType.INPUT_CALC, link_label=link_label)
 
@@ -173,15 +186,15 @@ def generate_upf_data():
 def generate_structure():
     """Return a `StructureData` representing bulk silicon."""
 
-    def _generate_structure(element):
+    def _generate_structure(element='Si'):
         """Return a `StructureData` representing bulk silicon."""
         from aiida.orm import StructureData
 
         a = 5.43
         cell = [[a / 2., a / 2., 0], [a / 2., 0, a / 2.], [0, a / 2., a / 2.]]
         structure = StructureData(cell=cell)
-        structure.append_atom(position=(0., 0., 0.), symbols='Si')
-        structure.append_atom(position=(a / 4., a / 4., a / 4.), symbols='Si')
+        structure.append_atom(position=(0., 0., 0.), symbols=element)
+        structure.append_atom(position=(a / 4., a / 4., a / 4.), symbols=element)
 
         return structure
 

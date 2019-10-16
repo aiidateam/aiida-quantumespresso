@@ -2,16 +2,17 @@
 from __future__ import absolute_import
 
 import abc
-import io
 import os
+import six
+from six.moves import zip
 
 from aiida import orm
 from aiida.common import datastructures, exceptions
 from aiida.common.lang import classproperty
 from aiida.engine import CalcJob
+from aiida.plugins import ParserFactory
+
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
-import six
-from six.moves import zip
 
 
 class BasePwCpInputGenerator(CalcJob):
@@ -111,14 +112,16 @@ class BasePwCpInputGenerator(CalcJob):
         # If present, add also the Van der Waals table to the pseudo dir. Note that the name of the table is not checked
         # but should be the one expected by Quantum ESPRESSO.
         if 'vdw_table' in self.inputs:
-            src_path = self.inputs.vdw_table.get_file_abs_path()
-            dst_path = os.path.join(self._PSEUDO_SUBFOLDER, os.path.split(self.inputs.vdw_table.get_file_abs_path())[1])
-            local_copy_list.append((src_path, dst_path))
+            uuid = self.inputs.vdw_table.uuid
+            src_path = self.inputs.vdw_table.filename
+            dst_path = os.path.join(self._PSEUDO_SUBFOLDER, self.inputs.vdw_table.filename)
+            local_copy_list.append((uuid, src_path, dst_path))
 
         if 'hubbard_file' in self.inputs:
-            src_path = self.inputs.hubbard_file.get_file_abs_path()
+            uuid = self.inputs.hubbard_file.filename
+            src_path = self.inputs.hubbard_file.filename
             dst_path = self.input_file_name_hubbard_file
-            local_copy_list.append((src_path, dst_path))
+            local_copy_list.append((uuid, src_path, dst_path))
 
         arguments = [
             self.inputs.parameters,
@@ -131,8 +134,7 @@ class BasePwCpInputGenerator(CalcJob):
         input_filecontent, local_copy_pseudo_list = self._generate_PWCPinputdata(*arguments)
         local_copy_list += local_copy_pseudo_list
 
-        input_filename = folder.get_abs_path(self.metadata.options.input_filename)
-        with io.open(input_filename, 'w') as handle:
+        with folder.open(self.metadata.options.input_filename, 'w') as handle:
             handle.write(input_filecontent)
 
         # operations for restart
@@ -156,8 +158,7 @@ class BasePwCpInputGenerator(CalcJob):
 
         # Create an `.EXIT` file if `only_initialization` flag in `settings` is set to `True`
         if settings.pop('ONLY_INITIALIZATION', False):
-            exit_filename = folder.get_abs_path('{}.EXIT'.format(self._PREFIX))
-            with open(exit_filename, 'w') as handle:
+            with folder.open('{}.EXIT'.format(self._PREFIX), 'w') as handle:
                 handle.write('\n')
 
         # Check if specific inputs for the ENVIRON module where specified
@@ -175,9 +176,8 @@ class BasePwCpInputGenerator(CalcJob):
             # we use the alphabetical order as in the inputdata generation
             kind_names = sorted([kind.name for kind in self.inputs.structure.kinds])
             mapping_species = {kind_name: (index + 1) for index, kind_name in enumerate(kind_names)}
-            environ_input_filename = folder.get_abs_path(self._ENVIRON_INPUT_FILE_NAME)
 
-            with open(environ_input_filename, 'w') as handle:
+            with folder.open(self._ENVIRON_INPUT_FILE_NAME, 'w') as handle:
                 handle.write('&ENVIRON\n')
                 for k, v in sorted(six.iteritems(environ_namelist)):
                     handle.write(convert_input_to_namelist_entry(k, v, mapping=mapping_species))
@@ -230,20 +230,12 @@ class BasePwCpInputGenerator(CalcJob):
             xmlpaths = os.path.join(self._OUTPUT_SUBFOLDER, self._PREFIX + '.save', 'K*[0-9]', 'eigenval*.xml')
             calcinfo.retrieve_temporary_list = [[xmlpaths, '.', 2]]
 
-        # TODO: self.get_parserclass() probably raises AttributeError, but is caught later!
-        #       Use self.input('metadata.options.parser_name') instead
-        try:
-            Parserclass = self.get_parserclass()
-            parser = Parserclass(self)
-            parser_opts = parser.get_parser_settings_key().upper()
-            settings.pop(parser_opts)
-        except (KeyError, AttributeError):
-            # the key parser_opts isn't inside the dictionary
-            pass
+        # We might still have parser options in the settings dictionary: pop them.
+        _pop_parser_options(self, settings)
 
         if settings:
             unknown_keys = ', '.join(list(settings.keys()))
-            raise exceptions.InputValidationError('`settings` contained unknown keys: {}'.format(unknown_keys))
+            raise exceptions.InputValidationError('`settings` contained unexpected keys: {}'.format(unknown_keys))
 
         return calcinfo
 
@@ -318,7 +310,7 @@ class BasePwCpInputGenerator(CalcJob):
                                            ''.format(kind.name))
 
             try:
-                # It it is the same pseudopotential file, use the same filename
+                # If it is the same pseudopotential file, use the same filename
                 filename = pseudo_filenames[ps.pk]
             except KeyError:
                 # The pseudo was not encountered yet; use a new name and also add it to the local copy list
@@ -549,7 +541,7 @@ class BasePwCpInputGenerator(CalcJob):
                     "No 'calculation' in CONTROL namelist."
                     'It is required for automatic detection of the valid list '
                     'of namelists. Otherwise, specify the list of namelists '
-                    "using the NAMELISTS key inside the 'settings' input node")
+                    "using the NAMELISTS key inside the 'settings' input node.")
 
             try:
                 namelists_toprint = cls._automatic_namelists[calculation_type]
@@ -618,3 +610,24 @@ def _case_transform_dict(d, dict_name, func_name, transform):
             'are repeated more than once when compared case-insensitively: {}.'
             'This is not allowed.'.format(dict_name, double_keys))
     return new_dict
+
+
+def _pop_parser_options(calc_job_instance, settings_dict, ignore_errors=True):
+    """This deletes any parser options from the settings dictionary. The parser options key is found
+    via the get_parser_settings_key() method of the parser class specified as a metadata input."""
+    from aiida.plugins import ParserFactory
+    from aiida.common import EntryPointError
+    try:
+        parser_name = calc_job_instance.inputs['metadata']['options']['parser_name']
+        ParserClass = ParserFactory(parser_name)
+        parser_opts_key = ParserClass.get_parser_settings_key().upper()
+        return settings_dict.pop(parser_opts_key, None)
+    except (KeyError, EntryPointError, AttributeError) as exc:
+        # KeyError: input 'metadata.options.parser_name' is not defined;
+        # EntryPointError: there was an error loading the parser class form its entry point
+        #   (this will probably cause errors elsewhere too);
+        # AttributeError: the parser class doesn't have a method get_parser_settings_key().
+        if ignore_errors:
+            pass
+        else:
+            raise exc
