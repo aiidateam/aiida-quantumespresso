@@ -453,6 +453,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
             marker_bfgs_converged = True
 
         elif 'number of bfgs steps' in line:
+
             try:
                 parsed_data['number_ionic_steps'] += 1
             except KeyError:
@@ -507,7 +508,6 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
 
     # now I create a bunch of arrays for every step.
 
-    # initialize the scf_index counter for the next cycle
     for data_step in relax_steps:
         trajectory_frame = {}
 
@@ -540,10 +540,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                         a1 = [bohr_to_ang * float(s) for s in a1]
                         a2 = [bohr_to_ang * float(s) for s in a2]
                         a3 = [bohr_to_ang * float(s) for s in a3]
-                    try:
-                        trajectory_data['lattice_vectors_relax'].append([a1, a2, a3])
-                    except KeyError:
-                        trajectory_data['lattice_vectors_relax'] = [[a1, a2, a3]]
+                    trajectory_data.setdefault('lattice_vectors_relax', []).append([a1, a2, a3])
 
                 except Exception:
                     logs.warning.append('Error while parsing relaxation cell parameters.')
@@ -568,10 +565,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                         elif metric == 'bohr':
                             tau = [bohr_to_ang * float(s) for s in tau]
                         positions.append(tau)
-                    try:
-                        trajectory_data[this_key].append(positions)
-                    except KeyError:
-                        trajectory_data[this_key] = [positions]
+                    trajectory_data.setdefault(this_key,[]).append(positions)
                 except Exception:
                     logs.warning.append('Error while parsing relaxation atomic positions.')
 
@@ -599,10 +593,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                     except IndexError:  # The dipole is also written at the beginning of a new bfgs iteration
                         break
                     if 'End of self-consistent calculation' in line2:
-                        try:
-                            trajectory_data['dipole'].append(value)
-                        except KeyError:
-                            trajectory_data['dipole'] = [value]
+                        trajectory_data.setdefault('dipole', []).append(value)
                         parsed_data['dipole' + units_suffix] = default_dipole_units
                         break
 
@@ -612,10 +603,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
             elif 'estimated scf accuracy' in line:
                 try:
                     value = float(line.split()[-2])* ry_to_ev
-                    try:
-                        trajectory_data['scf_accuracy'].append(value)
-                    except KeyError:
-                        trajectory_data['scf_accuracy'] = [value]
+                    trajectory_data.setdefault('scf_accuracy', []).append(value)
                 except Exception:
                     logs.warning.append('Error while parsing scf accuracy.')
 
@@ -623,10 +611,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
             elif 'convergence has been achieved in' in line or 'convergence NOT achieved after' in line:
                 try:
                     scf_iterations = int(line.split('iterations')[0].split()[-1])
-                    try:
-                        trajectory_data['scf_iterations'].append(scf_iterations)
-                    except KeyError:
-                        trajectory_data['scf_iterations'] = [scf_iterations]
+                    trajectory_data.setdefault('scf_iterations', []).append(scf_iterations)
                 except Exception:
                     logs.warning.append('Error while parsing scf iterations.')
 
@@ -640,10 +625,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                         if 'ethr' in line2:
                             value = float(line2.split('=')[1].split(',')[0])
                             break
-                    try:
-                        trajectory_data['energy_threshold'].append(value)
-                    except KeyError:
-                        trajectory_data['energy_threshold'] = [value]
+                    trajectory_data.setdefault('energy_threshold', []).append(value)
                 except Exception:
                     logs.warning.append('Error while parsing ethr.')
 
@@ -667,12 +649,8 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                             charges.append(float(line2.split('charge:')[1].split()[0]))
                         if len(mag_moments) == nat:
                             break
-                    try:
-                        trajectory_data['atomic_magnetic_moments'].append(mag_moments)
-                        trajectory_data['atomic_charges'].append(charges)
-                    except KeyError:
-                        trajectory_data['atomic_magnetic_moments'] = [mag_moments]
-                        trajectory_data['atomic_charges'] = [charges]
+                    trajectory_data.setdefault('atomic_magnetic_moments', []).append(mag_moments)
+                    trajectory_data.setdefault('atomic_charges', []).append(charges)
                     parsed_data['atomic_magnetic_moments' + units_suffix] = default_magnetization_units
                     parsed_data['atomic_charges' + units_suffix] = default_charge_units
                 except QEOutputParsingError:
@@ -681,15 +659,12 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
             # grep energy and possibly, magnetization
             elif '!' in line:
                 try:
-                    for key in ['energy', 'energy_accuracy']:
-                        if key not in trajectory_data:
-                            trajectory_data[key] = []
 
                     En = float(line.split('=')[1].split('Ry')[0]) * ry_to_ev
                     E_acc = float(data_step[count + 2].split('<')[1].split('Ry')[0]) * ry_to_ev
 
                     for key, value in [['energy', En], ['energy_accuracy', E_acc]]:
-                        trajectory_data[key].append(value)
+                        trajectory_data.setdefault(key, []).append(value)
                         parsed_data[key + units_suffix] = default_energy_units
                     # TODO: decide units for magnetization. now bohr mag/cell
                     j = 0
@@ -716,10 +691,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                                 ['external charges energy', 'energy_external_charges']]:
                             if string in line2:
                                 value = grep_energy_from_line(line2)
-                                try:
-                                    trajectory_data[key].append(value)
-                                except KeyError:
-                                    trajectory_data[key] = [value]
+                                trajectory_data.setdefault(key, []).append(value)
                                 parsed_data[key + units_suffix] = default_energy_units
                         # magnetizations
                         if 'total magnetization' in line2:
@@ -728,17 +700,12 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                                 value = float(this_m)
                             except ValueError:  # but can also be a three vector component in non-collinear calcs
                                 value = [float(i) for i in this_m.split()]
-                            try:
-                                trajectory_data['total_magnetization'].append(value)
-                            except KeyError:
-                                trajectory_data['total_magnetization'] = [value]
+                            trajectory_data.setdefault('total_magnetization', []).append(value)
                             parsed_data['total_magnetization' + units_suffix] = default_magnetization_units
+
                         elif 'absolute magnetization' in line2:
                             value = float(line2.split('=')[1].split('Bohr')[0])
-                            try:
-                                trajectory_data['absolute_magnetization'].append(value)
-                            except KeyError:
-                                trajectory_data['absolute_magnetization'] = [value]
+                            trajectory_data.setdefault('absolute_magnetization', []).append(value)
                             parsed_data['absolute_magnetization' + units_suffix] = default_magnetization_units
                         # exit loop
                         elif 'convergence' in line2:
@@ -751,10 +718,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                             line2 = data_step[count + j]
                             if 'Non-local correlation energy' in line2:
                                 value = grep_energy_from_line(line2)
-                                try:
-                                    trajectory_data['energy_vdw'].append(value)
-                                except KeyError:
-                                    trajectory_data['energy_vdw'] = [value]
+                                trajectory_data.setdefault('energy_vdw', []).append(value)
                                 break
                         parsed_data['energy_vdw' + units_suffix] = default_energy_units
                 except Exception:
@@ -763,10 +727,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
             elif 'the Fermi energy is' in line:
                 try:
                     value = float(line.split('is')[1].split('ev')[0])
-                    try:
-                        trajectory_data['fermi_energy'].append(value)
-                    except KeyError:
-                        trajectory_data['fermi_energy'] = [value]
+                    trajectory_data.setdefault('fermi_energy', []).append(value)
                     parsed_data['fermi_energy' + units_suffix] = default_energy_units
                 except Exception:
                     logs.warning.append('Error while parsing Fermi energy from the output file.')
@@ -785,10 +746,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                             forces.append(vec)
                         if len(forces) == nat:
                             break
-                    try:
-                        trajectory_data['forces'].append(forces)
-                    except KeyError:
-                        trajectory_data['forces'] = [forces]
+                    trajectory_data.setdefault('forces', []).append(forces)
                     parsed_data['forces' + units_suffix] = default_force_units
                 except Exception:
                     logs.warning.append('Error while parsing forces.')
@@ -798,10 +756,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
             elif 'Total force =' in line:
                 try:  # note that I can't check the units: not written in output!
                     value = float(line.split('=')[1].split('Total')[0]) * ry_to_ev / bohr_to_ang
-                    try:
-                        trajectory_data['total_force'].append(value)
-                    except KeyError:
-                        trajectory_data['total_force'] = [value]
+                    trajectory_data.setdefault('total_force', []).append(value)
                     parsed_data['total_force' + units_suffix] = default_force_units
                 except Exception:
                     logs.warning.append('Error while parsing total force.')
@@ -818,10 +773,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                         line2 = data_step[count2 + k + 1].split()
                         vec = [float(s) * 10**(-9) * ry_si / (bohr_si)**3 for s in line2[0:3]]
                         stress.append(vec)
-                    try:
-                        trajectory_data['stress'].append(stress)
-                    except KeyError:
-                        trajectory_data['stress'] = [stress]
+                    trajectory_data.setdefault('stress', []).append(stress)
                     parsed_data['stress' + units_suffix] = default_stress_units
                 except Exception:
                     logs.warning.append('Error while parsing stress tensor.')
