@@ -217,11 +217,12 @@ class NebParser(Parser):
 
         # convert data on structure of images into a TrajectoryData, and add as output node
         traj = TrajectoryData()
-        traj.set_trajectory(stepids = numpy.arange(1,num_images+1),
-                            cells = numpy.array(cells),
-                            symbols = numpy.array(symbols),
-                            positions = numpy.array(positions),
-                            )
+        traj.set_trajectory(
+            stepids=numpy.arange(1, num_images + 1),
+            cells=numpy.array(cells),
+            symbols=symbols,
+            positions=numpy.array(positions),
+        )
         self.out('output_trajectory', traj)
 
         if (parser_options is not None) and (parser_options.get('all_iterations', False)):

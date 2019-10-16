@@ -1,3 +1,25 @@
+output_mep:
+  array|interpolated_mep:
+  - 251
+  - 2
+  array|mep:
+  - 3
+  - 3
+output_trajectory:
+  array|cells:
+  - 3
+  - 3
+  - 3
+  array|positions:
+  - 3
+  - 3
+  - 3
+  array|steps:
+  - 3
+  symbols:
+  - H
+  - H
+  - H
 parameters:
   backward_activation_energy: 0.0
   ci_scheme: auto
