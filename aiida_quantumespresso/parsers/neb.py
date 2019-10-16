@@ -4,10 +4,11 @@ from __future__ import absolute_import
 import six
 from six.moves import range
 
-from aiida.parsers.parser import Parser
-from aiida.orm import Dict, KpointsData
 from aiida.common import NotExistent
+from aiida.orm import Dict
+from aiida.parsers.parser import Parser
 from aiida_quantumespresso.parsers import convert_qe2aiida_structure, QEOutputParsingError
+from aiida_quantumespresso.parsers.parse_raw.pw import reduce_symmetries
 from aiida_quantumespresso.parsers.parse_raw.pw import parse_stdout as parse_pw_stdout
 from aiida_quantumespresso.parsers.parse_xml.pw.parse import parse_xml as parse_pw_xml
 from aiida_quantumespresso.parsers.parse_xml.pw.exceptions import XMLParseError, XMLUnsupportedFormatError
@@ -17,19 +18,18 @@ from aiida_quantumespresso.calculations.pw import PwCalculation
 
 
 class NebParser(Parser):
-    """
-    This class is the implementation of the Parser class for Neb.
-    """
+    """`Parser` implementation for the `NebCalculation` calculation job class."""
 
     def parse(self, **kwargs):
-        """
-        Parses the calculation-output datafolder, and stores
-        results.
+        """Parse the retrieved files of a completed `NebCalculation` into output nodes.
+
+        Two nodes that are expected are the default 'retrieved' `FolderData` node which will store the retrieved files
+        permanently in the repository. The second required node is a filepath under the key `retrieved_temporary_files`
+        which should contain the temporary retrieved files.
         """
         from aiida.orm import TrajectoryData, ArrayData
         import os
         import numpy
-        import copy
 
         PREFIX = self.node.process_class._PREFIX
 
@@ -60,7 +60,7 @@ class NebParser(Parser):
 
         try:
             include_deprecated_v2_keys = parser_options['include_deprecated_v2_keys']
-        except (TypeError,KeyError):
+        except (TypeError, KeyError):
             include_deprecated_v2_keys = False
 
         # load the pw input parameters dictionary
@@ -106,7 +106,7 @@ class NebParser(Parser):
         # for each image...
         for i in range(num_images):
             # check if any of the known XML output file names are present, and parse the first that we find
-            relative_output_folder = os.path.join('{}_{}'.format(PREFIX, i+1), '{}.save'.format(PREFIX))
+            relative_output_folder = os.path.join('{}_{}'.format(PREFIX, i + 1), '{}.save'.format(PREFIX))
             retrieved_files = self.retrieved.list_object_names(relative_output_folder)
             for xml_filename in PwCalculation.xml_filenames:
                 if xml_filename in retrieved_files:
@@ -128,16 +128,16 @@ class NebParser(Parser):
                     break
             # otherwise, if none of the filenames we tried exists, exit with an error
             else:
-                self.logger.error('No xml output file found for image {}'.format(i+1))
+                self.logger.error('No xml output file found for image {}'.format(i + 1))
                 return self.exit_codes.ERROR_MISSING_XML_FILE
 
             # look for pw output and parse it
-            pw_out_file = os.path.join('{}_{}'.format(PREFIX, i+1), 'PW.out')
+            pw_out_file = os.path.join('{}_{}'.format(PREFIX, i + 1), 'PW.out')
             try:
-                with out_folder.open(pw_out_file,'r') as f:
+                with out_folder.open(pw_out_file, 'r') as f:
                     pw_out_text = f.read()  # Note: read() and not readlines()
             except IOError:
-                self.logger.error('No pw output file found for image {}'.format(i+1))
+                self.logger.error('No pw output file found for image {}'.format(i + 1))
                 return self.exit_codes.ERROR_READING_OUTPUT_FILE
 
             try:
@@ -151,51 +151,25 @@ class NebParser(Parser):
             parsed_trajectory = parsed_data_stdout.pop('trajectory', {})
             parsed_parameters = PwParser.build_output_parameters(parsed_data_xml, parsed_data_stdout)
 
+            # Explicit information about k-points does not need to be queryable so we remove it from the parameters
+            parsed_parameters.pop('k_points', None)
+            parsed_parameters.pop('k_points_units', None)
+            parsed_parameters.pop('k_points_weights', None)
+
             # Delete bands # TODO: this is just to make pytest happy; do we want to keep them instead?
-            try:
-                parsed_parameters.pop('bands')
-            except KeyError:
-                pass
-
-            # TODO: blacklist (old, here) or whitelist (new, from PwParser - see below)?
-            # # I add in the out_data all the last elements of trajectory_data values.
-            # # Safe for some large arrays, that I will likely never query.
-            # skip_keys = ['forces','atomic_magnetic_moments','atomic_charges',
-            #              'lattice_vectors_relax','atomic_positions_relax',
-            #              'atomic_species_name']
-            # tmp_trajectory_data = copy.copy(parsed_trajectory)
-            # for k, v in six.iteritems(tmp_trajectory_data):
-            #     if k in skip_keys:
-            #         continue
-            #     pw_out_data[k] = v[-1]
-            #     if len(v) == 1:  # delete any keys that are not arrays
-            #         trajectory_data.pop(x[0])
-
-            # As the k points are an array that is rather large, and again it's not something I'm going to parse likely
-            # since it's an info mainly contained in the input file, I move it to the trajectory data.
-            # Same for bands.
-            # TODO: this is actually useless, since we discard the trajectory of a single PW calculation,
-            #  and these 2 keys are not preserved by PwParser.final_trajectory_frame_to_parameters
-            #  Do we need them?
-            for key in ['k_points','k_points_weights']:
-                try:
-                    parsed_trajectory[key] = parsed_parameters.pop(key)
-                except KeyError:
-                    pass
+            parsed_parameters.pop('bands', None)
 
             # Append the last frame of some of the smaller trajectory arrays to the parameters for easy querying
             PwParser.final_trajectory_frame_to_parameters(parsed_parameters, parsed_trajectory)
 
-            # If the parser option 'all_symmetries' is not set to True, we reduce the raw parsed symmetries to safe space
-            # TODO: do we need this!?
-            # self.reduce_symmetries(parsed_parameters, parsed_structure, parser_options)
-            # TODO: do we need these!?
-            # kpoints = PwParser.build_output_kpoints(parsed_parameters, structure)
-            # trajectory = PwParser.build_output_trajectory(parsed_trajectory, structure)
+            # If the parser option 'all_symmetries' is False, we reduce the raw parsed symmetries to save space
+            all_symmetries = False if parser_options is None else parser_options.get('all_symmetries', False)
+            if not all_symmetries and 'cell' in parsed_structure:
+                reduce_symmetries(parsed_parameters, parsed_structure, self.logger)
 
             structure_data = convert_qe2aiida_structure(parsed_structure)
 
-            key = 'pw_output_image_{}'.format(i+1)
+            key = 'pw_output_image_{}'.format(i + 1)
             image_data[key] = parsed_parameters
 
             positions.append([site.position for site in structure_data.sites])
@@ -211,21 +185,19 @@ class NebParser(Parser):
         # Symbols can be obtained simply from the last image
         symbols = [str(site.kind_name) for site in structure_data.sites]
 
-        # convert output parameters to AiiDA Dict, and add as output node
-        output_params = Dict(dict=dict(list(neb_out_dict.items())+list(image_data.items())))
+        output_params = Dict(dict=dict(list(neb_out_dict.items()) + list(image_data.items())))
         self.out('output_parameters', output_params)
 
-        # convert data on structure of images into a TrajectoryData, and add as output node
-        traj = TrajectoryData()
-        traj.set_trajectory(
+        trajectory = TrajectoryData()
+        trajectory.set_trajectory(
             stepids=numpy.arange(1, num_images + 1),
             cells=numpy.array(cells),
             symbols=symbols,
             positions=numpy.array(positions),
         )
-        self.out('output_trajectory', traj)
+        self.out('output_trajectory', trajectory)
 
-        if (parser_options is not None) and (parser_options.get('all_iterations', False)):
+        if parser_options is not None and parser_options.get('all_iterations', False):
             if iteration_data:
                 arraydata = ArrayData()
                 for k, v in six.iteritems(iteration_data):
@@ -234,17 +206,19 @@ class NebParser(Parser):
 
         # Load the original and interpolated energy profile along the minimum-energy path (mep)
         try:
-            mep = numpy.loadtxt(out_folder.open(PREFIX + '.dat', 'r'))
+            filename = PREFIX + '.dat'
+            with out_folder.open(filename, 'r') as handle:
+                mep = numpy.loadtxt(handle)
         except Exception:
-            self.logger.warning('Impossible to find the file with image energies '
-                                'versus reaction coordinate.')
+            self.logger.warning('could not open expected output file `{}`.'.format(filename))
             mep = numpy.array([[]])
 
         try:
-            interp_mep = numpy.loadtxt(out_folder.open(PREFIX + '.int', 'r'))
+            filename = PREFIX + '.int'
+            with out_folder.open(filename, 'r') as handle:
+                interp_mep = numpy.loadtxt(handle)
         except Exception:
-            self.logger.warning('Impossible to find the file with the interpolation '
-                                'of image energies versus reaction coordinate.')
+            self.logger.warning('could not open expected output file `{}`.'.format(filename))
             interp_mep = numpy.array([[]])
 
         # Create an ArrayData with the energy profiles

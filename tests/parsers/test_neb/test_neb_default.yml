@@ -1,6 +1,6 @@
 output_mep:
   array|interpolated_mep:
-  - 251
+  - 11
   - 2
   array|mep:
   - 3
@@ -85,103 +85,22 @@ parameters:
     has_dipole_correction: false
     has_electric_field: false
     inversion_symmetry: false
-    k_points_units: 1 / angstrom
     lattice_symmetries:
-    - name: inversion
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - -1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
+    - symmetry_number: 32
       t_rev: '0'
-    - name: 180 deg rotation - cart. axis [0,1,1]
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
-      - - 0.0
-        - 1.0
-        - 0.0
+    - symmetry_number: 12
       t_rev: '0'
-    - name: 180 deg rotation - cart. axis [0,1,-1]
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
-      - - 0.0
-        - -1.0
-        - 0.0
+    - symmetry_number: 13
       t_rev: '0'
-    - name: inv. 180 deg rotation - cart. axis [1,0,0]
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
+    - symmetry_number: 35
       t_rev: '0'
-    - name: 180 deg rotation - cart. axis [0,1,0]
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
+    - symmetry_number: 2
       t_rev: '0'
-    - name: 180 deg rotation - cart. axis [0,0,1]
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - -1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
+    - symmetry_number: 1
       t_rev: '0'
-    - name: inv.  90 deg rotation - cart. axis [-1,0,0]
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
-      - - 0.0
-        - 1.0
-        - 0.0
+    - symmetry_number: 46
       t_rev: '0'
-    - name: inv.  90 deg rotation - cart. axis [1,0,0]
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
-      - - 0.0
-        - -1.0
-        - 0.0
+    - symmetry_number: 47
       t_rev: '0'
     lda_plus_u_calculation: false
     lkpoint_dir: false
@@ -227,165 +146,21 @@ parameters:
     starting_magnetization:
     - 0.5
     symmetries:
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: identity
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
+    - symmetry_number: 0
       t_rev: '0'
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: 180 deg rotation - cart. axis [1,0,0]
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - -1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
+    - symmetry_number: 3
       t_rev: '0'
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: ' 90 deg rotation - cart. axis [-1,0,0]'
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
-      - - 0.0
-        - -1.0
-        - 0.0
+    - symmetry_number: 14
       t_rev: '0'
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: ' 90 deg rotation - cart. axis [1,0,0]'
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
-      - - 0.0
-        - 1.0
-        - 0.0
+    - symmetry_number: 15
       t_rev: '0'
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: inv. 180 deg rotation - cart. axis [0,0,1]
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
+    - symmetry_number: 33
       t_rev: '0'
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: inv. 180 deg rotation - cart. axis [0,1,0]
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - -1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
+    - symmetry_number: 34
       t_rev: '0'
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: inv. 180 deg rotation - cart. axis [0,1,1]
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
-      - - 0.0
-        - -1.0
-        - 0.0
+    - symmetry_number: 44
       t_rev: '0'
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: inv. 180 deg rotation - cart. axis [0,1,-1]
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
-      - - 0.0
-        - 1.0
-        - 0.0
+    - symmetry_number: 45
       t_rev: '0'
     symmetries_units: crystal
     time_reversal_flag: true
@@ -423,7 +198,6 @@ parameters:
     has_dipole_correction: false
     has_electric_field: false
     inversion_symmetry: true
-    k_points_units: 1 / angstrom
     lattice_symmetries: []
     lda_plus_u_calculation: false
     lkpoint_dir: false
@@ -469,325 +243,37 @@ parameters:
     starting_magnetization:
     - 0.5
     symmetries:
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: identity
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
+    - symmetry_number: 0
       t_rev: '0'
-    - equivalent_atoms:
-      - 3
-      - 2
-      - 1
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: 180 deg rotation - cart. axis [0,0,1]
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - -1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
+    - symmetry_number: 1
       t_rev: '0'
-    - equivalent_atoms:
-      - 3
-      - 2
-      - 1
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: 180 deg rotation - cart. axis [0,1,0]
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
+    - symmetry_number: 2
       t_rev: '0'
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: 180 deg rotation - cart. axis [1,0,0]
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - -1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
+    - symmetry_number: 3
       t_rev: '0'
-    - equivalent_atoms:
-      - 3
-      - 2
-      - 1
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: 180 deg rotation - cart. axis [0,1,1]
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
-      - - 0.0
-        - 1.0
-        - 0.0
+    - symmetry_number: 12
       t_rev: '0'
-    - equivalent_atoms:
-      - 3
-      - 2
-      - 1
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: 180 deg rotation - cart. axis [0,1,-1]
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
-      - - 0.0
-        - -1.0
-        - 0.0
+    - symmetry_number: 13
       t_rev: '0'
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: ' 90 deg rotation - cart. axis [-1,0,0]'
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
-      - - 0.0
-        - -1.0
-        - 0.0
+    - symmetry_number: 14
       t_rev: '0'
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: ' 90 deg rotation - cart. axis [1,0,0]'
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
-      - - 0.0
-        - 1.0
-        - 0.0
+    - symmetry_number: 15
       t_rev: '0'
-    - equivalent_atoms:
-      - 3
-      - 2
-      - 1
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: inversion
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - -1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
+    - symmetry_number: 32
       t_rev: '0'
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: inv. 180 deg rotation - cart. axis [0,0,1]
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
+    - symmetry_number: 33
       t_rev: '0'
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: inv. 180 deg rotation - cart. axis [0,1,0]
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - -1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
+    - symmetry_number: 34
       t_rev: '0'
-    - equivalent_atoms:
-      - 3
-      - 2
-      - 1
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: inv. 180 deg rotation - cart. axis [1,0,0]
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
+    - symmetry_number: 35
       t_rev: '0'
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: inv. 180 deg rotation - cart. axis [0,1,1]
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
-      - - 0.0
-        - -1.0
-        - 0.0
+    - symmetry_number: 44
       t_rev: '0'
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: inv. 180 deg rotation - cart. axis [0,1,-1]
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
-      - - 0.0
-        - 1.0
-        - 0.0
+    - symmetry_number: 45
       t_rev: '0'
-    - equivalent_atoms:
-      - 3
-      - 2
-      - 1
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: inv.  90 deg rotation - cart. axis [-1,0,0]
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
-      - - 0.0
-        - 1.0
-        - 0.0
+    - symmetry_number: 46
       t_rev: '0'
-    - equivalent_atoms:
-      - 3
-      - 2
-      - 1
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: inv.  90 deg rotation - cart. axis [1,0,0]
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
-      - - 0.0
-        - -1.0
-        - 0.0
+    - symmetry_number: 47
       t_rev: '0'
     symmetries_units: crystal
     time_reversal_flag: true
@@ -825,103 +311,22 @@ parameters:
     has_dipole_correction: false
     has_electric_field: false
     inversion_symmetry: false
-    k_points_units: 1 / angstrom
     lattice_symmetries:
-    - name: inversion
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - -1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
+    - symmetry_number: 32
       t_rev: '0'
-    - name: 180 deg rotation - cart. axis [0,1,1]
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
-      - - 0.0
-        - 1.0
-        - 0.0
+    - symmetry_number: 12
       t_rev: '0'
-    - name: 180 deg rotation - cart. axis [0,1,-1]
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
-      - - 0.0
-        - -1.0
-        - 0.0
+    - symmetry_number: 13
       t_rev: '0'
-    - name: inv. 180 deg rotation - cart. axis [1,0,0]
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
+    - symmetry_number: 35
       t_rev: '0'
-    - name: 180 deg rotation - cart. axis [0,1,0]
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
+    - symmetry_number: 2
       t_rev: '0'
-    - name: 180 deg rotation - cart. axis [0,0,1]
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - -1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
+    - symmetry_number: 1
       t_rev: '0'
-    - name: inv.  90 deg rotation - cart. axis [-1,0,0]
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
-      - - 0.0
-        - 1.0
-        - 0.0
+    - symmetry_number: 46
       t_rev: '0'
-    - name: inv.  90 deg rotation - cart. axis [1,0,0]
-      rotation:
-      - - -1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
-      - - 0.0
-        - -1.0
-        - 0.0
+    - symmetry_number: 47
       t_rev: '0'
     lda_plus_u_calculation: false
     lkpoint_dir: false
@@ -967,165 +372,21 @@ parameters:
     starting_magnetization:
     - 0.5
     symmetries:
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: identity
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
+    - symmetry_number: 0
       t_rev: '0'
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: 180 deg rotation - cart. axis [1,0,0]
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - -1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
+    - symmetry_number: 3
       t_rev: '0'
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: ' 90 deg rotation - cart. axis [-1,0,0]'
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
-      - - 0.0
-        - -1.0
-        - 0.0
+    - symmetry_number: 14
       t_rev: '0'
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: ' 90 deg rotation - cart. axis [1,0,0]'
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
-      - - 0.0
-        - 1.0
-        - 0.0
+    - symmetry_number: 15
       t_rev: '0'
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: inv. 180 deg rotation - cart. axis [0,0,1]
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
+    - symmetry_number: 33
       t_rev: '0'
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: inv. 180 deg rotation - cart. axis [0,1,0]
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - -1.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
+    - symmetry_number: 34
       t_rev: '0'
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: inv. 180 deg rotation - cart. axis [0,1,1]
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - -1.0
-      - - 0.0
-        - -1.0
-        - 0.0
+    - symmetry_number: 44
       t_rev: '0'
-    - equivalent_atoms:
-      - 1
-      - 2
-      - 3
-      fractional_translation:
-      - 0.0
-      - 0.0
-      - 0.0
-      name: inv. 180 deg rotation - cart. axis [0,1,-1]
-      rotation:
-      - - 1.0
-        - 0.0
-        - 0.0
-      - - 0.0
-        - 0.0
-        - 1.0
-      - - 0.0
-        - 1.0
-        - 0.0
+    - symmetry_number: 45
       t_rev: '0'
     symmetries_units: crystal
     time_reversal_flag: true

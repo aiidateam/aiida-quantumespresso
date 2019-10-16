@@ -40,8 +40,8 @@ def build_num_regression_dictionary(arrays, array_names):
     result = {}
 
     for index, array in enumerate(arrays):
-        for names in array_names:
-            result[names[index]] = array.get_array(names[index]).flatten()
+        for name in array_names[index]:
+            result[name] = array.get_array(name).flatten()
 
     # Convert all arrays to floats, to get around this change that disallows diffent-sized arrays for non-float types:
     # https://github.com/ESSS/pytest-regressions/pull/18
