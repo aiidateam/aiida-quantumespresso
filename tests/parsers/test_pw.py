@@ -128,6 +128,29 @@ def test_pw_default_xml_new(fixture_database, fixture_computer_localhost, genera
     })
 
 
+def test_pw_initialization_xml_new(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+        generate_parser, generate_inputs_default, data_regression):
+    """Test a `pw.x` calculation with new XML that only runs the preamble, i.e. an initialization-only calculation."""
+    name = 'initialization_xml_new'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_default)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_band' not in results
+    assert 'output_kpoints' not in results
+    assert 'output_parameters' in results
+    assert 'output_trajectory' in results
+    data_regression.check({
+        'output_parameters': results['output_parameters'].get_dict(),
+        'output_trajectory': results['output_trajectory'].attributes,
+    })
+
+
 def test_pw_failed_missing(fixture_database, fixture_computer_localhost, generate_calc_job_node,
         generate_parser, generate_inputs_default, data_regression):
     """Test the parsing of a calculation that was interrupted before output files could even be written.

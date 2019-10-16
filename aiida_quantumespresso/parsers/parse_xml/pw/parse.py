@@ -7,7 +7,7 @@ from xmlschema import XMLSchema
 from xmlschema.etree import ElementTree
 from xmlschema.exceptions import URLError
 
-from aiida.common.extendeddicts import AttributeDict
+from aiida_quantumespresso.utils.mapping import get_logging_container
 from qe_tools.constants import hartree_to_ev, bohr_to_ang
 
 from .exceptions import XMLParseError
@@ -57,8 +57,10 @@ def parse_xml(xml_file, dir_with_bands=None, include_deprecated_keys=False):
             xml_file.seek(0)
             parsed_data, logs = parse_pw_xml_pre_6_2(xml_file, dir_with_bands, include_deprecated_keys)
     except Exception:
-        parsed_data = None
-        logs = None
+        import traceback
+        logs = get_logging_container()
+        logs.critical.append(traceback.format_exc())
+        parsed_data = {}
 
     return parsed_data, logs
 
@@ -72,10 +74,7 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
     """
     e_bohr2_to_coulomb_m2 = 57.214766  # e/a0^2 to C/m^2 (electric polarization) from Wolfram Alpha
 
-    logs = AttributeDict({
-        'warning': [],
-        'error': [],
-    })
+    logs = get_logging_container()
 
     # detect schema name+path from XML contents
     schema_filepath = get_schema_filepath(xml)
@@ -114,26 +113,17 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         [x * bohr_to_ang for x in xml_dictionary['output']['atomic_structure']['cell']['a3']],
     ]
 
-    if ('electric_field' in xml_dictionary['input'] and
-        'electric_potential' in xml_dictionary['input']['electric_field'] and
-        xml_dictionary['input']['electric_field']['electric_potential'] == 'sawtooth_potential'):
-        has_electric_field = True
+    inputs = xml_dictionary['input']
+    has_electric_field = inputs.get('electric_field', {}).get('electric_potential', None) == 'sawtooth_potential'
+    has_dipole_correction = inputs.get('electric_field', {}).get('dipole_correction', False)
+
+    if 'occupations' in inputs['bands']:
+        try:
+            occupations = inputs['bands']['occupations']['$']  # also present as ['output']['band_structure']['occupations_kind']
+        except TypeError:  # "string indices must be integers" -- might have attribute 'nspin'
+            occupations = inputs['bands']['occupations']
     else:
-        has_electric_field = False
-
-    if ('electric_field' in xml_dictionary['input'] and
-        'dipole_correction' in xml_dictionary['input']['electric_field']):
-        has_dipole_correction = xml_dictionary['input']['electric_field']['dipole_correction']
-    else:
-        has_dipole_correction = False
-
-    # if 'bands' in xml_dictionary['input'] and 'occupations' in xml_dictionary['input']['bands']:
-    # the above condition is always true, according to the new schema
-
-    try:
-        occupations = xml_dictionary['input']['bands']['occupations']['$']  # also present as ['output']['band_structure']['occupations_kind']
-    except TypeError:  # "string indices must be integers" -- might have attribute 'nspin'
-        occupations = xml_dictionary['input']['bands']['occupations']
+        occupations = None
 
     if include_deprecated_v2_keys:
 
@@ -145,7 +135,7 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         else:
             fixed_occupations = False
 
-        if 'tetrahedra' in occupations:
+        if occupations and 'tetrahedra' in occupations:
             tetrahedron_method = True
         else:
             tetrahedron_method = False
@@ -156,7 +146,7 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
             smearing_method = True
 
         if smearing_method:
-            if 'smearing' not in (list(xml_dictionary['output']['band_structure'].keys()) + list(xml_dictionary['input']['bands'].keys())):
+            if 'smearing' not in (list(xml_dictionary['output']['band_structure'].keys()) + list(inputs.keys())):
                 logs.error.append("occupations is '{}' but key 'smearing' is not present under input/bands "
                                   'nor under output/band_structure'.format(occupations))
             # TODO: this error is triggered if no smearing is specified in input. But this is a valid input, so we should't throw an error.
@@ -171,8 +161,8 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
     '''
     if 'smearing' in xml_dictionary['output']['band_structure']:
         smearing_xml = xml_dictionary['output']['band_structure']['smearing']
-    elif 'smearing' in xml_dictionary['input']['bands']:
-        smearing_xml = xml_dictionary['input']['bands']['smearing']
+    elif 'smearing' in inputs:
+        smearing_xml = inputs['smearing']
     try:
         smearing_type    = smearing_xml['$']
         smearing_degauss = smearing_xml['@degauss']
@@ -203,21 +193,18 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         magnetization_angle2.append(specie.get('magnetization_angle2', 0.0))
 
     constraint_mag = 0
-    if ('spin_constraints' in xml_dictionary['input'] and
-        'spin_constraints' in xml_dictionary['input']['spin_constraints']):
-        spin_constraints = xml_dictionary['input']['spin_constraints']['spin_constraints']
-
-        if spin_constraints == 'atomic':
-            constraint_mag = 1
-        elif spin_constraints == 'atomic direction':
-            constraint_mag = 2
-        elif spin_constraints == 'total':
-            constraint_mag = 3
-        elif spin_constraints == 'total direction':
-            constraint_mag = 6
+    spin_constraints = inputs.get('spin_constraints', {}).get('spin_constraints', None)
+    if spin_constraints == 'atomic':
+        constraint_mag = 1
+    elif spin_constraints == 'atomic direction':
+        constraint_mag = 2
+    elif spin_constraints == 'total':
+        constraint_mag = 3
+    elif spin_constraints == 'total direction':
+        constraint_mag = 6
 
     lsda = xml_dictionary['input']['spin']['lsda']
-    spin_orbit_calculation = xml_dictionary['input']['spin']['spinorbit']
+    spin_orbit_calculation = inputs['spin']['spinorbit']
     non_colinear_calculation = xml_dictionary['output']['magnetization']['noncolin']
     do_magnetization = xml_dictionary['output']['magnetization']['do_magnetization']
 
@@ -284,96 +271,17 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         else:
             raise XMLParseError('Unexpected type of symmetry: {}'.format(symmetry_type))
 
-    if (nsym != len(symmetries)) or (nrot != len(symmetries)+len(lattice_symmetries)):
+    if (nsym != len(symmetries)) or (nrot != len(symmetries) + len(lattice_symmetries)):
         logs.warning.append(
             'Inconsistent number of symmetries: nsym={}, nrot={}, len(symmetries)={}, len(lattice_symmetries)={}'.format(
                 nsym, nrot, len(symmetries), len(lattice_symmetries))
         )
 
-    # Band structure
-    num_k_points = xml_dictionary['output']['band_structure']['nks']
-    num_electrons = xml_dictionary['output']['band_structure']['nelec']
-    num_atomic_wfc = xml_dictionary['output']['band_structure']['num_of_atomic_wfc']
-    num_bands = xml_dictionary['output']['band_structure'].get('nbnd', None)
-    num_bands_up = xml_dictionary['output']['band_structure'].get('nbnd_up', None)
-    num_bands_down = xml_dictionary['output']['band_structure'].get('nbnd_dw', None)
-
-    if num_bands is None and num_bands_up is None and num_bands_down is None:
-        raise XMLParseError('None of `nbnd`, `nbnd_up` or `nbdn_dw` could be parsed.')
-
-    # If both channels are `None` we are dealing with a non spin-polarized or non-collinear calculation
-    elif num_bands_up is None and num_bands_down is None:
-        spins = False
-
-    # If only one of the channels is `None` we raise, because that is an inconsistent result
-    elif num_bands_up is None or num_bands_down is None:
-        raise XMLParseError('Only one of `nbnd_up` and `nbnd_dw` could be parsed')
-
-    # Here it is a spin-polarized calculation, where for pw.x the number of bands in each channel should be identical.
-    else:
-        spins = True
-        if num_bands_up != num_bands_down:
-            raise XMLParseError('different number of bands for spin channels: {} and {}'.format(num_bands_up, num_bands_down))
-
-        if num_bands is not None and num_bands != num_bands_up + num_bands_down:
-            raise XMLParseError('Inconsistent number of bands: nbnd={}, nbnd_up={}, nbnd_down={}'.format(num_bands, num_bands_up, num_bands_down))
-
-        if num_bands is None:
-            num_bands = num_bands_up + num_bands_down   # backwards compatibility;
-
-    # k-points
-    k_points = []
-    k_points_weights = []
-    ks_states = xml_dictionary['output']['band_structure']['ks_energies']
-    # alat is technically an optional attribute according to the schema,
-    # but I don't know what to do if it's missing. atomic_structure is mandatory.
-    output_alat_bohr = xml_dictionary['output']['atomic_structure']['@alat']
-    output_alat_angstrom = output_alat_bohr * bohr_to_ang
-    for ks_state in ks_states:
-        k_points.append([kp*2*np.pi/output_alat_angstrom for kp in ks_state['k_point']['$']])
-        k_points_weights.append(ks_state['k_point']['@weight'])
-    # bands
-    if not spins:
-        # Note: 'parse_with_retrieved' still expects a list of lists
-        band_eigenvalues = [[]]
-        band_occupations = [[]]
-        for ks_state in ks_states:
-            band_eigenvalues[0].append(ks_state['eigenvalues']['$'])
-            band_occupations[0].append(ks_state['occupations']['$'])
-    else:
-        band_eigenvalues = [[],[]]
-        band_occupations = [[],[]]
-        for ks_state in ks_states:
-            band_eigenvalues[0].append(ks_state['eigenvalues']['$'][0:num_bands_up])
-            band_eigenvalues[1].append(ks_state['eigenvalues']['$'][num_bands_up:num_bands])
-            band_occupations[0].append(ks_state['occupations']['$'][0:num_bands_up])
-            band_occupations[1].append(ks_state['occupations']['$'][num_bands_up:num_bands])
-
-    band_eigenvalues = np.array(band_eigenvalues) * hartree_to_ev
-    band_occupations = np.array(band_occupations)
-
-    if not spins:
-        parser_assert_equal(band_eigenvalues.shape, (1,num_k_points,num_bands),
-                            'Unexpected shape of band_eigenvalues')
-        parser_assert_equal(band_occupations.shape, (1,num_k_points,num_bands),
-                            'Unexpected shape of band_occupations')
-    else:
-        parser_assert_equal(band_eigenvalues.shape, (2,num_k_points,num_bands_up),
-                            'Unexpected shape of band_eigenvalues')
-        parser_assert_equal(band_occupations.shape, (2,num_k_points,num_bands_up),
-                            'Unexpected shape of band_occupations')
-
-    bands_dict = {
-        'occupations': band_occupations,
-        'bands': band_eigenvalues,
-        'bands_units': 'eV',
-    }
-
     xml_data = {
         #'pp_check_flag': True, # Currently not printed in the new format.
-            #Signals whether the XML file is complete
-            # and can be used for post-processing. Everything should be in the XML now, but in
-            # any case, the new XML schema should mostly protect from incomplete files.
+        # Signals whether the XML file is complete
+        # and can be used for post-processing. Everything should be in the XML now, but in
+        # any case, the new XML schema should mostly protect from incomplete files.
         'lkpoint_dir': False, # Currently not printed in the new format.
             # Signals whether kpt-data are written in sub-directories.
             # Was generally true in the old format, but now all the eigenvalues are
@@ -387,7 +295,6 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         'k_points_units': '1 / angstrom',
         'symmetries_units': 'crystal',
         'constraint_mag': constraint_mag,
-        'occupations': occupations,
         'magnetization_angle2': magnetization_angle2,
         'magnetization_angle1': magnetization_angle1,
         'starting_magnetization': starting_magnetization,
@@ -411,23 +318,118 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         'lsda': lsda,
         'number_of_spin_components': nspin,
         'no_time_rev_operations': xml_dictionary['input']['symmetry_flags']['no_t_rev'],
-        'inversion_symmetry': inversion_symmetry,  # the old tag was INVERSION_SYMMETRY,
-                    #and was set to (from the code): "invsym    if true the system has inversion symmetry"
+        'inversion_symmetry': inversion_symmetry,  # the old tag was INVERSION_SYMMETRY and was set to (from the code): "invsym    if true the system has inversion symmetry"
         'number_of_bravais_symmetries': nrot,  # lattice symmetries
         'number_of_symmetries': nsym,          # crystal symmetries
         'wfc_cutoff': xml_dictionary['input']['basis']['ecutwfc'] * hartree_to_ev,
-        'rho_cutoff': xml_dictionary['output']['basis_set']['ecutrho'] * hartree_to_ev, # not always printed in input->basis
+        'rho_cutoff': xml_dictionary['output']['basis_set']['ecutrho'] * hartree_to_ev,  # not always printed in input->basis
         'smooth_fft_grid': [value for _, value in sorted(xml_dictionary['output']['basis_set']['fft_smooth'].items())],
         'dft_exchange_correlation': xml_dictionary['input']['dft']['functional'],  # TODO: also parse optional elements of 'dft' tag
             # WARNING: this is different between old XML and new XML
         'spin_orbit_calculation': spin_orbit_calculation,
-        'number_of_atomic_wfc': num_atomic_wfc,
-        'number_of_k_points': num_k_points,
-        'number_of_electrons': num_electrons,
-        'k_points': k_points,
-        'k_points_weights': k_points_weights,
         'q_real_space': xml_dictionary['output']['algorithmic_info']['real_space_q'],
     }
+
+    # alat is technically an optional attribute according to the schema,
+    # but I don't know what to do if it's missing. atomic_structure is mandatory.
+    output_alat_bohr = xml_dictionary['output']['atomic_structure']['@alat']
+    output_alat_angstrom = output_alat_bohr * bohr_to_ang
+
+    # Band structure
+    if 'band_structure' in xml_dictionary['output']:
+        band_structure = xml_dictionary['output']['band_structure']
+        num_k_points = band_structure['nks']
+        num_electrons = band_structure['nelec']
+        num_atomic_wfc = band_structure['num_of_atomic_wfc']
+        num_bands = band_structure.get('nbnd', None)
+        num_bands_up = band_structure.get('nbnd_up', None)
+        num_bands_down = band_structure.get('nbnd_dw', None)
+
+        if num_bands is None and num_bands_up is None and num_bands_down is None:
+            raise XMLParseError('None of `nbnd`, `nbnd_up` or `nbdn_dw` could be parsed.')
+
+        # If both channels are `None` we are dealing with a non spin-polarized or non-collinear calculation
+        elif num_bands_up is None and num_bands_down is None:
+            spins = False
+
+        # If only one of the channels is `None` we raise, because that is an inconsistent result
+        elif num_bands_up is None or num_bands_down is None:
+            raise XMLParseError('Only one of `nbnd_up` and `nbnd_dw` could be parsed')
+
+        # Here it is a spin-polarized calculation, where for pw.x the number of bands in each channel should be identical.
+        else:
+            spins = True
+            if num_bands_up != num_bands_down:
+                raise XMLParseError('different number of bands for spin channels: {} and {}'.format(num_bands_up, num_bands_down))
+
+            if num_bands is not None and num_bands != num_bands_up + num_bands_down:
+                raise XMLParseError('Inconsistent number of bands: nbnd={}, nbnd_up={}, nbnd_down={}'.format(num_bands, num_bands_up, num_bands_down))
+
+            if num_bands is None:
+                num_bands = num_bands_up + num_bands_down   # backwards compatibility;
+
+        k_points = []
+        k_points_weights = []
+        ks_states = band_structure['ks_energies']
+        for ks_state in ks_states:
+            k_points.append([kp * 2 * np.pi / output_alat_angstrom for kp in ks_state['k_point']['$']])
+            k_points_weights.append(ks_state['k_point']['@weight'])
+
+        if not spins:
+            band_eigenvalues = [[]]
+            band_occupations = [[]]
+            for ks_state in ks_states:
+                band_eigenvalues[0].append(ks_state['eigenvalues']['$'])
+                band_occupations[0].append(ks_state['occupations']['$'])
+        else:
+            band_eigenvalues = [[], []]
+            band_occupations = [[], []]
+            for ks_state in ks_states:
+                band_eigenvalues[0].append(ks_state['eigenvalues']['$'][0:num_bands_up])
+                band_eigenvalues[1].append(ks_state['eigenvalues']['$'][num_bands_up:num_bands])
+                band_occupations[0].append(ks_state['occupations']['$'][0:num_bands_up])
+                band_occupations[1].append(ks_state['occupations']['$'][num_bands_up:num_bands])
+
+        band_eigenvalues = np.array(band_eigenvalues) * hartree_to_ev
+        band_occupations = np.array(band_occupations)
+
+        if not spins:
+            parser_assert_equal(band_eigenvalues.shape, (1, num_k_points, num_bands),
+                                'Unexpected shape of band_eigenvalues')
+            parser_assert_equal(band_occupations.shape, (1, num_k_points, num_bands),
+                                'Unexpected shape of band_occupations')
+        else:
+            parser_assert_equal(band_eigenvalues.shape, (2, num_k_points, num_bands_up),
+                                'Unexpected shape of band_eigenvalues')
+            parser_assert_equal(band_occupations.shape, (2, num_k_points, num_bands_up),
+                                'Unexpected shape of band_occupations')
+
+        if not spins:
+            xml_data['number_of_bands'] = num_bands
+        else:
+            # For collinear spin-polarized calculations `spins=True` and `num_bands` is sum of both channels. To get the
+            # actual number of bands, we divide by two using integer division
+            xml_data['number_of_bands'] = num_bands // 2
+
+        for key, value in [('number_of_bands_up', num_bands_up), ('number_of_bands_down', num_bands_down)]:
+            if value is not None:
+                xml_data[key] = value
+
+        if 'fermi_energy' in band_structure:
+            xml_data['fermi_energy'] = band_structure['fermi_energy'] * hartree_to_ev
+
+        bands_dict = {
+            'occupations': band_occupations,
+            'bands': band_eigenvalues,
+            'bands_units': 'eV',
+        }
+
+        xml_data['number_of_atomic_wfc'] = num_atomic_wfc
+        xml_data['number_of_k_points'] = num_k_points
+        xml_data['number_of_electrons'] = num_electrons
+        xml_data['k_points'] = k_points
+        xml_data['k_points_weights'] = k_points_weights
+        xml_data['bands'] = bands_dict
 
     try:
         monkhorst_pack = xml_dictionary['input']['k_points_IBZ']['monkhorst_pack']
@@ -437,22 +439,11 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         xml_data['monkhorst_pack_grid'] = [monkhorst_pack[attr] for attr in ['@nk1', '@nk2', '@nk3']]
         xml_data['monkhorst_pack_offset'] = [monkhorst_pack[attr] for attr in ['@k1', '@k2', '@k3']]
 
-    if not spins:
-        xml_data['number_of_bands'] = num_bands
-    else:
-        # For collinear spin-polarized calculations `spins=True` and `num_bands` is sum of both channels. To get the
-        # actual number of bands, we divide by two using integer division
-        xml_data['number_of_bands'] = num_bands // 2
-
-    for key, value in [('number_of_bands_up', num_bands_up), ('number_of_bands_down', num_bands_down)]:
-        if value is not None:
-            xml_data[key] = value
+    if occupations is not None:
+        xml_data['occupations'] = occupations
 
     if 'boundary_conditions' in xml_dictionary['output'] and 'assume_isolated' in xml_dictionary['output']['boundary_conditions']:
         xml_data['assume_isolated'] = xml_dictionary['output']['boundary_conditions']['assume_isolated']
-
-    if 'fermi_energy' in xml_dictionary['output']['band_structure']:
-        xml_data['fermi_energy'] = xml_dictionary['output']['band_structure']['fermi_energy'] * hartree_to_ev
 
     # This is not printed by QE 6.3, but will be re-added before the next version
     if 'real_space_beta' in xml_dictionary['output']['algorithmic_info']:
@@ -464,12 +455,12 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
     # NOTE: n_scf_steps refers to the number of SCF steps in the *last* loop only.
     # To get the total number of SCF steps in the run you should sum up the individual steps.
     # TODO: should we parse 'steps' too? Are they already added in the output trajectory?
-    for key in ['convergence_achieved','n_scf_steps','scf_error']:
+    for key in ['convergence_achieved', 'n_scf_steps', 'scf_error']:
         try:
             conv_info_scf[key] = xml_dictionary['output']['convergence_info']['scf_conv'][key]
         except KeyError:
             pass
-    for key in ['convergence_achieved','n_opt_steps','grad_norm']:
+    for key in ['convergence_achieved', 'n_opt_steps', 'grad_norm']:
         try:
             conv_info_opt[key] = xml_dictionary['output']['convergence_info']['opt_conv'][key]
         except KeyError:
@@ -513,23 +504,24 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         # parser_assert_equal(xml_data['berry_phase']['total_polarization_units'].lower(), 'e/bohr^2',
         #                    "Unsupported units for total polarization")
         # Retro-compatible keys:
-        xml_data['total_phase']      = berry_phase['totalPhase']['$']
-        xml_data['total_phase_units']      = '2pi'
-        xml_data['ionic_phase']      = berry_phase['totalPhase']['@ionic']
-        xml_data['ionic_phase_units']      = '2pi'
-        xml_data['electronic_phase'] = berry_phase['totalPhase']['@electronic']
-        xml_data['electronic_phase_units'] = '2pi'
         polarization = berry_phase['totalPolarization']['polarization']['$']
         polarization_units = berry_phase['totalPolarization']['polarization']['@Units']
         polarization_modulus = berry_phase['totalPolarization']['modulus']
-        parser_assert(polarization_units in ['e/bohr^2','C/m^2'],
+        parser_assert(polarization_units in ['e/bohr^2', 'C/m^2'],
                       "Unsupported units '{}' of total polarization".format(polarization_units))
         if polarization_units == 'e/bohr^2':
             polarization *= e_bohr2_to_coulomb_m2
             polarization_modulus *= e_bohr2_to_coulomb_m2
-        xml_data['polarization']        = polarization
-        xml_data['polarization_module'] = polarization_modulus # should be called "modulus"
-        xml_data['polarization_units']  = 'C / m^2'
+
+        xml_data['total_phase'] = berry_phase['totalPhase']['$']
+        xml_data['total_phase_units'] = '2pi'
+        xml_data['ionic_phase'] = berry_phase['totalPhase']['@ionic']
+        xml_data['ionic_phase_units'] = '2pi'
+        xml_data['electronic_phase'] = berry_phase['totalPhase']['@electronic']
+        xml_data['electronic_phase_units'] = '2pi'
+        xml_data['polarization'] = polarization
+        xml_data['polarization_module'] = polarization_modulus  # should be called "modulus"
+        xml_data['polarization_units'] = 'C / m^2'
         xml_data['polarization_direction'] = berry_phase['totalPolarization']['direction']
         # TODO: add conversion for (e/Omega).bohr (requires to know Omega, the volume of the cell)
         # TODO (maybe): Not parsed:
@@ -537,11 +529,11 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         # - individual electronic phases and weights
 
     # TODO: We should put the `non_periodic_cell_correction` string in (?)
-    atoms = [[atom['@name'], [coord*bohr_to_ang for coord in atom['$']]] for atom in xml_dictionary['output']['atomic_structure']['atomic_positions']['atom']]
+    atoms = [[atom['@name'], [coord * bohr_to_ang for coord in atom['$']]] for atom in xml_dictionary['output']['atomic_structure']['atomic_positions']['atom']]
     species = xml_dictionary['output']['atomic_species']['species']
     structure_data = {
-       'atomic_positions_units': 'Angstrom',
-       'direct_lattice_vectors_units': 'Angstrom',
+        'atomic_positions_units': 'Angstrom',
+        'direct_lattice_vectors_units': 'Angstrom',
         # ??? 'atoms_if_pos_list': [[1, 1, 1], [1, 1, 1]],
         'number_of_atoms': xml_dictionary['output']['atomic_structure']['@nat'],
         'lattice_parameter': output_alat_angstrom,
@@ -559,14 +551,13 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         'lattice_parameter_xml': output_alat_bohr,
         'number_of_species': xml_dictionary['output']['atomic_species']['@ntyp'],
         'species': {
-            'index': [i + 1 for i,specie in enumerate(species)],
+            'index': [i + 1 for i, specie in enumerate(species)],
             'pseudo': [specie['pseudo_file'] for specie in species],
             'mass': [specie['mass'] for specie in species],
             'type': [specie['@name'] for specie in species]
         },
     }
 
-    xml_data['bands'] = bands_dict
     xml_data['structure'] = structure_data
 
     return xml_data, logs
