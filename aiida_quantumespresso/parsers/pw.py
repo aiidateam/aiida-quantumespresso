@@ -31,11 +31,13 @@ class PwParser(Parser):
         except exceptions.NotExistent:
             return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
 
-        # Look for optional settings input node and potential 'parser_options' dictionary within it
         try:
-            parser_options = self.node.inputs.settings.get_dict()[self.get_parser_settings_key()]
-        except (KeyError, exceptions.NotExistent):
-            parser_options = None
+            settings = self.node.inputs.settings.get_dict()
+        except exceptions.NotExistent:
+            settings = {}
+
+        # Look for optional settings input node and potential 'parser_options' dictionary within it
+        parser_options = settings.get(self.get_parser_settings_key(), None)
 
         # Verify that the retrieved_temporary_folder is within the arguments if temporary files were specified
         if self.node.get_attribute('retrieve_temporary_list', None):
@@ -51,7 +53,7 @@ class PwParser(Parser):
         parsed_bands = parsed_stdout.pop('bands', {})
         parsed_structure = parsed_stdout.pop('structure', {})
         parsed_trajectory = parsed_stdout.pop('trajectory', {})
-        parsed_parameters = self.build_output_parameters(parsed_xml, parsed_stdout)
+        parsed_parameters = self.build_output_parameters(parsed_stdout, parsed_xml)
 
         # Append the last frame of some of the smaller trajectory arrays to the parameters for easy querying
         self.final_trajectory_frame_to_parameters(parsed_parameters, parsed_trajectory)
@@ -95,6 +97,10 @@ class PwParser(Parser):
         self.out('output_parameters', orm.Dict(dict=parsed_parameters))
 
         # Emit the logs returned by the XML and stdout parsing through the logger
+        # If the calculation was an initialization run, reset the XML logs because they will contain a lot of verbose
+        # warnings from the schema parser about incomplete data, but that is to be expected in an initialization run.
+        if settings.get('ONLY_INITIALIZATION', False):
+            logs_xml.pop('error')
         self.emit_logs(logs_stdout, logs_xml)
 
         # If the both stdout and xml exit codes are set, there was a basic problem with both output files and there
@@ -272,6 +278,8 @@ class PwParser(Parser):
         except XMLUnsupportedFormatError:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_FORMAT
         except Exception:
+            import traceback
+            traceback.print_exc()
             self.exit_code_xml = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
 
         return parsed_data, logs
@@ -304,6 +312,8 @@ class PwParser(Parser):
         try:
             parsed_data, logs = parse_stdout(stdout, parameters, parser_options, parsed_xml)
         except Exception:
+            import traceback
+            traceback.print_exc()
             self.exit_code_stdout = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
 
         # If the stdout was incomplete, most likely the job was interrupted before it could cleanly finish, so the
@@ -369,11 +379,9 @@ class PwParser(Parser):
 
         for key in list(parsed_stdout.keys()):
             if key in list(parsed_xml.keys()):
-                if key == 'fermi_energy' or key == 'fermi_energy_units':  # an exception for the (only?) key that may be found on both
-                    del parsed_stdout[key]
-                else:
-                    raise AssertionError('{} found in both dictionaries, values: {} vs. {}'.format(
-                        key, parsed_stdout[key], parsed_xml[key]))  # this shouldn't happen!
+                if parsed_stdout[key] != parsed_xml[key]:
+                    raise AssertionError('{} found in both dictionaries with different values: {} vs. {}'.format(
+                        key, parsed_stdout[key], parsed_xml[key]))
 
         parameters = dict(list(parsed_xml.items()) + list(parsed_stdout.items()) + list(parsed_info.items()))
 

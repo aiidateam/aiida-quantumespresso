@@ -8,8 +8,8 @@ import string
 from xml.dom.minidom import parse, parseString, Element
 from six.moves import range
 
-from aiida.common.extendeddicts import AttributeDict
 from aiida_quantumespresso.parsers import QEOutputParsingError
+from aiida_quantumespresso.utils.mapping import get_logging_container
 from qe_tools.constants import ry_to_ev, hartree_to_ev, bohr_to_ang
 
 units_suffix = '_units'
@@ -29,10 +29,7 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands, include_deprecated_keys=False
     import copy
     from xml.parsers.expat import ExpatError
 
-    logs = AttributeDict({
-        'warning': [],
-        'error': [],
-    })
+    logs = get_logging_container()
 
     # NOTE : I often assume that if the xml file has been written, it has no internal errors.
     try:
