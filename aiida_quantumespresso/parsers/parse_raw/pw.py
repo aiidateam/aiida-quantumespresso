@@ -16,6 +16,7 @@ from six.moves import range, zip
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.utils.mapping import get_logging_container
 from qe_tools.constants import ry_to_ev, bohr_to_ang, ry_si, bohr_si
+from six.moves import zip
 
 lattice_tolerance = 1.e-5
 units_suffix = '_units'
@@ -607,11 +608,17 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                 except Exception:
                     logs.warning.append('Error while parsing scf accuracy.')
 
-
             elif 'convergence has been achieved in' in line or 'convergence NOT achieved after' in line:
                 try:
-                    scf_iterations = int(line.split('iterations')[0].split()[-1])
-                    trajectory_data.setdefault('scf_iterations', []).append(scf_iterations)
+                    value = int(line.split('iterations')[0].split()[-1])
+                    trajectory_data.setdefault('scf_iterations', []).append(value)
+                except Exception:
+                    logs.warning.append('Error while parsing scf iterations.')
+
+            elif 'Calculation stopped in scf loop at iteration' in line:
+                try:
+                    value = int(line.split()[-1])
+                    trajectory_data.setdefault('scf_iterations', []).append(value)
                 except Exception:
                     logs.warning.append('Error while parsing scf iterations.')
 
@@ -827,6 +834,20 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                 trajectory_data.setdefault('electronic_dipole_cartesian_axes', []).append(ed_axes)
                 trajectory_data.setdefault('ionic_dipole_cell_average', []).append(id_cell)
                 trajectory_data.setdefault('ionic_dipole_cartesian_axes', []).append(id_axes)
+
+    # adding the final element to the scf_accuracy_index array and check consistency
+    if 'scf_accuracy' and 'scf_iterations' in trajectory_data:
+        value = len(trajectory_data['scf_accuracy'])
+        trajectory_data['scf_accuracy_index'].append(value)
+        # check consistency of accuracy_index vs scf_iterations
+        warning = 'scf_iterations and scf_accuracy arrays are not consistent'
+        if len(trajectory_data['scf_iterations']) + 1 != len(trajectory_data['scf_accuracy_index']):
+            logs.warning.append(warning)
+        value = trajectory_data['scf_accuracy'][0]
+        for i, j in zip(trajectory_data['scf_iterations'], trajectory_data['scf_accuracy_index'][1:]):
+            value += i
+            if value != j:
+                logs.warning.append(warning)
 
     # If specified in the parser options, parse the atomic occupations
     parse_atomic_occupations = parser_options.get('parse_atomic_occupations', False)

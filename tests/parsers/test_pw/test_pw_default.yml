@@ -225,7 +225,7 @@ output_trajectory:
   array|scf_accuracy:
   - 5
   array|scf_accuracy_index:
-  - 1
+  - 2
   array|scf_iterations:
   - 1
   array|steps:
