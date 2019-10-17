@@ -20,7 +20,7 @@ from __future__ import absolute_import
 import jsonschema
 from six.moves import map
 
-from plumpy import ProcessSpec
+from plumpy import ProcessSpec  # pylint: disable=unused-import
 
 from aiida import engine, orm, plugins
 from aiida.common import AttributeDict, LinkType
