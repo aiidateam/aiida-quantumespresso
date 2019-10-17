@@ -530,6 +530,7 @@ class PwParser(Parser):
             'energy_accuracy',
             'energy_ewald',
             'energy_hartree',
+            'energy_hubbard',
             'energy_one_electron',
             'energy_threshold',
             'energy_vdw',
