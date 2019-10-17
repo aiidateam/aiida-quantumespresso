@@ -688,6 +688,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                                 ['one-center paw contrib.', 'energy_one_center_paw'],
                                 ['est. exchange err', 'energy_est_exchange'],
                                 ['Fock energy', 'energy_fock'],
+                                ['Hubbard energy', 'energy_hubbard'],
                                 # Add also ENVIRON specific contribution to the total energy
                                 ['solvation energy', 'energy_solvation'],
                                 ['cavitation energy', 'energy_cavitation'],
