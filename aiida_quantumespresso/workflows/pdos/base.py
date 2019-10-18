@@ -43,56 +43,56 @@ from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 def get_parameter_schema():
     """Return the ``PdosWorkChain`` input parameter schema."""
     return {
-        "$schema": "http://json-schema.org/draft-07/schema",
-        "type": "object",
-        "definitions": {
-            "only": {
-                "type": "object",
-                "patternProperties": {
-                    "^([Ee][mM][iI][nN]|[Ee][mM][aA][xX]|[Dd][Ee][lL][tT][aA][Ee])$": {
-                        "description": "Emin, Emax & DeltaE should not be specified here",
-                        "not" : {}
+        '$schema': 'http://json-schema.org/draft-07/schema',
+        'type': 'object',
+        'definitions': {
+            'only': {
+                'type': 'object',
+                'patternProperties': {
+                    '^([Ee][mM][iI][nN]|[Ee][mM][aA][xX]|[Dd][Ee][lL][tT][aA][Ee])$': {
+                        'description': 'Emin, Emax & DeltaE should not be specified here',
+                        'not': {}
                     }
                 },
-                "properties": {
-                    "ngauss": {
-                        "description": "Type of gaussian broadening.",
-                        "type": "integer",
-                        "enum": [0, 1, -1, -99]
+                'properties': {
+                    'ngauss': {
+                        'description': 'Type of gaussian broadening.',
+                        'type': 'integer',
+                        'enum': [0, 1, -1, -99]
                     },
-                    "degauss": {
-                        "description": "gaussian broadening, Ry (not eV!)",
-                        "type": "number",
-                        "minimum": 0
+                    'degauss': {
+                        'description': 'gaussian broadening, Ry (not eV!)',
+                        'type': 'number',
+                        'minimum': 0
                     },
                 }
             }
         },
-        "required": ["Emin", "Emax", "DeltaE"],
-        "additionalProperties": False,
-        "properties": {
-            "align_to_fermi": {
-                "description": "if true, Emin=>Emin-Efermi & Emax=>Emax-Efermi (Efermi is taken from nscf)",
-                "type": "boolean"
+        'required': ['Emin', 'Emax', 'DeltaE'],
+        'additionalProperties': False,
+        'properties': {
+            'align_to_fermi': {
+                'description': 'if true, Emin=>Emin-Efermi & Emax=>Emax-Efermi (Efermi is taken from nscf)',
+                'type': 'boolean'
             },
-            "Emin": {
-                "description": "min energy (eV) for DOS plot",
-                "type": "number"
+            'Emin': {
+                'description': 'min energy (eV) for DOS plot',
+                'type': 'number'
             },
-            "Emax": {
-                "description": "max energy (eV) for DOS plot",
-                "type": "number"
+            'Emax': {
+                'description': 'max energy (eV) for DOS plot',
+                'type': 'number'
             },
-            "DeltaE": {
-                "description": "energy grid step (eV)",
-                "type": "number",
-                "minimum": 0
+            'DeltaE': {
+                'description': 'energy grid step (eV)',
+                'type': 'number',
+                'minimum': 0
             },
-            "dos_only": {
-                "$ref": "#/definitions/only"
+            'dos_only': {
+                '$ref': '#/definitions/only'
             },
-            "projwfc_only": {
-                "$ref": "#/definitions/only"
+            'projwfc_only': {
+                '$ref': '#/definitions/only'
             }
         }
     }
