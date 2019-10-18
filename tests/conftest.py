@@ -101,12 +101,12 @@ def generate_calc_job():
 def generate_calc_job_node():
     """Fixture to generate a mock `CalcJobNode` for testing parsers."""
 
-    def _generate_calc_job_node(entry_point_name, computer, test_name, inputs=None, attributes=None):
+    def _generate_calc_job_node(entry_point_name, computer, test_name=None, inputs=None, attributes=None):
         """Fixture to generate a mock `CalcJobNode` for testing parsers.
 
         :param entry_point_name: entry point name of the calculation class
         :param computer: a `Computer` instance
-        :param test_name: relative path of directory with test output files in the `fixtures/{entry_point_name}` folder
+        :param test_name: relative path of directory with test output files in the `fixtures/{entry_point_name}` folder.
         :param inputs: any optional nodes to add as input links to the corrent CalcJobNode
         :param attributes: any optional attributes to set on the node
         :return: `CalcJobNode` instance with an attached `FolderData` as the `retrieved` node
@@ -135,17 +135,18 @@ def generate_calc_job_node():
 
         node.store()
 
-        basepath = os.path.dirname(os.path.abspath(__file__))
-        filepath = os.path.join(basepath, 'parsers', 'fixtures', entry_point_name[len('quantumespresso.'):], test_name)
+        if test_name is not None:
+            basepath = os.path.dirname(os.path.abspath(__file__))
+            filepath = os.path.join(basepath, 'parsers', 'fixtures', entry_point_name[len('quantumespresso.'):], test_name)
 
-        retrieved = orm.FolderData()
-        retrieved.put_object_from_tree(filepath)
-        retrieved.add_incoming(node, link_type=LinkType.CREATE, link_label='retrieved')
-        retrieved.store()
+            retrieved = orm.FolderData()
+            retrieved.put_object_from_tree(filepath)
+            retrieved.add_incoming(node, link_type=LinkType.CREATE, link_label='retrieved')
+            retrieved.store()
 
-        remote_folder = orm.RemoteData(computer=computer, remote_path='/tmp')
-        remote_folder.add_incoming(node, link_type=LinkType.CREATE, link_label='remote_folder')
-        remote_folder.store()
+            remote_folder = orm.RemoteData(computer=computer, remote_path='/tmp')
+            remote_folder.add_incoming(node, link_type=LinkType.CREATE, link_label='remote_folder')
+            remote_folder.store()
 
         return node
 
