@@ -277,8 +277,8 @@ class PdosWorkChain(engine.WorkChain):
             if key not in dos_dict:
                 dos_dict[key] = val
         if dos_dict.pop('align_to_fermi', False):
-            dos_dict['Emin'] = dos_dict['Emin'] - self.ctx.nscf_fermi
-            dos_dict['Emax'] = dos_dict['Emax'] - self.ctx.nscf_fermi
+            dos_dict['Emin'] = dos_dict['Emin'] + self.ctx.nscf_fermi
+            dos_dict['Emax'] = dos_dict['Emax'] + self.ctx.nscf_fermi
         dos_inputs.parameters = orm.Dict(dict={
             'DOS': dos_dict
         })
@@ -292,8 +292,8 @@ class PdosWorkChain(engine.WorkChain):
             if key not in projwfc_dict:
                 projwfc_dict[key] = val
         if projwfc_dict.pop('align_to_fermi', False):
-            projwfc_dict['Emin'] = projwfc_dict['Emin'] - self.ctx.nscf_fermi
-            projwfc_dict['Emax'] = projwfc_dict['Emax'] - self.ctx.nscf_fermi
+            projwfc_dict['Emin'] = projwfc_dict['Emin'] + self.ctx.nscf_fermi
+            projwfc_dict['Emax'] = projwfc_dict['Emax'] + self.ctx.nscf_fermi
         projwfc_inputs.parameters = orm.Dict(dict={
             'PROJWFC': projwfc_dict
         })
