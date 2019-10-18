@@ -58,7 +58,16 @@ def test_default(
         }
     }
 
-    dos_parameters = {'Emin': -10, 'Emax': 10, 'DeltaE': 0.01, 'align_to_fermi': True}
+    dos_parameters = {
+        'Emin': -10,
+        'Emax': 10,
+        'DeltaE': 0.01,
+        'align_to_fermi': True,
+        'projwfc_only': {
+            "ngauss": 0,
+            "degauss": 0.01
+        }
+    }
 
     wc_builder.base = scf_inputs
     wc_builder.nscf = {'kpoints': generate_kpoints_mesh(4), 'pw': {'metadata': {'options': get_default_options()}}}

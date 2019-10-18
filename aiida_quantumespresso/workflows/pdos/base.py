@@ -43,41 +43,56 @@ from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 def get_parameter_schema():
     """Return the ``PdosWorkChain`` input parameter schema."""
     return {
-        '$schema': 'http://json-schema.org/draft-07/schema',
-        'type': 'object',
-        'required': ['Emin', 'Emax', 'DeltaE'],
-        'additionalProperties': False,
-        'properties': {
-            'align_to_fermi': {
-                'description': 'if true, Emin=>Emin-Efermi & Emax=>Emax-Efermi (Efermi is taken from nscf)',
-                'type': 'boolean'
+        "$schema": "http://json-schema.org/draft-07/schema",
+        "type": "object",
+        "definitions": {
+            "only": {
+                "type": "object",
+                "patternProperties": {
+                    "^([Ee][mM][iI][nN]|[Ee][mM][aA][xX]|[Dd][Ee][lL][tT][aA][Ee])$": {
+                        "description": "Emin, Emax & DeltaE should not be specified here",
+                        "not" : {}
+                    }
+                },
+                "properties": {
+                    "ngauss": {
+                        "description": "Type of gaussian broadening.",
+                        "type": "integer",
+                        "enum": [0, 1, -1, -99]
+                    },
+                    "degauss": {
+                        "description": "gaussian broadening, Ry (not eV!)",
+                        "type": "number",
+                        "minimum": 0
+                    },
+                }
+            }
+        },
+        "required": ["Emin", "Emax", "DeltaE"],
+        "additionalProperties": False,
+        "properties": {
+            "align_to_fermi": {
+                "description": "if true, Emin=>Emin-Efermi & Emax=>Emax-Efermi (Efermi is taken from nscf)",
+                "type": "boolean"
             },
-            'Emin': {
-                'description': 'min energy (eV) for DOS plot',
-                'type': 'number'
+            "Emin": {
+                "description": "min energy (eV) for DOS plot",
+                "type": "number"
             },
-            'Emax': {
-                'description': 'max energy (eV) for DOS plot',
-                'type': 'number'
+            "Emax": {
+                "description": "max energy (eV) for DOS plot",
+                "type": "number"
             },
-            'DeltaE': {
-                'description': 'energy grid step (eV)',
-                'type': 'number',
+            "DeltaE": {
+                "description": "energy grid step (eV)",
+                "type": "number",
+                "minimum": 0
             },
-            'ngauss': {
-                'description': 'Type of gaussian broadening.',
-                'type': 'integer',
-                'enum': [0, 1, -1, -99]
+            "dos_only": {
+                "$ref": "#/definitions/only"
             },
-            'degauss': {
-                'description': 'gaussian broadening, Ry (not eV!)',
-                'type': 'number'
-            },
-            'dos_only': {
-                'type': 'object'
-            },
-            'projwfc_only': {
-                'type': 'object'
+            "projwfc_only": {
+                "$ref": "#/definitions/only"
             }
         }
     }
@@ -86,9 +101,9 @@ def get_parameter_schema():
 def validate_dos_parameters(node):
     """Validate DOS parameters
 
-    - shared: ngauss | degauss | Emin | Emax | DeltaE
-    - dos.x only: bz_sum
-    - projwfc.x only: pawproj | n_proj_boxes | irmin(3,n_proj_boxes) | irmax(3,n_proj_boxes)
+    - shared: Emin | Emax | DeltaE
+    - dos.x only: ngauss | degauss | bz_sum
+    - projwfc.x only: ngauss | degauss | pawproj | n_proj_boxes | irmin(3,n_proj_boxes) | irmax(3,n_proj_boxes)
 
     """
     jsonschema.validate(node.get_dict(), get_parameter_schema())
@@ -273,12 +288,11 @@ class PdosWorkChain(engine.WorkChain):
         dos_inputs.parent_folder = self.ctx.nscf_parent_folder
         dos_dict = self.inputs.parameters.get_dict()
         dos_dict.pop('projwfc_only', None)
-        for key, val in dos_dict.pop('dos_only', {}).items():
-            if key not in dos_dict:
-                dos_dict[key] = val
         if dos_dict.pop('align_to_fermi', False):
             dos_dict['Emin'] = dos_dict['Emin'] + self.ctx.nscf_fermi
             dos_dict['Emax'] = dos_dict['Emax'] + self.ctx.nscf_fermi
+        for key, val in dos_dict.pop('dos_only', {}).items():
+            dos_dict[key] = val
         dos_inputs.parameters = orm.Dict(dict={
             'DOS': dos_dict
         })
@@ -288,12 +302,11 @@ class PdosWorkChain(engine.WorkChain):
         projwfc_inputs.parent_folder = self.ctx.nscf_parent_folder
         projwfc_dict = self.inputs.parameters.get_dict()
         projwfc_dict.pop('dos_only', None)
-        for key, val in projwfc_dict.pop('projwfc_only', {}).items():
-            if key not in projwfc_dict:
-                projwfc_dict[key] = val
         if projwfc_dict.pop('align_to_fermi', False):
             projwfc_dict['Emin'] = projwfc_dict['Emin'] + self.ctx.nscf_fermi
             projwfc_dict['Emax'] = projwfc_dict['Emax'] + self.ctx.nscf_fermi
+        for key, val in projwfc_dict.pop('projwfc_only', {}).items():
+            projwfc_dict[key] = val
         projwfc_inputs.parameters = orm.Dict(dict={
             'PROJWFC': projwfc_dict
         })
