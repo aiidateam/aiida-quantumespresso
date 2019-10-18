@@ -297,7 +297,7 @@ class PdosWorkChain(engine.WorkChain):
         if not calculation.is_finished_ok:
             self.report('ProjwfcCalculation failed with exit status {}'.format(calculation.exit_status))
             error_code = error_code or self.exit_codes.ERROR_SUB_PROCESS_FAILED_PROJWFC
-        
+
         if error_code:
             return error_code
 
