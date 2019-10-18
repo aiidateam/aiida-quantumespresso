@@ -4,15 +4,21 @@
 This requires four computations:
 
 - SCF (pw.x), to generate the initial wavefunction
-- NSCF (pw.x), to generate eigenvalues with a denser k-point mesh
+- NSCF (pw.x), to generate eigenvalues, generally with a denser k-point mesh and tetrahedra occupations
 - Total DoS (dos.x), to generate total densities of state
 - Partial DoS (projwfc.x), to generate partial densities of state by projecting wavefunctions onto atomic orbitals
 
 Related Resources:
 
-- https://www.quantum-espresso.org/Doc/pw_user_guide/node10.html
-- https://blog.levilentz.com/density-of-states-calculation/
-- http://indico.ictp.it/event/7921/session/320/contribution/1261/material/0/0.pdf
+- `Electronic structure calculations user guide <https://www.quantum-espresso.org/Doc/pw_user_guide/node10.html>`_
+- `Density of States calculation blog <https://blog.levilentz.com/density-of-states-calculation/>`_
+- `Quantum ESPRESSO tutorial slides <http://indico.ictp.it/event/7921/session/320/contribution/1261/material/0/0.pdf>`_
+
+.. warning::
+
+    For QE v6.1, there is an issue using ``tetrahedra`` occupations, as is recommended for ``nscf``,
+    and both ``dos.x`` and ``projwfc.x`` will raise errors when reading the xml file
+    (see `this post <https://lists.quantum-espresso.org/pipermail/users/2017-November/039656.html>`_).
 
 """
 from __future__ import absolute_import
@@ -215,6 +221,7 @@ class PdosWorkChain(engine.WorkChain):
         inputs.pw.parameters['CONTROL']['calculation'] = 'nscf'
         inputs.pw.parameters['CONTROL']['restart_mode'] = 'from_scratch'
         inputs.pw.parameters.setdefault('SYSTEM', {})
+        # TODO have an input dict to control override of base parameters (with these as default)? # pylint: disable=fixme
         inputs.pw.parameters['SYSTEM']['occupations'] = 'tetrahedra'
         inputs.pw.parameters['SYSTEM']['nosym'] = True
         try:
