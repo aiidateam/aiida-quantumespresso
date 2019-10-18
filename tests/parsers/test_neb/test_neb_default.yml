@@ -70,6 +70,7 @@ parameters:
         scf_error: 2.251833940343682e-10
     creator_name: pwscf
     creator_version: 6.4.1
+    degauss: 0.0408170751759
     dft_exchange_correlation: PBE
     do_magnetization: false
     do_not_use_time_reversal: false
@@ -137,6 +138,7 @@ parameters:
     q_real_space: false
     rho_cutoff: 1360.56917253
     rho_cutoff_units: eV
+    smearing_type: gaussian
     smooth_fft_grid:
     - 36
     - 15
@@ -183,6 +185,7 @@ parameters:
         scf_error: 2.987478357372217e-09
     creator_name: pwscf
     creator_version: 6.4.1
+    degauss: 0.0408170751759
     dft_exchange_correlation: PBE
     do_magnetization: false
     do_not_use_time_reversal: false
@@ -234,6 +237,7 @@ parameters:
     q_real_space: false
     rho_cutoff: 1360.56917253
     rho_cutoff_units: eV
+    smearing_type: gaussian
     smooth_fft_grid:
     - 36
     - 15
@@ -296,6 +300,7 @@ parameters:
         scf_error: 2.80245941733356e-10
     creator_name: pwscf
     creator_version: 6.4.1
+    degauss: 0.0408170751759
     dft_exchange_correlation: PBE
     do_magnetization: false
     do_not_use_time_reversal: false
@@ -363,6 +368,7 @@ parameters:
     q_real_space: false
     rho_cutoff: 1360.56917253
     rho_cutoff_units: eV
+    smearing_type: gaussian
     smooth_fft_grid:
     - 36
     - 15
