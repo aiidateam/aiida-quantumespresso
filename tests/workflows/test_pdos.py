@@ -3,7 +3,7 @@
 """Tests for the `PdosWorkChain` class."""
 from __future__ import absolute_import
 
-from aiida import orm, plugins
+from aiida import orm, plugins, engine
 from aiida.common import LinkType
 from aiida.engine.utils import instantiate_process
 from aiida.manage.manager import get_manager
@@ -58,13 +58,10 @@ def test_default(
         }
     }
 
-    dos_parameters = {'Emin': -100, 'Emax': 100, 'DeltaE': 0.01}
+    dos_parameters = {'Emin': -10, 'Emax': 10, 'DeltaE': 0.01, 'align_to_fermi': True}
 
     wc_builder.base = scf_inputs
-    wc_builder.nscf = {
-        'kpoints': generate_kpoints_mesh(4),
-        'pw': {'metadata': {'options': get_default_options()}}
-        }
+    wc_builder.nscf = {'kpoints': generate_kpoints_mesh(4), 'pw': {'metadata': {'options': get_default_options()}}}
     wc_builder.parameters = dos_parameters
     wc_builder.dos = {
         'code': generate_code_localhost('quantumespresso.dos', fixture_computer_localhost),
@@ -89,33 +86,47 @@ def test_default(
     pw_input_helper(scf_wkchain.inputs.pw.parameters.get_dict(), scf_wkchain.inputs.pw.structure)
     wkchain.ctx.scf_parent_folder = orm.RemoteData(remote_path='/path/on/remote', computer=fixture_computer_localhost)
 
+    # assert wkchain.inspect_scf() is None
+
     # run nscf
     nscf_inputs = wkchain.run_nscf()
-    nscf_wkchain = instantiate_process_cls(plugins.WorkflowFactory('quantumespresso.pw.base'), nscf_inputs)
-    pw_input_helper(nscf_wkchain.inputs.pw.parameters.get_dict(), nscf_wkchain.inputs.pw.structure)
-    wkchain.ctx.nscf_parent_folder = orm.RemoteData(remote_path='/path/on/remote', computer=fixture_computer_localhost)
 
-    # run dos and projwfc
+    # mock nscf outputs
+    # TODO ensure this test fails if the output link from PwCalculation changes from `output_parameters` # pylint: disable=fixme
+    mock_workchain = instantiate_process_cls(plugins.WorkflowFactory('quantumespresso.pw.base'), nscf_inputs)
+    pw_input_helper(mock_workchain.inputs.pw.parameters.get_dict(), mock_workchain.inputs.pw.structure)
+    mock_wknode = mock_workchain.node
+    mock_wknode.set_exit_status(0)
+    mock_wknode.set_process_state(engine.ProcessState.FINISHED)
+    mock_wknode.store()
+    remote = orm.RemoteData(remote_path='/path/on/remote', computer=fixture_computer_localhost)
+    remote.store()
+    remote.add_incoming(mock_wknode, link_type=LinkType.RETURN, link_label='remote_folder')
+    result = orm.Dict(dict={'fermi_energy': 6.9029595890428})
+    result.store()
+    result.add_incoming(mock_wknode, link_type=LinkType.RETURN, link_label='output_parameters')
+    wkchain.ctx.workchain_nscf = mock_wknode
+
+    assert wkchain.inspect_nscf() is None
+
+    # mock run dos and projwfc, and check that their inputs are acceptable
     dos_inputs, projwfc_inputs = wkchain.run_dos()
     generate_calc_job(fixture_sandbox_folder, 'quantumespresso.dos', dos_inputs)
     generate_calc_job(fixture_sandbox_folder, 'quantumespresso.projwfc', projwfc_inputs)
 
-    # mock outputs
-    calc_dos = orm.CalcJobNode(computer=fixture_computer_localhost, process_type='quantumespresso.dos')
-    calc_dos.set_option('resources', {'num_machines': 1, 'num_mpiprocs_per_machine': 1})
-    calc_dos.store()
-    result_dos = orm.Dict()
-    result_dos.add_incoming(calc_dos, link_type=LinkType.CREATE, link_label='output_parameters')
-    result_dos.store()
-    wkchain.ctx.calc_dos = calc_dos
+    # mock dos & projwfc outputs
+    for calc_type in ['dos', 'projwfc']:
+        mock_calc = orm.CalcJobNode(computer=fixture_computer_localhost, process_type='quantumespresso.' + calc_type)
+        mock_calc.set_option('resources', {'num_machines': 1, 'num_mpiprocs_per_machine': 1})
+        mock_calc.set_exit_status(0)
+        mock_calc.set_process_state(engine.ProcessState.FINISHED)
+        mock_calc.store()
+        result = orm.Dict()
+        result.add_incoming(mock_calc, link_type=LinkType.CREATE, link_label='output_parameters')
+        result.store()
+        wkchain.ctx['calc_' + calc_type] = mock_calc
 
-    calc_projwfc = orm.CalcJobNode(computer=fixture_computer_localhost, process_type='quantumespresso.projwfc')
-    calc_projwfc.set_option('resources', {'num_machines': 1, 'num_mpiprocs_per_machine': 1})
-    calc_projwfc.store()
-    result_dos = orm.Dict()
-    result_dos.add_incoming(calc_projwfc, link_type=LinkType.CREATE, link_label='output_parameters')
-    result_dos.store()
-    wkchain.ctx.calc_projwfc = calc_projwfc
+    assert wkchain.inspect_dos() is None
 
     # store results
     wkchain.results()

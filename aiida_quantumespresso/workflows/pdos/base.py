@@ -8,6 +8,11 @@ This requires four computations:
 - Total DoS (dos.x), to generate total densities of state
 - Partial DoS (projwfc.x), to generate partial densities of state by projecting wavefunctions onto atomic orbitals
 
+Additional functionality:
+
+- Setting ``'align_to_fermi': True`` in the input ``parameters`` node,
+  will ensure that the energy range is centred around the Fermi energy.
+
 Related Resources:
 
 - `Electronic structure calculations user guide <https://www.quantum-espresso.org/Doc/pw_user_guide/node10.html>`_
@@ -35,6 +40,49 @@ from aiida.orm.nodes.data.base import to_aiida_type
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 
 
+def get_parameter_schema():
+    """Return the ``PdosWorkChain`` input parameter schema."""
+    return {
+        '$schema': 'http://json-schema.org/draft-07/schema',
+        'type': 'object',
+        'required': ['Emin', 'Emax', 'DeltaE'],
+        'additionalProperties': False,
+        'properties': {
+            'align_to_fermi': {
+                'description': 'if true, Emin=>Emin-Efermi & Emax=>Emax-Efermi (Efermi is taken from nscf)',
+                'type': 'boolean'
+            },
+            'Emin': {
+                'description': 'min energy (eV) for DOS plot',
+                'type': 'number'
+            },
+            'Emax': {
+                'description': 'max energy (eV) for DOS plot',
+                'type': 'number'
+            },
+            'DeltaE': {
+                'description': 'energy grid step (eV)',
+                'type': 'number',
+            },
+            'ngauss': {
+                'description': 'Type of gaussian broadening.',
+                'type': 'integer',
+                'enum': [0, 1, -1, -99]
+            },
+            'degauss': {
+                'description': 'gaussian broadening, Ry (not eV!)',
+                'type': 'number'
+            },
+            'dos_only': {
+                'type': 'object'
+            },
+            'projwfc_only': {
+                'type': 'object'
+            }
+        }
+    }
+
+
 def validate_dos_parameters(node):
     """Validate DOS parameters
 
@@ -43,43 +91,7 @@ def validate_dos_parameters(node):
     - projwfc.x only: pawproj | n_proj_boxes | irmin(3,n_proj_boxes) | irmax(3,n_proj_boxes)
 
     """
-    jsonschema.validate(
-        node.get_dict(), {
-            '$schema': 'http://json-schema.org/draft-07/schema',
-            'type': 'object',
-            'required': ['Emin', 'Emax', 'DeltaE'],
-            'additionalProperties': False,
-            'properties': {
-                'Emin': {
-                    'description': 'min energy (eV) for DOS plot',
-                    'type': 'number'
-                },
-                'Emax': {
-                    'description': 'max energy (eV) for DOS plot',
-                    'type': 'number'
-                },
-                'DeltaE': {
-                    'description': 'energy grid step (eV)',
-                    'type': 'number',
-                },
-                'ngauss': {
-                    'description': 'Type of gaussian broadening.',
-                    'type': 'integer',
-                    'enum': [0, 1, -1, -99]
-                },
-                'degauss': {
-                    'description': 'gaussian broadening, Ry (not eV!)',
-                    'type': 'number'
-                },
-                'dos_only': {
-                    'type': 'object'
-                },
-                'projwfc_only': {
-                    'type': 'object'
-                }
-            }
-        }
-    )
+    jsonschema.validate(node.get_dict(), get_parameter_schema())
 
 
 PwBaseWorkChain = plugins.WorkflowFactory('quantumespresso.pw.base')
@@ -160,7 +172,10 @@ class PdosWorkChain(engine.WorkChain):
             message='the DOS sub process failed')
         spec.exit_code(404, 'ERROR_SUB_PROCESS_FAILED_PROJWFC',
             message='the PROJWFC sub process failed')
+        spec.exit_code(404, 'ERROR_SUB_PROCESS_FAILED_BOTH',
+            message='both the DOS and PROJWFC sub process failed')
 
+        spec.expose_outputs(PwBaseWorkChain, namespace='nscf')
         spec.expose_outputs(DosCalculation, namespace='dos')
         spec.expose_outputs(ProjwfcCalculation, namespace='projwfc')
 
@@ -249,6 +264,7 @@ class PdosWorkChain(engine.WorkChain):
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_NSCF
 
         self.ctx.nscf_parent_folder = workchain.outputs.remote_folder
+        self.ctx.nscf_fermi = workchain.outputs.output_parameters.dict.fermi_energy
 
     def run_dos(self):
         """Run DOS and Projwfc calculations, to generate total/partial Densities of State."""
@@ -259,6 +275,9 @@ class PdosWorkChain(engine.WorkChain):
         for key, val in dos_dict.pop('dos_only', {}).items():
             if key not in dos_dict:
                 dos_dict[key] = val
+        if dos_dict.pop('align_to_fermi', False):
+            dos_dict['Emin'] = dos_dict['Emin'] - self.ctx.nscf_fermi
+            dos_dict['Emax'] = dos_dict['Emax'] - self.ctx.nscf_fermi
         dos_inputs.parameters = orm.Dict(dict={
             'DOS': dos_dict
         })
@@ -271,6 +290,9 @@ class PdosWorkChain(engine.WorkChain):
         for key, val in projwfc_dict.pop('projwfc_only', {}).items():
             if key not in projwfc_dict:
                 projwfc_dict[key] = val
+        if projwfc_dict.pop('align_to_fermi', False):
+            projwfc_dict['Emin'] = projwfc_dict['Emin'] - self.ctx.nscf_fermi
+            projwfc_dict['Emax'] = projwfc_dict['Emax'] - self.ctx.nscf_fermi
         projwfc_inputs.parameters = orm.Dict(dict={
             'PROJWFC': projwfc_dict
         })
@@ -293,27 +315,31 @@ class PdosWorkChain(engine.WorkChain):
 
     def inspect_dos(self):
         """Verify that the DOS and Projwfc calculations finished successfully."""
-        error_code = None
+        error_codes = []
 
         calculation = self.ctx.calc_dos
         if not calculation.is_finished_ok:
             self.report('DosCalculation failed with exit status {}'.format(calculation.exit_status))
-            error_code = self.exit_codes.ERROR_SUB_PROCESS_FAILED_DOS
+            error_codes.append(self.exit_codes.ERROR_SUB_PROCESS_FAILED_DOS)
 
         calculation = self.ctx.calc_projwfc
         if not calculation.is_finished_ok:
             self.report('ProjwfcCalculation failed with exit status {}'.format(calculation.exit_status))
-            error_code = error_code or self.exit_codes.ERROR_SUB_PROCESS_FAILED_PROJWFC
+            error_codes.append(self.exit_codes.ERROR_SUB_PROCESS_FAILED_PROJWFC)
 
-        if error_code:
-            return error_code
+        if len(error_codes) > 1:
+            return self.exit_codes.ERROR_SUB_PROCESS_FAILED_BOTH
+        if len(error_codes) == 1:
+            return error_codes[0]
 
     def results(self):
         """Attach the desired output nodes directly as outputs of the workchain."""
-        self.report('workchain succesfully completed')
+        self.report('workchain successfully completed')
         # TODO exposed_outputs for CalcJobs is fixed in aiida-core v1.0.0b6 # pylint: disable=fixme
         # self.out_many(self.exposed_outputs(calc_node, process_class, namespace=pname))
         namespace_separator = self.spec().namespace_separator
+        for link_triple in self.ctx.workchain_nscf.get_outgoing(link_type=LinkType.CREATE).link_triples:
+            self.out('nscf' + namespace_separator + link_triple.link_label, link_triple.node)
         for link_triple in self.ctx.calc_dos.get_outgoing(link_type=LinkType.CREATE).link_triples:
             self.out('dos' + namespace_separator + link_triple.link_label, link_triple.node)
         for link_triple in self.ctx.calc_projwfc.get_outgoing(link_type=LinkType.CREATE).link_triples:
