@@ -843,7 +843,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
         warning = 'scf_iterations and scf_accuracy arrays are not consistent'
         if len(trajectory_data['scf_iterations']) + 1 != len(trajectory_data['scf_accuracy_index']):
             logs.warning.append(warning)
-        value = trajectory_data['scf_accuracy'][0]
+        value = trajectory_data['scf_accuracy_index'][0]
         for i, j in zip(trajectory_data['scf_iterations'], trajectory_data['scf_accuracy_index'][1:]):
             value += i
             if value != j:
