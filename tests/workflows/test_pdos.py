@@ -130,3 +130,8 @@ def test_default(
 
     # store results
     wkchain.results()
+
+    wkchain.update_outputs()
+    assert wkchain.node.get_outgoing().all_link_labels() == [
+        'projwfc__output_parameters', 'dos__output_parameters', 'nscf__remote_folder', 'nscf__output_parameters'
+    ]

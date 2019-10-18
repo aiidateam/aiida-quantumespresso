@@ -265,6 +265,7 @@ class PdosWorkChain(engine.WorkChain):
 
         self.ctx.nscf_parent_folder = workchain.outputs.remote_folder
         self.ctx.nscf_fermi = workchain.outputs.output_parameters.dict.fermi_energy
+        # TODO ensure fermi units are eV (and convert)?  # pylint: disable=fixme
 
     def run_dos(self):
         """Run DOS and Projwfc calculations, to generate total/partial Densities of State."""
@@ -338,7 +339,7 @@ class PdosWorkChain(engine.WorkChain):
         # TODO exposed_outputs for CalcJobs is fixed in aiida-core v1.0.0b6 # pylint: disable=fixme
         # self.out_many(self.exposed_outputs(calc_node, process_class, namespace=pname))
         namespace_separator = self.spec().namespace_separator
-        for link_triple in self.ctx.workchain_nscf.get_outgoing(link_type=LinkType.CREATE).link_triples:
+        for link_triple in self.ctx.workchain_nscf.get_outgoing(link_type=LinkType.RETURN).link_triples:
             self.out('nscf' + namespace_separator + link_triple.link_label, link_triple.node)
         for link_triple in self.ctx.calc_dos.get_outgoing(link_type=LinkType.CREATE).link_triples:
             self.out('dos' + namespace_separator + link_triple.link_label, link_triple.node)
