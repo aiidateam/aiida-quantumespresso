@@ -1,0 +1,3267 @@
+<?xml version="1.0"?>
+<?iotk version="1.2.0"?>
+<?iotk file_version="1.0"?>
+<?iotk binary="F"?>
+<?iotk qe_syntax="F"?>
+<Root>
+  <HEADER>
+    <FORMAT NAME="QEXML" VERSION="1.4.0"/>
+    <CREATOR NAME="PWSCF" VERSION="6.1"/>
+  </HEADER>
+  <CONTROL>
+    <PP_CHECK_FLAG type="logical" size="1">
+T
+    </PP_CHECK_FLAG>
+    <LKPOINT_DIR type="logical" size="1">
+T
+    </LKPOINT_DIR>
+    <Q_REAL_SPACE type="logical" size="1">
+F
+    </Q_REAL_SPACE>
+    <BETA_REAL_SPACE type="logical" size="1">
+F
+    </BETA_REAL_SPACE>
+    <TQ_SMOOTHING type="logical" size="1">
+F
+    </TQ_SMOOTHING>
+    <TBETA_SMOOTHING type="logical" size="1">
+F
+    </TBETA_SMOOTHING>
+  </CONTROL>
+  <CELL>
+    <NON-PERIODIC_CELL_CORRECTION type="character" size="1" len="4">
+None
+    </NON-PERIODIC_CELL_CORRECTION>
+    <BRAVAIS_LATTICE type="character" size="1" len="4">
+free
+    </BRAVAIS_LATTICE>
+    <LATTICE_PARAMETER type="real" size="1" UNITS="Bohr">
+ 7.255773225898359E+000
+    </LATTICE_PARAMETER>
+    <CELL_DIMENSIONS type="real" size="6">
+ 7.255773225898359E+000
+ 0.000000000000000E+000
+ 0.000000000000000E+000
+ 0.000000000000000E+000
+ 0.000000000000000E+000
+ 0.000000000000000E+000
+    </CELL_DIMENSIONS>
+    <DIRECT_LATTICE_VECTORS>
+      <UNITS_FOR_DIRECT_LATTICE_VECTORS UNITS="Bohr"/>
+      <a1 type="real" size="3" columns="3">
+ 5.130606450784521E+000  5.130606450784521E+000  0.000000000000000E+000
+      </a1>
+      <a2 type="real" size="3" columns="3">
+ 5.130606450784521E+000  0.000000000000000E+000  5.130606450784521E+000
+      </a2>
+      <a3 type="real" size="3" columns="3">
+ 0.000000000000000E+000  5.130606450784521E+000  5.130606450784521E+000
+      </a3>
+    </DIRECT_LATTICE_VECTORS>
+    <RECIPROCAL_LATTICE_VECTORS>
+      <UNITS_FOR_RECIPROCAL_LATTICE_VECTORS UNITS="2 pi / a"/>
+      <b1 type="real" size="3" columns="3">
+ 7.071067811865476E-001  7.071067811865476E-001 -7.071067811865476E-001
+      </b1>
+      <b2 type="real" size="3" columns="3">
+ 7.071067811865476E-001 -7.071067811865476E-001  7.071067811865476E-001
+      </b2>
+      <b3 type="real" size="3" columns="3">
+-7.071067811865476E-001  7.071067811865476E-001  7.071067811865476E-001
+      </b3>
+    </RECIPROCAL_LATTICE_VECTORS>
+  </CELL>
+  <IONS>
+    <NUMBER_OF_ATOMS type="integer" size="1">
+         2
+    </NUMBER_OF_ATOMS>
+    <NUMBER_OF_SPECIES type="integer" size="1">
+         1
+    </NUMBER_OF_SPECIES>
+    <UNITS_FOR_ATOMIC_MASSES UNITS="a.m.u."/>
+    <SPECIE.1>
+      <ATOM_TYPE type="character" size="1" len="3">
+Si 
+      </ATOM_TYPE>
+      <MASS type="real" size="1">
+ 2.808550000000000E+001
+      </MASS>
+      <PSEUDO type="character" size="1" len="28">
+Si.pbe-n-kjpaw_psl.1.0.0.UPF
+      </PSEUDO>
+    </SPECIE.1>
+    <PSEUDO_DIR type="character" size="1" len="9">
+./pseudo/
+    </PSEUDO_DIR>
+    <UNITS_FOR_ATOMIC_POSITIONS UNITS="Bohr"/>
+    <ATOM.1 SPECIES="Si " INDEX="1" tau="0.000000000000000E+000 0.000000000000000E+000 0.000000000000000E+000" if_pos="1 1 1"/>
+    <ATOM.2 SPECIES="Si " INDEX="1" tau="2.565303225392261E+000 2.565303225392261E+000 2.565303225392261E+000" if_pos="1 1 1"/>
+  </IONS>
+  <SYMMETRIES>
+    <NUMBER_OF_SYMMETRIES type="integer" size="1">
+         1
+    </NUMBER_OF_SYMMETRIES>
+    <NUMBER_OF_BRAVAIS_SYMMETRIES type="integer" size="1">
+         1
+    </NUMBER_OF_BRAVAIS_SYMMETRIES>
+    <INVERSION_SYMMETRY type="logical" size="1">
+F
+    </INVERSION_SYMMETRY>
+    <DO_NOT_USE_TIME_REVERSAL type="logical" size="1">
+F
+    </DO_NOT_USE_TIME_REVERSAL>
+    <TIME_REVERSAL_FLAG type="logical" size="1">
+T
+    </TIME_REVERSAL_FLAG>
+    <NO_TIME_REV_OPERATIONS type="logical" size="1">
+F
+    </NO_TIME_REV_OPERATIONS>
+    <NUMBER_OF_ATOMS type="integer" size="1">
+         2
+    </NUMBER_OF_ATOMS>
+    <UNITS_FOR_SYMMETRIES UNITS="Crystal"/>
+    <SYMM.1>
+      <INFO NAME="identity" T_REV="0"/>
+      <ROTATION type="integer" size="9" columns="3">
+         1          0          0 
+         0          1          0 
+         0          0          1
+      </ROTATION>
+      <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
+ 0.000000000000000E+000  0.000000000000000E+000  0.000000000000000E+000
+      </FRACTIONAL_TRANSLATION>
+      <EQUIVALENT_IONS type="integer" size="2" columns="8">
+         1          2
+      </EQUIVALENT_IONS>
+    </SYMM.1>
+  </SYMMETRIES>
+  <ELECTRIC_FIELD>
+    <HAS_ELECTRIC_FIELD type="logical" size="1">
+F
+    </HAS_ELECTRIC_FIELD>
+    <HAS_DIPOLE_CORRECTION type="logical" size="1">
+F
+    </HAS_DIPOLE_CORRECTION>
+    <FIELD_DIRECTION type="integer" size="1">
+         1
+    </FIELD_DIRECTION>
+    <MAXIMUM_POSITION type="real" size="1">
+ 5.000000000000000E-001
+    </MAXIMUM_POSITION>
+    <INVERSE_REGION type="real" size="1">
+ 1.000000000000000E-001
+    </INVERSE_REGION>
+    <FIELD_AMPLITUDE type="real" size="1">
+ 0.000000000000000E+000
+    </FIELD_AMPLITUDE>
+    <MONOPOLE_PLANE type="logical" size="1">
+F
+    </MONOPOLE_PLANE>
+    <MONOPOLE_POS type="real" size="1">
+ 5.000000000000000E-001
+    </MONOPOLE_POS>
+    <RELAX_Z type="logical" size="1">
+F
+    </RELAX_Z>
+    <BLOCK type="logical" size="1">
+F
+    </BLOCK>
+    <BLOCK_1 type="real" size="1">
+ 4.499999880790710E-001
+    </BLOCK_1>
+    <BLOCK_2 type="real" size="1">
+ 5.500000119209290E-001
+    </BLOCK_2>
+    <BLOCK_HEIGHT type="real" size="1">
+ 0.000000000000000E+000
+    </BLOCK_HEIGHT>
+  </ELECTRIC_FIELD>
+  <PLANE_WAVES>
+    <UNITS_FOR_CUTOFF UNITS="Hartree"/>
+    <WFC_CUTOFF type="real" size="1">
+ 1.500000000000000E+001
+    </WFC_CUTOFF>
+    <RHO_CUTOFF type="real" size="1">
+ 1.200000000000000E+002
+    </RHO_CUTOFF>
+    <MAX_NUMBER_OF_GK-VECTORS type="integer" size="1">
+       754
+    </MAX_NUMBER_OF_GK-VECTORS>
+    <GAMMA_ONLY type="logical" size="1">
+F
+    </GAMMA_ONLY>
+    <FFT_GRID nr1="36" nr2="36" nr3="36"/>
+    <GVECT_NUMBER type="integer" size="1">
+     16889
+    </GVECT_NUMBER>
+    <SMOOTH_FFT_GRID nr1s="25" nr2s="25" nr3s="25"/>
+    <SMOOTH_GVECT_NUMBER type="integer" size="1">
+      5985
+    </SMOOTH_GVECT_NUMBER>
+    <SMALLBOX_FFT_GRID nr1b="36" nr2b="36" nr3b="36"/>
+  </PLANE_WAVES>
+  <SPIN>
+    <LSDA type="logical" size="1">
+F
+    </LSDA>
+    <NON-COLINEAR_CALCULATION type="logical" size="1">
+F
+    </NON-COLINEAR_CALCULATION>
+    <SPIN-ORBIT_CALCULATION type="logical" size="1">
+F
+    </SPIN-ORBIT_CALCULATION>
+    <SPIN-ORBIT_DOMAG type="logical" size="1">
+F
+    </SPIN-ORBIT_DOMAG>
+  </SPIN>
+  <MAGNETIZATION_INIT>
+    <CONSTRAINT_MAG type="integer" size="1">
+         0
+    </CONSTRAINT_MAG>
+    <NUMBER_OF_SPECIES type="integer" size="1">
+         1
+    </NUMBER_OF_SPECIES>
+    <SPECIE.1>
+      <STARTING_MAGNETIZATION type="real" size="1">
+ 0.000000000000000E+000
+      </STARTING_MAGNETIZATION>
+      <ANGLE1 type="real" size="1">
+ 0.000000000000000E+000
+      </ANGLE1>
+      <ANGLE2 type="real" size="1">
+ 0.000000000000000E+000
+      </ANGLE2>
+    </SPECIE.1>
+    <TWO_FERMI_ENERGIES type="logical" size="1">
+F
+    </TWO_FERMI_ENERGIES>
+  </MAGNETIZATION_INIT>
+  <EXCHANGE_CORRELATION>
+    <DFT type="character" size="1" len="20">
+ SLA  PW   PBX  PBC 
+    </DFT>
+    <ACFDT_IN_PW type="logical" size="1">
+F
+    </ACFDT_IN_PW>
+    <ACFDT_IN_PW type="logical" size="1">
+F
+    </ACFDT_IN_PW>
+  </EXCHANGE_CORRELATION>
+  <ESM>
+    <esm_nfit type="integer" size="1">
+         4
+    </esm_nfit>
+    <esm_efield type="real" size="1">
+ 0.000000000000000E+000
+    </esm_efield>
+    <esm_w type="real" size="1">
+ 0.000000000000000E+000
+    </esm_w>
+    <esm_a type="real" size="1">
+ 0.000000000000000E+000
+    </esm_a>
+    <esm_bc type="character" size="1" len="3">
+pbc
+    </esm_bc>
+  </ESM>
+  <OCCUPATIONS>
+    <SMEARING_METHOD type="logical" size="1">
+F
+    </SMEARING_METHOD>
+    <TETRAHEDRON_METHOD type="logical" size="1">
+T
+    </TETRAHEDRON_METHOD>
+    <NUMBER_OF_TETRAHEDRA type="integer" size="1">
+       384
+    </NUMBER_OF_TETRAHEDRA>
+    <TETRAHEDRON.1 type="integer" size="4">
+         1
+        11
+         4
+        12
+    </TETRAHEDRON.1>
+    <TETRAHEDRON.2 type="integer" size="4">
+        11
+         4
+        15
+        12
+    </TETRAHEDRON.2>
+    <TETRAHEDRON.3 type="integer" size="4">
+         1
+         4
+         2
+        12
+    </TETRAHEDRON.3>
+    <TETRAHEDRON.4 type="integer" size="4">
+         4
+        15
+        12
+        16
+    </TETRAHEDRON.4>
+    <TETRAHEDRON.5 type="integer" size="4">
+         4
+        12
+         5
+        16
+    </TETRAHEDRON.5>
+    <TETRAHEDRON.6 type="integer" size="4">
+         4
+         2
+        12
+         5
+    </TETRAHEDRON.6>
+    <TETRAHEDRON.7 type="integer" size="4">
+         2
+        12
+         5
+        13
+    </TETRAHEDRON.7>
+    <TETRAHEDRON.8 type="integer" size="4">
+        12
+         5
+        16
+        13
+    </TETRAHEDRON.8>
+    <TETRAHEDRON.9 type="integer" size="4">
+         2
+         5
+         3
+        13
+    </TETRAHEDRON.9>
+    <TETRAHEDRON.10 type="integer" size="4">
+         5
+        16
+        13
+        17
+    </TETRAHEDRON.10>
+    <TETRAHEDRON.11 type="integer" size="4">
+         5
+        13
+         6
+        17
+    </TETRAHEDRON.11>
+    <TETRAHEDRON.12 type="integer" size="4">
+         5
+         3
+        13
+         6
+    </TETRAHEDRON.12>
+    <TETRAHEDRON.13 type="integer" size="4">
+         3
+        13
+         6
+        14
+    </TETRAHEDRON.13>
+    <TETRAHEDRON.14 type="integer" size="4">
+        13
+         6
+        17
+        14
+    </TETRAHEDRON.14>
+    <TETRAHEDRON.15 type="integer" size="4">
+         3
+         6
+         2
+        14
+    </TETRAHEDRON.15>
+    <TETRAHEDRON.16 type="integer" size="4">
+         6
+        17
+        14
+        18
+    </TETRAHEDRON.16>
+    <TETRAHEDRON.17 type="integer" size="4">
+         6
+        14
+         7
+        18
+    </TETRAHEDRON.17>
+    <TETRAHEDRON.18 type="integer" size="4">
+         6
+         2
+        14
+         7
+    </TETRAHEDRON.18>
+    <TETRAHEDRON.19 type="integer" size="4">
+         2
+        14
+         7
+        11
+    </TETRAHEDRON.19>
+    <TETRAHEDRON.20 type="integer" size="4">
+        14
+         7
+        18
+        11
+    </TETRAHEDRON.20>
+    <TETRAHEDRON.21 type="integer" size="4">
+         2
+         7
+         1
+        11
+    </TETRAHEDRON.21>
+    <TETRAHEDRON.22 type="integer" size="4">
+         7
+        18
+        11
+        15
+    </TETRAHEDRON.22>
+    <TETRAHEDRON.23 type="integer" size="4">
+         7
+        11
+         4
+        15
+    </TETRAHEDRON.23>
+    <TETRAHEDRON.24 type="integer" size="4">
+         7
+         1
+        11
+         4
+    </TETRAHEDRON.24>
+    <TETRAHEDRON.25 type="integer" size="4">
+         4
+        15
+         8
+        16
+    </TETRAHEDRON.25>
+    <TETRAHEDRON.26 type="integer" size="4">
+        15
+         8
+        19
+        16
+    </TETRAHEDRON.26>
+    <TETRAHEDRON.27 type="integer" size="4">
+         4
+         8
+         5
+        16
+    </TETRAHEDRON.27>
+    <TETRAHEDRON.28 type="integer" size="4">
+         8
+        19
+        16
+        20
+    </TETRAHEDRON.28>
+    <TETRAHEDRON.29 type="integer" size="4">
+         8
+        16
+         9
+        20
+    </TETRAHEDRON.29>
+    <TETRAHEDRON.30 type="integer" size="4">
+         8
+         5
+        16
+         9
+    </TETRAHEDRON.30>
+    <TETRAHEDRON.31 type="integer" size="4">
+         5
+        16
+         9
+        17
+    </TETRAHEDRON.31>
+    <TETRAHEDRON.32 type="integer" size="4">
+        16
+         9
+        20
+        17
+    </TETRAHEDRON.32>
+    <TETRAHEDRON.33 type="integer" size="4">
+         5
+         9
+         6
+        17
+    </TETRAHEDRON.33>
+    <TETRAHEDRON.34 type="integer" size="4">
+         9
+        20
+        17
+        21
+    </TETRAHEDRON.34>
+    <TETRAHEDRON.35 type="integer" size="4">
+         9
+        17
+        10
+        21
+    </TETRAHEDRON.35>
+    <TETRAHEDRON.36 type="integer" size="4">
+         9
+         6
+        17
+        10
+    </TETRAHEDRON.36>
+    <TETRAHEDRON.37 type="integer" size="4">
+         6
+        17
+        10
+        18
+    </TETRAHEDRON.37>
+    <TETRAHEDRON.38 type="integer" size="4">
+        17
+        10
+        21
+        18
+    </TETRAHEDRON.38>
+    <TETRAHEDRON.39 type="integer" size="4">
+         6
+        10
+         7
+        18
+    </TETRAHEDRON.39>
+    <TETRAHEDRON.40 type="integer" size="4">
+        10
+        21
+        18
+        22
+    </TETRAHEDRON.40>
+    <TETRAHEDRON.41 type="integer" size="4">
+        10
+        18
+         9
+        22
+    </TETRAHEDRON.41>
+    <TETRAHEDRON.42 type="integer" size="4">
+        10
+         7
+        18
+         9
+    </TETRAHEDRON.42>
+    <TETRAHEDRON.43 type="integer" size="4">
+         7
+        18
+         9
+        15
+    </TETRAHEDRON.43>
+    <TETRAHEDRON.44 type="integer" size="4">
+        18
+         9
+        22
+        15
+    </TETRAHEDRON.44>
+    <TETRAHEDRON.45 type="integer" size="4">
+         7
+         9
+         4
+        15
+    </TETRAHEDRON.45>
+    <TETRAHEDRON.46 type="integer" size="4">
+         9
+        22
+        15
+        19
+    </TETRAHEDRON.46>
+    <TETRAHEDRON.47 type="integer" size="4">
+         9
+        15
+         8
+        19
+    </TETRAHEDRON.47>
+    <TETRAHEDRON.48 type="integer" size="4">
+         9
+         4
+        15
+         8
+    </TETRAHEDRON.48>
+    <TETRAHEDRON.49 type="integer" size="4">
+         8
+        19
+         4
+        20
+    </TETRAHEDRON.49>
+    <TETRAHEDRON.50 type="integer" size="4">
+        19
+         4
+        23
+        20
+    </TETRAHEDRON.50>
+    <TETRAHEDRON.51 type="integer" size="4">
+         8
+         4
+         9
+        20
+    </TETRAHEDRON.51>
+    <TETRAHEDRON.52 type="integer" size="4">
+         4
+        23
+        20
+        24
+    </TETRAHEDRON.52>
+    <TETRAHEDRON.53 type="integer" size="4">
+         4
+        20
+         7
+        24
+    </TETRAHEDRON.53>
+    <TETRAHEDRON.54 type="integer" size="4">
+         4
+         9
+        20
+         7
+    </TETRAHEDRON.54>
+    <TETRAHEDRON.55 type="integer" size="4">
+         9
+        20
+         7
+        21
+    </TETRAHEDRON.55>
+    <TETRAHEDRON.56 type="integer" size="4">
+        20
+         7
+        24
+        21
+    </TETRAHEDRON.56>
+    <TETRAHEDRON.57 type="integer" size="4">
+         9
+         7
+        10
+        21
+    </TETRAHEDRON.57>
+    <TETRAHEDRON.58 type="integer" size="4">
+         7
+        24
+        21
+        25
+    </TETRAHEDRON.58>
+    <TETRAHEDRON.59 type="integer" size="4">
+         7
+        21
+         6
+        25
+    </TETRAHEDRON.59>
+    <TETRAHEDRON.60 type="integer" size="4">
+         7
+        10
+        21
+         6
+    </TETRAHEDRON.60>
+    <TETRAHEDRON.61 type="integer" size="4">
+        10
+        21
+         6
+        22
+    </TETRAHEDRON.61>
+    <TETRAHEDRON.62 type="integer" size="4">
+        21
+         6
+        25
+        22
+    </TETRAHEDRON.62>
+    <TETRAHEDRON.63 type="integer" size="4">
+        10
+         6
+         9
+        22
+    </TETRAHEDRON.63>
+    <TETRAHEDRON.64 type="integer" size="4">
+         6
+        25
+        22
+        26
+    </TETRAHEDRON.64>
+    <TETRAHEDRON.65 type="integer" size="4">
+         6
+        22
+         5
+        26
+    </TETRAHEDRON.65>
+    <TETRAHEDRON.66 type="integer" size="4">
+         6
+         9
+        22
+         5
+    </TETRAHEDRON.66>
+    <TETRAHEDRON.67 type="integer" size="4">
+         9
+        22
+         5
+        19
+    </TETRAHEDRON.67>
+    <TETRAHEDRON.68 type="integer" size="4">
+        22
+         5
+        26
+        19
+    </TETRAHEDRON.68>
+    <TETRAHEDRON.69 type="integer" size="4">
+         9
+         5
+         8
+        19
+    </TETRAHEDRON.69>
+    <TETRAHEDRON.70 type="integer" size="4">
+         5
+        26
+        19
+        23
+    </TETRAHEDRON.70>
+    <TETRAHEDRON.71 type="integer" size="4">
+         5
+        19
+         4
+        23
+    </TETRAHEDRON.71>
+    <TETRAHEDRON.72 type="integer" size="4">
+         5
+         8
+        19
+         4
+    </TETRAHEDRON.72>
+    <TETRAHEDRON.73 type="integer" size="4">
+         4
+        23
+         1
+        24
+    </TETRAHEDRON.73>
+    <TETRAHEDRON.74 type="integer" size="4">
+        23
+         1
+        11
+        24
+    </TETRAHEDRON.74>
+    <TETRAHEDRON.75 type="integer" size="4">
+         4
+         1
+         7
+        24
+    </TETRAHEDRON.75>
+    <TETRAHEDRON.76 type="integer" size="4">
+         1
+        11
+        24
+        12
+    </TETRAHEDRON.76>
+    <TETRAHEDRON.77 type="integer" size="4">
+         1
+        24
+         2
+        12
+    </TETRAHEDRON.77>
+    <TETRAHEDRON.78 type="integer" size="4">
+         1
+         7
+        24
+         2
+    </TETRAHEDRON.78>
+    <TETRAHEDRON.79 type="integer" size="4">
+         7
+        24
+         2
+        25
+    </TETRAHEDRON.79>
+    <TETRAHEDRON.80 type="integer" size="4">
+        24
+         2
+        12
+        25
+    </TETRAHEDRON.80>
+    <TETRAHEDRON.81 type="integer" size="4">
+         7
+         2
+         6
+        25
+    </TETRAHEDRON.81>
+    <TETRAHEDRON.82 type="integer" size="4">
+         2
+        12
+        25
+        13
+    </TETRAHEDRON.82>
+    <TETRAHEDRON.83 type="integer" size="4">
+         2
+        25
+         3
+        13
+    </TETRAHEDRON.83>
+    <TETRAHEDRON.84 type="integer" size="4">
+         2
+         6
+        25
+         3
+    </TETRAHEDRON.84>
+    <TETRAHEDRON.85 type="integer" size="4">
+         6
+        25
+         3
+        26
+    </TETRAHEDRON.85>
+    <TETRAHEDRON.86 type="integer" size="4">
+        25
+         3
+        13
+        26
+    </TETRAHEDRON.86>
+    <TETRAHEDRON.87 type="integer" size="4">
+         6
+         3
+         5
+        26
+    </TETRAHEDRON.87>
+    <TETRAHEDRON.88 type="integer" size="4">
+         3
+        13
+        26
+        14
+    </TETRAHEDRON.88>
+    <TETRAHEDRON.89 type="integer" size="4">
+         3
+        26
+         2
+        14
+    </TETRAHEDRON.89>
+    <TETRAHEDRON.90 type="integer" size="4">
+         3
+         5
+        26
+         2
+    </TETRAHEDRON.90>
+    <TETRAHEDRON.91 type="integer" size="4">
+         5
+        26
+         2
+        23
+    </TETRAHEDRON.91>
+    <TETRAHEDRON.92 type="integer" size="4">
+        26
+         2
+        14
+        23
+    </TETRAHEDRON.92>
+    <TETRAHEDRON.93 type="integer" size="4">
+         5
+         2
+         4
+        23
+    </TETRAHEDRON.93>
+    <TETRAHEDRON.94 type="integer" size="4">
+         2
+        14
+        23
+        11
+    </TETRAHEDRON.94>
+    <TETRAHEDRON.95 type="integer" size="4">
+         2
+        23
+         1
+        11
+    </TETRAHEDRON.95>
+    <TETRAHEDRON.96 type="integer" size="4">
+         2
+         4
+        23
+         1
+    </TETRAHEDRON.96>
+    <TETRAHEDRON.97 type="integer" size="4">
+        11
+        27
+        15
+        28
+    </TETRAHEDRON.97>
+    <TETRAHEDRON.98 type="integer" size="4">
+        27
+        15
+        30
+        28
+    </TETRAHEDRON.98>
+    <TETRAHEDRON.99 type="integer" size="4">
+        11
+        15
+        12
+        28
+    </TETRAHEDRON.99>
+    <TETRAHEDRON.100 type="integer" size="4">
+        15
+        30
+        28
+        31
+    </TETRAHEDRON.100>
+    <TETRAHEDRON.101 type="integer" size="4">
+        15
+        28
+        16
+        31
+    </TETRAHEDRON.101>
+    <TETRAHEDRON.102 type="integer" size="4">
+        15
+        12
+        28
+        16
+    </TETRAHEDRON.102>
+    <TETRAHEDRON.103 type="integer" size="4">
+        12
+        28
+        16
+        29
+    </TETRAHEDRON.103>
+    <TETRAHEDRON.104 type="integer" size="4">
+        28
+        16
+        31
+        29
+    </TETRAHEDRON.104>
+    <TETRAHEDRON.105 type="integer" size="4">
+        12
+        16
+        13
+        29
+    </TETRAHEDRON.105>
+    <TETRAHEDRON.106 type="integer" size="4">
+        16
+        31
+        29
+        32
+    </TETRAHEDRON.106>
+    <TETRAHEDRON.107 type="integer" size="4">
+        16
+        29
+        17
+        32
+    </TETRAHEDRON.107>
+    <TETRAHEDRON.108 type="integer" size="4">
+        16
+        13
+        29
+        17
+    </TETRAHEDRON.108>
+    <TETRAHEDRON.109 type="integer" size="4">
+        13
+        29
+        17
+        28
+    </TETRAHEDRON.109>
+    <TETRAHEDRON.110 type="integer" size="4">
+        29
+        17
+        32
+        28
+    </TETRAHEDRON.110>
+    <TETRAHEDRON.111 type="integer" size="4">
+        13
+        17
+        14
+        28
+    </TETRAHEDRON.111>
+    <TETRAHEDRON.112 type="integer" size="4">
+        17
+        32
+        28
+        33
+    </TETRAHEDRON.112>
+    <TETRAHEDRON.113 type="integer" size="4">
+        17
+        28
+        18
+        33
+    </TETRAHEDRON.113>
+    <TETRAHEDRON.114 type="integer" size="4">
+        17
+        14
+        28
+        18
+    </TETRAHEDRON.114>
+    <TETRAHEDRON.115 type="integer" size="4">
+        14
+        28
+        18
+        27
+    </TETRAHEDRON.115>
+    <TETRAHEDRON.116 type="integer" size="4">
+        28
+        18
+        33
+        27
+    </TETRAHEDRON.116>
+    <TETRAHEDRON.117 type="integer" size="4">
+        14
+        18
+        11
+        27
+    </TETRAHEDRON.117>
+    <TETRAHEDRON.118 type="integer" size="4">
+        18
+        33
+        27
+        30
+    </TETRAHEDRON.118>
+    <TETRAHEDRON.119 type="integer" size="4">
+        18
+        27
+        15
+        30
+    </TETRAHEDRON.119>
+    <TETRAHEDRON.120 type="integer" size="4">
+        18
+        11
+        27
+        15
+    </TETRAHEDRON.120>
+    <TETRAHEDRON.121 type="integer" size="4">
+        15
+        30
+        19
+        31
+    </TETRAHEDRON.121>
+    <TETRAHEDRON.122 type="integer" size="4">
+        30
+        19
+        34
+        31
+    </TETRAHEDRON.122>
+    <TETRAHEDRON.123 type="integer" size="4">
+        15
+        19
+        16
+        31
+    </TETRAHEDRON.123>
+    <TETRAHEDRON.124 type="integer" size="4">
+        19
+        34
+        31
+        35
+    </TETRAHEDRON.124>
+    <TETRAHEDRON.125 type="integer" size="4">
+        19
+        31
+        20
+        35
+    </TETRAHEDRON.125>
+    <TETRAHEDRON.126 type="integer" size="4">
+        19
+        16
+        31
+        20
+    </TETRAHEDRON.126>
+    <TETRAHEDRON.127 type="integer" size="4">
+        16
+        31
+        20
+        32
+    </TETRAHEDRON.127>
+    <TETRAHEDRON.128 type="integer" size="4">
+        31
+        20
+        35
+        32
+    </TETRAHEDRON.128>
+    <TETRAHEDRON.129 type="integer" size="4">
+        16
+        20
+        17
+        32
+    </TETRAHEDRON.129>
+    <TETRAHEDRON.130 type="integer" size="4">
+        20
+        35
+        32
+        36
+    </TETRAHEDRON.130>
+    <TETRAHEDRON.131 type="integer" size="4">
+        20
+        32
+        21
+        36
+    </TETRAHEDRON.131>
+    <TETRAHEDRON.132 type="integer" size="4">
+        20
+        17
+        32
+        21
+    </TETRAHEDRON.132>
+    <TETRAHEDRON.133 type="integer" size="4">
+        17
+        32
+        21
+        33
+    </TETRAHEDRON.133>
+    <TETRAHEDRON.134 type="integer" size="4">
+        32
+        21
+        36
+        33
+    </TETRAHEDRON.134>
+    <TETRAHEDRON.135 type="integer" size="4">
+        17
+        21
+        18
+        33
+    </TETRAHEDRON.135>
+    <TETRAHEDRON.136 type="integer" size="4">
+        21
+        36
+        33
+        35
+    </TETRAHEDRON.136>
+    <TETRAHEDRON.137 type="integer" size="4">
+        21
+        33
+        22
+        35
+    </TETRAHEDRON.137>
+    <TETRAHEDRON.138 type="integer" size="4">
+        21
+        18
+        33
+        22
+    </TETRAHEDRON.138>
+    <TETRAHEDRON.139 type="integer" size="4">
+        18
+        33
+        22
+        30
+    </TETRAHEDRON.139>
+    <TETRAHEDRON.140 type="integer" size="4">
+        33
+        22
+        35
+        30
+    </TETRAHEDRON.140>
+    <TETRAHEDRON.141 type="integer" size="4">
+        18
+        22
+        15
+        30
+    </TETRAHEDRON.141>
+    <TETRAHEDRON.142 type="integer" size="4">
+        22
+        35
+        30
+        34
+    </TETRAHEDRON.142>
+    <TETRAHEDRON.143 type="integer" size="4">
+        22
+        30
+        19
+        34
+    </TETRAHEDRON.143>
+    <TETRAHEDRON.144 type="integer" size="4">
+        22
+        15
+        30
+        19
+    </TETRAHEDRON.144>
+    <TETRAHEDRON.145 type="integer" size="4">
+        19
+        34
+        23
+        35
+    </TETRAHEDRON.145>
+    <TETRAHEDRON.146 type="integer" size="4">
+        34
+        23
+        30
+        35
+    </TETRAHEDRON.146>
+    <TETRAHEDRON.147 type="integer" size="4">
+        19
+        23
+        20
+        35
+    </TETRAHEDRON.147>
+    <TETRAHEDRON.148 type="integer" size="4">
+        23
+        30
+        35
+        33
+    </TETRAHEDRON.148>
+    <TETRAHEDRON.149 type="integer" size="4">
+        23
+        35
+        24
+        33
+    </TETRAHEDRON.149>
+    <TETRAHEDRON.150 type="integer" size="4">
+        23
+        20
+        35
+        24
+    </TETRAHEDRON.150>
+    <TETRAHEDRON.151 type="integer" size="4">
+        20
+        35
+        24
+        36
+    </TETRAHEDRON.151>
+    <TETRAHEDRON.152 type="integer" size="4">
+        35
+        24
+        33
+        36
+    </TETRAHEDRON.152>
+    <TETRAHEDRON.153 type="integer" size="4">
+        20
+        24
+        21
+        36
+    </TETRAHEDRON.153>
+    <TETRAHEDRON.154 type="integer" size="4">
+        24
+        33
+        36
+        32
+    </TETRAHEDRON.154>
+    <TETRAHEDRON.155 type="integer" size="4">
+        24
+        36
+        25
+        32
+    </TETRAHEDRON.155>
+    <TETRAHEDRON.156 type="integer" size="4">
+        24
+        21
+        36
+        25
+    </TETRAHEDRON.156>
+    <TETRAHEDRON.157 type="integer" size="4">
+        21
+        36
+        25
+        35
+    </TETRAHEDRON.157>
+    <TETRAHEDRON.158 type="integer" size="4">
+        36
+        25
+        32
+        35
+    </TETRAHEDRON.158>
+    <TETRAHEDRON.159 type="integer" size="4">
+        21
+        25
+        22
+        35
+    </TETRAHEDRON.159>
+    <TETRAHEDRON.160 type="integer" size="4">
+        25
+        32
+        35
+        31
+    </TETRAHEDRON.160>
+    <TETRAHEDRON.161 type="integer" size="4">
+        25
+        35
+        26
+        31
+    </TETRAHEDRON.161>
+    <TETRAHEDRON.162 type="integer" size="4">
+        25
+        22
+        35
+        26
+    </TETRAHEDRON.162>
+    <TETRAHEDRON.163 type="integer" size="4">
+        22
+        35
+        26
+        34
+    </TETRAHEDRON.163>
+    <TETRAHEDRON.164 type="integer" size="4">
+        35
+        26
+        31
+        34
+    </TETRAHEDRON.164>
+    <TETRAHEDRON.165 type="integer" size="4">
+        22
+        26
+        19
+        34
+    </TETRAHEDRON.165>
+    <TETRAHEDRON.166 type="integer" size="4">
+        26
+        31
+        34
+        30
+    </TETRAHEDRON.166>
+    <TETRAHEDRON.167 type="integer" size="4">
+        26
+        34
+        23
+        30
+    </TETRAHEDRON.167>
+    <TETRAHEDRON.168 type="integer" size="4">
+        26
+        19
+        34
+        23
+    </TETRAHEDRON.168>
+    <TETRAHEDRON.169 type="integer" size="4">
+        23
+        30
+        11
+        33
+    </TETRAHEDRON.169>
+    <TETRAHEDRON.170 type="integer" size="4">
+        30
+        11
+        27
+        33
+    </TETRAHEDRON.170>
+    <TETRAHEDRON.171 type="integer" size="4">
+        23
+        11
+        24
+        33
+    </TETRAHEDRON.171>
+    <TETRAHEDRON.172 type="integer" size="4">
+        11
+        27
+        33
+        28
+    </TETRAHEDRON.172>
+    <TETRAHEDRON.173 type="integer" size="4">
+        11
+        33
+        12
+        28
+    </TETRAHEDRON.173>
+    <TETRAHEDRON.174 type="integer" size="4">
+        11
+        24
+        33
+        12
+    </TETRAHEDRON.174>
+    <TETRAHEDRON.175 type="integer" size="4">
+        24
+        33
+        12
+        32
+    </TETRAHEDRON.175>
+    <TETRAHEDRON.176 type="integer" size="4">
+        33
+        12
+        28
+        32
+    </TETRAHEDRON.176>
+    <TETRAHEDRON.177 type="integer" size="4">
+        24
+        12
+        25
+        32
+    </TETRAHEDRON.177>
+    <TETRAHEDRON.178 type="integer" size="4">
+        12
+        28
+        32
+        29
+    </TETRAHEDRON.178>
+    <TETRAHEDRON.179 type="integer" size="4">
+        12
+        32
+        13
+        29
+    </TETRAHEDRON.179>
+    <TETRAHEDRON.180 type="integer" size="4">
+        12
+        25
+        32
+        13
+    </TETRAHEDRON.180>
+    <TETRAHEDRON.181 type="integer" size="4">
+        25
+        32
+        13
+        31
+    </TETRAHEDRON.181>
+    <TETRAHEDRON.182 type="integer" size="4">
+        32
+        13
+        29
+        31
+    </TETRAHEDRON.182>
+    <TETRAHEDRON.183 type="integer" size="4">
+        25
+        13
+        26
+        31
+    </TETRAHEDRON.183>
+    <TETRAHEDRON.184 type="integer" size="4">
+        13
+        29
+        31
+        28
+    </TETRAHEDRON.184>
+    <TETRAHEDRON.185 type="integer" size="4">
+        13
+        31
+        14
+        28
+    </TETRAHEDRON.185>
+    <TETRAHEDRON.186 type="integer" size="4">
+        13
+        26
+        31
+        14
+    </TETRAHEDRON.186>
+    <TETRAHEDRON.187 type="integer" size="4">
+        26
+        31
+        14
+        30
+    </TETRAHEDRON.187>
+    <TETRAHEDRON.188 type="integer" size="4">
+        31
+        14
+        28
+        30
+    </TETRAHEDRON.188>
+    <TETRAHEDRON.189 type="integer" size="4">
+        26
+        14
+        23
+        30
+    </TETRAHEDRON.189>
+    <TETRAHEDRON.190 type="integer" size="4">
+        14
+        28
+        30
+        27
+    </TETRAHEDRON.190>
+    <TETRAHEDRON.191 type="integer" size="4">
+        14
+        30
+        11
+        27
+    </TETRAHEDRON.191>
+    <TETRAHEDRON.192 type="integer" size="4">
+        14
+        23
+        30
+        11
+    </TETRAHEDRON.192>
+    <TETRAHEDRON.193 type="integer" size="4">
+        27
+        11
+        30
+        14
+    </TETRAHEDRON.193>
+    <TETRAHEDRON.194 type="integer" size="4">
+        11
+        30
+        23
+        14
+    </TETRAHEDRON.194>
+    <TETRAHEDRON.195 type="integer" size="4">
+        27
+        30
+        28
+        14
+    </TETRAHEDRON.195>
+    <TETRAHEDRON.196 type="integer" size="4">
+        30
+        23
+        14
+        26
+    </TETRAHEDRON.196>
+    <TETRAHEDRON.197 type="integer" size="4">
+        30
+        14
+        31
+        26
+    </TETRAHEDRON.197>
+    <TETRAHEDRON.198 type="integer" size="4">
+        30
+        28
+        14
+        31
+    </TETRAHEDRON.198>
+    <TETRAHEDRON.199 type="integer" size="4">
+        28
+        14
+        31
+        13
+    </TETRAHEDRON.199>
+    <TETRAHEDRON.200 type="integer" size="4">
+        14
+        31
+        26
+        13
+    </TETRAHEDRON.200>
+    <TETRAHEDRON.201 type="integer" size="4">
+        28
+        31
+        29
+        13
+    </TETRAHEDRON.201>
+    <TETRAHEDRON.202 type="integer" size="4">
+        31
+        26
+        13
+        25
+    </TETRAHEDRON.202>
+    <TETRAHEDRON.203 type="integer" size="4">
+        31
+        13
+        32
+        25
+    </TETRAHEDRON.203>
+    <TETRAHEDRON.204 type="integer" size="4">
+        31
+        29
+        13
+        32
+    </TETRAHEDRON.204>
+    <TETRAHEDRON.205 type="integer" size="4">
+        29
+        13
+        32
+        12
+    </TETRAHEDRON.205>
+    <TETRAHEDRON.206 type="integer" size="4">
+        13
+        32
+        25
+        12
+    </TETRAHEDRON.206>
+    <TETRAHEDRON.207 type="integer" size="4">
+        29
+        32
+        28
+        12
+    </TETRAHEDRON.207>
+    <TETRAHEDRON.208 type="integer" size="4">
+        32
+        25
+        12
+        24
+    </TETRAHEDRON.208>
+    <TETRAHEDRON.209 type="integer" size="4">
+        32
+        12
+        33
+        24
+    </TETRAHEDRON.209>
+    <TETRAHEDRON.210 type="integer" size="4">
+        32
+        28
+        12
+        33
+    </TETRAHEDRON.210>
+    <TETRAHEDRON.211 type="integer" size="4">
+        28
+        12
+        33
+        11
+    </TETRAHEDRON.211>
+    <TETRAHEDRON.212 type="integer" size="4">
+        12
+        33
+        24
+        11
+    </TETRAHEDRON.212>
+    <TETRAHEDRON.213 type="integer" size="4">
+        28
+        33
+        27
+        11
+    </TETRAHEDRON.213>
+    <TETRAHEDRON.214 type="integer" size="4">
+        33
+        24
+        11
+        23
+    </TETRAHEDRON.214>
+    <TETRAHEDRON.215 type="integer" size="4">
+        33
+        11
+        30
+        23
+    </TETRAHEDRON.215>
+    <TETRAHEDRON.216 type="integer" size="4">
+        33
+        27
+        11
+        30
+    </TETRAHEDRON.216>
+    <TETRAHEDRON.217 type="integer" size="4">
+        30
+        23
+        34
+        26
+    </TETRAHEDRON.217>
+    <TETRAHEDRON.218 type="integer" size="4">
+        23
+        34
+        19
+        26
+    </TETRAHEDRON.218>
+    <TETRAHEDRON.219 type="integer" size="4">
+        30
+        34
+        31
+        26
+    </TETRAHEDRON.219>
+    <TETRAHEDRON.220 type="integer" size="4">
+        34
+        19
+        26
+        22
+    </TETRAHEDRON.220>
+    <TETRAHEDRON.221 type="integer" size="4">
+        34
+        26
+        35
+        22
+    </TETRAHEDRON.221>
+    <TETRAHEDRON.222 type="integer" size="4">
+        34
+        31
+        26
+        35
+    </TETRAHEDRON.222>
+    <TETRAHEDRON.223 type="integer" size="4">
+        31
+        26
+        35
+        25
+    </TETRAHEDRON.223>
+    <TETRAHEDRON.224 type="integer" size="4">
+        26
+        35
+        22
+        25
+    </TETRAHEDRON.224>
+    <TETRAHEDRON.225 type="integer" size="4">
+        31
+        35
+        32
+        25
+    </TETRAHEDRON.225>
+    <TETRAHEDRON.226 type="integer" size="4">
+        35
+        22
+        25
+        21
+    </TETRAHEDRON.226>
+    <TETRAHEDRON.227 type="integer" size="4">
+        35
+        25
+        36
+        21
+    </TETRAHEDRON.227>
+    <TETRAHEDRON.228 type="integer" size="4">
+        35
+        32
+        25
+        36
+    </TETRAHEDRON.228>
+    <TETRAHEDRON.229 type="integer" size="4">
+        32
+        25
+        36
+        24
+    </TETRAHEDRON.229>
+    <TETRAHEDRON.230 type="integer" size="4">
+        25
+        36
+        21
+        24
+    </TETRAHEDRON.230>
+    <TETRAHEDRON.231 type="integer" size="4">
+        32
+        36
+        33
+        24
+    </TETRAHEDRON.231>
+    <TETRAHEDRON.232 type="integer" size="4">
+        36
+        21
+        24
+        20
+    </TETRAHEDRON.232>
+    <TETRAHEDRON.233 type="integer" size="4">
+        36
+        24
+        35
+        20
+    </TETRAHEDRON.233>
+    <TETRAHEDRON.234 type="integer" size="4">
+        36
+        33
+        24
+        35
+    </TETRAHEDRON.234>
+    <TETRAHEDRON.235 type="integer" size="4">
+        33
+        24
+        35
+        23
+    </TETRAHEDRON.235>
+    <TETRAHEDRON.236 type="integer" size="4">
+        24
+        35
+        20
+        23
+    </TETRAHEDRON.236>
+    <TETRAHEDRON.237 type="integer" size="4">
+        33
+        35
+        30
+        23
+    </TETRAHEDRON.237>
+    <TETRAHEDRON.238 type="integer" size="4">
+        35
+        20
+        23
+        19
+    </TETRAHEDRON.238>
+    <TETRAHEDRON.239 type="integer" size="4">
+        35
+        23
+        34
+        19
+    </TETRAHEDRON.239>
+    <TETRAHEDRON.240 type="integer" size="4">
+        35
+        30
+        23
+        34
+    </TETRAHEDRON.240>
+    <TETRAHEDRON.241 type="integer" size="4">
+        34
+        19
+        30
+        22
+    </TETRAHEDRON.241>
+    <TETRAHEDRON.242 type="integer" size="4">
+        19
+        30
+        15
+        22
+    </TETRAHEDRON.242>
+    <TETRAHEDRON.243 type="integer" size="4">
+        34
+        30
+        35
+        22
+    </TETRAHEDRON.243>
+    <TETRAHEDRON.244 type="integer" size="4">
+        30
+        15
+        22
+        18
+    </TETRAHEDRON.244>
+    <TETRAHEDRON.245 type="integer" size="4">
+        30
+        22
+        33
+        18
+    </TETRAHEDRON.245>
+    <TETRAHEDRON.246 type="integer" size="4">
+        30
+        35
+        22
+        33
+    </TETRAHEDRON.246>
+    <TETRAHEDRON.247 type="integer" size="4">
+        35
+        22
+        33
+        21
+    </TETRAHEDRON.247>
+    <TETRAHEDRON.248 type="integer" size="4">
+        22
+        33
+        18
+        21
+    </TETRAHEDRON.248>
+    <TETRAHEDRON.249 type="integer" size="4">
+        35
+        33
+        36
+        21
+    </TETRAHEDRON.249>
+    <TETRAHEDRON.250 type="integer" size="4">
+        33
+        18
+        21
+        17
+    </TETRAHEDRON.250>
+    <TETRAHEDRON.251 type="integer" size="4">
+        33
+        21
+        32
+        17
+    </TETRAHEDRON.251>
+    <TETRAHEDRON.252 type="integer" size="4">
+        33
+        36
+        21
+        32
+    </TETRAHEDRON.252>
+    <TETRAHEDRON.253 type="integer" size="4">
+        36
+        21
+        32
+        20
+    </TETRAHEDRON.253>
+    <TETRAHEDRON.254 type="integer" size="4">
+        21
+        32
+        17
+        20
+    </TETRAHEDRON.254>
+    <TETRAHEDRON.255 type="integer" size="4">
+        36
+        32
+        35
+        20
+    </TETRAHEDRON.255>
+    <TETRAHEDRON.256 type="integer" size="4">
+        32
+        17
+        20
+        16
+    </TETRAHEDRON.256>
+    <TETRAHEDRON.257 type="integer" size="4">
+        32
+        20
+        31
+        16
+    </TETRAHEDRON.257>
+    <TETRAHEDRON.258 type="integer" size="4">
+        32
+        35
+        20
+        31
+    </TETRAHEDRON.258>
+    <TETRAHEDRON.259 type="integer" size="4">
+        35
+        20
+        31
+        19
+    </TETRAHEDRON.259>
+    <TETRAHEDRON.260 type="integer" size="4">
+        20
+        31
+        16
+        19
+    </TETRAHEDRON.260>
+    <TETRAHEDRON.261 type="integer" size="4">
+        35
+        31
+        34
+        19
+    </TETRAHEDRON.261>
+    <TETRAHEDRON.262 type="integer" size="4">
+        31
+        16
+        19
+        15
+    </TETRAHEDRON.262>
+    <TETRAHEDRON.263 type="integer" size="4">
+        31
+        19
+        30
+        15
+    </TETRAHEDRON.263>
+    <TETRAHEDRON.264 type="integer" size="4">
+        31
+        34
+        19
+        30
+    </TETRAHEDRON.264>
+    <TETRAHEDRON.265 type="integer" size="4">
+        30
+        15
+        27
+        18
+    </TETRAHEDRON.265>
+    <TETRAHEDRON.266 type="integer" size="4">
+        15
+        27
+        11
+        18
+    </TETRAHEDRON.266>
+    <TETRAHEDRON.267 type="integer" size="4">
+        30
+        27
+        33
+        18
+    </TETRAHEDRON.267>
+    <TETRAHEDRON.268 type="integer" size="4">
+        27
+        11
+        18
+        14
+    </TETRAHEDRON.268>
+    <TETRAHEDRON.269 type="integer" size="4">
+        27
+        18
+        28
+        14
+    </TETRAHEDRON.269>
+    <TETRAHEDRON.270 type="integer" size="4">
+        27
+        33
+        18
+        28
+    </TETRAHEDRON.270>
+    <TETRAHEDRON.271 type="integer" size="4">
+        33
+        18
+        28
+        17
+    </TETRAHEDRON.271>
+    <TETRAHEDRON.272 type="integer" size="4">
+        18
+        28
+        14
+        17
+    </TETRAHEDRON.272>
+    <TETRAHEDRON.273 type="integer" size="4">
+        33
+        28
+        32
+        17
+    </TETRAHEDRON.273>
+    <TETRAHEDRON.274 type="integer" size="4">
+        28
+        14
+        17
+        13
+    </TETRAHEDRON.274>
+    <TETRAHEDRON.275 type="integer" size="4">
+        28
+        17
+        29
+        13
+    </TETRAHEDRON.275>
+    <TETRAHEDRON.276 type="integer" size="4">
+        28
+        32
+        17
+        29
+    </TETRAHEDRON.276>
+    <TETRAHEDRON.277 type="integer" size="4">
+        32
+        17
+        29
+        16
+    </TETRAHEDRON.277>
+    <TETRAHEDRON.278 type="integer" size="4">
+        17
+        29
+        13
+        16
+    </TETRAHEDRON.278>
+    <TETRAHEDRON.279 type="integer" size="4">
+        32
+        29
+        31
+        16
+    </TETRAHEDRON.279>
+    <TETRAHEDRON.280 type="integer" size="4">
+        29
+        13
+        16
+        12
+    </TETRAHEDRON.280>
+    <TETRAHEDRON.281 type="integer" size="4">
+        29
+        16
+        28
+        12
+    </TETRAHEDRON.281>
+    <TETRAHEDRON.282 type="integer" size="4">
+        29
+        31
+        16
+        28
+    </TETRAHEDRON.282>
+    <TETRAHEDRON.283 type="integer" size="4">
+        31
+        16
+        28
+        15
+    </TETRAHEDRON.283>
+    <TETRAHEDRON.284 type="integer" size="4">
+        16
+        28
+        12
+        15
+    </TETRAHEDRON.284>
+    <TETRAHEDRON.285 type="integer" size="4">
+        31
+        28
+        30
+        15
+    </TETRAHEDRON.285>
+    <TETRAHEDRON.286 type="integer" size="4">
+        28
+        12
+        15
+        11
+    </TETRAHEDRON.286>
+    <TETRAHEDRON.287 type="integer" size="4">
+        28
+        15
+        27
+        11
+    </TETRAHEDRON.287>
+    <TETRAHEDRON.288 type="integer" size="4">
+        28
+        30
+        15
+        27
+    </TETRAHEDRON.288>
+    <TETRAHEDRON.289 type="integer" size="4">
+        11
+         1
+        23
+         2
+    </TETRAHEDRON.289>
+    <TETRAHEDRON.290 type="integer" size="4">
+         1
+        23
+         4
+         2
+    </TETRAHEDRON.290>
+    <TETRAHEDRON.291 type="integer" size="4">
+        11
+        23
+        14
+         2
+    </TETRAHEDRON.291>
+    <TETRAHEDRON.292 type="integer" size="4">
+        23
+         4
+         2
+         5
+    </TETRAHEDRON.292>
+    <TETRAHEDRON.293 type="integer" size="4">
+        23
+         2
+        26
+         5
+    </TETRAHEDRON.293>
+    <TETRAHEDRON.294 type="integer" size="4">
+        23
+        14
+         2
+        26
+    </TETRAHEDRON.294>
+    <TETRAHEDRON.295 type="integer" size="4">
+        14
+         2
+        26
+         3
+    </TETRAHEDRON.295>
+    <TETRAHEDRON.296 type="integer" size="4">
+         2
+        26
+         5
+         3
+    </TETRAHEDRON.296>
+    <TETRAHEDRON.297 type="integer" size="4">
+        14
+        26
+        13
+         3
+    </TETRAHEDRON.297>
+    <TETRAHEDRON.298 type="integer" size="4">
+        26
+         5
+         3
+         6
+    </TETRAHEDRON.298>
+    <TETRAHEDRON.299 type="integer" size="4">
+        26
+         3
+        25
+         6
+    </TETRAHEDRON.299>
+    <TETRAHEDRON.300 type="integer" size="4">
+        26
+        13
+         3
+        25
+    </TETRAHEDRON.300>
+    <TETRAHEDRON.301 type="integer" size="4">
+        13
+         3
+        25
+         2
+    </TETRAHEDRON.301>
+    <TETRAHEDRON.302 type="integer" size="4">
+         3
+        25
+         6
+         2
+    </TETRAHEDRON.302>
+    <TETRAHEDRON.303 type="integer" size="4">
+        13
+        25
+        12
+         2
+    </TETRAHEDRON.303>
+    <TETRAHEDRON.304 type="integer" size="4">
+        25
+         6
+         2
+         7
+    </TETRAHEDRON.304>
+    <TETRAHEDRON.305 type="integer" size="4">
+        25
+         2
+        24
+         7
+    </TETRAHEDRON.305>
+    <TETRAHEDRON.306 type="integer" size="4">
+        25
+        12
+         2
+        24
+    </TETRAHEDRON.306>
+    <TETRAHEDRON.307 type="integer" size="4">
+        12
+         2
+        24
+         1
+    </TETRAHEDRON.307>
+    <TETRAHEDRON.308 type="integer" size="4">
+         2
+        24
+         7
+         1
+    </TETRAHEDRON.308>
+    <TETRAHEDRON.309 type="integer" size="4">
+        12
+        24
+        11
+         1
+    </TETRAHEDRON.309>
+    <TETRAHEDRON.310 type="integer" size="4">
+        24
+         7
+         1
+         4
+    </TETRAHEDRON.310>
+    <TETRAHEDRON.311 type="integer" size="4">
+        24
+         1
+        23
+         4
+    </TETRAHEDRON.311>
+    <TETRAHEDRON.312 type="integer" size="4">
+        24
+        11
+         1
+        23
+    </TETRAHEDRON.312>
+    <TETRAHEDRON.313 type="integer" size="4">
+        23
+         4
+        19
+         5
+    </TETRAHEDRON.313>
+    <TETRAHEDRON.314 type="integer" size="4">
+         4
+        19
+         8
+         5
+    </TETRAHEDRON.314>
+    <TETRAHEDRON.315 type="integer" size="4">
+        23
+        19
+        26
+         5
+    </TETRAHEDRON.315>
+    <TETRAHEDRON.316 type="integer" size="4">
+        19
+         8
+         5
+         9
+    </TETRAHEDRON.316>
+    <TETRAHEDRON.317 type="integer" size="4">
+        19
+         5
+        22
+         9
+    </TETRAHEDRON.317>
+    <TETRAHEDRON.318 type="integer" size="4">
+        19
+        26
+         5
+        22
+    </TETRAHEDRON.318>
+    <TETRAHEDRON.319 type="integer" size="4">
+        26
+         5
+        22
+         6
+    </TETRAHEDRON.319>
+    <TETRAHEDRON.320 type="integer" size="4">
+         5
+        22
+         9
+         6
+    </TETRAHEDRON.320>
+    <TETRAHEDRON.321 type="integer" size="4">
+        26
+        22
+        25
+         6
+    </TETRAHEDRON.321>
+    <TETRAHEDRON.322 type="integer" size="4">
+        22
+         9
+         6
+        10
+    </TETRAHEDRON.322>
+    <TETRAHEDRON.323 type="integer" size="4">
+        22
+         6
+        21
+        10
+    </TETRAHEDRON.323>
+    <TETRAHEDRON.324 type="integer" size="4">
+        22
+        25
+         6
+        21
+    </TETRAHEDRON.324>
+    <TETRAHEDRON.325 type="integer" size="4">
+        25
+         6
+        21
+         7
+    </TETRAHEDRON.325>
+    <TETRAHEDRON.326 type="integer" size="4">
+         6
+        21
+        10
+         7
+    </TETRAHEDRON.326>
+    <TETRAHEDRON.327 type="integer" size="4">
+        25
+        21
+        24
+         7
+    </TETRAHEDRON.327>
+    <TETRAHEDRON.328 type="integer" size="4">
+        21
+        10
+         7
+         9
+    </TETRAHEDRON.328>
+    <TETRAHEDRON.329 type="integer" size="4">
+        21
+         7
+        20
+         9
+    </TETRAHEDRON.329>
+    <TETRAHEDRON.330 type="integer" size="4">
+        21
+        24
+         7
+        20
+    </TETRAHEDRON.330>
+    <TETRAHEDRON.331 type="integer" size="4">
+        24
+         7
+        20
+         4
+    </TETRAHEDRON.331>
+    <TETRAHEDRON.332 type="integer" size="4">
+         7
+        20
+         9
+         4
+    </TETRAHEDRON.332>
+    <TETRAHEDRON.333 type="integer" size="4">
+        24
+        20
+        23
+         4
+    </TETRAHEDRON.333>
+    <TETRAHEDRON.334 type="integer" size="4">
+        20
+         9
+         4
+         8
+    </TETRAHEDRON.334>
+    <TETRAHEDRON.335 type="integer" size="4">
+        20
+         4
+        19
+         8
+    </TETRAHEDRON.335>
+    <TETRAHEDRON.336 type="integer" size="4">
+        20
+        23
+         4
+        19
+    </TETRAHEDRON.336>
+    <TETRAHEDRON.337 type="integer" size="4">
+        19
+         8
+        15
+         9
+    </TETRAHEDRON.337>
+    <TETRAHEDRON.338 type="integer" size="4">
+         8
+        15
+         4
+         9
+    </TETRAHEDRON.338>
+    <TETRAHEDRON.339 type="integer" size="4">
+        19
+        15
+        22
+         9
+    </TETRAHEDRON.339>
+    <TETRAHEDRON.340 type="integer" size="4">
+        15
+         4
+         9
+         7
+    </TETRAHEDRON.340>
+    <TETRAHEDRON.341 type="integer" size="4">
+        15
+         9
+        18
+         7
+    </TETRAHEDRON.341>
+    <TETRAHEDRON.342 type="integer" size="4">
+        15
+        22
+         9
+        18
+    </TETRAHEDRON.342>
+    <TETRAHEDRON.343 type="integer" size="4">
+        22
+         9
+        18
+        10
+    </TETRAHEDRON.343>
+    <TETRAHEDRON.344 type="integer" size="4">
+         9
+        18
+         7
+        10
+    </TETRAHEDRON.344>
+    <TETRAHEDRON.345 type="integer" size="4">
+        22
+        18
+        21
+        10
+    </TETRAHEDRON.345>
+    <TETRAHEDRON.346 type="integer" size="4">
+        18
+         7
+        10
+         6
+    </TETRAHEDRON.346>
+    <TETRAHEDRON.347 type="integer" size="4">
+        18
+        10
+        17
+         6
+    </TETRAHEDRON.347>
+    <TETRAHEDRON.348 type="integer" size="4">
+        18
+        21
+        10
+        17
+    </TETRAHEDRON.348>
+    <TETRAHEDRON.349 type="integer" size="4">
+        21
+        10
+        17
+         9
+    </TETRAHEDRON.349>
+    <TETRAHEDRON.350 type="integer" size="4">
+        10
+        17
+         6
+         9
+    </TETRAHEDRON.350>
+    <TETRAHEDRON.351 type="integer" size="4">
+        21
+        17
+        20
+         9
+    </TETRAHEDRON.351>
+    <TETRAHEDRON.352 type="integer" size="4">
+        17
+         6
+         9
+         5
+    </TETRAHEDRON.352>
+    <TETRAHEDRON.353 type="integer" size="4">
+        17
+         9
+        16
+         5
+    </TETRAHEDRON.353>
+    <TETRAHEDRON.354 type="integer" size="4">
+        17
+        20
+         9
+        16
+    </TETRAHEDRON.354>
+    <TETRAHEDRON.355 type="integer" size="4">
+        20
+         9
+        16
+         8
+    </TETRAHEDRON.355>
+    <TETRAHEDRON.356 type="integer" size="4">
+         9
+        16
+         5
+         8
+    </TETRAHEDRON.356>
+    <TETRAHEDRON.357 type="integer" size="4">
+        20
+        16
+        19
+         8
+    </TETRAHEDRON.357>
+    <TETRAHEDRON.358 type="integer" size="4">
+        16
+         5
+         8
+         4
+    </TETRAHEDRON.358>
+    <TETRAHEDRON.359 type="integer" size="4">
+        16
+         8
+        15
+         4
+    </TETRAHEDRON.359>
+    <TETRAHEDRON.360 type="integer" size="4">
+        16
+        19
+         8
+        15
+    </TETRAHEDRON.360>
+    <TETRAHEDRON.361 type="integer" size="4">
+        15
+         4
+        11
+         7
+    </TETRAHEDRON.361>
+    <TETRAHEDRON.362 type="integer" size="4">
+         4
+        11
+         1
+         7
+    </TETRAHEDRON.362>
+    <TETRAHEDRON.363 type="integer" size="4">
+        15
+        11
+        18
+         7
+    </TETRAHEDRON.363>
+    <TETRAHEDRON.364 type="integer" size="4">
+        11
+         1
+         7
+         2
+    </TETRAHEDRON.364>
+    <TETRAHEDRON.365 type="integer" size="4">
+        11
+         7
+        14
+         2
+    </TETRAHEDRON.365>
+    <TETRAHEDRON.366 type="integer" size="4">
+        11
+        18
+         7
+        14
+    </TETRAHEDRON.366>
+    <TETRAHEDRON.367 type="integer" size="4">
+        18
+         7
+        14
+         6
+    </TETRAHEDRON.367>
+    <TETRAHEDRON.368 type="integer" size="4">
+         7
+        14
+         2
+         6
+    </TETRAHEDRON.368>
+    <TETRAHEDRON.369 type="integer" size="4">
+        18
+        14
+        17
+         6
+    </TETRAHEDRON.369>
+    <TETRAHEDRON.370 type="integer" size="4">
+        14
+         2
+         6
+         3
+    </TETRAHEDRON.370>
+    <TETRAHEDRON.371 type="integer" size="4">
+        14
+         6
+        13
+         3
+    </TETRAHEDRON.371>
+    <TETRAHEDRON.372 type="integer" size="4">
+        14
+        17
+         6
+        13
+    </TETRAHEDRON.372>
+    <TETRAHEDRON.373 type="integer" size="4">
+        17
+         6
+        13
+         5
+    </TETRAHEDRON.373>
+    <TETRAHEDRON.374 type="integer" size="4">
+         6
+        13
+         3
+         5
+    </TETRAHEDRON.374>
+    <TETRAHEDRON.375 type="integer" size="4">
+        17
+        13
+        16
+         5
+    </TETRAHEDRON.375>
+    <TETRAHEDRON.376 type="integer" size="4">
+        13
+         3
+         5
+         2
+    </TETRAHEDRON.376>
+    <TETRAHEDRON.377 type="integer" size="4">
+        13
+         5
+        12
+         2
+    </TETRAHEDRON.377>
+    <TETRAHEDRON.378 type="integer" size="4">
+        13
+        16
+         5
+        12
+    </TETRAHEDRON.378>
+    <TETRAHEDRON.379 type="integer" size="4">
+        16
+         5
+        12
+         4
+    </TETRAHEDRON.379>
+    <TETRAHEDRON.380 type="integer" size="4">
+         5
+        12
+         2
+         4
+    </TETRAHEDRON.380>
+    <TETRAHEDRON.381 type="integer" size="4">
+        16
+        12
+        15
+         4
+    </TETRAHEDRON.381>
+    <TETRAHEDRON.382 type="integer" size="4">
+        12
+         2
+         4
+         1
+    </TETRAHEDRON.382>
+    <TETRAHEDRON.383 type="integer" size="4">
+        12
+         4
+        11
+         1
+    </TETRAHEDRON.383>
+    <TETRAHEDRON.384 type="integer" size="4">
+        12
+        15
+         4
+        11
+    </TETRAHEDRON.384>
+    <FIXED_OCCUPATIONS type="logical" size="1">
+F
+    </FIXED_OCCUPATIONS>
+  </OCCUPATIONS>
+  <BRILLOUIN_ZONE>
+    <NUMBER_OF_K-POINTS type="integer" size="1">
+        36
+    </NUMBER_OF_K-POINTS>
+    <UNITS_FOR_K-POINTS UNITS="2 pi / a"/>
+    <MONKHORST_PACK_GRID nk1="4" nk2="4" nk3="4"/>
+    <MONKHORST_PACK_OFFSET k1="0" k2="0" k3="0"/>
+    <K-POINT.1 XYZ="0.000000000000000E+000 0.000000000000000E+000 0.000000000000000E+000" WEIGHT="3.125000000000000E-002"/>
+    <K-POINT.2 XYZ="-1.767766952966369E-001 1.767766952966369E-001 1.767766952966369E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.3 XYZ="3.535533905932738E-001 -3.535533905932738E-001 -3.535533905932738E-001" WEIGHT="3.125000000000000E-002"/>
+    <K-POINT.4 XYZ="1.767766952966369E-001 -1.767766952966369E-001 1.767766952966369E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.5 XYZ="0.000000000000000E+000 0.000000000000000E+000 3.535533905932738E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.6 XYZ="5.303300858899107E-001 -5.303300858899107E-001 -1.767766952966369E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.7 XYZ="3.535533905932738E-001 -3.535533905932738E-001 0.000000000000000E+000" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.8 XYZ="-3.535533905932738E-001 3.535533905932738E-001 -3.535533905932738E-001" WEIGHT="3.125000000000000E-002"/>
+    <K-POINT.9 XYZ="-5.303300858899107E-001 5.303300858899107E-001 -1.767766952966369E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.10 XYZ="0.000000000000000E+000 0.000000000000000E+000 -7.071067811865476E-001" WEIGHT="3.125000000000000E-002"/>
+    <K-POINT.11 XYZ="1.767766952966369E-001 1.767766952966369E-001 -1.767766952966369E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.12 XYZ="0.000000000000000E+000 3.535533905932738E-001 0.000000000000000E+000" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.13 XYZ="5.303300858899107E-001 -1.767766952966369E-001 -5.303300858899107E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.14 XYZ="3.535533905932738E-001 0.000000000000000E+000 -3.535533905932738E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.15 XYZ="3.535533905932738E-001 0.000000000000000E+000 0.000000000000000E+000" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.16 XYZ="1.767766952966369E-001 1.767766952966369E-001 1.767766952966369E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.17 XYZ="7.071067811865476E-001 -3.535533905932738E-001 -3.535533905932738E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.18 XYZ="5.303300858899107E-001 -1.767766952966369E-001 -1.767766952966369E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.19 XYZ="-1.767766952966369E-001 5.303300858899107E-001 -5.303300858899107E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.20 XYZ="-3.535533905932737E-001 7.071067811865476E-001 -3.535533905932738E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.21 XYZ="1.767766952966369E-001 1.767766952966369E-001 -8.838834764831844E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.22 XYZ="0.000000000000000E+000 3.535533905932738E-001 -7.071067811865476E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.23 XYZ="0.000000000000000E+000 3.535533905932738E-001 -3.535533905932738E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.24 XYZ="-1.767766952966369E-001 5.303300858899107E-001 -1.767766952966369E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.25 XYZ="3.535533905932738E-001 0.000000000000000E+000 -7.071067811865476E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.26 XYZ="1.767766952966369E-001 1.767766952966369E-001 -5.303300858899107E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.27 XYZ="-3.535533905932738E-001 -3.535533905932738E-001 3.535533905932738E-001" WEIGHT="3.125000000000000E-002"/>
+    <K-POINT.28 XYZ="-5.303300858899107E-001 -1.767766952966369E-001 5.303300858899107E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.29 XYZ="0.000000000000000E+000 -7.071067811865476E-001 0.000000000000000E+000" WEIGHT="3.125000000000000E-002"/>
+    <K-POINT.30 XYZ="-1.767766952966369E-001 -5.303300858899107E-001 5.303300858899107E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.31 XYZ="-3.535533905932737E-001 -3.535533905932738E-001 7.071067811865476E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.32 XYZ="1.767766952966369E-001 -8.838834764831844E-001 1.767766952966369E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.33 XYZ="0.000000000000000E+000 -7.071067811865476E-001 3.535533905932738E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.34 XYZ="-7.071067811865476E-001 0.000000000000000E+000 0.000000000000000E+000" WEIGHT="3.125000000000000E-002"/>
+    <K-POINT.35 XYZ="-8.838834764831844E-001 1.767766952966369E-001 1.767766952966369E-001" WEIGHT="6.250000000000000E-002"/>
+    <K-POINT.36 XYZ="-3.535533905932738E-001 -3.535533905932738E-001 -3.535533905932738E-001" WEIGHT="3.125000000000000E-002"/>
+    <NORM-OF-Q type="real" size="1">
+ 0.000000000000000E+000
+    </NORM-OF-Q>
+  </BRILLOUIN_ZONE>
+  <PARALLELISM>
+    <GRANULARITY_OF_K-POINTS_DISTRIBUTION type="integer" size="1">
+         1
+    </GRANULARITY_OF_K-POINTS_DISTRIBUTION>
+    <NUMBER_OF_PROCESSORS type="integer" size="1">
+         1
+    </NUMBER_OF_PROCESSORS>
+    <NUMBER_OF_PROCESSORS_PER_POOL type="integer" size="1">
+         1
+    </NUMBER_OF_PROCESSORS_PER_POOL>
+    <NUMBER_OF_PROCESSORS_PER_IMAGE type="integer" size="1">
+         1
+    </NUMBER_OF_PROCESSORS_PER_IMAGE>
+    <NUMBER_OF_PROCESSORS_PER_TASKGROUP type="integer" size="1">
+         1
+    </NUMBER_OF_PROCESSORS_PER_TASKGROUP>
+    <NUMBER_OF_PROCESSORS_PER_BAND_GROUP type="integer" size="1">
+         1
+    </NUMBER_OF_PROCESSORS_PER_BAND_GROUP>
+    <NUMBER_OF_PROCESSORS_PER_DIAGONALIZATION type="integer" size="1">
+         1
+    </NUMBER_OF_PROCESSORS_PER_DIAGONALIZATION>
+  </PARALLELISM>
+  <CHARGE-DENSITY iotk_link="./charge-density.dat">
+    <!--This is a link to the file indicated in the iotk_link attribute-->
+  </CHARGE-DENSITY>
+  <BAND_STRUCTURE_INFO>
+    <NUMBER_OF_K-POINTS type="integer" size="1">
+        36
+    </NUMBER_OF_K-POINTS>
+    <NUMBER_OF_SPIN_COMPONENTS type="integer" size="1">
+         1
+    </NUMBER_OF_SPIN_COMPONENTS>
+    <NON-COLINEAR_CALCULATION type="logical" size="1">
+F
+    </NON-COLINEAR_CALCULATION>
+    <NUMBER_OF_ATOMIC_WFC type="integer" size="1">
+         8
+    </NUMBER_OF_ATOMIC_WFC>
+    <NUMBER_OF_BANDS type="integer" size="1">
+         8
+    </NUMBER_OF_BANDS>
+    <NUMBER_OF_ELECTRONS type="real" size="1">
+ 8.000000000000000E+000
+    </NUMBER_OF_ELECTRONS>
+    <UNITS_FOR_K-POINTS UNITS="2 pi / a"/>
+    <UNITS_FOR_ENERGIES UNITS="Hartree"/>
+    <FERMI_ENERGY type="real" size="1">
+ 2.536783731398269E-001
+    </FERMI_ENERGY>
+  </BAND_STRUCTURE_INFO>
+  <EIGENVALUES>
+    <K-POINT.1>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 0.000000000000000E+000  0.000000000000000E+000  0.000000000000000E+000
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 3.125000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00001/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.1>
+    <K-POINT.2>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+-1.767766952966369E-001  1.767766952966369E-001  1.767766952966369E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00002/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.2>
+    <K-POINT.3>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 3.535533905932738E-001 -3.535533905932738E-001 -3.535533905932738E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 3.125000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00003/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.3>
+    <K-POINT.4>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 1.767766952966369E-001 -1.767766952966369E-001  1.767766952966369E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00004/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.4>
+    <K-POINT.5>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 0.000000000000000E+000  0.000000000000000E+000  3.535533905932738E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00005/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.5>
+    <K-POINT.6>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 5.303300858899107E-001 -5.303300858899107E-001 -1.767766952966369E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00006/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.6>
+    <K-POINT.7>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 3.535533905932738E-001 -3.535533905932738E-001  0.000000000000000E+000
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00007/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.7>
+    <K-POINT.8>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+-3.535533905932738E-001  3.535533905932738E-001 -3.535533905932738E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 3.125000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00008/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.8>
+    <K-POINT.9>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+-5.303300858899107E-001  5.303300858899107E-001 -1.767766952966369E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00009/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.9>
+    <K-POINT.10>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 0.000000000000000E+000  0.000000000000000E+000 -7.071067811865476E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 3.125000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00010/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.10>
+    <K-POINT.11>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 1.767766952966369E-001  1.767766952966369E-001 -1.767766952966369E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00011/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.11>
+    <K-POINT.12>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 0.000000000000000E+000  3.535533905932738E-001  0.000000000000000E+000
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00012/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.12>
+    <K-POINT.13>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 5.303300858899107E-001 -1.767766952966369E-001 -5.303300858899107E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00013/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.13>
+    <K-POINT.14>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 3.535533905932738E-001  0.000000000000000E+000 -3.535533905932738E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00014/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.14>
+    <K-POINT.15>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 3.535533905932738E-001  0.000000000000000E+000  0.000000000000000E+000
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00015/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.15>
+    <K-POINT.16>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 1.767766952966369E-001  1.767766952966369E-001  1.767766952966369E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00016/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.16>
+    <K-POINT.17>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 7.071067811865476E-001 -3.535533905932738E-001 -3.535533905932738E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00017/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.17>
+    <K-POINT.18>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 5.303300858899107E-001 -1.767766952966369E-001 -1.767766952966369E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00018/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.18>
+    <K-POINT.19>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+-1.767766952966369E-001  5.303300858899107E-001 -5.303300858899107E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00019/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.19>
+    <K-POINT.20>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+-3.535533905932737E-001  7.071067811865476E-001 -3.535533905932738E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00020/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.20>
+    <K-POINT.21>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 1.767766952966369E-001  1.767766952966369E-001 -8.838834764831844E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00021/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.21>
+    <K-POINT.22>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 0.000000000000000E+000  3.535533905932738E-001 -7.071067811865476E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00022/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.22>
+    <K-POINT.23>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 0.000000000000000E+000  3.535533905932738E-001 -3.535533905932738E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00023/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.23>
+    <K-POINT.24>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+-1.767766952966369E-001  5.303300858899107E-001 -1.767766952966369E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00024/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.24>
+    <K-POINT.25>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 3.535533905932738E-001  0.000000000000000E+000 -7.071067811865476E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00025/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.25>
+    <K-POINT.26>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 1.767766952966369E-001  1.767766952966369E-001 -5.303300858899107E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00026/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.26>
+    <K-POINT.27>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+-3.535533905932738E-001 -3.535533905932738E-001  3.535533905932738E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 3.125000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00027/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.27>
+    <K-POINT.28>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+-5.303300858899107E-001 -1.767766952966369E-001  5.303300858899107E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00028/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.28>
+    <K-POINT.29>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 0.000000000000000E+000 -7.071067811865476E-001  0.000000000000000E+000
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 3.125000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00029/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.29>
+    <K-POINT.30>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+-1.767766952966369E-001 -5.303300858899107E-001  5.303300858899107E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00030/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.30>
+    <K-POINT.31>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+-3.535533905932737E-001 -3.535533905932738E-001  7.071067811865476E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00031/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.31>
+    <K-POINT.32>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 1.767766952966369E-001 -8.838834764831844E-001  1.767766952966369E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00032/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.32>
+    <K-POINT.33>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+ 0.000000000000000E+000 -7.071067811865476E-001  3.535533905932738E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00033/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.33>
+    <K-POINT.34>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+-7.071067811865476E-001  0.000000000000000E+000  0.000000000000000E+000
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 3.125000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00034/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.34>
+    <K-POINT.35>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+-8.838834764831844E-001  1.767766952966369E-001  1.767766952966369E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 6.250000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00035/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.35>
+    <K-POINT.36>
+      <K-POINT_COORDS type="real" size="3" columns="3">
+-3.535533905932738E-001 -3.535533905932738E-001 -3.535533905932738E-001
+      </K-POINT_COORDS>
+      <WEIGHT type="real" size="1">
+ 3.125000000000000E-002
+      </WEIGHT>
+      <DATAFILE iotk_link="./K00036/eigenval.xml">
+        <!--This is a link to the file indicated in the iotk_link attribute-->
+      </DATAFILE>
+    </K-POINT.36>
+  </EIGENVALUES>
+  <EIGENVECTORS>
+    <MAX_NUMBER_OF_GK-VECTORS type="integer" size="1">
+       754
+    </MAX_NUMBER_OF_GK-VECTORS>
+    <K-POINT.1>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       749
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.1>
+    <K-POINT.2>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       754
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.2>
+    <K-POINT.3>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       754
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.3>
+    <K-POINT.4>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       754
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.4>
+    <K-POINT.5>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       729
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.5>
+    <K-POINT.6>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       748
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.6>
+    <K-POINT.7>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       754
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.7>
+    <K-POINT.8>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       754
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.8>
+    <K-POINT.9>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       748
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.9>
+    <K-POINT.10>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       740
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.10>
+    <K-POINT.11>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       754
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.11>
+    <K-POINT.12>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       729
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.12>
+    <K-POINT.13>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       748
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.13>
+    <K-POINT.14>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       754
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.14>
+    <K-POINT.15>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       729
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.15>
+    <K-POINT.16>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       754
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.16>
+    <K-POINT.17>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       754
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.17>
+    <K-POINT.18>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       748
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.18>
+    <K-POINT.19>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       748
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.19>
+    <K-POINT.20>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       754
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.20>
+    <K-POINT.21>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       748
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.21>
+    <K-POINT.22>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       744
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.22>
+    <K-POINT.23>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       754
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.23>
+    <K-POINT.24>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       748
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.24>
+    <K-POINT.25>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       744
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.25>
+    <K-POINT.26>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       748
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.26>
+    <K-POINT.27>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       754
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.27>
+    <K-POINT.28>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       748
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.28>
+    <K-POINT.29>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       740
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.29>
+    <K-POINT.30>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       748
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.30>
+    <K-POINT.31>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       754
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.31>
+    <K-POINT.32>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       748
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.32>
+    <K-POINT.33>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       744
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.33>
+    <K-POINT.34>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       740
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.34>
+    <K-POINT.35>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       748
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.35>
+    <K-POINT.36>
+      <NUMBER_OF_GK-VECTORS type="integer" size="1">
+       754
+      </NUMBER_OF_GK-VECTORS>
+    </K-POINT.36>
+  </EIGENVECTORS>
+</Root>
+
