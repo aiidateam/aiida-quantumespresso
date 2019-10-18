@@ -28,6 +28,8 @@ def flatten_inputs(inputs, prefix=''):
 def fixture_environment():
     """Setup a complete AiiDA test environment, with configuration, profile, database and repository."""
     with fixture_manager() as manager:
+        from aiida.common.log import configure_logging
+        configure_logging(with_orm=True)
         yield manager
 
 

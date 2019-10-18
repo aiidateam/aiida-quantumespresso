@@ -3,7 +3,8 @@
 """Tests for the `DosParser`."""
 from __future__ import absolute_import
 import pytest
-from aiida.orm import FolderData
+
+from aiida import orm
 from aiida.common import AttributeDict
 
 
@@ -12,7 +13,7 @@ def dos_inputs():
     # The DosParser doesn't really need to access the parent folder, but we'd like to make the inputs as realistic
     # as possible, so we create an empty FolderData and attach it as an input to the current CalcJobNode.
     inputs = {
-        'parent_folder': FolderData().store(),
+        'parent_folder': orm.FolderData().store(),
     }
 
     return AttributeDict(inputs)
@@ -35,10 +36,11 @@ def test_dos_default(fixture_database, fixture_computer_localhost, generate_calc
     out_dos_y = results['output_dos'].get_y()
     dos_labels = [out_dos_x[0]] + [arr[0] for arr in out_dos_y]  # 4 strings
     dos_values = [out_dos_x[1]] + [arr[1] for arr in out_dos_y]  # 4 numpy arrays
-    dos_units  = [out_dos_x[2]] + [arr[2] for arr in out_dos_y]  # 4 strings
+    dos_units = [out_dos_x[2]] + [arr[2] for arr in out_dos_y]  # 4 strings
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert not orm.Log.objects.get_logs_for(node)
     assert 'output_parameters' in results
     assert 'output_dos' in results
     data_regression.check({
@@ -49,5 +51,5 @@ def test_dos_default(fixture_database, fixture_computer_localhost, generate_calc
         }
     })
     num_regression.check({
-        'dos_val_{}'.format(i) : val for i,val in enumerate(dos_values)
+        'dos_val_{}'.format(i): val for i, val in enumerate(dos_values)
     }, default_tolerance=dict(atol=0, rtol=1e-18))
