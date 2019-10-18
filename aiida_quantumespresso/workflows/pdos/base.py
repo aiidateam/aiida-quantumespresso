@@ -188,7 +188,7 @@ class PdosWorkChain(engine.WorkChain):
             self.report('SCF PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_SCF
 
-        self.ctx.scf_parent_folder = workchain.outputs.remote_workdir
+        self.ctx.scf_parent_folder = workchain.outputs.remote_folder
 
     def run_nscf(self):
         """Run an NSCF calculation, to generate eigenvalues with a denser k-point mesh.
@@ -241,7 +241,7 @@ class PdosWorkChain(engine.WorkChain):
             self.report('NSCF PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_NSCF
 
-        self.ctx.nscf_parent_folder = workchain.outputs.remote_workdir
+        self.ctx.nscf_parent_folder = workchain.outputs.remote_folder
 
     def run_dos(self):
         """Run DOS and Projwfc calculations, to generate total/partial Densities of State."""
@@ -286,15 +286,20 @@ class PdosWorkChain(engine.WorkChain):
 
     def inspect_dos(self):
         """Verify that the DOS and Projwfc calculations finished successfully."""
+        error_code = None
+
         calculation = self.ctx.calc_dos
         if not calculation.is_finished_ok:
             self.report('DosCalculation failed with exit status {}'.format(calculation.exit_status))
-            return self.exit_codes.ERROR_SUB_PROCESS_FAILED_DOS
+            error_code = self.exit_codes.ERROR_SUB_PROCESS_FAILED_DOS
 
         calculation = self.ctx.calc_projwfc
         if not calculation.is_finished_ok:
             self.report('ProjwfcCalculation failed with exit status {}'.format(calculation.exit_status))
-            return self.exit_codes.ERROR_SUB_PROCESS_FAILED_PROJWFC
+            error_code = error_code or self.exit_codes.ERROR_SUB_PROCESS_FAILED_PROJWFC
+        
+        if error_code:
+            return error_code
 
     def results(self):
         """Attach the desired output nodes directly as outputs of the workchain."""
