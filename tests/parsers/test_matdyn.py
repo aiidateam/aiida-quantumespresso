@@ -32,6 +32,7 @@ def test_matdyn_default(fixture_database, fixture_computer_localhost, generate_c
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert not orm.Log.objects.get_logs_for(node)
     assert 'output_parameters' in results
     assert 'output_phonon_bands' in results
     data_regression.check({

@@ -91,9 +91,11 @@ def test_pw_default(fixture_database, fixture_computer_localhost, generate_calc_
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert not orm.Log.objects.get_logs_for(node)
     assert 'output_kpoints' in results
     assert 'output_parameters' in results
     assert 'output_trajectory' in results
+
     data_regression.check({
         'output_kpoints': results['output_kpoints'].attributes,
         'output_parameters': results['output_parameters'].get_dict(),
@@ -118,9 +120,11 @@ def test_pw_default_xml_new(fixture_database, fixture_computer_localhost, genera
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert not orm.Log.objects.get_logs_for(node)
     assert 'output_band' in results
     assert 'output_parameters' in results
     assert 'output_trajectory' in results
+
     data_regression.check({
         'output_band': results['output_band'].attributes,
         'output_parameters': results['output_parameters'].get_dict(),
@@ -141,6 +145,7 @@ def test_pw_initialization_xml_new(fixture_database, fixture_computer_localhost,
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert orm.Log.objects.get_logs_for(node)
     assert 'output_band' not in results
     assert 'output_kpoints' not in results
     assert 'output_parameters' in results
@@ -171,6 +176,7 @@ def test_pw_failed_missing(fixture_database, fixture_computer_localhost, generat
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_failed, calcfunction.exit_status
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_FILES.status
+    assert orm.Log.objects.get_logs_for(node)
 
 
 def test_pw_failed_interrupted(fixture_database, fixture_computer_localhost, generate_calc_job_node,
@@ -196,6 +202,7 @@ def test_pw_failed_interrupted(fixture_database, fixture_computer_localhost, gen
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_failed, calcfunction.exit_status
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_FILES.status
+    assert orm.Log.objects.get_logs_for(node)
     assert 'output_parameters' in results
     data_regression.check(results['output_parameters'].get_dict())
 
@@ -224,6 +231,7 @@ def test_pw_failed_interrupted_stdout(fixture_database, fixture_computer_localho
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_failed, calcfunction.exit_status
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE.status
+    assert orm.Log.objects.get_logs_for(node)
     assert 'output_kpoints' in results
     assert 'output_parameters' in results
     assert 'output_trajectory' in results
@@ -253,6 +261,7 @@ def test_pw_failed_interrupted_xml(fixture_database, fixture_computer_localhost,
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_failed, calcfunction.exit_status
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_XML_PARSE.status
+    assert orm.Log.objects.get_logs_for(node)
     assert 'output_parameters' in results
     assert 'output_trajectory' in results
     data_regression.check(results['output_parameters'].get_dict())
@@ -272,6 +281,7 @@ def test_pw_failed_out_of_walltime(fixture_database, fixture_computer_localhost,
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_failed, calcfunction.exit_status
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUT_OF_WALLTIME.status
+    assert orm.Log.objects.get_logs_for(node)
     assert 'output_parameters' in results
     assert 'output_trajectory' in results
     data_regression.check({
@@ -294,6 +304,7 @@ def test_pw_failed_scf_not_converged(fixture_database, fixture_computer_localhos
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_failed, calcfunction.exit_status
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED.status
+    assert orm.Log.objects.get_logs_for(node)
     assert 'output_parameters' in results
     assert 'output_trajectory' in results
     data_regression.check({
@@ -315,6 +326,7 @@ def test_pw_relax_success(fixture_database, fixture_computer_localhost, generate
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert not orm.Log.objects.get_logs_for(node)
     assert 'output_kpoints' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
@@ -341,6 +353,7 @@ def test_pw_relax_failed_electronic(fixture_database, fixture_computer_localhost
 
     assert calcfunction.is_failed
     assert calcfunction.exit_status == expected_exit_status
+    assert orm.Log.objects.get_logs_for(node)
     assert 'output_kpoints' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
@@ -361,6 +374,7 @@ def test_pw_relax_failed_not_converged_nstep(fixture_database, fixture_computer_
 
     assert calcfunction.is_failed
     assert calcfunction.exit_status == expected_exit_status
+    assert orm.Log.objects.get_logs_for(node)
     assert 'output_kpoints' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
@@ -380,6 +394,7 @@ def test_pw_vcrelax_success(fixture_database, fixture_computer_localhost, genera
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert not orm.Log.objects.get_logs_for(node)
     assert 'output_kpoints' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
@@ -407,6 +422,7 @@ def test_pw_vcrelax_fractional_success(fixture_database, fixture_computer_localh
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert not orm.Log.objects.get_logs_for(node)
     assert 'output_kpoints' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
@@ -434,6 +450,7 @@ def test_pw_vcrelax_failed_charge_wrong(fixture_database, fixture_computer_local
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_failed, calcfunction.exit_status
     assert calcfunction.exit_status == expected_exit_status
+    assert orm.Log.objects.get_logs_for(node)
     assert 'output_parameters' in results
 
 
@@ -452,6 +469,7 @@ def test_pw_vcrelax_failed_symmetry_not_orthogonal(fixture_database, fixture_com
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_failed, calcfunction.exit_status
     assert calcfunction.exit_status == expected_exit_status
+    assert orm.Log.objects.get_logs_for(node)
     assert 'output_parameters' in results
 
 
@@ -469,6 +487,7 @@ def test_pw_vcrelax_failed_bfgs_history(fixture_database, fixture_computer_local
 
     assert calcfunction.is_failed
     assert calcfunction.exit_status == expected_exit_status
+    assert orm.Log.objects.get_logs_for(node)
     assert 'output_kpoints' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
@@ -489,6 +508,7 @@ def test_pw_vcrelax_failed_bfgs_history_final_scf(fixture_database, fixture_comp
 
     assert calcfunction.is_failed
     assert calcfunction.exit_status == expected_exit_status
+    assert orm.Log.objects.get_logs_for(node)
     assert 'output_kpoints' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
@@ -509,6 +529,7 @@ def test_pw_vcrelax_failed_electronic(fixture_database, fixture_computer_localho
 
     assert calcfunction.is_failed
     assert calcfunction.exit_status == expected_exit_status
+    assert orm.Log.objects.get_logs_for(node)
     assert 'output_kpoints' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
@@ -529,6 +550,7 @@ def test_pw_vcrelax_failed_electronic_final_scf(fixture_database, fixture_comput
 
     assert calcfunction.is_failed
     assert calcfunction.exit_status == expected_exit_status
+    assert orm.Log.objects.get_logs_for(node)
     assert 'output_kpoints' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
@@ -549,6 +571,7 @@ def test_pw_vcrelax_failed_not_converged_final_scf(fixture_database, fixture_com
 
     assert calcfunction.is_failed
     assert calcfunction.exit_status == expected_exit_status
+    assert orm.Log.objects.get_logs_for(node)
     assert 'output_kpoints' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
@@ -569,6 +592,7 @@ def test_pw_vcrelax_failed_not_converged_nstep(fixture_database, fixture_compute
 
     assert calcfunction.is_failed
     assert calcfunction.exit_status == expected_exit_status
+    assert orm.Log.objects.get_logs_for(node)
     assert 'output_kpoints' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
