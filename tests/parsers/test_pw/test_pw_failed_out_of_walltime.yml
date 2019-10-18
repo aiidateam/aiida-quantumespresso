@@ -51,6 +51,7 @@ output_parameters:
   q_real_space: false
   rho_cutoff: 3265.366014072
   rho_cutoff_units: eV
+  scf_iterations: 12
   smooth_fft_grid:
   - 25
   - 25
@@ -175,6 +176,12 @@ output_trajectory:
   - 1
   - 2
   - 3
+  array|scf_accuracy:
+  - 12
+  array|scf_accuracy_index:
+  - 2
+  array|scf_iterations:
+  - 1
   array|steps:
   - 1
   symbols:
