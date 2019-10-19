@@ -3,7 +3,12 @@ import re
 
 
 def parse_lowdin_charges(out_file_lines):
-    """Parse the Lowdin Charge section of the ``projwfc.x`` output."""
+    """Parse the Lowdin Charge section of the ``projwfc.x`` output.
+
+    :param out_file_lines: The projwfc.x stdout file content
+    :type out_file_lines: list[str]
+    :return: A tuple of lowdin data dict and spill parameter float
+    """
     # find start of Lowdin charge output
     start_line = None
     for i, line in enumerate(out_file_lines):
