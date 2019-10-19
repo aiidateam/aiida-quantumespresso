@@ -1,0 +1,305 @@
+1:
+  polarization:
+    d: 3.5789
+    p: 0.0483
+    s: 0.0666
+  spin down:
+    d: 1.3907
+    dx2-y2: 0.1557
+    dxy: 0.359
+    dxz: 0.3592
+    dyz: 0.3592
+    dz2: 0.1575
+    p: 3.5208
+    px: 1.1734
+    py: 1.1734
+    pz: 1.174
+    s: 1.184
+  spin up:
+    d: 4.9696
+    dx2-y2: 0.9899
+    dxy: 0.9968
+    dxz: 0.9968
+    dyz: 0.9968
+    dz2: 0.9893
+    p: 9.7893
+    px: 1.1895
+    py: 1.1895
+    pz: 1.19
+    s: 1.2506
+  sum:
+    polarization: 3.6938
+    spin down: 6.0955
+    spin up: 9.7893
+    total charge: 15.8849
+  total charge:
+    d: 6.3602
+    p: 7.09
+    s: 2.4347
+2:
+  polarization:
+    d: 3.5779
+    p: 0.0483
+    s: 0.0666
+  spin down:
+    d: 1.3919
+    dx2-y2: 0.1557
+    dxy: 0.3596
+    dxz: 0.3596
+    dyz: 0.3596
+    dz2: 0.1575
+    p: 3.5208
+    px: 1.1734
+    py: 1.1734
+    pz: 1.174
+    s: 1.184
+  spin up:
+    d: 4.9699
+    dx2-y2: 0.9901
+    dxy: 0.9968
+    dxz: 0.9968
+    dyz: 0.9968
+    dz2: 0.9895
+    p: 9.7896
+    px: 1.1895
+    py: 1.1895
+    pz: 1.19
+    s: 1.2506
+  sum:
+    polarization: 3.6928
+    spin down: 6.0968
+    spin up: 9.7896
+    total charge: 15.8864
+  total charge:
+    d: 6.3618
+    p: 7.09
+    s: 2.4347
+3:
+  polarization:
+    d: 3.5777
+    p: 0.0483
+    s: 0.0666
+  spin down:
+    d: 1.392
+    dx2-y2: 0.1557
+    dxy: 0.3589
+    dxz: 0.3597
+    dyz: 0.3601
+    dz2: 0.1575
+    p: 3.5208
+    px: 1.1734
+    py: 1.1734
+    pz: 1.174
+    s: 1.184
+  spin up:
+    d: 4.9697
+    dx2-y2: 0.99
+    dxy: 0.9968
+    dxz: 0.9968
+    dyz: 0.9968
+    dz2: 0.9893
+    p: 9.7894
+    px: 1.1895
+    py: 1.1895
+    pz: 1.19
+    s: 1.2506
+  sum:
+    polarization: 3.6926
+    spin down: 6.0968
+    spin up: 9.7894
+    total charge: 15.8863
+  total charge:
+    d: 6.3617
+    p: 7.09
+    s: 2.4347
+4:
+  polarization:
+    d: 3.5777
+    p: 0.0483
+    s: 0.0666
+  spin down:
+    d: 1.392
+    dx2-y2: 0.1557
+    dxy: 0.3589
+    dxz: 0.3601
+    dyz: 0.3597
+    dz2: 0.1575
+    p: 3.5208
+    px: 1.1734
+    py: 1.1734
+    pz: 1.174
+    s: 1.184
+  spin up:
+    d: 4.9697
+    dx2-y2: 0.99
+    dxy: 0.9968
+    dxz: 0.9968
+    dyz: 0.9968
+    dz2: 0.9893
+    p: 9.7894
+    px: 1.1895
+    py: 1.1895
+    pz: 1.19
+    s: 1.2506
+  sum:
+    polarization: 3.6926
+    spin down: 6.0968
+    spin up: 9.7894
+    total charge: 15.8863
+  total charge:
+    d: 6.3617
+    p: 7.09
+    s: 2.4347
+5:
+  polarization:
+    d: 0.0
+    p: 0.2604
+    s: 0.0407
+  spin down:
+    d: 0.0
+    dx2-y2: 0.0
+    dxy: 0.0
+    dxz: 0.0
+    dyz: 0.0
+    dz2: 0.0
+    p: 2.1274
+    px: 0.709
+    py: 0.709
+    pz: 0.7093
+    s: 0.7441
+  spin up:
+    d: 0.0
+    dx2-y2: 0.0
+    dxy: 0.0
+    dxz: 0.0
+    dyz: 0.0
+    dz2: 0.0
+    p: 3.1726
+    px: 0.7964
+    py: 0.7964
+    pz: 0.795
+    s: 0.7848
+  sum:
+    polarization: 0.3011
+    spin down: 2.8715
+    spin up: 3.1726
+    total charge: 6.0441
+  total charge:
+    d: 0.0
+    p: 4.5151
+    s: 1.529
+6:
+  polarization:
+    d: 0.0
+    p: 0.2603
+    s: 0.0407
+  spin down:
+    d: 0.0
+    dx2-y2: 0.0
+    dxy: 0.0
+    dxz: 0.0
+    dyz: 0.0
+    dz2: 0.0
+    p: 2.1274
+    px: 0.709
+    py: 0.709
+    pz: 0.7093
+    s: 0.7441
+  spin up:
+    d: 0.0
+    dx2-y2: 0.0
+    dxy: 0.0
+    dxz: 0.0
+    dyz: 0.0
+    dz2: 0.0
+    p: 3.1725
+    px: 0.7963
+    py: 0.7967
+    pz: 0.7947
+    s: 0.7848
+  sum:
+    polarization: 0.301
+    spin down: 2.8715
+    spin up: 3.1725
+    total charge: 6.044
+  total charge:
+    d: 0.0
+    p: 4.515
+    s: 1.529
+7:
+  polarization:
+    d: 0.0
+    p: 0.2603
+    s: 0.0407
+  spin down:
+    d: 0.0
+    dx2-y2: 0.0
+    dxy: 0.0
+    dxz: 0.0
+    dyz: 0.0
+    dz2: 0.0
+    p: 2.1274
+    px: 0.709
+    py: 0.709
+    pz: 0.7093
+    s: 0.7441
+  spin up:
+    d: 0.0
+    dx2-y2: 0.0
+    dxy: 0.0
+    dxz: 0.0
+    dyz: 0.0
+    dz2: 0.0
+    p: 3.1725
+    px: 0.7967
+    py: 0.7963
+    pz: 0.7947
+    s: 0.7848
+  sum:
+    polarization: 0.301
+    spin down: 2.8715
+    spin up: 3.1725
+    total charge: 6.044
+  total charge:
+    d: 0.0
+    p: 4.515
+    s: 1.529
+8:
+  polarization:
+    d: 0.0
+    p: 0.2603
+    s: 0.0407
+  spin down:
+    d: 0.0
+    dx2-y2: 0.0
+    dxy: 0.0
+    dxz: 0.0
+    dyz: 0.0
+    dz2: 0.0
+    p: 2.1274
+    px: 0.709
+    py: 0.709
+    pz: 0.7093
+    s: 0.7441
+  spin up:
+    d: 0.0
+    dx2-y2: 0.0
+    dxy: 0.0
+    dxz: 0.0
+    dyz: 0.0
+    dz2: 0.0
+    p: 3.1725
+    px: 0.7965
+    py: 0.7965
+    pz: 0.7946
+    s: 0.7848
+  sum:
+    polarization: 0.301
+    spin down: 2.8715
+    spin up: 3.1725
+    total charge: 6.044
+  total charge:
+    d: 0.0
+    p: 4.515
+    s: 1.529
+spill: 0.0032

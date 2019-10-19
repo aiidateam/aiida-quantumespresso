@@ -234,3 +234,11 @@ def generate_parser():
         return ParserFactory(entry_point_name)
 
     return _generate_parser
+
+
+@pytest.fixture
+def parser_fixture_path():
+    """Fixture to obtain the absolute path of the ``test/parsers/fixtures`` folder."""
+    basepath = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(basepath, 'parsers', 'fixtures')
+
