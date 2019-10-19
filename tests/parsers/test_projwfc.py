@@ -6,6 +6,9 @@ from __future__ import absolute_import
 import os
 import pytest
 
+from aiida import orm
+from aiida.common import AttributeDict, LinkType
+
 from aiida_quantumespresso.parsers.parse_raw.projwfc import parse_lowdin_charges
 
 
