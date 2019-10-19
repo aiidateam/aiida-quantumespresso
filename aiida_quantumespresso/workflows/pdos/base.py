@@ -3,15 +3,33 @@
 
 This requires four computations:
 
-- SCF (pw.x), to generate the initial wavefunction
-- NSCF (pw.x), to generate eigenvalues, generally with a denser k-point mesh and tetrahedra occupations
-- Total DoS (dos.x), to generate total densities of state
-- Partial DoS (projwfc.x), to generate partial densities of state by projecting wavefunctions onto atomic orbitals
+- SCF (pw.x), to generate the initial wavefunction.
+- NSCF (pw.x), to generate eigenvalues, generally with a denser k-point mesh and tetrahedra occupations.
+- Total DoS (dos.x), to generate total densities of state.
+- Partial DoS (projwfc.x), to generate partial densities of state, by projecting wavefunctions onto atomic orbitals.
 
 Additional functionality:
 
 - Setting ``'align_to_fermi': True`` in the input ``parameters`` node,
   will ensure that the energy range is centred around the Fermi energy.
+
+Storage memory management:
+
+The wavefunction file(s) created by the nscf calculation can get very large (>100Gb).
+These files must be copied to dos and projwfc calculations, so storage memory limits can easily be exceeded.
+If this is an issue, setting the input ``serial_clean`` to ``True`` will not run these calculations in parallel,
+but instead run in serial and clean directories when they are no longer required:
+
+- Run the scf workchain
+- Run the nscf workchain, then clean the scf calculation directories
+- Run the dos calculation, then clean its directory
+- Run the projwfc calculation, then clean its directory
+
+Setting the input ``clean_workdir`` to ``True``, will clean any remaining directories,
+after the whole workchain has terminated.
+
+Also note that projwfc will fail if the scf/nscf calculations were run with a different number of procs/pools and
+``wf_collect=.false.`` (this setting is deprecated in newer version of QE).
 
 Related Resources:
 
@@ -109,6 +127,29 @@ def validate_dos_parameters(node):
     jsonschema.validate(node.get_dict(), get_parameter_schema())
 
 
+def clean_calcjob_remote(node):
+    """Clean the remote directory of a ``CalcJobNode``."""
+    cleaned = False
+    try:
+        node.outputs.remote_folder._clean()  # pylint: disable=protected-access
+        cleaned = True
+    except (IOError, OSError, KeyError):
+        pass
+    return cleaned
+
+
+def clean_workchain_calcs(workchain):
+    """Clean all remote directories of a workchain's descendant calculations."""
+    cleaned_calcs = []
+
+    for called_descendant in workchain.called_descendants:
+        if isinstance(called_descendant, orm.CalcJobNode):
+            if clean_calcjob_remote(called_descendant):
+                cleaned_calcs.append(called_descendant.pk)
+
+    return cleaned_calcs
+
+
 PwBaseWorkChain = plugins.WorkflowFactory('quantumespresso.pw.base')
 DosCalculation = plugins.CalculationFactory('quantumespresso.dos')
 ProjwfcCalculation = plugins.CalculationFactory('quantumespresso.projwfc')
@@ -151,7 +192,14 @@ class PdosWorkChain(engine.WorkChain):
         spec.expose_inputs(DosCalculation, namespace='dos', exclude=('parent_folder', 'parameters'))
         spec.expose_inputs(ProjwfcCalculation, namespace='projwfc', exclude=('parent_folder', 'parameters'))
 
-        # additional
+        # Run options
+        spec.input('serial_clean',
+            valid_type=orm.Bool,
+            serializer=to_aiida_type,
+            required=False,
+            help=('If ``True``, calculations will be run in serial, '
+                  'and work directories will be cleaned before the next step.')
+        )
         spec.input(
             'clean_workdir',
             valid_type=orm.Bool,
@@ -167,13 +215,20 @@ class PdosWorkChain(engine.WorkChain):
             help='Terminate workchain steps before submitting calculations (test purposes only).')
 
         spec.outline(
-            cls.validate,
+            cls.setup,
             cls.run_scf,
             cls.inspect_scf,
             cls.run_nscf,
             cls.inspect_nscf,
-            cls.run_dos,
-            cls.inspect_dos,
+            engine.if_(cls.clean_serial)(
+                cls.run_dos_serial,
+                cls.inspect_dos_serial,
+                cls.run_projwfc_serial,
+                cls.inspect_projwfc_serial
+            ).else_(
+                cls.run_pdos_parallel,
+                cls.inspect_pdos_parallel,
+            ),
             cls.results,
         )
 
@@ -194,8 +249,17 @@ class PdosWorkChain(engine.WorkChain):
         spec.expose_outputs(DosCalculation, namespace='dos')
         spec.expose_outputs(ProjwfcCalculation, namespace='projwfc')
 
-    def validate(self):
+    def setup(self):
         """Initialize context variables that are used during the logical flow of the workchain."""
+        self.ctx.clean_serial = 'serial_clean' in self.inputs and self.inputs.serial_clean.value
+        self.ctx.is_test_run = 'test_run' in self.inputs and self.inputs.test_run.value
+
+    def clean_serial(self):
+        """Return whether dos and projwfc calculations should be run in serial.
+
+        The calculation remote folders will be cleaned before the next process step.
+        """
+        return self.ctx.clean_serial
 
     def run_scf(self):
         """Run an SCF calculation, to generate the wavefunction."""
@@ -208,7 +272,7 @@ class PdosWorkChain(engine.WorkChain):
         inputs.metadata.call_link_label = 'workchain_scf'
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
 
-        if 'test_run' in self.inputs and self.inputs.test_run.value:
+        if self.ctx.is_test_run:
             return inputs
 
         future = self.submit(PwBaseWorkChain, **inputs)
@@ -262,7 +326,7 @@ class PdosWorkChain(engine.WorkChain):
         inputs.metadata.call_link_label = 'workchain_scf'
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
 
-        if 'test_run' in self.inputs and self.inputs.test_run.value:
+        if self.ctx.is_test_run:
             return inputs
 
         future = self.submit(PwBaseWorkChain, **inputs)
@@ -278,12 +342,18 @@ class PdosWorkChain(engine.WorkChain):
             self.report('NSCF PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_NSCF
 
+        if self.ctx.clean_serial:
+            # we no longer require the scf remote folder, so can clean it
+            cleaned_calcs = clean_workchain_calcs(self.ctx.workchain_scf)
+            if cleaned_calcs:
+                self.report('cleaned remote folders of SCF calculations: {}'.format(' '.join(map(str, cleaned_calcs))))
+
         self.ctx.nscf_parent_folder = workchain.outputs.remote_folder
         self.ctx.nscf_fermi = workchain.outputs.output_parameters.dict.fermi_energy
         # TODO ensure fermi units are eV (and convert)?  # pylint: disable=fixme
 
-    def run_dos(self):
-        """Run DOS and Projwfc calculations, to generate total/partial Densities of State."""
+    def _generate_dos_inputs(self):
+        """Run DOS calculation, to generate total Densities of State."""
         dos_inputs = AttributeDict(self.exposed_inputs(DosCalculation, 'dos'))
         dos_inputs.parent_folder = self.ctx.nscf_parent_folder
         dos_dict = self.inputs.parameters.get_dict()
@@ -297,7 +367,10 @@ class PdosWorkChain(engine.WorkChain):
             'DOS': dos_dict
         })
         dos_inputs['metadata']['call_link_label'] = 'calc_dos'
+        return dos_inputs
 
+    def _generate_projwfc_inputs(self):
+        """Run Projwfc calculation, to generate partial Densities of State."""
         projwfc_inputs = AttributeDict(self.exposed_inputs(ProjwfcCalculation, 'projwfc'))
         projwfc_inputs.parent_folder = self.ctx.nscf_parent_folder
         projwfc_dict = self.inputs.parameters.get_dict()
@@ -311,23 +384,67 @@ class PdosWorkChain(engine.WorkChain):
             'PROJWFC': projwfc_dict
         })
         projwfc_inputs['metadata']['call_link_label'] = 'calc_projwfc'
+        return projwfc_inputs
 
-        if 'test_run' in self.inputs and self.inputs.test_run.value:
+    def run_dos_serial(self):
+        """Run DOS calculation."""
+        dos_inputs = self._generate_dos_inputs()
+        if self.ctx.is_test_run:
+            return dos_inputs
+        future_dos = self.submit(DosCalculation, **dos_inputs)
+        self.report('launching DosCalculation<{}>'.format(future_dos.pk))
+        return engine.ToContext(calc_dos=future_dos)
+
+    def inspect_dos_serial(self):
+        """Verify that the DOS calculation finished successfully, then clean its remote directory."""
+        calculation = self.ctx.calc_dos
+        if not calculation.is_finished_ok:
+            self.report('DosCalculation failed with exit status {}'.format(calculation.exit_status))
+            return self.exit_codes.ERROR_SUB_PROCESS_FAILED_DOS
+
+        if self.ctx.clean_serial:
+            # we no longer require the dos remote folder, so can clean it
+            if clean_calcjob_remote(calculation):
+                self.report('cleaned remote folder of DosCalculation<{}>'.format(calculation.pk))
+
+    def run_projwfc_serial(self):
+        """Run Projwfc calculation."""
+        projwfc_inputs = self._generate_projwfc_inputs()
+        if self.ctx.is_test_run:
+            return projwfc_inputs
+        future_projwfc = self.submit(ProjwfcCalculation, **projwfc_inputs)
+        self.report('launching ProjwfcCalculation<{}>'.format(future_projwfc.pk))
+        return engine.ToContext(calc_projwfc=future_projwfc)
+
+    def inspect_projwfc_serial(self):
+        """Verify that the Projwfc calculation finished successfully, then clean its remote directory."""
+        calculation = self.ctx.calc_projwfc
+        if not calculation.is_finished_ok:
+            self.report('ProjwfcCalculation failed with exit status {}'.format(calculation.exit_status))
+            return self.exit_codes.ERROR_SUB_PROCESS_FAILED_PROJWFC
+
+        if self.ctx.clean_serial:
+            # we no longer require the projwfc remote folder, so can clean it
+            if clean_calcjob_remote(calculation):
+                self.report('cleaned remote folder of ProjwfcCalculation<{}>'.format(calculation.pk))
+
+    def run_pdos_parallel(self):
+        """Run DOS and Projwfc calculations in parallel."""
+        dos_inputs = self._generate_dos_inputs()
+        projwfc_inputs = self._generate_projwfc_inputs()
+
+        if self.ctx.is_test_run:
             return dos_inputs, projwfc_inputs
 
         future_dos = self.submit(DosCalculation, **dos_inputs)
-
         self.report('launching DosCalculation<{}>'.format(future_dos.pk))
-
         self.to_context(**{'calc_dos': future_dos})
 
         future_projwfc = self.submit(ProjwfcCalculation, **projwfc_inputs)
-
         self.report('launching ProjwfcCalculation<{}>'.format(future_projwfc.pk))
-
         self.to_context(**{'calc_projwfc': future_projwfc})
 
-    def inspect_dos(self):
+    def inspect_pdos_parallel(self):
         """Verify that the DOS and Projwfc calculations finished successfully."""
         error_codes = []
 
@@ -367,15 +484,7 @@ class PdosWorkChain(engine.WorkChain):
             self.report('remote folders will not be cleaned')
             return
 
-        cleaned_calcs = []
-
-        for called_descendant in self.node.called_descendants:
-            if isinstance(called_descendant, orm.CalcJobNode):
-                try:
-                    called_descendant.outputs.remote_folder._clean()  # pylint: disable=protected-access
-                    cleaned_calcs.append(called_descendant.pk)
-                except (IOError, OSError, KeyError):
-                    pass
+        cleaned_calcs = clean_workchain_calcs(self.node)
 
         if cleaned_calcs:
             self.report('cleaned remote folders of calculations: {}'.format(' '.join(map(str, cleaned_calcs))))

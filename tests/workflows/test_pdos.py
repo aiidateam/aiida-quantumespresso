@@ -86,7 +86,8 @@ def test_default(
     wc_builder.test_run = True
 
     wkchain = instantiate_process_builder(wc_builder)
-    assert wkchain.validate() is None
+    assert wkchain.setup() is None
+    assert wkchain.clean_serial() is False
 
     # run scf
     scf_inputs = wkchain.run_scf()
@@ -118,7 +119,7 @@ def test_default(
     assert wkchain.inspect_nscf() is None
 
     # mock run dos and projwfc, and check that their inputs are acceptable
-    dos_inputs, projwfc_inputs = wkchain.run_dos()
+    dos_inputs, projwfc_inputs = wkchain.run_pdos_parallel()
     generate_calc_job(fixture_sandbox_folder, 'quantumespresso.dos', dos_inputs)
     generate_calc_job(fixture_sandbox_folder, 'quantumespresso.projwfc', projwfc_inputs)
 
@@ -134,7 +135,9 @@ def test_default(
         result.store()
         wkchain.ctx['calc_' + calc_type] = mock_calc
 
-    assert wkchain.inspect_dos() is None
+    assert wkchain.inspect_dos_serial() is None
+    assert wkchain.inspect_projwfc_serial() is None
+    assert wkchain.inspect_pdos_parallel() is None
 
     # store results
     wkchain.results()
