@@ -14,6 +14,7 @@ from aiida_quantumespresso.parsers.parse_raw.projwfc import parse_lowdin_charges
 
 @pytest.mark.parametrize('test_file', ('default', 'spin'))
 def test_parse_lowdin_charges(test_file, parser_fixture_path, data_regression):
+    """Test parsing of lowdin charges from projwfc.x, for non-spin/spin cases."""
     path = os.path.join(parser_fixture_path, 'projwfc', test_file, 'aiida.out')
     with open(path) as handle:
         data, spill_param = parse_lowdin_charges(handle.read().splitlines())
@@ -58,12 +59,13 @@ def test_projwfc_default(
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
 
-    for link_name in ['output_parameters', 'Dos', 'bands', 'projections']:
+    for link_name in ['output_parameters', 'Dos', 'bands', 'projections', 'lowdin']:
         assert link_name in results, list(results.keys())
 
     data_regression.check({
         'Dos': results['Dos'].attributes,
         'bands': results['bands'].attributes,
         'projections':
-        {k: v for k, v in results['projections'].attributes.items() if k not in ['reference_bandsdata_uuid']}
+        {k: v for k, v in results['projections'].attributes.items() if k not in ['reference_bandsdata_uuid']},
+        'lowdin': {k: v for k, v in results['lowdin'].attributes.items() if k not in ['structure_uuid']}
     })

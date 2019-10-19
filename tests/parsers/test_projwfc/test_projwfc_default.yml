@@ -17,6 +17,25 @@ bands:
   - 36
   - 3
   units: eV
+lowdin:
+  site_data:
+  - sum:
+      total_charge: 3.9663
+    total_charge:
+      p: 2.8328
+      px: 0.9443
+      py: 0.9443
+      pz: 0.9443
+      s: 1.1336
+  - sum:
+      total_charge: 3.9663
+    total_charge:
+      p: 2.8328
+      px: 0.9443
+      py: 0.9443
+      pz: 0.9443
+      s: 1.1336
+  spill_parameter: 0.0084
 projections:
   array|energy_array_0:
   - 22

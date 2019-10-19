@@ -2,30 +2,33 @@ from __future__ import absolute_import
 import re
 
 
-def parse_lowdin_charges(out_file_lines):
+def parse_lowdin_charges(out_file_lines, lowdin_lines=None):
     """Parse the Lowdin Charge section of the ``projwfc.x`` output.
 
     :param out_file_lines: The projwfc.x stdout file content
     :type out_file_lines: list[str]
+    :param lowdin_lines: indices of lines where 'Lowdin Charges:' has been found
     :return: A tuple of lowdin data dict and spill parameter float
     """
     # find start of Lowdin charge output
-    start_line = None
-    for i, line in enumerate(out_file_lines):
-        if line.strip() == 'Lowdin Charges:':
-            if start_line is not None:
-                raise IOError("'Lowdin Charges:' found on multiple lines: {}, {}".format(start_line, i))
-            start_line = i
+    if lowdin_lines is None:
+        lowdin_lines = []
+        for i, line in enumerate(out_file_lines):
+            if line.strip() == 'Lowdin Charges:':
+                lowdin_lines.append(i)
 
-    if start_line is None:
+    if len(lowdin_lines) > 1:
+        raise IOError("'Lowdin Charges:' found on multiple lines: {}".format(lowdin_lines))
+
+    if not lowdin_lines:
         return None, None
 
     spill_parameter = None
     started_section = False
     atom_index = None
     output = {}
-    for i, line in enumerate(out_file_lines[start_line + 1:]):
-        lineno = start_line + 2 + i
+    for i, line in enumerate(out_file_lines[lowdin_lines[0] + 1:]):
+        lineno = lowdin_lines[0] + 2 + i
         # break on empty line or spill parameter
         if not line.strip():
             if started_section:
@@ -43,7 +46,7 @@ def parse_lowdin_charges(out_file_lines):
             raise IOError('No atom index specified on or before line {}'.format(lineno))
         charge_type_match = re.match(r'^\s*(total charge|spin up|spin down|polarization)\s*\=\s*(\-?[\d\.]+)', line)
         if charge_type_match:
-            charge_type = charge_type_match.group(1).replace(" ", "_")
+            charge_type = charge_type_match.group(1).replace(' ', '_')
             output.setdefault(atom_index, {}).setdefault('sum', {})[charge_type] = float(charge_type_match.group(2))
         else:
             raise IOError('No charge type specified on line {}'.format(lineno))
