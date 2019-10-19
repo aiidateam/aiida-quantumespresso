@@ -1,8 +1,8 @@
 Dos:
   array|x_array:
-  - 2002
+  - 22
   array|y_array_0:
-  - 2002
+  - 22
   x_name: Energy
   x_units: eV
   y_names:
@@ -19,37 +19,37 @@ bands:
   units: eV
 projections:
   array|energy_array_0:
-  - 2002
+  - 22
   array|energy_array_1:
-  - 2002
+  - 22
   array|energy_array_2:
-  - 2002
+  - 22
   array|energy_array_3:
-  - 2002
+  - 22
   array|energy_array_4:
-  - 2002
+  - 22
   array|energy_array_5:
-  - 2002
+  - 22
   array|energy_array_6:
-  - 2002
+  - 22
   array|energy_array_7:
-  - 2002
+  - 22
   array|pdos_array_0:
-  - 2002
+  - 22
   array|pdos_array_1:
-  - 2002
+  - 22
   array|pdos_array_2:
-  - 2002
+  - 22
   array|pdos_array_3:
-  - 2002
+  - 22
   array|pdos_array_4:
-  - 2002
+  - 22
   array|pdos_array_5:
-  - 2002
+  - 22
   array|pdos_array_6:
-  - 2002
+  - 22
   array|pdos_array_7:
-  - 2002
+  - 22
   array|proj_array_0:
   - 36
   - 8

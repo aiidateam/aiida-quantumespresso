@@ -1,8 +1,8 @@
 &PROJWFC
   degauss =   2.0000000000d-02
-  deltae =   1.0000000000d-02
-  emax =   1.6902959589d+01
-  emin =  -3.0970404110d+00
+  deltae =   1.0000000000d-01
+  emax =   7.9029595890d+00
+  emin =   5.9029595890d+00
   kresolveddos = .false.
   lbinary_data = .false.
   lsym = .true.

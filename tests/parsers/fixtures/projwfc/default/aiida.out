@@ -5,16 +5,16 @@
 # mpiexec: 1 OpenMP threads / rank allocated by PBS select
 # mpiexec: Job has shared use of the allocated nodes. Disabling process-pinning
 # mpiexec: machinefile configured as:
-r1i2n13.cx2.hpc.ic.ac.uk:8
+r3i1n10.cx2.hpc.ic.ac.uk:8
 #
 # mpiexec: Checking all nodes are ONLINE:
 # mpiexec: All nodes appear ONLINE
-# mpiexec: launch started at Fri Oct 18 08:04:45 BST 2019
+# mpiexec: launch started at Sat Oct 19 11:04:25 BST 2019
 # mpiexec: launching program...
 # /apps/espresso/5.3.0/bin/projwfc.x 
-(r1i2n13.cx2.hpc.ic.ac.uk:0,1,2,3,4,5,6,7)
+(r3i1n10.cx2.hpc.ic.ac.uk:0,1,2,3,4,5,6,7)
 
-     Program PROJWFC v.5.3.0 (svn rev. 11974) starts on 18Oct2019 at  8: 4:45 
+     Program PROJWFC v.5.3.0 (svn rev. 11974) starts on 19Oct2019 at 11: 4:25 
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
@@ -50,7 +50,7 @@ r1i2n13.cx2.hpc.ic.ac.uk:8
      Sum         859     433    151                16889     5985    1139
  
 
-     Gaussian broadening (read from input): ngauss,degauss=   0    0.020000
+     Gaussian broadening (read from input): ngauss,degauss=   1    0.020000
 
 
      Calling projwave .... 
@@ -717,7 +717,7 @@ r1i2n13.cx2.hpc.ic.ac.uk:8
      psi = 0.169*[#   3]+0.169*[#   4]+0.169*[#   7]+0.169*[#   8]+
     |psi|^2 = 0.674
 
- k =   0.0000000000  0.3535533906 -0.7071067812
+ k =  -0.0000000000  0.3535533906 -0.7071067812
 ==== e(   1) =    -1.17748 eV ==== 
      psi = 0.490*[#   1]+0.163*[#   6]+0.163*[#   7]+0.108*[#   5]+0.036*[#   2]+
           +0.036*[#   3]+
@@ -751,7 +751,7 @@ r1i2n13.cx2.hpc.ic.ac.uk:8
           +0.055*[#   7]+
     |psi|^2 = 0.830
 
- k =   0.0000000000  0.3535533906 -0.3535533906
+ k =  -0.0000000000  0.3535533906 -0.3535533906
 ==== e(   1) =    -3.45920 eV ==== 
      psi = 0.334*[#   1]+0.334*[#   5]+0.073*[#   2]+0.073*[#   4]+0.073*[#   6]+
           +0.073*[#   8]+0.018*[#   3]+0.018*[#   7]+
@@ -1202,13 +1202,13 @@ Lowdin Charges:
      Atom #   2: total charge =   3.9663, p =  2.8328, pz=  0.9443, px=  0.9443, py=  0.9443, 
      Spilling Parameter:   0.0084
  
-     PROJWFC      :     1.36s CPU         1.91s WALL
+     PROJWFC      :     1.17s CPU         1.78s WALL
 
  
-   This run was terminated on:   8: 4:47  18Oct2019            
+   This run was terminated on:  11: 4:27  19Oct2019            
 
 =------------------------------------------------------------------------------=
    JOB DONE.
 =------------------------------------------------------------------------------=
-# mpiexec: finished at Fri Oct 18 08:04:47 BST 2019
+# mpiexec: finished at Sat Oct 19 11:04:27 BST 2019
 
