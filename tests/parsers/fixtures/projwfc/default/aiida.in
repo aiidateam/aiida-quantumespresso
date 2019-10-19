@@ -1,0 +1,15 @@
+&PROJWFC
+  degauss =   2.0000000000d-02
+  deltae =   1.0000000000d-02
+  emax =   1.6902959589d+01
+  emin =  -3.0970404110d+00
+  kresolveddos = .false.
+  lbinary_data = .false.
+  lsym = .true.
+  lwrite_overlaps = .false.
+  ngauss = 0
+  outdir = './out/'
+  plotboxes = .false.
+  prefix = 'aiida'
+  tdosinboxes = .false.
+/

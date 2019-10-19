@@ -1,0 +1,189 @@
+Dos:
+  array|x_array:
+  - 2002
+  array|y_array_0:
+  - 2002
+  x_name: Energy
+  x_units: eV
+  y_names:
+  - Dos
+  y_units:
+  - states/eV
+bands:
+  array|bands:
+  - 36
+  - 8
+  array|kpoints:
+  - 36
+  - 3
+  units: eV
+projections:
+  array|energy_array_0:
+  - 2002
+  array|energy_array_1:
+  - 2002
+  array|energy_array_2:
+  - 2002
+  array|energy_array_3:
+  - 2002
+  array|energy_array_4:
+  - 2002
+  array|energy_array_5:
+  - 2002
+  array|energy_array_6:
+  - 2002
+  array|energy_array_7:
+  - 2002
+  array|pdos_array_0:
+  - 2002
+  array|pdos_array_1:
+  - 2002
+  array|pdos_array_2:
+  - 2002
+  array|pdos_array_3:
+  - 2002
+  array|pdos_array_4:
+  - 2002
+  array|pdos_array_5:
+  - 2002
+  array|pdos_array_6:
+  - 2002
+  array|pdos_array_7:
+  - 2002
+  array|proj_array_0:
+  - 36
+  - 8
+  array|proj_array_1:
+  - 36
+  - 8
+  array|proj_array_2:
+  - 36
+  - 8
+  array|proj_array_3:
+  - 36
+  - 8
+  array|proj_array_4:
+  - 36
+  - 8
+  array|proj_array_5:
+  - 36
+  - 8
+  array|proj_array_6:
+  - 36
+  - 8
+  array|proj_array_7:
+  - 36
+  - 8
+  orbital_dicts:
+  - _orbital_type: realhydrogen
+    angular_momentum: 0
+    diffusivity: null
+    kind_name: Si
+    magnetic_number: 0
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Si
+    magnetic_number: 0
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Si
+    magnetic_number: 1
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Si
+    magnetic_number: 2
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 0
+    diffusivity: null
+    kind_name: Si
+    magnetic_number: 0
+    position:
+    - 1.3575
+    - 1.3575
+    - 1.3575
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Si
+    magnetic_number: 0
+    position:
+    - 1.3575
+    - 1.3575
+    - 1.3575
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Si
+    magnetic_number: 1
+    position:
+    - 1.3575
+    - 1.3575
+    - 1.3575
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Si
+    magnetic_number: 2
+    position:
+    - 1.3575
+    - 1.3575
+    - 1.3575
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
