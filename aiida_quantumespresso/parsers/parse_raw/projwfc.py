@@ -43,7 +43,7 @@ def parse_lowdin_charges(out_file_lines):
             raise IOError('No atom index specified on or before line {}'.format(lineno))
         charge_type_match = re.match(r'^\s*(total charge|spin up|spin down|polarization)\s*\=\s*(\-?[\d\.]+)', line)
         if charge_type_match:
-            charge_type = charge_type_match.group(1)
+            charge_type = charge_type_match.group(1).replace(" ", "_")
             output.setdefault(atom_index, {}).setdefault('sum', {})[charge_type] = float(charge_type_match.group(2))
         else:
             raise IOError('No charge type specified on line {}'.format(lineno))

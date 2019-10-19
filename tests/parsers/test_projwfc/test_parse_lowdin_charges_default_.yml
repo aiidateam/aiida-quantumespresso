@@ -1,7 +1,7 @@
 1:
   sum:
-    total charge: 3.9663
-  total charge:
+    total_charge: 3.9663
+  total_charge:
     p: 2.8328
     px: 0.9443
     py: 0.9443
@@ -9,8 +9,8 @@
     s: 1.1336
 2:
   sum:
-    total charge: 3.9663
-  total charge:
+    total_charge: 3.9663
+  total_charge:
     p: 2.8328
     px: 0.9443
     py: 0.9443

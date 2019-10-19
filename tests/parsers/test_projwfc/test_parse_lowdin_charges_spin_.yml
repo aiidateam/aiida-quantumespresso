@@ -3,7 +3,7 @@
     d: 3.5789
     p: 0.0483
     s: 0.0666
-  spin down:
+  spin_down:
     d: 1.3907
     dx2-y2: 0.1557
     dxy: 0.359
@@ -15,7 +15,7 @@
     py: 1.1734
     pz: 1.174
     s: 1.184
-  spin up:
+  spin_up:
     d: 4.9696
     dx2-y2: 0.9899
     dxy: 0.9968
@@ -29,10 +29,10 @@
     s: 1.2506
   sum:
     polarization: 3.6938
-    spin down: 6.0955
-    spin up: 9.7893
-    total charge: 15.8849
-  total charge:
+    spin_down: 6.0955
+    spin_up: 9.7893
+    total_charge: 15.8849
+  total_charge:
     d: 6.3602
     p: 7.09
     s: 2.4347
@@ -41,7 +41,7 @@
     d: 3.5779
     p: 0.0483
     s: 0.0666
-  spin down:
+  spin_down:
     d: 1.3919
     dx2-y2: 0.1557
     dxy: 0.3596
@@ -53,7 +53,7 @@
     py: 1.1734
     pz: 1.174
     s: 1.184
-  spin up:
+  spin_up:
     d: 4.9699
     dx2-y2: 0.9901
     dxy: 0.9968
@@ -67,10 +67,10 @@
     s: 1.2506
   sum:
     polarization: 3.6928
-    spin down: 6.0968
-    spin up: 9.7896
-    total charge: 15.8864
-  total charge:
+    spin_down: 6.0968
+    spin_up: 9.7896
+    total_charge: 15.8864
+  total_charge:
     d: 6.3618
     p: 7.09
     s: 2.4347
@@ -79,7 +79,7 @@
     d: 3.5777
     p: 0.0483
     s: 0.0666
-  spin down:
+  spin_down:
     d: 1.392
     dx2-y2: 0.1557
     dxy: 0.3589
@@ -91,7 +91,7 @@
     py: 1.1734
     pz: 1.174
     s: 1.184
-  spin up:
+  spin_up:
     d: 4.9697
     dx2-y2: 0.99
     dxy: 0.9968
@@ -105,10 +105,10 @@
     s: 1.2506
   sum:
     polarization: 3.6926
-    spin down: 6.0968
-    spin up: 9.7894
-    total charge: 15.8863
-  total charge:
+    spin_down: 6.0968
+    spin_up: 9.7894
+    total_charge: 15.8863
+  total_charge:
     d: 6.3617
     p: 7.09
     s: 2.4347
@@ -117,7 +117,7 @@
     d: 3.5777
     p: 0.0483
     s: 0.0666
-  spin down:
+  spin_down:
     d: 1.392
     dx2-y2: 0.1557
     dxy: 0.3589
@@ -129,7 +129,7 @@
     py: 1.1734
     pz: 1.174
     s: 1.184
-  spin up:
+  spin_up:
     d: 4.9697
     dx2-y2: 0.99
     dxy: 0.9968
@@ -143,10 +143,10 @@
     s: 1.2506
   sum:
     polarization: 3.6926
-    spin down: 6.0968
-    spin up: 9.7894
-    total charge: 15.8863
-  total charge:
+    spin_down: 6.0968
+    spin_up: 9.7894
+    total_charge: 15.8863
+  total_charge:
     d: 6.3617
     p: 7.09
     s: 2.4347
@@ -155,7 +155,7 @@
     d: 0.0
     p: 0.2604
     s: 0.0407
-  spin down:
+  spin_down:
     d: 0.0
     dx2-y2: 0.0
     dxy: 0.0
@@ -167,7 +167,7 @@
     py: 0.709
     pz: 0.7093
     s: 0.7441
-  spin up:
+  spin_up:
     d: 0.0
     dx2-y2: 0.0
     dxy: 0.0
@@ -181,10 +181,10 @@
     s: 0.7848
   sum:
     polarization: 0.3011
-    spin down: 2.8715
-    spin up: 3.1726
-    total charge: 6.0441
-  total charge:
+    spin_down: 2.8715
+    spin_up: 3.1726
+    total_charge: 6.0441
+  total_charge:
     d: 0.0
     p: 4.5151
     s: 1.529
@@ -193,7 +193,7 @@
     d: 0.0
     p: 0.2603
     s: 0.0407
-  spin down:
+  spin_down:
     d: 0.0
     dx2-y2: 0.0
     dxy: 0.0
@@ -205,7 +205,7 @@
     py: 0.709
     pz: 0.7093
     s: 0.7441
-  spin up:
+  spin_up:
     d: 0.0
     dx2-y2: 0.0
     dxy: 0.0
@@ -219,10 +219,10 @@
     s: 0.7848
   sum:
     polarization: 0.301
-    spin down: 2.8715
-    spin up: 3.1725
-    total charge: 6.044
-  total charge:
+    spin_down: 2.8715
+    spin_up: 3.1725
+    total_charge: 6.044
+  total_charge:
     d: 0.0
     p: 4.515
     s: 1.529
@@ -231,7 +231,7 @@
     d: 0.0
     p: 0.2603
     s: 0.0407
-  spin down:
+  spin_down:
     d: 0.0
     dx2-y2: 0.0
     dxy: 0.0
@@ -243,7 +243,7 @@
     py: 0.709
     pz: 0.7093
     s: 0.7441
-  spin up:
+  spin_up:
     d: 0.0
     dx2-y2: 0.0
     dxy: 0.0
@@ -257,10 +257,10 @@
     s: 0.7848
   sum:
     polarization: 0.301
-    spin down: 2.8715
-    spin up: 3.1725
-    total charge: 6.044
-  total charge:
+    spin_down: 2.8715
+    spin_up: 3.1725
+    total_charge: 6.044
+  total_charge:
     d: 0.0
     p: 4.515
     s: 1.529
@@ -269,7 +269,7 @@
     d: 0.0
     p: 0.2603
     s: 0.0407
-  spin down:
+  spin_down:
     d: 0.0
     dx2-y2: 0.0
     dxy: 0.0
@@ -281,7 +281,7 @@
     py: 0.709
     pz: 0.7093
     s: 0.7441
-  spin up:
+  spin_up:
     d: 0.0
     dx2-y2: 0.0
     dxy: 0.0
@@ -295,10 +295,10 @@
     s: 0.7848
   sum:
     polarization: 0.301
-    spin down: 2.8715
-    spin up: 3.1725
-    total charge: 6.044
-  total charge:
+    spin_down: 2.8715
+    spin_up: 3.1725
+    total_charge: 6.044
+  total_charge:
     d: 0.0
     p: 4.515
     s: 1.529
