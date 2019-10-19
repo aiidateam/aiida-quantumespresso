@@ -66,6 +66,7 @@ def test_neb_default(fixture_database, fixture_computer_localhost, generate_calc
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert not orm.Log.objects.get_logs_for(node)
     assert 'output_parameters' in results
     assert 'output_mep' in results
     assert 'output_trajectory' in results
@@ -96,6 +97,7 @@ def test_neb_all_iterations(fixture_database, fixture_computer_localhost, genera
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert not orm.Log.objects.get_logs_for(node)
     assert 'output_parameters' in results
     assert 'output_mep' in results
     assert 'output_trajectory' in results
@@ -122,6 +124,7 @@ def test_neb_deprecated_keys(fixture_database, fixture_computer_localhost, gener
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert not orm.Log.objects.get_logs_for(node)
     assert 'output_parameters' in results
     assert 'output_mep' in results
     assert 'output_trajectory' in results
