@@ -38,7 +38,8 @@ class NamelistsCalculation(CalcJob):
     _default_namelists = ['INPUTPP']
     _blocked_keywords = []  # a list of tuples with key and value fixed
 
-    _retrieve_temporary_list = []
+    _retrieve_temporary_list = ()
+    _retrieve_output_as_temp = False
 
     _DEFAULT_INPUT_FILE = 'aiida.in'
     _DEFAULT_OUTPUT_FILE = 'aiida.out'
@@ -173,12 +174,16 @@ class NamelistsCalculation(CalcJob):
 
         # Retrieve by default the output file and the xml file
         calcinfo.retrieve_list = []
-        calcinfo.retrieve_list.append(self.inputs.metadata.options.output_filename)
+        if not self._retrieve_output_as_temp:
+            calcinfo.retrieve_list.append(self.inputs.metadata.options.output_filename)
         settings_retrieve_list = settings.pop('ADDITIONAL_RETRIEVE_LIST', [])
         calcinfo.retrieve_list += settings_retrieve_list
         calcinfo.retrieve_list += self._internal_retrieve_list
 
-        calcinfo.retrieve_temporary_list = self._retrieve_temporary_list
+        calcinfo.retrieve_temporary_list = []
+        if self._retrieve_output_as_temp:
+            calcinfo.retrieve_temporary_list.append(self.inputs.metadata.options.output_filename)
+        calcinfo.retrieve_temporary_list += list(self._retrieve_temporary_list)
 
         # We might still have parser options in the settings dictionary: pop them.
         _pop_parser_options(self, settings)

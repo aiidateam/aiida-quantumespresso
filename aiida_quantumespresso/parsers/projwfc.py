@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division
-import re
+import os
 import fnmatch
+import re
 import traceback
 
 import numpy as np
@@ -256,14 +257,21 @@ class ProjwfcParser(Parser):
         except NotExistent:
             return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
 
+        # Check that the retrieved temporary folder is there
+        try:
+            temp_folder = kwargs['retrieved_temporary_folder']
+        except KeyError:
+            return self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER
+
         # Read standard out
         try:
-            filename_stdout = self.node.get_option('output_filename')  # or get_attribute(), but this is clearer
-            with out_folder.open(filename_stdout, 'r') as fil:
+            filename_stdout = self.node.get_option('output_filename')
+            with open(os.path.join(temp_folder, filename_stdout), 'r') as fil:
                 out_file_lines = fil.readlines()
         except OSError:
             return self.exit_codes.ERROR_READING_OUTPUT_FILE
 
+        # check that the computation completed successfully
         job_done = False
         for line in reversed(out_file_lines):
             if 'JOB DONE' in line:
@@ -349,8 +357,14 @@ class ProjwfcParser(Parser):
         return node
 
     def _parse_lodwin_charges(self, out_info_dict):
+        """Parse the Lodwin charge data from the output file."""
         data, spill_parameter = parse_lowdin_charges(out_info_dict['out_file_lines'], out_info_dict['lowdin_lines'])
-        structure = self.retrieve_parent_node('structure', outgoing=False)
+        # we store the uuid of the structure that these charges relate to, which will be
+        # an input if the PwCalculation was an scf/nscf or output if relax/vc-relax
+        try:
+            structure = self.retrieve_parent_node('output_structure', outgoing=True)
+        except QEOutputParsingError:
+            structure = self.retrieve_parent_node('structure', outgoing=False)
         try:
             site_data = [data[i + 1] for i in range(len(structure.sites))]
         except KeyError:

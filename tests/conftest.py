@@ -58,7 +58,8 @@ def fixture_computer_localhost(fixture_work_directory):
         hostname='localhost',
         transport_type='local',
         scheduler_type='direct',
-        workdir=fixture_work_directory).store()
+        workdir=fixture_work_directory
+    ).store()
     computer.set_default_mpiprocs_per_machine(1)
     yield computer
 
@@ -126,7 +127,7 @@ def generate_calc_job_node():
         node.set_option('max_wallclock_seconds', 1800)
 
         if attributes:
-            node.set_attributes(attributes)
+            node.set_attribute_many(attributes)
 
         if inputs:
             for link_label, input_node in flatten_inputs(inputs):
@@ -137,7 +138,9 @@ def generate_calc_job_node():
 
         if test_name is not None:
             basepath = os.path.dirname(os.path.abspath(__file__))
-            filepath = os.path.join(basepath, 'parsers', 'fixtures', entry_point_name[len('quantumespresso.'):], test_name)
+            filepath = os.path.join(
+                basepath, 'parsers', 'fixtures', entry_point_name[len('quantumespresso.'):], test_name
+            )
 
             retrieved = orm.FolderData()
             retrieved.put_object_from_tree(filepath)
@@ -237,8 +240,56 @@ def generate_parser():
 
 
 @pytest.fixture
+def parse_from_node():
+    """Fixture to parse calcjob outputs directly from a `CalcJobNode`."""
+
+    # TODO this can be removed once aiidateam/aiida-core#3061 is implemented  # pylint: disable=fixme
+    def _parse_from_node(cls, node, store_provenance=True, retrieved_temp=None):
+        """Parse the outputs directly from the `CalcJobNode`.
+
+        :param cls: a `Parser` instance
+        :param node: a `CalcJobNode` instance
+        :param store_provenance: bool, if True will store the parsing as a `CalcFunctionNode` in the provenance
+        :param retrieved_temp: None or str, abspath to the temporary folder.
+        :return: a tuple of the parsed results and the `CalcFunctionNode` representing the process of parsing
+        """
+        from aiida.engine import calcfunction, Process
+        from aiida.orm import Str
+
+        parser = cls(node=node)
+
+        @calcfunction
+        def parse_calcfunction(**kwargs):
+            """A wrapper function that will turn calling the `Parser.parse` method into a `CalcFunctionNode`.
+
+            :param kwargs: keyword arguments that are passed to `Parser.parse` after it has been constructed
+            """
+            if 'retrieved_temporary_folder' in kwargs:
+                string = kwargs.pop('retrieved_temporary_folder').value
+                kwargs['retrieved_temporary_folder'] = string
+
+            exit_code = parser.parse(**kwargs)
+            outputs = parser.outputs
+
+            if exit_code and exit_code.status:
+                process = Process.current()
+                process.out_many(outputs)
+                return exit_code
+
+            return dict(outputs)
+
+        inputs = {'metadata': {'store_provenance': store_provenance}}
+        inputs.update(parser.get_outputs_for_parsing())
+        if retrieved_temp is not None:
+            inputs['retrieved_temporary_folder'] = Str(retrieved_temp)
+
+        return parse_calcfunction.run_get_node(**inputs)
+
+    return _parse_from_node
+
+
+@pytest.fixture
 def parser_fixture_path():
     """Fixture to obtain the absolute path of the ``test/parsers/fixtures`` folder."""
     basepath = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(basepath, 'parsers', 'fixtures')
-

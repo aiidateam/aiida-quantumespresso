@@ -25,6 +25,7 @@ class ProjwfcCalculation(NamelistsCalculation):
     ]
     _default_parser = 'quantumespresso.projwfc'
     _internal_retrieve_list = [NamelistsCalculation._PREFIX + '.pdos*']
+    _retrieve_output_as_temp = True
 
     @classmethod
     def define(cls, spec):
@@ -45,6 +46,9 @@ class ProjwfcCalculation(NamelistsCalculation):
         spec.default_output_node = 'output_parameters'
         spec.exit_code(
             100, 'ERROR_NO_RETRIEVED_FOLDER', message='The retrieved folder data node could not be accessed.'
+        )
+        spec.exit_code(
+            101, 'ERROR_NO_RETRIEVED_TEMPORARY_FOLDER', message='The retrieved temporary folder could not be accessed.'
         )
         spec.exit_code(
             110, 'ERROR_READING_OUTPUT_FILE', message='The output file could not be read from the retrieved folder.'
