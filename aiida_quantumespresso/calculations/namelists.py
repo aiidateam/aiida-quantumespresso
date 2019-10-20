@@ -13,7 +13,6 @@ from aiida.common import datastructures, exceptions
 from aiida.engine import CalcJob
 from aiida.orm import Dict
 from aiida.orm import RemoteData, FolderData, SinglefileData
-from aiida.plugins import ParserFactory
 
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict, _pop_parser_options
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
@@ -39,7 +38,7 @@ class NamelistsCalculation(CalcJob):
     _default_namelists = ['INPUTPP']
     _blocked_keywords = []  # a list of tuples with key and value fixed
 
-    _retrieve_singlefile_list = []
+    _retrieve_temporary_list = []
 
     _DEFAULT_INPUT_FILE = 'aiida.in'
     _DEFAULT_OUTPUT_FILE = 'aiida.out'
@@ -179,7 +178,7 @@ class NamelistsCalculation(CalcJob):
         calcinfo.retrieve_list += settings_retrieve_list
         calcinfo.retrieve_list += self._internal_retrieve_list
 
-        calcinfo.retrieve_singlefile_list = self._retrieve_singlefile_list
+        calcinfo.retrieve_temporary_list = self._retrieve_temporary_list
 
         # We might still have parser options in the settings dictionary: pop them.
         _pop_parser_options(self, settings)
