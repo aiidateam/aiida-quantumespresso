@@ -48,4 +48,6 @@ class ProjwfcCalculation(NamelistsCalculation):
         spec.exit_code(
             111, 'ERROR_READING_PDOSTOT_FILE', message='The pdos_tot file could not be read from the retrieved folder.')
         spec.exit_code(
+            112, 'ERROR_PARSING_PROJECTIONS', message='An exception was raised parsing bands and projections.')
+        spec.exit_code(
             130, 'ERROR_JOB_NOT_DONE', message='The computation did not finish properly (\'JOB DONE\' not found).')
