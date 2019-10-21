@@ -45,7 +45,7 @@ class PwCalculationTools(CalculationTools):
                 'invalid index {}, must be between {} and {}'.format(index, -number_of_frames, number_of_frames - 1)
             )
 
-        if index == -1:
-            return scf_accuracy[scf_accuracy_index[-1]:]
+        if index < 0:
+            return scf_accuracy[scf_accuracy_index[index - 1]:scf_accuracy_index[index]]
 
         return scf_accuracy[scf_accuracy_index[index]:scf_accuracy_index[index + 1]]
