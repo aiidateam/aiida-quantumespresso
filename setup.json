@@ -37,6 +37,7 @@
             "quantumespresso.matdyn = aiida_quantumespresso.parsers.matdyn:MatdynParser",
             "quantumespresso.neb = aiida_quantumespresso.parsers.neb:NebParser",
             "quantumespresso.ph = aiida_quantumespresso.parsers.ph:PhParser",
+            "quantumespresso.pp = aiida_quantumespresso.parsers.pp:PpParser",
             "quantumespresso.projwfc = aiida_quantumespresso.parsers.projwfc:ProjwfcParser",
             "quantumespresso.pw = aiida_quantumespresso.parsers.pw:PwParser",
             "quantumespresso.pw2gw = aiida_quantumespresso.parsers.pw2gw:Pw2gwParser",
