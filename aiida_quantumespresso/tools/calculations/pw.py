@@ -6,7 +6,7 @@ from aiida.tools.calculations import CalculationTools
 
 
 class PwCalculationTools(CalculationTools):
-    """Calculation tools for `PwCalulation`.
+    """Calculation tools for `PwCalculation`.
 
     Methods implemented here are available on any `CalcJobNode` produced by the `PwCalculation class through the
     `tools` attribute.
@@ -41,9 +41,11 @@ class PwCalculationTools(CalculationTools):
         number_of_frames = len(scf_accuracy_index) - 1
 
         if index < -number_of_frames or index >= number_of_frames:
-            raise IndexError('invalid index {}, must be between 0 and {}'.format(index, number_of_frames - 1))
+            raise IndexError(
+                'invalid index {}, must be between {} and {}'.format(index, -number_of_frames, number_of_frames - 1)
+            )
 
         if index == -1:
-            return scf_accuracy[-1:]
+            return scf_accuracy[scf_accuracy_index[-1]:]
 
         return scf_accuracy[scf_accuracy_index[index]:scf_accuracy_index[index + 1]]
