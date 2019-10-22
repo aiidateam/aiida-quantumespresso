@@ -596,3 +596,29 @@ def test_pw_vcrelax_failed_not_converged_nstep(
     assert 'output_parameters' in results
     assert 'output_structure' in results
     assert 'output_trajectory' in results
+
+def test_pw_hybrid_failed_dexx_negative(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+        generate_parser, generate_inputs_default):
+    """Test the parsing of a calculation that was interrupted *after* convergence was achieved.
+
+    In this particular interrupted test only the stdout is incomplete and the XML is valid.
+
+    This test simulates where an SCF calculation reaches convergence but the code is interrupted while writing the
+    final output to disk. This can occur for a variety of reasons, for example the scheduler killing the job short
+    due to out of walltime or out of memory errors.
+
+    All three base outputs `array`, `kpoints` and `parameters` are expected as the first two are parsed from the XML
+    which is in tact and the parameters are parsed from `stdout`, which, although interrupted, is mostly complete.
+    """
+    name = 'failed_dexx_negative'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_default)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_DEXX_IS_NEGATIVE.status
+
