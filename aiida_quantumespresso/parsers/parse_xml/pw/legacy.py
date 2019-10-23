@@ -18,12 +18,11 @@ default_k_points_units = '1 / angstrom'
 default_length_units = 'Angstrom'
 
 
-def parse_pw_xml_pre_6_2(xml_file, dir_with_bands, include_deprecated_keys=False):
+def parse_pw_xml_pre_6_2(xml_file, dir_with_bands):
     """Parse the content of XML output file written by `pw.x` with the old schema-less XML format.
 
     :param xml_file: filelike object to the XML output file
     :param dir_with_bands: absolute filepath to directory containing k-point XML files
-    :param include_deprecated_v2_keys: boolean, if True, includes deprecated keys from old parser v2
     :returns: tuple of two dictionaries, with the parsed data and log messages, respectively
     """
     import copy
@@ -260,9 +259,10 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands, include_deprecated_keys=False
         parsed_data['occupations'] = 'tetrahedra'  # TODO: might also be tetrahedra_lin or tetrahedra_opt: check input?
     elif parsed_data['fixed_occupations']:
         parsed_data['occupations'] = 'fixed'
-    if not include_deprecated_keys:
-        for tagname in ['SMEARING_METHOD','TETRAHEDRON_METHOD','FIXED_OCCUPATIONS']:
-            parsed_data.pop(tagname.lower())
+
+    # Remove the following deprecated keys
+    for tagname in ['SMEARING_METHOD','TETRAHEDRON_METHOD','FIXED_OCCUPATIONS']:
+        parsed_data.pop(tagname.lower())
 
     #CARD CHARGE-DENSITY
     cardname='CHARGE-DENSITY'

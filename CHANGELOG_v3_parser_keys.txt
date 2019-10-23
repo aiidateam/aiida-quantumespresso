@@ -12,14 +12,6 @@ Output parameters:
 * removed:   u'tetrahedron_method': False,
 * added:   u'occupations': u'smearing',   ( or 'tetrahedra' or 'fixed')
 
-~~ "include_deprecated_v2_keys"=False vs =True ~~
-(tested with aiida-quantumespresso v3, on QE 6.2.1 (old XML), QE 6.3-backports (old XML), QE 6.3-backports (new XML))
-
-Re-added output parameters:
-* u'fixed_occupations': False,
-* u'smearing_method': True,
-* u'tetrahedron_method': False,
-
 ~~  QE 6.2.1 vs QE 6.3-backports (both old XML)  ~~
 (tested with aiida-quantumespresso v3 and aiida-quantumespresso develop)
 

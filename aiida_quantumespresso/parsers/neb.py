@@ -59,11 +59,6 @@ class NebParser(Parser):
             settings = {}
             parser_options = {}
 
-        try:
-            include_deprecated_v2_keys = parser_options['include_deprecated_v2_keys']
-        except (TypeError, KeyError):
-            include_deprecated_v2_keys = False
-
         # load the pw input parameters dictionary
         pw_input_dict = self.node.inputs.pw__parameters.get_dict()
 
@@ -111,7 +106,7 @@ class NebParser(Parser):
                     xml_file_path = os.path.join(relative_output_folder, xml_filename)
                     try:
                         with out_folder.open(xml_file_path) as xml_file:
-                            parsed_data_xml, logs_xml = parse_pw_xml(xml_file, None, include_deprecated_v2_keys)
+                            parsed_data_xml, logs_xml = parse_pw_xml(xml_file, None)
                     except IOError:
                         return self.exit(self.exit_codes.ERROR_OUTPUT_XML_READ)
                     except XMLParseError:
