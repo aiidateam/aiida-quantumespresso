@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for the `PwCalculationTools` class."""
 from __future__ import absolute_import
-import numpy
+import numpy as np
 import pytest
 
 from aiida import orm
@@ -29,7 +29,7 @@ def test_pw_get_scf_accuracy(fixture_database, fixture_computer_localhost, gener
     # Missing `scf_accuracy_index` array
     node = generate_calc_job_node(entry_point_name, fixture_computer_localhost)
     trajectory = orm.ArrayData()
-    trajectory.set_array('scf_accuracy', numpy.array([1, 1, 1, 2, 2, 2, 2, 2]))
+    trajectory.set_array('scf_accuracy', np.array([1, 1, 1, 2, 2, 2, 2, 2]))
     trajectory.add_incoming(node, link_type=LinkType.CREATE, link_label='output_trajectory')
     trajectory.store()
 
@@ -38,8 +38,8 @@ def test_pw_get_scf_accuracy(fixture_database, fixture_computer_localhost, gener
 
     node = generate_calc_job_node(entry_point_name, fixture_computer_localhost)
     trajectory = orm.ArrayData()
-    trajectory.set_array('scf_accuracy', numpy.array([1, 1, 1, 2, 2, 2, 2, 2]))
-    trajectory.set_array('scf_accuracy_index', numpy.array([0, 3, 8]))
+    trajectory.set_array('scf_accuracy', np.array([1, 1, 1, 2, 2, 2, 2, 2]))
+    trajectory.set_array('scf_accuracy_index', np.array([0, 3, 8]))
     trajectory.add_incoming(node, link_type=LinkType.CREATE, link_label='output_trajectory')
     trajectory.store()
 
@@ -49,7 +49,7 @@ def test_pw_get_scf_accuracy(fixture_database, fixture_computer_localhost, gener
     with pytest.raises(IndexError):
         node.tools.get_scf_accuracy(index=-3)
 
-    node.tools.get_scf_accuracy(index=0) == [1, 1, 1]
-    node.tools.get_scf_accuracy(index=1) == [2, 2, 2, 2, 2]
-    node.tools.get_scf_accuracy(index=-1) == [2, 2, 2, 2, 2]
-    node.tools.get_scf_accuracy(index=-2) == [1, 1, 1]
+    assert np.array_equal(node.tools.get_scf_accuracy(index=0), np.array([1, 1, 1]))
+    assert np.array_equal(node.tools.get_scf_accuracy(index=1), np.array([2, 2, 2, 2, 2]))
+    assert np.array_equal(node.tools.get_scf_accuracy(index=-1), np.array([2, 2, 2, 2, 2]))
+    assert np.array_equal(node.tools.get_scf_accuracy(index=-2), np.array([1, 1, 1]))
