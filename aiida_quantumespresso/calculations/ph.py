@@ -2,7 +2,6 @@
 """Plugin to create a Quantum Espresso ph.x input file."""
 from __future__ import absolute_import
 
-import io
 import os
 import numpy
 import six
@@ -52,6 +51,7 @@ class PhCalculation(CalcJob):
         spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.ph')
+        spec.input('metadata.options.withmpi', valid_type=bool, default=True)
         spec.input('qpoints', valid_type=orm.KpointsData, help='qpoint mesh')
         spec.input('parameters', valid_type=orm.Dict, help='')
         spec.input('settings', valid_type=orm.Dict, required=False, help='')
@@ -124,11 +124,14 @@ class PhCalculation(CalcJob):
             settings = {}
 
         parent_folder = self.inputs.parent_folder
+        parent_calcs = parent_folder.get_incoming(node_class=orm.CalcJobNode).all()
 
-        try:
-            parent_calc = parent_folder.get_incoming(node_class=orm.CalcJobNode).one().node
-        except ValueError:
-            raise exceptions.UniquenessError('Input RemoteData has multiple parents')
+        if not parent_calcs:
+            raise exceptions.NotExistent('parent_folder<{}> has no parent calculation'.format(parent_folder.pk))
+        elif len(parent_calcs) > 1:
+            raise exceptions.UniquenessError('parent_folder<{}> has multiple parent calculations'.format(parent_folder.pk))
+
+        parent_calc = parent_calcs[0].node
 
         # If the parent calculation is a `PhCalculation` we are restarting
         restart_flag = parent_calc.process_type == 'aiida.calculations:quantumespresso.ph'
@@ -212,18 +215,18 @@ class PhCalculation(CalcJob):
             if len(list_of_points) > 1:
                 parameters['INPUTPH']['qplot'] = True
                 parameters['INPUTPH']['ldisp'] = True
-                postpend_text = '{}\n'.format(len(list_of_points))
+                postpend_text = u'{}\n'.format(len(list_of_points))
                 for points in list_of_points:
-                    postpend_text += '{}  {}  {}  1\n'.format(*points)
+                    postpend_text += u'{0:18.10f} {1:18.10f} {2:18.10f}  1\n'.format(*points)
 
                 # Note: the weight is fixed to 1, because ph.x calls these
                 # things weights but they are not such. If they are going to
                 # exist with the meaning of weights, they will be supported
             else:
                 parameters['INPUTPH']['ldisp'] = False
-                postpend_text = ''
+                postpend_text = u''
                 for points in list_of_points:
-                    postpend_text += '{}  {}  {}\n'.format(*points)
+                    postpend_text += u'{0:18.10f} {1:18.10f} {2:18.10f}\n'.format(*points)
 
         # customized namelists, otherwise not present in the distributed ph code
         try:
