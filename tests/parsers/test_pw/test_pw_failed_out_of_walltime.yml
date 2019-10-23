@@ -178,8 +178,6 @@ output_trajectory:
   - 3
   array|scf_accuracy:
   - 12
-  array|scf_accuracy_index:
-  - 2
   array|scf_iterations:
   - 1
   array|steps:

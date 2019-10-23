@@ -39,7 +39,7 @@ def test_pw_get_scf_accuracy(fixture_database, fixture_computer_localhost, gener
     node = generate_calc_job_node(entry_point_name, fixture_computer_localhost)
     trajectory = orm.ArrayData()
     trajectory.set_array('scf_accuracy', np.array([1, 1, 1, 2, 2, 2, 2, 2]))
-    trajectory.set_array('scf_accuracy_index', np.array([0, 3, 8]))
+    trajectory.set_array('scf_iterations', np.array([3, 5]))
     trajectory.add_incoming(node, link_type=LinkType.CREATE, link_label='output_trajectory')
     trajectory.store()
 
