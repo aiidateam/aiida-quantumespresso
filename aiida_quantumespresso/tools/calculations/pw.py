@@ -6,7 +6,7 @@ from aiida.tools.calculations import CalculationTools
 
 
 class PwCalculationTools(CalculationTools):
-    """Calculation tools for `PwCalulation`.
+    """Calculation tools for `PwCalculation`.
 
     Methods implemented here are available on any `CalcJobNode` produced by the `PwCalculation class through the
     `tools` attribute.
@@ -20,7 +20,7 @@ class PwCalculationTools(CalculationTools):
         :param index: the zero-based index of the desired SCF cycle
         :return: a list of SCF accuracy values of a certain SCF cycle.
         :raises ValueError: if the node does not have the `output_trajectory` output
-        :raises ValueError: if `output_trajectory` does not have the `scf_accuracy` or `scf_accuracy_index` arrays
+        :raises ValueError: if `output_trajectory` does not have the `scf_accuracy` or `scf_iterations` arrays
         :raises IndexError: if the `index` is out of range
         """
         try:
@@ -34,16 +34,23 @@ class PwCalculationTools(CalculationTools):
             raise ValueError('{} does not contain the required `scf_accuracy` array'.format(trajectory))
 
         try:
-            scf_accuracy_index = trajectory.get_array('scf_accuracy_index')
+            scf_iterations = trajectory.get_array('scf_iterations')
         except KeyError:
-            raise ValueError('{} does not contain the required `scf_accuracy_index` array'.format(trajectory))
+            raise ValueError('{} does not contain the required `scf_iterations` array'.format(trajectory))
 
-        number_of_frames = len(scf_accuracy_index) - 1
+        number_of_frames = len(scf_iterations)
 
         if index < -number_of_frames or index >= number_of_frames:
-            raise IndexError('invalid index {}, must be between 0 and {}'.format(index, number_of_frames - 1))
+            raise IndexError(
+                'invalid index {}, must be between {} and {}'.format(index, -number_of_frames, number_of_frames - 1)
+            )
 
-        if index == -1:
-            return scf_accuracy[-1:]
+        # building an scf_accuracy_index for easier manipulation
+        scf_accuracy_index = [0]
+        for i in scf_iterations:
+            scf_accuracy_index.append(scf_accuracy_index[-1] + i)
+
+        if index < 0:
+            return scf_accuracy[scf_accuracy_index[index - 1]:scf_accuracy_index[index]]
 
         return scf_accuracy[scf_accuracy_index[index]:scf_accuracy_index[index + 1]]

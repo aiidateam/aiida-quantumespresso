@@ -512,9 +512,6 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
     for data_step in relax_steps:
         trajectory_frame = {}
 
-        current_index = len(trajectory_data.get('scf_accuracy', []))
-        trajectory_data.setdefault('scf_accuracy_index', []).append(current_index)
-
         for count, line in enumerate(data_step):
 
             if 'CELL_PARAMETERS' in line:
@@ -599,8 +596,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                         break
 
             # saving the SCF convergence accuracy for each SCF cycle
-            # this is not always present in the block starting with 'iteration #'
-            # so the array might be of different size for each relax cycle
+            # If for some step this line is not printed, the later check with the scf_accuracy array length should catch it
             elif 'estimated scf accuracy' in line:
                 try:
                     value = float(line.split()[-2])* ry_to_ev
@@ -835,19 +831,13 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                 trajectory_data.setdefault('ionic_dipole_cell_average', []).append(id_cell)
                 trajectory_data.setdefault('ionic_dipole_cartesian_axes', []).append(id_axes)
 
-    # adding the final element to the scf_accuracy_index array and check consistency
-    if 'scf_accuracy' and 'scf_iterations' in trajectory_data:
-        value = len(trajectory_data['scf_accuracy'])
-        trajectory_data['scf_accuracy_index'].append(value)
-        # check consistency of accuracy_index vs scf_iterations
-        warning = 'scf_iterations and scf_accuracy arrays are not consistent'
-        if len(trajectory_data['scf_iterations']) + 1 != len(trajectory_data['scf_accuracy_index']):
-            logs.warning.append(warning)
-        value = trajectory_data['scf_accuracy_index'][0]
-        for i, j in zip(trajectory_data['scf_iterations'], trajectory_data['scf_accuracy_index'][1:]):
-            value += i
-            if value != j:
-                logs.warning.append(warning)
+    # check consistency of scf_accuracy and scf_iterations
+    if 'scf_accuracy' in trajectory_data:
+        if 'scf_iterations' in trajectory_data:
+            if len(trajectory_data['scf_accuracy']) != sum(trajectory_data['scf_iterations']):
+                logs.warning.append('the length of scf_accuracy does not match the sum of the elements of scf_iterations.')
+        else:
+            logs.warning.append('"the scf_accuracy array was parsed but the scf_iterations was not.')
 
     # If specified in the parser options, parse the atomic occupations
     parse_atomic_occupations = parser_options.get('parse_atomic_occupations', False)
