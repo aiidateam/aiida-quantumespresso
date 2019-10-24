@@ -11,7 +11,6 @@ from aiida.plugins import CalculationFactory
 from aiida_quantumespresso.data.force_constants import ForceConstantsData
 from aiida_quantumespresso.utils.resources import get_default_options
 
-Q2rCalculation = CalculationFactory('quantumespresso.q2r')
 MatdynCalculation = CalculationFactory('quantumespresso.matdyn')
 
 
