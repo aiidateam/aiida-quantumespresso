@@ -833,12 +833,11 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
 
     # check consistency of scf_accuracy and scf_iterations
     if 'scf_accuracy' in trajectory_data:
-        warning = 'scf_iterations and scf_accuracy arrays are not consistent'
         if 'scf_iterations' in trajectory_data:
             if len(trajectory_data['scf_accuracy']) != sum(trajectory_data['scf_iterations']):
-                logs.warning.append(warning)
+                logs.warning.append('the length of scf_accuracy does not match the sum of the elements of scf_iterations.')
         else:
-            logs.warning.append(warning)
+            logs.warning.append('"the scf_accuracy array was parsed but the scf_iterations was not.')
 
     # If specified in the parser options, parse the atomic occupations
     parse_atomic_occupations = parser_options.get('parse_atomic_occupations', False)

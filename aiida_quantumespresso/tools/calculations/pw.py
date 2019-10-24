@@ -47,10 +47,8 @@ class PwCalculationTools(CalculationTools):
 
         # building an scf_accuracy_index for easier manipulation
         scf_accuracy_index = [0]
-        value = 0
         for i in scf_iterations:
-            value += i
-            scf_accuracy_index.append(value)
+            scf_accuracy_index.append(scf_accuracy_index[-1] + i)
 
         if index < 0:
             return scf_accuracy[scf_accuracy_index[index - 1]:scf_accuracy_index[index]]
