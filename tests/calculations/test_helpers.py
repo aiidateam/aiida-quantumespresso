@@ -8,7 +8,7 @@ import pytest
 from aiida_quantumespresso.calculations.helpers import pw_input_helper, QEInputValidationError
 
 
-def test_pw_helper_multidimensional(fixture_database, fixture_computer_localhost, generate_structure):
+def test_pw_helper_multidimensional(aiida_profile, fixture_localhost, generate_structure):
     """Test the helper for parameters containing a multidimensional parameter."""
     structure = generate_structure('Si')
     parameters = {

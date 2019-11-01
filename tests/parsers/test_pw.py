@@ -74,7 +74,7 @@ def generate_inputs_relax():
     })
 
 
-def test_pw_default(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
+def test_pw_default(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser,
                     generate_inputs_default, data_regression):
     """Test a `pw.x` calculation in `scf` mode.
 
@@ -85,7 +85,7 @@ def test_pw_default(fixture_database, fixture_computer_localhost, generate_calc_
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_default)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_default)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -103,7 +103,7 @@ def test_pw_default(fixture_database, fixture_computer_localhost, generate_calc_
     })
 
 
-def test_pw_default_xml_new(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
+def test_pw_default_xml_new(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser,
         generate_inputs_default, data_regression):
     """Test a `pw.x` calculation in `scf` mode that produced the XML output in the new schema-based format.
 
@@ -114,7 +114,7 @@ def test_pw_default_xml_new(fixture_database, fixture_computer_localhost, genera
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_default)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_default)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -132,14 +132,14 @@ def test_pw_default_xml_new(fixture_database, fixture_computer_localhost, genera
     })
 
 
-def test_pw_initialization_xml_new(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+def test_pw_initialization_xml_new(aiida_profile, fixture_localhost, generate_calc_job_node,
         generate_parser, generate_inputs_default, data_regression):
     """Test a `pw.x` calculation with new XML that only runs the preamble, i.e. an initialization-only calculation."""
     name = 'initialization_xml_new'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_default)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_default)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -156,7 +156,7 @@ def test_pw_initialization_xml_new(fixture_database, fixture_computer_localhost,
     })
 
 
-def test_pw_failed_missing(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+def test_pw_failed_missing(aiida_profile, fixture_localhost, generate_calc_job_node,
         generate_parser, generate_inputs_default, data_regression):
     """Test the parsing of a calculation that was interrupted before output files could even be written.
 
@@ -169,7 +169,7 @@ def test_pw_failed_missing(fixture_database, fixture_computer_localhost, generat
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_default)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_default)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -179,7 +179,7 @@ def test_pw_failed_missing(fixture_database, fixture_computer_localhost, generat
     assert orm.Log.objects.get_logs_for(node)
 
 
-def test_pw_failed_interrupted(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+def test_pw_failed_interrupted(aiida_profile, fixture_localhost, generate_calc_job_node,
         generate_parser, generate_inputs_default, data_regression):
     """Test the parsing of a calculation that was interrupted *after* convergence was achieved.
 
@@ -195,7 +195,7 @@ def test_pw_failed_interrupted(fixture_database, fixture_computer_localhost, gen
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_default)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_default)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -207,7 +207,7 @@ def test_pw_failed_interrupted(fixture_database, fixture_computer_localhost, gen
     data_regression.check(results['output_parameters'].get_dict())
 
 
-def test_pw_failed_interrupted_stdout(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+def test_pw_failed_interrupted_stdout(aiida_profile, fixture_localhost, generate_calc_job_node,
         generate_parser, generate_inputs_default, data_regression):
     """Test the parsing of a calculation that was interrupted *after* convergence was achieved.
 
@@ -224,7 +224,7 @@ def test_pw_failed_interrupted_stdout(fixture_database, fixture_computer_localho
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_default)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_default)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -238,7 +238,7 @@ def test_pw_failed_interrupted_stdout(fixture_database, fixture_computer_localho
     data_regression.check(results['output_parameters'].get_dict())
 
 
-def test_pw_failed_interrupted_xml(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+def test_pw_failed_interrupted_xml(aiida_profile, fixture_localhost, generate_calc_job_node,
         generate_parser, generate_inputs_default, data_regression):
     """Test the parsing of a calculation that was interrupted *after* convergence was achieved.
 
@@ -254,7 +254,7 @@ def test_pw_failed_interrupted_xml(fixture_database, fixture_computer_localhost,
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_default)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_default)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -267,14 +267,14 @@ def test_pw_failed_interrupted_xml(fixture_database, fixture_computer_localhost,
     data_regression.check(results['output_parameters'].get_dict())
 
 
-def test_pw_failed_out_of_walltime(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+def test_pw_failed_out_of_walltime(aiida_profile, fixture_localhost, generate_calc_job_node,
         generate_parser, generate_inputs_default, data_regression):
     """Test the parsing of an scf calculation that ran nominally but was cut short because it ran out of walltime."""
     name = 'failed_out_of_walltime'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_default)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_default)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -290,14 +290,14 @@ def test_pw_failed_out_of_walltime(fixture_database, fixture_computer_localhost,
     })
 
 
-def test_pw_failed_scf_not_converged(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+def test_pw_failed_scf_not_converged(aiida_profile, fixture_localhost, generate_calc_job_node,
         generate_parser, generate_inputs_default, data_regression):
     """Test the parsing of an scf calculation that ran nominally but did not reach convergence."""
     name = 'failed_scf_not_converged'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_default)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_default)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -313,14 +313,14 @@ def test_pw_failed_scf_not_converged(fixture_database, fixture_computer_localhos
     })
 
 
-def test_pw_relax_success(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
+def test_pw_relax_success(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser,
         generate_inputs_relax, data_regression):
     """Test a `relax` that successfully converges."""
     name = 'relax_success'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_relax)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_relax)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -339,14 +339,14 @@ def test_pw_relax_success(fixture_database, fixture_computer_localhost, generate
     })
 
 
-def test_pw_relax_failed_electronic(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+def test_pw_relax_failed_electronic(aiida_profile, fixture_localhost, generate_calc_job_node,
         generate_parser, generate_inputs_relax, data_regression):
     """Test a `relax` that failed to converge during electronic cycle before ionic convergence is reached."""
     name = 'relax_failed_electronic'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_relax)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_relax)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
     expected_exit_status = node.process_class.exit_codes.ERROR_IONIC_CYCLE_ELECTRONIC_CONVERGENCE_NOT_REACHED.status
@@ -360,14 +360,14 @@ def test_pw_relax_failed_electronic(fixture_database, fixture_computer_localhost
     assert 'output_trajectory' in results
 
 
-def test_pw_relax_failed_not_converged_nstep(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+def test_pw_relax_failed_not_converged_nstep(aiida_profile, fixture_localhost, generate_calc_job_node,
         generate_parser, generate_inputs_relax, data_regression):
     """Test a `relax` that failed to converge within the maximum number of steps."""
     name = 'relax_failed_not_converged_nstep'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_relax)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_relax)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
     expected_exit_status = node.process_class.exit_codes.ERROR_IONIC_CYCLE_EXCEEDED_NSTEP.status
@@ -381,14 +381,14 @@ def test_pw_relax_failed_not_converged_nstep(fixture_database, fixture_computer_
     assert 'output_trajectory' in results
 
 
-def test_pw_vcrelax_success(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
+def test_pw_vcrelax_success(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser,
         generate_inputs_relax, data_regression):
     """Test a `vc-relax` that successfully converges and the final scf also converges."""
     name = 'vcrelax_success'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_relax)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_relax)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -407,7 +407,7 @@ def test_pw_vcrelax_success(fixture_database, fixture_computer_localhost, genera
     })
 
 
-def test_pw_vcrelax_fractional_success(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
+def test_pw_vcrelax_fractional_success(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser,
         generate_inputs_relax, data_regression):
     """Test a `vc-relax`, that successfully converges and the final scf also converges.
     In this case the input atomic positions were defined using 'crystal' (i.e. fractional) units.
@@ -416,7 +416,7 @@ def test_pw_vcrelax_fractional_success(fixture_database, fixture_computer_localh
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_relax)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_relax)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -435,14 +435,14 @@ def test_pw_vcrelax_fractional_success(fixture_database, fixture_computer_localh
     })
 
 
-def test_pw_vcrelax_failed_charge_wrong(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+def test_pw_vcrelax_failed_charge_wrong(aiida_profile, fixture_localhost, generate_calc_job_node,
         generate_parser, generate_inputs_relax, data_regression):
     """Test a `vc-relax` that failed because the integrated charge is different from the expected one."""
     name = 'vcrelax_failed_charge_wrong'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_relax)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_relax)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
     expected_exit_status = node.process_class.exit_codes.ERROR_CHARGE_IS_WRONG.status
@@ -454,14 +454,14 @@ def test_pw_vcrelax_failed_charge_wrong(fixture_database, fixture_computer_local
     assert 'output_parameters' in results
 
 
-def test_pw_vcrelax_failed_symmetry_not_orthogonal(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+def test_pw_vcrelax_failed_symmetry_not_orthogonal(aiida_profile, fixture_localhost, generate_calc_job_node,
         generate_parser, generate_inputs_relax, data_regression):
     """Test a `vc-relax` that failed because original symmetries no longer map onto new structure."""
     name = 'vcrelax_failed_symmetry_not_orthogonal'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_relax)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_relax)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
     expected_exit_status = node.process_class.exit_codes.ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION.status
@@ -473,14 +473,14 @@ def test_pw_vcrelax_failed_symmetry_not_orthogonal(fixture_database, fixture_com
     assert 'output_parameters' in results
 
 
-def test_pw_vcrelax_failed_bfgs_history(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+def test_pw_vcrelax_failed_bfgs_history(aiida_profile, fixture_localhost, generate_calc_job_node,
         generate_parser, generate_inputs_relax, data_regression):
     """Test a `vc-relax` that failed to converge due to two consecutive failures of BFGS."""
     name = 'vcrelax_failed_bfgs_history'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_relax)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_relax)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
     expected_exit_status = node.process_class.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE.status
@@ -494,14 +494,14 @@ def test_pw_vcrelax_failed_bfgs_history(fixture_database, fixture_computer_local
     assert 'output_trajectory' in results
 
 
-def test_pw_vcrelax_failed_bfgs_history_final_scf(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+def test_pw_vcrelax_failed_bfgs_history_final_scf(aiida_profile, fixture_localhost, generate_calc_job_node,
         generate_parser, generate_inputs_relax, data_regression):
     """Test a `vc-relax` that failed to converge due to two consecutive failures of BFGS and final SCF fails."""
     name = 'vcrelax_failed_bfgs_history_final_scf'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_relax)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_relax)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
     expected_exit_status = node.process_class.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE.status
@@ -515,14 +515,14 @@ def test_pw_vcrelax_failed_bfgs_history_final_scf(fixture_database, fixture_comp
     assert 'output_trajectory' in results
 
 
-def test_pw_vcrelax_failed_electronic(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+def test_pw_vcrelax_failed_electronic(aiida_profile, fixture_localhost, generate_calc_job_node,
         generate_parser, generate_inputs_relax, data_regression):
     """Test a `vc-relax` that failed to converge during electronic cycle before ionic convergence is reached."""
     name = 'vcrelax_failed_electronic'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_relax)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_relax)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
     expected_exit_status = node.process_class.exit_codes.ERROR_IONIC_CYCLE_ELECTRONIC_CONVERGENCE_NOT_REACHED.status
@@ -536,14 +536,14 @@ def test_pw_vcrelax_failed_electronic(fixture_database, fixture_computer_localho
     assert 'output_trajectory' in results
 
 
-def test_pw_vcrelax_failed_electronic_final_scf(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+def test_pw_vcrelax_failed_electronic_final_scf(aiida_profile, fixture_localhost, generate_calc_job_node,
         generate_parser, generate_inputs_relax, data_regression):
     """Test a `vc-relax` that failed to converge in electronic cycle in the final SCF after ionic convergence."""
     name = 'vcrelax_failed_electronic_final_scf'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_relax)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_relax)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
     expected_exit_status = node.process_class.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_FINAL_SCF_FAILED.status
@@ -557,14 +557,14 @@ def test_pw_vcrelax_failed_electronic_final_scf(fixture_database, fixture_comput
     assert 'output_trajectory' in results
 
 
-def test_pw_vcrelax_failed_not_converged_final_scf(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+def test_pw_vcrelax_failed_not_converged_final_scf(aiida_profile, fixture_localhost, generate_calc_job_node,
         generate_parser, generate_inputs_relax, data_regression):
     """Test a `vc-relax` that successfully converges in ionic cycle, but thresholds are exceeded in the SCF."""
     name = 'vcrelax_failed_not_converged_final_scf'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_relax)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_relax)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
     expected_exit_status = node.process_class.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF.status
@@ -578,14 +578,14 @@ def test_pw_vcrelax_failed_not_converged_final_scf(fixture_database, fixture_com
     assert 'output_trajectory' in results
 
 
-def test_pw_vcrelax_failed_not_converged_nstep(fixture_database, fixture_computer_localhost, generate_calc_job_node,
+def test_pw_vcrelax_failed_not_converged_nstep(aiida_profile, fixture_localhost, generate_calc_job_node,
         generate_parser, generate_inputs_relax, data_regression):
     """Test a `vc-relax` that failed to converge within the maximum number of steps."""
     name = 'vcrelax_failed_not_converged_nstep'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, generate_inputs_relax)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_relax)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
     expected_exit_status = node.process_class.exit_codes.ERROR_IONIC_CYCLE_EXCEEDED_NSTEP.status

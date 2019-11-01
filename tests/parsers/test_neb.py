@@ -52,7 +52,7 @@ def build_num_regression_dictionary(arrays, array_names):
     return result
 
 
-def test_neb_default(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
+def test_neb_default(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser,
         generate_inputs, data_regression, num_regression):
     """Test a NEB calculation with symmetric images and automatic climbing image."""
     name = 'default'
@@ -60,7 +60,7 @@ def test_neb_default(fixture_database, fixture_computer_localhost, generate_calc
     entry_point_parser = 'quantumespresso.neb'
 
     inputs = generate_inputs(parser_options=None)
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, inputs)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -83,7 +83,7 @@ def test_neb_default(fixture_database, fixture_computer_localhost, generate_calc
     num_regression.check(data, default_tolerance=dict(atol=0, rtol=1e-18))
 
 
-def test_neb_all_iterations(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
+def test_neb_all_iterations(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser,
         generate_inputs, data_regression, num_regression):
     """Test a NEB calculation with the parser option `all_iterations=True`."""
     name = 'default'
@@ -91,7 +91,7 @@ def test_neb_all_iterations(fixture_database, fixture_computer_localhost, genera
     entry_point_parser = 'quantumespresso.neb'
 
     inputs = generate_inputs(parser_options={'all_iterations': True})
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, inputs)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -110,7 +110,7 @@ def test_neb_all_iterations(fixture_database, fixture_computer_localhost, genera
     num_regression.check(data, default_tolerance=dict(atol=0, rtol=1e-18))
 
 
-def test_neb_deprecated_keys(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
+def test_neb_deprecated_keys(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser,
         generate_inputs, data_regression, num_regression):
     """Test a NEB calculation with the parser option `include_deprecated_v2_keys=True`."""
     name = 'default'
@@ -118,7 +118,7 @@ def test_neb_deprecated_keys(fixture_database, fixture_computer_localhost, gener
     entry_point_parser = 'quantumespresso.neb'
 
     inputs = generate_inputs(parser_options={'include_deprecated_v2_keys': True})
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, name, inputs)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 

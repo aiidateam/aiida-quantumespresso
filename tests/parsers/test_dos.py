@@ -19,7 +19,7 @@ def dos_inputs():
     return AttributeDict(inputs)
 
 
-def test_dos_default(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
+def test_dos_default(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser,
                      dos_inputs, data_regression, num_regression):
     """
     Test `DosParser` on the results of a simple `dos.x` calculation.
@@ -27,7 +27,7 @@ def test_dos_default(fixture_database, fixture_computer_localhost, generate_calc
     entry_point_calc_job = 'quantumespresso.dos'
     entry_point_parser = 'quantumespresso.dos'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, 'default', dos_inputs)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'default', dos_inputs)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 

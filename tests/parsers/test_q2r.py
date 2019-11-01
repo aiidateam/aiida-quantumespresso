@@ -14,13 +14,13 @@ def generate_inputs():
     return {}
 
 
-def test_q2r_default(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
+def test_q2r_default(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser,
                      generate_inputs, data_regression):
     """Test a default `q2r.x` calculation."""
     entry_point_calc_job = 'quantumespresso.q2r'
     entry_point_parser = 'quantumespresso.q2r'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, 'default', generate_inputs)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'default', generate_inputs)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
