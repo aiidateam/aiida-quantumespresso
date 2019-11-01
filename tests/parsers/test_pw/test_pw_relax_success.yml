@@ -38,6 +38,8 @@ output_parameters:
   energy_units: eV
   energy_xc: -168.63179023436172
   energy_xc_units: eV
+  estimated_ram_per_process: 10.86
+  estimated_ram_per_process_units: MB
   fermi_energy: 6.5091589497144975
   fermi_energy_units: eV
   fft_grid:

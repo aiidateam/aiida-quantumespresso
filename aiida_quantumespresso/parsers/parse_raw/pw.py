@@ -16,7 +16,6 @@ from six.moves import range, zip
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.utils.mapping import get_logging_container
 from qe_tools.constants import ry_to_ev, bohr_to_ang, ry_si, bohr_si
-from six.moves import zip
 
 lattice_tolerance = 1.e-5
 units_suffix = '_units'
@@ -430,9 +429,30 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
 
         # parse the initialization time (take only first occurence)
         elif ('init_wall_time_seconds' not in parsed_data and 'total cpu time spent up to now is' in line):
-            init_time = float(line.split('total cpu time spent up to now is'
-                                         )[1].split('secs')[0])
+            init_time = float(line.split('total cpu time spent up to now is')[1].split('secs')[0])
             parsed_data['init_wall_time_seconds'] = init_time
+
+        # parse dynamical RAM estimates
+        elif 'Estimated max dynamical RAM per process' in line:
+            value = line.split('>')[-1]
+            match = re.match(r'\s+([+-]?\d+(\.\d*)?|\.\d+([eE][+-]?\d+)?)\s*(Mb|MB|GB)', value)
+            if match:
+                try:
+                    parsed_data['estimated_ram_per_process'] = float(match.group(1))
+                    parsed_data['estimated_ram_per_process{}'.format(units_suffix)] = match.group(4)
+                except (IndexError, ValueError):
+                    pass
+
+        # parse dynamical RAM estimates
+        elif 'Estimated total dynamical RAM' in line:
+            value = line.split('>')[-1]
+            match = re.match(r'\s+([+-]?\d+(\.\d*)?|\.\d+([eE][+-]?\d+)?)\s*(Mb|MB|GB)', value)
+            if match:
+                try:
+                    parsed_data['estimated_ram_total'] = float(match.group(1))
+                    parsed_data['estimated_ram_total{}'.format(units_suffix)] = match.group(4)
+                except (IndexError, ValueError):
+                    pass
 
         # parse the global file, for informations that are written only once
         elif 'PWSCF' in line and 'WALL' in line:

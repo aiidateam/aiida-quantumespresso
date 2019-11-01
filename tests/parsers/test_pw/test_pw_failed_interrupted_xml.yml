@@ -11,6 +11,8 @@ energy_threshold: 3.84e-06
 energy_units: eV
 energy_xc: -168.63179023436172
 energy_xc_units: eV
+estimated_ram_per_process: 10.86
+estimated_ram_per_process_units: MB
 fft_grid:
 - 36
 - 36
