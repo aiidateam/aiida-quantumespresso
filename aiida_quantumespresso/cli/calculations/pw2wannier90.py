@@ -77,7 +77,7 @@ def launch_calculation(
 
     if scdm_mode != 'no':
         parameters['INPUTPP']['scdm_proj'] = True
-        parameters['INPUTPP']['scdm_entanglement'] = 'isolated'
+        parameters['INPUTPP']['scdm_entanglement'] = scdm_mode
 
     # In this command-line example, we always retrieve .amn, .mmn and .eig,
     # but we never retrieve the UNK files that are big
