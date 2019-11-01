@@ -635,6 +635,9 @@
 
      Estimated max dynamical RAM per process >      10.86MB
 
+     # Note following line is pasted manually for testing purposes
+     Estimated total dynamical RAM >      11.35 GB
+
      Initial potential from superposition of free atoms
 
      starting charge    7.99888, renormalised to    8.00000
