@@ -70,10 +70,7 @@ def launch_calculation(
         }
     }
 
-    if write_unk:
-        parameters['INPUTPP']['write_unk'] = True
-    else:
-        parameters['INPUTPP']['write_unk'] = False
+    parameters['INPUTPP']['write_unk'] = write_unk
 
     if scdm_mode != 'no':
         parameters['INPUTPP']['scdm_proj'] = True
