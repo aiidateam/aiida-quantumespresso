@@ -10,11 +10,11 @@ from aiida.common import AttributeDict, LinkType
 
 
 @pytest.fixture
-def projwfc_inputs(generate_calc_job_node, fixture_computer_localhost, generate_structure, generate_kpoints_mesh):
+def projwfc_inputs(generate_calc_job_node, fixture_localhost, generate_structure, generate_kpoints_mesh):
     """Create the required inputs for the ``ProjwfcCalculation``."""
     parent_calcjob = generate_calc_job_node(
         'quantumespresso.pw',
-        fixture_computer_localhost,
+        fixture_localhost,
         'default',
         inputs={
             'structure': generate_structure('Si'),
@@ -32,14 +32,14 @@ def projwfc_inputs(generate_calc_job_node, fixture_computer_localhost, generate_
 
 
 def test_projwfc_default(
-    fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser, projwfc_inputs,
+    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, projwfc_inputs,
     data_regression
 ):
     """Test ``ProjwfcParser`` on the results of a simple ``projwfc.x`` calculation."""
     entry_point_calc_job = 'quantumespresso.projwfc'
     entry_point_parser = 'quantumespresso.projwfc'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, 'default', projwfc_inputs)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'default', projwfc_inputs)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 

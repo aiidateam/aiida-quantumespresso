@@ -13,22 +13,22 @@ PwCalculation = CalculationFactory('quantumespresso.pw')
 PhCalculation = CalculationFactory('quantumespresso.ph')
 
 
-def test_ph_default(fixture_database, fixture_computer_localhost, fixture_sandbox_folder, generate_calc_job,
-    generate_code_localhost, generate_structure, generate_kpoints_mesh, generate_remote_data, file_regression):
+def test_ph_default(aiida_profile, fixture_localhost, fixture_sandbox, generate_calc_job,
+    fixture_code, generate_structure, generate_kpoints_mesh, generate_remote_data, file_regression):
     """Test a default `PhCalculation`."""
     entry_point_name = 'quantumespresso.ph'
     parent_entry_point = 'quantumespresso.pw'
-    remote_path = fixture_sandbox_folder.abspath
+    remote_path = fixture_sandbox.abspath
 
     inputs = {
-        'code': generate_code_localhost(entry_point_name, fixture_computer_localhost),
-        'parent_folder': generate_remote_data(fixture_computer_localhost, remote_path, parent_entry_point),
+        'code': fixture_code(entry_point_name),
+        'parent_folder': generate_remote_data(fixture_localhost, remote_path, parent_entry_point),
         'qpoints': generate_kpoints_mesh(2),
         'parameters': orm.Dict(dict={'INPUTPH': {}}),
         'metadata': {'options': get_default_options()}
     }
 
-    calc_info = generate_calc_job(fixture_sandbox_folder, entry_point_name, inputs)
+    calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
     cmdline_params = ['-in', 'aiida.in']
     retrieve_list = ['./out/_ph0/aiida.phsave/tensors.xml', 'DYN_MAT', 'aiida.out']
@@ -41,20 +41,20 @@ def test_ph_default(fixture_database, fixture_computer_localhost, fixture_sandbo
     assert sorted(calc_info.retrieve_list) == sorted(retrieve_list)
     assert sorted(calc_info.remote_symlink_list) == sorted([])
 
-    with fixture_sandbox_folder.open('aiida.in') as handle:
+    with fixture_sandbox.open('aiida.in') as handle:
         input_written = handle.read()
 
     # Checks on the files written to the sandbox folder as raw input
-    assert sorted(fixture_sandbox_folder.get_content_list()) == sorted(['DYN_MAT', 'aiida.in'])
+    assert sorted(fixture_sandbox.get_content_list()) == sorted(['DYN_MAT', 'aiida.in'])
     file_regression.check(input_written, encoding='utf-8', extension='.in')
 
 
-def test_ph_qpoint_list(fixture_database, fixture_computer_localhost, fixture_sandbox_folder, generate_calc_job,
-    generate_code_localhost, generate_structure, generate_kpoints_mesh, generate_remote_data, file_regression):
+def test_ph_qpoint_list(aiida_profile, fixture_localhost, fixture_sandbox, generate_calc_job,
+    fixture_code, generate_structure, generate_kpoints_mesh, generate_remote_data, file_regression):
     """Test a `PhCalculation` with a qpoint list instead of a mesh."""
     entry_point_name = 'quantumespresso.ph'
     parent_entry_point = 'quantumespresso.pw'
-    remote_path = fixture_sandbox_folder.abspath
+    remote_path = fixture_sandbox.abspath
 
     structure = generate_structure()
     kpoints = generate_kpoints_mesh(2).get_kpoints_mesh(print_list=True)
@@ -63,16 +63,16 @@ def test_ph_qpoint_list(fixture_database, fixture_computer_localhost, fixture_sa
     qpoints.set_kpoints(kpoints)
 
     inputs = {
-        'code': generate_code_localhost(entry_point_name, fixture_computer_localhost),
-        'parent_folder': generate_remote_data(fixture_computer_localhost, remote_path, parent_entry_point),
+        'code': fixture_code(entry_point_name),
+        'parent_folder': generate_remote_data(fixture_localhost, remote_path, parent_entry_point),
         'qpoints': qpoints,
         'parameters': orm.Dict(dict={'INPUTPH': {}}),
         'metadata': {'options': get_default_options()}
     }
 
-    generate_calc_job(fixture_sandbox_folder, entry_point_name, inputs)
+    generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
-    with fixture_sandbox_folder.open('aiida.in') as handle:
+    with fixture_sandbox.open('aiida.in') as handle:
         input_written = handle.read()
 
     file_regression.check(input_written, encoding='utf-8', extension='.in')

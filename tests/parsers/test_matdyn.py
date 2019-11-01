@@ -20,13 +20,13 @@ def generate_inputs():
     })
 
 
-def test_matdyn_default(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
+def test_matdyn_default(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser,
                      generate_inputs, data_regression):
     """Test a default `matdyn.x` calculation."""
     entry_point_calc_job = 'quantumespresso.matdyn'
     entry_point_parser = 'quantumespresso.matdyn'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, 'default', generate_inputs)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'default', generate_inputs)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 

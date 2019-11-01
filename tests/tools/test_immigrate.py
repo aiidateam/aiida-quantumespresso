@@ -7,11 +7,10 @@ import os
 from aiida_quantumespresso.tools.pwinputparser import create_builder_from_file
 
 
-def test_create_builder(fixture_database, fixture_computer_localhost, generate_code_localhost, generate_upf_data,
-                        generate_calc_job, fixture_sandbox_folder):
-    """ this test uses the input file generated from tests.calculations.test_pw.test_pw_default"""
+def test_create_builder(aiida_profile, fixture_sandbox, fixture_code, generate_upf_data, generate_calc_job):
+    """This test uses the input file generated from `tests.calculations.test_pw.test_pw_default`"""
     entry_point_name = 'quantumespresso.pw'
-    code = generate_code_localhost(entry_point_name, fixture_computer_localhost)
+    code = fixture_code(entry_point_name)
 
     metadata = {
         'options': {
@@ -33,7 +32,7 @@ def test_create_builder(fixture_database, fixture_computer_localhost, generate_c
     si_upf = generate_upf_data('Si')
     si_upf.store()
 
-    builder = create_builder_from_file(in_folderpath, 'test_pw_default.in', code, metadata, upf_folderpath)
+    builder = create_builder_from_file(in_folderpath, 'test_pw_default.in', code, metadata, upf_folderpath, use_first=True)
 
     assert builder['code'] == code
     assert builder['metadata'] == metadata
@@ -51,4 +50,4 @@ def test_create_builder(fixture_database, fixture_computer_localhost, generate_c
     assert 'kpoints' in builder
     assert 'structure' in builder
 
-    generate_calc_job(fixture_sandbox_folder, entry_point_name, builder)
+    generate_calc_job(fixture_sandbox, entry_point_name, builder)

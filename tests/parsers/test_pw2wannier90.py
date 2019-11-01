@@ -42,7 +42,7 @@ def pw2wannier90_inputs():
     return AttributeDict(inputs)
 
 
-def test_pw2wannier90_default(fixture_database, fixture_computer_localhost, generate_calc_job_node, generate_parser,
+def test_pw2wannier90_default(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser,
                               pw2wannier90_inputs, data_regression):
     """
     Test a minimal `pw2wannier.x` calculation.
@@ -52,7 +52,7 @@ def test_pw2wannier90_default(fixture_database, fixture_computer_localhost, gene
     entry_point_calc_job = 'quantumespresso.pw2wannier90'
     entry_point_parser = 'quantumespresso.pw2wannier90'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_computer_localhost, 'default', pw2wannier90_inputs)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'default', pw2wannier90_inputs)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 

@@ -8,17 +8,17 @@ from aiida import orm
 from aiida.common.links import LinkType
 
 
-def test_pw_get_scf_accuracy(fixture_database, fixture_computer_localhost, generate_calc_job_node):
+def test_pw_get_scf_accuracy(aiida_profile, fixture_localhost, generate_calc_job_node):
     """Test the `PwCalculationTools.get_scf_accuracy` method."""
     entry_point_name = 'quantumespresso.pw'
 
     # Missing `output_trajectory` node
-    node = generate_calc_job_node(entry_point_name, fixture_computer_localhost)
+    node = generate_calc_job_node(entry_point_name, fixture_localhost)
     with pytest.raises(ValueError):
         node.tools.get_scf_accuracy()
 
     # Missing `scf_accuracy` array
-    node = generate_calc_job_node(entry_point_name, fixture_computer_localhost)
+    node = generate_calc_job_node(entry_point_name, fixture_localhost)
     trajectory = orm.ArrayData()
     trajectory.add_incoming(node, link_type=LinkType.CREATE, link_label='output_trajectory')
     trajectory.store()
@@ -27,7 +27,7 @@ def test_pw_get_scf_accuracy(fixture_database, fixture_computer_localhost, gener
         node.tools.get_scf_accuracy()
 
     # Missing `scf_accuracy_index` array
-    node = generate_calc_job_node(entry_point_name, fixture_computer_localhost)
+    node = generate_calc_job_node(entry_point_name, fixture_localhost)
     trajectory = orm.ArrayData()
     trajectory.set_array('scf_accuracy', np.array([1, 1, 1, 2, 2, 2, 2, 2]))
     trajectory.add_incoming(node, link_type=LinkType.CREATE, link_label='output_trajectory')
@@ -36,7 +36,7 @@ def test_pw_get_scf_accuracy(fixture_database, fixture_computer_localhost, gener
     with pytest.raises(ValueError):
         node.tools.get_scf_accuracy()
 
-    node = generate_calc_job_node(entry_point_name, fixture_computer_localhost)
+    node = generate_calc_job_node(entry_point_name, fixture_localhost)
     trajectory = orm.ArrayData()
     trajectory.set_array('scf_accuracy', np.array([1, 1, 1, 2, 2, 2, 2, 2]))
     trajectory.set_array('scf_iterations', np.array([3, 5]))

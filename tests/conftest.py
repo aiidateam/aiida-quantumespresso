@@ -4,70 +4,38 @@ from __future__ import absolute_import
 
 import io
 import os
-import shutil
-import tempfile
 import collections
 import pytest
 import six
 
-from aiida.manage.fixtures import fixture_manager
-
-
-def flatten_inputs(inputs, prefix=''):
-    """This function follows roughly the same logic as `aiida.engine.processes.process::Process._flatten_inputs`."""
-    flat_inputs = []
-    for key, value in six.iteritems(inputs):
-        if isinstance(value, collections.Mapping):
-            flat_inputs.extend(flatten_inputs(value, prefix=prefix + key + '__'))
-        else:
-            flat_inputs.append((prefix + key, value))
-    return flat_inputs
-
-
-@pytest.fixture(scope='session')
-def fixture_environment():
-    """Setup a complete AiiDA test environment, with configuration, profile, database and repository."""
-    with fixture_manager() as manager:
-        from aiida.common.log import configure_logging
-        configure_logging(with_orm=True)
-        yield manager
-
-
-@pytest.fixture(scope='session')
-def fixture_work_directory():
-    """Return a temporary folder that can be used as for example a computer's work directory."""
-    dirpath = tempfile.mkdtemp()
-    yield dirpath
-    shutil.rmtree(dirpath)
+pytest_plugins = ['aiida.manage.tests.pytest_fixtures']
 
 
 @pytest.fixture(scope='function')
-def fixture_sandbox_folder():
+def fixture_sandbox():
     """Return a `SandboxFolder`."""
     from aiida.common.folders import SandboxFolder
     with SandboxFolder() as folder:
         yield folder
 
 
-@pytest.fixture(scope='function')
-def fixture_computer_localhost(fixture_work_directory):
-    """Return a `Computer` instance mocking a localhost setup."""
-    from aiida.orm import Computer
-    computer = Computer(
-        name='localhost',
-        hostname='localhost',
-        transport_type='local',
-        scheduler_type='direct',
-        workdir=fixture_work_directory).store()
-    computer.set_default_mpiprocs_per_machine(1)
-    yield computer
+@pytest.fixture
+def fixture_localhost(aiida_localhost):
+    """Return a localhost `Computer`."""
+    localhost = aiida_localhost
+    localhost.set_default_mpiprocs_per_machine(1)
+    return localhost
 
 
-@pytest.fixture(scope='function')
-def fixture_database(fixture_environment):
-    """Clear the database after each test."""
-    yield
-    fixture_environment.reset_db()
+@pytest.fixture
+def fixture_code(fixture_localhost):
+    """Return a `Code` instance configured to run calculations of given entry point on localhost `Computer`."""
+
+    def _fixture_code(entry_point_name):
+        from aiida.orm import Code
+        return Code(input_plugin_name=entry_point_name, remote_computer_exec=[fixture_localhost, '/bin/true'])
+
+    return _fixture_code
 
 
 @pytest.fixture
@@ -100,6 +68,16 @@ def generate_calc_job():
 @pytest.fixture
 def generate_calc_job_node():
     """Fixture to generate a mock `CalcJobNode` for testing parsers."""
+
+    def flatten_inputs(inputs, prefix=''):
+        """This function follows roughly the same logic as `aiida.engine.processes.process::Process._flatten_inputs`."""
+        flat_inputs = []
+        for key, value in six.iteritems(inputs):
+            if isinstance(value, collections.Mapping):
+                flat_inputs.extend(flatten_inputs(value, prefix=prefix + key + '__'))
+            else:
+                flat_inputs.append((prefix + key, value))
+        return flat_inputs
 
     def _generate_calc_job_node(entry_point_name, computer, test_name=None, inputs=None, attributes=None):
         """Fixture to generate a mock `CalcJobNode` for testing parsers.
@@ -153,20 +131,7 @@ def generate_calc_job_node():
     return _generate_calc_job_node
 
 
-@pytest.fixture
-def generate_code_localhost():
-    """Return a `Code` instance configured to run calculations of given entry point on localhost `Computer`."""
-
-    def _generate_code_localhost(entry_point_name, computer):
-        from aiida.orm import Code
-        plugin_name = entry_point_name
-        remote_computer_exec = [computer, '/bin/true']
-        return Code(input_plugin_name=plugin_name, remote_computer_exec=remote_computer_exec)
-
-    return _generate_code_localhost
-
-
-@pytest.fixture
+@pytest.fixture(scope='session')
 def generate_upf_data():
     """Return a `UpfData` instance for the given element a file for which should exist in `tests/fixtures/pseudos`."""
 
@@ -220,7 +185,7 @@ def generate_kpoints_mesh():
     return _generate_kpoints_mesh
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def generate_parser():
     """Fixture to load a parser class for testing parsers."""
 

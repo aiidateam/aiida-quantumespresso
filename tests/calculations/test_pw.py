@@ -9,8 +9,8 @@ from aiida.common import datastructures
 from aiida_quantumespresso.utils.resources import get_default_options
 
 
-def test_pw_default(fixture_database, fixture_computer_localhost, fixture_sandbox_folder, generate_calc_job,
-    generate_code_localhost, generate_structure, generate_kpoints_mesh, generate_upf_data, file_regression):
+def test_pw_default(aiida_profile, fixture_sandbox, generate_calc_job,
+    fixture_code, generate_structure, generate_kpoints_mesh, generate_upf_data, file_regression):
     """Test a default `PwCalculation`."""
     entry_point_name = 'quantumespresso.pw'
 
@@ -26,7 +26,7 @@ def test_pw_default(fixture_database, fixture_computer_localhost, fixture_sandbo
 
     upf = generate_upf_data('Si')
     inputs = {
-        'code': generate_code_localhost(entry_point_name, fixture_computer_localhost),
+        'code': fixture_code(entry_point_name),
         'structure': generate_structure('Si'),
         'kpoints': generate_kpoints_mesh(2),
         'parameters': orm.Dict(dict=parameters),
@@ -34,7 +34,7 @@ def test_pw_default(fixture_database, fixture_computer_localhost, fixture_sandbo
         'metadata': {'options': get_default_options()}
     }
 
-    calc_info = generate_calc_job(fixture_sandbox_folder, entry_point_name, inputs)
+    calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
     cmdline_params = ['-in', 'aiida.in']
     local_copy_list = [(upf.uuid, upf.filename, u'./pseudo/Si.upf')]
@@ -49,9 +49,9 @@ def test_pw_default(fixture_database, fixture_computer_localhost, fixture_sandbo
     assert sorted(calc_info.retrieve_temporary_list) == sorted(retrieve_temporary_list)
     assert sorted(calc_info.remote_symlink_list) == sorted([])
 
-    with fixture_sandbox_folder.open('aiida.in') as handle:
+    with fixture_sandbox.open('aiida.in') as handle:
         input_written = handle.read()
 
     # Checks on the files written to the sandbox folder as raw input
-    assert sorted(fixture_sandbox_folder.get_content_list()) == sorted(['aiida.in', 'pseudo', 'out'])
+    assert sorted(fixture_sandbox.get_content_list()) == sorted(['aiida.in', 'pseudo', 'out'])
     file_regression.check(input_written, encoding='utf-8', extension='.in')
