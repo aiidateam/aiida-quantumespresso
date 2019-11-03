@@ -1,30 +1,25 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=unused-argument
 """Tests for the `NebParser`."""
 from __future__ import absolute_import
 
-import pytest
+import numpy as np
 
 from aiida import orm
 from aiida.common import AttributeDict
-import numpy as np
 
 
-@pytest.fixture
-def generate_inputs():
-
-    def _generate_inputs(parser_options=None):
-        """Return only those inputs that the parser will expect to be there."""
-        inputs = {
-            'parameters': orm.Dict(dict={'PATH': {'num_of_images': 3}}),
-            'pw': {
-                'parameters': orm.Dict(dict={}),
-            },
-            'settings': orm.Dict(dict={'parser_options': parser_options})
-        }
-        return AttributeDict(inputs)
-
-    return _generate_inputs
+def generate_inputs(parser_options=None):
+    """Return only those inputs that the parser will expect to be there."""
+    inputs = {
+        'parameters': orm.Dict(dict={'PATH': {
+            'num_of_images': 3
+        }}),
+        'pw': {
+            'parameters': orm.Dict()
+        },
+        'settings': orm.Dict(dict={'parser_options': parser_options})
+    }
+    return AttributeDict(inputs)
 
 
 def build_num_regression_dictionary(arrays, array_names):
@@ -46,14 +41,15 @@ def build_num_regression_dictionary(arrays, array_names):
     # Convert all arrays to floats, to get around this change that disallows diffent-sized arrays for non-float types:
     # https://github.com/ESSS/pytest-regressions/pull/18
     for key, val in result.items():
-        if not (np.issubdtype(val.dtype, np.floating) or np.issubdtype(val.dtype, np.complexfloating)):
+        if not (np.issubdtype(val.dtype, np.floating) or np.issubdtype(val.dtype, np.complexfloating)):  # pylint: disable=no-member
             result[key] = val.astype(np.float64)
 
     return result
 
 
-def test_neb_default(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser,
-        generate_inputs, data_regression, num_regression):
+def test_neb_default(
+    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, data_regression, num_regression
+):
     """Test a NEB calculation with symmetric images and automatic climbing image."""
     name = 'default'
     entry_point_calc_job = 'quantumespresso.neb'
@@ -83,8 +79,9 @@ def test_neb_default(aiida_profile, fixture_localhost, generate_calc_job_node, g
     num_regression.check(data, default_tolerance=dict(atol=0, rtol=1e-18))
 
 
-def test_neb_all_iterations(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser,
-        generate_inputs, data_regression, num_regression):
+def test_neb_all_iterations(
+    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, data_regression, num_regression
+):
     """Test a NEB calculation with the parser option `all_iterations=True`."""
     name = 'default'
     entry_point_calc_job = 'quantumespresso.neb'
@@ -110,8 +107,7 @@ def test_neb_all_iterations(aiida_profile, fixture_localhost, generate_calc_job_
     num_regression.check(data, default_tolerance=dict(atol=0, rtol=1e-18))
 
 
-def test_neb_deprecated_keys(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser,
-        generate_inputs, data_regression, num_regression):
+def test_neb_deprecated_keys(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser):
     """Test a NEB calculation with the parser option `include_deprecated_v2_keys=True`."""
     name = 'default'
     entry_point_calc_job = 'quantumespresso.neb'

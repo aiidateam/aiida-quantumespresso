@@ -245,5 +245,5 @@ output_trajectory:
   array|steps:
   - 1
   symbols:
-  - Si1
-  - Si2
+  - Si
+  - Si

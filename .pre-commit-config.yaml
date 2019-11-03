@@ -4,10 +4,7 @@
   - id: trailing-whitespace
     exclude: &exclude >
       (?x)^(
-          tests/calculations/test_pw/.*.in|
-          tests/fixtures/.*|
-          tests/parsers/fixtures/.*|
-          tests/parsers/*.yml
+        tests/.*(?<!\.py)$
       )$
   - id: double-quote-string-fixer
 
@@ -25,7 +22,7 @@
         aiida_quantumespresso/calculations.*|
         aiida_quantumespresso/parsers/.*|
         docs/.*|
-        tests/.*
+        tests/.*(?<!\.py)$
       )$
 
   - id: prospector

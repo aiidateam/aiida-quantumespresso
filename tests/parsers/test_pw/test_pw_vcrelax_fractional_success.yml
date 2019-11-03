@@ -220,13 +220,7 @@ output_structure:
     - 2.9030995006664494e-17
   kinds:
   - mass: 28.0855
-    name: Si1
-    symbols:
-    - Si
-    weights:
-    - 1.0
-  - mass: 28.0855
-    name: Si2
+    name: Si
     symbols:
     - Si
     weights:
@@ -235,12 +229,12 @@ output_structure:
   pbc2: true
   pbc3: true
   sites:
-  - kind_name: Si1
+  - kind_name: Si
     position:
     - -6.9058233802809814e-34
     - 4.143494028168588e-34
     - -3.6661766171149785e-34
-  - kind_name: Si2
+  - kind_name: Si
     position:
     - -1.3715335028958717
     - 1.3715335028958717
@@ -287,5 +281,5 @@ output_trajectory:
   array|total_force:
   - 5
   symbols:
-  - Si1
-  - Si2
+  - Si
+  - Si

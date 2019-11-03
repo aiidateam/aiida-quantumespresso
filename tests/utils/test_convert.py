@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
+"""Tests for :py:mod:`~aiida_quantumespresso.utils.convert`."""
 from __future__ import absolute_import
+
 import unittest
-from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 import six
+
+from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
 
 class TestUtilsConvertInputToNamelistEntry(unittest.TestCase):
+    """Tests for :py:func:`~aiida_quantumespresso.utils.convert.convert_input_to_namelist_entry`."""
 
     @classmethod
     def setUpClass(cls):
@@ -31,21 +35,15 @@ class TestUtilsConvertInputToNamelistEntry(unittest.TestCase):
         """
         When the value is a single value, it should be formatted as 'key = value'
         """
-        parameters = {
-            'ecutwfc': 100
-        }
-        expected = {
-            'ecutwfc': ['ecutwfc = 100']
-        }
+        parameters = {'ecutwfc': 100}
+        expected = {'ecutwfc': ['ecutwfc = 100']}
         self.validate_converted_output(parameters, expected)
 
     def test_single_list(self):
         """
         When the value is a single list, each entry should be formatted as 'key(i) = value[i]'
         """
-        parameters = {
-            'efield': [4, 5, 6]
-        }
+        parameters = {'efield': [4, 5, 6]}
         expected = {
             'efield': [
                 'efield(1) = 4',

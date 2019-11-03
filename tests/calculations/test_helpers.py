@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=unused-argument
 """Tests for the calculation input helper utilities."""
 from __future__ import absolute_import
 
@@ -8,9 +7,9 @@ import pytest
 from aiida_quantumespresso.calculations.helpers import pw_input_helper, QEInputValidationError
 
 
-def test_pw_helper_multidimensional(aiida_profile, fixture_localhost, generate_structure):
+def test_pw_helper_multidimensional(aiida_profile, generate_structure):
     """Test the helper for parameters containing a multidimensional parameter."""
-    structure = generate_structure('Si')
+    structure = generate_structure()
     parameters = {
         'CONTROL': {
             'calculation': 'scf'

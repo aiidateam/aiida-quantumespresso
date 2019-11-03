@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=unused-argument,redefined-outer-name
+# pylint: disable=redefined-outer-name
 """Tests for the `ProjwfcParser`."""
 from __future__ import absolute_import
 
@@ -10,17 +10,12 @@ from aiida.common import AttributeDict, LinkType
 
 
 @pytest.fixture
-def projwfc_inputs(generate_calc_job_node, fixture_localhost, generate_structure, generate_kpoints_mesh):
+def generate_inputs(generate_calc_job_node, fixture_localhost, generate_structure, generate_kpoints_mesh):
     """Create the required inputs for the ``ProjwfcCalculation``."""
-    parent_calcjob = generate_calc_job_node(
-        'quantumespresso.pw',
-        fixture_localhost,
-        'default',
-        inputs={
-            'structure': generate_structure('Si'),
-            'kpoints': generate_kpoints_mesh(4)
-        }
-    )
+    entry_point_name = 'quantumespresso.pw'
+    inputs = {'structure': generate_structure(), 'kpoints': generate_kpoints_mesh(4)}
+
+    parent_calcjob = generate_calc_job_node(entry_point_name, fixture_localhost, 'default', inputs=inputs)
     params = orm.Dict(dict={'number_of_spin_components': 1})
     params.add_incoming(parent_calcjob, link_type=LinkType.CREATE, link_label='output_parameters')
     params.store()
@@ -32,14 +27,13 @@ def projwfc_inputs(generate_calc_job_node, fixture_localhost, generate_structure
 
 
 def test_projwfc_default(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, projwfc_inputs,
-    data_regression
+    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
     """Test ``ProjwfcParser`` on the results of a simple ``projwfc.x`` calculation."""
     entry_point_calc_job = 'quantumespresso.projwfc'
     entry_point_parser = 'quantumespresso.projwfc'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'default', projwfc_inputs)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'default', generate_inputs)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 

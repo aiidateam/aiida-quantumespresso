@@ -1,27 +1,22 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=unused-argument
 """Tests for the `PhParser`."""
 from __future__ import absolute_import
-
-import pytest
 
 from aiida import orm
 
 
-@pytest.fixture
 def generate_inputs():
     """Return only those inputs that the parser will expect to be there."""
     return {}
 
 
-def test_ph_default(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser,
-                    generate_inputs, data_regression):
+def test_ph_default(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, data_regression):
     """Test a default `ph.x` calculation."""
     name = 'default'
     entry_point_calc_job = 'quantumespresso.ph'
     entry_point_parser = 'quantumespresso.ph'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -32,14 +27,13 @@ def test_ph_default(aiida_profile, fixture_localhost, generate_calc_job_node, ge
     data_regression.check(results['output_parameters'].get_dict())
 
 
-def test_ph_not_converged(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser,
-                          generate_inputs, data_regression):
+def test_ph_not_converged(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, data_regression):
     """Test a `ph.x` calculation where convergence is not reached."""
     name = 'failed_convergence_not_reached'
     entry_point_calc_job = 'quantumespresso.ph'
     entry_point_parser = 'quantumespresso.ph'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -50,14 +44,13 @@ def test_ph_not_converged(aiida_profile, fixture_localhost, generate_calc_job_no
     data_regression.check(results['output_parameters'].get_dict())
 
 
-def test_ph_out_of_walltime(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser,
-                            generate_inputs, data_regression):
+def test_ph_out_of_walltime(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, data_regression):
     """Test a `ph.x` calculation that runs out of walltime."""
     name = 'failed_out_of_walltime'
     entry_point_calc_job = 'quantumespresso.ph'
     entry_point_parser = 'quantumespresso.ph'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
