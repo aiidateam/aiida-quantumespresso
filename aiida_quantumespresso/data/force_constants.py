@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Sub class of `Data` to handle interatomic force constants produced by the Quantum ESPRESSO q2r.x code"""
+"""Sub class of `Data` to handle interatomic force constants produced by the Quantum ESPRESSO q2r.x code."""
 from __future__ import absolute_import
 
 import numpy
@@ -10,10 +10,10 @@ from aiida.orm import SinglefileData
 
 
 class ForceConstantsData(SinglefileData):
-    """Class to handle interatomic force constants from the Quantum ESPRESSO q2r.x code"""
+    """Class to handle interatomic force constants from the Quantum ESPRESSO q2r.x code."""
 
     def set_file(self, file):
-        """Add a file to the node, parse it and set the attributes found
+        """Add a file to the node, parse it and set the attributes found.
 
         :param file: absolute path to the file or a filelike object
         """

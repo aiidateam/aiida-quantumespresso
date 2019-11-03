@@ -11,22 +11,19 @@ from aiida_quantumespresso.utils.defaults.calculation import pw as pw_defaults
 
 
 def create_scheduler_resources(scheduler, base, goal):
-    """
-    This function will take a dictionary 'base', which contains scheduler resource
-    settings that can be set for the 'resources' key in the 'options' input of a
-    CalcJob, and update it with target scheduler resource value from the
-    dictionary 'goal', checking that the resource settings are allowed for the
-    specific scheduler implementation. The function should than return a dictionary
-    that can be used directly in the 'options' input of the CalcJob.
-    Any keys in either 'base' or 'goal' that are not recognized as valid resource keys
-    by the scheduler class, will be removed and will be kept otherwise. For settings that
-    appear both in 'base' and 'goal', the value in 'goal' will be used.
+    """Return a dictionary with scheduler resources.
+
+    This function will take a dictionary 'base', which contains scheduler resource settings that can be set for the
+    'resources' key in the 'options' input of a CalcJob, and update it with target scheduler resource value from the
+    dictionary 'goal', checking that the resource settings are allowed for the specific scheduler implementation. The
+    function should than return a dictionary that can be used directly in the 'options' input of the CalcJob. Any keys
+    in either 'base' or 'goal' that are not recognized as valid resource keys by the scheduler class, will be removed
+    and will be kept otherwise. For settings that appear both in 'base' and 'goal', the value in 'goal' will be used.
 
     :param scheduler: instance of the Scheduler class
     :param base: dictionary with base scheduler resource settings
     :param goal: dictionary with target scheduler resource settings
-    :returns: dictionary that can be used for the 'resources' key in the 'options'
-        dictionary of a CalcJob
+    :returns: dictionary that can be used for the 'resources' key in the 'options' dictionary of a CalcJob
     """
     base.update(goal)
 
@@ -44,9 +41,8 @@ def create_scheduler_resources(scheduler, base, goal):
 
 
 def cmdline_remove_npools(cmdline):
-    """
-    Remove all options related to npools in the list of command line options that is
-    passed as the 'cmdline' key in the 'settings' input of a PwCalculation.
+    """Remove all options related to npools in the `settings.cmdline` input.
+
     The cmdline setting is a list of strings that typically looks something like:
 
         cmdline = ['-nk', '4', '-ntg', '8']
@@ -64,9 +60,7 @@ def cmdline_remove_npools(cmdline):
 
 
 def get_default_options(max_num_machines=1, max_wallclock_seconds=1800, with_mpi=False):
-    """
-    Return an instance of the options dictionary with the minimally required parameters
-    for a CalcJob and set to default values unless overriden
+    """Return an instance of the options dictionary with the minimally required parameters for a `CalcJob`.
 
     :param max_num_machines: set the number of nodes, default=1
     :param max_wallclock_seconds: set the maximum number of wallclock seconds, default=1800
@@ -82,8 +76,7 @@ def get_default_options(max_num_machines=1, max_wallclock_seconds=1800, with_mpi
 
 
 def get_automatic_parallelization_options(max_num_machines=1, max_wallclock_seconds=1800):  # pylint: disable=invalid-name
-    """
-    Return an instance of the automatic parallelization options dictionary
+    """Return an instance of the automatic parallelization options dictionary.
 
     :param max_num_machines: set the number of nodes, default=1
     :param max_wallclock_seconds: set the maximum number of wallclock seconds, default=1800
@@ -104,9 +97,7 @@ def get_pw_parallelization_parameters(
     round_interval=1800,
     scaling_law=(exp(-16.1951988), 1.22535849)
 ):
-    """
-    Guess an optimal choice of parallelzation parameters for a PwCalculation based
-    on a completed initialization PwCalculation run
+    """Guess optimal choice of parallelzation parameters for a PwCalculation based on a completed initialization run.
 
     :param calculation: an initial pw calculation (only initialization is sufficient),
         to get number of k-points, of electrons, of spins, fft grids, etc.

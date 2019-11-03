@@ -13,14 +13,14 @@ DIRPATH_SCHEMAS = os.path.join(os.path.dirname(os.path.abspath(__file__)), DIRNA
 
 
 class QeXmlVersion(enum.Enum):
-    """An enum with the versions of XML output file known to exist for Quantum ESPRESSO"""
+    """An enum with the versions of XML output file known to exist for Quantum ESPRESSO."""
 
     PRE_6_2 = 0
     POST_6_2 = 1
 
 
 def get_xml_file_version(xml):
-    """Return the version of the Quantum ESPRESSO pw.x XML output file
+    """Return the version of the Quantum ESPRESSO pw.x XML output file.
 
     :param xml: the pre-parsed XML object
     :raises XMLUnsupportedFormatError: if the file cannot be read, parsed or if the version cannot be determined
@@ -34,7 +34,7 @@ def get_xml_file_version(xml):
 
 
 def get_schema_filepath(xml):
-    """Return the absolute filepath to the XML schema file that can be used to parse the given XML
+    """Return the absolute filepath to the XML schema file that can be used to parse the given XML.
 
     :param xml: the pre-parsed XML object
     :return: the XSD absolute filepath
@@ -47,7 +47,7 @@ def get_schema_filepath(xml):
 
 
 def get_default_schema_filepath():
-    """Return the absolute filepath to the default XML schema file
+    """Return the absolute filepath to the default XML schema file.
 
     :param xml: the pre-parsed XML object
     :return: the XSD absolute filepath
@@ -60,7 +60,7 @@ def get_default_schema_filepath():
 
 
 def get_schema_filename(xml):
-    """Return the filename of the schema file that corresponds to the given XML object
+    """Return the filename of the schema file that corresponds to the given XML object.
 
     :param xml: the pre-parsed XML object
     :return: the XSD filename
@@ -96,7 +96,7 @@ def get_available_xml_schemas():
 
 
 def is_valid_post_6_2_version(xml):
-    """Return whether the given XML object corresponds to an XML output file of Quantum ESPRESSO pw.x post v6.2
+    """Return whether the given XML object corresponds to an XML output file of Quantum ESPRESSO pw.x post v6.2.
 
     These versions of the output XML are parsable with an XSD schema file
 
@@ -107,7 +107,7 @@ def is_valid_post_6_2_version(xml):
 
 
 def is_valid_pre_6_2_version(xml):
-    """Returns whether the given XML object corresponds to an XML output file of Quantum ESPRESSO pw.x pre v6.2
+    """Returns whether the given XML object corresponds to an XML output file of Quantum ESPRESSO pw.x pre v6.2.
 
     :param xml: a parsed XML output file
     :return: boolean, True when the XML was produced by Quantum ESPRESSO with the old XML format

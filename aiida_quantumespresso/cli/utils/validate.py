@@ -9,10 +9,10 @@ from aiida.common import exceptions
 
 @decorators.with_dbenv()
 def validate_kpoints_mesh(ctx, param, value):
-    """
-    Command line option validator for a kpoints mesh tuple. The value should be a tuple
-    of three positive integers out of which a KpointsData object will be created with
-    a mesh equal to the tuple.
+    """Command line option validator for a kpoints mesh tuple.
+
+    The value should be a tuple of three positive integers out of which a KpointsData object will be created with a mesh
+    equal to the tuple.
 
     :param ctx: internal context of the click.command
     :param param: the click Parameter, i.e. either the Option or Argument to which the validator is hooked up
@@ -39,9 +39,9 @@ def validate_kpoints_mesh(ctx, param, value):
 
 @decorators.with_dbenv()
 def validate_hubbard_parameters(structure, parameters, hubbard_u=None, hubbard_v=None, hubbard_file_pk=None):
-    """
-    Validate Hubbard input parameters and update the parameters input node accordingly. If a valid hubbard_file_pk
-    is provided, the node will be loaded and returned
+    """Validate Hubbard input parameters and update the parameters input node accordingly.
+
+    If a valid hubbard_file_pk is provided, the node will be loaded and returned.
 
     :param structure: the StructureData node that will be used in the inputs
     :param parameters: the Dict node that will be used in the inputs
@@ -101,8 +101,7 @@ def validate_hubbard_parameters(structure, parameters, hubbard_u=None, hubbard_v
 
 
 def validate_starting_magnetization(structure, parameters, starting_magnetization=None):
-    """
-    Validate starting magnetization parameters and update the parameters input node accordingly.
+    """Validate starting magnetization parameters and update the parameters input node accordingly.
 
     :param structure: the StructureData node that will be used in the inputs
     :param parameters: the Dict node that will be used in the inputs
@@ -126,8 +125,7 @@ def validate_starting_magnetization(structure, parameters, starting_magnetizatio
 
 
 def validate_smearing(parameters, smearing=None):
-    """
-    Validate smearing parameters and update the parameters input node accordingly.
+    """Validate smearing parameters and update the parameters input node accordingly.
 
     :param parameters: the Dict node that will be used in the inputs
     :param smearing: a tuple of a string and float corresponding to type of smearing and the degauss value

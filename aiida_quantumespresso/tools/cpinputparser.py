@@ -15,5 +15,4 @@ class CpInputFile(StructureParseMixin, BaseCpInputFile):
         directly add this functionality to a sub class of :class:`~qe_tools.parsers.qeinputparser.QeInputFile` and then
         subsequently sub class that here, because the :class:`~qe_tools.parsers.qeinputparser.CpInputFile` is also
         required and sub classing both leads to problems with the MRO.
-
     """

@@ -17,10 +17,8 @@ from aiida_quantumespresso.parsers import parse_raw_out_basic
 
 
 def find_orbitals_from_statelines(out_info_dict):
-    """
-    This function reads in all the state_lines, that is, the lines describing
-    which atomic states, taken from the pseudopotential, are used for the
-    projection. Then it converts these state_lines into a set of orbitals.
+    """This function reads in all the state_lines, that is, the lines describing which atomic states, taken from the
+    pseudopotential, are used for the projection. Then it converts these state_lines into a set of orbitals.
 
     :param out_info_dict: contains various technical internals useful in parsing
     :return: orbitals, a list of orbitals suitable for setting ProjectionData
@@ -74,10 +72,8 @@ def find_orbitals_from_statelines(out_info_dict):
 
 
 def spin_dependent_subparser(out_info_dict):
-    """
-    This find the projection and bands arrays from the out_file and
-    out_info_dict. Used to handle the different possible spin-cases in
-    a convenient manner.
+    """This find the projection and bands arrays from the out_file and out_info_dict. Used to handle the different
+    possible spin-cases in a convenient manner.
 
     :param out_info_dict: contains various technical internals useful in parsing
     :return: ProjectionData, BandsData parsed from out_file
@@ -175,10 +171,9 @@ def spin_dependent_subparser(out_info_dict):
 
 
 def natural_sort_key(sort_key, _nsre=re.compile('([0-9]+)')):
-    """
-    Pass to ``key`` for ``str.sort`` to achieve natural sorting.
-    For example, ``["2", "11", "1"]`` will be
-    sorted to ``["1", "2", "11"]`` instead of ``["1", "11", "2"]``
+    """Pass to ``key`` for ``str.sort`` to achieve natural sorting. For example, ``["2", "11", "1"]`` will be sorted to
+    ``["1", "2", "11"]`` instead of ``["1", "11", "2"]``
+
     :param sort_key: Original key to be processed
     :return: A list of string and integers.
     """
@@ -192,8 +187,7 @@ def natural_sort_key(sort_key, _nsre=re.compile('([0-9]+)')):
 
 
 def spin_dependent_pdos_subparser(out_info_dict):
-    """
-    Finds and labels the pdos arrays associated with the out_info_dict
+    """Finds and labels the pdos arrays associated with the out_info_dict.
 
     :param out_info_dict: contains various technical internals useful in parsing
     :return: (pdos_name, pdos_array) tuples for all the specific pdos
@@ -226,18 +220,16 @@ def spin_dependent_pdos_subparser(out_info_dict):
 
 
 class ProjwfcParser(Parser):
-    """
-    This class is the implementation of the Parser class for projwfc.x in
-    Quantum Espresso. Parses projection arrays that map the projection onto
-    each point in the bands structure, as well as pdos arrays, which map
-    the projected density of states onto an energy axis.
+    """This class is the implementation of the Parser class for projwfc.x in Quantum Espresso.
+
+    Parses projection arrays that map the projection onto each point in the bands structure, as well as pdos arrays,
+    which map the projected density of states onto an energy axis.
     """
 
     def parse(self, **kwargs):
-        """
-        Parses the datafolder, stores results.
-        Retrieves projwfc output, and some basic information from the
-        out_file, such as warnings and wall_time
+        """Parses the datafolder, stores results.
+
+        Retrieves projwfc output, and some basic information from the out_file, such as warnings and wall_time
         """
         # Check that the retrieved folder is there
         try:
@@ -311,8 +303,7 @@ class ProjwfcParser(Parser):
         self.out('Dos', Dos_out)
 
     def _parse_bands_and_projections(self, out_info_dict):
-        """
-        Function that parses the standard output into bands and projection data.
+        """Function that parses the standard output into bands and projection data.
 
         :param out_info_dict: used to pass technical internal variables
                               to helper functions in compact form

@@ -47,6 +47,7 @@ class PhCalculation(CalcJob):
 
     @classmethod
     def define(cls, spec):
+        # yapf: disable
         super(PhCalculation, cls).define(spec)
         spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
@@ -346,8 +347,8 @@ class PhCalculation(CalcJob):
         return calcinfo
 
     def _get_pseudo_folder(self):
-        """
-        Get the calculation-specific pseudo folder (relative path).
+        """Get the calculation-specific pseudo folder (relative path).
+
         Default given by PwCalculation._PSEUDO_SUBFOLDER
         """
         return PwCalculation._PSEUDO_SUBFOLDER

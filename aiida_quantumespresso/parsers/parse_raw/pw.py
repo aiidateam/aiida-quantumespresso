@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-A collection of function that are used to parse the output of Quantum Espresso PW.
-The function that needs to be called from outside is parse_raw_output().
-The functions mostly work without aiida specific functionalities.
-The parsing will try to convert whatever it can in some dictionary, which
-by operative decision doesn't have much structure encoded, [the values are simple ]
+"""A collection of function that are used to parse the output of Quantum Espresso PW.
+
+The function that needs to be called from outside is parse_raw_output(). The functions mostly work without aiida
+specific functionalities. The parsing will try to convert whatever it can in some dictionary, which by operative
+decision doesn't have much structure encoded, [the values are simple ]
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -950,8 +949,7 @@ def convert_qe_time_to_sec(timestr):
 
 
 def parse_QE_errors(lines, line_number_start, warnings):
-    """
-    Parse QE errors messages (those appearing between some lines with ``%%%%%%%%``)
+    """Parse QE errors messages (those appearing between some lines with ``%%%%%%%%``)
 
     :param lines: list of strings, the output text file as read by ``readlines()``
         or as obtained by ``data.split('\\\\n')`` when data is the text file read by ``read()``

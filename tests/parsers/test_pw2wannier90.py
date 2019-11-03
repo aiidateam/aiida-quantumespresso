@@ -9,9 +9,7 @@ from aiida.common import AttributeDict
 
 
 def generate_inputs():
-    """
-    Minimal input for pw2wannier90 calculations.
-    """
+    """Minimal input for pw2wannier90 calculations."""
     basepath = os.path.dirname(os.path.abspath(__file__))
     nnkp_filepath = os.path.join(basepath, 'fixtures', 'pw2wannier90', 'inputs', 'aiida.nnkp')
 
@@ -42,10 +40,10 @@ def generate_inputs():
 def test_pw2wannier90_default(
     aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, data_regression
 ):
-    """
-    Test a minimal `pw2wannier.x` calculation.
-    The parser only checks for errors in aiida.out, so the reference contents of output_parameters
-    will also be very minimal.
+    """Test a minimal `pw2wannier.x` calculation.
+
+    The parser only checks for errors in aiida.out, so the reference contents of output_parameters will also be very
+    minimal.
     """
     entry_point_calc_job = 'quantumespresso.pw2wannier90'
     entry_point_parser = 'quantumespresso.pw2wannier90'

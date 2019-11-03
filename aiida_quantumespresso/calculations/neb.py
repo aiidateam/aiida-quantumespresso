@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Plugin to create a Quantum Espresso neb.x input file.
-"""
+"""Plugin to create a Quantum Espresso neb.x input file."""
 from __future__ import absolute_import
 import os
 import copy
@@ -21,10 +19,8 @@ from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
 
 class NebCalculation(CalcJob):
-    """
-    Nudged Elastic Band code (neb.x) of Quantum ESPRESSO distribution
-    For more information, refer to http://www.quantum-espresso.org/
-    """
+    """Nudged Elastic Band code (neb.x) of Quantum ESPRESSO distribution For more information, refer to
+    http://www.quantum-espresso.org/"""
     _PREFIX = 'aiida'
 
     # in restarts, will not copy but use symlinks
@@ -60,6 +56,7 @@ class NebCalculation(CalcJob):
 
     @classmethod
     def define(cls, spec):
+        # yapf: disable
         super(NebCalculation, cls).define(spec)
         spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
@@ -110,9 +107,7 @@ class NebCalculation(CalcJob):
 
     @classmethod
     def _generate_NEBinputdata(cls, neb_parameters, settings_dict):
-        """
-        This methods generate the input data for the NEB part of the calculation
-        """
+        """This methods generate the input data for the NEB part of the calculation."""
         # I put the first-level keys as uppercase (i.e., namelist and card names)
         # and the second-level keys as lowercase
         # (deeper levels are unchanged)

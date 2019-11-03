@@ -1,16 +1,12 @@
 # -*- coding: utf-8 -*-
-"""
-A basic parser for the common format of QE
-"""
+"""A basic parser for the common format of QE."""
 from __future__ import absolute_import
 from aiida_quantumespresso.parsers import parse_QE_errors, convert_qe_time_to_sec
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
 
 
 def parse_qe_simple(filecontent, codename=None):
-    """
-    Parses the output file of a QE calculation, just checking for basic content
-    like JOB DONE, errors with %%%% etc.
+    """Parses the output file of a QE calculation, just checking for basic content like JOB DONE, errors with %%%% etc.
 
     :param filecontent: a string with the output file content
     :param codename: the string printed both in the header and near the walltime.

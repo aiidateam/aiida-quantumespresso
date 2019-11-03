@@ -62,8 +62,8 @@ def parse_cp_traj_stanzas(num_elements, splitlines, prepend_name, rescale=1.):
         raise e
 
 def parse_cp_text_output(data,xml_data):
-    """
-    data must be a list of strings, one for each lines, as returned by readlines().
+    """data must be a list of strings, one for each lines, as returned by readlines().
+
     On output, a dictionary with parsed values
     """
     # TODO: uniform readlines() and read() usage for passing input to the parser
@@ -136,12 +136,8 @@ def parse_cp_text_output(data,xml_data):
 
 
 def parse_cp_xml_counter_output(data):
-    """
-    Parse xml file print_counter.xml
-    data must be a single string, as returned by file.read() (notice the
-    difference with parse_text_output!)
-    On output, a dictionary with parsed values.
-    """
+    """Parse xml file print_counter.xml data must be a single string, as returned by file.read() (notice the difference
+    with parse_text_output!) On output, a dictionary with parsed values."""
     dom = parseString(data)
     parsed_data={}
     cardname='LAST_SUCCESSFUL_PRINTOUT'
@@ -199,11 +195,9 @@ def parse_cp_raw_output(out_file, xml_file=None, xml_counter_file=None):
 # TODO: the xml has a lot in common with pw, maybe I should avoid duplication of code
 # or maybe should I wait for the new version of data-file.xml ?
 def parse_cp_xml_output(data):
-    """
-    Parse xml data
-    data must be a single string, as returned by file.read() (notice the
-    difference with parse_text_output!)
-    On output, a dictionary with parsed values.
+    """Parse xml data data must be a single string, as returned by file.read() (notice the difference with
+    parse_text_output!) On output, a dictionary with parsed values.
+
     Democratically, we have decided to use picoseconds as units of time, eV for energies, Angstrom for lengths.
     """
     import copy

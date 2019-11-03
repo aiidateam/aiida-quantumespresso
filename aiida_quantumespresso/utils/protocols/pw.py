@@ -8,20 +8,19 @@ import six
 
 
 def _load_pseudo_metadata(filename):
-    """
-    Load from the current folder a json file containing metadata (incl. suggested cutoffs)
-    for a library of pseudopotentials.
+    """Load from the current folder a json file containing metadata (incl.
+
+    suggested cutoffs) for a library of pseudopotentials.
     """
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)) as handle:
         return json.load(handle)
 
 
 def _get_all_protocol_modifiers():
-    """
-    Return the information on all possibile modifiers for all known protocols.
+    """Return the information on all possibile modifiers for all known protocols.
+
     It is a function so we can lazily load the jsons.
     """
-
     protocols = {
         'theos-ht-1.0': {
             'pseudo': {
@@ -72,13 +71,12 @@ def _get_all_protocol_modifiers():
 
 
 class ProtocolManager(object):
-    """
-    A class to manage calculation protocols (default parameters, )
-    """
+    """A class to manage calculation protocols."""
 
     def __init__(self, name):
-        """
-        Initialize a protocol instance. Pass a string specifying the protocol.
+        """Initialize a protocol instance.
+
+        Pass a string specifying the protocol.
         """
         self.name = name
         try:
@@ -87,8 +85,7 @@ class ProtocolManager(object):
             raise ValueError("Unknown protocol '{}'".format(name))
 
     def get_protocol_data(self, modifiers=None):
-        """
-        Return the full info on the specific protocol, using the (optional) modifiers
+        """Return the full info on the specific protocol, using the (optional) modifiers.
 
         :param modifiers: should be a dictionary with (optional) keys 'parameters' and 'pseudo', and
           whose value is the modifier name for that category.
@@ -138,42 +135,31 @@ class ProtocolManager(object):
         return retdata
 
     def get_parameters_modifier_names(self):
-        """Get all valid parameters modifier names"""
+        """Get all valid parameters modifier names."""
         return list(self.modifiers['parameters'].keys())
 
     def get_default_parameters_modifier_name(self):  # pylint: disable=invalid-name
-        """
-        Return the default parameter modifier name
-        (or None if no default is specified).
-        """
+        """Return the default parameter modifier name (or None if no default is specified)."""
         return self.modifiers.get('parameters_default', None)
 
     def get_parameters_data(self, modifier_name):
-        """
-        Given a parameter modifier name, return a dictionary of data associated to it.
-        """
+        """Given a parameter modifier name, return a dictionary of data associated to it."""
         return self.modifiers['parameters'][modifier_name]
 
     def get_pseudo_modifier_names(self):
-        """Get all valid pseudopotential modifier names"""
+        """Get all valid pseudopotential modifier names."""
         return list(self.modifiers['pseudo'].keys())
 
     def get_default_pseudo_modifier_name(self):  # pylint: disable=invalid-name
-        """
-        Return the default pseudopotential modifier name
-        (or None if no default is specified).
-        """
+        """Return the default pseudopotential modifier name (or None if no default is specified)."""
         return self.modifiers.get('pseudo_default', None)
 
     def get_pseudo_data(self, modifier_name):
-        """
-        Given a pseudo modifier name, return the ``pseudo_data`` associated to it.
-        """
+        """Given a pseudo modifier name, return the ``pseudo_data`` associated to it."""
         return self.modifiers['pseudo'][modifier_name]
 
     def check_pseudos(self, modifier_name=None, pseudo_data=None):
-        """
-        Given a pseudo modifier name, checks which pseudos exist in the DB.
+        """Given a pseudo modifier name, checks which pseudos exist in the DB.
 
         :param modifier_name: the name of the modifier. Leave to None to use the default one.
         :param pseudo_data: should be passed only if modifier_name == 'custom'

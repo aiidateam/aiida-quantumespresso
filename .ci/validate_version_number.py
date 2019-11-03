@@ -15,7 +15,7 @@ FILEPATH_SETUP_JSON = os.path.join(FILEPATH_ROOT, FILENAME_SETUP_JSON)
 
 
 def get_setup_json():
-    """Return the `setup.json` as a python dictionary """
+    """Return the `setup.json` as a python dictionary."""
     with open(FILEPATH_SETUP_JSON, 'r') as handle:
         setup_json = json.load(handle)
 
@@ -24,7 +24,7 @@ def get_setup_json():
 
 @click.group()
 def cli():
-    """Main CLI group."""
+    """Define the main CLI group."""
 
 
 @cli.command('version')

@@ -5,8 +5,7 @@ import numpy
 
 
 def are_matrices_equal(matrix_a, matrix_b, swap_sign_matrix_b=False, tolerance=1E-5):
-    """
-    Return whether matrix_a and matrix_b can be considered equal
+    """Return whether matrix_a and matrix_b can be considered equal.
 
     The matrices will be cast to a numpy array and the difference will then be defined as the
     sum of all elements of the absolute difference between the two. If that sum is less than

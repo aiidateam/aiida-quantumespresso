@@ -72,8 +72,8 @@ class MatdynParser(Parser):
 
 
 def parse_raw_matdyn_phonon_file(phonon_frequencies):
-    """
-    Parses the phonon frequencies file
+    """Parses the phonon frequencies file.
+
     :param phonon_frequencies: phonon frequencies file from the matdyn calculation
 
     :return dict parsed_data: keys:

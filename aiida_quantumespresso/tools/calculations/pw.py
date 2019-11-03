@@ -8,8 +8,8 @@ from aiida.tools.calculations import CalculationTools
 class PwCalculationTools(CalculationTools):
     """Calculation tools for `PwCalculation`.
 
-    Methods implemented here are available on any `CalcJobNode` produced by the `PwCalculation class through the
-    `tools` attribute.
+    Methods implemented here are available on any `CalcJobNode` produced by the `PwCalculation class through the `tools`
+    attribute.
     """
 
     # pylint: disable=too-few-public-methods

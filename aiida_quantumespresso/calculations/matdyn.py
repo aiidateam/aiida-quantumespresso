@@ -29,6 +29,7 @@ class MatdynCalculation(NamelistsCalculation):
 
     @classmethod
     def define(cls, spec):
+        # yapf: disable
         super(MatdynCalculation, cls).define(spec)
         spec.input('force_constants', valid_type=ForceConstantsData, required=True)
         spec.input('kpoints', valid_type=orm.KpointsData, help='Kpoints on which to calculate the phonon frequencies.')

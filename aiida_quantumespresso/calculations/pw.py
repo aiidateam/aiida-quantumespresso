@@ -58,7 +58,7 @@ class PwCalculation(BasePwCpInputGenerator):
 
     @classmethod
     def define(cls, spec):
-        # yapf:disable
+        # yapf: disable
         super(PwCalculation, cls).define(spec)
         spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.pw')
         spec.input('kpoints', valid_type=orm.KpointsData,
@@ -136,10 +136,10 @@ class PwCalculation(BasePwCpInputGenerator):
 
     @classproperty
     def input_file_name_hubbard_file(cls):
-        """
-        The relative file name of the file containing the Hubbard parameters if they should
-        be read from file instead of specified in the input file cards. Requires the
-        aiida-quantumespresso-hp plugin to be installed
+        """The relative file name of the file containing the Hubbard parameters if they should be read from file instead
+        of specified in the input file cards.
+
+        Requires the aiida-quantumespresso-hp plugin to be installed
         """
         try:
             HpCalculation = factories.CalculationFactory('quantumespresso.hp')
@@ -150,12 +150,9 @@ class PwCalculation(BasePwCpInputGenerator):
 
     @classmethod
     def input_helper(cls, *args, **kwargs):
-        """
-        Validate if the keywords are valid Quantum ESPRESSO pw.x keywords, and
-        also helps in preparing the input parameter dictionary in a
-        'standardized' form (e.g., converts ints to floats when required,
-        or if the flag flat_mode is specified, puts the keywords in the right
-        namelists).
+        """Validate if the keywords are valid Quantum ESPRESSO pw.x keywords, and also helps in preparing the input
+        parameter dictionary in a 'standardized' form (e.g., converts ints to floats when required, or if the flag
+        flat_mode is specified, puts the keywords in the right namelists).
 
         This function calls :py:func:`aiida_quantumespresso.calculations.helpers.pw_input_helper`,
         see its docstring for further information.

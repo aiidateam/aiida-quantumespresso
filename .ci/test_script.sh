@@ -11,9 +11,6 @@ case "$TEST_TYPE" in
         ;;
     tests)
         pytest -v ${TRAVIS_BUILD_DIR}/tests
-
-        # Run the daemon tests using docker
-        # verdi -p $TEST_AIIDA_BACKEND run ${TRAVIS_BUILD_DIR}/.ci/test_pw_with_daemon.py
         ;;
     pre-commit)
         pre-commit run --all-files || ( git status --short ; git diff ; exit 1 )

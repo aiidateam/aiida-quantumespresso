@@ -20,6 +20,7 @@ class PpCalculation(NamelistsCalculation):
 
     @classmethod
     def define(cls, spec):
+        # yapf: disable
         super(PpCalculation, cls).define(spec)
         spec.input('parent_folder', valid_type=(RemoteData, FolderData),
             help='Output folder of a completed `PwCalculation`')

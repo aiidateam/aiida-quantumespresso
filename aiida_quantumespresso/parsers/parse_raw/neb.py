@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-A collection of function that are used to parse the output of Quantum Espresso Neb.
-The function that needs to be called from outside is parse_raw_output_neb().
-The functions mostly work without aiida specific functionalities.
-The parsing will try to convert whatever it can in some dictionary, which
-by operative decision doesn't have much structure encoded, [the values are simple ]
+"""A collection of function that are used to parse the output of Quantum Espresso Neb.
+
+The function that needs to be called from outside is parse_raw_output_neb(). The functions mostly work without aiida
+specific functionalities. The parsing will try to convert whatever it can in some dictionary, which by operative
+decision doesn't have much structure encoded, [the values are simple ]
 """
 from __future__ import absolute_import
 import xml.dom.minidom
@@ -18,9 +17,7 @@ from six.moves import range
 
 
 def parse_raw_output_neb(out_file, input_dict, parser_opts=None):
-    """
-    Parses the output of a neb calculation
-    Receives in input the paths to the output file.
+    """Parses the output of a neb calculation Receives in input the paths to the output file.
 
     :param out_file: path to neb std output
     :param input_dict: dictionary with the neb input parameters
@@ -96,8 +93,7 @@ def parse_raw_output_neb(out_file, input_dict, parser_opts=None):
 
 
 def parse_neb_text_output(data, input_dict={}):
-    """
-    Parses the text output of QE Neb.
+    """Parses the text output of QE Neb.
 
     :param data: a string, the file as read by read()
     :param input_dict: dictionary with the input parameters

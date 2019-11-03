@@ -25,7 +25,6 @@ class PwInputFile(StructureParseMixin, BasePwInputFile):
         directly add this functionality to a sub class of :class:`~qe_tools.parsers.qeinputparser.QeInputFile` and then
         subsequently sub class that here, because the :class:`~qe_tools.parsers.qeinputparser.CpInputFile` is also
         required and sub classing both leads to problems with the MRO.
-
     """
 
     def get_kpointsdata(self):
@@ -65,7 +64,7 @@ class PwInputFile(StructureParseMixin, BasePwInputFile):
 
 
 def create_builder_from_file(input_folder, input_file_name, code, metadata, pseudo_folder_path=None, use_first=False):
-    """Create a populated process builder for a `PwCalculation` from a standard QE input file and pseudo (upf) files
+    """Create a populated process builder for a `PwCalculation` from a standard QE input file and pseudo (upf) files.
 
     :param input_folder: the folder containing the input file
     :type input_folder: aiida.common.folders.Folder or str

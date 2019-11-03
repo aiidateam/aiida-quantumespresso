@@ -55,8 +55,8 @@ def test_pw_default(
 ):
     """Test a `pw.x` calculation in `scf` mode.
 
-    The output is created by running a dead simple SCF calculation for a silicon structure.
-    This test should test the standard parsing of the stdout content and XML file stored in the standard results node.
+    The output is created by running a dead simple SCF calculation for a silicon structure. This test should test the
+    standard parsing of the stdout content and XML file stored in the standard results node.
     """
     name = 'default'
     entry_point_calc_job = 'quantumespresso.pw'
@@ -85,8 +85,8 @@ def test_pw_default_xml_new(
 ):
     """Test a `pw.x` calculation in `scf` mode that produced the XML output in the new schema-based format.
 
-    The output is created by running a dead simple SCF calculation for a silicon structure.
-    This test should test the standard parsing of the stdout content and XML file stored in the standard results node.
+    The output is created by running a dead simple SCF calculation for a silicon structure. This test should test the
+    standard parsing of the stdout content and XML file stored in the standard results node.
     """
     name = 'default_xml_new'
     entry_point_calc_job = 'quantumespresso.pw'
@@ -400,6 +400,7 @@ def test_pw_vcrelax_fractional_success(
     aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_relax, data_regression
 ):
     """Test a `vc-relax`, that successfully converges and the final scf also converges.
+
     In this case the input atomic positions were defined using 'crystal' (i.e. fractional) units.
     """
     name = 'vcrelax_fractional_success'
