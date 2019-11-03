@@ -37,6 +37,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
         super(PwBaseWorkChain, cls).define(spec)
         spec.expose_inputs(PwCalculation, namespace='pw', exclude=('kpoints',))
@@ -127,8 +128,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
     def validate_kpoints(self):
         """Validate the inputs related to k-points.
 
-        Either an explicit `KpointsData` with given mesh/path, or a desired k-points distance should be specified.
-        In the case of the latter, the `KpointsData` will be constructed for the input `StructureData` using the
+        Either an explicit `KpointsData` with given mesh/path, or a desired k-points distance should be specified. In
+        the case of the latter, the `KpointsData` will be constructed for the input `StructureData` using the
         `create_kpoints_from_distance` calculation function.
         """
         if all([key not in self.inputs for key in ['kpoints', 'kpoints_distance']]):
@@ -308,7 +309,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             self.ctx.inputs.pop('parent_folder', None)
 
     def _handle_calculation_sanity_checks(self, calculation):
-        """The current `calculation` has finished successfully according to the parser, but double-check.
+        """Perform sanity checks on the current `calculation` which has finished successfully according to the parser.
 
         Verify that the occupation of the last band is below a certain threshold, unless `occupations` was explicitly
         set to `fixed` in the input parameters. If this is violated, the calculation used too few bands and cannot be
@@ -343,7 +344,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
 @register_error_handler(PwBaseWorkChain, 600)
 def _handle_unrecoverable_failure(self, calculation):
-    """Calculations with an exit status below 400 are unrecoverable, so abort the work chain."""
+    """Handle calculations with an exit status below 400 which are unrecoverable, so abort the work chain."""
     if calculation.exit_status < 400:
         self.report_error_handled(calculation, 'unrecoverable error, aborting...')
         return ErrorHandlerReport(True, True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
@@ -351,7 +352,7 @@ def _handle_unrecoverable_failure(self, calculation):
 
 @register_error_handler(PwBaseWorkChain, 580)
 def _handle_out_of_walltime(self, calculation):
-    """In the case of `ERROR_OUT_OF_WALLTIME` calculation shut down neatly and we can simply restart."""
+    """Handle `ERROR_OUT_OF_WALLTIME` exit code: calculation shut down neatly and we can simply restart."""
     if calculation.exit_status == PwCalculation.spec().exit_codes.ERROR_OUT_OF_WALLTIME.status:
         try:
             self.ctx.inputs.structure = calculation.outputs.output_structure
@@ -367,7 +368,10 @@ def _handle_out_of_walltime(self, calculation):
 
 @register_error_handler(PwBaseWorkChain, 570)
 def _handle_vcrelax_converged_except_final_scf(self, calculation):
-    """Convergence reached in `vc-relax` except thresholds exceeded in final scf: consider as converged."""
+    """Handle `ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF` exit code.
+
+    Convergence reached in `vc-relax` except thresholds exceeded in final scf: consider as converged.
+    """
     exit_code_labels = [
         'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
     ]
@@ -383,7 +387,7 @@ def _handle_vcrelax_converged_except_final_scf(self, calculation):
 
 @register_error_handler(PwBaseWorkChain, 560)
 def _handle_relax_recoverable_ionic_convergence_error(self, calculation):
-    """Various exit codes for recoverable `vc-relax` or `relax` calculations with failed ionic convergence.
+    """Handle various exit codes for recoverable `vc-relax` or `relax` calculations with failed ionic convergence.
 
     These exit codes signify that the ionic convergence thresholds were not met, but the output structure is usable, so
     the solution is to simply restart from scratch but from the output structure.
@@ -405,7 +409,7 @@ def _handle_relax_recoverable_ionic_convergence_error(self, calculation):
 
 @register_error_handler(PwBaseWorkChain, 550)
 def _handle_relax_recoverable_electronic_convergence_error(self, calculation):
-    """Various exit codes for recoverable `vc-relax` or `relax` calculations with failed electronic convergence.
+    """Handle various exit codes for recoverable `vc-relax` or `relax` calculations with failed electronic convergence.
 
     These exit codes signify that the electronic convergence thresholds were not met, but the output structure is
     usable, so the solution is to simply restart from scratch but from the output structure.
@@ -432,7 +436,7 @@ def _handle_relax_recoverable_electronic_convergence_error(self, calculation):
 
 @register_error_handler(PwBaseWorkChain, 410)
 def _handle_electronic_convergence_not_achieved(self, calculation):
-    """In the case of `ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED` decrease the mixing beta and restart from scratch."""
+    """Handle `ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED`: decrease the mixing beta and restart from scratch."""
     if calculation.exit_status == PwCalculation.spec().exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED.status:
         factor = self.defaults.delta_factor_mixing_beta
         mixing_beta = self.ctx.inputs.parameters.get('ELECTRONS', {}).get('mixing_beta', self.defaults.qe.mixing_beta)
@@ -449,7 +453,7 @@ def _handle_electronic_convergence_not_achieved(self, calculation):
 
 @register_error_handler(PwBaseWorkChain)
 def _handle_insufficient_bands(self, calculation):
-    """Calculation successfully converged but included to few bands, so increase them and restart from scratch."""
+    """Handle successfully converged calculation with too few bands, so increase them and restart from scratch."""
     nbnd_cur = calculation.outputs.output_parameters.get_dict()['number_of_bands']
     nbnd_new = nbnd_cur + max(int(nbnd_cur * self.defaults.delta_factor_nbnd), self.defaults.delta_minimum_nbnd)
 

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Plugin to create a Quantum Espresso pw.x file.
+"""Plugin to create a Quantum Espresso pw.x file.
 
 TODO: COPY OUTDIR FROM PREVIOUS CALCULATION! Should be an input node of type
      RemoteData (or maybe subclass it?).
@@ -130,8 +129,7 @@ class CpCalculation(BasePwCpInputGenerator, CalcJob):
 
     @classmethod
     def define(cls, spec):
-        super(CpCalculation, cls).define(spec)
-        # yapf:disable
+        super(CpCalculation, cls).define(spec)  # noqa: D102 # yapf: disable
         spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.cp')
         spec.output('output_trajectory', valid_type=orm.TrajectoryData)
         spec.output('output_parameters', valid_type=orm.Dict)

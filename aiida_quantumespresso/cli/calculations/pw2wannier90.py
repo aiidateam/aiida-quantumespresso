@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
-Command line scripts to launch a `Pw2wannier90Calculation` for testing and demonstration purposes.
+"""Command line scripts to launch a `Pw2wannier90Calculation` for testing and demonstration purposes.
 
-This launcher assumes that the SEED and the PREFIX used in the previous PW calculation (parent_folder)
-are the same as those hardcoded in the Pw2wannier90Calculation class.
-We also hardcode some parameters and options.
+This launcher assumes that the SEED and the PREFIX used in the previous PW calculation (parent_folder) are the same as
+those hardcoded in the Pw2wannier90Calculation class. We also hardcode some parameters and options.
 """
 from __future__ import absolute_import
 

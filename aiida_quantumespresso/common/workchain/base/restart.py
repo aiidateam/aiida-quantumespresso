@@ -13,7 +13,7 @@ from aiida_quantumespresso.common.workchain.utils import ErrorHandlerReport
 
 
 class BaseRestartWorkChain(WorkChain):
-    """Base restart work chain
+    """Base restart work chain.
 
     This work chain serves as the starting point for more complex work chains that will be designed to run a calculation
     that might need multiple restarts to come to a successful end. These restarts may be necessary because a single
@@ -51,11 +51,13 @@ class BaseRestartWorkChain(WorkChain):
 
     The `_calculation_class` attribute should be set to the `CalcJob` class that should be run in the loop.
     """
+
     _verbose = False
     _calculation_class = None
     _error_handler_entry_point = None
 
     def __init__(self, *args, **kwargs):
+        """Construct the instance."""
         super(BaseRestartWorkChain, self).__init__(*args, **kwargs)
 
         if self._calculation_class is None or not issubclass(self._calculation_class, CalcJob):
@@ -65,11 +67,16 @@ class BaseRestartWorkChain(WorkChain):
 
     @override
     def load_instance_state(self, saved_state, load_context):
+        """Load the process instance from a saved state.
+
+        :param saved_state: saved state of existing process instance
+        :param load_context: context for loading instance state
+        """
         super(BaseRestartWorkChain, self).load_instance_state(saved_state, load_context)
         self._load_error_handlers()
 
     def _load_error_handlers(self):
-        # If an error handler entry point is defined, load them. If the plugin cannot be loaded log it and pass
+        """Load the error handlers defined through entry points, if any."""
         if self._error_handler_entry_point is not None:
             for entry_point_name in get_entry_point_names(self._error_handler_entry_point):
                 try:
@@ -86,6 +93,7 @@ class BaseRestartWorkChain(WorkChain):
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
         super(BaseRestartWorkChain, cls).define(spec)
         spec.input('max_iterations', valid_type=orm.Int, default=orm.Int(5),

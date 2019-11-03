@@ -19,6 +19,7 @@ class Q2rBaseWorkChain(BaseRestartWorkChain):
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
         super(Q2rBaseWorkChain, cls).define(spec)
         spec.expose_inputs(Q2rCalculation, namespace='q2r')
@@ -58,7 +59,7 @@ class Q2rBaseWorkChain(BaseRestartWorkChain):
 
 @register_error_handler(Q2rBaseWorkChain, 600)
 def _handle_unrecoverable_failure(self, calculation):
-    """Calculations with an exit status below 400 are unrecoverable, so abort the work chain."""
+    """Handle calculations with an exit status below 400 which are unrecoverable, so abort the work chain."""
     if calculation.exit_status < 400:
         self.report_error_handled(calculation, 'unrecoverable error, aborting...')
         return ErrorHandlerReport(True, True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)

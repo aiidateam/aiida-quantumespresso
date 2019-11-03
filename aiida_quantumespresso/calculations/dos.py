@@ -20,6 +20,7 @@ class DosCalculation(NamelistsCalculation):
 
     @classmethod
     def define(cls, spec):
+        # yapf: disable
         super(DosCalculation, cls).define(spec)
         spec.input('parent_folder', valid_type=(orm.RemoteData, orm.FolderData), required=True)
         spec.output('output_parameters', valid_type=orm.Dict)

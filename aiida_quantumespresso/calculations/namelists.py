@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
-"""
-Plugin to create a Quantum Espresso input file for a generic post-processing
-(or similar) code that only requires a few namelists (plus possibly some text
-afterwards).
-"""
+"""Plugin to create a Quantum Espresso input file for a generic post-processing (or similar) code that only requires a
+few namelists (plus possibly some text afterwards)."""
 from __future__ import absolute_import
 
 import os
@@ -48,6 +45,7 @@ class NamelistsCalculation(CalcJob):
 
     @classmethod
     def define(cls, spec):
+        # yapf: disable
         super(NamelistsCalculation, cls).define(spec)
         spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)

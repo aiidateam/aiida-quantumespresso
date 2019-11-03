@@ -8,9 +8,10 @@ from aiida.orm.nodes.data.upf import UpfData, get_pseudos_from_structure
 
 
 def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=None):  # pylint: disable=invalid-name
-    """
-    Use the explicitly passed pseudos dictionary or use the pseudo_family in combination with
-    the structure to obtain that dictionary.
+    """Validate the given pseudos mapping or pseudo potential family with respect to the given structure.
+
+    Use the explicitly passed pseudos dictionary or use the pseudo_family in combination with the structure to obtain
+    that dictionary.
 
     The pseudos dictionary should now be a dictionary of UPF nodes with the kind as linkname
     As such, if there are multiple kinds with the same element, there will be duplicate UPF nodes
@@ -49,8 +50,7 @@ def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=N
 
 
 def get_pseudos_of_calc(calc):
-    """
-    Return a dictionary of pseudos used by a given (pw.x, cp.x) calculation.
+    """Return a dictionary of pseudos used by a given (pw.x, cp.x) calculation.
 
     This returns a dictionary ``pseudos`` that can be set in a builder as ``builder.pseudo = pseudos``.
 
@@ -73,24 +73,22 @@ def get_pseudos_of_calc(calc):
 
 
 def get_pseudos_from_dict(structure, pseudos_uuids):
-    """
-    Given a dictionary in the format::
+    """Return mapping of structure kind names onto `UpfData` instances defined per element by `pseudos_uuids`.
+
+    The format of `pseudos_uuids` should have the following format:
 
         {
             'Al': '045a7a8d-feb1-4aeb-9d32-4e04b13bfc32',
             'C': '08ad7d53-b7cc-45d5-acb8-13530790b751',
         }
 
-    (i.e., associating a chemical element name to a UUID of a UpfData node
-    in the database), and a AiiDA structure, return a dictionary
-    associating each kind name with its UpfData object.
+    i.e. it shoud associate a chemical element name to a UUID of a UpfData node in the database, and a structure, return
+    a dictionary associating each kind name with its UpfData object.
 
     :param structure: a StructureData
     :param pseudos_uuids: a dictionary of UUIDs of UpfData for each chemical element, as specified above
-    :raise MultipleObjectsError: if more than one UPF for the same element is
-       found in the group.
-    :raise NotExistent: if no UPF for an element in the group is
-       found in the group.
+    :raise MultipleObjectsError: if more than one UPF for the same element is found in the group.
+    :raise NotExistent: if no UPF for an element in the group is found in the group.
     """
     from aiida.common import NotExistent
     from aiida.orm import load_node

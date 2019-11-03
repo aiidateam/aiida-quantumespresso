@@ -4,11 +4,10 @@ from aiida.orm import RemoteData, FolderData, Dict, XyData
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 
 class ProjwfcCalculation(NamelistsCalculation):
-    """
-    Projwfc.x code of the Quantum ESPRESSO distribution, handles the the
-    computation of projections of bloch wavefunctions onto atomic orbitals
-    <Psi(n,k) | Y(theta,phi)R(r) >.
-    For more information, refer to http://www.quantum-espresso.org/
+    """Projwfc.x code of the Quantum ESPRESSO distribution, handles the the computation of projections of bloch
+    wavefunctions onto atomic orbitals.
+
+    <Psi(n,k) | Y(theta,phi)R(r) >. For more information, refer to http://www.quantum-espresso.org/
     """
     #_PROJWFC_FILENAME = 'aiida.pdos'
     _default_namelists = ['PROJWFC']
@@ -27,6 +26,7 @@ class ProjwfcCalculation(NamelistsCalculation):
 
     @classmethod
     def define(cls, spec):
+        # yapf: disable
         from aiida.orm import ProjectionData, BandsData
         super(ProjwfcCalculation, cls).define(spec)
         spec.input('parent_folder', valid_type=(RemoteData, FolderData), help='The output folder of a pw.x calculation')

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Plugin to immigrate a Quantum Espresso pw.x job that was not run using AiiDa.
-"""
+"""Plugin to immigrate a Quantum Espresso pw.x job that was not run using AiiDa."""
 # TODO: Document the current limitations (e.g. ibrav == 0)
 from __future__ import absolute_import
 import os
@@ -19,8 +17,7 @@ from six.moves import zip
 
 
 class PwimmigrantCalculation(PwCalculation):
-    """
-    Create a PwCalculation object that can be used to import old jobs.
+    """Create a PwCalculation object that can be used to import old jobs.
 
     This is a sublass of aiida_quantumespresso.calculations.PwCalculation
     with slight modifications to some of the class variables and additional
@@ -55,8 +52,7 @@ class PwimmigrantCalculation(PwCalculation):
 
     def create_input_nodes(self, open_transport, input_file_name=None,
                            output_file_name=None, remote_workdir=None):
-        """
-        Create calculation input nodes based on the job's files.
+        """Create calculation input nodes based on the job's files.
 
         :param open_transport: An open instance of the transport class of the
             calculation's computer. See the tutorial for more information.
@@ -314,8 +310,7 @@ class PwimmigrantCalculation(PwCalculation):
         self.set_attribute('input_nodes_created', True)
 
     def _prepare_for_retrieval(self, open_transport):
-        """
-        Prepare the calculation for retrieval by daemon.
+        """Prepare the calculation for retrieval by daemon.
 
         :param open_transport: An open instance of the transport class of the
             calculation's computer.
@@ -328,7 +323,6 @@ class PwimmigrantCalculation(PwCalculation):
             * store the calculation and all it's input nodes
             * copy the input file to the calculation's raw_input_folder in the
             * store the remote_workdir as a RemoteData output node
-
         """
 
         # Manually set the files that will be copied to the repository and that
@@ -355,8 +349,7 @@ class PwimmigrantCalculation(PwCalculation):
         remotedata.store()
 
     def prepare_for_retrieval_and_parsing(self, open_transport):
-        """
-        Tell the daemon that the calculation is computed and ready to be parsed.
+        """Tell the daemon that the calculation is computed and ready to be parsed.
 
         :param open_transport: An open instance of the transport class of the
             calculation's computer. See the tutorial for more information.
@@ -411,8 +404,7 @@ class PwimmigrantCalculation(PwCalculation):
         self._prepare_for_retrieval(open_transport)
 
     def set_remote_workdir(self, remote_workdir):
-        """
-        Set the job's remote working directory.
+        """Set the job's remote working directory.
 
         :param remote_workdir: Absolute path of the job's remote working
             directory.
@@ -423,8 +415,7 @@ class PwimmigrantCalculation(PwCalculation):
         self.set_attribute('remote_workdir', remote_workdir)
 
     def set_output_subfolder(self, output_subfolder):
-        """
-        Manually set the job's ``outdir`` variable (e.g. ``'./out/'``).
+        """Manually set the job's ``outdir`` variable (e.g. ``'./out/'``).
 
         .. note:: The outdir variable is normally set automatically by
 
@@ -442,8 +433,7 @@ class PwimmigrantCalculation(PwCalculation):
         self._OUTPUT_SUBFOLDER = output_subfolder
 
     def set_prefix(self, prefix):
-        """
-        Manually set the job's ``prefix`` variable (e.g. ``'pwscf'``).
+        """Manually set the job's ``prefix`` variable (e.g. ``'pwscf'``).
 
         .. note:: The prefix variable is normally set automatically by
 
@@ -459,8 +449,7 @@ class PwimmigrantCalculation(PwCalculation):
         self._PREFIX = prefix
 
     def set_input_file_name(self, input_file_name):
-        """
-        Set the file name of the job's input file (e.g. ``'pw.in'``).
+        """Set the file name of the job's input file (e.g. ``'pw.in'``).
 
         :param input_file_name: The file name of the job's input file.
         :type input_file_name: str

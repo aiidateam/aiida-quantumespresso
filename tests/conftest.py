@@ -43,8 +43,8 @@ def fixture_code(fixture_localhost):
 def generate_calc_job():
     """Fixture to construct a new `CalcJob` instance and call `prepare_for_submission` for testing `CalcJob` classes.
 
-    The fixture will return the `CalcInfo` returned by `prepare_for_submission` and the temporary folder that was
-    passed to it, into which the raw input files will have been written.
+    The fixture will return the `CalcInfo` returned by `prepare_for_submission` and the temporary folder that was passed
+    to it, into which the raw input files will have been written.
     """
 
     def _generate_calc_job(folder, entry_point_name, inputs=None):
@@ -71,7 +71,7 @@ def generate_calc_job_node():
     """Fixture to generate a mock `CalcJobNode` for testing parsers."""
 
     def flatten_inputs(inputs, prefix=''):
-        """This function follows roughly the same logic as `aiida.engine.processes.process::Process._flatten_inputs`."""
+        """Flatten inputs recursively like :meth:`aiida.engine.processes.process::Process._flatten_inputs`."""
         flat_inputs = []
         for key, value in six.iteritems(inputs):
             if isinstance(value, collections.Mapping):

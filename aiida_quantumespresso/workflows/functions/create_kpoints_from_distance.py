@@ -6,9 +6,9 @@ from aiida.engine import calcfunction
 
 @calcfunction
 def create_kpoints_from_distance(structure, distance, force_parity):
-    """
-    Generate a uniformly spaced kpoint mesh for a given structure where the spacing between kpoints in reciprocal
-    space is guaranteed to be at least the defined distance.
+    """Generate a uniformly spaced kpoint mesh for a given structure.
+
+    The spacing between kpoints in reciprocal space is guaranteed to be at least the defined distance.
 
     :param structure: the StructureData to which the mesh should apply
     :param distance: a Float with the desired distance between kpoints in reciprocal space

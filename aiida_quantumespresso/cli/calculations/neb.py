@@ -54,8 +54,8 @@ def launch_calculation(
     code, structures, num_images, num_steps, pseudo_family, kpoints_mesh, ecutwfc, ecutrho, smearing, max_num_machines,
     max_wallclock_seconds, with_mpi, daemon, parent_folder, dry_run
 ):
-    """
-    Run a NebCalculation.
+    """Run a NebCalculation.
+
     Note that some parameters are hardcoded.
     """
     from aiida.orm import Dict

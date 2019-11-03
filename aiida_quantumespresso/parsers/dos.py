@@ -10,19 +10,16 @@ from six.moves import range
 
 
 class DosParser(Parser):
-    """
-    This class is the implementation of the Parser class for Dos.
-    """
+    """This class is the implementation of the Parser class for Dos."""
     # deprecated:
     #_dos_name = 'output_dos'
     #_units_name = 'output_units'
 
 
     def parse(self, **kwargs):
-        """
-        Parses the datafolder, stores results.
-        Retrieves dos output, and some basic information from the
-        out_file, such as warnings and wall_time
+        """Parses the datafolder, stores results.
+
+        Retrieves dos output, and some basic information from the out_file, such as warnings and wall_time
         """
         try:
             out_folder = self.retrieved
@@ -106,9 +103,8 @@ class DosParser(Parser):
 
 
 def parse_raw_dos(dos_file, array_names, array_units):
-    """
-    This function takes as input the dos_file as a list of filelines along
-    with information on how to give labels and units to the parsed data
+    """This function takes as input the dos_file as a list of filelines along with information on how to give labels and
+    units to the parsed data.
 
     :param dos_file: dos file lines in the form of a list
     :type dos_file: list

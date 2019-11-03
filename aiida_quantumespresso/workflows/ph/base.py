@@ -27,6 +27,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
         super(PhBaseWorkChain, cls).define(spec)
         spec.expose_inputs(PhCalculation, namespace='ph')
@@ -116,7 +117,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
 
 @register_error_handler(PhBaseWorkChain, 600)
 def _handle_unrecoverable_failure(self, calculation):
-    """Calculations with an exit status below 400 are unrecoverable, so abort the work chain."""
+    """Jandle calculations with an exit status below 400 which are unrecoverable, so abort the work chain."""
     if calculation.exit_status < 400:
         self.report_error_handled(calculation, 'unrecoverable error, aborting...')
         return ErrorHandlerReport(True, True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
@@ -124,7 +125,7 @@ def _handle_unrecoverable_failure(self, calculation):
 
 @register_error_handler(PhBaseWorkChain, 580)
 def _handle_out_of_walltime(self, calculation):
-    """In the case of `ERROR_OUT_OF_WALLTIME` calculation shut down neatly and we can simply restart."""
+    """Handle `ERROR_OUT_OF_WALLTIME` exit code: calculation shut down neatly and we can simply restart."""
     if calculation.exit_status == PhCalculation.exit_codes.ERROR_OUT_OF_WALLTIME.status:
         self.ctx.restart_calc = calculation
         self.report_error_handled(calculation, 'simply restart from the last calculation')
@@ -133,7 +134,7 @@ def _handle_out_of_walltime(self, calculation):
 
 @register_error_handler(PhBaseWorkChain, 410)
 def _handle_convergence_not_achieved(self, calculation):
-    """In the case of `ERROR_CONVERGENCE_NOT_REACHED` decrease the mixing beta and restart from scratch."""
+    """Handle `ERROR_CONVERGENCE_NOT_REACHED` exit code: decrease the mixing beta and restart from scratch."""
     if calculation.exit_status == PwCalculation.exit_codes.ERROR_CONVERGENCE_NOT_REACHED.status:
         factor = self.defaults.delta_factor_alpha_mix
         alpha_mix = self.ctx.inputs.parameters.get('INPUTPH', {}).get('alpha_mix(1)', self.defaults.alpha_mix)

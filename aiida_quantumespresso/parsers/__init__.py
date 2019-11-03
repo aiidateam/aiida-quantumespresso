@@ -5,15 +5,12 @@ from aiida.common import OutputParsingError
 
 
 class QEOutputParsingError(OutputParsingError):
-    """
-    Exception raised when there is a parsing error in the QE parser
-    """
+    """Exception raised when there is a parsing error in the QE parser."""
     pass
 
 
 def get_parser_info(parser_info_template=None):
-    """
-    Return a template dictionary with details about the parser such as the version
+    """Return a template dictionary with details about the parser such as the version.
 
     :param parser_info_template: template string with single placeholder to be replaced by current version number
     :returns: dictionary with parser name, version and empty list for warnings
@@ -34,10 +31,7 @@ def get_parser_info(parser_info_template=None):
 
 
 def convert_qe2aiida_structure(output_dict, input_structure=None):
-    """
-    Receives the dictionary cell parsed from quantum espresso
-    Convert it into an AiiDA structure object
-    """
+    """Receives the dictionary cell parsed from quantum espresso Convert it into an AiiDA structure object."""
     from aiida.plugins import DataFactory
 
     StructureData = DataFactory('structure')
@@ -62,9 +56,9 @@ def convert_qe2aiida_structure(output_dict, input_structure=None):
 
 
 def parse_raw_out_basic(out_file, calc_name):
-    """
-    A very simple parser for the standard out, usually aiida.outputs. Currently
-    only parses basic warnings and the walltime.
+    """A very simple parser for the standard out, usually aiida.outputs. Currently only parses basic warnings and the
+    walltime.
+
     :param out_file: the standard out to be parsed
     :param calc_name: the name of the calculation, e.g. PROJWFC
     :return: parsed_data
@@ -114,10 +108,7 @@ def parse_raw_out_basic(out_file, calc_name):
     return parsed_data
 
 def convert_qe_time_to_sec(timestr):
-    """
-    Given the walltime string of Quantum Espresso, converts it in a number of
-    seconds (float).
-    """
+    """Given the walltime string of Quantum Espresso, converts it in a number of seconds (float)."""
     rest = timestr.strip()
 
     if 'd' in rest:
@@ -151,9 +142,7 @@ def convert_qe_time_to_sec(timestr):
     return num_seconds
 
 def ldlparse_QE_errors(lines,count,warnings):
-    """
-    Parse QE errors messages (those appearing between some lines
-    with ``%%%%%%%%``)
+    """Parse QE errors messages (those appearing between some lines with ``%%%%%%%%``)
 
     :param lines: list of strings, the output text file as read by ``readlines()``
       or as obtained by ``data.split('\\\\n')`` when data is the text file read
@@ -184,9 +173,7 @@ def ldlparse_QE_errors(lines,count,warnings):
 
 
 def parse_QE_errors(lines,count,warnings):
-    """
-    Parse QE errors messages (those appearing between some lines with
-    ``%%%%%%%%``)
+    """Parse QE errors messages (those appearing between some lines with ``%%%%%%%%``)
 
     :param lines: list of strings, the output text file as read by ``readlines()``
       or as obtained by ``data.split('\\\\n')`` when data is the text file read by ``read()``

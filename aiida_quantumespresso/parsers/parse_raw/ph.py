@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
-A collection of function that are used to parse the output of Quantum Espresso PHonon.
-The function that needs to be called from outside is parse_raw_ph_output().
-Ideally, the functions should work even without aiida and will return a dictionary with parsed keys.
+"""A collection of function that are used to parse the output of Quantum Espresso PHonon.
+
+The function that needs to be called from outside is parse_raw_ph_output(). Ideally, the functions should work even
+without aiida and will return a dictionary with parsed keys.
 """
 from __future__ import absolute_import
 
@@ -87,10 +87,8 @@ def parse_raw_ph_output(stdout, tensors=None, dynamical_matrices=None):
 
 
 def parse_ph_tensor(data):
-    """
-    Parse the xml tensor file of QE v5.0.3
-    data must be read from the file with the .read() function (avoid readlines)
-    """
+    """Parse the xml tensor file of QE v5.0.3 data must be read from the file with the .read() function (avoid
+    readlines)"""
     from xml.dom.minidom import parseString
 
     dom = parseString(data)
@@ -134,9 +132,7 @@ def parse_ph_tensor(data):
     return parsed_data
 
 def parse_xml_matrices(tagname,target_tags):
-    """
-    Can be used to load the disordered matrices of the QE XML file
-    """
+    """Can be used to load the disordered matrices of the QE XML file."""
     a = target_tags.getElementsByTagName(tagname)[0]
     b = a.childNodes[0]
     flat_array = b.data.split()

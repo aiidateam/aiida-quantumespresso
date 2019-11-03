@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Workchain to automatically compute a band structure for a given structure using Quantum ESPRESSO pw.x"""
+"""Workchain to automatically compute a band structure for a given structure using Quantum ESPRESSO pw.x."""
 from __future__ import absolute_import
 
 from aiida import orm
@@ -27,10 +27,11 @@ def validate_protocol(protocol_dict):
 
 
 class PwBandStructureWorkChain(WorkChain):
-    """Workchain to automatically compute a band structure for a given structure using Quantum ESPRESSO pw.x"""
+    """Workchain to automatically compute a band structure for a given structure using Quantum ESPRESSO pw.x."""
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
         super(PwBandStructureWorkChain, cls).define(spec)
         spec.input('code', valid_type=orm.Code,
@@ -69,7 +70,7 @@ class PwBandStructureWorkChain(WorkChain):
         return protocol, protocol_modifiers
 
     def setup_protocol(self):
-        """Setup of context variables and inputs for the `PwBandsWorkChain`.
+        """Set up context variables and inputs for the `PwBandsWorkChain`.
 
         Based on the specified protocol, we define values for variables that affect the execution of the calculations.
         """
@@ -78,7 +79,7 @@ class PwBandStructureWorkChain(WorkChain):
         self.ctx.protocol = protocol.get_protocol_data(modifiers=protocol_modifiers)
 
     def setup_parameters(self):
-        """Setup the default input parameters required for the `PwBandsWorkChain`."""
+        """Set up the default input parameters required for the `PwBandsWorkChain`."""
         ecutwfc = []
         ecutrho = []
 
@@ -113,7 +114,6 @@ class PwBandStructureWorkChain(WorkChain):
 
     def run_bands(self):
         """Run the `PwBandsWorkChain` to compute the band structure."""
-
         def get_common_inputs():
             """Return the dictionary of inputs to be used as the basis for each `PwBaseWorkChain`."""
             protocol, protocol_modifiers = self._get_protocol()

@@ -8,6 +8,21 @@
       )$
   - id: double-quote-string-fixer
 
+- repo: https://github.com/PyCQA/pydocstyle
+  rev: 4.0.1
+  hooks:
+  - id: pydocstyle
+    language: system
+    types: [python]
+    args: ['--ignore=D104,D202,D203,D213']
+    exclude:
+      (?x)^(
+        aiida_quantumespresso/calculations.*|
+        aiida_quantumespresso/parsers/.*|
+        docs/.*|
+        utils/.*
+      )$
+
 - repo: local
   hooks:
 

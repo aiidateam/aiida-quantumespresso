@@ -17,18 +17,15 @@ class CpTcodtranslator(BaseTcodtranslator):
 
     @classmethod
     def get_software_package(cls, calc, **kwargs):  # pylint: disable=unused-argument
-        """
-        Returns the package or program name that was used to produce
-        the structure. Only package or program name should be used,
-        e.g. 'VASP', 'psi3', 'Abinit', etc.
+        """Return the package or program name that was used to produce the structure.
+
+        Only package or program name should be used, e.g. 'VASP', 'psi3', 'Abinit', etc.
         """
         return 'Quantum ESPRESSO'
 
     @classmethod
     def get_number_of_electrons(cls, calc, **kwargs):  # pylint: disable=unused-argument
-        """
-        Returns the number of electrons.
-        """
+        """Return the number of electrons."""
         parameters = calc.outputs.output_parameters
         if 'number_of_electrons' not in parameters.attrs():
             return None
@@ -36,9 +33,7 @@ class CpTcodtranslator(BaseTcodtranslator):
 
     @classmethod
     def get_computation_wallclock_time(cls, calc, **kwargs):  # pylint: disable=unused-argument
-        """
-        Returns the computation wallclock time in seconds.
-        """
+        """Return the computation wallclock time in seconds."""
         parameters = calc.outputs.output_parameters
         if 'wall_time_seconds' not in parameters.attrs():
             return None

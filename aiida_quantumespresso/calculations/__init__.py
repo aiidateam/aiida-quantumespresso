@@ -577,10 +577,9 @@ class BasePwCpInputGenerator(CalcJob):
 
     @staticmethod
     def _if_pos(fixed):
-        """
-        Simple function that returns 0 if fixed is True, 1 otherwise.
-        Useful to convert from the boolean value of fixed_coords to the value required
-        by Quantum Espresso as if_pos.
+        """Simple function that returns 0 if fixed is True, 1 otherwise.
+
+        Useful to convert from the boolean value of fixed_coords to the value required by Quantum Espresso as if_pos.
         """
         if fixed:
             return 0
@@ -613,8 +612,11 @@ def _case_transform_dict(d, dict_name, func_name, transform):
 
 
 def _pop_parser_options(calc_job_instance, settings_dict, ignore_errors=True):
-    """This deletes any parser options from the settings dictionary. The parser options key is found
-    via the get_parser_settings_key() method of the parser class specified as a metadata input."""
+    """This deletes any parser options from the settings dictionary.
+
+    The parser options key is found via the get_parser_settings_key() method of the parser class specified as a metadata
+    input.
+    """
     from aiida.plugins import ParserFactory
     from aiida.common import EntryPointError
     try:

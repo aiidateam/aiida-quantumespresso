@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Workchain to compute a band structure for a given structure using Quantum ESPRESSO pw.x"""
+"""Workchain to compute a band structure for a given structure using Quantum ESPRESSO pw.x."""
 from __future__ import absolute_import
 
 from six.moves import map
@@ -17,10 +17,11 @@ PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
 
 
 class PwBandsWorkChain(WorkChain):
-    """Workchain to compute a band structure for a given structure using Quantum ESPRESSO pw.x"""
+    """Workchain to compute a band structure for a given structure using Quantum ESPRESSO pw.x."""
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
         super(PwBandsWorkChain, cls).define(spec)
         spec.expose_inputs(PwRelaxWorkChain, namespace='relax', exclude=('clean_workdir', 'structure'),
@@ -114,7 +115,7 @@ class PwBandsWorkChain(WorkChain):
         self.out('seekpath_parameters', result['parameters'])
 
     def run_scf(self):
-        """Run the PwBaseWorkChain in scf mode on the primitive cell of (optionally relaxed) input structure"""
+        """Run the PwBaseWorkChain in scf mode on the primitive cell of (optionally relaxed) input structure."""
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='scf'))
         inputs.pw.structure = self.ctx.current_structure
         inputs.pw.parameters = inputs.pw.parameters.get_dict()

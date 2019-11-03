@@ -14,13 +14,11 @@ from aiida_quantumespresso.parsers.parse_raw.cp import parse_cp_raw_output, pars
 
 
 class CpParser(Parser):
-    """
-    This class is the implementation of the Parser class for Cp.
-    """
+    """This class is the implementation of the Parser class for Cp."""
 
     def parse(self, **kwargs):
-        """
-        Receives in input a dictionary of retrieved nodes.
+        """Receives in input a dictionary of retrieved nodes.
+
         Does all the logic here.
         """
         try:
@@ -240,15 +238,11 @@ class CpParser(Parser):
         self.out('output_parameters', output_params)
 
     def get_linkname_trajectory(self):
-        """
-        Returns the name of the link to the output_structure (None if not present)
-        """
+        """Returns the name of the link to the output_structure (None if not present)"""
         return 'output_trajectory'
 
     def _generate_sites_ordering(self, raw_species, raw_atoms):
-        """
-        take the positions of xml and from file.pos of the LAST step and compare them
-        """
+        """take the positions of xml and from file.pos of the LAST step and compare them."""
         # Examples in the comments are for species [Ba, O, Ti]
         # and atoms [Ba, Ti, O, O, O]
 
@@ -291,10 +285,7 @@ class CpParser(Parser):
         return reordering_inverse
 
     def _get_reordered_list(self, origlist, reordering):
-        """
-        Given a list to reorder, a list of integer positions with the new
-        order, return the reordered list.
-        """
+        """Given a list to reorder, a list of integer positions with the new order, return the reordered list."""
         return [origlist[e] for e in reordering]
 
     def _get_reordered_array(self, _input, reordering):

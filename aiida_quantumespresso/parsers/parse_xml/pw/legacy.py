@@ -495,9 +495,7 @@ def parse_xml_child_attribute_int(tagname,attributename,target_tags):
 
 
 def convert_list_to_matrix(in_matrix,n_rows,n_columns):
-    """
-    converts a list into a list of lists (a matrix like) with n_rows and n_columns
-    """
+    """converts a list into a list of lists (a matrix like) with n_rows and n_columns."""
     return [ in_matrix[j:j+n_rows] for j in range(0,n_rows*n_columns,n_rows) ]
 
 def xml_card_cell(parsed_data,dom):

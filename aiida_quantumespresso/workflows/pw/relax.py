@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Workchain to relax a structure using Quantum ESPRESSO pw.x"""
+"""Workchain to relax a structure using Quantum ESPRESSO pw.x."""
 from __future__ import absolute_import
 
 from six.moves import map
@@ -15,10 +15,11 @@ PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 
 
 class PwRelaxWorkChain(WorkChain):
-    """Workchain to relax a structure using Quantum ESPRESSO pw.x"""
+    """Workchain to relax a structure using Quantum ESPRESSO pw.x."""
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
         super(PwRelaxWorkChain, cls).define(spec)
         spec.expose_inputs(PwBaseWorkChain, namespace='base',

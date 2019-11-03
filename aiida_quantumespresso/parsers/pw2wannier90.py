@@ -8,15 +8,13 @@ from aiida_quantumespresso.parsers.parse_raw.simple import parse_qe_simple
 
 
 class Pw2wannier90Parser(Parser):
-    """
-    This class is the implementation of the Parser class for pw2wannier90.x
-    """
+    """This class is the implementation of the Parser class for pw2wannier90.x."""
 
     def parse(self, **kwargs):
-        """
-        Parses the datafolder, stores results.
-        In this case we only parse the aiida.out file, and retrieve any files
-        given in the internal and additional retrieve lists.
+        """Parses the datafolder, stores results.
+
+        In this case we only parse the aiida.out file, and retrieve any files given in the internal and additional
+        retrieve lists.
         """
         # Check that the retrieved folder is there
         try:

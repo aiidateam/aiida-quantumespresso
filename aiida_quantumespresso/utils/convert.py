@@ -9,13 +9,13 @@ from six.moves import zip
 
 
 def conv_to_fortran(val, quote_strings=True):
-    """
+    """Convert a python value to a format suited for fortran input.
+
     :param val: the value to be read and converted to a Fortran-friendly string.
     """
-    # Note that bool should come before integer, because a boolean matches also
-    # isinstance(...,int)
     import numpy
 
+    # Note that bool should come before integer, because a boolean matches also isinstance(..., int)
     if isinstance(val, (bool, numpy.bool_)):
         if val:
             val_str = '.true.'
@@ -41,14 +41,13 @@ def conv_to_fortran(val, quote_strings=True):
 
 
 def conv_to_fortran_withlists(val, quote_strings=True):
-    """
-    Same as conv_to_fortran but with extra logic to handle lists
+    """Convert a python value to a format suited for fortran input, recursively for lists.
+
     :param val: the value to be read and converted to a Fortran-friendly string.
     """
     # pylint: disable=too-many-return-statements
 
-    # Note that bool should come before integer, because a boolean matches also
-    # isinstance(...,int)
+    # Note that bool should come before integer, because a boolean matches also isinstance(..., int)
     if isinstance(val, (list, tuple)):
         val_str = ', '.join(conv_to_fortran(thing, quote_strings=quote_strings) for thing in val)
         return val_str
@@ -75,9 +74,9 @@ def conv_to_fortran_withlists(val, quote_strings=True):
 
 
 def convert_input_to_namelist_entry(key, val, mapping=None):
-    """
-    Given a key and a value, from an input parameters dictionary for a namelist calculation, map it to
-    the appropriate string format for the namelist input file. For single values it will return a single
+    """Convert a key and a value, from an input parameters dictionary for a namelist calculation.
+
+    Map it to the  appropriate string format for the namelist input file. For single values it will return a single
     string, but for values that are a dictionary, list or tuple, the returned string may be multiline.
 
     :param key: the namelist keyword name
