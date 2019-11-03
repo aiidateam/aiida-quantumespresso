@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=unused-argument
 """Tests for the `MatdynCalculation` class."""
 from __future__ import absolute_import
 
@@ -14,8 +13,9 @@ from aiida_quantumespresso.utils.resources import get_default_options
 MatdynCalculation = CalculationFactory('quantumespresso.matdyn')
 
 
-def test_matdyn_default(aiida_profile, fixture_sandbox, generate_calc_job,
-    fixture_code, generate_structure, generate_kpoints_mesh, file_regression):
+def test_matdyn_default(
+    aiida_profile, fixture_sandbox, generate_calc_job, fixture_code, generate_kpoints_mesh, file_regression
+):
     """Test a default `MatdynCalculation`."""
     entry_point_name = 'quantumespresso.matdyn'
 
@@ -26,13 +26,15 @@ def test_matdyn_default(aiida_profile, fixture_sandbox, generate_calc_job,
         'code': fixture_code(entry_point_name),
         'force_constants': force_constants,
         'kpoints': generate_kpoints_mesh(2),
-        'metadata': {'options': get_default_options()}
+        'metadata': {
+            'options': get_default_options()
+        }
     }
 
     calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
     local_copy_list = [(force_constants.uuid, force_constants.filename, force_constants.filename)]
-    retrieve_list = ['aiida.out'] + MatdynCalculation._internal_retrieve_list
+    retrieve_list = ['aiida.out'] + MatdynCalculation._internal_retrieve_list  # pylint: disable=protected-access
 
     # Check the attributes of the returned `CalcInfo`
     assert isinstance(calc_info, datastructures.CalcInfo)

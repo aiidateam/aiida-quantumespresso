@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # pylint: disable=redefined-outer-name
 """Initialise a text database and profile for pytest."""
 from __future__ import absolute_import
@@ -8,7 +9,7 @@ import collections
 import pytest
 import six
 
-pytest_plugins = ['aiida.manage.tests.pytest_fixtures']
+pytest_plugins = ['aiida.manage.tests.pytest_fixtures']  # pylint: disable=invalid-name
 
 
 @pytest.fixture(scope='function')
@@ -89,7 +90,6 @@ def generate_calc_job_node():
         :param attributes: any optional attributes to set on the node
         :return: `CalcJobNode` instance with an attached `FolderData` as the `retrieved` node
         """
-        import os
         from aiida import orm
         from aiida.common import LinkType
         from aiida.plugins.entry_point import format_entry_point_string
@@ -104,7 +104,7 @@ def generate_calc_job_node():
         node.set_option('max_wallclock_seconds', 1800)
 
         if attributes:
-            node.set_attributes(attributes)
+            node.set_attribute_many(attributes)
 
         if inputs:
             for link_label, input_node in flatten_inputs(inputs):
@@ -115,7 +115,9 @@ def generate_calc_job_node():
 
         if test_name is not None:
             basepath = os.path.dirname(os.path.abspath(__file__))
-            filepath = os.path.join(basepath, 'parsers', 'fixtures', entry_point_name[len('quantumespresso.'):], test_name)
+            filepath = os.path.join(
+                basepath, 'parsers', 'fixtures', entry_point_name[len('quantumespresso.'):], test_name
+            )
 
             retrieved = orm.FolderData()
             retrieved.put_object_from_tree(filepath)
@@ -154,15 +156,15 @@ def generate_upf_data():
 def generate_structure():
     """Return a `StructureData` representing bulk silicon."""
 
-    def _generate_structure(element='Si'):
+    def _generate_structure():
         """Return a `StructureData` representing bulk silicon."""
         from aiida.orm import StructureData
 
-        a = 5.43
-        cell = [[a / 2., a / 2., 0], [a / 2., 0, a / 2.], [0, a / 2., a / 2.]]
+        param = 5.43
+        cell = [[param / 2., param / 2., 0], [param / 2., 0, param / 2.], [0, param / 2., param / 2.]]
         structure = StructureData(cell=cell)
-        structure.append_atom(position=(0., 0., 0.), symbols=element)
-        structure.append_atom(position=(a / 4., a / 4., a / 4.), symbols=element)
+        structure.append_atom(position=(0., 0., 0.), symbols='Si', name='Si')
+        structure.append_atom(position=(param / 4., param / 4., param / 4.), symbols='Si', name='Si')
 
         return structure
 

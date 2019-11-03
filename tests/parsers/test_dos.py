@@ -1,33 +1,24 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=unused-argument
 """Tests for the `DosParser`."""
 from __future__ import absolute_import
-import pytest
 
 from aiida import orm
 from aiida.common import AttributeDict
 
 
-@pytest.fixture
-def dos_inputs():
-    # The DosParser doesn't really need to access the parent folder, but we'd like to make the inputs as realistic
-    # as possible, so we create an empty FolderData and attach it as an input to the current CalcJobNode.
-    inputs = {
-        'parent_folder': orm.FolderData().store(),
-    }
-
-    return AttributeDict(inputs)
+def generate_inputs():
+    """Return only those inputs that the parser will expect to be there."""
+    return AttributeDict()
 
 
-def test_dos_default(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser,
-                     dos_inputs, data_regression, num_regression):
-    """
-    Test `DosParser` on the results of a simple `dos.x` calculation.
-    """
+def test_dos_default(
+    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, data_regression, num_regression
+):
+    """Test `DosParser` on the results of a simple `dos.x` calculation."""
     entry_point_calc_job = 'quantumespresso.dos'
     entry_point_parser = 'quantumespresso.dos'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'default', dos_inputs)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'default', generate_inputs())
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -50,6 +41,5 @@ def test_dos_default(aiida_profile, fixture_localhost, generate_calc_job_node, g
             'units': dos_units,
         }
     })
-    num_regression.check({
-        'dos_val_{}'.format(i): val for i, val in enumerate(dos_values)
-    }, default_tolerance=dict(atol=0, rtol=1e-18))
+    num_regression.check({'dos_val_{}'.format(i): val for i, val in enumerate(dos_values)},
+                         default_tolerance=dict(atol=0, rtol=1e-18))

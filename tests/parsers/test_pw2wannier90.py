@@ -1,17 +1,14 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=unused-argument
 """Tests for the `Pw2wannier90Parser`."""
 from __future__ import absolute_import
 
-import pytest
 import os
 
 from aiida import orm
 from aiida.common import AttributeDict
 
 
-@pytest.fixture
-def pw2wannier90_inputs():
+def generate_inputs():
     """
     Minimal input for pw2wannier90 calculations.
     """
@@ -42,8 +39,9 @@ def pw2wannier90_inputs():
     return AttributeDict(inputs)
 
 
-def test_pw2wannier90_default(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser,
-                              pw2wannier90_inputs, data_regression):
+def test_pw2wannier90_default(
+    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, data_regression
+):
     """
     Test a minimal `pw2wannier.x` calculation.
     The parser only checks for errors in aiida.out, so the reference contents of output_parameters
@@ -52,7 +50,7 @@ def test_pw2wannier90_default(aiida_profile, fixture_localhost, generate_calc_jo
     entry_point_calc_job = 'quantumespresso.pw2wannier90'
     entry_point_parser = 'quantumespresso.pw2wannier90'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'default', pw2wannier90_inputs)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'default', generate_inputs())
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -60,6 +58,4 @@ def test_pw2wannier90_default(aiida_profile, fixture_localhost, generate_calc_jo
     assert calcfunction.is_finished_ok, calcfunction.exit_message
     assert not orm.Log.objects.get_logs_for(node)
     assert 'output_parameters' in results
-    data_regression.check({
-        'parameters': results['output_parameters'].get_dict()
-    })
+    data_regression.check({'parameters': results['output_parameters'].get_dict()})

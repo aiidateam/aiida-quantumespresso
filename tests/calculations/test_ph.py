@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=unused-argument
 """Tests for the `PhCalculation` class."""
 from __future__ import absolute_import
 
@@ -13,8 +12,10 @@ PwCalculation = CalculationFactory('quantumespresso.pw')
 PhCalculation = CalculationFactory('quantumespresso.ph')
 
 
-def test_ph_default(aiida_profile, fixture_localhost, fixture_sandbox, generate_calc_job,
-    fixture_code, generate_structure, generate_kpoints_mesh, generate_remote_data, file_regression):
+def test_ph_default(
+    aiida_profile, fixture_localhost, fixture_sandbox, generate_calc_job, fixture_code, generate_kpoints_mesh,
+    generate_remote_data, file_regression
+):
     """Test a default `PhCalculation`."""
     entry_point_name = 'quantumespresso.ph'
     parent_entry_point = 'quantumespresso.pw'
@@ -25,7 +26,9 @@ def test_ph_default(aiida_profile, fixture_localhost, fixture_sandbox, generate_
         'parent_folder': generate_remote_data(fixture_localhost, remote_path, parent_entry_point),
         'qpoints': generate_kpoints_mesh(2),
         'parameters': orm.Dict(dict={'INPUTPH': {}}),
-        'metadata': {'options': get_default_options()}
+        'metadata': {
+            'options': get_default_options()
+        }
     }
 
     calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
@@ -49,8 +52,10 @@ def test_ph_default(aiida_profile, fixture_localhost, fixture_sandbox, generate_
     file_regression.check(input_written, encoding='utf-8', extension='.in')
 
 
-def test_ph_qpoint_list(aiida_profile, fixture_localhost, fixture_sandbox, generate_calc_job,
-    fixture_code, generate_structure, generate_kpoints_mesh, generate_remote_data, file_regression):
+def test_ph_qpoint_list(
+    aiida_profile, fixture_localhost, fixture_sandbox, generate_calc_job, fixture_code, generate_structure,
+    generate_kpoints_mesh, generate_remote_data, file_regression
+):
     """Test a `PhCalculation` with a qpoint list instead of a mesh."""
     entry_point_name = 'quantumespresso.ph'
     parent_entry_point = 'quantumespresso.pw'
@@ -67,7 +72,9 @@ def test_ph_qpoint_list(aiida_profile, fixture_localhost, fixture_sandbox, gener
         'parent_folder': generate_remote_data(fixture_localhost, remote_path, parent_entry_point),
         'qpoints': qpoints,
         'parameters': orm.Dict(dict={'INPUTPH': {}}),
-        'metadata': {'options': get_default_options()}
+        'metadata': {
+            'options': get_default_options()
+        }
     }
 
     generate_calc_job(fixture_sandbox, entry_point_name, inputs)

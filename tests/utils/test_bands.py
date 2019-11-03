@@ -11,7 +11,8 @@ from aiida_quantumespresso.utils.bands import get_highest_occupied_band
 class TestGetHighestOccupiedBand(object):
     """Tests for :py:func:`~aiida_quantumespresso.utils.bands.get_highest_occupied_band`."""
 
-    def test_valid_node(self, aiida_profile):
+    @staticmethod
+    def test_valid_node(aiida_profile):
         """Test that the correct exceptions are thrown for incompatible nodes."""
         from aiida.orm import ArrayData, BandsData
 
@@ -34,7 +35,8 @@ class TestGetHighestOccupiedBand(object):
         with pytest.raises(ValueError):
             get_highest_occupied_band(node)
 
-    def test_threshold(self, aiida_profile):
+    @staticmethod
+    def test_threshold(aiida_profile):
         """Test the `threshold` parameter."""
         from aiida.orm import BandsData
 
@@ -56,7 +58,8 @@ class TestGetHighestOccupiedBand(object):
         with pytest.raises(ValueError):
             get_highest_occupied_band(bands, threshold=threshold)
 
-    def test_spin_unpolarized(self, aiida_profile):
+    @staticmethod
+    def test_spin_unpolarized(aiida_profile):
         """Test the function for a non spin-polarized calculation meaning there will be a single spin channel."""
         from aiida.orm import BandsData
 
@@ -73,20 +76,18 @@ class TestGetHighestOccupiedBand(object):
         homo = get_highest_occupied_band(bands)
         assert homo == 4
 
-    def test_spin_polarized(self, aiida_profile):
+    @staticmethod
+    def test_spin_polarized(aiida_profile):
         """Test the function for a spin-polarized calculation meaning there will be two spin channels."""
         from aiida.orm import BandsData
 
-        occupations = numpy.array([
-            [
-                [2., 2., 2., 2., 0.],
-                [2., 2., 2., 2., 0.],
-            ],
-            [
-                [2., 2., 2., 2., 0.],
-                [2., 2., 2., 2., 0.],
-            ]
-        ])
+        occupations = numpy.array([[
+            [2., 2., 2., 2., 0.],
+            [2., 2., 2., 2., 0.],
+        ], [
+            [2., 2., 2., 2., 0.],
+            [2., 2., 2., 2., 0.],
+        ]])
 
         bands = BandsData()
         bands.set_array('occupations', occupations)

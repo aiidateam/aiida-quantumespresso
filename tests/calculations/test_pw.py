@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=unused-argument
 """Tests for the `PwCalculation` class."""
 from __future__ import absolute_import
 
@@ -9,29 +8,27 @@ from aiida.common import datastructures
 from aiida_quantumespresso.utils.resources import get_default_options
 
 
-def test_pw_default(aiida_profile, fixture_sandbox, generate_calc_job,
-    fixture_code, generate_structure, generate_kpoints_mesh, generate_upf_data, file_regression):
+def test_pw_default(
+    aiida_profile, fixture_sandbox, generate_calc_job, fixture_code, generate_structure, generate_kpoints_mesh,
+    generate_upf_data, file_regression
+):
     """Test a default `PwCalculation`."""
     entry_point_name = 'quantumespresso.pw'
 
-    parameters = {
-        'CONTROL': {
-            'calculation': 'scf'
-        },
-        'SYSTEM': {
-            'ecutrho': 240.0,
-            'ecutwfc': 30.0
-        }
-    }
+    parameters = {'CONTROL': {'calculation': 'scf'}, 'SYSTEM': {'ecutrho': 240.0, 'ecutwfc': 30.0}}
 
     upf = generate_upf_data('Si')
     inputs = {
         'code': fixture_code(entry_point_name),
-        'structure': generate_structure('Si'),
+        'structure': generate_structure(),
         'kpoints': generate_kpoints_mesh(2),
         'parameters': orm.Dict(dict=parameters),
-        'pseudos': {'Si': upf},
-        'metadata': {'options': get_default_options()}
+        'pseudos': {
+            'Si': upf
+        },
+        'metadata': {
+            'options': get_default_options()
+        }
     }
 
     calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=unused-argument
 """Tests for immigrating `PwCalculation`s."""
 from __future__ import absolute_import
 import os
@@ -32,7 +31,9 @@ def test_create_builder(aiida_profile, fixture_sandbox, fixture_code, generate_u
     si_upf = generate_upf_data('Si')
     si_upf.store()
 
-    builder = create_builder_from_file(in_folderpath, 'test_pw_default.in', code, metadata, upf_folderpath, use_first=True)
+    builder = create_builder_from_file(
+        in_folderpath, 'test_pw_default.in', code, metadata, upf_folderpath, use_first=True
+    )
 
     assert builder['code'] == code
     assert builder['metadata'] == metadata
