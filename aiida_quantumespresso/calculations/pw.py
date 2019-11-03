@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""`CalcJob` implementation for the pw.x code of Quantum ESPRESSO."""
 from __future__ import absolute_import
 
 import os
@@ -48,6 +49,7 @@ class PwCalculation(BasePwCpInputGenerator):
     @classproperty
     def xml_filepaths(cls):
         """Return a list of XML output filepaths relative to the remote working directory that should be retrieved."""
+        # pylint: disable=no-self-argument,not-an-iterable
         filepaths = []
 
         for filename in cls.xml_filenames:
@@ -141,6 +143,7 @@ class PwCalculation(BasePwCpInputGenerator):
 
         Requires the aiida-quantumespresso-hp plugin to be installed
         """
+        # pylint: disable=no-self-argument,no-self-use
         try:
             HpCalculation = factories.CalculationFactory('quantumespresso.hp')
         except Exception:

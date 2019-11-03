@@ -96,8 +96,7 @@ class CpCalculation(BasePwCpInputGenerator, CalcJob):
         os.path.join(
             BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
             '{}.{}'.format(BasePwCpInputGenerator._PREFIX, ext),
-        )
-        for ext in _cp_ext_list
+        ) for ext in _cp_ext_list
     ] + [_FILE_XML_PRINT_COUNTER]
 
     # in restarts, it will copy from the parent the following
@@ -115,6 +114,7 @@ class CpCalculation(BasePwCpInputGenerator, CalcJob):
     @classproperty
     def xml_filepaths(cls):
         """Returns a list of relative filepaths of XML files."""
+        # pylint: disable=no-self-argument,not-an-iterable
         filepaths = []
 
         for filename in cls.xml_filenames:
@@ -136,29 +136,19 @@ class CpCalculation(BasePwCpInputGenerator, CalcJob):
         spec.default_output_node = 'output_parameters'
 
         spec.exit_code(
-            100, 'ERROR_NO_RETRIEVED_FOLDER',
-            message='The retrieved folder data node could not be accessed.')
+            100, 'ERROR_NO_RETRIEVED_FOLDER', message='The retrieved folder data node could not be accessed.'
+        )
         spec.exit_code(
-            101, 'ERROR_NO_RETRIEVED_TEMPORARY_FOLDER',
-            message='The retrieved temporary folder could not be accessed.')
+            101, 'ERROR_NO_RETRIEVED_TEMPORARY_FOLDER', message='The retrieved temporary folder could not be accessed.'
+        )
         spec.exit_code(
-            110, 'ERROR_READING_OUTPUT_FILE',
-            message='The output file could not be read from the retrieved folder.')
+            110, 'ERROR_READING_OUTPUT_FILE', message='The output file could not be read from the retrieved folder.'
+        )
         spec.exit_code(
-            115, 'ERROR_MISSING_XML_FILE',
-            message='The required XML file is not present in the retrieved folder.')
-        spec.exit_code(
-            116, 'ERROR_MULTIPLE_XML_FILES',
-            message='The retrieved folder contains multiple XML files.')
-        spec.exit_code(
-            117, 'ERROR_READING_XML_FILE',
-            message='The required XML file could not be read.')
-        spec.exit_code(
-            118, 'ERROR_READING_POS_FILE',
-            message='The required POS file could not be read.')
-        spec.exit_code(
-            119, 'ERROR_READING_TRAJECTORY_DATA',
-            message='The required trajectory data could not be read.')
-        spec.exit_code(
-            120, 'ERROR_INVALID_OUTPUT',
-            message='The output file contains invalid output.')
+            115, 'ERROR_MISSING_XML_FILE', message='The required XML file is not present in the retrieved folder.'
+        )
+        spec.exit_code(116, 'ERROR_MULTIPLE_XML_FILES', message='The retrieved folder contains multiple XML files.')
+        spec.exit_code(117, 'ERROR_READING_XML_FILE', message='The required XML file could not be read.')
+        spec.exit_code(118, 'ERROR_READING_POS_FILE', message='The required POS file could not be read.')
+        spec.exit_code(119, 'ERROR_READING_TRAJECTORY_DATA', message='The required trajectory data could not be read.')
+        spec.exit_code(120, 'ERROR_INVALID_OUTPUT', message='The output file contains invalid output.')

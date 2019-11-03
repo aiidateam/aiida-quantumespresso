@@ -1,15 +1,19 @@
 # -*- coding: utf-8 -*-
+"""`CalcJob` implementation for the projwfc.x code of Quantum ESPRESSO."""
 from __future__ import absolute_import
 from aiida.orm import RemoteData, FolderData, Dict, XyData
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 
+
 class ProjwfcCalculation(NamelistsCalculation):
-    """Projwfc.x code of the Quantum ESPRESSO distribution, handles the the computation of projections of bloch
+    """`CalcJob` implementation for the projwfc.x code of Quantum ESPRESSO.
+
+    Projwfc.x code of the Quantum ESPRESSO distribution, handles the the computation of projections of bloch
     wavefunctions onto atomic orbitals.
 
     <Psi(n,k) | Y(theta,phi)R(r) >. For more information, refer to http://www.quantum-espresso.org/
     """
-    #_PROJWFC_FILENAME = 'aiida.pdos'
+
     _default_namelists = ['PROJWFC']
     _blocked_keywords = [
         ('PROJWFC', 'outdir', NamelistsCalculation._OUTPUT_SUBFOLDER),
@@ -33,9 +37,9 @@ class ProjwfcCalculation(NamelistsCalculation):
         spec.output('output_parameters', valid_type=Dict)
         spec.output('Dos', valid_type=XyData)
         # if spin
-        spec.output('projections_up',   valid_type=ProjectionData, required=False)
+        spec.output('projections_up', valid_type=ProjectionData, required=False)
         spec.output('projections_down', valid_type=ProjectionData, required=False)
-        spec.output('bands_up',   valid_type=BandsData, required=False)
+        spec.output('bands_up', valid_type=BandsData, required=False)
         spec.output('bands_down', valid_type=BandsData, required=False)
         # if non-spin
         spec.output('projections', valid_type=ProjectionData, required=False)

@@ -10,7 +10,6 @@ from aiida.common import datastructures, exceptions
 from aiida.engine import CalcJob
 from aiida.orm import Dict
 from aiida.orm import RemoteData, FolderData, SinglefileData
-from aiida.plugins import ParserFactory
 
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict, _pop_parser_options
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
@@ -65,6 +64,7 @@ class NamelistsCalculation(CalcJob):
         By default, no text follows the namelists section. If in a sub class, any additional information needs to be
         added to the input file, this method can be overridden to return the lines that should be appended.
         """
+        # pylint: disable=no-self-use
         return u''
 
     def prepare_for_submission(self, folder):
@@ -73,6 +73,7 @@ class NamelistsCalculation(CalcJob):
         :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
         :return: `aiida.common.datastructures.CalcInfo` instance
         """
+        # pylint: disable=too-many-branches,too-many-statements
         if 'settings' in self.inputs:
             settings = _uppercase_dict(self.inputs.settings.get_dict(), dict_name='settings')
         else:
@@ -144,7 +145,6 @@ class NamelistsCalculation(CalcJob):
                     self._OUTPUT_SUBFOLDER
                 ))
             elif isinstance(parent_calc_folder, FolderData):
-                # TODO: test me, especially with deep relative paths.
                 for filename in parent_calc_folder.list_object_names():
                     local_copy_list.append((
                         parent_calc_folder.uuid,
@@ -152,7 +152,6 @@ class NamelistsCalculation(CalcJob):
                         os.path.join(self._OUTPUT_SUBFOLDER, filename)
                     ))
             elif isinstance(parent_calc_folder, SinglefileData):
-                # TODO: test me
                 single_file = parent_calc_folder
                 local_copy_list.append(
                     (single_file.uuid, single_file.filename, single_file.filename)
