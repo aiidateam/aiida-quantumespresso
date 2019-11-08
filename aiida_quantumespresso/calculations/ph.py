@@ -8,7 +8,6 @@ import six
 
 from aiida import orm
 from aiida.common import datastructures, exceptions
-from aiida.common.lang import classproperty
 from aiida.engine import CalcJob
 
 from aiida_quantumespresso.calculations.pw import PwCalculation
@@ -20,17 +19,9 @@ class PhCalculation(CalcJob):
     """`CalcJob` implementation for the ph.x code of Quantum ESPRESSO."""
 
     # Keywords that cannot be set by the user but will be set by the plugin
-    _blocked_keywords = [
-        ('INPUTPH', 'outdir'),
-        ('INPUTPH', 'iverbosity'),
-        ('INPUTPH', 'prefix'),
-        ('INPUTPH', 'fildyn'),
-        ('INPUTPH', 'ldisp'),
-        ('INPUTPH', 'nq1'),
-        ('INPUTPH', 'nq2'),
-        ('INPUTPH', 'nq3'),
-        ('INPUTPH', 'qplot')
-    ]
+    _blocked_keywords = [('INPUTPH', 'outdir'), ('INPUTPH', 'iverbosity'), ('INPUTPH', 'prefix'), ('INPUTPH', 'fildyn'),
+                         ('INPUTPH', 'ldisp'), ('INPUTPH', 'nq1'), ('INPUTPH', 'nq2'), ('INPUTPH', 'nq3'),
+                         ('INPUTPH', 'qplot')]
 
     _use_kpoints = True
 
@@ -41,6 +32,12 @@ class PhCalculation(CalcJob):
     _DEFAULT_INPUT_FILE = 'aiida.in'
     _DEFAULT_OUTPUT_FILE = 'aiida.out'
     _OUTPUT_XML_TENSOR_FILE_NAME = 'tensors.xml'
+    _OUTPUT_SUBFOLDER = './out/'
+    _FOLDER_DRHO = 'FILDRHO'
+    _DRHO_PREFIX = 'drho'
+    _DRHO_STAR_EXT = 'drho_rot'
+    _FOLDER_DYNAMICAL_MATRIX = 'DYN_MAT'
+    _OUTPUT_DYNAMICAL_MATRIX_PREFIX = os.path.join(_FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-')
 
     # Not using symlink in pw to allow multiple nscf to run on top of the same scf
     _default_symlink_usage = False
@@ -85,36 +82,13 @@ class PhCalculation(CalcJob):
         spec.exit_code(410, 'ERROR_CONVERGENCE_NOT_REACHED',
             message='The minimization cycle did not reach self-consistency.')
 
-    @classproperty
-    def _OUTPUT_SUBFOLDER(cls):
-        return './out/'
-
-    @classproperty
-    def _FOLDER_DRHO(cls):
-        return 'FILDRHO'
-
-    @classproperty
-    def _DRHO_PREFIX(cls):
-        return 'drho'
-
-    @classproperty
-    def _DRHO_STAR_EXT(cls):
-        return 'drho_rot'
-
-    @classproperty
-    def _FOLDER_DYNAMICAL_MATRIX(cls):
-        return 'DYN_MAT'
-
-    @classproperty
-    def _OUTPUT_DYNAMICAL_MATRIX_PREFIX(cls):
-        return os.path.join(cls._FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-')
-
     def prepare_for_submission(self, folder):
         """Create the input files from the input nodes passed to this instance of the `CalcJob`.
 
         :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
         :return: `aiida.common.datastructures.CalcInfo` instance
         """
+        # pylint: disable=too-many-statements,too-many-branches
         local_copy_list = []
         remote_copy_list = []
         remote_symlink_list = []
@@ -130,7 +104,8 @@ class PhCalculation(CalcJob):
         if not parent_calcs:
             raise exceptions.NotExistent('parent_folder<{}> has no parent calculation'.format(parent_folder.pk))
         elif len(parent_calcs) > 1:
-            raise exceptions.UniquenessError('parent_folder<{}> has multiple parent calculations'.format(parent_folder.pk))
+            raise exceptions.UniquenessError(
+                'parent_folder<{}> has multiple parent calculations'.format(parent_folder.pk))
 
         parent_calc = parent_calcs[0].node
 
@@ -145,10 +120,10 @@ class PhCalculation(CalcJob):
 
         # put by default, default_parent_output_folder = ./out
         try:
-            default_parent_output_folder = parent_calc.process_class._OUTPUT_SUBFOLDER
+            default_parent_output_folder = parent_calc.process_class._OUTPUT_SUBFOLDER  # pylint: disable=protected-access
         except AttributeError:
             try:
-                default_parent_output_folder = parent_calc._get_output_folder()
+                default_parent_output_folder = parent_calc._get_output_folder()  # pylint: disable=protected-access
             except AttributeError:
                 raise exceptions.InputValidationError('parent calculation does not have a default output subfolder')
         parent_calc_out_subfolder = settings.pop('PARENT_CALC_OUT_SUBFOLDER', default_parent_output_folder)
@@ -275,8 +250,7 @@ class PhCalculation(CalcJob):
             ))
 
             # I also create a symlink for the ./pseudo folder
-            # TODO: suppress this when the recover option of QE will be fixed
-            # (bug when trying to find pseudo file)
+            # Remove this when the recover option of QE will be fixed (bug when trying to find pseudo file)
             remote_symlink_list.append((
                 parent_folder.computer.uuid,
                 os.path.join(parent_folder.get_remote_path(), self._get_pseudo_folder()),
@@ -290,8 +264,7 @@ class PhCalculation(CalcJob):
                 self._OUTPUT_SUBFOLDER
             ))
             # I also copy the ./pseudo folder
-            # TODO: suppress this when the recover option of QE will be fixed
-            # (bug when trying to find pseudo file)
+            # Remove this when the recover option of QE will be fixed (bug when trying to find pseudo file)
             remote_copy_list.append((
                 parent_folder.computer.uuid,
                 os.path.join(parent_folder.get_remote_path(), self._get_pseudo_folder()),
@@ -346,9 +319,10 @@ class PhCalculation(CalcJob):
 
         return calcinfo
 
-    def _get_pseudo_folder(self):
+    @staticmethod
+    def _get_pseudo_folder():
         """Get the calculation-specific pseudo folder (relative path).
 
         Default given by PwCalculation._PSEUDO_SUBFOLDER
         """
-        return PwCalculation._PSEUDO_SUBFOLDER
+        return PwCalculation._PSEUDO_SUBFOLDER  # pylint: disable=protected-access

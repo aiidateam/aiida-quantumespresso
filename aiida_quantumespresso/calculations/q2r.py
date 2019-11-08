@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""`CalcJob` implementation for the q2r.x code of Quantum ESPRESSO."""
 from __future__ import absolute_import
 
 import os
@@ -13,12 +14,12 @@ class Q2rCalculation(NamelistsCalculation):
     """`CalcJob` implementation for the q2r.x code of Quantum ESPRESSO."""
 
     _FORCE_CONSTANTS_NAME = 'real_space_force_constants.dat'
-    _OUTPUT_SUBFOLDER = PhCalculation._FOLDER_DYNAMICAL_MATRIX
-    _INPUT_SUBFOLDER = os.path.join('.', PhCalculation._FOLDER_DYNAMICAL_MATRIX)
+    _OUTPUT_SUBFOLDER = PhCalculation._FOLDER_DYNAMICAL_MATRIX  # pylint: disable=protected-access
+    _INPUT_SUBFOLDER = os.path.join('.', PhCalculation._FOLDER_DYNAMICAL_MATRIX)  # pylint: disable=protected-access
 
     _default_namelists = ['INPUT']
     _blocked_keywords = [
-        ('INPUT', 'fildyn', PhCalculation._OUTPUT_DYNAMICAL_MATRIX_PREFIX),
+        ('INPUT', 'fildyn', PhCalculation._OUTPUT_DYNAMICAL_MATRIX_PREFIX),  # pylint: disable=protected-access
         ('INPUT', 'flfrc', _FORCE_CONSTANTS_NAME),
     ]
 

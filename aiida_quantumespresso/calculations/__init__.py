@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Base `CalcJob` for implementations for pw.x and cp.x of Quantum ESPRESSO."""
 from __future__ import absolute_import
 
 import abc
@@ -10,12 +11,12 @@ from aiida import orm
 from aiida.common import datastructures, exceptions
 from aiida.common.lang import classproperty
 from aiida.engine import CalcJob
-from aiida.plugins import ParserFactory
 
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
 
 class BasePwCpInputGenerator(CalcJob):
+    """Base `CalcJob` for implementations for pw.x and cp.x of Quantum ESPRESSO."""
 
     _PSEUDO_SUBFOLDER = './pseudo/'
     _OUTPUT_SUBFOLDER = './out/'
@@ -55,16 +56,17 @@ class BasePwCpInputGenerator(CalcJob):
 
         Note that this includes all potential filenames across all known versions of Quantum ESPRESSO
         """
+        # pylint: disable=no-self-argument
         return [cls._DATAFILE_XML_POST_6_2, cls._DATAFILE_XML_PRE_6_2]
 
     @abc.abstractmethod
     @classproperty
-    def xml_filepaths(cls):
+    def xml_filepaths(cls):  # pylint: disable=no-self-argument
         """Return a list of XML output filepaths relative to the remote working directory that should be retrieved."""
-        pass
 
     @classmethod
     def define(cls, spec):
+        # yapf: disable
         super(BasePwCpInputGenerator, cls).define(spec)
         spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
@@ -88,6 +90,7 @@ class BasePwCpInputGenerator(CalcJob):
         :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
         :return: `aiida.common.datastructures.CalcInfo` instance
         """
+        # pylint: disable=too-many-branches,too-many-statements
         if 'settings' in self.inputs:
             settings = _uppercase_dict(self.inputs.settings.get_dict(), dict_name='settings')
         else:
@@ -179,8 +182,8 @@ class BasePwCpInputGenerator(CalcJob):
 
             with folder.open(self._ENVIRON_INPUT_FILE_NAME, 'w') as handle:
                 handle.write('&ENVIRON\n')
-                for k, v in sorted(six.iteritems(environ_namelist)):
-                    handle.write(convert_input_to_namelist_entry(k, v, mapping=mapping_species))
+                for key, value in sorted(six.iteritems(environ_namelist)):
+                    handle.write(convert_input_to_namelist_entry(key, value, mapping=mapping_species))
                 handle.write('/\n')
 
         # Check for the deprecated 'ALSO_BANDS' setting and if present fire a deprecation log message
@@ -240,8 +243,9 @@ class BasePwCpInputGenerator(CalcJob):
         return calcinfo
 
     @classmethod
-    def _generate_PWCPinputdata(cls, parameters, settings, pseudos, structure, kpoints=None, use_fractional=False):
+    def _generate_PWCPinputdata(cls, parameters, settings, pseudos, structure, kpoints=None, use_fractional=False):  # pylint: disable=invalid-name
         """Create the input file in string format for a pw.x or cp.x calculation for the given inputs."""
+        # pylint: disable=too-many-branches,too-many-statements
         from aiida.common.utils import get_unique_filename
         import re
         local_copy_list_to_append = []
@@ -254,24 +258,24 @@ class BasePwCpInputGenerator(CalcJob):
 
         # I remove unwanted elements (for the moment, instead, I stop; to change when we setup a reasonable logging)
         for blocked in cls._blocked_keywords:
-            nl = blocked[0].upper()
+            namelist = blocked[0].upper()
             flag = blocked[1].lower()
             defaultvalue = None
             if len(blocked) >= 3:
                 defaultvalue = blocked[2]
-            if nl in input_params:
+            if namelist in input_params:
                 # The following lines is meant to avoid putting in input the
                 # parameters like celldm(*)
                 stripped_inparams = [re.sub('[(0-9)]', '', _)
-                                     for _ in input_params[nl].keys()]
+                                     for _ in input_params[namelist].keys()]
                 if flag in stripped_inparams:
                     raise exceptions.InputValidationError(
                         "You cannot specify explicitly the '{}' flag in the '{}' "
-                        'namelist or card.'.format(flag, nl))
+                        'namelist or card.'.format(flag, namelist))
                 if defaultvalue is not None:
-                    if nl not in input_params:
-                        input_params[nl] = {}
-                    input_params[nl][flag] = defaultvalue
+                    if namelist not in input_params:
+                        input_params[namelist] = {}
+                    input_params[namelist][flag] = defaultvalue
 
         # Set some variables (look out at the case! NAMELISTS should be uppercase,
         # internal flag names must be lowercase)
@@ -279,7 +283,7 @@ class BasePwCpInputGenerator(CalcJob):
         input_params['CONTROL']['pseudo_dir'] = cls._PSEUDO_SUBFOLDER
         input_params['CONTROL']['outdir'] = cls._OUTPUT_SUBFOLDER
         input_params['CONTROL']['prefix'] = cls._PREFIX
-        input_params['CONTROL']['verbosity'] = input_params['CONTROL'].get('verbosity', cls._default_verbosity)  # Set to high if not specified
+        input_params['CONTROL']['verbosity'] = input_params['CONTROL'].get('verbosity', cls._default_verbosity)
 
         # ============ I prepare the input site data =============
         # ------------ CELL_PARAMETERS -----------
@@ -303,7 +307,7 @@ class BasePwCpInputGenerator(CalcJob):
         for kind in structure.kinds:
             # This should not give errors, I already checked before that
             # the list of keys of pseudos and kinds coincides
-            ps = pseudos[kind.name]
+            pseudo = pseudos[kind.name]
             if kind.is_alloy or kind.has_vacancies:
                 raise exceptions.InputValidationError("Kind '{}' is an alloy or has "
                                            'vacancies. This is not allowed for pw.x input structures.'
@@ -311,12 +315,14 @@ class BasePwCpInputGenerator(CalcJob):
 
             try:
                 # If it is the same pseudopotential file, use the same filename
-                filename = pseudo_filenames[ps.pk]
+                filename = pseudo_filenames[pseudo.pk]
             except KeyError:
                 # The pseudo was not encountered yet; use a new name and also add it to the local copy list
-                filename = get_unique_filename(ps.filename, list(pseudo_filenames.values()))
-                pseudo_filenames[ps.pk] = filename
-                local_copy_list_to_append.append((ps.uuid, ps.filename, os.path.join(cls._PSEUDO_SUBFOLDER, filename)))
+                filename = get_unique_filename(pseudo.filename, list(pseudo_filenames.values()))
+                pseudo_filenames[pseudo.pk] = filename
+                local_copy_list_to_append.append(
+                    (pseudo.uuid, pseudo.filename, os.path.join(cls._PSEUDO_SUBFOLDER, filename))
+                )
 
             kind_names.append(kind.name)
             atomic_species_card_list.append('{} {} {}\n'.format(kind.name.ljust(6), kind.mass, filename))
@@ -430,7 +436,9 @@ class BasePwCpInputGenerator(CalcJob):
 
                 # Checking that all 3 dimensions are specified:
                 if len(vector) != 3:
-                    raise exceptions.InputValidationError('Velocities({}) for {} has not length three'.format(vector, site))
+                    raise exceptions.InputValidationError(
+                        'Velocities({}) for {} has not length three'.format(vector, site)
+                    )
 
                 lines.append('{0} {1:18.10f} {2:18.10f} {3:18.10f}\n'.format(site.kind_name.ljust(6), *vector))
 
@@ -504,9 +512,8 @@ class BasePwCpInputGenerator(CalcJob):
             kpoints_card_list = ['K_POINTS {}\n'.format(kpoints_type)]
 
             if kpoints_type == 'automatic':
-                if any([(i != 0. and i != 0.5) for i in offset]):
-                    raise exceptions.InputValidationError('offset list must only be made '
-                                               'of 0 or 0.5 floats')
+                if any([i not in [0, 0.5] for i in offset]):
+                    raise exceptions.InputValidationError('offset list must only be made of 0 or 0.5 floats')
                 the_offset = [0 if i == 0. else 1 for i in offset]
                 the_6_integers = list(mesh) + the_offset
                 kpoints_card_list.append('{:d} {:d} {:d} {:d} {:d} {:d}\n'
@@ -583,26 +590,26 @@ class BasePwCpInputGenerator(CalcJob):
         """
         if fixed:
             return 0
-        else:
-            return 1
+
+        return 1
 
 
-def _lowercase_dict(d, dict_name):
-    return _case_transform_dict(d, dict_name, '_lowercase_dict', str.lower)
+def _lowercase_dict(dictionary, dict_name):
+    return _case_transform_dict(dictionary, dict_name, '_lowercase_dict', str.lower)
 
 
-def _uppercase_dict(d, dict_name):
-    return _case_transform_dict(d, dict_name, '_uppercase_dict', str.upper)
+def _uppercase_dict(dictionary, dict_name):
+    return _case_transform_dict(dictionary, dict_name, '_uppercase_dict', str.upper)
 
 
-def _case_transform_dict(d, dict_name, func_name, transform):
+def _case_transform_dict(dictionary, dict_name, func_name, transform):
     from collections import Counter
 
-    if not isinstance(d, dict):
-        raise TypeError('{} accepts only dictionaries as argument, while you gave {}'.format(func_name, type(d)))
-    new_dict = dict((transform(str(k)), v) for k, v in six.iteritems(d))
-    if len(new_dict) != len(d):
-        num_items = Counter(transform(str(k)) for k in d.keys())
+    if not isinstance(dictionary, dict):
+        raise TypeError('{} accepts only dictionaries as argument, got {}'.format(func_name, type(dictionary)))
+    new_dict = dict((transform(str(k)), v) for k, v in six.iteritems(dictionary))
+    if len(new_dict) != len(dictionary):
+        num_items = Counter(transform(str(k)) for k in dictionary.keys())
         double_keys = ','.join([k for k, v in num_items if v > 1])
         raise exceptions.InputValidationError(
             "Inside the dictionary '{}' there are the following keys that "
@@ -621,8 +628,8 @@ def _pop_parser_options(calc_job_instance, settings_dict, ignore_errors=True):
     from aiida.common import EntryPointError
     try:
         parser_name = calc_job_instance.inputs['metadata']['options']['parser_name']
-        ParserClass = ParserFactory(parser_name)
-        parser_opts_key = ParserClass.get_parser_settings_key().upper()
+        parser_class = ParserFactory(parser_name)
+        parser_opts_key = parser_class.get_parser_settings_key().upper()
         return settings_dict.pop(parser_opts_key, None)
     except (KeyError, EntryPointError, AttributeError) as exc:
         # KeyError: input 'metadata.options.parser_name' is not defined;

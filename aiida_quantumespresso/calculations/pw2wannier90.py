@@ -1,22 +1,19 @@
 # -*- coding: utf-8 -*-
+"""`CalcJob` implementation for the pw2wannier.x code of Quantum ESPRESSO."""
 from __future__ import absolute_import
 from aiida.orm import RemoteData, FolderData, SinglefileData, Dict
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 
 
 class Pw2wannier90Calculation(NamelistsCalculation):
-    """pw2wannier90.x code of the Quantum ESPRESSO distribution, handles the calculation of the Amn, Mmn, ... files to
-    be used to compute Wannier functions with the Wannier90 code.
+    """`CalcJob` implementation for the pw2wannier.x code of Quantum ESPRESSO.
 
     For more information, refer to http://www.quantum-espresso.org/ and http://www.wannier.org/
     """
     _default_namelists = ['INPUTPP']
     _SEEDNAME = 'aiida'
-    _blocked_keywords = [
-        ('INPUTPP', 'outdir', NamelistsCalculation._OUTPUT_SUBFOLDER),
-        ('INPUTPP', 'prefix', NamelistsCalculation._PREFIX),
-        ('INPUTPP', 'seedname', _SEEDNAME)
-    ]
+    _blocked_keywords = [('INPUTPP', 'outdir', NamelistsCalculation._OUTPUT_SUBFOLDER),
+                         ('INPUTPP', 'prefix', NamelistsCalculation._PREFIX), ('INPUTPP', 'seedname', _SEEDNAME)]
     # By default we do not download anything else than aiida.out. One can add the files
     # _SEEDNAME.amn/.nnm/.eig to inputs.settings['ADDITIONAL_RETRIEVE_LIST'] to retrieve them.
     _internal_retrieve_list = []

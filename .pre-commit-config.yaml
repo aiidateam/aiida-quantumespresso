@@ -34,7 +34,7 @@
     args: ['-i']
     exclude: &exclude_files >
       (?x)^(
-        aiida_quantumespresso/calculations.*|
+        aiida_quantumespresso/calculations/pwimmigrant.*|
         aiida_quantumespresso/parsers/.*|
         docs/.*|
         tests/.*(?<!\.py)$

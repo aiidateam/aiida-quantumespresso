@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""`CalcJob` implementation for the matdyn.x code of Quantum ESPRESSO."""
 from __future__ import absolute_import
 
 from aiida import orm
@@ -21,10 +22,7 @@ class MatdynCalculation(NamelistsCalculation):
         ('INPUT', 'q_in_cryst_coord', True),  # kpoints always in crystal coordinates
     ]
 
-    _internal_retrieve_list = [
-        _PHONON_FREQUENCIES_NAME,
-        _PHONON_DOS_NAME
-    ]
+    _internal_retrieve_list = [_PHONON_FREQUENCIES_NAME, _PHONON_DOS_NAME]
     _default_parser = 'quantumespresso.matdyn'
 
     @classmethod

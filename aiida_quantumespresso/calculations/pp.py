@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""`CalcJob` implementation for the pp.x code of Quantum ESPRESSO."""
 from __future__ import absolute_import
 
 from aiida.orm import RemoteData, FolderData

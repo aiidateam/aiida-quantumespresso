@@ -9,8 +9,7 @@ from aiida.orm.nodes.data.remote import RemoteData
 from aiida.orm.nodes.data.dict import Dict
 from aiida.orm.nodes.data.upf import UpfData
 from aiida.common.folders import SandboxFolder
-from aiida.common import (FeatureNotAvailable, InvalidOperation,
-                                     InputValidationError)
+from aiida.common import (FeatureNotAvailable, InvalidOperation, InputValidationError)
 from aiida.common.links import LinkType
 from aiida_quantumespresso.tools import pwinputparser
 from six.moves import zip
@@ -50,8 +49,7 @@ class PwimmigrantCalculation(PwCalculation):
 
         super(PwimmigrantCalculation, self)._init_internal_params()
 
-    def create_input_nodes(self, open_transport, input_file_name=None,
-                           output_file_name=None, remote_workdir=None):
+    def create_input_nodes(self, open_transport, input_file_name=None, output_file_name=None, remote_workdir=None):
         """Create calculation input nodes based on the job's files.
 
         :param open_transport: An open instance of the transport class of the
@@ -197,15 +195,13 @@ class PwimmigrantCalculation(PwCalculation):
         with SandboxFolder() as folder:
 
             # Copy the input file to the temp folder.
-            remote_path = os.path.join(self._get_remote_workdir(),
-                                       self._INPUT_FILE_NAME)
+            remote_path = os.path.join(self._get_remote_workdir(), self._INPUT_FILE_NAME)
             open_transport.get(remote_path, folder.abspath)
 
             # Parse the input file.
             local_path = os.path.join(folder.abspath, self._INPUT_FILE_NAME)
             with open(local_path) as fin:
                 pwinputfile = pwinputparser.PwInputFile(fin)
-
 
             # Determine PREFIX, if it hasn't already been set by the user.
             if self._PREFIX is None:
@@ -223,9 +219,7 @@ class PwimmigrantCalculation(PwCalculation):
                 self._OUTPUT_SUBFOLDER = control_dict.get('outdir', None)
                 if self._OUTPUT_SUBFOLDER is None:
                     # See if the $ESPRESSO_TMPDIR is set.
-                    envar = open_transport.exec_command_wait(
-                        'echo $ESPRESSO_TMPDIR'
-                    )[1]
+                    envar = open_transport.exec_command_wait('echo $ESPRESSO_TMPDIR')[1]
                     if len(envar.strip()) > 0:
                         self._OUTPUT_SUBFOLDER = envar.strip()
                     else:
@@ -234,10 +228,9 @@ class PwimmigrantCalculation(PwCalculation):
 
             # Copy the pseudo files to the temp folder.
             for fnm in pwinputfile.atomic_species['pseudo_file_names']:
-                remote_path = os.path.join(self._get_remote_workdir(),
-                                           self._OUTPUT_SUBFOLDER,
-                                           '{}.save/'.format(self._PREFIX),
-                                           fnm)
+                remote_path = os.path.join(
+                    self._get_remote_workdir(), self._OUTPUT_SUBFOLDER, '{}.save/'.format(self._PREFIX), fnm
+                )
                 open_transport.get(remote_path, folder.abspath)
 
             # Make sure that ibrav = 0, since aiida doesn't support anything
@@ -335,17 +328,14 @@ class PwimmigrantCalculation(PwCalculation):
         self.store_all()
 
         # Store the original input file in the calculation's repository folder.
-        remote_path = os.path.join(self._get_remote_workdir(),
-                                   self._INPUT_FILE_NAME)
+        remote_path = os.path.join(self._get_remote_workdir(), self._INPUT_FILE_NAME)
         raw_input_folder = self.folder.get_subfolder('raw_input', create=True)
         open_transport.get(remote_path, raw_input_folder.abspath)
 
         # Manually add the remote working directory as a RemoteData output
         # node.
-        remotedata = RemoteData(computer=self.get_computer(),
-                                remote_path=self._get_remote_workdir())
-        remotedata.add_link_from(self, label='remote_folder',
-                                 link_type=LinkType.CREATE)
+        remotedata = RemoteData(computer=self.get_computer(), remote_path=self._get_remote_workdir())
+        remotedata.add_link_from(self, label='remote_folder', link_type=LinkType.CREATE)
         remotedata.store()
 
     def prepare_for_retrieval_and_parsing(self, open_transport):
