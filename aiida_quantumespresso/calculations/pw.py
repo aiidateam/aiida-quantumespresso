@@ -113,6 +113,9 @@ class PwCalculation(BasePwCpInputGenerator):
             message='The calculation stopped prematurely because it ran out of walltime.')
         spec.exit_code(410, 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED',
             message='The electronic minimization cycle did not reach self-consistency.')
+
+        spec.exit_code(461, 'ERROR_DEXX_IS_NEGATIVE', message='The code failed with negative dexx in the exchange calculation.')
+
         spec.exit_code(500, 'ERROR_IONIC_CONVERGENCE_NOT_REACHED',
             message='The ionic minimization cycle did not converge for the given thresholds.')
         spec.exit_code(501, 'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
@@ -135,8 +138,6 @@ class PwCalculation(BasePwCpInputGenerator):
             message='The electronic minimization cycle did not reach self-consistency.')
         spec.exit_code(541, 'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION',
             message='The variable cell optimization broke the symmetry of the k-points.')
-
-        spec.exit_code(551, 'ERROR_DEXX_IS_NEGATIVE', message='The code failed with negative dexx in the exchange calculation.')
 
     @classproperty
     def input_file_name_hubbard_file(cls):
