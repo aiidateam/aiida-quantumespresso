@@ -596,3 +596,24 @@ def test_pw_vcrelax_failed_not_converged_nstep(
     assert 'output_parameters' in results
     assert 'output_structure' in results
     assert 'output_trajectory' in results
+
+
+def test_pw_hybrid_failed_dexx_negative(
+    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_default
+):
+    """Test the parsing of a calculation that failed due to negative dexx.
+
+    In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
+    the relevant error message.
+    """
+    name = 'failed_dexx_negative'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_default)
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_DEXX_IS_NEGATIVE.status
