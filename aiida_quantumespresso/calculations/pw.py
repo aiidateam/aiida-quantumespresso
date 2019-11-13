@@ -114,7 +114,7 @@ class PwCalculation(BasePwCpInputGenerator):
         spec.exit_code(410, 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED',
             message='The electronic minimization cycle did not reach self-consistency.')
 
-        spec.exit_code(461, 'ERROR_DEXX_IS_NEGATIVE', 
+        spec.exit_code(461, 'ERROR_DEXX_IS_NEGATIVE',
             message='The code failed with negative dexx in the exchange calculation.')
 
         spec.exit_code(500, 'ERROR_IONIC_CONVERGENCE_NOT_REACHED',
