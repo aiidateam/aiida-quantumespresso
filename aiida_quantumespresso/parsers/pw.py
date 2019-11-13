@@ -103,15 +103,15 @@ class PwParser(Parser):
             logs_xml.pop('error')
         self.emit_logs(logs_stdout, logs_xml)
 
-        # If the both stdout and xml exit codes are set, there was a basic problem with both output files and there
-        # is no need to investigate any further.
-        if self.exit_code_stdout and self.exit_code_xml:
-            return self.exit(self.exit_codes.ERROR_OUTPUT_FILES)
-
         # First check for specific known problems that can cause a pre-mature termination of the calculation
         exit_code = self.validate_premature_exit(logs_stdout)
         if exit_code:
             return self.exit(exit_code)
+
+        # If the both stdout and xml exit codes are set, there was a basic problem with both output files and there
+        # is no need to investigate any further.
+        if self.exit_code_stdout and self.exit_code_xml:
+            return self.exit(self.exit_codes.ERROR_OUTPUT_FILES)
 
         if self.exit_code_stdout:
             return self.exit(self.exit_code_stdout)
