@@ -144,6 +144,9 @@ class PwParser(Parser):
         if 'ERROR_DEXX_IS_NEGATIVE' in logs['error']:
             return self.exit_codes.ERROR_DEXX_IS_NEGATIVE
 
+        if 'ERROR_NPOOLS_TOO_HIGH' in logs['error']:
+            return self.exit_codes.ERROR_NPOOLS_TOO_HIGH
+
     def validate_electronic(self, trajectory, parameters, logs):
         """Analyze problems that are specific to `electronic` type calculations: i.e. `scf`, `nscf` and `bands`."""
         if self.get_calculation_type() not in ['scf', 'nscf', 'bands']:
