@@ -275,7 +275,8 @@ def detect_important_message(logs, line):
             'problems computing cholesky': 'ERROR_DIAGONALIZATION_CHOLESKY_DECOMPOSITION',
             'charge is wrong': 'ERROR_CHARGE_IS_WRONG',
             'not orthogonal operation': 'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION',
-            'dexx is negative': 'ERROR_DEXX_IS_NEGATIVE'
+            'dexx is negative': 'ERROR_DEXX_IS_NEGATIVE',
+            'some nodes have no k-points': 'ERROR_NPOOLS_TOO_HIGH',
         },
         'warning': {
             'Warning:': None,

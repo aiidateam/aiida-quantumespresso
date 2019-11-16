@@ -117,6 +117,9 @@ class PwCalculation(BasePwCpInputGenerator):
         spec.exit_code(461, 'ERROR_DEXX_IS_NEGATIVE',
             message='The code failed with negative dexx in the exchange calculation.')
 
+        spec.exit_code(481, 'ERROR_NPOOLS_TOO_HIGH',
+            message='The k-point parallelization "npools" is too high, some nodes have no k-points.')
+
         spec.exit_code(500, 'ERROR_IONIC_CONVERGENCE_NOT_REACHED',
             message='The ionic minimization cycle did not converge for the given thresholds.')
         spec.exit_code(501, 'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
