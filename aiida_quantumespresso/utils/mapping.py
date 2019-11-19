@@ -2,7 +2,10 @@
 """Utilities to deal with various mapping data structures."""
 from __future__ import absolute_import
 
-from collections import Mapping
+try:
+    from collections.abc import Mapping
+except ImportError:
+    from collections import Mapping
 
 from aiida.common import AttributeDict
 from aiida.orm import Dict
