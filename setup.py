@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Setup script for aiida-core package."""
+"""Setup script for aiida-quantumespresso package."""
 from __future__ import absolute_import
 import json
 
