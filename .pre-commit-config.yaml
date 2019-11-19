@@ -50,14 +50,14 @@
 
   - id: version-number
     name: Check consistency in version number
-    entry: python ./.ci/validate_version_number.py
+    entry: python ./utils/validate_version_number.py
     args: ['version']
     language: system
     files: >-
       (?x)^(
         setup.json|
         aiida_quantumespresso/__init__.py|
-        ./.ci/validate_version_number.py|
+        ./utils/validate_version_number.py|
       )$
     pass_filenames: false
 
