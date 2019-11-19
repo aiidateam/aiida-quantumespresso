@@ -1,0 +1,110 @@
+name: aiida-quantumespresso
+
+on: [push, pull_request]
+
+jobs:
+
+  docs:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+
+    - name: Cache python dependencies
+      id: cache-pip
+      uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: pip-docs-${{ hashFiles('**/setup.json') }}
+        restore-keys: |
+          pip-docs-
+
+    - name: Install python dependencies
+      run:
+        pip install -e .[docs]
+
+    - name: Build documentation
+      env:
+        READTHEDOCS: 'True'
+      run:
+        SPHINXOPTS='-nW' make -C docs html
+
+  pre-commit:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Cache python dependencies
+      id: cache-pip
+      uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: pip-pre-commit-${{ hashFiles('**/setup.json') }}
+        restore-keys: |
+          pip-pre-commit-
+
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+
+    - name: Install python dependencies
+      run:
+        pip install -e .[dev]
+
+    - name: Run pre-commit
+      run:
+        pre-commit run --all-files || ( git status --short ; git diff ; exit 1 )
+
+  tests:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ['2.7', '3.6', '3.7']
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Cache python dependencies
+      id: cache-pip
+      uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: pip-${{ matrix.python-version }}-tests-${{ hashFiles('**/setup.json') }}
+        restore-keys: |
+          pip-${{ matrix.python-version }}-tests
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install system dependencies
+      run: |
+        wget -O - "https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc" | sudo apt-key add -
+        echo 'deb https://dl.bintray.com/rabbitmq-erlang/debian bionic erlang' | sudo tee -a /etc/apt/sources.list.d/bintray.rabbitmq.list
+        echo 'deb https://dl.bintray.com/rabbitmq/debian bionic main' | sudo tee -a /etc/apt/sources.list.d/bintray.rabbitmq.list
+        sudo apt update
+        sudo apt install postgresql postgresql-server-dev-all postgresql-client
+        sudo apt install rabbitmq-server
+        sudo systemctl status rabbitmq-server.service
+
+    - name: Install python dependencies
+      run: |
+        pip install numpy==1.16.4
+        pip install -e .[dev]
+        reentry scan
+
+    - name: Run pytest
+      run:
+        pytest -sv tests
