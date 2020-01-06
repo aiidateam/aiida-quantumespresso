@@ -105,6 +105,9 @@ class PwCalculation(BasePwCpInputGenerator):
             message='The XML output file could not be parsed.')
         spec.exit_code(322, 'ERROR_OUTPUT_XML_FORMAT',
             message='The XML output file has an unsupported format.')
+        spec.exit_code(340, 'ERROR_OUT_OF_WALLTIME_INTERRUPTED',
+            message='The calculation stopped prematurely because it ran out of walltime but the job was killed by the '
+            'scheduler before the files were safely written to disk for a potential restart.')
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
             message='The parser raised an unexpected exception.')
 
