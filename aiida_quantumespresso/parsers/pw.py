@@ -132,6 +132,9 @@ class PwParser(Parser):
 
     def validate_premature_exit(self, logs):
         """Analyze problems that will cause a pre-mature termination of the calculation, controlled or not."""
+        if 'ERROR_OUT_OF_WALLTIME' in logs['error'] and 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs['error']:
+            return self.exit_codes.ERROR_OUT_OF_WALLTIME_INTERRUPTED
+
         if 'ERROR_OUT_OF_WALLTIME' in logs['error']:
             return self.exit_codes.ERROR_OUT_OF_WALLTIME
 

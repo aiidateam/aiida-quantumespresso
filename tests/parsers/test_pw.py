@@ -274,6 +274,35 @@ def test_pw_failed_out_of_walltime(
     })
 
 
+def test_pw_failed_out_of_walltime_interrupted(
+    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_default, data_regression
+):
+    """Test the parsing of an scf calculation that ran nominally but was cut short because it ran out of walltime.
+
+    This differs from `test_pw_failed_out_of_walltime` in the sense that even though QE initiated the termination of the
+    calculation due to the walltime being exceeded, before it could write all necessary files too disk, the scheduler
+    killed the job because the walltime was exceeded.
+    """
+    name = 'failed_out_of_walltime_interrupted'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_default)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUT_OF_WALLTIME_INTERRUPTED.status
+    assert orm.Log.objects.get_logs_for(node)
+    assert 'output_parameters' in results
+    assert 'output_trajectory' in results
+    data_regression.check({
+        'output_parameters': results['output_parameters'].get_dict(),
+        'output_trajectory': results['output_trajectory'].attributes,
+    })
+
+
 def test_pw_failed_scf_not_converged(
     aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_default, data_regression
 ):

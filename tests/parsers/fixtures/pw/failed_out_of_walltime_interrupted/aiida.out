@@ -1,0 +1,15 @@
+     Program PWSCF v.6.1 (svn rev. 13369) starts on 12Jun2019 at 12:30:36
+
+     [CONTENT REMOVED]
+
+     total energy              =     -22.65168903 Ry
+     Harris-Foulkes estimate   =     -22.65168903 Ry
+     estimated scf accuracy    <          2.9E-15 Ry
+
+     Maximum CPU time exceeded
+
+     max_seconds     =       3.00
+     elapsed seconds =       3.16
+     Calculation stopped in scf loop at iteration #    12
+
+     Writing output data file aiida.save
