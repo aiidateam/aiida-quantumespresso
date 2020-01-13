@@ -2,6 +2,7 @@
 """`CalcJob` implementation for the pw2wannier.x code of Quantum ESPRESSO."""
 from __future__ import absolute_import
 from aiida.orm import RemoteData, FolderData, SinglefileData, Dict
+
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 
 

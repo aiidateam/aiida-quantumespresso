@@ -4,9 +4,10 @@ from __future__ import absolute_import
 
 from aiida import orm
 from aiida.common import AttributeDict
-from aiida.engine import WorkChain, ToContext
+from aiida.engine import ToContext
 from aiida.plugins import WorkflowFactory
 
+from aiida_quantumespresso._base import WorkChain
 from aiida_quantumespresso.utils.protocols.pw import ProtocolManager
 from aiida_quantumespresso.utils.pseudopotential import get_pseudos_from_dict
 from aiida_quantumespresso.utils.resources import get_default_options

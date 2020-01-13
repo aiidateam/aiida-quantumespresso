@@ -9,7 +9,7 @@ import six
 from aiida import orm
 from aiida.common import InputValidationError, CalcInfo, CodeInfo
 from aiida.common.lang import classproperty
-from aiida.engine import CalcJob
+from aiida_quantumespresso._base import CalcJob
 
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict, _pop_parser_options

@@ -7,8 +7,9 @@ from six.moves import map
 from aiida import orm
 from aiida.common import AttributeDict
 from aiida.plugins import WorkflowFactory
-from aiida.engine import WorkChain, ToContext, if_
+from aiida.engine import ToContext, if_
 
+from aiida_quantumespresso._base import WorkChain
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 from aiida_quantumespresso.workflows.functions.seekpath_structure_analysis import seekpath_structure_analysis
 

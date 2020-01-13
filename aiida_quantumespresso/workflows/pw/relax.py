@@ -6,8 +6,10 @@ from six.moves import map
 
 from aiida import orm
 from aiida.common import AttributeDict, exceptions
-from aiida.engine import WorkChain, ToContext, if_, while_, append_
+from aiida.engine import ToContext, if_, while_, append_
 from aiida.plugins import CalculationFactory, WorkflowFactory
+
+from aiida_quantumespresso._base import WorkChain
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 
 PwCalculation = CalculationFactory('quantumespresso.pw')

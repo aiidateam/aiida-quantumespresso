@@ -4,10 +4,11 @@ from __future__ import absolute_import
 
 from aiida import orm
 from aiida.common import exceptions
-from aiida.common.lang import override
-from aiida.engine import CalcJob, WorkChain, ExitCode, ToContext, append_
+from aiida.engine import ExitCode, ToContext, append_
 from aiida.plugins.entry_point import get_entry_point_names, load_entry_point
+from aiida.common.lang import override
 
+from aiida_quantumespresso._base import CalcJob, WorkChain
 from aiida_quantumespresso.common.exceptions import UnexpectedCalculationFailure
 from aiida_quantumespresso.common.workchain.utils import ErrorHandlerReport
 
