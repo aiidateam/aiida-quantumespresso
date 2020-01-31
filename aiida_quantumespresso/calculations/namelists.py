@@ -67,6 +67,42 @@ class NamelistsCalculation(CalcJob):
         # pylint: disable=no-self-use
         return u''
 
+    @staticmethod
+    def generate_input_file(parameters, namelists_toprint, following_text="", blocked=[]):
+        # Force default values for blocked keywords. NOTE: this is different from PW/CP
+        for blocked in blocked:
+            namelist = blocked[0].upper()
+            key = blocked[1].lower()
+            value = blocked[2]
+            if namelist in parameters:
+                if key in parameters[namelist]:
+                    raise exceptions.InputValidationError(
+                        "You cannot specify explicitly the '{}' key in the '{}' "
+                        'namelist.'.format(key, namelist))
+            else:
+                parameters[namelist] = {}
+            parameters[namelist][key] = value
+
+        file_lines = []
+        for namelist_name in namelists_toprint:
+            file_lines.append(u'&{0}'.format(namelist_name))
+            # namelist content; set to {} if not present, so that we leave an empty namelist
+            namelist = parameters.pop(namelist_name, {})
+            for key, value in sorted(six.iteritems(namelist)):
+                file_lines.append(convert_input_to_namelist_entry(key, value)[:-1])
+            file_lines.append(u'/')
+
+        # Write remaning text now, if any
+        file_lines.append(following_text)
+
+        if parameters:
+            raise exceptions.InputValidationError(
+                'The following namelists are specified in parameters, but are '
+                'not valid namelists for the current type of calculation: '
+                '{}'.format(','.join(list(parameters.keys()))))
+
+        return '\n'.join(file_lines)
+
     def prepare_for_submission(self, folder):
         """Create the input files from the input nodes passed to this instance of the `CalcJob`.
 
@@ -88,19 +124,6 @@ class NamelistsCalculation(CalcJob):
         else:
             parameters = {}
 
-        # Force default values for blocked keywords. NOTE: this is different from PW/CP
-        for blocked in self._blocked_keywords:
-            namelist = blocked[0].upper()
-            key = blocked[1].lower()
-            value = blocked[2]
-            if namelist in parameters:
-                if key in parameters[namelist]:
-                    raise exceptions.InputValidationError(
-                        "You cannot specify explicitly the '{}' key in the '{}' "
-                        'namelist.'.format(key, namelist))
-            else:
-                parameters[namelist] = {}
-            parameters[namelist][key] = value
 
         # =================== NAMELISTS AND CARDS ========================
         try:
@@ -111,25 +134,10 @@ class NamelistsCalculation(CalcJob):
         except KeyError:  # list of namelists not specified; do automatic detection
             namelists_toprint = self._default_namelists
 
+        file_content   = self.generate_input_file(parameters, namelists_toprint, following_text, self._blocked_keywords)
         input_filename = self.inputs.metadata.options.input_filename
         with folder.open(input_filename, 'w') as infile:
-            for namelist_name in namelists_toprint:
-                infile.write(u'&{0}\n'.format(namelist_name))
-                # namelist content; set to {} if not present, so that we leave an empty namelist
-                namelist = parameters.pop(namelist_name, {})
-                for key, value in sorted(six.iteritems(namelist)):
-                    infile.write(convert_input_to_namelist_entry(key, value))
-                infile.write(u'/\n')
-
-            # Write remaning text now, if any
-            infile.write(following_text)
-
-        # Check for specified namelists that are not expected
-        if parameters:
-            raise exceptions.InputValidationError(
-                'The following namelists are specified in parameters, but are '
-                'not valid namelists for the current type of calculation: '
-                '{}'.format(','.join(list(parameters.keys()))))
+            infile.write(file_content)
 
         remote_copy_list = []
         local_copy_list = []
