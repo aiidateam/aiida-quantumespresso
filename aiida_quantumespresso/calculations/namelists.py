@@ -67,13 +67,13 @@ class NamelistsCalculation(CalcJob):
         # pylint: disable=no-self-use
         return u''
 
-    @staticmethod
-    def generate_input_file(parameters, namelists_toprint, following_text="", blocked=[]):
+    @classmethod
+    def _set_blocked_keywords(self, parameters):
         # Force default values for blocked keywords. NOTE: this is different from PW/CP
-        for blocked in blocked:
-            namelist = blocked[0].upper()
-            key = blocked[1].lower()
-            value = blocked[2]
+        for b in self._blocked_keywords:
+            namelist = b[0].upper()
+            key = b[1].lower()
+            value = b[2]
             if namelist in parameters:
                 if key in parameters[namelist]:
                     raise exceptions.InputValidationError(
@@ -83,23 +83,48 @@ class NamelistsCalculation(CalcJob):
                 parameters[namelist] = {}
             parameters[namelist][key] = value
 
-        file_lines = []
-        for namelist_name in namelists_toprint:
-            file_lines.append(u'&{0}'.format(namelist_name))
+        return parameters
+
+    @staticmethod
+    def _filter_namelists(parameters, namelists_toprint, check_remaining=True):
+        """Select only the given namelists from a parameter dict.
+
+        :param parameters: 'dict' containing the fortran namelists and parameters to be used.
+        :param namelists_toprint:  'list' containing the namelists to be selected from 'parameters'.
+          If a given namelist is not present, an empty dict is used
+        :param check_remaining: 'bool', if True, raise an exception if more namelists other than
+          the ones given in 'namelist_toprint' are present in 'parameters'.
+        :return: 'dict' of namelists.
+        :raise: InputValidationError
+        """
+        filtered = {}
+        for key in namelists_toprint:
             # namelist content; set to {} if not present, so that we leave an empty namelist
-            namelist = parameters.pop(namelist_name, {})
-            for key, value in sorted(six.iteritems(namelist)):
-                file_lines.append(convert_input_to_namelist_entry(key, value)[:-1])
-            file_lines.append(u'/')
+            filtered[key] = parameters.pop(key, {})
 
-        # Write remaning text now, if any
-        file_lines.append(following_text)
-
-        if parameters:
+        if parameters and check_remaining:
             raise exceptions.InputValidationError(
                 'The following namelists are specified in parameters, but are '
                 'not valid namelists for the current type of calculation: '
                 '{}'.format(','.join(list(parameters.keys()))))
+
+        return filtered
+
+    @staticmethod
+    def _generate_input_file(parameters, following_text=""):
+        """Generate namelisst input_file content given a dict of parameters
+
+        :param parameters: 'dict' containing the fortran namelists and parameters to be used.
+          e.g.: {'CONTROL':{'calculation':'scf'}, 'SYSTEM':{'ecutwfc':30}}
+        :return: 'str' containing the input_file content a plain text.
+        """
+
+        file_lines = []
+        for namelist_name, namelist in parameters.items():
+            file_lines.append(u'&{0}'.format(namelist_name))
+            for key, value in sorted(six.iteritems(namelist)):
+                file_lines.append(convert_input_to_namelist_entry(key, value)[:-1])
+            file_lines.append(u'/')
 
         return '\n'.join(file_lines)
 
@@ -134,7 +159,10 @@ class NamelistsCalculation(CalcJob):
         except KeyError:  # list of namelists not specified; do automatic detection
             namelists_toprint = self._default_namelists
 
-        file_content   = self.generate_input_file(parameters, namelists_toprint, following_text, self._blocked_keywords)
+        parameters     = self._set_blocked_keywords(parameters)
+        parameters     = self._filter_namelists(parameters, namelists_toprint)
+        file_content   = self._generate_input_file(parameters, following_text)
+        file_content  += '\n' + following_text
         input_filename = self.inputs.metadata.options.input_filename
         with folder.open(input_filename, 'w') as infile:
             infile.write(file_content)
