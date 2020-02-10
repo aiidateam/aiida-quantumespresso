@@ -46,17 +46,21 @@ class InvalidatesCacheProcessSpecMixin(object):  # pylint: disable=too-few-publi
             super(InvalidatesCacheProcessSpecMixin, self).exit_code(status=status, message=message, label=label)
 
 
-class QuantumEspressoCalcJobProcessSpec(InvalidatesCacheProcessSpecMixin, CalcJobProcessSpec):  # pylint: disable=missing-docstring
-    pass
+class QuantumEspressoCalcJobProcessSpec(InvalidatesCacheProcessSpecMixin, CalcJobProcessSpec):
+    """Process spec intended for the `QuantumEspressoCalcJob` process class."""
 
 
-class QuantumEspressoWorkChainSpec(InvalidatesCacheProcessSpecMixin, WorkChainSpec):  # pylint: disable=missing-docstring
-    pass
+class QuantumEspressoWorkChainSpec(InvalidatesCacheProcessSpecMixin, WorkChainSpec):
+    """Process spec intended for the `QuantumEspressoWorkChain` process class."""
 
 
-class QuantumEspressoCalcJob(CalcJob):  # pylint: disable=missing-docstring,abstract-method
+class QuantumEspressoCalcJob(CalcJob):  # pylint: disable=abstract-method
+    """Custom CalcJob class for aiida-quantumespresso calculations."""
+
     _spec_class = QuantumEspressoCalcJobProcessSpec
 
 
-class QuantumEspressoWorkChain(WorkChain):  # pylint: disable=missing-docstring
+class QuantumEspressoWorkChain(WorkChain):
+    """Custom WorkChain class for aiida-quantumespresso workchains."""
+
     _spec_class = QuantumEspressoWorkChainSpec
