@@ -9,14 +9,14 @@ import six
 from aiida import orm
 from aiida.common import InputValidationError, CalcInfo, CodeInfo
 from aiida.common.lang import classproperty
-from aiida_quantumespresso._base import CalcJob
+from aiida_quantumespresso._base import QuantumEspressoCalcJob
 
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict, _pop_parser_options
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
 
-class NebCalculation(CalcJob):
+class NebCalculation(QuantumEspressoCalcJob):
     """Nudged Elastic Band code (neb.x) of Quantum ESPRESSO distribution For more information, refer to
     http://www.quantum-espresso.org/"""
 

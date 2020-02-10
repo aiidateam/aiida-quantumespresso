@@ -10,12 +10,12 @@ from aiida.common import datastructures, exceptions
 from aiida.orm import Dict
 from aiida.orm import RemoteData, FolderData, SinglefileData
 
-from aiida_quantumespresso._base import CalcJob
+from aiida_quantumespresso._base import QuantumEspressoCalcJob
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict, _pop_parser_options
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
 
-class NamelistsCalculation(CalcJob):
+class NamelistsCalculation(QuantumEspressoCalcJob):
     """`CalcJob` implementation to serve as base class for simple post-processing tools of Quantum ESPRESSO."""
 
     # Default name of the subfolder inside 'parent_folder' from which you want to copy the files, in case the

@@ -22,11 +22,11 @@ import six
 from aiida import orm
 from aiida.common.lang import classproperty
 
-from aiida_quantumespresso._base import CalcJob
+from aiida_quantumespresso._base import QuantumEspressoCalcJob
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 
 
-class CpCalculation(BasePwCpInputGenerator, CalcJob):
+class CpCalculation(BasePwCpInputGenerator, QuantumEspressoCalcJob):
     """`CalcJob` implementation for the cp.x code of Quantum ESPRESSO."""
 
     # Constants to use in the calculation

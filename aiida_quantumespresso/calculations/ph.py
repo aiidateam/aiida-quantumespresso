@@ -9,13 +9,13 @@ import six
 from aiida import orm
 from aiida.common import datastructures, exceptions
 
-from aiida_quantumespresso._base import CalcJob
+from aiida_quantumespresso._base import QuantumEspressoCalcJob
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
 
-class PhCalculation(CalcJob):
+class PhCalculation(QuantumEspressoCalcJob):
     """`CalcJob` implementation for the ph.x code of Quantum ESPRESSO."""
 
     # Keywords that cannot be set by the user but will be set by the plugin
