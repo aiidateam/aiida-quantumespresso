@@ -54,8 +54,13 @@ The aiida-quantumespresso set of plugins are released under a MIT license. See
 the LICENSE.txt file for more details.
 
 # Acknowlegements
-We acknowledge support from the [NCCR MARVEL](http://nccr-marvel.ch/) funded by the Swiss National Science Foundation and the EU Centre of Excellence "[MaX – Materials Design at the Exascale](http://www.max-centre.eu/)". (Horizon 2020 EINFRA-5, Grant No. 676598).
+We acknowledge support from:
+* the [NCCR MARVEL](http://nccr-marvel.ch/) funded by the Swiss National Science Foundation;
+* the EU Centre of Excellence "[MaX – Materials Design at the Exascale](http://www.max-centre.eu/)" (Horizon 2020 EINFRA-5, Grant No. 676598);
+* the [swissuniversities P-5 project "Materials Cloud"](https://www.materialscloud.org/swissuniversities).
 
 <img src="https://raw.githubusercontent.com/aiidateam/aiida-quantumespresso/develop/docs/source/images/MARVEL.png" width="300px" height="157px"/>
 
 <img src="https://raw.githubusercontent.com/aiidateam/aiida-quantumespresso/develop/docs/source/images/MaX.png" width="300px" height="84px"/>
+
+<img src="https://raw.githubusercontent.com/aiidateam/aiida-quantumespresso/develop/docs/source/images/swissuniversities.png" width="300px" height="35px"/>
