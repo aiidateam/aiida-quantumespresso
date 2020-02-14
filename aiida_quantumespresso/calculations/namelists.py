@@ -68,7 +68,7 @@ class NamelistsCalculation(CalcJob):
         return u''
 
     @classmethod
-    def _set_blocked_keywords(cls, parameters):
+    def set_blocked_keywords(cls, parameters):
         # Force default values for blocked keywords. NOTE: this is different from PW/CP
         for blocked in cls._blocked_keywords:
             namelist = blocked[0].upper()
@@ -86,7 +86,7 @@ class NamelistsCalculation(CalcJob):
         return parameters
 
     @staticmethod
-    def _filter_namelists(parameters, namelists_toprint, check_remaining=True):
+    def filter_namelists(parameters, namelists_toprint, check_remaining=True):
         """Select only the given namelists from a parameter dict.
 
         :param parameters: 'dict' containing the fortran namelists and parameters to be used.
@@ -111,7 +111,7 @@ class NamelistsCalculation(CalcJob):
         return filtered
 
     @staticmethod
-    def _generate_input_file(parameters):
+    def generate_input_file(parameters):
         """Generate namelisst input_file content given a dict of parameters
 
         :param parameters: 'dict' containing the fortran namelists and parameters to be used.
@@ -159,9 +159,9 @@ class NamelistsCalculation(CalcJob):
         except KeyError:  # list of namelists not specified; do automatic detection
             namelists_toprint = self._default_namelists
 
-        parameters = self._set_blocked_keywords(parameters)
-        parameters = self._filter_namelists(parameters, namelists_toprint)
-        file_content = self._generate_input_file(parameters)
+        parameters = self.set_blocked_keywords(parameters)
+        parameters = self.filter_namelists(parameters, namelists_toprint)
+        file_content = self.generate_input_file(parameters)
         file_content += '\n' + following_text
         input_filename = self.inputs.metadata.options.input_filename
         with folder.open(input_filename, 'w') as infile:
