@@ -69,7 +69,7 @@ class NamelistsCalculation(CalcJob):
 
     @classmethod
     def set_blocked_keywords(cls, parameters):
-        # Force default values for blocked keywords. NOTE: this is different from PW/CP
+        """Force default values for blocked keywords. NOTE: this is different from PW/CP."""
         for blocked in cls._blocked_keywords:
             namelist = blocked[0].upper()
             key = blocked[1].lower()
