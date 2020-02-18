@@ -47,6 +47,7 @@ class EpwCalculation(CalcJob):
         spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.epw')
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)
+        spec.input('kpoints', valid_type=orm.KpointsData, help='kpoint mesh')
         spec.input('qpoints', valid_type=orm.KpointsData, help='qpoint mesh')
         spec.input('parameters', valid_type=orm.Dict, help='')
         spec.input('settings', valid_type=orm.Dict, required=False, help='')
@@ -171,7 +172,7 @@ class EpwCalculation(CalcJob):
         parameters['INPUTEPW']['outdir'] = self._OUTPUT_SUBFOLDER
         parameters['INPUTEPW']['iverbosity'] = 1
         parameters['INPUTEPW']['prefix'] = self._PREFIX
-        parameters['INPUTPH']['fildyn'] = self._SAVE_PREFIX
+        #parameters['INPUTPH']['fildyn'] = self._SAVE_PREFIX
 
         try:
             mesh, offset = self.inputs.qpoints.get_kpoints_mesh()
@@ -186,7 +187,7 @@ class EpwCalculation(CalcJob):
 
             postpend_text = None
         except:
-            raise exceptions.InputValidationError('Cannot get the q-point')
+            raise exceptions.InputValidationError('Cannot get the coarse q-point')
 
        	try:
             mesh, offset = self.inputs.kpoints.get_kpoints_mesh()
@@ -201,7 +202,7 @@ class EpwCalculation(CalcJob):
 
             postpend_text = None
         except:
-            raise exceptions.InputValidationError('Cannot get the q-point')
+            raise exceptions.InputValidationError('Cannot get the coarse k-point')
 
 
         # customized namelists, otherwise not present in the distributed epw code
@@ -260,11 +261,11 @@ class EpwCalculation(CalcJob):
                 self._OUTPUT_SUBFOLDER
             ))
             # I also copy the ./save folder
-            remote_copy_list.append((
-                parent_folder.computer.uuid,
-                os.path.join(parent_folder.get_remote_path(), self._get_pseudo_folder()),
-                self._get_save_folder()
-            ))
+            #remote_copy_list.append((
+            #    parent_folder.computer.uuid,
+            #    os.path.join(parent_folder.get_remote_path(), self._get_pseudo_folder()),
+            #    self._get_save_folder()
+            #))
 
         codeinfo = datastructures.CodeInfo()
         codeinfo.cmdline_params = (list(settings.pop('CMDLINE', [])) + ['-in', self.metadata.options.input_filename])
