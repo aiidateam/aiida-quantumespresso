@@ -14,7 +14,8 @@ from . import cmd_launch
 
 @cmd_launch.command('epw')
 @options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.epw'))
-@options.CALCULATION(required=True)
+@click.option('--pw-parent', type=types.CalculationParamType(), help='The parent pw.x calculation.')
+@click.option('--ph-parent', type=types.CalculationParamType(), help='The parent pw.x calculation.')
 @options_qe.KPOINTS_MESH(default=[6, 6, 6])
 @options_qe.QPOINTS_MESH(default=[2, 2, 2])
 @options_qe.MAX_NUM_MACHINES()
@@ -22,7 +23,7 @@ from . import cmd_launch
 @options_qe.WITH_MPI()
 @options_qe.DAEMON()
 @decorators.with_dbenv()
-def launch_calculation(code, kpoints_mesh, qpoints_mesh, calculation, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
+def launch_calculation(code, kpoints_mesh, qpoints_mesh, pw_parent, ph_parent, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
     """Run a EpwCalculation."""
     from aiida import orm
     from aiida.plugins import CalculationFactory
@@ -32,24 +33,24 @@ def launch_calculation(code, kpoints_mesh, qpoints_mesh, calculation, max_num_ma
     # I cannot move this check into the option declaration, because CalcJobNode is not subclassed by the specific
     # calculation plugins (only Process is), and there is no feature yet to filter by the associated process_type.
     expected_process_type = 'aiida.calculations:quantumespresso.pw'
-    if calculation.process_type != expected_process_type:
+    if pw_parent.process_type != expected_process_type:
         raise click.BadParameter(
             'The input calculation node has a process_type: {}; should be {}'.format(
-                calculation.process_type, expected_process_type
+                pw_parent.process_type, expected_process_type
             )
         )
 
-    parent_folder = calculation.get_outgoing(node_class=orm.RemoteData, link_label_filter='remote_folder').one().node
+    pw_parent_folder = pw_parent.get_outgoing(node_class=orm.RemoteData, link_label_filter='remote_folder').one().node
 
     expected_process_type = 'aiida.calculations:quantumespresso.ph'
-    if calculation.process_type != expected_process_type:
+    if ph_parent.process_type != expected_process_type:
         raise click.BadParameter(
             'The input calculation node has a process_type: {}; should be {}'.format(
-                calculation.process_type, expected_process_type
+                ph_parent.process_type, expected_process_type
             )
         )
 
-    parent_folder = calculation.get_outgoing(node_class=orm.RemoteData, link_label_filter='remote_folder').one().node
+    ph_parent_folder = ph_parent.get_outgoing(node_class=orm.RemoteData, link_label_filter='remote_folder').one().node
 
 
     inputs = {
@@ -57,7 +58,8 @@ def launch_calculation(code, kpoints_mesh, qpoints_mesh, calculation, max_num_ma
         'qpoints': qpoints_mesh,
         'kpoints': kpoints_mesh,
         'parameters': orm.Dict(dict={'INPUTEPW': {}}),
-        'parent_folder': parent_folder,
+        'parent_folder': pw_parent_folder,
+        'parent_folder_ph': ph_parent_folder,
         'metadata': {
             'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
         }

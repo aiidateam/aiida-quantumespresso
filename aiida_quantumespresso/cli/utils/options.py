@@ -38,6 +38,17 @@ KPOINTS_MESH = OverridableOption(
     help=u'The number of points in the kpoint mesh along each basis vector.'
 )
 
+QPOINTS_MESH = OverridableOption(
+    '-q',
+    '--qpoints-mesh',
+    'qpoints_mesh',
+    nargs=3,
+    type=click.INT,
+    show_default=True,
+    callback=validate.validate_kpoints_mesh,
+    help=u'The number of points in the qpoint mesh along each basis vector.'
+)
+
 MAX_NUM_MACHINES = OverridableOption(
     '-m',
     '--max-num-machines',

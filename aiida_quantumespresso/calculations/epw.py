@@ -45,7 +45,7 @@ class EpwCalculation(CalcJob):
         super(EpwCalculation, cls).define(spec)
         spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
-        spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.ph')
+        spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.epw')
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)
         spec.input('qpoints', valid_type=orm.KpointsData, help='qpoint mesh')
         spec.input('parameters', valid_type=orm.Dict, help='')
@@ -127,6 +127,40 @@ class EpwCalculation(CalcJob):
                 raise exceptions.InputValidationError('parent calculation does not have a default output subfolder')
         parent_calc_out_subfolder = settings.pop('PARENT_CALC_OUT_SUBFOLDER', default_parent_output_folder)
 
+
+        parent_folder_ph = self.inputs.parent_folder_ph
+        parent_calcs_ph = parent_folder_ph.get_incoming(node_class=orm.CalcJobNode).all()
+
+        if not parent_calcs_ph:
+            raise exceptions.NotExistent('parent_folder<{}> has no parent calculation'.format(parent_folder.pk))
+        elif len(parent_calcs_ph) > 1:
+            raise exceptions.UniquenessError(
+                'parent_folder<{}> has multiple parent calculations'.format(parent_folder_ph.pk))
+
+        parent_calc_ph = parent_calcs_ph[0].node
+
+        # If the parent calculation is a `PhCalculation` we are restarting
+        restart_flag = parent_calc_ph.process_type == 'aiida.calculations:quantumespresso.epw'
+
+        # Also, the parent calculation must be on the same computer
+        if not self.node.computer.uuid == parent_calc_ph.computer.uuid:
+            raise exceptions.InputValidationError(
+                'Calculation has to be launched on the same computer as that of the parent: {}'.format(
+                    parent_calc_ph.computer.get_name()))
+
+        # put by default, default_parent_output_folder = ./out
+        try:
+            default_parent_output_folder = parent_calc_ph.process_class._OUTPUT_SUBFOLDER  # pylint: disable=protected-access
+        except AttributeError:
+            try:
+                default_parent_output_folder = parent_calc_ph._get_output_folder()  # pylint: disable=protected-access
+            except AttributeError:
+                raise exceptions.InputValidationError('parent calculation does not have a default output subfolder')
+        parent_calc_out_subfolder = settings.pop('PARENT_CALC_OUT_SUBFOLDER', default_parent_output_folder)
+
+
+
+
         # I put the first-level keys as uppercase (i.e., namelist and card names) and the second-level keys as lowercase
         parameters = _uppercase_dict(self.inputs.parameters.get_dict(), dict_name='parameters')
         parameters = {k: _lowercase_dict(v, dict_name=k) for k, v in six.iteritems(parameters)}
@@ -151,8 +185,10 @@ class EpwCalculation(CalcJob):
             parameters['INPUTEPW']['nq3'] = mesh[2]
 
             postpend_text = None
+        except:
+            raise exceptions.InputValidationError('Cannot get the q-point')
 
-        try:
+       	try:
             mesh, offset = self.inputs.kpoints.get_kpoints_mesh()
 
             if any([i != 0. for i in offset]):
@@ -164,6 +200,8 @@ class EpwCalculation(CalcJob):
             parameters['INPUTEPW']['nk3'] = mesh[2]
 
             postpend_text = None
+        except:
+            raise exceptions.InputValidationError('Cannot get the q-point')
 
 
         # customized namelists, otherwise not present in the distributed epw code
