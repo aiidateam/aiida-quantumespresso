@@ -51,10 +51,9 @@ class EpwCalculation(CalcJob):
         spec.input('qpoints', valid_type=orm.KpointsData, help='qpoint mesh')
         spec.input('parameters', valid_type=orm.Dict, help='')
         spec.input('settings', valid_type=orm.Dict, required=False, help='')
-        spec.input('parent_folder', valid_type=orm.RemoteData,
-            help='the folder of a completed `PwCalculation`')
-        spec.input('parent_folder_ph', valid_type=orm.RemoteData,
-            help='the folder of a completed `PhCalculation`')
+        spec.input('parent_folder_scf', valid_type=orm.RemoteData, help='the folder of a completed scf `PwCalculation`')
+        spec.input('parent_folder_nscf', valid_type=orm.RemoteData, help='the folder of a completed nscf `PwCalculation`')
+        spec.input('parent_folder_ph', valid_type=orm.RemoteData, help='the folder of a completed `PhCalculation`')
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.default_output_node = 'output_parameters'
 
@@ -98,50 +97,73 @@ class EpwCalculation(CalcJob):
         else:
             settings = {}
 
-        parent_folder = self.inputs.parent_folder
-        parent_calcs = parent_folder.get_incoming(node_class=orm.CalcJobNode).all()
+        # Deal with scf folder
+        parent_folder_scf = self.inputs.parent_folder_scf
+        parent_calcs_scf = parent_folder_scf.get_incoming(node_class=orm.CalcJobNode).all()
 
-        if not parent_calcs:
-            raise exceptions.NotExistent('parent_folder<{}> has no parent calculation'.format(parent_folder.pk))
-        elif len(parent_calcs) > 1:
+        if not parent_calcs_scf:
+            raise exceptions.NotExistent('parent_folder<{}> has no parent calculation'.format(parent_folder_scf.pk))
+        elif len(parent_calcs_scf) > 1:
             raise exceptions.UniquenessError(
-                'parent_folder<{}> has multiple parent calculations'.format(parent_folder.pk))
+                'parent_folder<{}> has multiple parent calculations'.format(parent_folder_scf.pk))
 
-        parent_calc = parent_calcs[0].node
-
-        # If the parent calculation is a `PhCalculation` we are restarting
-        restart_flag = parent_calc.process_type == 'aiida.calculations:quantumespresso.epw'
+        parent_calc_scf = parent_calcs_scf[0].node
 
         # Also, the parent calculation must be on the same computer
-        if not self.node.computer.uuid == parent_calc.computer.uuid:
+        if not self.node.computer.uuid == parent_calc_scf.computer.uuid:
             raise exceptions.InputValidationError(
                 'Calculation has to be launched on the same computer as that of the parent: {}'.format(
-                    parent_calc.computer.get_name()))
+                    parent_calc_scf.computer.get_name()))
 
         # put by default, default_parent_output_folder = ./out
         try:
-            default_parent_output_folder = parent_calc.process_class._OUTPUT_SUBFOLDER  # pylint: disable=protected-access
+            default_parent_output_folder_scf = parent_calc_scf.process_class._OUTPUT_SUBFOLDER  # pylint: disable=protected-access
         except AttributeError:
             try:
-                default_parent_output_folder = parent_calc._get_output_folder()  # pylint: disable=protected-access
+                default_parent_output_folder_scf = parent_calc_scf._get_output_folder()  # pylint: disable=protected-access
             except AttributeError:
                 raise exceptions.InputValidationError('parent calculation does not have a default output subfolder')
-        parent_calc_out_subfolder = settings.pop('PARENT_CALC_OUT_SUBFOLDER', default_parent_output_folder)
+        parent_calc_out_subfolder_scf = settings.pop('PARENT_CALC_OUT_SUBFOLDER_SCF', default_parent_output_folder_scf)
 
+        # Now nscf folder
+        parent_folder_nscf = self.inputs.parent_folder_nscf
+        parent_calcs_nscf = parent_folder_nscf.get_incoming(node_class=orm.CalcJobNode).all()
 
+        if not parent_calcs_nscf:
+            raise exceptions.NotExistent('parent_folder<{}> has no parent calculation'.format(parent_folder_nscf.pk))
+        elif len(parent_calcs_nscf) > 1:
+            raise exceptions.UniquenessError(
+                'parent_folder<{}> has multiple parent calculations'.format(parent_folder_nscf.pk))
+
+        parent_calc_nscf = parent_calcs_nscf[0].node
+
+        # Also, the parent calculation must be on the same computer
+        if not self.node.computer.uuid == parent_calc_nscf.computer.uuid:
+            raise exceptions.InputValidationError(
+                'Calculation has to be launched on the same computer as that of the parent: {}'.format(
+                    parent_calc_nscf.computer.get_name()))
+
+        # put by default, default_parent_output_folder = ./out
+        try:
+            default_parent_output_folder_nscf = parent_calc_nscf.process_class._OUTPUT_SUBFOLDER  # pylint: disable=protected-access
+        except AttributeError:
+            try:
+                default_parent_output_folder_nscf = parent_calc_nscf._get_output_folder()  # pylint: disable=protected-access
+            except AttributeError:
+                raise exceptions.InputValidationError('parent calculation does not have a default output subfolder')
+        parent_calc_out_subfolder_nscf = settings.pop('PARENT_CALC_OUT_SUBFOLDER_NSCF', default_parent_output_folder_nscf)
+
+        # Now phonon folder 
         parent_folder_ph = self.inputs.parent_folder_ph
         parent_calcs_ph = parent_folder_ph.get_incoming(node_class=orm.CalcJobNode).all()
 
         if not parent_calcs_ph:
-            raise exceptions.NotExistent('parent_folder<{}> has no parent calculation'.format(parent_folder.pk))
+            raise exceptions.NotExistent('parent_folder<{}> has no parent calculation'.format(parent_folder_ph.pk))
         elif len(parent_calcs_ph) > 1:
             raise exceptions.UniquenessError(
                 'parent_folder<{}> has multiple parent calculations'.format(parent_folder_ph.pk))
 
         parent_calc_ph = parent_calcs_ph[0].node
-
-        # If the parent calculation is a `PhCalculation` we are restarting
-        restart_flag = parent_calc_ph.process_type == 'aiida.calculations:quantumespresso.epw'
 
         # Also, the parent calculation must be on the same computer
         if not self.node.computer.uuid == parent_calc_ph.computer.uuid:
@@ -151,13 +173,13 @@ class EpwCalculation(CalcJob):
 
         # put by default, default_parent_output_folder = ./out
         try:
-            default_parent_output_folder = parent_calc_ph.process_class._OUTPUT_SUBFOLDER  # pylint: disable=protected-access
+            default_parent_output_folder_ph = parent_calc_ph.process_class._OUTPUT_SUBFOLDER  # pylint: disable=protected-access
         except AttributeError:
             try:
-                default_parent_output_folder = parent_calc_ph._get_output_folder()  # pylint: disable=protected-access
+                default_parent_output_folder_ph = parent_calc_ph._get_output_folder()  # pylint: disable=protected-access
             except AttributeError:
                 raise exceptions.InputValidationError('parent calculation does not have a default output subfolder')
-        parent_calc_out_subfolder = settings.pop('PARENT_CALC_OUT_SUBFOLDER', default_parent_output_folder)
+        parent_calc_out_subfolder_ph = settings.pop('PARENT_CALC_OUT_SUBFOLDER_PH', default_parent_output_folder_ph)
 
 
 
@@ -242,30 +264,45 @@ class EpwCalculation(CalcJob):
             folder.get_subfolder(self._OUTPUT_SUBFOLDER, create=True)
 
             remote_symlink_list.append((
-                parent_folder.computer.uuid,
-                os.path.join(parent_folder.get_remote_path(), parent_calc_out_subfolder, '*'),
+                parent_folder_scf.computer.uuid,
+                os.path.join(parent_folder_scf.get_remote_path(), parent_calc_out_subfolder_scf, '*'),
+                self._OUTPUT_SUBFOLDER
+            ))
+
+            # Same for nscf
+            remote_symlink_list.append((
+                parent_folder_nscf.computer.uuid,
+                os.path.join(parent_folder_nscf.get_remote_path(), parent_calc_out_subfolder_nscf, '*'),
                 self._OUTPUT_SUBFOLDER
             ))
 
             # I also create a symlink for the ./save folder
-            remote_symlink_list.append((
-                parent_folder.computer.uuid,
-                os.path.join(parent_folder.get_remote_path(), self._get_save_folder()),
-                self._get_save_folder()
-            ))
+            #remote_symlink_list.append((
+            #    parent_folder_ph.computer.uuid,
+            #    os.path.join(parent_folder_ph.get_remote_path(), self._get_save_folder_ph()),
+            #    self._get_save_folder()
+            #))
         else:
             # here I copy the whole folder ./out
             remote_copy_list.append((
-                parent_folder.computer.uuid,
-                os.path.join(parent_folder.get_remote_path(), parent_calc_out_subfolder),
+                parent_folder_scf.computer.uuid,
+                os.path.join(parent_folder_scf.get_remote_path(), parent_calc_out_subfolder_scf),
+                self._OUTPUT_SUBFOLDER
+            ))
+            # Same for nscf 
+            # here I copy the whole folder ./out
+            remote_copy_list.append((
+                parent_folder_nscf.computer.uuid,
+                os.path.join(parent_folder_nscf.get_remote_path(), parent_calc_out_subfolder_nscf),
                 self._OUTPUT_SUBFOLDER
             ))
             # I also copy the ./save folder
             #remote_copy_list.append((
-            #    parent_folder.computer.uuid,
-            #    os.path.join(parent_folder.get_remote_path(), self._get_pseudo_folder()),
+            #    parent_folder_ph.computer.uuid,
+            #    os.path.join(parent_folder_ph.get_remote_path(), self._get_pseudo_folder()),
             #    self._get_save_folder()
             #))
+
 
         codeinfo = datastructures.CodeInfo()
         codeinfo.cmdline_params = (list(settings.pop('CMDLINE', [])) + ['-in', self.metadata.options.input_filename])
@@ -289,10 +326,10 @@ class EpwCalculation(CalcJob):
 
         return calcinfo
 
-    @staticmethod
-    def _get_pseudo_folder():
-        """Get the calculation-specific pseudo folder (relative path).
-
-        Default given by PwCalculation._PSEUDO_SUBFOLDER
-        """
-        return PwCalculation._PSEUDO_SUBFOLDER  # pylint: disable=protected-access
+#    @staticmethod
+#    def _get_pseudo_folder():
+#        """Get the calculation-specific pseudo folder (relative path).
+#
+#        Default given by PwCalculation._PSEUDO_SUBFOLDER
+#        """
+#        return PwCalculation._PSEUDO_SUBFOLDER  # pylint: disable=protected-access
