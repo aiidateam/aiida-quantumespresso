@@ -63,8 +63,9 @@ def launch_calculation(
     from aiida_quantumespresso.utils.resources import get_default_options
 
     parameters = {
-        'CONTROL': {
-            'calculation': mode,
+        'CONTROL': { 
+            'calculation'   : mode,
+            'restart_mode'  : 'from_scratch'
         },
         'SYSTEM': {
             'ecutwfc': ecutwfc,

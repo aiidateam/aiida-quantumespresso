@@ -14,7 +14,6 @@ from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
-
 class EpwCalculation(CalcJob):
     """`CalcJob` implementation for the epw.x code of Quantum ESPRESSO."""
 
@@ -35,6 +34,8 @@ class EpwCalculation(CalcJob):
     _OUTPUT_XML_TENSOR_FILE_NAME = 'tensors.xml'
     _OUTPUT_SUBFOLDER = './out/'
     _SAVE_PREFIX = '/save/'
+    _FOLDER_SAVE = 'save'
+    _FOLDER_DYNAMICAL_MATRIX = 'DYN_MAT'
 
     # Not using symlink in pw to allow multiple nscf to run on top of the same scf
     _default_symlink_usage = False
@@ -45,7 +46,7 @@ class EpwCalculation(CalcJob):
         super(EpwCalculation, cls).define(spec)
         spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
-        spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.epw')
+        #spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.epw')
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)
         spec.input('kpoints', valid_type=orm.KpointsData, help='kpoint mesh')
         spec.input('qpoints', valid_type=orm.KpointsData, help='qpoint mesh')
@@ -86,6 +87,43 @@ class EpwCalculation(CalcJob):
         :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
         :return: `aiida.common.datastructures.CalcInfo` instance
         """
+        def isSEQ(self, parent_folder_ph):
+            """Check if the calculation was done in sequential or parallel
+            """
+            tmp_path = os.path.join(parent_folder_ph.get_remote_path(), self._OUTPUT_SUBFOLDER)
+            fname = os.path.join(tmp_path, '_ph0', '{}.dvscf'.format(self._PREFIX))
+
+            if (os.path.isfile(fname)):
+                lseq = True
+            else:
+                lseq = False
+
+            return lseq
+
+
+        def get_nqpt(self, parent_folder_ph):
+            """Get the number of q-points in the IBZ from a phonon calculation.
+            """
+
+            tmp_path = os.path.join(parent_folder_ph.get_remote_path(), self._OUTPUT_SUBFOLDER)
+            fname = os.path.join(tmp_path, '_ph0', '{}.phsave/control_ph.xml'.format(self._PREFIX))
+
+            fid = open(fname, 'r')
+            lines = fid.readlines()
+            # these files are relatively small so reading the whole thing shouldn't be an issue
+            fid.close()
+
+            line_number_of_nqpt = 0
+            while 'NUMBER_OF_Q_POINTS' not in lines[line_number_of_nqpt]:
+                # increment to line of interest
+                line_number_of_nqpt += 1
+            line_number_of_nqpt += 1  # its on the next line after that text
+
+            nqpt = int(lines[line_number_of_nqpt])
+
+            return nqpt
+
+
         # pylint: disable=too-many-statements,too-many-branches
         local_copy_list = []
         remote_copy_list = []
@@ -209,6 +247,11 @@ class EpwCalculation(CalcJob):
             namelists_toprint = self._compulsory_namelists
 
 
+        # create the save folder with dvscf and dyn files. 
+        folder.get_subfolder(self._FOLDER_SAVE, create=True)
+
+
+
         with folder.open(self.metadata.options.input_filename, 'w') as infile:
             for namelist_name in namelists_toprint:
                 infile.write(u'&{0}\n'.format(namelist_name))
@@ -240,12 +283,6 @@ class EpwCalculation(CalcJob):
                 self._OUTPUT_SUBFOLDER
             ))
 
-            # I also create a symlink for the ./save folder
-            #remote_symlink_list.append((
-            #    parent_folder_ph.computer.uuid,
-            #    os.path.join(parent_folder_ph.get_remote_path(), self._get_save_folder_ph()),
-            #    self._get_save_folder()
-            #))
         else:
             # here I copy the whole folder ./out
             remote_copy_list.append((
@@ -253,12 +290,76 @@ class EpwCalculation(CalcJob):
                 os.path.join(parent_folder_nscf.get_remote_path(), parent_calc_out_subfolder_nscf),
                 self._OUTPUT_SUBFOLDER
             ))
-            # I also copy the ./save folder
-            #remote_copy_list.append((
-            #    parent_folder_ph.computer.uuid,
-            #    os.path.join(parent_folder_ph.get_remote_path(), self._get_pseudo_folder()),
-            #    self._get_save_folder()
-            #))
+
+        # Test if seq. or parallel run
+        SEQ = isSEQ(self, parent_folder_ph)
+
+        #This gets the nqpt from the outputfiles
+        nqpt = get_nqpt(self, parent_folder_ph)
+
+        prefix = self._PREFIX
+
+        for iqpt in range(1, nqpt+1):
+            label = str(iqpt)
+            # Case calculation in seq.
+            if SEQ:
+                tmp_path = os.path.join(self._FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-0')
+                remote_copy_list.append((
+                    parent_folder_ph.computer.uuid,
+                    os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
+                    'save/'+prefix+'.dyn_q0.xml'))
+                tmp_path = os.path.join(self._FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-'+label+'.xml')
+                remote_copy_list.append((
+                    parent_folder_ph.computer.uuid,
+                    os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
+                    'save/'+prefix+'.dyn_q'+label+'.xml'))
+
+                if (iqpt == 1):
+                  tmp_path = os.path.join(self._OUTPUT_SUBFOLDER, '_ph0/'+prefix+'.dvscf')
+                  remote_copy_list.append((
+                      parent_folder_ph.computer.uuid,
+                      os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
+                      'save/'+prefix+'.dvscf_q'+label))
+                  tmp_path = os.path.join(self._OUTPUT_SUBFOLDER, '_ph0/'+prefix+'.phsave')
+                  remote_copy_list.append((
+                      parent_folder_ph.computer.uuid,
+                      os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
+                      'save/'))
+                else:
+                  tmp_path = os.path.join(self._OUTPUT_SUBFOLDER, '_ph0/'+prefix+'.q_'+label+'/'+prefix+'.dvscf')
+                  remote_copy_list.append((
+                      parent_folder_ph.computer.uuid,
+                      os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
+                      'save/'+prefix+'.dvscf_q'+label))
+            else:
+                tmp_path = os.path.join(self._FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-0')
+                remote_copy_list.append((
+                    parent_folder_ph.computer.uuid,
+                    os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
+                    'save/'+prefix+'.dyn_q0.xml'))
+                tmp_path = os.path.join(self._FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-'+label+'.xml')
+                remote_copy_list.append((
+                    parent_folder_ph.computer.uuid,
+                    os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
+                    'save/'+prefix+'.dyn_q'+label+'.xml'))
+
+                if (iqpt == 1):
+                  tmp_path = os.path.join(self._OUTPUT_SUBFOLDER, '_ph0/'+prefix+'.dvscf1')
+                  remote_copy_list.append((
+                      parent_folder_ph.computer.uuid,
+                      os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
+                      'save/'+prefix+'.dvscf_q'+label))
+                  tmp_path = os.path.join(self._OUTPUT_SUBFOLDER, '_ph0/'+prefix+'.phsave')
+                  remote_copy_list.append((
+                      parent_folder_ph.computer.uuid,
+                      os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
+                      'save/'))
+                else:
+                  tmp_path = os.path.join(self._OUTPUT_SUBFOLDER, '_ph0/'+prefix+'.q_'+label+'/'+prefix+'.dvscf1')
+                  remote_copy_list.append((
+                      parent_folder_ph.computer.uuid,
+                      os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
+                      'save/'+prefix+'.dvscf_q'+label))
 
 
         codeinfo = datastructures.CodeInfo()
@@ -283,10 +384,3 @@ class EpwCalculation(CalcJob):
 
         return calcinfo
 
-#    @staticmethod
-#    def _get_pseudo_folder():
-#        """Get the calculation-specific pseudo folder (relative path).
-#
-#        Default given by PwCalculation._PSEUDO_SUBFOLDER
-#        """
-#        return PwCalculation._PSEUDO_SUBFOLDER  # pylint: disable=protected-access

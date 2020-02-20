@@ -39,7 +39,7 @@ class PhCalculation(CalcJob):
     _DVSCF_PREFIX = 'dvscf'
     _DRHO_STAR_EXT = 'drho_rot'
     _FOLDER_DYNAMICAL_MATRIX = 'DYN_MAT'
-    _OUTPUT_DYNAMICAL_MATRIX_PREFIX = os.path.join(_FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-')
+    _OUTPUT_DYNAMICAL_MATRIX_PREFIX = os.path.join(_FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-.xml')
 
     # Not using symlink in pw to allow multiple nscf to run on top of the same scf
     _default_symlink_usage = False
@@ -161,6 +161,7 @@ class PhCalculation(CalcJob):
         parameters['INPUTPH']['outdir'] = self._OUTPUT_SUBFOLDER
         parameters['INPUTPH']['iverbosity'] = 1
         parameters['INPUTPH']['prefix'] = self._PREFIX
+        print('fildyn',self._OUTPUT_DYNAMICAL_MATRIX_PREFIX )
         parameters['INPUTPH']['fildyn'] = self._OUTPUT_DYNAMICAL_MATRIX_PREFIX
 
         if prepare_for_epw:
@@ -304,6 +305,13 @@ class PhCalculation(CalcJob):
             with folder.open('{}.EXIT'.format(self._PREFIX), 'w') as handle:
                 handle.write('\n')
 
+
+                remote_copy_list.append((
+                    parent_folder.computer.uuid,
+                    os.path.join(parent_folder.get_remote_path(), self._FOLDER_DYNAMICAL_MATRIX),
+                    '.'
+                ))
+
         codeinfo = datastructures.CodeInfo()
         codeinfo.cmdline_params = (list(settings.pop('CMDLINE', [])) + ['-in', self.metadata.options.input_filename])
         codeinfo.stdout_name = self.metadata.options.output_filename
@@ -330,80 +338,6 @@ class PhCalculation(CalcJob):
 
         return calcinfo
 
-        if prepare_for_epw:
-            # Test if '.xml' files are used
-            XML = hasXML()
-            
-            # Test if seq. or parallel run
-            SEQ = isSEQ()
-            
-            #This gets the nqpt from the outputfiles
-            nqpt = get_nqpt()
-            
-            os.system('mkdir save 2>/dev/null')
-            prefix = self._PREFIX
-            
-            for iqpt in range(1, nqpt+1):
-                label = str(iqpt)
-            
-                # Case calculation in seq.
-                if SEQ:
-                    # Case with XML files
-                    if XML:
-                        os.system('cp '+prefix+'.dyn0 '+prefix+'.dyn0.xml')
-                        os.system('cp '+prefix+'.dyn'+str(iqpt)+'.xml save/'+prefix
-                                  + '.dyn_q'+label+'.xml')
-                        if (iqpt == 1):
-                            os.system('cp _ph0/'+prefix+'.dvscf* save/'+prefix+'.dvscf_q'
-                                      + label)
-                            os.system('cp -r _ph0/'+prefix+'.phsave save/')
-                            os.system('cp '+prefix+'.fc.xml save/ifc.q2r.xml')
-                        else:
-                            os.system('cp _ph0/'+prefix+'.q_'+str(iqpt)+'/'+prefix +
-                                      '.dvscf* save/'+prefix+'.dvscf_q'+label)
-                            os.system('rm _ph0/'+prefix+'.q_'+str(iqpt)+'/*wfc*')
-                    # Case without XML files
-                    else:
-                        os.system('cp '+prefix+'.dyn'+str(iqpt)+' save/'+prefix+'.dyn_q' +
-                                  label)
-                        if (iqpt == 1):
-                            os.system('cp _ph0/'+prefix+'.dvscf save/'+prefix+'.dvscf_q' +
-                                      label)
-                            os.system('cp -r _ph0/'+prefix+'.phsave save/')
-                            os.system('cp '+prefix+'.fc save/ifc.q2r')
-                        else:
-                            os.system('cp _ph0/'+prefix+'.q_'+str(iqpt)+'/'+prefix +
-                                      '.dvscf save/'+prefix+'.dvscf_q'+label)
-                            os.system('rm _ph0/'+prefix+'.q_'+str(iqpt)+'/*wfc*')
-                else:
-                    # Case with XML format
-                    if XML:
-                        os.system('cp '+prefix+'.dyn0 '+prefix+'.dyn0.xml')
-                        os.system('cp '+prefix+'.dyn'+str(iqpt)+'.xml save/'+prefix +
-                                  '.dyn_q'+label+'.xml')
-                        if (iqpt == 1):
-                            os.system('cp _ph0/'+prefix+'.dvscf1 save/'+prefix+'.dvscf_q' +
-                                      label)
-                            os.system('cp -r _ph0/'+prefix+'.phsave save/')
-                            os.system('cp '+prefix+'.fc.xml save/ifc.q2r.xml')
-                        else:
-                            os.system('cp _ph0/'+prefix+'.q_'+str(iqpt)+'/'+prefix +
-                                      '.dvscf1 save/'+prefix+'.dvscf_q'+label)
-                            os.system('rm _ph0/'+prefix+'.q_'+str(iqpt)+'/*wfc*')
-                    # Case without XML format
-                    else:
-                        os.system('cp '+prefix+'.dyn'+str(iqpt)+' save/'+prefix+'.dyn_q' +
-                                  label)
-                        if (iqpt == 1):
-                            os.system('cp _ph0/'+prefix+'.dvscf1 save/'+prefix+'.dvscf_q' +
-                                      label)
-                            os.system('cp -r _ph0/'+prefix+'.phsave save/')
-                            os.system('cp '+prefix+'.fc save/ifc.q2r')
-                        else:
-                            os.system('cp _ph0/'+prefix+'.q_'+str(iqpt)+'/'+prefix +
-                                      '.dvscf1 save/'+prefix+'.dvscf_q'+label)
-                            os.system('rm _ph0/'+prefix+'.q_'+str(iqpt)+'/*wfc*')
-
 
     @staticmethod
     def _get_pseudo_folder():
@@ -412,73 +346,5 @@ class PhCalculation(CalcJob):
         Default given by PwCalculation._PSEUDO_SUBFOLDER
         """
         return PwCalculation._PSEUDO_SUBFOLDER  # pylint: disable=protected-access
-
-    # Return the number of q-points in the IBZ
-    def get_nqpt():
-        """Get the number of q-points in the IBZ from a phonon calculation.
-        """
-        fname = os.path.join(self._OUTPUT_SUBFOLDER, '_ph0', '{}.phsave/control_ph.xml'.format(self._PREFIX))  
-    
-        fid = open(fname, 'r')
-        lines = fid.readlines()
-        # these files are relatively small so reading the whole thing shouldn't be an issue
-        fid.close()
-    
-        line_number_of_nqpt = 0
-        while 'NUMBER_OF_Q_POINTS' not in lines[line_number_of_nqpt]:
-            # increment to line of interest
-            line_number_of_nqpt += 1
-        line_number_of_nqpt += 1  # its on the next line after that text
-    
-        nqpt = int(lines[line_number_of_nqpt])
-    
-        return nqpt
-
-    # Check if the calculation include SOC
-    def hasSOC():
-        """Check if the calculation was done with SOC
-        """
-        fname = os.path.join(self._OUTPUT_SUBFOLDER, '{}.save/data-file-schema.xml'.format(self._PREFIX))
-    
-        xmldoc = minidom.parse(fname)
-        item = xmldoc.getElementsByTagName('spinorbit')[0]
-        lSOC = item.childNodes[0].data
-    
-        return lSOC
-
-    # check if calculation used xml files (irrelevant of presence of SOC)
-    def hasXML():
-        """Check if the calculation was done with XML. 
-        """
-        # check for a file named prefix.dyn1.xml
-        # if it exists => return True else return False
-        fname = os.path.join(self._PREFIX + ".dyn1.xml")
-        
-        if os.path.isfile(fname):
-            return True
-        # check if the other without .xml extension exists
-        # if not raise an error
-        fname_no_xml = fname.strip(".xml")
-    
-        class FileNotFoundError(Exception):
-            pass
-        if not os.path.isfile(fname_no_xml):
-            raise FileNotFoundError(
-                    "No dyn0 file found cannot tell if xml format was used.")
-        return False
-
-    # Check if the calculation was done in sequential
-    def isSEQ(prefix):
-        """Check if the calculation was done in sequential or parallel
-        """
-        fname = os.path.join(self._OUTPUT_SUBFOLDER, '_ph0', '{}.dvscf'.format(self._PREFIX))
-        if (os.path.isfile(fname)):
-            lseq = True
-        else:
-            lseq = False
-    
-        return lseq
-
-
 
 

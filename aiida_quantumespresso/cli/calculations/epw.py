@@ -58,7 +58,7 @@ def launch_calculation(code, kpoints_mesh, qpoints_mesh, pw_nscf_parent, ph_pare
         'qpoints': qpoints_mesh,
         'kpoints': kpoints_mesh,
         'parameters': orm.Dict(dict={'INPUTEPW': {
-                                         'nbndsub'   : 4,
+                                         'nbndsub'   : 8,
                                          'elph'      : True,
                                          'kmaps'     : False,
                                          'epbwrite'  : True,
@@ -74,7 +74,8 @@ def launch_calculation(code, kpoints_mesh, qpoints_mesh, pw_nscf_parent, ph_pare
                                          'nqf1'      : 2,
                                          'nqf2'      : 2,
                                          'nqf3'      : 2,
-              				 'wannierize' : True,
+              				 'wannierize': True,
+                                         'dvscf_dir' : './save/'
                                          }}),
         'parent_folder_nscf': pw_nscf_parent_folder,
         'parent_folder_ph': ph_parent_folder,
