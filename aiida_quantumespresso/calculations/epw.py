@@ -51,7 +51,6 @@ class EpwCalculation(CalcJob):
         spec.input('qpoints', valid_type=orm.KpointsData, help='qpoint mesh')
         spec.input('parameters', valid_type=orm.Dict, help='')
         spec.input('settings', valid_type=orm.Dict, required=False, help='')
-        spec.input('parent_folder_scf', valid_type=orm.RemoteData, help='the folder of a completed scf `PwCalculation`')
         spec.input('parent_folder_nscf', valid_type=orm.RemoteData, help='the folder of a completed nscf `PwCalculation`')
         spec.input('parent_folder_ph', valid_type=orm.RemoteData, help='the folder of a completed `PhCalculation`')
         spec.output('output_parameters', valid_type=orm.Dict)
@@ -97,35 +96,7 @@ class EpwCalculation(CalcJob):
         else:
             settings = {}
 
-        # Deal with scf folder
-        parent_folder_scf = self.inputs.parent_folder_scf
-        parent_calcs_scf = parent_folder_scf.get_incoming(node_class=orm.CalcJobNode).all()
-
-        if not parent_calcs_scf:
-            raise exceptions.NotExistent('parent_folder<{}> has no parent calculation'.format(parent_folder_scf.pk))
-        elif len(parent_calcs_scf) > 1:
-            raise exceptions.UniquenessError(
-                'parent_folder<{}> has multiple parent calculations'.format(parent_folder_scf.pk))
-
-        parent_calc_scf = parent_calcs_scf[0].node
-
-        # Also, the parent calculation must be on the same computer
-        if not self.node.computer.uuid == parent_calc_scf.computer.uuid:
-            raise exceptions.InputValidationError(
-                'Calculation has to be launched on the same computer as that of the parent: {}'.format(
-                    parent_calc_scf.computer.get_name()))
-
-        # put by default, default_parent_output_folder = ./out
-        try:
-            default_parent_output_folder_scf = parent_calc_scf.process_class._OUTPUT_SUBFOLDER  # pylint: disable=protected-access
-        except AttributeError:
-            try:
-                default_parent_output_folder_scf = parent_calc_scf._get_output_folder()  # pylint: disable=protected-access
-            except AttributeError:
-                raise exceptions.InputValidationError('parent calculation does not have a default output subfolder')
-        parent_calc_out_subfolder_scf = settings.pop('PARENT_CALC_OUT_SUBFOLDER_SCF', default_parent_output_folder_scf)
-
-        # Now nscf folder
+        # Copy nscf folder
         parent_folder_nscf = self.inputs.parent_folder_nscf
         parent_calcs_nscf = parent_folder_nscf.get_incoming(node_class=orm.CalcJobNode).all()
 
@@ -264,13 +235,6 @@ class EpwCalculation(CalcJob):
             folder.get_subfolder(self._OUTPUT_SUBFOLDER, create=True)
 
             remote_symlink_list.append((
-                parent_folder_scf.computer.uuid,
-                os.path.join(parent_folder_scf.get_remote_path(), parent_calc_out_subfolder_scf, '*'),
-                self._OUTPUT_SUBFOLDER
-            ))
-
-            # Same for nscf
-            remote_symlink_list.append((
                 parent_folder_nscf.computer.uuid,
                 os.path.join(parent_folder_nscf.get_remote_path(), parent_calc_out_subfolder_nscf, '*'),
                 self._OUTPUT_SUBFOLDER
@@ -283,13 +247,6 @@ class EpwCalculation(CalcJob):
             #    self._get_save_folder()
             #))
         else:
-            # here I copy the whole folder ./out
-            remote_copy_list.append((
-                parent_folder_scf.computer.uuid,
-                os.path.join(parent_folder_scf.get_remote_path(), parent_calc_out_subfolder_scf),
-                self._OUTPUT_SUBFOLDER
-            ))
-            # Same for nscf 
             # here I copy the whole folder ./out
             remote_copy_list.append((
                 parent_folder_nscf.computer.uuid,

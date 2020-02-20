@@ -35,6 +35,7 @@ class PhCalculation(CalcJob):
     _OUTPUT_SUBFOLDER = './out/'
     _FOLDER_DRHO = 'FILDRHO'
     _DRHO_PREFIX = 'drho'
+    _DVSCF_PREFIX = 'dvscf'
     _DRHO_STAR_EXT = 'drho_rot'
     _FOLDER_DYNAMICAL_MATRIX = 'DYN_MAT'
     _OUTPUT_DYNAMICAL_MATRIX_PREFIX = os.path.join(_FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-')
@@ -132,6 +133,12 @@ class PhCalculation(CalcJob):
         parameters = _uppercase_dict(self.inputs.parameters.get_dict(), dict_name='parameters')
         parameters = {k: _lowercase_dict(v, dict_name=k) for k, v in six.iteritems(parameters)}
 
+        prepare_for_epw = settings.pop('PREPARE_FOR_EPW', False)
+        if prepare_for_epw:
+            self._blocked_keywords += [
+                ('INPUTPH', 'fildvscf')
+            ] 
+
         prepare_for_d3 = settings.pop('PREPARE_FOR_D3', False)
         if prepare_for_d3:
             self._blocked_keywords += [
@@ -154,6 +161,9 @@ class PhCalculation(CalcJob):
         parameters['INPUTPH']['iverbosity'] = 1
         parameters['INPUTPH']['prefix'] = self._PREFIX
         parameters['INPUTPH']['fildyn'] = self._OUTPUT_DYNAMICAL_MATRIX_PREFIX
+
+        if prepare_for_epw:
+            parameters['INPUTPH']['fildvscf'] = self._DVSCF_PREFIX
 
         if prepare_for_d3:
             parameters['INPUTPH']['fildrho'] = self._DRHO_PREFIX

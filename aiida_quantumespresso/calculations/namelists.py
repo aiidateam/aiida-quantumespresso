@@ -112,7 +112,7 @@ class NamelistsCalculation(CalcJob):
 
     @staticmethod
     def generate_input_file(parameters):
-        """Generate namelisst input_file content given a dict of parameters
+        """Generate namelist input_file content given a dict of parameters
 
         :param parameters: 'dict' containing the fortran namelists and parameters to be used.
           e.g.: {'CONTROL':{'calculation':'scf'}, 'SYSTEM':{'ecutwfc':30}}
