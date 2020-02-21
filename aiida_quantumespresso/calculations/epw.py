@@ -18,7 +18,7 @@ class EpwCalculation(CalcJob):
     """`CalcJob` implementation for the epw.x code of Quantum ESPRESSO."""
 
     # Keywords that cannot be set by the user but will be set by the plugin
-    _blocked_keywords = [('INPUTEPW', 'outdir'), ('INPUTEPW', 'iverbosity'), ('INPUTEPW', 'prefix'), 
+    _blocked_keywords = [('INPUTEPW', 'outdir'), ('INPUTEPW', 'iverbosity'), ('INPUTEPW', 'prefix'),
                          ('INPUTEPW', 'dvscf_dir'),
                          ('INPUTEPW', 'amass'), ('INPUTEPW', 'nq1'), ('INPUTEPW', 'nq2'), ('INPUTEPW', 'nq3'),
                          ('INPUTEPW', 'nk1'), ('INPUTEPW', 'nk2'), ('INPUTEPW', 'nk3')]
@@ -46,13 +46,14 @@ class EpwCalculation(CalcJob):
         super(EpwCalculation, cls).define(spec)
         spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
-        #spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.epw')
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)
         spec.input('kpoints', valid_type=orm.KpointsData, help='kpoint mesh')
         spec.input('qpoints', valid_type=orm.KpointsData, help='qpoint mesh')
+        spec.input('qibz', valid_type=orm.ArrayData, help='qpoint mesh in IBZ (must be same as prior PhCalculation')
         spec.input('parameters', valid_type=orm.Dict, help='')
         spec.input('settings', valid_type=orm.Dict, required=False, help='')
-        spec.input('parent_folder_nscf', valid_type=orm.RemoteData, help='the folder of a completed nscf `PwCalculation`')
+        spec.input('parent_folder_nscf', valid_type=orm.RemoteData,
+                 help='the folder of a completed nscf `PwCalculation`')
         spec.input('parent_folder_ph', valid_type=orm.RemoteData, help='the folder of a completed `PhCalculation`')
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.default_output_node = 'output_parameters'
@@ -162,7 +163,7 @@ class EpwCalculation(CalcJob):
                 raise exceptions.InputValidationError('parent calculation does not have a default output subfolder')
         parent_calc_out_subfolder_nscf = settings.pop('PARENT_CALC_OUT_SUBFOLDER_NSCF', default_parent_output_folder_nscf)
 
-        # Now phonon folder 
+        # Now phonon folder
         parent_folder_ph = self.inputs.parent_folder_ph
         parent_calcs_ph = parent_folder_ph.get_incoming(node_class=orm.CalcJobNode).all()
 
@@ -231,7 +232,6 @@ class EpwCalculation(CalcJob):
             parameters['INPUTEPW']['nk2'] = mesh[1]
             parameters['INPUTEPW']['nk3'] = mesh[2]
 
-            postpend_text = None
         except:
             raise exceptions.InputValidationError('Cannot get the coarse k-point')
 
@@ -247,9 +247,18 @@ class EpwCalculation(CalcJob):
             namelists_toprint = self._compulsory_namelists
 
 
-        # create the save folder with dvscf and dyn files. 
+        # create the save folder with dvscf and dyn files.
         folder.get_subfolder(self._FOLDER_SAVE, create=True)
 
+
+        # List of IBZ q-point to be added below EPW. To be removed when removed from EPW.
+        list_of_points = self.inputs.qibz.get_array('qibz')
+
+        # add here the list of point coordinates
+        if len(list_of_points) > 1:
+            postpend_text = u'{} cartesian\n'.format(len(list_of_points))
+            for points in list_of_points:
+                postpend_text += u'{0:18.10f} {1:18.10f} {2:18.10f} \n'.format(*points)
 
 
         with folder.open(self.metadata.options.input_filename, 'w') as infile:
@@ -383,4 +392,3 @@ class EpwCalculation(CalcJob):
             raise exceptions.InputValidationError('`settings` contained unexpected keys: {}'.format(unknown_keys))
 
         return calcinfo
-

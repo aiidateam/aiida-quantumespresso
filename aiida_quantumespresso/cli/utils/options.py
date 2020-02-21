@@ -49,6 +49,16 @@ QPOINTS_MESH = OverridableOption(
     help=u'The number of points in the qpoint mesh along each basis vector.'
 )
 
+QIBZ = OverridableOption(
+    '--qpoint-ibz',
+    'qibz',
+    nargs=3,
+    multiple=True,
+    type=click.FLOAT,
+    show_default=True,
+    help=u'The IBZ q-point list. Must be the same as the previous PH calculation.'
+)
+
 MAX_NUM_MACHINES = OverridableOption(
     '-m',
     '--max-num-machines',
