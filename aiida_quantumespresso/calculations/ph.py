@@ -138,7 +138,7 @@ class PhCalculation(CalcJob):
         if prepare_for_epw:
             self._blocked_keywords += [
                 ('INPUTPH', 'fildvscf')
-            ] 
+            ]
 
         prepare_for_d3 = settings.pop('PREPARE_FOR_D3', False)
         if prepare_for_d3:
@@ -161,7 +161,6 @@ class PhCalculation(CalcJob):
         parameters['INPUTPH']['outdir'] = self._OUTPUT_SUBFOLDER
         parameters['INPUTPH']['iverbosity'] = 1
         parameters['INPUTPH']['prefix'] = self._PREFIX
-        print('fildyn',self._OUTPUT_DYNAMICAL_MATRIX_PREFIX )
         parameters['INPUTPH']['fildyn'] = self._OUTPUT_DYNAMICAL_MATRIX_PREFIX
 
         if prepare_for_epw:
@@ -346,5 +345,3 @@ class PhCalculation(CalcJob):
         Default given by PwCalculation._PSEUDO_SUBFOLDER
         """
         return PwCalculation._PSEUDO_SUBFOLDER  # pylint: disable=protected-access
-
-

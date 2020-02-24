@@ -1,5 +1,5 @@
 &INPUTPH
-  fildyn = 'DYN_MAT/dynamical-matrix-'
+  fildyn = 'DYN_MAT/dynamical-matrix-.xml'
   iverbosity = 1
   ldisp = .true.
   outdir = './out/'
