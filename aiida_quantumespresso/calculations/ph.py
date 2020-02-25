@@ -3,7 +3,6 @@
 from __future__ import absolute_import
 
 import os
-from xml.dom import minidom
 import numpy
 import six
 
@@ -139,8 +138,6 @@ class PhCalculation(CalcJob):
             self._blocked_keywords += [
                 ('INPUTPH', 'fildvscf')
             ]
-            # Use .XML format for the dynamical matrix in EPW.
-            _OUTPUT_DYNAMICAL_MATRIX_PREFIX = os.path.join(_FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-.xml')
 
         prepare_for_d3 = settings.pop('PREPARE_FOR_D3', False)
         if prepare_for_d3:
@@ -163,7 +160,11 @@ class PhCalculation(CalcJob):
         parameters['INPUTPH']['outdir'] = self._OUTPUT_SUBFOLDER
         parameters['INPUTPH']['iverbosity'] = 1
         parameters['INPUTPH']['prefix'] = self._PREFIX
-        parameters['INPUTPH']['fildyn'] = self._OUTPUT_DYNAMICAL_MATRIX_PREFIX
+        if prepare_for_epw:
+            # Use .XML format for the dynamical matrix in EPW.
+            parameters['INPUTPH']['fildyn'] = os.path.join(self._FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-.xml')
+        else:
+            parameters['INPUTPH']['fildyn'] = self._OUTPUT_DYNAMICAL_MATRIX_PREFIX
 
         if prepare_for_epw:
             parameters['INPUTPH']['fildvscf'] = self._DVSCF_PREFIX
