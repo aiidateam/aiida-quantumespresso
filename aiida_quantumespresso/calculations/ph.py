@@ -3,9 +3,9 @@
 from __future__ import absolute_import
 
 import os
+from xml.dom import minidom
 import numpy
 import six
-from xml.dom import minidom
 
 from aiida import orm
 from aiida.common import datastructures, exceptions
@@ -39,7 +39,7 @@ class PhCalculation(CalcJob):
     _DVSCF_PREFIX = 'dvscf'
     _DRHO_STAR_EXT = 'drho_rot'
     _FOLDER_DYNAMICAL_MATRIX = 'DYN_MAT'
-    _OUTPUT_DYNAMICAL_MATRIX_PREFIX = os.path.join(_FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-.xml')
+    _OUTPUT_DYNAMICAL_MATRIX_PREFIX = os.path.join(_FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-')
 
     # Not using symlink in pw to allow multiple nscf to run on top of the same scf
     _default_symlink_usage = False
@@ -139,6 +139,8 @@ class PhCalculation(CalcJob):
             self._blocked_keywords += [
                 ('INPUTPH', 'fildvscf')
             ]
+            # Use .XML format for the dynamical matrix in EPW.
+            _OUTPUT_DYNAMICAL_MATRIX_PREFIX = os.path.join(_FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-.xml')
 
         prepare_for_d3 = settings.pop('PREPARE_FOR_D3', False)
         if prepare_for_d3:
