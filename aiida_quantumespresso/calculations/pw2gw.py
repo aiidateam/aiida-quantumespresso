@@ -2,12 +2,16 @@
 """`CalcJob` implementation for the pw2gw.x code of Quantum ESPRESSO."""
 from __future__ import absolute_import
 
-from aiida.orm import RemoteData
-from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
+import os 
 
+from aiida.orm import RemoteData
+from aiida.common import datastructures
+from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 
 class Pw2gwCalculation(NamelistsCalculation):
     """`CalcJob` implementation for the pw2gw.x code of Quantum ESPRESSO."""
+
+    _INPUT_PSEUDOFOLDER = './pseudo/'
 
     _EPS_X = 'epsX.dat'
     _EPS_Y = 'epsY.dat'
@@ -32,3 +36,18 @@ class Pw2gwCalculation(NamelistsCalculation):
             message='The retrieved folder data node could not be accessed.')
         spec.exit_code(300, 'ERROR_OUTPUT_FILES',
             message='The eps*.dat output files could not be read or parsed.')
+
+    def prepare_for_submission(self, folder):
+        calcinfo = super().prepare_for_submission(folder)
+        
+        calcinfo.codes_run_mode = datastructures.CodeRunMode.SERIAL
+
+        parent_calc_folder = self.inputs.parent_folder
+        calcinfo.remote_copy_list.append((
+            parent_calc_folder.computer.uuid,
+            os.path.join(parent_calc_folder.get_remote_path(), self._INPUT_PSEUDOFOLDER),
+            self._INPUT_PSEUDOFOLDER
+        ))
+
+        return calcinfo
+
