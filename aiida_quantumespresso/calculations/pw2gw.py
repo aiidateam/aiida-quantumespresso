@@ -2,11 +2,12 @@
 """`CalcJob` implementation for the pw2gw.x code of Quantum ESPRESSO."""
 from __future__ import absolute_import
 
-import os 
+import os
 
 from aiida.orm import RemoteData
 from aiida.common import datastructures
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
+
 
 class Pw2gwCalculation(NamelistsCalculation):
     """`CalcJob` implementation for the pw2gw.x code of Quantum ESPRESSO."""
@@ -38,8 +39,9 @@ class Pw2gwCalculation(NamelistsCalculation):
             message='The eps*.dat output files could not be read or parsed.')
 
     def prepare_for_submission(self, folder):
+        # yapf: disable
         calcinfo = super().prepare_for_submission(folder)
-        
+
         calcinfo.codes_run_mode = datastructures.CodeRunMode.SERIAL
 
         parent_calc_folder = self.inputs.parent_folder
@@ -50,4 +52,3 @@ class Pw2gwCalculation(NamelistsCalculation):
         ))
 
         return calcinfo
-
