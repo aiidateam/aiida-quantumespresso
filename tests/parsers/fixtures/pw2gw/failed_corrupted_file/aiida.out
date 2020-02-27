@@ -1,0 +1,118 @@
+
+     Program PW2GW v.6.2 starts on 28Sep2018 at 12:41:23 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI & OpenMP), running on       4 processor cores
+     Number of MPI processes:                 1
+     Threads/MPI process:                     4
+
+     MPI processes distributed on     1 nodes
+
+     Reading data from directory:
+     tmp/1C.save/
+     EXX fraction changed:   0.25
+     EXX Screening parameter changed:    0.0000000
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation      = PBE0 ( 6  4  8  4 0 0)
+     EXX-fraction              =        0.25
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+               file H.pbe-kjpaw_psl.1.0.0.UPF: wavefunction(s)  1S renormalized
+     WARNING: atomic wfc #  2 for atom type 2 has zero norm
+     WARNING: atomic wfc #  4 for atom type 2 has zero norm
+ 
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum       41609   41609  10401              9727843  9727843 1216055
+ 
+
+     negative rho (up, down):  3.397E-05 0.000E+00
+
+
+ writing LDA info on unit io UNFORMATTED
+
+
+ writing matrixelements on unit 98 FORMATTED
+ qplda title
+ pw2gw                                                                          
+  
+ test version                                                                   
+  
+    1    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0
+ Vettori di reticolo diretto
+a1  0.250000000000000000E+02  0.000000000000000000E+00  0.000000000000000000E+00
+a2  0.000000000000000000E+00  0.580800018310546875E+02  0.000000000000000000E+00
+a3  0.000000000000000000E+00  0.000000000000000000E+00  0.580800018310546875E+02
+ nrot=           8
+  0.100000000000000000E+01  0.000000000000000000E+00  0.000000000000000000E+00
+  0.000000000000000000E+00  0.100000000000000000E+01  0.000000000000000000E+00
+  0.000000000000000000E+00  0.000000000000000000E+00  0.100000000000000000E+01
+  0.100000000000000000E+01  0.000000000000000000E+00  0.000000000000000000E+00
+  0.000000000000000000E+00 -0.100000000000000000E+01  0.000000000000000000E+00
+  0.000000000000000000E+00  0.000000000000000000E+00 -0.100000000000000000E+01
+  0.100000000000000000E+01  0.000000000000000000E+00  0.000000000000000000E+00
+  0.000000000000000000E+00  0.000000000000000000E+00 -0.100000000000000000E+01
+  0.000000000000000000E+00  0.100000000000000000E+01  0.000000000000000000E+00
+  0.100000000000000000E+01  0.000000000000000000E+00  0.000000000000000000E+00
+  0.000000000000000000E+00  0.000000000000000000E+00  0.100000000000000000E+01
+  0.000000000000000000E+00 -0.100000000000000000E+01  0.000000000000000000E+00
+  0.100000000000000000E+01  0.000000000000000000E+00  0.000000000000000000E+00
+  0.000000000000000000E+00  0.100000000000000000E+01  0.000000000000000000E+00
+  0.000000000000000000E+00  0.000000000000000000E+00 -0.100000000000000000E+01
+  0.100000000000000000E+01  0.000000000000000000E+00  0.000000000000000000E+00
+  0.000000000000000000E+00 -0.100000000000000000E+01  0.000000000000000000E+00
+  0.000000000000000000E+00  0.000000000000000000E+00  0.100000000000000000E+01
+  0.100000000000000000E+01  0.000000000000000000E+00  0.000000000000000000E+00
+  0.000000000000000000E+00  0.000000000000000000E+00 -0.100000000000000000E+01
+  0.000000000000000000E+00 -0.100000000000000000E+01  0.000000000000000000E+00
+  0.100000000000000000E+01  0.000000000000000000E+00  0.000000000000000000E+00
+  0.000000000000000000E+00  0.000000000000000000E+00  0.100000000000000000E+01
+  0.000000000000000000E+00  0.100000000000000000E+01  0.000000000000000000E+00
+  nks            1
+  k points in  cartesian coordinates
+   0.000000  0.000000  0.000000
+ NDIMCP =       608028
+ fine debug sui punti g
+   0.000000  0.000000  0.000000
+ nbndsi=          20
+           1
+ weights:
+ 2.0000000
+ ik=           1
+ 2.0000000 2.0000000 2.0000000 2.0000000 2.0000000 2.0000000 2.0000000 2.0000000 2.0000000 0.0000000
+ 0.0000000 0.0000000 0.0000000 0.0000000 0.0000000 0.0000000 0.0000000 0.0000000 0.0000000 0.0000000
+ io sono omax =        15000
+ alpha =   1.000000000000000E-003
+ halfalpha =   5.000000000000000E-004
+ const =    9.43231723900834     
+ sono qui 6
+  0.000000000000000E+000  0.000000000000000E+000
+ igwx, npw      608028      608028
+ Costruisco le psi ed il matrixelements
+ Controllo: I punti k ora devo essere in coordinate cartesiane!
+   0.000000  0.000000  0.000000
+  out from k-points loop
+  Starting writing epsx,y,z,tot
+  0.000000000000000E+000
+  0.000000000000000E+000
+  0.000000000000000E+000  0.000000000000000E+000
+  Hey bello sto a fini
+ 
+     PW2GW        :  4m12.35s CPU     1m26.21s WALL
+
+ 
+   This run was terminated on:  12:42:50  28Sep2018            
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=
