@@ -40,7 +40,7 @@ class Pw2gwCalculation(NamelistsCalculation):
 
     def prepare_for_submission(self, folder):
         # yapf: disable
-        calcinfo = super().prepare_for_submission(folder)
+        calcinfo = super(Pw2gwCalculation, self).prepare_for_submission(folder)
 
         calcinfo.codes_run_mode = datastructures.CodeRunMode.SERIAL
 
