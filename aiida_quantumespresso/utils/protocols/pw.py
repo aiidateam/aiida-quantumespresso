@@ -4,8 +4,8 @@ from __future__ import absolute_import
 from __future__ import print_function
 import json
 import os
-import six
 from copy import deepcopy
+import six
 
 
 def _load_pseudo_metadata(filename):
@@ -74,8 +74,8 @@ def _get_all_protocol_modifiers():
     testing['parameters']['fast']['kpoints_mesh_density'] = 0.3
     testing['parameters_default'] = 'fast'
     ps_data = testing['pseudo']['SSSP-efficiency-1.1']
-    for ps in ps_data:
-        ps_data[ps]['cutoff'] = ps_data[ps]['cutoff']/2
+    for pseudo in ps_data:
+        ps_data[pseudo]['cutoff'] = ps_data[pseudo]['cutoff'] / 2
     testing['pseudo']['SSSP-efficiency-1.1'] = ps_data
     protocols['testing'] = testing
 
