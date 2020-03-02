@@ -87,5 +87,5 @@
     "license": "MIT License",
     "name": "aiida_quantumespresso",
     "url": "https://github.com/aiidateam/aiida-quantumespresso",
-    "version": "3.0.0a5"
+    "version": "3.0.0a6"
 }
