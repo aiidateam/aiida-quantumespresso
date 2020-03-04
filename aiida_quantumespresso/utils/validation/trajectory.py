@@ -18,7 +18,8 @@ def verify_convergence_trajectory(trajectory, index=-1, threshold_forces=None, t
     :param index: the frame index of the trajectory data to check, default is `-1` meaning the last frame
     :param threshold_forces: the force threshold in Ry / bohr
     :param threshold_stress: the stress threshold in kbar
-    :return: `None` if any of arrays or indices don't exist, `True` if all thresholds are valid, `False` otherwise
+    :return: `True` if all thresholds are valid, `False` otherwise
+    :raises ValueError: if any of the arrays or indices don't exist
     """
     if threshold_forces is not None:
         converged_forces = verify_convergence_forces(trajectory, index, threshold_forces)
@@ -30,9 +31,6 @@ def verify_convergence_trajectory(trajectory, index=-1, threshold_forces=None, t
     else:
         converged_stress = True
 
-    if converged_forces is None or converged_stress is None:
-        return None
-
     return converged_forces & converged_stress
 
 
@@ -42,7 +40,8 @@ def verify_convergence_forces(trajectory, index=-1, threshold=None):
     :param trajectory: the `TrajectoryData`
     :param index: the frame index of the trajectory data to check, default is `-1` meaning the last frame
     :param threshold: the force threshold in Ry / bohr
-    :return: `None` if the `forces` array or given index does not exist, `True` if threshold is valid, `False` otherwise
+    :return: `True` if threshold is valid, `False` otherwise
+    :raises ValueError: if the `forces` array or given index does not exist
     """
     from qe_tools.constants import ry_to_ev, bohr_to_ang
 
@@ -54,7 +53,7 @@ def verify_convergence_forces(trajectory, index=-1, threshold=None):
     try:
         forces = trajectory.get_array('forces')[index]
     except (KeyError, IndexError):
-        return None
+        raise ValueError('the `forces` array does not exist or the given index exceeds the length.')
 
     return numpy.max(abs(forces)) < threshold
 
@@ -65,7 +64,8 @@ def verify_convergence_stress(trajectory, index=-1, threshold=None):
     :param trajectory: the `TrajectoryData`
     :param index: the frame index of the trajectory data to check, default is `-1` meaning the last frame
     :param threshold: the stress threshold in kbar
-    :return: `None` if the `stress` array or given index does not exist, `True` if threshold is valid, `False` otherwise
+    :return: `True` if threshold is valid, `False` otherwise
+    :raises ValueError: if the `stress` array or given index does not exist
     """
     if threshold is None:
         return None
@@ -75,6 +75,6 @@ def verify_convergence_stress(trajectory, index=-1, threshold=None):
     try:
         stress = trajectory.get_array('stress')[index]
     except (KeyError, IndexError):
-        return None
+        raise ValueError('the `stress` array does not exist or the given index exceeds the length.')
 
     return (numpy.trace(stress) / 3.) < threshold
