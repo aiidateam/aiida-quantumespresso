@@ -118,9 +118,12 @@ def generate_calc_job_node():
             from qe_tools.utils.exceptions import ParsingError
             from aiida_quantumespresso.tools.pwinputparser import PwInputFile
             try:
-                inputs['structure'] = PwInputFile(filepath_input).get_structuredata()
+                parsed_input = PwInputFile(filepath_input)
             except ParsingError:
                 pass
+            else:
+                inputs['structure'] = parsed_input.get_structuredata()
+                inputs['parameters'] = orm.Dict(dict=parsed_input.namelists)
 
         if inputs:
             for link_label, input_node in flatten_inputs(inputs):

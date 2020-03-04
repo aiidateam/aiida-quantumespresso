@@ -31,7 +31,7 @@ def verify_convergence_trajectory(trajectory, index=-1, threshold_forces=None, t
     else:
         converged_stress = True
 
-    return converged_forces & converged_stress
+    return converged_forces and converged_stress
 
 
 def verify_convergence_forces(trajectory, index=-1, threshold=None):
