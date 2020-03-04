@@ -1,0 +1,286 @@
+
+     Program PWSCF v.6.3MaX starts on  4Mar2020 at 14:38:24 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+--- OUTPUT REMOVED ---
+
+     Writing output data file aiida.save/
+     NEW-OLD atomic charge density approx. for the potential
+     extrapolated charge    8.03700, renormalised to    8.00000
+
+     total cpu time spent up to now is       13.3 secs
+
+     Self-consistent Calculation
+
+     iteration #  1     ecut=    30.00 Ry     beta= 0.70
+     Davidson diagonalization with overlap
+     ethr =  1.00E-06,  avg # of iterations =  2.0
+
+     Threshold (ethr) on eigenvalues was too large:
+     Diagonalizing with lowered threshold
+
+     Davidson diagonalization with overlap
+     ethr =  8.77E-08,  avg # of iterations =  1.0
+
+     total cpu time spent up to now is       13.5 secs
+
+     total energy              =     -22.66027943 Ry
+     Harris-Foulkes estimate   =     -22.67871680 Ry
+     estimated scf accuracy    <       0.00000700 Ry
+
+     iteration #  2     ecut=    30.00 Ry     beta= 0.70
+     Davidson diagonalization with overlap
+     ethr =  8.75E-08,  avg # of iterations =  3.3
+
+     total cpu time spent up to now is       13.7 secs
+
+     total energy              =     -22.66029591 Ry
+     Harris-Foulkes estimate   =     -22.66029757 Ry
+     estimated scf accuracy    <       0.00000624 Ry
+
+     iteration #  3     ecut=    30.00 Ry     beta= 0.70
+     Davidson diagonalization with overlap
+     ethr =  7.80E-08,  avg # of iterations =  1.0
+
+     total cpu time spent up to now is       13.8 secs
+
+     total energy              =     -22.66029518 Ry
+     Harris-Foulkes estimate   =     -22.66029603 Ry
+     estimated scf accuracy    <       0.00000196 Ry
+
+     iteration #  4     ecut=    30.00 Ry     beta= 0.70
+     Davidson diagonalization with overlap
+     ethr =  2.45E-08,  avg # of iterations =  2.0
+
+     total cpu time spent up to now is       14.0 secs
+
+     total energy              =     -22.66029539 Ry
+     Harris-Foulkes estimate   =     -22.66029542 Ry
+     estimated scf accuracy    <       0.00000006 Ry
+
+     iteration #  5     ecut=    30.00 Ry     beta= 0.70
+     Davidson diagonalization with overlap
+     ethr =  7.34E-10,  avg # of iterations =  2.3
+
+     total cpu time spent up to now is       14.2 secs
+
+     End of self-consistent calculation
+
+          k = 0.0000 0.0000 0.0000 (   749 PWs)   bands (ev):
+
+    -5.8148   5.6191   5.6191   5.6191
+
+     occupation numbers 
+     1.0000   1.0000   1.0000   1.0000
+
+          k = 0.3435-0.3435-0.3435 (   754 PWs)   bands (ev):
+
+    -3.6789  -1.0226   4.4685   4.4685
+
+     occupation numbers 
+     1.0000   1.0000   1.0000   1.0000
+
+          k = 0.0000 0.0000-0.6869 (   740 PWs)   bands (ev):
+
+    -1.9601  -1.9601   2.9304   2.9304
+
+     occupation numbers 
+     1.0000   1.0000   1.0000   1.0000
+
+     highest occupied level (ev):     5.6191
+
+!    total energy              =     -22.66029541 Ry
+     Harris-Foulkes estimate   =     -22.66029541 Ry
+     estimated scf accuracy    <          3.1E-10 Ry
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =       4.60300797 Ry
+     hartree contribution      =       1.34362169 Ry
+     xc contribution           =     -12.28784551 Ry
+     ewald contribution        =     -16.31907956 Ry
+
+     convergence has been achieved in   5 iterations
+
+     Forces acting on atoms (cartesian axes, Ry/au):
+
+     atom    1 type  1   force =    -0.00000000   -0.00000000    0.00000000
+     atom    2 type  1   force =     0.00000000    0.00000000   -0.00000000
+     The non-local contrib.  to forces
+     atom    1 type  1   force =     0.00000000    0.00000000    0.00000000
+     atom    2 type  1   force =     0.00000000    0.00000000    0.00000000
+     The ionic contribution  to forces
+     atom    1 type  1   force =     0.00000000    0.00000000    0.00000000
+     atom    2 type  1   force =    -0.00000000   -0.00000000   -0.00000000
+     The local contribution  to forces
+     atom    1 type  1   force =     0.00000000    0.00000000    0.00000000
+     atom    2 type  1   force =    -0.00000000   -0.00000000   -0.00000000
+     The core correction contribution to forces
+     atom    1 type  1   force =    -0.00000000   -0.00000000   -0.00000000
+     atom    2 type  1   force =     0.00000000    0.00000000    0.00000000
+     The Hubbard contrib.    to forces
+     atom    1 type  1   force =     0.00000000    0.00000000    0.00000000
+     atom    2 type  1   force =     0.00000000    0.00000000    0.00000000
+     The SCF correction term to forces
+     atom    1 type  1   force =     0.00000000    0.00000000   -0.00000000
+     atom    2 type  1   force =    -0.00000000   -0.00000000    0.00000000
+
+     Total force =     0.000000     Total SCF correction =     0.000000
+
+
+     Computing stress (Cartesian axis) and pressure
+
+          total   stress  (Ry/bohr**3)                   (kbar)     P=   10.31
+   0.00007012   0.00000000   0.00000000         10.31      0.00      0.00
+   0.00000000   0.00007012   0.00000000          0.00     10.31      0.00
+   0.00000000   0.00000000   0.00007012          0.00      0.00     10.31
+
+--- OUTPUT REMOVED ---
+
+     Initial potential from superposition of free atoms
+
+     starting charge    7.99888, renormalised to    8.00000
+     Starting wfcs are    8 randomized atomic wfcs
+
+     total cpu time spent up to now is       17.7 secs
+
+     Self-consistent Calculation
+
+     iteration #  1     ecut=    30.00 Ry     beta= 0.70
+     Davidson diagonalization with overlap
+     ethr =  1.00E-06,  avg # of iterations =  6.7
+
+     total cpu time spent up to now is       17.9 secs
+
+     total energy              =     -22.65637530 Ry
+     Harris-Foulkes estimate   =     -22.67970821 Ry
+     estimated scf accuracy    <       0.09700014 Ry
+
+     iteration #  2     ecut=    30.00 Ry     beta= 0.70
+     Davidson diagonalization with overlap
+     ethr =  1.21E-03,  avg # of iterations =  1.0
+
+     total cpu time spent up to now is       18.1 secs
+
+     total energy              =     -22.65992387 Ry
+     Harris-Foulkes estimate   =     -22.65983894 Ry
+     estimated scf accuracy    <       0.00432327 Ry
+
+     iteration #  3     ecut=    30.00 Ry     beta= 0.70
+     Davidson diagonalization with overlap
+     ethr =  5.40E-05,  avg # of iterations =  1.0
+
+     total cpu time spent up to now is       18.2 secs
+
+     total energy              =     -22.66027125 Ry
+     Harris-Foulkes estimate   =     -22.66024059 Ry
+     estimated scf accuracy    <       0.00004701 Ry
+
+     iteration #  4     ecut=    30.00 Ry     beta= 0.70
+     Davidson diagonalization with overlap
+     ethr =  5.88E-07,  avg # of iterations =  3.7
+
+     total cpu time spent up to now is       18.4 secs
+
+     total energy              =     -22.66039403 Ry
+     Harris-Foulkes estimate   =     -22.66040028 Ry
+     estimated scf accuracy    <       0.00001484 Ry
+
+     iteration #  5     ecut=    30.00 Ry     beta= 0.70
+     Davidson diagonalization with overlap
+     ethr =  1.86E-07,  avg # of iterations =  2.0
+
+     total cpu time spent up to now is       18.6 secs
+
+     total energy              =     -22.66039556 Ry
+     Harris-Foulkes estimate   =     -22.66039603 Ry
+     estimated scf accuracy    <       0.00000115 Ry
+
+     iteration #  6     ecut=    30.00 Ry     beta= 0.70
+     Davidson diagonalization with overlap
+     ethr =  1.44E-08,  avg # of iterations =  2.7
+
+     total cpu time spent up to now is       18.8 secs
+
+     End of self-consistent calculation
+
+          k = 0.0000 0.0000 0.0000 (   869 PWs)   bands (ev):
+
+    -5.8148   5.6186   5.6186   5.6186
+
+     occupation numbers 
+     1.0000   1.0000   1.0000   1.0000
+
+          k = 0.3435-0.3435-0.3435 (   832 PWs)   bands (ev):
+
+    -3.6788  -1.0227   4.4684   4.4684
+
+     occupation numbers 
+     1.0000   1.0000   1.0000   1.0000
+
+          k = 0.0000 0.0000-0.6869 (   790 PWs)   bands (ev):
+
+    -1.9600  -1.9600   2.9304   2.9304
+
+     occupation numbers 
+     1.0000   1.0000   1.0000   1.0000
+
+     highest occupied level (ev):     5.6186
+
+!    total energy              =     -22.66039571 Ry
+     Harris-Foulkes estimate   =     -22.66039571 Ry
+     estimated scf accuracy    <          5.5E-09 Ry
+
+     The total energy is the sum of the following terms:
+
+     one-electron contribution =       4.60293329 Ry
+     hartree contribution      =       1.34359456 Ry
+     xc contribution           =     -12.28784400 Ry
+     ewald contribution        =     -16.31907955 Ry
+
+     convergence has been achieved in   6 iterations
+
+     Forces acting on atoms (cartesian axes, Ry/au):
+
+     atom    1 type  1   force =    -0.00000000    0.00000000    0.00000000
+     atom    2 type  1   force =    -0.00000000   -0.00000000   -0.00000000
+     The non-local contrib.  to forces
+     atom    1 type  1   force =     0.00000000    0.00000000   -0.00000000
+     atom    2 type  1   force =     0.00000000    0.00000000   -0.00000000
+     The ionic contribution  to forces
+     atom    1 type  1   force =     0.00000000    0.00000000    0.00000000
+     atom    2 type  1   force =     0.00000000    0.00000000    0.00000000
+     The local contribution  to forces
+     atom    1 type  1   force =    -0.00000000   -0.00000000   -0.00000000
+     atom    2 type  1   force =     0.00000000    0.00000000    0.00000000
+     The core correction contribution to forces
+     atom    1 type  1   force =     0.00000000    0.00000000    0.00000000
+     atom    2 type  1   force =     0.00000000    0.00000000    0.00000000
+     The Hubbard contrib.    to forces
+     atom    1 type  1   force =     0.00000000    0.00000000    0.00000000
+     atom    2 type  1   force =     0.00000000    0.00000000    0.00000000
+     The SCF correction term to forces
+     atom    1 type  1   force =    -0.00000000   -0.00000000    0.00000000
+     atom    2 type  1   force =     0.00000000    0.00000000   -0.00000000
+
+     Total force =     0.000000     Total SCF correction =     0.000000
+
+
+     Computing stress (Cartesian axis) and pressure
+
+          total   stress  (Ry/bohr**3)                   (kbar)     P=   10.31
+   0.00007012  -0.00000000  -0.00000000         10.31     -0.00     -0.00
+  -0.00000000   0.00007012  -0.00000000         -0.00     10.31     -0.00
+  -0.00000000  -0.00000000   0.00007012         -0.00     -0.00     10.31
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=
+

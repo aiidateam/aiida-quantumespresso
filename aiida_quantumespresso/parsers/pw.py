@@ -232,13 +232,15 @@ class PwParser(Parser):
         parameters = self.node.inputs.parameters.get_dict()
         threshold_forces = parameters.get('CONTROL', {}).get('forc_conv_thr', pw.forc_conv_thr)
         threshold_stress = parameters.get('CELL', {}).get('press_conv_thr', pw.press_conv_thr)
+        external_pressure = parameters.get('CELL', {}).get('press', 0)
 
         if relax_type == 'relax':
             return verify_convergence_trajectory(trajectory, -1, *[threshold_forces, None])
 
         if relax_type == 'vc-relax':
-            converged_relax = verify_convergence_trajectory(trajectory, -2, *[threshold_forces, threshold_stress])
-            converged_final = verify_convergence_trajectory(trajectory, -1, *[threshold_forces, threshold_stress])
+            values = [threshold_forces, threshold_stress, external_pressure]
+            converged_relax = verify_convergence_trajectory(trajectory, -2, *values)
+            converged_final = verify_convergence_trajectory(trajectory, -1, *values)
             return converged_relax and (converged_final or except_final_scf)
 
         raise RuntimeError('unknown relax_type: {}'.format(relax_type))

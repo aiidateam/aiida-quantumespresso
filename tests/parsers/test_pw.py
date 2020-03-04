@@ -493,6 +493,27 @@ def test_pw_vcrelax_success_fractional(
     })
 
 
+def test_pw_vcrelax_success_external_pressure(
+    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_relax
+):
+    """Test a `vc-relax` with external pressure that successfully converges and the final scf also converges."""
+    name = 'vcrelax_success_external_pressure'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs_relax())
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert not orm.Log.objects.get_logs_for(node)
+    assert 'output_kpoints' in results
+    assert 'output_parameters' in results
+    assert 'output_structure' in results
+    assert 'output_trajectory' in results
+
+
 def test_pw_vcrelax_failed_charge_wrong(
     aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_relax
 ):
