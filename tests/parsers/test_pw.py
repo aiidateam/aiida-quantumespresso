@@ -455,14 +455,14 @@ def test_pw_vcrelax_success(
     })
 
 
-def test_pw_vcrelax_fractional_success(
+def test_pw_vcrelax_success_fractional(
     aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_relax, data_regression
 ):
     """Test a `vc-relax`, that successfully converges and the final scf also converges.
 
     In this case the input atomic positions were defined using 'crystal' (i.e. fractional) units.
     """
-    name = 'vcrelax_fractional_success'
+    name = 'vcrelax_success_fractional'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
