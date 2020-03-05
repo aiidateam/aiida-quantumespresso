@@ -7,8 +7,7 @@ attribute of exit codes based on the status integer.
 
 from __future__ import absolute_import
 
-from aiida.engine import ExitCode
-from aiida.engine import CalcJob as _BaseCalcJob
+from aiida.engine import ExitCode, CalcJob as _BaseCalcJob
 from aiida.engine.processes.process_spec import CalcJobProcessSpec as _BaseCalcJobProcessSpec
 
 __all__ = ('CalcJob',)
