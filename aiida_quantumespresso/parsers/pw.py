@@ -411,7 +411,7 @@ class PwParser(Parser):
         :return: a new `StructureData` created from the parsed data iff the calculation type produces a new structure
             and the parsed data contained a cell definition. In all other cases, the input structure will be returned.
         """
-        from aiida_quantumespresso.parsers import convert_qe2aiida_structure
+        from aiida_quantumespresso.parsers.parse_raw import convert_qe2aiida_structure
 
         type_calc = self.node.inputs.parameters.get_dict()['CONTROL']['calculation']
 

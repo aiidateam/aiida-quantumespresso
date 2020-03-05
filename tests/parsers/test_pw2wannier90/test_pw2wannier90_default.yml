@@ -5,4 +5,3 @@ parameters:
   parser_warnings: []
   wall_time: 2.18s
   wall_time_seconds: 2.18
-  warnings: []
