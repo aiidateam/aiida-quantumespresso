@@ -10,9 +10,10 @@ from aiida.common import datastructures, exceptions
 from aiida.orm import Dict
 from aiida.orm import RemoteData, FolderData, SinglefileData
 
-from aiida_quantumespresso._base import CalcJob
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict, _pop_parser_options
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+
+from .base import CalcJob
 
 
 class NamelistsCalculation(CalcJob):

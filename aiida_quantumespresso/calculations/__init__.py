@@ -11,8 +11,9 @@ from aiida import orm
 from aiida.common import datastructures, exceptions
 from aiida.common.lang import classproperty
 
-from aiida_quantumespresso._base import CalcJob
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+
+from .base import CalcJob
 
 
 class BasePwCpInputGenerator(CalcJob):
