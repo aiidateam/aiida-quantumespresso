@@ -5,15 +5,15 @@ output_kpoints:
   array|weights:
   - 3
   cell:
-  - - 2.805912454646174
-    - 2.805912454646174
-    - -4.589880633464743e-19
-  - - 2.805912454646174
-    - -2.138393331132746e-17
-    - 2.805912454646174
-  - - -2.3516312470966146e-17
-    - 2.805912454646174
-    - 2.805912454646174
+  - - 2.8059133216627536
+    - 2.8059133216627536
+    - 2.1342944945611053e-17
+  - - 2.8059133216627536
+    - -1.1843856200479636e-17
+    - 2.8059133216627536
+  - - -4.5189157852047574e-17
+    - 2.8059133216627536
+    - 2.8059133216627536
   pbc1: true
   pbc2: true
   pbc3: true
@@ -22,25 +22,25 @@ output_parameters:
   charge_density: ./charge-density.dat
   constraint_mag: 0
   creator_name: pwscf
-  creator_version: '6.1'
+  creator_version: 6.3max
   dft_exchange_correlation: PBE
   do_not_use_time_reversal: false
-  energy: -308.3119523103562
+  energy: -308.3121739470744
   energy_accuracy: 6.122561276385e-08
   energy_accuracy_units: eV
-  energy_ewald: -221.15579169716153
+  energy_ewald: -221.15572339658908
   energy_ewald_units: eV
-  energy_hartree: 18.42194373592625
+  energy_hartree: 18.421983056375336
   energy_hartree_units: eV
-  energy_one_electron: 61.41609789028088
+  energy_one_electron: 61.4159899971455
   energy_one_electron_units: eV
   energy_threshold: 1.31e-08
   energy_units: eV
-  energy_xc: -166.99420223940183
+  energy_xc: -166.9944236040062
   energy_xc_units: eV
-  estimated_ram_per_process: 12.89
+  estimated_ram_per_process: 73.31
   estimated_ram_per_process_units: MB
-  fermi_energy: 5.502885817503379
+  fermi_energy: 5.5028738393871865
   fermi_energy_units: eV
   fft_grid:
   - 40
@@ -200,22 +200,22 @@ output_parameters:
   total_force: 0.0
   total_force_units: ev / angstrom
   total_number_of_scf_iterations: 29
-  volume: 44.18270955953583
-  wall_time: '        25.16s '
-  wall_time_seconds: 25.16
+  volume: 44.182750516430445
+  wall_time: '        21.66s '
+  wall_time_seconds: 21.66
   wfc_cutoff: 408.170751759
   wfc_cutoff_units: eV
 output_structure:
   cell:
-  - - 2.805912454646174
-    - 2.805912454646174
-    - -4.589880633464743e-19
-  - - 2.805912454646174
-    - -2.138393331132746e-17
-    - 2.805912454646174
-  - - -2.3516312470966146e-17
-    - 2.805912454646174
-    - 2.805912454646174
+  - - 2.8059133216627536
+    - 2.8059133216627536
+    - 2.1342944945611053e-17
+  - - 2.8059133216627536
+    - -1.1843856200479636e-17
+    - 2.8059133216627536
+  - - -4.5189157852047574e-17
+    - 2.8059133216627536
+    - 2.8059133216627536
   kinds:
   - mass: 28.0855
     name: Si
@@ -229,14 +229,14 @@ output_structure:
   sites:
   - kind_name: Si
     position:
-    - 3.944109647332697e-34
-    - 3.944109647332697e-34
-    - -3.944109647332697e-34
+    - -2.931098243101408e-50
+    - 0.0
+    - 3.639991537061969e-33
   - kind_name: Si
     position:
-    - 1.4029562273230871
-    - 1.4029562273230871
-    - 1.4029562273230871
+    - 1.4029566608313766
+    - 1.4029566608313766
+    - 1.4029566608313766
 output_trajectory:
   array|atomic_species_name:
   - 2

@@ -194,8 +194,9 @@ class PwParser(Parser):
 
             return self.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE
 
-        threshold_forces = parameters.get('CONTROL', {}).get('forc_conv_thr', pw.forc_conv_thr)
-        threshold_stress = parameters.get('CELL', {}).get('press_conv_thr', pw.press_conv_thr)
+        input_parameters = self.node.inputs.parameters.get_dict()
+        threshold_forces = input_parameters.get('CONTROL', {}).get('forc_conv_thr', pw.forc_conv_thr)
+        threshold_stress = input_parameters.get('CELL', {}).get('press_conv_thr', pw.press_conv_thr)
         thresholds = [threshold_forces, threshold_stress]
 
         # Here we are converged ionically: if there is no final scf, this was a `relax` run
