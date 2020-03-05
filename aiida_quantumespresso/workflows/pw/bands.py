@@ -159,9 +159,11 @@ class PwBandsWorkChain(WorkChain):
 
         inputs.pw.parameters['CONTROL']['restart_mode'] = 'restart'
         inputs.pw.parameters['CONTROL']['calculation'] = 'bands'
-        inputs.pw.parameters['ELECTRONS']['diagonalization'] = 'cg'
-        inputs.pw.parameters['ELECTRONS']['diago_full_acc'] = True
         inputs.pw.parameters['SYSTEM']['nbnd'] = nbands
+
+        # Only set the following parameters if not directly explicitly defined in the inputs
+        inputs.pw.parameters['ELECTRONS'].setdefault('diagonalization', 'cg')
+        inputs.pw.parameters['ELECTRONS'].setdefault('diago_full_acc', True)
 
         if 'kpoints' not in self.inputs.bands:
             inputs.kpoints = self.ctx.kpoints_path
