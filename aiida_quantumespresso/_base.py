@@ -1,27 +1,24 @@
 # -*- coding: utf-8 -*-
-"""Defines CalcJob and WorkChain base classes for aiida-quantumespresso.
+"""Defines a CalcJob base class for aiida-quantumespresso.
 
-The custom CalcJob and WorkChain base classes automatically set the
-'invalidates_cache' attribute of exit codes based on the status integer.
+The custom CalcJob base class automatically sets the'invalidates_cache'
+attribute of exit codes based on the status integer.
 """
 
 from __future__ import absolute_import
 
 from aiida.engine import ExitCode
-from aiida.engine import CalcJob
-from aiida.engine import WorkChain
-from aiida.engine.processes.process_spec import CalcJobProcessSpec
-from aiida.engine.processes.workchains.workchain import WorkChainSpec
+from aiida.engine import CalcJob as _BaseCalcJob
+from aiida.engine.processes.process_spec import CalcJobProcessSpec as _BaseCalcJobProcessSpec
 
-__all__ = ('QuantumEspressoCalcJob', 'QuantumEspressoWorkChain')
+__all__ = ('CalcJob',)
 
 
-class InvalidatesCacheProcessSpecMixin(object):  # pylint: disable=too-few-public-methods
-    """Implements automatically setting the `invalidates_cache` flag.
+class CalcJobProcessSpec(_BaseCalcJobProcessSpec):
+    """Process spec for aiida-quantumespresso CalcJob classes.
 
-    Mix-in class which adds the feature of automatically setting the
-    `invalidates_cache` flag to `True` for an exit status smaller than
-    400, unless explicitly overriden.
+    Automatically sets the `invalidates_cache` flag to `True` for an
+    exit status smaller than 400, unless explicitly overriden.
     """
 
     def exit_code(self, status, label, message, invalidates_cache=None):
@@ -40,27 +37,13 @@ class InvalidatesCacheProcessSpecMixin(object):  # pylint: disable=too-few-publi
             invalidates_cache = (isinstance(status, int) and status < 400)
 
         if 'invalidates_cache' in ExitCode._fields:
-            super(InvalidatesCacheProcessSpecMixin,
+            super(CalcJobProcessSpec,
                   self).exit_code(status=status, label=label, message=message, invalidates_cache=invalidates_cache)
         else:
-            super(InvalidatesCacheProcessSpecMixin, self).exit_code(status=status, message=message, label=label)
+            super(CalcJobProcessSpec, self).exit_code(status=status, message=message, label=label)
 
 
-class QuantumEspressoCalcJobProcessSpec(InvalidatesCacheProcessSpecMixin, CalcJobProcessSpec):
-    """Process spec intended for the `QuantumEspressoCalcJob` process class."""
-
-
-class QuantumEspressoWorkChainSpec(InvalidatesCacheProcessSpecMixin, WorkChainSpec):
-    """Process spec intended for the `QuantumEspressoWorkChain` process class."""
-
-
-class QuantumEspressoCalcJob(CalcJob):  # pylint: disable=abstract-method
+class CalcJob(_BaseCalcJob):  # pylint: disable=abstract-method
     """Custom CalcJob class for aiida-quantumespresso calculations."""
 
-    _spec_class = QuantumEspressoCalcJobProcessSpec
-
-
-class QuantumEspressoWorkChain(WorkChain):
-    """Custom WorkChain class for aiida-quantumespresso workchains."""
-
-    _spec_class = QuantumEspressoWorkChainSpec
+    _spec_class = CalcJobProcessSpec

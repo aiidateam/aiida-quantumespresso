@@ -4,10 +4,9 @@ from __future__ import absolute_import
 
 from aiida import orm
 from aiida.common import AttributeDict
-from aiida.engine import ToContext
+from aiida.engine import WorkChain, ToContext
 from aiida.plugins import WorkflowFactory
 
-from aiida_quantumespresso._base import QuantumEspressoWorkChain
 from aiida_quantumespresso.utils.protocols.pw import ProtocolManager
 from aiida_quantumespresso.utils.pseudopotential import get_pseudos_from_dict
 from aiida_quantumespresso.utils.resources import get_default_options
@@ -27,7 +26,7 @@ def validate_protocol(protocol_dict):
         return str(exception)
 
 
-class PwBandStructureWorkChain(QuantumEspressoWorkChain):
+class PwBandStructureWorkChain(WorkChain):
     """Workchain to automatically compute a band structure for a given structure using Quantum ESPRESSO pw.x."""
 
     @classmethod
