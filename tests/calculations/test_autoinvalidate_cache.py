@@ -4,8 +4,12 @@
 from __future__ import absolute_import
 import pytest
 
+import aiida
 from aiida.plugins import CalculationFactory
 from aiida.plugins.entry_point import get_entry_point_names
+
+if aiida.__version__ < '1.1':
+    pytest.skip("The 'invalidates_cache' feature is only available on AiiDA 1.1+", allow_module_level=True)
 
 QE_CALC_ENTRY_POINT_NAMES = [
     ep_name for ep_name in get_entry_point_names(group='aiida.calculations') if ep_name.startswith('quantumespresso')
