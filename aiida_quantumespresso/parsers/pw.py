@@ -165,9 +165,6 @@ class PwParser(Parser):
 
     def validate_ionic(self, trajectory, parameters, logs):
         """Analyze problems that are specific to `ionic` type calculations: i.e. `relax` and `vc-relax`."""
-        from aiida_quantumespresso.utils.defaults.calculation import pw
-        from aiida_quantumespresso.utils.validation.trajectory import verify_convergence_trajectory
-
         if self.get_calculation_type() not in ['relax', 'vc-relax']:
             return
 
@@ -185,58 +182,68 @@ class PwParser(Parser):
         if not ionic_convergence_reached and maximum_ionic_steps_reached:
             return self.exit_codes.ERROR_IONIC_CYCLE_EXCEEDED_NSTEP
 
-        # BFGS fails twice in a row in which case QE will print that convergence is reached while it is not
-        if ionic_convergence_reached and bfgs_history_failure:
+        # BFGS fails twice in a row in which case QE will print that convergence is reached while it is not necessarily
+        if bfgs_history_failure:
 
             # If electronic convergence was not reached, this had to have been a `vc-relax` where final SCF failed
             if not electronic_convergence_reached:
                 return self.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE
 
+            # If the forces and optionally stresses are already converged, consider the calculation successful
+            if self.is_ionically_converged(trajectory):
+                return
+
             return self.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE
 
-        input_parameters = self.node.inputs.parameters.get_dict()
-        threshold_forces = input_parameters.get('CONTROL', {}).get('forc_conv_thr', pw.forc_conv_thr)
-        threshold_stress = input_parameters.get('CELL', {}).get('press_conv_thr', pw.press_conv_thr)
-        thresholds = [threshold_forces, threshold_stress]
-
-        # Here we are converged ionically: if there is no final scf, this was a `relax` run
-        if ionic_convergence_reached and not final_scf:
-
-            # Manually verify convergence of total energy and forces
-            converged = verify_convergence_trajectory(trajectory, -1, threshold_forces)
-
-            if converged is None or not converged:
-                # This should never happen: apparently there was data missing or not converged despite QE saying so
-                return self.exit_codes.ERROR_IONIC_CONVERGENCE_NOT_REACHED
-
-        # Ionic convergence was reached in `vc-relax` run, but electronic convergence in final SCF failed
-        elif ionic_convergence_reached and not electronic_convergence_reached:
-
-            # Manually verify convergence of total energy and forces
-            converged = verify_convergence_trajectory(trajectory, -1, *thresholds)
-
-            if converged is None or not converged:
-                # This should never happen: apparently there was data missing or not converged despite QE saying so
-                return self.exit_codes.ERROR_IONIC_CONVERGENCE_NOT_REACHED
-            else:
+        # Electronic convergence could not have been reached either during ionic relaxation or during final scf
+        if not electronic_convergence_reached:
+            if final_scf:
                 return self.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_FINAL_SCF_FAILED
 
-        # Ionic convergence was reached in `vc-relax` run, and electronic convergence was reached in final SCF
-        elif ionic_convergence_reached and electronic_convergence_reached:
+            return self.exit_codes.ERROR_IONIC_CYCLE_ELECTRONIC_CONVERGENCE_NOT_REACHED
 
-            converged_relax = verify_convergence_trajectory(trajectory, -2, *thresholds)
-            converged_final = verify_convergence_trajectory(trajectory, -1, *thresholds)
+        # Here we have no direct warnings from Quantum ESPRESSO that suggest something went wrong, but we better make
+        # sure and double check manually that all forces (and optionally stresses) are converged.
+        if not self.is_ionically_converged(trajectory):
 
-            if converged_final is None or converged_relax is None or not converged_relax:
-                # This should never happen: apparently there was data missing or not converged despite QE saying so
-                return self.exit_codes.ERROR_IONIC_CONVERGENCE_NOT_REACHED
-
-            if not converged_final:
+            if self.is_ionically_converged(trajectory, except_final_scf=True):
                 # The forces and stresses of ionic cycle are below threshold, but those of the final SCF exceed them.
                 # This is not necessarily a problem since the calculation starts from scratch after the variable cell
                 # relaxation and the forces and stresses can be slightly different. Still it is useful to distinguish
                 # these calculations so we return a special exit code.
                 return self.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF
+
+            return self.exit_codes.ERROR_IONIC_CONVERGENCE_NOT_REACHED
+
+    def is_ionically_converged(self, trajectory, except_final_scf=False):
+        """Verify that the calculation was ionically converged.
+
+        For a `relax` calculation this means the forces stored in the `trajectory` are all below the force convergence
+        threshold which is retrieved from the input parameters. For a `vc-relax` calculation, the stress should also
+        give a pressure that is below the pressure convergence threshold.
+
+        :param trajectory: the output trajectory data
+        :param except_final_scf: if True will return whether the calculation is converged except for the final scf.
+        """
+        from aiida_quantumespresso.utils.defaults.calculation import pw
+        from aiida_quantumespresso.utils.validation.trajectory import verify_convergence_trajectory
+
+        relax_type = self.get_calculation_type()
+        parameters = self.node.inputs.parameters.get_dict()
+        threshold_forces = parameters.get('CONTROL', {}).get('forc_conv_thr', pw.forc_conv_thr)
+        threshold_stress = parameters.get('CELL', {}).get('press_conv_thr', pw.press_conv_thr)
+        external_pressure = parameters.get('CELL', {}).get('press', 0)
+
+        if relax_type == 'relax':
+            return verify_convergence_trajectory(trajectory, -1, *[threshold_forces, None])
+
+        if relax_type == 'vc-relax':
+            values = [threshold_forces, threshold_stress, external_pressure]
+            converged_relax = verify_convergence_trajectory(trajectory, -2, *values)
+            converged_final = verify_convergence_trajectory(trajectory, -1, *values)
+            return converged_relax and (converged_final or except_final_scf)
+
+        raise RuntimeError('unknown relax_type: {}'.format(relax_type))
 
     def exit(self, exit_code):
         """Log the exit message of the give exit code with level `ERROR` and return the exit code.
