@@ -27,11 +27,11 @@ class DosCalculation(NamelistsCalculation):
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.output('output_dos', valid_type=orm.XyData)
         spec.default_output_node = 'output_parameters'
-        spec.exit_code(
-            100, 'ERROR_NO_RETRIEVED_FOLDER', message='The retrieved folder data node could not be accessed.')
-        spec.exit_code(
-            110, 'ERROR_READING_OUTPUT_FILE', message='The output file could not be read from the retrieved folder.')
-        spec.exit_code(
-            111, 'ERROR_READING_DOS_FILE', message='The dos file could not be read from the retrieved folder.')
-        spec.exit_code(
-            130, 'ERROR_JOB_NOT_DONE', message='The computation did not finish properly ("JOB DONE" not found).')
+        spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
+            message='The retrieved folder data node could not be accessed.')
+        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
+            message='The stdout output file could not be read.')
+        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
+            message='The stdout output file was incomplete probably because the calculation got interrupted.')
+        spec.exit_code(330, 'ERROR_READING_DOS_FILE',
+            message='The dos file could not be read from the retrieved folder.')

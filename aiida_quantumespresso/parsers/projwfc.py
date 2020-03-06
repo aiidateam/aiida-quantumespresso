@@ -243,7 +243,7 @@ class ProjwfcParser(Parser):
             with out_folder.open(filename_stdout, 'r') as fil:
                 out_file = fil.readlines()
         except OSError:
-            return self.exit_codes.ERROR_READING_OUTPUT_FILE
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
         job_done = False
         for i in range(len(out_file)):
@@ -253,7 +253,7 @@ class ProjwfcParser(Parser):
                 break
         if not job_done:
             self.logger.error('Computation did not finish properly')
-            return self.exit_codes.ERROR_JOB_NOT_DONE
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
 
         # Parse basic info and warnings, and output them as output_parmeters
         parsed_data = parse_raw_out_basic(out_file, 'PROJWFC')

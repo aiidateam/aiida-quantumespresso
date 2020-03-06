@@ -35,15 +35,17 @@ class MatdynCalculation(NamelistsCalculation):
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.output('output_phonon_bands', valid_type=orm.BandsData)
         spec.default_output_node = 'output_parameters'
-        spec.exit_code(100, 'ERROR_NO_RETRIEVED_FOLDER',
+        spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
             message='The retrieved folder data node could not be accessed.')
-        spec.exit_code(110, 'ERROR_READING_OUTPUT_FILE',
-            message='The output file could not be read from the retrieved folder.')
-        spec.exit_code(130, 'ERROR_JOB_NOT_DONE',
-            message='The computation did not finish properly ("JOB DONE" not found).')
-        spec.exit_code(131, 'ERROR_OUTPUT_KPOINTS_MISSING',
+        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
+            message='The stdout output file could not be read.')
+        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
+            message='The stdout output file was incomplete probably because the calculation got interrupted.')
+        spec.exit_code(330, 'ERROR_OUTPUT_FREQUENCIES',
+            message='The output frequencies file could not be read from the retrieved folder.')
+        spec.exit_code(410, 'ERROR_OUTPUT_KPOINTS_MISSING',
             message='Number of kpoints not found in the output data')
-        spec.exit_code(132, 'ERROR_OUTPUT_KPOINTS_INCOMMENSURATE',
+        spec.exit_code(411, 'ERROR_OUTPUT_KPOINTS_INCOMMENSURATE',
             message='Number of kpoints in the inputs is not commensurate with those in the output')
 
     def _get_following_text(self):

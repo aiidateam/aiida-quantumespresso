@@ -32,7 +32,7 @@ class DosParser(Parser):
             with out_folder.open(filename_stdout, 'r') as fil:
                     out_file = fil.readlines()
         except OSError:
-            return self.exit_codes.ERROR_READING_OUTPUT_FILE
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
         job_done = False
         for i in range(len(out_file)):
@@ -41,7 +41,7 @@ class DosParser(Parser):
                 job_done = True
                 break
         if not job_done:
-            return self.exit_codes.ERROR_JOB_NOT_DONE
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
 
         # check that the dos file is present, if it is, read it
         try:

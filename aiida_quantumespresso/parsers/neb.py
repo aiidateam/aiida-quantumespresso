@@ -46,7 +46,7 @@ class NebParser(Parser):
 
         if filename_stdout not in list_of_files:
             self.logger.error("The standard output file '{}' was not found but is required".format(filename_stdout))
-            return self.exit_codes.ERROR_READING_OUTPUT_FILE
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
         # Look for optional settings input node and potential 'parser_options' dictionary within it
         # Note that we look for both NEB and PW parser options under "inputs.settings.parser_options";
@@ -77,7 +77,7 @@ class NebParser(Parser):
             # TODO: why do we ignore raw_successful ?
         except QEOutputParsingError as exc:
             self.logger.error('QEOutputParsingError in parse_raw_output_neb: {}'.format(exc))
-            return self.exit_codes.ERROR_READING_OUTPUT_FILE
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
         for warn_type in ['warnings', 'parser_warnings']:
             for message in neb_out_dict[warn_type]:
@@ -94,10 +94,10 @@ class NebParser(Parser):
                 num_images = neb_out_dict['num_of_images']
             except KeyError:
                 self.logger.error('Impossible to understand the number of images')
-                return self.exit_codes.ERROR_INVALID_OUTPUT
+                return self.exit_codes.ERROR_OUTPUT_STDOUT_PARSE
         if num_images < 2:
             self.logger.error('Too few images: {}'.format(num_images))
-            return self.exit_codes.ERROR_INVALID_OUTPUT
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_PARSE
 
         # Now parse the information from the individual pw calculations for the different images
         image_data = {}
@@ -138,7 +138,7 @@ class NebParser(Parser):
                     pw_out_text = f.read()  # Note: read() and not readlines()
             except IOError:
                 self.logger.error('No pw output file found for image {}'.format(i + 1))
-                return self.exit_codes.ERROR_READING_OUTPUT_FILE
+                return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
             try:
                 parsed_data_stdout, logs_stdout = parse_pw_stdout(pw_out_text, pw_input_dict, parser_options, parsed_data_xml)
