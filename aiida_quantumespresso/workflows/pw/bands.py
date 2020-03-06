@@ -16,8 +16,28 @@ PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
 
 
+def validate_inputs(inputs, ctx=None):  # pylint: disable=unused-argument
+    """Validate the inputs of the entire input namespace."""
+    if 'nbands_factor' in inputs and 'nbnd' in inputs['bands']['pw']['parameters'].get_attribute('SYSTEM', {}):
+        return PwBandsWorkChain.exit_codes.ERROR_INVALID_INPUT_NUMBER_OF_BANDS.message  # pylint: disable=no-member
+
+
 class PwBandsWorkChain(WorkChain):
-    """Workchain to compute a band structure for a given structure using Quantum ESPRESSO pw.x."""
+    """Workchain to compute a band structure for a given structure using Quantum ESPRESSO pw.x.
+
+    The logic for the computation of various parameters for the BANDS step is as follows:
+
+    Number of bands:
+        One can specify the number of bands to be used in the BANDS step either directly through the input parameters
+        `bands.pw.parameters.SYSTEM.nbnd` or through `nbands_factor`. Note that specifying both is not allowed. When
+        neither is specified nothing will be set by the work chain and the default of Quantum ESPRESSO will end up being
+        used. If the `nbands_factor` is specified the maximum value of the following values will be used:
+
+        * `nbnd` of the preceding SCF calculation
+        * 0.5 * nspin * nelectrons * nbands_factor
+        * 0.5 * nspin * nelectrons + 4 * nspin
+
+    """
 
     @classmethod
     def define(cls, spec):
@@ -34,8 +54,9 @@ class PwBandsWorkChain(WorkChain):
         spec.input('structure', valid_type=orm.StructureData, help='The inputs structure.')
         spec.input('clean_workdir', valid_type=orm.Bool, default=lambda: orm.Bool(False),
             help='If `True`, work directories of all called calculation will be cleaned at the end of execution.')
-        spec.input('nbands_factor', valid_type=orm.Float, default=lambda: orm.Float(1.2),
+        spec.input('nbands_factor', valid_type=orm.Float, required=False,
             help='The number of bands for the BANDS calculation is that used for the SCF multiplied by this factor.')
+        spec.inputs.validator = validate_inputs
         spec.outline(
             cls.setup,
             if_(cls.should_do_relax)(
@@ -49,12 +70,14 @@ class PwBandsWorkChain(WorkChain):
             cls.inspect_bands,
             cls.results,
         )
+        spec.exit_code(201, 'ERROR_INVALID_INPUT_NUMBER_OF_BANDS',
+            message='Cannot specify both `nbands_factor` and `bands.pw.parameters.SYSTEM.nbnd`.')
         spec.exit_code(401, 'ERROR_SUB_PROCESS_FAILED_RELAX',
-            message='the PwRelaxWorkChain sub process failed')
+            message='The PwRelaxWorkChain sub process failed')
         spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_SCF',
-            message='the scf PwBasexWorkChain sub process failed')
+            message='The scf PwBasexWorkChain sub process failed')
         spec.exit_code(403, 'ERROR_SUB_PROCESS_FAILED_BANDS',
-            message='the bands PwBasexWorkChain sub process failed')
+            message='The bands PwBasexWorkChain sub process failed')
         spec.output('primitive_structure', valid_type=orm.StructureData,
             help='The normalized and primitivized structure for which the bands are computed.')
         spec.output('seekpath_parameters', valid_type=orm.Dict,
@@ -141,15 +164,6 @@ class PwBandsWorkChain(WorkChain):
 
     def run_bands(self):
         """Run the PwBaseWorkChain in bands mode along the path of high-symmetry determined by seekpath."""
-
-        # Get info from SCF on number of electrons and number of spin components
-        scf_out_dict = self.ctx.workchain_scf.outputs.output_parameters.get_dict()
-        nelectron = int(scf_out_dict['number_of_electrons'])
-        nspin = int(scf_out_dict['number_of_spin_components'])
-        nbands = max(
-            int(0.5 * nelectron * nspin * self.inputs.nbands_factor.value),
-            int(0.5 * nelectron * nspin) + 4 * nspin)
-
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='bands'))
         inputs.pw.parameters = inputs.pw.parameters.get_dict()
 
@@ -157,8 +171,18 @@ class PwBandsWorkChain(WorkChain):
         inputs.pw.parameters.setdefault('SYSTEM', {})
         inputs.pw.parameters.setdefault('ELECTRONS', {})
 
+        # The following flags always have to be set in the parameters, regardless of what caller specified in the inputs
         inputs.pw.parameters['CONTROL']['calculation'] = 'bands'
-        inputs.pw.parameters['SYSTEM']['nbnd'] = nbands
+
+        # If `nbands_factor` is defined in the inputs we set the `nbnd` parameter
+        if 'nbands_factor' in self.inputs:
+            factor = self.inputs.nbands_factor.value
+            parameters = self.ctx.workchain_scf.outputs.output_parameters.get_dict()
+            nspin = int(parameters['number_of_spin_components'])
+            nbands = int(parameters['number_of_bands'])
+            nelectron = int(parameters['number_of_electrons'])
+            nbnd = max(int(0.5 * nelectron * nspin * factor), int(0.5 * nelectron * nspin) + 4 * nspin, nbands)
+            inputs.pw.parameters['SYSTEM']['nbnd'] = nbnd
 
         # Only set the following parameters if not directly explicitly defined in the inputs
         inputs.pw.parameters['ELECTRONS'].setdefault('diagonalization', 'cg')
