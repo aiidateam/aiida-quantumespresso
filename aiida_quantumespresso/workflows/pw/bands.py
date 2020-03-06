@@ -157,7 +157,6 @@ class PwBandsWorkChain(WorkChain):
         inputs.pw.parameters.setdefault('SYSTEM', {})
         inputs.pw.parameters.setdefault('ELECTRONS', {})
 
-        inputs.pw.parameters['CONTROL']['restart_mode'] = 'restart'
         inputs.pw.parameters['CONTROL']['calculation'] = 'bands'
         inputs.pw.parameters['SYSTEM']['nbnd'] = nbands
 
