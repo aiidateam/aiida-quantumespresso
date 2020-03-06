@@ -32,9 +32,9 @@ class PwBandsWorkChain(WorkChain):
         spec.expose_inputs(PwBaseWorkChain, namespace='bands', exclude=('clean_workdir', 'pw.structure'),
             namespace_options={'help': 'Inputs for the `PwBaseWorkChain` for the BANDS calculation.'})
         spec.input('structure', valid_type=orm.StructureData, help='The inputs structure.')
-        spec.input('clean_workdir', valid_type=orm.Bool, default=orm.Bool(False),
+        spec.input('clean_workdir', valid_type=orm.Bool, default=lambda: orm.Bool(False),
             help='If `True`, work directories of all called calculation will be cleaned at the end of execution.')
-        spec.input('nbands_factor', valid_type=orm.Float, default=orm.Float(1.2),
+        spec.input('nbands_factor', valid_type=orm.Float, default=lambda: orm.Float(1.2),
             help='The number of bands for the BANDS calculation is that used for the SCF multiplied by this factor.')
         spec.outline(
             cls.setup,
