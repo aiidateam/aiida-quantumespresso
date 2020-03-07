@@ -16,8 +16,40 @@ PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
 
 
+def validate_inputs(inputs, ctx=None):  # pylint: disable=unused-argument
+    """Validate the inputs of the entire input namespace."""
+    # pylint: disable=no-member
+
+    if 'nbands_factor' in inputs and 'nbnd' in inputs['bands']['pw']['parameters'].get_attribute('SYSTEM', {}):
+        return PwBandsWorkChain.exit_codes.ERROR_INVALID_INPUT_NUMBER_OF_BANDS.message
+
+    # Cannot specify both `bands_kpoints` and `bands_kpoints_distance`
+    if all([key in inputs for key in ['bands_kpoints', 'bands_kpoints_distance']]):
+        return PwBandsWorkChain.exit_codes.ERROR_INVALID_INPUT_KPOINTS.message
+
+
 class PwBandsWorkChain(WorkChain):
-    """Workchain to compute a band structure for a given structure using Quantum ESPRESSO pw.x."""
+    """Workchain to compute a band structure for a given structure using Quantum ESPRESSO pw.x.
+
+    The logic for the computation of various parameters for the BANDS step is as follows:
+
+    Number of bands:
+        One can specify the number of bands to be used in the BANDS step either directly through the input parameters
+        `bands.pw.parameters.SYSTEM.nbnd` or through `nbands_factor`. Note that specifying both is not allowed. When
+        neither is specified nothing will be set by the work chain and the default of Quantum ESPRESSO will end up being
+        used. If the `nbands_factor` is specified the maximum value of the following values will be used:
+
+        * `nbnd` of the preceding SCF calculation
+        * 0.5 * nspin * nelectrons * nbands_factor
+        * 0.5 * nspin * nelectrons + 4 * nspin
+
+    Kpoints:
+        There are three options; specify either an existing `KpointsData` through `bands_kpoints`, or specify the
+        `bands_kpoint_distance`, or specify neither. For the former those exact kpoints will be used for the BANDS step.
+        In the two other cases, the structure will first be normalized using SeekPath and the path along high-symmetry
+        k-points will be generated on that structure. The distance between kpoints for the path will be equal to that
+        of `bands_kpoints_distance` or the SeekPath default if not specified.
+    """
 
     @classmethod
     def define(cls, spec):
@@ -27,34 +59,47 @@ class PwBandsWorkChain(WorkChain):
         spec.expose_inputs(PwRelaxWorkChain, namespace='relax', exclude=('clean_workdir', 'structure'),
             namespace_options={'required': False, 'populate_defaults': False,
             'help': 'Inputs for the `PwRelaxWorkChain`, if not specified at all, the relaxation step is skipped.'})
-        spec.expose_inputs(PwBaseWorkChain, namespace='scf', exclude=('clean_workdir', 'pw.structure'),
+        spec.expose_inputs(PwBaseWorkChain, namespace='scf',
+            exclude=('clean_workdir', 'pw.structure'),
             namespace_options={'help': 'Inputs for the `PwBaseWorkChain` for the SCF calculation.'})
-        spec.expose_inputs(PwBaseWorkChain, namespace='bands', exclude=('clean_workdir', 'pw.structure'),
+        spec.expose_inputs(PwBaseWorkChain, namespace='bands',
+            exclude=('clean_workdir', 'pw.structure', 'pw.kpoints', 'pw.kpoints_distance'),
             namespace_options={'help': 'Inputs for the `PwBaseWorkChain` for the BANDS calculation.'})
         spec.input('structure', valid_type=orm.StructureData, help='The inputs structure.')
-        spec.input('clean_workdir', valid_type=orm.Bool, default=orm.Bool(False),
+        spec.input('clean_workdir', valid_type=orm.Bool, default=lambda: orm.Bool(False),
             help='If `True`, work directories of all called calculation will be cleaned at the end of execution.')
-        spec.input('nbands_factor', valid_type=orm.Float, default=orm.Float(1.2),
+        spec.input('nbands_factor', valid_type=orm.Float, required=False,
             help='The number of bands for the BANDS calculation is that used for the SCF multiplied by this factor.')
+        spec.input('bands_kpoints', valid_type=orm.KpointsData, required=False,
+            help='Explicit kpoints to use for the BANDS calculation. Specify either this or `bands_kpoints_distance`.')
+        spec.input('bands_kpoints_distance', valid_type=orm.Float, required=False,
+            help='Minimum kpoints distance for the BANDS calculation. Specify either this or `bands_kpoints`.')
+        spec.inputs.validator = validate_inputs
         spec.outline(
             cls.setup,
-            if_(cls.should_do_relax)(
+            if_(cls.should_run_relax)(
                 cls.run_relax,
                 cls.inspect_relax,
             ),
-            cls.run_seekpath,
+            if_(cls.should_run_seekpath)(
+                cls.run_seekpath,
+            ),
             cls.run_scf,
             cls.inspect_scf,
             cls.run_bands,
             cls.inspect_bands,
             cls.results,
         )
+        spec.exit_code(201, 'ERROR_INVALID_INPUT_NUMBER_OF_BANDS',
+            message='Cannot specify both `nbands_factor` and `bands.pw.parameters.SYSTEM.nbnd`.')
+        spec.exit_code(202, 'ERROR_INVALID_INPUT_KPOINTS',
+            message='Cannot specify both `bands_kpoints` and `bands_kpoints_distance`.')
         spec.exit_code(401, 'ERROR_SUB_PROCESS_FAILED_RELAX',
-            message='the PwRelaxWorkChain sub process failed')
+            message='The PwRelaxWorkChain sub process failed')
         spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_SCF',
-            message='the scf PwBasexWorkChain sub process failed')
+            message='The scf PwBasexWorkChain sub process failed')
         spec.exit_code(403, 'ERROR_SUB_PROCESS_FAILED_BANDS',
-            message='the bands PwBasexWorkChain sub process failed')
+            message='The bands PwBasexWorkChain sub process failed')
         spec.output('primitive_structure', valid_type=orm.StructureData,
             help='The normalized and primitivized structure for which the bands are computed.')
         spec.output('seekpath_parameters', valid_type=orm.Dict,
@@ -69,10 +114,15 @@ class PwBandsWorkChain(WorkChain):
     def setup(self):
         """Define the current structure in the context to be the input structure."""
         self.ctx.current_structure = self.inputs.structure
+        self.ctx.bands_kpoints = self.inputs.get('bands_kpoints', None)
 
-    def should_do_relax(self):
+    def should_run_relax(self):
         """If the 'relax' input namespace was specified, we relax the input structure."""
         return 'relax' in self.inputs
+
+    def should_run_seekpath(self):
+        """Seekpath should only be run if the `bands_kpoints` input is not specified."""
+        return 'bands_kpoints' not in self.inputs
 
     def run_relax(self):
         """Run the PwRelaxWorkChain to run a relax PwCalculation."""
@@ -96,20 +146,14 @@ class PwBandsWorkChain(WorkChain):
         self.ctx.current_structure = workchain.outputs.output_structure
 
     def run_seekpath(self):
-        """Run the structure through SeeKpath to get the primitive and normalized structure.
+        """Run the structure through SeeKpath to get the normalized structure and path along high-symmetry k-points .
 
-        This is performed regardless of whether the inputs structure was relaxed.
+        This is only called if the `bands_kpoints` input was not specified.
         """
-        if 'kpoints_distance' in self.inputs.bands:
-            seekpath_parameters = orm.Dict(dict={
-                'reference_distance': self.inputs.bands.kpoints_distance.value
-            })
-        else:
-            seekpath_parameters = orm.Dict(dict={})
-
-        result = seekpath_structure_analysis(self.ctx.current_structure, seekpath_parameters)
+        reference_distance = self.inputs.get('bands_kpoints_distance', None)
+        result = seekpath_structure_analysis(self.ctx.current_structure, reference_distance=reference_distance)
         self.ctx.current_structure = result['primitive_structure']
-        self.ctx.kpoints_path = result['explicit_kpoints']
+        self.ctx.bands_kpoints = result['explicit_kpoints']
 
         self.out('primitive_structure', result['primitive_structure'])
         self.out('seekpath_parameters', result['parameters'])
@@ -141,33 +185,32 @@ class PwBandsWorkChain(WorkChain):
 
     def run_bands(self):
         """Run the PwBaseWorkChain in bands mode along the path of high-symmetry determined by seekpath."""
-
-        # Get info from SCF on number of electrons and number of spin components
-        scf_out_dict = self.ctx.workchain_scf.outputs.output_parameters.get_dict()
-        nelectron = int(scf_out_dict['number_of_electrons'])
-        nspin = int(scf_out_dict['number_of_spin_components'])
-        nbands = max(
-            int(0.5 * nelectron * nspin * self.inputs.nbands_factor.value),
-            int(0.5 * nelectron * nspin) + 4 * nspin)
-
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='bands'))
-        inputs.pw.parameters = inputs.pw.parameters.get_dict()
 
+        inputs.kpoints = self.ctx.bands_kpoints
+        inputs.pw.structure = self.ctx.current_structure
+        inputs.pw.parent_folder = self.ctx.current_folder
+        inputs.pw.parameters = inputs.pw.parameters.get_dict()
         inputs.pw.parameters.setdefault('CONTROL', {})
         inputs.pw.parameters.setdefault('SYSTEM', {})
         inputs.pw.parameters.setdefault('ELECTRONS', {})
 
-        inputs.pw.parameters['CONTROL']['restart_mode'] = 'restart'
+        # The following flags always have to be set in the parameters, regardless of what caller specified in the inputs
         inputs.pw.parameters['CONTROL']['calculation'] = 'bands'
-        inputs.pw.parameters['ELECTRONS']['diagonalization'] = 'cg'
-        inputs.pw.parameters['ELECTRONS']['diago_full_acc'] = True
-        inputs.pw.parameters['SYSTEM']['nbnd'] = nbands
 
-        if 'kpoints' not in self.inputs.bands:
-            inputs.kpoints = self.ctx.kpoints_path
+        # Only set the following parameters if not directly explicitly defined in the inputs
+        inputs.pw.parameters['ELECTRONS'].setdefault('diagonalization', 'cg')
+        inputs.pw.parameters['ELECTRONS'].setdefault('diago_full_acc', True)
 
-        inputs.pw.structure = self.ctx.current_structure
-        inputs.pw.parent_folder = self.ctx.current_folder
+        # If `nbands_factor` is defined in the inputs we set the `nbnd` parameter
+        if 'nbands_factor' in self.inputs:
+            factor = self.inputs.nbands_factor.value
+            parameters = self.ctx.workchain_scf.outputs.output_parameters.get_dict()
+            nspin = int(parameters['number_of_spin_components'])
+            nbands = int(parameters['number_of_bands'])
+            nelectron = int(parameters['number_of_electrons'])
+            nbnd = max(int(0.5 * nelectron * nspin * factor), int(0.5 * nelectron * nspin) + 4 * nspin, nbands)
+            inputs.pw.parameters['SYSTEM']['nbnd'] = nbnd
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)

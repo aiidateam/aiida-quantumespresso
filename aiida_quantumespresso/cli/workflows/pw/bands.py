@@ -85,7 +85,6 @@ def launch_workflow(
     builder.bands.pw.code = code
     builder.bands.pw.parameters = parameters
     builder.bands.pseudo_family = pseudo_family
-    builder.bands.kpoints_distance = Float(kpoints_distance)
 
     if hubbard_file:
         builder.relax.base.pw.hubbard_file = hubbard_file

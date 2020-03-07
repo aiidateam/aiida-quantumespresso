@@ -94,6 +94,14 @@ def generate_calc_job_node():
         from aiida.common import LinkType
         from aiida.plugins.entry_point import format_entry_point_string
 
+        filepath_folder = None
+
+        if test_name is not None:
+            basepath = os.path.dirname(os.path.abspath(__file__))
+            filename = os.path.join(entry_point_name[len('quantumespresso.'):], test_name)
+            filepath_folder = os.path.join(basepath, 'parsers', 'fixtures', filename)
+            filepath_input = os.path.join(filepath_folder, 'aiida.in')
+
         entry_point = format_entry_point_string('aiida.calculations', entry_point_name)
 
         node = orm.CalcJobNode(computer=computer, process_type=entry_point)
@@ -106,6 +114,17 @@ def generate_calc_job_node():
         if attributes:
             node.set_attribute_many(attributes)
 
+        if filepath_folder:
+            from qe_tools.utils.exceptions import ParsingError
+            from aiida_quantumespresso.tools.pwinputparser import PwInputFile
+            try:
+                parsed_input = PwInputFile(filepath_input)
+            except ParsingError:
+                pass
+            else:
+                inputs['structure'] = parsed_input.get_structuredata()
+                inputs['parameters'] = orm.Dict(dict=parsed_input.namelists)
+
         if inputs:
             for link_label, input_node in flatten_inputs(inputs):
                 input_node.store()
@@ -113,14 +132,9 @@ def generate_calc_job_node():
 
         node.store()
 
-        if test_name is not None:
-            basepath = os.path.dirname(os.path.abspath(__file__))
-            filepath = os.path.join(
-                basepath, 'parsers', 'fixtures', entry_point_name[len('quantumespresso.'):], test_name
-            )
-
+        if filepath_folder:
             retrieved = orm.FolderData()
-            retrieved.put_object_from_tree(filepath)
+            retrieved.put_object_from_tree(filepath_folder)
             retrieved.add_incoming(node, link_type=LinkType.CREATE, link_label='retrieved')
             retrieved.store()
 
