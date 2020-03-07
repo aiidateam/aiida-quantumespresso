@@ -31,7 +31,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         # yapf: disable
         super(PhBaseWorkChain, cls).define(spec)
         spec.expose_inputs(PhCalculation, namespace='ph')
-        spec.input('only_initialization', valid_type=orm.Bool, default=orm.Bool(False))
+        spec.input('only_initialization', valid_type=orm.Bool, default=lambda: orm.Bool(False))
         spec.outline(
             cls.setup,
             cls.validate_parameters,
