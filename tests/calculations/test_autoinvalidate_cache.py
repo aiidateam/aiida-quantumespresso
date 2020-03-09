@@ -16,7 +16,7 @@ QE_CALC_ENTRY_POINT_NAMES = [
 ]
 
 # When explicitly overriden 'invalidates_cache' are added, add entries
-# EXPLICIT_OVERRIDES = {<entry_point_name>: {<status_integer>: <expected_value>}}
+# EXPLICIT_OVERRIDES = {<entry_point_name>: [<status_integer>, ...]}
 
 EXPLICIT_OVERRIDES = {}
 
@@ -29,11 +29,10 @@ def test_exit_code_invalidates_cache(entry_point_name):
     set according to the status integer.
     """
     calc_class = CalculationFactory(entry_point_name)
-    overrides = EXPLICIT_OVERRIDES.get(entry_point_name, {})
+    overrides = EXPLICIT_OVERRIDES.get(entry_point_name, [])
     for exit_code in calc_class.exit_codes.values():
-        if exit_code.status in overrides:
-            assert exit_code.invalidates_cache == overrides[exit_code.status]
-        elif exit_code.status < 400:
-            assert exit_code.invalidates_cache
-        else:
-            assert not exit_code.invalidates_cache
+        if exit_code.status not in overrides:
+            if exit_code.status < 400:
+                assert exit_code.invalidates_cache
+            else:
+                assert not exit_code.invalidates_cache
