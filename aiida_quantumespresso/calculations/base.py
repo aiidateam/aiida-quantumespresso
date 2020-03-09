@@ -2,7 +2,9 @@
 """Defines a CalcJob base class for aiida-quantumespresso.
 
 The custom CalcJob base class automatically sets the `invalidates_cache`
-attribute of exit codes based on the status integer.
+attribute of exit codes based on the status integer. All `CalcJob`
+implementations in `aiida-quantumespresso` must use this base class,
+not `aiida.engine.CalcJob`.
 """
 
 from __future__ import absolute_import
