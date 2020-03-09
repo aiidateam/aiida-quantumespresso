@@ -9,7 +9,7 @@ not `aiida.engine.CalcJob`.
 
 from __future__ import absolute_import
 
-from aiida.engine import ExitCode, CalcJob as _BaseCalcJob
+from aiida.engine import CalcJob as _BaseCalcJob
 from aiida.engine.processes.process_spec import CalcJobProcessSpec as _BaseCalcJobProcessSpec
 
 __all__ = ('CalcJob',)
@@ -37,10 +37,10 @@ class CalcJobProcessSpec(_BaseCalcJobProcessSpec):
         if invalidates_cache is None:
             invalidates_cache = (isinstance(status, int) and status < 400)
 
-        if 'invalidates_cache' in ExitCode._fields:
+        try:
             super(CalcJobProcessSpec,
                   self).exit_code(status=status, label=label, message=message, invalidates_cache=invalidates_cache)
-        else:
+        except TypeError:  # For AiiDA version <1.1
             super(CalcJobProcessSpec, self).exit_code(status=status, message=message, label=label)
 
 
