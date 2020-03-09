@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Defines a CalcJob base class for aiida-quantumespresso.
 
-The custom CalcJob base class automatically sets the'invalidates_cache'
+The custom CalcJob base class automatically sets the `invalidates_cache`
 attribute of exit codes based on the status integer.
 """
 
