@@ -25,15 +25,15 @@ class MatdynParser(Parser):
 
         if filename_stdout not in output_folder.list_object_names():
             self.logger.error("The standard output file '{}' was not found but is required".format(filename_stdout))
-            return self.exit_codes.ERROR_READING_OUTPUT_FILE
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
         if 'JOB DONE' not in output_folder.get_object_content(filename_stdout):
             self.logger.error('Computation did not finish properly')
-            return self.exit_codes.ERROR_JOB_NOT_DONE
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
 
         if filename_frequencies not in output_folder.list_object_names():
             self.logger.error("The frequencies output file '{}' was not found but is required".format(filename_stdout))
-            return self.exit_codes.ERROR_READING_OUTPUT_FILE
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
         # Extract the kpoints from the input data and create the `KpointsData` for the `BandsData`
         try:
