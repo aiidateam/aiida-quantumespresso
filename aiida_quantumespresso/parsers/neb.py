@@ -7,7 +7,8 @@ from six.moves import range
 from aiida.common import NotExistent
 from aiida.orm import Dict
 from aiida.parsers.parser import Parser
-from aiida_quantumespresso.parsers import convert_qe2aiida_structure, QEOutputParsingError
+from aiida_quantumespresso.parsers import QEOutputParsingError
+from aiida_quantumespresso.parsers.parse_raw import convert_qe2aiida_structure
 from aiida_quantumespresso.parsers.parse_raw.pw import reduce_symmetries
 from aiida_quantumespresso.parsers.parse_raw.pw import parse_stdout as parse_pw_stdout
 from aiida_quantumespresso.parsers.parse_xml.pw.parse import parse_xml as parse_pw_xml

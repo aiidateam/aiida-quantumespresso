@@ -5,16 +5,12 @@ from aiida.parsers import Parser
 from aiida.orm import Dict, XyData
 from aiida.common import NotExistent
 from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers import parse_raw_out_basic
+from aiida_quantumespresso.parsers.parse_raw.base import parse_output_base, emit_logs
 from six.moves import range
 
 
 class DosParser(Parser):
     """This class is the implementation of the Parser class for Dos."""
-    # deprecated:
-    #_dos_name = 'output_dos'
-    #_units_name = 'output_units'
-
 
     def parse(self, **kwargs):
         """Parses the datafolder, stores results.
@@ -91,15 +87,11 @@ class DosParser(Parser):
             y_units += ['states/eV']
         xy_data.set_y(y_arrays,y_names,y_units)
 
-        # grabs the parsed data from aiida.out
-        parsed_data = parse_raw_out_basic(out_file, 'DOS')
-        output_params = Dict(dict=parsed_data)
-        # Adds warnings
-        for message in parsed_data['warnings']:
-            self.logger.error(message)
-        # Create New Nodes
+        parsed_data, logs = parse_output_base(out_file, 'DOS')
+        emit_logs(self.logger, logs)
+
         self.out('output_dos', xy_data)
-        self.out('output_parameters', output_params)
+        self.out('output_parameters', Dict(dict=parsed_data))
 
 
 def parse_raw_dos(dos_file, array_names, array_units):
