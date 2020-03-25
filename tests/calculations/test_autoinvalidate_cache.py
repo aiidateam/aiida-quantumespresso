@@ -2,13 +2,16 @@
 """Test the automatic 'invalidates_cache' attribute for exit codes."""
 
 from __future__ import absolute_import
+
+from distutils.version import StrictVersion  # pylint: disable=import-error,no-name-in-module
+
 import pytest
 
 import aiida
 from aiida.plugins import CalculationFactory
 from aiida.plugins.entry_point import get_entry_point_names
 
-if aiida.__version__ < '1.1':
+if StrictVersion(aiida.__version__) < StrictVersion('1.1.0'):
     pytest.skip("The 'invalidates_cache' feature is only available on AiiDA 1.1+", allow_module_level=True)
 
 QE_CALC_ENTRY_POINT_NAMES = [
