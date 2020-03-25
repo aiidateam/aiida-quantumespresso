@@ -8,11 +8,12 @@ import six
 
 from aiida import orm
 from aiida.common import datastructures, exceptions
-from aiida.engine import CalcJob
 
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+
+from .base import CalcJob
 
 
 class PhCalculation(CalcJob):
