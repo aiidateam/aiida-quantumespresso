@@ -8,6 +8,7 @@ import six
 from aiida import orm
 from aiida.common.lang import classproperty
 from aiida.plugins import factories
+
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 
 
