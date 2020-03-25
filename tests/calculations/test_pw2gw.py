@@ -12,7 +12,7 @@ def test_pw_default(
     aiida_profile, fixture_localhost, fixture_sandbox, fixture_code, generate_calc_job, generate_remote_data, tmpdir,
     file_regression
 ):
-    """Test a default `PwCalculation`."""
+    """Test a default `Pw2gwCalculation`."""
     entry_point_name = 'quantumespresso.pw2gw'
 
     parameters = {
