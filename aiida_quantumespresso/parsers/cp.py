@@ -35,7 +35,7 @@ class CpParser(Parser):
         # at least the stdout should exist
         if stdout_filename not in list_of_files:
             self.logger.error('Standard output not found')
-            return self.exit_codes.ERROR_READING_OUTPUT_FILE
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
         # This should match 1 file
         xml_files = [
@@ -47,7 +47,7 @@ class CpParser(Parser):
             return self.exit_codes.ERROR_MISSING_XML_FILE
         elif len(xml_files) > 1:
             self.logger.error('more than one XML file retrieved, which should never happen')
-            return self.exit_codes.ERROR_MULTIPLE_XML_FILES
+            return self.exit_codes.ERROR_OUTPUT_XML_MULTIPLE
 
         if self.node.process_class._FILE_XML_PRINT_COUNTER_BASENAME not in list_of_files:
             self.logger.error('We could not find the print counter file in the output')

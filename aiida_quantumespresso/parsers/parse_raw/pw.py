@@ -13,6 +13,7 @@ import numpy
 from six.moves import range, zip
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
+from aiida_quantumespresso.parsers.parse_raw import convert_qe_time_to_sec
 from aiida_quantumespresso.utils.mapping import get_logging_container
 from qe_tools.constants import ry_to_ev, bohr_to_ang, ry_si, bohr_si
 
@@ -916,62 +917,3 @@ def grep_energy_from_line(line):
         return float(line.split('=')[1].split('Ry')[0]) * ry_to_ev
     except Exception:
         raise QEOutputParsingError('Error while parsing energy')
-
-
-def convert_qe_time_to_sec(timestr):
-    """Given the walltime string of Quantum Espresso, converts it in a number of seconds (float)."""
-    rest = timestr.strip()
-
-    if 'd' in rest:
-        days, rest = rest.split('d')
-    else:
-        days = '0'
-
-    if 'h' in rest:
-        hours, rest = rest.split('h')
-    else:
-        hours = '0'
-
-    if 'm' in rest:
-        minutes, rest = rest.split('m')
-    else:
-        minutes = '0'
-
-    if 's' in rest:
-        seconds, rest = rest.split('s')
-    else:
-        seconds = '0.'
-
-    if rest.strip():
-        raise ValueError("Something remained at the end of the string '{}': '{}'".format(timestr, rest))
-
-    num_seconds = (float(seconds) + float(minutes) * 60. + float(hours) * 3600. + float(days) * 86400.)
-
-    return num_seconds
-
-
-def parse_QE_errors(lines, line_number_start, warnings):
-    """Parse QE errors messages (those appearing between some lines with ``%%%%%%%%``)
-
-    :param lines: list of strings, the output text file as read by ``readlines()``
-        or as obtained by ``data.split('\\\\n')`` when data is the text file read by ``read()``
-    :param line_number_start: the line at which we identified some ``%%%%%%%%``
-    :param warnings: dictionary where keys are error markers and the value the corresponding warning messages that
-        should be returned.
-    :return messages: a list of QE error messages
-    """
-    messages = []
-
-    for line_number, line in enumerate(lines[line_number_start + 1:]):
-        if '%%%%%%%%%%%%' in line:
-            line_number_end = line_number
-            break
-    else:
-        return messages
-
-    for line in lines[line_number_start:line_number_end]:
-        for marker, message in warnings.items():
-            if marker in line:
-                messages.append(message)
-
-    return set(messages)
