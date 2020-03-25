@@ -33,9 +33,9 @@ class Pw2gwCalculation(NamelistsCalculation):
         spec.input('parent_folder', valid_type=RemoteData,
             help='Output folder of a completed `PwCalculation`')
 
-        spec.exit_code(200, 'ERROR_NO_RETRIEVED_FOLDER',
+        spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
             message='The retrieved folder data node could not be accessed.')
-        spec.exit_code(300, 'ERROR_OUTPUT_FILES',
+        spec.exit_code(305, 'ERROR_OUTPUT_FILES',
             message='The eps*.dat output files could not be read or parsed.')
 
     def prepare_for_submission(self, folder):
