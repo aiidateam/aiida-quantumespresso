@@ -22,7 +22,7 @@ class Q2rParser(Parser):
 
         if filename_stdout not in output_folder.list_object_names():
             self.logger.error("The standard output file '{}' was not found but is required".format(filename_stdout))
-            return self.exit_codes.ERROR_READING_OUTPUT_FILE
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
         if filename_force_constants not in output_folder.list_object_names():
             self.logger.error("The force constants file '{}' was not found but is required".format(filename_force_constants))
@@ -30,7 +30,7 @@ class Q2rParser(Parser):
 
         if 'JOB DONE' not in output_folder.get_object_content(filename_stdout):
             self.logger.error('Computation did not finish properly')
-            return self.exit_codes.ERROR_JOB_NOT_DONE
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
 
         with output_folder.open(filename_force_constants, 'rb') as handle:
             self.out('force_constants', ForceConstantsData(file=handle))

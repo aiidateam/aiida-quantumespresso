@@ -128,26 +128,30 @@ class CpCalculation(BasePwCpInputGenerator):
 
     @classmethod
     def define(cls, spec):
-        super(CpCalculation, cls).define(spec)  # noqa: D102 # yapf: disable
+        # yapf: disable
+        super(CpCalculation, cls).define(spec)
         spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.cp')
         spec.output('output_trajectory', valid_type=orm.TrajectoryData)
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.default_output_node = 'output_parameters'
 
-        spec.exit_code(
-            100, 'ERROR_NO_RETRIEVED_FOLDER', message='The retrieved folder data node could not be accessed.'
-        )
-        spec.exit_code(
-            101, 'ERROR_NO_RETRIEVED_TEMPORARY_FOLDER', message='The retrieved temporary folder could not be accessed.'
-        )
-        spec.exit_code(
-            110, 'ERROR_READING_OUTPUT_FILE', message='The output file could not be read from the retrieved folder.'
-        )
-        spec.exit_code(
-            115, 'ERROR_MISSING_XML_FILE', message='The required XML file is not present in the retrieved folder.'
-        )
-        spec.exit_code(116, 'ERROR_MULTIPLE_XML_FILES', message='The retrieved folder contains multiple XML files.')
-        spec.exit_code(117, 'ERROR_READING_XML_FILE', message='The required XML file could not be read.')
-        spec.exit_code(118, 'ERROR_READING_POS_FILE', message='The required POS file could not be read.')
-        spec.exit_code(119, 'ERROR_READING_TRAJECTORY_DATA', message='The required trajectory data could not be read.')
-        spec.exit_code(120, 'ERROR_INVALID_OUTPUT', message='The output file contains invalid output.')
+        spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
+            message='The retrieved folder data node could not be accessed.')
+        spec.exit_code(301, 'ERROR_NO_RETRIEVED_TEMPORARY_FOLDER',
+            message='The retrieved temporary folder could not be accessed.')
+        spec.exit_code(303, 'ERROR_MISSING_XML_FILE',
+            message='The required XML file is not present in the retrieved folder.')
+        spec.exit_code(304, 'ERROR_OUTPUT_XML_MULTIPLE',
+            message='The retrieved folder contains multiple XML files.')
+        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
+            message='The stdout output file could not be read.')
+        spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE',
+            message='The output file contains invalid output.')
+        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
+            message='The stdout output file was incomplete probably because the calculation got interrupted.')
+        spec.exit_code(320, 'ERROR_OUTPUT_XML_READ',
+            message='The required XML file could not be read.')
+        spec.exit_code(330, 'ERROR_READING_POS_FILE',
+            message='The required POS file could not be read.')
+        spec.exit_code(340, 'ERROR_READING_TRAJECTORY_DATA',
+            message='The required trajectory data could not be read.')

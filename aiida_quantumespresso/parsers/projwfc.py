@@ -13,7 +13,7 @@ from aiida.parsers import Parser
 from aiida.plugins import OrbitalFactory
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers import parse_raw_out_basic
+from aiida_quantumespresso.parsers.parse_raw.base import parse_output_base, emit_logs
 
 
 def find_orbitals_from_statelines(out_info_dict):
@@ -243,7 +243,7 @@ class ProjwfcParser(Parser):
             with out_folder.open(filename_stdout, 'r') as fil:
                 out_file = fil.readlines()
         except OSError:
-            return self.exit_codes.ERROR_READING_OUTPUT_FILE
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
         job_done = False
         for i in range(len(out_file)):
@@ -253,14 +253,12 @@ class ProjwfcParser(Parser):
                 break
         if not job_done:
             self.logger.error('Computation did not finish properly')
-            return self.exit_codes.ERROR_JOB_NOT_DONE
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
 
         # Parse basic info and warnings, and output them as output_parmeters
-        parsed_data = parse_raw_out_basic(out_file, 'PROJWFC')
-        for message in parsed_data['warnings']:
-            self.logger.error(message)
-        output_params = Dict(dict=parsed_data)
-        self.out('output_parameters', output_params)
+        parsed_data, logs = parse_output_base(out_file, 'PROJWFC')
+        emit_logs(self.logger, logs)
+        self.out('output_parameters', Dict(dict=parsed_data))
 
         # check and read pdos_tot file
         out_filenames = out_folder.list_object_names()

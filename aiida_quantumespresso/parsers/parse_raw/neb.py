@@ -11,7 +11,7 @@ import os
 import string
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
 from qe_tools.constants import ry_to_ev,hartree_to_ev,bohr_to_ang,ry_si,bohr_si
-from aiida_quantumespresso.parsers.parse_raw.pw import convert_qe_time_to_sec
+from aiida_quantumespresso.parsers.parse_raw import convert_qe_time_to_sec
 import six
 from six.moves import range
 
@@ -105,7 +105,8 @@ def parse_neb_text_output(data, input_dict={}):
     :return critical_messages: a list with critical messages. If any is found in
                                parsed_data['warnings'], the calculation is FAILED!
     """
-    from aiida_quantumespresso.parsers.parse_raw.pw import parse_QE_errors
+    from aiida_quantumespresso.parsers.parse_raw import parse_output_error
+    from aiida_quantumespresso.utils.mapping import get_logging_container
     from collections import defaultdict
 
     # TODO: find a more exhaustive list of the common errors of neb
@@ -115,7 +116,6 @@ def parse_neb_text_output(data, input_dict={}):
                          'SCF did not converge for a given image',
                          'Maximum CPU time exceeded':'Maximum CPU time exceeded',
                          'reached the maximum number of steps': 'Maximum number of iterations reached in the image optimization',
-                         '%%%%%%%%%%%%%%':None,
                          }
 
     minor_warnings = {'Warning:':None,
@@ -145,9 +145,11 @@ def parse_neb_text_output(data, input_dict={}):
             break
 
     # set by default the calculation as not converged.
-    parsed_data['converged'] = [False,0]
+    parsed_data['converged'] = [False, 0]
+    logs = get_logging_container()
+    lines = data.split('\n')
 
-    for count, line in enumerate(data.split('\n')):
+    for count, line in enumerate(lines):
         if 'initial path length' in line:
             initial_path_length = float(line.split('=')[1].split('bohr')[0])
             parsed_data['initial_path_length'] = initial_path_length * bohr_to_ang
@@ -186,22 +188,15 @@ def parse_neb_text_output(data, input_dict={}):
             parsed_data['climbing_images_manual'] = [int(_) for _ in line.split(':')[1].split(',')[:-1]]
         elif 'neb: convergence achieved in' in line:
             parsed_data['converged'] = [True, int(line.split('iteration')[0].split()[-1])]
-        elif any( i in line for i in all_warnings):
-            message = [ all_warnings[i] for i in all_warnings.keys() if i in line][0]
-            if message is None:
-                message = line
+        elif '%%%%%%%%%%%%%%' in line:
+            parse_output_error(lines, count, logs)
+        elif any(i in line for i in all_warnings):
+            message = [all_warnings[i] for i in all_warnings.keys() if i in line][0]
 
-            if '%%%%%%%%%%%%%%' in line:
-                message  = None
-                messages = parse_QE_errors(data.split('\n'),count,parsed_data['warnings'])
-
-            # if it found something, add to log
-            try:
-                parsed_data['warnings'].extend(messages)
-            except UnboundLocalError:
-                pass
             if message is not None:
                 parsed_data['warnings'].append(message)
+
+    parsed_data['warnings'].extend(logs.error)
 
     try:
         num_images = parsed_data['num_of_images']
