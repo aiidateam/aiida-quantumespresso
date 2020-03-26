@@ -95,7 +95,9 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         spec.exit_code(211, 'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY',
             message='Unrecognized keys were specified for `automatic_parallelization`.')
         spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
-            message='The calculation failed with an unrecoverable error.')
+            message='The calculation failed with an unidentified unrecoverable error.')
+        spec.exit_code(310, 'ERROR_KNOWN_UNRECOVERABLE_FAILURE',
+            message='The calculation failed with a known unrecoverable error.')
         spec.exit_code(320, 'ERROR_INITIALIZATION_CALCULATION_FAILED',
             message='The initialization calculation failed.')
         spec.exit_code(501, 'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
@@ -348,6 +350,21 @@ def _handle_unrecoverable_failure(self, calculation):
     if calculation.exit_status < 400:
         self.report_error_handled(calculation, 'unrecoverable error, aborting...')
         return ErrorHandlerReport(True, True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
+
+
+@register_error_handler(PwBaseWorkChain, 590)
+def _handle_known_unrecoverable_failure(self, calculation):
+    """Handle calculations with an exit status that correspond to a known failure mode that are unrecoverable.
+
+    These failures may always be unrecoverable or at some point a handler may be devised.
+    """
+    exit_code_labels = [
+        'ERROR_COMPUTING_CHOLESKY',
+    ]
+
+    if calculation.exit_status in PwCalculation.get_exit_statuses(exit_code_labels):
+        self.report_error_handled(calculation, 'known unrecoverable failure detected, aborting...')
+        return ErrorHandlerReport(True, True, self.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE)
 
 
 @register_error_handler(PwBaseWorkChain, 580)
