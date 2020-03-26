@@ -127,6 +127,7 @@ class PwBandsWorkChain(WorkChain):
     def run_relax(self):
         """Run the PwRelaxWorkChain to run a relax PwCalculation."""
         inputs = AttributeDict(self.exposed_inputs(PwRelaxWorkChain, namespace='relax'))
+        inputs.metadata.call_link_label = 'relax'
         inputs.structure = self.ctx.current_structure
 
         running = self.submit(PwRelaxWorkChain, **inputs)
@@ -150,8 +151,11 @@ class PwBandsWorkChain(WorkChain):
 
         This is only called if the `bands_kpoints` input was not specified.
         """
-        reference_distance = self.inputs.get('bands_kpoints_distance', None)
-        result = seekpath_structure_analysis(self.ctx.current_structure, reference_distance=reference_distance)
+        inputs = {
+            'reference_distance': self.inputs.get('bands_kpoints_distance', None),
+            'metadata': {'call_link_label': 'seekpath'}
+        }
+        result = seekpath_structure_analysis(self.ctx.current_structure, **inputs)
         self.ctx.current_structure = result['primitive_structure']
         self.ctx.bands_kpoints = result['explicit_kpoints']
 
@@ -161,6 +165,7 @@ class PwBandsWorkChain(WorkChain):
     def run_scf(self):
         """Run the PwBaseWorkChain in scf mode on the primitive cell of (optionally relaxed) input structure."""
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='scf'))
+        inputs.metadata.call_link_label = 'scf'
         inputs.pw.structure = self.ctx.current_structure
         inputs.pw.parameters = inputs.pw.parameters.get_dict()
         inputs.pw.parameters.setdefault('CONTROL', {})
@@ -186,7 +191,7 @@ class PwBandsWorkChain(WorkChain):
     def run_bands(self):
         """Run the PwBaseWorkChain in bands mode along the path of high-symmetry determined by seekpath."""
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='bands'))
-
+        inputs.metadata.call_link_label = 'bands'
         inputs.kpoints = self.ctx.bands_kpoints
         inputs.pw.structure = self.ctx.current_structure
         inputs.pw.parent_folder = self.ctx.current_folder
