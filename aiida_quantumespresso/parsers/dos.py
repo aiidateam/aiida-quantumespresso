@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 import numpy as np
-from aiida.parsers import Parser
+from six.moves import range
+
 from aiida.orm import Dict, XyData
 from aiida.common import NotExistent
+
 from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers.parse_raw.base import parse_output_base, emit_logs
-from six.moves import range
+from aiida_quantumespresso.parsers.parse_raw.base import parse_output_base
+from .base import Parser
 
 
 class DosParser(Parser):
@@ -20,7 +22,7 @@ class DosParser(Parser):
         try:
             out_folder = self.retrieved
         except NotExistent:
-            return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
+            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
 
         # Read standard out
         try:
@@ -28,7 +30,7 @@ class DosParser(Parser):
             with out_folder.open(filename_stdout, 'r') as fil:
                     out_file = fil.readlines()
         except OSError:
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 
         job_done = False
         for i in range(len(out_file)):
@@ -37,14 +39,14 @@ class DosParser(Parser):
                 job_done = True
                 break
         if not job_done:
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE)
 
         # check that the dos file is present, if it is, read it
         try:
             with out_folder.open(self.node.process_class._DOS_FILENAME, 'r') as fil:
                     dos_file = fil.readlines()
         except OSError:
-            return self.exit_codes.ERROR_READING_DOS_FILE
+            return self.exit(self.exit_codes.ERROR_READING_DOS_FILE)
 
         # end of initial checks
 
@@ -88,7 +90,7 @@ class DosParser(Parser):
         xy_data.set_y(y_arrays,y_names,y_units)
 
         parsed_data, logs = parse_output_base(out_file, 'DOS')
-        emit_logs(self.logger, logs)
+        self.emit_logs(logs)
 
         self.out('output_dos', xy_data)
         self.out('output_parameters', Dict(dict=parsed_data))

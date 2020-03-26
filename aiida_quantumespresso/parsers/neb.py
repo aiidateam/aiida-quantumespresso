@@ -6,7 +6,7 @@ from six.moves import range
 
 from aiida.common import NotExistent
 from aiida.orm import Dict
-from aiida.parsers.parser import Parser
+
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.parse_raw import convert_qe2aiida_structure
 from aiida_quantumespresso.parsers.parse_raw.pw import reduce_symmetries
@@ -16,6 +16,7 @@ from aiida_quantumespresso.parsers.parse_xml.pw.exceptions import XMLParseError,
 from aiida_quantumespresso.parsers.parse_raw.neb import parse_raw_output_neb
 from aiida_quantumespresso.parsers.pw import PwParser
 from aiida_quantumespresso.calculations.pw import PwCalculation
+from .base import Parser
 
 
 class NebParser(Parser):
@@ -38,7 +39,7 @@ class NebParser(Parser):
         try:
             out_folder = self.retrieved
         except NotExistent:
-            return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
+            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
 
         list_of_files = out_folder.list_object_names()  # Note: this includes folders, but not the files they contain.
 
@@ -46,8 +47,7 @@ class NebParser(Parser):
         filename_stdout = self.node.get_attribute('output_filename')
 
         if filename_stdout not in list_of_files:
-            self.logger.error("The standard output file '{}' was not found but is required".format(filename_stdout))
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 
         # Look for optional settings input node and potential 'parser_options' dictionary within it
         # Note that we look for both NEB and PW parser options under "inputs.settings.parser_options";
@@ -77,15 +77,14 @@ class NebParser(Parser):
             neb_out_dict, iteration_data, raw_successful = parse_raw_output_neb(stdout_abspath, neb_input_dict)
             # TODO: why do we ignore raw_successful ?
         except QEOutputParsingError as exc:
-            self.logger.error('QEOutputParsingError in parse_raw_output_neb: {}'.format(exc))
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 
         for warn_type in ['warnings', 'parser_warnings']:
             for message in neb_out_dict[warn_type]:
                 self.logger.warning('parsing NEB output: {}'.format(message))
 
         if 'QE neb run did not reach the end of the execution.' in neb_out_dict['parser_warnings']:
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE)
 
         # Retrieve the number of images
         try:
@@ -94,11 +93,9 @@ class NebParser(Parser):
             try:
                 num_images = neb_out_dict['num_of_images']
             except KeyError:
-                self.logger.error('Impossible to understand the number of images')
-                return self.exit_codes.ERROR_OUTPUT_STDOUT_PARSE
+                return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_PARSE)
         if num_images < 2:
-            self.logger.error('Too few images: {}'.format(num_images))
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_PARSE
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_PARSE)
 
         # Now parse the information from the individual pw calculations for the different images
         image_data = {}
@@ -116,21 +113,20 @@ class NebParser(Parser):
                         with out_folder.open(xml_file_path) as xml_file:
                             parsed_data_xml, logs_xml = parse_pw_xml(xml_file, None, include_deprecated_v2_keys)
                     except IOError:
-                        return self.exit_codes.ERROR_OUTPUT_XML_READ
+                        return self.exit(self.exit_codes.ERROR_OUTPUT_XML_READ)
                     except XMLParseError:
-                        return self.exit_codes.ERROR_OUTPUT_XML_PARSE
+                        return self.exit(self.exit_codes.ERROR_OUTPUT_XML_PARSE)
                     except XMLUnsupportedFormatError:
-                        return self.exit_codes.ERROR_OUTPUT_XML_FORMAT
+                        return self.exit(self.exit_codes.ERROR_OUTPUT_XML_FORMAT)
                     except Exception:
                         import traceback
                         traceback.print_exc()
-                        return self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
+                        return self.exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION)
                     # this image is dealt with, so break the inner loop and go to the next image
                     break
             # otherwise, if none of the filenames we tried exists, exit with an error
             else:
-                self.logger.error('No xml output file found for image {}'.format(i + 1))
-                return self.exit_codes.ERROR_MISSING_XML_FILE
+                return self.exit(self.exit_codes.ERROR_MISSING_XML_FILE)
 
             # look for pw output and parse it
             pw_out_file = os.path.join('{}_{}'.format(PREFIX, i + 1), 'PW.out')
@@ -138,15 +134,12 @@ class NebParser(Parser):
                 with out_folder.open(pw_out_file, 'r') as f:
                     pw_out_text = f.read()  # Note: read() and not readlines()
             except IOError:
-                self.logger.error('No pw output file found for image {}'.format(i + 1))
-                return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
+                return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 
             try:
                 parsed_data_stdout, logs_stdout = parse_pw_stdout(pw_out_text, pw_input_dict, parser_options, parsed_data_xml)
             except Exception:
-                import traceback
-                traceback.print_exc()
-                return self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
+                return self.exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION)
 
             parsed_structure = parsed_data_stdout.pop('structure', {})
             parsed_trajectory = parsed_data_stdout.pop('trajectory', {})

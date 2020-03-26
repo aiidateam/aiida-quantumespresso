@@ -2,9 +2,10 @@
 from __future__ import absolute_import
 
 from aiida.common import exceptions
-from aiida.parsers import Parser
+
 from aiida_quantumespresso.calculations.q2r import Q2rCalculation
 from aiida_quantumespresso.data.force_constants import ForceConstantsData
+from .base import Parser
 
 
 class Q2rParser(Parser):
@@ -15,22 +16,19 @@ class Q2rParser(Parser):
         try:
             output_folder = self.retrieved
         except exceptions.NotExistent:
-            return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
+            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
 
         filename_stdout = self.node.get_option('output_filename')
         filename_force_constants = Q2rCalculation._FORCE_CONSTANTS_NAME
 
         if filename_stdout not in output_folder.list_object_names():
-            self.logger.error("The standard output file '{}' was not found but is required".format(filename_stdout))
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 
         if filename_force_constants not in output_folder.list_object_names():
-            self.logger.error("The force constants file '{}' was not found but is required".format(filename_force_constants))
-            return self.exit_codes.ERROR_READING_FORCE_CONSTANTS_FILE
+            return self.exit(self.exit_codes.ERROR_READING_FORCE_CONSTANTS_FILE)
 
         if 'JOB DONE' not in output_folder.get_object_content(filename_stdout):
-            self.logger.error('Computation did not finish properly')
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE)
 
         with output_folder.open(filename_force_constants, 'rb') as handle:
             self.out('force_constants', ForceConstantsData(file=handle))

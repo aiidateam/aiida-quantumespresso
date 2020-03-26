@@ -36,8 +36,7 @@ class Pw2gwCalculation(NamelistsCalculation):
         spec.output('output_parameters', valid_type=orm.Dict,
             help='The `output_parameters` output node of the successful calculation.`')
         spec.output('eps', valid_type=orm.ArrayData,
-            help='The `eps` output node containing 5 arrays `energy`, `epsX`, `epsY`, `epsZ`, `epsTOT`'
-            )
+            help='The `eps` output node containing 5 arrays `energy`, `epsX`, `epsY`, `epsZ`, `epsTOT`')
 
         spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
             message='The retrieved folder data node could not be accessed.')
@@ -59,7 +58,6 @@ class Pw2gwCalculation(NamelistsCalculation):
             message='The parser raised an unexpected exception.')
 
     def prepare_for_submission(self, folder):
-        # yapf: disable
         calcinfo = super(Pw2gwCalculation, self).prepare_for_submission(folder)
 
         calcinfo.codes_run_mode = datastructures.CodeRunMode.SERIAL

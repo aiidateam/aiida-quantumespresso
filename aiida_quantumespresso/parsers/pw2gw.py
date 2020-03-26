@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
+"""`Parser` implementation for the `Pw2gwCalculation` calculation job class."""
 from __future__ import absolute_import
 
 import numpy as np
 from io import StringIO
 from aiida import orm
 from aiida.common import exceptions
-from aiida.parsers import Parser
 
 from aiida_quantumespresso.calculations.pw2gw import Pw2gwCalculation
+from .base import Parser
+
 
 class Pw2gwParser(Parser):
     """`Parser` implementation for the `Pw2gwCalculation` calculation job class."""
@@ -20,7 +22,7 @@ class Pw2gwParser(Parser):
         which should contain the temporary retrieved files.
         """
         self.exit_code_stdout = None
-        self.exit_code_eps    = None
+        self.exit_code_eps = None
 
         try:
             self.retrieved
@@ -45,14 +47,13 @@ class Pw2gwParser(Parser):
 
         self.out('eps', eps)
 
-
     def parse_eps_files(self):
         """Parse the eps*.dat files produced by pw2gw.x and store them in the `eps` node."""
         retrieved = self.retrieved
         retrieved_names = retrieved.list_object_names()
 
         files = Pw2gwCalculation._internal_retrieve_list
-        if any(not _ in retrieved_names for _ in files):
+        if any(_ not in retrieved_names for _ in files):
             self.exit_code_eps = self.exit_codes.ERROR_OUTPUT_FILES
             return
 
@@ -63,7 +64,7 @@ class Pw2gwParser(Parser):
             base = name.split('.')[0]
 
             try:
-                data =  np.loadtxt(StringIO(content))
+                data = np.loadtxt(StringIO(content))
             except ValueError:
                 self.exit_code_eps = self.exit_codes.ERROR_OUTPUT_FILES
                 return
@@ -71,15 +72,15 @@ class Pw2gwParser(Parser):
                 self.exit_code_eps = self.exit_codes.ERROR_OUTPUT_FILES_INVALID_FORMAT
                 return
 
-            X, Y = data.T
+            x, y = data.T
             if energy is None:
-                energy = X
-                eps.set_array('energy', X)
-            elif not np.allclose(X, energy):
+                energy = x
+                eps.set_array('energy', x)
+            elif not np.allclose(x, energy):
                 self.exit_code_eps = self.exit_codes.ERROR_OUTPUT_FILES_ENERGY_MISMATCH
                 return
 
-            eps.set_array(base, Y)
+            eps.set_array(base, y)
 
         return eps
 
@@ -116,56 +117,3 @@ class Pw2gwParser(Parser):
             self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
 
         return parsed_data, logs
-
-    def emit_logs(self, *args):
-        """Emit the messages in one or multiple "log dictionaries" through the logger of the parser.
-
-        A log dictionary is expected to have the following structure: each key must correspond to a log level of the
-        python logging module, e.g. `error` or `warning` and its values must be a list of string messages. The method
-        will loop over all log dictionaries and emit the messages it contains with the log level indicated by the key.
-
-        Example log dictionary structure::
-
-            logs = {
-                'warning': ['Could not parse the `etot_threshold` variable from the stdout.'],
-                'error': ['Self-consistency was not achieved']
-            }
-
-        :param args: log dictionaries
-        """
-        ignore = [
-            'Error while parsing ethr.',
-            'DEPRECATED: symmetry with ibrav=0, use correct ibrav instead'
-        ]
-
-        for logs in args:
-            for level, messages in logs.items():
-                for message in messages:
-
-                    if message is None:
-                        continue
-
-                    stripped = message.strip()
-
-                    if not stripped or stripped in ignore:
-                        continue
-
-                    try:
-                        getattr(self.logger, level)(stripped)
-                    except AttributeError:
-                        pass
-
-    def exit(self, exit_code):
-        """Log the exit message of the give exit code with level `ERROR` and return the exit code.
-
-        This is a utility function if one wants to return from the parse method and automically add the exit message
-        associated to the exit code as a log message to the node: e.g. `return self.exit(self.exit_codes.LABEL))`
-
-        :param exit_code: an `ExitCode`
-        :return: the exit code
-        """
-        self.logger.error(exit_code.message)
-        return exit_code
-
-
-
