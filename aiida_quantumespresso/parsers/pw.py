@@ -141,20 +141,16 @@ class PwParser(Parser):
         if 'ERROR_OUT_OF_WALLTIME' in logs['error'] and 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs['error']:
             return self.exit_codes.ERROR_OUT_OF_WALLTIME_INTERRUPTED
 
-        if 'ERROR_OUT_OF_WALLTIME' in logs['error']:
-            return self.exit_codes.ERROR_OUT_OF_WALLTIME
-
-        if 'ERROR_CHARGE_IS_WRONG' in logs['error']:
-            return self.exit_codes.ERROR_CHARGE_IS_WRONG
-
-        if 'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION' in logs['error']:
-            return self.exit_codes.ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION
-
-        if 'ERROR_DEXX_IS_NEGATIVE' in logs['error']:
-            return self.exit_codes.ERROR_DEXX_IS_NEGATIVE
-
-        if 'ERROR_NPOOLS_TOO_HIGH' in logs['error']:
-            return self.exit_codes.ERROR_NPOOLS_TOO_HIGH
+        for error_label in [
+            'ERROR_OUT_OF_WALLTIME',
+            'ERROR_CHARGE_IS_WRONG',
+            'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION',
+            'ERROR_DEXX_IS_NEGATIVE',
+            'ERROR_COMPUTING_CHOLESKY',
+            'ERROR_NPOOLS_TOO_HIGH',
+        ]:
+            if error_label in logs['error']:
+                return self.exit_codes.get(error_label)
 
     def validate_electronic(self, trajectory, parameters, logs):
         """Analyze problems that are specific to `electronic` type calculations: i.e. `scf`, `nscf` and `bands`."""
