@@ -8,28 +8,10 @@ decision doesn't have much structure encoded, [the values are simple ]
 from __future__ import absolute_import
 from __future__ import print_function
 
-import re
-import numpy
-from six.moves import range, zip
-
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.parse_raw import convert_qe_time_to_sec
 from aiida_quantumespresso.utils.mapping import get_logging_container
-from qe_tools.constants import ry_to_ev, bohr_to_ang, ry_si, bohr_si
 
-lattice_tolerance = 1.e-5
-units_suffix = '_units'
-default_charge_units = 'e'
-default_dipole_units = 'Debye'
-default_energy_units = 'eV'
-default_force_units = 'ev / angstrom'
-default_k_points_units = '1 / angstrom'
-default_length_units = 'Angstrom'
-default_magnetization_units = 'Bohrmag / cell'
-default_polarization_units = 'C / m^2'
-default_stress_units = 'GPascal'
-
-# def parse_stdout(stdout, input_parameters, parser_options=None):
 def parse_stdout(stdout):
     """Parses the stdout content of a Quantum ESPRESSO `pw2gw.x` calculation.
 
@@ -38,9 +20,6 @@ def parse_stdout(stdout):
     :param parser_options: the parser options from the settings input parameter node
     :returns: tuple of two dictionaries, with the parsed data and log messages, respectively
     """
-    # if parser_options is None:
-    #     parser_options = {}
-
     # Separate the input string into separate lines
     data_lines = stdout.split('\n')
 
