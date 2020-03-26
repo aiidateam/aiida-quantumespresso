@@ -1,0 +1,10 @@
+&INPUTPP
+  deltae =   1.0000000000d-03
+  emax =   1.5000000000d+01
+  emin =   0.0000000000d+00
+  outdir = './out/'
+  prefix = 'aiida'
+  qplda = .false.
+  vkb = .false.
+  vxcdiag = .false.
+/
