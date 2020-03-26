@@ -3,41 +3,38 @@ from __future__ import absolute_import
 
 from aiida.common import NotExistent
 from aiida.orm import Dict
-from aiida.parsers import Parser
-from aiida_quantumespresso.parsers.parse_raw.base import parse_output_base, emit_logs
+
+from aiida_quantumespresso.parsers.parse_raw.base import parse_output_base
+from .base import Parser
 
 
 class Pw2wannier90Parser(Parser):
-    """This class is the implementation of the Parser class for pw2wannier90.x."""
+    """`Parser` implementation for the `Pw2wannierCalculation` calculation job class."""
 
     def parse(self, **kwargs):
-        """Parses the datafolder, stores results.
+        """Parse the retrieved files of a completed `Pw2wannierCalculation` into output nodes.
 
-        In this case we only parse the aiida.out file, and retrieve any files given in the internal and additional
-        retrieve lists.
+        Two nodes that are expected are the default 'retrieved' `FolderData` node which will store the retrieved files
+        permanently in the repository.
         """
-        # Check that the retrieved folder is there
         try:
             out_folder = self.retrieved
         except NotExistent:
-            return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
+            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
 
-        # Read standard out
         try:
             filename_stdout = self.node.get_option('output_filename')  # or get_attribute(), but this is clearer
             with out_folder.open(filename_stdout, 'r') as fil:
                 out_file = fil.read()
         except OSError:
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 
-        # check that the file has finished (i.e. JOB DONE is inside the file)
-        out_dict, logs = parse_output_base(out_file, codename='PW2WANNIER')
-        emit_logs(self.logger, logs)
+        parsed_data, logs = parse_output_base(out_file, codename='PW2WANNIER')
+        self.emit_logs(logs)
 
-        # Output a Dict with whatever has been parsed
-        self.out('output_parameters', Dict(dict=out_dict))
+        self.out('output_parameters', Dict(dict=parsed_data))
 
         if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs.error:
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE)
         elif logs.error:
-            return self.exit_codes.ERROR_GENERIC_QE_ERROR
+            return self.exit(self.exit_codes.ERROR_GENERIC_QE_ERROR)

@@ -3,9 +3,7 @@
 from __future__ import absolute_import
 from aiida_quantumespresso.parsers import get_parser_info
 
-__all__ = (
-    'parse_output_base', 'parse_output_error', 'convert_qe_time_to_sec', 'convert_qe2aiida_structure'
-)
+__all__ = ('parse_output_base', 'parse_output_error', 'convert_qe_time_to_sec', 'convert_qe2aiida_structure')
 
 
 def parse_output_base(filecontent, codename=None, message_map=None):
@@ -61,46 +59,6 @@ def parse_output_base(filecontent, codename=None, message_map=None):
                 parse_output_error(lines, line_number, logs, message_map)
 
     return parsed_data, logs
-
-
-def emit_logs(logger, logging_containers, ignore=None):
-    """Emit the messages in one or multiple "log dictionaries" through the logger of the parser.
-
-    A log dictionary is expected to have the following structure: each key must correspond to a log level of the
-    python logging module, e.g. `error` or `warning` and its values must be a list of string messages. The method
-    will loop over all log dictionaries and emit the messages it contains with the log level indicated by the key.
-
-    Example log dictionary structure::
-
-        logs = {
-            'warning': ['Could not parse the `etot_threshold` variable from the stdout.'],
-            'error': ['Self-consistency was not achieved']
-        }
-
-    :param logging_containers: list of log dictionaries
-    """
-    if ignore is None:
-        ignore = []
-
-    if not isinstance(logging_containers, list):
-        logging_containers = [logging_containers]
-
-    for logging_container in logging_containers:
-        for level, messages in logging_container.items():
-            for message in messages:
-
-                if message is None:
-                    continue
-
-                stripped = message.strip()
-
-                if not stripped or stripped in ignore:
-                    continue
-
-                try:
-                    getattr(logger, level)(stripped)
-                except AttributeError:
-                    pass
 
 
 def parse_output_error(lines, line_number_start, logs, message_map=None):

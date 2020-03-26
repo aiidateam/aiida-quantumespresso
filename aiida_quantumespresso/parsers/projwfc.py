@@ -2,18 +2,17 @@
 from __future__ import absolute_import, division
 import re
 import fnmatch
-import traceback
 
 import numpy as np
 from six.moves import range
 
 from aiida.common import NotExistent, LinkType
 from aiida.orm import Dict, ProjectionData, BandsData, XyData, CalcJobNode
-from aiida.parsers import Parser
 from aiida.plugins import OrbitalFactory
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers.parse_raw.base import parse_output_base, emit_logs
+from aiida_quantumespresso.parsers.parse_raw.base import parse_output_base
+from .base import Parser
 
 
 def find_orbitals_from_statelines(out_info_dict):
@@ -235,7 +234,7 @@ class ProjwfcParser(Parser):
         try:
             out_folder = self.retrieved
         except NotExistent:
-            return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
+            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
 
         # Read standard out
         try:
@@ -243,7 +242,7 @@ class ProjwfcParser(Parser):
             with out_folder.open(filename_stdout, 'r') as fil:
                 out_file = fil.readlines()
         except OSError:
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 
         job_done = False
         for i in range(len(out_file)):
@@ -252,12 +251,11 @@ class ProjwfcParser(Parser):
                 job_done = True
                 break
         if not job_done:
-            self.logger.error('Computation did not finish properly')
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE)
 
         # Parse basic info and warnings, and output them as output_parmeters
         parsed_data, logs = parse_output_base(out_file, 'PROJWFC')
-        emit_logs(self.logger, logs)
+        self.emit_logs(logs)
         self.out('output_parameters', Dict(dict=parsed_data))
 
         # check and read pdos_tot file
@@ -270,8 +268,7 @@ class ProjwfcParser(Parser):
                 energy = pdostot_array[:, 0]
                 dos = pdostot_array[:, 1]
         except (OSError, KeyError):
-            self.logger.error('Error reading pdos_tot output file')
-            return self.exit_codes.ERROR_READING_PDOSTOT_FILE
+            return self.exit(self.exit_codes.ERROR_READING_PDOSTOT_FILE)
 
         # check and read all of the individual pdos_atm files
         pdos_atm_filenames = fnmatch.filter(out_filenames, '*pdos_atm*')
@@ -290,8 +287,7 @@ class ProjwfcParser(Parser):
             new_nodes_list = self._parse_bands_and_projections(out_info_dict)
         except QEOutputParsingError as err:
             self.logger.error('Error parsing bands and projections: {}'.format(err))
-            traceback.print_exc()
-            return self.exit_codes.ERROR_PARSING_PROJECTIONS
+            return self.exit(self.exit_codes.ERROR_PARSING_PROJECTIONS)
         for linkname, node in new_nodes_list:
             self.out(linkname, node)
 

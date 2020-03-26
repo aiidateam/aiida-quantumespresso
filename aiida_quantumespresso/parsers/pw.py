@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
+"""`Parser` implementation for the `PwCalculation` calculation job class."""
 from __future__ import absolute_import
 
 import numpy
 
 from aiida import orm
 from aiida.common import exceptions
-from aiida.parsers import Parser
 
-from aiida_quantumespresso.parsers.parse_raw.pw import reduce_symmetries
 from aiida_quantumespresso.utils.mapping import get_logging_container
+from .base import Parser
+from .parse_raw.pw import reduce_symmetries
 
 
 class PwParser(Parser):
@@ -29,7 +30,7 @@ class PwParser(Parser):
         try:
             self.retrieved
         except exceptions.NotExistent:
-            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
+            return self.exit(self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER))
 
         try:
             settings = self.node.inputs.settings.get_dict()
@@ -101,7 +102,12 @@ class PwParser(Parser):
         # warnings from the schema parser about incomplete data, but that is to be expected in an initialization run.
         if settings.get('ONLY_INITIALIZATION', False):
             logs_xml.pop('error')
-        self.emit_logs(logs_stdout, logs_xml)
+
+        ignore = [
+            'Error while parsing ethr.',
+            'DEPRECATED: symmetry with ibrav=0, use correct ibrav instead'
+        ]
+        self.emit_logs([logs_stdout, logs_xml], ignore=ignore)
 
         # First check for specific known problems that can cause a pre-mature termination of the calculation
         exit_code = self.validate_premature_exit(logs_stdout)
@@ -245,18 +251,6 @@ class PwParser(Parser):
 
         raise RuntimeError('unknown relax_type: {}'.format(relax_type))
 
-    def exit(self, exit_code):
-        """Log the exit message of the give exit code with level `ERROR` and return the exit code.
-
-        This is a utility function if one wants to return from the parse method and automically add the exit message
-        associated to the exit code as a log message to the node: e.g. `return self.exit(self.exit_codes.LABEL))`
-
-        :param exit_code: an `ExitCode`
-        :return: the exit code
-        """
-        self.logger.error(exit_code.message)
-        return exit_code
-
     def parse_xml(self, dir_with_bands=None, parser_options=None):
         """Parse the XML output file.
 
@@ -339,44 +333,6 @@ class PwParser(Parser):
             self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
 
         return parsed_data, logs
-
-    def emit_logs(self, *args):
-        """Emit the messages in one or multiple "log dictionaries" through the logger of the parser.
-
-        A log dictionary is expected to have the following structure: each key must correspond to a log level of the
-        python logging module, e.g. `error` or `warning` and its values must be a list of string messages. The method
-        will loop over all log dictionaries and emit the messages it contains with the log level indicated by the key.
-
-        Example log dictionary structure::
-
-            logs = {
-                'warning': ['Could not parse the `etot_threshold` variable from the stdout.'],
-                'error': ['Self-consistency was not achieved']
-            }
-
-        :param args: log dictionaries
-        """
-        ignore = [
-            'Error while parsing ethr.',
-            'DEPRECATED: symmetry with ibrav=0, use correct ibrav instead'
-        ]
-
-        for logs in args:
-            for level, messages in logs.items():
-                for message in messages:
-
-                    if message is None:
-                        continue
-
-                    stripped = message.strip()
-
-                    if not stripped or stripped in ignore:
-                        continue
-
-                    try:
-                        getattr(self.logger, level)(stripped)
-                    except AttributeError:
-                        pass
 
     @staticmethod
     def build_output_parameters(parsed_stdout, parsed_xml):
