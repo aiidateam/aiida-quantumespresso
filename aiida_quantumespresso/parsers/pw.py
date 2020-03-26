@@ -266,15 +266,17 @@ class PwParser(Parser):
         xml_files = [xml_file for xml_file in self.node.process_class.xml_filenames if xml_file in object_names]
 
         if not xml_files:
-            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_MISSING
+            if not self.node.get_option('without_xml'):
+                self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_MISSING
             return parsed_data, logs
+
         if len(xml_files) > 1:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_MULTIPLE
             return parsed_data, logs
 
         try:
             include_deprecated_keys = parser_options['include_deprecated_v2_keys']
-        except (TypeError,KeyError):
+        except (TypeError, KeyError):
             include_deprecated_keys = False
 
         try:
@@ -327,6 +329,18 @@ class PwParser(Parser):
         # output files are most likely corrupt and cannot be restarted from
         if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs['error']:
             self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
+
+        # Under certain conditions, such as the XML missing or being incorrect, the structure data might be incomplete.
+        # Since following code depends on it, we replace missing information taken from the input structure.
+        structure = self.node.inputs.structure
+        parsed_data.setdefault('structure', {}).setdefault('cell', {})
+
+        if 'lattice_vectors' not in parsed_data['structure']['cell']:
+            parsed_data['structure']['cell']['lattice_vectors'] = structure.cell
+
+        if 'atoms' not in parsed_data['structure']['cell']:
+            symbols = {s.kind_name: structure.get_kind(s.kind_name).symbol for s in structure.sites}
+            parsed_data['structure']['cell']['atoms'] = [(symbols[s.kind_name], s.position) for s in structure.sites]
 
         return parsed_data, logs
 

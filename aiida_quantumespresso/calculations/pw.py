@@ -64,6 +64,8 @@ class PwCalculation(BasePwCpInputGenerator):
         # yapf: disable
         super(PwCalculation, cls).define(spec)
         spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.pw')
+        spec.input('metadata.options.without_xml', valid_type=bool, required=False, help='If set to `True` the parser '
+            'will not fail if the XML file is missing in the retrieved folder.')
         spec.input('kpoints', valid_type=orm.KpointsData,
             help='kpoint mesh or kpoint path')
         spec.input('hubbard_file', valid_type=orm.SinglefileData, required=False,

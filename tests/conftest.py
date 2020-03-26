@@ -126,6 +126,12 @@ def generate_calc_job_node():
                 inputs['parameters'] = orm.Dict(dict=parsed_input.namelists)
 
         if inputs:
+            metadata = inputs.pop('metadata', {})
+            options = metadata.get('options', {})
+
+            for name, option in options.items():
+                node.set_option(name, option)
+
             for link_label, input_node in flatten_inputs(inputs):
                 input_node.store()
                 node.add_incoming(input_node, link_type=LinkType.INPUT_CALC, link_label=link_label)
