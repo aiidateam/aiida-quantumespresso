@@ -92,8 +92,6 @@ class Pw2gwParser(Parser):
         parsed_data = {}
 
         filename_stdout = self.node.get_attribute('output_filename')
-        # print(" < ", filename_stdout, ' > ')
-        # return parsed_data, logs
 
         if filename_stdout not in self.retrieved.list_object_names():
             self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_MISSING
