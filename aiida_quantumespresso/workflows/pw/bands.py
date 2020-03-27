@@ -114,6 +114,7 @@ class PwBandsWorkChain(WorkChain):
     def setup(self):
         """Define the current structure in the context to be the input structure."""
         self.ctx.current_structure = self.inputs.structure
+        self.ctx.current_number_of_bands = None
         self.ctx.bands_kpoints = self.inputs.get('bands_kpoints', None)
 
     def should_run_relax(self):
@@ -145,6 +146,7 @@ class PwBandsWorkChain(WorkChain):
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
 
         self.ctx.current_structure = workchain.outputs.output_structure
+        self.ctx.current_number_of_bands = workchain.outputs.output_parameters.get_attribute('number_of_bands')
 
     def run_seekpath(self):
         """Run the structure through SeeKpath to get the normalized structure and path along high-symmetry k-points .
@@ -168,8 +170,13 @@ class PwBandsWorkChain(WorkChain):
         inputs.metadata.call_link_label = 'scf'
         inputs.pw.structure = self.ctx.current_structure
         inputs.pw.parameters = inputs.pw.parameters.get_dict()
-        inputs.pw.parameters.setdefault('CONTROL', {})
-        inputs.pw.parameters['CONTROL']['calculation'] = 'scf'
+        inputs.pw.parameters.setdefault('CONTROL', {})['calculation'] = 'scf'
+
+        # Make sure to carry the number of bands from the relax workchain if it was run and it wasn't explicitly defined
+        # in the inputs. One of the base workchains in the relax workchain may have changed the number automatically in
+        #  the sanity checks on band occupations.
+        if self.ctx.current_number_of_bands:
+            inputs.pw.parameters.setdefault('SYSTEM', {}).setdefault('nbnd', self.ctx.current_number_of_bands)
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
@@ -187,6 +194,7 @@ class PwBandsWorkChain(WorkChain):
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_SCF
 
         self.ctx.current_folder = workchain.outputs.remote_folder
+        self.ctx.current_number_of_bands = workchain.outputs.output_parameters.get_attribute('number_of_bands')
 
     def run_bands(self):
         """Run the PwBaseWorkChain in bands mode along the path of high-symmetry determined by seekpath."""
@@ -216,6 +224,10 @@ class PwBandsWorkChain(WorkChain):
             nelectron = int(parameters['number_of_electrons'])
             nbnd = max(int(0.5 * nelectron * nspin * factor), int(0.5 * nelectron * nspin) + 4 * nspin, nbands)
             inputs.pw.parameters['SYSTEM']['nbnd'] = nbnd
+
+        # Otherwise set the current number of bands, unless explicitly set in the inputs
+        else:
+            inputs.pw.parameters['SYSTEM'].setdefault('nbnd', self.ctx.current_number_of_bands)
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
