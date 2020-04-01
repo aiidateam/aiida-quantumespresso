@@ -13,7 +13,7 @@ from aiida.common import AttributeDict
 def generate_inputs(generate_structure):
     """Return only those inputs that the parser will expect to be there."""
 
-    def _generate_inputs(calculation_type='scf', settings=None):
+    def _generate_inputs(calculation_type='scf', settings=None, metadata=None):
         structure = generate_structure()
         parameters = {'CONTROL': {'calculation': calculation_type}}
         kpoints = orm.KpointsData()
@@ -24,7 +24,8 @@ def generate_inputs(generate_structure):
             'structure': generate_structure(),
             'kpoints': kpoints,
             'parameters': orm.Dict(dict=parameters),
-            'settings': orm.Dict(dict=settings) or orm.Dict()
+            'settings': orm.Dict(dict=settings) or orm.Dict(),
+            'metadata': metadata or {}
         })
 
     return _generate_inputs
@@ -48,7 +49,7 @@ def test_pw_default(
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
-    assert not orm.Log.objects.get_logs_for(node)
+    assert not orm.Log.objects.get_logs_for(node), [log.message for log in orm.Log.objects.get_logs_for(node)]
     assert 'output_kpoints' in results
     assert 'output_parameters' in results
     assert 'output_trajectory' in results
@@ -56,6 +57,42 @@ def test_pw_default(
     data_regression.check({
         'output_kpoints': results['output_kpoints'].attributes,
         'output_parameters': results['output_parameters'].get_dict(),
+        'output_trajectory': results['output_trajectory'].attributes,
+    })
+
+
+def test_pw_default_no_xml(
+    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+):
+    """Test the parsing of an output directory without an XML file."""
+    name = 'default_no_xml'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    # With default inputs, the parsing should fail
+    inputs = generate_inputs(calculation_type='relax')
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_failed, calcfunction.process_state
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_XML_MISSING.status
+
+    # By setting the `without_xml` option the parsing should succeed and simply only use the stdout content
+    inputs = generate_inputs(calculation_type='relax', metadata={'options': {'without_xml': True}})
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_parameters' in results
+    assert 'output_structure' in results
+    assert 'output_trajectory' in results
+
+    data_regression.check({
+        'output_parameters': results['output_parameters'].get_dict(),
+        'output_structure': results['output_structure'].attributes,
         'output_trajectory': results['output_trajectory'].attributes,
     })
 
@@ -78,7 +115,7 @@ def test_pw_default_xml_190304(
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
-    assert not orm.Log.objects.get_logs_for(node)
+    assert not orm.Log.objects.get_logs_for(node), [log.message for log in orm.Log.objects.get_logs_for(node)]
     assert 'output_band' in results
     assert 'output_parameters' in results
     assert 'output_trajectory' in results
@@ -108,7 +145,7 @@ def test_pw_default_xml_191206(
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
-    assert not orm.Log.objects.get_logs_for(node)
+    assert not orm.Log.objects.get_logs_for(node), [log.message for log in orm.Log.objects.get_logs_for(node)]
     assert 'output_band' in results
     assert 'output_parameters' in results
     assert 'output_trajectory' in results
@@ -412,7 +449,7 @@ def test_pw_relax_success(
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
-    assert not orm.Log.objects.get_logs_for(node)
+    assert not orm.Log.objects.get_logs_for(node), [log.message for log in orm.Log.objects.get_logs_for(node)]
     assert 'output_kpoints' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
@@ -486,7 +523,7 @@ def test_pw_vcrelax_success(
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
-    assert not orm.Log.objects.get_logs_for(node)
+    assert not orm.Log.objects.get_logs_for(node), [log.message for log in orm.Log.objects.get_logs_for(node)]
     assert 'output_kpoints' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
@@ -517,7 +554,7 @@ def test_pw_vcrelax_success_fractional(
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
-    assert not orm.Log.objects.get_logs_for(node)
+    assert not orm.Log.objects.get_logs_for(node), [log.message for log in orm.Log.objects.get_logs_for(node)]
     assert 'output_kpoints' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
@@ -545,7 +582,7 @@ def test_pw_vcrelax_success_external_pressure(
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
-    assert not orm.Log.objects.get_logs_for(node)
+    assert not orm.Log.objects.get_logs_for(node), [log.message for log in orm.Log.objects.get_logs_for(node)]
     assert 'output_kpoints' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
@@ -637,7 +674,7 @@ def test_pw_vcrelax_failed_bfgs_history_already_converged(
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
     assert calcfunction.is_finished_ok, calcfunction.exit_status
-    assert not orm.Log.objects.get_logs_for(node)
+    assert not orm.Log.objects.get_logs_for(node), [log.message for log in orm.Log.objects.get_logs_for(node)]
     assert 'output_kpoints' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
