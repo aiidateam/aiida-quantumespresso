@@ -2,6 +2,8 @@
 """`Parser` implementation for the `PwCalculation` calculation job class."""
 from __future__ import absolute_import
 
+import traceback
+
 import numpy
 
 from aiida import orm
@@ -285,8 +287,7 @@ class PwParser(Parser):
         except XMLUnsupportedFormatError:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_FORMAT
         except Exception:
-            import traceback
-            traceback.print_exc()
+            logs.critical.append(traceback.format_exc())
             self.exit_code_xml = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
 
         return parsed_data, logs
@@ -319,8 +320,7 @@ class PwParser(Parser):
         try:
             parsed_data, logs = parse_stdout(stdout, parameters, parser_options, parsed_xml)
         except Exception:
-            import traceback
-            traceback.print_exc()
+            logs.critical.append(traceback.format_exc())
             self.exit_code_stdout = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
 
         # If the stdout was incomplete, most likely the job was interrupted before it could cleanly finish, so the
