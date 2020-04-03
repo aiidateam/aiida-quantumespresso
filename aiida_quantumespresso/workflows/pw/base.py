@@ -257,7 +257,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         inputs = prepare_process_inputs(PwCalculation, inputs)
         running = self.submit(PwCalculation, **inputs)
 
-        self.report('launching initialization PwCalculation<{}>'.format(running.pk))
+        self.report('launching initialization {}<{}>'.format(running.pk, self._calculation_class.__name__))
 
         return ToContext(calculation_init=running)
 
@@ -327,7 +327,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             bands = calculation.outputs.output_band
             get_highest_occupied_band(bands)
         except ValueError as exception:
-            self.report('calculation<{}> run with smearing and highest band is occupied'.format(calculation.pk))
+            args = [self._calculation_class.__name__, calculation.pk]
+            self.report('{}<{}> run with smearing and highest band is occupied'.format(*args))
             self.report('BandsData<{}> has invalid occupations: {}'.format(bands.pk, exception))
             return self._handle_insufficient_bands(calculation)
 
@@ -470,13 +471,13 @@ def _handle_electronic_convergence_not_achieved(self, calculation):
 
 @register_error_handler(PwBaseWorkChain)
 def _handle_insufficient_bands(self, calculation):
-    """Handle successfully converged calculation with too few bands, so increase them and restart from scratch."""
+    """Handle successfully converged calculation with too few bands, so increase them and restart."""
+    self.report('{}<{}> had insufficient bands'.format(calculation.process_label, calculation.pk))
+
     nbnd_cur = calculation.outputs.output_parameters.get_dict()['number_of_bands']
     nbnd_new = nbnd_cur + max(int(nbnd_cur * self.defaults.delta_factor_nbnd), self.defaults.delta_minimum_nbnd)
 
     self.ctx.inputs.parameters.setdefault('SYSTEM', {})['nbnd'] = nbnd_new
-    self.ctx.restart_calc = None
 
-    self.report('{}<{}> had insufficient bands'.format(calculation.process_label, calculation.pk))
     self.report('Action taken: increased the number of bands to {} and restarting from scratch'.format(nbnd_new))
     return ErrorHandlerReport(True, True)
