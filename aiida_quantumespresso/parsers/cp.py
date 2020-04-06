@@ -6,11 +6,11 @@ from distutils.version import LooseVersion
 import numpy
 from aiida.common import NotExistent
 from aiida.orm import Dict, TrajectoryData
-from aiida.parsers import Parser
 from six.moves import zip
 
 from qe_tools.constants import bohr_to_ang, hartree_to_ev, timeau_to_sec
 from aiida_quantumespresso.parsers.parse_raw.cp import parse_cp_raw_output, parse_cp_traj_stanzas
+from .base import Parser
 
 
 class CpParser(Parser):
@@ -24,8 +24,7 @@ class CpParser(Parser):
         try:
             out_folder = self.retrieved
         except NotExistent:
-            self.logger.error('No retrieved folder found')
-            return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
+            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
 
         # check what is inside the folder
         list_of_files = out_folder._repository.list_object_names()
@@ -34,8 +33,7 @@ class CpParser(Parser):
         stdout_filename = self.node.get_attribute('output_filename')
         # at least the stdout should exist
         if stdout_filename not in list_of_files:
-            self.logger.error('Standard output not found')
-            return self.exit_codes.ERROR_READING_OUTPUT_FILE
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 
         # This should match 1 file
         xml_files = [
@@ -43,16 +41,14 @@ class CpParser(Parser):
             if xml_file in list_of_files
         ]
         if not xml_files:
-            self.logger.error('no XML output files found, which is required for parsing')
-            return self.exit_codes.ERROR_MISSING_XML_FILE
+            return self.exit(self.exit_codes.ERROR_MISSING_XML_FILE)
         elif len(xml_files) > 1:
-            self.logger.error('more than one XML file retrieved, which should never happen')
-            return self.exit_codes.ERROR_MULTIPLE_XML_FILES
+            return self.exit(self.exit_codes.ERROR_OUTPUT_XML_MULTIPLE)
 
         if self.node.process_class._FILE_XML_PRINT_COUNTER_BASENAME not in list_of_files:
             self.logger.error('We could not find the print counter file in the output')
             # TODO: Add an error for this counter
-            return self.exit_codes.ERROR_MISSING_XML_FILE
+            return self.exit(self.exit_codes.ERROR_MISSING_XML_FILE)
 
         # Let's pass file handlers to this function
         out_dict, _raw_successful = parse_cp_raw_output(
@@ -71,13 +67,11 @@ class CpParser(Parser):
         ]
 
         # Now prepare the reordering, as filex in the xml are  ordered
-        reordering = self._generate_sites_ordering(out_dict['species'],
-                                                   out_dict['atoms'])
+        reordering = self._generate_sites_ordering(out_dict['species'], out_dict['atoms'])
 
         pos_filename = '{}.{}'.format(self.node.process_class._PREFIX, 'pos')
         if pos_filename not in list_of_files:
-            out_dict['warnings'].append('Unable to open the POS file... skipping.')
-            return self.exit_codes.ERROR_READING_POS_FILE
+            return self.exit(self.exit_codes.ERROR_READING_POS_FILE)
 
         trajectories = [
             ('positions', 'pos', bohr_to_ang, out_dict['number_of_atoms']),
@@ -163,7 +157,7 @@ class CpParser(Parser):
             if max_time_difference > 1.e-4: # It is typically ~1.e-7 due to roundoff errors
                 # If there is a large discrepancy
                 # it means there is something very weird going on...
-                return self.exit_codes.ERROR_READING_TRAJECTORY_DATA
+                return self.exit(self.exit_codes.ERROR_READING_TRAJECTORY_DATA)
 
             # Delete evp_times in any case, it's a duplicate of 'times'
             del raw_trajectory['evp_times']

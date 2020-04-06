@@ -2,13 +2,14 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+from distutils.version import StrictVersion
 import numpy as np
 from xmlschema import XMLSchema
 from xmlschema.etree import ElementTree
 from xmlschema.exceptions import URLError
 
 from aiida_quantumespresso.utils.mapping import get_logging_container
-from qe_tools.constants import hartree_to_ev, bohr_to_ang
+from qe_tools.constants import hartree_to_ev, bohr_to_ang, ry_to_ev
 
 from .exceptions import XMLParseError
 from .legacy import parse_pw_xml_pre_6_2
@@ -50,17 +51,11 @@ def parse_xml(xml_file, dir_with_bands=None, include_deprecated_v2_keys=False):
 
     xml_file_version = get_xml_file_version(xml_parsed)
 
-    try:
-        if xml_file_version == QeXmlVersion.POST_6_2:
-            parsed_data, logs = parse_pw_xml_post_6_2(xml_parsed, include_deprecated_v2_keys)
-        elif xml_file_version == QeXmlVersion.PRE_6_2:
-            xml_file.seek(0)
-            parsed_data, logs = parse_pw_xml_pre_6_2(xml_file, dir_with_bands, include_deprecated_v2_keys)
-    except Exception:
-        import traceback
-        logs = get_logging_container()
-        logs.critical.append(traceback.format_exc())
-        parsed_data = {}
+    if xml_file_version == QeXmlVersion.POST_6_2:
+        parsed_data, logs = parse_pw_xml_post_6_2(xml_parsed, include_deprecated_v2_keys)
+    elif xml_file_version == QeXmlVersion.PRE_6_2:
+        xml_file.seek(0)
+        parsed_data, logs = parse_pw_xml_pre_6_2(xml_file, dir_with_bands, include_deprecated_v2_keys)
 
     return parsed_data, logs
 
@@ -107,6 +102,7 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         for err in errors:
             logs.error.append(str(err))
 
+    xml_version = StrictVersion(xml_dictionary['general_info']['xml_format']['@VERSION'])
     inputs = xml_dictionary['input']
     outputs = xml_dictionary['output']
 
@@ -155,35 +151,6 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
             # Should we ask QE to print something nonetheless?
             # Also happens if occupations='fixed'.
             # (Example: occupations is 'fixed' but key 'smearing' is not present under input/bands nor output/band_structure. See calculation 4940, versus 4981.)
-
-    # TODO/NOTE: Not including smearing type and width for now.
-    # In the old XML format they are under OCCUPATIONS as SMEARING_TYPE and SMEARING_PARAMETER,
-    # but watch out: the value in the old format is half of that in the new format
-    # (the code divides it by e2=2.0, see PW/src/pw_restart.f90:446)
-    '''
-    if 'smearing' in outputs['band_structure']:
-        smearing_xml = outputs['band_structure']['smearing']
-    elif 'smearing' in inputs:
-        smearing_xml = inputs['smearing']
-    try:
-        smearing_type    = smearing_xml['$']
-        smearing_degauss = smearing_xml['@degauss']
-    except NameError:
-        pass
-    '''
-
-    # Here are some notes from the QE code for reference.
-    # SMEARING_METHOD = lgauss
-    #       lgauss,         &! if .TRUE.: use gaussian broadening
-    #       ltetra,         &! if .TRUE.: use tetrahedra
-    # SMEARING_TYPE = ngauss  (see Modules/qexml.f90:1530)
-    #       ngauss              ! type of smearing technique
-    # From dos.x input description:
-    #   Type of gaussian broadening:
-    #      =  0  Simple Gaussian (default)
-    #      =  1  Methfessel-Paxton of order 1
-    #      = -1  Marzari-Vanderbilt "cold smearing"
-    #      =-99  Fermi-Dirac function
 
     starting_magnetization = []
     magnetization_angle1 = []
@@ -340,6 +307,26 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
     # Band structure
     if 'band_structure' in outputs:
         band_structure = outputs['band_structure']
+
+        smearing_xml = None
+
+        if 'smearing' in outputs['band_structure']:
+            smearing_xml = outputs['band_structure']['smearing']
+        elif 'smearing' in inputs:
+            smearing_xml = inputs['smearing']
+
+        if smearing_xml:
+            degauss = smearing_xml['@degauss']
+
+            # Versions below 19.03.04 (Quantum ESPRESSO<=6.4.1) incorrectly print degauss in Ry instead of Hartree
+            if xml_version < StrictVersion('19.03.04'):
+                degauss *= ry_to_ev
+            else:
+                degauss *= hartree_to_ev
+
+            xml_data['degauss'] = degauss
+            xml_data['smearing_type'] = smearing_xml['$']
+
         num_k_points = band_structure['nks']
         num_electrons = band_structure['nelec']
         num_atomic_wfc = band_structure['num_of_atomic_wfc']

@@ -8,11 +8,12 @@ import six
 
 from aiida import orm
 from aiida.common import datastructures, exceptions
-from aiida.engine import CalcJob
 
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+
+from .base import CalcJob
 
 
 class PhCalculation(CalcJob):
@@ -59,21 +60,19 @@ class PhCalculation(CalcJob):
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.default_output_node = 'output_parameters'
 
-        # Unrecoverable errors: resources like the retrieved folder or its expected contents are missing
-        spec.exit_code(200, 'ERROR_NO_RETRIEVED_FOLDER',
-            message='The retrieved folder data node could not be accessed.')
-        spec.exit_code(210, 'ERROR_OUTPUT_STDOUT_MISSING',
-            message='The retrieved folder did not contain the required stdout output file.')
-
         # Unrecoverable errors: required retrieved files could not be read, parsed or are otherwise incomplete
-        spec.exit_code(300, 'ERROR_OUTPUT_FILES',
+        spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
+            message='The retrieved folder data node could not be accessed.')
+        spec.exit_code(302, 'ERROR_OUTPUT_STDOUT_MISSING',
+            message='The retrieved folder did not contain the required stdout output file.')
+        spec.exit_code(305, 'ERROR_OUTPUT_FILES',
             message='Both the stdout and XML output files could not be read or parsed.')
         spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
             message='The stdout output file could not be read.')
         spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE',
             message='The stdout output file could not be parsed.')
         spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
-            message='The stdout output file was incomplete.')
+            message='The stdout output file was incomplete probably because the calculation got interrupted.')
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
             message='The parser raised an unexpected exception.')
 

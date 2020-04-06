@@ -2,6 +2,7 @@
 """`CalcJob` implementation for the pw2wannier.x code of Quantum ESPRESSO."""
 from __future__ import absolute_import
 from aiida.orm import RemoteData, FolderData, SinglefileData, Dict
+
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 
 
@@ -29,16 +30,16 @@ class Pw2wannier90Calculation(NamelistsCalculation):
                    help='The output folder of a pw.x calculation')
         spec.output('output_parameters', valid_type=Dict)
         spec.default_output_node = 'output_parameters'
-        spec.exit_code(
-            100, 'ERROR_NO_RETRIEVED_FOLDER', message='The retrieved folder data node could not be accessed.')
-        spec.exit_code(
-            110, 'ERROR_READING_OUTPUT_FILE', message='The output file could not be read from the retrieved folder.')
-        spec.exit_code(
-            130, 'ERROR_JOB_NOT_DONE', message='The computation did not finish properly (\'JOB DONE\' not found).')
-        spec.exit_code(
-            140, 'ERROR_GENERIC_QE_ERROR', message='QE printed an error message')
-        spec.exit_code(
-            150, 'ERROR_GENERIC_PARSING_FAILURE', message='An error happened while parsing the output file')
+        spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
+            message='The retrieved folder data node could not be accessed.')
+        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
+            message='The stdout output file could not be read.')
+        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
+            message='The stdout output file was incomplete probably because the calculation got interrupted.')
+        spec.exit_code(340, 'ERROR_GENERIC_QE_ERROR',
+            message='Encountered a generic error message')
+        spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
+            message='An error happened while parsing the output file')
 
     def prepare_for_submission(self, folder):
         """Prepare the inputs of the calculation and the calcinfo data.

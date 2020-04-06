@@ -7,12 +7,13 @@ import os
 import six
 
 from aiida.common import datastructures, exceptions
-from aiida.engine import CalcJob
 from aiida.orm import Dict
 from aiida.orm import RemoteData, FolderData, SinglefileData
 
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict, _pop_parser_options
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+
+from .base import CalcJob
 
 
 class NamelistsCalculation(CalcJob):

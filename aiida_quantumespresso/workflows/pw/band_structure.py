@@ -40,7 +40,7 @@ class PwBandStructureWorkChain(WorkChain):
             help='The input structure.')
         spec.input('options', valid_type=orm.Dict, required=False,
             help='Optional `options` to use for the `PwCalculations`.')
-        spec.input('protocol', valid_type=orm.Dict, default=orm.Dict(dict={'name': 'theos-ht-1.0'}),
+        spec.input('protocol', valid_type=orm.Dict, default=lambda: orm.Dict(dict={'name': 'theos-ht-1.0'}),
             help='The protocol to use for the workchain.', validator=validate_protocol)
         spec.expose_outputs(PwBandsWorkChain)
         spec.outline(

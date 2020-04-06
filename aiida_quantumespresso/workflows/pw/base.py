@@ -95,7 +95,9 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         spec.exit_code(211, 'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY',
             message='Unrecognized keys were specified for `automatic_parallelization`.')
         spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
-            message='The calculation failed with an unrecoverable error.')
+            message='The calculation failed with an unidentified unrecoverable error.')
+        spec.exit_code(310, 'ERROR_KNOWN_UNRECOVERABLE_FAILURE',
+            message='The calculation failed with a known unrecoverable error.')
         spec.exit_code(320, 'ERROR_INITIALIZATION_CALCULATION_FAILED',
             message='The initialization calculation failed.')
         spec.exit_code(501, 'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
@@ -255,7 +257,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         inputs = prepare_process_inputs(PwCalculation, inputs)
         running = self.submit(PwCalculation, **inputs)
 
-        self.report('launching initialization PwCalculation<{}>'.format(running.pk))
+        self.report('launching initialization {}<{}>'.format(running.pk, self._calculation_class.__name__))
 
         return ToContext(calculation_init=running)
 
@@ -325,7 +327,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             bands = calculation.outputs.output_band
             get_highest_occupied_band(bands)
         except ValueError as exception:
-            self.report('calculation<{}> run with smearing and highest band is occupied'.format(calculation.pk))
+            args = [self._calculation_class.__name__, calculation.pk]
+            self.report('{}<{}> run with smearing and highest band is occupied'.format(*args))
             self.report('BandsData<{}> has invalid occupations: {}'.format(bands.pk, exception))
             return self._handle_insufficient_bands(calculation)
 
@@ -348,6 +351,21 @@ def _handle_unrecoverable_failure(self, calculation):
     if calculation.exit_status < 400:
         self.report_error_handled(calculation, 'unrecoverable error, aborting...')
         return ErrorHandlerReport(True, True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
+
+
+@register_error_handler(PwBaseWorkChain, 590)
+def _handle_known_unrecoverable_failure(self, calculation):
+    """Handle calculations with an exit status that correspond to a known failure mode that are unrecoverable.
+
+    These failures may always be unrecoverable or at some point a handler may be devised.
+    """
+    exit_code_labels = [
+        'ERROR_COMPUTING_CHOLESKY',
+    ]
+
+    if calculation.exit_status in PwCalculation.get_exit_statuses(exit_code_labels):
+        self.report_error_handled(calculation, 'known unrecoverable failure detected, aborting...')
+        return ErrorHandlerReport(True, True, self.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE)
 
 
 @register_error_handler(PwBaseWorkChain, 580)
@@ -453,13 +471,13 @@ def _handle_electronic_convergence_not_achieved(self, calculation):
 
 @register_error_handler(PwBaseWorkChain)
 def _handle_insufficient_bands(self, calculation):
-    """Handle successfully converged calculation with too few bands, so increase them and restart from scratch."""
+    """Handle successfully converged calculation with too few bands, so increase them and restart."""
+    self.report('{}<{}> had insufficient bands'.format(calculation.process_label, calculation.pk))
+
     nbnd_cur = calculation.outputs.output_parameters.get_dict()['number_of_bands']
     nbnd_new = nbnd_cur + max(int(nbnd_cur * self.defaults.delta_factor_nbnd), self.defaults.delta_minimum_nbnd)
 
     self.ctx.inputs.parameters.setdefault('SYSTEM', {})['nbnd'] = nbnd_new
-    self.ctx.restart_calc = None
 
-    self.report('{}<{}> had insufficient bands'.format(calculation.process_label, calculation.pk))
     self.report('Action taken: increased the number of bands to {} and restarting from scratch'.format(nbnd_new))
     return ErrorHandlerReport(True, True)
