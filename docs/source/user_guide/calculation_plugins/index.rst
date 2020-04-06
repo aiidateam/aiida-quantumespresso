@@ -24,8 +24,10 @@ Currently supported codes include:
 * `dos.x`: Compute density of states (DOS)
 * `projwfc.x`: Projects wavefunctions onto orthogonalized atomic wavefunctions
 * `pw2wannier90.x`: Interface between Quantum ESPRESSO and the `Wannier90`_ code
+* `epw.x`: Electron-phonon interpolation using the `EPW`_ code
 
 .. _Wannier90: http://www.wannier.org/
+.. _EPW: http://epw.org.uk/
 
 Moreover, support for further codes can be implemented adapting the **namelist** plugin.
 
@@ -44,4 +46,4 @@ Plugins
    dos
    projwfc
    pw2wannier90
-
+   epw
