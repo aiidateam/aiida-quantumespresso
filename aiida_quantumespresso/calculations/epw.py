@@ -46,8 +46,10 @@ class EpwCalculation(CalcJob):
         spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)
-        spec.input('kpoints', valid_type=orm.KpointsData, help='kpoint mesh')
-        spec.input('qpoints', valid_type=orm.KpointsData, help='qpoint mesh')
+        spec.input('kpoints', valid_type=orm.KpointsData, help='coarse kpoint mesh')
+        spec.input('qpoints', valid_type=orm.KpointsData, help='coarse qpoint mesh')
+        spec.input('kfpoints', valid_type=orm.KpointsData, help='fine kpoint mesh')
+        spec.input('qfpoints', valid_type=orm.KpointsData, help='fine qpoint mesh')
         spec.input('qibz', valid_type=orm.ArrayData, help='qpoint mesh in IBZ (must be same as prior PhCalculation')
         spec.input('parameters', valid_type=orm.Dict, help='')
         spec.input('settings', valid_type=orm.Dict, required=False, help='')
@@ -103,10 +105,9 @@ class EpwCalculation(CalcJob):
             tmp_path = os.path.join(parent_folder_ph.get_remote_path(), self._OUTPUT_SUBFOLDER)
             fname = os.path.join(tmp_path, '_ph0', '{}.phsave/control_ph.xml'.format(self._PREFIX))
 
-            fid = open(fname, 'r')
-            lines = fid.readlines()
             # these files are relatively small so reading the whole thing shouldn't be an issue
-            fid.close()
+            with open(fname, 'r') as fid:
+                lines = fid.readlines()
 
             line_number_of_nqpt = 0
             while 'NUMBER_OF_Q_POINTS' not in lines[line_number_of_nqpt]:
@@ -213,7 +214,7 @@ class EpwCalculation(CalcJob):
 
             postpend_text = None
         except:
-            raise exceptions.InputValidationError('Cannot get the coarse q-point')
+            raise exceptions.InputValidationError('Cannot get the coarse q-point grid')
 
         try:
             mesh, offset = self.inputs.kpoints.get_kpoints_mesh()
@@ -228,7 +229,38 @@ class EpwCalculation(CalcJob):
             parameters['INPUTEPW']['nk3'] = mesh[2]
 
         except:
-            raise exceptions.InputValidationError('Cannot get the coarse k-point')
+            raise exceptions.InputValidationError('Cannot get the coarse k-point grid')
+
+        try:
+            mesh, offset = self.inputs.qfpoints.get_kpoints_mesh()
+
+            if any([i != 0. for i in offset]):
+                raise NotImplementedError(
+                    'Computation of electron-phonon on a mesh with non zero offset is not implemented '
+                    )
+
+            parameters['INPUTEPW']['nqf1'] = mesh[0]
+            parameters['INPUTEPW']['nqf2'] = mesh[1]
+            parameters['INPUTEPW']['nqf3'] = mesh[2]
+
+            postpend_text = None
+        except:
+            raise exceptions.InputValidationError('Cannot get the fine q-point grid')
+
+        try:
+            mesh, offset = self.inputs.kfpoints.get_kpoints_mesh()
+
+            if any([i != 0. for i in offset]):
+                raise NotImplementedError(
+                    'Computation of electron-phonon on a mesh with non zero offset is not implemented '
+                    )
+
+            parameters['INPUTEPW']['nkf1'] = mesh[0]
+            parameters['INPUTEPW']['nkf2'] = mesh[1]
+            parameters['INPUTEPW']['nkf3'] = mesh[2]
+
+        except:
+            raise exceptions.InputValidationError('Cannot get the fine k-point grid')
 
 
         # customized namelists, otherwise not present in the distributed epw code

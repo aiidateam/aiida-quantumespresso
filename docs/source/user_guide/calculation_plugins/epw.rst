@@ -3,11 +3,11 @@ EPW
 
 Description
 -----------
-Plugin for the Quantum Espresso eph.x executable.
+Plugin for the Quantum Espresso epw.x executable.
 
 Supported codes
 ---------------
-* tested from eph.x v5.2 onwards.
+* tested from epw.x v5.2 onwards.
 
 Inputs
 ------

@@ -65,7 +65,6 @@ def launch_calculation(
     parameters = {
         'CONTROL': {
             'calculation': mode,
-            'restart_mode': 'from_scratch'
         },
         'SYSTEM': {
             'ecutwfc': ecutwfc,

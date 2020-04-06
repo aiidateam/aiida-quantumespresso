@@ -19,15 +19,16 @@ from . import cmd_launch
 @click.option('--ph-parent', type=types.CalculationParamType(), help='The parent ph.x calculation.')
 @options_qe.KPOINTS_MESH(default=[6, 6, 6])
 @options_qe.QPOINTS_MESH(default=[2, 2, 2])
-@options_qe.QIBZ(default=((0.0, 0.0, 0.0), (0.353553391, -0.353553391, -0.353553391), (0.0, 0.0, -0.707106781)))
+@options_qe.KFPOINTS_MESH(default=[6, 6, 6])
+@options_qe.QFPOINTS_MESH(default=[2, 2, 2])
 @options_qe.MAX_NUM_MACHINES()
 @options_qe.MAX_WALLCLOCK_SECONDS()
 @options_qe.WITH_MPI()
 @options_qe.DAEMON()
 @decorators.with_dbenv()
 def launch_calculation(
-    code, kpoints_mesh, qpoints_mesh, qibz, pw_nscf_parent, ph_parent, max_num_machines, max_wallclock_seconds,
-    with_mpi, daemon
+    code, kpoints_mesh, qpoints_mesh, kfpoints_mesh, qfpoints_mesh, qibz, pw_nscf_parent, ph_parent, max_num_machines,
+    max_wallclock_seconds, with_mpi, daemon
 ):
     """Run a EpwCalculation."""
     from aiida import orm
@@ -60,6 +61,14 @@ def launch_calculation(
 
     ph_parent_folder = ph_parent.get_outgoing(node_class=orm.RemoteData, link_label_filter='remote_folder').one().node
 
+    qibz = []
+    for key, value in ph_parent.outputs.output_parameters.get_dict().items():
+        if key.startswith('dynamical_matrix_'):
+            qibz.append(value['q_point'])
+
+    qibz_node = orm.ArrayData()
+    qibz_node.set_array('qibz', np.array(qibz))
+
     inputs = {
         'code':
         code,
@@ -67,6 +76,10 @@ def launch_calculation(
         qpoints_mesh,
         'kpoints':
         kpoints_mesh,
+        'qfpoints':
+        qfpoints_mesh,
+        'kfpoints':
+        kfpoints_mesh,
         'qibz':
         qibz_node,
         'parameters':
@@ -74,20 +87,20 @@ def launch_calculation(
             dict={
                 'INPUTEPW': {
                     'nbndsub': 8,
-                    'elph': True,
-                    'kmaps': False,
-                    'epbwrite': True,
-                    'epbread': False,
-                    'epwwrite': True,
-                    'epwread': False,
+                    'elph': True,  # default is false
+                    #                    'kmaps': False, # default is false
+                    'epbwrite': True,  # default is false
+                    #                    'epbread': False, # default is false
+                    'epwwrite': True,  # default is false
+                    #                    'epwread': False, # default is false
                     'proj(1)': 'Si : sp3',
                     'elecselfen': True,
-                    'nkf1': 6,
-                    'nkf2': 6,
-                    'nkf3': 6,
-                    'nqf1': 2,
-                    'nqf2': 2,
-                    'nqf3': 2,
+                    #                    'nkf1': 6,
+                    #                    'nkf2': 6,
+                    #                    'nkf3': 6,
+                    #                    'nqf1': 2,
+                    #                    'nqf2': 2,
+                    #                    'nqf3': 2,
                     'wannierize': True,
                     'dvscf_dir': './save/',
                     'dis_win_max': 18,

@@ -49,6 +49,28 @@ QPOINTS_MESH = OverridableOption(
     help=u'The number of points in the qpoint mesh along each basis vector.'
 )
 
+KFPOINTS_MESH = OverridableOption(
+    '-kf',
+    '--kfpoints-mesh',
+    'kfpoints_mesh',
+    nargs=3,
+    type=click.INT,
+    show_default=True,
+    callback=validate.validate_kpoints_mesh,
+    help=u'The number of points in the fine kpoint mesh along each basis vector.'
+)
+
+QFPOINTS_MESH = OverridableOption(
+    '-qf',
+    '--qfpoints-mesh',
+    'qfpoints_mesh',
+    nargs=3,
+    type=click.INT,
+    show_default=True,
+    callback=validate.validate_kpoints_mesh,
+    help=u'The number of points in the fine qpoint mesh along each basis vector.'
+)
+
 QIBZ = OverridableOption(
     '--qpoint-ibz',
     'qibz',
