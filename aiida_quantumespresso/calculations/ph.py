@@ -132,12 +132,6 @@ class PhCalculation(CalcJob):
         parameters = _uppercase_dict(self.inputs.parameters.get_dict(), dict_name='parameters')
         parameters = {k: _lowercase_dict(v, dict_name=k) for k, v in six.iteritems(parameters)}
 
-        prepare_for_epw = settings.pop('PREPARE_FOR_EPW', False)
-        if prepare_for_epw:
-            self._blocked_keywords += [
-                ('INPUTPH', 'fildvscf')
-            ]
-
         prepare_for_d3 = settings.pop('PREPARE_FOR_D3', False)
         if prepare_for_d3:
             self._blocked_keywords += [
@@ -159,14 +153,15 @@ class PhCalculation(CalcJob):
         parameters['INPUTPH']['outdir'] = self._OUTPUT_SUBFOLDER
         parameters['INPUTPH']['iverbosity'] = 1
         parameters['INPUTPH']['prefix'] = self._PREFIX
+
+        prepare_for_epw = settings.pop('PREPARE_FOR_EPW', False)
         if prepare_for_epw:
+            self._blocked_keywords += [('INPUTPH', 'fildvscf')]
+            parameters['INPUTPH']['fildvscf'] = self._DVSCF_PREFIX
             # Use .XML format for the dynamical matrix in EPW.
-            parameters['INPUTPH']['fildyn'] = os.path.join(self._FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-.xml')
+            parameters['INPUTPH']['fildyn'] = os.path.join(self._FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-')
         else:
             parameters['INPUTPH']['fildyn'] = self._OUTPUT_DYNAMICAL_MATRIX_PREFIX
-
-        if prepare_for_epw:
-            parameters['INPUTPH']['fildvscf'] = self._DVSCF_PREFIX
 
         if prepare_for_d3:
             parameters['INPUTPH']['fildrho'] = self._DRHO_PREFIX
@@ -305,7 +300,6 @@ class PhCalculation(CalcJob):
         if settings.pop('ONLY_INITIALIZATION', False):
             with folder.open('{}.EXIT'.format(self._PREFIX), 'w') as handle:
                 handle.write('\n')
-
 
                 remote_copy_list.append((
                     parent_folder.computer.uuid,

@@ -11,7 +11,8 @@ from six.moves import zip
 
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
 from qe_tools.constants import *
-from aiida_quantumespresso.parsers.parse_raw import convert_qe_time_to_sec
+#from aiida_quantumespresso.parsers.parse_raw import convert_qe_time_to_sec
+from aiida_quantumespresso.parsers.parse_raw.base import convert_qe_time_to_sec
 from aiida_quantumespresso.parsers.parse_xml.pw.legacy import parse_xml_child_bool, read_xml_card
 from aiida_quantumespresso.utils.mapping import get_logging_container
 
@@ -436,6 +437,3 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
         parsed_data['eigenvectors'] = eigenvectors
 
     return parsed_data
-
-
-

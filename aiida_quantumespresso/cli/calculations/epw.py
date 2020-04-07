@@ -27,7 +27,7 @@ from . import cmd_launch
 @options_qe.DAEMON()
 @decorators.with_dbenv()
 def launch_calculation(
-    code, kpoints_mesh, qpoints_mesh, kfpoints_mesh, qfpoints_mesh, qibz, pw_nscf_parent, ph_parent, max_num_machines,
+    code, kpoints_mesh, qpoints_mesh, kfpoints_mesh, qfpoints_mesh, pw_nscf_parent, ph_parent, max_num_machines,
     max_wallclock_seconds, with_mpi, daemon
 ):
     """Run a EpwCalculation."""
@@ -35,8 +35,6 @@ def launch_calculation(
     from aiida.plugins import CalculationFactory
     from aiida_quantumespresso.utils.resources import get_default_options
 
-    qibz_node = orm.ArrayData()
-    qibz_node.set_array('qibz', np.array(qibz))
     # Check that the parent calculation node comes from quantumespresso.pw and quantumespresso.ph
     # I cannot move this check into the option declaration, because CalcJobNode is not subclassed by the specific
     # calculation plugins (only Process is), and there is no feature yet to filter by the associated process_type.
@@ -61,13 +59,13 @@ def launch_calculation(
 
     ph_parent_folder = ph_parent.get_outgoing(node_class=orm.RemoteData, link_label_filter='remote_folder').one().node
 
-    qibz = []
+    qibz_ar = []
     for key, value in ph_parent.outputs.output_parameters.get_dict().items():
         if key.startswith('dynamical_matrix_'):
-            qibz.append(value['q_point'])
+            qibz_ar.append(value['q_point'])
 
     qibz_node = orm.ArrayData()
-    qibz_node.set_array('qibz', np.array(qibz))
+    qibz_node.set_array('qibz', np.array(qibz_ar))
 
     inputs = {
         'code':

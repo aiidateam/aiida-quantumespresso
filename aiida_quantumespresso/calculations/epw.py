@@ -56,32 +56,35 @@ class EpwCalculation(CalcJob):
         spec.input('parent_folder_nscf', valid_type=orm.RemoteData,
                  help='the folder of a completed nscf `PwCalculation`')
         spec.input('parent_folder_ph', valid_type=orm.RemoteData, help='the folder of a completed `PhCalculation`')
-        spec.output('output_parameters', valid_type=orm.Dict)
-        spec.default_output_node = 'output_parameters'
+        ##
+        ## To add when EPW parser is done.
+        ##
+        #spec.output('output_parameters', valid_type=orm.Dict)
+        #spec.default_output_node = 'output_parameters'
 
-        # Unrecoverable errors: resources like the retrieved folder or its expected contents are missing
-        spec.exit_code(200, 'ERROR_NO_RETRIEVED_FOLDER',
-            message='The retrieved folder data node could not be accessed.')
-        spec.exit_code(210, 'ERROR_OUTPUT_STDOUT_MISSING',
-            message='The retrieved folder did not contain the required stdout output file.')
+        ## Unrecoverable errors: resources like the retrieved folder or its expected contents are missing
+        #spec.exit_code(200, 'ERROR_NO_RETRIEVED_FOLDER',
+        #    message='The retrieved folder data node could not be accessed.')
+        #spec.exit_code(210, 'ERROR_OUTPUT_STDOUT_MISSING',
+        #    message='The retrieved folder did not contain the required stdout output file.')
 
-        # Unrecoverable errors: required retrieved files could not be read, parsed or are otherwise incomplete
-        spec.exit_code(300, 'ERROR_OUTPUT_FILES',
-            message='Both the stdout and XML output files could not be read or parsed.')
-        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
-            message='The stdout output file could not be read.')
-        spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE',
-            message='The stdout output file could not be parsed.')
-        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
-            message='The stdout output file was incomplete.')
-        spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
-            message='The parser raised an unexpected exception.')
+        ## Unrecoverable errors: required retrieved files could not be read, parsed or are otherwise incomplete
+        #spec.exit_code(300, 'ERROR_OUTPUT_FILES',
+        #    message='Both the stdout and XML output files could not be read or parsed.')
+        #spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
+        #    message='The stdout output file could not be read.')
+        #spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE',
+        #    message='The stdout output file could not be parsed.')
+        #spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
+        #    message='The stdout output file was incomplete.')
+        #spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
+        #    message='The parser raised an unexpected exception.')
 
-        # Significant errors but calculation can be used to restart
-        spec.exit_code(400, 'ERROR_OUT_OF_WALLTIME',
-            message='The calculation stopped prematurely because it ran out of walltime.')
-        spec.exit_code(410, 'ERROR_CONVERGENCE_NOT_REACHED',
-            message='The minimization cycle did not reach self-consistency.')
+        ## Significant errors but calculation can be used to restart
+        #spec.exit_code(400, 'ERROR_OUT_OF_WALLTIME',
+        #    message='The calculation stopped prematurely because it ran out of walltime.')
+        #spec.exit_code(410, 'ERROR_CONVERGENCE_NOT_REACHED',
+        #    message='The minimization cycle did not reach self-consistency.')
 
     def prepare_for_submission(self, folder):  # pylint: disable=too-many-statements,too-many-branches
         """Create the input files from the input nodes passed to this instance of the `CalcJob`.
@@ -343,12 +346,12 @@ class EpwCalculation(CalcJob):
                 remote_copy_list.append((
                     parent_folder_ph.computer.uuid,
                     os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
-                    'save/'+prefix+'.dyn_q0.xml'))
-                tmp_path = os.path.join(self._FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-'+label+'.xml')
+                    'save/'+prefix+'.dyn_q0'))
+                tmp_path = os.path.join(self._FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-'+label)
                 remote_copy_list.append((
                     parent_folder_ph.computer.uuid,
                     os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
-                    'save/'+prefix+'.dyn_q'+label+'.xml'))
+                    'save/'+prefix+'.dyn_q'+label))
 
                 if iqpt == 1:
                     tmp_path = os.path.join(self._OUTPUT_SUBFOLDER, '_ph0/'+prefix+'.dvscf')
@@ -372,12 +375,12 @@ class EpwCalculation(CalcJob):
                 remote_copy_list.append((
                     parent_folder_ph.computer.uuid,
                     os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
-                    'save/'+prefix+'.dyn_q0.xml'))
-                tmp_path = os.path.join(self._FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-'+label+'.xml')
+                    'save/'+prefix+'.dyn_q0'))
+                tmp_path = os.path.join(self._FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-'+label)
                 remote_copy_list.append((
                     parent_folder_ph.computer.uuid,
                     os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
-                    'save/'+prefix+'.dyn_q'+label+'.xml'))
+                    'save/'+prefix+'.dyn_q'+label))
 
                 if iqpt == 1:
                     tmp_path = os.path.join(self._OUTPUT_SUBFOLDER, '_ph0/'+prefix+'.dvscf1')
@@ -404,13 +407,12 @@ class EpwCalculation(CalcJob):
         codeinfo.code_uuid = self.inputs.code.uuid
 
         calcinfo = datastructures.CalcInfo()
-        calcinfo.uuid = str(self.uuid)
         calcinfo.codes_info = [codeinfo]
         calcinfo.local_copy_list = local_copy_list
         calcinfo.remote_copy_list = remote_copy_list
         calcinfo.remote_symlink_list = remote_symlink_list
 
-        # Retrieve by default the output file and the xml file
+        # Retrieve by default the output file
         calcinfo.retrieve_list = []
         calcinfo.retrieve_list.append(self.metadata.options.output_filename)
 
