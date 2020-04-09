@@ -153,15 +153,12 @@ class PhCalculation(CalcJob):
         parameters['INPUTPH']['outdir'] = self._OUTPUT_SUBFOLDER
         parameters['INPUTPH']['iverbosity'] = 1
         parameters['INPUTPH']['prefix'] = self._PREFIX
+        parameters['INPUTPH']['fildyn'] = self._OUTPUT_DYNAMICAL_MATRIX_PREFIX
 
         prepare_for_epw = settings.pop('PREPARE_FOR_EPW', False)
         if prepare_for_epw:
             self._blocked_keywords += [('INPUTPH', 'fildvscf')]
             parameters['INPUTPH']['fildvscf'] = self._DVSCF_PREFIX
-            # Use .XML format for the dynamical matrix in EPW.
-            parameters['INPUTPH']['fildyn'] = os.path.join(self._FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-')
-        else:
-            parameters['INPUTPH']['fildyn'] = self._OUTPUT_DYNAMICAL_MATRIX_PREFIX
 
         if prepare_for_d3:
             parameters['INPUTPH']['fildrho'] = self._DRHO_PREFIX

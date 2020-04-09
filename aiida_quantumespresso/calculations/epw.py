@@ -8,10 +8,9 @@ from six.moves import range
 
 from aiida import orm
 from aiida.common import datastructures, exceptions
-from aiida.engine import CalcJob
-
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+from .base import CalcJob
 
 
 class EpwCalculation(CalcJob):
@@ -62,12 +61,6 @@ class EpwCalculation(CalcJob):
         #spec.output('output_parameters', valid_type=orm.Dict)
         #spec.default_output_node = 'output_parameters'
 
-        ## Unrecoverable errors: resources like the retrieved folder or its expected contents are missing
-        #spec.exit_code(200, 'ERROR_NO_RETRIEVED_FOLDER',
-        #    message='The retrieved folder data node could not be accessed.')
-        #spec.exit_code(210, 'ERROR_OUTPUT_STDOUT_MISSING',
-        #    message='The retrieved folder did not contain the required stdout output file.')
-
         ## Unrecoverable errors: required retrieved files could not be read, parsed or are otherwise incomplete
         #spec.exit_code(300, 'ERROR_OUTPUT_FILES',
         #    message='Both the stdout and XML output files could not be read or parsed.')
@@ -92,36 +85,13 @@ class EpwCalculation(CalcJob):
         :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
         :return: `aiida.common.datastructures.CalcInfo` instance
         """
-        def is_seq(self, parent_folder_ph):
-            """Check if the calculation was done in sequential or parallel
-            """
-            tmp_path = os.path.join(parent_folder_ph.get_remote_path(), self._OUTPUT_SUBFOLDER)
-            fname = os.path.join(tmp_path, '_ph0', '{}.dvscf'.format(self._PREFIX))
 
-            return os.path.isfile(fname)
-
-
-        def get_nqpt(self, parent_folder_ph):
-            """Get the number of q-points in the IBZ from a phonon calculation.
-            """
-
-            tmp_path = os.path.join(parent_folder_ph.get_remote_path(), self._OUTPUT_SUBFOLDER)
-            fname = os.path.join(tmp_path, '_ph0', '{}.phsave/control_ph.xml'.format(self._PREFIX))
-
-            # these files are relatively small so reading the whole thing shouldn't be an issue
-            with open(fname, 'r') as fid:
-                lines = fid.readlines()
-
-            line_number_of_nqpt = 0
-            while 'NUMBER_OF_Q_POINTS' not in lines[line_number_of_nqpt]:
-                # increment to line of interest
-                line_number_of_nqpt += 1
-            line_number_of_nqpt += 1  # its on the next line after that text
-
-            nqpt = int(lines[line_number_of_nqpt])
-
-            return nqpt
-
+        def test_offset(offset):
+            """Check if the grid has an offset."""
+            if any([i != 0. for i in offset]):
+                raise NotImplementedError(
+                    'Computation of electron-phonon on a mesh with non zero offset is not implemented, '
+                    'at the level of epw.x')
 
         # pylint: disable=too-many-statements,too-many-branches
         local_copy_list = []
@@ -135,15 +105,10 @@ class EpwCalculation(CalcJob):
 
         # Copy nscf folder
         parent_folder_nscf = self.inputs.parent_folder_nscf
-        parent_calcs_nscf = parent_folder_nscf.get_incoming(node_class=orm.CalcJobNode).all()
+        parent_calc_nscf = parent_folder_nscf.creator
 
-        if not parent_calcs_nscf:
+        if parent_calc_nscf is None:
             raise exceptions.NotExistent('parent_folder<{}> has no parent calculation'.format(parent_folder_nscf.pk))
-        elif len(parent_calcs_nscf) > 1:
-            raise exceptions.UniquenessError(
-                'parent_folder<{}> has multiple parent calculations'.format(parent_folder_nscf.pk))
-
-        parent_calc_nscf = parent_calcs_nscf[0].node
 
         # Also, the parent calculation must be on the same computer
         if not self.node.computer.uuid == parent_calc_nscf.computer.uuid:
@@ -152,44 +117,17 @@ class EpwCalculation(CalcJob):
                     parent_calc_nscf.computer.get_name()))
 
         # put by default, default_parent_output_folder = ./out
-        try:
-            default_parent_output_folder_nscf = parent_calc_nscf.process_class._OUTPUT_SUBFOLDER  # pylint: disable=protected-access
-        except AttributeError:
-            try:
-                default_parent_output_folder_nscf = parent_calc_nscf._get_output_folder()  # pylint: disable=protected-access
-            except AttributeError:
-                raise exceptions.InputValidationError('parent calculation does not have a default output subfolder')
-        parent_calc_out_subfolder_nscf = settings.pop('PARENT_CALC_OUT_SUBFOLDER_NSCF',
-                default_parent_output_folder_nscf)
+        parent_calc_out_subfolder_nscf = parent_calc_nscf.process_class._OUTPUT_SUBFOLDER # pylint: disable=protected-access
 
         # Now phonon folder
         parent_folder_ph = self.inputs.parent_folder_ph
-        parent_calcs_ph = parent_folder_ph.get_incoming(node_class=orm.CalcJobNode).all()
-
-        if not parent_calcs_ph:
-            raise exceptions.NotExistent('parent_folder<{}> has no parent calculation'.format(parent_folder_ph.pk))
-        elif len(parent_calcs_ph) > 1:
-            raise exceptions.UniquenessError(
-                'parent_folder<{}> has multiple parent calculations'.format(parent_folder_ph.pk))
-
-        parent_calc_ph = parent_calcs_ph[0].node
+        parent_calc_ph = parent_folder_ph.creator
 
         # Also, the parent calculation must be on the same computer
         if not self.node.computer.uuid == parent_calc_ph.computer.uuid:
             raise exceptions.InputValidationError(
                 'Calculation has to be launched on the same computer as that of the parent: {}'.format(
                     parent_calc_ph.computer.get_name()))
-
-        # put by default, default_parent_output_folder = ./out
-        #try:
-        #    default_parent_output_folder_ph = parent_calc_ph.process_class._OUTPUT_SUBFOLDER  # pylint: disable=protected-access
-        #except AttributeError:
-        #    try:
-        #        default_parent_output_folder_ph = parent_calc_ph._get_output_folder()  # pylint: disable=protected-access
-        #    except AttributeError:
-        #        raise exceptions.InputValidationError('parent calculation does not have a default output subfolder')
-        #parent_calc_out_subfolder_ph = settings.pop('PARENT_CALC_OUT_SUBFOLDER_PH', default_parent_output_folder_ph)
-
 
         # I put the first-level keys as uppercase (i.e., namelist and card names) and the second-level keys as lowercase
         parameters = _uppercase_dict(self.inputs.parameters.get_dict(), dict_name='parameters')
@@ -201,67 +139,44 @@ class EpwCalculation(CalcJob):
         parameters['INPUTEPW']['outdir'] = self._OUTPUT_SUBFOLDER
         parameters['INPUTEPW']['iverbosity'] = 1
         parameters['INPUTEPW']['prefix'] = self._PREFIX
-        #parameters['INPUTPH']['fildyn'] = self._SAVE_PREFIX
 
         try:
             mesh, offset = self.inputs.qpoints.get_kpoints_mesh()
-
-            if any([i != 0. for i in offset]):
-                raise NotImplementedError(
-                    'Computation of electron-phonon on a mesh with non zero offset is not implemented, '
-                    'at the level of epw.x')
-
+            test_offset(offset)
             parameters['INPUTEPW']['nq1'] = mesh[0]
             parameters['INPUTEPW']['nq2'] = mesh[1]
             parameters['INPUTEPW']['nq3'] = mesh[2]
-
             postpend_text = None
         except:
             raise exceptions.InputValidationError('Cannot get the coarse q-point grid')
 
         try:
             mesh, offset = self.inputs.kpoints.get_kpoints_mesh()
-
-            if any([i != 0. for i in offset]):
-                raise NotImplementedError(
-                    'Computation of electron-phonon on a mesh with non zero offset is not implemented, '
-                    'at the level of epw.x')
-
+            test_offset(offset)
             parameters['INPUTEPW']['nk1'] = mesh[0]
             parameters['INPUTEPW']['nk2'] = mesh[1]
             parameters['INPUTEPW']['nk3'] = mesh[2]
-
+            postpend_text = None
         except:
             raise exceptions.InputValidationError('Cannot get the coarse k-point grid')
 
         try:
             mesh, offset = self.inputs.qfpoints.get_kpoints_mesh()
-
-            if any([i != 0. for i in offset]):
-                raise NotImplementedError(
-                    'Computation of electron-phonon on a mesh with non zero offset is not implemented '
-                    )
-
+            test_offset(offset)
             parameters['INPUTEPW']['nqf1'] = mesh[0]
             parameters['INPUTEPW']['nqf2'] = mesh[1]
             parameters['INPUTEPW']['nqf3'] = mesh[2]
-
             postpend_text = None
         except:
             raise exceptions.InputValidationError('Cannot get the fine q-point grid')
 
         try:
             mesh, offset = self.inputs.kfpoints.get_kpoints_mesh()
-
-            if any([i != 0. for i in offset]):
-                raise NotImplementedError(
-                    'Computation of electron-phonon on a mesh with non zero offset is not implemented '
-                    )
-
+            test_offset(offset)
             parameters['INPUTEPW']['nkf1'] = mesh[0]
             parameters['INPUTEPW']['nkf2'] = mesh[1]
             parameters['INPUTEPW']['nkf3'] = mesh[2]
-
+            postpend_text = None
         except:
             raise exceptions.InputValidationError('Cannot get the fine k-point grid')
 
@@ -280,16 +195,16 @@ class EpwCalculation(CalcJob):
         # create the save folder with dvscf and dyn files.
         folder.get_subfolder(self._FOLDER_SAVE, create=True)
 
-
         # List of IBZ q-point to be added below EPW. To be removed when removed from EPW.
         list_of_points = self.inputs.qibz.get_array('qibz')
+        # Number of q-point in the irreducible Brillouin Zone.
+        nqpt = len(list_of_points[0, :])
 
         # add here the list of point coordinates
         if len(list_of_points) > 1:
             postpend_text = u'{} cartesian\n'.format(len(list_of_points))
             for points in list_of_points:
                 postpend_text += u'{0:18.10f} {1:18.10f} {2:18.10f} \n'.format(*points)
-
 
         with folder.open(self.metadata.options.input_filename, 'w') as infile:
             for namelist_name in namelists_toprint:
@@ -330,75 +245,38 @@ class EpwCalculation(CalcJob):
                 self._OUTPUT_SUBFOLDER
             ))
 
-        # Test if seq. or parallel run
-        seq = is_seq(self, parent_folder_ph)
-
-        #This gets the nqpt from the outputfiles
-        nqpt = get_nqpt(self, parent_folder_ph)
-
         prefix = self._PREFIX
 
         for iqpt in range(1, nqpt+1):
             label = str(iqpt)
-            # Case calculation in seq.
-            if seq:
-                tmp_path = os.path.join(self._FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-0')
-                remote_copy_list.append((
-                    parent_folder_ph.computer.uuid,
-                    os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
-                    'save/'+prefix+'.dyn_q0'))
-                tmp_path = os.path.join(self._FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-'+label)
-                remote_copy_list.append((
-                    parent_folder_ph.computer.uuid,
-                    os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
-                    'save/'+prefix+'.dyn_q'+label))
+            tmp_path = os.path.join(self._FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-0')
+            remote_copy_list.append((
+                parent_folder_ph.computer.uuid,
+                os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
+                'save/'+prefix+'.dyn_q0'))
+            tmp_path = os.path.join(self._FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-'+label)
+            remote_copy_list.append((
+                parent_folder_ph.computer.uuid,
+                os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
+                'save/'+prefix+'.dyn_q'+label))
 
-                if iqpt == 1:
-                    tmp_path = os.path.join(self._OUTPUT_SUBFOLDER, '_ph0/'+prefix+'.dvscf')
-                    remote_copy_list.append((
-                        parent_folder_ph.computer.uuid,
-                        os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
-                        'save/'+prefix+'.dvscf_q'+label))
-                    tmp_path = os.path.join(self._OUTPUT_SUBFOLDER, '_ph0/'+prefix+'.phsave')
-                    remote_copy_list.append((
-                        parent_folder_ph.computer.uuid,
-                        os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
-                        'save/'))
-                else:
-                    tmp_path = os.path.join(self._OUTPUT_SUBFOLDER, '_ph0/'+prefix+'.q_'+label+'/'+prefix+'.dvscf')
-                    remote_copy_list.append((
-                        parent_folder_ph.computer.uuid,
-                        os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
-                        'save/'+prefix+'.dvscf_q'+label))
+            if iqpt == 1:
+                tmp_path = os.path.join(self._OUTPUT_SUBFOLDER, '_ph0/'+prefix+'.dvscf*')
+                remote_copy_list.append((
+                    parent_folder_ph.computer.uuid,
+                    os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
+                    'save/'+prefix+'.dvscf_q'+label))
+                tmp_path = os.path.join(self._OUTPUT_SUBFOLDER, '_ph0/'+prefix+'.phsave')
+                remote_copy_list.append((
+                    parent_folder_ph.computer.uuid,
+                    os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
+                    'save/'))
             else:
-                tmp_path = os.path.join(self._FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-0')
+                tmp_path = os.path.join(self._OUTPUT_SUBFOLDER, '_ph0/'+prefix+'.q_'+label+'/'+prefix+'.dvscf*')
                 remote_copy_list.append((
                     parent_folder_ph.computer.uuid,
                     os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
-                    'save/'+prefix+'.dyn_q0'))
-                tmp_path = os.path.join(self._FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-'+label)
-                remote_copy_list.append((
-                    parent_folder_ph.computer.uuid,
-                    os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
-                    'save/'+prefix+'.dyn_q'+label))
-
-                if iqpt == 1:
-                    tmp_path = os.path.join(self._OUTPUT_SUBFOLDER, '_ph0/'+prefix+'.dvscf1')
-                    remote_copy_list.append((
-                        parent_folder_ph.computer.uuid,
-                        os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
-                        'save/'+prefix+'.dvscf_q'+label))
-                    tmp_path = os.path.join(self._OUTPUT_SUBFOLDER, '_ph0/'+prefix+'.phsave')
-                    remote_copy_list.append((
-                        parent_folder_ph.computer.uuid,
-                        os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
-                        'save/'))
-                else:
-                    tmp_path = os.path.join(self._OUTPUT_SUBFOLDER, '_ph0/'+prefix+'.q_'+label+'/'+prefix+'.dvscf1')
-                    remote_copy_list.append((
-                        parent_folder_ph.computer.uuid,
-                        os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
-                        'save/'+prefix+'.dvscf_q'+label))
+                    'save/'+prefix+'.dvscf_q'+label))
 
 
         codeinfo = datastructures.CodeInfo()
@@ -415,6 +293,7 @@ class EpwCalculation(CalcJob):
         # Retrieve by default the output file
         calcinfo.retrieve_list = []
         calcinfo.retrieve_list.append(self.metadata.options.output_filename)
+        calcinfo.retrieve_list += settings.pop('ADDITIONAL_RETRIEVE_LIST', [])
 
         if settings:
             unknown_keys = ', '.join(list(settings.keys()))

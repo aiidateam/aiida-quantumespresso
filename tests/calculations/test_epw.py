@@ -4,7 +4,6 @@ from __future__ import absolute_import
 
 import numpy as np
 from aiida import orm
-from aiida.common import datastructures
 from aiida.plugins import CalculationFactory
 from aiida_quantumespresso.utils.resources import get_default_options
 
@@ -45,11 +44,9 @@ def test_epw_default(
         'quantumespresso.ph',
     )
 
-    qibz_ar = []
-    for key, value in parent_ph.outputs.output_parameters.get_dict().items():
-        if key.startswith('dynamical_matrix_'):
-            qibz_ar.append(value['q_point'])
+    parent_ph.set_remote_path('dummy_path')
 
+    qibz_ar = [[0, 0, 0], [0, 0.5, 0.5], [0.5, 0.5, 0.5]]
     qibz_node = orm.ArrayData()
     qibz_node.set_array('qibz', np.array(qibz_ar))
 
@@ -68,17 +65,9 @@ def test_epw_default(
         }
     }
 
-    calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
-
-    retrieve_list = ['aiida.out'] + EPWCALC._internal_retrieve_list  # pylint: disable=protected-access
-
-    # Check the attributes of the returned `CalcInfo`
-    assert isinstance(calc_info, datastructures.CalcInfo)
-    assert sorted(calc_info.retrieve_list) == sorted(retrieve_list)
+    generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
     with fixture_sandbox.open('aiida.in') as handle:
         input_written = handle.read()
 
-    # Checks on the files written to the sandbox folder as raw input
-    assert sorted(fixture_sandbox.get_content_list()) == sorted(['aiida.in'])
     file_regression.check(input_written, encoding='utf-8', extension='.in')
