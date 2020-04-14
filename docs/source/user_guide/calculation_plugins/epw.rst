@@ -152,21 +152,3 @@ Record the PK number from that calculation (named here ``NODE_PK_NSCF``)
 
   verdi process list -a
   verdi calcjob gotocomputer NODE_PK_EPW
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

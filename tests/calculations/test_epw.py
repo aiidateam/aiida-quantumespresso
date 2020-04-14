@@ -2,7 +2,6 @@
 """Tests for the `EpwCalculation` class."""
 from __future__ import absolute_import
 
-#import numpy as np
 from aiida import orm
 from aiida.plugins import CalculationFactory
 from aiida.common.links import LinkType
