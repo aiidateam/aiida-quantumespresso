@@ -20,6 +20,7 @@
             "quantumespresso.ph = aiida_quantumespresso.calculations.ph:PhCalculation",
             "quantumespresso.pp = aiida_quantumespresso.calculations.pp:PpCalculation",
             "quantumespresso.pw = aiida_quantumespresso.calculations.pw:PwCalculation",
+            "quantumespresso.epw = aiida_quantumespresso.calculations.epw:EpwCalculation",
             "quantumespresso.pw2gw = aiida_quantumespresso.calculations.pw2gw:Pw2gwCalculation",
             "quantumespresso.projwfc = aiida_quantumespresso.calculations.projwfc:ProjwfcCalculation",
             "quantumespresso.pw2wannier90 = aiida_quantumespresso.calculations.pw2wannier90:Pw2wannier90Calculation",

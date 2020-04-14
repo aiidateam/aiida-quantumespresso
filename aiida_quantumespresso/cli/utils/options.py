@@ -38,6 +38,49 @@ KPOINTS_MESH = OverridableOption(
     help=u'The number of points in the kpoint mesh along each basis vector.'
 )
 
+QPOINTS_MESH = OverridableOption(
+    '-q',
+    '--qpoints-mesh',
+    'qpoints_mesh',
+    nargs=3,
+    type=click.INT,
+    show_default=True,
+    callback=validate.validate_kpoints_mesh,
+    help=u'The number of points in the qpoint mesh along each basis vector.'
+)
+
+KFPOINTS_MESH = OverridableOption(
+    '-kf',
+    '--kfpoints-mesh',
+    'kfpoints_mesh',
+    nargs=3,
+    type=click.INT,
+    show_default=True,
+    callback=validate.validate_kpoints_mesh,
+    help=u'The number of points in the fine kpoint mesh along each basis vector.'
+)
+
+QFPOINTS_MESH = OverridableOption(
+    '-qf',
+    '--qfpoints-mesh',
+    'qfpoints_mesh',
+    nargs=3,
+    type=click.INT,
+    show_default=True,
+    callback=validate.validate_kpoints_mesh,
+    help=u'The number of points in the fine qpoint mesh along each basis vector.'
+)
+
+QIBZ = OverridableOption(
+    '--qpoint-ibz',
+    'qibz',
+    nargs=3,
+    multiple=True,
+    type=click.FLOAT,
+    show_default=True,
+    help=u'The IBZ q-point list. Must be the same as the previous PH calculation.'
+)
+
 MAX_NUM_MACHINES = OverridableOption(
     '-m',
     '--max-num-machines',

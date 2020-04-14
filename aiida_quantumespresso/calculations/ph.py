@@ -36,6 +36,7 @@ class PhCalculation(CalcJob):
     _OUTPUT_SUBFOLDER = './out/'
     _FOLDER_DRHO = 'FILDRHO'
     _DRHO_PREFIX = 'drho'
+    _DVSCF_PREFIX = 'dvscf'
     _DRHO_STAR_EXT = 'drho_rot'
     _FOLDER_DYNAMICAL_MATRIX = 'DYN_MAT'
     _OUTPUT_DYNAMICAL_MATRIX_PREFIX = os.path.join(_FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-')
@@ -153,6 +154,11 @@ class PhCalculation(CalcJob):
         parameters['INPUTPH']['iverbosity'] = 1
         parameters['INPUTPH']['prefix'] = self._PREFIX
         parameters['INPUTPH']['fildyn'] = self._OUTPUT_DYNAMICAL_MATRIX_PREFIX
+
+        prepare_for_epw = settings.pop('PREPARE_FOR_EPW', False)
+        if prepare_for_epw:
+            self._blocked_keywords += [('INPUTPH', 'fildvscf')]
+            parameters['INPUTPH']['fildvscf'] = self._DVSCF_PREFIX
 
         if prepare_for_d3:
             parameters['INPUTPH']['fildrho'] = self._DRHO_PREFIX
@@ -292,6 +298,12 @@ class PhCalculation(CalcJob):
             with folder.open('{}.EXIT'.format(self._PREFIX), 'w') as handle:
                 handle.write('\n')
 
+                remote_copy_list.append((
+                    parent_folder.computer.uuid,
+                    os.path.join(parent_folder.get_remote_path(), self._FOLDER_DYNAMICAL_MATRIX),
+                    '.'
+                ))
+
         codeinfo = datastructures.CodeInfo()
         codeinfo.cmdline_params = (list(settings.pop('CMDLINE', [])) + ['-in', self.metadata.options.input_filename])
         codeinfo.stdout_name = self.metadata.options.output_filename
@@ -317,6 +329,7 @@ class PhCalculation(CalcJob):
             raise exceptions.InputValidationError('`settings` contained unexpected keys: {}'.format(unknown_keys))
 
         return calcinfo
+
 
     @staticmethod
     def _get_pseudo_folder():
