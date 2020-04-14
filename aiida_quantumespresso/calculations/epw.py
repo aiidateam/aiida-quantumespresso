@@ -2,7 +2,9 @@
 """Plugin to create a Quantum Espresso epw.x input file."""
 from __future__ import absolute_import
 
+from __future__ import print_function
 import os
+import numpy as np
 import six
 from six.moves import range
 
@@ -49,35 +51,11 @@ class EpwCalculation(CalcJob):
         spec.input('qpoints', valid_type=orm.KpointsData, help='coarse qpoint mesh')
         spec.input('kfpoints', valid_type=orm.KpointsData, help='fine kpoint mesh')
         spec.input('qfpoints', valid_type=orm.KpointsData, help='fine qpoint mesh')
-        spec.input('qibz', valid_type=orm.ArrayData, help='qpoint mesh in IBZ (must be same as prior PhCalculation')
         spec.input('parameters', valid_type=orm.Dict, help='')
         spec.input('settings', valid_type=orm.Dict, required=False, help='')
         spec.input('parent_folder_nscf', valid_type=orm.RemoteData,
                  help='the folder of a completed nscf `PwCalculation`')
         spec.input('parent_folder_ph', valid_type=orm.RemoteData, help='the folder of a completed `PhCalculation`')
-        ##
-        ## To add when EPW parser is done.
-        ##
-        #spec.output('output_parameters', valid_type=orm.Dict)
-        #spec.default_output_node = 'output_parameters'
-
-        ## Unrecoverable errors: required retrieved files could not be read, parsed or are otherwise incomplete
-        #spec.exit_code(300, 'ERROR_OUTPUT_FILES',
-        #    message='Both the stdout and XML output files could not be read or parsed.')
-        #spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
-        #    message='The stdout output file could not be read.')
-        #spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE',
-        #    message='The stdout output file could not be parsed.')
-        #spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
-        #    message='The stdout output file was incomplete.')
-        #spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
-        #    message='The parser raised an unexpected exception.')
-
-        ## Significant errors but calculation can be used to restart
-        #spec.exit_code(400, 'ERROR_OUT_OF_WALLTIME',
-        #    message='The calculation stopped prematurely because it ran out of walltime.')
-        #spec.exit_code(410, 'ERROR_CONVERGENCE_NOT_REACHED',
-        #    message='The minimization cycle did not reach self-consistency.')
 
     def prepare_for_submission(self, folder):  # pylint: disable=too-many-statements,too-many-branches
         """Create the input files from the input nodes passed to this instance of the `CalcJob`.
@@ -196,7 +174,17 @@ class EpwCalculation(CalcJob):
         folder.get_subfolder(self._FOLDER_SAVE, create=True)
 
         # List of IBZ q-point to be added below EPW. To be removed when removed from EPW.
-        list_of_points = self.inputs.qibz.get_array('qibz')
+        qibz_ar = []
+        #print(parent_folder_ph.creator.outputs.output_parameters.get_dict())
+        for key, value in parent_folder_ph.creator.outputs.output_parameters.get_dict().items():
+            print(('key value ', key, ' ', value))
+            if key.startswith('dynamical_matrix_'):
+                qibz_ar.append(value['q_point'])
+
+        qibz_node = orm.ArrayData()
+        qibz_node.set_array('qibz', np.array(qibz_ar))
+
+        list_of_points = qibz_node.get_array('qibz')
         # Number of q-point in the irreducible Brillouin Zone.
         nqpt = len(list_of_points[0, :])
 
@@ -277,7 +265,6 @@ class EpwCalculation(CalcJob):
                     parent_folder_ph.computer.uuid,
                     os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
                     'save/'+prefix+'.dvscf_q'+label))
-
 
         codeinfo = datastructures.CodeInfo()
         codeinfo.cmdline_params = (list(settings.pop('CMDLINE', [])) + ['-in', self.metadata.options.input_filename])

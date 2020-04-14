@@ -2,9 +2,10 @@
 """Tests for the `EpwCalculation` class."""
 from __future__ import absolute_import
 
-import numpy as np
+#import numpy as np
 from aiida import orm
 from aiida.plugins import CalculationFactory
+from aiida.common.links import LinkType
 from aiida_quantumespresso.utils.resources import get_default_options
 
 EPWCALC = CalculationFactory('quantumespresso.epw')
@@ -46,9 +47,22 @@ def test_epw_default(
 
     parent_ph.set_remote_path('dummy_path')
 
-    qibz_ar = [[0, 0, 0], [0, 0.5, 0.5], [0.5, 0.5, 0.5]]
-    qibz_node = orm.ArrayData()
-    qibz_node.set_array('qibz', np.array(qibz_ar))
+    # Dummy q-point
+    qibz = {
+        'dynamical_matrix_1': {
+            'q_point': [0.0, 0.0, 0.0],
+        },
+        'dynamical_matrix_2': {
+            'q_point': [0.0, 0.5, 0.5],
+        },
+        'dynamical_matrix_3': {
+            'q_point': [0.5, 0.5, 0.5],
+        }
+    }
+
+    parameters2 = orm.Dict(dict=qibz)
+    parameters2.add_incoming(parent_ph.creator, link_label='output_parameters', link_type=LinkType.CREATE)
+    parameters2.store()
 
     inputs = {
         'code': fixture_code(entry_point_name),
@@ -59,7 +73,6 @@ def test_epw_default(
         'parent_folder_nscf': parent_pw,
         'parent_folder_ph': parent_ph,
         'parameters': orm.Dict(dict=parameters),
-        'qibz': qibz_node,
         'metadata': {
             'options': get_default_options()
         }
