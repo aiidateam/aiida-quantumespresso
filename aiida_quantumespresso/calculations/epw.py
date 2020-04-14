@@ -175,9 +175,7 @@ class EpwCalculation(CalcJob):
 
         # List of IBZ q-point to be added below EPW. To be removed when removed from EPW.
         qibz_ar = []
-        #print(parent_folder_ph.creator.outputs.output_parameters.get_dict())
-        for key, value in parent_folder_ph.creator.outputs.output_parameters.get_dict().items():
-            print(('key value ', key, ' ', value))
+        for key, value in sorted(parent_folder_ph.creator.outputs.output_parameters.get_dict().items()):
             if key.startswith('dynamical_matrix_'):
                 qibz_ar.append(value['q_point'])
 
