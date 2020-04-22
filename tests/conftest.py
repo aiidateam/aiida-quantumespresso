@@ -12,6 +12,17 @@ import six
 pytest_plugins = ['aiida.manage.tests.pytest_fixtures']  # pylint: disable=invalid-name
 
 
+@pytest.fixture(scope='session')
+def filepath_tests():
+    """Return the absolute filepath of the `tests` folder.
+
+    .. warning:: if this file moves with respect to the `tests` folder, the implementation should change.
+
+    :return: absolute filepath of `tests` folder which is the basepath for all test resources.
+    """
+    return os.path.dirname(os.path.abspath(__file__))
+
+
 @pytest.fixture(scope='function')
 def fixture_sandbox():
     """Return a `SandboxFolder`."""
@@ -154,15 +165,14 @@ def generate_calc_job_node():
 
 
 @pytest.fixture(scope='session')
-def generate_upf_data():
+def generate_upf_data(filepath_tests):
     """Return a `UpfData` instance for the given element a file for which should exist in `tests/fixtures/pseudos`."""
 
     def _generate_upf_data(element):
         """Return `UpfData` node."""
         from aiida.orm import UpfData
 
-        filename = os.path.join('tests', 'fixtures', 'pseudos', '{}.upf'.format(element))
-        filepath = os.path.abspath(filename)
+        filepath = os.path.join(filepath_tests, 'fixtures', 'pseudos', '{}.upf'.format(element))
 
         with io.open(filepath, 'r') as handle:
             upf = UpfData(file=handle.name)
