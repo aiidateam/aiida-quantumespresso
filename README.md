@@ -1,11 +1,10 @@
 # `aiida-quantumespresso`
 [![PyPI version](https://badge.fury.io/py/aiida-quantumespresso.svg)](https://badge.fury.io/py/aiida-quantumespresso)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/aiida-quantumespresso.svg)](https://pypi.python.org/pypi/aiida-quantumespresso/3.0.0a6/)
-[![Build Status](https://github.com/aiidateam/aiida-quantumespresso/workflows/aiida-quantumespresso/badge.svg)](https://github.com/aiidateam/aiida-quantumespresso/actions)
+[![Build Status](https://github.com/aiidateam/aiida-quantumespresso/workflows/aiida-quantumespresso/badge.svg?branch=develop&event=push)](https://github.com/aiidateam/aiida-quantumespresso/actions)
 [![Docs status](https://readthedocs.org/projects/aiida-quantumespresso/badge)](http://aiida-quantumespresso.readthedocs.io/)
 
 This is the official AiiDA plugin for [Quantum ESPRESSO](https://www.quantum-espresso.org/).
-
 
 ## Compatibility matrix
 
