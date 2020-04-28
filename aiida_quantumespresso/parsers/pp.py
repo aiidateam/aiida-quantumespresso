@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-""" Parser for pp.x calculations """
+"""`Parser` implementation for the `PpCalculation` calculation job class."""
 from __future__ import absolute_import
 
 import traceback
@@ -17,33 +17,32 @@ from .base import Parser
 from six.moves import range
 from six.moves import zip
 
+
 class PpParser(Parser):
-    """
-    Parser for pp.x calculations
-    """
+    """`Parser` implementation for the `PpCalculation` calculation job class."""
 
     # Lookup: plot_num --> units
     units_dict = {
-        0: 'e/bohr^3', # Electrons, electronic charge density
-        1: 'Ry', # Total potential
-        2: 'Ry', # Ionic potential
-        3: 'states/bohr^3', # Density of states over an energy range
-        4: 'Ry/K.bohr^3', # Local density of electronic entropy
-        5: 'states/bohr^3', # Simulated STM images from LDOS
-        6: 'e/bohr^3', # Spin density
-        7: 'e/bohr^3', # WFN contribution to charge density, assuming collinear spins
-        8: '1', # Electron localization function, dimensionless
-        9: 'e/bohr^3', # Charge density minus superposition of atomic densities
-        10: 'states/bohr^3', # Integrated local density of states (ILDOS)
-        11: 'Ry', # Bare + Hartree potential
-        12: 'Ry', # the sawtooth electric field potential
-        13: 'mu_B', # Noncollinear magnetisation, Bohr magnetons
-        17: 'e/bohr^3', # All electron charge density
-        18: 'T', # The exchange and correlation magnetic field in the noncollinear case
-        19: '1', # Reduced density gradient - see dx.doi.org/10.1021/ct100641a, Eq.1 - dimensionless
-        20: 'e/bohr^5', # Product of the electron density and the second eigenvalue of the electron-density Hessian matrix, see: dx.doi.org/10.1021/ct100641a, with sign of second eigenvalue
-        21: 'e/bohr^3', # All electron charge density, PAW case
-        22: 'Ry/bohr^3', # Kinetic energy density
+        0: 'e/bohr^3',  # Electrons, electronic charge density
+        1: 'Ry',  # Total potential
+        2: 'Ry',  # Ionic potential
+        3: 'states/bohr^3',  # Density of states over an energy range
+        4: 'Ry/K.bohr^3',  # Local density of electronic entropy
+        5: 'states/bohr^3',  # Simulated STM images from LDOS
+        6: 'e/bohr^3',  # Spin density
+        7: 'e/bohr^3',  # WFN contribution to charge density, assuming collinear spins
+        8: '1',  # Electron localization function, dimensionless
+        9: 'e/bohr^3',  # Charge density minus superposition of atomic densities
+        10: 'states/bohr^3',  # Integrated local density of states (ILDOS)
+        11: 'Ry',  # Bare + Hartree potential
+        12: 'Ry',  # the sawtooth electric field potential
+        13: 'mu_B',  # Noncollinear magnetisation, Bohr magnetons
+        17: 'e/bohr^3',  # All electron charge density
+        18: 'T',  # The exchange and correlation magnetic field in the noncollinear case
+        19: '1',  # Reduced density gradient - see dx.doi.org/10.1021/ct100641a, Eq.1 - dimensionless
+        20: 'e/bohr^5',  # Product of the electron density and the second eigenvalue of the electron-density Hessian matrix, see: dx.doi.org/10.1021/ct100641a, with sign of second eigenvalue
+        21: 'e/bohr^3',  # All electron charge density, PAW case
+        22: 'Ry/bohr^3',  # Kinetic energy density
     }
 
     def parse(self, **kwargs):
@@ -83,7 +82,7 @@ class PpParser(Parser):
                 data_raw = self.retrieved.get_object_content(filename_data)
             except (IOError, OSError):
                 return self.exit_codes.ERROR_DATAFILE_READ
-        elif temp_folder_path is not None: # Temp list case
+        elif temp_folder_path is not None:  # Temp list case
             data_file_path = os.path.join(temp_folder_path, filename_data)
             if os.path.isfile(data_file_path):
                 try:
@@ -129,7 +128,6 @@ class PpParser(Parser):
         self.out('output_data', parsed_data)
         self.out('output_parameters', orm.Dict(dict=self.output_parameters))
 
-
     def parse_stdout(self, stdout_str):
         """
         Parses the output written to StdOut to retrieve basic information about the post processing
@@ -166,7 +164,6 @@ class PpParser(Parser):
                     if message is None:
                         message = line
                     logs.warning.append(message)
-
 
         stdout_lines = stdout_str.splitlines()
         logs = get_logging_container()
@@ -205,7 +202,6 @@ class PpParser(Parser):
 
         return logs, output_dict
 
-
     def parse_gnuplot1D(self, data_file_str):
         """
         Parse 1D GNUPlot formatted output
@@ -225,7 +221,7 @@ class PpParser(Parser):
                 split_line = line.split()
                 coords.append(float(split_line[0]))
                 data.append(float(split_line[1]))
-            y_data= [data]
+            y_data = [data]
             y_names = ['data']
             y_units = [self.units_dict[self.output_parameters['plot_num']]]
 
@@ -248,12 +244,11 @@ class PpParser(Parser):
         arraydata = orm.ArrayData()
         arraydata.set_array('x_coordinates', np.array(coords))
         arraydata.set_array('x_coordinates_units', np.array(x_units))
-        for name,data,units in zip(y_names, y_data, y_units):
+        for name, data, units in zip(y_names, y_data, y_units):
             arraydata.set_array(name, np.array(data))
-            arraydata.set_array(name+'_units', np.array(units))
+            arraydata.set_array(name + '_units', np.array(units))
 
         return arraydata
-
 
     def parse_gnuplot_polar(self, data_file_str):
             """
@@ -262,7 +257,7 @@ class PpParser(Parser):
             :param data_file_str: the data file read in as a single string
             """
             data_lines = data_file_str.splitlines()
-            header_line = data_lines.pop(0)   # First line is a header
+            data_lines.pop(0)  # First line is a header
 
             data = []
             for line in data_lines:
@@ -274,7 +269,6 @@ class PpParser(Parser):
             arraydata.set_array('data_units', np.array(data_units))
 
             return arraydata
-
 
     def parse_gnuplot2D(self, data_file_str):
         """
@@ -305,7 +299,6 @@ class PpParser(Parser):
 
         return arraydata
 
-
     def parse_gaussian(self, data_file_str):
         """
         Parse Gaussian Cube formatted output
@@ -316,9 +309,9 @@ class PpParser(Parser):
         lines = data_file_str.splitlines()
 
         atoms_line = lines[2].split()
-        atoms = int(atoms_line[0]) # The number of atoms listed in the file
-        header = lines[:6+atoms]  # The header of the file: comments, the voxel, and the number of atoms and datapoints
-        data_lines = lines[6+atoms:] # The actual data: atoms and volumetric data
+        atoms = int(atoms_line[0])  # The number of atoms listed in the file
+        header = lines[:6 + atoms]  # The header of the file: comments, the voxel, and the number of atoms and datapoints
+        data_lines = lines[6 + atoms:]  # The actual data: atoms and volumetric data
 
         # Parse the declared dimensions of the volumetric data
         x_line = header[3].split()
@@ -328,7 +321,7 @@ class PpParser(Parser):
         z_line = header[5].split()
         zdim = int(z_line[0])
 
-        #Get the vectors describing the basis voxel
+        # Get the vectors describing the basis voxel
         voxel_array = np.array(
             [[x_line[1], x_line[2], x_line[3]],
             [y_line[1], y_line[2], y_line[3]],
@@ -344,7 +337,7 @@ class PpParser(Parser):
         datalist = []
         for line in data_lines:
             for i in range(0, len(line), 13):
-                data_point = line[i:i+13].strip()
+                data_point = line[i:i + 13].strip()
                 if data_point != '':
                     datalist.append(float(data_point))
 
@@ -354,7 +347,7 @@ class PpParser(Parser):
         for i in range(0, xdim):
             for j in range(0, ydim):
                 for k in range(0, zdim):
-                    data_array[i, j, k] = (datalist[(i*ydim*zdim)+(j*zdim)+k])
+                    data_array[i, j, k] = (datalist[(i * ydim * zdim) + (j * zdim) + k])
 
         coordinates_units = 'bohr'
         data_units = self.units_dict[self.output_parameters['plot_num']]

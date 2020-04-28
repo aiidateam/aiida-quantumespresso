@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-""" CalcJob implementation for pp.x """
+"""`CalcJob` implementation for the pp.x code of Quantum ESPRESSO."""
 from __future__ import absolute_import
 
 import os
@@ -14,33 +14,31 @@ from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 from .base import CalcJob
 
 
-def validate_parameters(value, ctx):  # pylint: disable=unused-argument
-    """ Validate 'parameters' dict."""
-
+def validate_parameters(value, ctx=None):  # pylint: disable=unused-argument
+    """Validate 'parameters' dict."""
     parameters = value.get_dict()
 
-    # Check for essential keys
     try:
         plot_num = parameters['INPUTPP']['plot_num']
     except KeyError:
-        return "parameter '[INPUTPP][plot_num]' must be explicitly set"
-
-    try:
-        dimension = parameters['PLOT']['iflag']
-    except KeyError:
-        return "parameter '[PLOT][iflag]' must be explicitly set"
+        return 'parameter `INPUTPP.plot_num` must be explicitly set'
 
     # Check that a valid plot type is requested
     if plot_num in range(23) and plot_num not in [14, 15, 16]:  # Must be integer in range 0-22, but not 14-16:
         parameters['INPUTPP']['plot_num'] = int(plot_num)  # If this test passes, we can safely cast to int
     else:
-        return "'plot_num' must be an integer in the range 0-23"
+        return '`INTPUTPP.plot_num` must be an integer in the range 0-23 excluding [14, 15, 16]'
+
+    try:
+        dimension = parameters['PLOT']['iflag']
+    except KeyError:
+        return 'parameter `PLOT.iflag` must be explicitly set'
 
     # Check for valid plot dimension:
     if dimension in range(5):  # Must be in range 0-4:
         parameters['PLOT']['iflag'] = int(dimension)
     else:
-        return "'iflag' must be an integer in the range 0-4"
+        return '`PLOT.iflag` must be an integer in the range 0-4'
 
 
 class PpCalculation(CalcJob):
@@ -117,9 +115,7 @@ class PpCalculation(CalcJob):
         spec.exit_code(332, 'ERROR_UNSUPPORTED_DATAFILE_FORMAT',
             message='The data file format is not supported by the parser')
 
-
-
-    def prepare_for_submission(self, folder): # pylint: disable=too-many-branches,too-many-statements
+    def prepare_for_submission(self, folder):  # pylint: disable=too-many-branches,too-many-statements
         """Create the input files from the input nodes passed to this instance of the `CalcJob`.
 
         :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
@@ -147,11 +143,11 @@ class PpCalculation(CalcJob):
 
         # Restrict the plot output to the file types that we want to be able to parse
         dimension_to_output_format = {
-            0: 0, # Spherical integration -> Gnuplot, 1D
-            1: 0, # 1D -> Gnuplot, 1D
-            2: 7, # 2D -> Gnuplot, 2D
-            3: 6, # 3D -> Gaussian cube
-            4: 0, # Polar on a sphere -> # Gnuplot, 1D
+            0: 0,  # Spherical integration -> Gnuplot, 1D
+            1: 0,  # 1D -> Gnuplot, 1D
+            2: 7,  # 2D -> Gnuplot, 2D
+            3: 6,  # 3D -> Gaussian cube
+            4: 0,  # Polar on a sphere -> # Gnuplot, 1D
         }
         parameters['PLOT']['output_format'] = dimension_to_output_format[parameters['PLOT']['iflag']]
 
@@ -166,7 +162,6 @@ class PpCalculation(CalcJob):
                 for key, value in sorted(six.iteritems(namelist)):
                     infile.write(convert_input_to_namelist_entry(key, value))
                 infile.write(u'/\n')
-
 
         # Check for specified namelists that are not expected
         if parameters:
