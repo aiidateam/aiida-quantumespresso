@@ -1,111 +1,120 @@
-name: aiida-quantumespresso
+name: continuous-integration
 
 on: [push, pull_request]
 
 jobs:
 
-  docs:
+    docs:
 
-    runs-on: ubuntu-latest
+        runs-on: ubuntu-latest
 
-    steps:
-    - uses: actions/checkout@v1
+        steps:
+        -   uses: actions/checkout@v1
 
-    - name: Set up Python 3.7
-      uses: actions/setup-python@v1
-      with:
-        python-version: 3.7
+        -   name: Cache python dependencies
+            id: cache-pip
+            uses: actions/cache@v1
+            with:
+                path: ~/.cache/pip
+                key: pip-docs-${{ hashFiles('**/setup.json') }}
+                restore-keys:
+                    pip-docs-
 
-    - name: Cache python dependencies
-      id: cache-pip
-      uses: actions/cache@v1
-      with:
-        path: ~/.cache/pip
-        key: pip-docs-${{ hashFiles('**/setup.json') }}
-        restore-keys: |
-          pip-docs-
+        -   name: Set up Python
+            uses: actions/setup-python@v1
+            with:
+                python-version: 3.8
 
-    - name: Install python dependencies
-      run:
-        pip install -e .[docs]
+        -   name: Install python dependencies
+            run:
+                pip install -e .[docs]
 
-    - name: Build documentation
-      env:
-        READTHEDOCS: 'True'
-      run:
-        SPHINXOPTS='-nW' make -C docs html
+        -   name: Build documentation
+            env:
+                READTHEDOCS: 'True'
+            run:
+                SPHINXOPTS='-nW' make -C docs html
 
-  pre-commit:
+    pre-commit:
 
-    runs-on: ubuntu-latest
+        runs-on: ubuntu-latest
 
-    steps:
-    - uses: actions/checkout@v1
+        steps:
+        -   uses: actions/checkout@v1
 
-    - name: Cache python dependencies
-      id: cache-pip
-      uses: actions/cache@v1
-      with:
-        path: ~/.cache/pip
-        key: pip-pre-commit-${{ hashFiles('**/setup.json') }}
-        restore-keys: |
-          pip-pre-commit-
+        -   name: Cache python dependencies
+            id: cache-pip
+            uses: actions/cache@v1
+            with:
+                path: ~/.cache/pip
+                key: pip-pre-commit-${{ hashFiles('**/setup.json') }}
+                restore-keys:
+                    pip-pre-commit-
 
-    - name: Set up Python 3.7
-      uses: actions/setup-python@v1
-      with:
-        python-version: 3.7
+        -   name: Set up Python
+            uses: actions/setup-python@v1
+            with:
+                python-version: 3.7
 
-    - name: Install python dependencies
-      run:
-        pip install -e .[dev]
+        -   name: Install python dependencies
+            run:
+                pip install -e .[dev]
 
-    - name: Run pre-commit
-      run:
-        pre-commit run --all-files || ( git status --short ; git diff ; exit 1 )
+        -   name: Run pre-commit
+            run:
+                pre-commit run --all-files || ( git status --short ; git diff ; exit 1 )
 
-  tests:
+    tests:
 
-    runs-on: ubuntu-latest
+        runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        python-version: [2.7, 3.5, 3.6, 3.7, 3.8]
+        strategy:
+            matrix:
+                python-version: [2.7, 3.5, 3.6, 3.7, 3.8]
 
-    steps:
-    - uses: actions/checkout@v1
+        services:
+            postgres:
+                image: postgres:10
+                env:
+                    POSTGRES_DB: test_${{ matrix.backend }}
+                    POSTGRES_PASSWORD: ''
+                    POSTGRES_HOST_AUTH_METHOD: trust
+                ports:
+                -    5432:5432
+            rabbitmq:
+                image: rabbitmq:latest
+                ports:
+                -   5672:5672
 
-    - name: Cache python dependencies
-      id: cache-pip
-      uses: actions/cache@v1
-      with:
-        path: ~/.cache/pip
-        key: pip-${{ matrix.python-version }}-tests-${{ hashFiles('**/setup.json') }}
-        restore-keys: |
-          pip-${{ matrix.python-version }}-tests
+        steps:
+        -   uses: actions/checkout@v2
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
-      with:
-        python-version: ${{ matrix.python-version }}
+        -   name: Cache python dependencies
+            id: cache-pip
+            uses: actions/cache@v1
+            with:
+                path: ~/.cache/pip
+                key: pip-${{ matrix.python-version }}-tests-${{ hashFiles('**/setup.json') }}
+                restore-keys:
+                    pip-${{ matrix.python-version }}-tests
 
-    - name: Install system dependencies
-      run: |
-        wget -O - "https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc" | sudo apt-key add -
-        echo 'deb https://dl.bintray.com/rabbitmq-erlang/debian bionic erlang' | sudo tee -a /etc/apt/sources.list.d/bintray.rabbitmq.list
-        echo 'deb https://dl.bintray.com/rabbitmq/debian bionic main' | sudo tee -a /etc/apt/sources.list.d/bintray.rabbitmq.list
-        sudo apt update
-        sudo apt install postgresql postgresql-server-dev-all postgresql-client
-        sudo apt install rabbitmq-server
-        sudo systemctl status rabbitmq-server.service
+        -   name: Set up Python ${{ matrix.python-version }}
+            uses: actions/setup-python@v1
+            with:
+                python-version: ${{ matrix.python-version }}
 
-    - name: Install python dependencies
-      run: |
-        pip install --upgrade setuptools
-        pip install numpy==1.16.4
-        pip install -e .[dev]
-        reentry scan
+        -   name: Install system dependencies
+            run: |
+                sudo apt update
+                sudo apt install postgresql-10
 
-    - name: Run pytest
-      run:
-        pytest -sv tests
+        -   name: Install python dependencies
+            run: |
+                pip install --upgrade setuptools
+                pip install numpy==1.16.4
+                pip install -e .[dev]
+                reentry scan
+
+        -   name: Run pytest
+            run:
+                pytest -sv tests
