@@ -1,0 +1,9 @@
+parameters:
+  charge_img: 0.0
+  charge_max: 1.003621
+  charge_min: -11.360121
+  negative_core_charge: -1.3e-05
+  output_format: gnuplot
+  plot_num: 11
+  plot_type: 1D along a line
+units_array: bohr

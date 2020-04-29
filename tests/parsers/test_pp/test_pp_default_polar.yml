@@ -1,0 +1,10 @@
+data_units:
+- Ry
+parameters:
+  charge_img: 0.0
+  charge_max: -1.056243
+  charge_min: -1.122469
+  negative_core_charge: -1.3e-05
+  output_format: gnuplot
+  plot_num: 11
+  plot_type: 2D polar on a sphere
