@@ -7,6 +7,7 @@
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Development Status :: 4 - Beta"
     ],
     "description": "The official AiiDA plugin for Quantum ESPRESSO",
@@ -20,6 +21,7 @@
             "quantumespresso.ph = aiida_quantumespresso.calculations.ph:PhCalculation",
             "quantumespresso.pp = aiida_quantumespresso.calculations.pp:PpCalculation",
             "quantumespresso.pw = aiida_quantumespresso.calculations.pw:PwCalculation",
+            "quantumespresso.epw = aiida_quantumespresso.calculations.epw:EpwCalculation",
             "quantumespresso.pw2gw = aiida_quantumespresso.calculations.pw2gw:Pw2gwCalculation",
             "quantumespresso.projwfc = aiida_quantumespresso.calculations.projwfc:ProjwfcCalculation",
             "quantumespresso.pw2wannier90 = aiida_quantumespresso.calculations.pw2wannier90:Pw2wannier90Calculation",
@@ -35,6 +37,7 @@
             "quantumespresso.matdyn = aiida_quantumespresso.parsers.matdyn:MatdynParser",
             "quantumespresso.neb = aiida_quantumespresso.parsers.neb:NebParser",
             "quantumespresso.ph = aiida_quantumespresso.parsers.ph:PhParser",
+            "quantumespresso.pp = aiida_quantumespresso.parsers.pp:PpParser",
             "quantumespresso.projwfc = aiida_quantumespresso.parsers.projwfc:ProjwfcParser",
             "quantumespresso.pw = aiida_quantumespresso.parsers.pw:PwParser",
             "quantumespresso.pw2gw = aiida_quantumespresso.parsers.pw2gw:Pw2gwParser",
@@ -67,7 +70,7 @@
             "prospector==1.1.7",
             "pylint==1.9.4; python_version<'3.0'",
             "pylint==2.3.1; python_version>='3.0'",
-            "pgtest==1.2.0",
+            "pgtest~=1.3,>=1.3.1",
             "pytest==3.6.3",
             "pytest-regressions==1.0.6",
             "yapf==0.28.0"

@@ -51,6 +51,8 @@ Inputs
 
     *  **'PARENT_CALC_OUT_SUBFOLDER'**: string. The subfolder of the parent
        scratch to be copied in the new scratch.
+    *  **'PREPARE_FOR_EPW'**: boolean. If True, more files are created in
+       preparation of the calculation of a EPW calculation.
     *  **'PREPARE_FOR_D3'**: boolean. If True, more files are created in
        preparation of the calculation of a D3 calculation.
     *  **'NAMELISTS'**: list of strings. Specify all the list of Namelists to be
