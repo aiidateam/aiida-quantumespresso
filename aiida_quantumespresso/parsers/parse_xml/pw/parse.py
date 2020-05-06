@@ -43,7 +43,7 @@ def cell_volume(a1, a2, a3):
     return abs(float(a1[0] * a_mid_0 + a1[1] * a_mid_1 + a1[2] * a_mid_2))
 
 
-def parse_xml(xml_file, dir_with_bands=None, include_deprecated_v2_keys=False):
+def parse_xml(xml_file, dir_with_bands=None):
     try:
         xml_parsed = ElementTree.parse(xml_file)
     except ElementTree.ParseError:
@@ -52,19 +52,18 @@ def parse_xml(xml_file, dir_with_bands=None, include_deprecated_v2_keys=False):
     xml_file_version = get_xml_file_version(xml_parsed)
 
     if xml_file_version == QeXmlVersion.POST_6_2:
-        parsed_data, logs = parse_pw_xml_post_6_2(xml_parsed, include_deprecated_v2_keys)
+        parsed_data, logs = parse_pw_xml_post_6_2(xml_parsed)
     elif xml_file_version == QeXmlVersion.PRE_6_2:
         xml_file.seek(0)
-        parsed_data, logs = parse_pw_xml_pre_6_2(xml_file, dir_with_bands, include_deprecated_v2_keys)
+        parsed_data, logs = parse_pw_xml_pre_6_2(xml_file, dir_with_bands)
 
     return parsed_data, logs
 
 
-def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
+def parse_pw_xml_post_6_2(xml):
     """Parse the content of XML output file written by `pw.x` with the new schema-based XML format.
 
     :param xml: parsed XML
-    :param include_deprecated_v2_keys: boolean, if True, includes deprecated keys from old parser v2
     :returns: tuple of two dictionaries, with the parsed data and log messages, respectively
     """
     e_bohr2_to_coulomb_m2 = 57.214766  # e/a0^2 to C/m^2 (electric polarization) from Wolfram Alpha
@@ -122,35 +121,6 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
             occupations = inputs['bands']['occupations']
     else:
         occupations = None
-
-    if include_deprecated_v2_keys:
-
-        # NOTE: these flags are not super clear
-        # TODO: remove them and just use 'occupations' as a string, with possible values "smearing","tetrahedra", ...
-
-        if occupations == 'from_input':  # False for 'fixed'  # TODO: does this make sense?
-            fixed_occupations = True
-        else:
-            fixed_occupations = False
-
-        if occupations and 'tetrahedra' in occupations:
-            tetrahedron_method = True
-        else:
-            tetrahedron_method = False
-
-        if occupations == 'from_input':
-            smearing_method = False
-        else:
-            smearing_method = True
-
-        if smearing_method:
-            if 'smearing' not in (list(outputs['band_structure'].keys()) + list(inputs.keys())):
-                logs.error.append("occupations is '{}' but key 'smearing' is not present under input/bands "
-                                  'nor under output/band_structure'.format(occupations))
-            # TODO: this error is triggered if no smearing is specified in input. But this is a valid input, so we should't throw an error.
-            # Should we ask QE to print something nonetheless?
-            # Also happens if occupations='fixed'.
-            # (Example: occupations is 'fixed' but key 'smearing' is not present under input/bands nor output/band_structure. See calculation 4940, versus 4981.)
 
     starting_magnetization = []
     magnetization_angle1 = []
@@ -467,11 +437,6 @@ def parse_pw_xml_post_6_2(xml, include_deprecated_v2_keys=False):
         # -1 = SCF convergence failed;
         # 3 = ionic convergence failed
         # These might be changed in the future. Also see PW/src/run_pwscf.f90
-
-    if include_deprecated_v2_keys:
-        xml_data['fixed_occupations'] = fixed_occupations
-        xml_data['tetrahedron_method'] = tetrahedron_method
-        xml_data['smearing_method'] = smearing_method
 
     try:
         berry_phase = outputs['electric_field']['BerryPhase']

@@ -381,17 +381,3 @@ occupations::
 
 Note that for ``pw.x`` to print the required information, the flag ``lda_plus_u`` has to be
 set to ``True`` in the ``SYSTEM`` card of the input ``parameters`` node.
-
-Include deprecated output keys
-..........................
-In version 3 of the plugin, some keys have been deprecated and removed by default
-from the ``output_parameters`` node, often replaced by more appropriate keys.
-To also include the deprecated keys, add ``include_deprecated_v2_keys: True``
-to the ``parser_options`` element of the settings dictionary.
-The default value of this options is ``False``. Example::
-
-    settings_dict = {
-        'parser_options': {
-            'include_deprecated_v2_keys': True,
-        }
-    }

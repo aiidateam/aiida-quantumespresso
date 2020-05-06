@@ -275,13 +275,8 @@ class PwParser(Parser):
             return parsed_data, logs
 
         try:
-            include_deprecated_keys = parser_options['include_deprecated_v2_keys']
-        except (TypeError, KeyError):
-            include_deprecated_keys = False
-
-        try:
             with self.retrieved.open(xml_files[0]) as xml_file:
-                parsed_data, logs = parse_xml(xml_file, dir_with_bands, include_deprecated_keys)
+                parsed_data, logs = parse_xml(xml_file, dir_with_bands)
         except IOError:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_READ
         except XMLParseError:
