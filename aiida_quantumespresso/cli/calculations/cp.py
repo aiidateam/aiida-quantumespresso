@@ -1,29 +1,33 @@
 # -*- coding: utf-8 -*-
 """Command line scripts to launch a `CpCalculation` for testing and demonstration purposes."""
-from aiida.cmdline.params import options, types
+from aiida.cmdline.params import options as options_core
+from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
+
+from aiida_sssp.cli import options as options_sssp
 
 from ..utils import defaults
 from ..utils import launch
-from ..utils import options as options_qe
+from ..utils import options
 from . import cmd_launch
 
 
 @cmd_launch.command('cp')
-@options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.cp'))
-@options_qe.STRUCTURE(default=defaults.get_structure)
-@options_qe.PSEUDO_FAMILY(required=True)
-@options_qe.MAX_NUM_MACHINES()
-@options_qe.MAX_WALLCLOCK_SECONDS()
-@options_qe.WITH_MPI()
-@options_qe.DAEMON()
+@options_core.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.cp'))
+@options.STRUCTURE(default=defaults.get_structure)
+@options_sssp.SSSP_FAMILY()
+@options.MAX_NUM_MACHINES()
+@options.MAX_WALLCLOCK_SECONDS()
+@options.WITH_MPI()
+@options.DAEMON()
 @decorators.with_dbenv()
-def launch_calculation(code, structure, pseudo_family, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
+def launch_calculation(code, structure, sssp_family, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
     """Run a CpCalculation."""
     from aiida.orm import Dict
-    from aiida.orm.nodes.data.upf import get_pseudos_from_structure
     from aiida.plugins import CalculationFactory
     from aiida_quantumespresso.utils.resources import get_default_options
+
+    cutoff_wfc, cutoff_rho = sssp_family.get_cutoffs(structure=structure)
 
     parameters = {
         'CONTROL': {
@@ -33,12 +37,11 @@ def launch_calculation(code, structure, pseudo_family, max_num_machines, max_wal
             'iprint': 1,
             'isave': 100,
             'dt': 3.0,
-            'max_seconds': 25 * 60,
             'nstep': 10,
         },
         'SYSTEM': {
-            'ecutwfc': 30.0,
-            'ecutrho': 240.0,
+            'ecutwfc': cutoff_wfc,
+            'ecutrho': cutoff_rho,
             'nr1b': 24,
             'nr2b': 24,
             'nr3b': 24,
@@ -57,7 +60,7 @@ def launch_calculation(code, structure, pseudo_family, max_num_machines, max_wal
     inputs = {
         'code': code,
         'structure': structure,
-        'pseudos': get_pseudos_from_structure(structure, pseudo_family),
+        'pseudos': sssp_family.get_pseudos(structure),
         'parameters': Dict(dict=parameters),
         'metadata': {
             'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),

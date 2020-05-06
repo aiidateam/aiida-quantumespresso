@@ -341,7 +341,6 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             args = [self._process_class.__name__, calculation.pk]
             self.report('{}<{}> run with smearing and highest band is occupied'.format(*args))
             self.report('BandsData<{}> has invalid occupations: {}'.format(bands.pk, exception))
-            self.report('{}<{}> had insufficient bands'.format(calculation.process_label, calculation.pk))
 
             nbnd_cur = calculation.outputs.output_parameters.get_dict()['number_of_bands']
             nbnd_new = nbnd_cur + max(int(nbnd_cur * self.defaults.delta_factor_nbnd), self.defaults.delta_minimum_nbnd)

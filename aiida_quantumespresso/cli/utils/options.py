@@ -8,11 +8,7 @@ from aiida.cmdline.params.options import OverridableOption
 from . import validate
 
 STRUCTURE = OverridableOption(
-    '-s', '--structure', type=types.DataParamType(sub_classes=('aiida.data:structure',)), help='StructureData node.'
-)
-
-PSEUDO_FAMILY = OverridableOption(
-    '-p', '--pseudo-family', 'pseudo_family', type=click.STRING, help='Pseudo potential family name.'
+    '-S', '--structure', type=types.DataParamType(sub_classes=('aiida.data:structure',)), help='StructureData node.'
 )
 
 KPOINTS_DISTANCE = OverridableOption(
@@ -138,16 +134,11 @@ CLEAN_WORKDIR = OverridableOption(
 )
 
 ECUTWFC = OverridableOption(
-    '-W', '--ecutwfc', type=click.FLOAT, default=30., show_default=True, help='The plane wave cutoff energy in Ry.'
+    '-W', '--ecutwfc', type=click.FLOAT, show_default=True, help='The plane wave cutoff energy in Ry.'
 )
 
 ECUTRHO = OverridableOption(
-    '-R',
-    '--ecutrho',
-    type=click.FLOAT,
-    default=240.,
-    show_default=True,
-    help='The charge density cutoff energy in Ry.'
+    '-R', '--ecutrho', type=click.FLOAT, show_default=True, help='The charge density cutoff energy in Ry.'
 )
 
 HUBBARD_U = OverridableOption(
@@ -179,7 +170,6 @@ HUBBARD_FILE = OverridableOption(
 )
 
 STARTING_MAGNETIZATION = OverridableOption(
-    '-M',
     '--starting-magnetization',
     nargs=2,
     multiple=True,
@@ -189,7 +179,6 @@ STARTING_MAGNETIZATION = OverridableOption(
 )
 
 SMEARING = OverridableOption(
-    '-S',
     '--smearing',
     nargs=2,
     default=(None, None),
