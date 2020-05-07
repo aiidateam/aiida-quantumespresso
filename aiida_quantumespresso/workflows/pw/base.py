@@ -5,6 +5,7 @@ from aiida.common import AttributeDict, exceptions
 from aiida.engine import ToContext, if_, while_
 from aiida.plugins import CalculationFactory
 
+from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import create_kpoints_from_distance
 from aiida_quantumespresso.common.workchain.utils import register_error_handler, ErrorHandlerReport
 from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkChain
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
@@ -12,7 +13,6 @@ from aiida_quantumespresso.utils.mapping import update_mapping, prepare_process_
 from aiida_quantumespresso.utils.pseudopotential import validate_and_prepare_pseudos_inputs
 from aiida_quantumespresso.utils.resources import get_default_options, get_pw_parallelization_parameters
 from aiida_quantumespresso.utils.resources import cmdline_remove_npools, create_scheduler_resources
-from aiida_quantumespresso.workflows.functions.create_kpoints_from_distance import create_kpoints_from_distance
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
 
