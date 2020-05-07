@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """Test the automatic 'invalidates_cache' attribute for exit codes."""
-
-from __future__ import absolute_import
-
 from distutils.version import StrictVersion  # pylint: disable=import-error,no-name-in-module
 
 import pytest

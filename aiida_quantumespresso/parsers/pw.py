@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """`Parser` implementation for the `PwCalculation` calculation job class."""
-from __future__ import absolute_import
-
 import traceback
 
 import numpy

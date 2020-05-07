@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 """Plugin to create a Quantum Espresso input file for a generic post-processing (or similar) code that only requires a
 few namelists (plus possibly some text afterwards)."""
-from __future__ import absolute_import
-
 import os
-import six
 
 from aiida.common import datastructures, exceptions
 from aiida.orm import Dict
@@ -46,12 +43,12 @@ class NamelistsCalculation(CalcJob):
     @classmethod
     def define(cls, spec):
         # yapf: disable
-        super(NamelistsCalculation, cls).define(spec)
-        spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
-        spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
+        super().define(spec)
+        spec.input('metadata.options.input_filename', valid_type=str, default=cls._DEFAULT_INPUT_FILE)
+        spec.input('metadata.options.output_filename', valid_type=str, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)  # Override default value False
         if cls._default_parser is not None:
-            spec.input('metadata.options.parser_name', valid_type=six.string_types, default=cls._default_parser)
+            spec.input('metadata.options.parser_name', valid_type=str, default=cls._default_parser)
         spec.input('parameters', valid_type=Dict, required=False,
             help='Use a node that specifies the input parameters for the namelists')
         spec.input('settings', valid_type=Dict, required=False,
@@ -66,7 +63,7 @@ class NamelistsCalculation(CalcJob):
         added to the input file, this method can be overridden to return the lines that should be appended.
         """
         # pylint: disable=no-self-use
-        return u''
+        return ''
 
     @classmethod
     def set_blocked_keywords(cls, parameters):
@@ -122,10 +119,10 @@ class NamelistsCalculation(CalcJob):
 
         file_lines = []
         for namelist_name, namelist in parameters.items():
-            file_lines.append(u'&{0}'.format(namelist_name))
-            for key, value in sorted(six.iteritems(namelist)):
+            file_lines.append('&{0}'.format(namelist_name))
+            for key, value in sorted(namelist.items()):
                 file_lines.append(convert_input_to_namelist_entry(key, value)[:-1])
-            file_lines.append(u'/')
+            file_lines.append('/')
 
         return '\n'.join(file_lines)
 
@@ -146,7 +143,7 @@ class NamelistsCalculation(CalcJob):
         # Put the first-level keys as uppercase (i.e., namelist and card names) and the second-level keys as lowercase
         if 'parameters' in self.inputs:
             parameters = _uppercase_dict(self.inputs.parameters.get_dict(), dict_name='parameters')
-            parameters = {k: _lowercase_dict(v, dict_name=k) for k, v in six.iteritems(parameters)}
+            parameters = {k: _lowercase_dict(v, dict_name=k) for k, v in parameters.items()}
         else:
             parameters = {}
 

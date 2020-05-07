@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division
 import re
 import fnmatch
 
 import numpy as np
-from six.moves import range
 
 from aiida.common import NotExistent, LinkType
 from aiida.orm import Dict, ProjectionData, BandsData, XyData, CalcJobNode

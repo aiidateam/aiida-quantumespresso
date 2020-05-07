@@ -8,8 +8,6 @@
 # For further information on the license, see the LICENSE.txt file        #
 # For further information please visit http://www.aiida.net               #
 ###########################################################################
-from __future__ import absolute_import
-from __future__ import print_function
 from aiida import load_profile
 
 from aiida.orm import Code

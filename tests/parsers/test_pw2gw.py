@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=invalid-name,redefined-outer-name
 """Tests for the `Pw2gwParser`."""
-from __future__ import absolute_import
-
 from aiida import orm
 
 
@@ -27,7 +25,7 @@ def test_pw2gw_default(
     data_regression.check({'output_parameters': results['output_parameters'].get_dict()},
                           basename='test_pw2gw_default_data')
 
-    num_regression.check({k: v for k, v in results['eps'].get_iterarrays()}, basename='test_pw2gw_default_eps')
+    num_regression.check(dict(results['eps'].get_iterarrays()), basename='test_pw2gw_default_eps')
 
 
 def test_pw2gw_failed_missing_output(

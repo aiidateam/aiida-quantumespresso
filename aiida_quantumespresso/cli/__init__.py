@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=wrong-import-position,wildcard-import
 """Module for the command line interface."""
-from __future__ import absolute_import
-
 import click
 import click_completion
 

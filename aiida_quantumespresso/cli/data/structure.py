@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Command line utilities to create and inspect `StructureData` nodes."""
-from __future__ import absolute_import
-
 import click
 
 from aiida.cmdline.params import options

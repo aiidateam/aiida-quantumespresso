@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 """`CalcJob` implementation for the pw.x code of Quantum ESPRESSO."""
-from __future__ import absolute_import
-
 import os
-import six
 
 from aiida import orm
 from aiida.common.lang import classproperty
@@ -62,8 +59,8 @@ class PwCalculation(BasePwCpInputGenerator):
     @classmethod
     def define(cls, spec):
         # yapf: disable
-        super(PwCalculation, cls).define(spec)
-        spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.pw')
+        super().define(spec)
+        spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.pw')
         spec.input('metadata.options.without_xml', valid_type=bool, required=False, help='If set to `True` the parser '
             'will not fail if the XML file is missing in the retrieved folder.')
         spec.input('kpoints', valid_type=orm.KpointsData,

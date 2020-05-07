@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Utilities for `BandsData` nodes."""
-from __future__ import absolute_import
 
 
 def get_highest_occupied_band(bands, threshold=0.005):

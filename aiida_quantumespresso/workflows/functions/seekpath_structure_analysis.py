@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Calcfunction to primitivize a structure and return high symmetry k-point path through its Brillouin zone."""
-from __future__ import absolute_import
 from aiida.engine import calcfunction
 from aiida.orm import Data
 

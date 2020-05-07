@@ -3,8 +3,6 @@
 
 All `Parser` implementations in `aiida-quantumespresso` must use this base class, not `aiida.parsers.Parser`.
 """
-from __future__ import absolute_import
-
 from aiida.parsers import Parser as _BaseParser
 
 __all__ = ('Parser',)

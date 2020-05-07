@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Setup for the `aiida-quantumespresso` plugin which provides an interface to Quantum ESPRESSO for `aiida-core`."""
-from __future__ import absolute_import
 from utils import fastentrypoints  # pylint: disable=unused-import
 
 

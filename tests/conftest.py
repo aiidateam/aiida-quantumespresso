@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=redefined-outer-name
 """Initialise a text database and profile for pytest."""
-from __future__ import absolute_import
-
 import io
 import os
 import collections
 import pytest
-import six
 
 pytest_plugins = ['aiida.manage.tests.pytest_fixtures']  # pylint: disable=invalid-name
 
@@ -84,7 +81,7 @@ def generate_calc_job_node():
     def flatten_inputs(inputs, prefix=''):
         """Flatten inputs recursively like :meth:`aiida.engine.processes.process::Process._flatten_inputs`."""
         flat_inputs = []
-        for key, value in six.iteritems(inputs):
+        for key, value in inputs.items():
             if isinstance(value, collections.Mapping):
                 flat_inputs.extend(flatten_inputs(value, prefix=prefix + key + '__'))
             else:

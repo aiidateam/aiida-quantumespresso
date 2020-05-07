@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Tests for the `MatdynCalculation` class."""
-from __future__ import absolute_import
-
 import os
 
 from aiida.common import datastructures

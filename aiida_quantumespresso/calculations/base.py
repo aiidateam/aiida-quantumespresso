@@ -4,8 +4,6 @@
 The custom `CalcJob` base class automatically sets the `invalidates_cache` attribute of exit codes based on the status
 integer. All `CalcJob` implementations in `aiida-quantumespresso` must use this base class, not `aiida.engine.CalcJob`.
 """
-from __future__ import absolute_import
-
 from aiida.engine import CalcJob as _BaseCalcJob
 from aiida.engine.processes.process_spec import CalcJobProcessSpec as _BaseCalcJobProcessSpec
 
@@ -37,7 +35,7 @@ class CalcJobProcessSpec(_BaseCalcJobProcessSpec):
             super(CalcJobProcessSpec,
                   self).exit_code(status=status, label=label, message=message, invalidates_cache=invalidates_cache)
         except TypeError:  # For AiiDA version <1.1
-            super(CalcJobProcessSpec, self).exit_code(status=status, message=message, label=label)
+            super().exit_code(status=status, message=message, label=label)
 
 
 class CalcJob(_BaseCalcJob):  # pylint: disable=abstract-method
@@ -48,5 +46,5 @@ class CalcJob(_BaseCalcJob):  # pylint: disable=abstract-method
     @classmethod
     def define(cls, spec):
         # yapf: disable
-        super(CalcJob, cls).define(spec)
+        super().define(spec)
         spec.inputs['metadata']['options']['resources'].default = lambda: {'num_machines': 1}

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """`CalcJob` implementation for the q2r.x code of Quantum ESPRESSO."""
-from __future__ import absolute_import
-
 import os
 
 from aiida import orm
@@ -29,7 +27,7 @@ class Q2rCalculation(NamelistsCalculation):
     @classmethod
     def define(cls, spec):
         # yapf: disable
-        super(Q2rCalculation, cls).define(spec)
+        super().define(spec)
         spec.input('parent_folder', valid_type=(orm.RemoteData, orm.FolderData), required=True)
         spec.output('force_constants', valid_type=ForceConstantsData)
         spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',

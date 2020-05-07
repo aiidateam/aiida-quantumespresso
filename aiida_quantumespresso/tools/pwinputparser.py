@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
 """Utilities to parse Quantum ESPRESSO pw.x input files into AiiDA nodes or builders."""
-from __future__ import absolute_import
-
 import copy
 import re
-import six
-from six.moves import zip
 import numpy as np
 
 from aiida.orm import Code, Dict, UpfData
@@ -86,12 +82,12 @@ def create_builder_from_file(input_folder, input_file_name, code, metadata, pseu
     builder = PwCalculation.get_builder()
     builder.metadata = metadata
 
-    if isinstance(code, six.string_types):
+    if isinstance(code, str):
         code = Code.get_from_string(code)
     builder.code = code
 
     # read input_file
-    if isinstance(input_folder, six.string_types):
+    if isinstance(input_folder, str):
         input_folder = Folder(input_folder)
 
     with input_folder.open(input_file_name) as input_file:
@@ -119,7 +115,7 @@ def create_builder_from_file(input_folder, input_file_name, code, metadata, pseu
     pseudos_map = {}
     if pseudo_folder_path is None:
         pseudo_folder_path = input_folder
-    if isinstance(pseudo_folder_path, six.string_types):
+    if isinstance(pseudo_folder_path, str):
         pseudo_folder_path = Folder(pseudo_folder_path)
     names = parsed_file.atomic_species['names']
     pseudo_file_names = parsed_file.atomic_species['pseudo_file_names']

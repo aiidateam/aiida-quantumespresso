@@ -31,7 +31,7 @@ the following snippet::
 
     @classmethod
     def define(cls, spec):
-        super(PwBaseWorkChain, cls).define(spec)
+        super().define(spec)
         spec.outline(
             cls.setup,
             while_(cls.should_run_calculation)(

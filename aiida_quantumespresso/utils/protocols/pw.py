@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 """Protocol definitions for workflow input generation."""
-from __future__ import absolute_import
-from __future__ import print_function
 import json
 import os
 from copy import deepcopy
-import six
 
 
 def _load_pseudo_metadata(filename):
@@ -82,7 +79,7 @@ def _get_all_protocol_modifiers():
     return protocols
 
 
-class ProtocolManager(object):
+class ProtocolManager:
     """A class to manage calculation protocols."""
 
     def __init__(self, name):
@@ -212,7 +209,7 @@ class ProtocolManager(object):
         # Pseudo with MD5 found, but wrong element!
         mismatch = {}
 
-        for element, this_pseudo_data in six.iteritems(pseudo_data):
+        for element, this_pseudo_data in pseudo_data.items():
             md5 = this_pseudo_data['md5']
 
             builder = QueryBuilder()
@@ -224,8 +221,8 @@ class ProtocolManager(object):
                     if element == this_element:
                         found[element] = this_uuid
                         break
-                    else:
-                        this_mismatch_elements.append(this_element)
+
+                    this_mismatch_elements.append(this_element)
                 if element not in found:
                     mismatch[element] = this_mismatch_elements
             else:

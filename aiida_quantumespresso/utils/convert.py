@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
 """Utilties to convert between python and fortran data types and formats."""
-from __future__ import absolute_import
-from __future__ import print_function
-
 import numbers
-import six
-from six.moves import zip
 
 
 def conv_to_fortran(val, quote_strings=True):
@@ -25,7 +20,7 @@ def conv_to_fortran(val, quote_strings=True):
         val_str = '{:d}'.format(val)
     elif isinstance(val, numbers.Real):
         val_str = ('{:18.10e}'.format(val)).replace('e', 'd')
-    elif isinstance(val, six.string_types):
+    elif isinstance(val, str):
         if quote_strings:
             val_str = "'{!s}'".format(val)
         else:
@@ -58,13 +53,13 @@ def conv_to_fortran_withlists(val, quote_strings=True):
 
         return '.false.'
 
-    if isinstance(val, six.integer_types):
+    if isinstance(val, int):
         return '{:d}'.format(val)
 
     if isinstance(val, float):
         return '{:18.10e}'.format(val).replace('e', 'd')
 
-    if isinstance(val, six.string_types):
+    if isinstance(val, str):
         if quote_strings:
             return "'{!s}'".format(val)
 
@@ -171,13 +166,13 @@ def convert_input_to_namelist_entry(key, val, mapping=None):
         # second is the actual line. This is used at the end to resort everything.
         list_of_strings = []
 
-        for elemk, itemval in six.iteritems(val):
+        for elemk, itemval in val.items():
             try:
                 idx = mapping[elemk]
             except KeyError:
                 raise ValueError("Unable to find the key '{}' in the mapping dictionary".format(elemk))
 
-            list_of_strings.append((idx, u'  {0}({2}) = {1}\n'.format(key, conv_to_fortran(itemval), idx)))
+            list_of_strings.append((idx, '  {0}({2}) = {1}\n'.format(key, conv_to_fortran(itemval), idx)))
 
         # I first have to resort, then to remove the index from the first column, finally to join the strings
         list_of_strings = list(zip(*sorted(list_of_strings)))[1]
@@ -196,10 +191,10 @@ def convert_input_to_namelist_entry(key, val, mapping=None):
 
                 for value in itemval[:-1]:
 
-                    if not isinstance(value, (int, six.string_types)):
+                    if not isinstance(value, (int, str)):
                         raise ValueError('values of double nested lists should be either integers or strings')
 
-                    if isinstance(value, six.string_types):
+                    if isinstance(value, str):
                         if mapping is None:
                             raise ValueError('cannot map the string value because no mapping was defined')
 
@@ -218,10 +213,10 @@ def convert_input_to_namelist_entry(key, val, mapping=None):
             else:
                 idx_string = '{}'.format(idx + 1)
 
-            list_of_strings.append(u'  {0}({2}) = {1}\n'.format(key, conv_to_fortran(itemval), idx_string))
+            list_of_strings.append('  {0}({2}) = {1}\n'.format(key, conv_to_fortran(itemval), idx_string))
 
-        return u''.join(list_of_strings)
+        return ''.join(list_of_strings)
 
     # Single value
     else:
-        return u'  {0} = {1}\n'.format(key, conv_to_fortran(val))
+        return '  {0} = {1}\n'.format(key, conv_to_fortran(val))

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Tests for immigrating `PwCalculation`s."""
-from __future__ import absolute_import
 import os
 
 from aiida_quantumespresso.tools.pwinputparser import create_builder_from_file

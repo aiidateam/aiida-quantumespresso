@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
 """Code that was written to parse the legacy XML format of Quantum ESPRESSO, which was deprecated in version 6.4."""
-from __future__ import absolute_import
-from __future__ import print_function
-
 import os
 import string
 from xml.dom.minidom import parse, parseString, Element
-from six.moves import range
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.utils.mapping import get_logging_container

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO ph.x calculation with automated error handling and restarts."""
-from __future__ import absolute_import
-
 from aiida import orm
 from aiida.common import AttributeDict
 from aiida.engine import while_
@@ -29,7 +27,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
     def define(cls, spec):
         """Define the process specification."""
         # yapf: disable
-        super(PhBaseWorkChain, cls).define(spec)
+        super().define(spec)
         spec.expose_inputs(PhCalculation, namespace='ph')
         spec.input('only_initialization', valid_type=orm.Bool, default=lambda: orm.Bool(False))
         spec.outline(
@@ -55,7 +53,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         This `self.ctx.inputs` dictionary will be used by the `BaseRestartWorkChain` to submit the calculations in the
         internal loop.
         """
-        super(PhBaseWorkChain, self).setup()
+        super().setup()
         self.ctx.inputs = AttributeDict(self.exposed_inputs(PhCalculation, 'ph'))
 
     def validate_parameters(self):

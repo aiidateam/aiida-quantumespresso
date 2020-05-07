@@ -4,13 +4,11 @@
 The function that needs to be called from outside is parse_raw_ph_output(). Ideally, the functions should work even
 without aiida and will return a dictionary with parsed keys.
 """
-from __future__ import absolute_import
-
 import numpy
-from six.moves import zip
+
+from qe_tools.constants import *
 
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
-from qe_tools.constants import *
 from aiida_quantumespresso.parsers.parse_raw.base import convert_qe_time_to_sec
 from aiida_quantumespresso.parsers.parse_xml.pw.legacy import parse_xml_child_bool, read_xml_card
 from aiida_quantumespresso.utils.mapping import get_logging_container

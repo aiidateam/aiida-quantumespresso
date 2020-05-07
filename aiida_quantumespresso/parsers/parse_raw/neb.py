@@ -5,15 +5,10 @@ The function that needs to be called from outside is parse_raw_output_neb(). The
 specific functionalities. The parsing will try to convert whatever it can in some dictionary, which by operative
 decision doesn't have much structure encoded, [the values are simple ]
 """
-from __future__ import absolute_import
-import xml.dom.minidom
-import os
-import string
+from qe_tools.constants import bohr_to_ang
+
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
-from qe_tools.constants import ry_to_ev,hartree_to_ev,bohr_to_ang,ry_si,bohr_si
 from aiida_quantumespresso.parsers.parse_raw import convert_qe_time_to_sec
-import six
-from six.moves import range
 
 
 def parse_raw_output_neb(out_file, input_dict, parser_opts=None):
@@ -75,7 +70,7 @@ def parse_raw_output_neb(out_file, input_dict, parser_opts=None):
     # I leave the possibility to skip some large arrays (None for the time being).
     skip_keys = []
     tmp_iteration_data = copy.copy(iteration_data)
-    for k, v in six.iteritems(tmp_iteration_data):
+    for k, v in tmp_iteration_data.items():
         if k in skip_keys:
             continue
         out_data[k] = v[-1]

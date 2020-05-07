@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 """Sub class of `Data` to handle interatomic force constants produced by the Quantum ESPRESSO q2r.x code."""
-from __future__ import absolute_import
-
 import numpy
-from six.moves import range
 
 from qe_tools.constants import bohr_to_ang
 from aiida.orm import SinglefileData
@@ -18,7 +15,7 @@ class ForceConstantsData(SinglefileData):
         :param file: absolute path to the file or a filelike object
         """
         # pylint: disable=redefined-builtin,arguments-differ
-        super(ForceConstantsData, self).set_file(file)
+        super().set_file(file)
 
         # Parse the force constants file
         dictionary, _, _ = parse_q2r_force_constants_file(self.get_content().splitlines(), also_force_constants=False)

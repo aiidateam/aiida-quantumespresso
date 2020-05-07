@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Base implementation of `WorkChain` class that implements a simple automated restart mechanism for calculations."""
-from __future__ import absolute_import
-
 from aiida import orm
 from aiida.common import exceptions
 from aiida.common.lang import override
@@ -58,7 +56,7 @@ class BaseRestartWorkChain(WorkChain):
 
     def __init__(self, *args, **kwargs):
         """Construct the instance."""
-        super(BaseRestartWorkChain, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         if self._calculation_class is None or not issubclass(self._calculation_class, CalcJob):
             raise ValueError('no valid CalcJob class defined for `_calculation_class` attribute')
@@ -72,7 +70,7 @@ class BaseRestartWorkChain(WorkChain):
         :param saved_state: saved state of existing process instance
         :param load_context: context for loading instance state
         """
-        super(BaseRestartWorkChain, self).load_instance_state(saved_state, load_context)
+        super().load_instance_state(saved_state, load_context)
         self._load_error_handlers()
 
     def _load_error_handlers(self):
@@ -95,7 +93,7 @@ class BaseRestartWorkChain(WorkChain):
     def define(cls, spec):
         """Define the process specification."""
         # yapf: disable
-        super(BaseRestartWorkChain, cls).define(spec)
+        super().define(spec)
         spec.input('max_iterations', valid_type=orm.Int, default=lambda: orm.Int(5),
             help='Maximum number of iterations the work chain will restart the calculation to finish successfully.')
         spec.input('clean_workdir', valid_type=orm.Bool, default=lambda: orm.Bool(False),
@@ -225,7 +223,7 @@ class BaseRestartWorkChain(WorkChain):
 
     def on_terminated(self):
         """Clean the working directories of all child calculations if `clean_workdir=True` in the inputs."""
-        super(BaseRestartWorkChain, self).on_terminated()
+        super().on_terminated()
 
         if self.inputs.clean_workdir.value is False:
             self.report('remote folders will not be cleaned')

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """`CalcJob` implementation for the pw2gw.x code of Quantum ESPRESSO."""
-from __future__ import absolute_import
-
 import os
 
 from aiida import orm
@@ -29,7 +27,7 @@ class Pw2gwCalculation(NamelistsCalculation):
     @classmethod
     def define(cls, spec):
         # yapf: disable
-        super(Pw2gwCalculation, cls).define(spec)
+        super().define(spec)
         spec.input('parent_folder', valid_type=orm.RemoteData,
             help='Output folder of a completed `PwCalculation`')
 
@@ -58,7 +56,7 @@ class Pw2gwCalculation(NamelistsCalculation):
             message='The parser raised an unexpected exception.')
 
     def prepare_for_submission(self, folder):
-        calcinfo = super(Pw2gwCalculation, self).prepare_for_submission(folder)
+        calcinfo = super().prepare_for_submission(folder)
 
         calcinfo.codes_run_mode = datastructures.CodeRunMode.SERIAL
 
