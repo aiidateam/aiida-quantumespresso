@@ -5,8 +5,8 @@ from aiida.common import AttributeDict
 from aiida.plugins import WorkflowFactory
 from aiida.engine import WorkChain, ToContext, if_
 
+from aiida_quantumespresso.calculations.functions.seekpath_structure_analysis import seekpath_structure_analysis
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
-from aiida_quantumespresso.workflows.functions.seekpath_structure_analysis import seekpath_structure_analysis
 
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')

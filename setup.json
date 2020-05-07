@@ -13,19 +13,21 @@
     "entry_points": {
         "aiida.calculations": [
             "quantumespresso.cp = aiida_quantumespresso.calculations.cp:CpCalculation",
+            "quantumespresso.create_kpoints_from_distance = aiida_quantumespresso.calculations.functions.create_kpoints_from_distance:create_kpoints_from_distance",
             "quantumespresso.dos = aiida_quantumespresso.calculations.dos:DosCalculation",
+            "quantumespresso.epw = aiida_quantumespresso.calculations.epw:EpwCalculation",
             "quantumespresso.matdyn = aiida_quantumespresso.calculations.matdyn:MatdynCalculation",
             "quantumespresso.namelists = aiida_quantumespresso.calculations.namelists:NamelistsCalculation",
             "quantumespresso.neb = aiida_quantumespresso.calculations.neb:NebCalculation",
             "quantumespresso.ph = aiida_quantumespresso.calculations.ph:PhCalculation",
             "quantumespresso.pp = aiida_quantumespresso.calculations.pp:PpCalculation",
-            "quantumespresso.pw = aiida_quantumespresso.calculations.pw:PwCalculation",
-            "quantumespresso.epw = aiida_quantumespresso.calculations.epw:EpwCalculation",
-            "quantumespresso.pw2gw = aiida_quantumespresso.calculations.pw2gw:Pw2gwCalculation",
             "quantumespresso.projwfc = aiida_quantumespresso.calculations.projwfc:ProjwfcCalculation",
+            "quantumespresso.pw = aiida_quantumespresso.calculations.pw:PwCalculation",
+            "quantumespresso.pw2gw = aiida_quantumespresso.calculations.pw2gw:Pw2gwCalculation",
             "quantumespresso.pw2wannier90 = aiida_quantumespresso.calculations.pw2wannier90:Pw2wannier90Calculation",
+            "quantumespresso.pwimmigrant = aiida_quantumespresso.calculations.pwimmigrant:PwimmigrantCalculation",
             "quantumespresso.q2r = aiida_quantumespresso.calculations.q2r:Q2rCalculation",
-            "quantumespresso.pwimmigrant = aiida_quantumespresso.calculations.pwimmigrant:PwimmigrantCalculation"
+            "quantumespresso.seekpath_structure_analysis = aiida_quantumespresso.calculations.functions.seekpath_structure_analysis:seekpath_structure_analysis"
         ],
         "aiida.data": [
             "quantumespresso.force_constants = aiida_quantumespresso.data.force_constants:ForceConstantsData"
