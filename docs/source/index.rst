@@ -66,7 +66,10 @@ Indices and tables
 
 Acknowledgements
 ++++++++++++++++
-We acknowledge support from the `NCCR MARVEL`_ funded by the Swiss National Science Foundation and the EU Centre of Excellence "`MaX – Materials Design at the Exascale`_". (Horizon 2020 EINFRA-5, Grant No. 676598).
+We acknowledge support from:
+* the `NCCR MARVEL`_ funded by the Swiss National Science Foundation;
+* the EU Centre of Excellence "`MaX – Materials Design at the Exascale`_" (Horizon 2020 EINFRA-5, Grant No. 676598);
+* the `swissuniversities P-5 project "Materials Cloud"`_.
 
 .. figure:: images/MARVEL.png
     :width: 300px
@@ -76,9 +79,13 @@ We acknowledge support from the `NCCR MARVEL`_ funded by the Swiss National Scie
     :width: 300px
     :align: center
     :height: 84px
+.. figure:: images/swissuniversities.png
+    :width: 300px
+    :align: center
+    :height: 35px
 
 .. _NCCR MARVEL: http://nccr-marvel.ch/
 .. _MaX – Materials Design at the Exascale: http://www.max-centre.eu/
+.. _`swissuniversities P-5 project "Materials Cloud"`: https://www.materialscloud.org/swissuniversities
 
 
-  

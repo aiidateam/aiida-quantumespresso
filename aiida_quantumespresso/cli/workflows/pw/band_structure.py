@@ -1,39 +1,38 @@
 # -*- coding: utf-8 -*-
+"""Command line scripts to launch a `PwBandStructureWorkChain` for testing and demonstration purposes."""
+from __future__ import absolute_import
 import click
-from aiida_quantumespresso.utils.click import command
-from aiida_quantumespresso.utils.click import options
+
+from aiida.cmdline.params import options, types
+from aiida.cmdline.utils import decorators
+
+from ...utils import launch
+from ...utils import options as options_qe
+from .. import cmd_launch
 
 
-@command()
-@options.code()
-@options.structure()
-@options.pseudo_family()
-@options.daemon()
+@cmd_launch.command('pw-band-structure')
+@options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.pw'))
+@options_qe.STRUCTURE(required=True)
+@options_qe.DAEMON()
 @click.option(
-    '-z', '--protocol', type=click.Choice(['standard']), default='standard', show_default=True,
-    help='the protocol to use for the workflow'
+    '-z',
+    '--protocol',
+    type=click.Choice(['theos-ht-1.0']),
+    default='theos-ht-1.0',
+    show_default=True,
+    help='The protocol to use for the workflow.'
 )
-def launch(
-    code, structure, pseudo_family, daemon, protocol):
-    """
-    Run the PwBandStructureWorkChain for a given input structure 
-    to compute the band structure for the relaxed structure
-    """
-    from aiida.orm.data.base import Str
-    from aiida.orm.utils import WorkflowFactory
-    from aiida.work.run import run, submit
-
-    PwBandStructureWorkChain = WorkflowFactory('quantumespresso.pw.band_structure')
+@decorators.with_dbenv()
+def launch_workflow(code, structure, daemon, protocol):
+    """Run a `PwBandStructureWorkChain`."""
+    from aiida import orm
+    from aiida.plugins import WorkflowFactory
 
     inputs = {
         'code': code,
         'structure': structure,
-        'pseudo_family': Str(pseudo_family),
-        'protocol': Str(protocol),
+        'protocol': orm.Dict(dict={'name': protocol}),
     }
 
-    if daemon:
-        workchain = submit(PwBandStructureWorkChain, **inputs)
-        click.echo('Submitted {}<{}> to the daemon'.format(PwBandStructureWorkChain.__name__, workchain.pid))
-    else:
-        run(PwBandStructureWorkChain, **inputs)
+    launch.launch_process(WorkflowFactory('quantumespresso.pw.band_structure'), daemon, **inputs)

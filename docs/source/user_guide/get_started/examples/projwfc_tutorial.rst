@@ -30,7 +30,7 @@ the code, and the proper scheduler info.
     load_dbenv()
 
     from aiida.orm import Code
-    from aiida.orm import CalculationFactory, DataFactory
+    from aiida.plugins import CalculationFactory, DataFactory
 
     #####################
     # ADAPT TO YOUR NEEDS
@@ -40,8 +40,8 @@ the code, and the proper scheduler info.
 
     code = Code.get_from_string(codename)
 
-    ParameterData = DataFactory('parameter')
-    parameters = ParameterData(dict={
+    Dict = DataFactory('dict')
+    parameters = Dict(dict={
         'PROJWFC': {
             'DeltaE' : 0.2,
             'ngauss' : 1,
@@ -52,8 +52,8 @@ the code, and the proper scheduler info.
     parentcalc = load_node(parent_id)
 
     calc = code.new_calc()
-    calc.set_max_wallclock_seconds(30*60) # 30 min
-    calc.set_resources({"num_machines": 1})
+    calc.set_option('max_wallclock_seconds', 30*60) # 30 min
+    calc.set_option('resources', {"num_machines": 1})
 
     calc.use_parameters(parameters)
     calc.use_code(code)

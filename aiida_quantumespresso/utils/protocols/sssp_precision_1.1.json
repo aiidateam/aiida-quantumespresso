@@ -1,0 +1,597 @@
+{
+  "Ag": {
+    "cutoff": 55.0,
+    "dual": 4.0,
+    "filename": "Ag_ONCV_PBE-1.0.oncvpsp.upf",
+    "md5": "94f47bd0669c641108e45594df92fabc",
+    "pseudopotential": "SG15"
+  },
+  "Al": {
+    "cutoff": 30.0,
+    "dual": 8.0,
+    "filename": "Al.pbe-n-kjpaw_psl.1.0.0.UPF",
+    "md5": "cfc449ca30b5f3223ec38ddd88ac046d",
+    "pseudopotential": "100PAW"
+  },
+  "Ar": {
+    "cutoff": 120.0,
+    "dual": 4.0,
+    "filename": "Ar_ONCV_PBE-1.1.oncvpsp.upf",
+    "md5": "46d28409cdd246843f76b7675277a949",
+    "pseudopotential": "SG15-1.1"
+  },
+  "As": {
+    "cutoff": 35.0,
+    "dual": 8.0,
+    "filename": "As.pbe-n-rrkjus_psl.0.2.UPF",
+    "md5": "767315de957beeeb34f87d97bf945c8f",
+    "pseudopotential": "031US"
+  },
+  "Au": {
+    "cutoff": 50.0,
+    "dual": 4.0,
+    "filename": "Au_ONCV_PBE-1.0.oncvpsp.upf",
+    "md5": "d14007822ba0e19f0206237467fc06c2",
+    "pseudopotential": "SG15"
+  },
+  "B": {
+    "cutoff": 55.0,
+    "dual": 8.0,
+    "filename": "B_pbe_v1.01.uspp.F.UPF",
+    "md5": "d081ebb89d0c768e112975f650467a00",
+    "pseudopotential": "GBRV-1.2"
+  },
+  "Ba": {
+    "cutoff": 35.0,
+    "dual": 8.0,
+    "filename": "Ba.pbe-spn-kjpaw_psl.1.0.0.UPF",
+    "md5": "c432291d3e53af55f19d5e8866385beb",
+    "pseudopotential": "100PAW"
+  },
+  "Be": {
+    "cutoff": 55.0,
+    "dual": 4.0,
+    "filename": "Be_ONCV_PBE-1.0.oncvpsp.upf",
+    "md5": "28b8ff6b8130143f4fef2c47cbef089d",
+    "pseudopotential": "SG15"
+  },
+  "Bi": {
+    "cutoff": 50.0,
+    "dual": 8.0,
+    "filename": "Bi_pbe_v1.uspp.F.UPF",
+    "md5": "cceb9f28ec65b6d7ff33140f5b0b1758",
+    "pseudopotential": "GBRV-1.2"
+  },
+  "Br": {
+    "cutoff": 90.0,
+    "dual": 8.0,
+    "filename": "br_pbe_v1.4.uspp.F.UPF",
+    "md5": "d3ffb7b29f6225aa16fe06858fb2a80b",
+    "pseudopotential": "GBRV-1.4"
+  },
+  "C": {
+    "cutoff": 45.0,
+    "dual": 8.0,
+    "filename": "C.pbe-n-kjpaw_psl.1.0.0.UPF",
+    "md5": "5d2aebdfa2cae82b50a7e79e9516da0f",
+    "pseudopotential": "100PAW"
+  },
+  "Ca": {
+    "cutoff": 30.0,
+    "dual": 8.0,
+    "filename": "Ca_pbe_v1.uspp.F.UPF",
+    "md5": "403a4c14b9e4d4dfdc3024c9a3812218",
+    "pseudopotential": "GBRV-1.2"
+  },
+  "Cd": {
+    "cutoff": 90.0,
+    "dual": 8.0,
+    "filename": "Cd.pbe-dn-rrkjus_psl.0.3.1.UPF",
+    "md5": "558e9f355611b531a870a69ef6ace9e2",
+    "pseudopotential": "031US"
+  },
+  "Ce": {
+    "cutoff": 50.0,
+    "dual": 8.0,
+    "filename": "Ce.GGA-PBE-paw-v1.0.UPF",
+    "md5": "c46c5ce91c1b1c29a1e5d4b97f9db5f7",
+    "pseudopotential": "Wentzcovitch"
+  },
+  "Cl": {
+    "cutoff": 100.0,
+    "dual": 8.0,
+    "filename": "Cl.pbe-n-rrkjus_psl.1.0.0.UPF",
+    "md5": "18cc83b4be324290a879bee3176034ba",
+    "pseudopotential": "100US"
+  },
+  "Co": {
+    "cutoff": 90.0,
+    "dual": 12.0,
+    "filename": "Co_pbe_v1.2.uspp.F.UPF",
+    "md5": "5f91765df6ddd3222702df6e7b74a16d",
+    "pseudopotential": "GBRV-1.2"
+  },
+  "Cr": {
+    "cutoff": 40.0,
+    "dual": 8.0,
+    "filename": "cr_pbe_v1.5.uspp.F.UPF",
+    "md5": "0d52af634a40206e4dee301ad30da4bf",
+    "pseudopotential": "GBRV-1.5"
+  },
+  "Cs": {
+    "cutoff": 30.0,
+    "dual": 8.0,
+    "filename": "Cs_pbe_v1.uspp.F.UPF",
+    "md5": "3476d69cb178dfad3ffaa59df4e07ca4",
+    "pseudopotential": "GBRV-1.2"
+  },
+  "Cu": {
+    "cutoff": 90.0,
+    "dual": 4.0,
+    "filename": "Cu_ONCV_PBE-1.0.oncvpsp.upf",
+    "md5": "695ac441eccbb634fec39edbf1c7156d",
+    "pseudopotential": "SG15"
+  },
+  "Dy": {
+    "cutoff": 40.0,
+    "dual": 8.0,
+    "filename": "Dy.GGA-PBE-paw-v1.0.UPF",
+    "md5": "aaa222e85efa51d78e19b07c890454ab",
+    "pseudopotential": "Wentzcovitch"
+  },
+  "Er": {
+    "cutoff": 40.0,
+    "dual": 8.0,
+    "filename": "Er.GGA-PBE-paw-v1.0.UPF",
+    "md5": "b08ffd41d90ff95dc07468a56b1546b7",
+    "pseudopotential": "Wentzcovitch"
+  },
+  "Eu": {
+    "cutoff": 40.0,
+    "dual": 8.0,
+    "filename": "Eu.GGA-PBE-paw-v1.0.UPF",
+    "md5": "2f98cd20d76ba534504868fe92c99950",
+    "pseudopotential": "Wentzcovitch"
+  },
+  "F": {
+    "cutoff": 90.0,
+    "dual": 4.0,
+    "filename": "F.oncvpsp.upf",
+    "md5": "dbf8367619a749999a0442b33b80a7e7",
+    "pseudopotential": "Dojo"
+  },
+  "Fe": {
+    "cutoff": 90.0,
+    "dual": 12.0,
+    "filename": "Fe.pbe-spn-kjpaw_psl.0.2.1.UPF",
+    "md5": "e86618425769142926afa95317d90200",
+    "pseudopotential": "031PAW"
+  },
+  "Ga": {
+    "cutoff": 90.0,
+    "dual": 8.0,
+    "filename": "Ga.pbe-dn-kjpaw_psl.1.0.0.UPF",
+    "md5": "a27b4342b1af7e5f338de752e9ed7044",
+    "pseudopotential": "100PAW"
+  },
+  "Gd": {
+    "cutoff": 40.0,
+    "dual": 8.0,
+    "filename": "Gd.GGA-PBE-paw-v1.0.UPF",
+    "md5": "5be61ee804628d0d4564e5bf0c6b2d4d",
+    "pseudopotential": "Wentzcovitch"
+  },
+  "Ge": {
+    "cutoff": 45.0,
+    "dual": 8.0,
+    "filename": "ge_pbe_v1.4.uspp.F.UPF",
+    "md5": "9c9eaa91e581c3f09632fb3098b2c6b2",
+    "pseudopotential": "GBRV-1.4"
+  },
+  "H": {
+    "cutoff": 80.0,
+    "dual": 4.0,
+    "filename": "H_ONCV_PBE-1.0.oncvpsp.upf",
+    "md5": "1790becc920ee074925cf490c71280fe",
+    "pseudopotential": "SG15"
+  },
+  "He": {
+    "cutoff": 55.0,
+    "dual": 4.0,
+    "filename": "He_ONCV_PBE-1.0.oncvpsp.upf",
+    "md5": "e7160162b946020f132a727efeb32d00",
+    "pseudopotential": "SG15"
+  },
+  "Hf": {
+    "cutoff": 55.0,
+    "dual": 4.0,
+    "filename": "Hf-sp.oncvpsp.upf",
+    "md5": "417ed15784afe83d2e06dacf143de3f8",
+    "pseudopotential": "Dojo"
+  },
+  "Hg": {
+    "cutoff": 55.0,
+    "dual": 4.0,
+    "filename": "Hg_ONCV_PBE-1.0.oncvpsp.upf",
+    "md5": "dd5a8773074bfcf4280086d4d95875c4",
+    "pseudopotential": "SG15"
+  },
+  "Ho": {
+    "cutoff": 40.0,
+    "dual": 8.0,
+    "filename": "Ho.GGA-PBE-paw-v1.0.UPF",
+    "md5": "180317b7bae2d95653b620b8c21968ce",
+    "pseudopotential": "Wentzcovitch"
+  },
+  "I": {
+    "cutoff": 45.0,
+    "dual": 8.0,
+    "filename": "I.pbe-n-kjpaw_psl.0.2.UPF",
+    "md5": "d4ef18d9c8f18dc85e5843bca1e50dc0",
+    "pseudopotential": "031PAW"
+  },
+  "In": {
+    "cutoff": 50.0,
+    "dual": 8.0,
+    "filename": "In.pbe-dn-rrkjus_psl.0.2.2.UPF",
+    "md5": "25e7c42c3b55b68f4bf926be2e7201a4",
+    "pseudopotential": "031US"
+  },
+  "Ir": {
+    "cutoff": 65.0,
+    "dual": 8.0,
+    "filename": "Ir_pbe_v1.2.uspp.F.UPF",
+    "md5": "8836f839c3459d2b385c504ce6d91f2c",
+    "pseudopotential": "GBRV-1.2"
+  },
+  "K": {
+    "cutoff": 60.0,
+    "dual": 8.0,
+    "filename": "K.pbe-spn-kjpaw_psl.1.0.0.UPF",
+    "md5": "7d58810084cac21f60fbe77ea2b688fd",
+    "pseudopotential": "100PAW"
+  },
+  "Kr": {
+    "cutoff": 50.0,
+    "dual": 4.0,
+    "filename": "Kr_ONCV_PBE-1.0.oncvpsp.upf",
+    "md5": "f2280ecf57a6c8a47e066f0532d843fa",
+    "pseudopotential": "SG15"
+  },
+  "La": {
+    "cutoff": 40.0,
+    "dual": 8.0,
+    "filename": "La.GGA-PBE-paw-v1.0.UPF",
+    "md5": "9bc570786a79c122988210fab848eb7f",
+    "pseudopotential": "Wentzcovitch"
+  },
+  "Li": {
+    "cutoff": 40.0,
+    "dual": 8.0,
+    "filename": "li_pbe_v1.4.uspp.F.UPF",
+    "md5": "e912e257baa3777c20ea3d68f190483c",
+    "pseudopotential": "GBRV-1.4"
+  },
+  "Lu": {
+    "cutoff": 45.0,
+    "dual": 8.0,
+    "filename": "Lu.GGA-PBE-paw-v1.0.UPF",
+    "md5": "cc59902dbb0747cc98260d4f1c8f461e",
+    "pseudopotential": "Wentzcovitch"
+  },
+  "Mg": {
+    "cutoff": 45.0,
+    "dual": 8.0,
+    "filename": "mg_pbe_v1.4.uspp.F.UPF",
+    "md5": "8ffbd8f729fef71095aac5bd8316fb1f",
+    "pseudopotential": "GBRV-1.4"
+  },
+  "Mn": {
+    "cutoff": 90.0,
+    "dual": 12.0,
+    "filename": "mn_pbe_v1.5.uspp.F.UPF",
+    "md5": "82ef2b46521d7a7d9e736dc3972e4928",
+    "pseudopotential": "GBRV-1.5"
+  },
+  "Mo": {
+    "cutoff": 35.0,
+    "dual": 4.0,
+    "filename": "Mo_ONCV_PBE-1.0.oncvpsp.upf",
+    "md5": "1b5d28e075c9ccadda658a603575cd1f",
+    "pseudopotential": "SG15"
+  },
+  "N": {
+    "cutoff": 80.0,
+    "dual": 4.0,
+    "filename": "N.oncvpsp.upf",
+    "md5": "563d65bfb082928f0c9eb97172f6c357",
+    "pseudopotential": "Dojo"
+  },
+  "Na": {
+    "cutoff": 100.0,
+    "dual": 4.0,
+    "filename": "Na_ONCV_PBE-1.0.oncvpsp.upf",
+    "md5": "24a298df0a6742ae313db96548fdb2a4",
+    "pseudopotential": "SG15"
+  },
+  "Nb": {
+    "cutoff": 40.0,
+    "dual": 8.0,
+    "filename": "Nb.pbe-spn-kjpaw_psl.0.3.0.UPF",
+    "md5": "411d72ad547312f8017e2943ceca08cc",
+    "pseudopotential": "031PAW"
+  },
+  "Nd": {
+    "cutoff": 40.0,
+    "dual": 8.0,
+    "filename": "Nd.GGA-PBE-paw-v1.0.UPF",
+    "md5": "6ed08d5e4060cc1ad99b3d24ba8e637d",
+    "pseudopotential": "Wentzcovitch"
+  },
+  "Ne": {
+    "cutoff": 50.0,
+    "dual": 4.0,
+    "filename": "Ne_ONCV_PBE-1.0.oncvpsp.upf",
+    "md5": "9b5acc4cb48b9d80e669eadd528e4e8f",
+    "pseudopotential": "SG15"
+  },
+  "Ni": {
+    "cutoff": 50.0,
+    "dual": 8.0,
+    "filename": "ni_pbe_v1.4.uspp.F.UPF",
+    "md5": "1ee80287db30b12d2bc1f57a5b5d6409",
+    "pseudopotential": "GBRV-1.4"
+  },
+  "O": {
+    "cutoff": 75.0,
+    "dual": 8.0,
+    "filename": "O.pbe-n-kjpaw_psl.0.1.UPF",
+    "md5": "0234752ac141de4415c5fc33072bef88",
+    "pseudopotential": "031PAW"
+  },
+  "Os": {
+    "cutoff": 40.0,
+    "dual": 8.0,
+    "filename": "Os_pbe_v1.2.uspp.F.UPF",
+    "md5": "a3fb40a04f0c37c25c34bbc47164c9a8",
+    "pseudopotential": "GBRV-1.2"
+  },
+  "P": {
+    "cutoff": 30.0,
+    "dual": 8.0,
+    "filename": "P.pbe-n-rrkjus_psl.1.0.0.UPF",
+    "md5": "8b930f418f0a4573dca56cd030ffe088",
+    "pseudopotential": "100US"
+  },
+  "Pb": {
+    "cutoff": 45.0,
+    "dual": 8.0,
+    "filename": "Pb.pbe-dn-kjpaw_psl.0.2.2.UPF",
+    "md5": "9d431e6316058b74ade52399a6cf67da",
+    "pseudopotential": "031PAW"
+  },
+  "Pd": {
+    "cutoff": 50.0,
+    "dual": 4.0,
+    "filename": "Pd_ONCV_PBE-1.0.oncvpsp.upf",
+    "md5": "eb77f42b51d86fb18e25f68156a31cf1",
+    "pseudopotential": "SG15"
+  },
+  "Pm": {
+    "cutoff": 40.0,
+    "dual": 8.0,
+    "filename": "Pm.GGA-PBE-paw-v1.0.UPF",
+    "md5": "19bca56110d8480befcb833617dbc7df",
+    "pseudopotential": "Wentzcovitch"
+  },
+  "Po": {
+    "cutoff": 80.0,
+    "dual": 8.0,
+    "filename": "Po.pbe-dn-rrkjus_psl.1.0.0.UPF",
+    "md5": "3f8a5a8b7a531f42ca8381c21d3cd528",
+    "pseudopotential": "100US"
+  },
+  "Pr": {
+    "cutoff": 40.0,
+    "dual": 8.0,
+    "filename": "Pr.GGA-PBE-paw-v1.0.UPF",
+    "md5": "8bd2f9d65236044fbf839895b9bd72c8",
+    "pseudopotential": "Wentzcovitch"
+  },
+  "Pt": {
+    "cutoff": 100.0,
+    "dual": 8.0,
+    "filename": "Pt.pbe-spfn-rrkjus_psl.1.0.0.UPF",
+    "md5": "ed006ba81d2b6b3b17616bb61ae12f04",
+    "pseudopotential": "100US"
+  },
+  "Rb": {
+    "cutoff": 30.0,
+    "dual": 4.0,
+    "filename": "Rb_ONCV_PBE-1.0.oncvpsp.upf",
+    "md5": "55a5172d6bfbce6759a58e35d43f6aa9",
+    "pseudopotential": "SG15"
+  },
+  "Re": {
+    "cutoff": 30.0,
+    "dual": 8.0,
+    "filename": "Re_pbe_v1.2.uspp.F.UPF",
+    "md5": "85f993410f3e006da9d71c142b4ad953",
+    "pseudopotential": "GBRV-1.2"
+  },
+  "Rh": {
+    "cutoff": 55.0,
+    "dual": 4.0,
+    "filename": "Rh_ONCV_PBE-1.0.oncvpsp.upf",
+    "md5": "ba07c69523b14cacd10683cd4c4284c1",
+    "pseudopotential": "SG15"
+  },
+  "Rn": {
+    "cutoff": 200.0,
+    "dual": 8.0,
+    "filename": "Rn.pbe-dn-kjpaw_psl.1.0.0.UPF",
+    "md5": "03f6b960ab99273412830d0b4aa01365",
+    "pseudopotential": "100PAW"
+  },
+  "Ru": {
+    "cutoff": 35.0,
+    "dual": 4.0,
+    "filename": "Ru_ONCV_PBE-1.0.oncvpsp.upf",
+    "md5": "be037bb81c227cfb9b1461a9f099f4bd",
+    "pseudopotential": "SG15"
+  },
+  "S": {
+    "cutoff": 35.0,
+    "dual": 8.0,
+    "filename": "s_pbe_v1.4.uspp.F.UPF",
+    "md5": "88d86576ff6df21479756cfb9bdac1df",
+    "pseudopotential": "GBRV-1.4"
+  },
+  "Sb": {
+    "cutoff": 55.0,
+    "dual": 8.0,
+    "filename": "sb_pbe_v1.4.uspp.F.UPF",
+    "md5": "9bc50dfb53373b713f5709b9110fe27f",
+    "pseudopotential": "GBRV-1.4"
+  },
+  "Sc": {
+    "cutoff": 90.0,
+    "dual": 8.0,
+    "filename": "Sc.pbe-spn-kjpaw_psl.0.2.3.UPF",
+    "md5": "2c6607fffa759d1e5292e48f5ddd8baa",
+    "pseudopotential": "031PAW"
+  },
+  "Se": {
+    "cutoff": 30.0,
+    "dual": 8.0,
+    "filename": "Se_pbe_v1.uspp.F.UPF",
+    "md5": "1b3568f3a8ae88f9a2a0ad0698632c85",
+    "pseudopotential": "GBRV-1.2"
+  },
+  "Si": {
+    "cutoff": 30.0,
+    "dual": 8.0,
+    "filename": "Si.pbe-n-rrkjus_psl.1.0.0.UPF",
+    "md5": "0b0bb1205258b0d07b9f9672cf965d36",
+    "pseudopotential": "100US"
+  },
+  "Sm": {
+    "cutoff": 40.0,
+    "dual": 8.0,
+    "filename": "Sm.GGA-PBE-paw-v1.0.UPF",
+    "md5": "3ddcafad514a6ea7d14a52e8ca30603a",
+    "pseudopotential": "Wentzcovitch"
+  },
+  "Sn": {
+    "cutoff": 70.0,
+    "dual": 8.0,
+    "filename": "Sn_pbe_v1.uspp.F.UPF",
+    "md5": "4cf58ce39ec5d5d420df3dd08604eb00",
+    "pseudopotential": "GBRV-1.2"
+  },
+  "Sr": {
+    "cutoff": 40.0,
+    "dual": 8.0,
+    "filename": "Sr_pbe_v1.uspp.F.UPF",
+    "md5": "6b418c05fbe9db5448babca5e47b7a5b",
+    "pseudopotential": "GBRV-1.2"
+  },
+  "Ta": {
+    "cutoff": 50.0,
+    "dual": 8.0,
+    "filename": "Ta_pbe_v1.uspp.F.UPF",
+    "md5": "f8bbe9446314a3b8ea5d9f3e3836c939",
+    "pseudopotential": "GBRV-1.2"
+  },
+  "Tb": {
+    "cutoff": 40.0,
+    "dual": 8.0,
+    "filename": "Tb.GGA-PBE-paw-v1.0.UPF",
+    "md5": "37cc37188d4ce4bd414f4b03d8f3cab6",
+    "pseudopotential": "Wentzcovitch"
+  },
+  "Tc": {
+    "cutoff": 40.0,
+    "dual": 4.0,
+    "filename": "Tc_ONCV_PBE-1.0.oncvpsp.upf",
+    "md5": "1c2b1e6c8b361b656073c0c20ed4f60a",
+    "pseudopotential": "SG15"
+  },
+  "Te": {
+    "cutoff": 30.0,
+    "dual": 8.0,
+    "filename": "Te_pbe_v1.uspp.F.UPF",
+    "md5": "c319670d6894cc26e93307826a071b75",
+    "pseudopotential": "GBRV-1.2"
+  },
+  "Ti": {
+    "cutoff": 40.0,
+    "dual": 8.0,
+    "filename": "ti_pbe_v1.4.uspp.F.UPF",
+    "md5": "88a00a6731bd790ddea75d31a80cb452",
+    "pseudopotential": "GBRV-1.4"
+  },
+  "Tl": {
+    "cutoff": 70.0,
+    "dual": 8.0,
+    "filename": "Tl_pbe_v1.2.uspp.F.UPF",
+    "md5": "b76cf1f7e72655a2b2c53cf6385d7059",
+    "pseudopotential": "GBRV-1.2"
+  },
+  "Tm": {
+    "cutoff": 40.0,
+    "dual": 8.0,
+    "filename": "Tm.GGA-PBE-paw-v1.0.UPF",
+    "md5": "5bf2bc9b2000dc366ce20ce5239c3999",
+    "pseudopotential": "Wentzcovitch"
+  },
+  "V": {
+    "cutoff": 40.0,
+    "dual": 8.0,
+    "filename": "v_pbe_v1.4.uspp.F.UPF",
+    "md5": "22b79981416ebb76fdaf5b1b8640f6fb",
+    "pseudopotential": "GBRV-1.4"
+  },
+  "W": {
+    "cutoff": 50.0,
+    "dual": 8.0,
+    "filename": "W_pbe_v1.2.uspp.F.UPF",
+    "md5": "9c083fa34c2a2ea0f02f1f893e16e1c8",
+    "pseudopotential": "GBRV-1.2"
+  },
+  "Xe": {
+    "cutoff": 80.0,
+    "dual": 4.0,
+    "filename": "Xe_ONCV_PBE-1.1.oncvpsp.upf",
+    "md5": "f6ea899d5a535d3f5731d9e48edfe3e3",
+    "pseudopotential": "SG15-1.1"
+  },
+  "Y": {
+    "cutoff": 35.0,
+    "dual": 8.0,
+    "filename": "Y_pbe_v1.uspp.F.UPF",
+    "md5": "2cf71db95cafeb975fc457bd7f14888e",
+    "pseudopotential": "GBRV-1.2"
+  },
+  "Yb": {
+    "cutoff": 40.0,
+    "dual": 8.0,
+    "filename": "Yb.GGA-PBE-paw-v1.0.UPF",
+    "md5": "c46ad346ad0f6b1727467da500789f7b",
+    "pseudopotential": "Wentzcovitch"
+  },
+  "Zn": {
+    "cutoff": 90.0,
+    "dual": 8.0,
+    "filename": "Zn_pbe_v1.uspp.F.UPF",
+    "md5": "df62231357ef9e81f77b2b3087fa5675",
+    "pseudopotential": "GBRV-1.2"
+  },
+  "Zr": {
+    "cutoff": 30.0,
+    "dual": 8.0,
+    "filename": "Zr_pbe_v1.uspp.F.UPF",
+    "md5": "5db81b1e868ab7776c4564c113de050b",
+    "pseudopotential": "GBRV-1.2"
+  }
+}

@@ -1,78 +1,99 @@
 # -*- coding: utf-8 -*-
+"""Command line scripts to launch a `PwRelaxWorkChain` for testing and demonstration purposes."""
+from __future__ import absolute_import
 import click
-from aiida_quantumespresso.utils.click import command
-from aiida_quantumespresso.utils.click import options
+
+from aiida.cmdline.params import options, types
+from aiida.cmdline.utils import decorators
+
+from ...utils import launch
+from ...utils import options as options_qe
+from ...utils import validate
+from .. import cmd_launch
 
 
-@command()
-@options.code()
-@options.structure()
-@options.pseudo_family()
-@options.kpoint_mesh()
-@options.max_num_machines()
-@options.max_wallclock_seconds()
-@options.daemon()
-@options.automatic_parallelization()
-@options.clean_workdir()
+@cmd_launch.command('pw-relax')
+@options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.pw'))
+@options_qe.STRUCTURE(required=True)
+@options_qe.PSEUDO_FAMILY(required=True)
+@options_qe.KPOINTS_DISTANCE()
+@options_qe.ECUTWFC()
+@options_qe.ECUTRHO()
+@options_qe.HUBBARD_U()
+@options_qe.HUBBARD_V()
+@options_qe.HUBBARD_FILE()
+@options_qe.STARTING_MAGNETIZATION()
+@options_qe.SMEARING()
+@options_qe.AUTOMATIC_PARALLELIZATION()
+@options_qe.CLEAN_WORKDIR()
+@options_qe.MAX_NUM_MACHINES()
+@options_qe.MAX_WALLCLOCK_SECONDS()
+@options_qe.WITH_MPI()
+@options_qe.DAEMON()
 @click.option(
-    '-f', '--final-scf', is_flag=True, default=False, show_default=True,
-    help='run a final scf calculation for the final relaxed structure'
+    '-f',
+    '--final-scf',
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help='Run a final scf calculation for the final relaxed structure.'
 )
-@click.option(
-    '-g', '--group', type=click.STRING, required=False,
-    help='the label of a Group to add the final PwCalculation to in case of success'
-)
-def launch(
-    code, structure, pseudo_family, kpoints, max_num_machines, max_wallclock_seconds, daemon,
-    automatic_parallelization, clean_workdir, final_scf, group):
-    """
-    Run the PwRelaxWorkChain for a given input structure
-    """
-    from aiida.orm.data.base import Bool, Str
-    from aiida.orm.data.parameter import ParameterData
-    from aiida.orm.utils import WorkflowFactory
-    from aiida.work.run import run, submit
-    from aiida_quantumespresso.utils.resources import get_default_options
+@decorators.with_dbenv()
+def launch_workflow(
+    code, structure, pseudo_family, kpoints_distance, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file_pk,
+    starting_magnetization, smearing, automatic_parallelization, clean_workdir, max_num_machines, max_wallclock_seconds,
+    with_mpi, daemon, final_scf
+):
+    """Run a `PwRelaxWorkChain`."""
+    from aiida.orm import Bool, Float, Str, Dict
+    from aiida.plugins import WorkflowFactory
+    from aiida_quantumespresso.utils.resources import get_default_options, get_automatic_parallelization_options
 
-    PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
+    builder = WorkflowFactory('quantumespresso.pw.relax').get_builder()
 
     parameters = {
         'SYSTEM': {
-            'ecutwfc': 30.,
-            'ecutrho': 240.,
+            'ecutwfc': ecutwfc,
+            'ecutrho': ecutrho,
         },
     }
 
-    inputs = {
-        'code': code,
-        'structure': structure,
-        'pseudo_family': Str(pseudo_family),
-        'kpoints': kpoints,
-        'parameters': ParameterData(dict=parameters),
-    }
+    try:
+        hubbard_file = validate.validate_hubbard_parameters(
+            structure, parameters, hubbard_u, hubbard_v, hubbard_file_pk
+        )
+    except ValueError as exception:
+        raise click.BadParameter(str(exception))
+
+    try:
+        validate.validate_starting_magnetization(structure, parameters, starting_magnetization)
+    except ValueError as exception:
+        raise click.BadParameter(str(exception))
+
+    try:
+        validate.validate_smearing(parameters, smearing)
+    except ValueError as exception:
+        raise click.BadParameter(str(exception))
+
+    builder.structure = structure
+    builder.base.pseudo_family = Str(pseudo_family)
+    builder.base.kpoints_distance = Float(kpoints_distance)
+    builder.base.pw.code = code
+    builder.base.pw.parameters = Dict(dict=parameters)
+
+    if hubbard_file:
+        builder.base.pw.hubbard_file = hubbard_file
 
     if automatic_parallelization:
-        parallelization = {
-            'max_num_machines': max_num_machines,
-            'target_time_seconds': 0.5 * max_wallclock_seconds,
-            'max_wallclock_seconds': max_wallclock_seconds
-        }
-        inputs['automatic_parallelization'] = ParameterData(dict=parallelization)
+        automatic_parallelization = get_automatic_parallelization_options(max_num_machines, max_wallclock_seconds)
+        builder.base.automatic_parallelization = Dict(dict=automatic_parallelization)
     else:
-        options = get_default_options(max_num_machines, max_wallclock_seconds)
-        inputs['options'] = ParameterData(dict=options)
+        builder.base.pw.metadata.options = get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)
 
     if clean_workdir:
-        inputs['clean_workdir'] = Bool(True)
+        builder.clean_workdir = Bool(True)
 
     if final_scf:
-        inputs['final_scf'] = Bool(True)
+        builder.final_scf = Bool(True)
 
-    if group:
-        inputs['group'] = Str(group)
-
-    if daemon:
-        workchain = submit(PwRelaxWorkChain, **inputs)
-        click.echo('Submitted {}<{}> to the daemon'.format(PwRelaxWorkChain.__name__, workchain.pid))
-    else:
-        run(PwRelaxWorkChain, **inputs)
+    launch.launch_process(builder, daemon)

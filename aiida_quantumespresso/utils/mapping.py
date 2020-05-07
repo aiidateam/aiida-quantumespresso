@@ -1,51 +1,104 @@
 # -*- coding: utf-8 -*-
-from collections import Mapping
-from aiida.common.extendeddicts import AttributeDict
-from aiida.orm.data.parameter import ParameterData
+"""Utilities to deal with various mapping data structures."""
+from __future__ import absolute_import
+
+try:
+    from collections.abc import Mapping
+except ImportError:
+    from collections import Mapping
+
+from aiida.common import AttributeDict
+from aiida.orm import Dict
+
+
+def get_logging_container():
+    """Return an `AttributeDict` that can be used to map logging messages to certain log levels.
+
+    This datastructure is useful to add log messages in a function that does not have access to the right logger. Once
+    returned, the caller who does have access to the logger can then easily loop over the contents and pipe the messages
+    through the actual logger.
+
+    :return: :py:class:`~aiida.common.extendeddicts.AttributeDict`
+    """
+    return AttributeDict({
+        'debug': [],
+        'info': [],
+        'warning': [],
+        'error': [],
+        'critical': [],
+    })
 
 
 def update_mapping(original, source):
-    """
-    """
-    return_parameter_data = False
+    """Update a nested dictionary with another optionally nested dictionary.
 
-    if isinstance(original, ParameterData):
-        return_parameter_data = True
+    The dictionaries may be plain Mapping objects or `Dict` nodes. If the original dictionary is an instance of `Dict`
+    the returned dictionary will also be wrapped in `Dict`.
+
+    :param original: Mapping object or `Dict` instance
+    :param source: Mapping object or `Dict` instance
+    :return: the original dictionary updated with the source dictionary
+    """
+    return_node = False
+
+    if isinstance(original, Dict):
+        return_node = True
         original = original.get_dict()
 
-    if isinstance(source, ParameterData):
+    if isinstance(source, Dict):
         source = source.get_dict()
 
-    for key, value in source.iteritems():
-        if (
-            key in original 
-            and (isinstance(value, Mapping) or isinstance(value, ParameterData))
-            and (isinstance(original[key], Mapping) or isinstance(original[key], ParameterData))
-        ):
+    for key, value in source.items():
+        if key in original and isinstance(value, (Dict, Mapping)) and isinstance(original[key], (Dict, Mapping)):
             original[key] = update_mapping(original[key], value)
         else:
             original[key] = value
 
-    if return_parameter_data:
-        original = ParameterData(dict=original)
+    if return_node:
+        original = Dict(dict=original)
 
     return original
 
 
-def prepare_process_inputs(inputs):
-    """
-    Prepare the inputs dictionary for a calculation process. Any remaining bare dictionaries in the inputs
-    dictionary will be wrapped in a ParameterData data node except for the '_options' key which should remain
-    a standard dictionary. Another exception are dictionaries whose keys are not strings but for example tuples.
-    This is the format used by input groups as in for example the explicit pseudo dictionary where the key is
-    a tuple of kind to which the UpfData corresponds.
-    """
-    prepared_inputs = AttributeDict()
+def prepare_process_inputs(process, inputs):
+    """Prepare the inputs for submission for the given process, according to its spec.
 
-    for key, val in inputs.iteritems():
-        if key != '_options' and isinstance(val, dict) and all([isinstance(k, (basestring)) for k in val.keys()]):
-            prepared_inputs[key] = ParameterData(dict=val)
+    That is to say that when an input is found in the inputs that corresponds to an input port in the spec of the
+    process that expects a `Dict`, yet the value in the inputs is a plain dictionary, the value will be wrapped in by
+    the `Dict` class to create a valid input.
+
+    :param process: sub class of `Process` for which to prepare the inputs dictionary
+    :param inputs: a dictionary of inputs intended for submission of the process
+    :return: a dictionary with all bare dictionaries wrapped in `Dict` if dictated by the process spec
+    """
+    prepared_inputs = wrap_bare_dict_inputs(process.spec().inputs, inputs)
+    return AttributeDict(prepared_inputs)
+
+
+def wrap_bare_dict_inputs(port_namespace, inputs):
+    """Wrap bare dictionaries in `inputs` in a `Dict` node if dictated by the corresponding port in given namespace.
+
+    :param port_namespace: a `PortNamespace`
+    :param inputs: a dictionary of inputs intended for submission of the process
+    :return: a dictionary with all bare dictionaries wrapped in `Dict` if dictated by the port namespace
+    """
+    from aiida.engine.processes import PortNamespace
+
+    wrapped = {}
+
+    for key, value in inputs.items():
+
+        if key not in port_namespace:
+            wrapped[key] = value
+            continue
+
+        port = port_namespace[key]
+
+        if isinstance(port, PortNamespace):
+            wrapped[key] = wrap_bare_dict_inputs(port, value)
+        elif port.valid_type == Dict and isinstance(value, dict):
+            wrapped[key] = Dict(dict=value)
         else:
-            prepared_inputs[key] = val
+            wrapped[key] = value
 
-    return prepared_inputs
+    return wrapped

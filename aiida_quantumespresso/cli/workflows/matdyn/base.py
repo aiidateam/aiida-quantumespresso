@@ -1,39 +1,49 @@
 # -*- coding: utf-8 -*-
-import click
-from aiida_quantumespresso.utils.click import command
-from aiida_quantumespresso.utils.click import options
+"""Command line scripts to launch a `MatdynBaseWorkChain` for testing and demonstration purposes."""
+from __future__ import absolute_import
+
+from aiida.cmdline.params import options, types
+from aiida.cmdline.utils import decorators
+
+from ...utils import launch
+from ...utils import options as options_qe
+from .. import cmd_launch
 
 
-@command()
-@options.code()
-@options.parent_calc(callback_kwargs={'entry_point': 'quantumespresso.q2r'})
-@options.kpoint_mesh()
-@options.max_num_machines()
-@options.max_wallclock_seconds()
-@options.daemon()
-def launch(
-    code, parent_calc, kpoints, max_num_machines, max_wallclock_seconds, daemon):
-    """
-    Run the MatdynBaseWorkChain for a previously completed Q2rCalculation
-    """
-    from aiida.orm.data.parameter import ParameterData
-    from aiida.orm.utils import CalculationFactory, WorkflowFactory
-    from aiida.work.run import run, submit
+@cmd_launch.command('matdyn-base')
+@options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.matdyn'))
+@options.DATUM(
+    required=True,
+    type=types.DataParamType(sub_classes=('aiida.data:quantumespresso.force_constants',)),
+    help='A ForceConstantsData node produced by a `Q2rCalculation`'
+)
+@options_qe.KPOINTS_MESH(default=[2, 2, 2])
+@options_qe.CLEAN_WORKDIR()
+@options_qe.MAX_NUM_MACHINES()
+@options_qe.MAX_WALLCLOCK_SECONDS()
+@options_qe.WITH_MPI()
+@options_qe.DAEMON()
+@decorators.with_dbenv()
+def launch_workflow(
+    code, datum, kpoints_mesh, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi, daemon
+):
+    """Run the `MatdynBaseWorkChain` for a previously completed `Q2rCalculation`."""
+    from aiida.orm import Bool
+    from aiida.plugins import WorkflowFactory
     from aiida_quantumespresso.utils.resources import get_default_options
 
-    MatdynBaseWorkChain = WorkflowFactory('quantumespresso.matdyn.base')
-
-    options = get_default_options(max_num_machines, max_wallclock_seconds)
-
     inputs = {
-        'code': code,
-        'kpoints': kpoints,
-        'parent_folder': parent_calc.out.force_constants,
-        'options': ParameterData(dict=options),
+        'matdyn': {
+            'code': code,
+            'kpoints': kpoints_mesh,
+            'force_constants': datum,
+            'metadata': {
+                'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
+            }
+        }
     }
 
-    if daemon:
-        workchain = submit(MatdynBaseWorkChain, **inputs)
-        click.echo('Submitted {}<{}> to the daemon'.format(MatdynBaseWorkChain.__name__, workchain.pid))
-    else:
-        run(MatdynBaseWorkChain, **inputs)
+    if clean_workdir:
+        inputs['clean_workdir'] = Bool(True)
+
+    launch.launch_process(WorkflowFactory('quantumespresso.matdyn.base'), daemon, **inputs)

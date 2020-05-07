@@ -21,7 +21,7 @@ Inputs
 * **parent_calculation**, A PW calculation. It is also recommended that a bands calculation be used as the parent
   for the best viewing results, though this is not mandatory.
 
-* **parameters**, class :py:class:`ParameterData <aiida.orm.data.parameter.ParameterData>`
+* **parameters**, class :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>`
   Input parameters of projwfc.x, as a nested dictionary, mapping the input of QE.
   See the QE documentation for the full list of variables and their meaning.
 
@@ -30,9 +30,9 @@ Outputs
 There are several output nodes that can be created by the plugin.
 All output nodes can be accessed with the ``calculation.out`` method.
 
-* output_parameters :py:class:`ParameterData <aiida.orm.data.parameter.ParameterData>`
+* output_parameters :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>`
   Contains the wall time of the run, as well as any warnings that may occurred.
-* projections :py:class:`ProjectionData <aiida.orm.data.array.projection.ProjectionData>`
+* projections :py:class:`ProjectionData <aiida.orm.nodes.data.array.projection.ProjectionData>`
   Contains the projections which store the orbitals, pdos arrays, and projection arrays.
 
   * orbitals :py:class:`RealhydrogenOrbital <aiida.common.orbital.realhydrogen.RealhydrogenOrbital>` which can be called using::
@@ -43,7 +43,7 @@ All output nodes can be accessed with the ``calculation.out`` method.
     orbital descriptors as keys. These keys, and their values, can be found using orbital.get_orbital_dict(). For example
     running the following commands on the output of a projwfc output for BaTiO3::
 
-        projection = my_projwfc_calc.out.projections # the projection data
+        projection = my_projwfc_calc.outputs.projections # the projection data
         this_orbital = projection.get_orbitals()[0]  # first element in a list of orbitals
         this_orbital.get_orbital_dict() # retrieves the orbital dictionary
 
@@ -100,12 +100,12 @@ All output nodes can be accessed with the ``calculation.out`` method.
 
       where the pdosarrays show the projected density of state for a given orbital using the energyarrays as their 'axis'
 
-* bands :py:class:`BandsData <aiida.orm.data.array.bands.BandsData>`
+* bands :py:class:`BandsData <aiida.orm.nodes.data.array.bands.BandsData>`
   Parsed energy for each band :math:`E_{nk} = <\psi_{nk}|H|\psi_{nk}>`. The projections output will have a reference to the bands accessible using ``projection.get_reference_bandsdata()``
 
 .. note:: In the case where spin-polarized calculations are used in the parent, there will be two output bands. One each for spin up and spin down.
 
-* Dos :py:class:`XyData <aiida.orm.data.array.xy.XyData>`
+* Dos :py:class:`XyData <aiida.orm.nodes.data.array.xy.XyData>`
   Contains the **absolute Dos**, which should not be confused with the sum of all the pdos. The energy axis and dos can be found using::
 
     Dos.get_x()
@@ -124,6 +124,6 @@ Errors
 ------
 Errors of the parsing are reported in the log of the calculation (accessible
 with the ``verdi calculation logshow`` command).
-Moreover, they are stored in the ParameterData under the key ``warnings``, and are
+Moreover, they are stored in the Dict under the key ``warnings``, and are
 accessible with ``Calculation.res.warnings``.
 

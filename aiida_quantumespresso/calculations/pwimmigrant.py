@@ -1,26 +1,22 @@
 # -*- coding: utf-8 -*-
-"""
-Plugin to immigrate a Quantum Espresso pw.x job that was not run using AiiDa.
-"""
+"""Plugin to immigrate a Quantum Espresso pw.x job that was not run using AiiDa."""
 # TODO: Document the current limitations (e.g. ibrav == 0)
+from __future__ import absolute_import
 import os
 from copy import deepcopy
 from aiida_quantumespresso.calculations.pw import PwCalculation
-from aiida.orm.calculation.job import _input_subfolder
-from aiida.orm.data.remote import RemoteData
-from aiida.orm.data.parameter import ParameterData
-from aiida.orm.data.upf import UpfData
+from aiida.orm.nodes.data.remote import RemoteData
+from aiida.orm.nodes.data.dict import Dict
+from aiida.orm.nodes.data.upf import UpfData
 from aiida.common.folders import SandboxFolder
-from aiida.common.datastructures import calc_states
-from aiida.common.exceptions import (FeatureNotAvailable, InvalidOperation,
-                                     InputValidationError)
+from aiida.common import (FeatureNotAvailable, InvalidOperation, InputValidationError)
 from aiida.common.links import LinkType
 from aiida_quantumespresso.tools import pwinputparser
+from six.moves import zip
 
 
 class PwimmigrantCalculation(PwCalculation):
-    """
-    Create a PwCalculation object that can be used to import old jobs.
+    """Create a PwCalculation object that can be used to import old jobs.
 
     This is a sublass of aiida_quantumespresso.calculations.PwCalculation
     with slight modifications to some of the class variables and additional
@@ -53,10 +49,8 @@ class PwimmigrantCalculation(PwCalculation):
 
         super(PwimmigrantCalculation, self)._init_internal_params()
 
-    def create_input_nodes(self, open_transport, input_file_name=None,
-                           output_file_name=None, remote_workdir=None):
-        """
-        Create calculation input nodes based on the job's files.
+    def create_input_nodes(self, open_transport, input_file_name=None, output_file_name=None, remote_workdir=None):
+        """Create calculation input nodes based on the job's files.
 
         :param open_transport: An open instance of the transport class of the
             calculation's computer. See the tutorial for more information.
@@ -68,7 +62,7 @@ class PwimmigrantCalculation(PwCalculation):
         create the input nodes that would exist if the calculation were
         submitted using AiiDa. These nodes are
 
-            * a ``'parameters'`` ParameterData node, based on the namelists and
+            * a ``'parameters'`` Dict node, based on the namelists and
               their variable-value pairs;
             * a ``'kpoints'`` KpointsData node, based on the *K_POINTS* card;
             * a ``'structure'`` StructureData node, based on the
@@ -76,10 +70,10 @@ class PwimmigrantCalculation(PwCalculation):
             * one ``'pseudo_X'`` UpfData node for the pseudopotential used for
               the atomic species with name ``X``, as specified in the
               *ATOMIC_SPECIES* card;
-            * a ``'settings'`` ParameterData node, if there are any fixed
+            * a ``'settings'`` Dict node, if there are any fixed
               coordinates, or if the gamma kpoint is used;
 
-        and can be retrieved as a dictionary using the ``get_inputs_dict()``
+        and can be retrieved as a dictionary using the ``get_incoming()``
         method. *These input links are cached-links; nothing is stored by this
         method (including the calculation node itself).*
 
@@ -180,36 +174,34 @@ class PwimmigrantCalculation(PwCalculation):
         # Check that open_transport is the correct transport type.
         if type(open_transport) is not self.get_computer().get_transport_class():
             raise InputValidationError(
-                "The transport passed as the `open_transport` parameter is "
-                "not the same transport type linked to the computer. Please "
-                "obtain the correct transport class using the "
+                'The transport passed as the `open_transport` parameter is '
+                'not the same transport type linked to the computer. Please '
+                'obtain the correct transport class using the '
                 "`get_transport_class` method of the calculation's computer. "
-                "See the tutorial for more information."
+                'See the tutorial for more information.'
             )
 
         # Check that open_transport is actually open.
         if not open_transport._is_open:
             raise InvalidOperation(
-                "The transport passed as the `open_transport` parameter is "
+                'The transport passed as the `open_transport` parameter is '
                 "not open. Please execute the open the transport using it's "
-                "`open` method, or execute the call to this method within a "
-                "`with` statement context guard. See the tutorial for more "
-                "information."
+                '`open` method, or execute the call to this method within a '
+                '`with` statement context guard. See the tutorial for more '
+                'information.'
             )
 
         # Copy the input file and psuedo files to a temp folder for parsing.
         with SandboxFolder() as folder:
 
             # Copy the input file to the temp folder.
-            remote_path = os.path.join(self._get_remote_workdir(),
-                                       self._INPUT_FILE_NAME)
+            remote_path = os.path.join(self._get_remote_workdir(), self._INPUT_FILE_NAME)
             open_transport.get(remote_path, folder.abspath)
 
             # Parse the input file.
             local_path = os.path.join(folder.abspath, self._INPUT_FILE_NAME)
             with open(local_path) as fin:
                 pwinputfile = pwinputparser.PwInputFile(fin)
-
 
             # Determine PREFIX, if it hasn't already been set by the user.
             if self._PREFIX is None:
@@ -227,9 +219,7 @@ class PwimmigrantCalculation(PwCalculation):
                 self._OUTPUT_SUBFOLDER = control_dict.get('outdir', None)
                 if self._OUTPUT_SUBFOLDER is None:
                     # See if the $ESPRESSO_TMPDIR is set.
-                    envar = open_transport.exec_command_wait(
-                        'echo $ESPRESSO_TMPDIR'
-                    )[1]
+                    envar = open_transport.exec_command_wait('echo $ESPRESSO_TMPDIR')[1]
                     if len(envar.strip()) > 0:
                         self._OUTPUT_SUBFOLDER = envar.strip()
                     else:
@@ -238,10 +228,9 @@ class PwimmigrantCalculation(PwCalculation):
 
             # Copy the pseudo files to the temp folder.
             for fnm in pwinputfile.atomic_species['pseudo_file_names']:
-                remote_path = os.path.join(self._get_remote_workdir(),
-                                           self._OUTPUT_SUBFOLDER,
-                                           '{}.save/'.format(self._PREFIX),
-                                           fnm)
+                remote_path = os.path.join(
+                    self._get_remote_workdir(), self._OUTPUT_SUBFOLDER, '{}.save/'.format(self._PREFIX), fnm
+                )
                 open_transport.get(remote_path, folder.abspath)
 
             # Make sure that ibrav = 0, since aiida doesn't support anything
@@ -252,7 +241,7 @@ class PwimmigrantCalculation(PwCalculation):
                     'Currently, AiiDa only supports ibrav = 0.'
                 )
 
-            # Create ParameterData node based on the namelist and link as input.
+            # Create Dict node based on the namelist and link as input.
 
             # First, strip the namelist items that aiida doesn't allow or sets
             # later.
@@ -262,13 +251,13 @@ class PwimmigrantCalculation(PwCalculation):
             # we are safe to fake that they were never there in the first place.
             parameters_dict = deepcopy(pwinputfile.namelists)
             for namelist, blocked_key in self._blocked_keywords:
-                keys = parameters_dict[namelist].keys()
+                keys = list(parameters_dict[namelist].keys())
                 for this_key in parameters_dict[namelist].keys():
                     # take into account that celldm and celldm(*) must be blocked
-                    if re.sub("[(0-9)]", "", this_key) == blocked_key:
+                    if re.sub('[(0-9)]', '', this_key) == blocked_key:
                         parameters_dict[namelist].pop(this_key, None)
 
-            parameters = ParameterData(dict=parameters_dict)
+            parameters = Dict(dict=parameters_dict)
             self.use_parameters(parameters)
 
             # Initialize the dictionary for settings parameter data for possible
@@ -299,23 +288,22 @@ class PwimmigrantCalculation(PwCalculation):
                 self.use_pseudo(pseudo, kind=name)
 
         # If there are any fixed coordinates (i.e. force modification
-        # present in the input file, create a ParameterData node for these
+        # present in the input file, create a Dict node for these
         # special settings.
         fixed_coords = pwinputfile.atomic_positions['fixed_coords']
         # NOTE: any() only works for 1-dimensional lists.
         if any((any(fc_xyz) for fc_xyz in fixed_coords)):
             settings_dict['FIXED_COORDS'] = fixed_coords
 
-        # If the settings_dict has been filled in, create a ParameterData
+        # If the settings_dict has been filled in, create a Dict
         # node from it and link as input.
         if settings_dict:
-            self.use_settings(ParameterData(dict=settings_dict))
+            self.use_settings(Dict(dict=settings_dict))
 
-        self._set_attr('input_nodes_created', True)
+        self.set_attribute('input_nodes_created', True)
 
     def _prepare_for_retrieval(self, open_transport):
-        """
-        Prepare the calculation for retrieval by daemon.
+        """Prepare the calculation for retrieval by daemon.
 
         :param open_transport: An open instance of the transport class of the
             calculation's computer.
@@ -328,38 +316,30 @@ class PwimmigrantCalculation(PwCalculation):
             * store the calculation and all it's input nodes
             * copy the input file to the calculation's raw_input_folder in the
             * store the remote_workdir as a RemoteData output node
-
         """
 
         # Manually set the files that will be copied to the repository and that
         # the parser will extract the results from. This would normally be
         # performed in self._prepare_for_submission prior to submission.
-        self._set_attr('retrieve_list',
-                       [self._OUTPUT_FILE_NAME, self._DATAFILE_XML])
-        self._set_attr('retrieve_singlefile_list', [])
+        self.set_attribute('retrieve_list', [self._OUTPUT_FILE_NAME] + self.xml_filenames)
+        self.set_attribute('retrieve_singlefile_list', [])
 
         # Make sure the calculation and input links are stored.
         self.store_all()
 
         # Store the original input file in the calculation's repository folder.
-        remote_path = os.path.join(self._get_remote_workdir(),
-                                   self._INPUT_FILE_NAME)
-        raw_input_folder = self.folder.get_subfolder(_input_subfolder,
-                                                     create=True)
+        remote_path = os.path.join(self._get_remote_workdir(), self._INPUT_FILE_NAME)
+        raw_input_folder = self.folder.get_subfolder('raw_input', create=True)
         open_transport.get(remote_path, raw_input_folder.abspath)
 
         # Manually add the remote working directory as a RemoteData output
         # node.
-        self._set_state(calc_states.SUBMITTING)
-        remotedata = RemoteData(computer=self.get_computer(),
-                                remote_path=self._get_remote_workdir())
-        remotedata.add_link_from(self, label='remote_folder',
-                                 link_type=LinkType.CREATE)
+        remotedata = RemoteData(computer=self.get_computer(), remote_path=self._get_remote_workdir())
+        remotedata.add_link_from(self, label='remote_folder', link_type=LinkType.CREATE)
         remotedata.store()
 
     def prepare_for_retrieval_and_parsing(self, open_transport):
-        """
-        Tell the daemon that the calculation is computed and ready to be parsed.
+        """Tell the daemon that the calculation is computed and ready to be parsed.
 
         :param open_transport: An open instance of the transport class of the
             calculation's computer. See the tutorial for more information.
@@ -386,41 +366,35 @@ class PwimmigrantCalculation(PwCalculation):
         # Check that the create_input_nodes method has run successfully.
         if not self.get_attr('input_nodes_created', False):
             raise InvalidOperation(
-                "You must run the create_input_nodes method before calling "
-                "prepare_for_retrieval_and_parsing!"
+                'You must run the create_input_nodes method before calling '
+                'prepare_for_retrieval_and_parsing!'
             )
 
         # Check that open_transport is the correct transport type.
         if type(open_transport) is not self.get_computer().get_transport_class():
             raise InputValidationError(
-                "The transport passed as the `open_transport` parameter is "
-                "not the same transport type linked to the computer. Please "
-                "obtain the correct transport class using the "
+                'The transport passed as the `open_transport` parameter is '
+                'not the same transport type linked to the computer. Please '
+                'obtain the correct transport class using the '
                 "`get_transport_class` method of the calculation's computer. "
-                "See the tutorial for more information."
+                'See the tutorial for more information.'
             )
 
         # Check that open_transport is actually open.
         if not open_transport._is_open:
             raise InvalidOperation(
-                "The transport passed as the `open_transport` parameter is "
+                'The transport passed as the `open_transport` parameter is '
                 "not open. Please execute the open the transport using it's "
-                "`open` method, or execute the call to this method within a "
-                "`with` statement context guard. See the tutorial for more "
-                "information."
+                '`open` method, or execute the call to this method within a '
+                '`with` statement context guard. See the tutorial for more '
+                'information.'
             )
 
         # Prepare the calculation for retrieval
         self._prepare_for_retrieval(open_transport)
 
-        # Manually set the state of the calculation to "COMPUTED", so that it
-        # will be retrieved and parsed the next time the daemon updates the
-        # status of calculations.
-        self._set_state(calc_states.COMPUTED)
-
     def set_remote_workdir(self, remote_workdir):
-        """
-        Set the job's remote working directory.
+        """Set the job's remote working directory.
 
         :param remote_workdir: Absolute path of the job's remote working
             directory.
@@ -428,11 +402,10 @@ class PwimmigrantCalculation(PwCalculation):
         """
         # This is the functionality as self._set_remote_workir, but it bypasses
         # the need to have the calculation state set as SUBMITTING.
-        self._set_attr('remote_workdir', remote_workdir)
+        self.set_attribute('remote_workdir', remote_workdir)
 
     def set_output_subfolder(self, output_subfolder):
-        """
-        Manually set the job's ``outdir`` variable (e.g. ``'./out/'``).
+        """Manually set the job's ``outdir`` variable (e.g. ``'./out/'``).
 
         .. note:: The outdir variable is normally set automatically by
 
@@ -450,8 +423,7 @@ class PwimmigrantCalculation(PwCalculation):
         self._OUTPUT_SUBFOLDER = output_subfolder
 
     def set_prefix(self, prefix):
-        """
-        Manually set the job's ``prefix`` variable (e.g. ``'pwscf'``).
+        """Manually set the job's ``prefix`` variable (e.g. ``'pwscf'``).
 
         .. note:: The prefix variable is normally set automatically by
 
@@ -467,8 +439,7 @@ class PwimmigrantCalculation(PwCalculation):
         self._PREFIX = prefix
 
     def set_input_file_name(self, input_file_name):
-        """
-        Set the file name of the job's input file (e.g. ``'pw.in'``).
+        """Set the file name of the job's input file (e.g. ``'pw.in'``).
 
         :param input_file_name: The file name of the job's input file.
         :type input_file_name: str
@@ -497,7 +468,7 @@ class PwimmigrantCalculation(PwCalculation):
 
     @_OUTPUT_SUBFOLDER.setter
     def _OUTPUT_SUBFOLDER(self, value):
-        self._set_attr('output_subfolder', value)
+        self.set_attribute('output_subfolder', value)
 
     @property
     def _PREFIX(self):
@@ -505,7 +476,7 @@ class PwimmigrantCalculation(PwCalculation):
 
     @_PREFIX.setter
     def _PREFIX(self, value):
-        self._set_attr('prefix', value)
+        self.set_attribute('prefix', value)
 
     @property
     def _INPUT_FILE_NAME(self):
@@ -513,7 +484,7 @@ class PwimmigrantCalculation(PwCalculation):
 
     @_INPUT_FILE_NAME.setter
     def _INPUT_FILE_NAME(self, value):
-        self._set_attr('input_file_name', value)
+        self.set_attribute('input_file_name', value)
 
     @property
     def _OUTPUT_FILE_NAME(self):
@@ -521,17 +492,4 @@ class PwimmigrantCalculation(PwCalculation):
 
     @_OUTPUT_FILE_NAME.setter
     def _OUTPUT_FILE_NAME(self, value):
-        self._set_attr('output_file_name', value)
-
-    @property
-    def _DATAFILE_XML(self):
-        path = os.path.join(self._OUTPUT_SUBFOLDER,
-                            '{}.save'.format(self._PREFIX),
-                            self._DATAFILE_XML_BASENAME)
-        return path
-
-    @_DATAFILE_XML.setter
-    def _DATAFILE_XML(self, value):
-        # Don't store this value in the db, since it gets set to the Aiida
-        # default in the parent class.
-        pass
+        self.set_attribute('output_file_name', value)

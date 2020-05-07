@@ -1,0 +1,21 @@
+iteration_array:
+  array|backward_activation_energy:
+  - 13
+  array|climbing_image_auto:
+  - 13
+  - 1
+  array|forward_activation_energy:
+  - 13
+  array|image_dist:
+  - 13
+  array|image_energies:
+  - 13
+  - 3
+  array|image_forces:
+  - 13
+  - 3
+  array|image_frozen:
+  - 13
+  - 3
+  array|path_length:
+  - 13

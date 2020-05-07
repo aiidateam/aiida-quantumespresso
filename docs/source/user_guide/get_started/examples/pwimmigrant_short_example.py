@@ -9,11 +9,12 @@
 # For further information please visit http://www.aiida.net               #
 ###########################################################################
 # Load the database environment.
+from __future__ import absolute_import
 from aiida import load_dbenv
 load_dbenv()
 
-from aiida.orm.code import Code
-from aiida.orm import CalculationFactory
+from aiida.orm import Code
+from aiida.plugins import CalculationFactory
 
 
 # Load the PwimmigrantCalculation class.

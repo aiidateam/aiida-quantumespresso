@@ -1,504 +1,561 @@
 # -*- coding: utf-8 -*-
+"""`Parser` implementation for the `PwCalculation` calculation job class."""
+from __future__ import absolute_import
+
+import traceback
+
 import numpy
-from aiida.common.exceptions import UniquenessError
-from aiida.orm.data.array.bands import BandsData
-from aiida.orm.data.array.kpoints import KpointsData
-from aiida.orm.data.parameter import ParameterData
-from aiida.parsers.parser import Parser
-from aiida_quantumespresso.calculations.pw import PwCalculation
-from aiida_quantumespresso.parsers import convert_qe2aiida_structure
-from aiida_quantumespresso.parsers.raw_parser_pw import parse_raw_output, QEOutputParsingError
-from aiida_quantumespresso.utils.linalg import are_matrices_equal
+
+from aiida import orm
+from aiida.common import exceptions
+
+from aiida_quantumespresso.utils.mapping import get_logging_container
+from .base import Parser
+from .parse_raw.pw import reduce_symmetries
 
 
 class PwParser(Parser):
-    """
-    The Parser implementation for the PwCalculation JobCalculation class
-    """
+    """`Parser` implementation for the `PwCalculation` calculation job class."""
 
-    _setting_key = 'parser_options'
+    def parse(self, **kwargs):
+        """Parse the retrieved files of a completed `PwCalculation` into output nodes.
 
-    def __init__(self, calc):
+        Two nodes that are expected are the default 'retrieved' `FolderData` node which will store the retrieved files
+        permanently in the repository. The second required node is a filepath under the key `retrieved_temporary_files`
+        which should contain the temporary retrieved files.
         """
-        Initialize the Parser for a PwCalculation
+        dir_with_bands = None
+        self.exit_code_xml = None
+        self.exit_code_stdout = None
+        self.exit_code_parser = None
 
-        :param calculation: instance of the PwCalculation
-        """
-        self._possible_symmetries = self._get_qe_symmetry_list()
+        try:
+            self.retrieved
+        except exceptions.NotExistent:
+            return self.exit(self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER))
 
-        if not isinstance(calc, PwCalculation):
-            raise QEOutputParsingError('Input calc must be a PwCalculation')
-
-        super(PwParser, self).__init__(calc)
-
-    def parse_with_retrieved(self, retrieved):
-        """
-        Parse the output nodes for a PwCalculations from a dictionary of retrieved nodes.
-        Two nodes that are expected are the default 'retrieved' FolderData node which will
-        store the retrieved files permanently in the repository. The second required node
-        is the unstored FolderData node with the temporary retrieved files, which should
-        be passed under the key 'retrieved_temporary_folder_key' of the Parser class.
-
-        :param retrieved: a dictionary of retrieved nodes
-        """
-        import os
-
-        successful = True
-
-        # Load the input dictionary
-        parameters = self._calc.inp.parameters.get_dict()
+        try:
+            settings = self.node.inputs.settings.get_dict()
+        except exceptions.NotExistent:
+            settings = {}
 
         # Look for optional settings input node and potential 'parser_options' dictionary within it
-        try:
-            settings = self._calc.inp.settings.get_dict()
-            parser_opts = settings[self.get_parser_settings_key()]
-        except (AttributeError, KeyError):
-            settings = {}
-            parser_opts = {}
-
-        # Check that the retrieved folder is there
-        try:
-            out_folder = retrieved[self._calc._get_linkname_retrieved()]
-        except KeyError:
-            self.logger.error("No retrieved folder found")
-            return False, ()
+        parser_options = settings.get(self.get_parser_settings_key(), None)
 
         # Verify that the retrieved_temporary_folder is within the arguments if temporary files were specified
-        if self._calc._get_retrieve_temporary_list():
+        if self.node.get_attribute('retrieve_temporary_list', None):
             try:
-                temporary_folder = retrieved[self.retrieved_temporary_folder_key]
-                dir_with_bands = temporary_folder.get_abs_path('.')
+                dir_with_bands = kwargs['retrieved_temporary_folder']
             except KeyError:
-                self.logger.error('the {} was not passed as an argument'.format(self.retrieved_temporary_folder_key))
-                return False, ()
+                return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
+
+        parameters = self.node.inputs.parameters.get_dict()
+        parsed_xml, logs_xml = self.parse_xml(dir_with_bands, parser_options)
+        parsed_stdout, logs_stdout = self.parse_stdout(parameters, parser_options, parsed_xml)
+
+        parsed_bands = parsed_stdout.pop('bands', {})
+        parsed_structure = parsed_stdout.pop('structure', {})
+        parsed_trajectory = parsed_stdout.pop('trajectory', {})
+        parsed_parameters = self.build_output_parameters(parsed_stdout, parsed_xml)
+
+        # Append the last frame of some of the smaller trajectory arrays to the parameters for easy querying
+        self.final_trajectory_frame_to_parameters(parsed_parameters, parsed_trajectory)
+
+        # If the parser option 'all_symmetries' is False, we reduce the raw parsed symmetries to save space
+        all_symmetries = False if parser_options is None else parser_options.get('all_symmetries', False)
+        if not all_symmetries and 'cell' in parsed_structure:
+            reduce_symmetries(parsed_parameters, parsed_structure, self.logger)
+
+        structure = self.build_output_structure(parsed_structure)
+        kpoints = self.build_output_kpoints(parsed_parameters, structure)
+        bands = self.build_output_bands(parsed_bands, kpoints)
+        trajectory = self.build_output_trajectory(parsed_trajectory, structure)
+
+        # Determine whether the input kpoints were defined as a mesh or as an explicit list
+        try:
+            self.node.inputs.kpoints.get_kpoints()
+        except AttributeError:
+            input_kpoints_explicit = False
         else:
-            dir_with_bands = None
+            input_kpoints_explicit = True
 
-        list_of_files = out_folder.get_folder_list()
+        # Only attach the `KpointsData` as output if there will be no `BandsData` output and inputs were defined as mesh
+        if kpoints and not bands and not input_kpoints_explicit:
+            self.out('output_kpoints', kpoints)
 
-        # The stdout is required for parsing
-        if self._calc._OUTPUT_FILE_NAME not in list_of_files:
-            self.logger.error("The standard output file '{}' was not found but is required".format(self._calc._OUTPUT_FILE_NAME))
-            return False, ()
+        if bands:
+            self.out('output_band', bands)
 
-        # The xml file is required for parsing
-        if self._calc._DATAFILE_XML_BASENAME not in list_of_files:
-            self.logger.error("The xml output file '{}' was not found but is required".format(self._calc._DATAFILE_XML_BASENAME))
-            successful = False
-            xml_file = None
-        else:
-            xml_file = os.path.join(out_folder.get_abs_path('.'), self._calc._DATAFILE_XML_BASENAME)
+        if trajectory:
+            self.out('output_trajectory', trajectory)
 
-        out_file = os.path.join(out_folder.get_abs_path('.'), self._calc._OUTPUT_FILE_NAME)
-
-        # Call the raw parsing function
-        parsing_args = [out_file, parameters, parser_opts, xml_file, dir_with_bands]
-        out_dict, trajectory_data, structure_data, bands_data, raw_successful = parse_raw_output(*parsing_args)
-
-        # If calculation was not considered failed already, use the new value
-        successful = raw_successful if successful else successful
-
-        # If the parser option 'all_symmetries' is not set to True, we reduce the raw parsed symmetries to safe space
-        all_symmetries = parser_opts.get('all_symmetries', False)
-
-        if not all_symmetries:
-
-            # In the standard output, each symmetry operation print two rotation matrices:
-            #
-            # * S_cryst^T: matrix in crystal coordinates, transposed
-            # * S_cart: matrix in cartesian coordinates,
-            #
-            # The XML files only print one matrix:
-            #
-            # * S_cryst: matrix in crystal coordinates
-            #
-            # The raw parsed symmetry information from the XML is large and will load the database heavily if stored as
-            # is for each calculation. Instead, we will map these dictionaries onto a static dictionary of rotation
-            # matrices generated by the _get_qe_symmetry_list static method. This dictionary will return the rotation
-            # matrices in cartesian coordinates, i.e. S_cart. In order to compare the raw matrices from the XML to these
-            # static matrices we have to convert S_cryst into S_cart. We derive here how that is done:
-            #
-            #   S_cryst * v_cryst = v_cryst'
-            #
-            # where v_cryst' is the rotated vector v_cryst under S_cryst
-            # We define `cell` where cell vectors are rows. Converting a vector from crystal to cartesian
-            # coordinates is defined as:
-            #
-            #   cell^T * v_cryst = v_cart
-            #
-            # The inverse of this operation is defined as
-            #
-            #   v_cryst = cell^Tinv * v_cart
-            #
-            # Replacing the last equation into the first we find:
-            #
-            #   S_cryst * cell^Tinv * v_cart = cell^Tinv * v_cart'
-            #
-            # Multiply on the left with cell^T gives:
-            #
-            #   cell^T * S_cryst * cell^Tinv * v_cart = v_cart'
-            #
-            # which can be rewritten as:
-            #
-            #   S_cart * v_cart = v_cart'
-            #
-            # where:
-            #
-            #   S_cart = cell^T * S_cryst * cell^Tinv
-            #
-            # We compute here the transpose and its inverse of the structure cell basis, which is needed to transform
-            # the parsed rotation matrices, which are in crystal coordinates, to cartesian coordinates, which are the
-            # matrices that are returned by the _get_qe_symmetry_list staticmethod
-            cell = structure_data['cell']['lattice_vectors']
-            cell_T = numpy.transpose(cell)
-            cell_Tinv = numpy.linalg.inv(cell_T)
-
-            try:
-                if 'symmetries' in out_dict.keys():
-                    old_symmetries = out_dict['symmetries']
-                    new_symmetries = []
-                    for this_sym in old_symmetries:
-                        name = this_sym['name'].strip()
-                        for i, this in enumerate(self._possible_symmetries):
-                            # Since we do an exact comparison we strip the string name from whitespace
-                            # and as soon as it is matched, we break to prevent it from matching another
-                            if name == this['name'].strip():
-                                index = i
-                                break
-                        else:
-                            index = None
-                            self.logger.error('Symmetry {} not found'.format(name))
-
-                        new_dict = {}
-                        if index is not None:
-                            # The raw parsed rotation matrix is in crystal coordinates, whereas the mapped rotation
-                            # in self._possible_symmetries is in cartesian coordinates. To allow them to be compared
-                            # to make sure we matched the correct rotation symmetry, we first convert the parsed matrix
-                            # to cartesian coordinates. For explanation of the method, see comment above.
-                            rotation_cryst = this_sym['rotation']
-                            rotation_cart_new = self._possible_symmetries[index]['matrix']
-                            rotation_cart_old = numpy.dot(cell_T, numpy.dot(rotation_cryst, cell_Tinv))
-
-                            inversion = self._possible_symmetries[index]['inversion']
-                            if not are_matrices_equal(rotation_cart_old, rotation_cart_new, swap_sign_matrix_b=inversion):
-                                self.logger.error('Mapped rotation matrix {} does not match the original rotation {}'
-                                    .format(rotation_cart_new, rotation_cart_old))
-                                new_dict['all_symmetries'] = this_sym
-                            else:
-                                # Note: here I lose the information about equivalent ions and fractional_translation.
-                                new_dict['t_rev'] = this_sym['t_rev']
-                                new_dict['symmetry_number'] = index
-                        else:
-                            new_dict['all_symmetries'] = this_sym
-
-                        new_symmetries.append(new_dict)
-
-                    out_dict['symmetries'] = new_symmetries  # and overwrite the old one
-            except KeyError:  # no symmetries were parsed (failed case, likely)
-                self.logger.error("No symmetries were found in output")
-
-        new_nodes_list = []
-
-        # I eventually save the new structure. structure_data is unnecessary after this
-        in_struc = self._calc.get_inputs_dict()['structure']
-        type_calc = parameters['CONTROL']['calculation']
-        struc = in_struc
-        if type_calc in ['relax', 'vc-relax', 'md', 'vc-md']:
-            if 'cell' in structure_data.keys():
-                struc = convert_qe2aiida_structure(structure_data, input_structure=in_struc)
-                new_nodes_list.append((self.get_linkname_outstructure(), struc))
-
-        k_points_list = trajectory_data.pop('k_points', None)
-        k_points_weights_list = trajectory_data.pop('k_points_weights', None)
-
-        if k_points_list is not None:
-
-            # Build the kpoints object
-            if out_dict['k_points_units'] not in ['2 pi / Angstrom']:
-                raise QEOutputParsingError('Error in kpoints units (should be cartesian)')
-
-            kpoints_from_output = KpointsData()
-            kpoints_from_output.set_cell_from_structure(struc)
-            kpoints_from_output.set_kpoints(k_points_list, cartesian=True, weights=k_points_weights_list)
-            kpoints_from_input = self._calc.inp.kpoints
-
-            if not bands_data:
-                try:
-                    kpoints_from_input.get_kpoints()
-                except AttributeError:
-                    new_nodes_list += [(self.get_linkname_out_kpoints(), kpoints_from_output)]
-
-            # Converting bands into a BandsData object (including the kpoints)
-            if bands_data:
-                kpoints_for_bands = kpoints_from_output
-
-                try:
-                    kpoints_from_input.get_kpoints()
-                    kpoints_for_bands.labels = kpoints_from_input.labels
-                except (AttributeError, ValueError, TypeError):
-                    # AttributeError: no list of kpoints in input
-                    # ValueError: labels from input do not match the output
-                    #      list of kpoints (some kpoints are missing)
-                    # TypeError: labels are not set, so kpoints_from_input.labels=None
-                    pass
-
-                # Get the bands occupations and correct the occupations of QE:
-                # If it computes only one component, it occupies it with half number of electrons
-                try:
-                    bands_data['occupations'][1]
-                    the_occupations = bands_data['occupations']
-                except IndexError:
-                    the_occupations = 2. * numpy.array(bands_data['occupations'][0])
-
-                try:
-                    bands_data['bands'][1]
-                    bands_energies = bands_data['bands']
-                except IndexError:
-                    bands_energies = bands_data['bands'][0]
-
-                the_bands_data = BandsData()
-                the_bands_data.set_kpointsdata(kpoints_for_bands)
-                the_bands_data.set_bands(bands_energies,
-                                         units=bands_data['bands_units'],
-                                         occupations=the_occupations)
-
-                new_nodes_list += [('output_band', the_bands_data)]
-                out_dict['linknames_band'] = ['output_band']
+        if not structure.is_stored:
+            self.out('output_structure', structure)
 
         # Separate the atomic_occupations dictionary in its own node if it is present
-        atomic_occupations = out_dict.get('atomic_occupations', {})
+        atomic_occupations = parsed_parameters.pop('atomic_occupations', None)
         if atomic_occupations:
-            out_dict.pop('atomic_occupations')
-            atomic_occupations_node = ParameterData(dict=atomic_occupations)
-            new_nodes_list.append(('output_atomic_occupations', atomic_occupations_node))
+            self.out('output_atomic_occupations', orm.Dict(dict=atomic_occupations))
 
-        output_params = ParameterData(dict=out_dict)
-        new_nodes_list.append((self.get_linkname_outparams(), output_params))
+        self.out('output_parameters', orm.Dict(dict=parsed_parameters))
 
-        if trajectory_data:
-            from aiida.orm.data.array.trajectory import TrajectoryData
-            from aiida.orm.data.array import ArrayData
-            try:
-                positions = numpy.array(trajectory_data.pop('atomic_positions_relax'))
-                try:
-                    cells = numpy.array(trajectory_data.pop('lattice_vectors_relax'))
-                    # if KeyError, the MD was at fixed cell
-                except KeyError:
-                    cells = numpy.array([in_struc.cell] * len(positions))
+        # Emit the logs returned by the XML and stdout parsing through the logger
+        # If the calculation was an initialization run, reset the XML logs because they will contain a lot of verbose
+        # warnings from the schema parser about incomplete data, but that is to be expected in an initialization run.
+        if settings.get('ONLY_INITIALIZATION', False):
+            logs_xml.pop('error')
 
-                symbols = numpy.array([str(i.kind_name) for i in in_struc.sites])
-                stepids = numpy.arange(len(positions))  # a growing integer per step
-                # I will insert time parsing when they fix their issues about time
-                # printing (logic is broken if restart is on)
+        ignore = [
+            'Error while parsing ethr.',
+            'DEPRECATED: symmetry with ibrav=0, use correct ibrav instead'
+        ]
+        self.emit_logs([logs_stdout, logs_xml], ignore=ignore)
 
-                traj = TrajectoryData()
-                traj.set_trajectory(
-                    stepids=stepids,
-                    cells=cells,
-                    symbols=symbols,
-                    positions=positions,
-                )
-                for x in trajectory_data.iteritems():
-                    traj.set_array(x[0], numpy.array(x[1]))
-                new_nodes_list.append((self.get_linkname_outtrajectory(), traj))
+        # First check for specific known problems that can cause a pre-mature termination of the calculation
+        exit_code = self.validate_premature_exit(logs_stdout)
+        if exit_code:
+            return self.exit(exit_code)
 
-            except KeyError:
-                # forces, atomic charges and atomic mag. moments, in scf calculation (when outputed)
-                arraydata = ArrayData()
-                for x in trajectory_data.iteritems():
-                    arraydata.set_array(x[0], numpy.array(x[1]))
-                new_nodes_list.append((self.get_linkname_outarray(), arraydata))
+        # If the both stdout and xml exit codes are set, there was a basic problem with both output files and there
+        # is no need to investigate any further.
+        if self.exit_code_stdout and self.exit_code_xml:
+            return self.exit(self.exit_codes.ERROR_OUTPUT_FILES)
 
-        return successful, new_nodes_list
+        if self.exit_code_stdout:
+            return self.exit(self.exit_code_stdout)
 
-    def get_parser_settings_key(self):
-        """
-        Return the name of the key to be used in the calculation settings, that
-        contains the dictionary with the parser_options
-        """
-        return 'parser_options'
+        if self.exit_code_xml:
+            return self.exit(self.exit_code_xml)
 
-    def get_linkname_outstructure(self):
-        """
-        Returns the name of the link to the output_structure
-        Node exists if positions or cell changed.
-        """
-        return 'output_structure'
+        # First determine issues that can occurr for all calculation types. Note that the generic errors, that are
+        # common to all types are done first. If a problem is found there, we return the exit code and don't continue
+        for validator in [self.validate_electronic, self.validate_dynamics, self.validate_ionic]:
+            exit_code = validator(trajectory, parsed_parameters, logs_stdout)
+            if exit_code:
+                return self.exit(exit_code)
 
-    def get_linkname_outtrajectory(self):
-        """
-        Returns the name of the link to the output_trajectory.
-        Node exists in case of calculation='md', 'vc-md', 'relax', 'vc-relax'
-        """
-        return 'output_trajectory'
+    def get_calculation_type(self):
+        """Return the type of the calculation."""
+        return self.node.inputs.parameters.get_attribute('CONTROL', {}).get('calculation', 'scf')
 
-    def get_linkname_outarray(self):
-        """
-        Returns the name of the link to the output_array
-        Node may exist in case of calculation='scf'
-        """
-        return 'output_array'
+    def validate_premature_exit(self, logs):
+        """Analyze problems that will cause a pre-mature termination of the calculation, controlled or not."""
+        if 'ERROR_OUT_OF_WALLTIME' in logs['error'] and 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs['error']:
+            return self.exit_codes.ERROR_OUT_OF_WALLTIME_INTERRUPTED
 
-    def get_linkname_out_kpoints(self):
-        """
-        Returns the name of the link to the output_kpoints
-        Node exists if cell has changed and no bands are stored.
-        """
-        return 'output_kpoints'
+        for error_label in [
+            'ERROR_OUT_OF_WALLTIME',
+            'ERROR_CHARGE_IS_WRONG',
+            'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION',
+            'ERROR_DEXX_IS_NEGATIVE',
+            'ERROR_COMPUTING_CHOLESKY',
+            'ERROR_NPOOLS_TOO_HIGH',
+        ]:
+            if error_label in logs['error']:
+                return self.exit_codes.get(error_label)
 
-    def get_extended_symmetries(self):
+    def validate_electronic(self, trajectory, parameters, logs):
+        """Analyze problems that are specific to `electronic` type calculations: i.e. `scf`, `nscf` and `bands`."""
+        if self.get_calculation_type() not in ['scf', 'nscf', 'bands']:
+            return
+
+        if 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED' in logs['error']:
+            return self.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED
+
+    def validate_dynamics(self, trajectory, parameters, logs):
+        """Analyze problems that are specific to `dynamics` type calculations: i.e. `md` and `vc-md`."""
+        if self.get_calculation_type() not in ['md', 'vc-md']:
+            return
+
+    def validate_ionic(self, trajectory, parameters, logs):
+        """Analyze problems that are specific to `ionic` type calculations: i.e. `relax` and `vc-relax`."""
+        if self.get_calculation_type() not in ['relax', 'vc-relax']:
+            return
+
+        electronic_convergence_reached = 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED' not in logs.error
+        ionic_convergence_reached = 'ERROR_IONIC_CONVERGENCE_NOT_REACHED' not in logs.error
+        bfgs_history_failure = 'ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE' in logs.error
+        maximum_ionic_steps_reached = 'ERROR_MAXIMUM_IONIC_STEPS_REACHED' in logs.warning
+        final_scf = parameters.get('final_scf', False)
+
+        # The electronic self-consistency cycle failed before reaching ionic convergence
+        if not ionic_convergence_reached and not electronic_convergence_reached:
+            return self.exit_codes.ERROR_IONIC_CYCLE_ELECTRONIC_CONVERGENCE_NOT_REACHED
+
+        # Ionic convergence was not reached because maximum number of steps was exceeded
+        if not ionic_convergence_reached and maximum_ionic_steps_reached:
+            return self.exit_codes.ERROR_IONIC_CYCLE_EXCEEDED_NSTEP
+
+        # BFGS fails twice in a row in which case QE will print that convergence is reached while it is not necessarily
+        if bfgs_history_failure:
+
+            # If electronic convergence was not reached, this had to have been a `vc-relax` where final SCF failed
+            if not electronic_convergence_reached:
+                return self.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE
+
+            # If the forces and optionally stresses are already converged, consider the calculation successful
+            if self.is_ionically_converged(trajectory):
+                return
+
+            return self.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE
+
+        # Electronic convergence could not have been reached either during ionic relaxation or during final scf
+        if not electronic_convergence_reached:
+            if final_scf:
+                return self.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_FINAL_SCF_FAILED
+
+            return self.exit_codes.ERROR_IONIC_CYCLE_ELECTRONIC_CONVERGENCE_NOT_REACHED
+
+        # Here we have no direct warnings from Quantum ESPRESSO that suggest something went wrong, but we better make
+        # sure and double check manually that all forces (and optionally stresses) are converged.
+        if not self.is_ionically_converged(trajectory):
+
+            if self.is_ionically_converged(trajectory, except_final_scf=True):
+                # The forces and stresses of ionic cycle are below threshold, but those of the final SCF exceed them.
+                # This is not necessarily a problem since the calculation starts from scratch after the variable cell
+                # relaxation and the forces and stresses can be slightly different. Still it is useful to distinguish
+                # these calculations so we return a special exit code.
+                return self.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF
+
+            return self.exit_codes.ERROR_IONIC_CONVERGENCE_NOT_REACHED
+
+    def is_ionically_converged(self, trajectory, except_final_scf=False):
+        """Verify that the calculation was ionically converged.
+
+        For a `relax` calculation this means the forces stored in the `trajectory` are all below the force convergence
+        threshold which is retrieved from the input parameters. For a `vc-relax` calculation, the stress should also
+        give a pressure that is below the pressure convergence threshold.
+
+        :param trajectory: the output trajectory data
+        :param except_final_scf: if True will return whether the calculation is converged except for the final scf.
         """
-        Return the extended dictionary of symmetries.
+        from aiida_quantumespresso.utils.defaults.calculation import pw
+        from aiida_quantumespresso.utils.validation.trajectory import verify_convergence_trajectory
+
+        relax_type = self.get_calculation_type()
+        parameters = self.node.inputs.parameters.get_dict()
+        threshold_forces = parameters.get('CONTROL', {}).get('forc_conv_thr', pw.forc_conv_thr)
+        threshold_stress = parameters.get('CELL', {}).get('press_conv_thr', pw.press_conv_thr)
+        external_pressure = parameters.get('CELL', {}).get('press', 0)
+
+        if relax_type == 'relax':
+            return verify_convergence_trajectory(trajectory, -1, *[threshold_forces, None])
+
+        if relax_type == 'vc-relax':
+            values = [threshold_forces, threshold_stress, external_pressure]
+            converged_relax = verify_convergence_trajectory(trajectory, -2, *values)
+            converged_final = verify_convergence_trajectory(trajectory, -1, *values)
+            return converged_relax and (converged_final or except_final_scf)
+
+        raise RuntimeError('unknown relax_type: {}'.format(relax_type))
+
+    def parse_xml(self, dir_with_bands=None, parser_options=None):
+        """Parse the XML output file.
+
+        :param dir_with_bands: absolute path to directory containing individual k-point XML files for old XML format.
+        :param parser_options: optional dictionary with parser options
+        :return: tuple of two dictionaries, first with raw parsed data and second with log messages
         """
-        data = self._calc.get_outputs(node_type=ParameterData, also_labels=True)
-        all_data = [i[1] for i in data if i[0] == self.get_linkname_outparams()]
-        if len(all_data) > 1:
-            raise UniquenessError('More than one output parameterdata found.')
-        elif not all_data:
-            return []
-        else:
-            compact_list = all_data[0].get_dict()['symmetries']  # rimetti lo zero
-            new_list = []
-            # copy what wasn't compact
-            for element in compact_list:
-                new_dict = {}
-                for keys in ['t_rev', 'equivalent_ions', 'fractional_translation']:
-                    try:
-                        new_dict[keys] = element[keys]
-                    except KeyError:
-                        pass
-                # expand the rest
-                new_dict['name'] = self._possible_symmetries[element['symmetry_number']]['name']
-                new_dict['rotation'] = self._possible_symmetries[element['symmetry_number']]['matrix']
-                new_dict['inversion'] = self._possible_symmetries[element['symmetry_number']]['inversion']
-                new_list.append(new_dict)
-            return new_list
+        from .parse_xml.pw.exceptions import XMLParseError, XMLUnsupportedFormatError
+        from .parse_xml.pw.parse import parse_xml
+
+        logs = get_logging_container()
+        parsed_data = {}
+
+        object_names = self.retrieved.list_object_names()
+        xml_files = [xml_file for xml_file in self.node.process_class.xml_filenames if xml_file in object_names]
+
+        if not xml_files:
+            if not self.node.get_option('without_xml'):
+                self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_MISSING
+            return parsed_data, logs
+
+        if len(xml_files) > 1:
+            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_MULTIPLE
+            return parsed_data, logs
+
+        try:
+            with self.retrieved.open(xml_files[0]) as xml_file:
+                parsed_data, logs = parse_xml(xml_file, dir_with_bands)
+        except IOError:
+            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_READ
+        except XMLParseError:
+            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_PARSE
+        except XMLUnsupportedFormatError:
+            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_FORMAT
+        except Exception:
+            logs.critical.append(traceback.format_exc())
+            self.exit_code_xml = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
+
+        return parsed_data, logs
+
+    def parse_stdout(self, parameters, parser_options=None, parsed_xml=None):
+        """Parse the stdout output file.
+
+        :param parameters: the input parameters dictionary
+        :param parser_options: optional dictionary with parser options
+        :param parsed_xml: the raw parsed data from the XML output
+        :return: tuple of two dictionaries, first with raw parsed data and second with log messages
+        """
+        from aiida_quantumespresso.parsers.parse_raw.pw import parse_stdout
+
+        logs = get_logging_container()
+        parsed_data = {}
+
+        filename_stdout = self.node.get_attribute('output_filename')
+
+        if filename_stdout not in self.retrieved.list_object_names():
+            self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_MISSING
+            return parsed_data, logs
+
+        try:
+            stdout = self.retrieved.get_object_content(filename_stdout)
+        except IOError:
+            self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_READ
+            return parsed_data, logs
+
+        try:
+            parsed_data, logs = parse_stdout(stdout, parameters, parser_options, parsed_xml)
+        except Exception:
+            logs.critical.append(traceback.format_exc())
+            self.exit_code_stdout = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
+
+        # If the stdout was incomplete, most likely the job was interrupted before it could cleanly finish, so the
+        # output files are most likely corrupt and cannot be restarted from
+        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs['error']:
+            self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
+
+        # Under certain conditions, such as the XML missing or being incorrect, the structure data might be incomplete.
+        # Since following code depends on it, we replace missing information taken from the input structure.
+        structure = self.node.inputs.structure
+        parsed_data.setdefault('structure', {}).setdefault('cell', {})
+
+        if 'lattice_vectors' not in parsed_data['structure']['cell']:
+            parsed_data['structure']['cell']['lattice_vectors'] = structure.cell
+
+        if 'atoms' not in parsed_data['structure']['cell']:
+            symbols = {s.kind_name: structure.get_kind(s.kind_name).symbol for s in structure.sites}
+            parsed_data['structure']['cell']['atoms'] = [(symbols[s.kind_name], s.position) for s in structure.sites]
+
+        return parsed_data, logs
 
     @staticmethod
-    def _get_qe_symmetry_list():
-        """
-        Hard coded names and rotation matrices + inversion from QE v 5.0.2
-        Function for Parser class usage only.
+    def build_output_parameters(parsed_stdout, parsed_xml):
+        """Build the dictionary of output parameters from the raw parsed data.
 
-        :return: a list of dictionaries, each containing name (string),
-            inversion (boolean) and matrix (list of lists)
-        """
-        sin3 = 0.866025403784438597
-        cos3 = 0.5
-        msin3 = -0.866025403784438597
-        mcos3 = -0.5
+        The output parameters are based on the union of raw parsed data from the XML and stdout output files.
+        Currently, if both raw parsed data dictionaries contain the same key, the stdout version takes precedence, but
+        this should not occur as the `parse_stdout` method should already have solved these conflicts.
 
-        # 32 rotations that are checked + inversion taken from symm_base.f90 from the QE source code
-        # They are in Fortran format and therefore transposed with respect to the default python format
-        transposed_matrices_cartesian = [
-            [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]],
-            [[-1., 0., 0.], [0., -1., 0.], [0., 0., 1.]],
-            [[-1., 0., 0.], [0., 1., 0.], [0., 0., -1.]],
-            [[1., 0., 0.], [0., -1., 0.], [0., 0., -1.]],
-            [[0., 1., 0.], [1., 0., 0.], [0., 0., -1.]],
-            [[0., -1., 0.], [-1., 0., 0.], [0., 0., -1.]],
-            [[0., -1., 0.], [1., 0., 0.], [0., 0., 1.]],
-            [[0., 1., 0.], [-1., 0., 0.], [0., 0., 1.]],
-            [[0., 0., 1.], [0., -1., 0.], [1., 0., 0.]],
-            [[0., 0., -1.], [0., -1., 0.], [-1., 0., 0.]],
-            [[0., 0., -1.], [0., 1., 0.], [1., 0., 0.]],
-            [[0., 0., 1.], [0., 1., 0.], [-1., 0., 0.]],
-            [[-1., 0., 0.], [0., 0., 1.], [0., 1., 0.]],
-            [[-1., 0., 0.], [0., 0., -1.], [0., -1., 0.]],
-            [[1., 0., 0.], [0., 0., -1.], [0., 1., 0.]],
-            [[1., 0., 0.], [0., 0., 1.], [0., -1., 0.]],
-            [[0., 0., 1.], [1., 0., 0.], [0., 1., 0.]],
-            [[0., 0., -1.], [-1., 0., 0.], [0., 1., 0.]],
-            [[0., 0., -1.], [1., 0., 0.], [0., -1., 0.]],
-            [[0., 0., 1.], [-1., 0., 0.], [0., -1., 0.]],
-            [[0., 1., 0.], [0., 0., 1.], [1., 0., 0.]],
-            [[0., -1., 0.], [0., 0., -1.], [1., 0., 0.]],
-            [[0., -1., 0.], [0., 0., 1.], [-1., 0., 0.]],
-            [[0., 1., 0.], [0., 0., -1.], [-1., 0., 0.]],
-            [[cos3, sin3, 0.], [msin3, cos3, 0.], [0., 0., 1.]],
-            [[cos3, msin3, 0.], [sin3, cos3, 0.], [0., 0., 1.]],
-            [[mcos3, sin3, 0.], [msin3, mcos3, 0.], [0., 0., 1.]],
-            [[mcos3, msin3, 0.], [sin3, mcos3, 0.], [0., 0., 1.]],
-            [[cos3, msin3, 0.], [msin3, mcos3, 0.], [0., 0., -1.]],
-            [[cos3, sin3, 0.], [sin3, mcos3, 0.], [0., 0., -1.]],
-            [[mcos3, msin3, 0.], [msin3, cos3, 0.], [0., 0., -1.]],
-            [[mcos3, sin3, 0.], [sin3, cos3, 0.], [0., 0., -1.]],
+        :param parsed_stdout: the raw parsed data dictionary from the stdout output file
+        :param parsed_xml: the raw parsed data dictionary from the XML output file
+        :return: the union of the two parsed raw and information about the parser
+        """
+        from aiida_quantumespresso.parsers import get_parser_info
+
+        parsed_info = get_parser_info(parser_info_template='aiida-quantumespresso parser pw.x v{}')
+
+        for key in list(parsed_stdout.keys()):
+            if key in list(parsed_xml.keys()):
+                if parsed_stdout[key] != parsed_xml[key]:
+                    raise AssertionError('{} found in both dictionaries with different values: {} vs. {}'.format(
+                        key, parsed_stdout[key], parsed_xml[key]))
+
+        parameters = dict(list(parsed_xml.items()) + list(parsed_stdout.items()) + list(parsed_info.items()))
+
+        return parameters
+
+    def build_output_structure(self, parsed_structure):
+        """Build the output structure from the raw parsed data.
+
+        :param parsed_structure: the dictionary with raw parsed structure data
+        :return: a new `StructureData` created from the parsed data iff the calculation type produces a new structure
+            and the parsed data contained a cell definition. In all other cases, the input structure will be returned.
+        """
+        from aiida_quantumespresso.parsers.parse_raw import convert_qe2aiida_structure
+
+        type_calc = self.node.inputs.parameters.get_dict()['CONTROL']['calculation']
+
+        if type_calc not in ['relax', 'vc-relax', 'md', 'vc-md'] or 'cell' not in list(parsed_structure.keys()):
+            return self.node.inputs.structure
+
+        return convert_qe2aiida_structure(parsed_structure, self.node.inputs.structure)
+
+    @staticmethod
+    def build_output_trajectory(parsed_trajectory, structure):
+        """Build the output trajectory from the raw parsed trajectory data.
+
+        :param parsed_trajectory: the raw parsed trajectory data
+        :return: a `TrajectoryData` or None
+        """
+        fractional = False
+
+        if 'atomic_positions_relax' in parsed_trajectory:
+            positions = numpy.array(parsed_trajectory.pop('atomic_positions_relax'))
+        elif 'atomic_fractionals_relax' in parsed_trajectory:
+            fractional = True
+            positions = numpy.array(parsed_trajectory.pop('atomic_fractionals_relax'))
+        else:
+            # The positions were never printed, the calculation did not change the structure
+            positions = numpy.array([[site.position for site in structure.sites]])
+
+        try:
+            cells = numpy.array(parsed_trajectory.pop('lattice_vectors_relax'))
+        except KeyError:
+            # The cell is never printed, the calculation was at fixed cell
+            cells = numpy.array([structure.cell])
+
+        # Ensure there are as many frames for cell as positions, even when the calculation was done at fixed cell
+        if len(cells) == 1 and len(positions) > 1:
+            cells = numpy.array([cells[0]] * len(positions))
+
+        if fractional:
+            # convert positions to cartesian
+            positions = numpy.einsum('ijk, ikm -> ijm', positions, cells)
+
+        symbols = [str(site.kind_name) for site in structure.sites]
+        stepids = numpy.arange(len(positions))
+
+        trajectory = orm.TrajectoryData()
+        trajectory.set_trajectory(
+            stepids=stepids,
+            cells=cells,
+            symbols=symbols,
+            positions=positions,
+        )
+
+        for key, value in parsed_trajectory.items():
+            trajectory.set_array(key, numpy.array(value))
+
+        return trajectory
+
+    def build_output_kpoints(self, parsed_parameters, structure):
+        """Build the output kpoints from the raw parsed data.
+
+        :param parsed_parameters: the raw parsed data
+        :return: a `KpointsData` or None
+        """
+        k_points_list = parsed_parameters.pop('k_points', None)
+        k_points_units = parsed_parameters.pop('k_points_units', None)
+        k_points_weights_list = parsed_parameters.pop('k_points_weights', None)
+
+        if k_points_list is None or k_points_weights_list is None:
+            return None
+
+        if k_points_units != '1 / angstrom':
+            self.logger.error('Error in kpoints units (should be cartesian)')
+            self.exit_code_parser = self.exit_codes.ERROR_INVALID_KPOINT_UNITS
+            return None
+
+        kpoints = orm.KpointsData()
+        kpoints.set_cell_from_structure(structure)
+        kpoints.set_kpoints(k_points_list, cartesian=True, weights=k_points_weights_list)
+
+        return kpoints
+
+    def build_output_bands(self, parsed_bands, parsed_kpoints=None):
+        """Build the output bands from the raw parsed bands data.
+
+        :param parsed_bands: the raw parsed bands data
+        :param parsed_kpoints: the `KpointsData` to use for the bands
+        :return: a `BandsData` or None
+        """
+        if not parsed_bands or not parsed_kpoints:
+            return
+
+        # In the case of input kpoints that define a list of k-points, i.e. along high-symmetry path, and explicit
+        # labels, set those labels also on the output kpoints to be used for the bands. This will allow plotting
+        # utilities to place k-point labels along the x-axis.
+        try:
+            self.node.inputs.kpoints.get_kpoints()
+            parsed_kpoints.labels = self.node.inputs.kpoints.labels
+        except (AttributeError, ValueError, TypeError):
+            # AttributeError: input kpoints defines a mesh, not an explicit list
+            # TypeError: inputs kpoints do not define any labels
+            # ValueError: input kpoints labels are not commensurate with `parsed_kpoints`
+            pass
+
+        # Correct the occupation for nspin=1 calculations where Quantum ESPRESSO populates each band only halfway
+        if len(parsed_bands['occupations']) > 1:
+            occupations = parsed_bands['occupations']
+        else:
+            occupations = 2. * numpy.array(parsed_bands['occupations'][0])
+
+        if len(parsed_bands['bands']) > 1:
+            bands_energies = parsed_bands['bands']
+        else:
+            bands_energies = parsed_bands['bands'][0]
+
+        bands = orm.BandsData()
+        bands.set_kpointsdata(parsed_kpoints)
+        bands.set_bands(bands_energies, units=parsed_bands['bands_units'], occupations=occupations)
+
+        return bands
+
+    @staticmethod
+    def get_parser_settings_key():
+        """Return the key that contains the optional parser options in the `settings` input node."""
+        return 'parser_options'
+
+    @staticmethod
+    def final_trajectory_frame_to_parameters(parameters, parsed_trajectory):
+        """Copy the last frame of certain properties from the `TrajectoryData` to the outputs parameters.
+
+        This makes these properties queryable.
+        """
+        include_keys = [
+            'energy',
+            'energy_accuracy',
+            'energy_ewald',
+            'energy_hartree',
+            'energy_hubbard',
+            'energy_one_electron',
+            'energy_threshold',
+            'energy_vdw',
+            'energy_xc',
+            'energy_smearing',
+            'energy_one_center_paw',
+            'energy_est_exchange',
+            'energy_fock',
+            'scf_iterations',
+            'fermi_energy',
+            'total_force',
+            'total_magnetization',
+            'absolute_magnetization',
         ]
 
-        # Names for the 32 matrices, with and without inversion
-        matrices_name = [
-            'identity                                     ',
-            '180 deg rotation - cart. axis [0,0,1]        ',
-            '180 deg rotation - cart. axis [0,1,0]        ',
-            '180 deg rotation - cart. axis [1,0,0]        ',
-            '180 deg rotation - cart. axis [1,1,0]        ',
-            '180 deg rotation - cart. axis [1,-1,0]       ',
-            ' 90 deg rotation - cart. axis [0,0,-1]       ',
-            ' 90 deg rotation - cart. axis [0,0,1]        ',
-            '180 deg rotation - cart. axis [1,0,1]        ',
-            '180 deg rotation - cart. axis [-1,0,1]       ',
-            ' 90 deg rotation - cart. axis [0,1,0]        ',
-            ' 90 deg rotation - cart. axis [0,-1,0]       ',
-            '180 deg rotation - cart. axis [0,1,1]        ',
-            '180 deg rotation - cart. axis [0,1,-1]       ',
-            ' 90 deg rotation - cart. axis [-1,0,0]       ',
-            ' 90 deg rotation - cart. axis [1,0,0]        ',
-            '120 deg rotation - cart. axis [-1,-1,-1]     ',
-            '120 deg rotation - cart. axis [-1,1,1]       ',
-            '120 deg rotation - cart. axis [1,1,-1]       ',
-            '120 deg rotation - cart. axis [1,-1,1]       ',
-            '120 deg rotation - cart. axis [1,1,1]        ',
-            '120 deg rotation - cart. axis [-1,1,-1]      ',
-            '120 deg rotation - cart. axis [1,-1,-1]      ',
-            '120 deg rotation - cart. axis [-1,-1,1]      ',
-            ' 60 deg rotation - cryst. axis [0,0,1]       ',
-            ' 60 deg rotation - cryst. axis [0,0,-1]      ',
-            '120 deg rotation - cryst. axis [0,0,1]       ',
-            '120 deg rotation - cryst. axis [0,0,-1]      ',
-            '180 deg rotation - cryst. axis [1,-1,0]      ',
-            '180 deg rotation - cryst. axis [2,1,0]       ',
-            '180 deg rotation - cryst. axis [0,1,0]       ',
-            '180 deg rotation - cryst. axis [1,1,0]       ',
-            'inversion                                    ',
-            'inv. 180 deg rotation - cart. axis [0,0,1]   ',
-            'inv. 180 deg rotation - cart. axis [0,1,0]   ',
-            'inv. 180 deg rotation - cart. axis [1,0,0]   ',
-            'inv. 180 deg rotation - cart. axis [1,1,0]   ',
-            'inv. 180 deg rotation - cart. axis [1,-1,0]  ',
-            'inv.  90 deg rotation - cart. axis [0,0,-1]  ',
-            'inv.  90 deg rotation - cart. axis [0,0,1]   ',
-            'inv. 180 deg rotation - cart. axis [1,0,1]   ',
-            'inv. 180 deg rotation - cart. axis [-1,0,1]  ',
-            'inv.  90 deg rotation - cart. axis [0,1,0]   ',
-            'inv.  90 deg rotation - cart. axis [0,-1,0]  ',
-            'inv. 180 deg rotation - cart. axis [0,1,1]   ',
-            'inv. 180 deg rotation - cart. axis [0,1,-1]  ',
-            'inv.  90 deg rotation - cart. axis [-1,0,0]  ',
-            'inv.  90 deg rotation - cart. axis [1,0,0]   ',
-            'inv. 120 deg rotation - cart. axis [-1,-1,-1]',
-            'inv. 120 deg rotation - cart. axis [-1,1,1]  ',
-            'inv. 120 deg rotation - cart. axis [1,1,-1]  ',
-            'inv. 120 deg rotation - cart. axis [1,-1,1]  ',
-            'inv. 120 deg rotation - cart. axis [1,1,1]   ',
-            'inv. 120 deg rotation - cart. axis [-1,1,-1] ',
-            'inv. 120 deg rotation - cart. axis [1,-1,-1] ',
-            'inv. 120 deg rotation - cart. axis [-1,-1,1] ',
-            'inv.  60 deg rotation - cryst. axis [0,0,1]  ',
-            'inv.  60 deg rotation - cryst. axis [0,0,-1] ',
-            'inv. 120 deg rotation - cryst. axis [0,0,1]  ',
-            'inv. 120 deg rotation - cryst. axis [0,0,-1] ',
-            'inv. 180 deg rotation - cryst. axis [1,-1,0] ',
-            'inv. 180 deg rotation - cryst. axis [2,1,0]  ',
-            'inv. 180 deg rotation - cryst. axis [0,1,0]  ',
-            'inv. 180 deg rotation - cryst. axis [1,1,0]  '
-        ]
+        for property_key, property_values in parsed_trajectory.items():
 
-        rotations = []
+            if property_key not in include_keys:
+                continue
 
-        for key, value in zip(matrices_name[:len(transposed_matrices_cartesian)], transposed_matrices_cartesian):
-            rotations.append({'name': key, 'matrix': numpy.transpose(value), 'inversion': False})
+            parameters[property_key] = property_values[-1]
 
-        for key, value in zip(matrices_name[len(transposed_matrices_cartesian):], transposed_matrices_cartesian):
-            rotations.append({'name': key, 'matrix': numpy.transpose(value), 'inversion': True})
+    def get_extended_symmetries(self):
+        """Return the extended dictionary of symmetries based on reduced symmetries stored in output parameters."""
+        from aiida_quantumespresso.parsers.parse_raw.pw import get_symmetry_mapping
 
-        return rotations
+        possible_symmetries = get_symmetry_mapping()
+        parameters = self.node.get_outgoing(node_class=orm.Dict).get_node_by_label('output_parameters')
+
+        symmetries_extended = []
+        symmetries_reduced = parameters.get_dict()['symmetries']  # rimetti lo zero
+
+        for element in symmetries_reduced:
+
+            symmetry = {}
+
+            for keys in ['t_rev', 'equivalent_ions', 'fractional_translation']:
+                try:
+                    symmetry[keys] = element[keys]
+                except KeyError:
+                    pass
+
+            # expand the rest
+            symmetry['name'] = possible_symmetries[element['symmetry_number']]['name']
+            symmetry['rotation'] = possible_symmetries[element['symmetry_number']]['matrix']
+            symmetry['inversion'] = possible_symmetries[element['symmetry_number']]['inversion']
+
+            symmetries_extended.append(symmetry)
+
+        return symmetries_extended

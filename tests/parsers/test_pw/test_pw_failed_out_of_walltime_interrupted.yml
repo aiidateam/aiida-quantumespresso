@@ -1,0 +1,18 @@
+output_parameters:
+  parser_info: aiida-quantumespresso parser pw.x v3.0.0
+  parser_version: 3.0.0
+  parser_warnings: []
+output_trajectory:
+  array|cells:
+  - 1
+  - 3
+  - 3
+  array|positions:
+  - 1
+  - 2
+  - 3
+  array|steps:
+  - 1
+  symbols:
+  - Si
+  - Si

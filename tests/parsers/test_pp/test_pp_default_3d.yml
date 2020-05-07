@@ -1,0 +1,7 @@
+coordinates_units: bohr
+data_units: Ry
+parameters:
+  negative_core_charge: -1.3e-05
+  output_format: Gaussian cube
+  plot_num: 11
+  plot_type: 3D

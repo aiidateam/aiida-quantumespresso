@@ -20,7 +20,6 @@ Base workchains
    :members:
 
    .. autoattribute:: aiida_quantumespresso.common.workchain.base.restart.BaseRestartWorkChain._verbose
-   .. autoattribute:: aiida_quantumespresso.common.workchain.base.restart.BaseRestartWorkChain._error_handlers
    .. autoattribute:: aiida_quantumespresso.common.workchain.base.restart.BaseRestartWorkChain._calculation_class
    .. autoattribute:: aiida_quantumespresso.common.workchain.base.restart.BaseRestartWorkChain._error_handler_entry_point
 

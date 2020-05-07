@@ -1,91 +1,52 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import numpy as np
-from aiida.parsers.parser import Parser
-from aiida.orm.data.array.xy import XyData
-from aiida.orm.data.parameter import ParameterData
-from aiida.common.exceptions import InvalidOperation
-from aiida.common.datastructures import calc_states
+from six.moves import range
+
+from aiida.orm import Dict, XyData
+from aiida.common import NotExistent
+
 from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers import parse_raw_out_basic
-from aiida_quantumespresso.calculations.dos import DosCalculation
+from aiida_quantumespresso.parsers.parse_raw.base import parse_output_base
+from .base import Parser
+
 
 class DosParser(Parser):
-    """
-    This class is the implementation of the Parser class for Dos.
-    """
-    _dos_name = 'output_dos'
-    _units_name = 'output_units'
+    """This class is the implementation of the Parser class for Dos."""
 
-    def __init__(self, calculation):
-        """
-        Initialize the instance of DosParser
-        """
-        # check for valid input
-        if not isinstance(calculation, DosCalculation):
-            raise QEOutputParsingError("Input calc must be a DosCalculation")
+    def parse(self, **kwargs):
+        """Parses the datafolder, stores results.
 
-        self._calc = calculation
-
-        super(DosParser, self).__init__(calculation)
-
-    def get_linkname_dos(self):
+        Retrieves dos output, and some basic information from the out_file, such as warnings and wall_time
         """
-        Returns the name of the link of dos
-        """
-        return self._dos_name
-
-    def get_linkname_units(self):
-        """
-        Returns the name of the link of units
-        """
-        return self._units_name
-
-    def parse_with_retrieved(self, retrieved):
-        """
-        Parses the datafolder, stores results.
-        Retrieves dos output, and some basic information from the
-        out_file, such as warnings and wall_time
-        """
-
-        # suppose at the start that the job is successful
-        successful = True
-        new_nodes_list = []
-
         try:
-            out_folder = self._calc.get_retrieved_node()
-        except KeyError:
-            self.logger.error("No retrieved folder found")
-            return successful, new_nodes_list
+            out_folder = self.retrieved
+        except NotExistent:
+            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
 
         # Read standard out
         try:
-            filpath = out_folder.get_abs_path(self._calc._OUTPUT_FILE_NAME)
-            with open(filpath, 'r') as fil:
+            filename_stdout = self.node.get_option('output_filename')  # or get_attribute(), but this is clearer
+            with out_folder.open(filename_stdout, 'r') as fil:
                     out_file = fil.readlines()
         except OSError:
-            self.logger.error("Standard output file could not be found.")
-            successful = False
-            return successful, new_nodes_list
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 
-        successful = False
+        job_done = False
         for i in range(len(out_file)):
             line = out_file[-i]
-            if "JOB DONE" in line:
-                successful = True
+            if 'JOB DONE' in line:
+                job_done = True
                 break
-        if not successful:
-            self.logger.error("Computation did not finish properly")
-            return successful, new_nodes_list
+        if not job_done:
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE)
 
         # check that the dos file is present, if it is, read it
         try:
-            dos_path = out_folder.get_abs_path(self._calc._DOS_FILENAME)
-            with open(dos_path, 'r') as fil:
+            with out_folder.open(self.node.process_class._DOS_FILENAME, 'r') as fil:
                     dos_file = fil.readlines()
         except OSError:
-            successful = False
-            self.logger.error("Dos output file could not found")
-            return successful, new_nodes_list
+            return self.exit(self.exit_codes.ERROR_READING_DOS_FILE)
 
         # end of initial checks
 
@@ -101,49 +62,44 @@ class DosParser(Parser):
                           'states']  # When spin is displayed
 
         # grabs parsed data from aiida.dos
+        # TODO: should I catch any QEOutputParsingError from parse_raw_dos,
+        #       log an error and return an exit code?
         array_data, spin = parse_raw_dos(dos_file, array_names, array_units)
-        
+
         energy_units = 'eV'
         dos_units = 'states/eV'
-        int_dos_units = 'states'        
+        int_dos_units = 'states'
         xy_data = XyData()
-        xy_data.set_x(array_data["dos_energy"],"dos_energy", energy_units)
+        xy_data.set_x(array_data['dos_energy'],'dos_energy', energy_units)
         y_arrays = []
         y_names = []
         y_units = []
-        y_arrays  += [array_data["integrated_dos"]]
-        y_names += ["integrated_dos"]
-        y_units += ["states"]
+        y_arrays  += [array_data['integrated_dos']]
+        y_names += ['integrated_dos']
+        y_units += ['states']
         if spin:
-            y_arrays  += [array_data["dos_spin_up"]]
-            y_arrays  += [array_data["dos_spin_down"]]
-            y_names += ["dos_spin_up"]
-            y_names += ["dos_spin_down"]
-            y_units += ["states/eV"]*2
+            y_arrays  += [array_data['dos_spin_up']]
+            y_arrays  += [array_data['dos_spin_down']]
+            y_names += ['dos_spin_up']
+            y_names += ['dos_spin_down']
+            y_units += ['states/eV']*2
         else:
-            y_arrays  += [array_data["dos"]]
-            y_names += ["dos"]
-            y_units += ["states/eV"]
+            y_arrays  += [array_data['dos']]
+            y_names += ['dos']
+            y_units += ['states/eV']
         xy_data.set_y(y_arrays,y_names,y_units)
 
-        # grabs the parsed data from aiida.out
-        parsed_data = parse_raw_out_basic(out_file, "DOS")
-        output_params = ParameterData(dict=parsed_data)
-        # Adds warnings
-        for message in parsed_data['warnings']:
-            self.logger.error(message)
-        # Create New Nodes List
-        new_nodes_list = [(self.get_linkname_outparams(), output_params),
-                          (self.get_linkname_dos(), xy_data)]
-        return successful,new_nodes_list
+        parsed_data, logs = parse_output_base(out_file, 'DOS')
+        self.emit_logs(logs)
 
+        self.out('output_dos', xy_data)
+        self.out('output_parameters', Dict(dict=parsed_data))
 
 
 def parse_raw_dos(dos_file, array_names, array_units):
-    """
-    This function takes as input the dos_file as a list of filelines along
-    with information on how to give labels and units to the parsed data
-    
+    """This function takes as input the dos_file as a list of filelines along with information on how to give labels and
+    units to the parsed data.
+
     :param dos_file: dos file lines in the form of a list
     :type dos_file: list
     :param array_names: list of all array names, note that array_names[0]
@@ -156,11 +112,11 @@ def parse_raw_dos(dos_file, array_names, array_units):
                         array_units[1] is for the case with spin-polarized
                         calculation
     :type array_units: list
-    
+
     :return array_data: narray, a dictionary for ArrayData type, which contains
                         all parsed dos output along with labels and units
     :return spin: boolean, indicates whether the parsed results are spin
-                  polarized 
+                  polarized
     """
 
     dos_header = dos_file[0]
@@ -170,9 +126,9 @@ def parse_raw_dos(dos_file, array_names, array_units):
         raise QEOutputParsingError('dosfile could not be loaded '
         ' using genfromtxt')
     if len(dos_data) == 0:
-        raise QEOutputParsingError("Dos file is empty.")
+        raise QEOutputParsingError('Dos file is empty.')
     if np.isnan(dos_data).any():
-        raise QEOutputParsingError("Dos file contains non-numeric elements.")
+        raise QEOutputParsingError('Dos file contains non-numeric elements.')
 
     # Checks the number of columns, essentially to see whether spin was used
     if len(dos_data[0]) == 3:
@@ -184,10 +140,10 @@ def parse_raw_dos(dos_file, array_names, array_units):
         # spin is used
         array_names = array_names[1]
         array_units = array_units[1]
-        spin = True 
+        spin = True
     else:
-        raise QEOutputParsingError("Dos file in format that the parser is not "
-                                   "designed to handle.")
+        raise QEOutputParsingError('Dos file in format that the parser is not '
+                                   'designed to handle.')
 
     i = 0
     array_data = {}
@@ -196,4 +152,4 @@ def parse_raw_dos(dos_file, array_names, array_units):
         array_data[array_names[i]] = dos_data[:, i]
         array_data[array_names[i]+'_units'] = np.array(array_units[i])
         i += 1
-    return array_data,spin
+    return array_data, spin

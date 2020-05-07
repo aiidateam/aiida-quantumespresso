@@ -1,49 +1,41 @@
 # -*- coding: utf-8 -*-
-from aiida.common.extendeddicts import AttributeDict
-from aiida.orm import Code
-from aiida.orm.data.base import Bool, Float, Int, Str
-from aiida.orm.data.folder import FolderData
-from aiida.orm.data.remote import RemoteData
-from aiida.orm.data.parameter import ParameterData
-from aiida.orm.data.array.kpoints import KpointsData
-from aiida.orm.utils import CalculationFactory
-from aiida.work.workchain import while_
-from aiida_quantumespresso.common.workchain.utils import ErrorHandlerReport
-from aiida_quantumespresso.common.workchain.utils import register_error_handler
-from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkChain
-from aiida_quantumespresso.utils.resources import get_default_options
+"""Workchain to run a Quantum ESPRESSO ph.x calculation with automated error handling and restarts."""
+from __future__ import absolute_import
 
+from aiida import orm
+from aiida.common import AttributeDict
+from aiida.engine import while_
+from aiida.plugins import CalculationFactory
+
+from aiida_quantumespresso.common.workchain.utils import ErrorHandlerReport, register_error_handler
+from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkChain
 
 PhCalculation = CalculationFactory('quantumespresso.ph')
 PwCalculation = CalculationFactory('quantumespresso.pw')
 
 
 class PhBaseWorkChain(BaseRestartWorkChain):
-    """
-    Base Workchain to launch a Quantum Espresso phonon ph.x calculation and restart it until
-    successfully converged or until the maximum number of restarts is exceeded
-    """
-    _verbose = True
+    """Workchain to run a Quantum ESPRESSO ph.x calculation with automated error handling and restarts."""
+
     _calculation_class = PhCalculation
 
     defaults = AttributeDict({
         'delta_factor_max_seconds': 0.95,
+        'delta_factor_alpha_mix': 0.90,
         'alpha_mix': 0.70,
     })
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
+        # yapf: disable
         super(PhBaseWorkChain, cls).define(spec)
-        spec.input('code', valid_type=Code)
-        spec.input('qpoints', valid_type=KpointsData)
-        spec.input('parent_folder', valid_type=RemoteData)
-        spec.input('parameters', valid_type=ParameterData, required=False)
-        spec.input('settings', valid_type=ParameterData, required=False)
-        spec.input('options', valid_type=ParameterData, required=False)
-        spec.input('only_initialization', valid_type=Bool, default=Bool(False))
+        spec.expose_inputs(PhCalculation, namespace='ph')
+        spec.input('only_initialization', valid_type=orm.Bool, default=lambda: orm.Bool(False))
         spec.outline(
             cls.setup,
-            cls.validate_inputs,
+            cls.validate_parameters,
+            cls.validate_resources,
             while_(cls.should_run_calculation)(
                 cls.prepare_calculation,
                 cls.run_calculation,
@@ -51,118 +43,106 @@ class PhBaseWorkChain(BaseRestartWorkChain):
             ),
             cls.results,
         )
-        spec.output('output_parameters', valid_type=ParameterData)
-        spec.output('remote_folder', valid_type=RemoteData)
-        spec.output('retrieved', valid_type=FolderData)
+        spec.expose_outputs(PwCalculation, exclude=('retrieved_folder',))
+        spec.exit_code(204, 'ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED',
+            message='The `metadata.options` did not specify both `resources.num_machines` and `max_wallclock_seconds`.')
+        spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
+            message='The calculation failed with an unrecoverable error.')
 
-    def validate_inputs(self):
+    def setup(self):
+        """Call the `setup` of the `BaseRestartWorkChain` and then create the inputs dictionary in `self.ctx.inputs`.
+
+        This `self.ctx.inputs` dictionary will be used by the `BaseRestartWorkChain` to submit the calculations in the
+        internal loop.
         """
-        Validate inputs that depend might depend on each other and cannot be validated by the spec. Also define
-        dictionary `inputs` in the context, that will contain the inputs for the calculation that will be launched
-        in the `run_calculation` step.
-        """
-        self.ctx.inputs = AttributeDict({
-            'code': self.inputs.code,
-            'qpoints': self.inputs.qpoints,
-            'parent_folder': self.inputs.parent_folder,
-        })
+        super(PhBaseWorkChain, self).setup()
+        self.ctx.inputs = AttributeDict(self.exposed_inputs(PhCalculation, 'ph'))
 
-        if 'parameters' in self.inputs:
-            self.ctx.inputs.parameters = self.inputs.parameters.get_dict()
-        else:
-            self.ctx.inputs.parameters = {}
+    def validate_parameters(self):
+        """Validate inputs that might depend on each other and cannot be validated by the spec."""
+        self.ctx.inputs.parameters = self.ctx.inputs.parameters.get_dict()
+        self.ctx.inputs.settings = self.ctx.inputs.settings.get_dict() if 'settings' in self.ctx.inputs else {}
 
-        if 'INPUTPH' not in self.ctx.inputs.parameters:
-            self.ctx.inputs.parameters['INPUTPH'] = {}
-
-        if 'settings' in self.inputs:
-            self.ctx.inputs.settings = self.inputs.settings.get_dict()
-        else:
-            self.ctx.inputs.settings = {}
-
-        if 'options' in self.inputs:
-            self.ctx.inputs._options = self.inputs.options.get_dict()
-        else:
-            self.ctx.inputs._options = get_default_options()
+        self.ctx.inputs.parameters.setdefault('INPUTPH', {})
+        self.ctx.inputs.parameters['INPUTPH']['recover'] = 'parent_folder' in self.ctx.inputs
 
         if self.inputs.only_initialization.value:
             self.ctx.inputs.settings['ONLY_INITIALIZATION'] = True
 
-    def prepare_calculation(self):
-        """
-        Prepare the inputs for the next calculation
-        """
-        if isinstance(self.ctx.restart_calc, PhCalculation):
-            self.ctx.inputs.parameters['INPUTPH']['recover'] = True
-            self.ctx.inputs.parent_folder = self.ctx.restart_calc.out.remote_folder
+    def validate_resources(self):
+        """Validate the inputs related to the resources.
 
-    def _prepare_process_inputs(self, inputs):
+        The `metadata.options` should at least contain the options `resources` and `max_wallclock_seconds`, where
+        `resources` should define the `num_machines`.
         """
-        The 'max_seconds' setting in the 'INPUTPH' card of the parameters will be set to a fraction of the
-        'max_wallclock_seconds' that will be given to the job via the '_options' dictionary. This will prevent the job
-        from being prematurely terminated by the scheduler without getting the chance to exit cleanly.
+        num_machines = self.ctx.inputs.metadata.options.get('resources', {}).get('num_machines', None)
+        max_wallclock_seconds = self.ctx.inputs.metadata.options.get('max_wallclock_seconds', None)
+
+        if num_machines is None or max_wallclock_seconds is None:
+            return self.exit_codes.ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED
+
+        self.set_max_seconds(max_wallclock_seconds)
+
+    def set_max_seconds(self, max_wallclock_seconds):
+        """Set the `max_seconds` to a fraction of `max_wallclock_seconds` option to prevent out-of-walltime problems.
+
+        :param max_wallclock_seconds: the maximum wallclock time that will be set in the scheduler settings.
         """
-        max_wallclock_seconds = inputs._options['max_wallclock_seconds']
         max_seconds_factor = self.defaults.delta_factor_max_seconds
         max_seconds = max_wallclock_seconds * max_seconds_factor
-        inputs.parameters['INPUTPH']['max_seconds'] = max_seconds
+        self.ctx.inputs.parameters['INPUTPH']['max_seconds'] = max_seconds
 
-        return super(PhBaseWorkChain, self)._prepare_process_inputs(inputs)
+    def prepare_calculation(self):
+        """Prepare the inputs for the next calculation.
+
+        If a `restart_calc` has been set in the context, its `remote_folder` will be used as the `parent_folder` input
+        for the next calculation and the `restart_mode` is set to `restart`.
+        """
+        if self.ctx.restart_calc:
+            self.ctx.inputs.parameters['INPUTPH']['recover'] = True
+            self.ctx.inputs.parent_folder = self.ctx.restart_calc.outputs.remote_folder
+
+    def report_error_handled(self, calculation, action):
+        """Report an action taken for a calculation that has failed.
+
+        This should be called in a registered error handler if its condition is met and an action was taken.
+
+        :param calculation: the failed calculation node
+        :param action: a string message with the action taken
+        """
+        arguments = [calculation.process_label, calculation.pk, calculation.exit_status, calculation.exit_message]
+        self.report('{}<{}> failed with exit status {}: {}'.format(*arguments))
+        self.report('Action taken: {}'.format(action))
 
 
-@register_error_handler(PhBaseWorkChain, 400)
-def _handle_fatal_error_read_namelists(self, calculation):
-    """
-    The calculation failed because it could not read the generated input file
-    """
-    if any(['reading inputph namelist' in w for w in calculation.res.warnings]):
-        self.abort_nowait('PhCalculation<{}> failed because of an invalid input file'.format(calculation.pk))
+@register_error_handler(PhBaseWorkChain, 600)
+def _handle_unrecoverable_failure(self, calculation):
+    """Jandle calculations with an exit status below 400 which are unrecoverable, so abort the work chain."""
+    if calculation.exit_status < 400:
+        self.report_error_handled(calculation, 'unrecoverable error, aborting...')
+        return ErrorHandlerReport(True, True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
+
+
+@register_error_handler(PhBaseWorkChain, 580)
+def _handle_out_of_walltime(self, calculation):
+    """Handle `ERROR_OUT_OF_WALLTIME` exit code: calculation shut down neatly and we can simply restart."""
+    if calculation.exit_status == PhCalculation.exit_codes.ERROR_OUT_OF_WALLTIME.status:
+        self.ctx.restart_calc = calculation
+        self.report_error_handled(calculation, 'simply restart from the last calculation')
         return ErrorHandlerReport(True, True)
 
 
-@register_error_handler(PhBaseWorkChain, 300)
-def _handle_error_exceeded_maximum_walltime(self, calculation):
-    """
-    Calculation ended nominally but ran out of allotted wall time
-    """
-    if 'Maximum CPU time exceeded' in calculation.res.warnings:
-        self.ctx.restart_calc = calculation
-        self.report('PhCalculation<{}> terminated because maximum wall time was exceeded, restarting'
-            .format(calculation.pk))
-        return ErrorHandlerReport(True, True)
-
-
-@register_error_handler(PhBaseWorkChain, 200)
-def _handle_fatal_error_not_converged(self, calculation):
-    """
-    The calculation failed because it could not read the generated input file
-    """
-    if ('Phonon did not reach end of self consistency' in calculation.res.warnings):
-        alpha_mix_old = calculation.inp.parameters.get_dict()['INPUTPH'].get('alpha_mix(1)', self.defaults.alpha_mix)
-        alpha_mix_new = 0.9 * alpha_mix_old
-        self.ctx.inputs.parameters['INPUTPH']['alpha_mix(1)'] = alpha_mix_new
-        self.ctx.restart_calc = calculation
-        self.report('PhCalculation<{}> terminated without reaching convergence, '
-            'setting alpha_mix to {} and restarting'.format(calculation.pk, alpha_mix_new))
-        return ErrorHandlerReport(True, True)
-
-
-@register_error_handler(PhBaseWorkChain, 100)
-def _handle_error_premature_termination(self, calculation):
-    """
-    Calculation did not reach the end of execution, probably because it was killed by the scheduler
-    for running out of allotted walltime
-    """
-    if 'QE ph run did not reach the end of the execution.' in calculation.res.parser_warnings:
-        inputs = calculation.inp.parameters.get_dict()
-        settings = self.ctx.inputs.settings
-
-        factor = self.defaults.delta_factor_max_seconds
-        max_seconds = settings.get('max_seconds', inputs['INPUTPH']['max_seconds'])
-        max_seconds_reduced = int(max_seconds * factor)
-        self.ctx.inputs.parameters['INPUTPH']['max_seconds'] = max_seconds_reduced
+@register_error_handler(PhBaseWorkChain, 410)
+def _handle_convergence_not_achieved(self, calculation):
+    """Handle `ERROR_CONVERGENCE_NOT_REACHED` exit code: decrease the mixing beta and restart from scratch."""
+    if calculation.exit_status == PwCalculation.exit_codes.ERROR_CONVERGENCE_NOT_REACHED.status:
+        factor = self.defaults.delta_factor_alpha_mix
+        alpha_mix = self.ctx.inputs.parameters.get('INPUTPH', {}).get('alpha_mix(1)', self.defaults.alpha_mix)
+        alpha_mix_new = alpha_mix * factor
 
         self.ctx.restart_calc = calculation
-        self.report('PwCalculation<{}> was terminated prematurely, reducing "max_seconds" from {} to {}'
-            .format(calculation.pk, max_seconds, max_seconds_reduced))
+        self.ctx.inputs.parameters.setdefault('INPUTPH', {})['alpha_mix(1)'] = alpha_mix_new
+
+        action = 'reduced alpha_mix from {} to {} and restarting'.format(alpha_mix, alpha_mix_new)
+        self.report_error_handled(calculation, action)
         return ErrorHandlerReport(True, True)

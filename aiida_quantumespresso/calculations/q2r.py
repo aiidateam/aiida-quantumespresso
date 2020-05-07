@@ -1,60 +1,42 @@
 # -*- coding: utf-8 -*-
+"""`CalcJob` implementation for the q2r.x code of Quantum ESPRESSO."""
+from __future__ import absolute_import
+
 import os
-from aiida.common.utils import classproperty
-from aiida.orm.data.folder import FolderData
+
+from aiida import orm
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 from aiida_quantumespresso.calculations.ph import PhCalculation
+from aiida_quantumespresso.data.force_constants import ForceConstantsData
+
 
 class Q2rCalculation(NamelistsCalculation):
-    """
-    q2r.x code of the Quantum ESPRESSO distribution, used to obtain the
-    interatomic force constants in real space after a phonon calculation.
-    For more information, refer to http://www.quantum-espresso.org/
-    """    
-    def _init_internal_params(self):
-        super(Q2rCalculation, self)._init_internal_params()
-                
-        self._default_namelists = ['INPUT']   
-        self._INPUT_SUBFOLDER = os.path.join('.',
-                           PhCalculation._FOLDER_DYNAMICAL_MATRIX)
-        #_internal_retrieve_list = [FORCE_CONSTANTS_NAME]
-        self._blocked_keywords = [('INPUT','fildyn',
-                                 PhCalculation._OUTPUT_DYNAMICAL_MATRIX_PREFIX),
-                                 ('INPUT','flfrc',self._FORCE_CONSTANTS_NAME),
-                            ]
-        self._parent_folder_type = FolderData
-        self._OUTPUT_SUBFOLDER = PhCalculation._FOLDER_DYNAMICAL_MATRIX
-        
-        self._retrieve_singlefile_list = [[self.get_linkname_force_matrix(),
-                                           'quantumespresso.forceconstants',
-                                           self._FORCE_CONSTANTS_NAME]]
-        
-        # Default Q2r output parser provided by AiiDA
-        self._default_parser = 'quantumespresso.q2r'
-        
-    @classproperty
-    def _FORCE_CONSTANTS_NAME(cls):
-        return 'real_space_force_constants.dat'
-   
-    def use_parent_calculation(self,calc):
-        """
-        Set the parent calculation, 
-        from which it will inherit the outputsubfolder.
-        The link will be created from parent RemoteData and NamelistCalculation 
-        """
-        if not isinstance(calc,PhCalculation):
-            raise ValueError("Parent calculation must be a PhCalculation")
+    """`CalcJob` implementation for the q2r.x code of Quantum ESPRESSO."""
 
-        localdata = calc.get_retrieved_node()
-        
-        self.use_parent_folder(localdata)
+    _FORCE_CONSTANTS_NAME = 'real_space_force_constants.dat'
+    _OUTPUT_SUBFOLDER = PhCalculation._FOLDER_DYNAMICAL_MATRIX  # pylint: disable=protected-access
+    _INPUT_SUBFOLDER = os.path.join('.', PhCalculation._FOLDER_DYNAMICAL_MATRIX)  # pylint: disable=protected-access
+
+    _default_namelists = ['INPUT']
+    _blocked_keywords = [
+        ('INPUT', 'fildyn', PhCalculation._OUTPUT_DYNAMICAL_MATRIX_PREFIX),  # pylint: disable=protected-access
+        ('INPUT', 'flfrc', _FORCE_CONSTANTS_NAME),
+    ]
+
+    _internal_retrieve_list = [_FORCE_CONSTANTS_NAME]
+    _default_parser = 'quantumespresso.q2r'
 
     @classmethod
-    def get_linkname_force_matrix(self):
-        """
-        Return the name of the link between Q2rCalculation and the output 
-        force constants produced
-        """
-        return 'force_constants'
-    
-    
+    def define(cls, spec):
+        # yapf: disable
+        super(Q2rCalculation, cls).define(spec)
+        spec.input('parent_folder', valid_type=(orm.RemoteData, orm.FolderData), required=True)
+        spec.output('force_constants', valid_type=ForceConstantsData)
+        spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
+            message='The retrieved folder data node could not be accessed.')
+        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
+            message='The stdout output file could not be read.')
+        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
+            message='The stdout output file was incomplete probably because the calculation got interrupted.')
+        spec.exit_code(330, 'ERROR_READING_FORCE_CONSTANTS_FILE',
+            message='The force constants file could not be read.')

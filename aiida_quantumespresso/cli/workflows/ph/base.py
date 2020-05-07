@@ -1,46 +1,46 @@
 # -*- coding: utf-8 -*-
-import click
-from aiida_quantumespresso.utils.click import command
-from aiida_quantumespresso.utils.click import options
+"""Command line scripts to launch a `PhBaseWorkChain` for testing and demonstration purposes."""
+from __future__ import absolute_import
+
+from aiida.cmdline.params import options, types
+from aiida.cmdline.utils import decorators
+
+from ...utils import launch
+from ...utils import options as options_qe
+from .. import cmd_launch
 
 
-@command()
-@options.code()
-@options.parent_calc(callback_kwargs={'entry_point': 'quantumespresso.pw'})
-@options.kpoint_mesh()
-@options.max_num_machines()
-@options.max_wallclock_seconds()
-@options.daemon()
-def launch(
-    code, parent_calc, kpoints, max_num_machines, max_wallclock_seconds, daemon):
-    """
-    Run the PhBaseWorkChain for a previously completed PwCalculation
-    """
-    from aiida.orm.data.parameter import ParameterData
-    from aiida.orm.utils import CalculationFactory, WorkflowFactory
-    from aiida.work.run import run, submit
+@cmd_launch.command('ph-base')
+@options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.ph'))
+@options.CALCULATION(required=True)
+@options_qe.KPOINTS_MESH(default=[2, 2, 2])
+@options_qe.CLEAN_WORKDIR()
+@options_qe.MAX_NUM_MACHINES()
+@options_qe.MAX_WALLCLOCK_SECONDS()
+@options_qe.WITH_MPI()
+@options_qe.DAEMON()
+@decorators.with_dbenv()
+def launch_workflow(
+    code, calculation, kpoints_mesh, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi, daemon
+):
+    """Run the `PhBaseWorkChain` for a previously completed `PwCalculation`."""
+    from aiida.orm import Bool, Dict
+    from aiida.plugins import WorkflowFactory
     from aiida_quantumespresso.utils.resources import get_default_options
 
-    PwCalculation = CalculationFactory('quantumespresso.pw')
-    PhBaseWorkChain = WorkflowFactory('quantumespresso.ph.base')
-
-    parameters = {
-        'INPUTPH': {
+    inputs = {
+        'ph': {
+            'code': code,
+            'qpoints': kpoints_mesh,
+            'parent_folder': calculation.outputs.remote_folder,
+            'parameters': Dict(dict={'INPUTPH': {}}),
+            'metadata': {
+                'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
+            }
         }
     }
 
-    options = get_default_options(max_num_machines, max_wallclock_seconds)
+    if clean_workdir:
+        inputs['clean_workdir'] = Bool(True)
 
-    inputs = {
-        'code': code,
-        'qpoints': kpoints,
-        'parent_folder': parent_calc.out.remote_folder,
-        'parameters': ParameterData(dict=parameters),
-        'options': ParameterData(dict=options),
-    }
-
-    if daemon:
-        workchain = submit(PhBaseWorkChain, **inputs)
-        click.echo('Submitted {}<{}> to the daemon'.format(PhBaseWorkChain.__name__, workchain.pid))
-    else:
-        run(PhBaseWorkChain, **inputs)
+    launch.launch_process(WorkflowFactory('quantumespresso.ph.base'), daemon, **inputs)

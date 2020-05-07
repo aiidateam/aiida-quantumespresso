@@ -25,6 +25,10 @@ wheels/
 .installed.cfg
 *.egg
 
+# Dev
+.vscode
+.history/
+
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
@@ -45,6 +49,7 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
+.pytest_cache
 
 # Translations
 *.mo
@@ -103,3 +108,4 @@ ENV/
 *~
 .DS_Store
 .idea
+submit_test/

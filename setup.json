@@ -1,89 +1,99 @@
 {
-    "author": "The AiiDA team", 
-    "author_email": "developers@aiida.net", 
+    "author": "The AiiDA team",
+    "author_email": "developers@aiida.net",
     "classifiers": [
-        "License :: OSI Approved :: MIT License", 
-        "Programming Language :: Python :: 2.7", 
-        "Development Status :: 4 - Beta"
-    ], 
-    "description": "The official AiiDA plugin for Quantum ESPRESSO", 
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Development Status :: 5 - Production/Stable"
+    ],
+    "description": "The official AiiDA plugin for Quantum ESPRESSO",
     "entry_points": {
         "aiida.calculations": [
-            "quantumespresso.cp = aiida_quantumespresso.calculations.cp:CpCalculation", 
-            "quantumespresso.dos = aiida_quantumespresso.calculations.dos:DosCalculation", 
-            "quantumespresso.matdyn = aiida_quantumespresso.calculations.matdyn:MatdynCalculation", 
-            "quantumespresso.namelists = aiida_quantumespresso.calculations.namelists:NamelistsCalculation", 
-            "quantumespresso.neb = aiida_quantumespresso.calculations.neb:NebCalculation", 
-            "quantumespresso.ph = aiida_quantumespresso.calculations.ph:PhCalculation", 
-            "quantumespresso.pp = aiida_quantumespresso.calculations.pp:PpCalculation", 
-            "quantumespresso.pw = aiida_quantumespresso.calculations.pw:PwCalculation", 
-            "quantumespresso.projwfc = aiida_quantumespresso.calculations.projwfc:ProjwfcCalculation", 
-            "quantumespresso.pw2wannier90 = aiida_quantumespresso.calculations.pw2wannier90:Pw2wannier90Calculation", 
-            "quantumespresso.q2r = aiida_quantumespresso.calculations.q2r:Q2rCalculation", 
+            "quantumespresso.cp = aiida_quantumespresso.calculations.cp:CpCalculation",
+            "quantumespresso.dos = aiida_quantumespresso.calculations.dos:DosCalculation",
+            "quantumespresso.matdyn = aiida_quantumespresso.calculations.matdyn:MatdynCalculation",
+            "quantumespresso.namelists = aiida_quantumespresso.calculations.namelists:NamelistsCalculation",
+            "quantumespresso.neb = aiida_quantumespresso.calculations.neb:NebCalculation",
+            "quantumespresso.ph = aiida_quantumespresso.calculations.ph:PhCalculation",
+            "quantumespresso.pp = aiida_quantumespresso.calculations.pp:PpCalculation",
+            "quantumespresso.pw = aiida_quantumespresso.calculations.pw:PwCalculation",
+            "quantumespresso.epw = aiida_quantumespresso.calculations.epw:EpwCalculation",
+            "quantumespresso.pw2gw = aiida_quantumespresso.calculations.pw2gw:Pw2gwCalculation",
+            "quantumespresso.projwfc = aiida_quantumespresso.calculations.projwfc:ProjwfcCalculation",
+            "quantumespresso.pw2wannier90 = aiida_quantumespresso.calculations.pw2wannier90:Pw2wannier90Calculation",
+            "quantumespresso.q2r = aiida_quantumespresso.calculations.q2r:Q2rCalculation",
             "quantumespresso.pwimmigrant = aiida_quantumespresso.calculations.pwimmigrant:PwimmigrantCalculation"
-        ], 
+        ],
         "aiida.data": [
-            "quantumespresso.forceconstants = aiida_quantumespresso.data.forceconstants:ForceconstantsData"
-        ], 
+            "quantumespresso.force_constants = aiida_quantumespresso.data.force_constants:ForceConstantsData"
+        ],
         "aiida.parsers": [
-            "quantumespresso.basicpw = aiida_quantumespresso.parsers.basicpw:BasicpwParser", 
-            "quantumespresso.cp = aiida_quantumespresso.parsers.cp:CpParser", 
-            "quantumespresso.dos = aiida_quantumespresso.parsers.dos:DosParser", 
-            "quantumespresso.matdyn = aiida_quantumespresso.parsers.matdyn:MatdynParser", 
-            "quantumespresso.neb = aiida_quantumespresso.parsers.neb:NebParser", 
-            "quantumespresso.ph = aiida_quantumespresso.parsers.ph:PhParser", 
-            "quantumespresso.projwfc = aiida_quantumespresso.parsers.projwfc:ProjwfcParser", 
-            "quantumespresso.pw = aiida_quantumespresso.parsers.pw:PwParser", 
-            "quantumespresso.q2r = aiida_quantumespresso.parsers.q2r:Q2rParser", 
+            "quantumespresso.cp = aiida_quantumespresso.parsers.cp:CpParser",
+            "quantumespresso.dos = aiida_quantumespresso.parsers.dos:DosParser",
+            "quantumespresso.matdyn = aiida_quantumespresso.parsers.matdyn:MatdynParser",
+            "quantumespresso.neb = aiida_quantumespresso.parsers.neb:NebParser",
+            "quantumespresso.ph = aiida_quantumespresso.parsers.ph:PhParser",
+            "quantumespresso.pp = aiida_quantumespresso.parsers.pp:PpParser",
+            "quantumespresso.projwfc = aiida_quantumespresso.parsers.projwfc:ProjwfcParser",
+            "quantumespresso.pw = aiida_quantumespresso.parsers.pw:PwParser",
+            "quantumespresso.pw2gw = aiida_quantumespresso.parsers.pw2gw:Pw2gwParser",
+            "quantumespresso.q2r = aiida_quantumespresso.parsers.q2r:Q2rParser",
             "quantumespresso.pw2wannier90 = aiida_quantumespresso.parsers.pw2wannier90:Pw2wannier90Parser"
-        ], 
-        "aiida.tests": [
-            "quantumespresso.parsers = tests.parsers.parsers", 
-            "quantumespresso.pw = tests.parsers.quantumespressopw", 
-            "quantumespresso.pw_input = tests.parsers.pwinputparser", 
-            "quantumespresso.pw_immigrant = tests.parsers.quantumespressopwimmigrant", 
-            "quantumespresso.tcodexporter = tests.parsers.tcodexporter"
-        ], 
+        ],
+        "aiida.tools.calculations": [
+            "quantumespresso.pw = aiida_quantumespresso.tools.calculations.pw:PwCalculationTools"
+        ],
         "aiida.tools.dbexporters.tcod_plugins": [
-            "quantumespresso.cp = aiida_quantumespresso.tools.dbexporters.tcod_plugins.cp:CpTcodtranslator", 
+            "quantumespresso.cp = aiida_quantumespresso.tools.dbexporters.tcod_plugins.cp:CpTcodtranslator",
             "quantumespresso.pw = aiida_quantumespresso.tools.dbexporters.tcod_plugins.pw:PwTcodtranslator"
-        ], 
+        ],
         "aiida.workflows": [
-            "quantumespresso.ph.base = aiida_quantumespresso.workflows.ph.base:PhBaseWorkChain", 
-            "quantumespresso.pw.base = aiida_quantumespresso.workflows.pw.base:PwBaseWorkChain", 
-            "quantumespresso.pw.relax = aiida_quantumespresso.workflows.pw.relax:PwRelaxWorkChain", 
-            "quantumespresso.pw.bands = aiida_quantumespresso.workflows.pw.bands:PwBandsWorkChain", 
-            "quantumespresso.pw.band_structure = aiida_quantumespresso.workflows.pw.band_structure:PwBandStructureWorkChain", 
-            "quantumespresso.q2r.base = aiida_quantumespresso.workflows.q2r.base:Q2rBaseWorkChain", 
+            "quantumespresso.ph.base = aiida_quantumespresso.workflows.ph.base:PhBaseWorkChain",
+            "quantumespresso.pw.base = aiida_quantumespresso.workflows.pw.base:PwBaseWorkChain",
+            "quantumespresso.pw.relax = aiida_quantumespresso.workflows.pw.relax:PwRelaxWorkChain",
+            "quantumespresso.pw.bands = aiida_quantumespresso.workflows.pw.bands:PwBandsWorkChain",
+            "quantumespresso.pw.band_structure = aiida_quantumespresso.workflows.pw.band_structure:PwBandStructureWorkChain",
+            "quantumespresso.q2r.base = aiida_quantumespresso.workflows.q2r.base:Q2rBaseWorkChain",
             "quantumespresso.matdyn.base = aiida_quantumespresso.workflows.matdyn.base:MatdynBaseWorkChain"
-        ], 
+        ],
         "console_scripts": [
-            "launch_calculation_pw = aiida_quantumespresso.cli.calculations.pw.base:launch", 
-            "launch_workflow_pw_band_structure = aiida_quantumespresso.cli.workflows.pw.band_structure:launch", 
-            "launch_workflow_pw_bands = aiida_quantumespresso.cli.workflows.pw.bands:launch", 
-            "launch_workflow_pw_relax = aiida_quantumespresso.cli.workflows.pw.relax:launch", 
-            "launch_workflow_pw_base = aiida_quantumespresso.cli.workflows.pw.base:launch", 
-            "launch_workflow_ph_base = aiida_quantumespresso.cli.workflows.ph.base:launch", 
-            "launch_workflow_q2r_base = aiida_quantumespresso.cli.workflows.q2r.base:launch", 
-            "launch_workflow_matdyn_base = aiida_quantumespresso.cli.workflows.matdyn.base:launch"
+            "aiida-quantumespresso = aiida_quantumespresso.cli:cmd_root"
         ]
-    }, 
+    },
     "extras_require": {
-        "dev_precommit": [
-            "pre-commit"
-        ], 
+        "dev": [
+            "pre-commit==1.17.0",
+            "prospector==1.1.7",
+            "pylint==1.9.4; python_version<'3.0'",
+            "pylint==2.3.1; python_version>='3.0'",
+            "pgtest~=1.3,>=1.3.1",
+            "pytest==3.6.3",
+            "pytest-regressions==1.0.6",
+            "yapf==0.28.0"
+        ],
+        "tcod": [
+            "aiida-tcod"
+        ],
         "docs": [
-            "Sphinx", 
-            "docutils", 
+            "Sphinx",
+            "docutils",
             "sphinx_rtd_theme"
         ]
-    }, 
+    },
     "install_requires": [
-        "aiida_core[atomic_tools]>=0.12.0,<1.0.0", 
-        "click"
-    ], 
-    "license": "MIT License", 
-    "name": "aiida_quantumespresso", 
-    "url": "https://github.com/aiidateam/aiida-quantumespresso", 
-    "version": "2.1.0"
+        "aiida_core[atomic_tools]>=1.0.0,<2.0.0",
+        "matplotlib<3.0.0; python_version<'3'",
+        "packaging",
+        "qe-tools==1.1.3",
+        "xmlschema==1.0.13"
+    ],
+    "license": "MIT License",
+    "name": "aiida_quantumespresso",
+    "python_requires": ">=2.7,!=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*",
+    "url": "https://github.com/aiidateam/aiida-quantumespresso",
+    "version": "3.0.0"
 }

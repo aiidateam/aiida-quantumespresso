@@ -1,110 +1,69 @@
 # -*- coding: utf-8 -*-
-from aiida.parsers.parser import Parser
-from aiida.orm.data.folder import FolderData
-from aiida.orm.data.parameter import ParameterData
-from aiida.common.datastructures import calc_states
-from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers.raw_parser_ph import parse_raw_ph_output
+"""`Parser` implementation for the `PhCalculation` calculation job class."""
+from __future__ import absolute_import
+
+import os
+import re
+import traceback
+
+from aiida import orm
+from aiida.common import exceptions
+
 from aiida_quantumespresso.calculations.ph import PhCalculation
+from aiida_quantumespresso.parsers.parse_raw.ph import parse_raw_ph_output as parse_stdout
+from .base import Parser
+
 
 class PhParser(Parser):
-    """
-    This class is the implementation of the Parser class for PHonon.
-    """
+    """`Parser` implementation for the `PhCalculation` calculation job class."""
 
-    def __init__(self,calculation):
-        """
-        Initialize the instance of PhParser
-        """
-        # check for valid input
-        if not isinstance(calculation,PhCalculation):
-            raise QEOutputParsingError("Input calc must be a PhCalculation")
-        
-        self._calc = calculation
-        
-        super(PhParser, self).__init__(calculation)
-        
-    def parse_with_retrieved(self,retrieved):
-        """
-        Receives in input a dictionary of retrieved nodes.
-        Does all the logic here.
-        """       
-        from aiida.common.exceptions import InvalidOperation
-        import os
-        
-        successful = True
-        
-        # retrieve the whole list of input links
-        calc_input_parameterdata = self._calc.get_inputs(node_type=ParameterData,
-                                                         also_labels=True)
-        
-        # look for eventual flags of the parser
-        parser_opts_query = [i[1] for i in calc_input_parameterdata if i[0]=='parser_opts']
-        # TODO: there should be a function returning the name of parser_opts
-        if len(parser_opts_query)>1:
-            self.logger.error("Too many ({}) parser_opts found"
-                               .format(len(parser_opts_query)))
-            successful = False
-
-        parser_opts = parser_opts_query[0] if parser_opts_query else []
-        if parser_opts:
-            # TODO this feature could be a set of flags to pass to the raw_parser
-            raise NotImplementedError("The parser_options feature is not yet implemented")
-        
-        # Check that the retrieved folder is there 
+    def parse(self, **kwargs):
+        """Parse the retrieved files from a `PhCalculation`."""
         try:
-            out_folder = retrieved[self._calc._get_linkname_retrieved()]
-        except KeyError:
-            self.logger.error("No retrieved folder found")
-            return False, ()
+            self.retrieved
+        except exceptions.NotExistent:
+            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
 
-        # check what is inside the folder
-        list_of_files = out_folder.get_folder_list()
-        # at least the stdout should exist
-        if not self._calc._OUTPUT_FILE_NAME in list_of_files:
-            successful = False
-            new_nodes_tuple = ()
-            self.logger.error("Standard output not found")
-            return successful,new_nodes_tuple
-        
-        # if there is something more, I note it down, so to call the raw parser
-        # with the right options
-        # look for xml
-        xml_tensor_file = None
-        if self._calc._OUTPUT_XML_TENSOR_FILE_NAME in list_of_files:
-            xml_tensor_file = out_folder.get_abs_path(
-                                    self._calc._OUTPUT_XML_TENSOR_FILE_NAME)
+        # The stdout is required for parsing
+        filename_stdout = self.node.get_attribute('output_filename')
+        filename_tensor = PhCalculation._OUTPUT_XML_TENSOR_FILE_NAME
 
-        # look for dynamical matrices
-        dynmat_dir = out_folder.get_abs_path(
-                               self._calc._FOLDER_DYNAMICAL_MATRIX)
-        dynamical_matrix_list = [ os.path.join(dynmat_dir,fil) 
-                                 for fil in os.listdir(dynmat_dir) 
-                                 if os.path.isfile(os.path.join(dynmat_dir,fil) ) 
-                                 and fil.startswith( os.path.split(self._calc._OUTPUT_DYNAMICAL_MATRIX_PREFIX)[1] )
-                                 and not fil.endswith(".freq") ]
-        
-        # sort according to the number at the end of the dynamical matrix files,
-        # when there is one
+        if filename_stdout not in self.retrieved.list_object_names():
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_MISSING)
+
         try:
-            dynamical_matrix_list = sorted( dynamical_matrix_list,
-                                        key=lambda x: int(x.split('-')[-1]) )
-        except ValueError:
-            dynamical_matrix_list = sorted( dynamical_matrix_list)
-        
-        # define output file name
-        out_file = out_folder.get_abs_path(self._calc._OUTPUT_FILE_NAME)
-        
-        # call the raw parsing function
-        out_dict,raw_successful = parse_raw_ph_output(out_file,xml_tensor_file,
-                                                      dynamical_matrix_list)
-        successful = raw_successful if successful else successful
-        
-        # convert the dictionary into an AiiDA object
-        output_params = ParameterData(dict=out_dict)
-        
-        # save it into db
-        new_nodes_list = [ (self.get_linkname_outparams(),output_params) ]
-        
-        return successful,new_nodes_list
-        
+            stdout = self.retrieved.get_object_content(filename_stdout)
+        except (IOError, OSError):
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
+
+        try:
+            tensor_file = self.retrieved.get_object_content(filename_tensor)
+        except (IOError, OSError):
+            tensor_file = None
+
+        # Look for dynamical matrices
+        dynmat_files = []
+        dynmat_folder = PhCalculation._FOLDER_DYNAMICAL_MATRIX
+        dynmat_prefix = os.path.split(PhCalculation._OUTPUT_DYNAMICAL_MATRIX_PREFIX)[1]
+
+        natural_sort = lambda string: [int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', string)]
+        for filename in sorted(self.retrieved.list_object_names(dynmat_folder), key=natural_sort):
+            if not filename.startswith(dynmat_prefix) or filename.endswith('.freq'):
+                continue
+
+            dynmat_files.append(self.retrieved.get_object_content(os.path.join(dynmat_folder, filename)))
+
+        try:
+            parsed_data, logs = parse_stdout(stdout, tensor_file, dynmat_files)
+        except Exception:
+            self.logger.error(traceback.format_exc())
+            return self.exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION)
+
+        self.emit_logs(logs)
+        self.out('output_parameters', orm.Dict(dict=parsed_data))
+
+        if 'ERROR_OUT_OF_WALLTIME' in logs['error']:
+            return self.exit_codes.ERROR_OUT_OF_WALLTIME
+
+        if 'ERROR_CONVERGENCE_NOT_REACHED' in logs['error']:
+            return self.exit_codes.ERROR_CONVERGENCE_NOT_REACHED

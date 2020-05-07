@@ -5,12 +5,12 @@ Phonon
 
 .. toctree::
    :maxdepth: 2
-   
+
 In this chapter will get you through the launching of a phonon calculation with Quantum Espresso, with ``ph.x``, a density functional perturbation theory code.
 For this tutorial, it is required that you managed to launch the ``pw.x`` calculation, which is at the base of the phonon code; and of course it is assumed that you already know how to use the QE code.
 
 The input of a phonon calculation can be actually simple, the only care that has to be taken, is to point to the same scratch of the previous pw calculation.
-Here we will try to compute the dynamical matrix on a mesh of points (actually consisting of a 1x1x1 mesh for brevity). 
+Here we will try to compute the dynamical matrix on a mesh of points (actually consisting of a 1x1x1 mesh for brevity).
 The input file that we should create is more or less this one::
 
   AiiDA calculation
@@ -43,11 +43,11 @@ We first load a couple of useful modules that you already met in the previous tu
     load_dbenv()
 
     from aiida.orm import Code
-    from aiida.orm import CalculationFactory, DataFactory
+    from aiida.plugins import CalculationFactory, DataFactory
 
 
 
-So, you were able to launch previously a ``pw.x`` calculation. 
+So, you were able to launch previously a ``pw.x`` calculation.
 
 Code
 ----
@@ -61,14 +61,14 @@ Then we load the ``Code`` class-instance from the database::
 Parameter
 ---------
 
-Just like the *PWscf* calculation, here we load the class ParameterData and we instanciate it in parameters.
-Again, ``ParameterData`` will simply represent a nested dictionary in the database, namelists at the first level, and then variables and values.
+Just like the *PWscf* calculation, here we load the class Dict and we instanciate it in parameters.
+Again, ``Dict`` will simply represent a nested dictionary in the database, namelists at the first level, and then variables and values.
 But this time of course, we need to use the variables of *PHonon*!
 
 ::
 
-    ParameterData = DataFactory('parameter')
-    parameters = ParameterData(dict={
+    Dict = DataFactory('dict')
+    parameters = Dict(dict={
 		'INPUTPH': {
 		    'tr2_ph' : 1.0e-8,
 		    'epsil' : True,
@@ -85,15 +85,15 @@ Now we create the object PH-calculation.
 As for ``pw.x``, we simply do::
 
     calc = code.new_calc()
-    
+
 and we set the parameters of the scheduler
 (and just like the PWscf, this is a configuration valid
 for the PBSpro and slurm schedulers only, see :ref:`my-reference-to-scheduler`).
-    
+
 ::
-    
-    calc.set_max_wallclock_seconds(30*60) # 30 min
-    calc.set_resources({"num_machines": 1})
+
+    calc.set_option('max_wallclock_seconds', 30*60) # 30 min
+    calc.set_option('resources', {"num_machines": 1})
 
 We then tell the calculation to use the code and the parameters that we prepared above::
 
@@ -115,14 +115,14 @@ before (let's say it's #6): so that you can load the class of *a*
 QE-PWscf calculation (with the CalculationFactory),
 and load the object that represent *the* QE-PWscf calculation with ID #6::
 
-    from aiida.orm import CalculationFactory
+    from aiida.plugins import CalculationFactory
     PwCalculation = CalculationFactory('quantumespresso.pw')
     parent_id = 6
     parentcalc = load_node(parent_id)
 
 Now that we loaded the parent calculation, we can set the phonon calc to
 inherit the right information from it::
-    
+
     calc.use_parent_calculation( parentcalc )
 
 Note that in our database schema relations between two calculation
@@ -156,7 +156,7 @@ the code, and the proper scheduler info.
     load_dbenv()
 
     from aiida.orm import Code
-    from aiida.orm import CalculationFactory, DataFactory
+    from aiida.plugins import CalculationFactory, DataFactory
 
     #####################
     # ADAPT TO YOUR NEEDS
@@ -166,8 +166,8 @@ the code, and the proper scheduler info.
 
     code = Code.get_from_string(codename)
 
-    ParameterData = DataFactory('parameter')
-    parameters = ParameterData(dict={
+    Dict = DataFactory('dict')
+    parameters = Dict(dict={
 		'INPUTPH': {
 		    'tr2_ph' : 1.0e-8,
 		    'epsil' : True,
@@ -181,8 +181,8 @@ the code, and the proper scheduler info.
     parentcalc = load_node(parent_id)
 
     calc = code.new_calc()
-    calc.set_max_wallclock_seconds(30*60) # 30 min
-    calc.set_resources({"num_machines": 1})
+    calc.set_option('max_wallclock_seconds', 30*60) # 30 min
+    calc.set_option('resources', {"num_machines": 1})
 
     calc.use_parameters(parameters)
     calc.use_code(code)
@@ -198,4 +198,4 @@ You can find a more sophisticated example, that checks the possible exceptions
 and prints nice error messages inside your AiiDA folder, under
 ``examples/submission/quantumespresso/test_ph.py``.
 
- 
+

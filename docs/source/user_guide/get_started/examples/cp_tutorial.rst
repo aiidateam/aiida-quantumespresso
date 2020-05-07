@@ -5,7 +5,7 @@ Car-Parrinello
 
 .. toctree::
    :maxdepth: 2
-   
+
 This chapter will teach you how to set up a Car-Parrinello (CP)
 calculation as implemented in the Quantum Espresso distribution.
 Again, AiiDA is not meant to teach you how to use a Quantum-Espresso code,
@@ -13,7 +13,7 @@ it is assumed that you already know CP.
 
 It is recommended that you first learn how to launch a PWscf calculation
 before proceeding in this tutorial (see :ref:`my-ref-to-pw-tutorial`), since
-here we will only emphasize the differences with respect to launching a PW 
+here we will only emphasize the differences with respect to launching a PW
 calculation.
 
 We want to setup a CP run of a 5 atom cell of BaTiO3.
@@ -59,11 +59,11 @@ The input file that we should create is more or less this one::
   Ti     47.88 Ti.pbesol-spn-rrkjus_psl.0.2.3-tot-pslib030.UPF
   O      15.9994 O.pbesol-n-rrkjus_psl.0.1-tested-pslib030.UPF
   ATOMIC_POSITIONS angstrom
-  Ba           0.0000000000       0.0000000000       0.0000000000 
-  Ti           2.0000000000       2.0000000000       2.0000000000 
-  O            2.0000000000       2.0000000000       0.0000000000 
-  O            2.0000000000       0.0000000000       2.0000000000 
-  O            0.0000000000       2.0000000000       2.0000000000 
+  Ba           0.0000000000       0.0000000000       0.0000000000
+  Ti           2.0000000000       2.0000000000       2.0000000000
+  O            2.0000000000       2.0000000000       0.0000000000
+  O            2.0000000000       0.0000000000       2.0000000000
+  O            0.0000000000       2.0000000000       2.0000000000
   CELL_PARAMETERS angstrom
 	  4.0000000000       0.0000000000       0.0000000000
 	  0.0000000000       4.0000000000       0.0000000000
@@ -81,7 +81,7 @@ the database::
   codename = 'my_cp'
   code = Code.get_from_string(codename)
 
-Then create the StructureData with the structure, and a ParameterData 
+Then create the StructureData with the structure, and a Dict
 node for the inputs. This time, of course, you have to specify the correct
 variables for a ``cp.x`` calculation::
 
@@ -98,8 +98,8 @@ variables for a ``cp.x`` calculation::
   s.append_atom(position=(alat/2.,0.,alat/2.),symbols=['O'])
   s.append_atom(position=(0.,alat/2.,alat/2.),symbols=['O'])
 
-  ParameterData = DataFactory('parameter')
-  parameters = ParameterData(dict={
+  Dict = DataFactory('dict')
+  parameters = Dict(dict={
             'CONTROL': {
                 'calculation': 'cp',
                 'restart_mode': 'from_scratch',
@@ -119,7 +119,7 @@ variables for a ``cp.x`` calculation::
                 },
             'ELECTRONS': {
                 'electron_damping': 1.e-1,
-                'electron_dynamics': 'damp', 
+                'electron_dynamics': 'damp',
                 'emass': 400.,
                 'emass_cutoff': 3.,
                 },
@@ -128,10 +128,10 @@ variables for a ``cp.x`` calculation::
             }}).store()
 
 We then create a new calculation with the proper settings::
-  
+
   calc = code.new_calc()
-  calc.set_max_wallclock_seconds(30*60) # 30 min
-  calc.set_resources({"num_machines": 1, "num_mpiprocs_per_machine": 16})
+  calc.set_option('max_wallclock_seconds', 30*60) # 30 min
+  calc.set_option('resources', {"num_machines": 1, "num_mpiprocs_per_machine": 16})
 
 And we link the input data to the calculation
 (and therefore set the links in the database). The main difference
@@ -141,10 +141,10 @@ link any kpoint as input::
   calc.use_structure(s)
   calc.use_code(code)
   calc.use_parameters(parameters)
-  
+
 Finally, load the proper pseudopotentials using
 e.g. a pseudopotential family (see :ref:`my-ref-to-pseudo-tutorial`)::
-  
+
   pseudo_family = 'lda_pslib'
   calc.use_pseudos_from_family(pseudo_family)
 

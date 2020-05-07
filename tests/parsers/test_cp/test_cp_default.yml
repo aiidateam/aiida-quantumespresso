@@ -1,0 +1,233 @@
+parameters:
+  accumulators:
+  - 22.70774600121351
+  - 114.7877322176092
+  - -135.4167896920448
+  - -17.02048717781361
+  - 0.0
+  - -17.02048717781361
+  - -17.02048717781361
+  - 0.0
+  - 2656.54939197921
+  - 0.0
+  atomic_positions_units: Angstrom
+  bravais_lattice: free
+  cell_dimensions:
+  - 7.215686081003893
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  cell_nose_vnhh:
+  - - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+  cell_nose_xnhh:
+  - - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+  cell_parameters_gvel:
+  - - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+  cell_parameters_ht:
+  - - 0.0
+    - 5.102260558791237
+    - 5.102260558791237
+  - - 5.102260558791237
+    - 0.0
+    - 5.102260558791237
+  - - 5.102260558791237
+    - 5.102260558791237
+    - 0.0
+  cell_parameters_htvel:
+  - - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+  creator_name: cp
+  creator_version: '6.0'
+  dft_exchange_correlation: PBE
+  direct_lattice_vectors_units: Angstrom
+  econs:
+  - 3.985588469156
+  econt:
+  - 4.329274239227
+  ekinc:
+  - 0.343685770070843
+  ekincm: 2.291610069896371
+  electrons_nose_vnhe: 0.0
+  electrons_nose_xnhe: 0.0
+  enthal:
+  - 3.985588469156
+  etot:
+  - 3.985588469156
+  fft_grid:
+  - 36
+  - 36
+  - 36
+  format_name: qexml
+  format_version: 1.4.0
+  gamma_only: true
+  granularity_of_k_points_distribution: 1
+  gvect_number: 8313
+  ions_nose_nhpcl: 1.0
+  ions_nose_nhpdim: 1.0
+  ions_nose_vnhp: 0.0
+  ions_nose_xnhp: 0.0
+  ions_positions_cdmi:
+  - 1.275565139697809
+  - 1.275565139697809
+  - 1.275565139697809
+  k_point:
+  - - - 0.0
+      - 0.0
+      - 0.0
+    - 2.0
+  last_successful_printout: 10
+  lattice_parameter: 3.8183766184073566
+  lattice_parameter_xml: 7.215686081003893
+  lda_plus_u_calculation: false
+  lsda: false
+  max_number_of_gk-vectors: 363
+  monkhorst_pack_grid:
+  - 0
+  - 0
+  - 0
+  monkhorst_pack_offset:
+  - 0
+  - 0
+  - 0
+  non_colinear_calculation: false
+  non_periodic_cell_correction: None
+  norm_of_q: 0.0
+  number_of_atomic_wfc: 8
+  number_of_atoms: 2
+  number_of_bands: 4
+  number_of_electrons: 8
+  number_of_k_points: 1
+  number_of_processors: 4
+  number_of_processors_per_image: 4
+  number_of_processors_per_pool: 4
+  number_of_processors_per_taskgroup: 1
+  number_of_species: 1
+  number_of_spin_components: 1
+  pp_check_flag: true
+  reciprocal_lattice_vectors:
+  - - -0.1851851851851852
+    - 0.1851851851851852
+    - 0.1851851851851852
+  - - 0.1851851851851852
+    - -0.1851851851851852
+    - 0.1851851851851852
+  - - 0.1851851851851852
+    - 0.1851851851851852
+    - -0.1851851851851852
+  rho_cutoff: 3265.366014072
+  rho_cutoff_units: eV
+  smallbox_fft_grid:
+  - 24
+  - 24
+  - 24
+  smooth_fft_grid:
+  - 25
+  - 25
+  - 25
+  smooth_gvect_number: 2981
+  species:
+    index:
+    - 1
+    mass:
+    - 28.085
+    pseudo:
+    - Si.pbe-n-rrkjus_psl.1.0.0.UPF
+    type:
+    - Si
+  spin_orbit_calculation: false
+  spin_orbit_domag: true
+  step_iteration: 10
+  temph:
+  - 0.0
+  tempp:
+  - 0.0
+  time: 0.0007256652978466716
+  title: MD Simulation
+  units_for_atomic_masses: a.m.u.
+  units_for_atomic_positions: bohr
+  units_for_direct_lattice_vectors: bohr
+  units_for_k_points: 2 pi / a
+  units_for_reciprocal_lattice_vectors: 2 pi / a
+  vnhh:
+  - 0.0
+  vnhp:
+  - 0.0
+  wall_time: '         5.64s '
+  warnings: []
+  wfc_cutoff: 408.170751759
+  wfc_cutoff_units: eV
+  xnhh0:
+  - 0.0
+  xnhp0:
+  - 0.0
+trajectory:
+  array|cell_temperature:
+  - 10
+  array|cells:
+  - 10
+  - 3
+  - 3
+  array|electronic_kinetic_energy:
+  - 10
+  array|energy_constant_motion:
+  - 10
+  array|enthalpy:
+  - 10
+  array|enthalpy_plus_kinetic:
+  - 10
+  array|ionic_temperature:
+  - 10
+  array|positions:
+  - 10
+  - 2
+  - 3
+  array|pressure:
+  - 10
+  array|scf_total_energy:
+  - 10
+  array|steps:
+  - 10
+  array|times:
+  - 10
+  array|velocities:
+  - 10
+  - 2
+  - 3
+  array|volume:
+  - 10
+  symbols:
+  - Si
+  - Si

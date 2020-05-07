@@ -1,50 +1,40 @@
 # -*- coding: utf-8 -*-
-from aiida.orm.data.parameter import ParameterData
-from aiida.parsers.parser import Parser
-from aiida_quantumespresso.parsers.raw_parser_simple import parse_qe_simple
+from __future__ import absolute_import
+
+from aiida.common import NotExistent
+from aiida.orm import Dict
+
+from aiida_quantumespresso.parsers.parse_raw.base import parse_output_base
+from .base import Parser
+
 
 class Pw2wannier90Parser(Parser):
-    """
-    This class is the implementation of the Parser class for pw2wannier90.x
-    """
-    def parse_with_retrieved(self,retrieved):
-        """      
-        Parses the datafolder, stores results.
-        This parser for this simple code does simply store in the DB a node
-        representing the file of forces in real space
+    """`Parser` implementation for the `Pw2wannierCalculation` calculation job class."""
+
+    def parse(self, **kwargs):
+        """Parse the retrieved files of a completed `Pw2wannierCalculation` into output nodes.
+
+        Two nodes that are expected are the default 'retrieved' `FolderData` node which will store the retrieved files
+        permanently in the repository.
         """
-        from aiida.common.exceptions import InvalidOperation
-
-        # suppose at the start that the job is successful
-        successful = True
-        warnings = []
-
-        # Check that the retrieved folder is there 
         try:
-            out_folder = retrieved[self._calc._get_linkname_retrieved()]
-        except KeyError:
-            self.logger.error("No retrieved folder found")
-            return False, ()
-            
-        # check what is inside the folder
-        list_of_files = out_folder.get_folder_list()
-        # at least the stdout should exist
-        if not self._calc._OUTPUT_FILE_NAME in list_of_files:
-            successful = False
-            self.logger.error("Standard output not found")
-            return successful,()
-        
-        # check that the file has finished (i.e. JOB DONE is inside the file)
-        filpath = out_folder.get_abs_path(self._calc._OUTPUT_FILE_NAME)
-        with open(filpath,'r') as fil:
-            lines = fil.read()
+            out_folder = self.retrieved
+        except NotExistent:
+            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
 
-        successful_raw, out_dict = parse_qe_simple(lines, codename="PW2WANNIER")
-        # If any failed, it's failed
-        successful = successful and successful_raw
+        try:
+            filename_stdout = self.node.get_option('output_filename')  # or get_attribute(), but this is clearer
+            with out_folder.open(filename_stdout, 'r') as fil:
+                out_file = fil.read()
+        except OSError:
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 
-        out_params = ParameterData(dict=out_dict)
-        new_nodes_list = [(self.get_linkname_outparams(), out_params)]
+        parsed_data, logs = parse_output_base(out_file, codename='PW2WANNIER')
+        self.emit_logs(logs)
 
-        return successful,new_nodes_list
+        self.out('output_parameters', Dict(dict=parsed_data))
 
+        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs.error:
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE)
+        elif logs.error:
+            return self.exit(self.exit_codes.ERROR_GENERIC_QE_ERROR)

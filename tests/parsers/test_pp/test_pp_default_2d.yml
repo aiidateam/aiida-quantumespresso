@@ -1,0 +1,10 @@
+coords_units: bohr
+data_units: Ry
+parameters:
+  charge_img: 0.0
+  charge_max: 0.996301
+  charge_min: -11.360121
+  negative_core_charge: -1.3e-05
+  output_format: gnuplot x,y,f
+  plot_num: 11
+  plot_type: 2D contour

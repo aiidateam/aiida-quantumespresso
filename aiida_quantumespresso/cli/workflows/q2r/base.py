@@ -1,37 +1,51 @@
 # -*- coding: utf-8 -*-
+"""Command line scripts to launch a `Q2rBaseWorkChain` for testing and demonstration purposes."""
+from __future__ import absolute_import
+
 import click
-from aiida_quantumespresso.utils.click import command
-from aiida_quantumespresso.utils.click import options
+
+from aiida.cmdline.params import options, types
+from aiida.cmdline.utils import decorators
+
+from ...utils import launch
+from ...utils import options as options_qe
+from .. import cmd_launch
 
 
-@command()
-@options.code()
-@options.parent_calc(callback_kwargs={'entry_point': 'quantumespresso.ph'})
-@options.max_num_machines()
-@options.max_wallclock_seconds()
-@options.daemon()
-def launch(
-    code, parent_calc, max_num_machines, max_wallclock_seconds, daemon):
-    """
-    Run the Q2rBaseWorkChain for a previously completed PhCalculation
-    """
-    from aiida.orm.data.parameter import ParameterData
-    from aiida.orm.utils import CalculationFactory, WorkflowFactory
-    from aiida.work.run import run, submit
+@cmd_launch.command('q2r-base')
+@options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.q2r'))
+@options.CALCULATION(required=True)
+@options_qe.CLEAN_WORKDIR()
+@options_qe.MAX_NUM_MACHINES()
+@options_qe.MAX_WALLCLOCK_SECONDS()
+@options_qe.WITH_MPI()
+@options_qe.DAEMON()
+@decorators.with_dbenv()
+def launch_workflow(code, calculation, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
+    """Run the `Q2rBaseWorkChain` for a previously completed `PhCalculation`."""
+    from aiida.orm import Bool
+    from aiida.plugins import WorkflowFactory
     from aiida_quantumespresso.utils.resources import get_default_options
 
-    Q2rBaseWorkChain = WorkflowFactory('quantumespresso.q2r.base')
-
-    options = get_default_options(max_num_machines, max_wallclock_seconds)
+    expected_process_type = 'aiida.calculations:quantumespresso.ph'
+    if calculation.process_type != expected_process_type:
+        raise click.BadParameter(
+            'The input calculation node has a process_type: {}; should be {}'.format(
+                calculation.process_type, expected_process_type
+            )
+        )
 
     inputs = {
-        'code': code,
-        'parent_folder': parent_calc.out.retrieved,
-        'options': ParameterData(dict=options),
+        'q2r': {
+            'code': code,
+            'parent_folder': calculation.outputs.remote_folder,
+            'metadata': {
+                'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
+            }
+        }
     }
 
-    if daemon:
-        workchain = submit(Q2rBaseWorkChain, **inputs)
-        click.echo('Submitted {}<{}> to the daemon'.format(Q2rBaseWorkChain.__name__, workchain.pid))
-    else:
-        run(Q2rBaseWorkChain, **inputs)
+    if clean_workdir:
+        inputs['clean_workdir'] = Bool(True)
+
+    launch.launch_process(WorkflowFactory('quantumespresso.q2r.base'), daemon, **inputs)

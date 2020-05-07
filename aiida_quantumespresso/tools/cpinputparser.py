@@ -1,46 +1,18 @@
 # -*- coding: utf-8 -*-
-import re
-import numpy as np
-from qeinputparser import (
-        QeInputFile,parse_namelists,parse_atomic_positions,
-        parse_atomic_species,parse_cell_parameters, RE_FLAGS )
-from aiida.orm.data.array.kpoints import KpointsData
-from aiida.common.exceptions import ParsingError
+"""Utilities to parse Quantum ESPRESSO cp.x input files into AiiDA nodes or builders."""
+from __future__ import absolute_import
+
+from qe_tools.parsers import CpInputFile as BaseCpInputFile
+from .base import StructureParseMixin
 
 
-from qeinputparser import (
-        QeInputFile,parse_namelists,parse_atomic_positions,
-        parse_atomic_species,parse_cell_parameters, RE_FLAGS )
+class CpInputFile(StructureParseMixin, BaseCpInputFile):
+    """Parser of Quantum ESPRESSO cp.x input file into AiiDA nodes.
 
-class CpInputFile(QeInputFile):
-    def __init__(self, pwinput):
-        """
-        Parse inputs's namelist and cards to create attributes of the info.
-
-        :param pwinput:
-            Any one of the following
-
-                * A string of the (existing) absolute path to the pwinput file.
-                * A single string containing the pwinput file's text.
-                * A list of strings, with the lines of the file as the elements.
-                * A file object. (It will be opened, if it isn't already.)
-
-        :raises IOError: if ``pwinput`` is a file and there is a problem reading
-            the file.
-        :raises TypeError: if ``pwinput`` is a list containing any non-string
-            element(s).
-        :raises aiida.common.exceptions.ParsingError: if there are issues
-            parsing the pwinput.
-        """
-
-        super(CpInputFile, self).__init__(pwinput)
-
-        # Parse the namelists.
-        self.namelists = parse_namelists(self.input_txt)
-        # Parse the ATOMIC_POSITIONS card.
-        self.atomic_positions = parse_atomic_positions(self.input_txt)
-        # Parse the CELL_PARAMETERS card.
-        self.cell_parameters = parse_cell_parameters(self.input_txt)
-        # Parse the ATOMIC_SPECIES card.
-        self.atomic_species = parse_atomic_species(self.input_txt)
-    
+    .. note:: This mixes in :class:`~aiida_quantumespresso.tools.base.StructureParseMixin` which adds the functionality
+        to parse a :class:`~aiida.nodes.orm.data.structure.StructureData` from the input file, instead of a plain
+        dictionary returned by :meth:`qe_tools.parsers.qeinputparser.get_structure_from_qeinput`. Note that one cannot
+        directly add this functionality to a sub class of :class:`~qe_tools.parsers.qeinputparser.QeInputFile` and then
+        subsequently sub class that here, because the :class:`~qe_tools.parsers.qeinputparser.CpInputFile` is also
+        required and sub classing both leads to problems with the MRO.
+    """
