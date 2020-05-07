@@ -54,11 +54,11 @@ jobs:
         -   name: Set up Python
             uses: actions/setup-python@v1
             with:
-                python-version: 3.7
+                python-version: 3.8
 
         -   name: Install python dependencies
             run:
-                pip install -e .[dev]
+                pip install -e .[pre-commit,tests]
 
         -   name: Run pre-commit
             run:
@@ -111,7 +111,7 @@ jobs:
         -   name: Install python dependencies
             run: |
                 pip install --upgrade setuptools
-                pip install -e .[dev]
+                pip install -e .[tests]
                 reentry scan
 
         -   name: Run pytest

@@ -8,4 +8,3 @@ Modules provided with aiida-quantumespresso (API reference)
     workflows
     parsers
     tcod_dbexporter
-

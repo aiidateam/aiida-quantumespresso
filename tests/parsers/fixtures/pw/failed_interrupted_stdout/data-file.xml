@@ -81,7 +81,7 @@ free
     <UNITS_FOR_ATOMIC_MASSES UNITS="a.m.u."/>
     <SPECIE.1>
       <ATOM_TYPE type="character" size="1" len="3">
-Si 
+Si
       </ATOM_TYPE>
       <MASS type="real" size="1">
  2.808550000000000E+001
@@ -123,8 +123,8 @@ F
     <SYMM.1>
       <INFO NAME="identity" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         1          0          0 
-         0          1          0 
+         1          0          0
+         0          1          0
          0          0          1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -137,8 +137,8 @@ F
     <SYMM.2>
       <INFO NAME="180 deg rotation - cart. axis [0,0,1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-        -1         -1         -1 
-         0          0          1 
+        -1         -1         -1
+         0          0          1
          0          1          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -151,8 +151,8 @@ F
     <SYMM.3>
       <INFO NAME="180 deg rotation - cart. axis [0,1,0]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0          0          1 
-        -1         -1         -1 
+         0          0          1
+        -1         -1         -1
          1          0          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -165,8 +165,8 @@ F
     <SYMM.4>
       <INFO NAME="180 deg rotation - cart. axis [1,0,0]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0          1          0 
-         1          0          0 
+         0          1          0
+         1          0          0
         -1         -1         -1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -179,8 +179,8 @@ F
     <SYMM.5>
       <INFO NAME="180 deg rotation - cart. axis [1,1,0]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         1          1          1 
-         0         -1          0 
+         1          1          1
+         0         -1          0
          0          0         -1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -193,8 +193,8 @@ F
     <SYMM.6>
       <INFO NAME="180 deg rotation - cart. axis [1,-1,0]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-        -1          0          0 
-         0          0         -1 
+        -1          0          0
+         0          0         -1
          0         -1          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -207,8 +207,8 @@ F
     <SYMM.7>
       <INFO NAME=" 90 deg rotation - cart. axis [0,0,-1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0         -1          0 
-         1          1          1 
+         0         -1          0
+         1          1          1
         -1          0          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -221,8 +221,8 @@ F
     <SYMM.8>
       <INFO NAME=" 90 deg rotation - cart. axis [0,0,1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0          0         -1 
-        -1          0          0 
+         0          0         -1
+        -1          0          0
          1          1          1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -235,8 +235,8 @@ F
     <SYMM.9>
       <INFO NAME="180 deg rotation - cart. axis [1,0,1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-        -1          0          0 
-         1          1          1 
+        -1          0          0
+         1          1          1
          0          0         -1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -249,8 +249,8 @@ F
     <SYMM.10>
       <INFO NAME="180 deg rotation - cart. axis [-1,0,1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0          0         -1 
-         0         -1          0 
+         0          0         -1
+         0         -1          0
         -1          0          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -263,8 +263,8 @@ F
     <SYMM.11>
       <INFO NAME=" 90 deg rotation - cart. axis [0,1,0]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         1          1          1 
-        -1          0          0 
+         1          1          1
+        -1          0          0
          0         -1          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -277,8 +277,8 @@ F
     <SYMM.12>
       <INFO NAME=" 90 deg rotation - cart. axis [0,-1,0]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0         -1          0 
-         0          0         -1 
+         0         -1          0
+         0          0         -1
          1          1          1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -291,8 +291,8 @@ F
     <SYMM.13>
       <INFO NAME="180 deg rotation - cart. axis [0,1,1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-        -1          0          0 
-         0         -1          0 
+        -1          0          0
+         0         -1          0
          1          1          1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -305,8 +305,8 @@ F
     <SYMM.14>
       <INFO NAME="180 deg rotation - cart. axis [0,1,-1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0         -1          0 
-        -1          0          0 
+         0         -1          0
+        -1          0          0
          0          0         -1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -319,8 +319,8 @@ F
     <SYMM.15>
       <INFO NAME=" 90 deg rotation - cart. axis [-1,0,0]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         1          1          1 
-         0          0         -1 
+         1          1          1
+         0          0         -1
         -1          0          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -333,8 +333,8 @@ F
     <SYMM.16>
       <INFO NAME=" 90 deg rotation - cart. axis [1,0,0]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0          0         -1 
-         1          1          1 
+         0          0         -1
+         1          1          1
          0         -1          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -347,8 +347,8 @@ F
     <SYMM.17>
       <INFO NAME="120 deg rotation - cart. axis [-1,-1,-1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0          0          1 
-         1          0          0 
+         0          0          1
+         1          0          0
          0          1          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -361,8 +361,8 @@ F
     <SYMM.18>
       <INFO NAME="120 deg rotation - cart. axis [-1,1,1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0          1          0 
-        -1         -1         -1 
+         0          1          0
+        -1         -1         -1
          0          0          1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -375,8 +375,8 @@ F
     <SYMM.19>
       <INFO NAME="120 deg rotation - cart. axis [1,1,-1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         1          0          0 
-         0          0          1 
+         1          0          0
+         0          0          1
         -1         -1         -1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -389,8 +389,8 @@ F
     <SYMM.20>
       <INFO NAME="120 deg rotation - cart. axis [1,-1,1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-        -1         -1         -1 
-         0          1          0 
+        -1         -1         -1
+         0          1          0
          1          0          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -403,8 +403,8 @@ F
     <SYMM.21>
       <INFO NAME="120 deg rotation - cart. axis [1,1,1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0          1          0 
-         0          0          1 
+         0          1          0
+         0          0          1
          1          0          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -417,8 +417,8 @@ F
     <SYMM.22>
       <INFO NAME="120 deg rotation - cart. axis [-1,1,-1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0          0          1 
-         0          1          0 
+         0          0          1
+         0          1          0
         -1         -1         -1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -431,8 +431,8 @@ F
     <SYMM.23>
       <INFO NAME="120 deg rotation - cart. axis [1,-1,-1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-        -1         -1         -1 
-         1          0          0 
+        -1         -1         -1
+         1          0          0
          0          0          1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -445,8 +445,8 @@ F
     <SYMM.24>
       <INFO NAME="120 deg rotation - cart. axis [-1,-1,1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         1          0          0 
-        -1         -1         -1 
+         1          0          0
+        -1         -1         -1
          0          1          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -459,8 +459,8 @@ F
     <SYMM.25>
       <INFO NAME="inversion" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-        -1          0          0 
-         0         -1          0 
+        -1          0          0
+         0         -1          0
          0          0         -1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -473,8 +473,8 @@ F
     <SYMM.26>
       <INFO NAME="inv. 180 deg rotation - cart. axis [0,0,1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         1          1          1 
-         0          0         -1 
+         1          1          1
+         0          0         -1
          0         -1          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -487,8 +487,8 @@ F
     <SYMM.27>
       <INFO NAME="inv. 180 deg rotation - cart. axis [0,1,0]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0          0         -1 
-         1          1          1 
+         0          0         -1
+         1          1          1
         -1          0          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -501,8 +501,8 @@ F
     <SYMM.28>
       <INFO NAME="inv. 180 deg rotation - cart. axis [1,0,0]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0         -1          0 
-        -1          0          0 
+         0         -1          0
+        -1          0          0
          1          1          1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -515,8 +515,8 @@ F
     <SYMM.29>
       <INFO NAME="inv. 180 deg rotation - cart. axis [1,1,0]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-        -1         -1         -1 
-         0          1          0 
+        -1         -1         -1
+         0          1          0
          0          0          1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -529,8 +529,8 @@ F
     <SYMM.30>
       <INFO NAME="inv. 180 deg rotation - cart. axis [1,-1,0]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         1          0          0 
-         0          0          1 
+         1          0          0
+         0          0          1
          0          1          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -543,8 +543,8 @@ F
     <SYMM.31>
       <INFO NAME="inv.  90 deg rotation - cart. axis [0,0,-1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0          1          0 
-        -1         -1         -1 
+         0          1          0
+        -1         -1         -1
          1          0          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -557,8 +557,8 @@ F
     <SYMM.32>
       <INFO NAME="inv.  90 deg rotation - cart. axis [0,0,1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0          0          1 
-         1          0          0 
+         0          0          1
+         1          0          0
         -1         -1         -1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -571,8 +571,8 @@ F
     <SYMM.33>
       <INFO NAME="inv. 180 deg rotation - cart. axis [1,0,1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         1          0          0 
-        -1         -1         -1 
+         1          0          0
+        -1         -1         -1
          0          0          1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -585,8 +585,8 @@ F
     <SYMM.34>
       <INFO NAME="inv. 180 deg rotation - cart. axis [-1,0,1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0          0          1 
-         0          1          0 
+         0          0          1
+         0          1          0
          1          0          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -599,8 +599,8 @@ F
     <SYMM.35>
       <INFO NAME="inv.  90 deg rotation - cart. axis [0,1,0]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-        -1         -1         -1 
-         1          0          0 
+        -1         -1         -1
+         1          0          0
          0          1          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -613,8 +613,8 @@ F
     <SYMM.36>
       <INFO NAME="inv.  90 deg rotation - cart. axis [0,-1,0]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0          1          0 
-         0          0          1 
+         0          1          0
+         0          0          1
         -1         -1         -1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -627,8 +627,8 @@ F
     <SYMM.37>
       <INFO NAME="inv. 180 deg rotation - cart. axis [0,1,1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         1          0          0 
-         0          1          0 
+         1          0          0
+         0          1          0
         -1         -1         -1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -641,8 +641,8 @@ F
     <SYMM.38>
       <INFO NAME="inv. 180 deg rotation - cart. axis [0,1,-1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0          1          0 
-         1          0          0 
+         0          1          0
+         1          0          0
          0          0          1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -655,8 +655,8 @@ F
     <SYMM.39>
       <INFO NAME="inv.  90 deg rotation - cart. axis [-1,0,0]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-        -1         -1         -1 
-         0          0          1 
+        -1         -1         -1
+         0          0          1
          1          0          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -669,8 +669,8 @@ F
     <SYMM.40>
       <INFO NAME="inv.  90 deg rotation - cart. axis [1,0,0]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0          0          1 
-        -1         -1         -1 
+         0          0          1
+        -1         -1         -1
          0          1          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -683,8 +683,8 @@ F
     <SYMM.41>
       <INFO NAME="inv. 120 deg rotation - cart. axis [-1,-1,-1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0          0         -1 
-        -1          0          0 
+         0          0         -1
+        -1          0          0
          0         -1          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -697,8 +697,8 @@ F
     <SYMM.42>
       <INFO NAME="inv. 120 deg rotation - cart. axis [-1,1,1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0         -1          0 
-         1          1          1 
+         0         -1          0
+         1          1          1
          0          0         -1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -711,8 +711,8 @@ F
     <SYMM.43>
       <INFO NAME="inv. 120 deg rotation - cart. axis [1,1,-1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-        -1          0          0 
-         0          0         -1 
+        -1          0          0
+         0          0         -1
          1          1          1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -725,8 +725,8 @@ F
     <SYMM.44>
       <INFO NAME="inv. 120 deg rotation - cart. axis [1,-1,1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         1          1          1 
-         0         -1          0 
+         1          1          1
+         0         -1          0
         -1          0          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -739,8 +739,8 @@ F
     <SYMM.45>
       <INFO NAME="inv. 120 deg rotation - cart. axis [1,1,1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0         -1          0 
-         0          0         -1 
+         0         -1          0
+         0          0         -1
         -1          0          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -753,8 +753,8 @@ F
     <SYMM.46>
       <INFO NAME="inv. 120 deg rotation - cart. axis [-1,1,-1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         0          0         -1 
-         0         -1          0 
+         0          0         -1
+         0         -1          0
          1          1          1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -767,8 +767,8 @@ F
     <SYMM.47>
       <INFO NAME="inv. 120 deg rotation - cart. axis [1,-1,-1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         1          1          1 
-        -1          0          0 
+         1          1          1
+        -1          0          0
          0          0         -1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -781,8 +781,8 @@ F
     <SYMM.48>
       <INFO NAME="inv. 120 deg rotation - cart. axis [-1,-1,1]" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-        -1          0          0 
-         1          1          1 
+        -1          0          0
+         1          1          1
          0         -1          0
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
@@ -896,7 +896,7 @@ F
   </MAGNETIZATION_INIT>
   <EXCHANGE_CORRELATION>
     <DFT type="character" size="1" len="20">
-PBE                 
+PBE
     </DFT>
     <ACFDT_IN_PW type="logical" size="1">
 F
@@ -1054,4 +1054,3 @@ F
     </K-POINT.3>
   </EIGENVECTORS>
 </Root>
-

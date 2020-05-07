@@ -52,6 +52,3 @@ Errors of the parsing are reported in the log of the calculation (accessible
 with the ``verdi calculation logshow`` command).
 Moreover, they are stored in the Dict under the key ``warnings``, and are
 accessible with ``Calculation.res.warnings``.
-
-
-

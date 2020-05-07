@@ -87,5 +87,3 @@ We acknowledge support from:
 .. _NCCR MARVEL: http://nccr-marvel.ch/
 .. _MaX – Materials Design at the Exascale: http://www.max-centre.eu/
 .. _`swissuniversities P-5 project "Materials Cloud"`: https://www.materialscloud.org/swissuniversities
-
-

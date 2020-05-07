@@ -14,13 +14,11 @@ class QEInputValidationError(InputValidationError):
 
 
 def _check_and_convert(keyword, val, expected_type):
-    """
-    val: the value to be read and converted to a Fortran-friendly string.
-    expected_type: a string with the expected type. Can be:
-      INTEGER
-      REAL
-      CHARACTER
-      LOGICAL
+    """Check and convert the value for the given keyword against an expected type.
+
+    :param keyword: the keyword
+    :param val: value for the given keyword
+    :param expected_type: type the value should have: [`INTEGER`, `REAL`, `CHARACTER`, `LOGICAL`]
     """
     # Note that bool should come before integer, because a boolean matches also
     # isinstance(...,int)
@@ -53,9 +51,10 @@ def _check_and_convert(keyword, val, expected_type):
 
 
 def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mode=False, version='6.2'):
-    """Validate if the input dictionary for Quantum ESPRESSO is valid. Return the dictionary (possibly with small
-    variations: e.g. convert integer to float where necessary, recreate the proper structure if flat_mode is True, ...)
-    to use as input parameters (use_parameters) for the pw.x calculation.
+    """Validate if the input dictionary for Quantum ESPRESSO is valid.
+
+    Return the dictionary (possibly with small variations: e.g. convert integer to float where necessary, recreate the
+    proper structure if flat_mode is True, ...) to use as input parameters (use_parameters) for the pw.x calculation.
 
     :param input_params: If flat_mode is True, pass a dictionary
         with 'key' = value; use the correct type

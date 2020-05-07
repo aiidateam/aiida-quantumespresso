@@ -127,7 +127,9 @@ class NebParser(Parser):
                 return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 
             try:
-                parsed_data_stdout, logs_stdout = parse_pw_stdout(pw_out_text, pw_input_dict, parser_options, parsed_data_xml)
+                parsed_data_stdout, logs_stdout = parse_pw_stdout(
+                    pw_out_text, pw_input_dict, parser_options, parsed_data_xml
+                )
             except Exception:
                 return self.exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION)
 

@@ -1,11 +1,11 @@
 
-     Program PW2GW v.6.2 starts on 28Sep2018 at 12:41:23 
+     Program PW2GW v.6.2 starts on 28Sep2018 at 12:41:23
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
          "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
          "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
-          URL http://www.quantum-espresso.org", 
+          URL http://www.quantum-espresso.org",
      in publications or presentations arising from this work. More details at
      http://www.quantum-espresso.org/quote
 
@@ -29,12 +29,12 @@
                file H.pbe-kjpaw_psl.1.0.0.UPF: wavefunction(s)  1S renormalized
      WARNING: atomic wfc #  2 for atom type 2 has zero norm
      WARNING: atomic wfc #  4 for atom type 2 has zero norm
- 
+
      G-vector sticks info
      --------------------
      sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
      Sum       41609   41609  10401              9727843  9727843 1216055
- 
+
 
      negative rho (up, down):  3.397E-05 0.000E+00
 
@@ -44,10 +44,10 @@
 
  writing matrixelements on unit 98 FORMATTED
  qplda title
- pw2gw                                                                          
-  
- test version                                                                   
-  
+ pw2gw
+
+ test version
+
     1    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0
  Vettori di reticolo diretto
 a1  0.250000000000000000E+02  0.000000000000000000E+00  0.000000000000000000E+00
@@ -94,7 +94,7 @@ a3  0.000000000000000000E+00  0.000000000000000000E+00  0.580800018310546875E+02
  io sono omax =        15000
  alpha =   1.000000000000000E-003
  halfalpha =   5.000000000000000E-004
- const =    9.43231723900834     
+ const =    9.43231723900834
  sono qui 6
   0.000000000000000E+000  0.000000000000000E+000
  igwx, npw      608028      608028
@@ -107,11 +107,11 @@ a3  0.000000000000000000E+00  0.000000000000000000E+00  0.580800018310546875E+02
   0.000000000000000E+000
   0.000000000000000E+000  0.000000000000000E+000
   Hey bello sto a fini
- 
+
      PW2GW        :  4m12.35s CPU     1m26.21s WALL
 
- 
-   This run was terminated on:  12:42:50  28Sep2018            
+
+   This run was terminated on:  12:42:50  28Sep2018
 
 =------------------------------------------------------------------------------=
    JOB DONE.

@@ -58,6 +58,7 @@ class PwCalculation(BasePwCpInputGenerator):
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
         super().define(spec)
         spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.pw')
@@ -148,10 +149,10 @@ class PwCalculation(BasePwCpInputGenerator):
 
     @classproperty
     def input_file_name_hubbard_file(cls):
-        """The relative file name of the file containing the Hubbard parameters if they should be read from file instead
-        of specified in the input file cards.
+        """Return the relative file name of the file containing the Hubbard parameters.
 
-        Requires the aiida-quantumespresso-hp plugin to be installed
+        .. note:: This only applies if they should be read from file instead of specified in the input file cards.
+        .. warning:: Requires the aiida-quantumespresso-hp plugin to be installed
         """
         # pylint: disable=no-self-argument,no-self-use
         try:
@@ -163,12 +164,13 @@ class PwCalculation(BasePwCpInputGenerator):
 
     @classmethod
     def input_helper(cls, *args, **kwargs):
-        """Validate if the keywords are valid Quantum ESPRESSO pw.x keywords, and also helps in preparing the input
-        parameter dictionary in a 'standardized' form (e.g., converts ints to floats when required, or if the flag
-        flat_mode is specified, puts the keywords in the right namelists).
+        """Validate the provided keywords and prepare the inputs dictionary in a 'standardized' form.
 
-        This function calls :py:func:`aiida_quantumespresso.calculations.helpers.pw_input_helper`,
-        see its docstring for further information.
+        The standardization converts ints to floats when required, or if the flag `flat_mode` is specified,
+        puts the keywords in the right namelists.
+
+        This function calls :py:func:`aiida_quantumespresso.calculations.helpers.pw_input_helper`, see its docstring for
+        further information.
         """
         from . import helpers
         return helpers.pw_input_helper(*args, **kwargs)

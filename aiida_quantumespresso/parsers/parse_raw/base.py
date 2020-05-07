@@ -127,12 +127,9 @@ def convert_qe_time_to_sec(timestr):
         seconds = '0.'
 
     if rest.strip():
-        raise ValueError("Something remained at the end of the string '{}': '{}'"
-                         .format(timestr, rest))
+        raise ValueError("Something remained at the end of the string '{}': '{}'".format(timestr, rest))
 
-    num_seconds = (
-        float(seconds) + float(minutes) * 60. +
-        float(hours) * 3600. + float(days) * 86400.)
+    num_seconds = (float(seconds) + float(minutes) * 60. + float(hours) * 3600. + float(days) * 86400.)
 
     return num_seconds
 

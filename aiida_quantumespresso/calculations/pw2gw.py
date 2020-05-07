@@ -26,6 +26,7 @@ class Pw2gwCalculation(NamelistsCalculation):
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
         super().define(spec)
         spec.input('parent_folder', valid_type=orm.RemoteData,
@@ -56,6 +57,15 @@ class Pw2gwCalculation(NamelistsCalculation):
             message='The parser raised an unexpected exception.')
 
     def prepare_for_submission(self, folder):
+        """Prepare the calculation job for submission by transforming input nodes into input files.
+
+        In addition to the input files being written to the sandbox folder, a `CalcInfo` instance will be returned that
+        contains lists of files that need to be copied to the remote machine before job submission, as well as file
+        lists that are to be retrieved after job completion.
+
+        :param folder: a sandbox folder to temporarily write files on disk.
+        :return: :py:`~aiida.common.datastructures.CalcInfo` instance.
+        """
         calcinfo = super().prepare_for_submission(folder)
 
         calcinfo.codes_run_mode = datastructures.CodeRunMode.SERIAL

@@ -81,7 +81,7 @@ free
     <UNITS_FOR_ATOMIC_MASSES UNITS="a.m.u."/>
     <SPECIE.1>
       <ATOM_TYPE type="character" size="1" len="3">
-C  
+C
       </ATOM_TYPE>
       <MASS type="real" size="1">
  1.201100000000000E+001
@@ -92,7 +92,7 @@ C.pbe-n-kjpaw_psl.1.0.0.UPF
     </SPECIE.1>
     <SPECIE.2>
       <ATOM_TYPE type="character" size="1" len="3">
-C1 
+C1
       </ATOM_TYPE>
       <MASS type="real" size="1">
  1.201100000000000E+001
@@ -103,7 +103,7 @@ C.pbe-n-kjpaw_psl.1.0.0.UPF
     </SPECIE.2>
     <SPECIE.3>
       <ATOM_TYPE type="character" size="1" len="3">
-C2 
+C2
       </ATOM_TYPE>
       <MASS type="real" size="1">
  1.201100000000000E+001
@@ -114,7 +114,7 @@ C.pbe-n-kjpaw_psl.1.0.0.UPF
     </SPECIE.3>
     <SPECIE.4>
       <ATOM_TYPE type="character" size="1" len="3">
-H  
+H
       </ATOM_TYPE>
       <MASS type="real" size="1">
  1.008000000000000E+000
@@ -168,15 +168,15 @@ F
     <SYMM.1>
       <INFO NAME="identity" T_REV="0"/>
       <ROTATION type="integer" size="9" columns="3">
-         1          0          0 
-         0          1          0 
+         1          0          0
+         0          1          0
          0          0          1
       </ROTATION>
       <FRACTIONAL_TRANSLATION type="real" size="3" columns="3">
  0.000000000000000E+000  0.000000000000000E+000  0.000000000000000E+000
       </FRACTIONAL_TRANSLATION>
       <EQUIVALENT_IONS type="integer" size="14" columns="8">
-         1          2          3          4          5          6          7          8 
+         1          2          3          4          5          6          7          8
          9         10         11         12         13         14
       </EQUIVALENT_IONS>
     </SYMM.1>
@@ -321,7 +321,7 @@ F
   </MAGNETIZATION_INIT>
   <EXCHANGE_CORRELATION>
     <DFT type="character" size="1" len="20">
-SLA PW PBX PBC      
+SLA PW PBX PBC
     </DFT>
     <ACFDT_IN_PW type="logical" size="1">
 F
@@ -439,5 +439,3 @@ F
   <EIGENVECTORS>
   </EIGENVECTORS>
 </Root>
- 
-

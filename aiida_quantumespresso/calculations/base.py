@@ -45,6 +45,7 @@ class CalcJob(_BaseCalcJob):  # pylint: disable=abstract-method
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
         super().define(spec)
         spec.inputs['metadata']['options']['resources'].default = lambda: {'num_machines': 1}

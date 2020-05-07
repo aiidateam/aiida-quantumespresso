@@ -35,7 +35,8 @@ class PpParser(Parser):
         17: 'e/bohr^3',  # All electron charge density
         18: 'T',  # The exchange and correlation magnetic field in the noncollinear case
         19: '1',  # Reduced density gradient - see dx.doi.org/10.1021/ct100641a, Eq.1 - dimensionless
-        20: 'e/bohr^5',  # Product of the electron density and the second eigenvalue of the electron-density Hessian matrix, see: dx.doi.org/10.1021/ct100641a, with sign of second eigenvalue
+        20:
+        'e/bohr^5',  # Product of the electron density and the second eigenvalue of the electron-density Hessian matrix, see: dx.doi.org/10.1021/ct100641a, with sign of second eigenvalue
         21: 'e/bohr^3',  # All electron charge density, PAW case
         22: 'Ry/bohr^3',  # Kinetic energy density
     }
@@ -72,7 +73,7 @@ class PpParser(Parser):
 
         # The post-processed data should have been written to file, either in the retrieved or temp list
         filename_data = PpCalculation._FILEOUT
-        if filename_data in self.retrieved.list_object_names():   # Retrieved list case
+        if filename_data in self.retrieved.list_object_names():  # Retrieved list case
             try:
                 data_raw = self.retrieved.get_object_content(filename_data)
             except (IOError, OSError):
@@ -179,10 +180,10 @@ class PpParser(Parser):
         for line in stdout_lines:
             if 'Check:' in line:
                 split_line = line.split('=')
-                if 'negative/imaginary' in line:    # QE6.1
+                if 'negative/imaginary' in line:  # QE6.1
                     output_dict['negative_core_charge'] = float(split_line[-1].split()[0])
                     output_dict['imaginary_core_charge'] = float(split_line.split()[-1])
-                else:                               # QE6.4
+                else:  # QE6.4
                     output_dict['negative_core_charge'] = float(split_line[1])
             if 'Min, Max, imaginary charge:' in line:
                 split_line = line.split()
@@ -246,24 +247,24 @@ class PpParser(Parser):
         return arraydata
 
     def parse_gnuplot_polar(self, data_file_str):
-            """
+        """
             Parse 2D Polar GNUPlot formatted, single column output
 
             :param data_file_str: the data file read in as a single string
             """
-            data_lines = data_file_str.splitlines()
-            data_lines.pop(0)  # First line is a header
+        data_lines = data_file_str.splitlines()
+        data_lines.pop(0)  # First line is a header
 
-            data = []
-            for line in data_lines:
-                data.append(float(line))
-            data_units = [self.units_dict[self.output_parameters['plot_num']]]
+        data = []
+        for line in data_lines:
+            data.append(float(line))
+        data_units = [self.units_dict[self.output_parameters['plot_num']]]
 
-            arraydata = orm.ArrayData()
-            arraydata.set_array('data', np.array(data))
-            arraydata.set_array('data_units', np.array(data_units))
+        arraydata = orm.ArrayData()
+        arraydata.set_array('data', np.array(data))
+        arraydata.set_array('data_units', np.array(data_units))
 
-            return arraydata
+        return arraydata
 
     def parse_gnuplot2D(self, data_file_str):
         """
@@ -305,7 +306,8 @@ class PpParser(Parser):
 
         atoms_line = lines[2].split()
         atoms = int(atoms_line[0])  # The number of atoms listed in the file
-        header = lines[:6 + atoms]  # The header of the file: comments, the voxel, and the number of atoms and datapoints
+        header = lines[:6 + atoms
+                       ]  # The header of the file: comments, the voxel, and the number of atoms and datapoints
         data_lines = lines[6 + atoms:]  # The actual data: atoms and volumetric data
 
         # Parse the declared dimensions of the volumetric data
@@ -317,12 +319,9 @@ class PpParser(Parser):
         zdim = int(z_line[0])
 
         # Get the vectors describing the basis voxel
-        voxel_array = np.array(
-            [[x_line[1], x_line[2], x_line[3]],
-            [y_line[1], y_line[2], y_line[3]],
-            [z_line[1], z_line[2], z_line[3]]],
-            dtype=np.float64
-        )
+        voxel_array = np.array([[x_line[1], x_line[2], x_line[3]], [y_line[1], y_line[2], y_line[3]],
+                                [z_line[1], z_line[2], z_line[3]]],
+                               dtype=np.float64)
 
         # Get the volumetric data
         data_array = np.zeros((xdim, ydim, zdim))

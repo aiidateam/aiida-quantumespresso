@@ -35,7 +35,7 @@ def parse_raw_output_neb(out_file, input_dict, parser_opts=None):
 
     # load NEB output file
     try:
-        with open(out_file,'r') as f:
+        with open(out_file, 'r') as f:
             out_lines = f.read()
     except IOError:  # non existing output file -> job crashed
         raise QEOutputParsingError('Failed to open output file: {}.'.format(out_file))
@@ -107,14 +107,15 @@ def parse_neb_text_output(data, input_dict={}):
     # TODO: find a more exhaustive list of the common errors of neb
 
     # critical warnings: if any is found, the calculation status is FAILED
-    critical_warnings = {'scf convergence NOT achieved on image':
-                         'SCF did not converge for a given image',
-                         'Maximum CPU time exceeded':'Maximum CPU time exceeded',
-                         'reached the maximum number of steps': 'Maximum number of iterations reached in the image optimization',
-                         }
+    critical_warnings = {
+        'scf convergence NOT achieved on image': 'SCF did not converge for a given image',
+        'Maximum CPU time exceeded': 'Maximum CPU time exceeded',
+        'reached the maximum number of steps': 'Maximum number of iterations reached in the image optimization',
+    }
 
-    minor_warnings = {'Warning:':None,
-                      }
+    minor_warnings = {
+        'Warning:': None,
+    }
 
     all_warnings = dict(list(critical_warnings.items()) + list(minor_warnings.items()))
 
@@ -199,11 +200,13 @@ def parse_neb_text_output(data, input_dict={}):
         try:
             num_images = input_dict['PATH']['num_of_images']
         except KeyError:
-            raise QEOutputParsingError('No information on the number '
-                                       'of images available (neither in input nor in output')
+            raise QEOutputParsingError(
+                'No information on the number '
+                'of images available (neither in input nor in output'
+            )
 
     iteration_lines = data.split('-- iteration')[1:]
-    iteration_lines = [ i.split('\n') for i in iteration_lines]
+    iteration_lines = [i.split('\n') for i in iteration_lines]
 
     for iteration in iteration_lines:
         for count, line in enumerate(iteration):
@@ -219,7 +222,7 @@ def parse_neb_text_output(data, input_dict={}):
                 frozen = []
                 try:
                     for i in range(num_images):
-                        split_line = iteration[count+2+i].split()[1:]
+                        split_line = iteration[count + 2 + i].split()[1:]
                         energies.append(float(split_line[0]))
                         forces.append(float(split_line[1]))
                         frozen.append(True if split_line[2] == 'T' else False)
@@ -227,9 +230,9 @@ def parse_neb_text_output(data, input_dict={}):
                     iteration_data['image_forces'].append(forces)
                     iteration_data['image_frozen'].append(frozen)
                 except Exception:
-                        parsed_data['warnings'].append('Error while parsing the image energies and forces.')
+                    parsed_data['warnings'].append('Error while parsing the image energies and forces.')
             elif 'climbing image' in line:
-                iteration_data['climbing_image_auto'].append([ int(_) for _  in line.split('=')[1].split(',')])
+                iteration_data['climbing_image_auto'].append([int(_) for _ in line.split('=')[1].split(',')])
             elif 'path length' in line:
                 path_length = float(line.split('=')[1].split('bohr')[0])
                 iteration_data['path_length'].append(path_length * bohr_to_ang)

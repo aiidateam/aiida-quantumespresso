@@ -1,10 +1,10 @@
 
-     Program PWSCF v.6.1 (svn rev. 13369) starts on 12Jun2019 at 12:30:36 
+     Program PWSCF v.6.1 (svn rev. 13369) starts on 12Jun2019 at 12:30:36
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
          "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
-          URL http://www.quantum-espresso.org", 
+          URL http://www.quantum-espresso.org",
      in publications or presentations arising from this work. More details at
      http://www.quantum-espresso.org/quote
 
@@ -45,14 +45,14 @@
      celldm(4)=   0.000000  celldm(5)=   0.000000  celldm(6)=   0.000000
 
      crystal axes: (cart. coord. in units of alat)
-               a(1) = (   0.707107   0.707107   0.000000 )  
-               a(2) = (   0.707107   0.000000   0.707107 )  
-               a(3) = (   0.000000   0.707107   0.707107 )  
+               a(1) = (   0.707107   0.707107   0.000000 )
+               a(2) = (   0.707107   0.000000   0.707107 )
+               a(3) = (   0.000000   0.707107   0.707107 )
 
      reciprocal axes: (cart. coord. in units 2 pi/alat)
-               b(1) = (  0.707107  0.707107 -0.707107 )  
-               b(2) = (  0.707107 -0.707107  0.707107 )  
-               b(3) = ( -0.707107  0.707107  0.707107 )  
+               b(1) = (  0.707107  0.707107 -0.707107 )
+               b(2) = (  0.707107 -0.707107  0.707107 )
+               b(3) = ( -0.707107  0.707107  0.707107 )
 
 
      PseudoPot. # 1 for Si read from file:
@@ -60,14 +60,14 @@
      MD5 check sum: 0b0bb1205258b0d07b9f9672cf965d36
      Pseudo is Ultrasoft + core correction, Zval =  4.0
      Generated using "atomic" code by A. Dal Corso  v.5.1
-     Using radial grid of 1141 points,  6 beta functions with: 
+     Using radial grid of 1141 points,  6 beta functions with:
                 l(1) =   0
                 l(2) =   0
                 l(3) =   1
                 l(4) =   1
                 l(5) =   2
                 l(6) =   2
-     Q(r) pseudized with 0 coefficients 
+     Q(r) pseudized with 0 coefficients
 
 
      atomic species   valence    mass     pseudopotential
@@ -78,7 +78,7 @@
 
                                     s                        frac. trans.
 
-      isym =  1     identity                                     
+      isym =  1     identity
 
  cryst.   s( 1) = (     1          0          0      )
                   (     0          1          0      )
@@ -89,7 +89,7 @@
                   (  0.0000000  0.0000000  1.0000000 )
 
 
-      isym =  2     180 deg rotation - cart. axis [0,0,1]        
+      isym =  2     180 deg rotation - cart. axis [0,0,1]
 
  cryst.   s( 2) = (    -1          0          0      )
                   (    -1          0          1      )
@@ -100,7 +100,7 @@
                   (  0.0000000  0.0000000  1.0000000 )
 
 
-      isym =  3     180 deg rotation - cart. axis [0,1,0]        
+      isym =  3     180 deg rotation - cart. axis [0,1,0]
 
  cryst.   s( 3) = (     0         -1          1      )
                   (     0         -1          0      )
@@ -111,7 +111,7 @@
                   (  0.0000000  0.0000000 -1.0000000 )
 
 
-      isym =  4     180 deg rotation - cart. axis [1,0,0]        
+      isym =  4     180 deg rotation - cart. axis [1,0,0]
 
  cryst.   s( 4) = (     0          1         -1      )
                   (     1          0         -1      )
@@ -122,7 +122,7 @@
                   (  0.0000000  0.0000000 -1.0000000 )
 
 
-      isym =  5     180 deg rotation - cart. axis [1,1,0]        
+      isym =  5     180 deg rotation - cart. axis [1,1,0]
 
  cryst.   s( 5) = (     1          0          0      )    f =( -0.2500000 )
                   (     1         -1          0      )       ( -0.2500000 )
@@ -133,7 +133,7 @@
                   (  0.0000000  0.0000000 -1.0000000 )       ( -0.3535534 )
 
 
-      isym =  6     180 deg rotation - cart. axis [1,-1,0]       
+      isym =  6     180 deg rotation - cart. axis [1,-1,0]
 
  cryst.   s( 6) = (    -1          0          0      )    f =( -0.2500000 )
                   (     0          0         -1      )       ( -0.2500000 )
@@ -144,7 +144,7 @@
                   (  0.0000000  0.0000000 -1.0000000 )       ( -0.3535534 )
 
 
-      isym =  7      90 deg rotation - cart. axis [0,0,-1]       
+      isym =  7      90 deg rotation - cart. axis [0,0,-1]
 
  cryst.   s( 7) = (     0          1         -1      )    f =( -0.2500000 )
                   (    -1          1          0      )       ( -0.2500000 )
@@ -155,7 +155,7 @@
                   (  0.0000000  0.0000000  1.0000000 )       ( -0.3535534 )
 
 
-      isym =  8      90 deg rotation - cart. axis [0,0,1]        
+      isym =  8      90 deg rotation - cart. axis [0,0,1]
 
  cryst.   s( 8) = (     0         -1          1      )    f =( -0.2500000 )
                   (     0          0          1      )       ( -0.2500000 )
@@ -166,7 +166,7 @@
                   (  0.0000000  0.0000000  1.0000000 )       ( -0.3535534 )
 
 
-      isym =  9     180 deg rotation - cart. axis [1,0,1]        
+      isym =  9     180 deg rotation - cart. axis [1,0,1]
 
  cryst.   s( 9) = (    -1          1          0      )    f =( -0.2500000 )
                   (     0          1          0      )       ( -0.2500000 )
@@ -177,7 +177,7 @@
                   (  1.0000000  0.0000000  0.0000000 )       ( -0.3535534 )
 
 
-      isym = 10     180 deg rotation - cart. axis [-1,0,1]       
+      isym = 10     180 deg rotation - cart. axis [-1,0,1]
 
  cryst.   s(10) = (     0          0         -1      )    f =( -0.2500000 )
                   (     0         -1          0      )       ( -0.2500000 )
@@ -188,7 +188,7 @@
                   ( -1.0000000  0.0000000  0.0000000 )       ( -0.3535534 )
 
 
-      isym = 11      90 deg rotation - cart. axis [0,1,0]        
+      isym = 11      90 deg rotation - cart. axis [0,1,0]
 
  cryst.   s(11) = (     1         -1          0      )    f =( -0.2500000 )
                   (     1          0         -1      )       ( -0.2500000 )
@@ -199,7 +199,7 @@
                   ( -1.0000000  0.0000000  0.0000000 )       ( -0.3535534 )
 
 
-      isym = 12      90 deg rotation - cart. axis [0,-1,0]       
+      isym = 12      90 deg rotation - cart. axis [0,-1,0]
 
  cryst.   s(12) = (     0          0          1      )    f =( -0.2500000 )
                   (    -1          0          1      )       ( -0.2500000 )
@@ -210,7 +210,7 @@
                   (  1.0000000  0.0000000  0.0000000 )       ( -0.3535534 )
 
 
-      isym = 13     180 deg rotation - cart. axis [0,1,1]        
+      isym = 13     180 deg rotation - cart. axis [0,1,1]
 
  cryst.   s(13) = (    -1          0          1      )    f =( -0.2500000 )
                   (     0         -1          1      )       ( -0.2500000 )
@@ -221,7 +221,7 @@
                   (  0.0000000  1.0000000  0.0000000 )       ( -0.3535534 )
 
 
-      isym = 14     180 deg rotation - cart. axis [0,1,-1]       
+      isym = 14     180 deg rotation - cart. axis [0,1,-1]
 
  cryst.   s(14) = (     0         -1          0      )    f =( -0.2500000 )
                   (    -1          0          0      )       ( -0.2500000 )
@@ -232,7 +232,7 @@
                   (  0.0000000 -1.0000000  0.0000000 )       ( -0.3535534 )
 
 
-      isym = 15      90 deg rotation - cart. axis [-1,0,0]       
+      isym = 15      90 deg rotation - cart. axis [-1,0,0]
 
  cryst.   s(15) = (     1          0         -1      )    f =( -0.2500000 )
                   (     1          0          0      )       ( -0.2500000 )
@@ -243,7 +243,7 @@
                   (  0.0000000 -1.0000000  0.0000000 )       ( -0.3535534 )
 
 
-      isym = 16      90 deg rotation - cart. axis [1,0,0]        
+      isym = 16      90 deg rotation - cart. axis [1,0,0]
 
  cryst.   s(16) = (     0          1          0      )    f =( -0.2500000 )
                   (     0          1         -1      )       ( -0.2500000 )
@@ -254,7 +254,7 @@
                   (  0.0000000  1.0000000  0.0000000 )       ( -0.3535534 )
 
 
-      isym = 17     120 deg rotation - cart. axis [-1,-1,-1]     
+      isym = 17     120 deg rotation - cart. axis [-1,-1,-1]
 
  cryst.   s(17) = (     0          1          0      )
                   (     0          0          1      )
@@ -265,7 +265,7 @@
                   (  1.0000000  0.0000000  0.0000000 )
 
 
-      isym = 18     120 deg rotation - cart. axis [-1,1,1]       
+      isym = 18     120 deg rotation - cart. axis [-1,1,1]
 
  cryst.   s(18) = (     0         -1          0      )
                   (     1         -1          0      )
@@ -276,7 +276,7 @@
                   ( -1.0000000  0.0000000  0.0000000 )
 
 
-      isym = 19     120 deg rotation - cart. axis [1,1,-1]       
+      isym = 19     120 deg rotation - cart. axis [1,1,-1]
 
  cryst.   s(19) = (     1          0         -1      )
                   (     0          0         -1      )
@@ -287,7 +287,7 @@
                   ( -1.0000000  0.0000000  0.0000000 )
 
 
-      isym = 20     120 deg rotation - cart. axis [1,-1,1]       
+      isym = 20     120 deg rotation - cart. axis [1,-1,1]
 
  cryst.   s(20) = (    -1          0          1      )
                   (    -1          1          0      )
@@ -298,7 +298,7 @@
                   (  1.0000000  0.0000000  0.0000000 )
 
 
-      isym = 21     120 deg rotation - cart. axis [1,1,1]        
+      isym = 21     120 deg rotation - cart. axis [1,1,1]
 
  cryst.   s(21) = (     0          0          1      )
                   (     1          0          0      )
@@ -309,7 +309,7 @@
                   (  0.0000000  1.0000000  0.0000000 )
 
 
-      isym = 22     120 deg rotation - cart. axis [-1,1,-1]      
+      isym = 22     120 deg rotation - cart. axis [-1,1,-1]
 
  cryst.   s(22) = (     0          0         -1      )
                   (     0          1         -1      )
@@ -320,7 +320,7 @@
                   (  0.0000000 -1.0000000  0.0000000 )
 
 
-      isym = 23     120 deg rotation - cart. axis [1,-1,-1]      
+      isym = 23     120 deg rotation - cart. axis [1,-1,-1]
 
  cryst.   s(23) = (    -1          1          0      )
                   (    -1          0          0      )
@@ -331,7 +331,7 @@
                   (  0.0000000  1.0000000  0.0000000 )
 
 
-      isym = 24     120 deg rotation - cart. axis [-1,-1,1]      
+      isym = 24     120 deg rotation - cart. axis [-1,-1,1]
 
  cryst.   s(24) = (     1         -1          0      )
                   (     0         -1          1      )
@@ -342,7 +342,7 @@
                   (  0.0000000 -1.0000000  0.0000000 )
 
 
-      isym = 25     inversion                                    
+      isym = 25     inversion
 
  cryst.   s(25) = (    -1          0          0      )    f =( -0.2500000 )
                   (     0         -1          0      )       ( -0.2500000 )
@@ -353,7 +353,7 @@
                   (  0.0000000  0.0000000 -1.0000000 )       ( -0.3535534 )
 
 
-      isym = 26     inv. 180 deg rotation - cart. axis [0,0,1]   
+      isym = 26     inv. 180 deg rotation - cart. axis [0,0,1]
 
  cryst.   s(26) = (     1          0          0      )    f =( -0.2500000 )
                   (     1          0         -1      )       ( -0.2500000 )
@@ -364,7 +364,7 @@
                   (  0.0000000  0.0000000 -1.0000000 )       ( -0.3535534 )
 
 
-      isym = 27     inv. 180 deg rotation - cart. axis [0,1,0]   
+      isym = 27     inv. 180 deg rotation - cart. axis [0,1,0]
 
  cryst.   s(27) = (     0          1         -1      )    f =( -0.2500000 )
                   (     0          1          0      )       ( -0.2500000 )
@@ -375,7 +375,7 @@
                   (  0.0000000  0.0000000  1.0000000 )       ( -0.3535534 )
 
 
-      isym = 28     inv. 180 deg rotation - cart. axis [1,0,0]   
+      isym = 28     inv. 180 deg rotation - cart. axis [1,0,0]
 
  cryst.   s(28) = (     0         -1          1      )    f =( -0.2500000 )
                   (    -1          0          1      )       ( -0.2500000 )
@@ -386,7 +386,7 @@
                   (  0.0000000  0.0000000  1.0000000 )       ( -0.3535534 )
 
 
-      isym = 29     inv. 180 deg rotation - cart. axis [1,1,0]   
+      isym = 29     inv. 180 deg rotation - cart. axis [1,1,0]
 
  cryst.   s(29) = (    -1          0          0      )
                   (    -1          1          0      )
@@ -397,7 +397,7 @@
                   (  0.0000000  0.0000000  1.0000000 )
 
 
-      isym = 30     inv. 180 deg rotation - cart. axis [1,-1,0]  
+      isym = 30     inv. 180 deg rotation - cart. axis [1,-1,0]
 
  cryst.   s(30) = (     1          0          0      )
                   (     0          0          1      )
@@ -408,7 +408,7 @@
                   (  0.0000000  0.0000000  1.0000000 )
 
 
-      isym = 31     inv.  90 deg rotation - cart. axis [0,0,-1]  
+      isym = 31     inv.  90 deg rotation - cart. axis [0,0,-1]
 
  cryst.   s(31) = (     0         -1          1      )
                   (     1         -1          0      )
@@ -419,7 +419,7 @@
                   (  0.0000000  0.0000000 -1.0000000 )
 
 
-      isym = 32     inv.  90 deg rotation - cart. axis [0,0,1]   
+      isym = 32     inv.  90 deg rotation - cart. axis [0,0,1]
 
  cryst.   s(32) = (     0          1         -1      )
                   (     0          0         -1      )
@@ -430,7 +430,7 @@
                   (  0.0000000  0.0000000 -1.0000000 )
 
 
-      isym = 33     inv. 180 deg rotation - cart. axis [1,0,1]   
+      isym = 33     inv. 180 deg rotation - cart. axis [1,0,1]
 
  cryst.   s(33) = (     1         -1          0      )
                   (     0         -1          0      )
@@ -441,7 +441,7 @@
                   ( -1.0000000  0.0000000  0.0000000 )
 
 
-      isym = 34     inv. 180 deg rotation - cart. axis [-1,0,1]  
+      isym = 34     inv. 180 deg rotation - cart. axis [-1,0,1]
 
  cryst.   s(34) = (     0          0          1      )
                   (     0          1          0      )
@@ -452,7 +452,7 @@
                   (  1.0000000  0.0000000  0.0000000 )
 
 
-      isym = 35     inv.  90 deg rotation - cart. axis [0,1,0]   
+      isym = 35     inv.  90 deg rotation - cart. axis [0,1,0]
 
  cryst.   s(35) = (    -1          1          0      )
                   (    -1          0          1      )
@@ -463,7 +463,7 @@
                   (  1.0000000  0.0000000  0.0000000 )
 
 
-      isym = 36     inv.  90 deg rotation - cart. axis [0,-1,0]  
+      isym = 36     inv.  90 deg rotation - cart. axis [0,-1,0]
 
  cryst.   s(36) = (     0          0         -1      )
                   (     1          0         -1      )
@@ -474,7 +474,7 @@
                   ( -1.0000000  0.0000000  0.0000000 )
 
 
-      isym = 37     inv. 180 deg rotation - cart. axis [0,1,1]   
+      isym = 37     inv. 180 deg rotation - cart. axis [0,1,1]
 
  cryst.   s(37) = (     1          0         -1      )
                   (     0          1         -1      )
@@ -485,7 +485,7 @@
                   (  0.0000000 -1.0000000  0.0000000 )
 
 
-      isym = 38     inv. 180 deg rotation - cart. axis [0,1,-1]  
+      isym = 38     inv. 180 deg rotation - cart. axis [0,1,-1]
 
  cryst.   s(38) = (     0          1          0      )
                   (     1          0          0      )
@@ -496,7 +496,7 @@
                   (  0.0000000  1.0000000  0.0000000 )
 
 
-      isym = 39     inv.  90 deg rotation - cart. axis [-1,0,0]  
+      isym = 39     inv.  90 deg rotation - cart. axis [-1,0,0]
 
  cryst.   s(39) = (    -1          0          1      )
                   (    -1          0          0      )
@@ -507,7 +507,7 @@
                   (  0.0000000  1.0000000  0.0000000 )
 
 
-      isym = 40     inv.  90 deg rotation - cart. axis [1,0,0]   
+      isym = 40     inv.  90 deg rotation - cart. axis [1,0,0]
 
  cryst.   s(40) = (     0         -1          0      )
                   (     0         -1          1      )
@@ -529,7 +529,7 @@
                   ( -1.0000000  0.0000000  0.0000000 )       ( -0.3535534 )
 
 
-      isym = 42     inv. 120 deg rotation - cart. axis [-1,1,1]  
+      isym = 42     inv. 120 deg rotation - cart. axis [-1,1,1]
 
  cryst.   s(42) = (     0          1          0      )    f =( -0.2500000 )
                   (    -1          1          0      )       ( -0.2500000 )
@@ -540,7 +540,7 @@
                   (  1.0000000  0.0000000  0.0000000 )       ( -0.3535534 )
 
 
-      isym = 43     inv. 120 deg rotation - cart. axis [1,1,-1]  
+      isym = 43     inv. 120 deg rotation - cart. axis [1,1,-1]
 
  cryst.   s(43) = (    -1          0          1      )    f =( -0.2500000 )
                   (     0          0          1      )       ( -0.2500000 )
@@ -551,7 +551,7 @@
                   (  1.0000000  0.0000000  0.0000000 )       ( -0.3535534 )
 
 
-      isym = 44     inv. 120 deg rotation - cart. axis [1,-1,1]  
+      isym = 44     inv. 120 deg rotation - cart. axis [1,-1,1]
 
  cryst.   s(44) = (     1          0         -1      )    f =( -0.2500000 )
                   (     1         -1          0      )       ( -0.2500000 )
@@ -562,7 +562,7 @@
                   ( -1.0000000  0.0000000  0.0000000 )       ( -0.3535534 )
 
 
-      isym = 45     inv. 120 deg rotation - cart. axis [1,1,1]   
+      isym = 45     inv. 120 deg rotation - cart. axis [1,1,1]
 
  cryst.   s(45) = (     0          0         -1      )    f =( -0.2500000 )
                   (    -1          0          0      )       ( -0.2500000 )
@@ -573,7 +573,7 @@
                   (  0.0000000 -1.0000000  0.0000000 )       ( -0.3535534 )
 
 
-      isym = 46     inv. 120 deg rotation - cart. axis [-1,1,-1] 
+      isym = 46     inv. 120 deg rotation - cart. axis [-1,1,-1]
 
  cryst.   s(46) = (     0          0          1      )    f =( -0.2500000 )
                   (     0         -1          1      )       ( -0.2500000 )
@@ -584,7 +584,7 @@
                   (  0.0000000  1.0000000  0.0000000 )       ( -0.3535534 )
 
 
-      isym = 47     inv. 120 deg rotation - cart. axis [1,-1,-1] 
+      isym = 47     inv. 120 deg rotation - cart. axis [1,-1,-1]
 
  cryst.   s(47) = (     1         -1          0      )    f =( -0.2500000 )
                   (     1          0          0      )       ( -0.2500000 )
@@ -595,7 +595,7 @@
                   (  0.0000000 -1.0000000  0.0000000 )       ( -0.3535534 )
 
 
-      isym = 48     inv. 120 deg rotation - cart. axis [-1,-1,1] 
+      isym = 48     inv. 120 deg rotation - cart. axis [-1,-1,1]
 
  cryst.   s(48) = (    -1          1          0      )    f =( -0.2500000 )
                   (     0          1         -1      )       ( -0.2500000 )
@@ -829,9 +829,8 @@
      PWSCF        :     2.89s CPU         3.42s WALL
 
 
-   This run was terminated on:  12:30:39  12Jun2019            
+   This run was terminated on:  12:30:39  12Jun2019
 
 =------------------------------------------------------------------------------=
    JOB DONE.
 =------------------------------------------------------------------------------=
-

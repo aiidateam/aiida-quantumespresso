@@ -1,11 +1,11 @@
 
-     Program PW2WANNIER v.6.4.1 starts on  8May2019 at 11:51:47 
+     Program PW2WANNIER v.6.4.1 starts on  8May2019 at 11:51:47
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
          "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
          "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
-          URL http://www.quantum-espresso.org", 
+          URL http://www.quantum-espresso.org",
      in publications or presentations arising from this work. More details at
      http://www.quantum-espresso.org/quote
 
@@ -40,7 +40,7 @@
  ----2D----2D----2D----2D----2D----2D----2D----2D----2D----2D----2D----2D
   The code is running with the 2D cutoff
   Please refer to:
-  Sohier, T., Calandra, M., & Mauri, F. (2017), 
+  Sohier, T., Calandra, M., & Mauri, F. (2017),
   Density functional perturbation theory for gated two-dimensional heterostructures:
   Theoretical developments and application to flexural phonons in graphene.
   Physical Review B, 96(7), 75448. https://doi.org/10.1103/PhysRevB.96.075448
@@ -52,10 +52,10 @@
 
   Spin CASE ( default = unpolarized )
 
-  Wannier mode is: standalone     
+  Wannier mode is: standalone
 
   -----------------
-  *** Reading nnkp 
+  *** Reading nnkp
   -----------------
 
   Checking info from wannier.nnkp file
@@ -67,40 +67,40 @@
 
  Projections:
 
-  Reading data about k-point neighbours 
+  Reading data about k-point neighbours
 
-  All neighbours are found 
+  All neighbours are found
 
-  Opening pp-files 
+  Opening pp-files
 
-
-  -----------------------------
-  *** A matrix is not computed 
-  -----------------------------
 
   -----------------------------
-  *** M matrix is not computed 
+  *** A matrix is not computed
+  -----------------------------
+
+  -----------------------------
+  *** M matrix is not computed
   -----------------------------
 
   -----------------------------------
-  *** Orbital terms are not computed 
+  *** Orbital terms are not computed
   -----------------------------------
 
   ----------------
-  *** Write bands 
+  *** Write bands
   ----------------
 
 
   -----------------------------
-  *** Plot info is not printed 
+  *** Plot info is not printed
   -----------------------------
 
   -----------------------------
-  *** Parity info is not printed 
+  *** Parity info is not printed
   -----------------------------
 
   ------------
-  *** Stop pp 
+  *** Stop pp
   ------------
 
 
@@ -109,9 +109,8 @@
      PW2WANNIER   :      2.04s CPU      2.18s WALL
 
 
-   This run was terminated on:  11:51:49   8May2019            
+   This run was terminated on:  11:51:49   8May2019
 
 =------------------------------------------------------------------------------=
    JOB DONE.
 =------------------------------------------------------------------------------=
-

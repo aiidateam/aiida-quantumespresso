@@ -78,8 +78,9 @@ def parse_raw_ph_output(stdout, tensors=None, dynamical_matrices=None):
             raise AssertionError('{} found in two dictionaries'.format(key))
 
     # I don't check the dynmat_data and parser_info keys
-    parsed_data = dict(list(dynmat_data.items()) + list(out_data.items()) +
-                       list(tensor_data.items()) + list(parser_info.items()))
+    parsed_data = dict(
+        list(dynmat_data.items()) + list(out_data.items()) + list(tensor_data.items()) + list(parser_info.items())
+    )
 
     return parsed_data, logs
 
@@ -95,10 +96,10 @@ def parse_ph_tensor(data):
 
     # card EF_TENSORS
     cardname = 'EF_TENSORS'
-    target_tags = read_xml_card(dom,cardname)
+    target_tags = read_xml_card(dom, cardname)
 
-    tagname='DONE_ELECTRIC_FIELD'
-    parsed_data[tagname.lower()]=parse_xml_child_bool(tagname,target_tags)
+    tagname = 'DONE_ELECTRIC_FIELD'
+    parsed_data[tagname.lower()] = parse_xml_child_bool(tagname, target_tags)
 
     if parsed_data[tagname.lower()]:
         try:
@@ -107,13 +108,13 @@ def parse_ph_tensor(data):
         except:
             raise QEOutputParsingError('Failed to parse Dielectric constant')
 
-    tagname='DONE_EFFECTIVE_CHARGE_EU'
-    parsed_data[tagname.lower()]=parse_xml_child_bool(tagname,target_tags)
+    tagname = 'DONE_EFFECTIVE_CHARGE_EU'
+    parsed_data[tagname.lower()] = parse_xml_child_bool(tagname, target_tags)
 
     if parsed_data[tagname.lower()]:
         try:
             second_tagname = 'EFFECTIVE_CHARGES_EU'
-            dumb_matrix = parse_xml_matrices(second_tagname,target_tags)
+            dumb_matrix = parse_xml_matrices(second_tagname, target_tags)
             # separate the elements of the messy matrix, with a matrix 3x3 for each element
             new_matrix = []
             this_at = []
@@ -129,15 +130,17 @@ def parse_ph_tensor(data):
 
     return parsed_data
 
-def parse_xml_matrices(tagname,target_tags):
+
+def parse_xml_matrices(tagname, target_tags):
     """Can be used to load the disordered matrices of the QE XML file."""
     a = target_tags.getElementsByTagName(tagname)[0]
     b = a.childNodes[0]
     flat_array = b.data.split()
     # convert to float, then into a list of tuples, then into a list of lists
     flat_array = [float(i) for i in flat_array]
-    list_tuple = list(zip(*[iter(flat_array)]*3))
+    list_tuple = list(zip(*[iter(flat_array)] * 3))
     return [list(i) for i in list_tuple]
+
 
 def parse_ph_text_output(lines, logs):
     """Parses the stdout of Quantum ESPRESSO ph.x.
@@ -145,6 +148,7 @@ def parse_ph_text_output(lines, logs):
     :param lines: list of strings, the file as read by readlines()
     :return: dictionary with parsed values
     """
+
     def detect_important_message(logs, line):
 
         message_map = {
@@ -197,8 +201,9 @@ def parse_ph_text_output(lines, logs):
         if 'q-points for this run' in line:
             try:
                 num_qpoints = int(line.split('/')[1].split('q-points')[0])
-                if ( 'number_of_qpoints' in list(parsed_data.keys()) and
-                     num_qpoints != parsed_data['number_of_qpoints']):
+                if (
+                    'number_of_qpoints' in list(parsed_data.keys()) and num_qpoints != parsed_data['number_of_qpoints']
+                ):
                     logs.warning.append('Number q-points found several times with different values')
                 else:
                     parsed_data['number_of_qpoints'] = num_qpoints
@@ -209,8 +214,9 @@ def parse_ph_text_output(lines, logs):
             # case of a 'only_wfc' calculation
             try:
                 num_qpoints = int(line.split('q-points')[0].split('(')[1])
-                if ( 'number_of_qpoints' in list(parsed_data.keys()) and
-                     num_qpoints != parsed_data['number_of_qpoints']):
+                if (
+                    'number_of_qpoints' in list(parsed_data.keys()) and num_qpoints != parsed_data['number_of_qpoints']
+                ):
                     logs.warning.append('Number q-points found several times with different values')
                 else:
                     parsed_data['number_of_qpoints'] = num_qpoints
@@ -234,6 +240,7 @@ def parse_ph_text_output(lines, logs):
                 pass
 
     return parsed_data
+
 
 def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False, parse_header=False):
     """Parse frequencies and eigenvectors of a single dynamical matrix.
@@ -279,7 +286,8 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
                 if abs(alat) < 1.e-5:
                     raise QEOutputParsingError(
                         'Lattice constant=0! Probably you are using an '
-                        'old Quantum ESPRESSO version?')
+                        'old Quantum ESPRESSO version?'
+                    )
                 header_dict['alat'] = alat
                 header_dict['alat_units'] = 'angstrom'
             except ValueError:
@@ -288,16 +296,14 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
             starting_line = 3
             if header_dict['ibrav'] == 0:
                 if 'Basis vectors' not in data[3]:
-                    raise QEOutputParsingError(
-                        "Wrong format (no 'Basis vectors' line)")
+                    raise QEOutputParsingError("Wrong format (no 'Basis vectors' line)")
                 try:
-                    v1 = [float(_)*alat for _ in data[4].split()]
-                    v2 = [float(_)*alat for _ in data[5].split()]
-                    v3 = [float(_)*alat for _ in data[6].split()]
+                    v1 = [float(_) * alat for _ in data[4].split()]
+                    v2 = [float(_) * alat for _ in data[5].split()]
+                    v3 = [float(_) * alat for _ in data[6].split()]
                     if len(v1) != 3 or len(v2) != 3 or len(v3) != 3:
-                        raise QEOutputParsingError(
-                            'Wrong length for basis vectors')
-                    header_dict['lattice_vectors'] = [v1,v2,v3]
+                        raise QEOutputParsingError('Wrong length for basis vectors')
+                    header_dict['lattice_vectors'] = [v1, v2, v3]
                     header_dict['lattice_vectors_units'] = 'angstrom'
                 except ValueError:
                     raise QEOutputParsingError('Wrong data for basis vectors')
@@ -305,19 +311,14 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
 
             species_info = {}
             species = []
-            for idx, sp_line in enumerate(
-                data[starting_line:starting_line + num_species],
-                start=1):
+            for idx, sp_line in enumerate(data[starting_line:starting_line + num_species], start=1):
                 pieces = sp_line.split("'")
                 if len(pieces) != 3:
-                    raise QEOutputParsingError(
-                        'Wrong # of elements for one of the species')
+                    raise QEOutputParsingError('Wrong # of elements for one of the species')
                 try:
                     if int(pieces[0]) != idx:
-                        raise QEOutputParsingError(
-                            'Error with the indices of the species')
-                    species.append([pieces[1].strip(),
-                                    float(pieces[2])/amu_Ry])
+                        raise QEOutputParsingError('Error with the indices of the species')
+                    species.append([pieces[1].strip(), float(pieces[2]) / amu_Ry])
                 except ValueError:
                     raise QEOutputParsingError('Error parsing the species')
 
@@ -327,68 +328,64 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
             atoms_coords = []
             atoms_labels = []
             starting_line += num_species
-            for idx, atom_line in enumerate(
-                data[starting_line:starting_line + num_atoms],
-                start=1):
+            for idx, atom_line in enumerate(data[starting_line:starting_line + num_atoms], start=1):
                 pieces = atom_line.split()
                 if len(pieces) != 5:
                     raise QEOutputParsingError(
                         'Wrong # of elements for one of the atoms: {}, '
-                        'line {}: {}'.format(
-                            len(pieces), starting_line+idx, pieces))
+                        'line {}: {}'.format(len(pieces), starting_line + idx, pieces)
+                    )
                 try:
                     if int(pieces[0]) != idx:
                         raise QEOutputParsingError(
                             'Error with the indices of the atoms: '
-                            '{} vs {}'.format(int(pieces[0]), idx))
+                            '{} vs {}'.format(int(pieces[0]), idx)
+                        )
                     sp_idx = int(pieces[1])
                     if sp_idx > len(species):
-                        raise QEOutputParsingError('Wrong index for the species: '
-                                            '{}, but max={}'.format(
-                                sp_idx, len(species)))
-                    atoms_labels.append(species[sp_idx-1][0])
-                    atoms_coords.append([float(pieces[2])*alat,
-                                         float(pieces[3])*alat,
-                                         float(pieces[4])*alat])
+                        raise QEOutputParsingError(
+                            'Wrong index for the species: '
+                            '{}, but max={}'.format(sp_idx, len(species))
+                        )
+                    atoms_labels.append(species[sp_idx - 1][0])
+                    atoms_coords.append([float(pieces[2]) * alat, float(pieces[3]) * alat, float(pieces[4]) * alat])
                 except ValueError:
                     raise QEOutputParsingError('Error parsing the atoms')
                 except IndexError:
-                    raise QEOutputParsingError(
-                        'Error with the indices in the atoms section')
+                    raise QEOutputParsingError('Error with the indices in the atoms section')
             header_dict['atoms_labels'] = atoms_labels
             header_dict['atoms_coords'] = atoms_coords
             header_dict['atoms_coords_units'] = 'angstrom'
 
             starting_line += num_atoms
 
-            starting_line += 1 # Got to the next line to check
+            starting_line += 1  # Got to the next line to check
             if 'Dynamical' not in data[starting_line]:
-                raise QEOutputParsingError(
-                    "Wrong format (no 'Dynamical  Matrix' line)")
+                raise QEOutputParsingError("Wrong format (no 'Dynamical  Matrix' line)")
 
             ## Here I finish the header parsing
 
         except QEOutputParsingError as e:
             logs.warning.append(
                 'Problem parsing the header of the matdyn file! (msg: {}). '
-                'Storing only the information I managed to retrieve'.format(
-                    e.message))
+                'Storing only the information I managed to retrieve'.format(e.message)
+            )
             header_dict['warnings'].append(
                 'There was some parsing error and this dictionary is '
-                'not complete, see the warnings of the top parsed_data dict')
+                'not complete, see the warnings of the top parsed_data dict'
+            )
 
         # I store what I got
         parsed_data['header'] = header_dict
 
-    for line_counter,line in enumerate(data[starting_line:],
-                                       start=starting_line):
+    for line_counter, line in enumerate(data[starting_line:], start=starting_line):
         if 'q = ' in line:
             # q point is written several times, because it can also be rotated.
             # I consider only the first point, which is the one computed
             if 'q_point' not in parsed_data:
-                q_point = [ float(i) for i in line.split('(')[1].split(')')[0].split() ]
+                q_point = [float(i) for i in line.split('(')[1].split(')')[0].split()]
                 if lattice_parameter:
-                    parsed_data['q_point'] = [ e*2*numpy.pi/lattice_parameter for e in q_point]
+                    parsed_data['q_point'] = [e * 2 * numpy.pi / lattice_parameter for e in q_point]
                     parsed_data['q_point_units'] = 'angstrom-1'
                 else:
                     parsed_data['q_point'] = q_point
@@ -402,13 +399,14 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
                 frequencies.append(None)
                 logs.warning.append('Wrong fortran formatting found while parsing frequencies')
             else:
-                frequencies.append( float(this_freq) )
+                frequencies.append(float(this_freq))
 
             this_eigenvectors = []
-            for new_line in data[line_counter+1:]:
-                if ('freq' in new_line or 'omega' in new_line or
-                    '************************************************'
-                    in new_line):
+            for new_line in data[line_counter + 1:]:
+                if (
+                    'freq' in new_line or 'omega' in new_line or
+                    '************************************************' in new_line
+                ):
                     break
                 this_things = new_line.split('(')[1].split(')')[0].split()
                 try:
@@ -416,12 +414,12 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
                 except ValueError:
                     logs.warning.append('Wrong fortran formatting found while parsing eigenvectors')
                     # then save the three (xyz) complex numbers as [None,None]
-                    this_eigenvectors.append([[None,None]]*3)
+                    this_eigenvectors.append([[None, None]] * 3)
                     continue
 
-                list_tuples = list(zip(*[iter(this_flatlist)]*2))
+                list_tuples = list(zip(*[iter(this_flatlist)] * 2))
                 # I save every complex number as a list of two numbers
-                this_eigenvectors.append( [ [i[0],i[1]] for i in list_tuples ] )
+                this_eigenvectors.append([[i[0], i[1]] for i in list_tuples])
 
             eigenvectors.append(this_eigenvectors)
 

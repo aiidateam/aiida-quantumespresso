@@ -62,5 +62,3 @@ the code, and the proper scheduler info.
     calc.store_all()
     print "created calculation with PK={}".format(calc.pk)
     calc.submit()
-
-

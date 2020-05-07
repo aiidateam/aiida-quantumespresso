@@ -137,9 +137,9 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
         if len(celldm) != 6:
             warnings.append('Wrong length for celldm')
         if ibrav != 0:
-            warnings.append('ibrav ({}) is not 0; q-points path for phonon ' 'dispersion might be wrong'.format(ibrav))
+            warnings.append('ibrav ({}) is not 0; q-points path for phonon dispersion might be wrong'.format(ibrav))
         if any([item != 0 for item in celldm[1:]]):
-            warnings.append('celldm[1:] are not all zero; only celldm[0] will ' 'be used')
+            warnings.append('celldm[1:] are not all zero; only celldm[0] will be used')
 
         parsed_data['number_of_species'] = ntyp
         parsed_data['number_of_atoms'] = nat
