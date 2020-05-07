@@ -1,11 +1,11 @@
 
-     Program NEB v.6.4.1 starts on  9Sep2019 at 21: 3:57 
+     Program NEB v.6.4.1 starts on  9Sep2019 at 21: 3:57
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
          "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
          "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
-          URL http://www.quantum-espresso.org", 
+          URL http://www.quantum-espresso.org",
      in publications or presentations arising from this work. More details at
      http://www.quantum-espresso.org/quote
 
@@ -310,7 +310,7 @@
      NEB          :     10.54s CPU     11.44s WALL
 
 
-   This run was terminated on:  21: 4: 8   9Sep2019            
+   This run was terminated on:  21: 4: 8   9Sep2019
 
 =------------------------------------------------------------------------------=
    JOB DONE.

@@ -103,10 +103,7 @@ class PwParser(Parser):
         if settings.get('ONLY_INITIALIZATION', False):
             logs_xml.pop('error')
 
-        ignore = [
-            'Error while parsing ethr.',
-            'DEPRECATED: symmetry with ibrav=0, use correct ibrav instead'
-        ]
+        ignore = ['Error while parsing ethr.', 'DEPRECATED: symmetry with ibrav=0, use correct ibrav instead']
         self.emit_logs([logs_stdout, logs_xml], ignore=ignore)
 
         # First check for specific known problems that can cause a pre-mature termination of the calculation
@@ -356,8 +353,11 @@ class PwParser(Parser):
         for key in list(parsed_stdout.keys()):
             if key in list(parsed_xml.keys()):
                 if parsed_stdout[key] != parsed_xml[key]:
-                    raise AssertionError('{} found in both dictionaries with different values: {} vs. {}'.format(
-                        key, parsed_stdout[key], parsed_xml[key]))
+                    raise AssertionError(
+                        '{} found in both dictionaries with different values: {} vs. {}'.format(
+                            key, parsed_stdout[key], parsed_xml[key]
+                        )
+                    )
 
         parameters = dict(list(parsed_xml.items()) + list(parsed_stdout.items()) + list(parsed_info.items()))
 

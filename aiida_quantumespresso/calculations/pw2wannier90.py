@@ -10,6 +10,7 @@ class Pw2wannier90Calculation(NamelistsCalculation):
 
     For more information, refer to http://www.quantum-espresso.org/ and http://www.wannier.org/
     """
+
     _default_namelists = ['INPUTPP']
     _SEEDNAME = 'aiida'
     _blocked_keywords = [('INPUTPP', 'outdir', NamelistsCalculation._OUTPUT_SUBFOLDER),
@@ -21,6 +22,7 @@ class Pw2wannier90Calculation(NamelistsCalculation):
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
         super().define(spec)
         spec.input('nnkp_file', valid_type=SinglefileData,
@@ -41,12 +43,15 @@ class Pw2wannier90Calculation(NamelistsCalculation):
             message='An error happened while parsing the output file')
 
     def prepare_for_submission(self, folder):
-        """Prepare the inputs of the calculation and the calcinfo data.
+        """Prepare the calculation job for submission by transforming input nodes into input files.
 
-        :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
-        :return: `aiida.common.datastructures.CalcInfo` instance
+        In addition to the input files being written to the sandbox folder, a `CalcInfo` instance will be returned that
+        contains lists of files that need to be copied to the remote machine before job submission, as well as file
+        lists that are to be retrieved after job completion.
+
+        :param folder: a sandbox folder to temporarily write files on disk.
+        :return: :py:`~aiida.common.datastructures.CalcInfo` instance.
         """
-        # Run the global namelist logic
         calcinfo = super().prepare_for_submission(folder)
 
         # Put the nnkp in the folder, with the correct filename

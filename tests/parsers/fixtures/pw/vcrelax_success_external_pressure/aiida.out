@@ -1,11 +1,11 @@
 
-     Program PWSCF v.6.3MaX starts on  4Mar2020 at 14:38:24 
+     Program PWSCF v.6.3MaX starts on  4Mar2020 at 14:38:24
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
          "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
          "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
-          URL http://www.quantum-espresso.org", 
+          URL http://www.quantum-espresso.org",
      in publications or presentations arising from this work. More details at
      http://www.quantum-espresso.org/quote
 
@@ -77,21 +77,21 @@
 
     -5.8148   5.6191   5.6191   5.6191
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000
 
           k = 0.3435-0.3435-0.3435 (   754 PWs)   bands (ev):
 
     -3.6789  -1.0226   4.4685   4.4685
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000
 
           k = 0.0000 0.0000-0.6869 (   740 PWs)   bands (ev):
 
     -1.9601  -1.9601   2.9304   2.9304
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000
 
      highest occupied level (ev):     5.6191
@@ -215,21 +215,21 @@
 
     -5.8148   5.6186   5.6186   5.6186
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000
 
           k = 0.3435-0.3435-0.3435 (   832 PWs)   bands (ev):
 
     -3.6788  -1.0227   4.4684   4.4684
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000
 
           k = 0.0000 0.0000-0.6869 (   790 PWs)   bands (ev):
 
     -1.9600  -1.9600   2.9304   2.9304
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000
 
      highest occupied level (ev):     5.6186
@@ -283,4 +283,3 @@
 =------------------------------------------------------------------------------=
    JOB DONE.
 =------------------------------------------------------------------------------=
-

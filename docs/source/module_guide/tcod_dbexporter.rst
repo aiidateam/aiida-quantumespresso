@@ -23,4 +23,3 @@ PW
 ++
 .. automodule:: aiida_quantumespresso.tools.dbexporters.tcod_plugins.pw
    :members:
-

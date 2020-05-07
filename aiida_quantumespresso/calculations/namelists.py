@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Plugin to create a Quantum Espresso input file for a generic post-processing (or similar) code that only requires a
-few namelists (plus possibly some text afterwards)."""
+"""Plugin to create a Quantum Espresso input file for a generic post-processing code.
+
+These codes typically only require a few namelists (plus possibly some text afterwards).
+"""
 import os
 
 from aiida.common import datastructures, exceptions
@@ -42,6 +44,7 @@ class NamelistsCalculation(CalcJob):
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
         super().define(spec)
         spec.input('metadata.options.input_filename', valid_type=str, default=cls._DEFAULT_INPUT_FILE)
@@ -110,7 +113,7 @@ class NamelistsCalculation(CalcJob):
 
     @staticmethod
     def generate_input_file(parameters):
-        """Generate namelist input_file content given a dict of parameters
+        """Generate namelist input_file content given a dict of parameters.
 
         :param parameters: 'dict' containing the fortran namelists and parameters to be used.
           e.g.: {'CONTROL':{'calculation':'scf'}, 'SYSTEM':{'ecutwfc':30}}
@@ -127,10 +130,14 @@ class NamelistsCalculation(CalcJob):
         return '\n'.join(file_lines)
 
     def prepare_for_submission(self, folder):
-        """Create the input files from the input nodes passed to this instance of the `CalcJob`.
+        """Prepare the calculation job for submission by transforming input nodes into input files.
 
-        :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
-        :return: `aiida.common.datastructures.CalcInfo` instance
+        In addition to the input files being written to the sandbox folder, a `CalcInfo` instance will be returned that
+        contains lists of files that need to be copied to the remote machine before job submission, as well as file
+        lists that are to be retrieved after job completion.
+
+        :param folder: a sandbox folder to temporarily write files on disk.
+        :return: :py:`~aiida.common.datastructures.CalcInfo` instance.
         """
         # pylint: disable=too-many-branches,too-many-statements
         if 'settings' in self.inputs:

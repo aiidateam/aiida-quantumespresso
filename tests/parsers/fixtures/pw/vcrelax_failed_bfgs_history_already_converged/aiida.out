@@ -1,11 +1,11 @@
 
-     Program PWSCF v.6.3 starts on 19Feb2020 at 19: 2:24 
+     Program PWSCF v.6.3 starts on 19Feb2020 at 19: 2:24
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
          "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
          "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
-          URL http://www.quantum-espresso.org", 
+          URL http://www.quantum-espresso.org",
      in publications or presentations arising from this work. More details at
      http://www.quantum-espresso.org/quote
 
@@ -29,14 +29,14 @@
      one sub-group per band group will be used
      scalapack distributed-memory algorithm (size of sub-group:  4*  4 procs)
 
- 
+
      Parallelization info
      --------------------
      sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
      Min         205     103     30                24751     8757    1414
      Max         206     104     31                24760     8765    1421
      Sum        7387    3709   1097               891159   315403   50989
- 
+
 
 
      bravais-lattice index     =            0
@@ -59,14 +59,14 @@
      celldm(4)=   0.000000  celldm(5)=   0.000000  celldm(6)=   0.000000
 
      crystal axes: (cart. coord. in units of alat)
-               a(1) = (   1.000000   0.000000   0.000000 )  
-               a(2) = (   0.000000  10.735437   0.000000 )  
-               a(3) = (   0.000000   0.000000   6.087996 )  
+               a(1) = (   1.000000   0.000000   0.000000 )
+               a(2) = (   0.000000  10.735437   0.000000 )
+               a(3) = (   0.000000   0.000000   6.087996 )
 
      reciprocal axes: (cart. coord. in units 2 pi/alat)
-               b(1) = (  1.000000  0.000000  0.000000 )  
-               b(2) = (  0.000000  0.093149  0.000000 )  
-               b(3) = (  0.000000  0.000000  0.164258 )  
+               b(1) = (  1.000000  0.000000  0.000000 )
+               b(2) = (  0.000000  0.093149  0.000000 )
+               b(3) = (  0.000000  0.000000  0.164258 )
 
 
 --- OUTPUT REMOVED ----
@@ -172,7 +172,7 @@
      ethr =  2.74E-13,  avg # of iterations =  2.4
 
      negative rho (up, down):  4.902E-04 4.902E-04
- 
+
      Magnetic moment per site:
      atom:    1    charge:    1.6648    magn:   -0.0235    constr:    0.0000
      atom:    2    charge:    1.6624    magn:    0.0307    constr:    0.0000
@@ -203,7 +203,7 @@
     -8.1067  -7.9119  -7.4030  -6.9335  -6.7404  -6.6598  -6.0576  -6.0297
     -5.6263  -0.4804   0.3806   0.5092   0.6122   0.7195
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -216,7 +216,7 @@
     -8.3031  -7.8201  -7.7483  -6.9853  -6.9801  -6.6487  -6.3569  -6.1460
     -5.5322  -0.4998   0.4825   0.6075   0.7173   0.7340
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -229,7 +229,7 @@
     -8.5460  -8.5081  -7.7124  -7.5468  -7.3845  -6.9502  -6.5123  -6.3760
     -5.2515  -0.5897   0.7061   0.7848   0.8975   1.0324
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -242,7 +242,7 @@
     -8.8411  -8.4351  -8.1397  -8.0913  -7.3315  -7.1137  -7.0997  -5.9313
     -4.7899  -0.8363   0.4750   1.2755   1.3651   1.5579
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -255,7 +255,7 @@
     -8.6862  -8.3038  -8.2075  -7.8979  -7.7932  -7.4709  -6.4963  -5.3377
     -4.1632  -1.3338  -0.0697   1.2910   1.9275   1.9867
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -268,7 +268,7 @@
     -8.8224  -8.4802  -8.3801  -7.8816  -7.4186  -6.7112  -5.7804  -4.6677
     -3.4293  -2.0685  -0.8497   0.3041   1.4245   2.4733
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -281,7 +281,7 @@
     -9.1766  -9.0167  -8.7610  -6.9353  -6.5093  -5.8780  -5.0901  -4.2570
     -3.0586  -2.5446  -1.3729  -0.6610   0.2015   1.1040
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -294,7 +294,7 @@
     -9.5896  -9.1304  -9.0174  -5.8889  -5.5690  -5.1846  -4.9043  -4.8451
     -3.2458  -2.5190  -0.9525  -0.8214  -0.6496  -0.1259
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -310,7 +310,7 @@
     -8.1067  -7.9119  -7.4030  -6.9335  -6.7404  -6.6598  -6.0576  -6.0297
     -5.6263  -0.4804   0.3806   0.5092   0.6122   0.7195
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -323,7 +323,7 @@
     -8.3031  -7.8201  -7.7483  -6.9853  -6.9801  -6.6487  -6.3569  -6.1460
     -5.5322  -0.4998   0.4825   0.6075   0.7173   0.7340
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -336,7 +336,7 @@
     -8.5460  -8.5081  -7.7124  -7.5468  -7.3845  -6.9502  -6.5123  -6.3760
     -5.2515  -0.5897   0.7061   0.7848   0.8975   1.0324
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -349,7 +349,7 @@
     -8.8411  -8.4351  -8.1397  -8.0913  -7.3315  -7.1137  -7.0997  -5.9313
     -4.7899  -0.8363   0.4750   1.2755   1.3651   1.5579
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -362,7 +362,7 @@
     -8.6862  -8.3038  -8.2075  -7.8979  -7.7932  -7.4709  -6.4963  -5.3377
     -4.1632  -1.3338  -0.0697   1.2910   1.9275   1.9867
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -375,7 +375,7 @@
     -8.8224  -8.4802  -8.3801  -7.8816  -7.4186  -6.7112  -5.7804  -4.6677
     -3.4293  -2.0685  -0.8497   0.3041   1.4245   2.4733
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -388,7 +388,7 @@
     -9.1766  -9.0167  -8.7610  -6.9353  -6.5093  -5.8780  -5.0901  -4.2570
     -3.0586  -2.5446  -1.3729  -0.6610   0.2015   1.1040
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -401,7 +401,7 @@
     -9.5896  -9.1304  -9.0174  -5.8889  -5.5690  -5.1846  -4.9043  -4.8451
     -3.2458  -2.5190  -0.9525  -0.8214  -0.6496  -0.1259
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -649,14 +649,14 @@ End final coordinates
      A final scf calculation at the relaxed structure.
      The G-vectors are recalculated for the final unit cell
      Results may differ from those at the preceding step.
- 
+
      Parallelization info
      --------------------
      sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
      Min         205     103     30                24761     8761    1414
      Max         206     104     31                24768     8768    1421
      Sum        7387    3709   1097               891463   315547   50989
- 
+
 
 
      bravais-lattice index     =            0
@@ -677,14 +677,14 @@ End final coordinates
      celldm(4)=   0.000000  celldm(5)=   0.000000  celldm(6)=   0.000000
 
      crystal axes: (cart. coord. in units of alat)
-               a(1) = (   1.000327   0.000000   0.000000 )  
-               a(2) = (   0.000000  10.735437   0.000000 )  
-               a(3) = (   0.000000   0.000000   6.087996 )  
+               a(1) = (   1.000327   0.000000   0.000000 )
+               a(2) = (   0.000000  10.735437   0.000000 )
+               a(3) = (   0.000000   0.000000   6.087996 )
 
      reciprocal axes: (cart. coord. in units 2 pi/alat)
-               b(1) = (  0.999673  0.000000  0.000000 )  
-               b(2) = (  0.000000  0.093149  0.000000 )  
-               b(3) = (  0.000000  0.000000  0.164258 )  
+               b(1) = (  0.999673  0.000000  0.000000 )
+               b(2) = (  0.000000  0.093149  0.000000 )
+               b(3) = (  0.000000  0.000000  0.164258 )
 
 
      PseudoPot. # 1 for C  read from file:
@@ -693,12 +693,12 @@ End final coordinates
      Pseudo is Projector augmented-wave + core cor, Zval =  4.0
      Generated using "atomic" code by A. Dal Corso v.5.1
      Shape of augmentation charge: PSQ
-     Using radial grid of 1073 points,  4 beta functions with: 
+     Using radial grid of 1073 points,  4 beta functions with:
                 l(1) =   0
                 l(2) =   0
                 l(3) =   1
                 l(4) =   1
-     Q(r) pseudized with 0 coefficients 
+     Q(r) pseudized with 0 coefficients
 
 
      PseudoPot. # 2 for C  read from file:
@@ -707,12 +707,12 @@ End final coordinates
      Pseudo is Projector augmented-wave + core cor, Zval =  4.0
      Generated using "atomic" code by A. Dal Corso v.5.1
      Shape of augmentation charge: PSQ
-     Using radial grid of 1073 points,  4 beta functions with: 
+     Using radial grid of 1073 points,  4 beta functions with:
                 l(1) =   0
                 l(2) =   0
                 l(3) =   1
                 l(4) =   1
-     Q(r) pseudized with 0 coefficients 
+     Q(r) pseudized with 0 coefficients
 
 
      PseudoPot. # 3 for C  read from file:
@@ -721,12 +721,12 @@ End final coordinates
      Pseudo is Projector augmented-wave + core cor, Zval =  4.0
      Generated using "atomic" code by A. Dal Corso v.5.1
      Shape of augmentation charge: PSQ
-     Using radial grid of 1073 points,  4 beta functions with: 
+     Using radial grid of 1073 points,  4 beta functions with:
                 l(1) =   0
                 l(2) =   0
                 l(3) =   1
                 l(4) =   1
-     Q(r) pseudized with 0 coefficients 
+     Q(r) pseudized with 0 coefficients
 
 
      PseudoPot. # 4 for H  read from file:
@@ -735,10 +735,10 @@ End final coordinates
      Pseudo is Projector augmented-wave, Zval =  1.0
      Generated using "atomic" code by A. Dal Corso v.6.1 svn rev. 13369
      Shape of augmentation charge: PSQ
-     Using radial grid of  929 points,  2 beta functions with: 
+     Using radial grid of  929 points,  2 beta functions with:
                 l(1) =   0
                 l(2) =   0
-     Q(r) pseudized with 0 coefficients 
+     Q(r) pseudized with 0 coefficients
 
 
      atomic species   valence    mass     pseudopotential
@@ -747,7 +747,7 @@ End final coordinates
         C2             4.00    12.01100     C ( 1.00)
         H              1.00     1.00800     H ( 1.00)
 
-     Starting magnetic structure 
+     Starting magnetic structure
      atomic species   magnetization
         C           -0.000
         C1           0.065
@@ -759,7 +759,7 @@ End final coordinates
 
                                     s                        frac. trans.
 
-      isym =  1     identity                                     
+      isym =  1     identity
 
  cryst.   s( 1) = (     1          0          0      )
                   (     0          1          0      )
@@ -770,7 +770,7 @@ End final coordinates
                   (  0.0000000  0.0000000  1.0000000 )
 
 
-      isym =  2     180 deg rotation - cart. axis [0,1,0]        
+      isym =  2     180 deg rotation - cart. axis [0,1,0]
 
  cryst.   s( 2) = (    -1          0          0      )    f =( -0.5000000 )
                   (     0          1          0      )       (  0.0000000 )
@@ -781,7 +781,7 @@ End final coordinates
                   (  0.0000000  0.0000000 -1.0000000 )       ( -0.0000000 )
 
 
-      isym =  3     inv. 180 deg rotation - cart. axis [0,0,1]   
+      isym =  3     inv. 180 deg rotation - cart. axis [0,0,1]
 
  cryst.   s( 3) = (     1          0          0      )
                   (     0          1          0      )
@@ -792,7 +792,7 @@ End final coordinates
                   (  0.0000000  0.0000000 -1.0000000 )
 
 
-      isym =  4     inv. 180 deg rotation - cart. axis [1,0,0]   
+      isym =  4     inv. 180 deg rotation - cart. axis [1,0,0]
 
  cryst.   s( 4) = (    -1          0          0      )    f =( -0.5000000 )
                   (     0          1          0      )       (  0.0000000 )
@@ -919,7 +919,7 @@ End final coordinates
 
      negative rho (up, down):  4.021E-04 4.021E-04
      Starting wfcs are   50 randomized atomic wfcs
-     Checking if some PAW data can be deallocated... 
+     Checking if some PAW data can be deallocated...
        PAW data deallocated on   61 nodes for type:  1
        PAW data deallocated on  200 nodes for type:  2
        PAW data deallocated on  201 nodes for type:  3
@@ -1207,7 +1207,7 @@ End final coordinates
      ethr =  2.22E-13,  avg # of iterations =  3.1
 
      negative rho (up, down):  4.873E-04 4.873E-04
- 
+
      Magnetic moment per site:
      atom:    1    charge:    1.6643    magn:   -0.0235    constr:    0.0000
      atom:    2    charge:    1.6619    magn:    0.0307    constr:    0.0000
@@ -1238,7 +1238,7 @@ End final coordinates
     -8.1067  -7.9119  -7.4030  -6.9335  -6.7404  -6.6599  -6.0576  -6.0297
     -5.6264  -0.4805   0.3811   0.5097   0.6126   0.7195
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -1251,7 +1251,7 @@ End final coordinates
     -8.3031  -7.8201  -7.7483  -6.9853  -6.9801  -6.6487  -6.3569  -6.1461
     -5.5322  -0.4998   0.4830   0.6080   0.7177   0.7340
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -1264,7 +1264,7 @@ End final coordinates
     -8.5460  -8.5081  -7.7124  -7.5468  -7.3845  -6.9502  -6.5123  -6.3760
     -5.2515  -0.5897   0.7061   0.7853   0.8979   1.0328
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -1277,7 +1277,7 @@ End final coordinates
     -8.8412  -8.4351  -8.1397  -8.0913  -7.3315  -7.1137  -7.0997  -5.9313
     -4.7900  -0.8363   0.4750   1.2759   1.3654   1.5582
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -1290,7 +1290,7 @@ End final coordinates
     -8.6862  -8.3038  -8.2075  -7.8980  -7.7933  -7.4709  -6.4963  -5.3377
     -4.1632  -1.3338  -0.0697   1.2910   1.9279   1.9869
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -1303,7 +1303,7 @@ End final coordinates
     -8.8224  -8.4802  -8.3802  -7.8816  -7.4186  -6.7112  -5.7804  -4.6677
     -3.4294  -2.0685  -0.8497   0.3041   1.4245   2.4733
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -1316,7 +1316,7 @@ End final coordinates
     -9.1766  -9.0167  -8.7610  -6.9353  -6.5093  -5.8780  -5.0901  -4.2571
     -3.0586  -2.5446  -1.3729  -0.6611   0.2015   1.1040
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -1329,7 +1329,7 @@ End final coordinates
     -9.5896  -9.1304  -9.0174  -5.8889  -5.5691  -5.1846  -4.9044  -4.8451
     -3.2458  -2.5190  -0.9525  -0.8214  -0.6496  -0.1259
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -1345,7 +1345,7 @@ End final coordinates
     -8.1067  -7.9119  -7.4030  -6.9335  -6.7404  -6.6599  -6.0576  -6.0297
     -5.6264  -0.4805   0.3811   0.5097   0.6126   0.7195
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -1358,7 +1358,7 @@ End final coordinates
     -8.3031  -7.8201  -7.7483  -6.9853  -6.9801  -6.6487  -6.3569  -6.1461
     -5.5322  -0.4998   0.4830   0.6079   0.7177   0.7340
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -1371,7 +1371,7 @@ End final coordinates
     -8.5460  -8.5081  -7.7124  -7.5468  -7.3845  -6.9502  -6.5123  -6.3760
     -5.2515  -0.5897   0.7061   0.7853   0.8979   1.0328
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -1384,7 +1384,7 @@ End final coordinates
     -8.8412  -8.4351  -8.1397  -8.0913  -7.3315  -7.1137  -7.0997  -5.9313
     -4.7900  -0.8363   0.4750   1.2759   1.3654   1.5582
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -1397,7 +1397,7 @@ End final coordinates
     -8.6862  -8.3038  -8.2076  -7.8980  -7.7933  -7.4709  -6.4963  -5.3377
     -4.1632  -1.3338  -0.0697   1.2910   1.9279   1.9869
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -1410,7 +1410,7 @@ End final coordinates
     -8.8224  -8.4802  -8.3802  -7.8816  -7.4186  -6.7112  -5.7804  -4.6677
     -3.4294  -2.0685  -0.8497   0.3041   1.4245   2.4733
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -1423,7 +1423,7 @@ End final coordinates
     -9.1766  -9.0167  -8.7610  -6.9353  -6.5093  -5.8780  -5.0901  -4.2571
     -3.0586  -2.5446  -1.3729  -0.6611   0.2015   1.1040
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -1436,7 +1436,7 @@ End final coordinates
     -9.5896  -9.1304  -9.0174  -5.8889  -5.5691  -5.1846  -4.9044  -4.8451
     -3.2458  -2.5190  -0.9525  -0.8214  -0.6496  -0.1259
 
-     occupation numbers 
+     occupation numbers
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
      1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000   1.0000
@@ -1646,7 +1646,7 @@ End final coordinates
 
 
      Writing output data file aiida.save/
- 
+
      init_run     :      4.10s CPU      4.22s WALL (       2 calls)
      electrons    :     65.66s CPU     67.42s WALL (       9 calls)
      update_pot   :     18.61s CPU     18.66s WALL (       7 calls)
@@ -1702,7 +1702,7 @@ End final coordinates
      ffts         :      0.47s CPU      0.47s WALL (     392 calls)
      fftw         :     20.91s CPU     21.20s WALL (   55432 calls)
      interpolate  :      0.86s CPU      0.86s WALL (     198 calls)
- 
+
      Parallel routines
      fft_scatt_xy :      2.73s CPU      2.76s WALL (   58673 calls)
      fft_scatt_yz :     21.14s CPU     21.36s WALL (   58673 calls)
@@ -1710,13 +1710,12 @@ End final coordinates
      PAW routines
      PAW_pot      :      3.24s CPU      3.30s WALL (     106 calls)
      PAW_symme    :      0.04s CPU      0.04s WALL (     203 calls)
- 
+
      PWSCF        :   2m 1.50s CPU   2m 6.93s WALL
 
- 
-   This run was terminated on:  19: 4:31  19Feb2020            
+
+   This run was terminated on:  19: 4:31  19Feb2020
 
 =------------------------------------------------------------------------------=
    JOB DONE.
 =------------------------------------------------------------------------------=
-

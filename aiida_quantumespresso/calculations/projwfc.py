@@ -29,6 +29,7 @@ class ProjwfcCalculation(NamelistsCalculation):
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
         from aiida.orm import ProjectionData, BandsData
         super().define(spec)

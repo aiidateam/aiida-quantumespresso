@@ -81,7 +81,7 @@ free
     <UNITS_FOR_ATOMIC_MASSES UNITS="a.m.u."/>
     <SPECIE.1>
       <ATOM_TYPE type="character" size="1" len="3">
-Si 
+Si
       </ATOM_TYPE>
       <MASS type="real" size="1">
  2.808550000000000E+001
@@ -227,7 +227,7 @@ F
   </MAGNETIZATION_INIT>
   <EXCHANGE_CORRELATION>
     <DFT type="character" size="1" len="20">
-PBE                 
+PBE
     </DFT>
     <ACFDT_IN_PW type="logical" size="1">
 F
@@ -334,5 +334,3 @@ F
   <EIGENVECTORS>
   </EIGENVECTORS>
 </Root>
-
-

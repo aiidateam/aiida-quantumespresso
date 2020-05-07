@@ -31,5 +31,3 @@ Outputs
 -------
 * force_constants :py:class:`SinglefileData <aiida.orm.nodes.data.singlefile.SinglefileData>`
   A file containing the force constants in real space.
-
-

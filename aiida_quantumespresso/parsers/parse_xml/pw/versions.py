@@ -4,7 +4,6 @@ import os
 
 from .exceptions import XMLUnsupportedFormatError
 
-
 DEFAULT_SCHEMA_FILENAME = 'qes-1.0.xsd'
 DIRNAME_SCHEMAS = 'schemas'
 DIRPATH_SCHEMAS = os.path.join(os.path.dirname(os.path.abspath(__file__)), DIRNAME_SCHEMAS)

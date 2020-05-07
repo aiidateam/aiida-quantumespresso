@@ -109,7 +109,7 @@ class CpCalculation(BasePwCpInputGenerator):
 
     @classproperty
     def xml_filepaths(cls):
-        """Returns a list of relative filepaths of XML files."""
+        """Return a list of relative filepaths of XML files."""
         # pylint: disable=no-self-argument,not-an-iterable
         filepaths = []
 
@@ -125,6 +125,7 @@ class CpCalculation(BasePwCpInputGenerator):
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
         super().define(spec)
         spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.cp')
