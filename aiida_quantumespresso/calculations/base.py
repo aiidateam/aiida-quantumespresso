@@ -31,11 +31,7 @@ class CalcJobProcessSpec(_BaseCalcJobProcessSpec):
         if invalidates_cache is None:
             invalidates_cache = (isinstance(status, int) and status < 400)
 
-        try:
-            super(CalcJobProcessSpec,
-                  self).exit_code(status=status, label=label, message=message, invalidates_cache=invalidates_cache)
-        except TypeError:  # For AiiDA version <1.1
-            super().exit_code(status=status, message=message, label=label)
+        super().exit_code(status=status, label=label, message=message, invalidates_cache=invalidates_cache)
 
 
 class CalcJob(_BaseCalcJob):  # pylint: disable=abstract-method

@@ -1,35 +1,18 @@
 # -*- coding: utf-8 -*-
 """Tests for the `MatdynCalculation` class."""
-import os
-
 from aiida.common import datastructures
 from aiida.plugins import CalculationFactory
-
-from aiida_quantumespresso.data.force_constants import ForceConstantsData
-from aiida_quantumespresso.utils.resources import get_default_options
 
 MatdynCalculation = CalculationFactory('quantumespresso.matdyn')
 
 
-def test_matdyn_default(
-    aiida_profile, fixture_sandbox, generate_calc_job, fixture_code, generate_kpoints_mesh, file_regression
-):
+def test_matdyn_default(aiida_profile, fixture_sandbox, generate_calc_job, generate_inputs_matdyn, file_regression):
     """Test a default `MatdynCalculation`."""
     entry_point_name = 'quantumespresso.matdyn'
 
-    filepath = os.path.join(os.path.dirname(__file__), 'fixtures', 'matdyn', 'default', 'force_constants.dat')
-    force_constants = ForceConstantsData(filepath)
-
-    inputs = {
-        'code': fixture_code(entry_point_name),
-        'force_constants': force_constants,
-        'kpoints': generate_kpoints_mesh(2),
-        'metadata': {
-            'options': get_default_options()
-        }
-    }
-
+    inputs = generate_inputs_matdyn()
     calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
+    force_constants = inputs['force_constants']
 
     local_copy_list = [(force_constants.uuid, force_constants.filename, force_constants.filename)]
     retrieve_list = ['aiida.out'] + MatdynCalculation._internal_retrieve_list  # pylint: disable=protected-access

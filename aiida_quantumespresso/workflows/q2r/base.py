@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO q2r.x calculation with automated error handling and restarts."""
 from aiida.common import AttributeDict
-from aiida.engine import while_
+from aiida.engine import while_, BaseRestartWorkChain, process_handler, ProcessHandlerReport
 from aiida.plugins import CalculationFactory
-
-from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkChain
-from aiida_quantumespresso.common.workchain.utils import register_error_handler, ErrorHandlerReport
 
 Q2rCalculation = CalculationFactory('quantumespresso.q2r')
 
@@ -13,7 +10,7 @@ Q2rCalculation = CalculationFactory('quantumespresso.q2r')
 class Q2rBaseWorkChain(BaseRestartWorkChain):
     """Workchain to run a Quantum ESPRESSO q2r.x calculation with automated error handling and restarts."""
 
-    _calculation_class = Q2rCalculation
+    _process_class = Q2rCalculation
 
     @classmethod
     def define(cls, spec):
@@ -24,9 +21,9 @@ class Q2rBaseWorkChain(BaseRestartWorkChain):
         spec.expose_outputs(Q2rCalculation)
         spec.outline(
             cls.setup,
-            while_(cls.should_run_calculation)(
-                cls.run_calculation,
-                cls.inspect_calculation,
+            while_(cls.should_run_process)(
+                cls.run_process,
+                cls.inspect_process,
             ),
             cls.results,
         )
@@ -40,6 +37,7 @@ class Q2rBaseWorkChain(BaseRestartWorkChain):
         internal loop.
         """
         super().setup()
+        self.ctx.restart_calc = None
         self.ctx.inputs = AttributeDict(self.exposed_inputs(Q2rCalculation, 'q2r'))
 
     def report_error_handled(self, calculation, action):
@@ -54,10 +52,9 @@ class Q2rBaseWorkChain(BaseRestartWorkChain):
         self.report('{}<{}> failed with exit status {}: {}'.format(*arguments))
         self.report('Action taken: {}'.format(action))
 
-
-@register_error_handler(Q2rBaseWorkChain, 600)
-def _handle_unrecoverable_failure(self, calculation):
-    """Handle calculations with an exit status below 400 which are unrecoverable, so abort the work chain."""
-    if calculation.exit_status < 400:
-        self.report_error_handled(calculation, 'unrecoverable error, aborting...')
-        return ErrorHandlerReport(True, True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
+    @process_handler(priority=600)
+    def handle_unrecoverable_failure(self, node):
+        """Handle calculations with an exit status below 400 which are unrecoverable, so abort the work chain."""
+        if node.is_failed and node.exit_status < 400:
+            self.report_error_handled(node, 'unrecoverable error, aborting...')
+            return ProcessHandlerReport(True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
