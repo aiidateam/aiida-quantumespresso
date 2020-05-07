@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-
 from distutils.version import LooseVersion
 
 import numpy
 from aiida.common import NotExistent
 from aiida.orm import Dict, TrajectoryData
-from six.moves import zip
 
 from qe_tools.constants import bohr_to_ang, hartree_to_ev, timeau_to_sec
 from aiida_quantumespresso.parsers.parse_raw.cp import parse_cp_raw_output, parse_cp_traj_stanzas

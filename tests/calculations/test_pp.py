@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=redefined-outer-name
 """Tests for the `PpCalculation` class."""
-from __future__ import absolute_import
 import pytest
 
 from aiida import orm

@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-
 from aiida.common import exceptions
 
 from aiida_quantumespresso.calculations.q2r import Q2rCalculation

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Utility functions to return process builders ready to be submitted for restarting a Quantum ESPRESSO calculation."""
-from __future__ import absolute_import
-
 from aiida_quantumespresso.calculations.cp import CpCalculation
 from aiida_quantumespresso.calculations.neb import NebCalculation
 from aiida_quantumespresso.calculations.ph import PhCalculation

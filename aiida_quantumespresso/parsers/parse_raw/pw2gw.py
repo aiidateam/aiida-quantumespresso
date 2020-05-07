@@ -5,12 +5,10 @@ The function that needs to be called from outside is parse_raw_output(). The fun
 specific functionalities. The parsing will try to convert whatever it can in some dictionary, which by operative
 decision doesn't have much structure encoded, [the values are simple ]
 """
-from __future__ import absolute_import
-from __future__ import print_function
-
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.parse_raw import convert_qe_time_to_sec
 from aiida_quantumespresso.utils.mapping import get_logging_container
+
 
 def parse_stdout(stdout):
     """Parses the stdout content of a Quantum ESPRESSO `pw2gw.x` calculation.

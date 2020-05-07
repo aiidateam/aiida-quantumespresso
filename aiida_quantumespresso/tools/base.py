@@ -1,15 +1,11 @@
 # -*- coding: utf-8 -*-
 """Base class for parser of Quantum ESPRESSO pw.x and cp.x input files based on generic parser of `qe-tools` package."""
-from __future__ import absolute_import
-from __future__ import print_function
-
 import re
-from six.moves import zip
 
 from aiida.common import InputValidationError
 
 
-class StructureParseMixin(object):
+class StructureParseMixin:
     """Mixin that extends :class:`~qe_tools.parsers.qeinputparser.QeInputFile` to parse a ``StructureData``."""
 
     # pylint: disable=too-few-public-methods

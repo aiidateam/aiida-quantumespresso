@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
 from xml.dom.minidom import parseString
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
 from aiida_quantumespresso.parsers.parse_xml.pw.legacy import (read_xml_card,
@@ -7,7 +6,6 @@ from aiida_quantumespresso.parsers.parse_xml.pw.legacy import (read_xml_card,
                    parse_xml_child_str,parse_xml_child_float,
                    parse_xml_child_attribute_str,xml_card_cell,xml_card_ions,
                    xml_card_exchangecorrelation,xml_card_spin,xml_card_planewaves)
-from six.moves import range
 
 
 def parse_cp_traj_stanzas(num_elements, splitlines, prepend_name, rescale=1.):

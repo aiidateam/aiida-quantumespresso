@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO q2r.x calculation with automated error handling and restarts."""
-from __future__ import absolute_import
-
 from aiida.common import AttributeDict
 from aiida.engine import while_
 from aiida.plugins import CalculationFactory
@@ -21,7 +19,7 @@ class Q2rBaseWorkChain(BaseRestartWorkChain):
     def define(cls, spec):
         """Define the process specification."""
         # yapf: disable
-        super(Q2rBaseWorkChain, cls).define(spec)
+        super().define(spec)
         spec.expose_inputs(Q2rCalculation, namespace='q2r')
         spec.expose_outputs(Q2rCalculation)
         spec.outline(
@@ -41,7 +39,7 @@ class Q2rBaseWorkChain(BaseRestartWorkChain):
         This `self.ctx.inputs` dictionary will be used by the `BaseRestartWorkChain` to submit the calculations in the
         internal loop.
         """
-        super(Q2rBaseWorkChain, self).setup()
+        super().setup()
         self.ctx.inputs = AttributeDict(self.exposed_inputs(Q2rCalculation, 'q2r'))
 
     def report_error_handled(self, calculation, action):

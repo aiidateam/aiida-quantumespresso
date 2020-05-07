@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import print_function
-
 from distutils.version import StrictVersion
 import numpy as np
 from xmlschema import XMLSchema
@@ -189,9 +186,9 @@ def parse_pw_xml_post_6_2(xml):
         }
 
         try:
-            sym['t_rev'] = u'1' if symmetry['info']['@time_reversal'] else u'0'
+            sym['t_rev'] = '1' if symmetry['info']['@time_reversal'] else '0'
         except KeyError:
-            sym['t_rev'] = u'0'
+            sym['t_rev'] = '0'
 
         try:
             sym['equivalent_atoms'] = symmetry['equivalent_atoms']['$']
@@ -225,7 +222,7 @@ def parse_pw_xml_post_6_2(xml):
             # Signals whether kpt-data are written in sub-directories.
             # Was generally true in the old format, but now all the eigenvalues are
             # in the XML file, under output / band_structure, so this is False.
-        'charge_density': u'./charge-density.dat', # A file name. Not printed in the new format.
+        'charge_density': './charge-density.dat', # A file name. Not printed in the new format.
             # The filename and path are considered fixed: <outdir>/<prefix>.save/charge-density.dat
             # TODO: change to .hdf5 if output format is HDF5 (issue #222)
         'rho_cutoff_units': 'eV',

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Calculation function to compute a k-point mesh for a structure with a guaranteed minimum k-point distance."""
-from __future__ import absolute_import
 from aiida.engine import calcfunction
 
 

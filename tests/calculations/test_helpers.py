@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Tests for the calculation input helper utilities."""
-from __future__ import absolute_import
-
 import pytest
 
 from aiida_quantumespresso.calculations.helpers import pw_input_helper, QEInputValidationError

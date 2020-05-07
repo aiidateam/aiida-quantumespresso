@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 """`CalcJob` implementation for the pp.x code of Quantum ESPRESSO."""
-from __future__ import absolute_import
-
 import os
-import six
-from six.moves import range
 
 from aiida import orm
 from aiida.common import datastructures, exceptions
@@ -73,14 +69,14 @@ class PpCalculation(CalcJob):
     @classmethod
     def define(cls, spec):
         # yapf: disable
-        super(PpCalculation, cls).define(spec)
+        super().define(spec)
         spec.input('parent_folder', valid_type=(orm.RemoteData, orm.FolderData), required=True,
             help='Output folder of a completed `PwCalculation`')
         spec.input('parameters', valid_type=orm.Dict, required=True, validator=validate_parameters,
             help='Use a node that specifies the input parameters for the namelists')
-        spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
-        spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
-        spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.pp')
+        spec.input('metadata.options.input_filename', valid_type=str, default=cls._DEFAULT_INPUT_FILE)
+        spec.input('metadata.options.output_filename', valid_type=str, default=cls._DEFAULT_OUTPUT_FILE)
+        spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.pp')
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)
         spec.input('metadata.options.keep_plot_file', valid_type=bool, default=False)
 
@@ -124,7 +120,7 @@ class PpCalculation(CalcJob):
 
         # Put the first-level keys as uppercase (i.e., namelist and card names) and the second-level keys as lowercase
         parameters = _uppercase_dict(self.inputs.parameters.get_dict(), dict_name='parameters')
-        parameters = {k: _lowercase_dict(v, dict_name=k) for k, v in six.iteritems(parameters)}
+        parameters = {k: _lowercase_dict(v, dict_name=k) for k, v in parameters.items()}
 
         # Set default values. NOTE: this is different from PW/CP
         for blocked in self._blocked_keywords:
@@ -156,12 +152,12 @@ class PpCalculation(CalcJob):
         input_filename = self.inputs.metadata.options.input_filename
         with folder.open(input_filename, 'w') as infile:
             for namelist_name in namelists_toprint:
-                infile.write(u'&{0}\n'.format(namelist_name))
+                infile.write('&{0}\n'.format(namelist_name))
                 # namelist content; set to {} if not present, so that we leave an empty namelist
                 namelist = parameters.pop(namelist_name, {})
-                for key, value in sorted(six.iteritems(namelist)):
+                for key, value in sorted(namelist.items()):
                     infile.write(convert_input_to_namelist_entry(key, value))
-                infile.write(u'/\n')
+                infile.write('/\n')
 
         # Check for specified namelists that are not expected
         if parameters:

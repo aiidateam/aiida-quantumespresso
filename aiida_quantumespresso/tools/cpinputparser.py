@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Utilities to parse Quantum ESPRESSO cp.x input files into AiiDA nodes or builders."""
-from __future__ import absolute_import
-
 from qe_tools.parsers import CpInputFile as BaseCpInputFile
 from .base import StructureParseMixin
 

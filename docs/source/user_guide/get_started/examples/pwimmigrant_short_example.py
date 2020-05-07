@@ -9,7 +9,6 @@
 # For further information please visit http://www.aiida.net               #
 ###########################################################################
 # Load the database environment.
-from __future__ import absolute_import
 from aiida import load_dbenv
 load_dbenv()
 

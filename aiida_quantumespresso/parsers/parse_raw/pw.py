@@ -5,17 +5,13 @@ The function that needs to be called from outside is parse_raw_output(). The fun
 specific functionalities. The parsing will try to convert whatever it can in some dictionary, which by operative
 decision doesn't have much structure encoded, [the values are simple ]
 """
-from __future__ import absolute_import
-from __future__ import print_function
-
 import re
 import numpy
-from six.moves import range, zip
+from qe_tools.constants import ry_to_ev, bohr_to_ang, ry_si, bohr_si
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.parse_raw import convert_qe_time_to_sec
 from aiida_quantumespresso.utils.mapping import get_logging_container
-from qe_tools.constants import ry_to_ev, bohr_to_ang, ry_si, bohr_si
 
 lattice_tolerance = 1.e-5
 units_suffix = '_units'

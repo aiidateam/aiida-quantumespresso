@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """TCOD export plugin for `PwCalculations`."""
-from __future__ import absolute_import
-
 import re
 
 from aiida.orm.nodes.data.upf import UpfData

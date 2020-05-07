@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """A basic parser for the common format of QE."""
-from __future__ import absolute_import
 from aiida_quantumespresso.parsers import get_parser_info
 
 __all__ = ('parse_output_base', 'parse_output_error', 'convert_qe_time_to_sec', 'convert_qe2aiida_structure')

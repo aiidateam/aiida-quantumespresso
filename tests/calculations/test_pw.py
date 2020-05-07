@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Tests for the `PwCalculation` class."""
-from __future__ import absolute_import
-
 from aiida import orm
 from aiida.common import datastructures
 
@@ -34,7 +32,7 @@ def test_pw_default(
     calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
     cmdline_params = ['-in', 'aiida.in']
-    local_copy_list = [(upf.uuid, upf.filename, u'./pseudo/Si.upf')]
+    local_copy_list = [(upf.uuid, upf.filename, './pseudo/Si.upf')]
     retrieve_list = ['aiida.out', './out/aiida.save/data-file-schema.xml', './out/aiida.save/data-file.xml']
     retrieve_temporary_list = [['./out/aiida.save/K*[0-9]/eigenval*.xml', '.', 2]]
 

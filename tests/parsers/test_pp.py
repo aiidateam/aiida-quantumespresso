@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=invalid-name,redefined-outer-name
 """Tests for the `PpParser`."""
-from __future__ import absolute_import
-
 import pytest
 
 from aiida import orm

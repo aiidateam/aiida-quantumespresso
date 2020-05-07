@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Utilities related to linear algebra operations."""
-from __future__ import absolute_import
 import numpy
 
 

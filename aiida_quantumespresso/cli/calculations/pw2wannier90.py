@@ -4,8 +4,6 @@
 This launcher assumes that the SEED and the PREFIX used in the previous PW calculation (parent_folder) are the same as
 those hardcoded in the Pw2wannier90Calculation class. We also hardcode some parameters and options.
 """
-from __future__ import absolute_import
-
 import click
 
 from aiida.cmdline.params import options, types
@@ -38,7 +36,7 @@ WRITE_UNK = OverridableOption(
     is_flag=True,
     default=False,
     show_default=True,
-    help=u'Output also the UNK matrices (for real-space plotting of the Wannier functions).'
+    help='Output also the UNK matrices (for real-space plotting of the Wannier functions).'
 )
 
 

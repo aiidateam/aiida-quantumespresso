@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 """Unit tests for the :py:mod:`~aiida_quantumespresso.utils.bands` module."""
-from __future__ import absolute_import
-
 import numpy
 import pytest
 
 from aiida_quantumespresso.utils.bands import get_highest_occupied_band
 
 
-class TestGetHighestOccupiedBand(object):
+class TestGetHighestOccupiedBand:
     """Tests for :py:func:`~aiida_quantumespresso.utils.bands.get_highest_occupied_band`."""
 
     @staticmethod

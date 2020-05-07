@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-
-import six
-from six.moves import range
-
 from aiida.common import NotExistent
 from aiida.orm import Dict
 
@@ -189,7 +184,7 @@ class NebParser(Parser):
         if parser_options is not None and parser_options.get('all_iterations', False):
             if iteration_data:
                 arraydata = ArrayData()
-                for k, v in six.iteritems(iteration_data):
+                for k, v in iteration_data.items():
                     arraydata.set_array(k, numpy.array(v))
                 self.out('iteration_array', arraydata)
 

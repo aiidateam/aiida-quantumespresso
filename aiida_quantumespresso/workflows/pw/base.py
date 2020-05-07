@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts."""
-from __future__ import absolute_import
-
 from aiida import orm
 from aiida.common import AttributeDict, exceptions
 from aiida.engine import ToContext, if_, while_
@@ -39,7 +37,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
     def define(cls, spec):
         """Define the process specification."""
         # yapf: disable
-        super(PwBaseWorkChain, cls).define(spec)
+        super().define(spec)
         spec.expose_inputs(PwCalculation, namespace='pw', exclude=('kpoints',))
         spec.input('pw.metadata.options.resources', valid_type=dict, required=False)
         spec.input('kpoints', valid_type=orm.KpointsData, required=False,
@@ -109,7 +107,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         This `self.ctx.inputs` dictionary will be used by the `BaseRestartWorkChain` to submit the calculations in the
         internal loop.
         """
-        super(PwBaseWorkChain, self).setup()
+        super().setup()
         self.ctx.inputs = AttributeDict(self.exposed_inputs(PwCalculation, 'pw'))
 
     def validate_parameters(self):

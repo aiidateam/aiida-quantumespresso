@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
 """Utilities for calculation job resources."""
-from __future__ import absolute_import
-
 from math import exp, ceil
 import numpy as np
-import six
-from six.moves import range
 
 from aiida_quantumespresso.utils.defaults.calculation import pw as pw_defaults
 
@@ -28,7 +24,7 @@ def create_scheduler_resources(scheduler, base, goal):
     base.update(goal)
 
     resources = {}
-    for key, value in six.iteritems(base):
+    for key, value in base.items():
         if key in scheduler._job_resource_class.get_valid_keys():  # pylint: disable=protected-access
             resources[key] = value
 
@@ -37,7 +33,7 @@ def create_scheduler_resources(scheduler, base, goal):
     except TypeError as exception:
         raise ValueError('failed to create job resources for {} scheduler: {}'.format(scheduler.__class__, exception))
 
-    return {key: value for key, value in six.iteritems(job_resource) if value is not None}
+    return {key: value for key, value in job_resource.items() if value is not None}
 
 
 def cmdline_remove_npools(cmdline):

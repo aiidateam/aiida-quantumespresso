@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """`Parser` implementation for the `PpCalculation` calculation job class."""
-from __future__ import absolute_import
-
 import traceback
 import os.path
 
@@ -13,9 +11,6 @@ from aiida.common import exceptions
 from aiida_quantumespresso.calculations.pp import PpCalculation
 from aiida_quantumespresso.utils.mapping import get_logging_container
 from .base import Parser
-
-from six.moves import range
-from six.moves import zip
 
 
 class PpParser(Parser):

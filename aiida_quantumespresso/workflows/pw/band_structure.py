@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Workchain to automatically compute a band structure for a given structure using Quantum ESPRESSO pw.x."""
-from __future__ import absolute_import
-
 from aiida import orm
 from aiida.common import AttributeDict
 from aiida.engine import WorkChain, ToContext
@@ -33,7 +31,7 @@ class PwBandStructureWorkChain(WorkChain):
     def define(cls, spec):
         """Define the process specification."""
         # yapf: disable
-        super(PwBandStructureWorkChain, cls).define(spec)
+        super().define(spec)
         spec.input('code', valid_type=orm.Code,
             help='The `pw.x` code to use for the `PwCalculations`.')
         spec.input('structure', valid_type=orm.StructureData,

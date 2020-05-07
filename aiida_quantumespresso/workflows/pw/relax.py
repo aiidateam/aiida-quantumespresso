@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 """Workchain to relax a structure using Quantum ESPRESSO pw.x."""
-from __future__ import absolute_import
-
-from six.moves import map
-
 from aiida import orm
 from aiida.common import AttributeDict, exceptions
 from aiida.engine import WorkChain, ToContext, if_, while_, append_
@@ -22,7 +18,7 @@ class PwRelaxWorkChain(WorkChain):
     def define(cls, spec):
         """Define the process specification."""
         # yapf: disable
-        super(PwRelaxWorkChain, cls).define(spec)
+        super().define(spec)
         spec.expose_inputs(PwBaseWorkChain, namespace='base',
             exclude=('clean_workdir', 'pw.structure', 'pw.parent_folder'),
             namespace_options={'help': 'Inputs for the `PwBaseWorkChain`.'})
@@ -219,7 +215,7 @@ class PwRelaxWorkChain(WorkChain):
 
     def on_terminated(self):
         """Clean the working directories of all child calculations if `clean_workdir=True` in the inputs."""
-        super(PwRelaxWorkChain, self).on_terminated()
+        super().on_terminated()
 
         if self.inputs.clean_workdir.value is False:
             self.report('remote folders will not be cleaned')

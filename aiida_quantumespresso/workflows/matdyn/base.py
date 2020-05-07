@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO matdyn.x calculation with automated error handling and restarts."""
-from __future__ import absolute_import
-
 from aiida.common import AttributeDict
 from aiida.engine import while_
 from aiida.plugins import CalculationFactory
@@ -21,7 +19,7 @@ class MatdynBaseWorkChain(BaseRestartWorkChain):
     def define(cls, spec):
         """Define the process specification."""
         # yapf: disable
-        super(MatdynBaseWorkChain, cls).define(spec)
+        super().define(spec)
         spec.expose_inputs(MatdynCalculation, namespace='matdyn')
         spec.expose_outputs(MatdynCalculation)
         spec.outline(
@@ -41,7 +39,7 @@ class MatdynBaseWorkChain(BaseRestartWorkChain):
         This `self.ctx.inputs` dictionary will be used by the `BaseRestartWorkChain` to submit the calculations in the
         internal loop.
         """
-        super(MatdynBaseWorkChain, self).setup()
+        super().setup()
         self.ctx.inputs = AttributeDict(self.exposed_inputs(MatdynCalculation, 'matdyn'))
 
     def report_error_handled(self, calculation, action):
