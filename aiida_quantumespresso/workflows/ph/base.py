@@ -2,11 +2,8 @@
 """Workchain to run a Quantum ESPRESSO ph.x calculation with automated error handling and restarts."""
 from aiida import orm
 from aiida.common import AttributeDict
-from aiida.engine import while_
+from aiida.engine import while_, BaseRestartWorkChain, process_handler, ProcessHandlerReport
 from aiida.plugins import CalculationFactory
-
-from aiida_quantumespresso.common.workchain.utils import ErrorHandlerReport, register_error_handler
-from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkChain
 
 PhCalculation = CalculationFactory('quantumespresso.ph')
 PwCalculation = CalculationFactory('quantumespresso.pw')
@@ -15,7 +12,7 @@ PwCalculation = CalculationFactory('quantumespresso.pw')
 class PhBaseWorkChain(BaseRestartWorkChain):
     """Workchain to run a Quantum ESPRESSO ph.x calculation with automated error handling and restarts."""
 
-    _calculation_class = PhCalculation
+    _process_class = PhCalculation
 
     defaults = AttributeDict({
         'delta_factor_max_seconds': 0.95,
@@ -34,10 +31,10 @@ class PhBaseWorkChain(BaseRestartWorkChain):
             cls.setup,
             cls.validate_parameters,
             cls.validate_resources,
-            while_(cls.should_run_calculation)(
-                cls.prepare_calculation,
-                cls.run_calculation,
-                cls.inspect_calculation,
+            while_(cls.should_run_process)(
+                cls.prepare_process,
+                cls.run_process,
+                cls.inspect_process,
             ),
             cls.results,
         )
@@ -54,6 +51,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         internal loop.
         """
         super().setup()
+        self.ctx.restart_calc = None
         self.ctx.inputs = AttributeDict(self.exposed_inputs(PhCalculation, 'ph'))
 
     def validate_parameters(self):
@@ -90,7 +88,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         max_seconds = max_wallclock_seconds * max_seconds_factor
         self.ctx.inputs.parameters['INPUTPH']['max_seconds'] = max_seconds
 
-    def prepare_calculation(self):
+    def prepare_process(self):
         """Prepare the inputs for the next calculation.
 
         If a `restart_calc` has been set in the context, its `remote_folder` will be used as the `parent_folder` input
@@ -112,35 +110,30 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         self.report('{}<{}> failed with exit status {}: {}'.format(*arguments))
         self.report('Action taken: {}'.format(action))
 
+    @process_handler(priority=600)
+    def handle_unrecoverable_failure(self, node):
+        """Handle calculations with an exit status below 400 which are unrecoverable, so abort the work chain."""
+        if node.is_failed and node.exit_status < 400:
+            self.report_error_handled(node, 'unrecoverable error, aborting...')
+            return ProcessHandlerReport(True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
 
-@register_error_handler(PhBaseWorkChain, 600)
-def _handle_unrecoverable_failure(self, calculation):
-    """Jandle calculations with an exit status below 400 which are unrecoverable, so abort the work chain."""
-    if calculation.exit_status < 400:
-        self.report_error_handled(calculation, 'unrecoverable error, aborting...')
-        return ErrorHandlerReport(True, True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
+    @process_handler(priority=580, exit_codes=PhCalculation.exit_codes.ERROR_OUT_OF_WALLTIME)
+    def handle_out_of_walltime(self, node):
+        """Handle `ERROR_OUT_OF_WALLTIME` exit code: calculation shut down neatly and we can simply restart."""
+        self.ctx.restart_calc = node
+        self.report_error_handled(node, 'simply restart from the last calculation')
+        return ProcessHandlerReport(True)
 
-
-@register_error_handler(PhBaseWorkChain, 580)
-def _handle_out_of_walltime(self, calculation):
-    """Handle `ERROR_OUT_OF_WALLTIME` exit code: calculation shut down neatly and we can simply restart."""
-    if calculation.exit_status == PhCalculation.exit_codes.ERROR_OUT_OF_WALLTIME.status:
-        self.ctx.restart_calc = calculation
-        self.report_error_handled(calculation, 'simply restart from the last calculation')
-        return ErrorHandlerReport(True, True)
-
-
-@register_error_handler(PhBaseWorkChain, 410)
-def _handle_convergence_not_achieved(self, calculation):
-    """Handle `ERROR_CONVERGENCE_NOT_REACHED` exit code: decrease the mixing beta and restart from scratch."""
-    if calculation.exit_status == PwCalculation.exit_codes.ERROR_CONVERGENCE_NOT_REACHED.status:
+    @process_handler(priority=410, exit_codes=PhCalculation.exit_codes.ERROR_CONVERGENCE_NOT_REACHED)
+    def handle_convergence_not_achieved(self, node):
+        """Handle `ERROR_CONVERGENCE_NOT_REACHED` exit code: decrease the mixing beta and restart from scratch."""
         factor = self.defaults.delta_factor_alpha_mix
         alpha_mix = self.ctx.inputs.parameters.get('INPUTPH', {}).get('alpha_mix(1)', self.defaults.alpha_mix)
         alpha_mix_new = alpha_mix * factor
 
-        self.ctx.restart_calc = calculation
+        self.ctx.restart_calc = node
         self.ctx.inputs.parameters.setdefault('INPUTPH', {})['alpha_mix(1)'] = alpha_mix_new
 
         action = 'reduced alpha_mix from {} to {} and restarting'.format(alpha_mix, alpha_mix_new)
-        self.report_error_handled(calculation, action)
-        return ErrorHandlerReport(True, True)
+        self.report_error_handled(node, action)
+        return ProcessHandlerReport(True)
