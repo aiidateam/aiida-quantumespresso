@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 """`CalcJob` implementation for the pw.x code of Quantum ESPRESSO."""
-from __future__ import absolute_import
-
 import os
-import six
 
 from aiida import orm
 from aiida.common.lang import classproperty
@@ -61,9 +58,12 @@ class PwCalculation(BasePwCpInputGenerator):
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
-        super(PwCalculation, cls).define(spec)
-        spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.pw')
+        super().define(spec)
+        spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.pw')
+        spec.input('metadata.options.without_xml', valid_type=bool, required=False, help='If set to `True` the parser '
+            'will not fail if the XML file is missing in the retrieved folder.')
         spec.input('kpoints', valid_type=orm.KpointsData,
             help='kpoint mesh or kpoint path')
         spec.input('hubbard_file', valid_type=orm.SinglefileData, required=False,
@@ -118,6 +118,8 @@ class PwCalculation(BasePwCpInputGenerator):
 
         spec.exit_code(461, 'ERROR_DEXX_IS_NEGATIVE',
             message='The code failed with negative dexx in the exchange calculation.')
+        spec.exit_code(462, 'ERROR_COMPUTING_CHOLESKY',
+            message='The code failed during the cholesky factorization.')
 
         spec.exit_code(481, 'ERROR_NPOOLS_TOO_HIGH',
             message='The k-point parallelization "npools" is too high, some nodes have no k-points.')
@@ -147,10 +149,10 @@ class PwCalculation(BasePwCpInputGenerator):
 
     @classproperty
     def input_file_name_hubbard_file(cls):
-        """The relative file name of the file containing the Hubbard parameters if they should be read from file instead
-        of specified in the input file cards.
+        """Return the relative file name of the file containing the Hubbard parameters.
 
-        Requires the aiida-quantumespresso-hp plugin to be installed
+        .. note:: This only applies if they should be read from file instead of specified in the input file cards.
+        .. warning:: Requires the aiida-quantumespresso-hp plugin to be installed
         """
         # pylint: disable=no-self-argument,no-self-use
         try:
@@ -162,12 +164,13 @@ class PwCalculation(BasePwCpInputGenerator):
 
     @classmethod
     def input_helper(cls, *args, **kwargs):
-        """Validate if the keywords are valid Quantum ESPRESSO pw.x keywords, and also helps in preparing the input
-        parameter dictionary in a 'standardized' form (e.g., converts ints to floats when required, or if the flag
-        flat_mode is specified, puts the keywords in the right namelists).
+        """Validate the provided keywords and prepare the inputs dictionary in a 'standardized' form.
 
-        This function calls :py:func:`aiida_quantumespresso.calculations.helpers.pw_input_helper`,
-        see its docstring for further information.
+        The standardization converts ints to floats when required, or if the flag `flat_mode` is specified,
+        puts the keywords in the right namelists.
+
+        This function calls :py:func:`aiida_quantumespresso.calculations.helpers.pw_input_helper`, see its docstring for
+        further information.
         """
         from . import helpers
         return helpers.pw_input_helper(*args, **kwargs)

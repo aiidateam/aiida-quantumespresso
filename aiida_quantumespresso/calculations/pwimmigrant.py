@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Plugin to immigrate a Quantum Espresso pw.x job that was not run using AiiDa."""
 # TODO: Document the current limitations (e.g. ibrav == 0)
-from __future__ import absolute_import
 import os
 from copy import deepcopy
 from aiida_quantumespresso.calculations.pw import PwCalculation
@@ -12,7 +11,6 @@ from aiida.common.folders import SandboxFolder
 from aiida.common import (FeatureNotAvailable, InvalidOperation, InputValidationError)
 from aiida.common.links import LinkType
 from aiida_quantumespresso.tools import pwinputparser
-from six.moves import zip
 
 
 class PwimmigrantCalculation(PwCalculation):
@@ -47,7 +45,7 @@ class PwimmigrantCalculation(PwCalculation):
 
     def _init_internal_params(self):
 
-        super(PwimmigrantCalculation, self)._init_internal_params()
+        super()._init_internal_params()
 
     def create_input_nodes(self, open_transport, input_file_name=None, output_file_name=None, remote_workdir=None):
         """Create calculation input nodes based on the job's files.

@@ -1,13 +1,8 @@
 # -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO matdyn.x calculation with automated error handling and restarts."""
-from __future__ import absolute_import
-
 from aiida.common import AttributeDict
-from aiida.engine import while_
+from aiida.engine import while_, BaseRestartWorkChain, process_handler, ProcessHandlerReport
 from aiida.plugins import CalculationFactory
-
-from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkChain
-from aiida_quantumespresso.common.workchain.utils import register_error_handler, ErrorHandlerReport
 
 MatdynCalculation = CalculationFactory('quantumespresso.matdyn')
 
@@ -15,20 +10,20 @@ MatdynCalculation = CalculationFactory('quantumespresso.matdyn')
 class MatdynBaseWorkChain(BaseRestartWorkChain):
     """Workchain to run a Quantum ESPRESSO matdyn.x calculation with automated error handling and restarts."""
 
-    _calculation_class = MatdynCalculation
+    _process_class = MatdynCalculation
 
     @classmethod
     def define(cls, spec):
         """Define the process specification."""
         # yapf: disable
-        super(MatdynBaseWorkChain, cls).define(spec)
+        super().define(spec)
         spec.expose_inputs(MatdynCalculation, namespace='matdyn')
         spec.expose_outputs(MatdynCalculation)
         spec.outline(
             cls.setup,
-            while_(cls.should_run_calculation)(
-                cls.run_calculation,
-                cls.inspect_calculation,
+            while_(cls.should_run_process)(
+                cls.run_process,
+                cls.inspect_process,
             ),
             cls.results,
         )
@@ -41,7 +36,8 @@ class MatdynBaseWorkChain(BaseRestartWorkChain):
         This `self.ctx.inputs` dictionary will be used by the `BaseRestartWorkChain` to submit the calculations in the
         internal loop.
         """
-        super(MatdynBaseWorkChain, self).setup()
+        super().setup()
+        self.ctx.restart_calc = None
         self.ctx.inputs = AttributeDict(self.exposed_inputs(MatdynCalculation, 'matdyn'))
 
     def report_error_handled(self, calculation, action):
@@ -56,10 +52,9 @@ class MatdynBaseWorkChain(BaseRestartWorkChain):
         self.report('{}<{}> failed with exit status {}: {}'.format(*arguments))
         self.report('Action taken: {}'.format(action))
 
-
-@register_error_handler(MatdynBaseWorkChain, 600)
-def _handle_unrecoverable_failure(self, calculation):
-    """Handle calculations with an exit status below 400 which are unrecoverable, so abort the work chain."""
-    if calculation.exit_status < 400:
-        self.report_error_handled(calculation, 'unrecoverable error, aborting...')
-        return ErrorHandlerReport(True, True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
+    @process_handler(priority=600)
+    def handle_unrecoverable_failure(self, node):
+        """Handle calculations with an exit status below 400 which are unrecoverable, so abort the work chain."""
+        if node.is_failed and node.exit_status < 400:
+            self.report_error_handled(node, 'unrecoverable error, aborting...')
+            return ProcessHandlerReport(True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)

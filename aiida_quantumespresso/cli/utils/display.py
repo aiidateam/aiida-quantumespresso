@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Module with display utitlies for the CLI."""
-from __future__ import absolute_import
-
 import os
 
 import click

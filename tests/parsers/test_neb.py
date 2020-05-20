@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Tests for the `NebParser`."""
-from __future__ import absolute_import
-
 import numpy as np
 
 from aiida import orm
@@ -105,29 +103,3 @@ def test_neb_all_iterations(
 
     data = build_num_regression_dictionary([results['iteration_array']], [results['iteration_array'].get_arraynames()])
     num_regression.check(data, default_tolerance=dict(atol=0, rtol=1e-18))
-
-
-def test_neb_deprecated_keys(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser):
-    """Test a NEB calculation with the parser option `include_deprecated_v2_keys=True`."""
-    name = 'default'
-    entry_point_calc_job = 'quantumespresso.neb'
-    entry_point_parser = 'quantumespresso.neb'
-
-    inputs = generate_inputs(parser_options={'include_deprecated_v2_keys': True})
-    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
-    parser = generate_parser(entry_point_parser)
-    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
-
-    assert calcfunction.is_finished, calcfunction.exception
-    assert calcfunction.is_finished_ok, calcfunction.exit_message
-    assert not orm.Log.objects.get_logs_for(node)
-    assert 'output_parameters' in results
-    assert 'output_mep' in results
-    assert 'output_trajectory' in results
-    assert 'iteration_array' not in results
-
-    for key, dictionary in results['output_parameters'].get_dict().items():
-        if key.startswith('pw_output_image'):
-            assert dictionary['fixed_occupations'] is False
-            assert dictionary['smearing_method'] is True
-            assert dictionary['tetrahedron_method'] is False

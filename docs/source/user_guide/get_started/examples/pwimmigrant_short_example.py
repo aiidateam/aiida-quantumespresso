@@ -9,13 +9,11 @@
 # For further information please visit http://www.aiida.net               #
 ###########################################################################
 # Load the database environment.
-from __future__ import absolute_import
 from aiida import load_dbenv
 load_dbenv()
 
 from aiida.orm import Code
 from aiida.plugins import CalculationFactory
-
 
 # Load the PwimmigrantCalculation class.
 PwimmigrantCalculation = CalculationFactory('quantumespresso.pwimmigrant')
@@ -30,18 +28,22 @@ computer = code.get_remote_computer()
 resources = {'num_machines': 1, 'num_mpiprocs_per_machine': 1}
 
 # Initialize the pw_job1 calculation node.
-calc1 = PwimmigrantCalculation(computer=computer,
-                               resources=resources,
-                               remote_workdir='/scratch/',
-                               input_file_name='pw_job1.in',
-                               output_file_name='pw_job1.out')
+calc1 = PwimmigrantCalculation(
+    computer=computer,
+    resources=resources,
+    remote_workdir='/scratch/',
+    input_file_name='pw_job1.in',
+    output_file_name='pw_job1.out'
+)
 
 # Initialize the pw_job2 calculation node.
-calc2 = PwimmigrantCalculation(computer=computer,
-                               resources=resources,
-                               remote_workdir='/scratch/',
-                               input_file_name='pw_job2.in',
-                               output_file_name='pw_job2.out')
+calc2 = PwimmigrantCalculation(
+    computer=computer,
+    resources=resources,
+    remote_workdir='/scratch/',
+    input_file_name='pw_job2.in',
+    output_file_name='pw_job2.out'
+)
 
 # Link the code that was used to run the calculations.
 calc1.use_code(code)

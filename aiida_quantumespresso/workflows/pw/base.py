@@ -1,20 +1,16 @@
 # -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts."""
-from __future__ import absolute_import
-
 from aiida import orm
 from aiida.common import AttributeDict, exceptions
-from aiida.engine import ToContext, if_, while_
+from aiida.engine import ToContext, if_, while_, BaseRestartWorkChain, process_handler, ProcessHandlerReport, ExitCode
 from aiida.plugins import CalculationFactory
 
-from aiida_quantumespresso.common.workchain.utils import register_error_handler, ErrorHandlerReport
-from aiida_quantumespresso.common.workchain.base.restart import BaseRestartWorkChain
+from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import create_kpoints_from_distance
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 from aiida_quantumespresso.utils.mapping import update_mapping, prepare_process_inputs
 from aiida_quantumespresso.utils.pseudopotential import validate_and_prepare_pseudos_inputs
 from aiida_quantumespresso.utils.resources import get_default_options, get_pw_parallelization_parameters
 from aiida_quantumespresso.utils.resources import cmdline_remove_npools, create_scheduler_resources
-from aiida_quantumespresso.workflows.functions.create_kpoints_from_distance import create_kpoints_from_distance
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
 
@@ -22,8 +18,9 @@ PwCalculation = CalculationFactory('quantumespresso.pw')
 class PwBaseWorkChain(BaseRestartWorkChain):
     """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts."""
 
-    _calculation_class = PwCalculation
-    _error_handler_entry_point = 'aiida_quantumespresso.workflow_error_handlers.pw.base'
+    # pylint: disable=too-many-public-methods
+
+    _process_class = PwCalculation
 
     defaults = AttributeDict({
         'qe': qe_defaults,
@@ -39,7 +36,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
     def define(cls, spec):
         """Define the process specification."""
         # yapf: disable
-        super(PwBaseWorkChain, cls).define(spec)
+        super().define(spec)
         spec.expose_inputs(PwCalculation, namespace='pw', exclude=('kpoints',))
         spec.input('pw.metadata.options.resources', valid_type=dict, required=False)
         spec.input('kpoints', valid_type=orm.KpointsData, required=False,
@@ -70,10 +67,10 @@ class PwBaseWorkChain(BaseRestartWorkChain):
                 cls.run_init,
                 cls.inspect_init,
             ),
-            while_(cls.should_run_calculation)(
-                cls.prepare_calculation,
-                cls.run_calculation,
-                cls.inspect_calculation,
+            while_(cls.should_run_process)(
+                cls.prepare_process,
+                cls.run_process,
+                cls.inspect_process,
             ),
             cls.results,
         )
@@ -95,7 +92,9 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         spec.exit_code(211, 'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY',
             message='Unrecognized keys were specified for `automatic_parallelization`.')
         spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
-            message='The calculation failed with an unrecoverable error.')
+            message='The calculation failed with an unidentified unrecoverable error.')
+        spec.exit_code(310, 'ERROR_KNOWN_UNRECOVERABLE_FAILURE',
+            message='The calculation failed with a known unrecoverable error.')
         spec.exit_code(320, 'ERROR_INITIALIZATION_CALCULATION_FAILED',
             message='The initialization calculation failed.')
         spec.exit_code(501, 'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
@@ -107,7 +106,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         This `self.ctx.inputs` dictionary will be used by the `BaseRestartWorkChain` to submit the calculations in the
         internal loop.
         """
-        super(PwBaseWorkChain, self).setup()
+        super().setup()
+        self.ctx.restart_calc = None
         self.ctx.inputs = AttributeDict(self.exposed_inputs(PwCalculation, 'pw'))
 
     def validate_parameters(self):
@@ -255,7 +255,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         inputs = prepare_process_inputs(PwCalculation, inputs)
         running = self.submit(PwCalculation, **inputs)
 
-        self.report('launching initialization PwCalculation<{}>'.format(running.pk))
+        self.report('launching initialization {}<{}>'.format(running.pk, self._process_class.__name__))
 
         return ToContext(calculation_init=running)
 
@@ -294,7 +294,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
         return
 
-    def prepare_calculation(self):
+    def prepare_process(self):
         """Prepare the inputs for the next calculation.
 
         If a `restart_calc` has been set in the context, its `remote_folder` will be used as the `parent_folder` input
@@ -308,8 +308,21 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'from_scratch'
             self.ctx.inputs.pop('parent_folder', None)
 
-    def _handle_calculation_sanity_checks(self, calculation):
-        """Perform sanity checks on the current `calculation` which has finished successfully according to the parser.
+    def report_error_handled(self, calculation, action):
+        """Report an action taken for a calculation that has failed.
+
+        This should be called in a registered error handler if its condition is met and an action was taken.
+
+        :param calculation: the failed calculation node
+        :param action: a string message with the action taken
+        """
+        arguments = [calculation.process_label, calculation.pk, calculation.exit_status, calculation.exit_message]
+        self.report('{}<{}> failed with exit status {}: {}'.format(*arguments))
+        self.report('Action taken: {}'.format(action))
+
+    @process_handler(exit_codes=ExitCode(0))
+    def sanity_check_insufficient_bands(self, calculation):
+        """Perform a sanity check on the band occupations of a  successfully converged calculation.
 
         Verify that the occupation of the last band is below a certain threshold, unless `occupations` was explicitly
         set to `fixed` in the input parameters. If this is violated, the calculation used too few bands and cannot be
@@ -325,35 +338,42 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             bands = calculation.outputs.output_band
             get_highest_occupied_band(bands)
         except ValueError as exception:
-            self.report('calculation<{}> run with smearing and highest band is occupied'.format(calculation.pk))
+            args = [self._process_class.__name__, calculation.pk]
+            self.report('{}<{}> run with smearing and highest band is occupied'.format(*args))
             self.report('BandsData<{}> has invalid occupations: {}'.format(bands.pk, exception))
-            return self._handle_insufficient_bands(calculation)
+            self.report('{}<{}> had insufficient bands'.format(calculation.process_label, calculation.pk))
 
-    def report_error_handled(self, calculation, action):
-        """Report an action taken for a calculation that has failed.
+            nbnd_cur = calculation.outputs.output_parameters.get_dict()['number_of_bands']
+            nbnd_new = nbnd_cur + max(int(nbnd_cur * self.defaults.delta_factor_nbnd), self.defaults.delta_minimum_nbnd)
 
-        This should be called in a registered error handler if its condition is met and an action was taken.
+            self.ctx.inputs.parameters.setdefault('SYSTEM', {})['nbnd'] = nbnd_new
 
-        :param calculation: the failed calculation node
-        :param action: a string message with the action taken
+            self.report('Action taken: increased number of bands to {} and restarting from scratch'.format(nbnd_new))
+            return ProcessHandlerReport(True)
+
+    @process_handler(priority=600)
+    def handle_unrecoverable_failure(self, calculation):
+        """Handle calculations with an exit status below 400 which are unrecoverable, so abort the work chain."""
+        if calculation.is_failed and calculation.exit_status < 400:
+            self.report_error_handled(calculation, 'unrecoverable error, aborting...')
+            return ProcessHandlerReport(True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
+
+    @process_handler(priority=590, exit_codes=[
+        PwCalculation.exit_codes.ERROR_COMPUTING_CHOLESKY,
+    ])
+    def handle_known_unrecoverable_failure(self, calculation):
+        """Handle calculations with an exit status that correspond to a known failure mode that are unrecoverable.
+
+        These failures may always be unrecoverable or at some point a handler may be devised.
         """
-        arguments = [calculation.process_label, calculation.pk, calculation.exit_status, calculation.exit_message]
-        self.report('{}<{}> failed with exit status {}: {}'.format(*arguments))
-        self.report('Action taken: {}'.format(action))
+        self.report_error_handled(calculation, 'known unrecoverable failure detected, aborting...')
+        return ProcessHandlerReport(True, self.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE)
 
-
-@register_error_handler(PwBaseWorkChain, 600)
-def _handle_unrecoverable_failure(self, calculation):
-    """Handle calculations with an exit status below 400 which are unrecoverable, so abort the work chain."""
-    if calculation.exit_status < 400:
-        self.report_error_handled(calculation, 'unrecoverable error, aborting...')
-        return ErrorHandlerReport(True, True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
-
-
-@register_error_handler(PwBaseWorkChain, 580)
-def _handle_out_of_walltime(self, calculation):
-    """Handle `ERROR_OUT_OF_WALLTIME` exit code: calculation shut down neatly and we can simply restart."""
-    if calculation.exit_status == PwCalculation.spec().exit_codes.ERROR_OUT_OF_WALLTIME.status:
+    @process_handler(priority=580, exit_codes=[
+        PwCalculation.exit_codes.ERROR_OUT_OF_WALLTIME,
+        ])
+    def handle_out_of_walltime(self, calculation):
+        """Handle `ERROR_OUT_OF_WALLTIME` exit code: calculation shut down neatly and we can simply restart."""
         try:
             self.ctx.inputs.structure = calculation.outputs.output_structure
         except exceptions.NotExistent:
@@ -363,64 +383,51 @@ def _handle_out_of_walltime(self, calculation):
             self.ctx.restart_calc = None
             self.report_error_handled(calculation, 'out of walltime: structure changed so restarting from scratch')
 
-        return ErrorHandlerReport(True, True)
+        return ProcessHandlerReport(True)
 
+    @process_handler(priority=570, exit_codes=[
+        PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF,
+        ])
+    def handle_vcrelax_converged_except_final_scf(self, calculation):
+        """Handle `ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF` exit code.
 
-@register_error_handler(PwBaseWorkChain, 570)
-def _handle_vcrelax_converged_except_final_scf(self, calculation):
-    """Handle `ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF` exit code.
-
-    Convergence reached in `vc-relax` except thresholds exceeded in final scf: consider as converged.
-    """
-    exit_code_labels = [
-        'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
-    ]
-
-    if calculation.exit_status in PwCalculation.get_exit_statuses(exit_code_labels):
+        Convergence reached in `vc-relax` except thresholds exceeded in final scf: consider as converged.
+        """
         self.ctx.is_finished = True
         self.ctx.restart_calc = calculation
         action = 'ionic convergence thresholds met except in final scf: consider structure relaxed.'
         self.report_error_handled(calculation, action)
         self.results()  # Call the results method to attach the output nodes
-        return ErrorHandlerReport(True, True, self.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF)
+        return ProcessHandlerReport(True, self.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF)
 
+    @process_handler(priority=560, exit_codes=[
+        PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_NOT_REACHED,
+        PwCalculation.exit_codes.ERROR_IONIC_CYCLE_EXCEEDED_NSTEP,
+        PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE,
+        PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE,
+        ])
+    def handle_relax_recoverable_ionic_convergence_error(self, calculation):
+        """Handle various exit codes for recoverable `relax` calculations with failed ionic convergence.
 
-@register_error_handler(PwBaseWorkChain, 560)
-def _handle_relax_recoverable_ionic_convergence_error(self, calculation):
-    """Handle various exit codes for recoverable `vc-relax` or `relax` calculations with failed ionic convergence.
-
-    These exit codes signify that the ionic convergence thresholds were not met, but the output structure is usable, so
-    the solution is to simply restart from scratch but from the output structure.
-    """
-    exit_code_labels = [
-        'ERROR_IONIC_CONVERGENCE_NOT_REACHED',
-        'ERROR_IONIC_CYCLE_EXCEEDED_NSTEP',
-        'ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE',
-        'ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE',
-    ]
-
-    if calculation.exit_status in PwCalculation.get_exit_statuses(exit_code_labels):
+        These exit codes signify that the ionic convergence thresholds were not met, but the output structure is usable,
+        so the solution is to simply restart from scratch but from the output structure.
+        """
         self.ctx.restart_calc = None
         self.ctx.inputs.structure = calculation.outputs.output_structure
         action = 'no ionic convergence but clean shutdown: restarting from scratch but using output structure.'
         self.report_error_handled(calculation, action)
-        return ErrorHandlerReport(True, True)
+        return ProcessHandlerReport(True)
 
+    @process_handler(priority=550, exit_codes=[
+        PwCalculation.exit_codes.ERROR_IONIC_CYCLE_ELECTRONIC_CONVERGENCE_NOT_REACHED,
+        PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_FINAL_SCF_FAILED,
+        ])
+    def handle_relax_recoverable_electronic_convergence_error(self, calculation):
+        """Handle various exit codes for recoverable `relax` calculations with failed electronic convergence.
 
-@register_error_handler(PwBaseWorkChain, 550)
-def _handle_relax_recoverable_electronic_convergence_error(self, calculation):
-    """Handle various exit codes for recoverable `vc-relax` or `relax` calculations with failed electronic convergence.
-
-    These exit codes signify that the electronic convergence thresholds were not met, but the output structure is
-    usable, so the solution is to simply restart from scratch but from the output structure.
-    """
-    exit_code_labels = [
-        'ERROR_IONIC_CYCLE_ELECTRONIC_CONVERGENCE_NOT_REACHED',
-        'ERROR_IONIC_CONVERGENCE_REACHED_FINAL_SCF_FAILED',
-    ]
-
-    if calculation.exit_status in PwCalculation.get_exit_statuses(exit_code_labels):
-
+        These exit codes signify that the electronic convergence thresholds were not met, but the output structure is
+        usable, so the solution is to simply restart from scratch but from the output structure.
+        """
         factor = self.defaults.delta_factor_mixing_beta
         mixing_beta = self.ctx.inputs.parameters.get('ELECTRONS', {}).get('mixing_beta', self.defaults.qe.mixing_beta)
         mixing_beta_new = mixing_beta * factor
@@ -431,13 +438,12 @@ def _handle_relax_recoverable_electronic_convergence_error(self, calculation):
         action = 'no electronic convergence but clean shutdown: reduced beta mixing from {} to {} restarting from ' \
                  'scratch but using output structure.'.format(mixing_beta, mixing_beta_new)
         self.report_error_handled(calculation, action)
-        return ErrorHandlerReport(True, True)
+        return ProcessHandlerReport(True)
 
-
-@register_error_handler(PwBaseWorkChain, 410)
-def _handle_electronic_convergence_not_achieved(self, calculation):
-    """Handle `ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED`: decrease the mixing beta and restart from scratch."""
-    if calculation.exit_status == PwCalculation.spec().exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED.status:
+    @process_handler(priority=410, exit_codes=[
+        PwCalculation.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED,])
+    def handle_electronic_convergence_not_achieved(self, calculation):
+        """Handle `ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED`: decrease the mixing beta and restart from scratch."""
         factor = self.defaults.delta_factor_mixing_beta
         mixing_beta = self.ctx.inputs.parameters.get('ELECTRONS', {}).get('mixing_beta', self.defaults.qe.mixing_beta)
         mixing_beta_new = mixing_beta * factor
@@ -445,21 +451,8 @@ def _handle_electronic_convergence_not_achieved(self, calculation):
         self.ctx.restart_calc = calculation
         self.ctx.inputs.parameters.setdefault('ELECTRONS', {})['mixing_beta'] = mixing_beta_new
 
-        action = 'reduced beta mixing from {} to {} and restarting from the last ' \
-            'calculation'.format(mixing_beta, mixing_beta_new)
+        action = 'reduced beta mixing from {} to {} and restarting from the last calculation'.format(
+            mixing_beta, mixing_beta_new
+        )
         self.report_error_handled(calculation, action)
-        return ErrorHandlerReport(True, True)
-
-
-@register_error_handler(PwBaseWorkChain)
-def _handle_insufficient_bands(self, calculation):
-    """Handle successfully converged calculation with too few bands, so increase them and restart from scratch."""
-    nbnd_cur = calculation.outputs.output_parameters.get_dict()['number_of_bands']
-    nbnd_new = nbnd_cur + max(int(nbnd_cur * self.defaults.delta_factor_nbnd), self.defaults.delta_minimum_nbnd)
-
-    self.ctx.inputs.parameters.setdefault('SYSTEM', {})['nbnd'] = nbnd_new
-    self.ctx.restart_calc = None
-
-    self.report('{}<{}> had insufficient bands'.format(calculation.process_label, calculation.pk))
-    self.report('Action taken: increased the number of bands to {} and restarting from scratch'.format(nbnd_new))
-    return ErrorHandlerReport(True, True)
+        return ProcessHandlerReport(True)

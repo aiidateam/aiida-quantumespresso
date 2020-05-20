@@ -1,12 +1,4 @@
 # -*- coding: utf-8 -*-
-###########################################################################
-# Copyright (c), The AiiDA team. All rights reserved.                     #
-# This file is part of the AiiDA code.                                    #
-#                                                                         #
-# The code is hosted on GitHub at https://github.com/aiidateam/aiida_core #
-# For further information on the license, see the LICENSE.txt file        #
-# For further information please visit http://www.aiida.net               #
-###########################################################################
 # Copyright (c) 2016, Aaron Christianson
 # All rights reserved.
 #
@@ -32,8 +24,7 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-'''
-Monkey patch setuptools to write faster console_scripts with this format:
+"""Monkey patch setuptools to write faster console_scripts with this format.
 
     import sys
     from mymodule import entry_function
@@ -43,14 +34,14 @@ This is better.
 
 (c) 2016, Aaron Christianson
 http://github.com/ninjaaron/fast-entry_points
-'''
+"""
 from __future__ import division
 from __future__ import absolute_import
 from __future__ import print_function
 import re
 from setuptools.command import easy_install
 
-TEMPLATE = r'''
+TEMPLATE = r"""
 import re
 import sys
 
@@ -58,15 +49,12 @@ from {0} import {1}
 
 if __name__ == '__main__':
     sys.argv[0] = re.sub(r'(-script\.pyw?|\.exe)?$', '', sys.argv[0])
-    sys.exit({2}())'''
+    sys.exit({2}())"""
 
 
 @classmethod
 def get_args(cls, dist, header=None):
-    """
-    Yield write_script() argument tuples for a distribution's
-    console_scripts and gui_scripts entry points.
-    """
+    """Yield write_script() argument tuples for a distribution's console_scripts and gui_scripts entry points."""
     # pylint: disable=no-member,protected-access
     if header is None:
         header = cls.get_header()
@@ -86,7 +74,8 @@ def get_args(cls, dist, header=None):
 easy_install.ScriptWriter.get_args = get_args
 
 
-def main():  # pylint: disable=missing-docstring
+def main():
+    """Patch the setuptools."""
     import os
     import shutil
     import sys
@@ -102,14 +91,14 @@ def main():  # pylint: disable=missing-docstring
         with open(manifest_path, 'a+') as manifest:
             manifest.seek(0)
             manifest_content = manifest.read()
-            if not 'include fastentrypoints.py' in manifest_content:
+            if 'include fastentrypoints.py' not in manifest_content:
                 manifest.write(('\n' if manifest_content else '') + 'include fastentrypoints.py')
 
         # Insert the import statement to setup.py if not present
         with open(setup_path, 'a+') as setup:
             setup.seek(0)
             setup_content = setup.read()
-            if not 'import fastentrypoints' in setup_content:
+            if 'import fastentrypoints' not in setup_content:
                 setup.seek(0)
                 setup.truncate()
                 setup.write('import fastentrypoints\n' + setup_content)

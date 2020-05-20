@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 """Plugin to create a Quantum Espresso neb.x input file."""
-from __future__ import absolute_import
-
 import copy
 import os
-import six
 
 from aiida import orm
 from aiida.common import InputValidationError, CalcInfo, CodeInfo
@@ -18,8 +15,7 @@ from .base import CalcJob
 
 
 class NebCalculation(CalcJob):
-    """Nudged Elastic Band code (neb.x) of Quantum ESPRESSO distribution For more information, refer to
-    http://www.quantum-espresso.org/"""
+    """Nudged Elastic Band code (neb.x) of Quantum ESPRESSO distribution."""
 
     _PREFIX = 'aiida'
 
@@ -46,7 +42,7 @@ class NebCalculation(CalcJob):
 
     @classproperty
     def xml_filepaths(cls):
-        """Returns a list of relative filepaths of XML files."""
+        """Return a list of relative filepaths of XML files."""
         # pylint: disable=no-self-argument,not-an-iterable
         filepaths = []
 
@@ -58,11 +54,12 @@ class NebCalculation(CalcJob):
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
-        super(NebCalculation, cls).define(spec)
-        spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
-        spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
-        spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.neb')
+        super().define(spec)
+        spec.input('metadata.options.input_filename', valid_type=str, default=cls._DEFAULT_INPUT_FILE)
+        spec.input('metadata.options.output_filename', valid_type=str, default=cls._DEFAULT_OUTPUT_FILE)
+        spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.neb')
         spec.input('first_structure', valid_type=orm.StructureData, help='Initial structure')
         spec.input('last_structure', valid_type=orm.StructureData, help='Final structure')
         spec.input('parameters', valid_type=orm.Dict, help='NEB-specific input parameters')
@@ -100,12 +97,12 @@ class NebCalculation(CalcJob):
 
     @classmethod
     def _generate_input_files(cls, neb_parameters, settings_dict):
-        """This methods generate the input data for the NEB part of the calculation."""
+        """Generate the input data for the NEB part of the calculation."""
         # I put the first-level keys as uppercase (i.e., namelist and card names)
         # and the second-level keys as lowercase
         # (deeper levels are unchanged)
         input_params = _uppercase_dict(neb_parameters.get_dict(), dict_name='parameters')
-        input_params = {k: _lowercase_dict(v, dict_name=k) for k, v in six.iteritems(input_params)}
+        input_params = {k: _lowercase_dict(v, dict_name=k) for k, v in input_params.items()}
 
         # Force default values for blocked keywords. NOTE: this is different from PW/CP
         for blocked in cls._blocked_keywords:
@@ -146,12 +143,12 @@ class NebCalculation(CalcJob):
             if climbing_image_list is not None:
                 raise InputValidationError("Climbing images are not accepted when 'ci_scheme' is {}.".format(ci_scheme))
 
-        input_data = u'&PATH\n'
+        input_data = '&PATH\n'
         # namelist content; set to {} if not present, so that we leave an empty namelist
         namelist = input_params.pop('PATH', {})
-        for key, value in sorted(six.iteritems(namelist)):
+        for key, value in sorted(namelist.items()):
             input_data += convert_input_to_namelist_entry(key, value)
-        input_data += u'/\n'
+        input_data += '/\n'
 
         # Write CI cards now
         if manual_climbing_image:
@@ -166,10 +163,14 @@ class NebCalculation(CalcJob):
         return input_data
 
     def prepare_for_submission(self, folder):
-        """Create the input files from the input nodes passed to this instance of the `CalcJob`.
+        """Prepare the calculation job for submission by transforming input nodes into input files.
 
-        :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
-        :return: `aiida.common.datastructures.CalcInfo` instance
+        In addition to the input files being written to the sandbox folder, a `CalcInfo` instance will be returned that
+        contains lists of files that need to be copied to the remote machine before job submission, as well as file
+        lists that are to be retrieved after job completion.
+
+        :param folder: a sandbox folder to temporarily write files on disk.
+        :return: :py:`~aiida.common.datastructures.CalcInfo` instance.
         """
         # pylint: disable=too-many-branches,too-many-statements
         import numpy as np

@@ -50,8 +50,8 @@ parameters:
   nstep_path: 20
   num_of_images: 3
   opt_scheme: broyden
-  parser_info: aiida-quantumespresso parser neb.x v3.0.0a6
-  parser_version: 3.0.0a6
+  parser_info: aiida-quantumespresso parser neb.x v3.0.0
+  parser_version: 3.0.0
   parser_warnings: []
   path_length: 2.95757141880951
   path_thr: 0.05
@@ -70,6 +70,7 @@ parameters:
         scf_error: 2.251833940343682e-10
     creator_name: pwscf
     creator_version: 6.4.1
+    degauss: 0.0408170751759
     dft_exchange_correlation: PBE
     do_magnetization: false
     do_not_use_time_reversal: false
@@ -131,12 +132,13 @@ parameters:
     number_of_spin_components: 2
     number_of_symmetries: 8
     occupations: smearing
-    parser_info: aiida-quantumespresso parser pw.x v3.0.0a6
-    parser_version: 3.0.0a6
+    parser_info: aiida-quantumespresso parser pw.x v3.0.0
+    parser_version: 3.0.0
     parser_warnings: []
     q_real_space: false
     rho_cutoff: 1360.56917253
     rho_cutoff_units: eV
+    smearing_type: gaussian
     smooth_fft_grid:
     - 36
     - 15
@@ -183,6 +185,7 @@ parameters:
         scf_error: 2.987478357372217e-09
     creator_name: pwscf
     creator_version: 6.4.1
+    degauss: 0.0408170751759
     dft_exchange_correlation: PBE
     do_magnetization: false
     do_not_use_time_reversal: false
@@ -228,12 +231,13 @@ parameters:
     number_of_spin_components: 2
     number_of_symmetries: 16
     occupations: smearing
-    parser_info: aiida-quantumespresso parser pw.x v3.0.0a6
-    parser_version: 3.0.0a6
+    parser_info: aiida-quantumespresso parser pw.x v3.0.0
+    parser_version: 3.0.0
     parser_warnings: []
     q_real_space: false
     rho_cutoff: 1360.56917253
     rho_cutoff_units: eV
+    smearing_type: gaussian
     smooth_fft_grid:
     - 36
     - 15
@@ -296,6 +300,7 @@ parameters:
         scf_error: 2.80245941733356e-10
     creator_name: pwscf
     creator_version: 6.4.1
+    degauss: 0.0408170751759
     dft_exchange_correlation: PBE
     do_magnetization: false
     do_not_use_time_reversal: false
@@ -357,12 +362,13 @@ parameters:
     number_of_spin_components: 2
     number_of_symmetries: 8
     occupations: smearing
-    parser_info: aiida-quantumespresso parser pw.x v3.0.0a6
-    parser_version: 3.0.0a6
+    parser_info: aiida-quantumespresso parser pw.x v3.0.0
+    parser_version: 3.0.0
     parser_warnings: []
     q_real_space: false
     rho_cutoff: 1360.56917253
     rho_cutoff_units: eV
+    smearing_type: gaussian
     smooth_fft_grid:
     - 36
     - 15

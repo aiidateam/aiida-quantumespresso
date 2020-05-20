@@ -1,0 +1,45 @@
+
+     Program POST-PROC v.6.4 starts on 23Oct2019 at 12: 7:22
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+          URL http://www.quantum-espresso.org",
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI), running on     1 processors
+
+     MPI processes distributed on     1 nodes
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation      = PBE ( 1  4  3  4 0 0)
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+               file C.pbe-n-kjpaw_psl.1.0.0.UPF: wavefunction(s)  2S 2P renormalized
+
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum        1305     657    161                35513    12533    1551
+
+
+     Check: negative core charge=   -0.000013
+
+     Calling punch_plot, plot_num =  11
+     Writing data to file  aiida.filplot
+     Reading data from file  aiida.filplot
+
+     Writing data to be plotted to file aiida.fileout
+     Plot Type: 3D                     Output format: XCrySDen
+
+     POST-PROC    :      0.47s CPU      0.49s WALL
+
+
+   This run was terminated on:  12: 7:23  23Oct2019
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=

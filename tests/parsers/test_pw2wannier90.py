@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Tests for the `Pw2wannier90Parser`."""
-from __future__ import absolute_import
-
 import os
 
 from aiida import orm

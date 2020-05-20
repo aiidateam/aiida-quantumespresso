@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 """Plugin to create a Quantum Espresso ph.x input file."""
-from __future__ import absolute_import
-
 import os
 import numpy
-import six
 
 from aiida import orm
 from aiida.common import datastructures, exceptions
@@ -36,6 +33,7 @@ class PhCalculation(CalcJob):
     _OUTPUT_SUBFOLDER = './out/'
     _FOLDER_DRHO = 'FILDRHO'
     _DRHO_PREFIX = 'drho'
+    _DVSCF_PREFIX = 'dvscf'
     _DRHO_STAR_EXT = 'drho_rot'
     _FOLDER_DYNAMICAL_MATRIX = 'DYN_MAT'
     _OUTPUT_DYNAMICAL_MATRIX_PREFIX = os.path.join(_FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-')
@@ -45,11 +43,12 @@ class PhCalculation(CalcJob):
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
-        super(PhCalculation, cls).define(spec)
-        spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
-        spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
-        spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.ph')
+        super().define(spec)
+        spec.input('metadata.options.input_filename', valid_type=str, default=cls._DEFAULT_INPUT_FILE)
+        spec.input('metadata.options.output_filename', valid_type=str, default=cls._DEFAULT_OUTPUT_FILE)
+        spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.ph')
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)
         spec.input('qpoints', valid_type=orm.KpointsData, help='qpoint mesh')
         spec.input('parameters', valid_type=orm.Dict, help='')
@@ -82,10 +81,14 @@ class PhCalculation(CalcJob):
             message='The minimization cycle did not reach self-consistency.')
 
     def prepare_for_submission(self, folder):
-        """Create the input files from the input nodes passed to this instance of the `CalcJob`.
+        """Prepare the calculation job for submission by transforming input nodes into input files.
 
-        :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
-        :return: `aiida.common.datastructures.CalcInfo` instance
+        In addition to the input files being written to the sandbox folder, a `CalcInfo` instance will be returned that
+        contains lists of files that need to be copied to the remote machine before job submission, as well as file
+        lists that are to be retrieved after job completion.
+
+        :param folder: a sandbox folder to temporarily write files on disk.
+        :return: :py:`~aiida.common.datastructures.CalcInfo` instance.
         """
         # pylint: disable=too-many-statements,too-many-branches
         local_copy_list = []
@@ -129,7 +132,7 @@ class PhCalculation(CalcJob):
 
         # I put the first-level keys as uppercase (i.e., namelist and card names) and the second-level keys as lowercase
         parameters = _uppercase_dict(self.inputs.parameters.get_dict(), dict_name='parameters')
-        parameters = {k: _lowercase_dict(v, dict_name=k) for k, v in six.iteritems(parameters)}
+        parameters = {k: _lowercase_dict(v, dict_name=k) for k, v in parameters.items()}
 
         prepare_for_d3 = settings.pop('PREPARE_FOR_D3', False)
         if prepare_for_d3:
@@ -153,6 +156,11 @@ class PhCalculation(CalcJob):
         parameters['INPUTPH']['iverbosity'] = 1
         parameters['INPUTPH']['prefix'] = self._PREFIX
         parameters['INPUTPH']['fildyn'] = self._OUTPUT_DYNAMICAL_MATRIX_PREFIX
+
+        prepare_for_epw = settings.pop('PREPARE_FOR_EPW', False)
+        if prepare_for_epw:
+            self._blocked_keywords += [('INPUTPH', 'fildvscf')]
+            parameters['INPUTPH']['fildvscf'] = self._DVSCF_PREFIX
 
         if prepare_for_d3:
             parameters['INPUTPH']['fildrho'] = self._DRHO_PREFIX
@@ -190,18 +198,18 @@ class PhCalculation(CalcJob):
             if len(list_of_points) > 1:
                 parameters['INPUTPH']['qplot'] = True
                 parameters['INPUTPH']['ldisp'] = True
-                postpend_text = u'{}\n'.format(len(list_of_points))
+                postpend_text = '{}\n'.format(len(list_of_points))
                 for points in list_of_points:
-                    postpend_text += u'{0:18.10f} {1:18.10f} {2:18.10f}  1\n'.format(*points)
+                    postpend_text += '{0:18.10f} {1:18.10f} {2:18.10f}  1\n'.format(*points)
 
                 # Note: the weight is fixed to 1, because ph.x calls these
                 # things weights but they are not such. If they are going to
                 # exist with the meaning of weights, they will be supported
             else:
                 parameters['INPUTPH']['ldisp'] = False
-                postpend_text = u''
+                postpend_text = ''
                 for points in list_of_points:
-                    postpend_text += u'{0:18.10f} {1:18.10f} {2:18.10f}\n'.format(*points)
+                    postpend_text += '{0:18.10f} {1:18.10f} {2:18.10f}\n'.format(*points)
 
         # customized namelists, otherwise not present in the distributed ph code
         try:
@@ -219,12 +227,12 @@ class PhCalculation(CalcJob):
 
         with folder.open(self.metadata.options.input_filename, 'w') as infile:
             for namelist_name in namelists_toprint:
-                infile.write(u'&{0}\n'.format(namelist_name))
+                infile.write('&{0}\n'.format(namelist_name))
                 # namelist content; set to {} if not present, so that we leave an empty namelist
                 namelist = parameters.pop(namelist_name, {})
-                for key, value in sorted(six.iteritems(namelist)):
+                for key, value in sorted(namelist.items()):
                     infile.write(convert_input_to_namelist_entry(key, value))
-                infile.write(u'/\n')
+                infile.write('/\n')
 
             # add list of qpoints if required
             if postpend_text is not None:
@@ -292,6 +300,12 @@ class PhCalculation(CalcJob):
             with folder.open('{}.EXIT'.format(self._PREFIX), 'w') as handle:
                 handle.write('\n')
 
+                remote_copy_list.append((
+                    parent_folder.computer.uuid,
+                    os.path.join(parent_folder.get_remote_path(), self._FOLDER_DYNAMICAL_MATRIX),
+                    '.'
+                ))
+
         codeinfo = datastructures.CodeInfo()
         codeinfo.cmdline_params = (list(settings.pop('CMDLINE', [])) + ['-in', self.metadata.options.input_filename])
         codeinfo.stdout_name = self.metadata.options.output_filename
@@ -317,6 +331,7 @@ class PhCalculation(CalcJob):
             raise exceptions.InputValidationError('`settings` contained unexpected keys: {}'.format(unknown_keys))
 
         return calcinfo
+
 
     @staticmethod
     def _get_pseudo_folder():

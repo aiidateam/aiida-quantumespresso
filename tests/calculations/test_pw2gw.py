@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Tests for the `Pw2gwCalculation` class."""
-from __future__ import absolute_import
-
 from aiida import orm
 from aiida.common import datastructures
 

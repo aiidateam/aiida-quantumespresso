@@ -745,4 +745,3 @@ run and are sitting in some folders, and that you want to import inside AiiDA.
 
 This can be achieved with the ``PwImmigrant`` class described below,
 for which you can find a tutorial :ref:`here <pwimmigrant-tutorial>`.
-

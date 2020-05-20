@@ -1,21 +1,21 @@
 
-     Program MATDYN v.6.1 (svn rev. 13369) starts on  9May2019 at 11:46:17 
+     Program MATDYN v.6.1 (svn rev. 13369) starts on  9May2019 at 11:46:17
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
          "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
-          URL http://www.quantum-espresso.org", 
+          URL http://www.quantum-espresso.org",
      in publications or presentations arising from this work. More details at
      http://www.quantum-espresso.org/quote
 
      Parallel version (MPI), running on     1 processors
- mass for atomic type   1 not given; uses mass from file real_space_force_constants.dat                                                                                                                                                                                                                                  
+ mass for atomic type   1 not given; uses mass from file real_space_force_constants.dat
      A direction for q was not specified:TO-LO splitting will be absent
 
      MATDYN       :     0.00s CPU         0.00s WALL
 
 
-   This run was terminated on:  11:46:17   9May2019            
+   This run was terminated on:  11:46:17   9May2019
 
 =------------------------------------------------------------------------------=
    JOB DONE.

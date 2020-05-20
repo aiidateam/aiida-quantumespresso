@@ -1,0 +1,11 @@
+coords_units_array: bohr
+data_int_units_array: Ry
+data_units_array: Ry
+parameters:
+  charge_img: 0.0
+  charge_max: 7.580972
+  charge_min: -142.755892
+  negative_core_charge: -1.3e-05
+  output_format: gnuplot
+  plot_num: 11
+  plot_type: 1D spherical average

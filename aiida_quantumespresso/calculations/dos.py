@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """`CalcJob` implementation for the dos.x code of Quantum ESPRESSO."""
-from __future__ import absolute_import
-
 from aiida import orm
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 
@@ -21,8 +19,9 @@ class DosCalculation(NamelistsCalculation):
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
-        super(DosCalculation, cls).define(spec)
+        super().define(spec)
         spec.input('parent_folder', valid_type=(orm.RemoteData, orm.FolderData), required=True)
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.output('output_dos', valid_type=orm.XyData)

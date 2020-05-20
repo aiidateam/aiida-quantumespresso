@@ -1,16 +1,12 @@
 # -*- coding: utf-8 -*-
 """Workchain to compute a band structure for a given structure using Quantum ESPRESSO pw.x."""
-from __future__ import absolute_import
-
-from six.moves import map
-
 from aiida import orm
 from aiida.common import AttributeDict
 from aiida.plugins import WorkflowFactory
 from aiida.engine import WorkChain, ToContext, if_
 
+from aiida_quantumespresso.calculations.functions.seekpath_structure_analysis import seekpath_structure_analysis
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
-from aiida_quantumespresso.workflows.functions.seekpath_structure_analysis import seekpath_structure_analysis
 
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
@@ -55,7 +51,7 @@ class PwBandsWorkChain(WorkChain):
     def define(cls, spec):
         """Define the process specification."""
         # yapf: disable
-        super(PwBandsWorkChain, cls).define(spec)
+        super().define(spec)
         spec.expose_inputs(PwRelaxWorkChain, namespace='relax', exclude=('clean_workdir', 'structure'),
             namespace_options={'required': False, 'populate_defaults': False,
             'help': 'Inputs for the `PwRelaxWorkChain`, if not specified at all, the relaxation step is skipped.'})
@@ -114,6 +110,7 @@ class PwBandsWorkChain(WorkChain):
     def setup(self):
         """Define the current structure in the context to be the input structure."""
         self.ctx.current_structure = self.inputs.structure
+        self.ctx.current_number_of_bands = None
         self.ctx.bands_kpoints = self.inputs.get('bands_kpoints', None)
 
     def should_run_relax(self):
@@ -127,6 +124,7 @@ class PwBandsWorkChain(WorkChain):
     def run_relax(self):
         """Run the PwRelaxWorkChain to run a relax PwCalculation."""
         inputs = AttributeDict(self.exposed_inputs(PwRelaxWorkChain, namespace='relax'))
+        inputs.metadata.call_link_label = 'relax'
         inputs.structure = self.ctx.current_structure
 
         running = self.submit(PwRelaxWorkChain, **inputs)
@@ -144,14 +142,18 @@ class PwBandsWorkChain(WorkChain):
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
 
         self.ctx.current_structure = workchain.outputs.output_structure
+        self.ctx.current_number_of_bands = workchain.outputs.output_parameters.get_attribute('number_of_bands')
 
     def run_seekpath(self):
         """Run the structure through SeeKpath to get the normalized structure and path along high-symmetry k-points .
 
         This is only called if the `bands_kpoints` input was not specified.
         """
-        reference_distance = self.inputs.get('bands_kpoints_distance', None)
-        result = seekpath_structure_analysis(self.ctx.current_structure, reference_distance=reference_distance)
+        inputs = {
+            'reference_distance': self.inputs.get('bands_kpoints_distance', None),
+            'metadata': {'call_link_label': 'seekpath'}
+        }
+        result = seekpath_structure_analysis(self.ctx.current_structure, **inputs)
         self.ctx.current_structure = result['primitive_structure']
         self.ctx.bands_kpoints = result['explicit_kpoints']
 
@@ -161,10 +163,16 @@ class PwBandsWorkChain(WorkChain):
     def run_scf(self):
         """Run the PwBaseWorkChain in scf mode on the primitive cell of (optionally relaxed) input structure."""
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='scf'))
+        inputs.metadata.call_link_label = 'scf'
         inputs.pw.structure = self.ctx.current_structure
         inputs.pw.parameters = inputs.pw.parameters.get_dict()
-        inputs.pw.parameters.setdefault('CONTROL', {})
-        inputs.pw.parameters['CONTROL']['calculation'] = 'scf'
+        inputs.pw.parameters.setdefault('CONTROL', {})['calculation'] = 'scf'
+
+        # Make sure to carry the number of bands from the relax workchain if it was run and it wasn't explicitly defined
+        # in the inputs. One of the base workchains in the relax workchain may have changed the number automatically in
+        #  the sanity checks on band occupations.
+        if self.ctx.current_number_of_bands:
+            inputs.pw.parameters.setdefault('SYSTEM', {}).setdefault('nbnd', self.ctx.current_number_of_bands)
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
@@ -182,11 +190,12 @@ class PwBandsWorkChain(WorkChain):
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_SCF
 
         self.ctx.current_folder = workchain.outputs.remote_folder
+        self.ctx.current_number_of_bands = workchain.outputs.output_parameters.get_attribute('number_of_bands')
 
     def run_bands(self):
         """Run the PwBaseWorkChain in bands mode along the path of high-symmetry determined by seekpath."""
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='bands'))
-
+        inputs.metadata.call_link_label = 'bands'
         inputs.kpoints = self.ctx.bands_kpoints
         inputs.pw.structure = self.ctx.current_structure
         inputs.pw.parent_folder = self.ctx.current_folder
@@ -212,6 +221,10 @@ class PwBandsWorkChain(WorkChain):
             nbnd = max(int(0.5 * nelectron * nspin * factor), int(0.5 * nelectron * nspin) + 4 * nspin, nbands)
             inputs.pw.parameters['SYSTEM']['nbnd'] = nbnd
 
+        # Otherwise set the current number of bands, unless explicitly set in the inputs
+        else:
+            inputs.pw.parameters['SYSTEM'].setdefault('nbnd', self.ctx.current_number_of_bands)
+
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
 
@@ -236,7 +249,7 @@ class PwBandsWorkChain(WorkChain):
 
     def on_terminated(self):
         """Clean the working directories of all child calculations if `clean_workdir=True` in the inputs."""
-        super(PwBandsWorkChain, self).on_terminated()
+        super().on_terminated()
 
         if self.inputs.clean_workdir.value is False:
             self.report('remote folders will not be cleaned')

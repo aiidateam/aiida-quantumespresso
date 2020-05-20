@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Pre-commit script to ensure that version numbers in `setup.json` and `aiida_quantumespresso/__init__.py` match."""
-from __future__ import absolute_import
 import os
 import json
 import sys

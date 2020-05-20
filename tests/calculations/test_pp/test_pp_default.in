@@ -1,0 +1,11 @@
+&INPUTPP
+  filplot = 'aiida.filplot'
+  outdir = './out/'
+  plot_num = 1
+  prefix = 'aiida'
+/
+&PLOT
+  fileout = 'aiida.fileout'
+  iflag = 3
+  output_format = 6
+/

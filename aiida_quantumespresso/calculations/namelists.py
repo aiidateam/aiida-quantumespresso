@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-"""Plugin to create a Quantum Espresso input file for a generic post-processing (or similar) code that only requires a
-few namelists (plus possibly some text afterwards)."""
-from __future__ import absolute_import
+"""Plugin to create a Quantum Espresso input file for a generic post-processing code.
 
+These codes typically only require a few namelists (plus possibly some text afterwards).
+"""
 import os
-import six
 
 from aiida.common import datastructures, exceptions
 from aiida.orm import Dict
@@ -45,13 +44,14 @@ class NamelistsCalculation(CalcJob):
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
-        super(NamelistsCalculation, cls).define(spec)
-        spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
-        spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
+        super().define(spec)
+        spec.input('metadata.options.input_filename', valid_type=str, default=cls._DEFAULT_INPUT_FILE)
+        spec.input('metadata.options.output_filename', valid_type=str, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)  # Override default value False
         if cls._default_parser is not None:
-            spec.input('metadata.options.parser_name', valid_type=six.string_types, default=cls._default_parser)
+            spec.input('metadata.options.parser_name', valid_type=str, default=cls._default_parser)
         spec.input('parameters', valid_type=Dict, required=False,
             help='Use a node that specifies the input parameters for the namelists')
         spec.input('settings', valid_type=Dict, required=False,
@@ -66,7 +66,7 @@ class NamelistsCalculation(CalcJob):
         added to the input file, this method can be overridden to return the lines that should be appended.
         """
         # pylint: disable=no-self-use
-        return u''
+        return ''
 
     @classmethod
     def set_blocked_keywords(cls, parameters):
@@ -113,7 +113,7 @@ class NamelistsCalculation(CalcJob):
 
     @staticmethod
     def generate_input_file(parameters):
-        """Generate namelisst input_file content given a dict of parameters
+        """Generate namelist input_file content given a dict of parameters.
 
         :param parameters: 'dict' containing the fortran namelists and parameters to be used.
           e.g.: {'CONTROL':{'calculation':'scf'}, 'SYSTEM':{'ecutwfc':30}}
@@ -122,18 +122,22 @@ class NamelistsCalculation(CalcJob):
 
         file_lines = []
         for namelist_name, namelist in parameters.items():
-            file_lines.append(u'&{0}'.format(namelist_name))
-            for key, value in sorted(six.iteritems(namelist)):
+            file_lines.append('&{0}'.format(namelist_name))
+            for key, value in sorted(namelist.items()):
                 file_lines.append(convert_input_to_namelist_entry(key, value)[:-1])
-            file_lines.append(u'/')
+            file_lines.append('/')
 
         return '\n'.join(file_lines)
 
     def prepare_for_submission(self, folder):
-        """Create the input files from the input nodes passed to this instance of the `CalcJob`.
+        """Prepare the calculation job for submission by transforming input nodes into input files.
 
-        :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
-        :return: `aiida.common.datastructures.CalcInfo` instance
+        In addition to the input files being written to the sandbox folder, a `CalcInfo` instance will be returned that
+        contains lists of files that need to be copied to the remote machine before job submission, as well as file
+        lists that are to be retrieved after job completion.
+
+        :param folder: a sandbox folder to temporarily write files on disk.
+        :return: :py:`~aiida.common.datastructures.CalcInfo` instance.
         """
         # pylint: disable=too-many-branches,too-many-statements
         if 'settings' in self.inputs:
@@ -146,7 +150,7 @@ class NamelistsCalculation(CalcJob):
         # Put the first-level keys as uppercase (i.e., namelist and card names) and the second-level keys as lowercase
         if 'parameters' in self.inputs:
             parameters = _uppercase_dict(self.inputs.parameters.get_dict(), dict_name='parameters')
-            parameters = {k: _lowercase_dict(v, dict_name=k) for k, v in six.iteritems(parameters)}
+            parameters = {k: _lowercase_dict(v, dict_name=k) for k, v in parameters.items()}
         else:
             parameters = {}
 
