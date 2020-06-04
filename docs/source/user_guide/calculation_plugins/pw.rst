@@ -81,7 +81,6 @@ This can then be used directly in the process builder of for example a ``PwCalcu
     'CONTROL', 'pseudo_dir': pseudopotential directory
     'CONTROL', 'outdir': scratch directory
     'CONTROL', 'prefix': file prefix
-    'SYSTEM', 'ibrav': cell shape
     'SYSTEM', 'celldm': cell dm
     'SYSTEM', 'nat': number of atoms
     'SYSTEM', 'ntyp': number of species
@@ -93,6 +92,8 @@ This can then be used directly in the process builder of for example a ``PwCalcu
     'SYSTEM', 'cosbc': cell parameters
 
   Those keywords should not be specified, otherwise the submission will fail.
+
+  The `SYSTEM`, `ibrav` keyword is optional. If it is not specified, `ibrav=0` is used. When a non-zero `ibrav` is given, `aiida-quantumespresso` automatically extracts the cell parameters. As a consistency check, the cell is re-constructed from these parameters and compared to the input cell. The input structure needs to match the convention detailed in the `pw.x documentation <https://www.quantum-espresso.org/Doc/INPUT_PW.html#idm199>`_. The tolerance used in this check can be adjusted with the `IBRAV_CELL_TOLERANCE` key in the `settings` dictionary. It defines the absolute tolerance on each element of the cell matrix.
 
 * **structure**, class :py:class:`StructureData <aiida.orm.nodes.data.structure.StructureData>`
 * **settings**, class :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>` (optional)
