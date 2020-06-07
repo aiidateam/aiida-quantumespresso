@@ -68,8 +68,7 @@
     "extras_require": {
         "pre-commit": [
             "pre-commit~=2.2",
-            "prospector~=1.2",
-            "yapf~=0.29"
+            "pylint~=2.5.0"
         ],
         "tests": [
             "pgtest~=1.3",
