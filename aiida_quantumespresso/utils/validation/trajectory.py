@@ -46,12 +46,12 @@ def verify_convergence_forces(trajectory, index=-1, threshold=None):
     :return: `True` if threshold is valid, `False` otherwise
     :raises ValueError: if the `forces` array or given index does not exist
     """
-    from qe_tools.constants import ry_to_ev, bohr_to_ang
+    from qe_tools import CONSTANTS
 
     if threshold is None:
         return None
 
-    threshold *= ry_to_ev / bohr_to_ang  # Convert to eV / Å
+    threshold *= CONSTANTS.ry_to_ev / CONSTANTS.bohr_to_ang  # Convert to eV / Å
 
     try:
         forces = trajectory.get_array('forces')[index]

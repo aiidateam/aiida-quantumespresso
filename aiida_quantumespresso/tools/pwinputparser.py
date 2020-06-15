@@ -91,7 +91,7 @@ def create_builder_from_file(input_folder, input_file_name, code, metadata, pseu
         input_folder = Folder(input_folder)
 
     with input_folder.open(input_file_name) as input_file:
-        parsed_file = PwInputFile(input_file)
+        parsed_file = PwInputFile(input_file.read())
 
     builder.structure = parsed_file.get_structuredata()
     builder.kpoints = parsed_file.get_kpointsdata()
