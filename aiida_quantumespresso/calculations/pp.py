@@ -82,7 +82,8 @@ class PpCalculation(CalcJob):
         spec.input('metadata.options.keep_plot_file', valid_type=bool, default=False)
 
         spec.output('output_parameters', valid_type=orm.Dict)
-        spec.output('output_data', valid_type=orm.ArrayData)
+        #spec.output('output_data', valid_type=orm.ArrayData)
+        spec.outputs.dynamic = True
         spec.default_output_node = 'output_parameters'
 
         # Standard exceptions
@@ -215,8 +216,8 @@ class PpCalculation(CalcJob):
         calcinfo.retrieve_temporary_list = []
         calcinfo.retrieve_list.append(self.inputs.metadata.options.output_filename)
         if self.inputs.metadata.options.keep_plot_file:
-            calcinfo.retrieve_list.append(self._FILEOUT)
+            calcinfo.retrieve_list.append(tuple(['*'+self._FILEOUT, '.', 0]))
         else:
-            calcinfo.retrieve_temporary_list.append(self._FILEOUT)
+            calcinfo.retrieve_temporary_list.append(tuple(['*'+self._FILEOUT, '.', 0]))
 
         return calcinfo

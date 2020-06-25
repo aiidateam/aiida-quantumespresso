@@ -71,58 +71,66 @@ class PpParser(Parser):
         except (IOError, OSError):
             return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
-        # The post-processed data should have been written to file, either in the retrieved or temp list
-        filename_data = PpCalculation._FILEOUT
-        if filename_data in self.retrieved.list_object_names():  # Retrieved list case
-            try:
-                data_raw = self.retrieved.get_object_content(filename_data)
-            except (IOError, OSError):
-                return self.exit_codes.ERROR_DATAFILE_READ
-        elif temp_folder_path is not None:  # Temp list case
-            data_file_path = os.path.join(temp_folder_path, filename_data)
-            if os.path.isfile(data_file_path):
-                try:
-                    with open(data_file_path, 'r') as fhandle:
-                        data_raw = fhandle.read()
-                except (IOError, OSError):
-                    return self.exit_codes.ERROR_DATAFILE_READ
-            else:
-                return self.exit_codes.ERROR_OUTPUT_DATAFILE_MISSING
-        else:
-            return self.exit_codes.ERROR_OUTPUT_DATAFILE_MISSING
-
-        # Parse stdout
+        # Parse stdout.
         try:
             logs, self.output_parameters = self.parse_stdout(stdout_raw)
         except Exception:
             self.logger.error(traceback.format_exc())
             return self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
 
-        # Print the logs
+        # Print the logs.
         self.emit_logs(logs)
 
-        # Scan logs for known errors
+        # Scan logs for known errors.
         if 'ERROR_PARENT_XML_MISSING' in logs['error']:
             return self.exit_codes.ERROR_PARENT_XML_MISSING
         if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs['error']:
             return self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
 
-        # Parse the post-processed-data according to what kind of data file was produced
-        if self.output_parameters['output_format'] == 'gnuplot':
-            if self.output_parameters['plot_type'] == '2D polar on a sphere':
-                parsed_data = self.parse_gnuplot_polar(data_raw)
-            else:
-                parsed_data = self.parse_gnuplot1D(data_raw)
-        elif self.output_parameters['output_format'] == 'gnuplot x,y,f':
-            parsed_data = self.parse_gnuplot2D(data_raw)
-        elif self.output_parameters['output_format'] == 'Gaussian cube':
-            parsed_data = self.parse_gaussian(data_raw)
-        else:
-            return self.exit_codes.ERROR_UNSUPPORTED_DATAFILE_FORMAT
-
-        # Create output nodes
-        self.out('output_data', parsed_data)
         self.out('output_parameters', orm.Dict(dict=self.output_parameters))
+
+        # The post-processed data should have been written to file, either in the retrieved or temp list
+        datafile_missing = True
+
+        for filename_data in self.retrieved.list_object_names():  # Retrieved list case
+            if PpCalculation._FILEOUT in filename_data:
+                datafile_missing = False
+                try:
+                    data_raw = self.retrieved.get_object_content(filename_data)
+                except (IOError, OSError):
+                    return self.exit_codes.ERROR_DATAFILE_READ
+            elif temp_folder_path is not None:  # Temp list case
+                data_file_path = os.path.join(temp_folder_path, filename_data)
+                if os.path.isfile(data_file_path):
+                    datafile_missing = False
+                    try:
+                        with open(data_file_path, 'r') as fhandle:
+                            data_raw = fhandle.read()
+                    except (IOError, OSError):
+                        return self.exit_codes.ERROR_DATAFILE_READ
+                else:
+                    continue
+            else:
+                continue
+
+            # Parse the post-processed-data according to what kind of data file was produced
+            if self.output_parameters['output_format'] == 'gnuplot':
+                if self.output_parameters['plot_type'] == '2D polar on a sphere':
+                    parsed_data = self.parse_gnuplot_polar(data_raw)
+                else:
+                    parsed_data = self.parse_gnuplot1D(data_raw)
+            elif self.output_parameters['output_format'] == 'gnuplot x,y,f':
+                parsed_data = self.parse_gnuplot2D(data_raw)
+            elif self.output_parameters['output_format'] == 'Gaussian cube':
+                parsed_data = self.parse_gaussian(data_raw)
+            else:
+                return self.exit_codes.ERROR_UNSUPPORTED_DATAFILE_FORMAT
+
+            # Create output nodes.
+            self.out(filename_data.replace('.', '_'), parsed_data)
+
+        if datafile_missing:
+            return self.exit_codes.ERROR_OUTPUT_DATAFILE_MISSING
 
     def parse_stdout(self, stdout_str):
         """
