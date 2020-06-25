@@ -83,6 +83,7 @@ class PpCalculation(CalcJob):
 
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.output('output_data', valid_type=orm.ArrayData)
+        spec.output_namespace('output_data_multiple', valid_type=orm.ArrayData, dynamic=True)
         spec.default_output_node = 'output_parameters'
 
         # Standard exceptions
@@ -106,11 +107,13 @@ class PpCalculation(CalcJob):
 
         # Output datafile related exceptions
         spec.exit_code(330, 'ERROR_OUTPUT_DATAFILE_MISSING',
-            message='The retrieved folder did not contain the required formatted data output file.')
+            message='The formatted data output file `{filename}` was not present in the retrieved (temporary) folder.')
         spec.exit_code(331, 'ERROR_OUTPUT_DATAFILE_READ',
-            message='The formatted data output file could not be read.')
+            message='The formatted data output file `{filename}` could not be read.')
         spec.exit_code(332, 'ERROR_UNSUPPORTED_DATAFILE_FORMAT',
             message='The data file format is not supported by the parser')
+        spec.exit_code(333, 'ERROR_OUTPUT_DATAFILE_PARSE',
+            message='The formatted data output file `{filename}` could not be parsed')
 
     def prepare_for_submission(self, folder):  # pylint: disable=too-many-branches,too-many-statements
         """Prepare the calculation job for submission by transforming input nodes into input files.
@@ -210,13 +213,22 @@ class PpCalculation(CalcJob):
         calcinfo.local_copy_list = local_copy_list
         calcinfo.remote_copy_list = remote_copy_list
 
-        # Retrieve by default the output file and plot file
-        calcinfo.retrieve_list = []
+        # Retrieve by default the output file
+        calcinfo.retrieve_list = [self.inputs.metadata.options.output_filename]
         calcinfo.retrieve_temporary_list = []
-        calcinfo.retrieve_list.append(self.inputs.metadata.options.output_filename)
+
+        # Depending on the `plot_num` and the corresponding parameters, more than one pair of `filplot` + `fileout`
+        # files may be written. In that case, the data files will have `filplot` as a prefix with some suffix to
+        # distinguish them from one another. The `fileout` filename will be the full data filename with the `fileout`
+        # value as a suffix.
+        retrieve_tuples = [
+            self._FILEOUT,
+            ('{}_*{}'.format(self._FILPLOT, self._FILEOUT), '.', 0)
+        ]
+
         if self.inputs.metadata.options.keep_plot_file:
-            calcinfo.retrieve_list.append(self._FILEOUT)
+            calcinfo.retrieve_list.extend(retrieve_tuples)
         else:
-            calcinfo.retrieve_temporary_list.append(self._FILEOUT)
+            calcinfo.retrieve_temporary_list.extend(retrieve_tuples)
 
         return calcinfo
