@@ -278,10 +278,11 @@ class PpParser(Parser):
         data = []
 
         for line in data_lines:
-            if line == '':
+            stripped = line.strip()
+            if stripped == '':
                 continue
             else:
-                split_line = line.split()
+                split_line = stripped.split()
                 coords.append([float(split_line[0]), float(split_line[1])])
                 data.append(float(split_line[2]))
 
