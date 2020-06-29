@@ -217,7 +217,7 @@ class PpParser(Parser):
                 split_line = line.split('=')
                 if 'negative/imaginary' in line:  # QE6.1
                     output_dict['negative_core_charge'] = float(split_line[-1].split()[0])
-                    output_dict['imaginary_core_charge'] = float(split_line.split()[-1])
+                    output_dict['imaginary_core_charge'] = float(split_line[-1].split()[-1])
                 else:  # QE6.4
                     output_dict['negative_core_charge'] = float(split_line[1])
             if 'Min, Max, imaginary charge:' in line:
@@ -335,10 +335,15 @@ class PpParser(Parser):
         """
         lines = data_file_str.splitlines()
 
+        title = lines[0]
+        comment = lines[1]
+
         atoms_line = lines[2].split()
-        atoms = int(atoms_line[0])  # The number of atoms listed in the file
-        header = lines[:6 + atoms]  # Header of the file: comments, the voxel, and the number of atoms and datapoints
-        data_lines = lines[6 + atoms:]  # The actual data: atoms and volumetric data
+        natoms = int(atoms_line[0])  # The number of atoms listed in the file
+        origin = np.array(atoms_line[1:], dtype=float)
+
+        header = lines[:6 + natoms]  # Header of the file: comments, the voxel, and the number of atoms and datapoints
+        data_lines = lines[6 + natoms:]  # The actual data: atoms and volumetric data
 
         # Parse the declared dimensions of the volumetric data
         x_line = header[3].split()
@@ -352,26 +357,21 @@ class PpParser(Parser):
         voxel_array = np.array([[x_line[1], x_line[2], x_line[3]], [y_line[1], y_line[2], y_line[3]],
                                 [z_line[1], z_line[2], z_line[3]]],
                                dtype=np.float64)
+        atomic_numbers = np.empty(natoms, int)
+        coordinates = np.empty((natoms, 3))
+        for i in range(natoms):
+            line = header[6 + i].split()
+            atomic_numbers[i] = int(line[0])
+            coordinates[i] = [float(s) for s in line[2:]]
 
         # Get the volumetric data
-        data_array = np.zeros((xdim, ydim, zdim))
-
-        # The data is organised into columns with a fixed number of values
-        # Gather up all the data points into one list for easier unpacking
-        datalist = []
+        data_array = np.empty(xdim * ydim * zdim, dtype=float)
+        cursor = 0
         for line in data_lines:
-            for i in range(0, len(line), 13):
-                data_point = line[i:i + 13].strip()
-                if data_point != '':
-                    datalist.append(float(data_point))
-
-        # Unpack the list and repack as a 3D array
-        # Note the unusual indexing: cube files run over the z index first, then y and x.
-        # E.g. The first volumetric data point is x,y,z = (0,0,0) and the second is (0,0,1)
-        for i in range(0, xdim):
-            for j in range(0, ydim):
-                for k in range(0, zdim):
-                    data_array[i, j, k] = (datalist[(i * ydim * zdim) + (j * zdim) + k])
+            ls = line.split()
+            data_array[cursor:cursor + len(ls)] = ls
+            cursor += len(ls)
+        data_array = data_array.reshape((xdim, ydim, zdim))
 
         coordinates_units = 'bohr'
         data_units = self.units_dict[self.output_parameters['plot_num']]
@@ -379,7 +379,9 @@ class PpParser(Parser):
         arraydata = orm.ArrayData()
         arraydata.set_array('voxel', voxel_array)
         arraydata.set_array('data', data_array)
-        arraydata.set_array('coordinates_units', np.array(coordinates_units))
         arraydata.set_array('data_units', np.array(data_units))
+        arraydata.set_array('coordinates_units', np.array(coordinates_units))
+        arraydata.set_array('coordinates', coordinates)
+        arraydata.set_array('atomic_numbers', atomic_numbers)
 
         return arraydata
