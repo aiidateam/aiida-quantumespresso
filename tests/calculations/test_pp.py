@@ -40,14 +40,16 @@ def test_pp_default(aiida_profile, fixture_sandbox, generate_calc_job, generate_
     calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
     retrieve_list = ['aiida.out']
-    retrieve_temporary_list = ['aiida.fileout']
+    retrieve_temporary_list = ['aiida.fileout', ('aiida.filplot_*aiida.fileout', '.', 0)]
     local_copy_list = []
 
     # Check the attributes of the returned `CalcInfo`
     assert isinstance(calc_info, datastructures.CalcInfo)
     assert sorted(calc_info.local_copy_list) == sorted(local_copy_list)
     assert sorted(calc_info.retrieve_list) == sorted(retrieve_list)
-    assert sorted(calc_info.retrieve_temporary_list) == sorted(retrieve_temporary_list)
+    assert len(calc_info.retrieve_temporary_list) == 2
+    for element in retrieve_temporary_list:
+        assert element in calc_info.retrieve_temporary_list
 
     with fixture_sandbox.open('aiida.in') as handle:
         input_written = handle.read()
@@ -64,15 +66,17 @@ def test_pp_keep_plot_file(aiida_profile, fixture_sandbox, generate_calc_job, ge
     inputs.metadata.options.keep_plot_file = True
 
     calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
-    retrieve_list = ['aiida.out', 'aiida.fileout']
+    retrieve_list = ['aiida.out', 'aiida.fileout', ('aiida.filplot_*aiida.fileout', '.', 0)]
     retrieve_temporary_list = []
     local_copy_list = []
 
     # Check the attributes of the returned `CalcInfo`, no need to check the input file as it is not affected
     assert isinstance(calc_info, datastructures.CalcInfo)
     assert sorted(calc_info.local_copy_list) == sorted(local_copy_list)
-    assert sorted(calc_info.retrieve_list) == sorted(retrieve_list)
     assert sorted(calc_info.retrieve_temporary_list) == sorted(retrieve_temporary_list)
+    assert len(calc_info.retrieve_list) == 3
+    for element in retrieve_list:
+        assert element in calc_info.retrieve_list
 
 
 @pytest.mark.parametrize(
