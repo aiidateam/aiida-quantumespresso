@@ -271,7 +271,7 @@ def test_pp_default_3d(
     assert calcfunction.is_finished_ok, calcfunction.exit_message
     assert 'output_parameters' in results
     assert 'output_data' in results
-    assert len(results['output_data'].get_arraynames()) == 4
+    assert len(results['output_data'].get_arraynames()) == 6
     data_array = results['output_data'].get_array('data').flatten()
     voxel_array = results['output_data'].get_array('voxel').flatten()
     data_units_array = results['output_data'].get_array('data_units')
@@ -313,7 +313,7 @@ def test_pp_default_3d_keep_plot_file(
     assert calcfunction.is_finished_ok, calcfunction.exit_message
     assert 'output_parameters' in results
     assert 'output_data' in results
-    assert len(results['output_data'].get_arraynames()) == 4
+    assert len(results['output_data'].get_arraynames()) == 6
 
 
 def test_pp_default_3d_multiple(aiida_profile, generate_calc_job_node, generate_parser, generate_inputs_3d):
@@ -334,7 +334,7 @@ def test_pp_default_3d_multiple(aiida_profile, generate_calc_job_node, generate_
     for key in ['K001_B001', 'K001_B002']:
         assert key in results['output_data_multiple']
         node = results['output_data_multiple'][key]
-        assert len(node.get_arraynames()) == 4
+        assert len(node.get_arraynames()) == 6
 
 
 def test_pp_default_3d_failed_missing(
