@@ -335,9 +335,6 @@ class PpParser(Parser):
         """
         lines = data_file_str.splitlines()
 
-        title = lines[0]
-        comment = lines[1]
-
         atoms_line = lines[2].split()
         natoms = int(atoms_line[0])  # The number of atoms listed in the file
         origin = np.array(atoms_line[1:], dtype=float)
