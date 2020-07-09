@@ -213,9 +213,9 @@ class PpParser(Parser):
 
         # Parse useful data from stdout
         for line in stdout_lines:
-            if 'Check:' in line:
+            if 'Check:' in line:  # QE < 6.5
                 split_line = line.split('=')
-                if 'negative/imaginary' in line:  # QE6.1
+                if 'negative/imaginary' in line:  # QE6.1-6.3
                     output_dict['negative_core_charge'] = float(split_line[-1].split()[0])
                     output_dict['imaginary_core_charge'] = float(split_line[-1].split()[-1])
                 else:  # QE6.4
@@ -354,12 +354,6 @@ class PpParser(Parser):
         voxel_array = np.array([[x_line[1], x_line[2], x_line[3]], [y_line[1], y_line[2], y_line[3]],
                                 [z_line[1], z_line[2], z_line[3]]],
                                dtype=np.float64)
-        atomic_numbers = np.empty(natoms, int)
-        coordinates = np.empty((natoms, 3))
-        for i in range(natoms):
-            line = header[6 + i].split()
-            atomic_numbers[i] = int(line[0])
-            coordinates[i] = [float(s) for s in line[2:]]
 
         # Get the volumetric data
         data_array = np.empty(xdim * ydim * zdim, dtype=float)
@@ -378,7 +372,5 @@ class PpParser(Parser):
         arraydata.set_array('data', data_array)
         arraydata.set_array('data_units', np.array(data_units))
         arraydata.set_array('coordinates_units', np.array(coordinates_units))
-        arraydata.set_array('coordinates', coordinates)
-        arraydata.set_array('atomic_numbers', atomic_numbers)
 
         return arraydata
