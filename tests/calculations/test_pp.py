@@ -82,11 +82,11 @@ def test_pp_keep_plot_file(aiida_profile, fixture_sandbox, generate_calc_job, ge
 
 
 def test_pp_cmdline_setting(aiida_profile, fixture_sandbox, generate_calc_job, generate_inputs):
-    """Test a `PpCalculation` with user-defined cmdline setting."""
+    """Test a `PpCalculation` with user-defined cmdline settings."""
     entry_point_name = 'quantumespresso.pp'
     inputs = generate_inputs(settings={'cmdline': ['-npools', '2']})
     calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
-    assert ['-npools', '2'] == calc_info.codes_info[0].cmdline_params
+    assert calc_info.codes_info[0].cmdline_params == ['-npools', '2']
 
 
 @pytest.mark.parametrize(
