@@ -25,7 +25,7 @@ def generate_inputs(fixture_localhost, fixture_sandbox, fixture_code, generate_r
             'parameters':
             orm.Dict(dict=parameters),
             'settings':
-            orm.Dict(dict=settings) or orm.Dict(),
+            orm.Dict(dict=settings),
             'metadata': {
                 'options': get_default_options()
             }
