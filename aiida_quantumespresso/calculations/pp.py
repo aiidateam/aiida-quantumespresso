@@ -75,6 +75,8 @@ class PpCalculation(CalcJob):
             help='Output folder of a completed `PwCalculation`')
         spec.input('parameters', valid_type=orm.Dict, required=True, validator=validate_parameters,
             help='Use a node that specifies the input parameters for the namelists')
+        spec.input('settings', valid_type=orm.Dict, required=False,
+            help='Optional parameters to affect the way the calculation job is performed.')
         spec.input('metadata.options.input_filename', valid_type=str, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=str, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.pp')
@@ -129,6 +131,12 @@ class PpCalculation(CalcJob):
         # Put the first-level keys as uppercase (i.e., namelist and card names) and the second-level keys as lowercase
         parameters = _uppercase_dict(self.inputs.parameters.get_dict(), dict_name='parameters')
         parameters = {k: _lowercase_dict(v, dict_name=k) for k, v in parameters.items()}
+
+        # Same for settings.
+        if 'settings' in self.inputs:
+            settings = _uppercase_dict(self.inputs.settings.get_dict(), dict_name='settings')
+        else:
+            settings = {}
 
         # Set default values. NOTE: this is different from PW/CP
         for blocked in self._blocked_keywords:
@@ -204,6 +212,7 @@ class PpCalculation(CalcJob):
                 ))
 
         codeinfo = datastructures.CodeInfo()
+        codeinfo.cmdline_params = settings.pop('CMDLINE', [])
         codeinfo.stdin_name = self.inputs.metadata.options.input_filename
         codeinfo.stdout_name = self.inputs.metadata.options.output_filename
         codeinfo.code_uuid = self.inputs.code.uuid
