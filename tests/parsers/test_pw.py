@@ -22,7 +22,7 @@ def generate_inputs(generate_structure):
             'structure': generate_structure(),
             'kpoints': kpoints,
             'parameters': orm.Dict(dict=parameters),
-            'settings': orm.Dict(dict=settings) or orm.Dict(),
+            'settings': orm.Dict(dict=settings),
             'metadata': metadata or {}
         })
 
