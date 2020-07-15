@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """`CalcJob` implementation for the matdyn.x code of Quantum ESPRESSO."""
-from __future__ import absolute_import
-
 from aiida import orm
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 from aiida_quantumespresso.data.force_constants import ForceConstantsData
@@ -27,8 +25,9 @@ class MatdynCalculation(NamelistsCalculation):
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
-        super(MatdynCalculation, cls).define(spec)
+        super().define(spec)
         spec.input('force_constants', valid_type=ForceConstantsData, required=True)
         spec.input('kpoints', valid_type=orm.KpointsData, help='Kpoints on which to calculate the phonon frequencies.')
         spec.inputs.pop('parent_folder')
@@ -55,22 +54,26 @@ class MatdynCalculation(NamelistsCalculation):
         except AttributeError:
             kpoints = self.inputs.kpoints.get_kpoints_mesh(print_list=True)
 
-        kpoints_string = [u'{}'.format(len(kpoints))]
+        kpoints_string = ['{}'.format(len(kpoints))]
         for kpoint in kpoints:
-            kpoints_string.append(u'{:18.10f} {:18.10f} {:18.10f}'.format(*kpoint))
+            kpoints_string.append('{:18.10f} {:18.10f} {:18.10f}'.format(*kpoint))
 
         return '\n'.join(kpoints_string) + '\n'
 
     def prepare_for_submission(self, folder):
-        """Create the input files from the input nodes passed to this instance of the `CalcJob`.
+        """Prepare the calculation job for submission by transforming input nodes into input files.
 
-        :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
-        :return: `aiida.common.datastructures.CalcInfo` instance
+        In addition to the input files being written to the sandbox folder, a `CalcInfo` instance will be returned that
+        contains lists of files that need to be copied to the remote machine before job submission, as well as file
+        lists that are to be retrieved after job completion.
+
+        :param folder: a sandbox folder to temporarily write files on disk.
+        :return: :py:`~aiida.common.datastructures.CalcInfo` instance.
         """
         force_constants = self.inputs.force_constants
         self._blocked_keywords.append(('INPUT', 'flfrc', force_constants.filename))
 
-        calcinfo = super(MatdynCalculation, self).prepare_for_submission(folder)
+        calcinfo = super().prepare_for_submission(folder)
         calcinfo.local_copy_list.append((force_constants.uuid, force_constants.filename, force_constants.filename))
 
         return calcinfo

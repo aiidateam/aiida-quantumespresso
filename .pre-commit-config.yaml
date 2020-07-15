@@ -1,76 +1,57 @@
 repos:
-- repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v2.2.3
-  hooks:
-  - id: trailing-whitespace
-    exclude: &exclude >
-      (?x)^(
-        tests/.*(?<!\.py)$
-      )$
-  - id: double-quote-string-fixer
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.5.0
+    hooks:
+    -   id: double-quote-string-fixer
+    -   id: end-of-file-fixer
+    -   id: fix-encoding-pragma
+    -   id: mixed-line-ending
+    -   id: trailing-whitespace
+        exclude: >-
+            (?x)^(
+                tests/.*.*out|
+                tests/.*.in$
+            )$
 
-- repo: https://github.com/PyCQA/pydocstyle
-  rev: 4.0.1
-  hooks:
-  - id: pydocstyle
-    language: system
-    types: [python]
-    args: ['--ignore=D104,D202,D203,D213']
-    exclude:
-      (?x)^(
-        aiida_quantumespresso/calculations.*|
-        aiida_quantumespresso/parsers/.*|
-        docs/.*|
-        utils/.*
-      )$
+-   repo: https://github.com/PyCQA/pylint
+    rev: pylint-2.5.2
+    hooks:
+    -   id: pylint
+        language: system
+        exclude: &exclude_files >
+            (?x)^(
+                aiida_quantumespresso/calculations/pwimmigrant.*|
+                aiida_quantumespresso/parsers/.*|
+                docs/.*|
+                tests/.*(?<!\.py)$
+            )$
 
-- repo: local
-  hooks:
+-   repo: https://github.com/PyCQA/pydocstyle
+    rev: 5.0.2
+    hooks:
+    -   id: pydocstyle
+        exclude: *exclude_files
+        args: ['--ignore=D104,D202,D203,D213']
 
-  - id: yapf
-    name: yapf
-    entry: yapf
-    language: system
-    types: [python]
-    args: ['-i']
-    exclude: &exclude_files >
-      (?x)^(
-        aiida_quantumespresso/calculations/pwimmigrant.*|
-        aiida_quantumespresso/parsers/.*|
-        docs/.*|
-        tests/.*(?<!\.py)$
-      )$
+-   repo: https://github.com/pre-commit/mirrors-yapf
+    rev: v0.30.0
+    hooks:
+    -   id: yapf
+        name: yapf
+        types: [python]
+        args: ['-i']
 
-  - id: prospector
-    language: system
-    types: [file, python]
-    exclude: *exclude_files
-    name: prospector
-    description: 'This hook runs Prospector: https://github.com/landscapeio/prospector'
-    entry: prospector
-
-  - id: version-number
-    name: Check consistency in version number
-    entry: python ./utils/validate_version_number.py
-    args: ['version']
-    language: system
-    files: >-
-      (?x)^(
-        setup.json|
-        aiida_quantumespresso/__init__.py|
-        ./utils/validate_version_number.py|
-      )$
-    pass_filenames: false
-
-- repo: https://github.com/python-modernize/python-modernize.git
-  rev: a234ce4e185cf77a55632888f1811d83b4ad9ef2
-  hooks:
-  - id: python-modernize
-    exclude: >
-      (?x)^(
-        docs/.*|
-        examples/.*
-      )$
-    args:
-      - --write
-      - --nobackups
+-   repo: local
+    hooks:
+    -   id: version-number
+        name: Check consistency in version number
+        entry: python ./utils/validate_version_number.py
+        args: ['version']
+        language: system
+        files: >-
+            (?x)^(
+                setup.json|
+                aiida_quantumespresso/__init__.py|
+                ./utils/validate_version_number.py|
+            )$
+        pass_filenames: false

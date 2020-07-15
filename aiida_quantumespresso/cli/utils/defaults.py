@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Module with utitlies for the CLI to generate default values."""
-from __future__ import absolute_import
 
 
 def get_structure():

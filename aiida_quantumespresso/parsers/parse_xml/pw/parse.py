@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import print_function
-
 from distutils.version import StrictVersion
 import numpy as np
+from urllib.error import URLError
+
 from xmlschema import XMLSchema
 from xmlschema.etree import ElementTree
-from xmlschema.exceptions import URLError
+from qe_tools.constants import hartree_to_ev, bohr_to_ang, ry_to_ev
 
 from aiida_quantumespresso.utils.mapping import get_logging_container
-from qe_tools.constants import hartree_to_ev, bohr_to_ang, ry_to_ev
 
 from .exceptions import XMLParseError
 from .legacy import parse_pw_xml_pre_6_2
@@ -83,7 +81,9 @@ def parse_pw_xml_post_6_2(xml):
         try:
             xsd = XMLSchema(schema_filepath_default)
         except URLError:
-            raise XMLParseError('Could not open or parse the XSD files {} and {}'.format(schema_filepath, schema_filepath_default))
+            raise XMLParseError(
+                'Could not open or parse the XSD files {} and {}'.format(schema_filepath, schema_filepath_default)
+            )
         else:
             schema_filepath = schema_filepath_default
 
@@ -116,7 +116,8 @@ def parse_pw_xml_post_6_2(xml):
 
     if 'occupations' in inputs['bands']:
         try:
-            occupations = inputs['bands']['occupations']['$']  # also present as ['output']['band_structure']['occupations_kind']
+            occupations = inputs['bands']['occupations'][
+                '$']  # also present as ['output']['band_structure']['occupations_kind']
         except TypeError:  # "string indices must be integers" -- might have attribute 'nspin'
             occupations = inputs['bands']['occupations']
     else:
@@ -189,9 +190,9 @@ def parse_pw_xml_post_6_2(xml):
         }
 
         try:
-            sym['t_rev'] = u'1' if symmetry['info']['@time_reversal'] else u'0'
+            sym['t_rev'] = '1' if symmetry['info']['@time_reversal'] else '0'
         except KeyError:
-            sym['t_rev'] = u'0'
+            sym['t_rev'] = '0'
 
         try:
             sym['equivalent_atoms'] = symmetry['equivalent_atoms']['$']
@@ -212,8 +213,8 @@ def parse_pw_xml_post_6_2(xml):
 
     if (nsym != len(symmetries)) or (nrot != len(symmetries) + len(lattice_symmetries)):
         logs.warning.append(
-            'Inconsistent number of symmetries: nsym={}, nrot={}, len(symmetries)={}, len(lattice_symmetries)={}'.format(
-                nsym, nrot, len(symmetries), len(lattice_symmetries))
+            'Inconsistent number of symmetries: nsym={}, nrot={}, len(symmetries)={}, len(lattice_symmetries)={}'.
+            format(nsym, nrot, len(symmetries), len(lattice_symmetries))
         )
 
     xml_data = {
@@ -221,13 +222,13 @@ def parse_pw_xml_post_6_2(xml):
         # Signals whether the XML file is complete
         # and can be used for post-processing. Everything should be in the XML now, but in
         # any case, the new XML schema should mostly protect from incomplete files.
-        'lkpoint_dir': False, # Currently not printed in the new format.
-            # Signals whether kpt-data are written in sub-directories.
-            # Was generally true in the old format, but now all the eigenvalues are
-            # in the XML file, under output / band_structure, so this is False.
-        'charge_density': u'./charge-density.dat', # A file name. Not printed in the new format.
-            # The filename and path are considered fixed: <outdir>/<prefix>.save/charge-density.dat
-            # TODO: change to .hdf5 if output format is HDF5 (issue #222)
+        'lkpoint_dir': False,  # Currently not printed in the new format.
+        # Signals whether kpt-data are written in sub-directories.
+        # Was generally true in the old format, but now all the eigenvalues are
+        # in the XML file, under output / band_structure, so this is False.
+        'charge_density': './charge-density.dat',  # A file name. Not printed in the new format.
+        # The filename and path are considered fixed: <outdir>/<prefix>.save/charge-density.dat
+        # TODO: change to .hdf5 if output format is HDF5 (issue #222)
         'rho_cutoff_units': 'eV',
         'wfc_cutoff_units': 'eV',
         'fermi_energy_units': 'eV',
@@ -257,14 +258,15 @@ def parse_pw_xml_post_6_2(xml):
         'lsda': lsda,
         'number_of_spin_components': nspin,
         'no_time_rev_operations': inputs['symmetry_flags']['no_t_rev'],
-        'inversion_symmetry': inversion_symmetry,  # the old tag was INVERSION_SYMMETRY and was set to (from the code): "invsym    if true the system has inversion symmetry"
+        'inversion_symmetry':
+        inversion_symmetry,  # the old tag was INVERSION_SYMMETRY and was set to (from the code): "invsym    if true the system has inversion symmetry"
         'number_of_bravais_symmetries': nrot,  # lattice symmetries
-        'number_of_symmetries': nsym,          # crystal symmetries
+        'number_of_symmetries': nsym,  # crystal symmetries
         'wfc_cutoff': inputs['basis']['ecutwfc'] * hartree_to_ev,
         'rho_cutoff': outputs['basis_set']['ecutrho'] * hartree_to_ev,  # not always printed in input->basis
         'smooth_fft_grid': [value for _, value in sorted(outputs['basis_set']['fft_smooth'].items())],
         'dft_exchange_correlation': inputs['dft']['functional'],  # TODO: also parse optional elements of 'dft' tag
-            # WARNING: this is different between old XML and new XML
+        # WARNING: this is different between old XML and new XML
         'spin_orbit_calculation': spin_orbit_calculation,
         'q_real_space': outputs['algorithmic_info']['real_space_q'],
     }
@@ -319,13 +321,19 @@ def parse_pw_xml_post_6_2(xml):
         else:
             spins = True
             if num_bands_up != num_bands_down:
-                raise XMLParseError('different number of bands for spin channels: {} and {}'.format(num_bands_up, num_bands_down))
+                raise XMLParseError(
+                    'different number of bands for spin channels: {} and {}'.format(num_bands_up, num_bands_down)
+                )
 
             if num_bands is not None and num_bands != num_bands_up + num_bands_down:
-                raise XMLParseError('Inconsistent number of bands: nbnd={}, nbnd_up={}, nbnd_down={}'.format(num_bands, num_bands_up, num_bands_down))
+                raise XMLParseError(
+                    'Inconsistent number of bands: nbnd={}, nbnd_up={}, nbnd_down={}'.format(
+                        num_bands, num_bands_up, num_bands_down
+                    )
+                )
 
             if num_bands is None:
-                num_bands = num_bands_up + num_bands_down   # backwards compatibility;
+                num_bands = num_bands_up + num_bands_down  # backwards compatibility;
 
         k_points = []
         k_points_weights = []
@@ -353,15 +361,19 @@ def parse_pw_xml_post_6_2(xml):
         band_occupations = np.array(band_occupations)
 
         if not spins:
-            parser_assert_equal(band_eigenvalues.shape, (1, num_k_points, num_bands),
-                                'Unexpected shape of band_eigenvalues')
-            parser_assert_equal(band_occupations.shape, (1, num_k_points, num_bands),
-                                'Unexpected shape of band_occupations')
+            parser_assert_equal(
+                band_eigenvalues.shape, (1, num_k_points, num_bands), 'Unexpected shape of band_eigenvalues'
+            )
+            parser_assert_equal(
+                band_occupations.shape, (1, num_k_points, num_bands), 'Unexpected shape of band_occupations'
+            )
         else:
-            parser_assert_equal(band_eigenvalues.shape, (2, num_k_points, num_bands_up),
-                                'Unexpected shape of band_eigenvalues')
-            parser_assert_equal(band_occupations.shape, (2, num_k_points, num_bands_up),
-                                'Unexpected shape of band_occupations')
+            parser_assert_equal(
+                band_eigenvalues.shape, (2, num_k_points, num_bands_up), 'Unexpected shape of band_eigenvalues'
+            )
+            parser_assert_equal(
+                band_occupations.shape, (2, num_k_points, num_bands_up), 'Unexpected shape of band_occupations'
+            )
 
         if not spins:
             xml_data['number_of_bands'] = num_bands
@@ -461,8 +473,10 @@ def parse_pw_xml_post_6_2(xml):
         polarization = berry_phase['totalPolarization']['polarization']['$']
         polarization_units = berry_phase['totalPolarization']['polarization']['@Units']
         polarization_modulus = berry_phase['totalPolarization']['modulus']
-        parser_assert(polarization_units in ['e/bohr^2', 'C/m^2'],
-                      "Unsupported units '{}' of total polarization".format(polarization_units))
+        parser_assert(
+            polarization_units in ['e/bohr^2', 'C/m^2'],
+            "Unsupported units '{}' of total polarization".format(polarization_units)
+        )
         if polarization_units == 'e/bohr^2':
             polarization *= e_bohr2_to_coulomb_m2
             polarization_modulus *= e_bohr2_to_coulomb_m2
@@ -483,27 +497,35 @@ def parse_pw_xml_post_6_2(xml):
         # - individual electronic phases and weights
 
     # TODO: We should put the `non_periodic_cell_correction` string in (?)
-    atoms = [[atom['@name'], [coord * bohr_to_ang for coord in atom['$']]] for atom in outputs['atomic_structure']['atomic_positions']['atom']]
+    atoms = [[atom['@name'], [coord * bohr_to_ang
+                              for coord in atom['$']]]
+             for atom in outputs['atomic_structure']['atomic_positions']['atom']]
     species = outputs['atomic_species']['species']
     structure_data = {
-        'atomic_positions_units': 'Angstrom',
-        'direct_lattice_vectors_units': 'Angstrom',
+        'atomic_positions_units':
+        'Angstrom',
+        'direct_lattice_vectors_units':
+        'Angstrom',
         # ??? 'atoms_if_pos_list': [[1, 1, 1], [1, 1, 1]],
-        'number_of_atoms': outputs['atomic_structure']['@nat'],
-        'lattice_parameter': output_alat_angstrom,
+        'number_of_atoms':
+        outputs['atomic_structure']['@nat'],
+        'lattice_parameter':
+        output_alat_angstrom,
         'reciprocal_lattice_vectors': [
-            outputs['basis_set']['reciprocal_lattice']['b1'],
-            outputs['basis_set']['reciprocal_lattice']['b2'],
+            outputs['basis_set']['reciprocal_lattice']['b1'], outputs['basis_set']['reciprocal_lattice']['b2'],
             outputs['basis_set']['reciprocal_lattice']['b3']
         ],
-        'atoms': atoms,
+        'atoms':
+        atoms,
         'cell': {
             'lattice_vectors': lattice_vectors,
             'volume': cell_volume(*lattice_vectors),
             'atoms': atoms,
         },
-        'lattice_parameter_xml': output_alat_bohr,
-        'number_of_species': outputs['atomic_species']['@ntyp'],
+        'lattice_parameter_xml':
+        output_alat_bohr,
+        'number_of_species':
+        outputs['atomic_species']['@ntyp'],
         'species': {
             'index': [i + 1 for i, specie in enumerate(species)],
             'pseudo': [specie['pseudo_file'] for specie in species],

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """A basic parser for the common format of QE."""
-from __future__ import absolute_import
 from aiida_quantumespresso.parsers import get_parser_info
 
 __all__ = ('parse_output_base', 'parse_output_error', 'convert_qe_time_to_sec', 'convert_qe2aiida_structure')
@@ -128,12 +127,9 @@ def convert_qe_time_to_sec(timestr):
         seconds = '0.'
 
     if rest.strip():
-        raise ValueError("Something remained at the end of the string '{}': '{}'"
-                         .format(timestr, rest))
+        raise ValueError("Something remained at the end of the string '{}': '{}'".format(timestr, rest))
 
-    num_seconds = (
-        float(seconds) + float(minutes) * 60. +
-        float(hours) * 3600. + float(days) * 86400.)
+    num_seconds = (float(seconds) + float(minutes) * 60. + float(hours) * 3600. + float(days) * 86400.)
 
     return num_seconds
 

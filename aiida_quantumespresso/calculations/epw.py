@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
 """Plugin to create a Quantum Espresso epw.x input file."""
-from __future__ import absolute_import
-
-from __future__ import print_function
 import os
 import numpy as np
-import six
-from six.moves import range
 
 from aiida import orm
 from aiida.common import datastructures, exceptions
@@ -42,10 +37,11 @@ class EpwCalculation(CalcJob):
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
-        super(EpwCalculation, cls).define(spec)
-        spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
-        spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
+        super().define(spec)
+        spec.input('metadata.options.input_filename', valid_type=str, default=cls._DEFAULT_INPUT_FILE)
+        spec.input('metadata.options.output_filename', valid_type=str, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)
         spec.input('kpoints', valid_type=orm.KpointsData, help='coarse kpoint mesh')
         spec.input('qpoints', valid_type=orm.KpointsData, help='coarse qpoint mesh')
@@ -58,10 +54,14 @@ class EpwCalculation(CalcJob):
         spec.input('parent_folder_ph', valid_type=orm.RemoteData, help='the folder of a completed `PhCalculation`')
 
     def prepare_for_submission(self, folder):  # pylint: disable=too-many-statements,too-many-branches
-        """Create the input files from the input nodes passed to this instance of the `CalcJob`.
+        """Prepare the calculation job for submission by transforming input nodes into input files.
 
-        :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
-        :return: `aiida.common.datastructures.CalcInfo` instance
+        In addition to the input files being written to the sandbox folder, a `CalcInfo` instance will be returned that
+        contains lists of files that need to be copied to the remote machine before job submission, as well as file
+        lists that are to be retrieved after job completion.
+
+        :param folder: a sandbox folder to temporarily write files on disk.
+        :return: :py:`~aiida.common.datastructures.CalcInfo` instance.
         """
 
         def test_offset(offset):
@@ -109,7 +109,7 @@ class EpwCalculation(CalcJob):
 
         # I put the first-level keys as uppercase (i.e., namelist and card names) and the second-level keys as lowercase
         parameters = _uppercase_dict(self.inputs.parameters.get_dict(), dict_name='parameters')
-        parameters = {k: _lowercase_dict(v, dict_name=k) for k, v in six.iteritems(parameters)}
+        parameters = {k: _lowercase_dict(v, dict_name=k) for k, v in parameters.items()}
 
         if 'INPUTEPW' not in parameters:
             raise exceptions.InputValidationError('required namelist INPUTEPW not specified')
@@ -188,18 +188,18 @@ class EpwCalculation(CalcJob):
 
         # add here the list of point coordinates
         if len(list_of_points) > 1:
-            postpend_text = u'{} cartesian\n'.format(len(list_of_points))
+            postpend_text = '{} cartesian\n'.format(len(list_of_points))
             for points in list_of_points:
-                postpend_text += u'{0:18.10f} {1:18.10f} {2:18.10f} \n'.format(*points)
+                postpend_text += '{0:18.10f} {1:18.10f} {2:18.10f} \n'.format(*points)
 
         with folder.open(self.metadata.options.input_filename, 'w') as infile:
             for namelist_name in namelists_toprint:
-                infile.write(u'&{0}\n'.format(namelist_name))
+                infile.write('&{0}\n'.format(namelist_name))
                 # namelist content; set to {} if not present, so that we leave an empty namelist
                 namelist = parameters.pop(namelist_name, {})
-                for key, value in sorted(six.iteritems(namelist)):
+                for key, value in sorted(namelist.items()):
                     infile.write(convert_input_to_namelist_entry(key, value))
-                infile.write(u'/\n')
+                infile.write('/\n')
 
             # add list of qpoints if required
             if postpend_text is not None:

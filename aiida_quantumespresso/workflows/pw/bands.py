@@ -1,16 +1,12 @@
 # -*- coding: utf-8 -*-
 """Workchain to compute a band structure for a given structure using Quantum ESPRESSO pw.x."""
-from __future__ import absolute_import
-
-from six.moves import map
-
 from aiida import orm
 from aiida.common import AttributeDict
 from aiida.plugins import WorkflowFactory
 from aiida.engine import WorkChain, ToContext, if_
 
+from aiida_quantumespresso.calculations.functions.seekpath_structure_analysis import seekpath_structure_analysis
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
-from aiida_quantumespresso.workflows.functions.seekpath_structure_analysis import seekpath_structure_analysis
 
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
@@ -55,7 +51,7 @@ class PwBandsWorkChain(WorkChain):
     def define(cls, spec):
         """Define the process specification."""
         # yapf: disable
-        super(PwBandsWorkChain, cls).define(spec)
+        super().define(spec)
         spec.expose_inputs(PwRelaxWorkChain, namespace='relax', exclude=('clean_workdir', 'structure'),
             namespace_options={'required': False, 'populate_defaults': False,
             'help': 'Inputs for the `PwRelaxWorkChain`, if not specified at all, the relaxation step is skipped.'})
@@ -253,7 +249,7 @@ class PwBandsWorkChain(WorkChain):
 
     def on_terminated(self):
         """Clean the working directories of all child calculations if `clean_workdir=True` in the inputs."""
-        super(PwBandsWorkChain, self).on_terminated()
+        super().on_terminated()
 
         if self.inputs.clean_workdir.value is False:
             self.report('remote folders will not be cleaned')

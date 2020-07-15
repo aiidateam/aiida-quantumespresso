@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 """`CalcJob` implementation for the pp.x code of Quantum ESPRESSO."""
-from __future__ import absolute_import
-
 import os
-import six
-from six.moves import range
 
 from aiida import orm
 from aiida.common import datastructures, exceptions
@@ -72,20 +68,24 @@ class PpCalculation(CalcJob):
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
-        super(PpCalculation, cls).define(spec)
+        super().define(spec)
         spec.input('parent_folder', valid_type=(orm.RemoteData, orm.FolderData), required=True,
             help='Output folder of a completed `PwCalculation`')
         spec.input('parameters', valid_type=orm.Dict, required=True, validator=validate_parameters,
             help='Use a node that specifies the input parameters for the namelists')
-        spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
-        spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
-        spec.input('metadata.options.parser_name', valid_type=six.string_types, default='quantumespresso.pp')
+        spec.input('settings', valid_type=orm.Dict, required=False,
+            help='Optional parameters to affect the way the calculation job is performed.')
+        spec.input('metadata.options.input_filename', valid_type=str, default=cls._DEFAULT_INPUT_FILE)
+        spec.input('metadata.options.output_filename', valid_type=str, default=cls._DEFAULT_OUTPUT_FILE)
+        spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.pp')
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)
         spec.input('metadata.options.keep_plot_file', valid_type=bool, default=False)
 
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.output('output_data', valid_type=orm.ArrayData)
+        spec.output_namespace('output_data_multiple', valid_type=orm.ArrayData, dynamic=True)
         spec.default_output_node = 'output_parameters'
 
         # Standard exceptions
@@ -109,22 +109,34 @@ class PpCalculation(CalcJob):
 
         # Output datafile related exceptions
         spec.exit_code(330, 'ERROR_OUTPUT_DATAFILE_MISSING',
-            message='The retrieved folder did not contain the required formatted data output file.')
+            message='The formatted data output file `{filename}` was not present in the retrieved (temporary) folder.')
         spec.exit_code(331, 'ERROR_OUTPUT_DATAFILE_READ',
-            message='The formatted data output file could not be read.')
+            message='The formatted data output file `{filename}` could not be read.')
         spec.exit_code(332, 'ERROR_UNSUPPORTED_DATAFILE_FORMAT',
             message='The data file format is not supported by the parser')
+        spec.exit_code(333, 'ERROR_OUTPUT_DATAFILE_PARSE',
+            message='The formatted data output file `{filename}` could not be parsed')
 
     def prepare_for_submission(self, folder):  # pylint: disable=too-many-branches,too-many-statements
-        """Create the input files from the input nodes passed to this instance of the `CalcJob`.
+        """Prepare the calculation job for submission by transforming input nodes into input files.
 
-        :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
-        :return: `aiida.common.datastructures.CalcInfo` instance
+        In addition to the input files being written to the sandbox folder, a `CalcInfo` instance will be returned that
+        contains lists of files that need to be copied to the remote machine before job submission, as well as file
+        lists that are to be retrieved after job completion.
+
+        :param folder: a sandbox folder to temporarily write files on disk.
+        :return: :py:`~aiida.common.datastructures.CalcInfo` instance.
         """
 
         # Put the first-level keys as uppercase (i.e., namelist and card names) and the second-level keys as lowercase
         parameters = _uppercase_dict(self.inputs.parameters.get_dict(), dict_name='parameters')
-        parameters = {k: _lowercase_dict(v, dict_name=k) for k, v in six.iteritems(parameters)}
+        parameters = {k: _lowercase_dict(v, dict_name=k) for k, v in parameters.items()}
+
+        # Same for settings.
+        if 'settings' in self.inputs:
+            settings = _uppercase_dict(self.inputs.settings.get_dict(), dict_name='settings')
+        else:
+            settings = {}
 
         # Set default values. NOTE: this is different from PW/CP
         for blocked in self._blocked_keywords:
@@ -156,12 +168,12 @@ class PpCalculation(CalcJob):
         input_filename = self.inputs.metadata.options.input_filename
         with folder.open(input_filename, 'w') as infile:
             for namelist_name in namelists_toprint:
-                infile.write(u'&{0}\n'.format(namelist_name))
+                infile.write('&{0}\n'.format(namelist_name))
                 # namelist content; set to {} if not present, so that we leave an empty namelist
                 namelist = parameters.pop(namelist_name, {})
-                for key, value in sorted(six.iteritems(namelist)):
+                for key, value in sorted(namelist.items()):
                     infile.write(convert_input_to_namelist_entry(key, value))
-                infile.write(u'/\n')
+                infile.write('/\n')
 
         # Check for specified namelists that are not expected
         if parameters:
@@ -200,6 +212,7 @@ class PpCalculation(CalcJob):
                 ))
 
         codeinfo = datastructures.CodeInfo()
+        codeinfo.cmdline_params = settings.pop('CMDLINE', [])
         codeinfo.stdin_name = self.inputs.metadata.options.input_filename
         codeinfo.stdout_name = self.inputs.metadata.options.output_filename
         codeinfo.code_uuid = self.inputs.code.uuid
@@ -209,13 +222,22 @@ class PpCalculation(CalcJob):
         calcinfo.local_copy_list = local_copy_list
         calcinfo.remote_copy_list = remote_copy_list
 
-        # Retrieve by default the output file and plot file
-        calcinfo.retrieve_list = []
+        # Retrieve by default the output file
+        calcinfo.retrieve_list = [self.inputs.metadata.options.output_filename]
         calcinfo.retrieve_temporary_list = []
-        calcinfo.retrieve_list.append(self.inputs.metadata.options.output_filename)
+
+        # Depending on the `plot_num` and the corresponding parameters, more than one pair of `filplot` + `fileout`
+        # files may be written. In that case, the data files will have `filplot` as a prefix with some suffix to
+        # distinguish them from one another. The `fileout` filename will be the full data filename with the `fileout`
+        # value as a suffix.
+        retrieve_tuples = [
+            self._FILEOUT,
+            ('{}_*{}'.format(self._FILPLOT, self._FILEOUT), '.', 0)
+        ]
+
         if self.inputs.metadata.options.keep_plot_file:
-            calcinfo.retrieve_list.append(self._FILEOUT)
+            calcinfo.retrieve_list.extend(retrieve_tuples)
         else:
-            calcinfo.retrieve_temporary_list.append(self._FILEOUT)
+            calcinfo.retrieve_temporary_list.extend(retrieve_tuples)
 
         return calcinfo

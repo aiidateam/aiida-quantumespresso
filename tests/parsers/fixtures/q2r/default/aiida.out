@@ -1,16 +1,16 @@
 
-     Program Q2R v.6.1 (svn rev. 13369) starts on  9May2019 at  9:59:29 
+     Program Q2R v.6.1 (svn rev. 13369) starts on  9May2019 at  9:59:29
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
          "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
-          URL http://www.quantum-espresso.org", 
+          URL http://www.quantum-espresso.org",
      in publications or presentations arising from this work. More details at
      http://www.quantum-espresso.org/quote
 
      Parallel version (MPI), running on     1 processors
 
-     reading grid info from file DYN_MAT/dynamical-matrix-0    
+     reading grid info from file DYN_MAT/dynamical-matrix-0
   reading force constants from file DYN_MAT/dynamical-matrix-1
  macroscopic fields = T
   57.36256  -0.00000  -0.00000
@@ -34,7 +34,7 @@
      Q2R          :     0.00s CPU         0.00s WALL
 
 
-   This run was terminated on:   9:59:29   9May2019            
+   This run was terminated on:   9:59:29   9May2019
 
 =------------------------------------------------------------------------------=
    JOB DONE.

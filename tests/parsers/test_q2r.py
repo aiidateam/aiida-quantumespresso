@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Tests for the `Q2rParser`."""
-from __future__ import absolute_import
-
 from aiida import orm
 
 

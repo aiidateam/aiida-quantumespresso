@@ -160,8 +160,3 @@ Compact script
 Download: :download:`this example script <pwimmigrant_short_example.py>`
 
 .. literalinclude:: pwimmigrant_short_example.py
-
-
-
-
-

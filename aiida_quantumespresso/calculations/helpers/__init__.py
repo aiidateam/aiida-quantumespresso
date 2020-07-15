@@ -1,14 +1,10 @@
 # -*- coding: utf-8 -*-
 """Utilities to automatically format, convert and validate data structures from python to fortran."""
-from __future__ import absolute_import
-from __future__ import print_function
-
 import copy
 import difflib
 import os
 import xml.dom.minidom
 from packaging.version import Version
-import six
 
 from aiida.common import InputValidationError, InternalError
 
@@ -18,13 +14,11 @@ class QEInputValidationError(InputValidationError):
 
 
 def _check_and_convert(keyword, val, expected_type):
-    """
-    val: the value to be read and converted to a Fortran-friendly string.
-    expected_type: a string with the expected type. Can be:
-      INTEGER
-      REAL
-      CHARACTER
-      LOGICAL
+    """Check and convert the value for the given keyword against an expected type.
+
+    :param keyword: the keyword
+    :param val: value for the given keyword
+    :param expected_type: type the value should have: [`INTEGER`, `REAL`, `CHARACTER`, `LOGICAL`]
     """
     # Note that bool should come before integer, because a boolean matches also
     # isinstance(...,int)
@@ -34,19 +28,19 @@ def _check_and_convert(keyword, val, expected_type):
         else:
             raise TypeError('Expected a boolean for keyword {}, found {} instead'.format(keyword, type(val)))
     elif expected_type.upper() == 'REAL':
-        if isinstance(val, six.integer_types):
+        if isinstance(val, int):
             outval = float(val)
         elif isinstance(val, float):
             outval = val
         else:
             raise TypeError('Expected a float for keyword {}, found {} instead'.format(keyword, type(val)))
     elif expected_type.upper() == 'INTEGER':
-        if isinstance(val, six.integer_types):
+        if isinstance(val, int):
             outval = val
         else:
             raise TypeError('Expected an integer for keyword {}, found {} instead'.format(keyword, type(val)))
     elif expected_type.upper() == 'CHARACTER':
-        if isinstance(val, six.string_types):
+        if isinstance(val, str):
             outval = val
         else:
             raise TypeError('Expected a string for keyword {}, found {} instead'.format(keyword, type(val)))
@@ -57,9 +51,10 @@ def _check_and_convert(keyword, val, expected_type):
 
 
 def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mode=False, version='6.2'):
-    """Validate if the input dictionary for Quantum ESPRESSO is valid. Return the dictionary (possibly with small
-    variations: e.g. convert integer to float where necessary, recreate the proper structure if flat_mode is True, ...)
-    to use as input parameters (use_parameters) for the pw.x calculation.
+    """Validate if the input dictionary for Quantum ESPRESSO is valid.
+
+    Return the dictionary (possibly with small variations: e.g. convert integer to float where necessary, recreate the
+    proper structure if flat_mode is True, ...) to use as input parameters (use_parameters) for the pw.x calculation.
 
     :param input_params: If flat_mode is True, pass a dictionary
         with 'key' = value; use the correct type
@@ -139,13 +134,13 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
         input_params_internal = {}
         input_original_namelists = {}
         all_input_namelists = set()
-        for namelist, content in six.iteritems(input_params):
+        for namelist, content in input_params.items():
             if not isinstance(content, dict):
                 raise QEInputValidationError(
                     "The content associated to the namelist '{}' must be a dictionary".format(namelist)
                 )
             all_input_namelists.add(namelist)
-            for key, value in six.iteritems(content):
+            for key, value in content.items():
                 input_params_internal[key] = copy.deepcopy(value)
                 if key in input_original_namelists:
                     err_str = "The keyword '{}' was specified both in the namelist {} and {}.".format(
@@ -382,7 +377,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
     # the compulsory ones at the end
     inserted_kws = []
     # I parse each element of the input dictionary
-    for keyword, value in six.iteritems(input_params_internal):
+    for keyword, value in input_params_internal.items():
         keyword = keyword.lower()
 
         if keyword in valid_kws:
@@ -449,7 +444,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
                         continue
 
                 outdict = {}
-                for kindname, found_item in six.iteritems(value):
+                for kindname, found_item in value.items():
                     if kindname not in atomic_species_list:
                         err_str = "Error, '{}' is not a valid kind name.".format(kindname)
                         if stop_at_first_error:

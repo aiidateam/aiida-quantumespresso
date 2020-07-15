@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-
-import six
-from six.moves import range
-
 from aiida.common import NotExistent
 from aiida.orm import Dict
 
@@ -132,7 +127,9 @@ class NebParser(Parser):
                 return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 
             try:
-                parsed_data_stdout, logs_stdout = parse_pw_stdout(pw_out_text, pw_input_dict, parser_options, parsed_data_xml)
+                parsed_data_stdout, logs_stdout = parse_pw_stdout(
+                    pw_out_text, pw_input_dict, parser_options, parsed_data_xml
+                )
             except Exception:
                 return self.exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION)
 
@@ -189,7 +186,7 @@ class NebParser(Parser):
         if parser_options is not None and parser_options.get('all_iterations', False):
             if iteration_data:
                 arraydata = ArrayData()
-                for k, v in six.iteritems(iteration_data):
+                for k, v in iteration_data.items():
                     arraydata.set_array(k, numpy.array(v))
                 self.out('iteration_array', arraydata)
 

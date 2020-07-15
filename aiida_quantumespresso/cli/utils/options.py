@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """Pre-defined overridable options for commonly used command line interface parameters."""
-from __future__ import absolute_import
-
-import six
 import click
 
 from aiida.cmdline.params import types
@@ -11,11 +8,11 @@ from aiida.cmdline.params.options import OverridableOption
 from . import validate
 
 STRUCTURE = OverridableOption(
-    '-s', '--structure', type=types.DataParamType(sub_classes=('aiida.data:structure',)), help=u'StructureData node.'
+    '-s', '--structure', type=types.DataParamType(sub_classes=('aiida.data:structure',)), help='StructureData node.'
 )
 
 PSEUDO_FAMILY = OverridableOption(
-    '-p', '--pseudo-family', 'pseudo_family', type=click.STRING, help=u'Pseudo potential family name.'
+    '-p', '--pseudo-family', 'pseudo_family', type=click.STRING, help='Pseudo potential family name.'
 )
 
 KPOINTS_DISTANCE = OverridableOption(
@@ -24,7 +21,7 @@ KPOINTS_DISTANCE = OverridableOption(
     type=click.FLOAT,
     default=0.5,
     show_default=True,
-    help=u'The minimal distance between k-points in reciprocal space in inverse Ångström.'
+    help='The minimal distance between k-points in reciprocal space in inverse Ångström.'
 )
 
 KPOINTS_MESH = OverridableOption(
@@ -35,7 +32,7 @@ KPOINTS_MESH = OverridableOption(
     type=click.INT,
     show_default=True,
     callback=validate.validate_kpoints_mesh,
-    help=u'The number of points in the kpoint mesh along each basis vector.'
+    help='The number of points in the kpoint mesh along each basis vector.'
 )
 
 QPOINTS_MESH = OverridableOption(
@@ -46,7 +43,7 @@ QPOINTS_MESH = OverridableOption(
     type=click.INT,
     show_default=True,
     callback=validate.validate_kpoints_mesh,
-    help=u'The number of points in the qpoint mesh along each basis vector.'
+    help='The number of points in the qpoint mesh along each basis vector.'
 )
 
 KFPOINTS_MESH = OverridableOption(
@@ -57,7 +54,7 @@ KFPOINTS_MESH = OverridableOption(
     type=click.INT,
     show_default=True,
     callback=validate.validate_kpoints_mesh,
-    help=u'The number of points in the fine kpoint mesh along each basis vector.'
+    help='The number of points in the fine kpoint mesh along each basis vector.'
 )
 
 QFPOINTS_MESH = OverridableOption(
@@ -68,7 +65,7 @@ QFPOINTS_MESH = OverridableOption(
     type=click.INT,
     show_default=True,
     callback=validate.validate_kpoints_mesh,
-    help=u'The number of points in the fine qpoint mesh along each basis vector.'
+    help='The number of points in the fine qpoint mesh along each basis vector.'
 )
 
 QIBZ = OverridableOption(
@@ -78,7 +75,7 @@ QIBZ = OverridableOption(
     multiple=True,
     type=click.FLOAT,
     show_default=True,
-    help=u'The IBZ q-point list. Must be the same as the previous PH calculation.'
+    help='The IBZ q-point list. Must be the same as the previous PH calculation.'
 )
 
 MAX_NUM_MACHINES = OverridableOption(
@@ -87,7 +84,7 @@ MAX_NUM_MACHINES = OverridableOption(
     type=click.INT,
     default=1,
     show_default=True,
-    help=u'The maximum number of machines (nodes) to use for the calculations.'
+    help='The maximum number of machines (nodes) to use for the calculations.'
 )
 
 MAX_WALLCLOCK_SECONDS = OverridableOption(
@@ -96,11 +93,11 @@ MAX_WALLCLOCK_SECONDS = OverridableOption(
     type=click.INT,
     default=1800,
     show_default=True,
-    help=u'the maximum wallclock time in seconds to set for the calculations.'
+    help='the maximum wallclock time in seconds to set for the calculations.'
 )
 
 WITH_MPI = OverridableOption(
-    '-i', '--with-mpi', is_flag=True, default=False, show_default=True, help=u'Run the calculations with MPI enabled.'
+    '-i', '--with-mpi', is_flag=True, default=False, show_default=True, help='Run the calculations with MPI enabled.'
 )
 
 PARENT_FOLDER = OverridableOption(
@@ -110,7 +107,7 @@ PARENT_FOLDER = OverridableOption(
     type=types.DataParamType(sub_classes=('aiida.data:remote',)),
     show_default=True,
     required=False,
-    help=u'The PK of a parent remote folder (for restarts).'
+    help='The PK of a parent remote folder (for restarts).'
 )
 
 DAEMON = OverridableOption(
@@ -119,7 +116,7 @@ DAEMON = OverridableOption(
     is_flag=True,
     default=False,
     show_default=True,
-    help=u'Submit the process to the daemon instead of running it locally.'
+    help='Submit the process to the daemon instead of running it locally.'
 )
 
 AUTOMATIC_PARALLELIZATION = OverridableOption(
@@ -128,7 +125,7 @@ AUTOMATIC_PARALLELIZATION = OverridableOption(
     is_flag=True,
     default=False,
     show_default=True,
-    help=u'Enable the automatic parallelization option of the workchain.'
+    help='Enable the automatic parallelization option of the workchain.'
 )
 
 CLEAN_WORKDIR = OverridableOption(
@@ -137,11 +134,11 @@ CLEAN_WORKDIR = OverridableOption(
     is_flag=True,
     default=False,
     show_default=True,
-    help=u'Clean the remote folder of all the launched calculations after completion of the workchain.'
+    help='Clean the remote folder of all the launched calculations after completion of the workchain.'
 )
 
 ECUTWFC = OverridableOption(
-    '-W', '--ecutwfc', type=click.FLOAT, default=30., show_default=True, help=u'The plane wave cutoff energy in Ry.'
+    '-W', '--ecutwfc', type=click.FLOAT, default=30., show_default=True, help='The plane wave cutoff energy in Ry.'
 )
 
 ECUTRHO = OverridableOption(
@@ -150,7 +147,7 @@ ECUTRHO = OverridableOption(
     type=click.FLOAT,
     default=240.,
     show_default=True,
-    help=u'The charge density cutoff energy in Ry.'
+    help='The charge density cutoff energy in Ry.'
 )
 
 HUBBARD_U = OverridableOption(
@@ -158,8 +155,8 @@ HUBBARD_U = OverridableOption(
     '--hubbard-u',
     nargs=2,
     multiple=True,
-    type=click.Tuple([six.text_type, float]),
-    help=u'Add a Hubbard U term to a specific kind.',
+    type=click.Tuple([str, float]),
+    help='Add a Hubbard U term to a specific kind.',
     metavar='<KIND MAGNITUDE>...'
 )
 
@@ -169,7 +166,7 @@ HUBBARD_V = OverridableOption(
     nargs=4,
     multiple=True,
     type=click.Tuple([int, int, int, float]),
-    help=u'Add a Hubbard V interaction between two sites.',
+    help='Add a Hubbard V interaction between two sites.',
     metavar='<SITE SITE TYPE MAGNITUDE>...'
 )
 
@@ -178,7 +175,7 @@ HUBBARD_FILE = OverridableOption(
     '--hubbard-file',
     'hubbard_file_pk',
     type=types.DataParamType(sub_classes=('aiida.data:singlefile',)),
-    help=u'SinglefileData containing Hubbard parameters from a HpCalculation to use as input for Hubbard V.'
+    help='SinglefileData containing Hubbard parameters from a HpCalculation to use as input for Hubbard V.'
 )
 
 STARTING_MAGNETIZATION = OverridableOption(
@@ -186,8 +183,8 @@ STARTING_MAGNETIZATION = OverridableOption(
     '--starting-magnetization',
     nargs=2,
     multiple=True,
-    type=click.Tuple([six.text_type, float]),
-    help=u'Add a starting magnetization to a specific kind.',
+    type=click.Tuple([str, float]),
+    help='Add a starting magnetization to a specific kind.',
     metavar='<KIND MAGNITUDE>...'
 )
 
@@ -196,7 +193,7 @@ SMEARING = OverridableOption(
     '--smearing',
     nargs=2,
     default=(None, None),
-    type=click.Tuple([six.text_type, float]),
-    help=u'Add smeared occupations by specifying the type and amount of smearing.',
+    type=click.Tuple([str, float]),
+    help='Add smeared occupations by specifying the type and amount of smearing.',
     metavar='<TYPE DEGAUSS>'
 )

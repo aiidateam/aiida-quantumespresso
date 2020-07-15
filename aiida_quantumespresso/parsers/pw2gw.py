@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """`Parser` implementation for the `Pw2gwCalculation` calculation job class."""
-from __future__ import absolute_import
-
 import numpy as np
 from io import StringIO
 from aiida import orm

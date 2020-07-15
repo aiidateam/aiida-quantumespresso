@@ -1,6 +1,6 @@
 output_parameters:
-  parser_info: aiida-quantumespresso parser pw.x v3.0.0
-  parser_version: 3.0.0
+  parser_info: aiida-quantumespresso parser pw.x v3.1.0
+  parser_version: 3.1.0
   parser_warnings: []
 output_trajectory:
   array|cells:

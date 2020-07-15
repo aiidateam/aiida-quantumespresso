@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=invalid-name,redefined-outer-name
 """Tests for the `PwParser`."""
-from __future__ import absolute_import
-
 import pytest
 
 from aiida import orm
@@ -24,7 +22,7 @@ def generate_inputs(generate_structure):
             'structure': generate_structure(),
             'kpoints': kpoints,
             'parameters': orm.Dict(dict=parameters),
-            'settings': orm.Dict(dict=settings) or orm.Dict(),
+            'settings': orm.Dict(dict=settings),
             'metadata': metadata or {}
         })
 

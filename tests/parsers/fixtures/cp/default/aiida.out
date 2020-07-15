@@ -1,10 +1,10 @@
 
-     Program CP v.6.0 (svn rev. 13079) starts on  7May2019 at 14:46: 9 
+     Program CP v.6.0 (svn rev. 13079) starts on  7May2019 at 14:46: 9
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
          "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
-          URL http://www.quantum-espresso.org", 
+          URL http://www.quantum-espresso.org",
      in publications or presentations arising from this work. More details at
      http://www.quantum-espresso.org/quote
 
@@ -28,7 +28,7 @@
 
    Main Simulation Parameters (from input)
    ---------------------------------------
-   Restart Mode       =      -1   from_scratch   
+   Restart Mode       =      -1   from_scratch
    Number of MD Steps =      10
    Print out every            1 MD Steps
    Reads from unit    =      50
@@ -124,7 +124,7 @@
     36    36    36      36    36     9       1     1     4
    Array leading dimensions ( nr1x, nr2x, nr3x )   =     36    36    36
    Local number of cell to store the grid ( nrxx ) =      11664
-   Number of x-y planes for each processors: 
+   Number of x-y planes for each processors:
    nr3l =     9    9    9    9
 
    Smooth Real Mesh
@@ -134,7 +134,7 @@
     25    25    25      25    25     7       1     1     4
    Array leading dimensions ( nr1x, nr2x, nr3x )   =     25    25    25
    Local number of cell to store the grid ( nrxx ) =       4375
-   Number of x-y planes for each processors: 
+   Number of x-y planes for each processors:
    nr3sl =     7    6    6    6
 
    Small Box Real Mesh
@@ -189,7 +189,7 @@
    -------------------------------
   nlinit  nh(is), ngb, is, kkbeta, lmaxq =           18        2479           1         829           5
 
-                        qqq 
+                        qqq
   -0.0772  -0.0666   0.0000   0.0000   0.0000   0.0000
   -0.0666  -0.0419   0.0000   0.0000   0.0000   0.0000
    0.0000   0.0000  -0.0095  -0.0249   0.0000   0.0000
@@ -221,7 +221,7 @@
   17  indv=  6   ang. mom=  2
   18  indv=  6   ang. mom=  2
 
-                        dion 
+                        dion
    0.2480   0.2226   0.0000   0.0000   0.0000   0.0000
    0.2226   0.5178   0.0000   0.0000   0.0000   0.0000
    0.0000   0.0000   0.0832   0.0571   0.0000   0.0000
@@ -316,7 +316,7 @@
 
 
 
-   Partial temperatures (for each ionic specie) 
+   Partial temperatures (for each ionic specie)
    Species  Temp (K)   Mean Square Displacement (a.u.)
         1   0.00E+00     0.0000E+00
 
@@ -395,7 +395,7 @@
      CP           :     5.61s CPU         5.64s WALL
 
 
-   This run was terminated on:  14:46:15   7May2019            
+   This run was terminated on:  14:46:15   7May2019
 
 =------------------------------------------------------------------------------=
    JOB DONE.

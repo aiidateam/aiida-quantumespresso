@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 """Utilities for pseudo potentials."""
-from __future__ import absolute_import
-
-import six
-
 from aiida.orm.nodes.data.upf import UpfData, get_pseudos_from_structure
 
 
@@ -37,7 +33,7 @@ def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=N
     elif pseudo_family:
         # This will already raise some exceptions, potentially, like the ones below
         pseudos = get_pseudos_from_structure(structure, pseudo_family.value)
-    elif isinstance(pseudos, (six.string_types, Str)):
+    elif isinstance(pseudos, (str, Str)):
         raise TypeError('you passed "pseudos" as a string - maybe you wanted to pass it as "pseudo_family" instead?')
 
     for kind in structure.get_kind_names():

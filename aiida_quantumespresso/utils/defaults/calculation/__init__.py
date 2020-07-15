@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=invalid-name
 """Module with default values of parameters used in Quantum ESPRESSO."""
-from __future__ import absolute_import
 
 from aiida.common.extendeddicts import AttributeDict
 

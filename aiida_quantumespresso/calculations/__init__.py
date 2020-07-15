@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
 """Base `CalcJob` for implementations for pw.x and cp.x of Quantum ESPRESSO."""
-from __future__ import absolute_import
-
 import abc
 import os
-import six
-from six.moves import zip
 
 from aiida import orm
 from aiida.common import datastructures, exceptions
@@ -67,10 +63,11 @@ class BasePwCpInputGenerator(CalcJob):
 
     @classmethod
     def define(cls, spec):
+        """Define the process specification."""
         # yapf: disable
-        super(BasePwCpInputGenerator, cls).define(spec)
-        spec.input('metadata.options.input_filename', valid_type=six.string_types, default=cls._DEFAULT_INPUT_FILE)
-        spec.input('metadata.options.output_filename', valid_type=six.string_types, default=cls._DEFAULT_OUTPUT_FILE)
+        super().define(spec)
+        spec.input('metadata.options.input_filename', valid_type=str, default=cls._DEFAULT_INPUT_FILE)
+        spec.input('metadata.options.output_filename', valid_type=str, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)  # Override default withmpi=False
         spec.input('structure', valid_type=orm.StructureData,
             help='The input structure.')
@@ -183,7 +180,7 @@ class BasePwCpInputGenerator(CalcJob):
 
             with folder.open(self._ENVIRON_INPUT_FILE_NAME, 'w') as handle:
                 handle.write('&ENVIRON\n')
-                for key, value in sorted(six.iteritems(environ_namelist)):
+                for key, value in sorted(environ_namelist.items()):
                     handle.write(convert_input_to_namelist_entry(key, value, mapping=mapping_species))
                 handle.write('/\n')
 
@@ -255,7 +252,7 @@ class BasePwCpInputGenerator(CalcJob):
         # and the second-level keys as lowercase
         # (deeper levels are unchanged)
         input_params = _uppercase_dict(parameters.get_dict(), dict_name='parameters')
-        input_params = {k: _lowercase_dict(v, dict_name=k) for k, v in six.iteritems(input_params)}
+        input_params = {k: _lowercase_dict(v, dict_name=k) for k, v in input_params.items()}
 
         # I remove unwanted elements (for the moment, instead, I stop; to change when we setup a reasonable logging)
         for blocked in cls._blocked_keywords:
@@ -559,14 +556,14 @@ class BasePwCpInputGenerator(CalcJob):
                                            "namelists using the NAMELISTS inside the 'settings' input "
                                            'node'.format(calculation_type))
 
-        inputfile = u''
+        inputfile = ''
         for namelist_name in namelists_toprint:
-            inputfile += u'&{0}\n'.format(namelist_name)
+            inputfile += '&{0}\n'.format(namelist_name)
             # namelist content; set to {} if not present, so that we leave an empty namelist
             namelist = input_params.pop(namelist_name, {})
             for key, value in sorted(namelist.items()):
                 inputfile += convert_input_to_namelist_entry(key, value, mapping=mapping_species)
-            inputfile += u'/\n'
+            inputfile += '/\n'
 
         # Write cards now
         inputfile += atomic_species_card
@@ -585,7 +582,7 @@ class BasePwCpInputGenerator(CalcJob):
 
     @staticmethod
     def _if_pos(fixed):
-        """Simple function that returns 0 if fixed is True, 1 otherwise.
+        """Return 0 if fixed is True, 1 otherwise.
 
         Useful to convert from the boolean value of fixed_coords to the value required by Quantum Espresso as if_pos.
         """
@@ -608,7 +605,7 @@ def _case_transform_dict(dictionary, dict_name, func_name, transform):
 
     if not isinstance(dictionary, dict):
         raise TypeError('{} accepts only dictionaries as argument, got {}'.format(func_name, type(dictionary)))
-    new_dict = dict((transform(str(k)), v) for k, v in six.iteritems(dictionary))
+    new_dict = dict((transform(str(k)), v) for k, v in dictionary.items())
     if len(new_dict) != len(dictionary):
         num_items = Counter(transform(str(k)) for k in dictionary.keys())
         double_keys = ','.join([k for k, v in num_items if v > 1])
@@ -620,7 +617,7 @@ def _case_transform_dict(dictionary, dict_name, func_name, transform):
 
 
 def _pop_parser_options(calc_job_instance, settings_dict, ignore_errors=True):
-    """This deletes any parser options from the settings dictionary.
+    """Delete any parser options from the settings dictionary.
 
     The parser options key is found via the get_parser_settings_key() method of the parser class specified as a metadata
     input.

@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-
-from six.moves import range
-
 from aiida import orm
 from aiida.common import exceptions
 from qe_tools.constants import invcm_to_THz

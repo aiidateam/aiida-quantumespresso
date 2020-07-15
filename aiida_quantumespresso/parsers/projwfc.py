@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division
 import re
 import fnmatch
 
 import numpy as np
-from six.moves import range
 
 from aiida.common import NotExistent, LinkType
 from aiida.orm import Dict, ProjectionData, BandsData, XyData, CalcJobNode
@@ -121,7 +119,7 @@ def spin_dependent_subparser(out_info_dict):
                     #sets relevant values in pdos_array
                     projection_arrays[i % od['k_states']][j % od['num_bands']][wave_id[l] - 1] = wave_fraction[l]
     except IndexError:
-        raise QEOutputParsingError('the standard out file does not ' 'comply with the official ' 'documentation.')
+        raise QEOutputParsingError('the standard out file does not comply with the official documentation.')
 
     bands_data = BandsData()
     # Attempts to retrieve the kpoints from the parent calc

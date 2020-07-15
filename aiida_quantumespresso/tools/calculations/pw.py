@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Tools for nodes created by running the `PwCalculation` class."""
-from __future__ import absolute_import
 from aiida.common import exceptions
 from aiida.tools.calculations import CalculationTools
 

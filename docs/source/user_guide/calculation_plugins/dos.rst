@@ -39,9 +39,9 @@ All output nodes can be accessed with the ``calculation.out`` method.
 
   Which will return the tuples (in order)::
 
-    [(u'Energy', Energy_array, 'eV')]
-    [(u'integrated_dos', integrated_dos_array, 'states'),
-     (u'dos', dos_array, 'states/eV')]
+    [('Energy', Energy_array, 'eV')]
+    [('integrated_dos', integrated_dos_array, 'states'),
+     ('dos', dos_array, 'states/eV')]
 
   Where the Energy_array is a numpy array given the energy values and the Dos_array is a numpy array giving the Dos values for each energy in the Energy_array. The
   integrated_dos_array returns the integral of the Dos_array from Emin to the given energy in the Energy_array.
@@ -52,6 +52,3 @@ Errors of the parsing are reported in the log of the calculation (accessible
 with the ``verdi calculation logshow`` command).
 Moreover, they are stored in the Dict under the key ``warnings``, and are
 accessible with ``Calculation.res.warnings``.
-
-
-

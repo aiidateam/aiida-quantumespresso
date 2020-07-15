@@ -21,7 +21,7 @@ jobs:
                     pip-docs-
 
         -   name: Set up Python
-            uses: actions/setup-python@v1
+            uses: actions/setup-python@v2
             with:
                 python-version: 3.8
 
@@ -52,13 +52,13 @@ jobs:
                     pip-pre-commit-
 
         -   name: Set up Python
-            uses: actions/setup-python@v1
+            uses: actions/setup-python@v2
             with:
-                python-version: 3.7
+                python-version: 3.8
 
         -   name: Install python dependencies
             run:
-                pip install -e .[dev]
+                pip install -e .[pre-commit,tests]
 
         -   name: Run pre-commit
             run:
@@ -70,7 +70,7 @@ jobs:
 
         strategy:
             matrix:
-                python-version: [2.7, 3.5, 3.6, 3.7, 3.8]
+                python-version: [3.5, 3.6, 3.7.7, 3.8]
 
         services:
             postgres:
@@ -99,7 +99,7 @@ jobs:
                     pip-${{ matrix.python-version }}-tests
 
         -   name: Set up Python ${{ matrix.python-version }}
-            uses: actions/setup-python@v1
+            uses: actions/setup-python@v2
             with:
                 python-version: ${{ matrix.python-version }}
 
@@ -111,8 +111,7 @@ jobs:
         -   name: Install python dependencies
             run: |
                 pip install --upgrade setuptools
-                pip install numpy==1.16.4
-                pip install -e .[dev]
+                pip install -e .[tests]
                 reentry scan
 
         -   name: Run pytest

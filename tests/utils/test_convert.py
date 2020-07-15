@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tests for :py:mod:`~aiida_quantumespresso.utils.convert`."""
-from __future__ import absolute_import
-
 import unittest
-import six
 
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
@@ -14,7 +11,7 @@ class TestUtilsConvertInputToNamelistEntry(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Define a test mapping."""
-        super(TestUtilsConvertInputToNamelistEntry, cls).setUpClass()
+        super().setUpClass()
         cls.mapping = {
             'Co': 1,
             'O': 3,
@@ -22,7 +19,7 @@ class TestUtilsConvertInputToNamelistEntry(unittest.TestCase):
 
     def validate_converted_output(self, parameters, expected):
         """Validate recursively the two dictionaries."""
-        for key, value in six.iteritems(parameters):
+        for key, value in parameters.items():
             converted = convert_input_to_namelist_entry(key, value, self.mapping)
             lines = [line for line in converted.split('\n') if line]
 
@@ -103,7 +100,7 @@ class TestUtilsConvertInputToNamelistEntry(unittest.TestCase):
             ]
         }
 
-        for key, value in six.iteritems(parameters):
+        for key, value in parameters.items():
             with self.assertRaises(ValueError):
                 convert_input_to_namelist_entry(key, value, self.mapping)
 
@@ -115,7 +112,7 @@ class TestUtilsConvertInputToNamelistEntry(unittest.TestCase):
             ]
         }
 
-        for key, value in six.iteritems(parameters):
+        for key, value in parameters.items():
             with self.assertRaises(ValueError):
                 convert_input_to_namelist_entry(key, value, self.mapping)
 
@@ -127,6 +124,6 @@ class TestUtilsConvertInputToNamelistEntry(unittest.TestCase):
             ]
         }
 
-        for key, value in six.iteritems(parameters):
+        for key, value in parameters.items():
             with self.assertRaises(ValueError):
                 convert_input_to_namelist_entry(key, value, None)

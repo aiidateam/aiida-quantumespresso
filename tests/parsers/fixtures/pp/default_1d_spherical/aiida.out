@@ -1,11 +1,11 @@
 
-     Program POST-PROC v.6.4 starts on 23Oct2019 at 10:42:53 
+     Program POST-PROC v.6.4 starts on 23Oct2019 at 10:42:53
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
          "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
          "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
-          URL http://www.quantum-espresso.org", 
+          URL http://www.quantum-espresso.org",
      in publications or presentations arising from this work. More details at
      http://www.quantum-espresso.org/quote
 
@@ -37,12 +37,12 @@
 
      Writing data to be plotted to file aiida.fileout
      Min, Max, imaginary charge:  -142.755892    7.580972    0.000000
-     Plot Type: 1D spherical average   Output format: gnuplot      
+     Plot Type: 1D spherical average   Output format: gnuplot
 
      POST-PROC    :      0.55s CPU      0.61s WALL
 
 
-   This run was terminated on:  10:42:53  23Oct2019            
+   This run was terminated on:  10:42:53  23Oct2019
 
 =------------------------------------------------------------------------------=
    JOB DONE.
