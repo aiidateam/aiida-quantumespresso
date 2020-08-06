@@ -6,7 +6,8 @@ import pytest
 from plumpy import ProcessState
 
 from aiida.common import AttributeDict
-from aiida.engine import ProcessHandlerReport
+from aiida.engine import ExitCode, ProcessHandlerReport
+from aiida.orm import Dict
 
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
@@ -23,7 +24,7 @@ def generate_workchain_pw(generate_workchain, generate_inputs_pw, generate_calc_
         process = generate_workchain(entry_point, {'pw': inputs, 'kpoints': kpoints})
 
         if exit_code is not None:
-            node = generate_calc_job_node()
+            node = generate_calc_job_node(inputs={'parameters': Dict()})
             node.set_process_state(ProcessState.FINISHED)
             node.set_exit_status(exit_code.status)
 
@@ -133,3 +134,12 @@ def test_handle_relax_recoverable_ionic_convergence_error(
 
     result = process.inspect_process()
     assert result.status == 0
+
+
+def test_sanity_check_no_bands(aiida_profile, generate_workchain_pw):
+    """Test that `sanity_check_insufficient_bands` does not except if there is no `output_band`, which is optional."""
+    process = generate_workchain_pw(exit_code=ExitCode(0))
+    process.setup()
+
+    calculation = process.ctx.children[-1]
+    assert process.sanity_check_insufficient_bands(calculation) is None
