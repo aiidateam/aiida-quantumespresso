@@ -49,18 +49,18 @@ def find_orbitals_from_statelines(out_info_dict):
     element_re = re.compile(r'atom\s*[0-9]+\s*\(\s*([A-Za-z]+?)\s*\)')
     if out_info_dict['spinorbit']:
         # spinorbit
-        lnum_re = re.compile(r'l=([0-9]+?)[^0-9]')
-        jnum_re = re.compile(r'j=([0-9.]+?)[^0-9.]')
-        mjnum_re = re.compile(r'm_j=([0-9]+?)[^0-9.]')
+        lnum_re = re.compile(r'l=\s*([0-9]+?)[^0-9]')
+        jnum_re = re.compile(r'j=\s*([0-9.]+?)[^0-9.]')
+        mjnum_re = re.compile(r'm_j=\s*([0-9]+?)[^0-9.]')
     elif not out_info_dict['collinear']:
         # non-collinear
-        lnum_re = re.compile(r'l=([0-9]+?)[^0-9]')
-        mnum_re = re.compile(r'm=([0-9]+?)[^0-9]')
-        sznum_re = re.compile(r's_z=([0-9.]*?)[^0-9.]')
+        lnum_re = re.compile(r'l=\s*([0-9]+?)[^0-9]')
+        mnum_re = re.compile(r'm=\s*([0-9]+?)[^0-9]')
+        sznum_re = re.compile(r's_z=\s*([0-9.]*?)[^0-9.]')
     else:
         # collinear / no spin
-        lnum_re = re.compile(r'l=([0-9]+?)[^0-9]')
-        mnum_re = re.compile(r'm=([0-9]+?)[^0-9]')
+        lnum_re = re.compile(r'l=\s*([0-9]+?)[^0-9]')
+        mnum_re = re.compile(r'm=\s*([0-9]+?)[^0-9]')
     wfc_lines = out_info_dict['wfc_lines']
     state_lines = [out_file[wfc_line] for wfc_line in wfc_lines]
     state_dicts = []
