@@ -20,11 +20,47 @@ def find_orbitals_from_statelines(out_info_dict):
     :param out_info_dict: contains various technical internals useful in parsing
     :return: orbitals, a list of orbitals suitable for setting ProjectionData
     """
+
+    # Format of statelines
+    # From PP/src/projwfc.f90: (since Oct. 8 2019)
+    #
+    # 1000 FORMAT (5x,"state #",i4,": atom ",i3," (",a3,"), wfc ",i2," (l=",i1)
+    # IF (lspinorb) THEN
+    # 1001 FORMAT (" j=",f3.1," m_j=",f4.1,")")
+    # ELSE IF (noncolin) THEN
+    # 1002 FORMAT (" m=",i2," s_z=",f4.1,")")
+    # ELSE
+    # 1003 FORMAT (" m=",i2,")")
+    # ENDIF
+    #
+    # Before:
+    # IF (lspinorb) THEN
+    # ...
+    # 1000    FORMAT (5x,"state #",i4,": atom ",i3," (",a3,"), wfc ",i2, &
+    #               " (j=",f3.1," l=",i1," m_j=",f4.1,")")
+    # ELSE
+    # ...
+    # 1500    FORMAT (5x,"state #",i4,": atom ",i3," (",a3,"), wfc ",i2, &
+    #               " (l=",i1," m=",i2," s_z=",f4.1,")")
+    # ENDIF
+
     out_file = out_info_dict['out_file']
-    atomnum_re = re.compile(r'atom (.*?)\(')
-    element_re = re.compile(r'\((.*?)\)')
-    lnum_re = re.compile(r'l=(.*?)m=')
-    mnum_re = re.compile(r'm=(.*?)\)')
+    atomnum_re = re.compile(r'atom\s*([0-9]+?)[^0-9]')
+    element_re = re.compile(r'atom\s*[0-9]+\s*\(\s*([A-Za-z]+?)\s*\)')
+    if out_info_dict['spinorbit']:
+        # spinorbit
+        lnum_re = re.compile(r'l=([0-9]+?)[^0-9]')
+        jnum_re = re.compile(r'j=([0-9.]+?)[^0-9.]')
+        mjnum_re = re.compile(r'm_j=([0-9]+?)[^0-9.]')
+    elif not out_info_dict['collinear']:
+        # non-collinear
+        lnum_re = re.compile(r'l=([0-9]+?)[^0-9]')
+        mnum_re = re.compile(r'm=([0-9]+?)[^0-9]')
+        sznum_re = re.compile(r's_z=([0-9.]*?)[^0-9.]')
+    else:
+        # collinear / no spin
+        lnum_re = re.compile(r'l=([0-9]+?)[^0-9]')
+        mnum_re = re.compile(r'm=([0-9]+?)[^0-9]')
     wfc_lines = out_info_dict['wfc_lines']
     state_lines = [out_file[wfc_line] for wfc_line in wfc_lines]
     state_dicts = []
@@ -35,8 +71,14 @@ def find_orbitals_from_statelines(out_info_dict):
             state_dict['atomnum'] -= 1  # to keep with orbital indexing
             state_dict['kind_name'] = element_re.findall(state_line)[0].strip()
             state_dict['angular_momentum'] = int(lnum_re.findall(state_line)[0])
-            state_dict['magnetic_number'] = int(mnum_re.findall(state_line)[0])
-            state_dict['magnetic_number'] -= 1  # to keep with orbital indexing
+            if out_info_dict['spinorbit']:
+                state_dict['total_angular_momentum'] = float(jnum_re.findall(state_line)[0])
+                state_dict['magnetic_number'] = float(mjnum_re.findall(state_line)[0])
+            else:
+                if not out_info_dict['collinear']:
+                    state_dict['spin'] = float(sznum_re.findall(state_line)[0])
+                state_dict['magnetic_number'] = int(mnum_re.findall(state_line)[0])
+                state_dict['magnetic_number'] -= 1  # to keep with orbital indexing
         except ValueError:
             raise QEOutputParsingError('State lines are not formatted in a standard way.')
         state_dicts.append(state_dict)
@@ -61,9 +103,14 @@ def find_orbitals_from_statelines(out_info_dict):
 
     # here we set the resulting state_dicts to a new set of orbitals
     orbitals = []
-    RealhydrogenOrbital = OrbitalFactory('realhydrogen')
+    if out_info_dict["spinorbit"]:
+        OrbitalCls = OrbitalFactory('spinorbithydrogen')
+    elif not out_info_dict["collinear"]:
+        OrbitalCls = OrbitalFactory('noncollinearhydrogen')
+    else:
+        OrbitalCls = OrbitalFactory('realhydrogen')
     for state_dict in state_dicts:
-        orbitals.append(RealhydrogenOrbital(**state_dict))
+        orbitals.append(OrbitalCls(**state_dict))
 
     return orbitals
 
@@ -353,8 +400,17 @@ class ProjwfcParser(Parser):
                 spin = True
             else:
                 spin = False
+            out_info_dict['spinorbit'] = parent_param.get_dict().get('spin_orbit_calculation', False)
+            out_info_dict['collinear'] = not parent_param.get_dict().get('non_colinear_calculation', False)
+            if not out_info_dict['collinear']:
+                # Sanity check
+                if nspin != 4:
+                    raise QEOutputParsingError('The calculation is non-collinear, but nspin is not set to 4!')
+                spin = False
         except KeyError:
             spin = False
+            out_info_dict['spinorbit'] = False
+            out_info_dict['collinear'] = True
         out_info_dict['spin'] = spin
 
         # changes k-numbers to match spin
