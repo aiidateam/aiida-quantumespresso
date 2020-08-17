@@ -77,7 +77,7 @@ def test_projwfc_spin(
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
 
-    for link_name in ['output_parameters', 'Dos', 'bands', 'projections']:
+    for link_name in ['output_parameters', 'Dos', 'bands_up', 'bands_down', 'projections_up', 'projections_down']:
         assert link_name in results, list(results.keys())
 
     data_regression.check({
