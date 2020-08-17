@@ -1,19 +1,17 @@
 # -*- coding: utf-8 -*-
-"""
-A module defining hydrogen-like orbitals in the simultaneous eigen-basis of
-H, J^2, L^2, S^2 and J_z operators, useful for projecting densities with
-spin-orbit coupling.
+"""A module defining hydrogen-like orbitals.
+
+The orbitals are defined in the simultaneous eigen-basis of H, J^2, L^2, S^2
+and J_z operators, useful for projecting densities with spin-orbit coupling.
 """
 
-from aiida.common.exceptions import ValidationError, InputValidationError
+from aiida.common.exceptions import ValidationError
 
 from aiida.tools.data.orbital.orbital import Orbital, validate_len3_list_or_none, validate_float_or_none
 
 
 def validate_j(value):
-    """
-    Validate the value of the total angular momentum
-    """
+    """Validate the value of the total angular momentum."""
     if not isinstance(value, (int, float)):
         raise ValidationError('total angular momentum (j) must be float')
 
@@ -27,9 +25,7 @@ def validate_j(value):
 
 
 def validate_l(value):
-    """
-    Validate the value of the angular momentum
-    """
+    """Validate the value of the angular momentum."""
     if not isinstance(value, int):
         raise ValidationError('angular momentum (l) must be integer')
 
@@ -40,9 +36,7 @@ def validate_l(value):
 
 
 def validate_mj(value):
-    """
-    Validate the value of the magnetic number
-    """
+    """Validate the value of the magnetic number."""
     if not isinstance(value, (int, float)):
         raise ValidationError('magnetic number (m_j) must be float')
 
@@ -53,9 +47,7 @@ def validate_mj(value):
 
 
 def validate_kind_name(value):
-    """
-    Validate the value of the kind_name
-    """
+    """Validate the value of the kind_name."""
     if value is not None and not isinstance(value, str):
         raise ValidationError('kind_name must be a string')
 
@@ -63,9 +55,7 @@ def validate_kind_name(value):
 
 
 def validate_n(value):
-    """
-    Validate the value of the number of radial nodes
-    """
+    """Validate the value of the number of radial nodes."""
     if not isinstance(value, int):
         raise ValidationError('number of radial nodes (n) must be integer')
 
@@ -75,10 +65,10 @@ def validate_n(value):
     return value
 
 
-
-
 class SpinorbitHydrogenOrbital(Orbital):
-    """Orbitals for hydrogen, in the common basis of H, J^2, L^2, S^2, J_z
+    """Orbitals for hydrogen with spin-orbit interaction.
+
+    The orbital is defined in the common basis of H, J^2, L^2, S^2, J_z
     operators, indexed by the quantum numbers n, j, l, j_z.
 
     A brief description of what is meant by each of these labels:
@@ -94,23 +84,19 @@ class SpinorbitHydrogenOrbital(Orbital):
     """
     _base_fields_required = tuple(
         list(Orbital._base_fields_required) +
-        [('total_angular_momentum', validate_j), ('angular_momentum', validate_l),
-         ('magnetic_number', validate_mj), ('radial_nodes', validate_n)]
+        [('total_angular_momentum',
+          validate_j), ('angular_momentum', validate_l), ('magnetic_number', validate_mj), ('radial_nodes', validate_n)]
     )
 
-    _base_fields_optional = tuple(
-        list(Orbital._base_fields_optional) + [
-            ('kind_name', validate_kind_name, None),
-        ]
-    )
+    _base_fields_optional = tuple(list(Orbital._base_fields_optional) + [
+        ('kind_name', validate_kind_name, None),
+    ])
 
     def __str__(self):
         orb_dict = self.get_orbital_dict()
         try:
             orb_name = 'j={},l={},m_j={}'.format(
-                orb_dict['total_angular_momentum'],
-                orb_dict['angular_momentum'],
-                orb_dict['magnetic_number']
+                orb_dict['total_angular_momentum'], orb_dict['angular_momentum'], orb_dict['magnetic_number']
             )
             position_string = '{:.4f},{:.4f},{:.4f}'.format(
                 orb_dict['position'][0], orb_dict['position'][1], orb_dict['position'][2]
@@ -126,22 +112,25 @@ class SpinorbitHydrogenOrbital(Orbital):
 
     def _validate_keys(self, input_dict):
         """
-        Validates the keys otherwise raise ValidationError. Does basic
-        validation from the parent followed by validations for the
+        Validates the keys otherwise raise ValidationError.
+
+        Does basic validation from the parent followed by validations for the
         quantum numbers. Raises exceptions should the input_dict fail the
-        valiation or if it contains any unsupported keywords.
-        :param input_dict: the dictionary of keys to be validated
-        :return validated_dict: a validated dictionary
+        valiation or if it contains any unsupported keywords. :param
+        input_dict: the dictionary of keys to be validated :return
+        validated_dict: a validated dictionary
         """
         validated_dict = super()._validate_keys(input_dict)
 
         # Validate m knowing the value of l
         total_angular_momentum = validated_dict['total_angular_momentum']  # j quantum number, must be there
         angular_momentum = validated_dict['angular_momentum']  # l quantum number, must be there
-        accepted_range = [abs(angular_momentum-0.5), angular_momentum+0.5]
+        accepted_range = [abs(angular_momentum - 0.5), angular_momentum + 0.5]
         if total_angular_momentum < min(accepted_range) or total_angular_momentum > max(accepted_range):
             raise ValidationError(
-                'the total angular momentum must be in the range [{}, {}]'.format(min(accepted_range), max(accepted_range))
+                'the total angular momentum must be in the range [{}, {}]'.format(
+                    min(accepted_range), max(accepted_range)
+                )
             )
         magnetic_number = validated_dict['magnetic_number']  # m quantum number, must be there
         accepted_range = [-total_angular_momentum, total_angular_momentum]

@@ -103,9 +103,9 @@ def find_orbitals_from_statelines(out_info_dict):
 
     # here we set the resulting state_dicts to a new set of orbitals
     orbitals = []
-    if out_info_dict["spinorbit"]:
+    if out_info_dict['spinorbit']:
         OrbitalCls = OrbitalFactory('spinorbithydrogen')
-    elif not out_info_dict["collinear"]:
+    elif not out_info_dict['collinear']:
         OrbitalCls = OrbitalFactory('noncollinearhydrogen')
     else:
         OrbitalCls = OrbitalFactory('realhydrogen')

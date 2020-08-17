@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-A module defining hydrogen-like orbitals with non-collinear spin component.
-"""
+"""A module defining hydrogen-like orbitals with non-collinear spin component."""
 
 from aiida.common.exceptions import ValidationError
 
@@ -9,9 +7,7 @@ from aiida.tools.data.orbital.realhydrogen import RealhydrogenOrbital
 
 
 def validate_spin(value):
-    """
-    Validate the value of the spin projection s_z.
-    """
+    """Validate the value of the spin projection s_z."""
     if not isinstance(value, (int, float)):
         raise ValidationError('spin projection (s_z) must be float')
 
@@ -19,29 +15,24 @@ def validate_spin(value):
 
 
 class NoncollinearHydrogenOrbital(RealhydrogenOrbital):
-    """
-    Orbitals for hydrogen, largely follows the conventions used by wannier90
+    """Orbitals for hydrogen, largely follows the conventions used by wannier90
     Object to handle the generation of real hydrogen orbitals and their
     hybrids, has methods for producing s, p, d, f, and sp, sp2, sp3, sp3d,
     sp3d2 hybrids. This method does not deal with the cannonical hydrogen
-    orbitals which contain imaginary components.
-    The orbitals described here are chiefly concerned with the symmetric
-    aspects of the oribitals without the context of space. Therefore
-    diffusitivity, position and atomic labels should be handled in the
-    OrbitalData class.
-    Following the notation of table 3.1, 3.2 of Wannier90 user guide
-    http://www.wannier.org/doc/user_guide.pdf
-    A brief description of what is meant by each of these labels:
-    :param radial_nodes: the number of radial nodes (or inflections) if no
-                         radial nodes are supplied, defaults to 0
-    :param angular_momentum: Angular quantum number, using real orbitals
-    :param magnetic_number: Magnetic quantum number, using real orbitals
-    :param spin: spin z-projection s_z
-    The conventions regarding L and M correpsond to those used in
-    wannier90 for all L greater than 0 the orbital is not hyrbridized
-    see table 3.1 and for L less than 0 the orbital is hybridized see
-    table 3.2. M then indexes all the possible orbitals from 0 to 2L for
-    L > 0 and from 0 to (-L) for L < 0.
+    orbitals which contain imaginary components. The orbitals described here
+    are chiefly concerned with the symmetric aspects of the oribitals without
+    the context of space. Therefore diffusitivity, position and atomic labels
+    should be handled in the OrbitalData class. Following the notation of table
+    3.1, 3.2 of Wannier90 user guide http://www.wannier.org/doc/user_guide.pdf
+    A brief description of what is meant by each of these labels: :param
+    radial_nodes: the number of radial nodes (or inflections) if no radial
+    nodes are supplied, defaults to 0 :param angular_momentum: Angular quantum
+    number, using real orbitals :param magnetic_number: Magnetic quantum
+    number, using real orbitals :param spin: spin z-projection s_z The
+    conventions regarding L and M correpsond to those used in wannier90 for all
+    L greater than 0 the orbital is not hyrbridized see table 3.1 and for L
+    less than 0 the orbital is hybridized see table 3.2. M then indexes all the
+    possible orbitals from 0 to 2L for L > 0 and from 0 to (-L) for L < 0.
     """
     _base_fields_required = RealhydrogenOrbital._base_fields_required
 

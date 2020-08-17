@@ -23,6 +23,7 @@ def generate_inputs(generate_calc_job_node, fixture_localhost, generate_structur
 
     return AttributeDict(inputs)
 
+
 def test_projwfc_default(
     aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
@@ -47,6 +48,7 @@ def test_projwfc_default(
         {k: v for k, v in results['projections'].attributes.items() if k not in ['reference_bandsdata_uuid']}
     })
 
+
 @pytest.fixture
 def generate_inputs_spin(generate_calc_job_node, fixture_localhost, generate_structure, generate_kpoints_mesh):
     """Create the required inputs for the ``ProjwfcCalculation`` with nspin=2."""
@@ -62,6 +64,7 @@ def generate_inputs_spin(generate_calc_job_node, fixture_localhost, generate_str
     }
 
     return AttributeDict(inputs)
+
 
 def test_projwfc_spin(
     aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_spin, data_regression
@@ -87,6 +90,7 @@ def test_projwfc_spin(
         {k: v for k, v in results['projections'].attributes.items() if k not in ['reference_bandsdata_uuid']}
     })
 
+
 @pytest.fixture
 def generate_inputs_noncollinear(generate_calc_job_node, fixture_localhost, generate_structure, generate_kpoints_mesh):
     """Create the required inputs for the ``ProjwfcCalculation`` with noncolin=.true."""
@@ -103,8 +107,10 @@ def generate_inputs_noncollinear(generate_calc_job_node, fixture_localhost, gene
 
     return AttributeDict(inputs)
 
+
 def test_projwfc_noncollinear(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_noncollinear, data_regression
+    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_noncollinear,
+    data_regression
 ):
     """Test ``ProjwfcParser`` on the results of a noncollinear ``projwfc.x`` calculation."""
     entry_point_calc_job = 'quantumespresso.projwfc'
@@ -127,6 +133,7 @@ def test_projwfc_noncollinear(
         {k: v for k, v in results['projections'].attributes.items() if k not in ['reference_bandsdata_uuid']}
     })
 
+
 @pytest.fixture
 def generate_inputs_spinorbit(generate_calc_job_node, fixture_localhost, generate_structure, generate_kpoints_mesh):
     """Create the required inputs for the ``ProjwfcCalculation`` with lspinorb=.true."""
@@ -134,8 +141,13 @@ def generate_inputs_spinorbit(generate_calc_job_node, fixture_localhost, generat
     inputs = {'structure': generate_structure(), 'kpoints': generate_kpoints_mesh(4)}
 
     parent_calcjob = generate_calc_job_node(entry_point_name, fixture_localhost, 'default', inputs=inputs)
-    params = orm.Dict(dict={'number_of_spin_components': 4, 'non_colinear_calculation': True,
-                            'spin_orbit_calculation': True})
+    params = orm.Dict(
+        dict={
+            'number_of_spin_components': 4,
+            'non_colinear_calculation': True,
+            'spin_orbit_calculation': True
+        }
+    )
     params.add_incoming(parent_calcjob, link_type=LinkType.CREATE, link_label='output_parameters')
     params.store()
     inputs = {
@@ -144,8 +156,10 @@ def generate_inputs_spinorbit(generate_calc_job_node, fixture_localhost, generat
 
     return AttributeDict(inputs)
 
+
 def test_projwfc_spinorbit(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_spinorbit, data_regression
+    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_spinorbit,
+    data_regression
 ):
     """Test ``ProjwfcParser`` on the results of a spinorbit ``projwfc.x`` calculation."""
     entry_point_calc_job = 'quantumespresso.projwfc'

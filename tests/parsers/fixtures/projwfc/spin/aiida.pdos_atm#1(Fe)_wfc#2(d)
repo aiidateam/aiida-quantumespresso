@@ -1,4 +1,4 @@
-# E (eV)  ldosup(E)  ldosdw(E) pdosup(E)  pdosdw(E)  pdosup(E)  pdosdw(E)  pdosup(E)  pdosdw(E)  pdosup(E)  pdosdw(E)  pdosup(E)  pdosdw(E) 
+# E (eV)  ldosup(E)  ldosdw(E) pdosup(E)  pdosdw(E)  pdosup(E)  pdosdw(E)  pdosup(E)  pdosdw(E)  pdosup(E)  pdosdw(E)  pdosup(E)  pdosdw(E)
    5.903  0.145E-03  0.451E-06  0.275E-04  0.329E-12  0.301E-04  0.150E-06  0.301E-04  0.150E-06  0.275E-04  0.329E-12  0.301E-04  0.150E-06
    6.003  0.368E-03  0.183E-05  0.831E-04  0.822E-11  0.673E-04  0.609E-06  0.673E-04  0.609E-06  0.831E-04  0.822E-11  0.673E-04  0.609E-06
    6.103  0.823E-03  0.565E-05  0.192E-03  0.157E-09  0.146E-03  0.188E-05  0.146E-03  0.188E-05  0.192E-03  0.157E-09  0.146E-03  0.188E-05
