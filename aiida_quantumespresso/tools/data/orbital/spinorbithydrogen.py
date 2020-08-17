@@ -113,7 +113,7 @@ class SpinorbitHydrogenOrbital(Orbital):
         return out_string
 
     def _validate_keys(self, input_dict):
-        """Validates the keys otherwise raise ValidationError.
+        """Validate the keys otherwise raise ValidationError.
 
         Does basic validation from the parent followed by validations for the
         quantum numbers. Raises exceptions should the input_dict fail the
