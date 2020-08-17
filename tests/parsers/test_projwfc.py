@@ -53,7 +53,7 @@ def generate_inputs_spin(generate_calc_job_node, fixture_localhost, generate_str
     entry_point_name = 'quantumespresso.pw'
     inputs = {'structure': generate_structure(), 'kpoints': generate_kpoints_mesh(4)}
 
-    parent_calcjob = generate_calc_job_node(entry_point_name, fixture_localhost, 'spin', inputs=inputs)
+    parent_calcjob = generate_calc_job_node(entry_point_name, fixture_localhost, 'default', inputs=inputs)
     params = orm.Dict(dict={'number_of_spin_components': 2})
     params.add_incoming(parent_calcjob, link_type=LinkType.CREATE, link_label='output_parameters')
     params.store()
@@ -66,7 +66,7 @@ def generate_inputs_spin(generate_calc_job_node, fixture_localhost, generate_str
 def test_projwfc_spin(
     aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_spin, data_regression
 ):
-    """Test ``ProjwfcParser`` on the results of a simple ``projwfc.x`` calculation."""
+    """Test ``ProjwfcParser`` on the results of a LSDA ``projwfc.x`` calculation."""
     entry_point_calc_job = 'quantumespresso.projwfc'
     entry_point_parser = 'quantumespresso.projwfc'
 
@@ -89,11 +89,11 @@ def test_projwfc_spin(
 
 @pytest.fixture
 def generate_inputs_noncollinear(generate_calc_job_node, fixture_localhost, generate_structure, generate_kpoints_mesh):
-    """Create the required inputs for the ``ProjwfcCalculation`` with nspin=2."""
+    """Create the required inputs for the ``ProjwfcCalculation`` with noncolin=.true."""
     entry_point_name = 'quantumespresso.pw'
     inputs = {'structure': generate_structure(), 'kpoints': generate_kpoints_mesh(4)}
 
-    parent_calcjob = generate_calc_job_node(entry_point_name, fixture_localhost, 'noncollinear', inputs=inputs)
+    parent_calcjob = generate_calc_job_node(entry_point_name, fixture_localhost, 'default', inputs=inputs)
     params = orm.Dict(dict={'number_of_spin_components': 4, 'non_colinear_calculation': True})
     params.add_incoming(parent_calcjob, link_type=LinkType.CREATE, link_label='output_parameters')
     params.store()
@@ -106,7 +106,7 @@ def generate_inputs_noncollinear(generate_calc_job_node, fixture_localhost, gene
 def test_projwfc_noncollinear(
     aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_noncollinear, data_regression
 ):
-    """Test ``ProjwfcParser`` on the results of a simple ``projwfc.x`` calculation."""
+    """Test ``ProjwfcParser`` on the results of a noncollinear ``projwfc.x`` calculation."""
     entry_point_calc_job = 'quantumespresso.projwfc'
     entry_point_parser = 'quantumespresso.projwfc'
 
@@ -129,11 +129,11 @@ def test_projwfc_noncollinear(
 
 @pytest.fixture
 def generate_inputs_spinorbit(generate_calc_job_node, fixture_localhost, generate_structure, generate_kpoints_mesh):
-    """Create the required inputs for the ``ProjwfcCalculation`` with nspin=2."""
+    """Create the required inputs for the ``ProjwfcCalculation`` with lspinorb=.true."""
     entry_point_name = 'quantumespresso.pw'
     inputs = {'structure': generate_structure(), 'kpoints': generate_kpoints_mesh(4)}
 
-    parent_calcjob = generate_calc_job_node(entry_point_name, fixture_localhost, 'spinorbit', inputs=inputs)
+    parent_calcjob = generate_calc_job_node(entry_point_name, fixture_localhost, 'default', inputs=inputs)
     params = orm.Dict(dict={'number_of_spin_components': 4, 'non_colinear_calculation': True,
                             'spin_orbit_calculation': True})
     params.add_incoming(parent_calcjob, link_type=LinkType.CREATE, link_label='output_parameters')
@@ -147,7 +147,7 @@ def generate_inputs_spinorbit(generate_calc_job_node, fixture_localhost, generat
 def test_projwfc_spinorbit(
     aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_spinorbit, data_regression
 ):
-    """Test ``ProjwfcParser`` on the results of a simple ``projwfc.x`` calculation."""
+    """Test ``ProjwfcParser`` on the results of a spinorbit ``projwfc.x`` calculation."""
     entry_point_calc_job = 'quantumespresso.projwfc'
     entry_point_parser = 'quantumespresso.projwfc'
 
