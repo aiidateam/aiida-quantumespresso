@@ -257,15 +257,15 @@ def spin_dependent_pdos_subparser(out_info_dict):
     # both are produced in the same order (thus the sorted file_names)
     for name in pdos_file_names:
         this_array = pdos_atm_array_dict[name]
-        if out_info_dict['collinear']:
-            for i in range(fa, np.shape(this_array)[1], mf):
+        if not out_info_dict['collinear'] and not out_info_dict["spinorb"]:
+            # In the non-collinear non-spinorbit case, the "up"-spin orbitals
+            # come first, followed by all "down" orbitals
+            for i in range(3, np.shape(this_array)[1], 2):
+                out_arrays.append(this_array[:, i])
+            for i in range(4, np.shape(this_array)[1], 2):
                 out_arrays.append(this_array[:, i])
         else:
-            # In the non-collinear case, the "up"-spin orbitals come first,
-            # followed by all "down" orbitals
-            for i in range(fa, np.shape(this_array)[1], 2):
-                out_arrays.append(this_array[:, i])
-            for i in range(fa+1, np.shape(this_array)[1], 2):
+            for i in range(fa, np.shape(this_array)[1], mf):
                 out_arrays.append(this_array[:, i])
 
     return out_arrays
