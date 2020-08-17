@@ -64,13 +64,13 @@ def generate_inputs_spin(generate_calc_job_node, fixture_localhost, generate_str
     return AttributeDict(inputs)
 
 def test_projwfc_spin(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_spin, data_regression
 ):
     """Test ``ProjwfcParser`` on the results of a simple ``projwfc.x`` calculation."""
     entry_point_calc_job = 'quantumespresso.projwfc'
     entry_point_parser = 'quantumespresso.projwfc'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'spin', generate_inputs)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'spin', generate_inputs_spin)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -104,13 +104,13 @@ def generate_inputs_noncollinear(generate_calc_job_node, fixture_localhost, gene
     return AttributeDict(inputs)
 
 def test_projwfc_noncollinear(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_noncollinear, data_regression
 ):
     """Test ``ProjwfcParser`` on the results of a simple ``projwfc.x`` calculation."""
     entry_point_calc_job = 'quantumespresso.projwfc'
     entry_point_parser = 'quantumespresso.projwfc'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'noncollinear', generate_inputs)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'noncollinear', generate_inputs_noncollinear)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -145,13 +145,13 @@ def generate_inputs_spinorbit(generate_calc_job_node, fixture_localhost, generat
     return AttributeDict(inputs)
 
 def test_projwfc_spinorbit(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_spinorbit, data_regression
 ):
     """Test ``ProjwfcParser`` on the results of a simple ``projwfc.x`` calculation."""
     entry_point_calc_job = 'quantumespresso.projwfc'
     entry_point_parser = 'quantumespresso.projwfc'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'spinorbit', generate_inputs)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'spinorbit', generate_inputs_spinorbit)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
