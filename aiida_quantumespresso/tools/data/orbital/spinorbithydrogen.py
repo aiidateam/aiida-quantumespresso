@@ -7,7 +7,7 @@ and J_z operators, useful for projecting densities with spin-orbit coupling.
 
 from aiida.common.exceptions import ValidationError
 
-from aiida.tools.data.orbital.orbital import Orbital, validate_len3_list_or_none, validate_float_or_none
+from aiida.tools.data.orbital.orbital import Orbital
 
 
 def validate_j(value):
@@ -82,6 +82,7 @@ class SpinorbitHydrogenOrbital(Orbital):
     l+s` in integer steps and the magnetic number takes values from -j to +j in
     integer steps.
     """
+
     _base_fields_required = tuple(
         list(Orbital._base_fields_required) +
         [('total_angular_momentum',
@@ -93,6 +94,7 @@ class SpinorbitHydrogenOrbital(Orbital):
     ])
 
     def __str__(self):
+        """Printable representation of the orbital."""
         orb_dict = self.get_orbital_dict()
         try:
             orb_name = 'j={},l={},m_j={}'.format(
@@ -111,8 +113,7 @@ class SpinorbitHydrogenOrbital(Orbital):
         return out_string
 
     def _validate_keys(self, input_dict):
-        """
-        Validates the keys otherwise raise ValidationError.
+        """Validates the keys otherwise raise ValidationError.
 
         Does basic validation from the parent followed by validations for the
         quantum numbers. Raises exceptions should the input_dict fail the
