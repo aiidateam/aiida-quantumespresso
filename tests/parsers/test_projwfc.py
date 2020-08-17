@@ -85,9 +85,12 @@ def test_projwfc_spin(
 
     data_regression.check({
         'Dos': results['Dos'].attributes,
-        'bands': results['bands'].attributes,
-        'projections':
-        {k: v for k, v in results['projections'].attributes.items() if k not in ['reference_bandsdata_uuid']}
+        'bands_up': results['bands_up'].attributes,
+        'bands_down': results['bands_down'].attributes,
+        'projections_up':
+        {k: v for k, v in results['projections_up'].attributes.items() if k not in ['reference_bandsdata_uuid']},
+        'projections_down':
+        {k: v for k, v in results['projections_down'].attributes.items() if k not in ['reference_bandsdata_uuid']}
     })
 
 
