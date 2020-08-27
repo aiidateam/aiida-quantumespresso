@@ -11,10 +11,10 @@ from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
 from aiida_quantumespresso.parsers.parse_raw import convert_qe_time_to_sec
 
 
-def parse_raw_output_neb(out_file, input_dict, parser_opts=None):
+def parse_raw_output_neb(stdout, input_dict, parser_opts=None):
     """Parses the output of a neb calculation Receives in input the paths to the output file.
 
-    :param out_file: path to neb std output
+    :param stdout: the stdout content as a string
     :param input_dict: dictionary with the neb input parameters
     :param parser_opts: not used
 
@@ -33,19 +33,12 @@ def parse_raw_output_neb(out_file, input_dict, parser_opts=None):
     job_successful = True
     parser_info = get_parser_info(parser_info_template='aiida-quantumespresso parser neb.x v{}')
 
-    # load NEB output file
-    try:
-        with open(out_file, 'r') as f:
-            out_lines = f.read()
-    except IOError:  # non existing output file -> job crashed
-        raise QEOutputParsingError('Failed to open output file: {}.'.format(out_file))
-
-    if not out_lines:  # there is an output file, but it's empty -> crash
+    if not stdout:  # there is an output file, but it's empty -> crash
         job_successful = False
 
     # check if the job has finished (that doesn't mean without errors)
     finished_run = False
-    for line in out_lines.split('\n')[::-1]:
+    for line in stdout.split('\n')[::-1]:
         if 'JOB DONE' in line:
             finished_run = True
             break
@@ -56,7 +49,7 @@ def parse_raw_output_neb(out_file, input_dict, parser_opts=None):
 
     # parse the text output of the neb calculation
     try:
-        out_data, iteration_data, critical_messages = parse_neb_text_output(out_lines, input_dict)
+        out_data, iteration_data, critical_messages = parse_neb_text_output(stdout, input_dict)
     except QEOutputParsingError as exc:
         if not finished_run:  # I try to parse it as much as possible
             parser_info['parser_warnings'].append('Error while parsing the output file')
