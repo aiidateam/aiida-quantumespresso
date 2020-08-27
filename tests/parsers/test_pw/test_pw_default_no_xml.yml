@@ -25,8 +25,8 @@ output_parameters:
   number_of_bands: 4
   number_of_k_points: 3
   number_of_species: 1
-  parser_info: aiida-quantumespresso parser pw.x v3.0.0
-  parser_version: 3.0.0
+  parser_info: aiida-quantumespresso parser pw.x v3.1.0
+  parser_version: 3.1.0
   parser_warnings: []
   scf_iterations: 5
   smooth_fft_grid:

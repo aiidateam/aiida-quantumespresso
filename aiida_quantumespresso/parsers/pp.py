@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """`Parser` implementation for the `PpCalculation` calculation job class."""
+import os
+import re
 import traceback
-import os.path
 
 import numpy as np
 
@@ -45,24 +46,22 @@ class PpParser(Parser):
         """
         Parse raw files retrieved from remote dir
         """
-
-        temp_folder_path = None
-
-        # A retrieved folded is required
         try:
             self.retrieved
         except exceptions.NotExistent:
             return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
 
+        retrieve_temporary_list = self.node.get_attribute('retrieve_temporary_list', None)
+        filename_stdout = self.node.get_option('output_filename')
+
         # If temporary files were specified, check that we have them
-        if self.node.get_attribute('retrieve_temporary_list', None):
+        if retrieve_temporary_list:
             try:
-                temp_folder_path = kwargs['retrieved_temporary_folder']
+                retrieved_temporary_folder = kwargs['retrieved_temporary_folder']
             except KeyError:
                 return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
 
         # The stdout is required for parsing
-        filename_stdout = self.node.get_attribute('output_filename')
         if filename_stdout not in self.retrieved.list_object_names():
             return self.exit_codes.ERROR_OUTPUT_STDOUT_MISSING
 
@@ -71,34 +70,48 @@ class PpParser(Parser):
         except (IOError, OSError):
             return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
-        # The post-processed data should have been written to file, either in the retrieved or temp list
-        filename_data = PpCalculation._FILEOUT
-        if filename_data in self.retrieved.list_object_names():  # Retrieved list case
-            try:
-                data_raw = self.retrieved.get_object_content(filename_data)
-            except (IOError, OSError):
-                return self.exit_codes.ERROR_DATAFILE_READ
-        elif temp_folder_path is not None:  # Temp list case
-            data_file_path = os.path.join(temp_folder_path, filename_data)
-            if os.path.isfile(data_file_path):
-                try:
-                    with open(data_file_path, 'r') as fhandle:
-                        data_raw = fhandle.read()
-                except (IOError, OSError):
-                    return self.exit_codes.ERROR_DATAFILE_READ
-            else:
-                return self.exit_codes.ERROR_OUTPUT_DATAFILE_MISSING
-        else:
-            return self.exit_codes.ERROR_OUTPUT_DATAFILE_MISSING
+        data_raw = []
 
-        # Parse stdout
+        # Currently all plot output files should start with the `filplot` as prefix. If only one file was produced the
+        # prefix is the entire filename, but in the case of multiple files, there will be pairs of two files where the
+        # first has the format '{filename_prefix}.{some_random_suffix' and the second has the same name but with the
+        # `filename_suffix` appended.
+        filename_prefix = PpCalculation._FILPLOT
+        filename_suffix = PpCalculation._FILEOUT
+
+        # How to get the output filenames and how to open them, depends on whether they will have been retrieved in the
+        # `retrieved` output node, or in the `retrieved_temporary_folder`. Instead of having a conditional with almost
+        # the same loop logic in each branch, we apply a somewhat dirty trick to define an `opener` which is a callable
+        # that will open a handle to the output file given a certain filename. This works since it is guaranteed that
+        # these output files (excluding the standard output) will all either be in the retrieved, or in the retrieved
+        # temporary folder.
+        if retrieve_temporary_list:
+            filenames = os.listdir(retrieved_temporary_folder)
+            file_opener = lambda filename: open(os.path.join(retrieved_temporary_folder, filename))
+        else:
+            filenames = self.retrieved.list_object_names()
+            file_opener = self.retrieved.open
+
+        for filename in filenames:
+            if filename.endswith(filename_suffix):
+                try:
+                    with file_opener(filename) as handle:
+                        data_raw.append((filename, handle.read()))
+                except OSError:
+                    return self.exit_codes.ERROR_OUTPUT_DATAFILE_READ.format(filename=filename)
+
+        # If we don't have any parsed files, we exit. Note that this will not catch the case where there should be more
+        # than one file, but the engine did not retrieve all of them. Since often we anyway don't know how many files
+        # should be retrieved there really is no way to check this explicitly.
+        if not data_raw:
+            return self.exit_codes.ERROR_OUTPUT_DATAFILE_MISSING.format(filename=filename_prefix)
+
         try:
             logs, self.output_parameters = self.parse_stdout(stdout_raw)
         except Exception:
             self.logger.error(traceback.format_exc())
             return self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
 
-        # Print the logs
         self.emit_logs(logs)
 
         # Scan logs for known errors
@@ -107,21 +120,43 @@ class PpParser(Parser):
         if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs['error']:
             return self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
 
-        # Parse the post-processed-data according to what kind of data file was produced
-        if self.output_parameters['output_format'] == 'gnuplot':
-            if self.output_parameters['plot_type'] == '2D polar on a sphere':
-                parsed_data = self.parse_gnuplot_polar(data_raw)
-            else:
-                parsed_data = self.parse_gnuplot1D(data_raw)
-        elif self.output_parameters['output_format'] == 'gnuplot x,y,f':
-            parsed_data = self.parse_gnuplot2D(data_raw)
-        elif self.output_parameters['output_format'] == 'Gaussian cube':
-            parsed_data = self.parse_gaussian(data_raw)
-        else:
+        # The following check should in principle always succeed since the iflag should in principle be set by the
+        # `PpCalculation` plugin which only ever sets 0 - 4, but we check in order for the code not to except.
+        iflag = self.node.inputs.parameters.get_attribute('PLOT')['iflag']
+        if iflag not in range(5):
             return self.exit_codes.ERROR_UNSUPPORTED_DATAFILE_FORMAT
 
+        data_parsed = []
+        parsers = {
+            0: self.parse_gnuplot1D,
+            1: self.parse_gnuplot1D,
+            2: self.parse_gnuplot2D,
+            3: self.parse_gaussian,
+            4: self.parse_gnuplot_polar,
+        }
+
+        def get_key_from_filename(filename):
+            """Determine the output link label for the output file with the given filename."""
+            if filename == filename_suffix:
+                return filename
+
+            pattern = r'{}_(.*){}'.format(filename_prefix, filename_suffix)
+            matches = re.search(pattern, filename)
+            return matches.group(1)
+
+        for filename, data in data_raw:
+            try:
+                key = get_key_from_filename(filename)
+                data_parsed.append((key, parsers[iflag](data)))
+            except Exception:  # pylint: disable=broad-except
+                return self.exit_codes.ERROR_OUTPUT_DATAFILE_PARSE.format(filename=filename)
+
         # Create output nodes
-        self.out('output_data', parsed_data)
+        if len(data_parsed) == 1:
+            self.out('output_data', data_parsed[0][1])
+        else:
+            self.out('output_data_multiple', dict(data_parsed))
+
         self.out('output_parameters', orm.Dict(dict=self.output_parameters))
 
     def parse_stdout(self, stdout_str):
@@ -178,11 +213,11 @@ class PpParser(Parser):
 
         # Parse useful data from stdout
         for line in stdout_lines:
-            if 'Check:' in line:
+            if 'Check:' in line:  # QE < 6.5
                 split_line = line.split('=')
-                if 'negative/imaginary' in line:  # QE6.1
+                if 'negative/imaginary' in line:  # QE6.1-6.3
                     output_dict['negative_core_charge'] = float(split_line[-1].split()[0])
-                    output_dict['imaginary_core_charge'] = float(split_line.split()[-1])
+                    output_dict['imaginary_core_charge'] = float(split_line[-1].split()[-1])
                 else:  # QE6.4
                     output_dict['negative_core_charge'] = float(split_line[1])
             if 'Min, Max, imaginary charge:' in line:
@@ -199,8 +234,7 @@ class PpParser(Parser):
         return logs, output_dict
 
     def parse_gnuplot1D(self, data_file_str):
-        """
-        Parse 1D GNUPlot formatted output
+        """Parse 1D GNUPlot formatted output.
 
         :param data_file_str: the data file read in as a single string
         """
@@ -247,11 +281,10 @@ class PpParser(Parser):
         return arraydata
 
     def parse_gnuplot_polar(self, data_file_str):
-        """
-            Parse 2D Polar GNUPlot formatted, single column output
+        """Parse 2D Polar GNUPlot formatted, single column output.
 
-            :param data_file_str: the data file read in as a single string
-            """
+        :param data_file_str: the data file read in as a single string
+        """
         data_lines = data_file_str.splitlines()
         data_lines.pop(0)  # First line is a header
 
@@ -267,8 +300,7 @@ class PpParser(Parser):
         return arraydata
 
     def parse_gnuplot2D(self, data_file_str):
-        """
-        Parse 2D GNUPlot formatted output
+        """Parse 2D GNUPlot formatted output.
 
         :param data_file_str: the data file read in as a single string
         """
@@ -278,10 +310,11 @@ class PpParser(Parser):
         data = []
 
         for line in data_lines:
-            if line == '':
+            stripped = line.strip()
+            if stripped == '':
                 continue
             else:
-                split_line = line.split()
+                split_line = stripped.split()
                 coords.append([float(split_line[0]), float(split_line[1])])
                 data.append(float(split_line[2]))
 
@@ -296,19 +329,18 @@ class PpParser(Parser):
         return arraydata
 
     def parse_gaussian(self, data_file_str):
-        """
-        Parse Gaussian Cube formatted output
+        """Parse Gaussian Cube formatted output.
 
         :param data_file_str: the data file read in as a single string
         """
-
         lines = data_file_str.splitlines()
 
         atoms_line = lines[2].split()
-        atoms = int(atoms_line[0])  # The number of atoms listed in the file
-        header = lines[:6 + atoms
-                       ]  # The header of the file: comments, the voxel, and the number of atoms and datapoints
-        data_lines = lines[6 + atoms:]  # The actual data: atoms and volumetric data
+        natoms = int(atoms_line[0])  # The number of atoms listed in the file
+        origin = np.array(atoms_line[1:], dtype=float)
+
+        header = lines[:6 + natoms]  # Header of the file: comments, the voxel, and the number of atoms and datapoints
+        data_lines = lines[6 + natoms:]  # The actual data: atoms and volumetric data
 
         # Parse the declared dimensions of the volumetric data
         x_line = header[3].split()
@@ -324,24 +356,13 @@ class PpParser(Parser):
                                dtype=np.float64)
 
         # Get the volumetric data
-        data_array = np.zeros((xdim, ydim, zdim))
-
-        # The data is organised into columns with a fixed number of values
-        # Gather up all the data points into one list for easier unpacking
-        datalist = []
+        data_array = np.empty(xdim * ydim * zdim, dtype=float)
+        cursor = 0
         for line in data_lines:
-            for i in range(0, len(line), 13):
-                data_point = line[i:i + 13].strip()
-                if data_point != '':
-                    datalist.append(float(data_point))
-
-        # Unpack the list and repack as a 3D array
-        # Note the unusual indexing: cube files run over the z index first, then y and x.
-        # E.g. The first volumetric data point is x,y,z = (0,0,0) and the second is (0,0,1)
-        for i in range(0, xdim):
-            for j in range(0, ydim):
-                for k in range(0, zdim):
-                    data_array[i, j, k] = (datalist[(i * ydim * zdim) + (j * zdim) + k])
+            ls = line.split()
+            data_array[cursor:cursor + len(ls)] = ls
+            cursor += len(ls)
+        data_array = data_array.reshape((xdim, ydim, zdim))
 
         coordinates_units = 'bohr'
         data_units = self.units_dict[self.output_parameters['plot_num']]
@@ -349,7 +370,7 @@ class PpParser(Parser):
         arraydata = orm.ArrayData()
         arraydata.set_array('voxel', voxel_array)
         arraydata.set_array('data', data_array)
-        arraydata.set_array('coordinates_units', np.array(coordinates_units))
         arraydata.set_array('data_units', np.array(data_units))
+        arraydata.set_array('coordinates_units', np.array(coordinates_units))
 
         return arraydata

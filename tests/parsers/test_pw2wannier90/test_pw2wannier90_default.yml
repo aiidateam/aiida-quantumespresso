@@ -1,7 +1,7 @@
 parameters:
   code_version: v.6.4.1
-  parser_info: aiida-quantumespresso parser simple v3.0.0
-  parser_version: 3.0.0
+  parser_info: aiida-quantumespresso parser simple v3.1.0
+  parser_version: 3.1.0
   parser_warnings: []
   wall_time: 2.18s
   wall_time_seconds: 2.18

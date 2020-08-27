@@ -39,7 +39,9 @@ def test_create_builder(
 
     assert builder['code'] == code
     assert builder['metadata'] == metadata
-    assert builder['pseudos']['Si'].id == si_upf.id
+    pseudo_hash = si_upf.get_hash()
+    assert pseudo_hash is not None
+    assert builder['pseudos']['Si'].get_hash() == pseudo_hash
     assert builder['parameters'].get_dict() == {
         'CONTROL': {
             'calculation': 'scf',

@@ -255,7 +255,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         inputs = prepare_process_inputs(PwCalculation, inputs)
         running = self.submit(PwCalculation, **inputs)
 
-        self.report('launching initialization {}<{}>'.format(running.pk, self._process_class.__name__))
+        self.report('launching initialization {}<{}>'.format(running.pk, self.ctx.process_name))
 
         return ToContext(calculation_init=running)
 
@@ -336,9 +336,15 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
         try:
             bands = calculation.outputs.output_band
+        except AttributeError:
+            args = [self.ctx.process_name, calculation.pk]
+            self.report('{}<{}> does not have `output_band` output, skipping sanity check.'.format(*args))
+            return
+
+        try:
             get_highest_occupied_band(bands)
         except ValueError as exception:
-            args = [self._process_class.__name__, calculation.pk]
+            args = [self.ctx.process_name, calculation.pk]
             self.report('{}<{}> run with smearing and highest band is occupied'.format(*args))
             self.report('BandsData<{}> has invalid occupations: {}'.format(bands.pk, exception))
             self.report('{}<{}> had insufficient bands'.format(calculation.process_label, calculation.pk))

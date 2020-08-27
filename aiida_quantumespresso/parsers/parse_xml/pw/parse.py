@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 from distutils.version import StrictVersion
 import numpy as np
+from urllib.error import URLError
+
 from xmlschema import XMLSchema
 from xmlschema.etree import ElementTree
-from xmlschema.exceptions import URLError
+from qe_tools.constants import hartree_to_ev, bohr_to_ang, ry_to_ev
 
 from aiida_quantumespresso.utils.mapping import get_logging_container
-from qe_tools.constants import hartree_to_ev, bohr_to_ang, ry_to_ev
 
 from .exceptions import XMLParseError
 from .legacy import parse_pw_xml_pre_6_2

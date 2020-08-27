@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=redefined-outer-name,too-many-statements
 """Initialise a text database and profile for pytest."""
+import collections
 import io
 import os
-import collections
+import shutil
+
 import pytest
 
 pytest_plugins = ['aiida.manage.tests.pytest_fixtures']  # pylint: disable=invalid-name
@@ -94,7 +96,9 @@ def generate_calc_job_node(fixture_localhost):
                 flat_inputs.append((prefix + key, value))
         return flat_inputs
 
-    def _generate_calc_job_node(entry_point_name='base', computer=None, test_name=None, inputs=None, attributes=None):
+    def _generate_calc_job_node(
+        entry_point_name='base', computer=None, test_name=None, inputs=None, attributes=None, retrieve_temporary=None
+    ):
         """Fixture to generate a mock `CalcJobNode` for testing parsers.
 
         :param entry_point_name: entry point name of the calculation class
@@ -102,7 +106,10 @@ def generate_calc_job_node(fixture_localhost):
         :param test_name: relative path of directory with test output files in the `fixtures/{entry_point_name}` folder.
         :param inputs: any optional nodes to add as input links to the corrent CalcJobNode
         :param attributes: any optional attributes to set on the node
-        :return: `CalcJobNode` instance with an attached `FolderData` as the `retrieved` node
+        :param retrieve_temporary: optional tuple of an absolute filepath of a temporary directory and a list of
+            filenames that should be written to this directory, which will serve as the `retrieved_temporary_folder`.
+            For now this only works with top-level files and does not support files nested in directories.
+        :return: `CalcJobNode` instance with an attached `FolderData` as the `retrieved` node.
         """
         from aiida import orm
         from aiida.common import LinkType
@@ -155,9 +162,20 @@ def generate_calc_job_node(fixture_localhost):
 
         node.store()
 
+        if retrieve_temporary:
+            dirpath, filenames = retrieve_temporary
+            for filename in filenames:
+                shutil.copy(os.path.join(filepath_folder, filename), os.path.join(dirpath, filename))
+
         if filepath_folder:
             retrieved = orm.FolderData()
             retrieved.put_object_from_tree(filepath_folder)
+
+            # Remove files that are supposed to be only present in the retrieved temporary folder
+            if retrieve_temporary:
+                for filename in filenames:
+                    retrieved.delete_object(filename)
+
             retrieved.add_incoming(node, link_type=LinkType.CREATE, link_label='retrieved')
             retrieved.store()
 

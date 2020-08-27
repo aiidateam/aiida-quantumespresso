@@ -288,6 +288,55 @@ def test_pp_default_3d(
     })
 
 
+def test_pp_default_3d_keep_plot_file(
+    aiida_profile, generate_calc_job_node, generate_parser, generate_inputs_3d, tmpdir
+):
+    """Test a `pp.x` calculation where `keep_plot_file=False` meaning files will be parsed from temporary directory."""
+    entry_point_calc_job = 'quantumespresso.pp'
+    entry_point_parser = 'quantumespresso.pp'
+
+    # Need to cast the `tmpdir` which can be a `Path` object which is not yet supported in Python 3.5
+    dirpath = str(tmpdir)
+
+    attributes = {'options': {'keep_plot_file': False}, 'retrieve_temporary_list': ['aiida.fileout']}
+    node = generate_calc_job_node(
+        entry_point_calc_job,
+        test_name='default_3d',
+        inputs=generate_inputs_3d,
+        attributes=attributes,
+        retrieve_temporary=(dirpath, ['aiida.fileout'])
+    )
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False, retrieved_temporary_folder=dirpath)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_parameters' in results
+    assert 'output_data' in results
+    assert len(results['output_data'].get_arraynames()) == 4
+
+
+def test_pp_default_3d_multiple(aiida_profile, generate_calc_job_node, generate_parser, generate_inputs_3d):
+    """Test a default `pp.x` calculation producing multiple files in 3D format."""
+    entry_point_calc_job = 'quantumespresso.pp'
+    entry_point_parser = 'quantumespresso.pp'
+
+    node = generate_calc_job_node(entry_point_calc_job, test_name='default_3d_multiple', inputs=generate_inputs_3d)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_parameters' in results
+    assert 'output_data_multiple' in results
+
+    # Since the actual parsing of the file content itself is done in `test_pp_default_3d` we will not do it here again
+    for key in ['K001_B001', 'K001_B002']:
+        assert key in results['output_data_multiple']
+        node = results['output_data_multiple'][key]
+        assert len(node.get_arraynames()) == 4
+
+
 def test_pp_default_3d_failed_missing(
     aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_3d
 ):
@@ -358,4 +407,4 @@ def test_pp_default_3d_failed_format(
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_failed, calcfunction.exit_status
-    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_UNSUPPORTED_DATAFILE_FORMAT.status
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_DATAFILE_PARSE.status

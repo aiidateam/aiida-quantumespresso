@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 """Setup for the `aiida-quantumespresso` plugin which provides an interface to Quantum ESPRESSO for `aiida-core`."""
-from utils import fastentrypoints  # pylint: disable=unused-import
+try:
+    import fastentrypoints  # pylint: disable=unused-import
+except ImportError:
+    # This should only occur when building the package, i.e. for `python setup.py sdist/bdist_wheel`
+    pass
 
 
 def setup_package():
