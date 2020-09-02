@@ -382,7 +382,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
         detect_important_message(logs, line)
 
         # to be used for later
-        if 'Carrying out vdW-DF run using the following parameters:' in line:
+        if 'Non-local correlation energy' in line:
             vdw_correction = True
 
         elif 'Cartesian axes' in line:
@@ -777,19 +777,27 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                   in line) or ('Computing stress (Cartesian axis) and pressure' in line):
                 try:
                     stress = []
-                    for k in range(10 + 5 * vdw_correction):
+                    count2 = None
+                    for k in range(15):  # Up to 15 lines later - more than 10 are needed if vdW is turned on
                         if 'P=' in data_step[count + k + 1]:
                             count2 = count + k + 1
-                    if '(Ry/bohr**3)' not in data_step[count2]:
-                        raise QEOutputParsingError('Error while parsing stress: unexpected units.')
-                    for k in range(3):
-                        line2 = data_step[count2 + k + 1].split()
-                        vec = [float(s) * 10**(-9) * ry_si / (bohr_si)**3 for s in line2[0:3]]
-                        stress.append(vec)
-                    trajectory_data.setdefault('stress', []).append(stress)
-                    parsed_data['stress' + units_suffix] = default_stress_units
+                    if count2 is None:
+                        logs.warning.append(
+                            'Error while parsing stress tensor: '
+                            '"P=" not found within 15 lines from the start of the stress block'
+                        )
+                    else:
+                        if '(Ry/bohr**3)' not in data_step[count2]:
+                            raise QEOutputParsingError('Error while parsing stress: unexpected units.')
+                        for k in range(3):
+                            line2 = data_step[count2 + k + 1].split()
+                            vec = [float(s) * 10**(-9) * ry_si / (bohr_si)**3 for s in line2[0:3]]
+                            stress.append(vec)
+                        trajectory_data.setdefault('stress', []).append(stress)
+                        parsed_data['stress' + units_suffix] = default_stress_units
                 except Exception:
-                    logs.warning.append('Error while parsing stress tensor.')
+                    import traceback
+                    logs.warning.append('Error while parsing stress tensor: {}'.format(traceback.format_exc()))
 
             # Electronic and ionic dipoles when 'lelfield' was set to True in input parameters
             elif lelfield is True:
