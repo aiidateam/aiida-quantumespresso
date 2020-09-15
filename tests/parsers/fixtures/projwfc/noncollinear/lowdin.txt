@@ -1,12 +1,12 @@
 
 Lowdin Charges:
 
-     Atom #   1: total charge =   7.9828, s =  1.3216, p =  0.0000, d =  6.6612,
-                 spin up      =   3.9914, s =  0.6608,
-                 spin up      =   3.9914, p =  0.0000,
-                 spin up      =   3.9914, d =  3.3306,
-                 spin down    =   3.9914, s =  0.6608,
-                 spin down    =   3.9914, p =  0.0000,
-                 spin down    =   3.9914, d =  3.3306,
-                 polarization =   0.0000, s =  0.0000, p =  0.0000, d = -0.0000,
-     Spilling Parameter:   0.0022
+     Atom #   1: total charge =   7.9931, s =  1.9953, p =  0.0000, d =  5.9978,
+                 spin up      =   3.9966, s =  0.9976,
+                 spin up      =   3.9966, p =  0.0000,
+                 spin up      =   3.9966, d =  2.9989,
+                 spin down    =   3.9966, s =  0.9976,
+                 spin down    =   3.9966, p =  0.0000,
+                 spin down    =   3.9966, d =  2.9989,
+                 polarization =   0.0000, s =  0.0000, p =  0.0000, d =  0.0000,
+     Spilling Parameter:   0.0009
