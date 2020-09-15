@@ -319,7 +319,7 @@ class ProjwfcParser(Parser):
             pdostot_filename = fnmatch.filter(out_filenames, '*pdos_tot*')[0]
             with out_folder.open(pdostot_filename, 'r') as pdostot_file:
                 # Columns: Energy(eV), Ldos, Pdos
-                pdostot_array = np.genfromtxt(pdostot_file)
+                pdostot_array = np.atleast_2d(np.genfromtxt(pdostot_file))
                 energy = pdostot_array[:, 0]
                 dos = pdostot_array[:, 1]
         except (OSError, KeyError):
@@ -330,7 +330,7 @@ class ProjwfcParser(Parser):
         pdos_atm_array_dict = {}
         for name in pdos_atm_filenames:
             with out_folder.open(name, 'r') as pdosatm_file:
-                pdos_atm_array_dict[name] = np.genfromtxt(pdosatm_file)
+                pdos_atm_array_dict[name] = np.atleast_2d(np.genfromtxt(pdosatm_file))
 
         # finding the bands and projections
         # we create a dictionary the progressively accumulates more info
