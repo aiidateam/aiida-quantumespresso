@@ -11,10 +11,10 @@ Dos:
   - states/eV
 bands:
   array|bands:
-  - 22
+  - 1
   - 16
   array|kpoints:
-  - 22
+  - 1
   - 3
   units: eV
 projections:
@@ -67,40 +67,40 @@ projections:
   array|pdos_array_9:
   - 22
   array|proj_array_0:
-  - 22
+  - 1
   - 16
   array|proj_array_1:
-  - 22
+  - 1
   - 16
   array|proj_array_10:
-  - 22
+  - 1
   - 16
   array|proj_array_11:
-  - 22
+  - 1
   - 16
   array|proj_array_2:
-  - 22
+  - 1
   - 16
   array|proj_array_3:
-  - 22
+  - 1
   - 16
   array|proj_array_4:
-  - 22
+  - 1
   - 16
   array|proj_array_5:
-  - 22
+  - 1
   - 16
   array|proj_array_6:
-  - 22
+  - 1
   - 16
   array|proj_array_7:
-  - 22
+  - 1
   - 16
   array|proj_array_8:
-  - 22
+  - 1
   - 16
   array|proj_array_9:
-  - 22
+  - 1
   - 16
   orbital_dicts:
   - _orbital_type: noncollinearhydrogen

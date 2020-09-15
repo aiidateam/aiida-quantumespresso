@@ -11,18 +11,18 @@ Dos:
   - states/eV
 bands_down:
   array|bands:
-  - 11
+  - 1
   - 8
   array|kpoints:
-  - 11
+  - 1
   - 3
   units: eV
 bands_up:
   array|bands:
-  - 11
+  - 1
   - 8
   array|kpoints:
-  - 11
+  - 1
   - 3
   units: eV
 projections_down:
@@ -51,22 +51,22 @@ projections_down:
   array|pdos_array_5:
   - 22
   array|proj_array_0:
-  - 11
+  - 1
   - 8
   array|proj_array_1:
-  - 11
+  - 1
   - 8
   array|proj_array_2:
-  - 11
+  - 1
   - 8
   array|proj_array_3:
-  - 11
+  - 1
   - 8
   array|proj_array_4:
-  - 11
+  - 1
   - 8
   array|proj_array_5:
-  - 11
+  - 1
   - 8
   orbital_dicts:
   - _orbital_type: realhydrogen
@@ -179,22 +179,22 @@ projections_up:
   array|pdos_array_5:
   - 22
   array|proj_array_0:
-  - 11
+  - 1
   - 8
   array|proj_array_1:
-  - 11
+  - 1
   - 8
   array|proj_array_2:
-  - 11
+  - 1
   - 8
   array|proj_array_3:
-  - 11
+  - 1
   - 8
   array|proj_array_4:
-  - 11
+  - 1
   - 8
   array|proj_array_5:
-  - 11
+  - 1
   - 8
   orbital_dicts:
   - _orbital_type: realhydrogen
