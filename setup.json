@@ -48,6 +48,10 @@
         "aiida.tools.calculations": [
             "quantumespresso.pw = aiida_quantumespresso.tools.calculations.pw:PwCalculationTools"
         ],
+        "aiida.tools.data.orbitals": [
+            "spinorbithydrogen = aiida_quantumespresso.tools.data.orbital.spinorbithydrogen:SpinorbitHydrogenOrbital",
+            "noncollinearhydrogen = aiida_quantumespresso.tools.data.orbital.noncollinearhydrogen:NoncollinearHydrogenOrbital"
+        ],
         "aiida.tools.dbexporters.tcod_plugins": [
             "quantumespresso.cp = aiida_quantumespresso.tools.dbexporters.tcod_plugins.cp:CpTcodtranslator",
             "quantumespresso.pw = aiida_quantumespresso.tools.dbexporters.tcod_plugins.pw:PwTcodtranslator"

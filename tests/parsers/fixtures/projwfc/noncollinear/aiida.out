@@ -1,0 +1,134 @@
+
+     Program PROJWFC v.6.5 starts on 15Sep2020 at  9:19:28 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI), running on     1 processors
+
+     MPI processes distributed on     1 nodes
+
+     Reading xml data from directory:
+
+     ./out/aiida.save/
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation= PZ
+                           (   1   1   0   0   0   0   0)
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+               file Fe.pz-nd-rrkjus.UPF: wavefunction(s)  4S renormalized
+ 
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum         307     155     37                 3367     1205     141
+ 
+
+     Check: negative core charge=   -0.000013
+
+     Gaussian broadening (read from input): ngauss,degauss=   0    0.020000
+
+
+     Calling projwave .... 
+ 
+  Problem Sizes 
+  natomwfc =            12
+  nbnd     =            16
+  nkstot   =             1
+  npwx     =           141
+  nkb      =            18
+ 
+
+     Atomic states used for projection
+     (read from pseudopotential files):
+
+     state #   1: atom   1 (Fe ), wfc  1 (l=0 m= 1 s_z= 0.5)
+     state #   2: atom   1 (Fe ), wfc  1 (l=0 m= 1 s_z=-0.5)
+     state #   3: atom   1 (Fe ), wfc  2 (l=2 m= 1 s_z= 0.5)
+     state #   4: atom   1 (Fe ), wfc  2 (l=2 m= 2 s_z= 0.5)
+     state #   5: atom   1 (Fe ), wfc  2 (l=2 m= 3 s_z= 0.5)
+     state #   6: atom   1 (Fe ), wfc  2 (l=2 m= 4 s_z= 0.5)
+     state #   7: atom   1 (Fe ), wfc  2 (l=2 m= 5 s_z= 0.5)
+     state #   8: atom   1 (Fe ), wfc  2 (l=2 m= 1 s_z=-0.5)
+     state #   9: atom   1 (Fe ), wfc  2 (l=2 m= 2 s_z=-0.5)
+     state #  10: atom   1 (Fe ), wfc  2 (l=2 m= 3 s_z=-0.5)
+     state #  11: atom   1 (Fe ), wfc  2 (l=2 m= 4 s_z=-0.5)
+     state #  12: atom   1 (Fe ), wfc  2 (l=2 m= 5 s_z=-0.5)
+
+ k =   0.0000000000  0.0000000000  0.0000000000
+==== e(   1) =     5.28097 eV ==== 
+     psi = 0.499*[#   1]+0.499*[#   2]
+    |psi|^2 = 0.998
+==== e(   2) =     6.42269 eV ==== 
+     psi = 0.499*[#   1]+0.499*[#   2]
+    |psi|^2 = 0.997
+==== e(   3) =    11.65332 eV ==== 
+     psi = 0.250*[#   4]+0.250*[#   7]+0.250*[#   9]+0.250*[#  12]
+    |psi|^2 = 1.000
+==== e(   4) =    11.65332 eV ==== 
+     psi = 0.250*[#   4]+0.250*[#   7]+0.250*[#   9]+0.250*[#  12]
+    |psi|^2 = 1.000
+==== e(   5) =    11.65334 eV ==== 
+     psi = 0.500*[#   5]+0.500*[#  10]
+    |psi|^2 = 1.000
+==== e(   6) =    13.02237 eV ==== 
+     psi = 0.375*[#   6]+0.375*[#  11]+0.125*[#   3]+0.125*[#   8]
+    |psi|^2 = 1.000
+==== e(   7) =    13.02238 eV ==== 
+     psi = 0.375*[#   3]+0.375*[#   8]+0.125*[#   6]+0.125*[#  11]
+    |psi|^2 = 1.000
+==== e(   8) =    15.08102 eV ==== 
+     psi = 0.250*[#   4]+0.250*[#   7]+0.250*[#   9]+0.250*[#  12]
+    |psi|^2 = 1.000
+==== e(   9) =    15.08102 eV ==== 
+     psi = 0.250*[#   4]+0.250*[#   7]+0.250*[#   9]+0.250*[#  12]
+    |psi|^2 = 1.000
+==== e(  10) =    15.08104 eV ==== 
+     psi = 0.500*[#   5]+0.500*[#  10]
+    |psi|^2 = 1.000
+==== e(  11) =    17.27459 eV ==== 
+     psi = 0.375*[#   6]+0.375*[#  11]+0.125*[#   3]+0.125*[#   8]
+    |psi|^2 = 0.999
+==== e(  12) =    17.27465 eV ==== 
+     psi = 0.375*[#   3]+0.375*[#   8]+0.125*[#   6]+0.125*[#  11]
+    |psi|^2 = 0.999
+==== e(  13) =    39.61394 eV ==== 
+ 
+    |psi|^2 = 0.000
+==== e(  14) =    39.61401 eV ==== 
+ 
+    |psi|^2 = 0.000
+==== e(  15) =    39.61413 eV ==== 
+ 
+    |psi|^2 = 0.000
+==== e(  16) =    40.42571 eV ==== 
+ 
+    |psi|^2 = 0.000
+
+Lowdin Charges: 
+
+     Atom #   1: total charge =   7.9931, s =  1.9953, p =  0.0000, d =  5.9978, 
+                 spin up      =   3.9966, s =  0.9976, 
+                 spin up      =   3.9966, p =  0.0000, 
+                 spin up      =   3.9966, d =  2.9989, 
+                 spin down    =   3.9966, s =  0.9976, 
+                 spin down    =   3.9966, p =  0.0000, 
+                 spin down    =   3.9966, d =  2.9989, 
+                 polarization =   0.0000, s =  0.0000, p =  0.0000, d =  0.0000, 
+     Spilling Parameter:   0.0009
+ 
+     PROJWFC      :      1.07s CPU      1.19s WALL
+
+ 
+   This run was terminated on:   9:19:29  15Sep2020            
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=
