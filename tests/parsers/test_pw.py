@@ -95,6 +95,36 @@ def test_pw_default_no_xml(
     })
 
 
+def test_pw_default_xml_200420(
+    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+):
+    """Test a `pw.x` calculation in `scf` mode that produced the XML output with schema of 200420.
+
+    The output is created by running a dead simple SCF calculation for an aluminium structure. This test should test the
+    standard parsing of the stdout content and XML file stored in the standard results node.
+    """
+    name = 'default_xml_200420'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert not orm.Log.objects.get_logs_for(node), [log.message for log in orm.Log.objects.get_logs_for(node)]
+    assert 'output_band' in results
+    assert 'output_parameters' in results
+    assert 'output_trajectory' in results
+
+    data_regression.check({
+        'output_band': results['output_band'].attributes,
+        'output_parameters': results['output_parameters'].get_dict(),
+        'output_trajectory': results['output_trajectory'].attributes,
+    })
+
+
 def test_pw_default_xml_190304(
     aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
