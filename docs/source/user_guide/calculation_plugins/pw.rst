@@ -99,6 +99,10 @@ This can then be used directly in the process builder of for example a ``PwCalcu
 * **settings**, class :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>` (optional)
   An optional dictionary that activates non-default operations. For a list of possible
   values to pass, see the section on the :ref:`advanced features <pw-advanced-features>`.
+* **parallelization**, class :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>` (optional)
+  An optional dictionary to specify the parallelization flags passed to `pw.x` on the
+  command line. The dictionary maps flag names (type `str`) to their values (type `int`).
+  Allowed flag names are `npool`, `nband`, `ntg`, and `ndiag`.
 * **parent_folder**, class :py:class:`RemoteData <aiida.orm.nodes.data.dict.Dict>` (optional)
   If specified, the scratch folder coming from a previous QE calculation is
   copied in the scratch of the new calculation.
