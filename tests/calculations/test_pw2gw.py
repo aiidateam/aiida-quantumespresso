@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=redefined-outer-name
 """Tests for the `Pw2gwCalculation` class."""
 import os
 import pytest
 
 from aiida import orm
 from aiida.common import datastructures
+
 
 @pytest.fixture()
 def parameters():
@@ -22,7 +24,12 @@ def parameters():
 
     return parameters
 
-@pytest.fixture(params=[False,], ids=['base', ])
+
+@pytest.fixture(params=[
+    False,
+], ids=[
+    'base',
+])
 def settings(request):
     """Fixture: parameters for z2pack calculation."""
     settings = {}
@@ -32,14 +39,18 @@ def settings(request):
 
     return settings
 
+
 @pytest.fixture
 def remote(fixture_localhost, tmpdir, generate_remote_data):
     """Fixture: Remote folder created by a CalcJob with inputs."""
     remote = generate_remote_data(
-        fixture_localhost, str(tmpdir), 'quantumespresso.pw',
-        )
+        fixture_localhost,
+        str(tmpdir),
+        'quantumespresso.pw',
+    )
 
     return remote
+
 
 @pytest.fixture()
 def inputs(fixture_code, remote, parameters, settings):
@@ -57,17 +68,12 @@ def inputs(fixture_code, remote, parameters, settings):
     }
     return inputs
 
+
 @pytest.mark.parametrize(
-    'settings,with_symlink',
-    [
-        (False, False),
-        (True, True)], ids=['base', 'with_symlink'
-    ],
-    indirect=['settings']
-    )
+    'settings,with_symlink', [(False, False), (True, True)], ids=['base', 'with_symlink'], indirect=['settings']
+)
 def test_pw2gw_default(
-    aiida_profile, fixture_sandbox, generate_calc_job, tmpdir,
-    file_regression, remote, inputs, with_symlink
+    aiida_profile, fixture_sandbox, generate_calc_job, file_regression, remote, inputs, with_symlink
 ):
     """Test a default `Pw2gwCalculation`."""
     entry_point_name = 'quantumespresso.pw2gw'
@@ -77,22 +83,12 @@ def test_pw2gw_default(
     retrieve_list = ['aiida.out', 'epsX.dat', 'epsY.dat', 'epsZ.dat', 'epsTOT.dat']
 
     remote_copy_list = [
-        (
-            remote.computer.uuid,
-            os.path.join(remote.get_remote_path(), path),
-            path
-        ) for path in ['./pseudo/']
-        ]
+        (remote.computer.uuid, os.path.join(remote.get_remote_path(), path), path) for path in ['./pseudo/']
+    ]
     remote_symlink_list = []
 
     ptr = remote_copy_list if not with_symlink else remote_symlink_list
-    ptr.extend([
-        (
-            remote.computer.uuid,
-            os.path.join(remote.get_remote_path(), path),
-            path
-        ) for path in ['./out/']
-        ])
+    ptr.extend([(remote.computer.uuid, os.path.join(remote.get_remote_path(), path), path) for path in ['./out/']])
 
     assert isinstance(calc_info, datastructures.CalcInfo)
     assert sorted(calc_info.retrieve_list) == sorted(retrieve_list)
