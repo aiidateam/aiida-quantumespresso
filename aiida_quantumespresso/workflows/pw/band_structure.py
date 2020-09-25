@@ -12,7 +12,7 @@ from aiida_quantumespresso.utils.resources import get_default_options
 PwBandsWorkChain = WorkflowFactory('quantumespresso.pw.bands')
 
 
-def validate_protocol(protocol_dict):
+def validate_protocol(protocol_dict, ctx=None):  # pylint: disable=unused-argument
     """Check that the protocol is one for which we have a definition."""
     try:
         protocol_name = protocol_dict['name']
