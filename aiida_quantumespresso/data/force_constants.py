@@ -5,6 +5,8 @@ import numpy
 from qe_tools.constants import bohr_to_ang
 from aiida.orm import SinglefileData
 
+# pylint: disable=too-many-ancestors, raise-missing-from
+
 
 class ForceConstantsData(SinglefileData):
     """Class to handle interatomic force constants from the Quantum ESPRESSO q2r.x code."""
