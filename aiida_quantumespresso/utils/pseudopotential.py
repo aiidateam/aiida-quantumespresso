@@ -2,7 +2,11 @@
 """Utilities for pseudo potentials."""
 import warnings
 from aiida.common.warnings import AiidaDeprecationWarning
-from aiida.orm.nodes.data.upf import UpfData, get_pseudos_from_structure
+from aiida.orm.nodes.data.upf import get_pseudos_from_structure
+from aiida.plugins import DataFactory
+
+LegacyUpfData = DataFactory('upf')
+UpfData = DataFactory('pseudo.upf')
 
 
 def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=None):  # pylint: disable=invalid-name
@@ -43,7 +47,7 @@ def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=N
     for kind in structure.get_kind_names():
         if kind not in pseudos:
             raise ValueError(f'no pseudo available for element {kind}')
-        elif not isinstance(pseudos[kind], UpfData):
+        elif not isinstance(pseudos[kind], (LegacyUpfData, UpfData)):
             raise ValueError(f'pseudo for element {kind} is not of type UpfData')
 
     return pseudos

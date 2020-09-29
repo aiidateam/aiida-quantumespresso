@@ -6,12 +6,13 @@ those hardcoded in the Pw2wannier90Calculation class. We also hardcode some para
 """
 import click
 
-from aiida.cmdline.params import options, types
+from aiida.cmdline.params import options as options_core
+from aiida.cmdline.params import types
 from aiida.cmdline.params.options import OverridableOption
 from aiida.cmdline.utils import decorators
 
 from ..utils import launch
-from ..utils import options as options_qe
+from ..utils import options
 from . import cmd_launch
 
 NNKP_FILE = OverridableOption(
@@ -41,15 +42,15 @@ WRITE_UNK = OverridableOption(
 
 
 @cmd_launch.command('pw2wannier90')
-@options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.pw2wannier90'))
-@options_qe.PARENT_FOLDER(required=True, help='RemoteData node containing the output of a PW NSCF calculation.')
+@options_core.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.pw2wannier90'))
+@options.PARENT_FOLDER(required=True, help='RemoteData node containing the output of a PW NSCF calculation.')
 @NNKP_FILE()
 @SCDM_MODE()
 @WRITE_UNK()
-@options_qe.MAX_NUM_MACHINES()
-@options_qe.MAX_WALLCLOCK_SECONDS()
-@options_qe.WITH_MPI()
-@options_qe.DAEMON()
+@options.MAX_NUM_MACHINES()
+@options.MAX_WALLCLOCK_SECONDS()
+@options.WITH_MPI()
+@options.DAEMON()
 @decorators.with_dbenv()
 def launch_calculation(
     code, parent_folder, nnkp_file, scdm_mode, write_unk, max_num_machines, max_wallclock_seconds, with_mpi, daemon

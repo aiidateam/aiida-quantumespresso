@@ -2,7 +2,6 @@
 # pylint: disable=redefined-outer-name,too-many-statements
 """Initialise a text database and profile for pytest."""
 import collections
-import io
 import os
 import shutil
 
@@ -190,33 +189,46 @@ def generate_calc_job_node(fixture_localhost):
 
 
 @pytest.fixture(scope='session')
-def generate_upf_data(filepath_tests):
+def generate_upf_data(tmp_path_factory):
     """Return a `UpfData` instance for the given element a file for which should exist in `tests/fixtures/pseudos`."""
 
     def _generate_upf_data(element):
         """Return `UpfData` node."""
-        from aiida.orm import UpfData
+        from aiida_pseudo.data.pseudo import UpfData
 
-        filepath = os.path.join(filepath_tests, 'fixtures', 'pseudos', f'{element}.upf')
-
-        with io.open(filepath, 'r') as handle:
-            upf = UpfData(file=handle.name)
-
-        return upf
+        with open(tmp_path_factory.mktemp('pseudos') / f'{element}.upf', 'w+b') as handle:
+            handle.write(f'<UPF version="2.0.1"><PP_HEADER element="{element}"/></UPF>\n'.encode('utf-8'))
+            handle.flush()
+            return UpfData(file=handle)
 
     return _generate_upf_data
 
 
 @pytest.fixture
-def generate_upf_family(generate_upf_data):
-    """Generate a UPF family."""
+def generate_upf_family(tmp_path, generate_upf_data):
+    """Return a factory for a `UpfFamily` instance."""
 
-    def _generate_upf_family(label='SSSP'):
-        from aiida.orm.groups import UpfFamily
-        pseudo = generate_upf_data(element='Si').store()
-        group = UpfFamily(label=label).store()
-        group.add_nodes([pseudo])
-        return group
+    def _generate_upf_family(label='family', elements=('Si',)):
+        """Return an instance of `UpfFamily` or subclass containing the given elements.
+
+        :param elements: optional list of elements to include instead of all the available ones
+        :return: the pseudo family
+        """
+        from aiida_pseudo.groups.family import UpfFamily
+
+        cutoffs = {}
+
+        for element in elements:
+            upf = generate_upf_data(element)
+            with open(os.path.join(tmp_path, f'{element}.upf'), 'wb') as handle:
+                with upf.open(mode='rb') as source:
+                    handle.write(source.read())
+            cutoffs[element] = {'cutoff_wfc': 1.0, 'cutoff_rho': 2.0}
+
+        family = UpfFamily.create_from_folder(str(tmp_path), label)
+        family.set_cutoffs(cutoffs)
+
+        return family
 
     return _generate_upf_family
 

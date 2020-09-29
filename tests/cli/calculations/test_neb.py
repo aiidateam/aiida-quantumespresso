@@ -11,5 +11,5 @@ def test_command_base(run_cli_process_launch_command, fixture_code, generate_upf
     code = fixture_code('quantumespresso.neb').store()
     family = generate_upf_family()
     structures = [generate_structure().store().pk, generate_structure().store().pk]
-    options = ['-X', code.full_label, '-p', family.label, '-s'] + structures
+    options = ['-X', code.full_label, '-F', family.label, '-s'] + structures
     run_cli_process_launch_command(launch_calculation, options=options)
