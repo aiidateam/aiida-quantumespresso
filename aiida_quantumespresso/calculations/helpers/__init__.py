@@ -186,7 +186,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
     try:
         with open(xml_path, 'r') as handle:
             dom = xml.dom.minidom.parse(handle)
-    except IOError:
+    except IOError as exception:
         prefix = 'INPUT_PW-'
         suffix = '.xml'
         versions = [
@@ -205,7 +205,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
         raise QEInputValidationError(
             'Unknown Quantum Espresso version: {}. '
             'Available versions: {};{}'.format(version, ', '.join(versions), add_str)
-        )
+        ) from exception
 
     # ========== List of known PW variables (from XML file) ===============
     known_kws = dom.getElementsByTagName('var')
@@ -340,21 +340,21 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
 
     try:
         calculation_type = input_params_internal['calculation']
-    except KeyError:
+    except KeyError as exception:
         raise QEInputValidationError(
             'Error, you need to specify at least the '
             'calculation type (among {})'.format(', '.join(list(valid_calculations_and_opt_namelists.keys())))
-        )
+        ) from exception
 
     try:
         opt_namelists = valid_calculations_and_opt_namelists[calculation_type]
-    except KeyError:
+    except KeyError as exception:
         raise QEInputValidationError(
             'Error, {} is not a valid value for '
             'the calculation type (valid values: {})'.format(
                 calculation_type, ', '.join(list(valid_calculations_and_opt_namelists.keys()))
             )
-        )
+        ) from exception
 
     internal_dict = {i: {} for i in compulsory_namelists + opt_namelists}
     all_namelists = set(compulsory_namelists)
@@ -396,19 +396,19 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
                         errors_list.append(err_str)
             try:
                 internal_dict[namelist_name][keyword] = _check_and_convert(keyword, value, found_var['expected_type'])
-            except KeyError:
+            except KeyError as exception:
                 if namelist_name in all_namelists:
                     err_str = 'Error, namelist {} not valid for calculation type {}'.format(
                         namelist_name, calculation_type
                     )
                     if stop_at_first_error:
-                        raise QEInputValidationError(err_str)
+                        raise QEInputValidationError(err_str) from exception
                     else:
                         errors_list.append(err_str)
                 else:
                     err_str = 'Error, unknown namelist {}'.format(namelist_name)
                     if stop_at_first_error:
-                        raise QEInputValidationError(err_str)
+                        raise QEInputValidationError(err_str) from exception
                     else:
                         errors_list.append(err_str)
             except TypeError as exception:
@@ -462,20 +462,20 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
 
                 try:
                     internal_dict[namelist_name][keyword] = outdict
-                except KeyError:
+                except KeyError as exception:
                     err_str = 'Error, unknown namelist {}'.format(namelist_name)
                     if stop_at_first_error:
-                        raise QEInputValidationError(err_str)
+                        raise QEInputValidationError(err_str) from exception
                     else:
                         errors_list.append(err_str)
                         continue
             else:
                 try:
                     end_value = int(found_var['end_val'])
-                except ValueError:
+                except ValueError as exception:
                     err_str = "Error, invalid end value '{}' for keyword '{}'.".format(found_var['end_val'], keyword)
                     if stop_at_first_error:
-                        raise QEInputValidationError(err_str)
+                        raise QEInputValidationError(err_str) from exception
                     else:
                         errors_list.append(err_str)
                         continue
@@ -504,10 +504,10 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
 
                 try:
                     internal_dict[namelist_name][keyword] = outlist
-                except KeyError:
+                except KeyError as exception:
                     err_str = 'Error, unknown namelist {}'.format(namelist_name)
                     if stop_at_first_error:
-                        raise QEInputValidationError(err_str)
+                        raise QEInputValidationError(err_str) from exception
                     else:
                         errors_list.append(err_str)
                         continue
@@ -522,10 +522,10 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
             # Create empty list for this keyword in the correct namelist
             try:
                 internal_dict[namelist_name][keyword] = []
-            except KeyError:
+            except KeyError as exception:
                 err_str = 'Error, unknown namelist {}'.format(namelist_name)
                 if stop_at_first_error:
-                    raise QEInputValidationError(err_str)
+                    raise QEInputValidationError(err_str) from exception
                 else:
                     errors_list.append(err_str)
                     continue
@@ -554,12 +554,12 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
 
                     try:
                         int(variable['start'][i])
-                    except ValueError:
+                    except ValueError as exception:
                         err_str = "Error, invalid start value '{}' for keyword '{}'.".format(
                             variable['start'][i], keyword
                         )
                         if stop_at_first_error:
-                            raise QEInputValidationError(err_str)
+                            raise QEInputValidationError(err_str) from exception
                         else:
                             errors_list.append(err_str)
                             continue
@@ -583,12 +583,12 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
                         # Other types are assumed to be an integer
                         try:
                             index_value = int(index_value)
-                        except ValueError:
+                        except ValueError as exception:
                             err_str = 'Error, only integer types are supported for index {}, got {}'.format(
                                 index, index_value
                             )
                             if stop_at_first_error:
-                                raise QEInputValidationError(err_str)
+                                raise QEInputValidationError(err_str) from exception
                             else:
                                 errors_list.append(err_str)
                                 continue

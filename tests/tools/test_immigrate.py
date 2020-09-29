@@ -5,9 +5,7 @@ import os
 from aiida_quantumespresso.tools.pwinputparser import create_builder_from_file
 
 
-def test_create_builder(
-    aiida_profile, fixture_sandbox, fixture_code, generate_upf_data, generate_calc_job, filepath_tests
-):
+def test_create_builder(fixture_sandbox, fixture_code, generate_upf_data, generate_calc_job, filepath_tests):
     """Test the `create_builder_from_file` method that parses an existing `pw.x` folder into a process builder.
 
     The input file used is the one generated for `tests.calculations.test_pw.test_pw_default`.

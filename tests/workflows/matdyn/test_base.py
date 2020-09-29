@@ -33,7 +33,7 @@ def generate_workchain_matdyn(generate_workchain, generate_inputs_matdyn, genera
     return _generate_workchain_matdyn
 
 
-def test_setup(aiida_profile, generate_workchain_matdyn):
+def test_setup(generate_workchain_matdyn):
     """Test `MatdynBaseWorkChain.setup`."""
     process = generate_workchain_matdyn()
     process.setup()
@@ -42,7 +42,7 @@ def test_setup(aiida_profile, generate_workchain_matdyn):
     assert isinstance(process.ctx.inputs, AttributeDict)
 
 
-def test_handle_unrecoverable_failure(aiida_profile, generate_workchain_matdyn):
+def test_handle_unrecoverable_failure(generate_workchain_matdyn):
     """Test `MatdynBaseWorkChain.handle_unrecoverable_failure`."""
     process = generate_workchain_matdyn(exit_code=MatdynCalculation.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
     process.setup()

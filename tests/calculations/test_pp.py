@@ -34,7 +34,7 @@ def generate_inputs(fixture_localhost, fixture_sandbox, fixture_code, generate_r
     return _generate_inputs
 
 
-def test_pp_default(aiida_profile, fixture_sandbox, generate_calc_job, generate_inputs, file_regression):
+def test_pp_default(fixture_sandbox, generate_calc_job, generate_inputs, file_regression):
     """Test a default `PpCalculation`."""
     entry_point_name = 'quantumespresso.pp'
     inputs = generate_inputs()
@@ -61,7 +61,7 @@ def test_pp_default(aiida_profile, fixture_sandbox, generate_calc_job, generate_
     file_regression.check(input_written, encoding='utf-8', extension='.in')
 
 
-def test_pp_keep_plot_file(aiida_profile, fixture_sandbox, generate_calc_job, generate_inputs):
+def test_pp_keep_plot_file(fixture_sandbox, generate_calc_job, generate_inputs):
     """Test a `PpCalculation` where we want to retrieve the plot file."""
     entry_point_name = 'quantumespresso.pp'
     inputs = generate_inputs()
@@ -81,7 +81,7 @@ def test_pp_keep_plot_file(aiida_profile, fixture_sandbox, generate_calc_job, ge
         assert element in calc_info.retrieve_list
 
 
-def test_pp_cmdline_setting(aiida_profile, fixture_sandbox, generate_calc_job, generate_inputs):
+def test_pp_cmdline_setting(fixture_sandbox, generate_calc_job, generate_inputs):
     """Test a `PpCalculation` with user-defined cmdline settings."""
     entry_point_name = 'quantumespresso.pp'
     inputs = generate_inputs(settings={'cmdline': ['-npools', '2']})
@@ -93,16 +93,49 @@ def test_pp_cmdline_setting(aiida_profile, fixture_sandbox, generate_calc_job, g
     ('parameters', 'message'),
     (
         ({}, 'parameter `INPUTPP.plot_num` must be explicitly set'),
-        ({'INPUTPP': {}}, 'parameter `INPUTPP.plot_num` must be explicitly set'),
-        ({'INPUTPP': {'plot_num': 'str'}}, '`INTPUTPP.plot_num` must be an integer in the range'),
-        ({'INPUTPP': {'plot_num': 14}}, '`INTPUTPP.plot_num` must be an integer in the range'),
-        ({'INPUTPP': {'plot_num': 1}}, 'parameter `PLOT.iflag` must be explicitly set'),
-        ({'INPUTPP': {'plot_num': 1}, 'PLOT': {}}, 'parameter `PLOT.iflag` must be explicitly set'),
-        ({'INPUTPP': {'plot_num': 1}, 'PLOT': {'iflag': 'str'}}, '`PLOT.iflag` must be an integer in the range 0-4'),
-        ({'INPUTPP': {'plot_num': 1}, 'PLOT': {'iflag': 5}}, '`PLOT.iflag` must be an integer in the range 0-4'),
+        ({
+            'INPUTPP': {}
+        }, 'parameter `INPUTPP.plot_num` must be explicitly set'),
+        ({
+            'INPUTPP': {
+                'plot_num': 'str'
+            }
+        }, '`INTPUTPP.plot_num` must be an integer in the range'),
+        ({
+            'INPUTPP': {
+                'plot_num': 14
+            }
+        }, '`INTPUTPP.plot_num` must be an integer in the range'),
+        ({
+            'INPUTPP': {
+                'plot_num': 1
+            }
+        }, 'parameter `PLOT.iflag` must be explicitly set'),
+        ({
+            'INPUTPP': {
+                'plot_num': 1
+            },
+            'PLOT': {}
+        }, 'parameter `PLOT.iflag` must be explicitly set'),
+        ({
+            'INPUTPP': {
+                'plot_num': 1
+            },
+            'PLOT': {
+                'iflag': 'str'
+            }
+        }, '`PLOT.iflag` must be an integer in the range 0-4'),
+        ({
+            'INPUTPP': {
+                'plot_num': 1
+            },
+            'PLOT': {
+                'iflag': 5
+            }
+        }, '`PLOT.iflag` must be an integer in the range 0-4'),
     ),
-)  # yapf: disable
-def test_pp_invalid_parameters(aiida_profile, fixture_sandbox, generate_calc_job, generate_inputs, parameters, message):
+)
+def test_pp_invalid_parameters(fixture_sandbox, generate_calc_job, generate_inputs, parameters, message):
     """Test that launching `PpCalculation` fails for invalid parameters."""
     entry_point_name = 'quantumespresso.pp'
 

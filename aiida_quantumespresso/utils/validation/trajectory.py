@@ -55,8 +55,8 @@ def verify_convergence_forces(trajectory, index=-1, threshold=None):
 
     try:
         forces = trajectory.get_array('forces')[index]
-    except (KeyError, IndexError):
-        raise ValueError('the `forces` array does not exist or the given index exceeds the length.')
+    except (KeyError, IndexError) as exception:
+        raise ValueError('the `forces` array does not exist or the given index exceeds the length.') from exception
 
     return numpy.max(abs(forces)) < threshold
 
@@ -82,8 +82,8 @@ def verify_convergence_stress(trajectory, index=-1, threshold=None, reference_pr
 
     try:
         stress = trajectory.get_array('stress')[index]
-    except (KeyError, IndexError):
-        raise ValueError('the `stress` array does not exist or the given index exceeds the length.')
+    except (KeyError, IndexError) as exception:
+        raise ValueError('the `stress` array does not exist or the given index exceeds the length.') from exception
 
     pressure = (numpy.trace(stress) / 3.)
 
