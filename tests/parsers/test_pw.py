@@ -612,12 +612,10 @@ def test_pw_vcrelax_success_rVV10(
     assert calcfunction.is_finished_ok, calcfunction.exit_message
     assert not orm.Log.objects.get_logs_for(node), [log.message for log in orm.Log.objects.get_logs_for(node)]
     assert 'output_parameters' in results
-    assert 'output_structure' in results
     assert 'output_trajectory' in results
     data_regression.check({
-        'output_parameters': results['output_parameters'].get_dict(),
-        'output_structure': results['output_structure'].attributes,
-        'output_trajectory': results['output_trajectory'].attributes,
+        'energy_vdw': results['output_parameters']['energy_vdw'],
+        'array|stress': results['output_trajectory'].attributes['array|stress'],
     })
 
 

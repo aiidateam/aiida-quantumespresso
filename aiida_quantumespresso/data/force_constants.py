@@ -5,8 +5,6 @@ import numpy
 from qe_tools.constants import bohr_to_ang
 from aiida.orm import SinglefileData
 
-# pylint: disable=too-many-ancestors, raise-missing-from
-
 
 class ForceConstantsData(SinglefileData):
     """Class to handle interatomic force constants from the Quantum ESPRESSO q2r.x code."""
@@ -230,6 +228,7 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
                                         current_line += 1
 
     except (IndexError, ValueError) as exception:
-        raise ValueError(str(exception) + '\nForce constants file could not be parsed (incorrect file format)')
+        raise ValueError(str(exception) + '\nForce constants file could not be parsed (incorrect file format)') \
+            from exception
 
     return parsed_data, force_constants, warnings
