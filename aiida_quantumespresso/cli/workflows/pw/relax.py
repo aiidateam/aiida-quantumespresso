@@ -93,6 +93,12 @@ def launch_workflow(
         builder.clean_workdir = Bool(True)
 
     if final_scf:
-        builder.final_scf = Bool(True)
+        builder.base_final_scf.pseudo_family = Str(pseudo_family)
+        builder.base_final_scf.kpoints_distance = Float(kpoints_distance)
+        builder.base_final_scf.pw.code = code
+        builder.base_final_scf.pw.parameters = Dict(dict=parameters)
+        builder.base_final_scf.pw.metadata.options = get_default_options(
+            max_num_machines, max_wallclock_seconds, with_mpi
+        )
 
     launch.launch_process(builder, daemon)
