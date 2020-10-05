@@ -227,7 +227,7 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
                                         force_constants[mi1, mi2, mi3, ji1, ji2, na1, na2] = float(line[3])
                                         current_line += 1
 
-    except (IndexError, ValueError) as exception:
-        raise ValueError(str(exception) + '\nForce constants file could not be parsed (incorrect file format)')
+    except (IndexError, ValueError) as exc:
+        raise ValueError(str(exc) + '\nForce constants file could not be parsed (incorrect file format)') from exc
 
     return parsed_data, force_constants, warnings

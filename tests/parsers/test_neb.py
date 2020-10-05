@@ -45,9 +45,7 @@ def build_num_regression_dictionary(arrays, array_names):
     return result
 
 
-def test_neb_default(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, data_regression, num_regression
-):
+def test_neb_default(fixture_localhost, generate_calc_job_node, generate_parser, data_regression, num_regression):
     """Test a NEB calculation with symmetric images and automatic climbing image."""
     name = 'default'
     entry_point_calc_job = 'quantumespresso.neb'
@@ -78,7 +76,7 @@ def test_neb_default(
 
 
 def test_neb_all_iterations(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, data_regression, num_regression
+    fixture_localhost, generate_calc_job_node, generate_parser, data_regression, num_regression
 ):
     """Test a NEB calculation with the parser option `all_iterations=True`."""
     name = 'default'

@@ -16,9 +16,7 @@ def generate_inputs(generate_structure):
     })
 
 
-def test_cp_default(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
-):
+def test_cp_default(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression):
     """Test a default `cp.x` calculation."""
     entry_point_calc_job = 'quantumespresso.cp'
     entry_point_parser = 'quantumespresso.cp'

@@ -7,8 +7,8 @@ import numpy as np
 from aiida.orm import Code, Dict, UpfData
 from aiida.common.folders import Folder
 from aiida.plugins import CalculationFactory
-
 from qe_tools.parsers import PwInputFile as BasePwInputFile
+
 from .base import StructureParseMixin
 
 
