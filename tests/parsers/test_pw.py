@@ -586,7 +586,7 @@ def test_pw_vcrelax_success_fractional(
 
 
 def test_pw_vcrelax_success_rVV10(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
     """Test a `vc-relax` rVV10 run that successfully converges."""
     name = 'vcrelax_success_rVV10'
