@@ -125,8 +125,8 @@ class EpwCalculation(CalcJob):
             parameters['INPUTEPW']['nq2'] = mesh[1]
             parameters['INPUTEPW']['nq3'] = mesh[2]
             postpend_text = None
-        except:
-            raise exceptions.InputValidationError('Cannot get the coarse q-point grid')
+        except NotImplementedError as exception:
+            raise exceptions.InputValidationError('Cannot get the coarse q-point grid') from exception
 
         try:
             mesh, offset = self.inputs.kpoints.get_kpoints_mesh()
@@ -135,8 +135,8 @@ class EpwCalculation(CalcJob):
             parameters['INPUTEPW']['nk2'] = mesh[1]
             parameters['INPUTEPW']['nk3'] = mesh[2]
             postpend_text = None
-        except:
-            raise exceptions.InputValidationError('Cannot get the coarse k-point grid')
+        except NotImplementedError as exception:
+            raise exceptions.InputValidationError('Cannot get the coarse k-point grid') from exception
 
         try:
             mesh, offset = self.inputs.qfpoints.get_kpoints_mesh()
@@ -145,8 +145,8 @@ class EpwCalculation(CalcJob):
             parameters['INPUTEPW']['nqf2'] = mesh[1]
             parameters['INPUTEPW']['nqf3'] = mesh[2]
             postpend_text = None
-        except:
-            raise exceptions.InputValidationError('Cannot get the fine q-point grid')
+        except NotImplementedError as exception:
+            raise exceptions.InputValidationError('Cannot get the fine q-point grid') from exception
 
         try:
             mesh, offset = self.inputs.kfpoints.get_kpoints_mesh()
@@ -155,8 +155,8 @@ class EpwCalculation(CalcJob):
             parameters['INPUTEPW']['nkf2'] = mesh[1]
             parameters['INPUTEPW']['nkf3'] = mesh[2]
             postpend_text = None
-        except:
-            raise exceptions.InputValidationError('Cannot get the fine k-point grid')
+        except NotImplementedError as exception:
+            raise exceptions.InputValidationError('Cannot get the fine k-point grid') from exception
 
 
         # customized namelists, otherwise not present in the distributed epw code

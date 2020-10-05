@@ -24,18 +24,18 @@ class PwCalculationTools(CalculationTools):
         """
         try:
             trajectory = self._node.outputs.output_trajectory
-        except exceptions.NotExistent:
-            raise ValueError('{} does not have the `output_trajectory` output node'.format(self._node))
+        except exceptions.NotExistent as exc:
+            raise ValueError('{} does not have the `output_trajectory` output node'.format(self._node)) from exc
 
         try:
             scf_accuracy = trajectory.get_array('scf_accuracy')
-        except KeyError:
-            raise ValueError('{} does not contain the required `scf_accuracy` array'.format(trajectory))
+        except KeyError as exc:
+            raise ValueError('{} does not contain the required `scf_accuracy` array'.format(trajectory)) from exc
 
         try:
             scf_iterations = trajectory.get_array('scf_iterations')
-        except KeyError:
-            raise ValueError('{} does not contain the required `scf_iterations` array'.format(trajectory))
+        except KeyError as exc:
+            raise ValueError('{} does not contain the required `scf_iterations` array'.format(trajectory)) from exc
 
         number_of_frames = len(scf_iterations)
 

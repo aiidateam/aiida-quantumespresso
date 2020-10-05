@@ -126,8 +126,9 @@ class PhCalculation(CalcJob):
         except AttributeError:
             try:
                 default_parent_output_folder = parent_calc._get_output_folder()  # pylint: disable=protected-access
-            except AttributeError:
-                raise exceptions.InputValidationError('parent calculation does not have a default output subfolder')
+            except AttributeError as exception:
+                msg = 'parent calculation does not have a default output subfolder'
+                raise exceptions.InputValidationError(msg) from exception
         parent_calc_out_subfolder = settings.pop('PARENT_CALC_OUT_SUBFOLDER', default_parent_output_folder)
 
         # I put the first-level keys as uppercase (i.e., namelist and card names) and the second-level keys as lowercase
@@ -186,9 +187,10 @@ class PhCalculation(CalcJob):
             # this is the case where no mesh was set. Maybe it's a list
             try:
                 list_of_points = self.inputs.qpoints.get_kpoints(cartesian=True)
-            except AttributeError:
+            except AttributeError as exception:
                 # In this case, there are no info on the qpoints at all
-                raise exceptions.InputValidationError('Input `qpoints` contains neither a mesh nor a list of points')
+                msg = 'Input `qpoints` contains neither a mesh nor a list of points'
+                raise exceptions.InputValidationError(msg) from exception
 
             # change to 2pi/a coordinates
             lattice_parameter = numpy.linalg.norm(self.inputs.qpoints.cell[0])

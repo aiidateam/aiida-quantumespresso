@@ -35,9 +35,7 @@ def generate_inputs():
     return AttributeDict(inputs)
 
 
-def test_pw2wannier90_default(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, data_regression
-):
+def test_pw2wannier90_default(fixture_localhost, generate_calc_job_node, generate_parser, data_regression):
     """Test a minimal `pw2wannier.x` calculation.
 
     The parser only checks for errors in aiida.out, so the reference contents of output_parameters will also be very

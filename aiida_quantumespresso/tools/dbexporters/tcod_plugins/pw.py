@@ -6,8 +6,8 @@ from aiida.orm.nodes.data.upf import UpfData
 
 try:
     from aiida_tcod.tools.dbexporters.tcod import BaseTcodtranslator  # pylint: disable=import-error
-except ImportError:
-    raise ImportError('dependency `aiida-tcod` not installed; run `pip install aiida-tcod` to do so.')
+except ImportError as exception:
+    raise ImportError('dependency `aiida-tcod` not installed; run `pip install aiida-tcod` to do so.') from exception
 
 
 class PwTcodtranslator(BaseTcodtranslator):

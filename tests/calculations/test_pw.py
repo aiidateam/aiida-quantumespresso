@@ -3,7 +3,7 @@
 from aiida.common import datastructures
 
 
-def test_pw_default(aiida_profile, fixture_sandbox, generate_calc_job, generate_inputs_pw, file_regression):
+def test_pw_default(fixture_sandbox, generate_calc_job, generate_inputs_pw, file_regression):
     """Test a default `PwCalculation`."""
     entry_point_name = 'quantumespresso.pw'
 

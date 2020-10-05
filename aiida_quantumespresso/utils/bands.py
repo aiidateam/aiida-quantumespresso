@@ -37,8 +37,8 @@ def get_highest_occupied_band(bands, threshold=0.005):
 
     try:
         occupations = bands.get_array('occupations')
-    except KeyError:
-        raise ValueError('BandsData does not contain a `occupations` array')
+    except KeyError as exception:
+        raise ValueError('BandsData does not contain a `occupations` array') from exception
 
     lumo_indices = []
 

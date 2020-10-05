@@ -464,7 +464,7 @@ class BasePwCpInputGenerator(CalcJob):
                     has_mesh = False
                     weights = [1.] * num_kpoints
 
-            except AttributeError:
+            except AttributeError as exception:
 
                 try:
                     kpoints_list = kpoints.get_kpoints()
@@ -472,11 +472,10 @@ class BasePwCpInputGenerator(CalcJob):
                     has_mesh = False
                     if num_kpoints == 0:
                         raise exceptions.InputValidationError(
-                            'At least one k point must be '
-                            'provided for non-gamma calculations')
+                            'At least one k point must be provided for non-gamma calculations'
+                        ) from exception
                 except AttributeError:
-                    raise exceptions.InputValidationError(
-                        'No valid kpoints have been found')
+                    raise exceptions.InputValidationError('No valid kpoints have been found') from exception
 
                 try:
                     _, weights = kpoints.get_kpoints(also_weights=True)
@@ -541,20 +540,20 @@ class BasePwCpInputGenerator(CalcJob):
             try:
                 control_nl = input_params['CONTROL']
                 calculation_type = control_nl['calculation']
-            except KeyError:
+            except KeyError as exception:
                 raise exceptions.InputValidationError(
                     "No 'calculation' in CONTROL namelist."
                     'It is required for automatic detection of the valid list '
                     'of namelists. Otherwise, specify the list of namelists '
-                    "using the NAMELISTS key inside the 'settings' input node.")
+                    "using the NAMELISTS key inside the 'settings' input node.") from exception
 
             try:
                 namelists_toprint = cls._automatic_namelists[calculation_type]
-            except KeyError:
+            except KeyError as exception:
                 raise exceptions.InputValidationError("Unknown 'calculation' value in "
                                            'CONTROL namelist {}. Otherwise, specify the list of '
                                            "namelists using the NAMELISTS inside the 'settings' input "
-                                           'node'.format(calculation_type))
+                                           'node'.format(calculation_type)) from exception
 
         inputfile = ''
         for namelist_name in namelists_toprint:
