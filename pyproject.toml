@@ -1,3 +1,46 @@
 [build-system]
 requires = ['setuptools>=40.8.0', 'wheel', 'reentry~=1.3', 'fastentrypoints~=0.12']
 build-backend = 'setuptools.build_meta:__legacy__'
+
+[tool.pylint.format]
+max-line-length = 120
+
+[tool.pylint.tool-check]
+generated-members = 'self.exit_codes.*'
+
+[tool.pylint.messages_control]
+disable = [
+    'bad-continuation',
+    'duplicate-code',
+    'locally-disabled',
+    'logging-format-interpolation',
+    'inconsistent-return-statements',
+    'import-outside-toplevel',
+    'no-else-raise',
+    'too-many-arguments',
+    'too-many-ancestors',
+    'too-many-branches',
+    'too-many-locals',
+]
+
+[tool.pylint.basic]
+good-names = [
+    'i',
+    'j',
+    'k',
+    'UpfData',
+    'HpCalculation',
+    'PwCalculation',
+]
+
+[tool.pytest.ini_options]
+minversion = '6.0'
+testpaths = [
+    'tests',
+]
+filterwarnings = [
+    'ignore::DeprecationWarning:frozendict:',
+    'ignore::DeprecationWarning:pkg_resources:',
+    'ignore::DeprecationWarning:reentry:',
+    'ignore::DeprecationWarning:sqlalchemy_utils:',
+]

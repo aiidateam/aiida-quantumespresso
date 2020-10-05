@@ -7,7 +7,7 @@ from aiida import orm
 from aiida.common.links import LinkType
 
 
-def test_pw_get_scf_accuracy(aiida_profile, fixture_localhost, generate_calc_job_node):
+def test_pw_get_scf_accuracy(fixture_localhost, generate_calc_job_node):
     """Test the `PwCalculationTools.get_scf_accuracy` method."""
     entry_point_name = 'quantumespresso.pw'
 

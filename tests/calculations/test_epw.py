@@ -9,8 +9,8 @@ EPWCALC = CalculationFactory('quantumespresso.epw')
 
 
 def test_epw_default(
-    aiida_profile, fixture_localhost, fixture_sandbox, generate_calc_job, generate_remote_data, fixture_code,
-    generate_kpoints_mesh, file_regression, tmpdir
+    fixture_localhost, fixture_sandbox, generate_calc_job, generate_remote_data, fixture_code, generate_kpoints_mesh,
+    file_regression, tmpdir
 ):
     """Test a default `EpwCalculation`."""
     entry_point_name = 'quantumespresso.epw'

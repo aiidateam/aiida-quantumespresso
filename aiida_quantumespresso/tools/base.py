@@ -51,8 +51,10 @@ class StructureParseMixin:
         for mass, name, pseudo in zip(species['masses'], species['names'], species['pseudo_file_names']):
             try:
                 symbols = valid_elements_regex.search(pseudo).group('ele').capitalize()
-            except Exception:
-                raise InputValidationError('could not determine element name from pseudo name: {}'.format(pseudo))
+            except Exception as exception:
+                raise InputValidationError(
+                    'could not determine element name from pseudo name: {}'.format(pseudo)
+                ) from exception
             structure.append_kind(Kind(name=name, symbols=symbols, mass=mass))
 
         for symbol, position in zip(data['atom_names'], data['positions']):
