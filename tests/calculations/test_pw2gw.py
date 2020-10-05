@@ -72,9 +72,7 @@ def inputs(fixture_code, remote, parameters, settings):
 @pytest.mark.parametrize(
     'settings,with_symlink', [(False, False), (True, True)], ids=['base', 'with_symlink'], indirect=['settings']
 )
-def test_pw2gw_default(
-    aiida_profile, fixture_sandbox, generate_calc_job, file_regression, remote, inputs, with_symlink
-):
+def test_pw2gw_default(fixture_sandbox, generate_calc_job, file_regression, remote, inputs, with_symlink):
     """Test a default `Pw2gwCalculation`."""
     entry_point_name = 'quantumespresso.pw2gw'
 

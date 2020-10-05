@@ -10,7 +10,7 @@ class TestGetHighestOccupiedBand:
     """Tests for :py:func:`~aiida_quantumespresso.utils.bands.get_highest_occupied_band`."""
 
     @staticmethod
-    def test_valid_node(aiida_profile):
+    def test_valid_node():
         """Test that the correct exceptions are thrown for incompatible nodes."""
         from aiida.orm import ArrayData, BandsData
 
@@ -34,7 +34,7 @@ class TestGetHighestOccupiedBand:
             get_highest_occupied_band(node)
 
     @staticmethod
-    def test_threshold(aiida_profile):
+    def test_threshold():
         """Test the `threshold` parameter."""
         from aiida.orm import BandsData
 
@@ -57,7 +57,7 @@ class TestGetHighestOccupiedBand:
             get_highest_occupied_band(bands, threshold=threshold)
 
     @staticmethod
-    def test_spin_unpolarized(aiida_profile):
+    def test_spin_unpolarized():
         """Test the function for a non spin-polarized calculation meaning there will be a single spin channel."""
         from aiida.orm import BandsData
 
@@ -75,7 +75,7 @@ class TestGetHighestOccupiedBand:
         assert homo == 4
 
     @staticmethod
-    def test_spin_polarized(aiida_profile):
+    def test_spin_polarized():
         """Test the function for a spin-polarized calculation meaning there will be two spin channels."""
         from aiida.orm import BandsData
 
