@@ -4,9 +4,7 @@
 from aiida import orm
 
 
-def test_pw2gw_default(
-    aiida_profile, fixture_localhost, generate_parser, generate_calc_job_node, data_regression, num_regression
-):
+def test_pw2gw_default(fixture_localhost, generate_parser, generate_calc_job_node, data_regression, num_regression):
     """Test a normal pw2gw.x output."""
     name = 'default'
     entry_point_calc_job = 'quantumespresso.pw2gw'
@@ -28,12 +26,7 @@ def test_pw2gw_default(
     num_regression.check(dict(results['eps'].get_iterarrays()), basename='test_pw2gw_default_eps')
 
 
-def test_pw2gw_failed_missing_output(
-    aiida_profile,
-    fixture_localhost,
-    generate_parser,
-    generate_calc_job_node,
-):
+def test_pw2gw_failed_missing_output(fixture_localhost, generate_parser, generate_calc_job_node):
     """Test a pw2gw.x output where file are missing."""
     name = 'failed_missing_output'
     entry_point_calc_job = 'quantumespresso.pw2gw'
@@ -51,12 +44,7 @@ def test_pw2gw_failed_missing_output(
     assert orm.Log.objects.get_logs_for(node)
 
 
-def test_pw2gw_failed_missing_stdout(
-    aiida_profile,
-    fixture_localhost,
-    generate_parser,
-    generate_calc_job_node,
-):
+def test_pw2gw_failed_missing_stdout(fixture_localhost, generate_parser, generate_calc_job_node):
     """Test a pw2gw.x output where file are missing."""
     name = 'failed_missing_stdout'
     entry_point_calc_job = 'quantumespresso.pw2gw'
@@ -74,12 +62,7 @@ def test_pw2gw_failed_missing_stdout(
     assert orm.Log.objects.get_logs_for(node)
 
 
-def test_pw2gw_failed_corrupted_file(
-    aiida_profile,
-    fixture_localhost,
-    generate_parser,
-    generate_calc_job_node,
-):
+def test_pw2gw_failed_corrupted_file(fixture_localhost, generate_parser, generate_calc_job_node):
     """Test a pw2gw.x output where file are corrupted."""
     name = 'failed_corrupted_file'
     entry_point_calc_job = 'quantumespresso.pw2gw'

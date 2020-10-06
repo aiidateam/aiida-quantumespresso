@@ -6,7 +6,7 @@ from aiida.plugins import CalculationFactory
 MatdynCalculation = CalculationFactory('quantumespresso.matdyn')
 
 
-def test_matdyn_default(aiida_profile, fixture_sandbox, generate_calc_job, generate_inputs_matdyn, file_regression):
+def test_matdyn_default(fixture_sandbox, generate_calc_job, generate_inputs_matdyn, file_regression):
     """Test a default `MatdynCalculation`."""
     entry_point_name = 'quantumespresso.matdyn'
 

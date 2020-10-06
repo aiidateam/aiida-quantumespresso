@@ -24,9 +24,7 @@ def generate_inputs(generate_calc_job_node, fixture_localhost, generate_structur
     return AttributeDict(inputs)
 
 
-def test_projwfc_default(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
-):
+def test_projwfc_default(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression):
     """Test ``ProjwfcParser`` on the results of a simple ``projwfc.x`` calculation."""
     entry_point_calc_job = 'quantumespresso.projwfc'
     entry_point_parser = 'quantumespresso.projwfc'
@@ -67,7 +65,7 @@ def generate_inputs_spin(generate_calc_job_node, fixture_localhost, generate_str
 
 
 def test_projwfc_spin(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_spin, data_regression
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_spin, data_regression
 ):
     """Test ``ProjwfcParser`` on the results of a LSDA ``projwfc.x`` calculation."""
     entry_point_calc_job = 'quantumespresso.projwfc'
@@ -112,8 +110,7 @@ def generate_inputs_noncollinear(generate_calc_job_node, fixture_localhost, gene
 
 
 def test_projwfc_noncollinear(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_noncollinear,
-    data_regression
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_noncollinear, data_regression
 ):
     """Test ``ProjwfcParser`` on the results of a noncollinear ``projwfc.x`` calculation."""
     entry_point_calc_job = 'quantumespresso.projwfc'
@@ -161,8 +158,7 @@ def generate_inputs_spinorbit(generate_calc_job_node, fixture_localhost, generat
 
 
 def test_projwfc_spinorbit(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_spinorbit,
-    data_regression
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_spinorbit, data_regression
 ):
     """Test ``ProjwfcParser`` on the results of a spinorbit ``projwfc.x`` calculation."""
     entry_point_calc_job = 'quantumespresso.projwfc'

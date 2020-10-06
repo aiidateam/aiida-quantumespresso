@@ -8,7 +8,7 @@ def generate_inputs():
     return {}
 
 
-def test_q2r_default(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, data_regression):
+def test_q2r_default(fixture_localhost, generate_calc_job_node, generate_parser, data_regression):
     """Test a default `q2r.x` calculation."""
     entry_point_calc_job = 'quantumespresso.q2r'
     entry_point_parser = 'quantumespresso.q2r'

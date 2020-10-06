@@ -12,7 +12,7 @@ def generate_inputs():
     return {'parameters': orm.Dict(dict={}), 'settings': orm.Dict(dict={})}
 
 
-def test_restart(aiida_profile, fixture_localhost, generate_calc_job_node):
+def test_restart(fixture_localhost, generate_calc_job_node):
     """Test the generics of the `get_builder_restart`."""
     entry_point_calc_job = 'quantumespresso.dos'
     node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'default', generate_inputs())
@@ -22,7 +22,7 @@ def test_restart(aiida_profile, fixture_localhost, generate_calc_job_node):
         restart.get_builder_restart(node)
 
 
-def test_restart_cp(aiida_profile, fixture_localhost, generate_calc_job_node):
+def test_restart_cp(fixture_localhost, generate_calc_job_node):
     """Test the `get_builder_restart` for a completed `CpCalculation`."""
     entry_point_calc_job = 'quantumespresso.cp'
     node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'default', generate_inputs())
@@ -41,7 +41,7 @@ def test_restart_cp(aiida_profile, fixture_localhost, generate_calc_job_node):
     assert parameters['CONTROL']['restart_mode'] == 'from_scratch'
 
 
-def test_restart_neb(aiida_profile, fixture_localhost, generate_calc_job_node):
+def test_restart_neb(fixture_localhost, generate_calc_job_node):
     """Test the `get_builder_restart` for a completed `NebCalculation`."""
     entry_point_calc_job = 'quantumespresso.neb'
     node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'default', generate_inputs())
@@ -60,7 +60,7 @@ def test_restart_neb(aiida_profile, fixture_localhost, generate_calc_job_node):
     assert parameters['PATH']['restart_mode'] == 'from_scratch'
 
 
-def test_restart_ph(aiida_profile, fixture_localhost, generate_calc_job_node):
+def test_restart_ph(fixture_localhost, generate_calc_job_node):
     """Test the `get_builder_restart` for a completed `PhCalculation`."""
     entry_point_calc_job = 'quantumespresso.ph'
     node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'default', generate_inputs())
@@ -72,7 +72,7 @@ def test_restart_ph(aiida_profile, fixture_localhost, generate_calc_job_node):
     assert parameters['INPUTPH']['recover'] is True
 
 
-def test_restart_pw(aiida_profile, fixture_localhost, generate_calc_job_node):
+def test_restart_pw(fixture_localhost, generate_calc_job_node):
     """Test the `get_builder_restart` for a completed `PwCalculation`."""
     entry_point_calc_job = 'quantumespresso.pw'
     node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'default', generate_inputs())

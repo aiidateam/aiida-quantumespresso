@@ -169,8 +169,8 @@ def convert_input_to_namelist_entry(key, val, mapping=None):
         for elemk, itemval in val.items():
             try:
                 idx = mapping[elemk]
-            except KeyError:
-                raise ValueError("Unable to find the key '{}' in the mapping dictionary".format(elemk))
+            except KeyError as exception:
+                raise ValueError("Unable to find the key '{}' in the mapping dictionary".format(elemk)) from exception
 
             list_of_strings.append((idx, '  {0}({2}) = {1}\n'.format(key, conv_to_fortran(itemval), idx)))
 
