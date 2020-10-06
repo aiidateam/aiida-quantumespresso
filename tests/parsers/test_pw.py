@@ -29,9 +29,7 @@ def generate_inputs(generate_structure):
     return _generate_inputs
 
 
-def test_pw_default(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
-):
+def test_pw_default(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression):
     """Test a `pw.x` calculation in `scf` mode.
 
     The output is created by running a dead simple SCF calculation for a silicon structure. This test should test the
@@ -60,7 +58,7 @@ def test_pw_default(
 
 
 def test_pw_default_no_xml(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
     """Test the parsing of an output directory without an XML file."""
     name = 'default_no_xml'
@@ -96,7 +94,7 @@ def test_pw_default_no_xml(
 
 
 def test_pw_default_xml_200420(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
     """Test a `pw.x` calculation in `scf` mode that produced the XML output with schema of 200420.
 
@@ -126,7 +124,7 @@ def test_pw_default_xml_200420(
 
 
 def test_pw_default_xml_190304(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
     """Test a `pw.x` calculation in `scf` mode that produced the XML output with schema of 190304.
 
@@ -156,7 +154,7 @@ def test_pw_default_xml_190304(
 
 
 def test_pw_default_xml_191206(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
     """Test a `pw.x` calculation in `scf` mode that produced the XML output with schema of 191206.
 
@@ -186,7 +184,7 @@ def test_pw_default_xml_191206(
 
 
 def test_pw_initialization_xml_new(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
     """Test a `pw.x` calculation with new XML that only runs the preamble, i.e. an initialization-only calculation."""
     name = 'initialization_xml_new'
@@ -211,9 +209,7 @@ def test_pw_initialization_xml_new(
     })
 
 
-def test_pw_failed_computing_cholesky(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
-):
+def test_pw_failed_computing_cholesky(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
     """Test the parsing of a calculation that failed during cholesky factorization.
 
     In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
@@ -232,9 +228,7 @@ def test_pw_failed_computing_cholesky(
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_COMPUTING_CHOLESKY.status
 
 
-def test_pw_failed_dexx_negative(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
-):
+def test_pw_failed_dexx_negative(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
     """Test the parsing of a calculation that failed due to negative dexx.
 
     In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
@@ -253,7 +247,7 @@ def test_pw_failed_dexx_negative(
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_DEXX_IS_NEGATIVE.status
 
 
-def test_pw_failed_missing(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
+def test_pw_failed_missing(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
     """Test the parsing of a calculation that was interrupted before output files could even be written.
 
     In this particular interrupted test both the XML and the stdout are completely missing.
@@ -276,7 +270,7 @@ def test_pw_failed_missing(aiida_profile, fixture_localhost, generate_calc_job_n
 
 
 def test_pw_failed_interrupted(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
     """Test the parsing of a calculation that was interrupted *after* convergence was achieved.
 
@@ -305,7 +299,7 @@ def test_pw_failed_interrupted(
 
 
 def test_pw_failed_interrupted_stdout(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
     """Test the parsing of a calculation that was interrupted *after* convergence was achieved.
 
@@ -337,7 +331,7 @@ def test_pw_failed_interrupted_stdout(
 
 
 def test_pw_failed_interrupted_xml(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
     """Test the parsing of a calculation that was interrupted *after* convergence was achieved.
 
@@ -366,7 +360,7 @@ def test_pw_failed_interrupted_xml(
     data_regression.check(results['output_parameters'].get_dict())
 
 
-def test_pw_npools_too_high(aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
+def test_pw_npools_too_high(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
     """Test the parsing of a calculation that failed because some nodes have no k-points.
 
     In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
@@ -386,7 +380,7 @@ def test_pw_npools_too_high(aiida_profile, fixture_localhost, generate_calc_job_
 
 
 def test_pw_failed_out_of_walltime(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
     """Test the parsing of an scf calculation that ran nominally but was cut short because it ran out of walltime."""
     name = 'failed_out_of_walltime'
@@ -410,7 +404,7 @@ def test_pw_failed_out_of_walltime(
 
 
 def test_pw_failed_out_of_walltime_interrupted(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
     """Test the parsing of an scf calculation that ran nominally but was cut short because it ran out of walltime.
 
@@ -439,7 +433,7 @@ def test_pw_failed_out_of_walltime_interrupted(
 
 
 def test_pw_failed_scf_not_converged(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
     """Test the parsing of an scf calculation that ran nominally but did not reach convergence."""
     name = 'failed_scf_not_converged'
@@ -462,9 +456,7 @@ def test_pw_failed_scf_not_converged(
     })
 
 
-def test_pw_relax_success(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
-):
+def test_pw_relax_success(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression):
     """Test a `relax` that successfully converges."""
     name = 'relax_success'
     entry_point_calc_job = 'quantumespresso.pw'
@@ -490,9 +482,7 @@ def test_pw_relax_success(
     })
 
 
-def test_pw_relax_failed_electronic(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
-):
+def test_pw_relax_failed_electronic(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
     """Test a `relax` that failed to converge during electronic cycle before ionic convergence is reached."""
     name = 'relax_failed_electronic'
     entry_point_calc_job = 'quantumespresso.pw'
@@ -514,7 +504,7 @@ def test_pw_relax_failed_electronic(
 
 
 def test_pw_relax_failed_not_converged_nstep(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
 ):
     """Test a `relax` that failed to converge within the maximum number of steps."""
     name = 'relax_failed_not_converged_nstep'
@@ -537,7 +527,7 @@ def test_pw_relax_failed_not_converged_nstep(
 
 
 def test_pw_vcrelax_success(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
     """Test a `vc-relax` that successfully converges and the final scf also converges."""
     name = 'vcrelax_success'
@@ -565,7 +555,7 @@ def test_pw_vcrelax_success(
 
 
 def test_pw_vcrelax_success_fractional(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
     """Test a `vc-relax`, that successfully converges and the final scf also converges.
 
@@ -595,8 +585,32 @@ def test_pw_vcrelax_success_fractional(
     })
 
 
+def test_pw_vcrelax_success_rVV10(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+):
+    """Test a `vc-relax` rVV10 run that successfully converges."""
+    name = 'vcrelax_success_rVV10'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    inputs = generate_inputs(calculation_type='vc-relax')
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert not orm.Log.objects.get_logs_for(node), [log.message for log in orm.Log.objects.get_logs_for(node)]
+    assert 'output_parameters' in results
+    assert 'output_trajectory' in results
+    data_regression.check({
+        'energy_vdw': results['output_parameters']['energy_vdw'],
+        'array|stress': results['output_trajectory'].attributes['array|stress'],
+    })
+
+
 def test_pw_vcrelax_success_external_pressure(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
 ):
     """Test a `vc-relax` with external pressure that successfully converges and the final scf also converges."""
     name = 'vcrelax_success_external_pressure'
@@ -617,9 +631,7 @@ def test_pw_vcrelax_success_external_pressure(
     assert 'output_trajectory' in results
 
 
-def test_pw_vcrelax_failed_charge_wrong(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
-):
+def test_pw_vcrelax_failed_charge_wrong(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
     """Test a `vc-relax` that failed because the integrated charge is different from the expected one."""
     name = 'vcrelax_failed_charge_wrong'
     entry_point_calc_job = 'quantumespresso.pw'
@@ -639,7 +651,7 @@ def test_pw_vcrelax_failed_charge_wrong(
 
 
 def test_pw_vcrelax_failed_symmetry_not_orthogonal(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
 ):
     """Test a `vc-relax` that failed because original symmetries no longer map onto new structure."""
     name = 'vcrelax_failed_symmetry_not_orthogonal'
@@ -659,9 +671,7 @@ def test_pw_vcrelax_failed_symmetry_not_orthogonal(
     assert 'output_parameters' in results
 
 
-def test_pw_vcrelax_failed_bfgs_history(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
-):
+def test_pw_vcrelax_failed_bfgs_history(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
     """Test a `vc-relax` that failed to converge due to two consecutive failures of BFGS."""
     name = 'vcrelax_failed_bfgs_history'
     entry_point_calc_job = 'quantumespresso.pw'
@@ -683,7 +693,7 @@ def test_pw_vcrelax_failed_bfgs_history(
 
 
 def test_pw_vcrelax_failed_bfgs_history_already_converged(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
 ):
     """Test a `vc-relax` that stops due to two consecutive failures of BFGS but is actually converged.
 
@@ -710,7 +720,7 @@ def test_pw_vcrelax_failed_bfgs_history_already_converged(
 
 
 def test_pw_vcrelax_failed_bfgs_history_final_scf(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
 ):
     """Test a `vc-relax` that failed to converge due to two consecutive failures of BFGS and final SCF fails."""
     name = 'vcrelax_failed_bfgs_history_final_scf'
@@ -732,9 +742,7 @@ def test_pw_vcrelax_failed_bfgs_history_final_scf(
     assert 'output_trajectory' in results
 
 
-def test_pw_vcrelax_failed_electronic(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
-):
+def test_pw_vcrelax_failed_electronic(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
     """Test a `vc-relax` that failed to converge during electronic cycle before ionic convergence is reached."""
     name = 'vcrelax_failed_electronic'
     entry_point_calc_job = 'quantumespresso.pw'
@@ -756,7 +764,7 @@ def test_pw_vcrelax_failed_electronic(
 
 
 def test_pw_vcrelax_failed_electronic_final_scf(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
 ):
     """Test a `vc-relax` that failed to converge in electronic cycle in the final SCF after ionic convergence."""
     name = 'vcrelax_failed_electronic_final_scf'
@@ -779,7 +787,7 @@ def test_pw_vcrelax_failed_electronic_final_scf(
 
 
 def test_pw_vcrelax_failed_not_converged_final_scf(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
 ):
     """Test a `vc-relax` that successfully converges in ionic cycle, but thresholds are exceeded in the SCF."""
     name = 'vcrelax_failed_not_converged_final_scf'
@@ -802,7 +810,7 @@ def test_pw_vcrelax_failed_not_converged_final_scf(
 
 
 def test_pw_vcrelax_failed_not_converged_nstep(
-    aiida_profile, fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
 ):
     """Test a `vc-relax` that failed to converge within the maximum number of steps."""
     name = 'vcrelax_failed_not_converged_nstep'

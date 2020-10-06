@@ -1,0 +1,80 @@
+name: Nightly Build
+
+on:
+    schedule:
+    -   cron: '0 0 * * *'  # Run every day at midnight
+
+jobs:
+
+    tests:
+
+        if: github.repository == 'aiidateam/aiida-quantumespresso'  # Prevent running the builds on forks as well
+
+        runs-on: ubuntu-latest
+
+        strategy:
+            matrix:
+                python-version: [3.6, 3.7, 3.8]
+
+        services:
+            postgres:
+                image: postgres:10
+                env:
+                    POSTGRES_DB: test_${{ matrix.backend }}
+                    POSTGRES_PASSWORD: ''
+                    POSTGRES_HOST_AUTH_METHOD: trust
+                ports:
+                -    5432:5432
+            rabbitmq:
+                image: rabbitmq:latest
+                ports:
+                -   5672:5672
+
+        steps:
+        -   uses: actions/checkout@v2
+
+        -   name: Cache python dependencies
+            id: cache-pip
+            uses: actions/cache@v1
+            with:
+                path: ~/.cache/pip
+                key: pip-${{ matrix.python-version }}-tests-${{ hashFiles('**/setup.json') }}
+                restore-keys:
+                    pip-${{ matrix.python-version }}-tests
+
+        -   name: Set up Python ${{ matrix.python-version }}
+            uses: actions/setup-python@v2
+            with:
+                python-version: ${{ matrix.python-version }}
+
+        -   name: Install system dependencies
+            run: |
+                sudo apt update
+                sudo apt install postgresql-10
+
+        -   name: Install python dependencies
+            continue-on-error: true
+            id: install
+            run: |
+                pip install --upgrade setuptools
+                pip install -e .[tests]
+                pip install git+https://github.com/aiidateam/aiida-core@develop
+                reentry scan
+
+        -   name: Run pytest
+            continue-on-error: true
+            id: tests
+            run:
+                pytest -sv tests
+
+        -   name: Slack notification
+            if: steps.install.outcome == 'Failure' || steps.tests.outcome == 'Failure'
+            uses: rtCamp/action-slack-notify@master
+            env:
+                SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+                SLACK_ICON: https://www.materialscloud.org/discover/images/0ba0a17d.aiida-logo-128.png
+                SLACK_USERNAME: aiida-quantumespresso
+                SLACK_CHANNEL: dev-aiida-qe
+                SLACK_COLOR: b60205
+                SLACK_TITLE: "Nightly build against `aiida-core/develop` failed"
+                SLACK_MESSAGE: "The tests fail with the current version of `aiida-core/develop`."

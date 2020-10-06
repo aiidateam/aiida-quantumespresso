@@ -157,8 +157,10 @@ class PwCalculation(BasePwCpInputGenerator):
         # pylint: disable=no-self-argument,no-self-use
         try:
             HpCalculation = factories.CalculationFactory('quantumespresso.hp')
-        except Exception:
-            raise RuntimeError('this is determined by the aiida-quantumespresso-hp plugin but it is not installed')
+        except Exception as exc:
+            raise RuntimeError(
+                'this is determined by the aiida-quantumespresso-hp plugin but it is not installed'
+            ) from exc
 
         return HpCalculation.input_file_name_hubbard_file
 

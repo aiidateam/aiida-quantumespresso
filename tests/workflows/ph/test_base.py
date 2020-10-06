@@ -33,7 +33,7 @@ def generate_workchain_ph(generate_workchain, generate_inputs_ph, generate_calc_
     return _generate_workchain_ph
 
 
-def test_setup(aiida_profile, generate_workchain_ph):
+def test_setup(generate_workchain_ph):
     """Test `PhBaseWorkChain.setup`."""
     process = generate_workchain_ph()
     process.setup()
@@ -42,7 +42,7 @@ def test_setup(aiida_profile, generate_workchain_ph):
     assert isinstance(process.ctx.inputs, AttributeDict)
 
 
-def test_handle_unrecoverable_failure(aiida_profile, generate_workchain_ph):
+def test_handle_unrecoverable_failure(generate_workchain_ph):
     """Test `PhBaseWorkChain.handle_unrecoverable_failure`."""
     process = generate_workchain_ph(exit_code=PhCalculation.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
     process.setup()
@@ -56,7 +56,7 @@ def test_handle_unrecoverable_failure(aiida_profile, generate_workchain_ph):
     assert result == PhBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE
 
 
-def test_handle_out_of_walltime(aiida_profile, generate_workchain_ph):
+def test_handle_out_of_walltime(generate_workchain_ph):
     """Test `PhBaseWorkChain.handle_out_of_walltime`."""
     process = generate_workchain_ph(exit_code=PhCalculation.exit_codes.ERROR_OUT_OF_WALLTIME)
     process.setup()
@@ -69,7 +69,7 @@ def test_handle_out_of_walltime(aiida_profile, generate_workchain_ph):
     assert result.status == 0
 
 
-def test_handle_convergence_not_achieved(aiida_profile, generate_workchain_ph):
+def test_handle_convergence_not_achieved(generate_workchain_ph):
     """Test `PhBaseWorkChain.handle_convergence_not_achieved`."""
     process = generate_workchain_ph(exit_code=PhCalculation.exit_codes.ERROR_CONVERGENCE_NOT_REACHED)
     process.setup()
