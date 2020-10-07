@@ -11,8 +11,8 @@ dos:
   - states/eV
 parameters:
   code_version: v.6.4.1
-  parser_info: aiida-quantumespresso parser simple v3.1.0
-  parser_version: 3.1.0
+  parser_info: aiida-quantumespresso parser simple v3.2.0
+  parser_version: 3.2.0
   parser_warnings: []
   wall_time: 0.41s
   wall_time_seconds: 0.41

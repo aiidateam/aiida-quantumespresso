@@ -47,8 +47,8 @@ number_of_atoms: 2
 number_of_irr_representations_for_each_q:
 - 2
 number_of_qpoints: 1
-parser_info: aiida-quantumespresso parser ph.x v3.1.0
-parser_version: 3.1.0
+parser_info: aiida-quantumespresso parser ph.x v3.2.0
+parser_version: 3.2.0
 parser_warnings: []
 wall_time: '        15.25s '
 wall_time_seconds: 15.25
