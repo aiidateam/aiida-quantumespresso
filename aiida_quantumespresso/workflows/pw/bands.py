@@ -97,8 +97,10 @@ class PwBandsWorkChain(WorkChain):
         spec.exit_code(403, 'ERROR_SUB_PROCESS_FAILED_BANDS',
             message='The bands PwBasexWorkChain sub process failed')
         spec.output('primitive_structure', valid_type=orm.StructureData,
+            required=False,
             help='The normalized and primitivized structure for which the bands are computed.')
         spec.output('seekpath_parameters', valid_type=orm.Dict,
+            required=False,
             help='The parameters used in the SeeKpath call to normalize the input or relaxed structure.')
         spec.output('scf_parameters', valid_type=orm.Dict,
             help='The output parameters of the SCF `PwBaseWorkChain`.')
