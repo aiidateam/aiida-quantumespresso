@@ -5,7 +5,7 @@ import numpy
 from aiida.common import NotExistent
 from aiida.orm import Dict, TrajectoryData
 
-from qe_tools.constants import bohr_to_ang, hartree_to_ev, timeau_to_sec
+from qe_tools import CONSTANTS
 from aiida_quantumespresso.parsers.parse_raw.cp import parse_cp_raw_output, parse_cp_traj_stanzas
 from .base import Parser
 
@@ -44,11 +44,10 @@ class CpParser(Parser):
             # TODO: Add an error for this counter
             return self.exit(self.exit_codes.ERROR_MISSING_XML_FILE)
 
-        # Let's pass file handlers to this function
-        out_dict, _raw_successful = parse_cp_raw_output(
-            out_folder.open(stdout_filename), out_folder.open(xml_files[0]),
-            out_folder.open(self.node.process_class._FILE_XML_PRINT_COUNTER_BASENAME)
-        )
+        output_stdout = out_folder.get_object_content(stdout_filename)
+        output_xml = out_folder.get_object_content(xml_files[0])
+        output_xml_counter = out_folder.get_object_content(self.node.process_class._FILE_XML_PRINT_COUNTER_BASENAME)
+        out_dict, _raw_successful = parse_cp_raw_output(output_stdout, output_xml, output_xml_counter)
 
         # parse the trajectory. Units in Angstrom, picoseconds and eV.
         # append everthing in the temporary dictionary raw_trajectory
@@ -66,9 +65,12 @@ class CpParser(Parser):
             return self.exit(self.exit_codes.ERROR_READING_POS_FILE)
 
         trajectories = [
-            ('positions', 'pos', bohr_to_ang, out_dict['number_of_atoms']),
-            ('cells', 'cel', bohr_to_ang, 3),
-            ('velocities', 'vel', bohr_to_ang / timeau_to_sec * 10**12, out_dict['number_of_atoms']),
+            ('positions', 'pos', CONSTANTS.bohr_to_ang, out_dict['number_of_atoms']),
+            ('cells', 'cel', CONSTANTS.bohr_to_ang, 3),
+            (
+                'velocities', 'vel', CONSTANTS.bohr_to_ang / CONSTANTS.timeau_to_sec * 10**12,
+                out_dict['number_of_atoms']
+            ),
         ]
 
         for name, extension, scale, elements in trajectories:
@@ -93,7 +95,8 @@ class CpParser(Parser):
 
         # =============== EVP trajectory ============================
         try:
-            matrix = numpy.genfromtxt(out_folder.open('{}.evp'.format(self._node.process_class._PREFIX)))
+            with out_folder.open('{}.evp'.format(self._node.process_class._PREFIX)) as handle:
+                matrix = numpy.genfromtxt(handle)
             # there might be a different format if the matrix has one row only
             try:
                 matrix.shape[1]
@@ -109,26 +112,26 @@ class CpParser(Parser):
                 #print "New version"
                 raw_trajectory['steps'] = numpy.array(matrix[:, 0], dtype=int)
                 raw_trajectory['evp_times'] = matrix[:, 1]  # TPS, ps
-                raw_trajectory['electronic_kinetic_energy'] = matrix[:, 2] * hartree_to_ev  # EKINC, eV
+                raw_trajectory['electronic_kinetic_energy'] = matrix[:, 2] * CONSTANTS.hartree_to_ev  # EKINC, eV
                 raw_trajectory['cell_temperature'] = matrix[:, 3]  # TEMPH, K
                 raw_trajectory['ionic_temperature'] = matrix[:, 4]  # TEMPP, K
-                raw_trajectory['scf_total_energy'] = matrix[:, 5] * hartree_to_ev  # ETOT, eV
-                raw_trajectory['enthalpy'] = matrix[:, 6] * hartree_to_ev  # ENTHAL, eV
-                raw_trajectory['enthalpy_plus_kinetic'] = matrix[:, 7] * hartree_to_ev  # ECONS, eV
-                raw_trajectory['energy_constant_motion'] = matrix[:, 8] * hartree_to_ev  # ECONT, eV
-                raw_trajectory['volume'] = matrix[:, 9] * (bohr_to_ang**3)  # volume, angstrom^3
+                raw_trajectory['scf_total_energy'] = matrix[:, 5] * CONSTANTS.hartree_to_ev  # ETOT, eV
+                raw_trajectory['enthalpy'] = matrix[:, 6] * CONSTANTS.hartree_to_ev  # ENTHAL, eV
+                raw_trajectory['enthalpy_plus_kinetic'] = matrix[:, 7] * CONSTANTS.hartree_to_ev  # ECONS, eV
+                raw_trajectory['energy_constant_motion'] = matrix[:, 8] * CONSTANTS.hartree_to_ev  # ECONT, eV
+                raw_trajectory['volume'] = matrix[:, 9] * (CONSTANTS.bohr_to_ang**3)  # volume, angstrom^3
                 raw_trajectory['pressure'] = matrix[:, 10]  # out_press, GPa
             else:
                 #print "Old version"
                 raw_trajectory['steps'] = numpy.array(matrix[:, 0], dtype=int)
-                raw_trajectory['electronic_kinetic_energy'] = matrix[:, 1] * hartree_to_ev  # EKINC, eV
+                raw_trajectory['electronic_kinetic_energy'] = matrix[:, 1] * CONSTANTS.hartree_to_ev  # EKINC, eV
                 raw_trajectory['cell_temperature'] = matrix[:, 2]  # TEMPH, K
                 raw_trajectory['ionic_temperature'] = matrix[:, 3]  # TEMPP, K
-                raw_trajectory['scf_total_energy'] = matrix[:, 4] * hartree_to_ev  # ETOT, eV
-                raw_trajectory['enthalpy'] = matrix[:, 5] * hartree_to_ev  # ENTHAL, eV
-                raw_trajectory['enthalpy_plus_kinetic'] = matrix[:, 6] * hartree_to_ev  # ECONS, eV
-                raw_trajectory['energy_constant_motion'] = matrix[:, 7] * hartree_to_ev  # ECONT, eV
-                raw_trajectory['volume'] = matrix[:, 8] * (bohr_to_ang**3)  # volume, angstrom^3
+                raw_trajectory['scf_total_energy'] = matrix[:, 4] * CONSTANTS.hartree_to_ev  # ETOT, eV
+                raw_trajectory['enthalpy'] = matrix[:, 5] * CONSTANTS.hartree_to_ev  # ENTHAL, eV
+                raw_trajectory['enthalpy_plus_kinetic'] = matrix[:, 6] * CONSTANTS.hartree_to_ev  # ECONS, eV
+                raw_trajectory['energy_constant_motion'] = matrix[:, 7] * CONSTANTS.hartree_to_ev  # ECONT, eV
+                raw_trajectory['volume'] = matrix[:, 8] * (CONSTANTS.bohr_to_ang**3)  # volume, angstrom^3
                 raw_trajectory['pressure'] = matrix[:, 9]  # out_press, GPa
                 raw_trajectory['evp_times'] = matrix[:, 10]  # TPS, ps
 

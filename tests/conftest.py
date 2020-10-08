@@ -139,11 +139,12 @@ def generate_calc_job_node(fixture_localhost):
             node.set_attribute_many(attributes)
 
         if filepath_folder:
-            from qe_tools.utils.exceptions import ParsingError
+            from qe_tools.exceptions import ParsingError
             from aiida_quantumespresso.tools.pwinputparser import PwInputFile
             try:
-                parsed_input = PwInputFile(filepath_input)
-            except ParsingError:
+                with open(filepath_input, 'r') as input_file:
+                    parsed_input = PwInputFile(input_file.read())
+            except (ParsingError, FileNotFoundError):
                 pass
             else:
                 inputs['structure'] = parsed_input.get_structuredata()

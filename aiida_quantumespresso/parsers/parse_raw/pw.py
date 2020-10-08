@@ -7,7 +7,7 @@ decision doesn't have much structure encoded, [the values are simple ]
 """
 import re
 import numpy
-from qe_tools.constants import ry_to_ev, bohr_to_ang, ry_si, bohr_si
+from qe_tools import CONSTANTS
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.parse_raw import convert_qe_time_to_sec
@@ -334,8 +334,8 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                 elif 'Smooth grid' in line:
                     smooth_FFT_grid = [int(g) for g in line.split('(')[1].split(')')[0].split(',')]
                     break
-            alat *= bohr_to_ang
-            volume *= bohr_to_ang**3
+            alat *= CONSTANTS.bohr_to_ang
+            volume *= CONSTANTS.bohr_to_ang**3
             parsed_data['lattice_parameter_initial'] = alat
             parsed_data['number_of_bands'] = nbnd
             try:
@@ -514,19 +514,19 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                         )
 
                     if 'alat' in lattice[0].lower():
-                        a1 = [alat * bohr_to_ang * float(s) for s in a1]
-                        a2 = [alat * bohr_to_ang * float(s) for s in a2]
-                        a3 = [alat * bohr_to_ang * float(s) for s in a3]
+                        a1 = [alat * CONSTANTS.bohr_to_ang * float(s) for s in a1]
+                        a2 = [alat * CONSTANTS.bohr_to_ang * float(s) for s in a2]
+                        a3 = [alat * CONSTANTS.bohr_to_ang * float(s) for s in a3]
                         lattice_parameter_b = float(lattice[1])
                         if abs(lattice_parameter_b - alat) > lattice_tolerance:
                             raise QEOutputParsingError(
                                 'Lattice parameters mismatch! ' + '{} vs {}'.format(lattice_parameter_b, alat)
                             )
                     elif 'bohr' in lattice[0].lower():
-                        lattice_parameter_b *= bohr_to_ang
-                        a1 = [bohr_to_ang * float(s) for s in a1]
-                        a2 = [bohr_to_ang * float(s) for s in a2]
-                        a3 = [bohr_to_ang * float(s) for s in a3]
+                        lattice_parameter_b *= CONSTANTS.bohr_to_ang
+                        a1 = [CONSTANTS.bohr_to_ang * float(s) for s in a1]
+                        a2 = [CONSTANTS.bohr_to_ang * float(s) for s in a2]
+                        a3 = [CONSTANTS.bohr_to_ang * float(s) for s in a3]
                     trajectory_data.setdefault('lattice_vectors_relax', []).append([a1, a2, a3])
 
                 except Exception:
@@ -550,7 +550,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                         if metric == 'alat':
                             tau = [alat * float(s) for s in tau]
                         elif metric == 'bohr':
-                            tau = [bohr_to_ang * float(s) for s in tau]
+                            tau = [CONSTANTS.bohr_to_ang * float(s) for s in tau]
                         positions.append(tau)
                     trajectory_data.setdefault(this_key, []).append(positions)
                 except Exception:
@@ -590,7 +590,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
             # If for some step this line is not printed, the later check with the scf_accuracy array length should catch it
             elif 'estimated scf accuracy' in line:
                 try:
-                    value = float(line.split()[-2]) * ry_to_ev
+                    value = float(line.split()[-2]) * CONSTANTS.ry_to_ev
                     trajectory_data.setdefault('scf_accuracy', []).append(value)
                 except Exception:
                     logs.warning.append('Error while parsing scf accuracy.')
@@ -654,7 +654,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
             elif '!' in line:
                 try:
 
-                    En = float(line.split('=')[1].split('Ry')[0]) * ry_to_ev
+                    En = float(line.split('=')[1].split('Ry')[0]) * CONSTANTS.ry_to_ev
 
                     # Up till v6.5, the line after total energy would be the Harris-Foulkes estimate, followed by the
                     # estimated SCF accuracy. However, pw.x v6.6 removed the HF estimate line.
@@ -663,7 +663,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                         subline = data_step[count + i]
                         if marker in subline:
                             try:
-                                E_acc = float(subline.split('<')[1].split('Ry')[0]) * ry_to_ev
+                                E_acc = float(subline.split('<')[1].split('Ry')[0]) * CONSTANTS.ry_to_ev
                             except Exception:
                                 pass
                             else:
@@ -754,7 +754,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                         if 'atom ' in line2:
                             line2 = line2.split('=')[1].split()
                             # CONVERT FORCES IN eV/Ang
-                            vec = [float(s) * ry_to_ev / bohr_to_ang for s in line2]
+                            vec = [float(s) * CONSTANTS.ry_to_ev / CONSTANTS.bohr_to_ang for s in line2]
                             forces.append(vec)
                         if len(forces) == nat:
                             break
@@ -767,7 +767,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
 
             elif 'Total force =' in line:
                 try:  # note that I can't check the units: not written in output!
-                    value = float(line.split('=')[1].split('Total')[0]) * ry_to_ev / bohr_to_ang
+                    value = float(line.split('=')[1].split('Total')[0]) * CONSTANTS.ry_to_ev / CONSTANTS.bohr_to_ang
                     trajectory_data.setdefault('total_force', []).append(value)
                     parsed_data['total_force' + units_suffix] = default_force_units
                 except Exception:
@@ -791,7 +791,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                             raise QEOutputParsingError('Error while parsing stress: unexpected units.')
                         for k in range(3):
                             line2 = data_step[count2 + k + 1].split()
-                            vec = [float(s) * 10**(-9) * ry_si / (bohr_si)**3 for s in line2[0:3]]
+                            vec = [float(s) * 10**(-9) * CONSTANTS.ry_si / (CONSTANTS.bohr_si)**3 for s in line2[0:3]]
                             stress.append(vec)
                         trajectory_data.setdefault('stress', []).append(stress)
                         parsed_data['stress' + units_suffix] = default_stress_units
@@ -910,6 +910,6 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
 
 def grep_energy_from_line(line):
     try:
-        return float(line.split('=')[1].split('Ry')[0]) * ry_to_ev
+        return float(line.split('=')[1].split('Ry')[0]) * CONSTANTS.ry_to_ev
     except Exception:
         raise QEOutputParsingError('Error while parsing energy')

@@ -6,7 +6,7 @@ from xml.dom.minidom import parse, parseString, Element
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.utils.mapping import get_logging_container
-from qe_tools.constants import ry_to_ev, hartree_to_ev, bohr_to_ang
+from qe_tools import CONSTANTS
 
 units_suffix = '_units'
 default_energy_units = 'eV'
@@ -205,16 +205,16 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands):
     if parsed_data.get('two_fermi_energies', False):
         tagname = 'FERMI_ENERGY_UP'
         parsed_data[tagname.replace('-','_').lower()] = \
-            parse_xml_child_float(tagname,target_tags) * hartree_to_ev
+            parse_xml_child_float(tagname,target_tags) * CONSTANTS.hartree_to_ev
         parsed_data[tagname.lower() + units_suffix] = default_energy_units
         tagname = 'FERMI_ENERGY_DOWN'
         parsed_data[tagname.replace('-','_').lower()] = \
-            parse_xml_child_float(tagname,target_tags) * hartree_to_ev
+            parse_xml_child_float(tagname,target_tags) * CONSTANTS.hartree_to_ev
         parsed_data[tagname.lower() + units_suffix] = default_energy_units
     else:
         tagname = 'FERMI_ENERGY'
         parsed_data[tagname.replace('-','_').lower()] = \
-            parse_xml_child_float(tagname,target_tags) * hartree_to_ev
+            parse_xml_child_float(tagname,target_tags) * CONSTANTS.hartree_to_ev
         parsed_data[tagname.lower() + units_suffix] = default_energy_units
 
     #CARD MAGNETIZATION_INIT
@@ -303,7 +303,7 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands):
                     tagname = 'EIGENVALUES'
                     a = eig_dom.getElementsByTagName(tagname)[0]
                     b = a.childNodes[0]
-                    value_e = [float(s) * hartree_to_ev for s in b.data.split()]
+                    value_e = [float(s) * CONSTANTS.hartree_to_ev for s in b.data.split()]
 
                     tagname = 'OCCUPATIONS'
                     a = eig_dom.getElementsByTagName(tagname)[0]
@@ -520,7 +520,7 @@ def xml_card_cell(parsed_data, dom):
             )
         )
     if metric == 'bohr':
-        value *= bohr_to_ang
+        value *= CONSTANTS.bohr_to_ang
     parsed_data[tagname.replace('-', '_').lower()] = value
 
     tagname = 'CELL_DIMENSIONS'
@@ -558,7 +558,7 @@ def xml_card_cell(parsed_data, dom):
             d = c.data.replace('\n', '').split()
             value = [float(i) for i in d]
             if metric == 'bohr':
-                value = [bohr_to_ang * float(s) for s in value]
+                value = [CONSTANTS.bohr_to_ang * float(s) for s in value]
             lattice_vectors.append(value)
 
         volume = cell_volume(lattice_vectors[0], lattice_vectors[1], lattice_vectors[2])
@@ -682,7 +682,7 @@ def xml_card_ions(parsed_data, dom, lattice_vectors, volume):
             if metric == 'alat':
                 tau = [parsed_data['lattice_parameter_xml'] * float(s) for s in tau]
             elif metric == 'bohr':
-                tau = [bohr_to_ang * float(s) for s in tau]
+                tau = [CONSTANTS.bohr_to_ang * float(s) for s in tau]
             atomlist.append([chem_symbol, tau])
             tagname2 = 'if_pos'
             b = a.getAttribute(tagname2)
@@ -745,9 +745,9 @@ def xml_card_planewaves(parsed_data, dom, calctype):
             raise QEOutputParsingError('Units {} are not supported by parser'.format(units))
     else:
         if 'hartree' in units:
-            conv_fac = hartree_to_ev
+            conv_fac = CONSTANTS.hartree_to_ev
         else:
-            conv_fac = ry_to_ev
+            conv_fac = CONSTANTS.ry_to_ev
 
         tagname = 'WFC_CUTOFF'
         parsed_data[tagname.lower()] = parse_xml_child_float(tagname, target_tags) * conv_fac
@@ -882,7 +882,7 @@ def xml_card_exchangecorrelation(parsed_data, dom):
                 a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
                 b = a.childNodes[0]
                 c = b.data.replace('\n', ' ').split()  # note the need of a white space!
-                value = [float(i) * ry_to_ev for i in c]
+                value = [float(i) * CONSTANTS.ry_to_ev for i in c]
                 parsed_data[tagname.lower()] = value
             except Exception:
                 raise QEOutputParsingError('Error parsing tag '+\
