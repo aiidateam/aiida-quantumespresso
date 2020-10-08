@@ -44,11 +44,10 @@ class CpParser(Parser):
             # TODO: Add an error for this counter
             return self.exit(self.exit_codes.ERROR_MISSING_XML_FILE)
 
-        # Let's pass file handlers to this function
-        out_dict, _raw_successful = parse_cp_raw_output(
-            out_folder.open(stdout_filename), out_folder.open(xml_files[0]),
-            out_folder.open(self.node.process_class._FILE_XML_PRINT_COUNTER_BASENAME)
-        )
+        output_stdout = out_folder.get_object_content(stdout_filename)
+        output_xml = out_folder.get_object_content(xml_files[0])
+        output_xml_counter = out_folder.get_object_content(self.node.process_class._FILE_XML_PRINT_COUNTER_BASENAME)
+        out_dict, _raw_successful = parse_cp_raw_output(output_stdout, output_xml, output_xml_counter)
 
         # parse the trajectory. Units in Angstrom, picoseconds and eV.
         # append everthing in the temporary dictionary raw_trajectory
@@ -96,7 +95,8 @@ class CpParser(Parser):
 
         # =============== EVP trajectory ============================
         try:
-            matrix = numpy.genfromtxt(out_folder.open('{}.evp'.format(self._node.process_class._PREFIX)))
+            with out_folder.open('{}.evp'.format(self._node.process_class._PREFIX)) as handle:
+                matrix = numpy.genfromtxt(handle)
             # there might be a different format if the matrix has one row only
             try:
                 matrix.shape[1]

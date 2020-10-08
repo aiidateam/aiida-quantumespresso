@@ -60,13 +60,12 @@ class NebParser(Parser):
         # load the neb input parameters dictionary
         neb_input_dict = self.node.inputs.parameters.get_dict()
 
-        stdout_abspath = os.path.join(out_folder._repository._get_base_folder().abspath, filename_stdout)
-
         # First parse the Neb output
         try:
-            neb_out_dict, iteration_data, raw_successful = parse_raw_output_neb(stdout_abspath, neb_input_dict)
+            stdout = out_folder.get_object_content(filename_stdout)
+            neb_out_dict, iteration_data, raw_successful = parse_raw_output_neb(stdout, neb_input_dict)
             # TODO: why do we ignore raw_successful ?
-        except QEOutputParsingError as exc:
+        except (OSError, QEOutputParsingError):
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 
         for warn_type in ['warnings', 'parser_warnings']:
