@@ -199,7 +199,7 @@ class PwimmigrantCalculation(PwCalculation):
             # Parse the input file.
             local_path = os.path.join(folder.abspath, self._INPUT_FILE_NAME)
             with open(local_path) as fin:
-                pwinputfile = pwinputparser.PwInputFile(fin)
+                pwinputfile = pwinputparser.PwInputFile(fin.read())
 
             # Determine PREFIX, if it hasn't already been set by the user.
             if self._PREFIX is None:

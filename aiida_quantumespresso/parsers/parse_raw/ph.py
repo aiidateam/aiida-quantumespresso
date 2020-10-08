@@ -6,7 +6,7 @@ without aiida and will return a dictionary with parsed keys.
 """
 import numpy
 
-from qe_tools.constants import *
+from qe_tools import CONSTANTS
 
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
 from aiida_quantumespresso.parsers.parse_raw.base import convert_qe_time_to_sec
@@ -282,7 +282,7 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
                 header_dict['ibrav'] = int(pieces[2])
                 header_dict['celldm'] = [float(i) for i in pieces[3:]]
                 # In angstrom
-                alat = header_dict['celldm'][0] * bohr_to_ang
+                alat = header_dict['celldm'][0] * CONSTANTS.bohr_to_ang
                 if abs(alat) < 1.e-5:
                     raise QEOutputParsingError(
                         'Lattice constant=0! Probably you are using an '
@@ -318,7 +318,7 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
                 try:
                     if int(pieces[0]) != idx:
                         raise QEOutputParsingError('Error with the indices of the species')
-                    species.append([pieces[1].strip(), float(pieces[2]) / amu_Ry])
+                    species.append([pieces[1].strip(), float(pieces[2]) / CONSTANTS.amu_Ry])
                 except ValueError:
                     raise QEOutputParsingError('Error parsing the species')
 

@@ -91,7 +91,7 @@
     "install_requires": [
         "aiida_core[atomic_tools]~=1.2",
         "packaging",
-        "qe-tools~=1.1",
+        "qe-tools~=2.0rc1",
         "xmlschema~=1.2"
     ],
     "license": "MIT License",

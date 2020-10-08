@@ -5,7 +5,7 @@ from urllib.error import URLError
 
 from xmlschema import XMLSchema
 from xmlschema.etree import ElementTree
-from qe_tools.constants import hartree_to_ev, bohr_to_ang, ry_to_ev
+from qe_tools import CONSTANTS
 
 from aiida_quantumespresso.utils.mapping import get_logging_container
 
@@ -106,9 +106,9 @@ def parse_pw_xml_post_6_2(xml):
     outputs = xml_dictionary['output']
 
     lattice_vectors = [
-        [x * bohr_to_ang for x in outputs['atomic_structure']['cell']['a1']],
-        [x * bohr_to_ang for x in outputs['atomic_structure']['cell']['a2']],
-        [x * bohr_to_ang for x in outputs['atomic_structure']['cell']['a3']],
+        [x * CONSTANTS.bohr_to_ang for x in outputs['atomic_structure']['cell']['a1']],
+        [x * CONSTANTS.bohr_to_ang for x in outputs['atomic_structure']['cell']['a2']],
+        [x * CONSTANTS.bohr_to_ang for x in outputs['atomic_structure']['cell']['a3']],
     ]
 
     has_electric_field = inputs.get('electric_field', {}).get('electric_potential', None) == 'sawtooth_potential'
@@ -262,8 +262,8 @@ def parse_pw_xml_post_6_2(xml):
         inversion_symmetry,  # the old tag was INVERSION_SYMMETRY and was set to (from the code): "invsym    if true the system has inversion symmetry"
         'number_of_bravais_symmetries': nrot,  # lattice symmetries
         'number_of_symmetries': nsym,  # crystal symmetries
-        'wfc_cutoff': inputs['basis']['ecutwfc'] * hartree_to_ev,
-        'rho_cutoff': outputs['basis_set']['ecutrho'] * hartree_to_ev,  # not always printed in input->basis
+        'wfc_cutoff': inputs['basis']['ecutwfc'] * CONSTANTS.hartree_to_ev,
+        'rho_cutoff': outputs['basis_set']['ecutrho'] * CONSTANTS.hartree_to_ev,  # not always printed in input->basis
         'smooth_fft_grid': [value for _, value in sorted(outputs['basis_set']['fft_smooth'].items())],
         'dft_exchange_correlation': inputs['dft']['functional'],  # TODO: also parse optional elements of 'dft' tag
         # WARNING: this is different between old XML and new XML
@@ -274,7 +274,7 @@ def parse_pw_xml_post_6_2(xml):
     # alat is technically an optional attribute according to the schema,
     # but I don't know what to do if it's missing. atomic_structure is mandatory.
     output_alat_bohr = outputs['atomic_structure']['@alat']
-    output_alat_angstrom = output_alat_bohr * bohr_to_ang
+    output_alat_angstrom = output_alat_bohr * CONSTANTS.bohr_to_ang
 
     # Band structure
     if 'band_structure' in outputs:
@@ -292,9 +292,9 @@ def parse_pw_xml_post_6_2(xml):
 
             # Versions below 19.03.04 (Quantum ESPRESSO<=6.4.1) incorrectly print degauss in Ry instead of Hartree
             if xml_version < StrictVersion('19.03.04'):
-                degauss *= ry_to_ev
+                degauss *= CONSTANTS.ry_to_ev
             else:
-                degauss *= hartree_to_ev
+                degauss *= CONSTANTS.hartree_to_ev
 
             xml_data['degauss'] = degauss
             xml_data['smearing_type'] = smearing_xml['$']
@@ -357,7 +357,7 @@ def parse_pw_xml_post_6_2(xml):
                 band_occupations[0].append(ks_state['occupations']['$'][0:num_bands_up])
                 band_occupations[1].append(ks_state['occupations']['$'][num_bands_up:num_bands])
 
-        band_eigenvalues = np.array(band_eigenvalues) * hartree_to_ev
+        band_eigenvalues = np.array(band_eigenvalues) * CONSTANTS.hartree_to_ev
         band_occupations = np.array(band_occupations)
 
         if not spins:
@@ -387,7 +387,7 @@ def parse_pw_xml_post_6_2(xml):
                 xml_data[key] = value
 
         if 'fermi_energy' in band_structure:
-            xml_data['fermi_energy'] = band_structure['fermi_energy'] * hartree_to_ev
+            xml_data['fermi_energy'] = band_structure['fermi_energy'] * CONSTANTS.hartree_to_ev
 
         bands_dict = {
             'occupations': band_occupations,
@@ -497,7 +497,7 @@ def parse_pw_xml_post_6_2(xml):
         # - individual electronic phases and weights
 
     # TODO: We should put the `non_periodic_cell_correction` string in (?)
-    atoms = [[atom['@name'], [coord * bohr_to_ang
+    atoms = [[atom['@name'], [coord * CONSTANTS.bohr_to_ang
                               for coord in atom['$']]]
              for atom in outputs['atomic_structure']['atomic_positions']['atom']]
     species = outputs['atomic_species']['species']

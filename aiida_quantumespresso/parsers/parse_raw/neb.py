@@ -5,7 +5,7 @@ The function that needs to be called from outside is parse_raw_output_neb(). The
 specific functionalities. The parsing will try to convert whatever it can in some dictionary, which by operative
 decision doesn't have much structure encoded, [the values are simple ]
 """
-from qe_tools.constants import bohr_to_ang
+from qe_tools import CONSTANTS
 
 from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
 from aiida_quantumespresso.parsers.parse_raw import convert_qe_time_to_sec
@@ -148,10 +148,10 @@ def parse_neb_text_output(data, input_dict={}):
     for count, line in enumerate(lines):
         if 'initial path length' in line:
             initial_path_length = float(line.split('=')[1].split('bohr')[0])
-            parsed_data['initial_path_length'] = initial_path_length * bohr_to_ang
+            parsed_data['initial_path_length'] = initial_path_length * CONSTANTS.bohr_to_ang
         elif 'initial inter-image distance' in line:
             initial_image_dist = float(line.split('=')[1].split('bohr')[0])
-            parsed_data['initial_image_dist'] = initial_image_dist * bohr_to_ang
+            parsed_data['initial_image_dist'] = initial_image_dist * CONSTANTS.bohr_to_ang
         elif 'string_method' in line:
             parsed_data['string_method'] = line.split('=')[1].strip()
         elif 'restart_mode' in line:
@@ -235,9 +235,9 @@ def parse_neb_text_output(data, input_dict={}):
                 iteration_data['climbing_image_auto'].append([int(_) for _ in line.split('=')[1].split(',')])
             elif 'path length' in line:
                 path_length = float(line.split('=')[1].split('bohr')[0])
-                iteration_data['path_length'].append(path_length * bohr_to_ang)
+                iteration_data['path_length'].append(path_length * CONSTANTS.bohr_to_ang)
             elif 'inter-image distance' in line:
                 image_dist = float(line.split('=')[1].split('bohr')[0])
-                iteration_data['image_dist'].append(image_dist * bohr_to_ang)
+                iteration_data['image_dist'].append(image_dist * CONSTANTS.bohr_to_ang)
 
     return parsed_data, dict(iteration_data), list(critical_warnings.values())

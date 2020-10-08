@@ -2,8 +2,8 @@
 """Sub class of `Data` to handle interatomic force constants produced by the Quantum ESPRESSO q2r.x code."""
 import numpy
 
-from qe_tools.constants import bohr_to_ang
 from aiida.orm import SinglefileData
+from qe_tools import CONSTANTS
 
 
 class ForceConstantsData(SinglefileData):
@@ -147,7 +147,9 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
 
         # read cell data
         cell = tuple(
-            tuple(float(c) * celldm[0] * bohr_to_ang for c in l.split()) for l in lines[current_line:current_line + 3]
+            tuple(float(c) * celldm[0] * CONSTANTS.bohr_to_ang
+                  for c in l.split())
+            for l in lines[current_line:current_line + 3]
         )
         parsed_data['cell'] = cell
         current_line += 3
@@ -169,7 +171,7 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
                 line[0] = atom_type_list[ityp - 1][0]  # string with element name
                 line[1] = atom_type_list[ityp - 1][1]  # element mass in amu_ry
                 # Convert atomic positions (in cartesian) from alat to Angstrom:
-                line[2:] = [pos * celldm[0] * bohr_to_ang for pos in line[2:]]
+                line[2:] = [pos * celldm[0] * CONSTANTS.bohr_to_ang for pos in line[2:]]
             atom_list.append(tuple(line))
             current_line += 1
 
