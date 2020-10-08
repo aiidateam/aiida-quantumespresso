@@ -52,7 +52,6 @@ class CpCalculation(BasePwCpInputGenerator):
         ('CONTROL', 'pseudo_dir'),  # set later
         ('CONTROL', 'outdir'),  # set later
         ('CONTROL', 'prefix'),  # set later
-        ('SYSTEM', 'ibrav'),  # set later
         ('SYSTEM', 'celldm'),
         ('SYSTEM', 'nat'),  # set later
         ('SYSTEM', 'ntyp'),  # set later

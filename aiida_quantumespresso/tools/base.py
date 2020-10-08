@@ -42,7 +42,7 @@ class StructureParseMixin:
         """, re.X | re.I
         )
 
-        data = self.get_structure_from_qeinput()
+        data = self.structure
         species = self.atomic_species
 
         structure = StructureData()

@@ -91,13 +91,10 @@ def create_builder_from_file(input_folder, input_file_name, code, metadata, pseu
         input_folder = Folder(input_folder)
 
     with input_folder.open(input_file_name) as input_file:
-        parsed_file = PwInputFile(input_file)
+        parsed_file = PwInputFile(input_file.read())
 
     builder.structure = parsed_file.get_structuredata()
     builder.kpoints = parsed_file.get_kpointsdata()
-
-    if parsed_file.namelists['SYSTEM']['ibrav'] != 0:
-        raise NotImplementedError('Found ibrav != 0: `aiida-quantumespresso` currently only supports ibrav = 0.')
 
     # Then, strip the namelist items that the plugin doesn't allow or sets later.
     # NOTE: If any of the position or cell units are in alat or crystal

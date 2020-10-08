@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from aiida import orm
 from aiida.common import exceptions
-from qe_tools.constants import invcm_to_THz
+from qe_tools import CONSTANTS
 
 from aiida_quantumespresso.calculations.matdyn import MatdynCalculation
 from .base import Parser
@@ -114,7 +114,7 @@ def parse_raw_matdyn_phonon_file(phonon_frequencies):
     for i in range(num_kpoints):
         for j in range(num_bands):
             try:
-                freq_matrix[i, j] = corrected_data[counter] * invcm_to_THz  # from cm-1 to THz
+                freq_matrix[i, j] = corrected_data[counter] * CONSTANTS.invcm_to_THz  # from cm-1 to THz
             except ValueError:
                 parsed_data['warnings'].append('Error while parsing the frequencies')
             except IndexError:
