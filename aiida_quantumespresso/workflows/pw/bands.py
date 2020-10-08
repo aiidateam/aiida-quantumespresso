@@ -217,10 +217,16 @@ class PwBandsWorkChain(WorkChain):
         if 'nbands_factor' in self.inputs:
             factor = self.inputs.nbands_factor.value
             parameters = self.ctx.workchain_scf.outputs.output_parameters.get_dict()
-            nspin = int(parameters['number_of_spin_components'])
+            if int(parameters['number_of_spin_components']) > 1:
+                nspin_factor = 2
+            else:
+                nspin_factor = 1
             nbands = int(parameters['number_of_bands'])
             nelectron = int(parameters['number_of_electrons'])
-            nbnd = max(int(0.5 * nelectron * nspin * factor), int(0.5 * nelectron * nspin) + 4 * nspin, nbands)
+            nbnd = max(
+                int(0.5 * nelectron * nspin_factor * factor),
+                int(0.5 * nelectron * nspin_factor) + 4 * nspin_factor,
+                nbands)
             inputs.pw.parameters['SYSTEM']['nbnd'] = nbnd
 
         # Otherwise set the current number of bands, unless explicitly set in the inputs
