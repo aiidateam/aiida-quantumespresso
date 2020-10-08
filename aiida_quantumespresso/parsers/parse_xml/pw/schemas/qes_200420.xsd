@@ -263,30 +263,36 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   </complexType>
   <simpleType name="functionalType">
     <restriction base="string">
-    <enumeration value="PZ"/>
-    <enumeration value="BP"/>
-    <enumeration value="PBE"/>
-    <enumeration value="REVPBE"/>
-    <enumeration value="PBESOL"/>
-    <enumeration value="BLYP"/>
-    <enumeration value="OLYP"/>
-    <enumeration value="PW91"/>
-    <enumeration value="WC"/>
-    <enumeration value="SOGGA"/>
-    <enumeration value="EV93"/>
-    <enumeration value="B3LYP"/>
-    <enumeration value="GauPBE"/>
-    <enumeration value="PBE0"/>
-    <enumeration value="HSE"/>
-    <enumeration value="VDW-DF"/>
-    <enumeration value="VDW-DF-CX"/>
-    <enumeration value="VDW-DF-C09"/>
-    <enumeration value="VDW-DF-OB86"/>
-    <enumeration value="VDW-DF-OBK8"/>
-    <enumeration value="VDW-DF2"/>
-    <enumeration value="VDW-DF2-C09"/>
-    <enumeration value="VDW-DF2-B86R"/>
-    <enumeration value="RVV10"/>
+    <pattern value="[pP][zZ]"/>
+    <pattern value="[bB][pP]"/>
+    <pattern value="[pP][bB][eE]"/>
+    <pattern value="[rR][rE][vV][pP][bB][eE]"/>
+    <pattern value="[pP][bB][eE][sS][oO][lL]"/>
+    <pattern value="[bB][lL][yY][pP]"/>
+    <pattern value="[oO][lL][yY][pP]"/>
+    <pattern value="[pP][wW]91"/>
+    <pattern value="[wW][cC]"/>
+    <pattern value="[sS][oO][gG][gG][aA]"/>
+    <pattern value="[eE][vV]93"/>
+    <pattern value="[bB]3[lL][yY][pP]"/>
+    <pattern value="[gG][aA][uU][pP][bB][eE]"/>
+    <pattern value="[pP][bB][eE]0"/>
+    <pattern value="[hH][sS][eE]"/>
+    <pattern value="[vV][dD][wW]-[dD][fF]"/>
+    <pattern value="[vV][dD][wW]-[dD][fF]-CX"/>
+    <pattern value="[vV][dD][wW]-[dD][fF]-[cC]09"/>
+    <pattern value="[vV][dD][wW]-[dD][fF]-[oO][bB]86"/>
+    <pattern value="[vV][dD][wW]-[dD][fF]-[oO][bB][kK]8"/>
+    <pattern value="[vV][dD][wW]-[dD][fF]2"/>
+    <pattern value="[vV][dD][wW]-[dD][fF]2-[cC]09"/>
+    <pattern value="[vV][dD][wW]-[dD][fF]2-[bB]86[rR]"/>
+    <pattern value="[rR][vV][vV]10"/>
+    <pattern value=".*[xX][cC]_[lL][Dd][Aa]_[xX][cC]?_.*"/>
+    <pattern value=".*[xX][cC]_[mM]?[gG][Gg][Aa]_[xX][cC]?_.*"/>
+    <pattern value=".*[xX][cC]_[hH][yY][bB]_[mM]?[gG][Gg][Aa]_[xX][cC]?_.*"/>
+    <pattern value=".*[xX][cC]_[lL][Dd][Aa]_[cC]_.*"/>
+    <pattern value=".*[xX][cC]_[mM]?[gG][Gg][Aa]_[kKcC]_.*"/>
+    <pattern value=".*[xX][cC]_[hH][yY][bB]_[mM]?[gG][Gg][Aa]_[kKcC]?_.*"/>
     </restriction>
   </simpleType>
 
@@ -867,7 +873,7 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
       <element type="boolean" name="spinorbit"/>
       <element type="double"  name="total"/>
       <element type="double"  name="absolute"/>
-      <element type="boolean" name="do_magnetization"/>
+      <element type="boolean" name="do_magnetization" minOccurs="0"/>
     </sequence>
   </complexType>
   <complexType name="total_energyType">

@@ -53,7 +53,11 @@
       </cell>
     </atomic_structure>
     <dft>
-      <functional>PBE</functional>
+      <functional>rvv10</functional>
+      <vdW>
+        <vdw_corr>none</vdw_corr>
+        <non_local_term>VV10</non_local_term>
+      </vdW>
     </dft>
     <spin>
       <lsda>false</lsda>

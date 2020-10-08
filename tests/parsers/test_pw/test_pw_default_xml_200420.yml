@@ -37,7 +37,7 @@ output_parameters:
       scf_error: 8.612006993690606e-08
   creator_name: pwscf
   creator_version: '6.6'
-  dft_exchange_correlation: PBE
+  dft_exchange_correlation: rvv10
   do_magnetization: false
   do_not_use_time_reversal: false
   energy: -308.1140383401864
