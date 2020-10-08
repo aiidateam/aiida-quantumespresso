@@ -158,7 +158,6 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
         i.lower() for i in [
             'pseudo_dir',
             'outdir',
-            'ibrav',
             'celldm',
             'nat',
             'ntyp',

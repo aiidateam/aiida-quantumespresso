@@ -27,7 +27,6 @@ class PwCalculation(BasePwCpInputGenerator):
         ('CONTROL', 'pseudo_dir'),
         ('CONTROL', 'outdir'),
         ('CONTROL', 'prefix'),
-        ('SYSTEM', 'ibrav'),
         ('SYSTEM', 'celldm'),
         ('SYSTEM', 'nat'),
         ('SYSTEM', 'ntyp'),

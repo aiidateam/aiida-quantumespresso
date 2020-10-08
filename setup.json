@@ -92,7 +92,8 @@
         "aiida_core[atomic_tools]~=1.3",
         "packaging",
         "qe-tools~=2.0rc1",
-        "xmlschema~=1.2"
+        "xmlschema~=1.2",
+        "numpy"
     ],
     "license": "MIT License",
     "name": "aiida_quantumespresso",
