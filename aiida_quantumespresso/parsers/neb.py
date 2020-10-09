@@ -30,13 +30,8 @@ class NebParser(Parser):
 
         PREFIX = self.node.process_class._PREFIX
 
-        # Check that the retrieved folder is there
-        try:
-            out_folder = self.retrieved
-        except NotExistent:
-            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
-
-        list_of_files = out_folder.list_object_names()  # Note: this includes folders, but not the files they contain.
+        retrieved = self.retrieved
+        list_of_files = retrieved.list_object_names()  # Note: this includes folders, but not the files they contain.
 
         # The stdout is required for parsing
         filename_stdout = self.node.get_attribute('output_filename')
@@ -62,7 +57,7 @@ class NebParser(Parser):
 
         # First parse the Neb output
         try:
-            stdout = out_folder.get_object_content(filename_stdout)
+            stdout = retrieved.get_object_content(filename_stdout)
             neb_out_dict, iteration_data, raw_successful = parse_raw_output_neb(stdout, neb_input_dict)
             # TODO: why do we ignore raw_successful ?
         except (OSError, QEOutputParsingError):
@@ -99,7 +94,7 @@ class NebParser(Parser):
                 if xml_filename in retrieved_files:
                     xml_file_path = os.path.join(relative_output_folder, xml_filename)
                     try:
-                        with out_folder.open(xml_file_path) as xml_file:
+                        with retrieved.open(xml_file_path) as xml_file:
                             parsed_data_xml, logs_xml = parse_pw_xml(xml_file, None)
                     except IOError:
                         return self.exit(self.exit_codes.ERROR_OUTPUT_XML_READ)
@@ -120,7 +115,7 @@ class NebParser(Parser):
             # look for pw output and parse it
             pw_out_file = os.path.join(f'{PREFIX}_{i + 1}', 'PW.out')
             try:
-                with out_folder.open(pw_out_file, 'r') as f:
+                with retrieved.open(pw_out_file, 'r') as f:
                     pw_out_text = f.read()  # Note: read() and not readlines()
             except IOError:
                 return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
@@ -192,7 +187,7 @@ class NebParser(Parser):
         # Load the original and interpolated energy profile along the minimum-energy path (mep)
         try:
             filename = PREFIX + '.dat'
-            with out_folder.open(filename, 'r') as handle:
+            with retrieved.open(filename, 'r') as handle:
                 mep = numpy.loadtxt(handle)
         except Exception:
             self.logger.warning(f'could not open expected output file `{filename}`.')
@@ -200,7 +195,7 @@ class NebParser(Parser):
 
         try:
             filename = PREFIX + '.int'
-            with out_folder.open(filename, 'r') as handle:
+            with retrieved.open(filename, 'r') as handle:
                 interp_mep = numpy.loadtxt(handle)
         except Exception:
             self.logger.warning(f'could not open expected output file `{filename}`.')

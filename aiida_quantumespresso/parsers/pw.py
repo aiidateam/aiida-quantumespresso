@@ -28,11 +28,6 @@ class PwParser(Parser):
         self.exit_code_parser = None
 
         try:
-            self.retrieved
-        except exceptions.NotExistent:
-            return self.exit(self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER))
-
-        try:
             settings = self.node.inputs.settings.get_dict()
         except exceptions.NotExistent:
             settings = {}

@@ -122,10 +122,9 @@ def spin_dependent_subparser(out_info_dict):
     :param out_info_dict: contains various technical internals useful in parsing
     :return: ProjectionData, BandsData parsed from out_file
     """
-
     out_file = out_info_dict['out_file']
     spin_down = out_info_dict['spin_down']
-    od = out_info_dict  #using a shorter name for convenience
+    od = out_info_dict  # using a shorter name for convenience
     #   regular expressions needed for later parsing
     WaveFraction1_re = re.compile(r'\=(.*?)\*')  # state composition 1
     WaveFractionremain_re = re.compile(r'\+(.*?)\*')  # state comp 2
@@ -286,15 +285,12 @@ class ProjwfcParser(Parser):
         Retrieves projwfc output, and some basic information from the out_file, such as warnings and wall_time
         """
         # Check that the retrieved folder is there
-        try:
-            out_folder = self.retrieved
-        except NotExistent:
-            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
+        retrieved = self.retrieved
 
         # Read standard out
         try:
             filename_stdout = self.node.get_option('output_filename')  # or get_attribute(), but this is clearer
-            with out_folder.open(filename_stdout, 'r') as fil:
+            with retrieved.open(filename_stdout, 'r') as fil:
                 out_file = fil.readlines()
         except OSError:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
@@ -314,10 +310,10 @@ class ProjwfcParser(Parser):
         self.out('output_parameters', Dict(dict=parsed_data))
 
         # check and read pdos_tot file
-        out_filenames = out_folder.list_object_names()
+        out_filenames = retrieved.list_object_names()
         try:
             pdostot_filename = fnmatch.filter(out_filenames, '*pdos_tot*')[0]
-            with out_folder.open(pdostot_filename, 'r') as pdostot_file:
+            with retrieved.open(pdostot_filename, 'r') as pdostot_file:
                 # Columns: Energy(eV), Ldos, Pdos
                 pdostot_array = np.atleast_2d(np.genfromtxt(pdostot_file))
                 energy = pdostot_array[:, 0]
@@ -329,7 +325,7 @@ class ProjwfcParser(Parser):
         pdos_atm_filenames = fnmatch.filter(out_filenames, '*pdos_atm*')
         pdos_atm_array_dict = {}
         for name in pdos_atm_filenames:
-            with out_folder.open(name, 'r') as pdosatm_file:
+            with retrieved.open(name, 'r') as pdosatm_file:
                 pdos_atm_array_dict[name] = np.atleast_2d(np.genfromtxt(pdosatm_file))
 
         # finding the bands and projections

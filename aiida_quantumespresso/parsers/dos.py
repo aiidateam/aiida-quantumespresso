@@ -2,7 +2,6 @@
 import numpy as np
 
 from aiida.orm import Dict, XyData
-from aiida.common import NotExistent
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.parse_raw.base import parse_output_base
@@ -17,15 +16,12 @@ class DosParser(Parser):
 
         Retrieves dos output, and some basic information from the out_file, such as warnings and wall_time
         """
-        try:
-            out_folder = self.retrieved
-        except NotExistent:
-            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
+        retrieved = self.retrieved
 
         # Read standard out
         try:
             filename_stdout = self.node.get_option('output_filename')  # or get_attribute(), but this is clearer
-            with out_folder.open(filename_stdout, 'r') as fil:
+            with retrieved.open(filename_stdout, 'r') as fil:
                 out_file = fil.readlines()
         except OSError:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
@@ -41,7 +37,7 @@ class DosParser(Parser):
 
         # check that the dos file is present, if it is, read it
         try:
-            with out_folder.open(self.node.process_class._DOS_FILENAME, 'r') as fil:
+            with retrieved.open(self.node.process_class._DOS_FILENAME, 'r') as fil:
                 dos_file = fil.readlines()
         except OSError:
             return self.exit(self.exit_codes.ERROR_READING_DOS_FILE)

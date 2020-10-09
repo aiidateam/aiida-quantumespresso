@@ -76,8 +76,6 @@ class NebCalculation(CalcJob):
         spec.output('output_mep', valid_type=orm.ArrayData,
             help='The original and interpolated energy profiles along the minimum-energy path (mep)')
         spec.default_output_node = 'output_parameters'
-        spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
-            message='The retrieved folder data node could not be accessed.')
         spec.exit_code(303, 'ERROR_MISSING_XML_FILE',
             message='The required XML file is not present in the retrieved folder.')
         spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',

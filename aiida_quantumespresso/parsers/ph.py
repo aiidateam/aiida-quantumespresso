@@ -5,7 +5,6 @@ import re
 import traceback
 
 from aiida import orm
-from aiida.common import exceptions
 
 from aiida_quantumespresso.calculations.ph import PhCalculation
 from aiida_quantumespresso.parsers.parse_raw.ph import parse_raw_ph_output as parse_stdout
@@ -17,25 +16,22 @@ class PhParser(Parser):
 
     def parse(self, **kwargs):
         """Parse the retrieved files from a `PhCalculation`."""
-        try:
-            self.retrieved
-        except exceptions.NotExistent:
-            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
+        retrieved = self.retrieved
 
         # The stdout is required for parsing
         filename_stdout = self.node.get_attribute('output_filename')
         filename_tensor = PhCalculation._OUTPUT_XML_TENSOR_FILE_NAME
 
-        if filename_stdout not in self.retrieved.list_object_names():
+        if filename_stdout not in retrieved.list_object_names():
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_MISSING)
 
         try:
-            stdout = self.retrieved.get_object_content(filename_stdout)
+            stdout = retrieved.get_object_content(filename_stdout)
         except (IOError, OSError):
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 
         try:
-            tensor_file = self.retrieved.get_object_content(filename_tensor)
+            tensor_file = retrieved.get_object_content(filename_tensor)
         except (IOError, OSError):
             tensor_file = None
 
@@ -45,11 +41,11 @@ class PhParser(Parser):
         dynmat_prefix = os.path.split(PhCalculation._OUTPUT_DYNAMICAL_MATRIX_PREFIX)[1]
 
         natural_sort = lambda string: [int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', string)]
-        for filename in sorted(self.retrieved.list_object_names(dynmat_folder), key=natural_sort):
+        for filename in sorted(retrieved.list_object_names(dynmat_folder), key=natural_sort):
             if not filename.startswith(dynmat_prefix) or filename.endswith('.freq'):
                 continue
 
-            dynmat_files.append(self.retrieved.get_object_content(os.path.join(dynmat_folder, filename)))
+            dynmat_files.append(retrieved.get_object_content(os.path.join(dynmat_folder, filename)))
 
         try:
             parsed_data, logs = parse_stdout(stdout, tensor_file, dynmat_files)

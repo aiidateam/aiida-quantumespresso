@@ -45,8 +45,6 @@ class ProjwfcCalculation(NamelistsCalculation):
         spec.output('projections', valid_type=ProjectionData, required=False)
         spec.output('bands', valid_type=BandsData, required=False)
         spec.default_output_node = 'output_parameters'
-        spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
-            message='The retrieved folder data node could not be accessed.')
         spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
             message='The stdout output file could not be read.')
         spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',

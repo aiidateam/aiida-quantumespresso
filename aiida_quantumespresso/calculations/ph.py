@@ -59,8 +59,6 @@ class PhCalculation(CalcJob):
         spec.default_output_node = 'output_parameters'
 
         # Unrecoverable errors: required retrieved files could not be read, parsed or are otherwise incomplete
-        spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
-            message='The retrieved folder data node could not be accessed.')
         spec.exit_code(302, 'ERROR_OUTPUT_STDOUT_MISSING',
             message='The retrieved folder did not contain the required stdout output file.')
         spec.exit_code(305, 'ERROR_OUTPUT_FILES',
