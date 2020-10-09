@@ -48,6 +48,10 @@
         "aiida.tools.calculations": [
             "quantumespresso.pw = aiida_quantumespresso.tools.calculations.pw:PwCalculationTools"
         ],
+        "aiida.tools.data.orbitals": [
+            "spinorbithydrogen = aiida_quantumespresso.tools.data.orbital.spinorbithydrogen:SpinorbitHydrogenOrbital",
+            "noncollinearhydrogen = aiida_quantumespresso.tools.data.orbital.noncollinearhydrogen:NoncollinearHydrogenOrbital"
+        ],
         "aiida.tools.dbexporters.tcod_plugins": [
             "quantumespresso.cp = aiida_quantumespresso.tools.dbexporters.tcod_plugins.cp:CpTcodtranslator",
             "quantumespresso.pw = aiida_quantumespresso.tools.dbexporters.tcod_plugins.pw:PwTcodtranslator"
@@ -68,11 +72,11 @@
     "extras_require": {
         "pre-commit": [
             "pre-commit~=2.2",
-            "pylint~=2.5.0"
+            "pylint~=2.6.0"
         ],
         "tests": [
             "pgtest~=1.3",
-            "pytest~=5.4",
+            "pytest~=6.0",
             "pytest-regressions~=1.0"
         ],
         "tcod": [
@@ -85,14 +89,15 @@
         ]
     },
     "install_requires": [
-        "aiida_core[atomic_tools]~=1.2",
+        "aiida_core[atomic_tools]~=1.3",
         "packaging",
-        "qe-tools~=1.1",
-        "xmlschema~=1.2"
+        "qe-tools~=2.0rc1",
+        "xmlschema~=1.2",
+        "numpy"
     ],
     "license": "MIT License",
     "name": "aiida_quantumespresso",
     "python_requires": ">=3.5",
     "url": "https://github.com/aiidateam/aiida-quantumespresso",
-    "version": "3.1.0"
+    "version": "3.2.0"
 }

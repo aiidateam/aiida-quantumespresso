@@ -1,0 +1,327 @@
+Dos:
+  array|x_array:
+  - 22
+  array|y_array_0:
+  - 22
+  x_name: Energy
+  x_units: eV
+  y_names:
+  - Dos
+  y_units:
+  - states/eV
+bands:
+  array|bands:
+  - 1
+  - 16
+  array|kpoints:
+  - 1
+  - 3
+  units: eV
+projections:
+  array|energy_array_0:
+  - 22
+  array|energy_array_1:
+  - 22
+  array|energy_array_10:
+  - 22
+  array|energy_array_11:
+  - 22
+  array|energy_array_12:
+  - 22
+  array|energy_array_13:
+  - 22
+  array|energy_array_14:
+  - 22
+  array|energy_array_15:
+  - 22
+  array|energy_array_16:
+  - 22
+  array|energy_array_17:
+  - 22
+  array|energy_array_2:
+  - 22
+  array|energy_array_3:
+  - 22
+  array|energy_array_4:
+  - 22
+  array|energy_array_5:
+  - 22
+  array|energy_array_6:
+  - 22
+  array|energy_array_7:
+  - 22
+  array|energy_array_8:
+  - 22
+  array|energy_array_9:
+  - 22
+  array|pdos_array_0:
+  - 22
+  array|pdos_array_1:
+  - 22
+  array|pdos_array_10:
+  - 22
+  array|pdos_array_11:
+  - 22
+  array|pdos_array_12:
+  - 22
+  array|pdos_array_13:
+  - 22
+  array|pdos_array_14:
+  - 22
+  array|pdos_array_15:
+  - 22
+  array|pdos_array_16:
+  - 22
+  array|pdos_array_17:
+  - 22
+  array|pdos_array_2:
+  - 22
+  array|pdos_array_3:
+  - 22
+  array|pdos_array_4:
+  - 22
+  array|pdos_array_5:
+  - 22
+  array|pdos_array_6:
+  - 22
+  array|pdos_array_7:
+  - 22
+  array|pdos_array_8:
+  - 22
+  array|pdos_array_9:
+  - 22
+  array|proj_array_0:
+  - 1
+  - 16
+  array|proj_array_1:
+  - 1
+  - 16
+  array|proj_array_10:
+  - 1
+  - 16
+  array|proj_array_11:
+  - 1
+  - 16
+  array|proj_array_12:
+  - 1
+  - 16
+  array|proj_array_13:
+  - 1
+  - 16
+  array|proj_array_14:
+  - 1
+  - 16
+  array|proj_array_15:
+  - 1
+  - 16
+  array|proj_array_16:
+  - 1
+  - 16
+  array|proj_array_17:
+  - 1
+  - 16
+  array|proj_array_2:
+  - 1
+  - 16
+  array|proj_array_3:
+  - 1
+  - 16
+  array|proj_array_4:
+  - 1
+  - 16
+  array|proj_array_5:
+  - 1
+  - 16
+  array|proj_array_6:
+  - 1
+  - 16
+  array|proj_array_7:
+  - 1
+  - 16
+  array|proj_array_8:
+  - 1
+  - 16
+  array|proj_array_9:
+  - 1
+  - 16
+  orbital_dicts:
+  - _orbital_type: spinorbithydrogen
+    angular_momentum: 0
+    kind_name: Fe
+    magnetic_number: -0.5
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    total_angular_momentum: 0.5
+  - _orbital_type: spinorbithydrogen
+    angular_momentum: 0
+    kind_name: Fe
+    magnetic_number: 0.5
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    total_angular_momentum: 0.5
+  - _orbital_type: spinorbithydrogen
+    angular_momentum: 1
+    kind_name: Fe
+    magnetic_number: -0.5
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    total_angular_momentum: 0.5
+  - _orbital_type: spinorbithydrogen
+    angular_momentum: 1
+    kind_name: Fe
+    magnetic_number: 0.5
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    total_angular_momentum: 0.5
+  - _orbital_type: spinorbithydrogen
+    angular_momentum: 1
+    kind_name: Fe
+    magnetic_number: -1.5
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    total_angular_momentum: 1.5
+  - _orbital_type: spinorbithydrogen
+    angular_momentum: 1
+    kind_name: Fe
+    magnetic_number: -0.5
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    total_angular_momentum: 1.5
+  - _orbital_type: spinorbithydrogen
+    angular_momentum: 1
+    kind_name: Fe
+    magnetic_number: 0.5
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    total_angular_momentum: 1.5
+  - _orbital_type: spinorbithydrogen
+    angular_momentum: 1
+    kind_name: Fe
+    magnetic_number: 1.5
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    total_angular_momentum: 1.5
+  - _orbital_type: spinorbithydrogen
+    angular_momentum: 2
+    kind_name: Fe
+    magnetic_number: -1.5
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    total_angular_momentum: 1.5
+  - _orbital_type: spinorbithydrogen
+    angular_momentum: 2
+    kind_name: Fe
+    magnetic_number: -0.5
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    total_angular_momentum: 1.5
+  - _orbital_type: spinorbithydrogen
+    angular_momentum: 2
+    kind_name: Fe
+    magnetic_number: 0.5
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    total_angular_momentum: 1.5
+  - _orbital_type: spinorbithydrogen
+    angular_momentum: 2
+    kind_name: Fe
+    magnetic_number: 1.5
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    total_angular_momentum: 1.5
+  - _orbital_type: spinorbithydrogen
+    angular_momentum: 2
+    kind_name: Fe
+    magnetic_number: -2.5
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    total_angular_momentum: 2.5
+  - _orbital_type: spinorbithydrogen
+    angular_momentum: 2
+    kind_name: Fe
+    magnetic_number: -1.5
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    total_angular_momentum: 2.5
+  - _orbital_type: spinorbithydrogen
+    angular_momentum: 2
+    kind_name: Fe
+    magnetic_number: -0.5
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    total_angular_momentum: 2.5
+  - _orbital_type: spinorbithydrogen
+    angular_momentum: 2
+    kind_name: Fe
+    magnetic_number: 0.5
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    total_angular_momentum: 2.5
+  - _orbital_type: spinorbithydrogen
+    angular_momentum: 2
+    kind_name: Fe
+    magnetic_number: 1.5
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    total_angular_momentum: 2.5
+  - _orbital_type: spinorbithydrogen
+    angular_momentum: 2
+    kind_name: Fe
+    magnetic_number: 2.5
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    total_angular_momentum: 2.5

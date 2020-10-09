@@ -13,11 +13,10 @@ repos:
                 tests/.*.in$
             )$
 
--   repo: https://github.com/PyCQA/pylint
-    rev: pylint-2.5.2
+-   repo: https://github.com/PyCQA/pydocstyle
+    rev: 5.0.2
     hooks:
-    -   id: pylint
-        language: system
+    -   id: pydocstyle
         exclude: &exclude_files >
             (?x)^(
                 aiida_quantumespresso/calculations/pwimmigrant.*|
@@ -25,12 +24,6 @@ repos:
                 docs/.*|
                 tests/.*(?<!\.py)$
             )$
-
--   repo: https://github.com/PyCQA/pydocstyle
-    rev: 5.0.2
-    hooks:
-    -   id: pydocstyle
-        exclude: *exclude_files
         args: ['--ignore=D104,D202,D203,D213']
 
 -   repo: https://github.com/pre-commit/mirrors-yapf
@@ -40,6 +33,13 @@ repos:
         name: yapf
         types: [python]
         args: ['-i']
+
+-   repo: https://github.com/PyCQA/pylint
+    rev: pylint-2.6.0
+    hooks:
+    -   id: pylint
+        language: system
+        exclude: *exclude_files
 
 -   repo: local
     hooks:

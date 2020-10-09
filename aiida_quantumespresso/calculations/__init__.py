@@ -7,9 +7,12 @@ from aiida import orm
 from aiida.common import datastructures, exceptions
 from aiida.common.lang import classproperty
 
+from qe_tools.converters import get_parameters_from_cell
+
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
 from .base import CalcJob
+from .helpers import QEInputValidationError
 
 
 class BasePwCpInputGenerator(CalcJob):
@@ -23,6 +26,7 @@ class BasePwCpInputGenerator(CalcJob):
     _DATAFILE_XML_PRE_6_2 = 'data-file.xml'
     _DATAFILE_XML_POST_6_2 = 'data-file-schema.xml'
     _ENVIRON_INPUT_FILE_NAME = 'environ.in'
+    _DEFAULT_IBRAV = 0
 
     # Additional files that should always be retrieved for the specific plugin
     _internal_retrieve_list = []
@@ -285,10 +289,15 @@ class BasePwCpInputGenerator(CalcJob):
 
         # ============ I prepare the input site data =============
         # ------------ CELL_PARAMETERS -----------
-        cell_parameters_card = 'CELL_PARAMETERS angstrom\n'
-        for vector in structure.cell:
-            cell_parameters_card += ('{0:18.10f} {1:18.10f} {2:18.10f}'
-                                     '\n'.format(*vector))
+
+        # Specify cell parameters only if 'ibrav' is zero.
+        if input_params.get('SYSTEM', {}).get('ibrav', cls._DEFAULT_IBRAV) == 0:
+            cell_parameters_card = 'CELL_PARAMETERS angstrom\n'
+            for vector in structure.cell:
+                cell_parameters_card += ('{0:18.10f} {1:18.10f} {2:18.10f}'
+                                        '\n'.format(*vector))
+        else:
+            cell_parameters_card = ''
 
         # ------------- ATOMIC_SPECIES ------------
         atomic_species_card_list = []
@@ -448,7 +457,18 @@ class BasePwCpInputGenerator(CalcJob):
         # Set some variables (look out at the case! NAMELISTS should be
         # uppercase, internal flag names must be lowercase)
         input_params.setdefault('SYSTEM', {})
-        input_params['SYSTEM']['ibrav'] = 0
+        input_params['SYSTEM'].setdefault('ibrav', cls._DEFAULT_IBRAV)
+        ibrav = input_params['SYSTEM']['ibrav']
+        if ibrav != 0:
+            try:
+                structure_parameters = get_parameters_from_cell(
+                    ibrav=ibrav,
+                    cell=structure.get_attribute('cell'),
+                    tolerance=settings.pop('IBRAV_CELL_TOLERANCE', 1e-6)
+                )
+            except ValueError as exc:
+                raise QEInputValidationError('Cannot get structure parameters from cell: {}'.format(exc)) from exc
+            input_params['SYSTEM'].update(structure_parameters)
         input_params['SYSTEM']['nat'] = len(structure.sites)
         input_params['SYSTEM']['ntyp'] = len(structure.kinds)
 
@@ -464,7 +484,7 @@ class BasePwCpInputGenerator(CalcJob):
                     has_mesh = False
                     weights = [1.] * num_kpoints
 
-            except AttributeError:
+            except AttributeError as exception:
 
                 try:
                     kpoints_list = kpoints.get_kpoints()
@@ -472,11 +492,10 @@ class BasePwCpInputGenerator(CalcJob):
                     has_mesh = False
                     if num_kpoints == 0:
                         raise exceptions.InputValidationError(
-                            'At least one k point must be '
-                            'provided for non-gamma calculations')
+                            'At least one k point must be provided for non-gamma calculations'
+                        ) from exception
                 except AttributeError:
-                    raise exceptions.InputValidationError(
-                        'No valid kpoints have been found')
+                    raise exceptions.InputValidationError('No valid kpoints have been found') from exception
 
                 try:
                     _, weights = kpoints.get_kpoints(also_weights=True)
@@ -541,20 +560,20 @@ class BasePwCpInputGenerator(CalcJob):
             try:
                 control_nl = input_params['CONTROL']
                 calculation_type = control_nl['calculation']
-            except KeyError:
+            except KeyError as exception:
                 raise exceptions.InputValidationError(
                     "No 'calculation' in CONTROL namelist."
                     'It is required for automatic detection of the valid list '
                     'of namelists. Otherwise, specify the list of namelists '
-                    "using the NAMELISTS key inside the 'settings' input node.")
+                    "using the NAMELISTS key inside the 'settings' input node.") from exception
 
             try:
                 namelists_toprint = cls._automatic_namelists[calculation_type]
-            except KeyError:
+            except KeyError as exception:
                 raise exceptions.InputValidationError("Unknown 'calculation' value in "
                                            'CONTROL namelist {}. Otherwise, specify the list of '
                                            "namelists using the NAMELISTS inside the 'settings' input "
-                                           'node'.format(calculation_type))
+                                           'node'.format(calculation_type)) from exception
 
         inputfile = ''
         for namelist_name in namelists_toprint:

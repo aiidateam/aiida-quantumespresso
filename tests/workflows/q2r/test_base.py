@@ -33,7 +33,7 @@ def generate_workchain_q2r(generate_workchain, generate_inputs_q2r, generate_cal
     return _generate_workchain_q2r
 
 
-def test_setup(aiida_profile, generate_workchain_q2r):
+def test_setup(generate_workchain_q2r):
     """Test `Q2rBaseWorkChain.setup`."""
     process = generate_workchain_q2r()
     process.setup()
@@ -42,7 +42,7 @@ def test_setup(aiida_profile, generate_workchain_q2r):
     assert isinstance(process.ctx.inputs, AttributeDict)
 
 
-def test_handle_unrecoverable_failure(aiida_profile, generate_workchain_q2r):
+def test_handle_unrecoverable_failure(generate_workchain_q2r):
     """Test `Q2rBaseWorkChain.handle_unrecoverable_failure`."""
     process = generate_workchain_q2r(exit_code=Q2rCalculation.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
     process.setup()

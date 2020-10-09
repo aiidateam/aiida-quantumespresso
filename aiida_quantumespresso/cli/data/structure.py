@@ -21,7 +21,8 @@ def cmd_import(filename, dry_run):
     """Import a `StructureData` from a Quantum ESPRESSO input file."""
     from aiida_quantumespresso.tools.pwinputparser import PwInputFile
 
-    parser = PwInputFile(filename)
+    with open(filename, 'r') as input_file:
+        parser = PwInputFile(input_file.read())
     structure = parser.get_structuredata()
     formula = structure.get_formula()
 

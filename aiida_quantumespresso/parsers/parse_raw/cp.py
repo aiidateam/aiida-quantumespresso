@@ -149,30 +149,27 @@ def parse_cp_xml_counter_output(data):
     return parsed_data
 
 
-def parse_cp_raw_output(out_file, xml_file=None, xml_counter_file=None):
+def parse_cp_raw_output(stdout, output_xml=None, output_xml_counter=None):
 
     parser_info = get_parser_info(parser_info_template='aiida-quantumespresso parser cp.x v{}')
 
-    # analyze the xml
-    if xml_file is not None:
-        xml_data = parse_cp_xml_output(xml_file.read())
-    else:
+    if output_xml is None:
         parser_info['parser_warnings'].append('Skipping the parsing of the xml file.')
         xml_data = {}
-
-    # analyze the counter file, which keeps info on the steps
-    if xml_counter_file is not None:
-        xml_counter_data = parse_cp_xml_counter_output(xml_counter_file.read())
     else:
+        xml_data = parse_cp_xml_output(output_xml)
+
+    # XML counter file, which keeps info on the steps
+    if output_xml_counter is None:
         xml_counter_data = {}
+    else:
+        xml_counter_data = parse_cp_xml_counter_output(output_xml_counter)
 
-    # analyze the standard output
-    out_lines = out_file.readlines()
-
+    stdout = stdout.split('\n')
     # understand if the job ended smoothly
-    job_successful = any('JOB DONE' in line for line in reversed(out_lines))
+    job_successful = any('JOB DONE' in line for line in reversed(stdout))
 
-    out_data = parse_cp_text_output(out_lines, xml_data)
+    out_data = parse_cp_text_output(stdout, xml_data)
 
     for key in out_data.keys():
         if key in list(xml_data.keys()):

@@ -94,15 +94,16 @@ def get_pseudos_from_dict(structure, pseudos_uuids):
         symbol = kind.symbol
         try:
             uuid = pseudos_uuids[symbol]
-        except KeyError:
-            raise NotExistent('No UPF for element {} found in the provided pseudos_uuids dictionary'.format(symbol))
+        except KeyError as exception:
+            msg = 'No UPF for element {} found in the provided pseudos_uuids dictionary'.format(symbol)
+            raise NotExistent(msg) from exception
         try:
             upf = load_node(uuid)
-        except NotExistent:
+        except NotExistent as exception:
             raise NotExistent(
                 'No node found associated to the UUID {} given for element {} '
                 'in the provided pseudos_uuids dictionary'.format(uuid, symbol)
-            )
+            ) from exception
         if not isinstance(upf, UpfData):
             raise ValueError('Node with UUID {} is not a UpfData'.format(uuid))
         if upf.element != symbol:

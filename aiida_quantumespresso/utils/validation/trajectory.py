@@ -46,17 +46,17 @@ def verify_convergence_forces(trajectory, index=-1, threshold=None):
     :return: `True` if threshold is valid, `False` otherwise
     :raises ValueError: if the `forces` array or given index does not exist
     """
-    from qe_tools.constants import ry_to_ev, bohr_to_ang
+    from qe_tools import CONSTANTS
 
     if threshold is None:
         return None
 
-    threshold *= ry_to_ev / bohr_to_ang  # Convert to eV / Å
+    threshold *= CONSTANTS.ry_to_ev / CONSTANTS.bohr_to_ang  # Convert to eV / Å
 
     try:
         forces = trajectory.get_array('forces')[index]
-    except (KeyError, IndexError):
-        raise ValueError('the `forces` array does not exist or the given index exceeds the length.')
+    except (KeyError, IndexError) as exception:
+        raise ValueError('the `forces` array does not exist or the given index exceeds the length.') from exception
 
     return numpy.max(abs(forces)) < threshold
 
@@ -82,8 +82,8 @@ def verify_convergence_stress(trajectory, index=-1, threshold=None, reference_pr
 
     try:
         stress = trajectory.get_array('stress')[index]
-    except (KeyError, IndexError):
-        raise ValueError('the `stress` array does not exist or the given index exceeds the length.')
+    except (KeyError, IndexError) as exception:
+        raise ValueError('the `stress` array does not exist or the given index exceeds the length.') from exception
 
     pressure = (numpy.trace(stress) / 3.)
 
