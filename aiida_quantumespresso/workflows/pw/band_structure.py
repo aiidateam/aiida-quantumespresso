@@ -73,7 +73,7 @@ class PwBandStructureWorkChain(WorkChain):
         Based on the specified protocol, we define values for variables that affect the execution of the calculations.
         """
         protocol, protocol_modifiers = self._get_protocol()
-        self.report('running the workchain with the "{}" protocol'.format(protocol.name))
+        self.report(f'running the workchain with the "{protocol.name}" protocol')
         self.ctx.protocol = protocol.get_protocol_data(modifiers=protocol_modifiers)
 
     def setup_parameters(self):
@@ -89,7 +89,7 @@ class PwBandStructureWorkChain(WorkChain):
                 ecutwfc.append(cutoff)
                 ecutrho.append(cutrho)
             except KeyError:
-                self.report('failed to retrieve the cutoff or dual factor for {}'.format(kind))
+                self.report(f'failed to retrieve the cutoff or dual factor for {kind}')
                 return self.exit_codes.ERROR_INVALID_INPUT_UNRECOGNIZED_KIND
 
         self.ctx.parameters = orm.Dict(dict={
@@ -158,7 +158,7 @@ class PwBandStructureWorkChain(WorkChain):
 
         running = self.submit(PwBandsWorkChain, **inputs)
 
-        self.report('launching PwBandsWorkChain<{}>'.format(running.pk))
+        self.report(f'launching PwBandsWorkChain<{running.pk}>')
 
         return ToContext(workchain_bands=running)
 
@@ -167,7 +167,7 @@ class PwBandStructureWorkChain(WorkChain):
         workchain = self.ctx.workchain_bands
 
         if not self.ctx.workchain_bands.is_finished_ok:
-            self.report('sub process PwBandsWorkChain<{}> failed'.format(workchain.pk))
+            self.report(f'sub process PwBandsWorkChain<{workchain.pk}> failed')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_BANDS
 
         self.report('workchain successfully completed')

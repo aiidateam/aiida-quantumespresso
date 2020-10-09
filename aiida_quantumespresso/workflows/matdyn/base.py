@@ -50,7 +50,7 @@ class MatdynBaseWorkChain(BaseRestartWorkChain):
         """
         arguments = [calculation.process_label, calculation.pk, calculation.exit_status, calculation.exit_message]
         self.report('{}<{}> failed with exit status {}: {}'.format(*arguments))
-        self.report('Action taken: {}'.format(action))
+        self.report(f'Action taken: {action}')
 
     @process_handler(priority=600)
     def handle_unrecoverable_failure(self, node):

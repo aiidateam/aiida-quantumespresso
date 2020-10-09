@@ -50,7 +50,7 @@ class PwCalculation(BasePwCpInputGenerator):
         filepaths = []
 
         for filename in cls.xml_filenames:
-            filepath = os.path.join(cls._OUTPUT_SUBFOLDER, '{}.save'.format(cls._PREFIX), filename)
+            filepath = os.path.join(cls._OUTPUT_SUBFOLDER, f'{cls._PREFIX}.save', filename)
             filepaths.append(filepath)
 
         return filepaths

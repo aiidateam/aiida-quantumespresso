@@ -71,7 +71,7 @@ def launch_calculation(
     }
 
     if mode in CALCS_REQUIRING_PARENT and not parent_folder:
-        raise click.BadParameter("calculation '{}' requires a parent folder".format(mode), param_hint='--parent-folder')
+        raise click.BadParameter(f"calculation '{mode}' requires a parent folder", param_hint='--parent-folder')
 
     try:
         hubbard_file = validate.validate_hubbard_parameters(

@@ -21,7 +21,7 @@ def get_parser_info(parser_info_template=None):
     parser_info['parser_version'] = parser_version
 
     if parser_info_template is None:
-        parser_info['parser_info'] = 'aiida-quantumespresso parser v{}'.format(parser_version)
+        parser_info['parser_info'] = f'aiida-quantumespresso parser v{parser_version}'
     else:
         parser_info['parser_info'] = parser_info_template.format(parser_version)
 

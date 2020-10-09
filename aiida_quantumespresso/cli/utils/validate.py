@@ -31,7 +31,7 @@ def validate_kpoints_mesh(ctx, param, value):
         kpoints = KpointsData()
         kpoints.set_kpoints_mesh(value)
     except ValueError as exception:
-        raise click.BadParameter('failed to create a KpointsData mesh out of {}\n{}'.format(value, exception))
+        raise click.BadParameter(f'failed to create a KpointsData mesh out of {value}\n{exception}')
 
     return kpoints
 
@@ -62,10 +62,10 @@ def validate_hubbard_parameters(structure, parameters, hubbard_u=None, hubbard_v
         try:
             hubbard_file = load_node(pk=hubbard_file_pk)
         except exceptions.NotExistent:
-            ValueError('{} is not a valid pk'.format(hubbard_file_pk))
+            ValueError(f'{hubbard_file_pk} is not a valid pk')
         else:
             if not isinstance(hubbard_file, SinglefileData):
-                ValueError('Node<{}> is not a SinglefileData but {}'.format(hubbard_file_pk, type(hubbard_file)))
+                ValueError(f'Node<{hubbard_file_pk}> is not a SinglefileData but {type(hubbard_file)}')
 
         parameters['SYSTEM']['lda_plus_u'] = True
         parameters['SYSTEM']['lda_plus_u_kind'] = 2

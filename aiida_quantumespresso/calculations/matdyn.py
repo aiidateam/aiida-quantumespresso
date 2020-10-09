@@ -54,7 +54,7 @@ class MatdynCalculation(NamelistsCalculation):
         except AttributeError:
             kpoints = self.inputs.kpoints.get_kpoints_mesh(print_list=True)
 
-        kpoints_string = ['{}'.format(len(kpoints))]
+        kpoints_string = [f'{len(kpoints)}']
         for kpoint in kpoints:
             kpoints_string.append('{:18.10f} {:18.10f} {:18.10f}'.format(*kpoint))
 

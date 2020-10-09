@@ -26,26 +26,26 @@ def _check_and_convert(keyword, val, expected_type):
         if isinstance(val, bool):
             outval = val
         else:
-            raise TypeError('Expected a boolean for keyword {}, found {} instead'.format(keyword, type(val)))
+            raise TypeError(f'Expected a boolean for keyword {keyword}, found {type(val)} instead')
     elif expected_type.upper() == 'REAL':
         if isinstance(val, int):
             outval = float(val)
         elif isinstance(val, float):
             outval = val
         else:
-            raise TypeError('Expected a float for keyword {}, found {} instead'.format(keyword, type(val)))
+            raise TypeError(f'Expected a float for keyword {keyword}, found {type(val)} instead')
     elif expected_type.upper() == 'INTEGER':
         if isinstance(val, int):
             outval = val
         else:
-            raise TypeError('Expected an integer for keyword {}, found {} instead'.format(keyword, type(val)))
+            raise TypeError(f'Expected an integer for keyword {keyword}, found {type(val)} instead')
     elif expected_type.upper() == 'CHARACTER':
         if isinstance(val, str):
             outval = val
         else:
-            raise TypeError('Expected a string for keyword {}, found {} instead'.format(keyword, type(val)))
+            raise TypeError(f'Expected a string for keyword {keyword}, found {type(val)} instead')
     else:
-        raise InternalError('Unexpected type check for keyword {}: {})'.format(keyword, expected_type.upper()))
+        raise InternalError(f'Unexpected type check for keyword {keyword}: {expected_type.upper()})')
 
     return outval
 
@@ -137,7 +137,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
         for namelist, content in input_params.items():
             if not isinstance(content, dict):
                 raise QEInputValidationError(
-                    "The content associated to the namelist '{}' must be a dictionary".format(namelist)
+                    f"The content associated to the namelist '{namelist}' must be a dictionary"
                 )
             all_input_namelists.add(namelist)
             for key, value in content.items():
@@ -181,7 +181,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
     module_dir = os.path.dirname(__file__)
     if module_dir == '':
         module_dir = os.curdir
-    xml_path = os.path.join(module_dir, 'INPUT_PW-{}.xml'.format(version))
+    xml_path = os.path.join(module_dir, f'INPUT_PW-{version}.xml')
     try:
         with open(xml_path, 'r') as handle:
             dom = xml.dom.minidom.parse(handle)
@@ -200,10 +200,9 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
         if pos == 0:
             add_str = ' (the version you specified is too old)'
         else:
-            add_str = ' (the older, closest version you can use is {})'.format(strictversions[pos - 1])
+            add_str = f' (the older, closest version you can use is {strictversions[pos - 1]})'
         raise QEInputValidationError(
-            'Unknown Quantum Espresso version: {}. '
-            'Available versions: {};{}'.format(version, ', '.join(versions), add_str)
+            f"Unknown Quantum Espresso version: {version}. Available versions: {', '.join(versions)};{add_str}"
         ) from exception
 
     # ========== List of known PW variables (from XML file) ===============
@@ -271,7 +270,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
         start_val = dim.getAttribute('start')
         if start_val != '1':
             raise InternalError(
-                "Wrong start value '{}' in input array (dimension) {}".format(start_val, dim.getAttribute('name'))
+                f"Wrong start value '{start_val}' in input array (dimension) {dim.getAttribute('name')}"
             )
         # I save the string as it is; somewhere else I will check for its value
         valid_dims[dim.getAttribute('name').lower()]['end_val'] = dim.getAttribute('end')
@@ -322,7 +321,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
     # =================== Check for blocked keywords ===========================
     for keyword in input_params_internal:
         if keyword in blocked_kws:
-            err_str = "You should not provide explicitly keyword '{}'.".format(keyword)
+            err_str = f"You should not provide explicitly keyword '{keyword}'."
             if stop_at_first_error:
                 raise QEInputValidationError(err_str)
             else:
@@ -397,15 +396,13 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
                 internal_dict[namelist_name][keyword] = _check_and_convert(keyword, value, found_var['expected_type'])
             except KeyError as exception:
                 if namelist_name in all_namelists:
-                    err_str = 'Error, namelist {} not valid for calculation type {}'.format(
-                        namelist_name, calculation_type
-                    )
+                    err_str = f'Error, namelist {namelist_name} not valid for calculation type {calculation_type}'
                     if stop_at_first_error:
                         raise QEInputValidationError(err_str) from exception
                     else:
                         errors_list.append(err_str)
                 else:
-                    err_str = 'Error, unknown namelist {}'.format(namelist_name)
+                    err_str = f'Error, unknown namelist {namelist_name}'
                     if stop_at_first_error:
                         raise QEInputValidationError(err_str) from exception
                     else:
@@ -433,9 +430,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
             # I accept only ntyp or an integer as end_val
             if found_var['end_val'] == 'ntyp':
                 if not isinstance(value, dict):
-                    err_str = "Error, expected dictionary to associate each specie to a value for keyword '{}'.".format(
-                        keyword
-                    )
+                    err_str = f"Error, expected dictionary to associate each specie to a value for keyword '{keyword}'."
                     if stop_at_first_error:
                         raise QEInputValidationError(err_str)
                     else:
@@ -445,7 +440,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
                 outdict = {}
                 for kindname, found_item in value.items():
                     if kindname not in atomic_species_list:
-                        err_str = "Error, '{}' is not a valid kind name.".format(kindname)
+                        err_str = f"Error, '{kindname}' is not a valid kind name."
                         if stop_at_first_error:
                             raise QEInputValidationError(err_str)
                         else:
@@ -462,7 +457,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
                 try:
                     internal_dict[namelist_name][keyword] = outdict
                 except KeyError as exception:
-                    err_str = 'Error, unknown namelist {}'.format(namelist_name)
+                    err_str = f'Error, unknown namelist {namelist_name}'
                     if stop_at_first_error:
                         raise QEInputValidationError(err_str) from exception
                     else:
@@ -472,14 +467,14 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
                 try:
                     end_value = int(found_var['end_val'])
                 except ValueError as exception:
-                    err_str = "Error, invalid end value '{}' for keyword '{}'.".format(found_var['end_val'], keyword)
+                    err_str = f"Error, invalid end value '{found_var['end_val']}' for keyword '{keyword}'."
                     if stop_at_first_error:
                         raise QEInputValidationError(err_str) from exception
                     else:
                         errors_list.append(err_str)
                         continue
                 if not isinstance(value, list) or len(value) != end_value:
-                    err_str = "Error, expecting a list of length {} for keyword ' {}'.".format(end_value, keyword)
+                    err_str = f"Error, expecting a list of length {end_value} for keyword ' {keyword}'."
                     if stop_at_first_error:
                         raise QEInputValidationError(err_str)
                     else:
@@ -504,7 +499,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
                 try:
                     internal_dict[namelist_name][keyword] = outlist
                 except KeyError as exception:
-                    err_str = 'Error, unknown namelist {}'.format(namelist_name)
+                    err_str = f'Error, unknown namelist {namelist_name}'
                     if stop_at_first_error:
                         raise QEInputValidationError(err_str) from exception
                     else:
@@ -522,7 +517,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
             try:
                 internal_dict[namelist_name][keyword] = []
             except KeyError as exception:
-                err_str = 'Error, unknown namelist {}'.format(namelist_name)
+                err_str = f'Error, unknown namelist {namelist_name}'
                 if stop_at_first_error:
                     raise QEInputValidationError(err_str) from exception
                 else:
@@ -554,9 +549,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
                     try:
                         int(variable['start'][i])
                     except ValueError as exception:
-                        err_str = "Error, invalid start value '{}' for keyword '{}'.".format(
-                            variable['start'][i], keyword
-                        )
+                        err_str = f"Error, invalid start value '{variable['start'][i]}' for keyword '{keyword}'."
                         if stop_at_first_error:
                             raise QEInputValidationError(err_str) from exception
                         else:
@@ -570,7 +563,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
                         kindname = index_value
 
                         if kindname not in atomic_species_list:
-                            err_str = "Error, '{}' is not a valid kind name.".format(kindname)
+                            err_str = f"Error, '{kindname}' is not a valid kind name."
                             if stop_at_first_error:
                                 raise QEInputValidationError(err_str)
                             else:
@@ -583,9 +576,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
                         try:
                             index_value = int(index_value)
                         except ValueError as exception:
-                            err_str = 'Error, only integer types are supported for index {}, got {}'.format(
-                                index, index_value
-                            )
+                            err_str = f'Error, only integer types are supported for index {index}, got {index_value}'
                             if stop_at_first_error:
                                 raise QEInputValidationError(err_str) from exception
                             else:
@@ -600,12 +591,12 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
 
         else:
             # Neither a variable nor an array
-            err_str = 'Problem parsing keyword {}. '.format(keyword)
+            err_str = f'Problem parsing keyword {keyword}. '
             similar_kws = difflib.get_close_matches(keyword, valid_invars_list)
             if len(similar_kws) == 1:
-                err_str += 'Maybe you wanted to specify {}?'.format(similar_kws[0])
+                err_str += f'Maybe you wanted to specify {similar_kws[0]}?'
             elif len(similar_kws) > 1:
-                err_str += 'Maybe you wanted to specify one of these: {}?'.format(', '.join(similar_kws))
+                err_str += f"Maybe you wanted to specify one of these: {', '.join(similar_kws)}?"
             else:
                 err_str += '(No similar keywords found...)'
             if stop_at_first_error:
@@ -619,13 +610,13 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
     # ============== I check here compulsory variables ===========
     missing_kws = compulsory_kws - set(inserted_kws)
     if missing_kws:
-        err_str = 'Missing compulsory variables: {}.'.format(', '.join(missing_kws))
+        err_str = f"Missing compulsory variables: {', '.join(missing_kws)}."
         if stop_at_first_error:
             raise QEInputValidationError(err_str)
         else:
             errors_list.append(err_str)
 
     if errors_list:
-        raise QEInputValidationError('Errors! {} issues found:\n* '.format(len(errors_list)) + '\n* '.join(errors_list))
+        raise QEInputValidationError(f'Errors! {len(errors_list)} issues found:\n* ' + '\n* '.join(errors_list))
 
     return internal_dict

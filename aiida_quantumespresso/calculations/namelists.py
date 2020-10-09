@@ -122,7 +122,7 @@ class NamelistsCalculation(CalcJob):
 
         file_lines = []
         for namelist_name, namelist in parameters.items():
-            file_lines.append('&{0}'.format(namelist_name))
+            file_lines.append(f'&{namelist_name}')
             for key, value in sorted(namelist.items()):
                 file_lines.append(convert_input_to_namelist_entry(key, value)[:-1])
             file_lines.append('/')
@@ -230,6 +230,6 @@ class NamelistsCalculation(CalcJob):
 
         if settings:
             unknown_keys = ', '.join(list(settings.keys()))
-            raise exceptions.InputValidationError('`settings` contained unexpected keys: {}'.format(unknown_keys))
+            raise exceptions.InputValidationError(f'`settings` contained unexpected keys: {unknown_keys}')
 
         return calcinfo

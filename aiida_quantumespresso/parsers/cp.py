@@ -60,7 +60,7 @@ class CpParser(Parser):
         # Now prepare the reordering, as filex in the xml are  ordered
         reordering = self._generate_sites_ordering(out_dict['species'], out_dict['atoms'])
 
-        pos_filename = '{}.{}'.format(self.node.process_class._PREFIX, 'pos')
+        pos_filename = f'{self.node.process_class._PREFIX}.pos'
         if pos_filename not in list_of_files:
             return self.exit(self.exit_codes.ERROR_READING_POS_FILE)
 
@@ -75,27 +75,28 @@ class CpParser(Parser):
 
         for name, extension, scale, elements in trajectories:
             try:
-                with out_folder.open('{}.{}'.format(self.node.process_class._PREFIX, extension)) as datafile:
+                with out_folder.open(f'{self.node.process_class._PREFIX}.{extension}') as datafile:
                     data = [l.split() for l in datafile]
                     # POSITIONS stored in angstrom
                 traj_data = parse_cp_traj_stanzas(
-                    num_elements=elements, splitlines=data, prepend_name='{}_traj'.format(name), rescale=scale
+                    num_elements=elements, splitlines=data, prepend_name=f'{name}_traj', rescale=scale
                 )
                 # here initialize the dictionary. If the parsing of positions fails, though, I don't have anything
                 # out of the CP dynamics. Therefore, the calculation status is set to FAILED.
                 if extension != 'cel':
-                    raw_trajectory['{}_ordered'.format(name)
-                                   ] = self._get_reordered_array(traj_data['{}_traj_data'.format(name)], reordering)
+                    raw_trajectory[f'{name}_ordered'] = self._get_reordered_array(
+                        traj_data[f'{name}_traj_data'], reordering
+                    )
                 else:
                     raw_trajectory['cells'] = numpy.array(traj_data['cells_traj_data'])
                 if extension == 'pos':
-                    raw_trajectory['times'] = numpy.array(traj_data['{}_traj_times'.format(name)])
+                    raw_trajectory['times'] = numpy.array(traj_data[f'{name}_traj_times'])
             except IOError:
-                out_dict['warnings'].append('Unable to open the {} file... skipping.'.format(extension.upper()))
+                out_dict['warnings'].append(f'Unable to open the {extension.upper()} file... skipping.')
 
         # =============== EVP trajectory ============================
         try:
-            with out_folder.open('{}.evp'.format(self._node.process_class._PREFIX)) as handle:
+            with out_folder.open(f'{self._node.process_class._PREFIX}.evp') as handle:
                 matrix = numpy.genfromtxt(handle)
             # there might be a different format if the matrix has one row only
             try:

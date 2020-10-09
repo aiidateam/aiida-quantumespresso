@@ -33,7 +33,7 @@ def get_highest_occupied_band(bands, threshold=0.005):
     from aiida.orm import BandsData
 
     if not isinstance(bands, BandsData):
-        raise ValueError('bands should be a `{}` node'.format(BandsData.__name__))
+        raise ValueError(f'bands should be a `{BandsData.__name__}` node')
 
     try:
         occupations = bands.get_array('occupations')

@@ -57,7 +57,7 @@ class Pw2wannier90Calculation(NamelistsCalculation):
         # Put the nnkp in the folder, with the correct filename
         nnkp_file = self.inputs.nnkp_file
         calcinfo.local_copy_list.append(
-            (nnkp_file.uuid, nnkp_file.filename, '{}.nnkp'.format(self._SEEDNAME))
+            (nnkp_file.uuid, nnkp_file.filename, f'{self._SEEDNAME}.nnkp')
         )
 
         return calcinfo
