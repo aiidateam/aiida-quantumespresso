@@ -18,7 +18,7 @@ def parse_output_base(filecontent, codename=None, message_map=None):
     keys = ['error', 'warning']
 
     if message_map is not None and (not isinstance(message_map, dict) or any(key not in message_map for key in keys)):
-        raise RuntimeError('invalid format `message_map`: should be dictionary with two keys {}'.format(keys))
+        raise RuntimeError(f'invalid format `message_map`: should be dictionary with two keys {keys}')
 
     logs = get_logging_container()
     parsed_data = get_parser_info(parser_info_template='aiida-quantumespresso parser simple v{}')
@@ -33,7 +33,7 @@ def parse_output_base(filecontent, codename=None, message_map=None):
 
     if codename is not None:
 
-        codestring = 'Program {}'.format(codename)
+        codestring = f'Program {codename}'
 
         for line_number, line in enumerate(lines):
 
@@ -127,7 +127,7 @@ def convert_qe_time_to_sec(timestr):
         seconds = '0.'
 
     if rest.strip():
-        raise ValueError("Something remained at the end of the string '{}': '{}'".format(timestr, rest))
+        raise ValueError(f"Something remained at the end of the string '{timestr}': '{rest}'")
 
     num_seconds = (float(seconds) + float(minutes) * 60. + float(hours) * 3600. + float(days) * 86400.)
 

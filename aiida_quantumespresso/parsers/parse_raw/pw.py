@@ -99,7 +99,7 @@ def reduce_symmetries(parsed_parameters, parsed_structure, logger):
                             break
                     else:
                         index = None
-                        logger.error('Symmetry {} not found'.format(name))
+                        logger.error(f'Symmetry {name} not found')
 
                     new_dict = {}
                     if index is not None:
@@ -131,11 +131,11 @@ def reduce_symmetries(parsed_parameters, parsed_structure, logger):
 
                 parsed_parameters[symmetry_type] = new_symmetries  # and overwrite the old one
             except KeyError:
-                logger.warning("key '{}' is not present in raw output dictionary".format(symmetry_type))
+                logger.warning(f"key '{symmetry_type}' is not present in raw output dictionary")
         else:
             # backwards-compatiblity: 'lattice_symmetries' is not created in older versions of the parser
             if symmetry_type != 'lattice_symmetries':
-                logger.warning("key '{}' is not present in raw output dictionary".format(symmetry_type))
+                logger.warning(f"key '{symmetry_type}' is not present in raw output dictionary")
 
 
 def get_symmetry_mapping():
@@ -406,7 +406,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
             if match:
                 try:
                     parsed_data['estimated_ram_per_process'] = float(match.group(1))
-                    parsed_data['estimated_ram_per_process{}'.format(units_suffix)] = match.group(4)
+                    parsed_data[f'estimated_ram_per_process{units_suffix}'] = match.group(4)
                 except (IndexError, ValueError):
                     pass
 
@@ -417,7 +417,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
             if match:
                 try:
                     parsed_data['estimated_ram_total'] = float(match.group(1))
-                    parsed_data['estimated_ram_total{}'.format(units_suffix)] = match.group(4)
+                    parsed_data[f'estimated_ram_total{units_suffix}'] = match.group(4)
                 except (IndexError, ValueError):
                     pass
 
@@ -464,7 +464,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                     parsed_data['pointgroup_schoenflies'] = pg_schoenflies
 
                 except Exception:
-                    warning = 'Problem parsing point group, I found: {}'.format(line.strip())
+                    warning = f'Problem parsing point group, I found: {line.strip()}'
                     logs.warning.append(warning)
 
         # special parsing of c_bands error
@@ -510,7 +510,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                     lattice = line.split('(')[1].split(')')[0].split('=')
                     if lattice[0].lower() not in ['alat', 'bohr', 'angstrom']:
                         raise QEOutputParsingError(
-                            'Error while parsing cell_parameters: ' + 'unsupported units {}'.format(lattice[0])
+                            'Error while parsing cell_parameters: ' + f'unsupported units {lattice[0]}'
                         )
 
                     if 'alat' in lattice[0].lower():
@@ -520,7 +520,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                         lattice_parameter_b = float(lattice[1])
                         if abs(lattice_parameter_b - alat) > lattice_tolerance:
                             raise QEOutputParsingError(
-                                'Lattice parameters mismatch! ' + '{} vs {}'.format(lattice_parameter_b, alat)
+                                'Lattice parameters mismatch! ' + f'{lattice_parameter_b} vs {alat}'
                             )
                     elif 'bohr' in lattice[0].lower():
                         lattice_parameter_b *= CONSTANTS.bohr_to_ang
@@ -569,7 +569,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                     units = line2.split()[-1]
                     if default_dipole_units.lower() not in units.lower():  # only debye
                         raise QEOutputParsingError(
-                            'Error parsing the dipole correction. Units {} are not supported.'.format(units)
+                            f'Error parsing the dipole correction. Units {units} are not supported.'
                         )
                     value = float(line2.split()[-2])
                 except IndexError:  # on units
@@ -669,7 +669,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                             else:
                                 break
                     else:
-                        raise KeyError('could not find and parse the line with `{}`'.format(marker))
+                        raise KeyError(f'could not find and parse the line with `{marker}`')
 
                     for key, value in [['energy', En], ['energy_accuracy', E_acc]]:
                         trajectory_data.setdefault(key, []).append(value)
@@ -797,7 +797,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                         parsed_data['stress' + units_suffix] = default_stress_units
                 except Exception:
                     import traceback
-                    logs.warning.append('Error while parsing stress tensor: {}'.format(traceback.format_exc()))
+                    logs.warning.append(f'Error while parsing stress tensor: {traceback.format_exc()}')
 
             # Electronic and ionic dipoles when 'lelfield' was set to True in input parameters
             elif lelfield is True:

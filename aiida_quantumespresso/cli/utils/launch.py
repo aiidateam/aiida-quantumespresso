@@ -21,15 +21,15 @@ def launch_process(process, daemon, **inputs):
     elif issubclass(process, Process):
         process_name = process.__name__
     else:
-        raise TypeError('invalid type for process: {}'.format(process))
+        raise TypeError(f'invalid type for process: {process}')
 
     if daemon:
         node = launch.submit(process, **inputs)
-        click.echo('Submitted {}<{}> to the daemon'.format(process_name, node.pk))
+        click.echo(f'Submitted {process_name}<{node.pk}> to the daemon')
     else:
         if inputs.get('metadata', {}).get('dry_run', False):
-            click.echo('Running a dry run for {}...'.format(process_name))
+            click.echo(f'Running a dry run for {process_name}...')
         else:
-            click.echo('Running a {}...'.format(process_name))
+            click.echo(f'Running a {process_name}...')
         _, node = launch.run_get_node(process, **inputs)
         echo_process_results(node)

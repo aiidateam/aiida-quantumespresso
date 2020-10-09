@@ -27,7 +27,7 @@ def cmd_import(filename, dry_run):
     formula = structure.get_formula()
 
     if dry_run:
-        echo.echo_success('parsed structure with formula {}'.format(formula))
+        echo.echo_success(f'parsed structure with formula {formula}')
     else:
         structure.store()
-        echo.echo_success('parsed and stored StructureData<{}> with formula {}'.format(structure.pk, formula))
+        echo.echo_success(f'parsed and stored StructureData<{structure.pk}> with formula {formula}')

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """Sub class of `Data` to handle interatomic force constants produced by the Quantum ESPRESSO q2r.x code."""
 import numpy
+from qe_tools import CONSTANTS
 
 from aiida.orm import SinglefileData
-from qe_tools import CONSTANTS
 
 
 class ForceConstantsData(SinglefileData):
@@ -137,7 +137,7 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
         if len(celldm) != 6:
             warnings.append('Wrong length for celldm')
         if ibrav != 0:
-            warnings.append('ibrav ({}) is not 0; q-points path for phonon dispersion might be wrong'.format(ibrav))
+            warnings.append(f'ibrav ({ibrav}) is not 0; q-points path for phonon dispersion might be wrong')
         if any([item != 0 for item in celldm[1:]]):
             warnings.append('celldm[1:] are not all zero; only celldm[0] will be used')
 

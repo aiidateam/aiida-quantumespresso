@@ -25,7 +25,7 @@ def parser_assert(condition, message, log_func=raise_parsing_error):
 
 def parser_assert_equal(val1, val2, message, log_func=raise_parsing_error):
     if not (val1 == val2):
-        msg = 'Violated assertion: {} == {}'.format(val1, val2)
+        msg = f'Violated assertion: {val1} == {val2}'
         if message:
             msg += ' - '
             msg += message
@@ -82,7 +82,7 @@ def parse_pw_xml_post_6_2(xml):
             xsd = XMLSchema(schema_filepath_default)
         except URLError:
             raise XMLParseError(
-                'Could not open or parse the XSD files {} and {}'.format(schema_filepath, schema_filepath_default)
+                f'Could not open or parse the XSD files {schema_filepath} and {schema_filepath_default}'
             )
         else:
             schema_filepath = schema_filepath_default
@@ -97,7 +97,7 @@ def parse_pw_xml_post_6_2(xml):
 
     xml_dictionary, errors = xsd.to_dict(xml, validation='lax')
     if errors:
-        logs.error.append('{} XML schema validation error(s) schema: {}:'.format(len(errors), schema_filepath))
+        logs.error.append(f'{len(errors)} XML schema validation error(s) schema: {schema_filepath}:')
         for err in errors:
             logs.error.append(str(err))
 
@@ -209,7 +209,7 @@ def parse_pw_xml_post_6_2(xml):
         elif symmetry_type == 'lattice_symmetry':
             lattice_symmetries.append(sym)
         else:
-            raise XMLParseError('Unexpected type of symmetry: {}'.format(symmetry_type))
+            raise XMLParseError(f'Unexpected type of symmetry: {symmetry_type}')
 
     if (nsym != len(symmetries)) or (nrot != len(symmetries) + len(lattice_symmetries)):
         logs.warning.append(
@@ -321,9 +321,7 @@ def parse_pw_xml_post_6_2(xml):
         else:
             spins = True
             if num_bands_up != num_bands_down:
-                raise XMLParseError(
-                    'different number of bands for spin channels: {} and {}'.format(num_bands_up, num_bands_down)
-                )
+                raise XMLParseError(f'different number of bands for spin channels: {num_bands_up} and {num_bands_down}')
 
             if num_bands is not None and num_bands != num_bands_up + num_bands_down:
                 raise XMLParseError(
@@ -475,7 +473,7 @@ def parse_pw_xml_post_6_2(xml):
         polarization_modulus = berry_phase['totalPolarization']['modulus']
         parser_assert(
             polarization_units in ['e/bohr^2', 'C/m^2'],
-            "Unsupported units '{}' of total polarization".format(polarization_units)
+            f"Unsupported units '{polarization_units}' of total polarization"
         )
         if polarization_units == 'e/bohr^2':
             polarization *= e_bohr2_to_coulomb_m2

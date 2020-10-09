@@ -91,7 +91,7 @@ class ProtocolManager:
         try:
             self.modifiers = _get_all_protocol_modifiers()[name]
         except KeyError as exception:
-            raise ValueError("Unknown protocol '{}'".format(name)) from exception
+            raise ValueError(f"Unknown protocol '{name}'") from exception
 
     def get_protocol_data(self, modifiers=None):
         """Return the full info on the specific protocol, using the (optional) modifiers.
@@ -136,7 +136,7 @@ class ProtocolManager:
 
         # Check that there are no unknown modifiers
         if modifiers_copy:
-            raise ValueError('Unknown modifiers specified: {}'.format(','.join(sorted(modifiers_copy))))
+            raise ValueError(f"Unknown modifiers specified: {','.join(sorted(modifiers_copy))}")
 
         retdata = self.get_parameters_data(parameters_modifier_name)
         retdata['pseudo_data'] = pseudo_data

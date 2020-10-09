@@ -197,7 +197,7 @@ def generate_upf_data(filepath_tests):
         """Return `UpfData` node."""
         from aiida.orm import UpfData
 
-        filepath = os.path.join(filepath_tests, 'fixtures', 'pseudos', '{}.upf'.format(element))
+        filepath = os.path.join(filepath_tests, 'fixtures', 'pseudos', f'{element}.upf')
 
         with io.open(filepath, 'r') as handle:
             upf = UpfData(file=handle.name)

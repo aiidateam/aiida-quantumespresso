@@ -162,7 +162,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         try:
             self.ctx.inputs.pseudos = validate_and_prepare_pseudos_inputs(structure, pseudos, pseudo_family)
         except ValueError as exception:
-            self.report('{}'.format(exception))
+            self.report(f'{exception}')
             return self.exit_codes.ERROR_INVALID_INPUT_PSEUDO_POTENTIALS
 
     def validate_resources(self):
@@ -219,7 +219,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         remaining_keys = [key for key in parallelization.keys() if key not in expected_keys]
 
         for key, value in [(key, value) for key, value in received_keys if value is None]:
-            self.report('required key "{}" in automatic_parallelization input not found'.format(key))
+            self.report(f'required key "{key}" in automatic_parallelization input not found')
             return self.exit_codes.ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY
 
         if remaining_keys:
@@ -255,7 +255,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         inputs = prepare_process_inputs(PwCalculation, inputs)
         running = self.submit(PwCalculation, **inputs)
 
-        self.report('launching initialization {}<{}>'.format(running.pk, self.ctx.process_name))
+        self.report(f'launching initialization {running.pk}<{self.ctx.process_name}>')
 
         return ToContext(calculation_init=running)
 
@@ -272,7 +272,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         # Note: don't do this at home, we are losing provenance here. This should be done by a calculation function
         node = orm.Dict(dict=parallelization).store()
         self.out('automatic_parallelization', node)
-        self.report('results of automatic parallelization in {}<{}>'.format(node.__class__.__name__, node.pk))
+        self.report(f'results of automatic parallelization in {node.__class__.__name__}<{node.pk}>')
 
         options = self.ctx.inputs.metadata['options']
         base_resources = options.get('resources', {})
@@ -318,7 +318,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         """
         arguments = [calculation.process_label, calculation.pk, calculation.exit_status, calculation.exit_message]
         self.report('{}<{}> failed with exit status {}: {}'.format(*arguments))
-        self.report('Action taken: {}'.format(action))
+        self.report(f'Action taken: {action}')
 
     @process_handler(exit_codes=ExitCode(0))
     def sanity_check_insufficient_bands(self, calculation):
@@ -346,15 +346,15 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         except ValueError as exception:
             args = [self.ctx.process_name, calculation.pk]
             self.report('{}<{}> run with smearing and highest band is occupied'.format(*args))
-            self.report('BandsData<{}> has invalid occupations: {}'.format(bands.pk, exception))
-            self.report('{}<{}> had insufficient bands'.format(calculation.process_label, calculation.pk))
+            self.report(f'BandsData<{bands.pk}> has invalid occupations: {exception}')
+            self.report(f'{calculation.process_label}<{calculation.pk}> had insufficient bands')
 
             nbnd_cur = calculation.outputs.output_parameters.get_dict()['number_of_bands']
             nbnd_new = nbnd_cur + max(int(nbnd_cur * self.defaults.delta_factor_nbnd), self.defaults.delta_minimum_nbnd)
 
             self.ctx.inputs.parameters.setdefault('SYSTEM', {})['nbnd'] = nbnd_new
 
-            self.report('Action taken: increased number of bands to {} and restarting from scratch'.format(nbnd_new))
+            self.report(f'Action taken: increased number of bands to {nbnd_new} and restarting from scratch')
             return ProcessHandlerReport(True)
 
     @process_handler(priority=600)
@@ -457,8 +457,6 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         self.ctx.restart_calc = calculation
         self.ctx.inputs.parameters.setdefault('ELECTRONS', {})['mixing_beta'] = mixing_beta_new
 
-        action = 'reduced beta mixing from {} to {} and restarting from the last calculation'.format(
-            mixing_beta, mixing_beta_new
-        )
+        action = f'reduced beta mixing from {mixing_beta} to {mixing_beta_new} and restarting from the last calculation'
         self.report_error_handled(calculation, action)
         return ProcessHandlerReport(True)

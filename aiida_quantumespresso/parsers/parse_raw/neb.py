@@ -57,7 +57,7 @@ def parse_raw_output_neb(stdout, input_dict, parser_opts=None):
             iteration_data = {}
             critical_messages = []
         else:  # if it was finished and I got an error, it's a mistake of the parser
-            raise QEOutputParsingError('Error while parsing NEB text output: {}'.format(exc))
+            raise QEOutputParsingError(f'Error while parsing NEB text output: {exc}')
 
     # I add in the out_data all the last elements of iteration_data values.
     # I leave the possibility to skip some large arrays (None for the time being).

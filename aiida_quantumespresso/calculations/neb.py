@@ -38,7 +38,7 @@ class NebCalculation(CalcJob):
         # pylint: disable=no-self-argument
         # I retrieve them all, even if I don't parse all of them
         _neb_ext_list = ['path', 'dat', 'int']
-        return ['{}.{}'.format(cls._PREFIX, ext) for ext in _neb_ext_list]
+        return [f'{cls._PREFIX}.{ext}' for ext in _neb_ext_list]
 
     @classproperty
     def xml_filepaths(cls):
@@ -112,7 +112,7 @@ class NebCalculation(CalcJob):
             if namelist in input_params:
                 if key in input_params[namelist]:
                     raise InputValidationError(
-                        "You cannot specify explicitly the '{}' key in the '{}' namelist.".format(key, namelist)
+                        f"You cannot specify explicitly the '{key}' key in the '{namelist}' namelist."
                     )
             else:
                 input_params[namelist] = {}
@@ -141,7 +141,7 @@ class NebCalculation(CalcJob):
         else:
             manual_climbing_image = False
             if climbing_image_list is not None:
-                raise InputValidationError("Climbing images are not accepted when 'ci_scheme' is {}.".format(ci_scheme))
+                raise InputValidationError(f"Climbing images are not accepted when 'ci_scheme' is {ci_scheme}.")
 
         input_data = '&PATH\n'
         # namelist content; set to {} if not present, so that we leave an empty namelist
@@ -233,7 +233,7 @@ class NebCalculation(CalcJob):
                 self.inputs.pw.parameters, this_settings_dict, self.inputs.pw.pseudos, structure, self.inputs.pw.kpoints
             )
             local_copy_pseudo_list += this_local_copy_pseudo_list
-            with folder.open('pw_{}.in'.format(i + 1), 'w') as handle:
+            with folder.open(f'pw_{i + 1}.in', 'w') as handle:
                 handle.write(pw_input_filecontent)
 
         # We need to pop the settings that were used in the PW calculations
@@ -276,8 +276,8 @@ class NebCalculation(CalcJob):
                 remote_symlink_list.append((
                     parent_calc_folder.computer.uuid,
                     os.path.join(parent_calc_folder.get_remote_path(),
-                                 '{}.path'.format(self._PREFIX)),
-                    '{}.path'.format(self._PREFIX)
+                                 f'{self._PREFIX}.path'),
+                    f'{self._PREFIX}.path'
                 ))
         else:
             # copy remote output dir and .path file, if specified
@@ -292,14 +292,14 @@ class NebCalculation(CalcJob):
                 remote_copy_list.append((
                     parent_calc_folder.computer.uuid,
                     os.path.join(parent_calc_folder.get_remote_path(),
-                                 '{}.path'.format(self._PREFIX)),
-                    '{}.path'.format(self._PREFIX)
+                                 f'{self._PREFIX}.path'),
+                    f'{self._PREFIX}.path'
                 ))
 
         # here we may create an aiida.EXIT file
         create_exit_file = settings_dict.pop('ONLY_INITIALIZATION', False)
         if create_exit_file:
-            exit_filename = '{}.EXIT'.format(self._PREFIX)
+            exit_filename = f'{self._PREFIX}.EXIT'
             with folder.open(exit_filename, 'w') as handle:
                 handle.write('\n')
 
@@ -337,6 +337,6 @@ class NebCalculation(CalcJob):
 
         if settings_dict:
             unknown_keys = ', '.join(list(settings_dict.keys()))
-            raise InputValidationError('`settings` contained unexpected keys: {}'.format(unknown_keys))
+            raise InputValidationError(f'`settings` contained unexpected keys: {unknown_keys}')
 
         return calcinfo

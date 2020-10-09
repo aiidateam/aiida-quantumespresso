@@ -54,7 +54,7 @@ class PwInputFile(StructureParseMixin, BasePwInputFile):
         elif self.k_points['type'] == 'gamma':
             kpoints.set_kpoints_mesh([1, 1, 1])
         else:
-            raise NotImplementedError('support for units {} not yet implemented'.format(self.k_points['type']))
+            raise NotImplementedError(f"support for units {self.k_points['type']} not yet implemented")
 
         return kpoints
 

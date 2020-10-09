@@ -108,7 +108,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         """
         arguments = [calculation.process_label, calculation.pk, calculation.exit_status, calculation.exit_message]
         self.report('{}<{}> failed with exit status {}: {}'.format(*arguments))
-        self.report('Action taken: {}'.format(action))
+        self.report(f'Action taken: {action}')
 
     @process_handler(priority=600)
     def handle_unrecoverable_failure(self, node):
@@ -134,6 +134,6 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         self.ctx.restart_calc = node
         self.ctx.inputs.parameters.setdefault('INPUTPH', {})['alpha_mix(1)'] = alpha_mix_new
 
-        action = 'reduced alpha_mix from {} to {} and restarting'.format(alpha_mix, alpha_mix_new)
+        action = f'reduced alpha_mix from {alpha_mix} to {alpha_mix_new} and restarting'
         self.report_error_handled(node, action)
         return ProcessHandlerReport(True)

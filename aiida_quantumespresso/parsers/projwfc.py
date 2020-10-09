@@ -341,7 +341,7 @@ class ProjwfcParser(Parser):
         try:
             new_nodes_list = self._parse_bands_and_projections(out_info_dict)
         except QEOutputParsingError as err:
-            self.logger.error('Error parsing bands and projections: {}'.format(err))
+            self.logger.error(f'Error parsing bands and projections: {err}')
             return self.exit(self.exit_codes.ERROR_PARSING_PROJECTIONS)
         for linkname, node in new_nodes_list:
             self.out(linkname, node)
@@ -394,7 +394,7 @@ class ProjwfcParser(Parser):
                                                             link_type=LinkType.CREATE).one().node
             )
         except ValueError as e:
-            raise QEOutputParsingError('Could not get parent calculation of input folder: {}'.format(e))
+            raise QEOutputParsingError(f'Could not get parent calculation of input folder: {e}')
         out_info_dict['parent_calc'] = parent_calc
         try:
             parent_param = parent_calc.get_outgoing(link_label_filter='output_parameters').one().node
