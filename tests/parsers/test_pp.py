@@ -289,19 +289,16 @@ def test_pp_default_3d_keep_plot_file(generate_calc_job_node, generate_parser, g
     entry_point_calc_job = 'quantumespresso.pp'
     entry_point_parser = 'quantumespresso.pp'
 
-    # Need to cast the `tmpdir` which can be a `Path` object which is not yet supported in Python 3.5
-    dirpath = str(tmpdir)
-
     attributes = {'options': {'keep_plot_file': False}, 'retrieve_temporary_list': ['aiida.fileout']}
     node = generate_calc_job_node(
         entry_point_calc_job,
         test_name='default_3d',
         inputs=generate_inputs_3d,
         attributes=attributes,
-        retrieve_temporary=(dirpath, ['aiida.fileout'])
+        retrieve_temporary=(tmpdir, ['aiida.fileout'])
     )
     parser = generate_parser(entry_point_parser)
-    results, calcfunction = parser.parse_from_node(node, store_provenance=False, retrieved_temporary_folder=dirpath)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False, retrieved_temporary_folder=tmpdir)
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message

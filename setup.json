@@ -3,7 +3,6 @@
     "author_email": "developers@aiida.net",
     "classifiers": [
         "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
@@ -97,7 +96,7 @@
     ],
     "license": "MIT License",
     "name": "aiida_quantumespresso",
-    "python_requires": ">=3.5",
+    "python_requires": ">=3.6",
     "url": "https://github.com/aiidateam/aiida-quantumespresso",
     "version": "3.2.0"
 }
