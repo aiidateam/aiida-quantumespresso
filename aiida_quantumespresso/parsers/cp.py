@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 from distutils.version import LooseVersion
-
 import numpy
-from aiida.common import NotExistent
-from aiida.orm import Dict, TrajectoryData
 
+from aiida.orm import Dict, TrajectoryData
 from qe_tools import CONSTANTS
+
 from aiida_quantumespresso.parsers.parse_raw.cp import parse_cp_raw_output, parse_cp_traj_stanzas
 from .base import Parser
 
@@ -18,13 +17,10 @@ class CpParser(Parser):
 
         Does all the logic here.
         """
-        try:
-            out_folder = self.retrieved
-        except NotExistent:
-            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
+        retrieved = self.retrieved
 
         # check what is inside the folder
-        list_of_files = out_folder._repository.list_object_names()
+        list_of_files = retrieved._repository.list_object_names()
 
         # options.metadata become attributes like this:
         stdout_filename = self.node.get_attribute('output_filename')
@@ -44,9 +40,9 @@ class CpParser(Parser):
             # TODO: Add an error for this counter
             return self.exit(self.exit_codes.ERROR_MISSING_XML_FILE)
 
-        output_stdout = out_folder.get_object_content(stdout_filename)
-        output_xml = out_folder.get_object_content(xml_files[0])
-        output_xml_counter = out_folder.get_object_content(self.node.process_class._FILE_XML_PRINT_COUNTER_BASENAME)
+        output_stdout = retrieved.get_object_content(stdout_filename)
+        output_xml = retrieved.get_object_content(xml_files[0])
+        output_xml_counter = retrieved.get_object_content(self.node.process_class._FILE_XML_PRINT_COUNTER_BASENAME)
         out_dict, _raw_successful = parse_cp_raw_output(output_stdout, output_xml, output_xml_counter)
 
         # parse the trajectory. Units in Angstrom, picoseconds and eV.
@@ -75,7 +71,7 @@ class CpParser(Parser):
 
         for name, extension, scale, elements in trajectories:
             try:
-                with out_folder.open(f'{self.node.process_class._PREFIX}.{extension}') as datafile:
+                with retrieved.open(f'{self.node.process_class._PREFIX}.{extension}') as datafile:
                     data = [l.split() for l in datafile]
                     # POSITIONS stored in angstrom
                 traj_data = parse_cp_traj_stanzas(
@@ -96,7 +92,7 @@ class CpParser(Parser):
 
         # =============== EVP trajectory ============================
         try:
-            with out_folder.open(f'{self._node.process_class._PREFIX}.evp') as handle:
+            with retrieved.open(f'{self._node.process_class._PREFIX}.evp') as handle:
                 matrix = numpy.genfromtxt(handle)
             # there might be a different format if the matrix has one row only
             try:

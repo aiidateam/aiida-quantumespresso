@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from aiida.common import NotExistent
 from aiida.orm import Dict
 
 from aiida_quantumespresso.parsers.parse_raw.base import parse_output_base
@@ -16,13 +15,8 @@ class Pw2wannier90Parser(Parser):
         permanently in the repository.
         """
         try:
-            out_folder = self.retrieved
-        except NotExistent:
-            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
-
-        try:
             filename_stdout = self.node.get_option('output_filename')  # or get_attribute(), but this is clearer
-            with out_folder.open(filename_stdout, 'r') as fil:
+            with self.retrieved.open(filename_stdout, 'r') as fil:
                 out_file = fil.read()
         except OSError:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)

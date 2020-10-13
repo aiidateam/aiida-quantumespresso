@@ -46,11 +46,7 @@ class PpParser(Parser):
         """
         Parse raw files retrieved from remote dir
         """
-        try:
-            self.retrieved
-        except exceptions.NotExistent:
-            return self.exit_codes.ERROR_NO_RETRIEVED_FOLDER
-
+        retrieved = self.retrieved
         retrieve_temporary_list = self.node.get_attribute('retrieve_temporary_list', None)
         filename_stdout = self.node.get_option('output_filename')
 
@@ -62,11 +58,11 @@ class PpParser(Parser):
                 return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
 
         # The stdout is required for parsing
-        if filename_stdout not in self.retrieved.list_object_names():
+        if filename_stdout not in retrieved.list_object_names():
             return self.exit_codes.ERROR_OUTPUT_STDOUT_MISSING
 
         try:
-            stdout_raw = self.retrieved.get_object_content(filename_stdout)
+            stdout_raw = retrieved.get_object_content(filename_stdout)
         except (IOError, OSError):
             return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
@@ -89,8 +85,8 @@ class PpParser(Parser):
             filenames = os.listdir(retrieved_temporary_folder)
             file_opener = lambda filename: open(os.path.join(retrieved_temporary_folder, filename))
         else:
-            filenames = self.retrieved.list_object_names()
-            file_opener = self.retrieved.open
+            filenames = retrieved.list_object_names()
+            file_opener = retrieved.open
 
         for filename in filenames:
             if filename.endswith(filename_suffix):
