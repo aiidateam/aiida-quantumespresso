@@ -125,8 +125,8 @@ class PpParser(Parser):
             return matches.group(1)
 
         for filename in filenames:
-            # Directly parse the retrieved files after reading them to memory (`data_raw`). `data_raw` is overwritten
-            # in each iteration to improve memory usage.
+            # Directly parse the retrieved files after reading them to memory (`data_raw`). The raw data
+            # of each file is released from memory after parsing, to improve memory usage.
             if filename.endswith(filename_suffix):
                 # Read the file to memory
                 try:
