@@ -207,8 +207,6 @@ class BasePwCpInputGenerator(CalcJob):
         # is replaced by mpirun ... pw.x ... -in aiida.in
         # in the scheduler, _get_run_line, if cmdline_params is empty, it
         # simply uses < calcinfo.stin_name
-        calcinfo.cmdline_params = (list(cmdline_params) + ['-in', self.metadata.options.input_filename])
-
         codeinfo = datastructures.CodeInfo()
         codeinfo.cmdline_params = (list(cmdline_params) + ['-in', self.metadata.options.input_filename])
         codeinfo.stdout_name = self.metadata.options.output_filename
