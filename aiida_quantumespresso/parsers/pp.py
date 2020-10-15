@@ -66,8 +66,6 @@ class PpParser(Parser):
         except (IOError, OSError):
             return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
-        data_raw = []
-
         # Currently all plot output files should start with the `filplot` as prefix. If only one file was produced the
         # prefix is the entire filename, but in the case of multiple files, there will be pairs of two files where the
         # first has the format '{filename_prefix}.{some_random_suffix' and the second has the same name but with the
@@ -87,20 +85,6 @@ class PpParser(Parser):
         else:
             filenames = retrieved.list_object_names()
             file_opener = retrieved.open
-
-        for filename in filenames:
-            if filename.endswith(filename_suffix):
-                try:
-                    with file_opener(filename) as handle:
-                        data_raw.append((filename, handle.read()))
-                except OSError:
-                    return self.exit_codes.ERROR_OUTPUT_DATAFILE_READ.format(filename=filename)
-
-        # If we don't have any parsed files, we exit. Note that this will not catch the case where there should be more
-        # than one file, but the engine did not retrieve all of them. Since often we anyway don't know how many files
-        # should be retrieved there really is no way to check this explicitly.
-        if not data_raw:
-            return self.exit_codes.ERROR_OUTPUT_DATAFILE_MISSING.format(filename=filename_prefix)
 
         try:
             logs, self.output_parameters = self.parse_stdout(stdout_raw)
@@ -140,12 +124,29 @@ class PpParser(Parser):
             matches = re.search(pattern, filename)
             return matches.group(1)
 
-        for filename, data in data_raw:
-            try:
-                key = get_key_from_filename(filename)
-                data_parsed.append((key, parsers[iflag](data)))
-            except Exception:  # pylint: disable=broad-except
-                return self.exit_codes.ERROR_OUTPUT_DATAFILE_PARSE.format(filename=filename)
+        for filename in filenames:
+            # Directly parse the retrieved files after reading them to memory (`data_raw`). The raw data
+            # of each file is released from memory after parsing, to improve memory usage.
+            if filename.endswith(filename_suffix):
+                # Read the file to memory
+                try:
+                    with file_opener(filename) as handle:
+                        data_raw = handle.read()
+                except OSError:
+                    return self.exit_codes.ERROR_OUTPUT_DATAFILE_READ.format(filename=filename)
+                # Parse the file
+                try:
+                    key = get_key_from_filename(filename)
+                    data_parsed.append((key, parsers[iflag](data_raw)))
+                    del data_raw
+                except Exception:  # pylint: disable=broad-except
+                    return self.exit_codes.ERROR_OUTPUT_DATAFILE_PARSE.format(filename=filename)
+
+        # If we don't have any parsed files, we exit. Note that this will not catch the case where there should be more
+        # than one file, but the engine did not retrieve all of them. Since often we anyway don't know how many files
+        # should be retrieved there really is no way to check this explicitly.
+        if not data_parsed:
+            return self.exit_codes.ERROR_OUTPUT_DATAFILE_MISSING.format(filename=filename_prefix)
 
         # Create output nodes
         if len(data_parsed) == 1:
