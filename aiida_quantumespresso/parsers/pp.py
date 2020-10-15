@@ -125,13 +125,16 @@ class PpParser(Parser):
             return matches.group(1)
 
         for filename in filenames:
+            # Directly parse the retrieved files after reading them to memory (`data_raw`). `data_raw` is overwritten
+            # in each iteration to improve memory usage.
             if filename.endswith(filename_suffix):
+                # Read the file to memory
                 try:
                     with file_opener(filename) as handle:
                         data_raw = handle.read()
                 except OSError:
                     return self.exit_codes.ERROR_OUTPUT_DATAFILE_READ.format(filename=filename)
-
+                # Parse the file
                 try:
                     key = get_key_from_filename(filename)
                     data_parsed.append((key, parsers[iflag](data_raw)))
