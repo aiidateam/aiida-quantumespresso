@@ -46,7 +46,7 @@ def find_orbitals_from_statelines(out_info_dict):
 
     out_file = out_info_dict['out_file']
     atomnum_re = re.compile(r'atom\s*([0-9]+?)[^0-9]')
-    element_re = re.compile(r'atom\s*[0-9]+\s*\(\s*([A-Za-z]+?)\s*\)')
+    element_re = re.compile(r'atom\s*[0-9]+\s*\(\s*(.*?)\s*\)')
     if out_info_dict['spinorbit']:
         # spinorbit
         lnum_re = re.compile(r'l=\s*([0-9]+?)[^0-9]')
