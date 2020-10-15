@@ -138,6 +138,7 @@ class PpParser(Parser):
                 try:
                     key = get_key_from_filename(filename)
                     data_parsed.append((key, parsers[iflag](data_raw)))
+                    del data_raw
                 except Exception:  # pylint: disable=broad-except
                     return self.exit_codes.ERROR_OUTPUT_DATAFILE_PARSE.format(filename=filename)
 
