@@ -78,7 +78,7 @@ projections:
   - _orbital_type: realhydrogen
     angular_momentum: 0
     diffusivity: null
-    kind_name: Si
+    kind_name: Si1
     magnetic_number: 0
     position:
     - 0.0
@@ -92,7 +92,7 @@ projections:
   - _orbital_type: realhydrogen
     angular_momentum: 1
     diffusivity: null
-    kind_name: Si
+    kind_name: Si1
     magnetic_number: 0
     position:
     - 0.0
@@ -106,7 +106,7 @@ projections:
   - _orbital_type: realhydrogen
     angular_momentum: 1
     diffusivity: null
-    kind_name: Si
+    kind_name: Si1
     magnetic_number: 1
     position:
     - 0.0
@@ -120,7 +120,7 @@ projections:
   - _orbital_type: realhydrogen
     angular_momentum: 1
     diffusivity: null
-    kind_name: Si
+    kind_name: Si1
     magnetic_number: 2
     position:
     - 0.0
@@ -134,7 +134,7 @@ projections:
   - _orbital_type: realhydrogen
     angular_momentum: 0
     diffusivity: null
-    kind_name: Si
+    kind_name: Si1
     magnetic_number: 0
     position:
     - 1.3575
@@ -148,7 +148,7 @@ projections:
   - _orbital_type: realhydrogen
     angular_momentum: 1
     diffusivity: null
-    kind_name: Si
+    kind_name: Si1
     magnetic_number: 0
     position:
     - 1.3575
@@ -162,7 +162,7 @@ projections:
   - _orbital_type: realhydrogen
     angular_momentum: 1
     diffusivity: null
-    kind_name: Si
+    kind_name: Si1
     magnetic_number: 1
     position:
     - 1.3575
@@ -176,7 +176,7 @@ projections:
   - _orbital_type: realhydrogen
     angular_momentum: 1
     diffusivity: null
-    kind_name: Si
+    kind_name: Si1
     magnetic_number: 2
     position:
     - 1.3575
