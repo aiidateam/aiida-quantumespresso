@@ -31,7 +31,7 @@ def create_scheduler_resources(scheduler, base, goal):
     try:
         job_resource = scheduler.create_job_resource(**resources)
     except TypeError as exception:
-        raise ValueError('failed to create job resources for {} scheduler'.format(scheduler.__class__)) from exception
+        raise ValueError(f'failed to create job resources for {scheduler.__class__} scheduler') from exception
 
     return {key: value for key, value in job_resource.items() if value is not None}
 

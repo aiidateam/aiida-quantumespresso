@@ -67,15 +67,15 @@ def parse_raw_ph_output(stdout, tensors=None, dynamical_matrices=None):
             this_dynmat_data = parse_ph_dynmat(lines, logs)
 
             # join it with the previous dynmat info
-            dynmat_data['dynamical_matrix_%s' % dynmat_counter] = this_dynmat_data
+            dynmat_data[f'dynamical_matrix_{dynmat_counter}'] = this_dynmat_data
             # TODO: use the bands format?
 
     # join dictionaries, there should not be any twice repeated key
     for key in out_data.keys():
         if key in list(tensor_data.keys()):
-            raise AssertionError('{} found in two dictionaries'.format(key))
+            raise AssertionError(f'{key} found in two dictionaries')
         if key in list(dynmat_data.keys()):
-            raise AssertionError('{} found in two dictionaries'.format(key))
+            raise AssertionError(f'{key} found in two dictionaries')
 
     # I don't check the dynmat_data and parser_info keys
     parsed_data = dict(
@@ -332,21 +332,14 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
                 pieces = atom_line.split()
                 if len(pieces) != 5:
                     raise QEOutputParsingError(
-                        'Wrong # of elements for one of the atoms: {}, '
-                        'line {}: {}'.format(len(pieces), starting_line + idx, pieces)
+                        f'Wrong # of elements for one of the atoms: {len(pieces)}, line {starting_line + idx}: {pieces}'
                     )
                 try:
                     if int(pieces[0]) != idx:
-                        raise QEOutputParsingError(
-                            'Error with the indices of the atoms: '
-                            '{} vs {}'.format(int(pieces[0]), idx)
-                        )
+                        raise QEOutputParsingError(f'Error with the indices of the atoms: {int(pieces[0])} vs {idx}')
                     sp_idx = int(pieces[1])
                     if sp_idx > len(species):
-                        raise QEOutputParsingError(
-                            'Wrong index for the species: '
-                            '{}, but max={}'.format(sp_idx, len(species))
-                        )
+                        raise QEOutputParsingError(f'Wrong index for the species: {sp_idx}, but max={len(species)}')
                     atoms_labels.append(species[sp_idx - 1][0])
                     atoms_coords.append([float(pieces[2]) * alat, float(pieces[3]) * alat, float(pieces[4]) * alat])
                 except ValueError:

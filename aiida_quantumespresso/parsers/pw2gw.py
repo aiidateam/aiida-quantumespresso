@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """`Parser` implementation for the `Pw2gwCalculation` calculation job class."""
+import io
 import numpy as np
-from io import StringIO
+
 from aiida import orm
-from aiida.common import exceptions
 
 from aiida_quantumespresso.calculations.pw2gw import Pw2gwCalculation
 from .base import Parser
@@ -21,11 +21,6 @@ class Pw2gwParser(Parser):
         """
         self.exit_code_stdout = None
         self.exit_code_eps = None
-
-        try:
-            self.retrieved
-        except exceptions.NotExistent:
-            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
 
         # Parse the pw2gw stout file
         data, logs_stdout = self.parse_stdout()
@@ -62,7 +57,7 @@ class Pw2gwParser(Parser):
             base = name.split('.')[0]
 
             try:
-                data = np.loadtxt(StringIO(content))
+                data = np.loadtxt(io.StringIO(content))
             except ValueError:
                 self.exit_code_eps = self.exit_codes.ERROR_OUTPUT_FILES
                 return

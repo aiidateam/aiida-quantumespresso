@@ -6,7 +6,6 @@ import os
 from aiida import orm
 from aiida.common import datastructures, exceptions
 from aiida.common.lang import classproperty
-
 from qe_tools.converters import get_parameters_from_cell
 
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
@@ -163,7 +162,7 @@ class BasePwCpInputGenerator(CalcJob):
 
         # Create an `.EXIT` file if `only_initialization` flag in `settings` is set to `True`
         if settings.pop('ONLY_INITIALIZATION', False):
-            with folder.open('{}.EXIT'.format(self._PREFIX), 'w') as handle:
+            with folder.open(f'{self._PREFIX}.EXIT', 'w') as handle:
                 handle.write('\n')
 
         # Check if specific inputs for the ENVIRON module where specified
@@ -208,8 +207,6 @@ class BasePwCpInputGenerator(CalcJob):
         # is replaced by mpirun ... pw.x ... -in aiida.in
         # in the scheduler, _get_run_line, if cmdline_params is empty, it
         # simply uses < calcinfo.stin_name
-        calcinfo.cmdline_params = (list(cmdline_params) + ['-in', self.metadata.options.input_filename])
-
         codeinfo = datastructures.CodeInfo()
         codeinfo.cmdline_params = (list(cmdline_params) + ['-in', self.metadata.options.input_filename])
         codeinfo.stdout_name = self.metadata.options.output_filename
@@ -240,7 +237,7 @@ class BasePwCpInputGenerator(CalcJob):
 
         if settings:
             unknown_keys = ', '.join(list(settings.keys()))
-            raise exceptions.InputValidationError('`settings` contained unexpected keys: {}'.format(unknown_keys))
+            raise exceptions.InputValidationError(f'`settings` contained unexpected keys: {unknown_keys}')
 
         return calcinfo
 
@@ -332,7 +329,7 @@ class BasePwCpInputGenerator(CalcJob):
                 )
 
             kind_names.append(kind.name)
-            atomic_species_card_list.append('{} {} {}\n'.format(kind.name.ljust(6), kind.mass, filename))
+            atomic_species_card_list.append(f'{kind.name.ljust(6)} {kind.mass} {filename}\n')
 
         # I join the lines, but I resort them using the alphabetical order of
         # species, given by the kind_names list. I also store the mapping_species
@@ -370,13 +367,11 @@ class BasePwCpInputGenerator(CalcJob):
             for i, this_atom_fix in enumerate(fixed_coords):
                 if len(this_atom_fix) != 3:
                     raise exceptions.InputValidationError(
-                        'fixed_coords({:d}) has not length three'
-                        ''.format(i + 1))
+                        f'fixed_coords({i + 1:d}) has not length three')
                 for fixed_c in this_atom_fix:
                     if not isinstance(fixed_c, bool):
                         raise exceptions.InputValidationError(
-                            'fixed_coords({:d}) has non-boolean '
-                            'elements'.format(i + 1))
+                            f'fixed_coords({i + 1:d}) has non-boolean elements')
 
                 if_pos_values = [cls._if_pos(_) for _ in this_atom_fix]
                 fixed_coords_strings.append(
@@ -418,7 +413,7 @@ class BasePwCpInputGenerator(CalcJob):
 
                 # Checking that all 3 dimensions are specified:
                 if len(vector) != 3:
-                    raise exceptions.InputValidationError('Forces({}) for {} has not length three'.format(vector, site))
+                    raise exceptions.InputValidationError(f'Forces({vector}) for {site} has not length three')
 
                 lines.append('{0} {1:18.10f} {2:18.10f} {3:18.10f}\n'.format(site.kind_name.ljust(6), *vector))
 
@@ -444,7 +439,7 @@ class BasePwCpInputGenerator(CalcJob):
                 # Checking that all 3 dimensions are specified:
                 if len(vector) != 3:
                     raise exceptions.InputValidationError(
-                        'Velocities({}) for {} has not length three'.format(vector, site)
+                        f'Velocities({vector}) for {site} has not length three'
                     )
 
                 lines.append('{0} {1:18.10f} {2:18.10f} {3:18.10f}\n'.format(site.kind_name.ljust(6), *vector))
@@ -467,7 +462,7 @@ class BasePwCpInputGenerator(CalcJob):
                     tolerance=settings.pop('IBRAV_CELL_TOLERANCE', 1e-6)
                 )
             except ValueError as exc:
-                raise QEInputValidationError('Cannot get structure parameters from cell: {}'.format(exc)) from exc
+                raise QEInputValidationError(f'Cannot get structure parameters from cell: {exc}') from exc
             input_params['SYSTEM'].update(structure_parameters)
         input_params['SYSTEM']['nat'] = len(structure.sites)
         input_params['SYSTEM']['ntyp'] = len(structure.kinds)
@@ -526,7 +521,7 @@ class BasePwCpInputGenerator(CalcJob):
             else:
                 kpoints_type = 'crystal'
 
-            kpoints_card_list = ['K_POINTS {}\n'.format(kpoints_type)]
+            kpoints_card_list = [f'K_POINTS {kpoints_type}\n']
 
             if kpoints_type == 'automatic':
                 if any([i not in [0, 0.5] for i in offset]):
@@ -540,11 +535,10 @@ class BasePwCpInputGenerator(CalcJob):
                 # nothing to be written in this case
                 pass
             else:
-                kpoints_card_list.append('{:d}\n'.format(num_kpoints))
+                kpoints_card_list.append(f'{num_kpoints:d}\n')
                 for kpoint, weight in zip(kpoints_list, weights):
                     kpoints_card_list.append(
-                        '  {:18.10f} {:18.10f} {:18.10f} {:18.10f}'
-                        '\n'.format(kpoint[0], kpoint[1], kpoint[2], weight))
+                        f'  {kpoint[0]:18.10f} {kpoint[1]:18.10f} {kpoint[2]:18.10f} {weight:18.10f}\n')
 
             kpoints_card = ''.join(kpoints_card_list)
             del kpoints_card_list
@@ -577,7 +571,7 @@ class BasePwCpInputGenerator(CalcJob):
 
         inputfile = ''
         for namelist_name in namelists_toprint:
-            inputfile += '&{0}\n'.format(namelist_name)
+            inputfile += f'&{namelist_name}\n'
             # namelist content; set to {} if not present, so that we leave an empty namelist
             namelist = input_params.pop(namelist_name, {})
             for key, value in sorted(namelist.items()):
@@ -623,7 +617,7 @@ def _case_transform_dict(dictionary, dict_name, func_name, transform):
     from collections import Counter
 
     if not isinstance(dictionary, dict):
-        raise TypeError('{} accepts only dictionaries as argument, got {}'.format(func_name, type(dictionary)))
+        raise TypeError(f'{func_name} accepts only dictionaries as argument, got {type(dictionary)}')
     new_dict = dict((transform(str(k)), v) for k, v in dictionary.items())
     if len(new_dict) != len(dictionary):
         num_items = Counter(transform(str(k)) for k in dictionary.keys())

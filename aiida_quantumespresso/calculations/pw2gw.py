@@ -37,8 +37,6 @@ class Pw2gwCalculation(NamelistsCalculation):
         spec.output('eps', valid_type=orm.ArrayData,
             help='The `eps` output node containing 5 arrays `energy`, `epsX`, `epsY`, `epsZ`, `epsTOT`')
 
-        spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
-            message='The retrieved folder data node could not be accessed.')
         spec.exit_code(302, 'ERROR_OUTPUT_STDOUT_MISSING',
             message='The retrieved folder did not contain the required stdout output file.')
         spec.exit_code(305, 'ERROR_OUTPUT_FILES',

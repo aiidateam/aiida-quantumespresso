@@ -129,15 +129,13 @@ class SpinorbitHydrogenOrbital(Orbital):
         accepted_range = [abs(angular_momentum - 0.5), angular_momentum + 0.5]
         if total_angular_momentum < min(accepted_range) or total_angular_momentum > max(accepted_range):
             raise ValidationError(
-                'the total angular momentum must be in the range [{}, {}]'.format(
-                    min(accepted_range), max(accepted_range)
-                )
+                f'the total angular momentum must be in the range [{min(accepted_range)}, {max(accepted_range)}]'
             )
         magnetic_number = validated_dict['magnetic_number']  # m quantum number, must be there
         accepted_range = [-total_angular_momentum, total_angular_momentum]
         if magnetic_number < min(accepted_range) or magnetic_number > max(accepted_range):
             raise ValidationError(
-                'the magnetic number must be in the range [{}, {}]'.format(min(accepted_range), max(accepted_range))
+                f'the magnetic number must be in the range [{min(accepted_range)}, {max(accepted_range)}]'
             )
 
         return validated_dict

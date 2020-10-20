@@ -4,7 +4,7 @@ import fnmatch
 
 import numpy as np
 
-from aiida.common import NotExistent, LinkType
+from aiida.common import LinkType
 from aiida.orm import Dict, ProjectionData, BandsData, XyData, CalcJobNode
 from aiida.plugins import OrbitalFactory
 
@@ -46,7 +46,7 @@ def find_orbitals_from_statelines(out_info_dict):
 
     out_file = out_info_dict['out_file']
     atomnum_re = re.compile(r'atom\s*([0-9]+?)[^0-9]')
-    element_re = re.compile(r'atom\s*[0-9]+\s*\(\s*([A-Za-z]+?)\s*\)')
+    element_re = re.compile(r'atom\s*[0-9]+\s*\(\s*([A-Za-z0-9-_]+?)\s*\)')
     if out_info_dict['spinorbit']:
         # spinorbit
         lnum_re = re.compile(r'l=\s*([0-9]+?)[^0-9]')
@@ -122,10 +122,9 @@ def spin_dependent_subparser(out_info_dict):
     :param out_info_dict: contains various technical internals useful in parsing
     :return: ProjectionData, BandsData parsed from out_file
     """
-
     out_file = out_info_dict['out_file']
     spin_down = out_info_dict['spin_down']
-    od = out_info_dict  #using a shorter name for convenience
+    od = out_info_dict  # using a shorter name for convenience
     #   regular expressions needed for later parsing
     WaveFraction1_re = re.compile(r'\=(.*?)\*')  # state composition 1
     WaveFractionremain_re = re.compile(r'\+(.*?)\*')  # state comp 2
@@ -286,15 +285,12 @@ class ProjwfcParser(Parser):
         Retrieves projwfc output, and some basic information from the out_file, such as warnings and wall_time
         """
         # Check that the retrieved folder is there
-        try:
-            out_folder = self.retrieved
-        except NotExistent:
-            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
+        retrieved = self.retrieved
 
         # Read standard out
         try:
             filename_stdout = self.node.get_option('output_filename')  # or get_attribute(), but this is clearer
-            with out_folder.open(filename_stdout, 'r') as fil:
+            with retrieved.open(filename_stdout, 'r') as fil:
                 out_file = fil.readlines()
         except OSError:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
@@ -314,10 +310,10 @@ class ProjwfcParser(Parser):
         self.out('output_parameters', Dict(dict=parsed_data))
 
         # check and read pdos_tot file
-        out_filenames = out_folder.list_object_names()
+        out_filenames = retrieved.list_object_names()
         try:
             pdostot_filename = fnmatch.filter(out_filenames, '*pdos_tot*')[0]
-            with out_folder.open(pdostot_filename, 'r') as pdostot_file:
+            with retrieved.open(pdostot_filename, 'r') as pdostot_file:
                 # Columns: Energy(eV), Ldos, Pdos
                 pdostot_array = np.atleast_2d(np.genfromtxt(pdostot_file))
                 energy = pdostot_array[:, 0]
@@ -329,7 +325,7 @@ class ProjwfcParser(Parser):
         pdos_atm_filenames = fnmatch.filter(out_filenames, '*pdos_atm*')
         pdos_atm_array_dict = {}
         for name in pdos_atm_filenames:
-            with out_folder.open(name, 'r') as pdosatm_file:
+            with retrieved.open(name, 'r') as pdosatm_file:
                 pdos_atm_array_dict[name] = np.atleast_2d(np.genfromtxt(pdosatm_file))
 
         # finding the bands and projections
@@ -341,7 +337,7 @@ class ProjwfcParser(Parser):
         try:
             new_nodes_list = self._parse_bands_and_projections(out_info_dict)
         except QEOutputParsingError as err:
-            self.logger.error('Error parsing bands and projections: {}'.format(err))
+            self.logger.error(f'Error parsing bands and projections: {err}')
             return self.exit(self.exit_codes.ERROR_PARSING_PROJECTIONS)
         for linkname, node in new_nodes_list:
             self.out(linkname, node)
@@ -394,7 +390,7 @@ class ProjwfcParser(Parser):
                                                             link_type=LinkType.CREATE).one().node
             )
         except ValueError as e:
-            raise QEOutputParsingError('Could not get parent calculation of input folder: {}'.format(e))
+            raise QEOutputParsingError(f'Could not get parent calculation of input folder: {e}')
         out_info_dict['parent_calc'] = parent_calc
         try:
             parent_param = parent_calc.get_outgoing(link_label_filter='output_parameters').one().node

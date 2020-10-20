@@ -34,8 +34,6 @@ class MatdynCalculation(NamelistsCalculation):
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.output('output_phonon_bands', valid_type=orm.BandsData)
         spec.default_output_node = 'output_parameters'
-        spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
-            message='The retrieved folder data node could not be accessed.')
         spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
             message='The stdout output file could not be read.')
         spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
@@ -54,7 +52,7 @@ class MatdynCalculation(NamelistsCalculation):
         except AttributeError:
             kpoints = self.inputs.kpoints.get_kpoints_mesh(print_list=True)
 
-        kpoints_string = ['{}'.format(len(kpoints))]
+        kpoints_string = [f'{len(kpoints)}']
         for kpoint in kpoints:
             kpoints_string.append('{:18.10f} {:18.10f} {:18.10f}'.format(*kpoint))
 

@@ -31,7 +31,7 @@ class CpCalculation(BasePwCpInputGenerator):
     _FILE_XML_PRINT_COUNTER_BASENAME = 'print_counter.xml'
     _FILE_XML_PRINT_COUNTER = os.path.join(
         BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-        '{}_{}.save'.format(BasePwCpInputGenerator._PREFIX, _CP_WRITE_UNIT_NUMBER),
+        f'{BasePwCpInputGenerator._PREFIX}_{_CP_WRITE_UNIT_NUMBER}.save',
         _FILE_XML_PRINT_COUNTER_BASENAME,
     )
 
@@ -90,20 +90,20 @@ class CpCalculation(BasePwCpInputGenerator):
     _internal_retrieve_list = [
         os.path.join(
             BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-            '{}.{}'.format(BasePwCpInputGenerator._PREFIX, ext),
+            f'{BasePwCpInputGenerator._PREFIX}.{ext}',
         ) for ext in _cp_ext_list
     ] + [_FILE_XML_PRINT_COUNTER]
 
     # in restarts, it will copy from the parent the following
     _restart_copy_from = os.path.join(
         BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-        '{}_{}.save'.format(BasePwCpInputGenerator._PREFIX, _CP_WRITE_UNIT_NUMBER),
+        f'{BasePwCpInputGenerator._PREFIX}_{_CP_WRITE_UNIT_NUMBER}.save',
     )
 
     # in restarts, it will copy the previous folder in the following one
     _restart_copy_to = os.path.join(
         BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-        '{}_{}.save'.format(BasePwCpInputGenerator._PREFIX, _CP_READ_UNIT_NUMBER),
+        f'{BasePwCpInputGenerator._PREFIX}_{_CP_READ_UNIT_NUMBER}.save',
     )
 
     @classproperty
@@ -115,7 +115,7 @@ class CpCalculation(BasePwCpInputGenerator):
         for filename in cls.xml_filenames:
             filepath = os.path.join(
                 cls._OUTPUT_SUBFOLDER,
-                '{}_{}.save'.format(cls._PREFIX, cls._CP_WRITE_UNIT_NUMBER),
+                f'{cls._PREFIX}_{cls._CP_WRITE_UNIT_NUMBER}.save',
                 filename,
             )
             filepaths.append(filepath)
@@ -132,8 +132,6 @@ class CpCalculation(BasePwCpInputGenerator):
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.default_output_node = 'output_parameters'
 
-        spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
-            message='The retrieved folder data node could not be accessed.')
         spec.exit_code(301, 'ERROR_NO_RETRIEVED_TEMPORARY_FOLDER',
             message='The retrieved temporary folder could not be accessed.')
         spec.exit_code(303, 'ERROR_MISSING_XML_FILE',

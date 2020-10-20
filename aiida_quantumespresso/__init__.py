@@ -1,3 +1,3 @@
 # -*- coding: utf-8 -*-
 """The official AiiDA plugin for Quantum ESPRESSO."""
-__version__ = '3.1.0'
+__version__ = '3.2.0'

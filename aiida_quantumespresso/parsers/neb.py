@@ -30,13 +30,8 @@ class NebParser(Parser):
 
         PREFIX = self.node.process_class._PREFIX
 
-        # Check that the retrieved folder is there
-        try:
-            out_folder = self.retrieved
-        except NotExistent:
-            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
-
-        list_of_files = out_folder.list_object_names()  # Note: this includes folders, but not the files they contain.
+        retrieved = self.retrieved
+        list_of_files = retrieved.list_object_names()  # Note: this includes folders, but not the files they contain.
 
         # The stdout is required for parsing
         filename_stdout = self.node.get_attribute('output_filename')
@@ -62,7 +57,7 @@ class NebParser(Parser):
 
         # First parse the Neb output
         try:
-            stdout = out_folder.get_object_content(filename_stdout)
+            stdout = retrieved.get_object_content(filename_stdout)
             neb_out_dict, iteration_data, raw_successful = parse_raw_output_neb(stdout, neb_input_dict)
             # TODO: why do we ignore raw_successful ?
         except (OSError, QEOutputParsingError):
@@ -70,7 +65,7 @@ class NebParser(Parser):
 
         for warn_type in ['warnings', 'parser_warnings']:
             for message in neb_out_dict[warn_type]:
-                self.logger.warning('parsing NEB output: {}'.format(message))
+                self.logger.warning(f'parsing NEB output: {message}')
 
         if 'QE neb run did not reach the end of the execution.' in neb_out_dict['parser_warnings']:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE)
@@ -93,13 +88,13 @@ class NebParser(Parser):
         # for each image...
         for i in range(num_images):
             # check if any of the known XML output file names are present, and parse the first that we find
-            relative_output_folder = os.path.join('{}_{}'.format(PREFIX, i + 1), '{}.save'.format(PREFIX))
+            relative_output_folder = os.path.join(f'{PREFIX}_{i + 1}', f'{PREFIX}.save')
             retrieved_files = self.retrieved.list_object_names(relative_output_folder)
             for xml_filename in PwCalculation.xml_filenames:
                 if xml_filename in retrieved_files:
                     xml_file_path = os.path.join(relative_output_folder, xml_filename)
                     try:
-                        with out_folder.open(xml_file_path) as xml_file:
+                        with retrieved.open(xml_file_path) as xml_file:
                             parsed_data_xml, logs_xml = parse_pw_xml(xml_file, None)
                     except IOError:
                         return self.exit(self.exit_codes.ERROR_OUTPUT_XML_READ)
@@ -118,9 +113,9 @@ class NebParser(Parser):
                 return self.exit(self.exit_codes.ERROR_MISSING_XML_FILE)
 
             # look for pw output and parse it
-            pw_out_file = os.path.join('{}_{}'.format(PREFIX, i + 1), 'PW.out')
+            pw_out_file = os.path.join(f'{PREFIX}_{i + 1}', 'PW.out')
             try:
-                with out_folder.open(pw_out_file, 'r') as f:
+                with retrieved.open(pw_out_file, 'r') as f:
                     pw_out_text = f.read()  # Note: read() and not readlines()
             except IOError:
                 return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
@@ -154,7 +149,7 @@ class NebParser(Parser):
 
             structure_data = convert_qe2aiida_structure(parsed_structure)
 
-            key = 'pw_output_image_{}'.format(i + 1)
+            key = f'pw_output_image_{i + 1}'
             image_data[key] = parsed_parameters
 
             positions.append([site.position for site in structure_data.sites])
@@ -163,7 +158,7 @@ class NebParser(Parser):
             # Add also PW warnings and errors to the neb output data, avoiding repetitions.
             for log_type in ['warning', 'error']:
                 for message in logs_stdout[log_type]:
-                    formatted_message = '{}: {}'.format(log_type, message)
+                    formatted_message = f'{log_type}: {message}'
                     if formatted_message not in neb_out_dict['warnings']:
                         neb_out_dict['warnings'].append(formatted_message)
 
@@ -192,18 +187,18 @@ class NebParser(Parser):
         # Load the original and interpolated energy profile along the minimum-energy path (mep)
         try:
             filename = PREFIX + '.dat'
-            with out_folder.open(filename, 'r') as handle:
+            with retrieved.open(filename, 'r') as handle:
                 mep = numpy.loadtxt(handle)
         except Exception:
-            self.logger.warning('could not open expected output file `{}`.'.format(filename))
+            self.logger.warning(f'could not open expected output file `{filename}`.')
             mep = numpy.array([[]])
 
         try:
             filename = PREFIX + '.int'
-            with out_folder.open(filename, 'r') as handle:
+            with retrieved.open(filename, 'r') as handle:
                 interp_mep = numpy.loadtxt(handle)
         except Exception:
-            self.logger.warning('could not open expected output file `{}`.'.format(filename))
+            self.logger.warning(f'could not open expected output file `{filename}`.')
             interp_mep = numpy.array([[]])
 
         # Create an ArrayData with the energy profiles

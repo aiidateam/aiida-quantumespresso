@@ -96,12 +96,12 @@ class PwRelaxWorkChain(WorkChain):
             inputs.pw.parameters.setdefault('SYSTEM', {})['nbnd'] = self.ctx.current_number_of_bands
 
         # Set the `CALL` link label
-        inputs.metadata.call_link_label = 'iteration_{:02d}'.format(self.ctx.iteration)
+        inputs.metadata.call_link_label = f'iteration_{self.ctx.iteration:02d}'
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
 
-        self.report('launching PwBaseWorkChain<{}>'.format(running.pk))
+        self.report(f'launching PwBaseWorkChain<{running.pk}>')
 
         return ToContext(workchains=append_(running))
 
@@ -122,7 +122,7 @@ class PwRelaxWorkChain(WorkChain):
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
 
         if workchain.is_failed and workchain.exit_status not in PwBaseWorkChain.get_exit_statuses(acceptable_statuses):
-            self.report('relax PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
+            self.report(f'relax PwBaseWorkChain failed with exit status {workchain.exit_status}')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
 
         try:
@@ -137,8 +137,7 @@ class PwRelaxWorkChain(WorkChain):
         # Set relaxed structure as input structure for next iteration
         self.ctx.current_structure = structure
         self.ctx.current_number_of_bands = workchain.outputs.output_parameters.get_dict()['number_of_bands']
-        self.report('after iteration {} cell volume of relaxed structure is {}'
-            .format(self.ctx.iteration, curr_cell_volume))
+        self.report(f'after iteration {self.ctx.iteration} cell volume of relaxed structure is {curr_cell_volume}')
 
         # After first iteration, simply set the cell volume and restart the next base workchain
         if not prev_cell_volume:
@@ -183,7 +182,7 @@ class PwRelaxWorkChain(WorkChain):
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
 
-        self.report('launching PwBaseWorkChain<{}> for final scf'.format(running.pk))
+        self.report(f'launching PwBaseWorkChain<{running.pk}> for final scf')
 
         return ToContext(workchain_scf=running)
 
@@ -192,13 +191,13 @@ class PwRelaxWorkChain(WorkChain):
         workchain = self.ctx.workchain_scf
 
         if not workchain.is_finished_ok:
-            self.report('final scf PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
+            self.report(f'final scf PwBaseWorkChain failed with exit status {workchain.exit_status}')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_FINAL_SCF
 
     def results(self):
         """Attach the output parameters and structure of the last workchain to the outputs."""
         if self.ctx.is_converged and self.ctx.iteration <= self.inputs.max_meta_convergence_iterations.value:
-            self.report('workchain completed after {} iterations'.format(self.ctx.iteration))
+            self.report(f'workchain completed after {self.ctx.iteration} iterations')
         else:
             self.report('maximum number of meta convergence iterations exceeded')
 
@@ -232,4 +231,4 @@ class PwRelaxWorkChain(WorkChain):
                     pass
 
         if cleaned_calcs:
-            self.report('cleaned remote folders of calculations: {}'.format(' '.join(map(str, cleaned_calcs))))
+            self.report(f"cleaned remote folders of calculations: {' '.join(map(str, cleaned_calcs))}")

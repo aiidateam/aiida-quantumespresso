@@ -37,7 +37,7 @@ output_parameters:
       scf_error: 8.612006993690606e-08
   creator_name: pwscf
   creator_version: '6.6'
-  dft_exchange_correlation: PBE
+  dft_exchange_correlation: rvv10
   do_magnetization: false
   do_not_use_time_reversal: false
   energy: -308.1140383401864
@@ -96,8 +96,8 @@ output_parameters:
   number_of_spin_components: 1
   number_of_symmetries: 48
   occupations: fixed
-  parser_info: aiida-quantumespresso parser pw.x v3.1.0
-  parser_version: 3.1.0
+  parser_info: aiida-quantumespresso parser pw.x v3.2.0
+  parser_version: 3.2.0
   parser_warnings: []
   q_real_space: false
   rho_cutoff: 3265.366014072

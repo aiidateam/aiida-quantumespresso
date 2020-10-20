@@ -56,7 +56,7 @@ class PwTcodtranslator(BaseTcodtranslator):
         if energy_type not in parameters.attrs():
             return None
         if energy_type + '_units' not in parameters.attrs():
-            raise ValueError('energy units for {} are unknown'.format(energy_type))
+            raise ValueError(f'energy units for {energy_type} are unknown')
         if parameters.get_attr(energy_type + '_units') != 'eV':
             raise ValueError(
                 'energy units for {} are {} instead of eV -- unit conversion is not possible yet'.format(

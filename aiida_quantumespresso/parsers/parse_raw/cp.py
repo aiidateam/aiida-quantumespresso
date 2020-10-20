@@ -44,18 +44,18 @@ def parse_cp_traj_stanzas(num_elements, splitlines, prepend_name, rescale=1.):
                     stanzas.append(this_stanza)
                     this_stanza = []
             else:
-                raise ValueError('Wrong line length ({})'.format(len(l)))
+                raise ValueError(f'Wrong line length ({len(l)})')
         if len(this_stanza) != 0:
-            raise ValueError('Wrong length of last block ({} lines instead of 0).'.format(len(this_stanza)))
+            raise ValueError(f'Wrong length of last block ({len(this_stanza)} lines instead of 0).')
         if len(steps) != len(stanzas):
             raise ValueError('Length mismatch between number of steps and number of defined stanzas.')
         return {
-            '{}_steps'.format(prepend_name): steps,
-            '{}_times'.format(prepend_name): times,
-            '{}_data'.format(prepend_name): stanzas,
+            f'{prepend_name}_steps': steps,
+            f'{prepend_name}_times': times,
+            f'{prepend_name}_data': stanzas,
         }
     except Exception as e:
-        e.message = 'At line {}: {}'.format(linenum + 1, e)
+        e.message = f'At line {linenum + 1}: {e}'
         raise e
 
 
@@ -173,9 +173,9 @@ def parse_cp_raw_output(stdout, output_xml=None, output_xml_counter=None):
 
     for key in out_data.keys():
         if key in list(xml_data.keys()):
-            raise AssertionError('%s found in both dictionaries' % key)
+            raise AssertionError(f'{key} found in both dictionaries')
         if key in list(xml_counter_data.keys()):
-            raise AssertionError('%s found in both dictionaries' % key)
+            raise AssertionError(f'{key} found in both dictionaries')
         # out_data keys take precedence and overwrite xml_data keys,
         # if the same key name is shared by both (but this should not happen!)
 
@@ -225,7 +225,7 @@ def parse_cp_xml_output(data):
     value = parse_xml_child_float(tagname, target_tags)
     units = parse_xml_child_attribute_str(tagname, attrname, target_tags)
     if units not in ['pico-seconds']:
-        raise QEOutputParsingError('Units {} are not supported by parser'.format(units))
+        raise QEOutputParsingError(f'Units {units} are not supported by parser')
     parsed_data[tagname.lower()] = value
 
     tagname = 'TITLE'
@@ -263,7 +263,7 @@ def parse_cp_xml_output(data):
     metric = parse_xml_child_attribute_str(tagname, attrname, target_tags)
     if metric not in ['2 pi / a']:
         raise QEOutputParsingError(
-            'Error parsing attribute %s, tag %s inside %s, units unknown' % (attrname, tagname, target_tags.tagName)
+            f'Error parsing attribute {attrname}, tag {tagname} inside {target_tags.tagName}, units unknown'
         )
     parsed_data[tagname.replace('-', '_').lower()] = metric
 
@@ -274,7 +274,7 @@ def parse_cp_xml_output(data):
         value = [int(a.getAttribute('nk' + str(i + 1))) for i in range(3)]
         parsed_data[tagname.replace('-', '_').lower()] = value
     except:
-        raise QEOutputParsingError('Error parsing tag %s inside %s.' % (tagname, target_tags.tagName))
+        raise QEOutputParsingError(f'Error parsing tag {tagname} inside {target_tags.tagName}.')
 
     tagname = 'MONKHORST_PACK_OFFSET'
     try:
@@ -282,7 +282,7 @@ def parse_cp_xml_output(data):
         value = [int(a.getAttribute('k' + str(i + 1))) for i in range(3)]
         parsed_data[tagname.replace('-', '_').lower()] = value
     except:
-        raise QEOutputParsingError('Error parsing tag %s inside %s.' % (tagname, target_tags.tagName))
+        raise QEOutputParsingError(f'Error parsing tag {tagname} inside {target_tags.tagName}.')
 
     try:
         kpoints = []
@@ -302,7 +302,7 @@ def parse_cp_xml_output(data):
 
         parsed_data['k_point'] = kpoints
     except:
-        raise QEOutputParsingError('Error parsing tag K-POINT.# inside %s.' % (target_tags.tagName))
+        raise QEOutputParsingError(f'Error parsing tag K-POINT.# inside {target_tags.tagName}.')
 
     tagname = 'NORM-OF-Q'
     # TODO decide if save this parameter
@@ -562,7 +562,7 @@ def parse_cp_xml_output(data):
             except:
                 pass
         except:
-            raise QEOutputParsingError('Error parsing CARD {}'.format(cardname))
+            raise QEOutputParsingError(f'Error parsing CARD {cardname}')
 
     # CARD BAND_STRUCTURE_INFO
 

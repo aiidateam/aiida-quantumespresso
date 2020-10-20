@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 from distutils.version import LooseVersion
-
 import numpy
-from aiida.common import NotExistent
-from aiida.orm import Dict, TrajectoryData
 
+from aiida.orm import Dict, TrajectoryData
 from qe_tools import CONSTANTS
+
 from aiida_quantumespresso.parsers.parse_raw.cp import parse_cp_raw_output, parse_cp_traj_stanzas
 from .base import Parser
 
@@ -18,13 +17,10 @@ class CpParser(Parser):
 
         Does all the logic here.
         """
-        try:
-            out_folder = self.retrieved
-        except NotExistent:
-            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
+        retrieved = self.retrieved
 
         # check what is inside the folder
-        list_of_files = out_folder._repository.list_object_names()
+        list_of_files = retrieved._repository.list_object_names()
 
         # options.metadata become attributes like this:
         stdout_filename = self.node.get_attribute('output_filename')
@@ -44,9 +40,9 @@ class CpParser(Parser):
             # TODO: Add an error for this counter
             return self.exit(self.exit_codes.ERROR_MISSING_XML_FILE)
 
-        output_stdout = out_folder.get_object_content(stdout_filename)
-        output_xml = out_folder.get_object_content(xml_files[0])
-        output_xml_counter = out_folder.get_object_content(self.node.process_class._FILE_XML_PRINT_COUNTER_BASENAME)
+        output_stdout = retrieved.get_object_content(stdout_filename)
+        output_xml = retrieved.get_object_content(xml_files[0])
+        output_xml_counter = retrieved.get_object_content(self.node.process_class._FILE_XML_PRINT_COUNTER_BASENAME)
         out_dict, _raw_successful = parse_cp_raw_output(output_stdout, output_xml, output_xml_counter)
 
         # parse the trajectory. Units in Angstrom, picoseconds and eV.
@@ -60,7 +56,7 @@ class CpParser(Parser):
         # Now prepare the reordering, as filex in the xml are  ordered
         reordering = self._generate_sites_ordering(out_dict['species'], out_dict['atoms'])
 
-        pos_filename = '{}.{}'.format(self.node.process_class._PREFIX, 'pos')
+        pos_filename = f'{self.node.process_class._PREFIX}.pos'
         if pos_filename not in list_of_files:
             return self.exit(self.exit_codes.ERROR_READING_POS_FILE)
 
@@ -75,27 +71,28 @@ class CpParser(Parser):
 
         for name, extension, scale, elements in trajectories:
             try:
-                with out_folder.open('{}.{}'.format(self.node.process_class._PREFIX, extension)) as datafile:
+                with retrieved.open(f'{self.node.process_class._PREFIX}.{extension}') as datafile:
                     data = [l.split() for l in datafile]
                     # POSITIONS stored in angstrom
                 traj_data = parse_cp_traj_stanzas(
-                    num_elements=elements, splitlines=data, prepend_name='{}_traj'.format(name), rescale=scale
+                    num_elements=elements, splitlines=data, prepend_name=f'{name}_traj', rescale=scale
                 )
                 # here initialize the dictionary. If the parsing of positions fails, though, I don't have anything
                 # out of the CP dynamics. Therefore, the calculation status is set to FAILED.
                 if extension != 'cel':
-                    raw_trajectory['{}_ordered'.format(name)
-                                   ] = self._get_reordered_array(traj_data['{}_traj_data'.format(name)], reordering)
+                    raw_trajectory[f'{name}_ordered'] = self._get_reordered_array(
+                        traj_data[f'{name}_traj_data'], reordering
+                    )
                 else:
                     raw_trajectory['cells'] = numpy.array(traj_data['cells_traj_data'])
                 if extension == 'pos':
-                    raw_trajectory['times'] = numpy.array(traj_data['{}_traj_times'.format(name)])
+                    raw_trajectory['times'] = numpy.array(traj_data[f'{name}_traj_times'])
             except IOError:
-                out_dict['warnings'].append('Unable to open the {} file... skipping.'.format(extension.upper()))
+                out_dict['warnings'].append(f'Unable to open the {extension.upper()} file... skipping.')
 
         # =============== EVP trajectory ============================
         try:
-            with out_folder.open('{}.evp'.format(self._node.process_class._PREFIX)) as handle:
+            with retrieved.open(f'{self._node.process_class._PREFIX}.evp') as handle:
                 matrix = numpy.genfromtxt(handle)
             # there might be a different format if the matrix has one row only
             try:

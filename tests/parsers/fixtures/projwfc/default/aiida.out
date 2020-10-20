@@ -58,14 +58,14 @@ r3i1n10.cx2.hpc.ic.ac.uk:8
      Atomic states used for projection
      (read from pseudopotential files):
 
-     state #   1: atom   1 (Si ), wfc  1 (l=0 m= 1)
-     state #   2: atom   1 (Si ), wfc  2 (l=1 m= 1)
-     state #   3: atom   1 (Si ), wfc  2 (l=1 m= 2)
-     state #   4: atom   1 (Si ), wfc  2 (l=1 m= 3)
-     state #   5: atom   2 (Si ), wfc  1 (l=0 m= 1)
-     state #   6: atom   2 (Si ), wfc  2 (l=1 m= 1)
-     state #   7: atom   2 (Si ), wfc  2 (l=1 m= 2)
-     state #   8: atom   2 (Si ), wfc  2 (l=1 m= 3)
+     state #   1: atom   1 (Si1 ), wfc  1 (l=0 m= 1)
+     state #   2: atom   1 (Si1 ), wfc  2 (l=1 m= 1)
+     state #   3: atom   1 (Si1 ), wfc  2 (l=1 m= 2)
+     state #   4: atom   1 (Si1 ), wfc  2 (l=1 m= 3)
+     state #   5: atom   2 (Si1 ), wfc  1 (l=0 m= 1)
+     state #   6: atom   2 (Si1 ), wfc  2 (l=1 m= 1)
+     state #   7: atom   2 (Si1 ), wfc  2 (l=1 m= 2)
+     state #   8: atom   2 (Si1 ), wfc  2 (l=1 m= 3)
 
  k =   0.0000000000  0.0000000000  0.0000000000
 ==== e(   1) =    -5.51537 eV ====

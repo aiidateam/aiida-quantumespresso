@@ -24,7 +24,8 @@ def test_pw_default(fixture_sandbox, generate_calc_job, generate_inputs_pw, file
 
     # Check the attributes of the returned `CalcInfo`
     assert isinstance(calc_info, datastructures.CalcInfo)
-    assert sorted(calc_info.cmdline_params) == sorted(cmdline_params)
+    assert isinstance(calc_info.codes_info[0], datastructures.CodeInfo)
+    assert sorted(calc_info.codes_info[0].cmdline_params) == sorted(cmdline_params)
     assert sorted(calc_info.local_copy_list) == sorted(local_copy_list)
     assert sorted(calc_info.retrieve_list) == sorted(retrieve_list)
     assert sorted(calc_info.retrieve_temporary_list) == sorted(retrieve_temporary_list)
@@ -76,7 +77,8 @@ def test_pw_ibrav(
 
     # Check the attributes of the returned `CalcInfo`
     assert isinstance(calc_info, datastructures.CalcInfo)
-    assert sorted(calc_info.cmdline_params) == sorted(cmdline_params)
+    assert isinstance(calc_info.codes_info[0], datastructures.CodeInfo)
+    assert sorted(calc_info.codes_info[0].cmdline_params) == sorted(cmdline_params)
     assert sorted(calc_info.local_copy_list) == sorted(local_copy_list)
     assert sorted(calc_info.retrieve_list) == sorted(retrieve_list)
     assert sorted(calc_info.retrieve_temporary_list) == sorted(retrieve_temporary_list)

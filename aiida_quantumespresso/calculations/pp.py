@@ -89,8 +89,6 @@ class PpCalculation(CalcJob):
         spec.default_output_node = 'output_parameters'
 
         # Standard exceptions
-        spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
-            message='The retrieved folder data node could not be accessed.')
         spec.exit_code(301, 'ERROR_NO_RETRIEVED_TEMPORARY_FOLDER',
             message='The retrieved temporary folder could not be accessed.')
         spec.exit_code(302, 'ERROR_OUTPUT_STDOUT_MISSING',
@@ -168,7 +166,7 @@ class PpCalculation(CalcJob):
         input_filename = self.inputs.metadata.options.input_filename
         with folder.open(input_filename, 'w') as infile:
             for namelist_name in namelists_toprint:
-                infile.write('&{0}\n'.format(namelist_name))
+                infile.write(f'&{namelist_name}\n')
                 # namelist content; set to {} if not present, so that we leave an empty namelist
                 namelist = parameters.pop(namelist_name, {})
                 for key, value in sorted(namelist.items()):
@@ -232,7 +230,7 @@ class PpCalculation(CalcJob):
         # value as a suffix.
         retrieve_tuples = [
             self._FILEOUT,
-            ('{}_*{}'.format(self._FILPLOT, self._FILEOUT), '.', 0)
+            (f'{self._FILPLOT}_*{self._FILEOUT}', '.', 0)
         ]
 
         if self.inputs.metadata.options.keep_plot_file:

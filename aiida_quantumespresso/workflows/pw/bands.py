@@ -131,7 +131,7 @@ class PwBandsWorkChain(WorkChain):
 
         running = self.submit(PwRelaxWorkChain, **inputs)
 
-        self.report('launching PwRelaxWorkChain<{}>'.format(running.pk))
+        self.report(f'launching PwRelaxWorkChain<{running.pk}>')
 
         return ToContext(workchain_relax=running)
 
@@ -140,7 +140,7 @@ class PwBandsWorkChain(WorkChain):
         workchain = self.ctx.workchain_relax
 
         if not workchain.is_finished_ok:
-            self.report('PwRelaxWorkChain failed with exit status {}'.format(workchain.exit_status))
+            self.report(f'PwRelaxWorkChain failed with exit status {workchain.exit_status}')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
 
         self.ctx.current_structure = workchain.outputs.output_structure
@@ -179,7 +179,7 @@ class PwBandsWorkChain(WorkChain):
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
 
-        self.report('launching PwBaseWorkChain<{}> in {} mode'.format(running.pk, 'scf'))
+        self.report(f'launching PwBaseWorkChain<{running.pk}> in scf mode')
 
         return ToContext(workchain_scf=running)
 
@@ -188,7 +188,7 @@ class PwBandsWorkChain(WorkChain):
         workchain = self.ctx.workchain_scf
 
         if not workchain.is_finished_ok:
-            self.report('scf PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
+            self.report(f'scf PwBaseWorkChain failed with exit status {workchain.exit_status}')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_SCF
 
         self.ctx.current_folder = workchain.outputs.remote_folder
@@ -217,10 +217,16 @@ class PwBandsWorkChain(WorkChain):
         if 'nbands_factor' in self.inputs:
             factor = self.inputs.nbands_factor.value
             parameters = self.ctx.workchain_scf.outputs.output_parameters.get_dict()
-            nspin = int(parameters['number_of_spin_components'])
+            if int(parameters['number_of_spin_components']) > 1:
+                nspin_factor = 2
+            else:
+                nspin_factor = 1
             nbands = int(parameters['number_of_bands'])
             nelectron = int(parameters['number_of_electrons'])
-            nbnd = max(int(0.5 * nelectron * nspin * factor), int(0.5 * nelectron * nspin) + 4 * nspin, nbands)
+            nbnd = max(
+                int(0.5 * nelectron * nspin_factor * factor),
+                int(0.5 * nelectron * nspin_factor) + 4 * nspin_factor,
+                nbands)
             inputs.pw.parameters['SYSTEM']['nbnd'] = nbnd
 
         # Otherwise set the current number of bands, unless explicitly set in the inputs
@@ -230,7 +236,7 @@ class PwBandsWorkChain(WorkChain):
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
 
-        self.report('launching PwBaseWorkChain<{}> in {} mode'.format(running.pk, 'bands'))
+        self.report(f'launching PwBaseWorkChain<{running.pk}> in bands mode')
 
         return ToContext(workchain_bands=running)
 
@@ -239,7 +245,7 @@ class PwBandsWorkChain(WorkChain):
         workchain = self.ctx.workchain_bands
 
         if not workchain.is_finished_ok:
-            self.report('bands PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
+            self.report(f'bands PwBaseWorkChain failed with exit status {workchain.exit_status}')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_BANDS
 
     def results(self):
@@ -268,4 +274,4 @@ class PwBandsWorkChain(WorkChain):
                     pass
 
         if cleaned_calcs:
-            self.report('cleaned remote folders of calculations: {}'.format(' '.join(map(str, cleaned_calcs))))
+            self.report(f"cleaned remote folders of calculations: {' '.join(map(str, cleaned_calcs))}")

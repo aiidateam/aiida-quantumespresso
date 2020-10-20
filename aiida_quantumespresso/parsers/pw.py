@@ -28,11 +28,6 @@ class PwParser(Parser):
         self.exit_code_parser = None
 
         try:
-            self.retrieved
-        except exceptions.NotExistent:
-            return self.exit(self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER))
-
-        try:
             settings = self.node.inputs.settings.get_dict()
         except exceptions.NotExistent:
             settings = {}
@@ -242,7 +237,7 @@ class PwParser(Parser):
             converged_final = verify_convergence_trajectory(trajectory, -1, *values)
             return converged_relax and (converged_final or except_final_scf)
 
-        raise RuntimeError('unknown relax_type: {}'.format(relax_type))
+        raise RuntimeError(f'unknown relax_type: {relax_type}')
 
     def parse_xml(self, dir_with_bands=None, parser_options=None):
         """Parse the XML output file.
