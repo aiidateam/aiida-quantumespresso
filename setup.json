@@ -99,5 +99,5 @@
     "name": "aiida_quantumespresso",
     "python_requires": ">=3.5",
     "url": "https://github.com/aiidateam/aiida-quantumespresso",
-    "version": "3.2.0"
+    "version": "3.2.1"
 }
