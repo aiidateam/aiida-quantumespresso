@@ -1,0 +1,108 @@
+parameters:
+  beta_real_space: false
+  charge_density: ./charge-density.dat
+  conjugate_gradient: true
+  constraint_mag: 0
+  creator_name: cp
+  creator_version: '6.6'
+  dft_exchange_correlation: null
+  do_magnetization: false
+  do_not_use_time_reversal: null
+  exit_status: 0
+  fermi_energy_units: eV
+  fft_grid:
+  - 60
+  - 60
+  - 60
+  format_name: QEXSD
+  format_version: 20.04.20
+  has_dipole_correction: false
+  has_electric_field: false
+  inversion_symmetry: false
+  k_points:
+  - - 0.0
+    - 0.0
+    - 0.0
+  k_points_units: 1 / angstrom
+  k_points_weights:
+  - 2.0
+  last_successful_printout: 30
+  lattice_symmetries: []
+  lda_plus_u_calculation: false
+  lkpoint_dir: false
+  lsda: false
+  magnetization_angle1:
+  - 0.0
+  - 0.0
+  magnetization_angle2:
+  - 0.0
+  - 0.0
+  no_time_rev_operations: null
+  non_colinear_calculation: false
+  number_of_atomic_wfc: 6
+  number_of_bands: 4
+  number_of_bravais_symmetries: null
+  number_of_electrons: 8.0
+  number_of_k_points: 1
+  number_of_spin_components: 1
+  number_of_symmetries: null
+  q_real_space: false
+  rho_cutoff: 4353.821352096
+  rho_cutoff_units: eV
+  smooth_fft_grid:
+  - 60
+  - 60
+  - 60
+  spin_orbit_calculation: false
+  spin_orbit_domag: false
+  starting_magnetization:
+  - 0.0
+  - 0.0
+  symmetries: []
+  symmetries_units: crystal
+  time_reversal_flag: true
+  wall_time: '   1m 4.64s '
+  warnings: []
+  wfc_cutoff: -27.2113834506
+  wfc_cutoff_units: eV
+trajectory:
+  array|cell_temperature:
+  - 3
+  array|cells:
+  - 3
+  - 3
+  - 3
+  array|electronic_kinetic_energy:
+  - 3
+  array|energy_constant_motion:
+  - 3
+  array|enthalpy:
+  - 3
+  array|enthalpy_plus_kinetic:
+  - 3
+  array|forces:
+  - 0
+  array|ionic_temperature:
+  - 3
+  array|positions:
+  - 3
+  - 3
+  - 3
+  array|pressure:
+  - 3
+  array|scf_total_energy:
+  - 3
+  array|steps:
+  - 3
+  array|times:
+  - 3
+  array|velocities:
+  - 3
+  - 3
+  - 3
+  array|volume:
+  - 3
+  symbols:
+  - H
+  - H
+  - O
