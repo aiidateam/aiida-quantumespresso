@@ -122,9 +122,9 @@ class BasePwCpInputGenerator(CalcJob):
             local_copy_list.append((uuid, src_path, dst_path))
 
         if 'hubbard_file' in self.inputs:
-            uuid = self.inputs.hubbard_file.filename
+            uuid = self.inputs.hubbard_file.uuid
             src_path = self.inputs.hubbard_file.filename
-            dst_path = self.input_file_name_hubbard_file
+            dst_path = self.filename_input_hubbard_parameters
             local_copy_list.append((uuid, src_path, dst_path))
 
         arguments = [

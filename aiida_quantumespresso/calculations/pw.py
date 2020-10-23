@@ -145,7 +145,7 @@ class PwCalculation(BasePwCpInputGenerator):
             message='The variable cell optimization broke the symmetry of the k-points.')
 
     @classproperty
-    def input_file_name_hubbard_file(cls):
+    def filename_input_hubbard_parameters(cls):
         """Return the relative file name of the file containing the Hubbard parameters.
 
         .. note:: This only applies if they should be read from file instead of specified in the input file cards.
@@ -159,7 +159,7 @@ class PwCalculation(BasePwCpInputGenerator):
                 'this is determined by the aiida-quantumespresso-hp plugin but it is not installed'
             ) from exc
 
-        return HpCalculation.input_file_name_hubbard_file
+        return HpCalculation.filename_input_hubbard_parameters
 
     @classmethod
     def input_helper(cls, *args, **kwargs):
