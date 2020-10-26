@@ -339,12 +339,8 @@ class PwParser(Parser):
 
         :param parsed_stdout: the raw parsed data dictionary from the stdout output file
         :param parsed_xml: the raw parsed data dictionary from the XML output file
-        :return: the union of the two parsed raw and information about the parser
+        :return: the union of the two raw parsed data dictionaries
         """
-        from aiida_quantumespresso.parsers import get_parser_info
-
-        parsed_info = get_parser_info(parser_info_template='aiida-quantumespresso parser pw.x v{}')
-
         for key in list(parsed_stdout.keys()):
             if key in list(parsed_xml.keys()):
                 if parsed_stdout[key] != parsed_xml[key]:
@@ -354,7 +350,7 @@ class PwParser(Parser):
                         )
                     )
 
-        parameters = dict(list(parsed_xml.items()) + list(parsed_stdout.items()) + list(parsed_info.items()))
+        parameters = dict(list(parsed_xml.items()) + list(parsed_stdout.items()))
 
         return parameters
 
