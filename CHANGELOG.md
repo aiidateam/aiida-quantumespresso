@@ -1,3 +1,10 @@
+## v3.2.1:
+
+### Improvements
+- `PpParser`: reduce memory usage by deleting raw data once parsed [[#587]](https://github.com/aiidateam/aiida-quantumespresso/pull/587)
+- `ProjwfcParser`: support kind names with numerals, dashes and underscores [[#591]](https://github.com/aiidateam/aiida-quantumespresso/pull/591)
+
+
 ## v3.2.0:
 
 ### Features

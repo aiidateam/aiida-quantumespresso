@@ -208,6 +208,20 @@ def generate_upf_data(filepath_tests):
 
 
 @pytest.fixture
+def generate_upf_family(generate_upf_data):
+    """Generate a UPF family."""
+
+    def _generate_upf_family(label='SSSP'):
+        from aiida.orm.groups import UpfFamily
+        pseudo = generate_upf_data(element='Si').store()
+        group = UpfFamily(label=label).store()
+        group.add_nodes([pseudo])
+        return group
+
+    return _generate_upf_family
+
+
+@pytest.fixture
 def generate_structure():
     """Return a `StructureData` representing bulk silicon."""
 
@@ -309,19 +323,24 @@ def generate_workchain():
 
 
 @pytest.fixture
-def generate_inputs_matdyn(filepath_tests, fixture_code, generate_kpoints_mesh):
+def generate_force_constants_data(filepath_tests):
+    """Generate a ``ForceConstantsData`` node."""
+    from aiida_quantumespresso.data.force_constants import ForceConstantsData
+    filepath = os.path.join(filepath_tests, 'calculations', 'fixtures', 'matdyn', 'default', 'force_constants.dat')
+    return ForceConstantsData(filepath)
+
+
+@pytest.fixture
+def generate_inputs_matdyn(fixture_code, generate_kpoints_mesh, generate_force_constants_data):
     """Generate default inputs for a `MatdynCalculation."""
 
     def _generate_inputs_matdyn():
         """Generate default inputs for a `MatdynCalculation."""
-        from aiida_quantumespresso.data.force_constants import ForceConstantsData
         from aiida_quantumespresso.utils.resources import get_default_options
-
-        filepath = os.path.join(filepath_tests, 'calculations', 'fixtures', 'matdyn', 'default', 'force_constants.dat')
 
         inputs = {
             'code': fixture_code('quantumespresso.matdyn'),
-            'force_constants': ForceConstantsData(filepath),
+            'force_constants': generate_force_constants_data,
             'kpoints': generate_kpoints_mesh(2),
             'metadata': {
                 'options': get_default_options()

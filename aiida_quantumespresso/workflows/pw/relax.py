@@ -11,6 +11,17 @@ PwCalculation = CalculationFactory('quantumespresso.pw')
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 
 
+def validate_final_scf(value, _):
+    """Validate the final scf input."""
+    if isinstance(value, orm.Bool) and value:
+        import warnings
+        from aiida.common.warnings import AiidaDeprecationWarning
+        warnings.warn(
+            'this input is deprecated and will be removed. If you want to run a final scf, specify the inputs that '
+            'should be used in the `base_final_scf` namespace.', AiidaDeprecationWarning
+        )
+
+
 class PwRelaxWorkChain(WorkChain):
     """Workchain to relax a structure using Quantum ESPRESSO pw.x."""
 
@@ -21,9 +32,13 @@ class PwRelaxWorkChain(WorkChain):
         super().define(spec)
         spec.expose_inputs(PwBaseWorkChain, namespace='base',
             exclude=('clean_workdir', 'pw.structure', 'pw.parent_folder'),
-            namespace_options={'help': 'Inputs for the `PwBaseWorkChain`.'})
+            namespace_options={'help': 'Inputs for the `PwBaseWorkChain` for the main relax loop.'})
+        spec.expose_inputs(PwBaseWorkChain, namespace='base_final_scf',
+            exclude=('clean_workdir', 'pw.structure', 'pw.parent_folder'),
+            namespace_options={'required': False, 'populate_defaults': False,
+                'help': 'Inputs for the `PwBaseWorkChain` for the final scf.'})
         spec.input('structure', valid_type=orm.StructureData, help='The inputs structure.')
-        spec.input('final_scf', valid_type=orm.Bool, default=lambda: orm.Bool(False),
+        spec.input('final_scf', valid_type=orm.Bool, default=lambda: orm.Bool(False), validator=validate_final_scf,
             help='If `True`, a final SCF calculation will be performed on the successfully relaxed structure.')
         spec.input('relaxation_scheme', valid_type=orm.Str, default=lambda: orm.Str('vc-relax'),
             help='The relaxation scheme to use: choose either `relax` or `vc-relax` for variable cell relax.')
@@ -63,6 +78,13 @@ class PwRelaxWorkChain(WorkChain):
         self.ctx.is_converged = False
         self.ctx.iteration = 0
 
+        if self.inputs.final_scf and 'base_final_scf' in self.inputs:
+            raise ValueError('cannot specify `final_scf=True` and `base_final_scf` at the same time.')
+        elif self.inputs.final_scf:
+            self.ctx.final_scf_inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base'))
+        elif 'base_final_scf' in self.inputs:
+            self.ctx.final_scf_inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base_final_scf'))
+
     def should_run_relax(self):
         """Return whether a relaxation workchain should be run.
 
@@ -77,7 +99,7 @@ class PwRelaxWorkChain(WorkChain):
         If the maximum number of meta convergence iterations has been exceeded and convergence has not been reached, the
         structure cannot be considered to be relaxed and the final scf should not be run.
         """
-        return self.inputs.final_scf.value and self.ctx.is_converged
+        return self.ctx.is_converged and 'final_scf_inputs' in self.ctx
 
     def run_relax(self):
         """Run the `PwBaseWorkChain` to run a relax `PwCalculation`."""
@@ -166,7 +188,7 @@ class PwRelaxWorkChain(WorkChain):
 
     def run_final_scf(self):
         """Run the `PwBaseWorkChain` to run a final scf `PwCalculation` for the relaxed structure."""
-        inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base'))
+        inputs = self.ctx.final_scf_inputs
         inputs.pw.structure = self.ctx.current_structure
         inputs.pw.parameters = inputs.pw.parameters.get_dict()
 

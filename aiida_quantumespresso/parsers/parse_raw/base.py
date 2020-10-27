@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """A basic parser for the common format of QE."""
-from aiida_quantumespresso.parsers import get_parser_info
 
 __all__ = ('parse_output_base', 'parse_output_error', 'convert_qe_time_to_sec', 'convert_qe2aiida_structure')
 
@@ -21,7 +20,7 @@ def parse_output_base(filecontent, codename=None, message_map=None):
         raise RuntimeError(f'invalid format `message_map`: should be dictionary with two keys {keys}')
 
     logs = get_logging_container()
-    parsed_data = get_parser_info(parser_info_template='aiida-quantumespresso parser simple v{}')
+    parsed_data = {}
 
     lines = filecontent if isinstance(filecontent, list) else filecontent.split('\n')
 

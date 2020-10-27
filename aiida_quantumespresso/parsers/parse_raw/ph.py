@@ -8,7 +8,7 @@ import numpy
 
 from qe_tools import CONSTANTS
 
-from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
+from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.parse_raw.base import convert_qe_time_to_sec
 from aiida_quantumespresso.parsers.parse_xml.pw.legacy import parse_xml_child_bool, read_xml_card
 from aiida_quantumespresso.utils.mapping import get_logging_container
@@ -24,7 +24,6 @@ def parse_raw_ph_output(stdout, tensors=None, dynamical_matrices=None):
     """
     logs = get_logging_container()
     data_lines = stdout.split('\n')
-    parser_info = get_parser_info(parser_info_template='aiida-quantumespresso parser ph.x v{}')
 
     # First check whether the `JOB DONE` message was written, otherwise the job was interrupted
     for line in data_lines:
@@ -78,9 +77,7 @@ def parse_raw_ph_output(stdout, tensors=None, dynamical_matrices=None):
             raise AssertionError(f'{key} found in two dictionaries')
 
     # I don't check the dynmat_data and parser_info keys
-    parsed_data = dict(
-        list(dynmat_data.items()) + list(out_data.items()) + list(tensor_data.items()) + list(parser_info.items())
-    )
+    parsed_data = dict(list(dynmat_data.items()) + list(out_data.items()) + list(tensor_data.items()))
 
     return parsed_data, logs
 
