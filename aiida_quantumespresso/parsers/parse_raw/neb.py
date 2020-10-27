@@ -7,7 +7,7 @@ decision doesn't have much structure encoded, [the values are simple ]
 """
 from qe_tools import CONSTANTS
 
-from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
+from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.parse_raw import convert_qe_time_to_sec
 
 
@@ -31,7 +31,7 @@ def parse_raw_output_neb(stdout, input_dict, parser_opts=None):
     import copy
 
     job_successful = True
-    parser_info = get_parser_info(parser_info_template='aiida-quantumespresso parser neb.x v{}')
+    parser_warnings = []
 
     if not stdout:  # there is an output file, but it's empty -> crash
         job_successful = False
@@ -44,7 +44,7 @@ def parse_raw_output_neb(stdout, input_dict, parser_opts=None):
             break
     if not finished_run:  # error if the job has not finished
         warning = 'QE neb run did not reach the end of the execution.'
-        parser_info['parser_warnings'].append(warning)
+        parser_warnings.append(warning)
         job_successful = False
 
     # parse the text output of the neb calculation
@@ -52,7 +52,7 @@ def parse_raw_output_neb(stdout, input_dict, parser_opts=None):
         out_data, iteration_data, critical_messages = parse_neb_text_output(stdout, input_dict)
     except QEOutputParsingError as exc:
         if not finished_run:  # I try to parse it as much as possible
-            parser_info['parser_warnings'].append('Error while parsing the output file')
+            parser_warnings.append('Error while parsing the output file')
             out_data = {'warnings': []}
             iteration_data = {}
             critical_messages = []
@@ -72,7 +72,7 @@ def parse_raw_output_neb(stdout, input_dict, parser_opts=None):
     if any([x in out_data['warnings'] for x in critical_messages]):
         job_successful = False
 
-    parameter_data = dict(list(out_data.items()) + list(parser_info.items()))
+    parameter_data = dict(list(out_data.items()) + [('parser_warnings', parser_warnings)])
 
     # return various data.
     # parameter data will be mapped in Dict

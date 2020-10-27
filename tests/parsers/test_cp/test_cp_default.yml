@@ -136,6 +136,7 @@ parameters:
   number_of_processors_per_taskgroup: 1
   number_of_species: 1
   number_of_spin_components: 1
+  parser_warnings: []
   pp_check_flag: true
   reciprocal_lattice_vectors:
   - - -0.1851851851851852

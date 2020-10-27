@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from xml.dom.minidom import parseString
-from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
+from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.parse_xml.pw.legacy import (
     read_xml_card, parse_xml_child_integer, xml_card_header, parse_xml_child_bool, parse_xml_child_str,
     parse_xml_child_float, parse_xml_child_attribute_str, xml_card_cell, xml_card_ions, xml_card_exchangecorrelation,
@@ -151,10 +151,10 @@ def parse_cp_xml_counter_output(data):
 
 def parse_cp_raw_output(stdout, output_xml=None, output_xml_counter=None):
 
-    parser_info = get_parser_info(parser_info_template='aiida-quantumespresso parser cp.x v{}')
+    parser_warnings = []
 
     if output_xml is None:
-        parser_info['parser_warnings'].append('Skipping the parsing of the xml file.')
+        parser_warnings.append('Skipping the parsing of the xml file.')
         xml_data = {}
     else:
         xml_data = parse_cp_xml_output(output_xml)
@@ -179,7 +179,10 @@ def parse_cp_raw_output(stdout, output_xml=None, output_xml_counter=None):
         # out_data keys take precedence and overwrite xml_data keys,
         # if the same key name is shared by both (but this should not happen!)
 
-    final_data = dict(list(xml_data.items()) + list(out_data.items()) + list(xml_counter_data.items()))
+    final_data = dict(
+        list(xml_data.items()) + list(out_data.items()) + list(xml_counter_data.items()) +
+        [('parser_warnings', parser_warnings)]
+    )
 
     # TODO: parse the trajectory and save them in a reasonable format
 
