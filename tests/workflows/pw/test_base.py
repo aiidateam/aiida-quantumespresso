@@ -72,6 +72,21 @@ def test_handle_out_of_walltime(generate_workchain_pw):
     assert result.status == 0
 
 
+def test_handle_electronic_convergence_not_reached(generate_workchain_pw):
+    """Test `PwBaseWorkChain.handle_electronic_convergence_not_achieved`."""
+    process = generate_workchain_pw(exit_code=PwCalculation.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED)
+    process.setup()
+    process.validate_parameters()
+
+    result = process.handle_electronic_convergence_not_achieved(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert result.do_break
+    assert process.ctx.restart_calc is None
+
+    result = process.inspect_process()
+    assert result.status == 0
+
+
 def test_handle_known_unrecoverable_failure(generate_workchain_pw):
     """Test `PwBaseWorkChain.handle_known_unrecoverable_failure`."""
     process = generate_workchain_pw(exit_code=PwCalculation.exit_codes.ERROR_COMPUTING_CHOLESKY)
