@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """Utilities for pseudo potentials."""
+import warnings
+from aiida.common.warnings import AiidaDeprecationWarning
 from aiida.orm.nodes.data.upf import UpfData, get_pseudos_from_structure
 
 
@@ -25,6 +27,8 @@ def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=N
     :returns: a dictionary of UpfData nodes where the key is the kind name
     """
     from aiida.orm import Str
+
+    warnings.warn('this function is deprecated and will be removed in `v4.0.0`.', AiidaDeprecationWarning)
 
     if pseudos and pseudo_family:
         raise ValueError('you cannot specify both "pseudos" and "pseudo_family"')
@@ -54,6 +58,8 @@ def get_pseudos_of_calc(calc):
     :return: a dictionary where the key is the kind name and the value is the UpfData object.
     """
     from aiida.common.links import LinkType
+
+    warnings.warn('this function is deprecated and will be removed in `v4.0.0`.', AiidaDeprecationWarning)
 
     pseudos = {}
     # I create here a dictionary that associates each kind name to a pseudo
@@ -88,6 +94,8 @@ def get_pseudos_from_dict(structure, pseudos_uuids):
     """
     from aiida.common import NotExistent
     from aiida.orm import load_node
+
+    warnings.warn('this function is deprecated and will be removed in `v4.0.0`.', AiidaDeprecationWarning)
 
     pseudo_list = {}
     for kind in structure.kinds:

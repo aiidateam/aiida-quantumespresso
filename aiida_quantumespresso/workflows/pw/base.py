@@ -15,6 +15,14 @@ from aiida_quantumespresso.utils.resources import cmdline_remove_npools, create_
 PwCalculation = CalculationFactory('quantumespresso.pw')
 
 
+def validate_pseudo_family(value, _):
+    """Validate the `pseudo_family` input."""
+    if value is not None:
+        import warnings
+        from aiida.common.warnings import AiidaDeprecationWarning
+        warnings.warn('`pseudo_family` is deprecated, use `pw.pseudos` instead.', AiidaDeprecationWarning)
+
+
 class PwBaseWorkChain(BaseRestartWorkChain):
     """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts."""
 
@@ -48,10 +56,10 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             help='Optional input when constructing the k-points based on a desired `kpoints_distance`. Setting this to '
                  '`True` will force the k-point mesh to have an even number of points along each lattice vector except '
                  'for any non-periodic directions.')
-        spec.input('pseudo_family', valid_type=orm.Str, required=False,
-            help='An alternative to specifying the pseudo potentials manually in `pseudos`: one can specify the name '
-                 'of an existing pseudo potential family and the work chain will generate the pseudos automatically '
-                 'based on the input structure.')
+        spec.input('pseudo_family', valid_type=orm.Str, required=False, validator=validate_pseudo_family,
+            help='[Deprecated: use `pw.pseudos` instead] An alternative to specifying the pseudo potentials manually in'
+                 ' `pseudos`: one can specify the name of an existing pseudo potential family and the work chain will '
+                 'generate the pseudos automatically based on the input structure.')
         spec.input('automatic_parallelization', valid_type=orm.Dict, required=False,
             help='When defined, the work chain will first launch an initialization calculation to determine the '
                  'dimensions of the problem, and based on this it will try to set optimal parallelization flags.')
