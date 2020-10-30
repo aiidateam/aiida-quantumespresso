@@ -34,9 +34,10 @@ To enable it, add the following to your shell loading script, e.g. the `.bashrc`
 The tool comes with various sub commands, for example to quickly launch some calculations and workchains
 For example, to launch a test `PwCalculation` you can run the following command:
 
-    aiida-quantumespresso calculation launch pw -X pw-v6.1 -p SSSP_v1.1_eff_PBE
+    aiida-quantumespresso calculation launch pw -X pw-v6.1 -F SSSP/1.1/PBE/efficiency
 
-Note that this requires the code `pw-v6.1` and pseudo potential family `SSSP_v1.1_eff_PBE` to be configured.
+Note that this requires the code `pw-v6.1` and pseudopotential family `SSSP/1.1/PBE/efficiency` to be configured.
+See the pseudopotentials section on how to install them easily.
 Each command has a fully documented command line interface, which can be printed to screen with the help flag:
 
     aiida-quantumespresso calculation launch ph --help
@@ -64,6 +65,18 @@ which should print something like the following:
       -d, --daemon                    Submit the process to the daemon instead of
                                       running it locally.  [default: False]
       -h, --help                      Show this message and exit.
+
+## Pseudopotentials
+Pseudopotentials are installed and managed through the [`aiida-pseudo` plugin](https://pypi.org/project/aiida-pseudo/).
+The easiest way to install pseudopotentials, is to install a version of the [SSSP](https://www.materialscloud.org/discover/sssp/table/efficiency) through the CLI of `aiida-pseudo`.
+Simply run
+
+    aiida-pseudo install sssp
+
+to install the default SSSP version.
+List the installed pseudopotential families with the command `aiida-pseudo list`.
+You can then use the name of any family in the command line using the `-F` flag.
+
 
 ## License
 The `aiida-quantumespresso` plugin package is released under the MIT license.

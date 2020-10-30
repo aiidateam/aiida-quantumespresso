@@ -2,34 +2,35 @@
 """Command line scripts to launch a `PwBaseWorkChain` for testing and demonstration purposes."""
 import click
 
-from aiida.cmdline.params import options, types
+from aiida.cmdline.params import options as options_core
+from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
 
 from ...utils import defaults
 from ...utils import launch
-from ...utils import options as options_qe
+from ...utils import options
 from ...utils import validate
 from .. import cmd_launch
 
 
 @cmd_launch.command('pw-base')
-@options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.pw'))
-@options_qe.STRUCTURE(default=defaults.get_structure)
-@options_qe.PSEUDO_FAMILY(required=True)
-@options_qe.KPOINTS_DISTANCE()
-@options_qe.ECUTWFC()
-@options_qe.ECUTRHO()
-@options_qe.HUBBARD_U()
-@options_qe.HUBBARD_V()
-@options_qe.HUBBARD_FILE()
-@options_qe.STARTING_MAGNETIZATION()
-@options_qe.SMEARING()
-@options_qe.AUTOMATIC_PARALLELIZATION()
-@options_qe.CLEAN_WORKDIR()
-@options_qe.MAX_NUM_MACHINES()
-@options_qe.MAX_WALLCLOCK_SECONDS()
-@options_qe.WITH_MPI()
-@options_qe.DAEMON()
+@options_core.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.pw'))
+@options.STRUCTURE(default=defaults.get_structure)
+@options.PSEUDO_FAMILY()
+@options.KPOINTS_DISTANCE()
+@options.ECUTWFC()
+@options.ECUTRHO()
+@options.HUBBARD_U()
+@options.HUBBARD_V()
+@options.HUBBARD_FILE()
+@options.STARTING_MAGNETIZATION()
+@options.SMEARING()
+@options.AUTOMATIC_PARALLELIZATION()
+@options.CLEAN_WORKDIR()
+@options.MAX_NUM_MACHINES()
+@options.MAX_WALLCLOCK_SECONDS()
+@options.WITH_MPI()
+@options.DAEMON()
 @decorators.with_dbenv()
 def launch_workflow(
     code, structure, pseudo_family, kpoints_distance, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file_pk,
@@ -37,16 +38,18 @@ def launch_workflow(
     with_mpi, daemon
 ):
     """Run a `PwBaseWorkChain`."""
-    from aiida.orm import Bool, Float, Str, Dict
+    from aiida.orm import Bool, Float, Dict
     from aiida.plugins import WorkflowFactory
     from aiida_quantumespresso.utils.resources import get_default_options, get_automatic_parallelization_options
 
     builder = WorkflowFactory('quantumespresso.pw.base').get_builder()
 
+    cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure)
+
     parameters = {
         'SYSTEM': {
-            'ecutwfc': ecutwfc,
-            'ecutrho': ecutrho,
+            'ecutwfc': ecutwfc or cutoff_wfc,
+            'ecutrho': ecutrho or cutoff_rho,
         },
     }
 
@@ -70,7 +73,7 @@ def launch_workflow(
     builder.pw.code = code
     builder.pw.structure = structure
     builder.pw.parameters = Dict(dict=parameters)
-    builder.pseudo_family = Str(pseudo_family)
+    builder.pw.pseudos = pseudo_family.get_pseudos(structure=structure)
     builder.kpoints_distance = Float(kpoints_distance)
 
     if hubbard_file:

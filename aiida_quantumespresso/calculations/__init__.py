@@ -6,12 +6,16 @@ import os
 from aiida import orm
 from aiida.common import datastructures, exceptions
 from aiida.common.lang import classproperty
+from aiida.plugins import DataFactory
 from qe_tools.converters import get_parameters_from_cell
 
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
 from .base import CalcJob
 from .helpers import QEInputValidationError
+
+LegacyUpfData = DataFactory('upf')
+UpfData = DataFactory('pseudo.upf')
 
 
 class BasePwCpInputGenerator(CalcJob):
@@ -82,7 +86,7 @@ class BasePwCpInputGenerator(CalcJob):
             help='An optional working directory of a previously completed calculation to restart from.')
         spec.input('vdw_table', valid_type=orm.SinglefileData, required=False,
             help='Optional van der Waals table contained in a `SinglefileData`.')
-        spec.input_namespace('pseudos', valid_type=orm.UpfData, dynamic=True,
+        spec.input_namespace('pseudos', valid_type=(LegacyUpfData, UpfData), dynamic=True,
             help='A mapping of `UpfData` nodes onto the kind name to which they should apply.')
 
     def prepare_for_submission(self, folder):
