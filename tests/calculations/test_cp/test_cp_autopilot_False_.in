@@ -1,0 +1,29 @@
+&CONTROL
+  calculation = 'cp'
+  ndr = 50
+  ndw = 51
+  outdir = './out/'
+  prefix = 'aiida'
+  pseudo_dir = './pseudo/'
+  verbosity = 'low'
+/
+&SYSTEM
+  ecutrho =   2.4000000000d+02
+  ecutwfc =   3.0000000000d+01
+  ibrav = 0
+  nat = 2
+  ntyp = 1
+/
+&ELECTRONS
+/
+&IONS
+/
+ATOMIC_SPECIES
+Si     28.0855 Si.upf
+ATOMIC_POSITIONS angstrom
+Si           0.0000000000       0.0000000000       0.0000000000 
+Si           1.3575000000       1.3575000000       1.3575000000 
+CELL_PARAMETERS angstrom
+      2.7150000000       2.7150000000       0.0000000000
+      2.7150000000       0.0000000000       2.7150000000
+      0.0000000000       2.7150000000       2.7150000000

@@ -10,7 +10,6 @@ from aiida.plugins import DataFactory
 from qe_tools.converters import get_parameters_from_cell
 
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
-
 from .base import CalcJob
 from .helpers import QEInputValidationError
 
@@ -244,6 +243,16 @@ class BasePwCpInputGenerator(CalcJob):
             raise exceptions.InputValidationError(f'`settings` contained unexpected keys: {unknown_keys}')
 
         return calcinfo
+
+    @staticmethod
+    def _generate_PWCP_input_tail(*args, **kwargs):
+        """Generate tail of input file.
+
+        By default, nothing specific is generated.
+        This method can be implemented again in derived classes, and it will be called by _generate_PWCPinputdata
+        """
+        # pylint: disable=unused-argument,invalid-name
+        return ''
 
     @classmethod
     def _generate_PWCPinputdata(cls, parameters, settings, pseudos, structure, kpoints=None, use_fractional=False):  # pylint: disable=invalid-name
@@ -588,6 +597,11 @@ class BasePwCpInputGenerator(CalcJob):
         if cls._use_kpoints:
             inputfile += kpoints_card
         inputfile += cell_parameters_card
+
+        # Generate additional cards bases on input parameters and settings that are subclass specific
+        tail = cls._generate_PWCP_input_tail(input_params=input_params, settings=settings)
+        if tail:
+            inputfile += f'\n{tail}'
 
         if input_params:
             raise exceptions.InputValidationError(

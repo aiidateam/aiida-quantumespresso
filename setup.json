@@ -93,7 +93,7 @@
         "aiida-pseudo~=0.1",
         "packaging",
         "qe-tools~=2.0rc1",
-        "xmlschema~=1.2",
+        "xmlschema~=1.2,>=1.2.5",
         "numpy"
     ],
     "license": "MIT License",
