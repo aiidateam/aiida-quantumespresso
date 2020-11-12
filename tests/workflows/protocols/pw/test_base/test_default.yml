@@ -1,0 +1,26 @@
+clean_workdir: true
+kpoints_distance: 0.15
+kpoints_force_parity: false
+pw:
+  code: test.quantumespresso.pw@localhost-test
+  parameters:
+    CONTROL:
+      calculation: scf
+      etot_conv_thr: 2.0e-05
+      forc_conv_thr: 0.0001
+      tprnfor: true
+      tstress: true
+    ELECTRONS:
+      conv_thr: 4.0e-10
+      electron_maxstep: 80
+      mixing_beta: 0.4
+    SYSTEM:
+      degauss: 0.01
+      ecutrho: 240.0
+      ecutwfc: 30.0
+      nosym: false
+      occupations: smearing
+      smearing: cold
+  pseudos:
+    Si: Si<md5=b8624bea1910ebe720dc5977d5a73a7d>
+  structure: Si2

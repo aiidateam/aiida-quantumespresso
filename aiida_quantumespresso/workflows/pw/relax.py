@@ -96,6 +96,45 @@ class PwRelaxWorkChain(WorkChain):
             help='The successfully relaxed structure, unless `relax_type is RelaxType.NONE`.')
         # yapf: enable
 
+    @classmethod
+    def get_builder_from_protocol(cls, code, structure, protocol=None, overrides=None, **kwargs):
+        """Return a builder prepopulated with inputs selected according to the chosen protocol.
+
+        :param code: the ``Code`` instance configured for the ``quantumespresso.pw`` plugin.
+        :param structure: the ``StructureData`` instance to use.
+        :param protocol: protocol to use, if not specified, the default will be used.
+        :param overrides: optional dictionary of inputs to override the defaults of the protocol.
+        :param kwargs: additional keyword arguments that will be passed to the ``get_builder_from_protocol`` of all the
+            sub processes that are called by this workchain.
+        :return: a process builder instance with all inputs defined ready for launch.
+        """
+        from aiida_quantumespresso.workflows.protocols.utils import get_protocol_inputs
+
+        args = (code, structure, protocol)
+        inputs = get_protocol_inputs(cls, protocol, overrides)
+        builder = cls.get_builder()
+
+        base = PwBaseWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('base', None), **kwargs)
+        base_final_scf = PwBaseWorkChain.get_builder_from_protocol(
+            *args, overrides=inputs.get('base_final_scf', None), **kwargs
+        )
+
+        base['pw'].pop('structure', None)
+        base.pop('clean_workdir', None)
+        base_final_scf['pw'].pop('structure', None)
+        base_final_scf.pop('clean_workdir', None)
+
+        builder.base = base
+        builder.base_final_scf = base_final_scf
+        builder.structure = structure
+        builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
+        builder.max_meta_convergence_iterations = orm.Int(inputs['max_meta_convergence_iterations'])
+        builder.meta_convergence = orm.Bool(inputs['meta_convergence'])
+        builder.relaxation_scheme = orm.Str(inputs['relaxation_scheme'])
+        builder.volume_convergence = orm.Float(inputs['volume_convergence'])
+
+        return builder
+
     def setup(self):
         """Input validation and context setup."""
         self.ctx.current_number_of_bands = None

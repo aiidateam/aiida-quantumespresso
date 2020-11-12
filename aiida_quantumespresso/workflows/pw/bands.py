@@ -110,6 +110,48 @@ class PwBandsWorkChain(WorkChain):
             help='The computed band structure.')
         # yapf: enable
 
+    @classmethod
+    def get_builder_from_protocol(cls, code, structure, protocol=None, overrides=None, **kwargs):
+        """Return a builder prepopulated with inputs selected according to the chosen protocol.
+
+        :param code: the ``Code`` instance configured for the ``quantumespresso.pw`` plugin.
+        :param structure: the ``StructureData`` instance to use.
+        :param protocol: protocol to use, if not specified, the default will be used.
+        :param overrides: optional dictionary of inputs to override the defaults of the protocol.
+        :param kwargs: additional keyword arguments that will be passed to the ``get_builder_from_protocol`` of all the
+            sub processes that are called by this workchain.
+        :return: a process builder instance with all inputs defined ready for launch.
+        """
+        from aiida_quantumespresso.workflows.protocols.utils import get_protocol_inputs
+
+        args = (code, structure, protocol)
+        inputs = get_protocol_inputs(cls, protocol, overrides)
+        builder = cls.get_builder()
+
+        relax = PwRelaxWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('relax', None), **kwargs)
+        scf = PwBaseWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('scf', None), **kwargs)
+        bands = PwBaseWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('bands', None), **kwargs)
+
+        relax.pop('structure', None)
+        relax.pop('clean_workdir', None)
+        relax.pop('base_final_scf', None)
+        scf['pw'].pop('structure', None)
+        scf.pop('clean_workdir', None)
+        bands['pw'].pop('structure', None)
+        bands.pop('clean_workdir', None)
+        bands.pop('kpoints_distance', None)
+        bands.pop('kpoints_force_parity', None)
+
+        builder.structure = structure
+        builder.relax = relax
+        builder.scf = scf
+        builder.bands = bands
+        builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
+        builder.nbands_factor = orm.Float(inputs['nbands_factor'])
+        builder.bands_kpoints_distance = orm.Float(inputs['bands_kpoints_distance'])
+
+        return builder
+
     def setup(self):
         """Define the current structure in the context to be the input structure."""
         self.ctx.current_structure = self.inputs.structure
