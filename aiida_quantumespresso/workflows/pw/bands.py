@@ -8,6 +8,8 @@ from aiida.engine import WorkChain, ToContext, if_
 from aiida_quantumespresso.calculations.functions.seekpath_structure_analysis import seekpath_structure_analysis
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 
+from ..protocols.utils import ProtocolMixin
+
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
 
@@ -24,7 +26,7 @@ def validate_inputs(inputs, ctx=None):  # pylint: disable=unused-argument
         return PwBandsWorkChain.exit_codes.ERROR_INVALID_INPUT_KPOINTS.message
 
 
-class PwBandsWorkChain(WorkChain):
+class PwBandsWorkChain(ProtocolMixin, WorkChain):
     """Workchain to compute a band structure for a given structure using Quantum ESPRESSO pw.x.
 
     The logic for the computation of various parameters for the BANDS step is as follows:
@@ -122,10 +124,8 @@ class PwBandsWorkChain(WorkChain):
             sub processes that are called by this workchain.
         :return: a process builder instance with all inputs defined ready for launch.
         """
-        from aiida_quantumespresso.workflows.protocols.utils import get_protocol_inputs
-
         args = (code, structure, protocol)
-        inputs = get_protocol_inputs(cls, protocol, overrides)
+        inputs = cls.get_protocol_inputs(protocol, overrides)
         builder = cls.get_builder()
 
         relax = PwRelaxWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('relax', None), **kwargs)

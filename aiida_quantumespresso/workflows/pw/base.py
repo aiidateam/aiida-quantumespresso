@@ -12,6 +12,8 @@ from aiida_quantumespresso.utils.pseudopotential import validate_and_prepare_pse
 from aiida_quantumespresso.utils.resources import get_default_options, get_pw_parallelization_parameters
 from aiida_quantumespresso.utils.resources import cmdline_remove_npools, create_scheduler_resources
 
+from ..protocols.utils import ProtocolMixin
+
 PwCalculation = CalculationFactory('quantumespresso.pw')
 UpfFamily = GroupFactory('pseudo.family.upf')
 SsspFamily = GroupFactory('pseudo.family.sssp')
@@ -25,7 +27,7 @@ def validate_pseudo_family(value, _):
         warnings.warn('`pseudo_family` is deprecated, use `pw.pseudos` instead.', AiidaDeprecationWarning)
 
 
-class PwBaseWorkChain(BaseRestartWorkChain):
+class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts."""
 
     # pylint: disable=too-many-public-methods
@@ -121,10 +123,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         :param overrides: optional dictionary of inputs to override the defaults of the protocol.
         :return: a process builder instance with all inputs defined ready for launch.
         """
-        from aiida_quantumespresso.workflows.protocols.utils import get_protocol_inputs
-
         builder = cls.get_builder()
-        inputs = get_protocol_inputs(cls, protocol, overrides)
+        inputs = cls.get_protocol_inputs(protocol, overrides)
 
         meta_parameters = inputs.pop('meta_parameters')
         pseudo_family = inputs.pop('pseudo_family')
