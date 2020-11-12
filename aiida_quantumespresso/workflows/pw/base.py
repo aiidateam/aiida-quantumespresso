@@ -3,7 +3,7 @@
 from aiida import orm
 from aiida.common import AttributeDict, exceptions
 from aiida.engine import ToContext, if_, while_, BaseRestartWorkChain, process_handler, ProcessHandlerReport, ExitCode
-from aiida.plugins import CalculationFactory
+from aiida.plugins import CalculationFactory, GroupFactory
 
 from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import create_kpoints_from_distance
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
@@ -13,11 +13,13 @@ from aiida_quantumespresso.utils.resources import get_default_options, get_pw_pa
 from aiida_quantumespresso.utils.resources import cmdline_remove_npools, create_scheduler_resources
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
+UpfFamily = GroupFactory('pseudo.family.upf')
+SsspFamily = GroupFactory('pseudo.family.sssp')
 
 
 def validate_pseudo_family(value, _):
     """Validate the `pseudo_family` input."""
-    if value is not None:
+    if value:
         import warnings
         from aiida.common.warnings import AiidaDeprecationWarning
         warnings.warn('`pseudo_family` is deprecated, use `pw.pseudos` instead.', AiidaDeprecationWarning)
@@ -108,6 +110,50 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         spec.exit_code(501, 'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
             message='Then ionic minimization cycle converged but the thresholds are exceeded in the final SCF.')
         # yapf: enable
+
+    @classmethod
+    def get_builder_from_protocol(cls, code, structure, protocol=None, overrides=None, **_):
+        """Return a builder prepopulated with inputs selected according to the chosen protocol.
+
+        :param code: the ``Code`` instance configured for the ``quantumespresso.pw`` plugin.
+        :param structure: the ``StructureData`` instance to use.
+        :param protocol: protocol to use, if not specified, the default will be used.
+        :param overrides: optional dictionary of inputs to override the defaults of the protocol.
+        :return: a process builder instance with all inputs defined ready for launch.
+        """
+        from aiida_quantumespresso.workflows.protocols.utils import get_protocol_inputs
+
+        builder = cls.get_builder()
+        inputs = get_protocol_inputs(cls, protocol, overrides)
+
+        meta_parameters = inputs.pop('meta_parameters')
+        pseudo_family = inputs.pop('pseudo_family')
+
+        natoms = len(structure.sites)
+
+        try:
+            types = (UpfFamily, SsspFamily)
+            pseudo_family = orm.QueryBuilder().append(types, filters={'label': pseudo_family}).one()[0]
+        except exceptions.NotExistent as exception:
+            raise ValueError(f'required pseudo family `{pseudo_family}` is not installed') from exception
+
+        cutoffs = pseudo_family.get_recommended_cutoffs(structure=structure)
+
+        parameters = inputs['pw']['parameters']
+        parameters['CONTROL']['etot_conv_thr'] = natoms * meta_parameters['etot_conv_thr_per_atom']
+        parameters['ELECTRONS']['conv_thr'] = natoms * meta_parameters['conv_thr_per_atom']
+        parameters['SYSTEM']['ecutwfc'] = cutoffs[0]
+        parameters['SYSTEM']['ecutrho'] = cutoffs[1]
+
+        builder.pw['code'] = code  # pylint: disable=no-member
+        builder.pw['pseudos'] = pseudo_family.get_pseudos(structure=structure)  # pylint: disable=no-member
+        builder.pw['structure'] = structure  # pylint: disable=no-member
+        builder.pw['parameters'] = orm.Dict(dict=parameters)  # pylint: disable=no-member
+        builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
+        builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
+        builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
+
+        return builder
 
     def setup(self):
         """Call the `setup` of the `BaseRestartWorkChain` and then create the inputs dictionary in `self.ctx.inputs`.
