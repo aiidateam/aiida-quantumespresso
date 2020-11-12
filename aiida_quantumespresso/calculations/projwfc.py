@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """`CalcJob` implementation for the projwfc.x code of Quantum ESPRESSO."""
+import os
 from aiida.orm import RemoteData, FolderData, Dict, XyData
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 
@@ -25,7 +26,14 @@ class ProjwfcCalculation(NamelistsCalculation):
         ('PROJWFC', 'plotboxes', False),
     ]
     _default_parser = 'quantumespresso.projwfc'
-    _internal_retrieve_list = [NamelistsCalculation._PREFIX + '.pdos*']
+    # yapf: disable
+    _internal_retrieve_list = [
+        NamelistsCalculation._PREFIX + '.pdos*',
+        os.path.join(
+            NamelistsCalculation._OUTPUT_SUBFOLDER,
+            f'{NamelistsCalculation._PREFIX}.save',
+            'atomic_proj.xml')
+    ]
 
     @classmethod
     def define(cls, spec):
