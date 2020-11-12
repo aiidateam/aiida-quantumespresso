@@ -8,6 +8,8 @@ from aiida.plugins import CalculationFactory, WorkflowFactory
 from aiida_quantumespresso.common.types import RelaxType
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 
+from ..protocols.utils import ProtocolMixin
+
 PwCalculation = CalculationFactory('quantumespresso.pw')
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 
@@ -44,7 +46,7 @@ def validate_relax_type(value, _):
             return f'`{value.value}` is not a valid value of `RelaxType`.'
 
 
-class PwRelaxWorkChain(WorkChain):
+class PwRelaxWorkChain(ProtocolMixin, WorkChain):
     """Workchain to relax a structure using Quantum ESPRESSO pw.x."""
 
     @classmethod
@@ -108,10 +110,8 @@ class PwRelaxWorkChain(WorkChain):
             sub processes that are called by this workchain.
         :return: a process builder instance with all inputs defined ready for launch.
         """
-        from aiida_quantumespresso.workflows.protocols.utils import get_protocol_inputs
-
         args = (code, structure, protocol)
-        inputs = get_protocol_inputs(cls, protocol, overrides)
+        inputs = cls.get_protocol_inputs(protocol, overrides)
         builder = cls.get_builder()
 
         base = PwBaseWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('base', None), **kwargs)
