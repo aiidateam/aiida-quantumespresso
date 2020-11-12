@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 """Tests for the ``PwRelaxWorkChain.get_builder_from_protocol`` method."""
+import pytest
+
 from aiida.engine import ProcessBuilder
+
+from aiida_quantumespresso.common.types import ElectronicType
 from aiida_quantumespresso.workflows.pw.relax import PwRelaxWorkChain
 
 
@@ -24,3 +28,21 @@ def test_default(fixture_code, generate_structure, data_regression, serialize_bu
 
     assert isinstance(builder, ProcessBuilder)
     data_regression.check(serialize_builder(builder))
+
+
+def test_electronic_type(fixture_code, generate_structure):
+    """Test ``PwRelaxWorkChain.get_builder_from_protocol`` with ``electronic_type`` keyword."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure()
+
+    with pytest.raises(NotImplementedError):
+        for electronic_type in [ElectronicType.AUTOMATIC]:
+            PwRelaxWorkChain.get_builder_from_protocol(code, structure, electronic_type=electronic_type)
+
+    builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, electronic_type=ElectronicType.INSULATOR)
+
+    for namespace in [builder.base, builder.base_final_scf]:
+        parameters = namespace['pw']['parameters'].get_dict()
+        assert parameters['SYSTEM']['occupations'] == 'fixed'
+        assert 'degauss' not in parameters['SYSTEM']
+        assert 'smearing' not in parameters['SYSTEM']
