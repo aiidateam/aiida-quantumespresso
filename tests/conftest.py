@@ -4,6 +4,7 @@
 import collections
 import os
 import shutil
+import tempfile
 
 import pytest
 
@@ -48,10 +49,55 @@ def fixture_code(fixture_localhost):
     """Return a `Code` instance configured to run calculations of given entry point on localhost `Computer`."""
 
     def _fixture_code(entry_point_name):
+        from aiida.common import exceptions
         from aiida.orm import Code
-        return Code(input_plugin_name=entry_point_name, remote_computer_exec=[fixture_localhost, '/bin/true'])
+
+        label = f'test.{entry_point_name}'
+
+        try:
+            return Code.objects.get(label=label)  # pylint: disable=no-member
+        except exceptions.NotExistent:
+            return Code(
+                label=label,
+                input_plugin_name=entry_point_name,
+                remote_computer_exec=[fixture_localhost, '/bin/true'],
+            )
 
     return _fixture_code
+
+
+@pytest.fixture(scope='session', autouse=True)
+def sssp(aiida_profile, generate_upf_data):
+    """Create an SSSP pseudo potential family from scratch."""
+    from aiida.common.constants import elements
+    from aiida.plugins import GroupFactory
+
+    aiida_profile.reset_db()
+
+    SsspFamily = GroupFactory('pseudo.family.sssp')
+
+    cutoffs = {'standard': {}}
+
+    with tempfile.TemporaryDirectory() as dirpath:
+        for values in elements.values():
+
+            element = values['symbol']
+            upf = generate_upf_data(element)
+            filename = os.path.join(dirpath, f'{element}.upf')
+
+            with open(filename, 'w+b') as handle:
+                with upf.open(mode='rb') as source:
+                    handle.write(source.read())
+                    handle.flush()
+
+            cutoffs['standard'][element] = {'cutoff_wfc': 30., 'cutoff_rho': 240.}
+
+        label = 'SSSP/1.1/PBE/efficiency'
+        family = SsspFamily.create_from_folder(dirpath, label)
+
+    family.set_cutoffs(cutoffs)
+
+    return family
 
 
 @pytest.fixture
@@ -197,7 +243,8 @@ def generate_upf_data(tmp_path_factory):
         from aiida_pseudo.data.pseudo import UpfData
 
         with open(tmp_path_factory.mktemp('pseudos') / f'{element}.upf', 'w+b') as handle:
-            handle.write(f'<UPF version="2.0.1"><PP_HEADER element="{element}"/></UPF>\n'.encode('utf-8'))
+            content = f'<UPF version="2.0.1"><PP_HEADER\nelement="{element}"\nz_valence="1.0"\n/></UPF>\n'
+            handle.write(content.encode('utf-8'))
             handle.flush()
             return UpfData(file=handle)
 
@@ -226,7 +273,7 @@ def generate_upf_family(tmp_path, generate_upf_data):
             cutoffs[element] = {'cutoff_wfc': 1.0, 'cutoff_rho': 2.0}
 
         family = UpfFamily.create_from_folder(str(tmp_path), label)
-        family.set_cutoffs(cutoffs)
+        family.set_cutoffs({'standard': cutoffs})
 
         return family
 

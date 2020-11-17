@@ -2,13 +2,11 @@
 """Tests for the ``calculation launch pw2wannier90`` command."""
 import io
 
-import pytest
 from aiida.orm import SinglefileData
 
 from aiida_quantumespresso.cli.calculations.pw2wannier90 import launch_calculation
 
 
-@pytest.mark.usefixtures('clear_database_before_test')
 def test_command_base(run_cli_process_launch_command, fixture_code, generate_calc_job_node):
     """Test invoking the calculation launch command with only required inputs."""
     code = fixture_code('quantumespresso.pw2wannier90').store()
