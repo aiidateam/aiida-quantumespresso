@@ -5,6 +5,7 @@ from aiida.common import AttributeDict, exceptions
 from aiida.engine import WorkChain, ToContext, if_, while_, append_
 from aiida.plugins import CalculationFactory, WorkflowFactory
 
+from aiida_quantumespresso.common.types import RelaxType
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
@@ -20,6 +21,27 @@ def validate_final_scf(value, _):
             'this input is deprecated and will be removed. If you want to run a final scf, specify the inputs that '
             'should be used in the `base_final_scf` namespace.', AiidaDeprecationWarning
         )
+
+
+def validate_relaxation_scheme(value, _):
+    """Validate the relaxation scheme input."""
+    if value:
+        import warnings
+        from aiida.common.warnings import AiidaDeprecationWarning
+        warnings.warn(
+            'the `relaxation_scheme` input is deprecated and will be removed. Use the ``relax_type`` input instead. '
+            'Accepted values are values of the ``aiida_quantumespresso.common.types.RelaxType`` enum',
+            AiidaDeprecationWarning
+        )
+
+
+def validate_relax_type(value, _):
+    """Validate the relax type input."""
+    if value:
+        try:
+            RelaxType(value.value)
+        except ValueError:
+            return f'`{value.value}` is not a valid value of `RelaxType`.'
 
 
 class PwRelaxWorkChain(WorkChain):
@@ -40,8 +62,11 @@ class PwRelaxWorkChain(WorkChain):
         spec.input('structure', valid_type=orm.StructureData, help='The inputs structure.')
         spec.input('final_scf', valid_type=orm.Bool, default=lambda: orm.Bool(False), validator=validate_final_scf,
             help='If `True`, a final SCF calculation will be performed on the successfully relaxed structure.')
-        spec.input('relaxation_scheme', valid_type=orm.Str, default=lambda: orm.Str('vc-relax'),
+        spec.input('relaxation_scheme', valid_type=orm.Str, required=False, validator=validate_relaxation_scheme,
             help='The relaxation scheme to use: choose either `relax` or `vc-relax` for variable cell relax.')
+        spec.input('relax_type', valid_type=orm.Str, default=lambda: orm.Str(RelaxType.ATOMS_CELL.value),
+            validator=validate_relax_type,
+            help='The relax type to use: should be a value of the enum ``common.types.RelaxType``.')
         spec.input('meta_convergence', valid_type=orm.Bool, default=lambda: orm.Bool(True),
             help='If `True` the workchain will perform a meta-convergence on the cell volume.')
         spec.input('max_meta_convergence_iterations', valid_type=orm.Int, default=lambda: orm.Int(5),
@@ -109,9 +134,37 @@ class PwRelaxWorkChain(WorkChain):
         inputs.pw.structure = self.ctx.current_structure
         inputs.pw.parameters = inputs.pw.parameters.get_dict()
 
+        inputs.pw.parameters.setdefault('CELL', {})
         inputs.pw.parameters.setdefault('CONTROL', {})
-        inputs.pw.parameters['CONTROL']['calculation'] = self.inputs.relaxation_scheme.value
         inputs.pw.parameters['CONTROL']['restart_mode'] = 'from_scratch'
+
+        if 'relaxation_scheme' in self.inputs:
+            if self.inputs.relaxation_scheme.value == 'relax':
+                relax_type = RelaxType.ATOMS
+            elif self.inputs.relaxation_scheme.value == 'vc-relax':
+                relax_type = RelaxType.ATOMS_CELL
+            else:
+                raise ValueError('unsupported value for the `relaxation_scheme` input.')
+        else:
+            relax_type = RelaxType(self.inputs.relax_type)
+
+        if relax_type in [RelaxType.NONE, RelaxType.VOLUME, RelaxType.SHAPE, RelaxType.CELL]:
+            inputs.pw.settings = self._fix_atomic_positions(inputs.pw.structure, inputs.pw.get('settings', None))
+
+        if relax_type in [RelaxType.NONE, RelaxType.ATOMS]:
+            inputs.pw.parameters['CONTROL']['calculation'] = 'relax'
+            inputs.pw.parameters.pop('CELL', None)
+        else:
+            inputs.pw.parameters['CONTROL']['calculation'] = 'vc-relax'
+
+        if relax_type in [RelaxType.VOLUME, RelaxType.ATOMS_VOLUME]:
+            inputs.pw.parameters['CELL']['cell_dofree'] = 'volume'
+
+        if relax_type in [RelaxType.SHAPE, RelaxType.ATOMS_SHAPE]:
+            inputs.pw.parameters['CELL']['cell_dofree'] = 'shape'
+
+        if relax_type in [RelaxType.CELL, RelaxType.ATOMS_CELL]:
+            inputs.pw.parameters['CELL']['cell_dofree'] = 'all'
 
         # If one of the nested `PwBaseWorkChains` changed the number of bands, apply it here
         if self.ctx.current_number_of_bands is not None:
@@ -254,3 +307,15 @@ class PwRelaxWorkChain(WorkChain):
 
         if cleaned_calcs:
             self.report(f"cleaned remote folders of calculations: {' '.join(map(str, cleaned_calcs))}")
+
+    @staticmethod
+    def _fix_atomic_positions(structure, settings):
+        """Fix the atomic positions, by setting the `FIXED_COORDS` key in the `settings` input node."""
+        if settings is not None:
+            settings = settings.get_dict()
+        else:
+            settings = {}
+
+        settings['FIXED_COORDS'] = [[True, True, True]] * len(structure.sites)
+
+        return settings
