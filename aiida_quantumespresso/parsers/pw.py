@@ -228,6 +228,14 @@ class PwParser(Parser):
         threshold_stress = parameters.get('CELL', {}).get('press_conv_thr', pw.press_conv_thr)
         external_pressure = parameters.get('CELL', {}).get('press', 0)
 
+        # Through the `cell_dofree` the degrees of freedom of the cell can be constrained, which makes the threshold on
+        # the stress hard to interpret. Therefore, unless the `cell_dofree` is set to the default `all` where the cell
+        # is fully unconstrained, the stress is ignored even if an explicit `press_conv_thr` is specified in the inputs.
+        constrained_cell = parameters.get('CELL', {}).get('cell_dofree', 'all') != 'all'
+
+        if constrained_cell:
+            threshold_stress = None
+
         if relax_type == 'relax':
             return verify_convergence_trajectory(trajectory, -1, *[threshold_forces, None])
 
@@ -235,6 +243,7 @@ class PwParser(Parser):
             values = [threshold_forces, threshold_stress, external_pressure]
             converged_relax = verify_convergence_trajectory(trajectory, -2, *values)
             converged_final = verify_convergence_trajectory(trajectory, -1, *values)
+
             return converged_relax and (converged_final or except_final_scf)
 
         raise RuntimeError(f'unknown relax_type: {relax_type}')
