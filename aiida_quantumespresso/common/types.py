@@ -22,3 +22,12 @@ class RelaxType(enum.Enum):
     ATOMS_VOLUME = 'atoms_volume'  # Same as `VOLUME` but atomic positions are relaxed as well
     ATOMS_SHAPE = 'atoms_shape'  # Same as `SHAPE`  but atomic positions are relaxed as well
     ATOMS_CELL = 'atoms_cell'  # Same as `CELL`  but atomic positions are relaxed as well
+
+
+class SpinType(enum.Enum):
+    """Enumeration to indicate the spin polarization type of a system."""
+
+    NONE = 'none'
+    COLLINEAR = 'collinear'
+    NON_COLLINEAR = 'non_collinear'
+    SPIN_ORBIT = 'spin_orbit'

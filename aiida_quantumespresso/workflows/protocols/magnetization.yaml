@@ -1,0 +1,183 @@
+default_magnetization: 0.1
+Ac:
+  magmom: 5
+Ag:
+  magmom: 0
+Al:
+  magmom: 0
+Ar:
+  magmom: 0
+As:
+  magmom: 0
+Au:
+  magmom: 0
+B:
+  magmom: 0
+Ba:
+  magmom: 0
+Be:
+  magmom: 0
+Bi:
+  magmom: 0
+Br:
+  magmom: 0
+C:
+  magmom: 0
+Ca:
+  magmom: 0
+Cd:
+  magmom: 0
+Ce:
+  magmom: 5
+Cl:
+  magmom: 0
+Co:
+  magmom: 5
+Cr:
+  magmom: 5
+Cs:
+  magmom: 0
+Cu:
+  magmom: 0
+Dy:
+  magmom: 7
+Er:
+  magmom: 7
+Eu:
+  magmom: 7
+F:
+  magmom: 0
+Fe:
+  magmom: 5
+Ga:
+  magmom: 0
+Gd:
+  magmom: 5
+Ge:
+  magmom: 0
+H:
+  magmom: 0
+He:
+  magmom: 0
+Hf:
+  magmom: 5
+Hg:
+  magmom: 0
+Ho:
+  magmom: 7
+I:
+  magmom: 0
+In:
+  magmom: 0
+Ir:
+  magmom: 5
+K:
+  magmom: 0
+Kr:
+  magmom: 0
+La:
+  magmom: 5
+Li:
+  magmom: 0
+Lu:
+  magmom: 5
+Mg:
+  magmom: 0
+Mn:
+  magmom: 5
+Mo:
+  magmom: 5
+N:
+  magmom: 0
+Na:
+  magmom: 0
+Nb:
+  magmom: 5
+Nd:
+  magmom: 7
+Ne:
+  magmom: 0
+Ni:
+  magmom: 5
+Np:
+  magmom: 5
+O:
+  magmom: 0
+Os:
+  magmom: 5
+P:
+  magmom: 0
+Pa:
+  magmom: 5
+Pb:
+  magmom: 0
+Pd:
+  magmom: 0
+Pm:
+  magmom: 7
+Po:
+  magmom: 0
+Pr:
+  magmom: 7
+Pt:
+  magmom: 5
+Pu:
+  magmom: 7
+Rb:
+  magmom: 0
+Re:
+  magmom: 5
+Rh:
+  magmom: 5
+Rn:
+  magmom: 0
+Ru:
+  magmom: 5
+S:
+  magmom: 0
+Sb:
+  magmom: 0
+Sc:
+  magmom: 5
+Se:
+  magmom: 0
+Si:
+  magmom: 0
+Sm:
+  magmom: 7
+Sn:
+  magmom: 0
+Sr:
+  magmom: 0
+Ta:
+  magmom: 5
+Tb:
+  magmom: 7
+Tc:
+  magmom: 5
+Te:
+  magmom: 0
+Th:
+  magmom: 5
+Ti:
+  magmom: 5
+Tl:
+  magmom: 0
+Tm:
+  magmom: 7
+U:
+  magmom: 5
+V:
+  magmom: 5
+W:
+  magmom: 5
+Xe:
+  magmom: 0
+Y:
+  magmom: 5
+Yb:
+  magmom: 0
+Zn:
+  magmom: 0
+Zr:
+  magmom: 5

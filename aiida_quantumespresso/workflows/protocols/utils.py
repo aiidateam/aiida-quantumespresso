@@ -98,3 +98,36 @@ def load_protocol_file(cls):
 
     with (pathlib.Path(__file__).resolve().parent / basepath / filename).open() as handle:
         return yaml.safe_load(handle)
+
+
+def get_magnetization_parameters() -> dict:
+    """Return the mapping of suggested initial magnetic moments for each element.
+
+    :returns: the magnetization parameters.
+    """
+    with (pathlib.Path(__file__).resolve().parent / 'magnetization.yaml').open() as handle:
+        return yaml.safe_load(handle)
+
+
+def get_starting_magnetization(structure, pseudo_family):
+    """Return the dictionary with starting magnetization for each kind in the structure.
+
+    :param structure: the structure.
+    :param pseudo_family: pseudopotential family.
+    :returns: dictionary of starting magnetizations.
+    """
+    magnetic_parameters = get_magnetization_parameters()
+    starting_magnetization = {}
+
+    for kind in structure.kinds:
+        magnetic_moment = magnetic_parameters[kind.symbol]['magmom']
+
+        if magnetic_moment == 0:
+            magnetization = magnetic_parameters['default_magnetization']
+        else:
+            z_valence = pseudo_family.get_pseudo(element=kind.symbol).z_valence
+            magnetization = magnetic_moment / float(z_valence)
+
+        starting_magnetization[kind.name] = magnetization
+
+    return starting_magnetization
