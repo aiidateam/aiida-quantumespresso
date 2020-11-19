@@ -92,8 +92,8 @@ class PwRelaxWorkChain(WorkChain):
         spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_FINAL_SCF',
             message='the final scf PwBaseWorkChain sub process failed')
         spec.expose_outputs(PwBaseWorkChain, exclude=('output_structure',))
-        spec.output('output_structure', valid_type=orm.StructureData, required=True,
-            help='The successfully relaxed structure.')
+        spec.output('output_structure', valid_type=orm.StructureData, required=False,
+            help='The successfully relaxed structure, unless `relax_type is RelaxType.NONE`.')
 
     def setup(self):
         """Input validation and context setup."""
@@ -285,7 +285,9 @@ class PwRelaxWorkChain(WorkChain):
             structure = workchain.outputs.output_structure
 
         self.out_many(self.exposed_outputs(workchain, PwBaseWorkChain))
-        self.out('output_structure', structure)
+
+        if self.inputs.relax_type.value != RelaxType.NONE.value:
+            self.out('output_structure', structure)
 
     def on_terminated(self):
         """Clean the working directories of all child calculations if `clean_workdir=True` in the inputs."""
