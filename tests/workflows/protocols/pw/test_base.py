@@ -4,7 +4,7 @@ import pytest
 
 from aiida.engine import ProcessBuilder
 
-from aiida_quantumespresso.common.types import ElectronicType
+from aiida_quantumespresso.common.types import ElectronicType, SpinType
 from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
 
 
@@ -45,3 +45,49 @@ def test_electronic_type(fixture_code, generate_structure):
     assert parameters['SYSTEM']['occupations'] == 'fixed'
     assert 'degauss' not in parameters['SYSTEM']
     assert 'smearing' not in parameters['SYSTEM']
+
+
+def test_spin_type(fixture_code, generate_structure):
+    """Test ``PwBaseWorkChain.get_builder_from_protocol`` with ``spin_type`` keyword."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure()
+
+    with pytest.raises(NotImplementedError):
+        for spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT]:
+            PwBaseWorkChain.get_builder_from_protocol(code, structure, spin_type=spin_type)
+
+    builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, spin_type=SpinType.COLLINEAR)
+    parameters = builder.pw.parameters.get_dict()
+
+    assert parameters['SYSTEM']['nspin'] == 2
+    assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.1}
+
+
+@pytest.mark.parametrize('starting_magnetization', ({}, {'Si1': 1.0, 'Si2': 2.0}))
+def test_starting_magnetization_invalid(fixture_code, generate_structure, starting_magnetization):
+    """Test ``PwBaseWorkChain.get_builder_from_protocol`` with invalid ``starting_magnetization`` keyword."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure()
+
+    with pytest.raises(ValueError, match=r'`starting_magnetization` is specified but spin type `.*` is incompatible.'):
+        PwBaseWorkChain.get_builder_from_protocol(code, structure, starting_magnetization=starting_magnetization)
+
+    with pytest.raises(ValueError):
+        PwBaseWorkChain.get_builder_from_protocol(
+            code, structure, starting_magnetization=starting_magnetization, spin_type=SpinType.COLLINEAR
+        )
+
+
+def test_starting_magnetization(fixture_code, generate_structure):
+    """Test ``PwBaseWorkChain.get_builder_from_protocol`` with ``starting_magnetization`` keyword."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure()
+
+    starting_magnetization = {'Si': 1.0}
+    builder = PwBaseWorkChain.get_builder_from_protocol(
+        code, structure, starting_magnetization=starting_magnetization, spin_type=SpinType.COLLINEAR
+    )
+    parameters = builder.pw.parameters.get_dict()
+
+    assert parameters['SYSTEM']['nspin'] == 2
+    assert parameters['SYSTEM']['starting_magnetization'] == starting_magnetization
