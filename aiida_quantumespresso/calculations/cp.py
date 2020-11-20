@@ -157,6 +157,7 @@ class CpCalculation(BasePwCpInputGenerator):
             message='The required POS file could not be read.')
         spec.exit_code(340, 'ERROR_READING_TRAJECTORY_DATA',
             message='The required trajectory data could not be read.')
+        # yapf: enable
 
     @staticmethod
     def _generate_PWCP_input_tail(*args, **kwargs):

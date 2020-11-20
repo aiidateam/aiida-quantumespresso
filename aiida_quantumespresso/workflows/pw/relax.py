@@ -94,6 +94,7 @@ class PwRelaxWorkChain(WorkChain):
         spec.expose_outputs(PwBaseWorkChain, exclude=('output_structure',))
         spec.output('output_structure', valid_type=orm.StructureData, required=False,
             help='The successfully relaxed structure, unless `relax_type is RelaxType.NONE`.')
+        # yapf: enable
 
     def setup(self):
         """Input validation and context setup."""
@@ -188,9 +189,7 @@ class PwRelaxWorkChain(WorkChain):
         """
         workchain = self.ctx.workchains[-1]
 
-        acceptable_statuses = [
-            'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF'
-        ]
+        acceptable_statuses = ['ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF']
 
         if workchain.is_excepted or workchain.is_killed:
             self.report('relax PwBaseWorkChain was excepted or killed')
@@ -229,11 +228,17 @@ class PwRelaxWorkChain(WorkChain):
 
         if volume_difference < volume_threshold:
             self.ctx.is_converged = True
-            self.report('relative cell volume difference {} smaller than convergence threshold {}'
-                .format(volume_difference, volume_threshold))
+            self.report(
+                'relative cell volume difference {} smaller than convergence threshold {}'.format(
+                    volume_difference, volume_threshold
+                )
+            )
         else:
-            self.report('current relative cell volume difference {} larger than convergence threshold {}'
-                .format(volume_difference, volume_threshold))
+            self.report(
+                'current relative cell volume difference {} larger than convergence threshold {}'.format(
+                    volume_difference, volume_threshold
+                )
+            )
 
         self.ctx.current_cell_volume = curr_cell_volume
 

@@ -53,3 +53,4 @@ class ProjwfcCalculation(NamelistsCalculation):
             message='The pdos_tot file could not be read from the retrieved folder.')
         spec.exit_code(340, 'ERROR_PARSING_PROJECTIONS',
             message='An exception was raised parsing bands and projections.')
+        # yapf: enable

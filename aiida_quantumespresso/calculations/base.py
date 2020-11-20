@@ -45,3 +45,4 @@ class CalcJob(_BaseCalcJob):  # pylint: disable=abstract-method
         # yapf: disable
         super().define(spec)
         spec.inputs['metadata']['options']['resources'].default = lambda: {'num_machines': 1}
+        # yapf: enable

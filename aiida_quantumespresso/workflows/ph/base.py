@@ -43,6 +43,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
             message='The `metadata.options` did not specify both `resources.num_machines` and `max_wallclock_seconds`.')
         spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
             message='The calculation failed with an unrecoverable error.')
+        # yapf: enable
 
     def setup(self):
         """Call the `setup` of the `BaseRestartWorkChain` and then create the inputs dictionary in `self.ctx.inputs`.
