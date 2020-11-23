@@ -1,0 +1,174 @@
+output_parameters:
+  atomic_charges_units: e
+  atomic_magnetic_moments_units: Bohrmag / cell
+  beta_real_space: false
+  charge_density: ./charge-density.dat
+  constraint_mag: 0
+  convergence_info:
+    scf_conv:
+      convergence_achieved: true
+      n_scf_steps: 9
+      scf_error: 3.272165362524077e-06
+  creator_name: pwscf
+  creator_version: '6.6'
+  dft_exchange_correlation: PBE
+  do_magnetization: false
+  do_not_use_time_reversal: false
+  energy_threshold: 2.32e-07
+  exit_status: 0
+  fermi_energy: -4.4818
+  fermi_energy_units: eV
+  fft_grid:
+  - 45
+  - 45
+  - 45
+  format_name: QEXSD
+  format_version: 20.04.20
+  has_dipole_correction: false
+  has_electric_field: false
+  init_wall_time_seconds: 43.2
+  inversion_symmetry: false
+  lattice_symmetries:
+  - symmetry_number: 6
+    t_rev: '0'
+  - symmetry_number: 7
+    t_rev: '0'
+  - symmetry_number: 8
+    t_rev: '0'
+  - symmetry_number: 9
+    t_rev: '0'
+  - symmetry_number: 10
+    t_rev: '0'
+  - symmetry_number: 11
+    t_rev: '0'
+  - symmetry_number: 12
+    t_rev: '0'
+  - symmetry_number: 13
+    t_rev: '0'
+  - symmetry_number: 14
+    t_rev: '0'
+  - symmetry_number: 15
+    t_rev: '0'
+  - symmetry_number: 1
+    t_rev: '0'
+  - symmetry_number: 17
+    t_rev: '0'
+  - symmetry_number: 18
+    t_rev: '0'
+  - symmetry_number: 19
+    t_rev: '0'
+  - symmetry_number: 2
+    t_rev: '0'
+  - symmetry_number: 21
+    t_rev: '0'
+  - symmetry_number: 22
+    t_rev: '0'
+  - symmetry_number: 23
+    t_rev: '0'
+  - symmetry_number: 32
+    t_rev: '0'
+  - symmetry_number: 33
+    t_rev: '0'
+  - symmetry_number: 34
+    t_rev: '0'
+  - symmetry_number: 35
+    t_rev: '0'
+  - symmetry_number: 36
+    t_rev: '0'
+  - symmetry_number: 3
+    t_rev: '0'
+  - symmetry_number: 38
+    t_rev: '0'
+  - symmetry_number: 39
+    t_rev: '0'
+  - symmetry_number: 40
+    t_rev: '0'
+  - symmetry_number: 4
+    t_rev: '0'
+  - symmetry_number: 42
+    t_rev: '0'
+  - symmetry_number: 43
+    t_rev: '0'
+  - symmetry_number: 44
+    t_rev: '0'
+  - symmetry_number: 5
+    t_rev: '0'
+  - symmetry_number: 46
+    t_rev: '0'
+  - symmetry_number: 47
+    t_rev: '0'
+  - symmetry_number: 48
+    t_rev: '0'
+  - symmetry_number: 49
+    t_rev: '0'
+  - symmetry_number: 50
+    t_rev: '0'
+  - symmetry_number: 51
+    t_rev: '0'
+  - symmetry_number: 52
+    t_rev: '0'
+  - symmetry_number: 53
+    t_rev: '0'
+  - symmetry_number: 54
+    t_rev: '0'
+  - symmetry_number: 55
+    t_rev: '0'
+  lda_plus_u_calculation: false
+  lkpoint_dir: false
+  lsda: true
+  magnetization_angle1:
+  - 0.0
+  magnetization_angle2:
+  - 0.0
+  monkhorst_pack_grid:
+  - 4
+  - 4
+  - 4
+  monkhorst_pack_offset:
+  - 0
+  - 0
+  - 0
+  no_time_rev_operations: false
+  non_colinear_calculation: false
+  number_of_atomic_wfc: 8
+  number_of_atoms: 2
+  number_of_bands: 9
+  number_of_bands_down: 9
+  number_of_bands_up: 9
+  number_of_bravais_symmetries: 48
+  number_of_electrons: 8.0
+  number_of_k_points: 13
+  number_of_species: 1
+  number_of_spin_components: 2
+  number_of_symmetries: 6
+  occupations: tetrahedra
+  q_real_space: false
+  rho_cutoff: 544.227669012
+  rho_cutoff_units: eV
+  smooth_fft_grid:
+  - 45
+  - 45
+  - 45
+  spin_orbit_calculation: false
+  spin_orbit_domag: false
+  starting_magnetization:
+  - 0.5
+  symmetries:
+  - symmetry_number: 0
+    t_rev: '0'
+  - symmetry_number: 16
+    t_rev: '0'
+  - symmetry_number: 20
+    t_rev: '0'
+  - symmetry_number: 37
+    t_rev: '0'
+  - symmetry_number: 41
+    t_rev: '0'
+  - symmetry_number: 45
+    t_rev: '0'
+  symmetries_units: crystal
+  time_reversal_flag: true
+  total_number_of_scf_iterations: 2
+  volume: 1460.300403372312
+  wfc_cutoff: 136.056917253
+  wfc_cutoff_units: eV
