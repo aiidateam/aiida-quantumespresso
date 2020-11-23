@@ -2,10 +2,16 @@
 """Base `CalcJob` for implementations for pw.x and cp.x of Quantum ESPRESSO."""
 import abc
 import os
+import copy
+import numbers
+import warnings
+from functools import partial
+from types import MappingProxyType
 
 from aiida import orm
 from aiida.common import datastructures, exceptions
 from aiida.common.lang import classproperty
+from aiida.common.warnings import AiidaDeprecationWarning
 from aiida.plugins import DataFactory
 from qe_tools.converters import get_parameters_from_cell
 
@@ -29,6 +35,37 @@ class BasePwCpInputGenerator(CalcJob):
     _DATAFILE_XML_POST_6_2 = 'data-file-schema.xml'
     _ENVIRON_INPUT_FILE_NAME = 'environ.in'
     _DEFAULT_IBRAV = 0
+
+    # A mapping {flag_name: help_string} of parallelization flags
+    # possible in QE codes. The flags that are actually implemented in a
+    # given code should be specified in the '_ENABLED_PARALLELIZATION_FLAGS'
+    # tuple of each calculation subclass.
+    _PARALLELIZATION_FLAGS = MappingProxyType(
+        dict(
+            nimage="The number of 'images', each corresponding to a different self-consistent or "
+            'linear-response calculation.',
+            npool="The number of 'pools', each taking care of a group of k-points.",
+            nband="The number of 'band groups', each taking care of a group of Kohn-Sham orbitals.",
+            ntg="The number of 'task groups' across which the FFT planes are distributed.",
+            ndiag="The number of 'linear algebra groups' used when parallelizing the subspace "
+            'diagonalization / iterative orthonormalization. By default, no parameter is '
+            'passed to Quantum ESPRESSO, meaning it will use its default.',
+            nhw="The 'nmany' FFT bands parallelization option."
+        )
+    )
+
+    _ENABLED_PARALLELIZATION_FLAGS = tuple()
+
+    _PARALLELIZATION_FLAG_ALIASES = MappingProxyType(
+        dict(
+            nimage=('ni', 'nimages', 'npot'),
+            npool=('nk', 'npools'),
+            nband=('nb', 'nbgrp', 'nband_group'),
+            ntg=('nt', 'ntask_groups', 'nyfft'),
+            ndiag=('northo', 'nd', 'nproc_diag', 'nproc_ortho'),
+            nhw=('nh', 'n_howmany', 'howmany')
+        )
+    )
 
     # Additional files that should always be retrieved for the specific plugin
     _internal_retrieve_list = []
@@ -87,6 +124,35 @@ class BasePwCpInputGenerator(CalcJob):
             help='Optional van der Waals table contained in a `SinglefileData`.')
         spec.input_namespace('pseudos', valid_type=(LegacyUpfData, UpfData), dynamic=True,
             help='A mapping of `UpfData` nodes onto the kind name to which they should apply.')
+        spec.input(
+            'parallelization',
+            valid_type=orm.Dict,
+            required=False,
+            help=(
+                'Parallelization options. The following flags are allowed:\n' + '\n'.join(
+                    f'{flag_name:<7}: {cls._PARALLELIZATION_FLAGS[flag_name]}'
+                    for flag_name in cls._ENABLED_PARALLELIZATION_FLAGS
+                )
+            ),
+            validator=cls._validate_parallelization
+        )
+
+    @classmethod
+    def _validate_parallelization(cls, value, port_namespace):  # pylint: disable=unused-argument
+        if value:
+            value_dict = value.get_dict()
+            unknown_flags = set(value_dict.keys()) - set(cls._ENABLED_PARALLELIZATION_FLAGS)
+            if unknown_flags:
+                return (
+                    f"Unknown flags in 'parallelization': {unknown_flags}, "
+                    f'allowed flags are {cls._ENABLED_PARALLELIZATION_FLAGS}.'
+                )
+            invalid_values = [val for val in value_dict.values() if not isinstance(val, numbers.Integral)]
+            if invalid_values:
+                return (
+                    f'Parallelization values must be integers; got invalid values {invalid_values}.'
+                )
+
 
     def prepare_for_submission(self, folder):
         """Create the input files from the input nodes passed to this instance of the `CalcJob`.
@@ -203,8 +269,12 @@ class BasePwCpInputGenerator(CalcJob):
         calcinfo = datastructures.CalcInfo()
 
         calcinfo.uuid = str(self.uuid)
-        # Empty command line by default
-        cmdline_params = settings.pop('CMDLINE', [])
+        # Start from an empty command line by default
+        cmdline_params = self._add_parallelization_flags_to_cmdline_params(
+            cmdline_params=settings.pop('CMDLINE', [])
+        )
+
+
         # we commented calcinfo.stin_name and added it here in cmdline_params
         # in this way the mpirun ... pw.x ... < aiida.in
         # is replaced by mpirun ... pw.x ... -in aiida.in
@@ -243,6 +313,55 @@ class BasePwCpInputGenerator(CalcJob):
             raise exceptions.InputValidationError(f'`settings` contained unexpected keys: {unknown_keys}')
 
         return calcinfo
+
+    def _add_parallelization_flags_to_cmdline_params(self, cmdline_params):
+        """Get the command line parameters with added parallelization flags.
+
+        Adds the parallelization flags to the given `cmdline_params` and
+        returns the updated list.
+
+        Raises an `InputValidationError` if multiple aliases to the same
+        flag are given in `cmdline_params`, or the same flag is given
+        both in `cmdline_params` and the explicit `parallelization`
+        input.
+        """
+        cmdline_params_res = copy.deepcopy(cmdline_params)
+        # The `cmdline_params_normalized` are used only here to check
+        # for existing parallelization flags.
+        cmdline_params_normalized = []
+        for param in cmdline_params:
+            cmdline_params_normalized.extend(param.split())
+
+        if 'parallelization' in self.inputs:
+            parallelization_dict = self.inputs.parallelization.get_dict()
+        else:
+            parallelization_dict = {}
+        # To make the order of flags consistent and "nice", we use the
+        # ordering from the flag definition.
+        for flag_name in self._ENABLED_PARALLELIZATION_FLAGS:
+            all_aliases = list(self._PARALLELIZATION_FLAG_ALIASES[flag_name]) + [flag_name]
+            aliases_in_cmdline = [alias for alias in all_aliases if f'-{alias}' in cmdline_params_normalized]
+            if aliases_in_cmdline:
+                if len(aliases_in_cmdline) > 1:
+                    raise exceptions.InputValidationError(
+                        f'Conflicting parallelization flags {aliases_in_cmdline} '
+                        "in settings['CMDLINE']"
+                    )
+                if flag_name in parallelization_dict:
+                    raise exceptions.InputValidationError(
+                        f"Parallelization flag '{aliases_in_cmdline[0]}' specified in settings['CMDLINE'] conflicts "
+                        f"with '{flag_name}' in the 'parallelization' input."
+                    )
+                else:
+                    warnings.warn(
+                        "Specifying the parallelization flags through settings['CMDLINE'] is "
+                        "deprecated, use the 'parallelization' input instead.", AiidaDeprecationWarning
+                    )
+                    continue
+            if flag_name in parallelization_dict:
+                flag_value = parallelization_dict[flag_name]
+                cmdline_params_res += [f'-{flag_name}', str(flag_value)]
+        return cmdline_params_res
 
     @staticmethod
     def _generate_PWCP_input_tail(*args, **kwargs):

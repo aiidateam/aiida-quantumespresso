@@ -43,6 +43,8 @@ class PwCalculation(BasePwCpInputGenerator):
     # Not using symlink in pw to allow multiple nscf to run on top of the same scf
     _default_symlink_usage = False
 
+    _ENABLED_PARALLELIZATION_FLAGS = ('npool', 'nband', 'ntg', 'ndiag')
+
     @classproperty
     def xml_filepaths(cls):
         """Return a list of XML output filepaths relative to the remote working directory that should be retrieved."""
