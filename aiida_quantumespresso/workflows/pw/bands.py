@@ -108,6 +108,7 @@ class PwBandsWorkChain(WorkChain):
             help='The output parameters of the BANDS `PwBaseWorkChain`.')
         spec.output('band_structure', valid_type=orm.BandsData,
             help='The computed band structure.')
+        # yapf: enable
 
     def setup(self):
         """Define the current structure in the context to be the input structure."""
@@ -153,7 +154,9 @@ class PwBandsWorkChain(WorkChain):
         """
         inputs = {
             'reference_distance': self.inputs.get('bands_kpoints_distance', None),
-            'metadata': {'call_link_label': 'seekpath'}
+            'metadata': {
+                'call_link_label': 'seekpath'
+            }
         }
         result = seekpath_structure_analysis(self.ctx.current_structure, **inputs)
         self.ctx.current_structure = result['primitive_structure']
@@ -225,8 +228,8 @@ class PwBandsWorkChain(WorkChain):
             nelectron = int(parameters['number_of_electrons'])
             nbnd = max(
                 int(0.5 * nelectron * nspin_factor * factor),
-                int(0.5 * nelectron * nspin_factor) + 4 * nspin_factor,
-                nbands)
+                int(0.5 * nelectron * nspin_factor) + 4 * nspin_factor, nbands
+            )
             inputs.pw.parameters['SYSTEM']['nbnd'] = nbnd
 
         # Otherwise set the current number of bands, unless explicitly set in the inputs

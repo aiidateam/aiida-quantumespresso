@@ -107,6 +107,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             message='The initialization calculation failed.')
         spec.exit_code(501, 'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
             message='Then ionic minimization cycle converged but the thresholds are exceeded in the final SCF.')
+        # yapf: enable
 
     def setup(self):
         """Call the `setup` of the `BaseRestartWorkChain` and then create the inputs dictionary in `self.ctx.inputs`.
@@ -150,7 +151,9 @@ class PwBaseWorkChain(BaseRestartWorkChain):
                 'structure': self.inputs.pw.structure,
                 'distance': self.inputs.kpoints_distance,
                 'force_parity': self.inputs.get('kpoints_force_parity', orm.Bool(False)),
-                'metadata': {'call_link_label': 'create_kpoints_from_distance'}
+                'metadata': {
+                    'call_link_label': 'create_kpoints_from_distance'
+                }
             }
             kpoints = create_kpoints_from_distance(**inputs)  # pylint: disable=unexpected-keyword-arg
 
@@ -231,8 +234,9 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             return self.exit_codes.ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY
 
         if remaining_keys:
-            self.report('detected unrecognized keys in the automatic_parallelization input: {}'.format(
-                ' '.join(remaining_keys)))
+            self.report(
+                f"detected unrecognized keys in the automatic_parallelization input: {' '.join(remaining_keys)}"
+            )
             return self.exit_codes.ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY
 
         # Add the calculation mode to the automatic parallelization dictionary
@@ -385,7 +389,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
     @process_handler(priority=580, exit_codes=[
         PwCalculation.exit_codes.ERROR_OUT_OF_WALLTIME,
-        ])
+    ])
     def handle_out_of_walltime(self, calculation):
         """Handle `ERROR_OUT_OF_WALLTIME` exit code: calculation shut down neatly and we can simply restart."""
         try:
@@ -399,9 +403,11 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
         return ProcessHandlerReport(True)
 
-    @process_handler(priority=570, exit_codes=[
-        PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF,
-        ])
+    @process_handler(
+        priority=570, exit_codes=[
+            PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF,
+        ]
+    )
     def handle_vcrelax_converged_except_final_scf(self, calculation):
         """Handle `ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF` exit code.
 
@@ -414,12 +420,15 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         self.results()  # Call the results method to attach the output nodes
         return ProcessHandlerReport(True, self.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF)
 
-    @process_handler(priority=560, exit_codes=[
-        PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_NOT_REACHED,
-        PwCalculation.exit_codes.ERROR_IONIC_CYCLE_EXCEEDED_NSTEP,
-        PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE,
-        PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE,
-        ])
+    @process_handler(
+        priority=560,
+        exit_codes=[
+            PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_NOT_REACHED,
+            PwCalculation.exit_codes.ERROR_IONIC_CYCLE_EXCEEDED_NSTEP,
+            PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE,
+            PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE,
+        ]
+    )
     def handle_relax_recoverable_ionic_convergence_error(self, calculation):
         """Handle various exit codes for recoverable `relax` calculations with failed ionic convergence.
 
@@ -432,10 +441,13 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         self.report_error_handled(calculation, action)
         return ProcessHandlerReport(True)
 
-    @process_handler(priority=550, exit_codes=[
-        PwCalculation.exit_codes.ERROR_IONIC_CYCLE_ELECTRONIC_CONVERGENCE_NOT_REACHED,
-        PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_FINAL_SCF_FAILED,
-        ])
+    @process_handler(
+        priority=550,
+        exit_codes=[
+            PwCalculation.exit_codes.ERROR_IONIC_CYCLE_ELECTRONIC_CONVERGENCE_NOT_REACHED,
+            PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_FINAL_SCF_FAILED,
+        ]
+    )
     def handle_relax_recoverable_electronic_convergence_error(self, calculation):
         """Handle various exit codes for recoverable `relax` calculations with failed electronic convergence.
 
@@ -455,7 +467,8 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         return ProcessHandlerReport(True)
 
     @process_handler(priority=410, exit_codes=[
-        PwCalculation.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED,])
+        PwCalculation.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED,
+    ])
     def handle_electronic_convergence_not_achieved(self, calculation):
         """Handle `ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED`: decrease the mixing beta and restart from scratch."""
         factor = self.defaults.delta_factor_mixing_beta

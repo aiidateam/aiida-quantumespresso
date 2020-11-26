@@ -58,6 +58,7 @@ class NamelistsCalculation(CalcJob):
             help='Use an additional node for special settings')
         spec.input('parent_folder', valid_type=(RemoteData, FolderData, SinglefileData), required=False,
             help='Use a local or remote folder as parent folder (for restarts and similar)')
+        # yapf: enable
 
     def _get_following_text(self):
         """Return any optional text that is to be written after the normal namelists in the input file.
@@ -79,7 +80,8 @@ class NamelistsCalculation(CalcJob):
                 if key in parameters[namelist]:
                     raise exceptions.InputValidationError(
                         "You cannot specify explicitly the '{}' key in the '{}' "
-                        'namelist.'.format(key, namelist))
+                        'namelist.'.format(key, namelist)
+                    )
             else:
                 parameters[namelist] = {}
             parameters[namelist][key] = value
@@ -107,7 +109,8 @@ class NamelistsCalculation(CalcJob):
             raise exceptions.InputValidationError(
                 'The following namelists are specified in parameters, but are '
                 'not valid namelists for the current type of calculation: '
-                '{}'.format(','.join(list(parameters.keys()))))
+                '{}'.format(','.join(list(parameters.keys())))
+            )
 
         return filtered
 
@@ -154,13 +157,13 @@ class NamelistsCalculation(CalcJob):
         else:
             parameters = {}
 
-
         # =================== NAMELISTS AND CARDS ========================
         try:
             namelists_toprint = settings.pop('NAMELISTS')
             if not isinstance(namelists_toprint, list):
                 raise exceptions.InputValidationError(
-                    "The 'NAMELISTS' value, if specified in the settings input node, must be a list of strings")
+                    "The 'NAMELISTS' value, if specified in the settings input node, must be a list of strings"
+                )
         except KeyError:  # list of namelists not specified; do automatic detection
             namelists_toprint = self._default_namelists
 
@@ -187,21 +190,17 @@ class NamelistsCalculation(CalcJob):
                 parent_calc_out_subfolder = settings.pop('PARENT_CALC_OUT_SUBFOLDER', self._INPUT_SUBFOLDER)
                 ptr.append((
                     parent_calc_folder.computer.uuid,
-                    os.path.join(parent_calc_folder.get_remote_path(), parent_calc_out_subfolder),
-                    self._OUTPUT_SUBFOLDER
+                    os.path.join(parent_calc_folder.get_remote_path(),
+                                 parent_calc_out_subfolder), self._OUTPUT_SUBFOLDER
                 ))
             elif isinstance(parent_calc_folder, FolderData):
                 for filename in parent_calc_folder.list_object_names():
-                    local_copy_list.append((
-                        parent_calc_folder.uuid,
-                        filename,
-                        os.path.join(self._OUTPUT_SUBFOLDER, filename)
-                    ))
+                    local_copy_list.append(
+                        (parent_calc_folder.uuid, filename, os.path.join(self._OUTPUT_SUBFOLDER, filename))
+                    )
             elif isinstance(parent_calc_folder, SinglefileData):
                 single_file = parent_calc_folder
-                local_copy_list.append(
-                    (single_file.uuid, single_file.filename, single_file.filename)
-                )
+                local_copy_list.append((single_file.uuid, single_file.filename, single_file.filename))
 
         codeinfo = datastructures.CodeInfo()
         codeinfo.cmdline_params = settings.pop('CMDLINE', [])

@@ -39,6 +39,7 @@ class Pw2wannier90Calculation(NamelistsCalculation):
             message='Encountered a generic error message')
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
             message='An error happened while parsing the output file')
+        # yapf: enable
 
     def prepare_for_submission(self, folder):
         """Prepare the calculation job for submission by transforming input nodes into input files.
@@ -54,8 +55,6 @@ class Pw2wannier90Calculation(NamelistsCalculation):
 
         # Put the nnkp in the folder, with the correct filename
         nnkp_file = self.inputs.nnkp_file
-        calcinfo.local_copy_list.append(
-            (nnkp_file.uuid, nnkp_file.filename, f'{self._SEEDNAME}.nnkp')
-        )
+        calcinfo.local_copy_list.append((nnkp_file.uuid, nnkp_file.filename, f'{self._SEEDNAME}.nnkp'))
 
         return calcinfo
