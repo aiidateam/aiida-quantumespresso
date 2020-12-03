@@ -125,7 +125,7 @@ def parse_xml_post_6_2(xml):
     lsda = inputs.get('spin', {}).get('lsda', False)
     spin_orbit_calculation = inputs.get('spin', {}).get('spinorbit', False)
     non_colinear_calculation = outputs['magnetization']['noncolin']
-    do_magnetization = outputs['magnetization']['do_magnetization']
+    do_magnetization = outputs['magnetization'].get('do_magnetization', False)
 
     # Time reversal symmetry of the system
     if non_colinear_calculation and do_magnetization:
@@ -232,7 +232,7 @@ def parse_xml_post_6_2(xml):
         'symmetries': symmetries,
         'lattice_symmetries': lattice_symmetries,
         'do_not_use_time_reversal': inputs.get('symmetry_flags', {}).get('noinv', None),
-        'spin_orbit_domag': outputs['magnetization']['do_magnetization'],
+        'spin_orbit_domag': do_magnetization,
         'fft_grid': [value for _, value in sorted(outputs['basis_set']['fft_grid'].items())],
         'lsda': lsda,
         'number_of_spin_components': nspin,
