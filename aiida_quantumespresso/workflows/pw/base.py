@@ -17,7 +17,6 @@ from aiida_quantumespresso.utils.resources import cmdline_remove_npools, create_
 from ..protocols.utils import ProtocolMixin
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
-UpfFamily = GroupFactory('pseudo.family.upf')
 SsspFamily = GroupFactory('pseudo.family.sssp')
 
 
@@ -140,6 +139,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             guess for the magnetization is automatically set in case this argument is not provided.
         :return: a process builder instance with all inputs defined ready for launch.
         """
+        from qe_tools import CONSTANTS
         from aiida_quantumespresso.workflows.protocols.utils import get_starting_magnetization
 
         if isinstance(code, str):
@@ -168,18 +168,19 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         nkinds = len(structure.kinds)
 
         try:
-            types = (UpfFamily, SsspFamily)
-            pseudo_family = orm.QueryBuilder().append(types, filters={'label': pseudo_family}).one()[0]
+            pseudo_family = orm.QueryBuilder().append(SsspFamily, filters={'label': pseudo_family}).one()[0]
         except exceptions.NotExistent as exception:
-            raise ValueError(f'required pseudo family `{pseudo_family}` is not installed') from exception
+            raise ValueError(
+                f'required pseudo family `{pseudo_family}` is not installed. Please run `aiida-pseudo install sssp`.'
+            ) from exception
 
-        cutoffs = pseudo_family.get_recommended_cutoffs(structure=structure)
+        cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure)
 
         parameters = inputs['pw']['parameters']
         parameters['CONTROL']['etot_conv_thr'] = natoms * meta_parameters['etot_conv_thr_per_atom']
         parameters['ELECTRONS']['conv_thr'] = natoms * meta_parameters['conv_thr_per_atom']
-        parameters['SYSTEM']['ecutwfc'] = cutoffs[0]
-        parameters['SYSTEM']['ecutrho'] = cutoffs[1]
+        parameters['SYSTEM']['ecutwfc'] = cutoff_wfc / CONSTANTS.ry_to_ev
+        parameters['SYSTEM']['ecutrho'] = cutoff_rho / CONSTANTS.ry_to_ev
 
         if electronic_type is ElectronicType.INSULATOR:
             parameters['SYSTEM']['occupations'] = 'fixed'
