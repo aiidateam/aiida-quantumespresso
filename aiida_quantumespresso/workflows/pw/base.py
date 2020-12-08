@@ -342,8 +342,16 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         """
         from aiida_quantumespresso.utils.bands import get_highest_occupied_band
 
+        occupations = calculation.inputs.parameters.get_attribute('SYSTEM', {}).get('occupations', None)
+
+        if occupations is None:
+            self.report(
+                '`SYSTEM.occupations` parameter is not defined: performing band occupation check. '
+                'If you want to disable this, explicitly set `SYSTEM.occupations` to `fixed`.'
+            )
+
         # Only skip the check on the highest band occupation if `occupations` was explicitly set to `fixed`.
-        if calculation.inputs.parameters.get_attribute('SYSTEM', {}).get('occupations', None) == 'fixed':
+        if occupations == 'fixed':
             return
 
         try:
