@@ -130,7 +130,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
         builder.max_meta_convergence_iterations = orm.Int(inputs['max_meta_convergence_iterations'])
         builder.meta_convergence = orm.Bool(inputs['meta_convergence'])
-        builder.relaxation_scheme = orm.Str(inputs['relaxation_scheme'])
+        builder.relax_type = orm.Str(inputs['relax_type'])
         builder.volume_convergence = orm.Float(inputs['volume_convergence'])
 
         return builder

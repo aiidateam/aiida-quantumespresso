@@ -66,7 +66,7 @@ relax:
         Si: Si<md5=b8624bea1910ebe720dc5977d5a73a7d>
   max_meta_convergence_iterations: 5
   meta_convergence: true
-  relaxation_scheme: vc-relax
+  relax_type: atoms_cell
   volume_convergence: 0.02
 scf:
   kpoints_distance: 0.15

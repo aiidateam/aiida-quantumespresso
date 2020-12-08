@@ -67,6 +67,6 @@ base_final_scf:
 clean_workdir: true
 max_meta_convergence_iterations: 5
 meta_convergence: true
-relaxation_scheme: vc-relax
+relax_type: atoms_cell
 structure: Si2
 volume_convergence: 0.02
