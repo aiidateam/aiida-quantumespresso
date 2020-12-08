@@ -4,7 +4,7 @@ import pytest
 
 from aiida.engine import ProcessBuilder
 
-from aiida_quantumespresso.common.types import ElectronicType, SpinType
+from aiida_quantumespresso.common.types import ElectronicType, RelaxType, SpinType
 from aiida_quantumespresso.workflows.pw.bands import PwBandsWorkChain
 
 
@@ -63,3 +63,13 @@ def test_spin_type(fixture_code, generate_structure):
         parameters = namespace['pw']['parameters'].get_dict()
         assert parameters['SYSTEM']['nspin'] == 2
         assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.1}
+
+
+def test_relax_type(fixture_code, generate_structure):
+    """Test ``PwBandsWorkChain.get_builder_from_protocol`` overriding the ``relax_type`` input."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure()
+
+    overrides = {'relax': {'relax_type': RelaxType.NONE.value}}
+    builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)
+    assert builder.relax['relax_type'].value == RelaxType.NONE.value
