@@ -40,6 +40,8 @@ def launch_workflow(
     """Run a `PwBaseWorkChain`."""
     from aiida.orm import Bool, Float, Dict
     from aiida.plugins import WorkflowFactory
+    from qe_tools import CONSTANTS
+
     from aiida_quantumespresso.utils.resources import get_default_options, get_automatic_parallelization_options
 
     builder = WorkflowFactory('quantumespresso.pw.base').get_builder()
@@ -48,8 +50,8 @@ def launch_workflow(
 
     parameters = {
         'SYSTEM': {
-            'ecutwfc': ecutwfc or cutoff_wfc,
-            'ecutrho': ecutrho or cutoff_rho,
+            'ecutwfc': ecutwfc or cutoff_wfc / CONSTANTS.ry_to_ev,
+            'ecutrho': ecutrho or cutoff_rho / CONSTANTS.ry_to_ev,
         },
     }
 
