@@ -2,28 +2,34 @@
 """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts."""
 from aiida import orm
 from aiida.common import AttributeDict, exceptions
+from aiida.common.lang import type_check
 from aiida.engine import ToContext, if_, while_, BaseRestartWorkChain, process_handler, ProcessHandlerReport, ExitCode
-from aiida.plugins import CalculationFactory
+from aiida.plugins import CalculationFactory, GroupFactory
 
 from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import create_kpoints_from_distance
+from aiida_quantumespresso.common.types import ElectronicType, SpinType
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 from aiida_quantumespresso.utils.mapping import update_mapping, prepare_process_inputs
 from aiida_quantumespresso.utils.pseudopotential import validate_and_prepare_pseudos_inputs
 from aiida_quantumespresso.utils.resources import get_default_options, get_pw_parallelization_parameters
 from aiida_quantumespresso.utils.resources import cmdline_remove_npools, create_scheduler_resources
 
+from ..protocols.utils import ProtocolMixin
+
 PwCalculation = CalculationFactory('quantumespresso.pw')
+UpfFamily = GroupFactory('pseudo.family.upf')
+SsspFamily = GroupFactory('pseudo.family.sssp')
 
 
 def validate_pseudo_family(value, _):
     """Validate the `pseudo_family` input."""
-    if value is not None:
+    if value:
         import warnings
         from aiida.common.warnings import AiidaDeprecationWarning
         warnings.warn('`pseudo_family` is deprecated, use `pw.pseudos` instead.', AiidaDeprecationWarning)
 
 
-class PwBaseWorkChain(BaseRestartWorkChain):
+class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts."""
 
     # pylint: disable=too-many-public-methods
@@ -108,6 +114,98 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         spec.exit_code(501, 'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
             message='Then ionic minimization cycle converged but the thresholds are exceeded in the final SCF.')
         # yapf: enable
+
+    @classmethod
+    def get_builder_from_protocol(
+        cls,
+        code,
+        structure,
+        protocol=None,
+        overrides=None,
+        electronic_type=ElectronicType.METAL,
+        spin_type=SpinType.NONE,
+        starting_magnetization=None,
+        **_
+    ):
+        """Return a builder prepopulated with inputs selected according to the chosen protocol.
+
+        :param code: the ``Code`` instance configured for the ``quantumespresso.pw`` plugin.
+        :param structure: the ``StructureData`` instance to use.
+        :param protocol: protocol to use, if not specified, the default will be used.
+        :param overrides: optional dictionary of inputs to override the defaults of the protocol.
+        :param electronic_type: indicate the electronic character of the system through ``ElectronicType`` instance.
+        :param spin_type: indicate the spin polarization type to use through a ``SpinType`` instance.
+        :param starting_magnetization: optional dictionary that maps the starting magnetization of each kind to a
+            desired value for a spin polarized calculation. Note that for ``spin_type == SpinType.COLLINEAR`` a starting
+            guess for the magnetization is automatically set in case this argument is not provided.
+        :return: a process builder instance with all inputs defined ready for launch.
+        """
+        from aiida_quantumespresso.workflows.protocols.utils import get_starting_magnetization
+
+        if isinstance(code, str):
+            code = orm.load_code(code)
+
+        type_check(code, orm.Code)
+        type_check(electronic_type, ElectronicType)
+        type_check(spin_type, SpinType)
+
+        if electronic_type not in [ElectronicType.METAL, ElectronicType.INSULATOR]:
+            raise NotImplementedError(f'electronic type `{electronic_type}` is not supported.')
+
+        if spin_type not in [SpinType.NONE, SpinType.COLLINEAR]:
+            raise NotImplementedError(f'spin type `{spin_type}` is not supported.')
+
+        if starting_magnetization is not None and spin_type is not SpinType.COLLINEAR:
+            raise ValueError(f'`starting_magnetization` is specified but spin type `{spin_type}` is incompatible.')
+
+        builder = cls.get_builder()
+        inputs = cls.get_protocol_inputs(protocol, overrides)
+
+        meta_parameters = inputs.pop('meta_parameters')
+        pseudo_family = inputs.pop('pseudo_family')
+
+        natoms = len(structure.sites)
+        nkinds = len(structure.kinds)
+
+        try:
+            types = (UpfFamily, SsspFamily)
+            pseudo_family = orm.QueryBuilder().append(types, filters={'label': pseudo_family}).one()[0]
+        except exceptions.NotExistent as exception:
+            raise ValueError(f'required pseudo family `{pseudo_family}` is not installed') from exception
+
+        cutoffs = pseudo_family.get_recommended_cutoffs(structure=structure)
+
+        parameters = inputs['pw']['parameters']
+        parameters['CONTROL']['etot_conv_thr'] = natoms * meta_parameters['etot_conv_thr_per_atom']
+        parameters['ELECTRONS']['conv_thr'] = natoms * meta_parameters['conv_thr_per_atom']
+        parameters['SYSTEM']['ecutwfc'] = cutoffs[0]
+        parameters['SYSTEM']['ecutrho'] = cutoffs[1]
+
+        if electronic_type is ElectronicType.INSULATOR:
+            parameters['SYSTEM']['occupations'] = 'fixed'
+            parameters['SYSTEM'].pop('degauss')
+            parameters['SYSTEM'].pop('smearing')
+
+        if spin_type is SpinType.COLLINEAR:
+            if starting_magnetization is None:
+                starting_magnetization = get_starting_magnetization(structure, pseudo_family)
+
+            if sorted(starting_magnetization.keys()) != sorted(structure.get_kind_names()):
+                raise ValueError(f'`starting_magnetization` needs one value for each of the {nkinds} kinds.')
+
+            parameters['SYSTEM']['nspin'] = 2
+            parameters['SYSTEM']['starting_magnetization'] = starting_magnetization
+
+        builder.pw['code'] = code  # pylint: disable=no-member
+        builder.pw['pseudos'] = pseudo_family.get_pseudos(structure=structure)  # pylint: disable=no-member
+        builder.pw['structure'] = structure  # pylint: disable=no-member
+        builder.pw['parameters'] = orm.Dict(dict=parameters)  # pylint: disable=no-member
+        builder.pw['metadata'] = inputs['metadata']  # pylint: disable=no-member
+        builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
+        builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
+        builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
+
+        return builder
 
     def setup(self):
         """Call the `setup` of the `BaseRestartWorkChain` and then create the inputs dictionary in `self.ctx.inputs`.

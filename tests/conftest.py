@@ -66,6 +66,48 @@ def fixture_code(fixture_localhost):
     return _fixture_code
 
 
+@pytest.fixture
+def serialize_builder():
+    """Serialize the given process builder into a dictionary with nodes turned into their value representation.
+
+    :param builder: the process builder to serialize
+    :return: dictionary
+    """
+
+    def serialize_data(data):
+        # pylint: disable=too-many-return-statements
+        from aiida.orm import BaseType, Dict, Code
+        from aiida.plugins import DataFactory
+
+        StructureData = DataFactory('structure')
+        UpfData = DataFactory('pseudo.upf')
+
+        if isinstance(data, dict):
+            return {key: serialize_data(value) for key, value in data.items()}
+
+        if isinstance(data, BaseType):
+            return data.value
+
+        if isinstance(data, Code):
+            return data.full_label
+
+        if isinstance(data, Dict):
+            return data.get_dict()
+
+        if isinstance(data, StructureData):
+            return data.get_formula()
+
+        if isinstance(data, UpfData):
+            return f'{data.element}<md5={data.md5}>'
+
+        return data
+
+    def _serialize_builder(builder):
+        return serialize_data(builder._inputs(prune=True))  # pylint: disable=protected-access
+
+    return _serialize_builder
+
+
 @pytest.fixture(scope='session', autouse=True)
 def sssp(aiida_profile, generate_upf_data):
     """Create an SSSP pseudo potential family from scratch."""
