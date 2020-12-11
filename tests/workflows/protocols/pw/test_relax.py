@@ -4,7 +4,7 @@ import pytest
 
 from aiida.engine import ProcessBuilder
 
-from aiida_quantumespresso.common.types import ElectronicType, SpinType
+from aiida_quantumespresso.common.types import ElectronicType, RelaxType, SpinType
 from aiida_quantumespresso.workflows.pw.relax import PwRelaxWorkChain
 
 
@@ -63,3 +63,12 @@ def test_spin_type(fixture_code, generate_structure):
         parameters = namespace['pw']['parameters'].get_dict()
         assert parameters['SYSTEM']['nspin'] == 2
         assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.1}
+
+
+@pytest.mark.parametrize('relax_type', RelaxType)
+def test_relax_type(fixture_code, generate_structure, relax_type):
+    """Docs."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure()
+    builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, overrides={'relax_type': relax_type.value})
+    assert builder.relax_type.value == relax_type.value
