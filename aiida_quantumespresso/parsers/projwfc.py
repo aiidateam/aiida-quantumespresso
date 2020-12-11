@@ -142,12 +142,12 @@ def spin_dependent_subparser(out_info_dict):
             for j in range(i * od['num_bands'], (i + 1) * od['num_bands'], 1):
                 out_ind = od['e_lines'][j]
                 try:
-                    # post ~6.3 output format "e ="
+                    # post ~6.3 <6.5 output format "e ="
                     val = out_file[out_ind].split()[2]
                     float(val)
                 except ValueError:
-                    # pre ~6.3 output format? "==== e("
-                    val = out_file[out_ind].split()[4]
+                    # pre ~6.3 and 6.5+ output format "==== e("
+                    val = out_file[out_ind].split(' = ')[1].split()[0]
                 bands[i % od['k_states']][j % od['num_bands']] = val
                 #subloop grabs pdos
                 wave_fraction = []
