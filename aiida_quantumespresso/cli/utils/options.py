@@ -13,6 +13,11 @@ from . import validate
 class PseudoFamilyType(types.GroupParamType):
     """Subclass of `GroupParamType` in order to be able to print warning with instructions."""
 
+    def __init__(self, pseudo_types=None, **kwargs):
+        """Construct a new instance."""
+        super().__init__(**kwargs)
+        self._pseudo_types = pseudo_types
+
     @decorators.with_dbenv()
     def convert(self, value, param, ctx):
         """Convert the value to actual pseudo family instance."""
@@ -28,8 +33,15 @@ class PseudoFamilyType(types.GroupParamType):
                 raise click.BadParameter(  # pylint: disable=raise-missing-from
                     f'`{value}` is not of a supported pseudopotential family type.\nTo install a supported '
                     'pseudofamily, use the `aiida-pseudo` plugin. See the following link for detailed instructions:\n\n'
-                    '    https://github.com/aiidateam/aiida-quantumespresso#pseudo-potentials'
+                    '    https://github.com/aiidateam/aiida-quantumespresso#pseudopotentials'
                 )
+
+        if self._pseudo_types is not None and group.pseudo_type not in self._pseudo_types:
+            pseudo_types = ', '.join(self._pseudo_types)
+            raise click.BadParameter(
+                f'family `{group.label}` contains pseudopotentials of the wrong type `{group.pseudo_type}`.\nOnly the '
+                f'following types are supported: {pseudo_types}'
+            )
 
         return group
 
@@ -37,7 +49,7 @@ class PseudoFamilyType(types.GroupParamType):
 PSEUDO_FAMILY = OverridableOption(
     '-F',
     '--pseudo-family',
-    type=PseudoFamilyType(sub_classes=('aiida.groups:pseudo.family.upf', 'aiida.groups:pseudo.family.sssp')),
+    type=PseudoFamilyType(sub_classes=('aiida.groups:pseudo.family',), pseudo_types=('pseudo.upf',)),
     required=True,
     help='Select a pseudopotential family.'
 )

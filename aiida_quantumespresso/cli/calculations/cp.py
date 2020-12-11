@@ -23,6 +23,8 @@ def launch_calculation(code, structure, pseudo_family, max_num_machines, max_wal
     """Run a CpCalculation."""
     from aiida.orm import Dict
     from aiida.plugins import CalculationFactory
+    from qe_tools import CONSTANTS
+
     from aiida_quantumespresso.utils.resources import get_default_options
 
     cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure)
@@ -38,8 +40,8 @@ def launch_calculation(code, structure, pseudo_family, max_num_machines, max_wal
             'nstep': 10,
         },
         'SYSTEM': {
-            'ecutwfc': cutoff_wfc,
-            'ecutrho': cutoff_rho,
+            'ecutwfc': cutoff_wfc / CONSTANTS.ry_to_ev,
+            'ecutrho': cutoff_rho / CONSTANTS.ry_to_ev,
             'nr1b': 24,
             'nr2b': 24,
             'nr3b': 24,
