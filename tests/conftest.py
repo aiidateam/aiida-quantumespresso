@@ -289,7 +289,7 @@ def generate_upf_data(tmp_path_factory):
         from aiida_pseudo.data.pseudo import UpfData
 
         with open(tmp_path_factory.mktemp('pseudos') / f'{element}.upf', 'w+b') as handle:
-            content = f'<UPF version="2.0.1"><PP_HEADER\nelement="{element}"\nz_valence="1.0"\n/></UPF>\n'
+            content = f'<UPF version="2.0.1"><PP_HEADER\nelement="{element}"\nz_valence="4.0"\n/></UPF>\n'
             handle.write(content.encode('utf-8'))
             handle.flush()
             return UpfData(file=handle)

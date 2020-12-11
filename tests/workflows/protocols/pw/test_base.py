@@ -63,31 +63,33 @@ def test_spin_type(fixture_code, generate_structure):
     assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.1}
 
 
-@pytest.mark.parametrize('starting_magnetization', ({}, {'Si1': 1.0, 'Si2': 2.0}))
-def test_starting_magnetization_invalid(fixture_code, generate_structure, starting_magnetization):
-    """Test ``PwBaseWorkChain.get_builder_from_protocol`` with invalid ``starting_magnetization`` keyword."""
+@pytest.mark.parametrize('initial_magnetic_moments', ({}, {'Si1': 1.0, 'Si2': 2.0}))
+def test_initial_magnetic_moments_invalid(fixture_code, generate_structure, initial_magnetic_moments):
+    """Test ``PwBaseWorkChain.get_builder_from_protocol`` with invalid ``initial_magnetic_moments`` keyword."""
     code = fixture_code('quantumespresso.pw')
     structure = generate_structure()
 
-    with pytest.raises(ValueError, match=r'`starting_magnetization` is specified but spin type `.*` is incompatible.'):
-        PwBaseWorkChain.get_builder_from_protocol(code, structure, starting_magnetization=starting_magnetization)
+    with pytest.raises(
+        ValueError, match=r'`initial_magnetic_moments` is specified but spin type `.*` is incompatible.'
+    ):
+        PwBaseWorkChain.get_builder_from_protocol(code, structure, initial_magnetic_moments=initial_magnetic_moments)
 
     with pytest.raises(ValueError):
         PwBaseWorkChain.get_builder_from_protocol(
-            code, structure, starting_magnetization=starting_magnetization, spin_type=SpinType.COLLINEAR
+            code, structure, initial_magnetic_moments=initial_magnetic_moments, spin_type=SpinType.COLLINEAR
         )
 
 
-def test_starting_magnetization(fixture_code, generate_structure):
-    """Test ``PwBaseWorkChain.get_builder_from_protocol`` with ``starting_magnetization`` keyword."""
+def test_initial_magnetic_moments(fixture_code, generate_structure):
+    """Test ``PwBaseWorkChain.get_builder_from_protocol`` with ``initial_magnetic_moments`` keyword."""
     code = fixture_code('quantumespresso.pw')
     structure = generate_structure()
 
-    starting_magnetization = {'Si': 1.0}
+    initial_magnetic_moments = {'Si': 1.0}
     builder = PwBaseWorkChain.get_builder_from_protocol(
-        code, structure, starting_magnetization=starting_magnetization, spin_type=SpinType.COLLINEAR
+        code, structure, initial_magnetic_moments=initial_magnetic_moments, spin_type=SpinType.COLLINEAR
     )
     parameters = builder.pw.parameters.get_dict()
 
     assert parameters['SYSTEM']['nspin'] == 2
-    assert parameters['SYSTEM']['starting_magnetization'] == starting_magnetization
+    assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.25}
