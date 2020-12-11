@@ -109,13 +109,26 @@ def get_magnetization_parameters() -> dict:
         return yaml.safe_load(handle)
 
 
-def get_starting_magnetization(structure, pseudo_family):
+def get_starting_magnetization(structure, pseudo_family, initial_magnetic_moments=None):
     """Return the dictionary with starting magnetization for each kind in the structure.
 
     :param structure: the structure.
     :param pseudo_family: pseudopotential family.
+    :param initial_magnetic_moments: dictionary mapping each kind in the structure to its magnetic moment.
     :returns: dictionary of starting magnetizations.
     """
+    if initial_magnetic_moments is not None:
+
+        nkinds = len(structure.kinds)
+
+        if sorted(initial_magnetic_moments.keys()) != sorted(structure.get_kind_names()):
+            raise ValueError(f'`initial_magnetic_moments` needs one value for each of the {nkinds} kinds.')
+
+        return {
+            kind.name: initial_magnetic_moments[kind.name] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
+            for kind in structure.kinds
+        }
+
     magnetic_parameters = get_magnetization_parameters()
     starting_magnetization = {}
 

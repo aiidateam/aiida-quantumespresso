@@ -123,7 +123,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         overrides=None,
         electronic_type=ElectronicType.METAL,
         spin_type=SpinType.NONE,
-        starting_magnetization=None,
+        initial_magnetic_moments=None,
         **_
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
@@ -134,9 +134,9 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         :param overrides: optional dictionary of inputs to override the defaults of the protocol.
         :param electronic_type: indicate the electronic character of the system through ``ElectronicType`` instance.
         :param spin_type: indicate the spin polarization type to use through a ``SpinType`` instance.
-        :param starting_magnetization: optional dictionary that maps the starting magnetization of each kind to a
-            desired value for a spin polarized calculation. Note that for ``spin_type == SpinType.COLLINEAR`` a starting
-            guess for the magnetization is automatically set in case this argument is not provided.
+        :param initial_magnetic_moments: optional dictionary that maps the initial magnetic moment of each kind to a
+            desired value for a spin polarized calculation. Note that for ``spin_type == SpinType.COLLINEAR`` an initial
+            guess for the magnetic moment is automatically set in case this argument is not provided.
         :return: a process builder instance with all inputs defined ready for launch.
         """
         from qe_tools import CONSTANTS
@@ -155,8 +155,8 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if spin_type not in [SpinType.NONE, SpinType.COLLINEAR]:
             raise NotImplementedError(f'spin type `{spin_type}` is not supported.')
 
-        if starting_magnetization is not None and spin_type is not SpinType.COLLINEAR:
-            raise ValueError(f'`starting_magnetization` is specified but spin type `{spin_type}` is incompatible.')
+        if initial_magnetic_moments is not None and spin_type is not SpinType.COLLINEAR:
+            raise ValueError(f'`initial_magnetic_moments` is specified but spin type `{spin_type}` is incompatible.')
 
         builder = cls.get_builder()
         inputs = cls.get_protocol_inputs(protocol, overrides)
@@ -165,7 +165,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         pseudo_family = inputs.pop('pseudo_family')
 
         natoms = len(structure.sites)
-        nkinds = len(structure.kinds)
 
         try:
             pseudo_family = orm.QueryBuilder().append(SsspFamily, filters={'label': pseudo_family}).one()[0]
@@ -188,11 +187,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             parameters['SYSTEM'].pop('smearing')
 
         if spin_type is SpinType.COLLINEAR:
-            if starting_magnetization is None:
-                starting_magnetization = get_starting_magnetization(structure, pseudo_family)
-
-            if sorted(starting_magnetization.keys()) != sorted(structure.get_kind_names()):
-                raise ValueError(f'`starting_magnetization` needs one value for each of the {nkinds} kinds.')
+            starting_magnetization = get_starting_magnetization(structure, pseudo_family, initial_magnetic_moments)
 
             parameters['SYSTEM']['nspin'] = 2
             parameters['SYSTEM']['starting_magnetization'] = starting_magnetization

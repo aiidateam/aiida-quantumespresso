@@ -28,5 +28,5 @@ pw:
       occupations: smearing
       smearing: cold
   pseudos:
-    Si: Si<md5=b8624bea1910ebe720dc5977d5a73a7d>
+    Si: Si<md5=57fa15d98af99972c7b7aa5c179b0bb8>
   structure: Si2
