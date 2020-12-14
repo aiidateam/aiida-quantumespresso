@@ -164,7 +164,10 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         If the maximum number of meta convergence iterations has been exceeded and convergence has not been reached, the
         structure cannot be considered to be relaxed and the final scf should not be run.
         """
-        return self.ctx.is_converged and 'final_scf_inputs' in self.ctx
+        return (
+            RelaxType(self.inputs.relax_type) is not RelaxType.NONE and self.ctx.is_converged and
+            'final_scf_inputs' in self.ctx
+        )
 
     def run_relax(self):
         """Run the `PwBaseWorkChain` to run a relax `PwCalculation`."""
@@ -188,10 +191,13 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         else:
             relax_type = RelaxType(self.inputs.relax_type)
 
-        if relax_type in [RelaxType.NONE, RelaxType.VOLUME, RelaxType.SHAPE, RelaxType.CELL]:
+        if relax_type in [RelaxType.VOLUME, RelaxType.SHAPE, RelaxType.CELL]:
             inputs.pw.settings = self._fix_atomic_positions(inputs.pw.structure, inputs.pw.get('settings', None))
 
-        if relax_type in [RelaxType.NONE, RelaxType.ATOMS]:
+        if relax_type == RelaxType.NONE:
+            inputs.pw.parameters['CONTROL']['calculation'] = 'scf'
+            inputs.pw.parameters.pop('CELL', None)
+        elif relax_type == RelaxType.ATOMS:
             inputs.pw.parameters['CONTROL']['calculation'] = 'relax'
             inputs.pw.parameters.pop('CELL', None)
         else:
@@ -241,7 +247,12 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         try:
             structure = workchain.outputs.output_structure
         except exceptions.NotExistent:
-            self.report('relax PwBaseWorkChain finished successful but without output structure')
+            # If relax_type is RelaxType.NONE, this is expected, so we are done
+            if RelaxType(self.inputs.relax_type) is RelaxType.NONE:
+                self.ctx.is_converged = True
+                return
+
+            self.report('`vc-relax` or `relax` PwBaseWorkChain finished successfully but without output structure')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
 
         prev_cell_volume = self.ctx.current_cell_volume
@@ -256,8 +267,11 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         if not prev_cell_volume:
             self.ctx.current_cell_volume = curr_cell_volume
 
-            # If meta convergence is switched off we are done
-            if not self.inputs.meta_convergence.value:
+            # If meta convergence is switched off, or the relax type doesn't change the volume we are done
+            if (
+                not self.inputs.meta_convergence.value or
+                RelaxType(self.inputs.relax_type) in [RelaxType.ATOMS, RelaxType.SHAPE]
+            ):
                 self.ctx.is_converged = True
             return
 
@@ -323,14 +337,16 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         # Get the latest workchain, which is either the workchain_scf if it ran or otherwise the last regular workchain
         try:
             workchain = self.ctx.workchain_scf
-            structure = workchain.inputs.pw__structure
         except AttributeError:
             workchain = self.ctx.workchains[-1]
-            structure = workchain.outputs.output_structure
 
         self.out_many(self.exposed_outputs(workchain, PwBaseWorkChain))
 
-        if self.inputs.relax_type.value != RelaxType.NONE.value:
+        if RelaxType(self.inputs.relax_type) is not RelaxType.NONE:
+            try:
+                structure = workchain.outputs.output_structure
+            except AttributeError:
+                structure = workchain.inputs.pw__structure
             self.out('output_structure', structure)
 
     def on_terminated(self):
