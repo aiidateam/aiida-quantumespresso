@@ -38,7 +38,7 @@ Inputs
 
       'INPUTPH', 'outdir': scratch directory
       'INPUTPH', 'prefix': file prefix
-      'INPUTPH', 'iverbosity': file prefix
+      'INPUTPH', 'verbosity': file prefix
       'INPUTPH', 'fildyn': file prefix
       'INPUTPH', 'ldisp': logic displacement
       'INPUTPH', 'nq1': q-mesh on b1

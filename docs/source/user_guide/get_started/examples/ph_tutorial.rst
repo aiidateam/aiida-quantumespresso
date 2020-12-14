@@ -17,7 +17,7 @@ The input file that we should create is more or less this one::
   &INPUTPH
      epsil = .true.
      fildyn = 'DYN_MAT/dynamical-matrix-'
-     iverbosity = 1
+     verbosity = 'high'
      ldisp = .true.
      nq1 = 1
      nq2 = 1

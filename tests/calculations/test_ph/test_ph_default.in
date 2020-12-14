@@ -1,10 +1,10 @@
 &INPUTPH
   fildyn = 'DYN_MAT/dynamical-matrix-'
-  iverbosity = 1
   ldisp = .true.
   nq1 = 2
   nq2 = 2
   nq3 = 2
   outdir = './out/'
   prefix = 'aiida'
+  verbosity = 'high'
 /
