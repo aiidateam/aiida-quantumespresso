@@ -143,12 +143,36 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         self.ctx.is_converged = False
         self.ctx.iteration = 0
 
+        # Determine the correct `RelaxType` and add it to the context
+        if 'relaxation_scheme' in self.inputs:
+            if self.inputs.relaxation_scheme.value == 'relax':
+                self.ctx.relax_type = RelaxType.ATOMS
+            elif self.inputs.relaxation_scheme.value == 'vc-relax':
+                self.ctx.relax_type = RelaxType.ATOMS_CELL
+            else:
+                raise ValueError('unsupported value for the `relaxation_scheme` input.')
+        else:
+            self.ctx.relax_type = RelaxType(self.inputs.relax_type)
+
+        # Set the meta_convergence and add it to the context
+        self.ctx.meta_convergence = self.inputs.meta_convergence.value
+        if self.inputs.meta_convergence and self.ctx.relax_type in [RelaxType.NONE, RelaxType.ATOMS, RelaxType.SHAPE]:
+            self.report(
+                f'Since there is no change in volume for `{self.ctx.relax_type}`, meta convergence is turned off.'
+            )
+            self.ctx.meta_convergence = False
+
+        # Add the final scf inputs to the context if a final scf should be run
         if self.inputs.final_scf and 'base_final_scf' in self.inputs:
             raise ValueError('cannot specify `final_scf=True` and `base_final_scf` at the same time.')
         elif self.inputs.final_scf:
             self.ctx.final_scf_inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base'))
         elif 'base_final_scf' in self.inputs:
             self.ctx.final_scf_inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base_final_scf'))
+
+        if self.ctx.relax_type is RelaxType.NONE:
+            self.report('Work chain will not run final SCF for `RelaxType.NONE`.')
+            self.ctx.pop('final_scf_inputs')
 
     def should_run_relax(self):
         """Return whether a relaxation workchain should be run.
@@ -164,10 +188,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         If the maximum number of meta convergence iterations has been exceeded and convergence has not been reached, the
         structure cannot be considered to be relaxed and the final scf should not be run.
         """
-        return (
-            RelaxType(self.inputs.relax_type) is not RelaxType.NONE and self.ctx.is_converged and
-            'final_scf_inputs' in self.ctx
-        )
+        return self.ctx.is_converged and 'final_scf_inputs' in self.ctx
 
     def run_relax(self):
         """Run the `PwBaseWorkChain` to run a relax `PwCalculation`."""
@@ -181,35 +202,25 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         inputs.pw.parameters.setdefault('CONTROL', {})
         inputs.pw.parameters['CONTROL']['restart_mode'] = 'from_scratch'
 
-        if 'relaxation_scheme' in self.inputs:
-            if self.inputs.relaxation_scheme.value == 'relax':
-                relax_type = RelaxType.ATOMS
-            elif self.inputs.relaxation_scheme.value == 'vc-relax':
-                relax_type = RelaxType.ATOMS_CELL
-            else:
-                raise ValueError('unsupported value for the `relaxation_scheme` input.')
-        else:
-            relax_type = RelaxType(self.inputs.relax_type)
-
-        if relax_type in [RelaxType.VOLUME, RelaxType.SHAPE, RelaxType.CELL]:
+        if self.ctx.relax_type in [RelaxType.VOLUME, RelaxType.SHAPE, RelaxType.CELL]:
             inputs.pw.settings = self._fix_atomic_positions(inputs.pw.structure, inputs.pw.get('settings', None))
 
-        if relax_type == RelaxType.NONE:
+        if self.ctx.relax_type is RelaxType.NONE:
             inputs.pw.parameters['CONTROL']['calculation'] = 'scf'
             inputs.pw.parameters.pop('CELL', None)
-        elif relax_type == RelaxType.ATOMS:
+        elif self.ctx.relax_type is RelaxType.ATOMS:
             inputs.pw.parameters['CONTROL']['calculation'] = 'relax'
             inputs.pw.parameters.pop('CELL', None)
         else:
             inputs.pw.parameters['CONTROL']['calculation'] = 'vc-relax'
 
-        if relax_type in [RelaxType.VOLUME, RelaxType.ATOMS_VOLUME]:
+        if self.ctx.relax_type in [RelaxType.VOLUME, RelaxType.ATOMS_VOLUME]:
             inputs.pw.parameters['CELL']['cell_dofree'] = 'volume'
 
-        if relax_type in [RelaxType.SHAPE, RelaxType.ATOMS_SHAPE]:
+        if self.ctx.relax_type in [RelaxType.SHAPE, RelaxType.ATOMS_SHAPE]:
             inputs.pw.parameters['CELL']['cell_dofree'] = 'shape'
 
-        if relax_type in [RelaxType.CELL, RelaxType.ATOMS_CELL]:
+        if self.ctx.relax_type in [RelaxType.CELL, RelaxType.ATOMS_CELL]:
             inputs.pw.parameters['CELL']['cell_dofree'] = 'all'
 
         # If one of the nested `PwBaseWorkChains` changed the number of bands, apply it here
@@ -248,7 +259,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
             structure = workchain.outputs.output_structure
         except exceptions.NotExistent:
             # If relax_type is RelaxType.NONE, this is expected, so we are done
-            if RelaxType(self.inputs.relax_type) is RelaxType.NONE:
+            if self.ctx.relax_type is RelaxType.NONE:
                 self.ctx.is_converged = True
                 return
 
@@ -267,11 +278,8 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         if not prev_cell_volume:
             self.ctx.current_cell_volume = curr_cell_volume
 
-            # If meta convergence is switched off, or the relax type doesn't change the volume we are done
-            if (
-                not self.inputs.meta_convergence.value or
-                RelaxType(self.inputs.relax_type) in [RelaxType.ATOMS, RelaxType.SHAPE]
-            ):
+            # If meta convergence is switched off we are done
+            if not self.ctx.meta_convergence:
                 self.ctx.is_converged = True
             return
 
@@ -334,20 +342,16 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         else:
             self.report('maximum number of meta convergence iterations exceeded')
 
-        # Get the latest workchain, which is either the workchain_scf if it ran or otherwise the last regular workchain
-        try:
-            workchain = self.ctx.workchain_scf
-        except AttributeError:
-            workchain = self.ctx.workchains[-1]
+        # Get the latest relax workchain and pass the outputs
+        final_relax_workchain = self.ctx.workchains[-1]
 
-        self.out_many(self.exposed_outputs(workchain, PwBaseWorkChain))
+        if self.ctx.relax_type is not RelaxType.NONE:
+            self.out('output_structure', final_relax_workchain.outputs.output_structure)
 
-        if RelaxType(self.inputs.relax_type) is not RelaxType.NONE:
-            try:
-                structure = workchain.outputs.output_structure
-            except AttributeError:
-                structure = workchain.inputs.pw__structure
-            self.out('output_structure', structure)
+        if 'final_scf_inputs' in self.ctx:
+            self.out_many(self.exposed_outputs(self.ctx.workchain_scf, PwBaseWorkChain))
+        else:
+            self.out_many(self.exposed_outputs(final_relax_workchain, PwBaseWorkChain))
 
     def on_terminated(self):
         """Clean the working directories of all child calculations if `clean_workdir=True` in the inputs."""
