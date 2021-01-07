@@ -18,6 +18,7 @@ from ..protocols.utils import ProtocolMixin
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
 SsspFamily = GroupFactory('pseudo.family.sssp')
+PseudoDojoFamily = GroupFactory('pseudo.family.pseudo_dojo')
 
 
 def validate_pseudo_family(value, _):
@@ -167,7 +168,8 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         natoms = len(structure.sites)
 
         try:
-            pseudo_family = orm.QueryBuilder().append(SsspFamily, filters={'label': pseudo_family}).one()[0]
+            pseudo_set = (PseudoDojoFamily, SsspFamily)
+            pseudo_family = orm.QueryBuilder().append(pseudo_set, filters={'label': pseudo_family}).one()[0]
         except exceptions.NotExistent as exception:
             raise ValueError(
                 f'required pseudo family `{pseudo_family}` is not installed. Please run `aiida-pseudo install sssp`.'
