@@ -172,7 +172,8 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             pseudo_family = orm.QueryBuilder().append(pseudo_set, filters={'label': pseudo_family}).one()[0]
         except exceptions.NotExistent as exception:
             raise ValueError(
-                f'required pseudo family `{pseudo_family}` is not installed. Please run `aiida-pseudo install sssp`.'
+                f'required pseudo family `{pseudo_family}` is not installed. Please use `aiida-pseudo install` to'
+                'install it.'
             ) from exception
 
         cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure)
