@@ -411,6 +411,29 @@ def generate_structure():
 
 
 @pytest.fixture
+def generate_structure_from_kinds():
+    """Return a dummy `StructureData` instance with the specified kind names."""
+
+    def _generate_structure_from_kinds(site_kind_names):
+        """Return a dummy `StructureData` instance with the specified kind names."""
+        import re
+
+        from aiida import orm
+
+        if not isinstance(site_kind_names, (list, tuple)):
+            site_kind_names = (site_kind_names,)
+
+        structure = orm.StructureData(cell=[[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+
+        for kind_name in site_kind_names:
+            structure.append_atom(name=kind_name, symbols=re.sub('[0-9]', '', kind_name), position=(0., 0., 0.))
+
+        return structure
+
+    return _generate_structure_from_kinds
+
+
+@pytest.fixture
 def generate_kpoints_mesh():
     """Return a `KpointsData` node."""
 
