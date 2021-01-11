@@ -44,9 +44,10 @@ relax:
           withmpi: true
       parameters:
         CELL:
+          cell_dofree: all
           press_conv_thr: 0.5
         CONTROL:
-          calculation: scf
+          calculation: vc-relax
           etot_conv_thr: 2.0e-05
           forc_conv_thr: 0.0001
           tprnfor: true
@@ -66,7 +67,6 @@ relax:
         Si: Si<md5=57fa15d98af99972c7b7aa5c179b0bb8>
   max_meta_convergence_iterations: 5
   meta_convergence: true
-  relax_type: atoms_cell
   volume_convergence: 0.02
 scf:
   kpoints_distance: 0.15

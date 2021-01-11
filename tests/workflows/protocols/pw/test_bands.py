@@ -66,10 +66,11 @@ def test_spin_type(fixture_code, generate_structure):
 
 
 def test_relax_type(fixture_code, generate_structure):
-    """Test ``PwBandsWorkChain.get_builder_from_protocol`` overriding the ``relax_type`` input."""
+    """Test ``PwBandsWorkChain.get_builder_from_protocol`` setting the ``relax_type`` input."""
     code = fixture_code('quantumespresso.pw')
     structure = generate_structure()
 
-    overrides = {'relax': {'relax_type': RelaxType.NONE.value}}
-    builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)
-    assert builder.relax['relax_type'].value == RelaxType.NONE.value
+    builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, relax_type=RelaxType.NONE)
+    assert builder.relax['base']['pw']['parameters']['CONTROL']['calculation'] == 'scf'
+    with pytest.raises(KeyError):
+        builder.relax['base']['pw']['parameters']['CELL']  # pylint: disable=pointless-statement
