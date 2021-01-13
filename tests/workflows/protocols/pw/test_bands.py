@@ -72,5 +72,4 @@ def test_relax_type(fixture_code, generate_structure):
 
     builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, relax_type=RelaxType.NONE)
     assert builder.relax['base']['pw']['parameters']['CONTROL']['calculation'] == 'scf'
-    with pytest.raises(KeyError):
-        builder.relax['base']['pw']['parameters']['CELL']  # pylint: disable=pointless-statement
+    assert 'CELL' not in builder.relax['base']['pw']['parameters'].get_dict()

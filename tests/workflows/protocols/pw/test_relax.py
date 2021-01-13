@@ -72,13 +72,11 @@ def test_relax_type(fixture_code, generate_structure):
 
     builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, relax_type=RelaxType.NONE)
     assert builder.base['pw']['parameters']['CONTROL']['calculation'] == 'scf'
-    with pytest.raises(KeyError):
-        builder.base['pw']['parameters']['CELL']  # pylint: disable=pointless-statement
+    assert 'CELL' not in builder.base['pw']['parameters'].get_dict()
 
     builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, relax_type=RelaxType.ATOMS)
     assert builder.base['pw']['parameters']['CONTROL']['calculation'] == 'relax'
-    with pytest.raises(KeyError):
-        builder.base['pw']['parameters']['CELL']  # pylint: disable=pointless-statement
+    assert 'CELL' not in builder.base['pw']['parameters'].get_dict()
 
     builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, relax_type=RelaxType.VOLUME)
     assert builder.base['pw']['parameters']['CONTROL']['calculation'] == 'vc-relax'
@@ -98,17 +96,14 @@ def test_relax_type(fixture_code, generate_structure):
     builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, relax_type=RelaxType.ATOMS_VOLUME)
     assert builder.base['pw']['parameters']['CONTROL']['calculation'] == 'vc-relax'
     assert builder.base['pw']['parameters']['CELL']['cell_dofree'] == 'volume'
-    with pytest.raises(KeyError):
-        builder.base['pw']['settings']  # pylint: disable=pointless-statement
+    assert 'settings' not in builder.base['pw']
 
     builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, relax_type=RelaxType.ATOMS_SHAPE)
     assert builder.base['pw']['parameters']['CONTROL']['calculation'] == 'vc-relax'
     assert builder.base['pw']['parameters']['CELL']['cell_dofree'] == 'shape'
-    with pytest.raises(KeyError):
-        builder.base['pw']['settings']  # pylint: disable=pointless-statement
+    assert 'settings' not in builder.base['pw']
 
     builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, relax_type=RelaxType.ATOMS_CELL)
     assert builder.base['pw']['parameters']['CONTROL']['calculation'] == 'vc-relax'
     assert builder.base['pw']['parameters']['CELL']['cell_dofree'] == 'all'
-    with pytest.raises(KeyError):
-        builder.base['pw']['settings']  # pylint: disable=pointless-statement
+    assert 'settings' not in builder.base['pw']

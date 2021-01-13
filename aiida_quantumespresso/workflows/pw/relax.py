@@ -160,6 +160,9 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         self.ctx.relax_inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base'))
         self.ctx.relax_inputs.pw.parameters = self.ctx.relax_inputs.pw.parameters.get_dict()
 
+        self.ctx.relax_inputs.pw.parameters.setdefault('CONTROL', {})
+        self.ctx.relax_inputs.pw.parameters['CONTROL']['restart_mode'] = 'from_scratch'
+
         # Adjust the inputs for the chosen relaxation scheme
         if 'relaxation_scheme' in self.inputs:
             if self.inputs.relaxation_scheme.value in ('relax', 'vc-relax'):
@@ -187,12 +190,22 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         elif 'base_final_scf' in self.inputs:
             self.ctx.final_scf_inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base_final_scf'))
 
-        if 'final_scf_inputs' in self.ctx and self.ctx.relax_inputs.pw.parameters['CONTROL']['calculation'] == 'scf':
-            self.report(
-                'Work chain will not run final SCF when `calculation` is set to `scf` for the relaxation '
-                '`PwBaseWorkChain`.'
-            )
-            self.ctx.pop('final_scf_inputs')
+        if 'final_scf_inputs' in self.ctx:
+            if self.ctx.relax_inputs.pw.parameters['CONTROL']['calculation'] == 'scf':
+                self.report(
+                    'Work chain will not run final SCF when `calculation` is set to `scf` for the relaxation '
+                    '`PwBaseWorkChain`.'
+                )
+                self.ctx.pop('final_scf_inputs')
+
+            else:
+                self.ctx.final_scf_inputs.pw.parameters = self.ctx.final_scf_inputs.pw.parameters.get_dict()
+
+                self.ctx.final_scf_inputs.pw.parameters.setdefault('CONTROL', {})
+                self.ctx.final_scf_inputs.pw.parameters['CONTROL']['calculation'] = 'scf'
+                self.ctx.final_scf_inputs.pw.parameters['CONTROL']['restart_mode'] = 'from_scratch'
+                self.ctx.final_scf_inputs.pw.parameters.pop('CELL', None)
+                self.ctx.final_scf_inputs.metadata.call_link_label = 'final_scf'
 
     def should_run_relax(self):
         """Return whether a relaxation workchain should be run.
@@ -216,13 +229,6 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
 
         inputs = self.ctx.relax_inputs
         inputs.pw.structure = self.ctx.current_structure
-
-        inputs.pw.parameters.setdefault('CONTROL', {})
-        inputs.pw.parameters['CONTROL']['restart_mode'] = 'from_scratch'
-
-        # If the relaxation uses 'vc-relax make sure there is a 'CELL' namelist
-        if inputs.pw.parameters['CONTROL']['calculation'] == 'vc-relax':
-            inputs.pw.parameters.setdefault('CELL', {})
 
         # If one of the nested `PwBaseWorkChains` changed the number of bands, apply it here
         if self.ctx.current_number_of_bands is not None:
@@ -310,13 +316,6 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         """Run the `PwBaseWorkChain` to run a final scf `PwCalculation` for the relaxed structure."""
         inputs = self.ctx.final_scf_inputs
         inputs.pw.structure = self.ctx.current_structure
-        inputs.pw.parameters = inputs.pw.parameters.get_dict()
-
-        inputs.pw.parameters.setdefault('CONTROL', {})
-        inputs.pw.parameters['CONTROL']['calculation'] = 'scf'
-        inputs.pw.parameters['CONTROL']['restart_mode'] = 'from_scratch'
-        inputs.pw.parameters.pop('CELL', None)
-        inputs.metadata.call_link_label = 'final_scf'
 
         if self.ctx.current_number_of_bands is not None:
             inputs.pw.parameters.setdefault('SYSTEM', {})['nbnd'] = self.ctx.current_number_of_bands
@@ -349,9 +348,9 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         if self.inputs.base.pw.parameters['CONTROL']['calculation'] != 'scf':
             self.out('output_structure', final_relax_workchain.outputs.output_structure)
 
-        if 'final_scf_inputs' in self.ctx:
+        try:
             self.out_many(self.exposed_outputs(self.ctx.workchain_scf, PwBaseWorkChain))
-        else:
+        except AttributeError:
             self.out_many(self.exposed_outputs(final_relax_workchain, PwBaseWorkChain))
 
     def on_terminated(self):
