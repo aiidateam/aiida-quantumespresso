@@ -15,6 +15,14 @@ PwCalculation = CalculationFactory('quantumespresso.pw')
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 
 
+def validate_inputs(inputs, _):
+    """Validate the top level namespace."""
+    parameters = inputs['base']['pw']['parameters'].get_dict()
+
+    if 'relaxation_scheme' not in inputs and 'calculation' not in parameters.get('CONTROL', {}):
+        return 'The parameters in `base.pw.parameters` do not specify the required key `CONTROL.calculation`.'
+
+
 def validate_final_scf(value, _):
     """Validate the final scf input."""
     if isinstance(value, orm.Bool) and value:
@@ -65,6 +73,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
             help='The volume difference threshold between two consecutive meta convergence iterations.')
         spec.input('clean_workdir', valid_type=orm.Bool, default=lambda: orm.Bool(False),
             help='If `True`, work directories of all called calculation will be cleaned at the end of execution.')
+        spec.inputs.validator = validate_inputs
         spec.outline(
             cls.setup,
             while_(cls.should_run_relax)(
@@ -174,7 +183,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         self.ctx.meta_convergence = self.inputs.meta_convergence.value
         volume_cannot_change = (
             self.ctx.relax_inputs.pw.parameters['CONTROL']['calculation'] in ('scf', 'relax') or
-            self.ctx.relax_inputs.pw.parameters['CELL']['cell_dofree'] == 'shape'
+            self.ctx.relax_inputs.pw.parameters.get('CELL', {}).get('cell_dofree', None) == 'shape'
         )
         if self.ctx.meta_convergence and volume_cannot_change:
             self.report(
