@@ -2,7 +2,6 @@ default_inputs:
     clean_workdir: True
     max_meta_convergence_iterations: 5
     meta_convergence: True
-    relax_type: atoms_cell
     volume_convergence: 0.02
     base:
         pw:

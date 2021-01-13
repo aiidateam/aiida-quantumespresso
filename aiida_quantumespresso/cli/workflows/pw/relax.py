@@ -49,7 +49,6 @@ def launch_workflow(
     from aiida.plugins import WorkflowFactory
     from qe_tools import CONSTANTS
 
-    from aiida_quantumespresso.common.types import RelaxType
     from aiida_quantumespresso.utils.resources import get_default_options, get_automatic_parallelization_options
 
     builder = WorkflowFactory('quantumespresso.pw.relax').get_builder()
@@ -57,6 +56,9 @@ def launch_workflow(
     cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure)
 
     parameters = {
+        'CONTROL': {
+            'calculation': 'relax',
+        },
         'SYSTEM': {
             'ecutwfc': ecutwfc or cutoff_wfc / CONSTANTS.ry_to_ev,
             'ecutrho': ecutrho or cutoff_rho / CONSTANTS.ry_to_ev,
@@ -81,7 +83,6 @@ def launch_workflow(
         raise click.BadParameter(str(exception))
 
     builder.structure = structure
-    builder.relax_type = Str(RelaxType.ATOMS.value)
     builder.base.kpoints_distance = Float(kpoints_distance)
     builder.base.pw.code = code
     builder.base.pw.pseudos = pseudo_family.get_pseudos(structure=structure)

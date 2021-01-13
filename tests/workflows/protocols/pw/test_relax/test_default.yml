@@ -11,9 +11,10 @@ base:
         withmpi: true
     parameters:
       CELL:
+        cell_dofree: all
         press_conv_thr: 0.5
       CONTROL:
-        calculation: scf
+        calculation: vc-relax
         etot_conv_thr: 2.0e-05
         forc_conv_thr: 0.0001
         tprnfor: true
@@ -67,6 +68,5 @@ base_final_scf:
 clean_workdir: true
 max_meta_convergence_iterations: 5
 meta_convergence: true
-relax_type: atoms_cell
 structure: Si2
 volume_convergence: 0.02
