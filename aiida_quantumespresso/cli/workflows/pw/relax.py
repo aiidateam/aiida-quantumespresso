@@ -56,6 +56,9 @@ def launch_workflow(
     cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure)
 
     parameters = {
+        'CONTROL': {
+            'calculation': 'relax',
+        },
         'SYSTEM': {
             'ecutwfc': ecutwfc or cutoff_wfc / CONSTANTS.ry_to_ev,
             'ecutrho': ecutrho or cutoff_rho / CONSTANTS.ry_to_ev,
