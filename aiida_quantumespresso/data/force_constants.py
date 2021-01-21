@@ -1,21 +1,22 @@
 # -*- coding: utf-8 -*-
 """Sub class of `Data` to handle interatomic force constants produced by the Quantum ESPRESSO q2r.x code."""
 import numpy
+from qe_tools import CONSTANTS
 
 from aiida.orm import SinglefileData
-from qe_tools import CONSTANTS
 
 
 class ForceConstantsData(SinglefileData):
     """Class to handle interatomic force constants from the Quantum ESPRESSO q2r.x code."""
 
-    def set_file(self, file):
+    def set_file(self, file, filename=None, **kwargs):
         """Add a file to the node, parse it and set the attributes found.
 
         :param file: absolute path to the file or a filelike object
+        :param filename: specify filename to use (defaults to name of provided file).
         """
-        # pylint: disable=redefined-builtin,arguments-differ
-        super().set_file(file)
+        # pylint: disable=redefined-builtin
+        super().set_file(file, filename, **kwargs)
 
         # Parse the force constants file
         dictionary, _, _ = parse_q2r_force_constants_file(self.get_content().splitlines(), also_force_constants=False)
@@ -137,7 +138,7 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
         if len(celldm) != 6:
             warnings.append('Wrong length for celldm')
         if ibrav != 0:
-            warnings.append('ibrav ({}) is not 0; q-points path for phonon dispersion might be wrong'.format(ibrav))
+            warnings.append(f'ibrav ({ibrav}) is not 0; q-points path for phonon dispersion might be wrong')
         if any([item != 0 for item in celldm[1:]]):
             warnings.append('celldm[1:] are not all zero; only celldm[0] will be used')
 

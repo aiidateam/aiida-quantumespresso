@@ -2,9 +2,9 @@
 # pylint: disable=redefined-outer-name,too-many-statements
 """Initialise a text database and profile for pytest."""
 import collections
-import io
 import os
 import shutil
+import tempfile
 
 import pytest
 
@@ -49,10 +49,101 @@ def fixture_code(fixture_localhost):
     """Return a `Code` instance configured to run calculations of given entry point on localhost `Computer`."""
 
     def _fixture_code(entry_point_name):
+        from aiida.common import exceptions
         from aiida.orm import Code
-        return Code(input_plugin_name=entry_point_name, remote_computer_exec=[fixture_localhost, '/bin/true'])
+
+        label = f'test.{entry_point_name}'
+
+        try:
+            return Code.objects.get(label=label)  # pylint: disable=no-member
+        except exceptions.NotExistent:
+            return Code(
+                label=label,
+                input_plugin_name=entry_point_name,
+                remote_computer_exec=[fixture_localhost, '/bin/true'],
+            )
 
     return _fixture_code
+
+
+@pytest.fixture
+def serialize_builder():
+    """Serialize the given process builder into a dictionary with nodes turned into their value representation.
+
+    :param builder: the process builder to serialize
+    :return: dictionary
+    """
+
+    def serialize_data(data):
+        # pylint: disable=too-many-return-statements
+        from aiida.orm import BaseType, Dict, Code
+        from aiida.plugins import DataFactory
+
+        StructureData = DataFactory('structure')
+        UpfData = DataFactory('pseudo.upf')
+
+        if isinstance(data, dict):
+            return {key: serialize_data(value) for key, value in data.items()}
+
+        if isinstance(data, BaseType):
+            return data.value
+
+        if isinstance(data, Code):
+            return data.full_label
+
+        if isinstance(data, Dict):
+            return data.get_dict()
+
+        if isinstance(data, StructureData):
+            return data.get_formula()
+
+        if isinstance(data, UpfData):
+            return f'{data.element}<md5={data.md5}>'
+
+        return data
+
+    def _serialize_builder(builder):
+        return serialize_data(builder._inputs(prune=True))  # pylint: disable=protected-access
+
+    return _serialize_builder
+
+
+@pytest.fixture(scope='session', autouse=True)
+def sssp(aiida_profile, generate_upf_data):
+    """Create an SSSP pseudo potential family from scratch."""
+    from qe_tools import CONSTANTS
+    from aiida.common.constants import elements
+    from aiida.plugins import GroupFactory
+
+    aiida_profile.reset_db()
+
+    SsspFamily = GroupFactory('pseudo.family.sssp')
+
+    cutoffs = {'standard': {}}
+
+    with tempfile.TemporaryDirectory() as dirpath:
+        for values in elements.values():
+
+            element = values['symbol']
+            upf = generate_upf_data(element)
+            filename = os.path.join(dirpath, f'{element}.upf')
+
+            with open(filename, 'w+b') as handle:
+                with upf.open(mode='rb') as source:
+                    handle.write(source.read())
+                    handle.flush()
+
+            cutoffs['standard'][element] = {
+                'cutoff_wfc': 30. * CONSTANTS.ry_to_ev,
+                'cutoff_rho': 240. * CONSTANTS.ry_to_ev
+            }
+
+        label = 'SSSP/1.1/PBE/efficiency'
+        family = SsspFamily.create_from_folder(dirpath, label)
+
+    family.set_cutoffs(cutoffs)
+
+    return family
 
 
 @pytest.fixture
@@ -190,19 +281,18 @@ def generate_calc_job_node(fixture_localhost):
 
 
 @pytest.fixture(scope='session')
-def generate_upf_data(filepath_tests):
+def generate_upf_data(tmp_path_factory):
     """Return a `UpfData` instance for the given element a file for which should exist in `tests/fixtures/pseudos`."""
 
     def _generate_upf_data(element):
         """Return `UpfData` node."""
-        from aiida.orm import UpfData
+        from aiida_pseudo.data.pseudo import UpfData
 
-        filepath = os.path.join(filepath_tests, 'fixtures', 'pseudos', '{}.upf'.format(element))
-
-        with io.open(filepath, 'r') as handle:
-            upf = UpfData(file=handle.name)
-
-        return upf
+        with open(tmp_path_factory.mktemp('pseudos') / f'{element}.upf', 'w+b') as handle:
+            content = f'<UPF version="2.0.1"><PP_HEADER\nelement="{element}"\nz_valence="4.0"\n/></UPF>\n'
+            handle.write(content.encode('utf-8'))
+            handle.flush()
+            return UpfData(file=handle)
 
     return _generate_upf_data
 
@@ -211,16 +301,23 @@ def generate_upf_data(filepath_tests):
 def generate_structure():
     """Return a `StructureData` representing bulk silicon."""
 
-    def _generate_structure():
-        """Return a `StructureData` representing bulk silicon."""
+    def _generate_structure(structure_id='silicon'):
+        """Return a `StructureData` representing bulk silicon or a snapshot of a single water molecule dynamics."""
         from aiida.orm import StructureData
 
-        param = 5.43
-        cell = [[param / 2., param / 2., 0], [param / 2., 0, param / 2.], [0, param / 2., param / 2.]]
-        structure = StructureData(cell=cell)
-        structure.append_atom(position=(0., 0., 0.), symbols='Si', name='Si')
-        structure.append_atom(position=(param / 4., param / 4., param / 4.), symbols='Si', name='Si')
-
+        if structure_id == 'silicon':
+            param = 5.43
+            cell = [[param / 2., param / 2., 0], [param / 2., 0, param / 2.], [0, param / 2., param / 2.]]
+            structure = StructureData(cell=cell)
+            structure.append_atom(position=(0., 0., 0.), symbols='Si', name='Si')
+            structure.append_atom(position=(param / 4., param / 4., param / 4.), symbols='Si', name='Si')
+        elif structure_id == 'water':
+            structure = StructureData(cell=[[5.29177209, 0., 0.], [0., 5.29177209, 0.], [0., 0., 5.29177209]])
+            structure.append_atom(position=[12.73464656, 16.7741411, 24.35076238], symbols='H', name='H')
+            structure.append_atom(position=[-29.3865565, 9.51707929, -4.02515904], symbols='H', name='H')
+            structure.append_atom(position=[1.04074437, -1.64320127, -1.27035021], symbols='O', name='O')
+        else:
+            raise KeyError('Unknown structure_id=\'{}\''.format(structure_id))
         return structure
 
     return _generate_structure
@@ -309,19 +406,24 @@ def generate_workchain():
 
 
 @pytest.fixture
-def generate_inputs_matdyn(filepath_tests, fixture_code, generate_kpoints_mesh):
+def generate_force_constants_data(filepath_tests):
+    """Generate a ``ForceConstantsData`` node."""
+    from aiida_quantumespresso.data.force_constants import ForceConstantsData
+    filepath = os.path.join(filepath_tests, 'calculations', 'fixtures', 'matdyn', 'default', 'force_constants.dat')
+    return ForceConstantsData(filepath)
+
+
+@pytest.fixture
+def generate_inputs_matdyn(fixture_code, generate_kpoints_mesh, generate_force_constants_data):
     """Generate default inputs for a `MatdynCalculation."""
 
     def _generate_inputs_matdyn():
         """Generate default inputs for a `MatdynCalculation."""
-        from aiida_quantumespresso.data.force_constants import ForceConstantsData
         from aiida_quantumespresso.utils.resources import get_default_options
-
-        filepath = os.path.join(filepath_tests, 'calculations', 'fixtures', 'matdyn', 'default', 'force_constants.dat')
 
         inputs = {
             'code': fixture_code('quantumespresso.matdyn'),
-            'force_constants': ForceConstantsData(filepath),
+            'force_constants': generate_force_constants_data,
             'kpoints': generate_kpoints_mesh(2),
             'metadata': {
                 'options': get_default_options()
@@ -411,3 +513,51 @@ def generate_inputs_pw(fixture_code, generate_structure, generate_kpoints_mesh, 
         return inputs
 
     return _generate_inputs_pw
+
+
+@pytest.fixture
+def generate_inputs_cp(fixture_code, generate_structure, generate_upf_data):
+    """Generate default inputs for a CpCalculation."""
+
+    def _generate_inputs_cp(autopilot=False):
+        """Generate default inputs for a CpCalculation."""
+        from aiida.orm import Dict
+        from aiida_quantumespresso.utils.resources import get_default_options
+
+        inputs = {
+            'code': fixture_code('quantumespresso.cp'),
+            'structure': generate_structure(),
+            'parameters': Dict(dict={
+                'CONTROL': {
+                    'calculation': 'cp'
+                },
+                'SYSTEM': {
+                    'ecutrho': 240.0,
+                    'ecutwfc': 30.0
+                }
+            }),
+            'pseudos': {
+                'Si': generate_upf_data('Si')
+            },
+            'metadata': {
+                'options': get_default_options()
+            }
+        }
+        if autopilot:
+            inputs['settings'] = Dict(
+                dict={
+                    'AUTOPILOT': [{
+                        'onstep': 2,
+                        'what': 'dt',
+                        'newvalue': 42.0
+                    }, {
+                        'onstep': 3,
+                        'what': 'dt',
+                        'newvalue': 42.42
+                    }]
+                }
+            )
+
+        return inputs
+
+    return _generate_inputs_cp

@@ -1,6 +1,12 @@
 # -*- coding: utf-8 -*-
 """Utilities for pseudo potentials."""
-from aiida.orm.nodes.data.upf import UpfData, get_pseudos_from_structure
+import warnings
+from aiida.common.warnings import AiidaDeprecationWarning
+from aiida.orm.nodes.data.upf import get_pseudos_from_structure
+from aiida.plugins import DataFactory
+
+LegacyUpfData = DataFactory('upf')
+UpfData = DataFactory('pseudo.upf')
 
 
 def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=None):  # pylint: disable=invalid-name
@@ -26,6 +32,8 @@ def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=N
     """
     from aiida.orm import Str
 
+    warnings.warn('this function is deprecated and will be removed in `v4.0.0`.', AiidaDeprecationWarning)
+
     if pseudos and pseudo_family:
         raise ValueError('you cannot specify both "pseudos" and "pseudo_family"')
     elif pseudos is None and pseudo_family is None:
@@ -38,9 +46,9 @@ def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=N
 
     for kind in structure.get_kind_names():
         if kind not in pseudos:
-            raise ValueError('no pseudo available for element {}'.format(kind))
-        elif not isinstance(pseudos[kind], UpfData):
-            raise ValueError('pseudo for element {} is not of type UpfData'.format(kind))
+            raise ValueError(f'no pseudo available for element {kind}')
+        elif not isinstance(pseudos[kind], (LegacyUpfData, UpfData)):
+            raise ValueError(f'pseudo for element {kind} is not of type UpfData')
 
     return pseudos
 
@@ -54,6 +62,8 @@ def get_pseudos_of_calc(calc):
     :return: a dictionary where the key is the kind name and the value is the UpfData object.
     """
     from aiida.common.links import LinkType
+
+    warnings.warn('this function is deprecated and will be removed in `v4.0.0`.', AiidaDeprecationWarning)
 
     pseudos = {}
     # I create here a dictionary that associates each kind name to a pseudo
@@ -89,13 +99,15 @@ def get_pseudos_from_dict(structure, pseudos_uuids):
     from aiida.common import NotExistent
     from aiida.orm import load_node
 
+    warnings.warn('this function is deprecated and will be removed in `v4.0.0`.', AiidaDeprecationWarning)
+
     pseudo_list = {}
     for kind in structure.kinds:
         symbol = kind.symbol
         try:
             uuid = pseudos_uuids[symbol]
         except KeyError as exception:
-            msg = 'No UPF for element {} found in the provided pseudos_uuids dictionary'.format(symbol)
+            msg = f'No UPF for element {symbol} found in the provided pseudos_uuids dictionary'
             raise NotExistent(msg) from exception
         try:
             upf = load_node(uuid)
@@ -105,11 +117,9 @@ def get_pseudos_from_dict(structure, pseudos_uuids):
                 'in the provided pseudos_uuids dictionary'.format(uuid, symbol)
             ) from exception
         if not isinstance(upf, UpfData):
-            raise ValueError('Node with UUID {} is not a UpfData'.format(uuid))
+            raise ValueError(f'Node with UUID {uuid} is not a UpfData')
         if upf.element != symbol:
-            raise ValueError(
-                'Node<{}> is associated to element {} and not to {} as expected'.format(uuid, upf.element, symbol)
-            )
+            raise ValueError(f'Node<{uuid}> is associated to element {upf.element} and not to {symbol} as expected')
 
         pseudo_list[kind.name] = upf
 

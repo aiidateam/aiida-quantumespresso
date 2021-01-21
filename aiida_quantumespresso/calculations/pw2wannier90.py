@@ -31,8 +31,6 @@ class Pw2wannier90Calculation(NamelistsCalculation):
                    help='The output folder of a pw.x calculation')
         spec.output('output_parameters', valid_type=Dict)
         spec.default_output_node = 'output_parameters'
-        spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
-            message='The retrieved folder data node could not be accessed.')
         spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
             message='The stdout output file could not be read.')
         spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
@@ -41,6 +39,7 @@ class Pw2wannier90Calculation(NamelistsCalculation):
             message='Encountered a generic error message')
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
             message='An error happened while parsing the output file')
+        # yapf: enable
 
     def prepare_for_submission(self, folder):
         """Prepare the calculation job for submission by transforming input nodes into input files.
@@ -56,8 +55,6 @@ class Pw2wannier90Calculation(NamelistsCalculation):
 
         # Put the nnkp in the folder, with the correct filename
         nnkp_file = self.inputs.nnkp_file
-        calcinfo.local_copy_list.append(
-            (nnkp_file.uuid, nnkp_file.filename, '{}.nnkp'.format(self._SEEDNAME))
-        )
+        calcinfo.local_copy_list.append((nnkp_file.uuid, nnkp_file.filename, f'{self._SEEDNAME}.nnkp'))
 
         return calcinfo

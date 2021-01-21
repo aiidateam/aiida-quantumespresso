@@ -2,12 +2,13 @@
 """Command line scripts to launch a `PwCalculation` for testing and demonstration purposes."""
 import click
 
-from aiida.cmdline.params import options, types
+from aiida.cmdline.params import options as options_core
+from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
 
 from ..utils import defaults
 from ..utils import launch
-from ..utils import options as options_qe
+from ..utils import options
 from ..utils import validate
 from . import cmd_launch
 
@@ -15,23 +16,23 @@ CALCS_REQUIRING_PARENT = set(['nscf'])
 
 
 @cmd_launch.command('pw')
-@options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.pw'))
-@options_qe.STRUCTURE(default=defaults.get_structure)
-@options_qe.PSEUDO_FAMILY(required=True)
-@options_qe.KPOINTS_MESH(default=[2, 2, 2])
-@options_qe.ECUTWFC()
-@options_qe.ECUTRHO()
-@options_qe.HUBBARD_U()
-@options_qe.HUBBARD_V()
-@options_qe.HUBBARD_FILE()
-@options_qe.STARTING_MAGNETIZATION()
-@options_qe.SMEARING()
-@options_qe.MAX_NUM_MACHINES()
-@options_qe.MAX_WALLCLOCK_SECONDS()
-@options_qe.WITH_MPI()
-@options_qe.DAEMON()
-@options_qe.PARENT_FOLDER()
-@options.DRY_RUN()
+@options_core.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.pw'))
+@options.STRUCTURE(default=defaults.get_structure)
+@options.PSEUDO_FAMILY()
+@options.KPOINTS_MESH(default=[2, 2, 2])
+@options.ECUTWFC()
+@options.ECUTRHO()
+@options.HUBBARD_U()
+@options.HUBBARD_V()
+@options.HUBBARD_FILE()
+@options.STARTING_MAGNETIZATION()
+@options.SMEARING()
+@options.MAX_NUM_MACHINES()
+@options.MAX_WALLCLOCK_SECONDS()
+@options.WITH_MPI()
+@options.DAEMON()
+@options.PARENT_FOLDER()
+@options_core.DRY_RUN()
 @click.option(
     '-z',
     '--calculation-mode',
@@ -55,23 +56,26 @@ def launch_calculation(
     mode, unfolded_kpoints
 ):
     """Run a PwCalculation."""
-    from aiida.orm import Dict
-    from aiida.orm.nodes.data.upf import get_pseudos_from_structure
+    from aiida.orm import Dict, KpointsData
     from aiida.plugins import CalculationFactory
+    from qe_tools import CONSTANTS
+
     from aiida_quantumespresso.utils.resources import get_default_options
+
+    cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure)
 
     parameters = {
         'CONTROL': {
             'calculation': mode,
         },
         'SYSTEM': {
-            'ecutwfc': ecutwfc,
-            'ecutrho': ecutrho,
+            'ecutwfc': ecutwfc or cutoff_wfc / CONSTANTS.ry_to_ev,
+            'ecutrho': ecutrho or cutoff_rho / CONSTANTS.ry_to_ev,
         }
     }
 
     if mode in CALCS_REQUIRING_PARENT and not parent_folder:
-        raise click.BadParameter("calculation '{}' requires a parent folder".format(mode), param_hint='--parent-folder')
+        raise click.BadParameter(f"calculation '{mode}' requires a parent folder", param_hint='--parent-folder')
 
     try:
         hubbard_file = validate.validate_hubbard_parameters(
@@ -91,7 +95,6 @@ def launch_calculation(
         raise click.BadParameter(str(exception))
 
     if unfolded_kpoints:
-        from aiida.orm import KpointsData
         unfolded_list = kpoints_mesh.get_kpoints_mesh(print_list=True)
         kpoints_mesh = KpointsData()
         kpoints_mesh.set_kpoints(unfolded_list)
@@ -99,7 +102,7 @@ def launch_calculation(
     inputs = {
         'code': code,
         'structure': structure,
-        'pseudos': get_pseudos_from_structure(structure, pseudo_family),
+        'pseudos': pseudo_family.get_pseudos(structure=structure),
         'kpoints': kpoints_mesh,
         'parameters': Dict(dict=parameters),
         'metadata': {

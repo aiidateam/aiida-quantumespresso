@@ -2,17 +2,18 @@
 """Command line scripts to launch a `NebCalculation` for testing and demonstration purposes."""
 import click
 
-from aiida.cmdline.params import options, types
+from aiida.cmdline.params import options as options_core
+from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
 
 from ..utils import launch
-from ..utils import options as options_qe
+from ..utils import options
 from ..utils import validate
 from . import cmd_launch
 
 
 @cmd_launch.command('neb')
-@options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.neb'))
+@options_core.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.neb'))
 @click.option(
     '-s',
     '--structures',
@@ -36,17 +37,17 @@ from . import cmd_launch
     help='Maximum number of path optimization steps',
     default=20,
 )
-@options_qe.PSEUDO_FAMILY(required=True)
-@options_qe.KPOINTS_MESH(default=[2, 2, 2])
-@options_qe.ECUTWFC()
-@options_qe.ECUTRHO()
-@options_qe.SMEARING()
-@options_qe.MAX_NUM_MACHINES()
-@options_qe.MAX_WALLCLOCK_SECONDS()
-@options_qe.WITH_MPI()
-@options_qe.DAEMON()
-@options_qe.PARENT_FOLDER()
-@options.DRY_RUN()
+@options.PSEUDO_FAMILY()
+@options.KPOINTS_MESH(default=[2, 2, 2])
+@options.ECUTWFC()
+@options.ECUTRHO()
+@options.SMEARING()
+@options.MAX_NUM_MACHINES()
+@options.MAX_WALLCLOCK_SECONDS()
+@options.WITH_MPI()
+@options.DAEMON()
+@options.PARENT_FOLDER()
+@options_core.DRY_RUN()
 @decorators.with_dbenv()
 def launch_calculation(
     code, structures, num_images, num_steps, pseudo_family, kpoints_mesh, ecutwfc, ecutrho, smearing, max_num_machines,
@@ -57,17 +58,20 @@ def launch_calculation(
     Note that some parameters are hardcoded.
     """
     from aiida.orm import Dict
-    from aiida.orm.nodes.data.upf import get_pseudos_from_structure
     from aiida.plugins import CalculationFactory
+    from qe_tools import CONSTANTS
+
     from aiida_quantumespresso.utils.resources import get_default_options
+
+    cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structures[0])
 
     pw_parameters = {
         'CONTROL': {
             'calculation': 'relax',
         },
         'SYSTEM': {
-            'ecutwfc': ecutwfc,
-            'ecutrho': ecutrho,
+            'ecutwfc': ecutwfc or cutoff_wfc / CONSTANTS.ry_to_ev,
+            'ecutrho': ecutrho or cutoff_rho / CONSTANTS.ry_to_ev,
         }
     }
 
@@ -90,7 +94,7 @@ def launch_calculation(
         'first_structure': structures[0],
         'last_structure': structures[1],
         'pw': {
-            'pseudos': get_pseudos_from_structure(structures[0], pseudo_family),
+            'pseudos': pseudo_family.get_pseudos(structure=structures[0]),
             'kpoints': kpoints_mesh,
             'parameters': Dict(dict=pw_parameters),
         },

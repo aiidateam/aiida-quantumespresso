@@ -2,33 +2,34 @@
 """Command line scripts to launch a `PwRelaxWorkChain` for testing and demonstration purposes."""
 import click
 
-from aiida.cmdline.params import options, types
+from aiida.cmdline.params import options as options_core
+from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
 
 from ...utils import launch
-from ...utils import options as options_qe
+from ...utils import options
 from ...utils import validate
 from .. import cmd_launch
 
 
 @cmd_launch.command('pw-relax')
-@options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.pw'))
-@options_qe.STRUCTURE(required=True)
-@options_qe.PSEUDO_FAMILY(required=True)
-@options_qe.KPOINTS_DISTANCE()
-@options_qe.ECUTWFC()
-@options_qe.ECUTRHO()
-@options_qe.HUBBARD_U()
-@options_qe.HUBBARD_V()
-@options_qe.HUBBARD_FILE()
-@options_qe.STARTING_MAGNETIZATION()
-@options_qe.SMEARING()
-@options_qe.AUTOMATIC_PARALLELIZATION()
-@options_qe.CLEAN_WORKDIR()
-@options_qe.MAX_NUM_MACHINES()
-@options_qe.MAX_WALLCLOCK_SECONDS()
-@options_qe.WITH_MPI()
-@options_qe.DAEMON()
+@options_core.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.pw'))
+@options.STRUCTURE(required=True)
+@options.PSEUDO_FAMILY()
+@options.KPOINTS_DISTANCE()
+@options.ECUTWFC()
+@options.ECUTRHO()
+@options.HUBBARD_U()
+@options.HUBBARD_V()
+@options.HUBBARD_FILE()
+@options.STARTING_MAGNETIZATION()
+@options.SMEARING()
+@options.AUTOMATIC_PARALLELIZATION()
+@options.CLEAN_WORKDIR()
+@options.MAX_NUM_MACHINES()
+@options.MAX_WALLCLOCK_SECONDS()
+@options.WITH_MPI()
+@options.DAEMON()
 @click.option(
     '-f',
     '--final-scf',
@@ -44,16 +45,23 @@ def launch_workflow(
     with_mpi, daemon, final_scf
 ):
     """Run a `PwRelaxWorkChain`."""
-    from aiida.orm import Bool, Float, Str, Dict
+    from aiida.orm import Bool, Float, Dict, Str
     from aiida.plugins import WorkflowFactory
+    from qe_tools import CONSTANTS
+
     from aiida_quantumespresso.utils.resources import get_default_options, get_automatic_parallelization_options
 
     builder = WorkflowFactory('quantumespresso.pw.relax').get_builder()
 
+    cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure)
+
     parameters = {
+        'CONTROL': {
+            'calculation': 'relax',
+        },
         'SYSTEM': {
-            'ecutwfc': ecutwfc,
-            'ecutrho': ecutrho,
+            'ecutwfc': ecutwfc or cutoff_wfc / CONSTANTS.ry_to_ev,
+            'ecutrho': ecutrho or cutoff_rho / CONSTANTS.ry_to_ev,
         },
     }
 
@@ -75,9 +83,9 @@ def launch_workflow(
         raise click.BadParameter(str(exception))
 
     builder.structure = structure
-    builder.base.pseudo_family = Str(pseudo_family)
     builder.base.kpoints_distance = Float(kpoints_distance)
     builder.base.pw.code = code
+    builder.base.pw.pseudos = pseudo_family.get_pseudos(structure=structure)
     builder.base.pw.parameters = Dict(dict=parameters)
 
     if hubbard_file:
@@ -93,6 +101,12 @@ def launch_workflow(
         builder.clean_workdir = Bool(True)
 
     if final_scf:
-        builder.final_scf = Bool(True)
+        builder.base_final_scf.pseudo_family = Str(pseudo_family)
+        builder.base_final_scf.kpoints_distance = Float(kpoints_distance)
+        builder.base_final_scf.pw.code = code
+        builder.base_final_scf.pw.parameters = Dict(dict=parameters)
+        builder.base_final_scf.pw.metadata.options = get_default_options(
+            max_num_machines, max_wallclock_seconds, with_mpi
+        )
 
     launch.launch_process(builder, daemon)

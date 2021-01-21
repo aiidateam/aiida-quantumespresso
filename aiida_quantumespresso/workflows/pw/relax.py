@@ -2,16 +2,50 @@
 """Workchain to relax a structure using Quantum ESPRESSO pw.x."""
 from aiida import orm
 from aiida.common import AttributeDict, exceptions
+from aiida.common.lang import type_check
 from aiida.engine import WorkChain, ToContext, if_, while_, append_
 from aiida.plugins import CalculationFactory, WorkflowFactory
 
+from aiida_quantumespresso.common.types import RelaxType
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
+
+from ..protocols.utils import ProtocolMixin
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 
 
-class PwRelaxWorkChain(WorkChain):
+def validate_inputs(inputs, _):
+    """Validate the top level namespace."""
+    parameters = inputs['base']['pw']['parameters'].get_dict()
+
+    if 'relaxation_scheme' not in inputs and 'calculation' not in parameters.get('CONTROL', {}):
+        return 'The parameters in `base.pw.parameters` do not specify the required key `CONTROL.calculation`.'
+
+
+def validate_final_scf(value, _):
+    """Validate the final scf input."""
+    if isinstance(value, orm.Bool) and value:
+        import warnings
+        from aiida.common.warnings import AiidaDeprecationWarning
+        warnings.warn(
+            'this input is deprecated and will be removed. If you want to run a final scf, specify the inputs that '
+            'should be used in the `base_final_scf` namespace.', AiidaDeprecationWarning
+        )
+
+
+def validate_relaxation_scheme(value, _):
+    """Validate the relaxation scheme input."""
+    if value:
+        import warnings
+        from aiida.common.warnings import AiidaDeprecationWarning
+        warnings.warn(
+            'the `relaxation_scheme` input is deprecated and will be removed. Use the `get_builder_from_protocol` '
+            'instead to obtain a prepopulated builder using the `RelaxType` enum.', AiidaDeprecationWarning
+        )
+
+
+class PwRelaxWorkChain(ProtocolMixin, WorkChain):
     """Workchain to relax a structure using Quantum ESPRESSO pw.x."""
 
     @classmethod
@@ -21,11 +55,15 @@ class PwRelaxWorkChain(WorkChain):
         super().define(spec)
         spec.expose_inputs(PwBaseWorkChain, namespace='base',
             exclude=('clean_workdir', 'pw.structure', 'pw.parent_folder'),
-            namespace_options={'help': 'Inputs for the `PwBaseWorkChain`.'})
+            namespace_options={'help': 'Inputs for the `PwBaseWorkChain` for the main relax loop.'})
+        spec.expose_inputs(PwBaseWorkChain, namespace='base_final_scf',
+            exclude=('clean_workdir', 'pw.structure', 'pw.parent_folder'),
+            namespace_options={'required': False, 'populate_defaults': False,
+                'help': 'Inputs for the `PwBaseWorkChain` for the final scf.'})
         spec.input('structure', valid_type=orm.StructureData, help='The inputs structure.')
-        spec.input('final_scf', valid_type=orm.Bool, default=lambda: orm.Bool(False),
+        spec.input('final_scf', valid_type=orm.Bool, default=lambda: orm.Bool(False), validator=validate_final_scf,
             help='If `True`, a final SCF calculation will be performed on the successfully relaxed structure.')
-        spec.input('relaxation_scheme', valid_type=orm.Str, default=lambda: orm.Str('vc-relax'),
+        spec.input('relaxation_scheme', valid_type=orm.Str, required=False, validator=validate_relaxation_scheme,
             help='The relaxation scheme to use: choose either `relax` or `vc-relax` for variable cell relax.')
         spec.input('meta_convergence', valid_type=orm.Bool, default=lambda: orm.Bool(True),
             help='If `True` the workchain will perform a meta-convergence on the cell volume.')
@@ -35,6 +73,7 @@ class PwRelaxWorkChain(WorkChain):
             help='The volume difference threshold between two consecutive meta convergence iterations.')
         spec.input('clean_workdir', valid_type=orm.Bool, default=lambda: orm.Bool(False),
             help='If `True`, work directories of all called calculation will be cleaned at the end of execution.')
+        spec.inputs.validator = validate_inputs
         spec.outline(
             cls.setup,
             while_(cls.should_run_relax)(
@@ -52,8 +91,72 @@ class PwRelaxWorkChain(WorkChain):
         spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_FINAL_SCF',
             message='the final scf PwBaseWorkChain sub process failed')
         spec.expose_outputs(PwBaseWorkChain, exclude=('output_structure',))
-        spec.output('output_structure', valid_type=orm.StructureData, required=True,
+        spec.output('output_structure', valid_type=orm.StructureData, required=False,
             help='The successfully relaxed structure.')
+        # yapf: enable
+
+    @classmethod
+    def get_builder_from_protocol(
+        cls, code, structure, protocol=None, overrides=None, relax_type=RelaxType.ATOMS_CELL, **kwargs
+    ):
+        """Return a builder prepopulated with inputs selected according to the chosen protocol.
+
+        :param code: the ``Code`` instance configured for the ``quantumespresso.pw`` plugin.
+        :param structure: the ``StructureData`` instance to use.
+        :param protocol: protocol to use, if not specified, the default will be used.
+        :param overrides: optional dictionary of inputs to override the defaults of the protocol.
+        :param relax_type: the relax type to use: should be a value of the enum ``common.types.RelaxType``.
+        :param kwargs: additional keyword arguments that will be passed to the ``get_builder_from_protocol`` of all the
+            sub processes that are called by this workchain.
+        :return: a process builder instance with all inputs defined ready for launch.
+        """
+        type_check(relax_type, RelaxType)
+
+        args = (code, structure, protocol)
+        inputs = cls.get_protocol_inputs(protocol, overrides)
+        builder = cls.get_builder()
+
+        base = PwBaseWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('base', None), **kwargs)
+        base_final_scf = PwBaseWorkChain.get_builder_from_protocol(
+            *args, overrides=inputs.get('base_final_scf', None), **kwargs
+        )
+
+        base['pw'].pop('structure', None)
+        base.pop('clean_workdir', None)
+        base_final_scf['pw'].pop('structure', None)
+        base_final_scf.pop('clean_workdir', None)
+
+        if relax_type in [RelaxType.VOLUME, RelaxType.SHAPE, RelaxType.CELL]:
+            base.pw.settings = orm.Dict(dict=PwRelaxWorkChain._fix_atomic_positions(structure, base.pw.settings))
+
+        if relax_type is RelaxType.NONE:
+            base.pw.parameters['CONTROL']['calculation'] = 'scf'
+            base.pw.parameters.delete_attribute('CELL')
+
+        elif relax_type is RelaxType.ATOMS:
+            base.pw.parameters['CONTROL']['calculation'] = 'relax'
+            base.pw.parameters.delete_attribute('CELL')
+        else:
+            base.pw.parameters['CONTROL']['calculation'] = 'vc-relax'
+
+        if relax_type in [RelaxType.VOLUME, RelaxType.ATOMS_VOLUME]:
+            base.pw.parameters['CELL']['cell_dofree'] = 'volume'
+
+        if relax_type in [RelaxType.SHAPE, RelaxType.ATOMS_SHAPE]:
+            base.pw.parameters['CELL']['cell_dofree'] = 'shape'
+
+        if relax_type in [RelaxType.CELL, RelaxType.ATOMS_CELL]:
+            base.pw.parameters['CELL']['cell_dofree'] = 'all'
+
+        builder.base = base
+        builder.base_final_scf = base_final_scf
+        builder.structure = structure
+        builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
+        builder.max_meta_convergence_iterations = orm.Int(inputs['max_meta_convergence_iterations'])
+        builder.meta_convergence = orm.Bool(inputs['meta_convergence'])
+        builder.volume_convergence = orm.Float(inputs['volume_convergence'])
+
+        return builder
 
     def setup(self):
         """Input validation and context setup."""
@@ -62,6 +165,56 @@ class PwRelaxWorkChain(WorkChain):
         self.ctx.current_cell_volume = None
         self.ctx.is_converged = False
         self.ctx.iteration = 0
+
+        self.ctx.relax_inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base'))
+        self.ctx.relax_inputs.pw.parameters = self.ctx.relax_inputs.pw.parameters.get_dict()
+
+        self.ctx.relax_inputs.pw.parameters.setdefault('CONTROL', {})
+        self.ctx.relax_inputs.pw.parameters['CONTROL']['restart_mode'] = 'from_scratch'
+
+        # Adjust the inputs for the chosen relaxation scheme
+        if 'relaxation_scheme' in self.inputs:
+            if self.inputs.relaxation_scheme.value in ('relax', 'vc-relax'):
+                self.ctx.relax_inputs.pw.parameters['CONTROL']['calculation'] = self.inputs.relaxation_scheme.value
+            else:
+                raise ValueError('unsupported value for the `relaxation_scheme` input.')
+
+        # Set the meta_convergence and add it to the context
+        self.ctx.meta_convergence = self.inputs.meta_convergence.value
+        volume_cannot_change = (
+            self.ctx.relax_inputs.pw.parameters['CONTROL']['calculation'] in ('scf', 'relax') or
+            self.ctx.relax_inputs.pw.parameters.get('CELL', {}).get('cell_dofree', None) == 'shape'
+        )
+        if self.ctx.meta_convergence and volume_cannot_change:
+            self.report(
+                'No change in volume possible for the provided base input parameters. Meta convergence is turned off.'
+            )
+            self.ctx.meta_convergence = False
+
+        # Add the final scf inputs to the context if a final scf should be run
+        if self.inputs.final_scf and 'base_final_scf' in self.inputs:
+            raise ValueError('cannot specify `final_scf=True` and `base_final_scf` at the same time.')
+        elif self.inputs.final_scf:
+            self.ctx.final_scf_inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base'))
+        elif 'base_final_scf' in self.inputs:
+            self.ctx.final_scf_inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base_final_scf'))
+
+        if 'final_scf_inputs' in self.ctx:
+            if self.ctx.relax_inputs.pw.parameters['CONTROL']['calculation'] == 'scf':
+                self.report(
+                    'Work chain will not run final SCF when `calculation` is set to `scf` for the relaxation '
+                    '`PwBaseWorkChain`.'
+                )
+                self.ctx.pop('final_scf_inputs')
+
+            else:
+                self.ctx.final_scf_inputs.pw.parameters = self.ctx.final_scf_inputs.pw.parameters.get_dict()
+
+                self.ctx.final_scf_inputs.pw.parameters.setdefault('CONTROL', {})
+                self.ctx.final_scf_inputs.pw.parameters['CONTROL']['calculation'] = 'scf'
+                self.ctx.final_scf_inputs.pw.parameters['CONTROL']['restart_mode'] = 'from_scratch'
+                self.ctx.final_scf_inputs.pw.parameters.pop('CELL', None)
+                self.ctx.final_scf_inputs.metadata.call_link_label = 'final_scf'
 
     def should_run_relax(self):
         """Return whether a relaxation workchain should be run.
@@ -77,31 +230,26 @@ class PwRelaxWorkChain(WorkChain):
         If the maximum number of meta convergence iterations has been exceeded and convergence has not been reached, the
         structure cannot be considered to be relaxed and the final scf should not be run.
         """
-        return self.inputs.final_scf.value and self.ctx.is_converged
+        return self.ctx.is_converged and 'final_scf_inputs' in self.ctx
 
     def run_relax(self):
         """Run the `PwBaseWorkChain` to run a relax `PwCalculation`."""
         self.ctx.iteration += 1
 
-        inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base'))
+        inputs = self.ctx.relax_inputs
         inputs.pw.structure = self.ctx.current_structure
-        inputs.pw.parameters = inputs.pw.parameters.get_dict()
-
-        inputs.pw.parameters.setdefault('CONTROL', {})
-        inputs.pw.parameters['CONTROL']['calculation'] = self.inputs.relaxation_scheme.value
-        inputs.pw.parameters['CONTROL']['restart_mode'] = 'from_scratch'
 
         # If one of the nested `PwBaseWorkChains` changed the number of bands, apply it here
         if self.ctx.current_number_of_bands is not None:
             inputs.pw.parameters.setdefault('SYSTEM', {})['nbnd'] = self.ctx.current_number_of_bands
 
         # Set the `CALL` link label
-        inputs.metadata.call_link_label = 'iteration_{:02d}'.format(self.ctx.iteration)
+        inputs.metadata.call_link_label = f'iteration_{self.ctx.iteration:02d}'
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
 
-        self.report('launching PwBaseWorkChain<{}>'.format(running.pk))
+        self.report(f'launching PwBaseWorkChain<{running.pk}>')
 
         return ToContext(workchains=append_(running))
 
@@ -113,22 +261,25 @@ class PwRelaxWorkChain(WorkChain):
         """
         workchain = self.ctx.workchains[-1]
 
-        acceptable_statuses = [
-            'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF'
-        ]
+        acceptable_statuses = ['ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF']
 
         if workchain.is_excepted or workchain.is_killed:
             self.report('relax PwBaseWorkChain was excepted or killed')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
 
         if workchain.is_failed and workchain.exit_status not in PwBaseWorkChain.get_exit_statuses(acceptable_statuses):
-            self.report('relax PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
+            self.report(f'relax PwBaseWorkChain failed with exit status {workchain.exit_status}')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
 
         try:
             structure = workchain.outputs.output_structure
         except exceptions.NotExistent:
-            self.report('relax PwBaseWorkChain finished successful but without output structure')
+            # If the calculation is set to 'scf', this is expected, so we are done
+            if self.inputs.base.pw.parameters['CONTROL']['calculation'] == 'scf':
+                self.ctx.is_converged = True
+                return
+
+            self.report('`vc-relax` or `relax` PwBaseWorkChain finished successfully but without output structure')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
 
         prev_cell_volume = self.ctx.current_cell_volume
@@ -137,15 +288,14 @@ class PwRelaxWorkChain(WorkChain):
         # Set relaxed structure as input structure for next iteration
         self.ctx.current_structure = structure
         self.ctx.current_number_of_bands = workchain.outputs.output_parameters.get_dict()['number_of_bands']
-        self.report('after iteration {} cell volume of relaxed structure is {}'
-            .format(self.ctx.iteration, curr_cell_volume))
+        self.report(f'after iteration {self.ctx.iteration} cell volume of relaxed structure is {curr_cell_volume}')
 
         # After first iteration, simply set the cell volume and restart the next base workchain
         if not prev_cell_volume:
             self.ctx.current_cell_volume = curr_cell_volume
 
             # If meta convergence is switched off we are done
-            if not self.inputs.meta_convergence.value:
+            if not self.ctx.meta_convergence:
                 self.ctx.is_converged = True
             return
 
@@ -155,11 +305,17 @@ class PwRelaxWorkChain(WorkChain):
 
         if volume_difference < volume_threshold:
             self.ctx.is_converged = True
-            self.report('relative cell volume difference {} smaller than convergence threshold {}'
-                .format(volume_difference, volume_threshold))
+            self.report(
+                'relative cell volume difference {} smaller than convergence threshold {}'.format(
+                    volume_difference, volume_threshold
+                )
+            )
         else:
-            self.report('current relative cell volume difference {} larger than convergence threshold {}'
-                .format(volume_difference, volume_threshold))
+            self.report(
+                'current relative cell volume difference {} larger than convergence threshold {}'.format(
+                    volume_difference, volume_threshold
+                )
+            )
 
         self.ctx.current_cell_volume = curr_cell_volume
 
@@ -167,15 +323,8 @@ class PwRelaxWorkChain(WorkChain):
 
     def run_final_scf(self):
         """Run the `PwBaseWorkChain` to run a final scf `PwCalculation` for the relaxed structure."""
-        inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base'))
+        inputs = self.ctx.final_scf_inputs
         inputs.pw.structure = self.ctx.current_structure
-        inputs.pw.parameters = inputs.pw.parameters.get_dict()
-
-        inputs.pw.parameters.setdefault('CONTROL', {})
-        inputs.pw.parameters['CONTROL']['calculation'] = 'scf'
-        inputs.pw.parameters['CONTROL']['restart_mode'] = 'from_scratch'
-        inputs.pw.parameters.pop('CELL', None)
-        inputs.metadata.call_link_label = 'final_scf'
 
         if self.ctx.current_number_of_bands is not None:
             inputs.pw.parameters.setdefault('SYSTEM', {})['nbnd'] = self.ctx.current_number_of_bands
@@ -183,7 +332,7 @@ class PwRelaxWorkChain(WorkChain):
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
 
-        self.report('launching PwBaseWorkChain<{}> for final scf'.format(running.pk))
+        self.report(f'launching PwBaseWorkChain<{running.pk}> for final scf')
 
         return ToContext(workchain_scf=running)
 
@@ -192,26 +341,26 @@ class PwRelaxWorkChain(WorkChain):
         workchain = self.ctx.workchain_scf
 
         if not workchain.is_finished_ok:
-            self.report('final scf PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
+            self.report(f'final scf PwBaseWorkChain failed with exit status {workchain.exit_status}')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_FINAL_SCF
 
     def results(self):
         """Attach the output parameters and structure of the last workchain to the outputs."""
         if self.ctx.is_converged and self.ctx.iteration <= self.inputs.max_meta_convergence_iterations.value:
-            self.report('workchain completed after {} iterations'.format(self.ctx.iteration))
+            self.report(f'workchain completed after {self.ctx.iteration} iterations')
         else:
             self.report('maximum number of meta convergence iterations exceeded')
 
-        # Get the latest workchain, which is either the workchain_scf if it ran or otherwise the last regular workchain
-        try:
-            workchain = self.ctx.workchain_scf
-            structure = workchain.inputs.pw__structure
-        except AttributeError:
-            workchain = self.ctx.workchains[-1]
-            structure = workchain.outputs.output_structure
+        # Get the latest relax workchain and pass the outputs
+        final_relax_workchain = self.ctx.workchains[-1]
 
-        self.out_many(self.exposed_outputs(workchain, PwBaseWorkChain))
-        self.out('output_structure', structure)
+        if self.inputs.base.pw.parameters['CONTROL']['calculation'] != 'scf':
+            self.out('output_structure', final_relax_workchain.outputs.output_structure)
+
+        try:
+            self.out_many(self.exposed_outputs(self.ctx.workchain_scf, PwBaseWorkChain))
+        except AttributeError:
+            self.out_many(self.exposed_outputs(final_relax_workchain, PwBaseWorkChain))
 
     def on_terminated(self):
         """Clean the working directories of all child calculations if `clean_workdir=True` in the inputs."""
@@ -232,4 +381,16 @@ class PwRelaxWorkChain(WorkChain):
                     pass
 
         if cleaned_calcs:
-            self.report('cleaned remote folders of calculations: {}'.format(' '.join(map(str, cleaned_calcs))))
+            self.report(f"cleaned remote folders of calculations: {' '.join(map(str, cleaned_calcs))}")
+
+    @staticmethod
+    def _fix_atomic_positions(structure, settings):
+        """Fix the atomic positions, by setting the `FIXED_COORDS` key in the `settings` input node."""
+        if settings is not None:
+            settings = settings.get_dict()
+        else:
+            settings = {}
+
+        settings['FIXED_COORDS'] = [[True, True, True]] * len(structure.sites)
+
+        return settings

@@ -43,6 +43,8 @@ class PwCalculation(BasePwCpInputGenerator):
     # Not using symlink in pw to allow multiple nscf to run on top of the same scf
     _default_symlink_usage = False
 
+    _ENABLED_PARALLELIZATION_FLAGS = ('npool', 'nband', 'ntg', 'ndiag')
+
     @classproperty
     def xml_filepaths(cls):
         """Return a list of XML output filepaths relative to the remote working directory that should be retrieved."""
@@ -50,7 +52,7 @@ class PwCalculation(BasePwCpInputGenerator):
         filepaths = []
 
         for filename in cls.xml_filenames:
-            filepath = os.path.join(cls._OUTPUT_SUBFOLDER, '{}.save'.format(cls._PREFIX), filename)
+            filepath = os.path.join(cls._OUTPUT_SUBFOLDER, f'{cls._PREFIX}.save', filename)
             filepaths.append(filepath)
 
         return filepaths
@@ -79,8 +81,6 @@ class PwCalculation(BasePwCpInputGenerator):
         spec.default_output_node = 'output_parameters'
 
         # Unrecoverable errors: required retrieved files could not be read, parsed or are otherwise incomplete
-        spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
-            message='The retrieved folder data node could not be accessed.')
         spec.exit_code(301, 'ERROR_NO_RETRIEVED_TEMPORARY_FOLDER',
             message='The retrieved temporary folder could not be accessed.')
         spec.exit_code(302, 'ERROR_OUTPUT_STDOUT_MISSING',
@@ -145,9 +145,10 @@ class PwCalculation(BasePwCpInputGenerator):
             message='The electronic minimization cycle did not reach self-consistency.')
         spec.exit_code(541, 'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION',
             message='The variable cell optimization broke the symmetry of the k-points.')
+        # yapf: enable
 
     @classproperty
-    def input_file_name_hubbard_file(cls):
+    def filename_input_hubbard_parameters(cls):
         """Return the relative file name of the file containing the Hubbard parameters.
 
         .. note:: This only applies if they should be read from file instead of specified in the input file cards.
@@ -161,7 +162,7 @@ class PwCalculation(BasePwCpInputGenerator):
                 'this is determined by the aiida-quantumespresso-hp plugin but it is not installed'
             ) from exc
 
-        return HpCalculation.input_file_name_hubbard_file
+        return HpCalculation.filename_input_hubbard_parameters
 
     @classmethod
     def input_helper(cls, *args, **kwargs):

@@ -37,8 +37,6 @@ class Pw2gwCalculation(NamelistsCalculation):
         spec.output('eps', valid_type=orm.ArrayData,
             help='The `eps` output node containing 5 arrays `energy`, `epsX`, `epsY`, `epsZ`, `epsTOT`')
 
-        spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
-            message='The retrieved folder data node could not be accessed.')
         spec.exit_code(302, 'ERROR_OUTPUT_STDOUT_MISSING',
             message='The retrieved folder did not contain the required stdout output file.')
         spec.exit_code(305, 'ERROR_OUTPUT_FILES',
@@ -55,6 +53,7 @@ class Pw2gwCalculation(NamelistsCalculation):
             message='The eps*.dat output files contains different values of energies.')
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
             message='The parser raised an unexpected exception.')
+        # yapf: enable
 
     def prepare_for_submission(self, folder):
         """Prepare the calculation job for submission by transforming input nodes into input files.
@@ -73,8 +72,7 @@ class Pw2gwCalculation(NamelistsCalculation):
         parent_calc_folder = self.inputs.parent_folder
         calcinfo.remote_copy_list.append((
             parent_calc_folder.computer.uuid,
-            os.path.join(parent_calc_folder.get_remote_path(), self._INPUT_PSEUDOFOLDER),
-            self._INPUT_PSEUDOFOLDER
+            os.path.join(parent_calc_folder.get_remote_path(), self._INPUT_PSEUDOFOLDER), self._INPUT_PSEUDOFOLDER
         ))
 
         return calcinfo

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Plugin to create a Quantum Espresso pw.x file.
+"""Plugin to create a Quantum Espresso cp.x file.
 
 TODO: COPY OUTDIR FROM PREVIOUS CALCULATION! Should be an input node of type
      RemoteData (or maybe subclass it?).
@@ -18,6 +18,7 @@ import os
 
 from aiida import orm
 from aiida.common.lang import classproperty
+from aiida.common import exceptions
 
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 
@@ -29,10 +30,16 @@ class CpCalculation(BasePwCpInputGenerator):
     _CP_READ_UNIT_NUMBER = 50
     _CP_WRITE_UNIT_NUMBER = 51
     _FILE_XML_PRINT_COUNTER_BASENAME = 'print_counter.xml'
+    _FILE_PRINT_COUNTER_BASENAME = 'print_counter'
     _FILE_XML_PRINT_COUNTER = os.path.join(
         BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-        '{}_{}.save'.format(BasePwCpInputGenerator._PREFIX, _CP_WRITE_UNIT_NUMBER),
+        f'{BasePwCpInputGenerator._PREFIX}_{_CP_WRITE_UNIT_NUMBER}.save',
         _FILE_XML_PRINT_COUNTER_BASENAME,
+    )
+    _FILE_PRINT_COUNTER = os.path.join(
+        BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
+        f'{BasePwCpInputGenerator._PREFIX}_{_CP_WRITE_UNIT_NUMBER}.save',
+        _FILE_PRINT_COUNTER_BASENAME,
     )
 
     # Input file "sections" that we are going to write by calculation type
@@ -90,20 +97,20 @@ class CpCalculation(BasePwCpInputGenerator):
     _internal_retrieve_list = [
         os.path.join(
             BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-            '{}.{}'.format(BasePwCpInputGenerator._PREFIX, ext),
+            f'{BasePwCpInputGenerator._PREFIX}.{ext}',
         ) for ext in _cp_ext_list
-    ] + [_FILE_XML_PRINT_COUNTER]
+    ] + [_FILE_XML_PRINT_COUNTER, _FILE_PRINT_COUNTER]
 
     # in restarts, it will copy from the parent the following
     _restart_copy_from = os.path.join(
         BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-        '{}_{}.save'.format(BasePwCpInputGenerator._PREFIX, _CP_WRITE_UNIT_NUMBER),
+        f'{BasePwCpInputGenerator._PREFIX}_{_CP_WRITE_UNIT_NUMBER}.save',
     )
 
     # in restarts, it will copy the previous folder in the following one
     _restart_copy_to = os.path.join(
         BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-        '{}_{}.save'.format(BasePwCpInputGenerator._PREFIX, _CP_READ_UNIT_NUMBER),
+        f'{BasePwCpInputGenerator._PREFIX}_{_CP_READ_UNIT_NUMBER}.save',
     )
 
     @classproperty
@@ -115,7 +122,7 @@ class CpCalculation(BasePwCpInputGenerator):
         for filename in cls.xml_filenames:
             filepath = os.path.join(
                 cls._OUTPUT_SUBFOLDER,
-                '{}_{}.save'.format(cls._PREFIX, cls._CP_WRITE_UNIT_NUMBER),
+                f'{cls._PREFIX}_{cls._CP_WRITE_UNIT_NUMBER}.save',
                 filename,
             )
             filepaths.append(filepath)
@@ -132,8 +139,6 @@ class CpCalculation(BasePwCpInputGenerator):
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.default_output_node = 'output_parameters'
 
-        spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
-            message='The retrieved folder data node could not be accessed.')
         spec.exit_code(301, 'ERROR_NO_RETRIEVED_TEMPORARY_FOLDER',
             message='The retrieved temporary folder could not be accessed.')
         spec.exit_code(303, 'ERROR_MISSING_XML_FILE',
@@ -152,3 +157,38 @@ class CpCalculation(BasePwCpInputGenerator):
             message='The required POS file could not be read.')
         spec.exit_code(340, 'ERROR_READING_TRAJECTORY_DATA',
             message='The required trajectory data could not be read.')
+        # yapf: enable
+
+    @staticmethod
+    def _generate_PWCP_input_tail(*args, **kwargs):
+        """Parse CP specific input parameters."""
+        settings = kwargs['settings']
+
+        # AUTOPILOT
+        autopilot = settings.pop('AUTOPILOT', [])
+
+        if not autopilot:
+            return ''
+
+        autopilot_card = 'AUTOPILOT\n'
+
+        try:
+            for event in autopilot:
+                if isinstance(event['newvalue'], str):
+                    autopilot_card += f"ON_STEP = {event['onstep']} : '{event['what']}' = {event['newvalue']}\n"
+                else:
+                    autopilot_card += f"ON_STEP = {event['onstep']} : {event['what']} = {event['newvalue']}\n"
+        except KeyError as exception:
+            raise exceptions.InputValidationError(
+                f"""AUTOPILOT input: you must specify a list of dictionaries like the following:
+                 [
+                    {{'onstep' : 10, 'what' : 'dt', 'newvalue' : 5.0 }},
+                    {{'onstep' : 20, 'what' : 'whatever', 'newvalue' : 'pippo'}}
+                 ]
+                 You specified {autopilot}
+                 """
+            ) from exception
+
+        autopilot_card += 'ENDRULES\n'
+
+        return autopilot_card

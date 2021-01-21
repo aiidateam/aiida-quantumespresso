@@ -45,6 +45,13 @@ def test_setup(generate_workchain_pw):
     assert isinstance(process.ctx.inputs, AttributeDict)
 
 
+def test_validate_pseudos(generate_workchain_pw):
+    """Test `PwBaseWorkChain.validate_pseudos`."""
+    process = generate_workchain_pw()
+    process.setup()
+    assert process.validate_pseudos() is None
+
+
 def test_handle_unrecoverable_failure(generate_workchain_pw):
     """Test `PwBaseWorkChain.handle_unrecoverable_failure`."""
     process = generate_workchain_pw(exit_code=PwCalculation.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
@@ -67,6 +74,21 @@ def test_handle_out_of_walltime(generate_workchain_pw):
     result = process.handle_out_of_walltime(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
     assert result.do_break
+
+    result = process.inspect_process()
+    assert result.status == 0
+
+
+def test_handle_electronic_convergence_not_reached(generate_workchain_pw):
+    """Test `PwBaseWorkChain.handle_electronic_convergence_not_achieved`."""
+    process = generate_workchain_pw(exit_code=PwCalculation.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED)
+    process.setup()
+    process.validate_parameters()
+
+    result = process.handle_electronic_convergence_not_achieved(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert result.do_break
+    assert process.ctx.restart_calc is None
 
     result = process.inspect_process()
     assert result.status == 0

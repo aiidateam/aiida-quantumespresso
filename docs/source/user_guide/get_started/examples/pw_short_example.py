@@ -90,4 +90,4 @@ builder.kpoints = kpoints
 
 calc = submit(builder)
 
-print('created calculation with PK={}'.format(calc.pk))
+print(f'created calculation with PK={calc.pk}')

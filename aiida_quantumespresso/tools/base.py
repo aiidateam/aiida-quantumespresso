@@ -53,7 +53,7 @@ class StructureParseMixin:
                 symbols = valid_elements_regex.search(pseudo).group('ele').capitalize()
             except Exception as exception:
                 raise InputValidationError(
-                    'could not determine element name from pseudo name: {}'.format(pseudo)
+                    f'could not determine element name from pseudo name: {pseudo}'
                 ) from exception
             structure.append_kind(Kind(name=name, symbols=symbols, mass=mass))
 

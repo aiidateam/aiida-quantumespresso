@@ -8,7 +8,7 @@ import numpy
 
 from qe_tools import CONSTANTS
 
-from aiida_quantumespresso.parsers import QEOutputParsingError, get_parser_info
+from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.parse_raw.base import convert_qe_time_to_sec
 from aiida_quantumespresso.parsers.parse_xml.pw.legacy import parse_xml_child_bool, read_xml_card
 from aiida_quantumespresso.utils.mapping import get_logging_container
@@ -24,7 +24,6 @@ def parse_raw_ph_output(stdout, tensors=None, dynamical_matrices=None):
     """
     logs = get_logging_container()
     data_lines = stdout.split('\n')
-    parser_info = get_parser_info(parser_info_template='aiida-quantumespresso parser ph.x v{}')
 
     # First check whether the `JOB DONE` message was written, otherwise the job was interrupted
     for line in data_lines:
@@ -67,20 +66,18 @@ def parse_raw_ph_output(stdout, tensors=None, dynamical_matrices=None):
             this_dynmat_data = parse_ph_dynmat(lines, logs)
 
             # join it with the previous dynmat info
-            dynmat_data['dynamical_matrix_%s' % dynmat_counter] = this_dynmat_data
+            dynmat_data[f'dynamical_matrix_{dynmat_counter}'] = this_dynmat_data
             # TODO: use the bands format?
 
     # join dictionaries, there should not be any twice repeated key
     for key in out_data.keys():
         if key in list(tensor_data.keys()):
-            raise AssertionError('{} found in two dictionaries'.format(key))
+            raise AssertionError(f'{key} found in two dictionaries')
         if key in list(dynmat_data.keys()):
-            raise AssertionError('{} found in two dictionaries'.format(key))
+            raise AssertionError(f'{key} found in two dictionaries')
 
     # I don't check the dynmat_data and parser_info keys
-    parsed_data = dict(
-        list(dynmat_data.items()) + list(out_data.items()) + list(tensor_data.items()) + list(parser_info.items())
-    )
+    parsed_data = dict(list(dynmat_data.items()) + list(out_data.items()) + list(tensor_data.items()))
 
     return parsed_data, logs
 
@@ -332,21 +329,14 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
                 pieces = atom_line.split()
                 if len(pieces) != 5:
                     raise QEOutputParsingError(
-                        'Wrong # of elements for one of the atoms: {}, '
-                        'line {}: {}'.format(len(pieces), starting_line + idx, pieces)
+                        f'Wrong # of elements for one of the atoms: {len(pieces)}, line {starting_line + idx}: {pieces}'
                     )
                 try:
                     if int(pieces[0]) != idx:
-                        raise QEOutputParsingError(
-                            'Error with the indices of the atoms: '
-                            '{} vs {}'.format(int(pieces[0]), idx)
-                        )
+                        raise QEOutputParsingError(f'Error with the indices of the atoms: {int(pieces[0])} vs {idx}')
                     sp_idx = int(pieces[1])
                     if sp_idx > len(species):
-                        raise QEOutputParsingError(
-                            'Wrong index for the species: '
-                            '{}, but max={}'.format(sp_idx, len(species))
-                        )
+                        raise QEOutputParsingError(f'Wrong index for the species: {sp_idx}, but max={len(species)}')
                     atoms_labels.append(species[sp_idx - 1][0])
                     atoms_coords.append([float(pieces[2]) * alat, float(pieces[3]) * alat, float(pieces[4]) * alat])
                 except ValueError:

@@ -38,7 +38,7 @@ class NebCalculation(CalcJob):
         # pylint: disable=no-self-argument
         # I retrieve them all, even if I don't parse all of them
         _neb_ext_list = ['path', 'dat', 'int']
-        return ['{}.{}'.format(cls._PREFIX, ext) for ext in _neb_ext_list]
+        return [f'{cls._PREFIX}.{ext}' for ext in _neb_ext_list]
 
     @classproperty
     def xml_filepaths(cls):
@@ -76,8 +76,6 @@ class NebCalculation(CalcJob):
         spec.output('output_mep', valid_type=orm.ArrayData,
             help='The original and interpolated energy profiles along the minimum-energy path (mep)')
         spec.default_output_node = 'output_parameters'
-        spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
-            message='The retrieved folder data node could not be accessed.')
         spec.exit_code(303, 'ERROR_MISSING_XML_FILE',
             message='The required XML file is not present in the retrieved folder.')
         spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
@@ -94,6 +92,7 @@ class NebCalculation(CalcJob):
             message='The XML output file has an unsupported format.')
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
             message='The parser raised an unexpected exception.')
+        # yapf: enable
 
     @classmethod
     def _generate_input_files(cls, neb_parameters, settings_dict):
@@ -112,7 +111,7 @@ class NebCalculation(CalcJob):
             if namelist in input_params:
                 if key in input_params[namelist]:
                     raise InputValidationError(
-                        "You cannot specify explicitly the '{}' key in the '{}' namelist.".format(key, namelist)
+                        f"You cannot specify explicitly the '{key}' key in the '{namelist}' namelist."
                     )
             else:
                 input_params[namelist] = {}
@@ -128,20 +127,24 @@ class NebCalculation(CalcJob):
         if ci_scheme == 'manual':
             manual_climbing_image = True
             if climbing_image_list is None:
-                raise InputValidationError("'ci_scheme' is {}, but no climbing images were specified for this "
-                                           'calculation.'.format(ci_scheme))
+                raise InputValidationError(
+                    "'ci_scheme' is {}, but no climbing images were specified for this "
+                    'calculation.'.format(ci_scheme)
+                )
             if not isinstance(climbing_image_list, list):
                 raise InputValidationError('Climbing images should be provided as a list.')
             num_of_images = input_params['PATH'].get('num_of_images', 2)
             if any([(i < 2 or i >= num_of_images) for i in climbing_image_list]):
-                raise InputValidationError('The climbing images should be in the range between the first '
-                                           'and the last image (excluded).')
+                raise InputValidationError(
+                    'The climbing images should be in the range between the first '
+                    'and the last image (excluded).'
+                )
             climbing_image_card = 'CLIMBING_IMAGES\n'
             climbing_image_card += ', '.join([str(_) for _ in climbing_image_list]) + '\n'
         else:
             manual_climbing_image = False
             if climbing_image_list is not None:
-                raise InputValidationError("Climbing images are not accepted when 'ci_scheme' is {}.".format(ci_scheme))
+                raise InputValidationError(f"Climbing images are not accepted when 'ci_scheme' is {ci_scheme}.")
 
         input_data = '&PATH\n'
         # namelist content; set to {} if not present, so that we leave an empty namelist
@@ -158,7 +161,8 @@ class NebCalculation(CalcJob):
             raise InputValidationError(
                 'The following namelists are specified in input_params, but are '
                 'not valid namelists for the current type of calculation: '
-                '{}'.format(','.join(list(input_params.keys()))))
+                '{}'.format(','.join(list(input_params.keys())))
+            )
 
         return input_data
 
@@ -189,8 +193,7 @@ class NebCalculation(CalcJob):
         last_structure = self.inputs.last_structure
 
         # Check that the first and last image have the same cell
-        if abs(np.array(first_structure.cell)-
-               np.array(last_structure.cell)).max() > 1.e-4:
+        if abs(np.array(first_structure.cell) - np.array(last_structure.cell)).max() > 1.e-4:
             raise InputValidationError('Different cell in the fist and last image')
 
         # Check that the first and last image have the same number of sites
@@ -199,8 +202,10 @@ class NebCalculation(CalcJob):
 
         # Check that sites in the initial and final structure have the same kinds
         if first_structure.get_site_kindnames() != last_structure.get_site_kindnames():
-            raise InputValidationError('Mismatch between the kind names and/or order between '
-                                       'the first and final image')
+            raise InputValidationError(
+                'Mismatch between the kind names and/or order between '
+                'the first and final image'
+            )
 
         # Check that a pseudo potential was specified for each kind present in the `StructureData`
         # self.inputs.pw.pseudos is a plumpy.utils.AttributesFrozendict
@@ -208,7 +213,8 @@ class NebCalculation(CalcJob):
         if set(kindnames) != set(self.inputs.pw.pseudos.keys()):
             raise InputValidationError(
                 'Mismatch between the defined pseudos and the list of kinds of the structure.\nPseudos: {};\n'
-                'Kinds: {}'.format(', '.join(list(self.inputs.pw.pseudos.keys())), ', '.join(list(kindnames))))
+                'Kinds: {}'.format(', '.join(list(self.inputs.pw.pseudos.keys())), ', '.join(list(kindnames)))
+            )
 
         ##############################
         # END OF INITIAL INPUT CHECK #
@@ -233,7 +239,7 @@ class NebCalculation(CalcJob):
                 self.inputs.pw.parameters, this_settings_dict, self.inputs.pw.pseudos, structure, self.inputs.pw.kpoints
             )
             local_copy_pseudo_list += this_local_copy_pseudo_list
-            with folder.open('pw_{}.in'.format(i + 1), 'w') as handle:
+            with folder.open(f'pw_{i + 1}.in', 'w') as handle:
                 handle.write(pw_input_filecontent)
 
         # We need to pop the settings that were used in the PW calculations
@@ -254,11 +260,9 @@ class NebCalculation(CalcJob):
         # but should be the one expected by Quantum ESPRESSO.
         vdw_table = self.inputs.get('pw.vdw_table', None)
         if vdw_table:
-            local_copy_list.append((
-                vdw_table.uuid,
-                vdw_table.filename,
-                os.path.join(self._PSEUDO_SUBFOLDER, vdw_table.filename)
-            ))
+            local_copy_list.append(
+                (vdw_table.uuid, vdw_table.filename, os.path.join(self._PSEUDO_SUBFOLDER, vdw_table.filename))
+            )
 
         # operations for restart
         parent_calc_folder = self.inputs.get('parent_folder', None)
@@ -268,38 +272,33 @@ class NebCalculation(CalcJob):
                 # I put the symlink to the old parent ./out folder
                 remote_symlink_list.append((
                     parent_calc_folder.computer.uuid,
-                    os.path.join(parent_calc_folder.get_remote_path(),
-                                 self._OUTPUT_SUBFOLDER, '*'),  # asterisk: make individual symlinks for each file
+                    os.path.join(parent_calc_folder.get_remote_path(), self._OUTPUT_SUBFOLDER,
+                                 '*'),  # asterisk: make individual symlinks for each file
                     self._OUTPUT_SUBFOLDER
                 ))
                 # and to the old parent prefix.path
                 remote_symlink_list.append((
                     parent_calc_folder.computer.uuid,
-                    os.path.join(parent_calc_folder.get_remote_path(),
-                                 '{}.path'.format(self._PREFIX)),
-                    '{}.path'.format(self._PREFIX)
+                    os.path.join(parent_calc_folder.get_remote_path(), f'{self._PREFIX}.path'), f'{self._PREFIX}.path'
                 ))
         else:
             # copy remote output dir and .path file, if specified
             if parent_calc_folder is not None:
                 remote_copy_list.append((
                     parent_calc_folder.computer.uuid,
-                    os.path.join(parent_calc_folder.get_remote_path(),
-                                 self._OUTPUT_SUBFOLDER, '*'),
-                    self._OUTPUT_SUBFOLDER
+                    os.path.join(parent_calc_folder.get_remote_path(), self._OUTPUT_SUBFOLDER,
+                                 '*'), self._OUTPUT_SUBFOLDER
                 ))
                 # and copy the old parent prefix.path
                 remote_copy_list.append((
                     parent_calc_folder.computer.uuid,
-                    os.path.join(parent_calc_folder.get_remote_path(),
-                                 '{}.path'.format(self._PREFIX)),
-                    '{}.path'.format(self._PREFIX)
+                    os.path.join(parent_calc_folder.get_remote_path(), f'{self._PREFIX}.path'), f'{self._PREFIX}.path'
                 ))
 
         # here we may create an aiida.EXIT file
         create_exit_file = settings_dict.pop('ONLY_INITIALIZATION', False)
         if create_exit_file:
-            exit_filename = '{}.EXIT'.format(self._PREFIX)
+            exit_filename = f'{self._PREFIX}.EXIT'
             with folder.open(exit_filename, 'w') as handle:
                 handle.write('\n')
 
@@ -337,6 +336,6 @@ class NebCalculation(CalcJob):
 
         if settings_dict:
             unknown_keys = ', '.join(list(settings_dict.keys()))
-            raise InputValidationError('`settings` contained unexpected keys: {}'.format(unknown_keys))
+            raise InputValidationError(f'`settings` contained unexpected keys: {unknown_keys}')
 
         return calcinfo

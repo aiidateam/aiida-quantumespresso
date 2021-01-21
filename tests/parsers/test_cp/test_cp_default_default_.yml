@@ -208,6 +208,8 @@ trajectory:
   - 10
   array|enthalpy_plus_kinetic:
   - 10
+  array|forces:
+  - 0
   array|ionic_temperature:
   - 10
   array|positions:

@@ -56,6 +56,7 @@ class PwBandStructureWorkChain(WorkChain):
         spec.output('scf_parameters', valid_type=orm.Dict)
         spec.output('band_parameters', valid_type=orm.Dict)
         spec.output('band_structure', valid_type=orm.BandsData)
+        # yapf: enable
 
     def _get_protocol(self):
         """Return a `ProtocolManager` instance and a dictionary of modifiers."""
@@ -73,7 +74,7 @@ class PwBandStructureWorkChain(WorkChain):
         Based on the specified protocol, we define values for variables that affect the execution of the calculations.
         """
         protocol, protocol_modifiers = self._get_protocol()
-        self.report('running the workchain with the "{}" protocol'.format(protocol.name))
+        self.report(f'running the workchain with the "{protocol.name}" protocol')
         self.ctx.protocol = protocol.get_protocol_data(modifiers=protocol_modifiers)
 
     def setup_parameters(self):
@@ -89,35 +90,39 @@ class PwBandStructureWorkChain(WorkChain):
                 ecutwfc.append(cutoff)
                 ecutrho.append(cutrho)
             except KeyError:
-                self.report('failed to retrieve the cutoff or dual factor for {}'.format(kind))
+                self.report(f'failed to retrieve the cutoff or dual factor for {kind}')
                 return self.exit_codes.ERROR_INVALID_INPUT_UNRECOGNIZED_KIND
 
-        self.ctx.parameters = orm.Dict(dict={
-            'CONTROL': {
-                'restart_mode': 'from_scratch',
-                'tstress': self.ctx.protocol['tstress'],
-                'tprnfor': self.ctx.protocol['tprnfor'],
-            },
-            'SYSTEM': {
-                'ecutwfc': max(ecutwfc),
-                'ecutrho': max(ecutrho),
-                'smearing': self.ctx.protocol['smearing'],
-                'degauss': self.ctx.protocol['degauss'],
-                'occupations': self.ctx.protocol['occupations'],
-            },
-            'ELECTRONS': {
-                'conv_thr': self.ctx.protocol['convergence_threshold_per_atom'] * len(self.inputs.structure.sites),
+        self.ctx.parameters = orm.Dict(
+            dict={
+                'CONTROL': {
+                    'restart_mode': 'from_scratch',
+                    'tstress': self.ctx.protocol['tstress'],
+                    'tprnfor': self.ctx.protocol['tprnfor'],
+                },
+                'SYSTEM': {
+                    'ecutwfc': max(ecutwfc),
+                    'ecutrho': max(ecutrho),
+                    'smearing': self.ctx.protocol['smearing'],
+                    'degauss': self.ctx.protocol['degauss'],
+                    'occupations': self.ctx.protocol['occupations'],
+                },
+                'ELECTRONS': {
+                    'conv_thr': self.ctx.protocol['convergence_threshold_per_atom'] * len(self.inputs.structure.sites),
+                }
             }
-        })
+        )
 
     def run_bands(self):
         """Run the `PwBandsWorkChain` to compute the band structure."""
+
         def get_common_inputs():
             """Return the dictionary of inputs to be used as the basis for each `PwBaseWorkChain`."""
             protocol, protocol_modifiers = self._get_protocol()
             checked_pseudos = protocol.check_pseudos(
                 modifier_name=protocol_modifiers.get('pseudo', None),
-                pseudo_data=protocol_modifiers.get('pseudo_data', None))
+                pseudo_data=protocol_modifiers.get('pseudo_data', None)
+            )
             known_pseudos = checked_pseudos['found']
 
             inputs = AttributeDict({
@@ -158,7 +163,7 @@ class PwBandStructureWorkChain(WorkChain):
 
         running = self.submit(PwBandsWorkChain, **inputs)
 
-        self.report('launching PwBandsWorkChain<{}>'.format(running.pk))
+        self.report(f'launching PwBandsWorkChain<{running.pk}>')
 
         return ToContext(workchain_bands=running)
 
@@ -167,16 +172,12 @@ class PwBandStructureWorkChain(WorkChain):
         workchain = self.ctx.workchain_bands
 
         if not self.ctx.workchain_bands.is_finished_ok:
-            self.report('sub process PwBandsWorkChain<{}> failed'.format(workchain.pk))
+            self.report(f'sub process PwBandsWorkChain<{workchain.pk}> failed')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_BANDS
 
         self.report('workchain successfully completed')
         link_labels = [
-            'primitive_structure',
-            'seekpath_parameters',
-            'scf_parameters',
-            'band_parameters',
-            'band_structure'
+            'primitive_structure', 'seekpath_parameters', 'scf_parameters', 'band_parameters', 'band_structure'
         ]
 
         for link_triple in workchain.get_outgoing().all():

@@ -2,20 +2,34 @@
 """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts."""
 from aiida import orm
 from aiida.common import AttributeDict, exceptions
+from aiida.common.lang import type_check
 from aiida.engine import ToContext, if_, while_, BaseRestartWorkChain, process_handler, ProcessHandlerReport, ExitCode
-from aiida.plugins import CalculationFactory
+from aiida.plugins import CalculationFactory, GroupFactory
 
 from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import create_kpoints_from_distance
+from aiida_quantumespresso.common.types import ElectronicType, SpinType
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 from aiida_quantumespresso.utils.mapping import update_mapping, prepare_process_inputs
 from aiida_quantumespresso.utils.pseudopotential import validate_and_prepare_pseudos_inputs
 from aiida_quantumespresso.utils.resources import get_default_options, get_pw_parallelization_parameters
 from aiida_quantumespresso.utils.resources import cmdline_remove_npools, create_scheduler_resources
 
+from ..protocols.utils import ProtocolMixin
+
 PwCalculation = CalculationFactory('quantumespresso.pw')
+SsspFamily = GroupFactory('pseudo.family.sssp')
+PseudoDojoFamily = GroupFactory('pseudo.family.pseudo_dojo')
 
 
-class PwBaseWorkChain(BaseRestartWorkChain):
+def validate_pseudo_family(value, _):
+    """Validate the `pseudo_family` input."""
+    if value:
+        import warnings
+        from aiida.common.warnings import AiidaDeprecationWarning
+        warnings.warn('`pseudo_family` is deprecated, use `pw.pseudos` instead.', AiidaDeprecationWarning)
+
+
+class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts."""
 
     # pylint: disable=too-many-public-methods
@@ -48,10 +62,10 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             help='Optional input when constructing the k-points based on a desired `kpoints_distance`. Setting this to '
                  '`True` will force the k-point mesh to have an even number of points along each lattice vector except '
                  'for any non-periodic directions.')
-        spec.input('pseudo_family', valid_type=orm.Str, required=False,
-            help='An alternative to specifying the pseudo potentials manually in `pseudos`: one can specify the name '
-                 'of an existing pseudo potential family and the work chain will generate the pseudos automatically '
-                 'based on the input structure.')
+        spec.input('pseudo_family', valid_type=orm.Str, required=False, validator=validate_pseudo_family,
+            help='[Deprecated: use `pw.pseudos` instead] An alternative to specifying the pseudo potentials manually in'
+                 ' `pseudos`: one can specify the name of an existing pseudo potential family and the work chain will '
+                 'generate the pseudos automatically based on the input structure.')
         spec.input('automatic_parallelization', valid_type=orm.Dict, required=False,
             help='When defined, the work chain will first launch an initialization calculation to determine the '
                  'dimensions of the problem, and based on this it will try to set optimal parallelization flags.')
@@ -99,6 +113,98 @@ class PwBaseWorkChain(BaseRestartWorkChain):
             message='The initialization calculation failed.')
         spec.exit_code(501, 'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
             message='Then ionic minimization cycle converged but the thresholds are exceeded in the final SCF.')
+        # yapf: enable
+
+    @classmethod
+    def get_builder_from_protocol(
+        cls,
+        code,
+        structure,
+        protocol=None,
+        overrides=None,
+        electronic_type=ElectronicType.METAL,
+        spin_type=SpinType.NONE,
+        initial_magnetic_moments=None,
+        **_
+    ):
+        """Return a builder prepopulated with inputs selected according to the chosen protocol.
+
+        :param code: the ``Code`` instance configured for the ``quantumespresso.pw`` plugin.
+        :param structure: the ``StructureData`` instance to use.
+        :param protocol: protocol to use, if not specified, the default will be used.
+        :param overrides: optional dictionary of inputs to override the defaults of the protocol.
+        :param electronic_type: indicate the electronic character of the system through ``ElectronicType`` instance.
+        :param spin_type: indicate the spin polarization type to use through a ``SpinType`` instance.
+        :param initial_magnetic_moments: optional dictionary that maps the initial magnetic moment of each kind to a
+            desired value for a spin polarized calculation. Note that for ``spin_type == SpinType.COLLINEAR`` an initial
+            guess for the magnetic moment is automatically set in case this argument is not provided.
+        :return: a process builder instance with all inputs defined ready for launch.
+        """
+        from qe_tools import CONSTANTS
+        from aiida_quantumespresso.workflows.protocols.utils import get_starting_magnetization
+
+        if isinstance(code, str):
+            code = orm.load_code(code)
+
+        type_check(code, orm.Code)
+        type_check(electronic_type, ElectronicType)
+        type_check(spin_type, SpinType)
+
+        if electronic_type not in [ElectronicType.METAL, ElectronicType.INSULATOR]:
+            raise NotImplementedError(f'electronic type `{electronic_type}` is not supported.')
+
+        if spin_type not in [SpinType.NONE, SpinType.COLLINEAR]:
+            raise NotImplementedError(f'spin type `{spin_type}` is not supported.')
+
+        if initial_magnetic_moments is not None and spin_type is not SpinType.COLLINEAR:
+            raise ValueError(f'`initial_magnetic_moments` is specified but spin type `{spin_type}` is incompatible.')
+
+        builder = cls.get_builder()
+        inputs = cls.get_protocol_inputs(protocol, overrides)
+
+        meta_parameters = inputs.pop('meta_parameters')
+        pseudo_family = inputs.pop('pseudo_family')
+
+        natoms = len(structure.sites)
+
+        try:
+            pseudo_set = (PseudoDojoFamily, SsspFamily)
+            pseudo_family = orm.QueryBuilder().append(pseudo_set, filters={'label': pseudo_family}).one()[0]
+        except exceptions.NotExistent as exception:
+            raise ValueError(
+                f'required pseudo family `{pseudo_family}` is not installed. Please use `aiida-pseudo install` to'
+                'install it.'
+            ) from exception
+
+        cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure)
+
+        parameters = inputs['pw']['parameters']
+        parameters['CONTROL']['etot_conv_thr'] = natoms * meta_parameters['etot_conv_thr_per_atom']
+        parameters['ELECTRONS']['conv_thr'] = natoms * meta_parameters['conv_thr_per_atom']
+        parameters['SYSTEM']['ecutwfc'] = cutoff_wfc / CONSTANTS.ry_to_ev
+        parameters['SYSTEM']['ecutrho'] = cutoff_rho / CONSTANTS.ry_to_ev
+
+        if electronic_type is ElectronicType.INSULATOR:
+            parameters['SYSTEM']['occupations'] = 'fixed'
+            parameters['SYSTEM'].pop('degauss')
+            parameters['SYSTEM'].pop('smearing')
+
+        if spin_type is SpinType.COLLINEAR:
+            starting_magnetization = get_starting_magnetization(structure, pseudo_family, initial_magnetic_moments)
+
+            parameters['SYSTEM']['nspin'] = 2
+            parameters['SYSTEM']['starting_magnetization'] = starting_magnetization
+
+        builder.pw['code'] = code  # pylint: disable=no-member
+        builder.pw['pseudos'] = pseudo_family.get_pseudos(structure=structure)  # pylint: disable=no-member
+        builder.pw['structure'] = structure  # pylint: disable=no-member
+        builder.pw['parameters'] = orm.Dict(dict=parameters)  # pylint: disable=no-member
+        builder.pw['metadata'] = inputs['metadata']  # pylint: disable=no-member
+        builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
+        builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
+        builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
+
+        return builder
 
     def setup(self):
         """Call the `setup` of the `BaseRestartWorkChain` and then create the inputs dictionary in `self.ctx.inputs`.
@@ -142,7 +248,9 @@ class PwBaseWorkChain(BaseRestartWorkChain):
                 'structure': self.inputs.pw.structure,
                 'distance': self.inputs.kpoints_distance,
                 'force_parity': self.inputs.get('kpoints_force_parity', orm.Bool(False)),
-                'metadata': {'call_link_label': 'create_kpoints_from_distance'}
+                'metadata': {
+                    'call_link_label': 'create_kpoints_from_distance'
+                }
             }
             kpoints = create_kpoints_from_distance(**inputs)  # pylint: disable=unexpected-keyword-arg
 
@@ -162,7 +270,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         try:
             self.ctx.inputs.pseudos = validate_and_prepare_pseudos_inputs(structure, pseudos, pseudo_family)
         except ValueError as exception:
-            self.report('{}'.format(exception))
+            self.report(f'{exception}')
             return self.exit_codes.ERROR_INVALID_INPUT_PSEUDO_POTENTIALS
 
     def validate_resources(self):
@@ -219,12 +327,13 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         remaining_keys = [key for key in parallelization.keys() if key not in expected_keys]
 
         for key, value in [(key, value) for key, value in received_keys if value is None]:
-            self.report('required key "{}" in automatic_parallelization input not found'.format(key))
+            self.report(f'required key "{key}" in automatic_parallelization input not found')
             return self.exit_codes.ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY
 
         if remaining_keys:
-            self.report('detected unrecognized keys in the automatic_parallelization input: {}'.format(
-                ' '.join(remaining_keys)))
+            self.report(
+                f"detected unrecognized keys in the automatic_parallelization input: {' '.join(remaining_keys)}"
+            )
             return self.exit_codes.ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY
 
         # Add the calculation mode to the automatic parallelization dictionary
@@ -255,7 +364,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         inputs = prepare_process_inputs(PwCalculation, inputs)
         running = self.submit(PwCalculation, **inputs)
 
-        self.report('launching initialization {}<{}>'.format(running.pk, self.ctx.process_name))
+        self.report(f'launching initialization {running.pk}<{self.ctx.process_name}>')
 
         return ToContext(calculation_init=running)
 
@@ -272,7 +381,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         # Note: don't do this at home, we are losing provenance here. This should be done by a calculation function
         node = orm.Dict(dict=parallelization).store()
         self.out('automatic_parallelization', node)
-        self.report('results of automatic parallelization in {}<{}>'.format(node.__class__.__name__, node.pk))
+        self.report(f'results of automatic parallelization in {node.__class__.__name__}<{node.pk}>')
 
         options = self.ctx.inputs.metadata['options']
         base_resources = options.get('resources', {})
@@ -318,7 +427,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         """
         arguments = [calculation.process_label, calculation.pk, calculation.exit_status, calculation.exit_message]
         self.report('{}<{}> failed with exit status {}: {}'.format(*arguments))
-        self.report('Action taken: {}'.format(action))
+        self.report(f'Action taken: {action}')
 
     @process_handler(exit_codes=ExitCode(0))
     def sanity_check_insufficient_bands(self, calculation):
@@ -330,8 +439,16 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         """
         from aiida_quantumespresso.utils.bands import get_highest_occupied_band
 
+        occupations = calculation.inputs.parameters.get_attribute('SYSTEM', {}).get('occupations', None)
+
+        if occupations is None:
+            self.report(
+                '`SYSTEM.occupations` parameter is not defined: performing band occupation check. '
+                'If you want to disable this, explicitly set `SYSTEM.occupations` to `fixed`.'
+            )
+
         # Only skip the check on the highest band occupation if `occupations` was explicitly set to `fixed`.
-        if calculation.inputs.parameters.get_attribute('SYSTEM', {}).get('occupations', None) == 'fixed':
+        if occupations == 'fixed':
             return
 
         try:
@@ -346,15 +463,15 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         except ValueError as exception:
             args = [self.ctx.process_name, calculation.pk]
             self.report('{}<{}> run with smearing and highest band is occupied'.format(*args))
-            self.report('BandsData<{}> has invalid occupations: {}'.format(bands.pk, exception))
-            self.report('{}<{}> had insufficient bands'.format(calculation.process_label, calculation.pk))
+            self.report(f'BandsData<{bands.pk}> has invalid occupations: {exception}')
+            self.report(f'{calculation.process_label}<{calculation.pk}> had insufficient bands')
 
             nbnd_cur = calculation.outputs.output_parameters.get_dict()['number_of_bands']
             nbnd_new = nbnd_cur + max(int(nbnd_cur * self.defaults.delta_factor_nbnd), self.defaults.delta_minimum_nbnd)
 
             self.ctx.inputs.parameters.setdefault('SYSTEM', {})['nbnd'] = nbnd_new
 
-            self.report('Action taken: increased number of bands to {} and restarting from scratch'.format(nbnd_new))
+            self.report(f'Action taken: increased number of bands to {nbnd_new} and restarting from scratch')
             return ProcessHandlerReport(True)
 
     @process_handler(priority=600)
@@ -377,7 +494,7 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
     @process_handler(priority=580, exit_codes=[
         PwCalculation.exit_codes.ERROR_OUT_OF_WALLTIME,
-        ])
+    ])
     def handle_out_of_walltime(self, calculation):
         """Handle `ERROR_OUT_OF_WALLTIME` exit code: calculation shut down neatly and we can simply restart."""
         try:
@@ -391,9 +508,11 @@ class PwBaseWorkChain(BaseRestartWorkChain):
 
         return ProcessHandlerReport(True)
 
-    @process_handler(priority=570, exit_codes=[
-        PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF,
-        ])
+    @process_handler(
+        priority=570, exit_codes=[
+            PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF,
+        ]
+    )
     def handle_vcrelax_converged_except_final_scf(self, calculation):
         """Handle `ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF` exit code.
 
@@ -406,12 +525,15 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         self.results()  # Call the results method to attach the output nodes
         return ProcessHandlerReport(True, self.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF)
 
-    @process_handler(priority=560, exit_codes=[
-        PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_NOT_REACHED,
-        PwCalculation.exit_codes.ERROR_IONIC_CYCLE_EXCEEDED_NSTEP,
-        PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE,
-        PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE,
-        ])
+    @process_handler(
+        priority=560,
+        exit_codes=[
+            PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_NOT_REACHED,
+            PwCalculation.exit_codes.ERROR_IONIC_CYCLE_EXCEEDED_NSTEP,
+            PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE,
+            PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE,
+        ]
+    )
     def handle_relax_recoverable_ionic_convergence_error(self, calculation):
         """Handle various exit codes for recoverable `relax` calculations with failed ionic convergence.
 
@@ -424,10 +546,13 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         self.report_error_handled(calculation, action)
         return ProcessHandlerReport(True)
 
-    @process_handler(priority=550, exit_codes=[
-        PwCalculation.exit_codes.ERROR_IONIC_CYCLE_ELECTRONIC_CONVERGENCE_NOT_REACHED,
-        PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_FINAL_SCF_FAILED,
-        ])
+    @process_handler(
+        priority=550,
+        exit_codes=[
+            PwCalculation.exit_codes.ERROR_IONIC_CYCLE_ELECTRONIC_CONVERGENCE_NOT_REACHED,
+            PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_FINAL_SCF_FAILED,
+        ]
+    )
     def handle_relax_recoverable_electronic_convergence_error(self, calculation):
         """Handle various exit codes for recoverable `relax` calculations with failed electronic convergence.
 
@@ -447,18 +572,17 @@ class PwBaseWorkChain(BaseRestartWorkChain):
         return ProcessHandlerReport(True)
 
     @process_handler(priority=410, exit_codes=[
-        PwCalculation.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED,])
+        PwCalculation.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED,
+    ])
     def handle_electronic_convergence_not_achieved(self, calculation):
         """Handle `ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED`: decrease the mixing beta and restart from scratch."""
         factor = self.defaults.delta_factor_mixing_beta
         mixing_beta = self.ctx.inputs.parameters.get('ELECTRONS', {}).get('mixing_beta', self.defaults.qe.mixing_beta)
         mixing_beta_new = mixing_beta * factor
 
-        self.ctx.restart_calc = calculation
+        self.ctx.restart_calc = None
         self.ctx.inputs.parameters.setdefault('ELECTRONS', {})['mixing_beta'] = mixing_beta_new
 
-        action = 'reduced beta mixing from {} to {} and restarting from the last calculation'.format(
-            mixing_beta, mixing_beta_new
-        )
+        action = f'reduced beta mixing from {mixing_beta} to {mixing_beta_new} and restarting from the last calculation'
         self.report_error_handled(calculation, action)
         return ProcessHandlerReport(True)

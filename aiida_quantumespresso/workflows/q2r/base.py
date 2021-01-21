@@ -29,6 +29,7 @@ class Q2rBaseWorkChain(BaseRestartWorkChain):
         )
         spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
             message='The calculation failed with an unrecoverable error.')
+        # yapf: enable
 
     def setup(self):
         """Call the `setup` of the `BaseRestartWorkChain` and then create the inputs dictionary in `self.ctx.inputs`.
@@ -50,7 +51,7 @@ class Q2rBaseWorkChain(BaseRestartWorkChain):
         """
         arguments = [calculation.process_label, calculation.pk, calculation.exit_status, calculation.exit_message]
         self.report('{}<{}> failed with exit status {}: {}'.format(*arguments))
-        self.report('Action taken: {}'.format(action))
+        self.report(f'Action taken: {action}')
 
     @process_handler(priority=600)
     def handle_unrecoverable_failure(self, node):

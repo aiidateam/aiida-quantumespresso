@@ -38,7 +38,7 @@ def test_dos_default(fixture_localhost, generate_calc_job_node, generate_parser,
             'units': dos_units,
         }
     })
-    num_regression.check({'dos_val_{}'.format(i): val for i, val in enumerate(dos_values)},
+    num_regression.check({f'dos_val_{i}': val for i, val in enumerate(dos_values)},
                          default_tolerance=dict(atol=0, rtol=1e-18))
 
 

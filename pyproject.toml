@@ -28,6 +28,8 @@ good-names = [
     'i',
     'j',
     'k',
+    'SsspFamily',
+    'StructureData',
     'UpfData',
     'HpCalculation',
     'PwCalculation',

@@ -2,7 +2,7 @@
 import enum
 import os
 
-from .exceptions import XMLUnsupportedFormatError
+from aiida_quantumespresso.parsers.parse_xml.exceptions import XMLUnsupportedFormatError
 
 DEFAULT_SCHEMA_FILENAME = 'qes-1.0.xsd'
 DIRNAME_SCHEMAS = 'schemas'
@@ -37,7 +37,7 @@ def get_schema_filepath(xml):
     :return: the XSD absolute filepath
     """
     schema_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'schemas')
-    schema_filename = get_schema_filename(xml)
+    schema_filename = get_schema_filename(xml)  # if schema == 'pw' else 'qes_cp_devel_030920.xsd'
     schema_filepath = os.path.join(schema_directory, schema_filename)
 
     return schema_filepath
