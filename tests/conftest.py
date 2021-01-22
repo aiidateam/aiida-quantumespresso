@@ -66,9 +66,52 @@ def fixture_code(fixture_localhost):
     return _fixture_code
 
 
+@pytest.fixture
+def serialize_builder():
+    """Serialize the given process builder into a dictionary with nodes turned into their value representation.
+
+    :param builder: the process builder to serialize
+    :return: dictionary
+    """
+
+    def serialize_data(data):
+        # pylint: disable=too-many-return-statements
+        from aiida.orm import BaseType, Dict, Code
+        from aiida.plugins import DataFactory
+
+        StructureData = DataFactory('structure')
+        UpfData = DataFactory('pseudo.upf')
+
+        if isinstance(data, dict):
+            return {key: serialize_data(value) for key, value in data.items()}
+
+        if isinstance(data, BaseType):
+            return data.value
+
+        if isinstance(data, Code):
+            return data.full_label
+
+        if isinstance(data, Dict):
+            return data.get_dict()
+
+        if isinstance(data, StructureData):
+            return data.get_formula()
+
+        if isinstance(data, UpfData):
+            return f'{data.element}<md5={data.md5}>'
+
+        return data
+
+    def _serialize_builder(builder):
+        return serialize_data(builder._inputs(prune=True))  # pylint: disable=protected-access
+
+    return _serialize_builder
+
+
 @pytest.fixture(scope='session', autouse=True)
 def sssp(aiida_profile, generate_upf_data):
     """Create an SSSP pseudo potential family from scratch."""
+    from qe_tools import CONSTANTS
     from aiida.common.constants import elements
     from aiida.plugins import GroupFactory
 
@@ -90,7 +133,10 @@ def sssp(aiida_profile, generate_upf_data):
                     handle.write(source.read())
                     handle.flush()
 
-            cutoffs['standard'][element] = {'cutoff_wfc': 30., 'cutoff_rho': 240.}
+            cutoffs['standard'][element] = {
+                'cutoff_wfc': 30. * CONSTANTS.ry_to_ev,
+                'cutoff_rho': 240. * CONSTANTS.ry_to_ev
+            }
 
         label = 'SSSP/1.1/PBE/efficiency'
         family = SsspFamily.create_from_folder(dirpath, label)
@@ -243,41 +289,12 @@ def generate_upf_data(tmp_path_factory):
         from aiida_pseudo.data.pseudo import UpfData
 
         with open(tmp_path_factory.mktemp('pseudos') / f'{element}.upf', 'w+b') as handle:
-            content = f'<UPF version="2.0.1"><PP_HEADER\nelement="{element}"\nz_valence="1.0"\n/></UPF>\n'
+            content = f'<UPF version="2.0.1"><PP_HEADER\nelement="{element}"\nz_valence="4.0"\n/></UPF>\n'
             handle.write(content.encode('utf-8'))
             handle.flush()
             return UpfData(file=handle)
 
     return _generate_upf_data
-
-
-@pytest.fixture
-def generate_upf_family(tmp_path, generate_upf_data):
-    """Return a factory for a `UpfFamily` instance."""
-
-    def _generate_upf_family(label='family', elements=('Si',)):
-        """Return an instance of `UpfFamily` or subclass containing the given elements.
-
-        :param elements: optional list of elements to include instead of all the available ones
-        :return: the pseudo family
-        """
-        from aiida_pseudo.groups.family import UpfFamily
-
-        cutoffs = {}
-
-        for element in elements:
-            upf = generate_upf_data(element)
-            with open(os.path.join(tmp_path, f'{element}.upf'), 'wb') as handle:
-                with upf.open(mode='rb') as source:
-                    handle.write(source.read())
-            cutoffs[element] = {'cutoff_wfc': 1.0, 'cutoff_rho': 2.0}
-
-        family = UpfFamily.create_from_folder(str(tmp_path), label)
-        family.set_cutoffs({'standard': cutoffs})
-
-        return family
-
-    return _generate_upf_family
 
 
 @pytest.fixture

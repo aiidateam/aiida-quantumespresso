@@ -8,6 +8,8 @@ from aiida.engine import WorkChain, ToContext, if_
 from aiida_quantumespresso.calculations.functions.seekpath_structure_analysis import seekpath_structure_analysis
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 
+from ..protocols.utils import ProtocolMixin
+
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
 
@@ -24,7 +26,7 @@ def validate_inputs(inputs, ctx=None):  # pylint: disable=unused-argument
         return PwBandsWorkChain.exit_codes.ERROR_INVALID_INPUT_KPOINTS.message
 
 
-class PwBandsWorkChain(WorkChain):
+class PwBandsWorkChain(ProtocolMixin, WorkChain):
     """Workchain to compute a band structure for a given structure using Quantum ESPRESSO pw.x.
 
     The logic for the computation of various parameters for the BANDS step is as follows:
@@ -109,6 +111,46 @@ class PwBandsWorkChain(WorkChain):
         spec.output('band_structure', valid_type=orm.BandsData,
             help='The computed band structure.')
         # yapf: enable
+
+    @classmethod
+    def get_builder_from_protocol(cls, code, structure, protocol=None, overrides=None, **kwargs):
+        """Return a builder prepopulated with inputs selected according to the chosen protocol.
+
+        :param code: the ``Code`` instance configured for the ``quantumespresso.pw`` plugin.
+        :param structure: the ``StructureData`` instance to use.
+        :param protocol: protocol to use, if not specified, the default will be used.
+        :param overrides: optional dictionary of inputs to override the defaults of the protocol.
+        :param kwargs: additional keyword arguments that will be passed to the ``get_builder_from_protocol`` of all the
+            sub processes that are called by this workchain.
+        :return: a process builder instance with all inputs defined ready for launch.
+        """
+        args = (code, structure, protocol)
+        inputs = cls.get_protocol_inputs(protocol, overrides)
+        builder = cls.get_builder()
+
+        relax = PwRelaxWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('relax', None), **kwargs)
+        scf = PwBaseWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('scf', None), **kwargs)
+        bands = PwBaseWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('bands', None), **kwargs)
+
+        relax.pop('structure', None)
+        relax.pop('clean_workdir', None)
+        relax.pop('base_final_scf', None)
+        scf['pw'].pop('structure', None)
+        scf.pop('clean_workdir', None)
+        bands['pw'].pop('structure', None)
+        bands.pop('clean_workdir', None)
+        bands.pop('kpoints_distance', None)
+        bands.pop('kpoints_force_parity', None)
+
+        builder.structure = structure
+        builder.relax = relax
+        builder.scf = scf
+        builder.bands = bands
+        builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
+        builder.nbands_factor = orm.Float(inputs['nbands_factor'])
+        builder.bands_kpoints_distance = orm.Float(inputs['bands_kpoints_distance'])
+
+        return builder
 
     def setup(self):
         """Define the current structure in the context to be the input structure."""
