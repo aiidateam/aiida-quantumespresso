@@ -52,8 +52,8 @@ class PwimmigrantCalculation(PwCalculation):
 
         :param open_transport: An open instance of the transport class of the
             calculation's computer. See the tutorial for more information.
-        :type open_transport: aiida.transport.plugins.local.LocalTransport
-            or aiida.transport.plugins.ssh.SshTransport
+        :type open_transport: aiida.transports.plugins.local.LocalTransport
+            or aiida.transports.plugins.ssh.SshTransport
 
 
         This method parses the files in the job's remote working directory to
@@ -305,8 +305,8 @@ class PwimmigrantCalculation(PwCalculation):
 
         :param open_transport: An open instance of the transport class of the
             calculation's computer.
-        :type open_transport: aiida.transport.plugins.local.LocalTransport
-            or aiida.transport.plugins.ssh.SshTransport
+        :type open_transport: aiida.transports.plugins.local.LocalTransport
+            or aiida.transports.plugins.ssh.SshTransport
 
         Here, we
 
@@ -341,8 +341,8 @@ class PwimmigrantCalculation(PwCalculation):
 
         :param open_transport: An open instance of the transport class of the
             calculation's computer. See the tutorial for more information.
-        :type open_transport: aiida.transport.plugins.local.LocalTransport
-            or aiida.transport.plugins.ssh.SshTransport
+        :type open_transport: aiida.transports.plugins.local.LocalTransport
+            or aiida.transports.plugins.ssh.SshTransport
 
         The next time the daemon updates the status of calculations, it will
         see this job is in the 'COMPUTED' state and will retrieve its output

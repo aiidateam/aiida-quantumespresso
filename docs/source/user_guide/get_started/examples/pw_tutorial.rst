@@ -127,7 +127,7 @@ Once you have a code, you can start to assemble the inputs to run
 a PWscf calculation.
 
 .. note:: To learn more about calculations and processes in AiiDA you can
-  refer to the :ref:`working_calculations` and :ref:`concepts_processes` sections
+  refer to the :ref:`aiida:topics:calculations` and :ref:`aiida:topics:processes` sections
   of the AiiDA manual
   Remember that what is shown here refers to the Quantum ESPRESSO plugin:
   different codes will in general required different inputs.
@@ -190,7 +190,7 @@ We now proceed in setting up the structure.
     to run a Quantum ESPRESSO PW calculation.
 
     For more detailed information, give a look to the
-    :ref:`structure_tutorial`.
+    :ref:`aiida:topics:data_types:materials:structure`.
 
 There are two ways to do that in AiiDA, a first one is to use the AiiDA Structure,
 which we will explain in the following; the second choice is the
@@ -233,7 +233,7 @@ Then, we append to the empty crystal cell the atoms, specifying their element na
   s.append_atom(position=(0.,alat/2.,alat/2.),symbols='O')
 
 To see more methods associated to the ``StructureData`` class,
-look at the :ref:`my-ref-to-structure` documentation on the AiiDA manual.
+look at the :ref:`aiida:topics:data_types:materials:structure` documentation on the AiiDA manual.
 
 .. note:: When you create a node (in this case a ``StructureData`` node) as
   described above, you are just creating it in the computer memory, and not
@@ -247,7 +247,7 @@ look at the :ref:`my-ref-to-structure` documentation on the AiiDA manual.
     s.store()
 
 For an extended tutorial about the creation of ``Structure`` objects,
-check :ref:`this tutorial on the AiiDA-core documentation <aiida:structure_tutorial>`.
+check :ref:`this tutorial on the AiiDA-core documentation <aiida:topics:data_types:materials:structure>`.
 
 .. note:: AiiDA also supports  ASE structures. Once you created your structure
   with ASE, in an object instance called say ``ase_s``, you can
@@ -561,7 +561,7 @@ pseudopotential files, one for each element of the structure.
 
    For a more extended documentation on how to import pseudopotentials in the database,
    and how to handle and instal pseudopotential families, you can find more
-   information in :ref:`my-ref-to-pseudo-tutorial`.
+   information in :ref:`aiida:topics:data_types:materials:upf`.
 
 The ``builder.pseudos`` input is a dictionary, where the keys are the names of
 the elements, and the values are the ``UpfData`` objects stored in the database.
@@ -645,7 +645,7 @@ To execute the calculation, there are two possible ways:
    - run: the calculation gets executed in the shell, locking it until it is finished;
    - submit: the calculation is handled to the AiiDA daemon, and it will be running in the background
 
-The commands are explained more in detail in the :ref:`working_processes_launching` documentation of AiiDA.
+The commands are explained more in detail in the :ref:`aiida:tutorial` documentation of AiiDA.
 
 To run your calculation, you can execute: ::
 
