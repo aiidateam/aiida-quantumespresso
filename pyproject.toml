@@ -73,7 +73,6 @@ description =
 extras = docs
 changedir = docs
 whitelist_externals = make
-commands_pre = reentry scan
 commands =
     clean: make clean
     make

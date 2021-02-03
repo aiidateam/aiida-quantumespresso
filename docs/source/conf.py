@@ -20,10 +20,13 @@ import time
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 import aiida_quantumespresso
 
-from aiida.manage.configuration import load_documentation_profile
+# ensure plugins are loaded
+from reentry import manager
+manager.scan()
 
 # Load the dummy profile even if we are running locally, this way the documentation will succeed even if the current
 # default profile of the AiiDA installation does not use a Django backend.
+from aiida.manage.configuration import load_documentation_profile
 load_documentation_profile()
 
 # -- General configuration ------------------------------------------------
