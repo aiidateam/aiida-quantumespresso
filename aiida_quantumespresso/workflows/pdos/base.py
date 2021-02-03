@@ -117,7 +117,7 @@ def get_parameter_schema():
 
 
 def validate_dos_parameters(node):
-    """Validate DOS parameters
+    """Validate DOS parameters.
 
     - shared: Emin | Emax | DeltaE
     - dos.x only: ngauss | degauss | bz_sum
@@ -277,7 +277,7 @@ class PdosWorkChain(engine.WorkChain):
 
         future = self.submit(PwBaseWorkChain, **inputs)
 
-        self.report('launching SCF PwBaseWorkChain<{}>'.format(future.pk))
+        self.report(f'launching SCF PwBaseWorkChain<{future.pk}>')
 
         return engine.ToContext(workchain_scf=future)
 
@@ -285,7 +285,7 @@ class PdosWorkChain(engine.WorkChain):
         """Verify that the SCF calculation finished successfully."""
         workchain = self.ctx.workchain_scf
         if not workchain.is_finished_ok:
-            self.report('SCF PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
+            self.report(f'SCF PwBaseWorkChain failed with exit status {workchain.exit_status}')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_SCF
 
         self.ctx.scf_parent_folder = workchain.outputs.remote_folder
@@ -331,7 +331,7 @@ class PdosWorkChain(engine.WorkChain):
 
         future = self.submit(PwBaseWorkChain, **inputs)
 
-        self.report('launching NSCF PwBaseWorkChain<{}>'.format(future.pk))
+        self.report(f'launching NSCF PwBaseWorkChain<{future.pk}>')
 
         return engine.ToContext(workchain_nscf=future)
 
@@ -339,14 +339,14 @@ class PdosWorkChain(engine.WorkChain):
         """Verify that the NSCF calculation finished successfully."""
         workchain = self.ctx.workchain_nscf
         if not workchain.is_finished_ok:
-            self.report('NSCF PwBaseWorkChain failed with exit status {}'.format(workchain.exit_status))
+            self.report(f'NSCF PwBaseWorkChain failed with exit status {workchain.exit_status}')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_NSCF
 
         if self.ctx.clean_serial:
             # we no longer require the scf remote folder, so can clean it
             cleaned_calcs = clean_workchain_calcs(self.ctx.workchain_scf)
             if cleaned_calcs:
-                self.report('cleaned remote folders of SCF calculations: {}'.format(' '.join(map(str, cleaned_calcs))))
+                self.report(f"cleaned remote folders of SCF calculations: {' '.join(map(str, cleaned_calcs))}")
 
         self.ctx.nscf_parent_folder = workchain.outputs.remote_folder
         self.ctx.nscf_fermi = workchain.outputs.output_parameters.dict.fermi_energy
@@ -392,20 +392,20 @@ class PdosWorkChain(engine.WorkChain):
         if self.ctx.is_test_run:
             return dos_inputs
         future_dos = self.submit(DosCalculation, **dos_inputs)
-        self.report('launching DosCalculation<{}>'.format(future_dos.pk))
+        self.report(f'launching DosCalculation<{future_dos.pk}>')
         return engine.ToContext(calc_dos=future_dos)
 
     def inspect_dos_serial(self):
         """Verify that the DOS calculation finished successfully, then clean its remote directory."""
         calculation = self.ctx.calc_dos
         if not calculation.is_finished_ok:
-            self.report('DosCalculation failed with exit status {}'.format(calculation.exit_status))
+            self.report(f'DosCalculation failed with exit status {calculation.exit_status}')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_DOS
 
         if self.ctx.clean_serial:
             # we no longer require the dos remote folder, so can clean it
             if clean_calcjob_remote(calculation):
-                self.report('cleaned remote folder of DosCalculation<{}>'.format(calculation.pk))
+                self.report(f'cleaned remote folder of DosCalculation<{calculation.pk}>')
 
     def run_projwfc_serial(self):
         """Run Projwfc calculation."""
@@ -413,20 +413,20 @@ class PdosWorkChain(engine.WorkChain):
         if self.ctx.is_test_run:
             return projwfc_inputs
         future_projwfc = self.submit(ProjwfcCalculation, **projwfc_inputs)
-        self.report('launching ProjwfcCalculation<{}>'.format(future_projwfc.pk))
+        self.report(f'launching ProjwfcCalculation<{future_projwfc.pk}>')
         return engine.ToContext(calc_projwfc=future_projwfc)
 
     def inspect_projwfc_serial(self):
         """Verify that the Projwfc calculation finished successfully, then clean its remote directory."""
         calculation = self.ctx.calc_projwfc
         if not calculation.is_finished_ok:
-            self.report('ProjwfcCalculation failed with exit status {}'.format(calculation.exit_status))
+            self.report(f'ProjwfcCalculation failed with exit status {calculation.exit_status}')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_PROJWFC
 
         if self.ctx.clean_serial:
             # we no longer require the projwfc remote folder, so can clean it
             if clean_calcjob_remote(calculation):
-                self.report('cleaned remote folder of ProjwfcCalculation<{}>'.format(calculation.pk))
+                self.report(f'cleaned remote folder of ProjwfcCalculation<{calculation.pk}>')
 
     def run_pdos_parallel(self):
         """Run DOS and Projwfc calculations in parallel."""
@@ -437,11 +437,11 @@ class PdosWorkChain(engine.WorkChain):
             return dos_inputs, projwfc_inputs
 
         future_dos = self.submit(DosCalculation, **dos_inputs)
-        self.report('launching DosCalculation<{}>'.format(future_dos.pk))
+        self.report(f'launching DosCalculation<{future_dos.pk}>')
         self.to_context(**{'calc_dos': future_dos})
 
         future_projwfc = self.submit(ProjwfcCalculation, **projwfc_inputs)
-        self.report('launching ProjwfcCalculation<{}>'.format(future_projwfc.pk))
+        self.report(f'launching ProjwfcCalculation<{future_projwfc.pk}>')
         self.to_context(**{'calc_projwfc': future_projwfc})
 
     def inspect_pdos_parallel(self):
@@ -450,12 +450,12 @@ class PdosWorkChain(engine.WorkChain):
 
         calculation = self.ctx.calc_dos
         if not calculation.is_finished_ok:
-            self.report('DosCalculation failed with exit status {}'.format(calculation.exit_status))
+            self.report(f'DosCalculation failed with exit status {calculation.exit_status}')
             error_codes.append(self.exit_codes.ERROR_SUB_PROCESS_FAILED_DOS)
 
         calculation = self.ctx.calc_projwfc
         if not calculation.is_finished_ok:
-            self.report('ProjwfcCalculation failed with exit status {}'.format(calculation.exit_status))
+            self.report(f'ProjwfcCalculation failed with exit status {calculation.exit_status}')
             error_codes.append(self.exit_codes.ERROR_SUB_PROCESS_FAILED_PROJWFC)
 
         if len(error_codes) > 1:
@@ -478,7 +478,7 @@ class PdosWorkChain(engine.WorkChain):
 
     def on_terminated(self):
         """Clean the working directories of all child calculations if `clean_workdir=True` in the inputs."""
-        super(PdosWorkChain, self).on_terminated()
+        super().on_terminated()
 
         if self.inputs.clean_workdir.value is False:
             self.report('remote folders will not be cleaned')
@@ -487,4 +487,4 @@ class PdosWorkChain(engine.WorkChain):
         cleaned_calcs = clean_workchain_calcs(self.node)
 
         if cleaned_calcs:
-            self.report('cleaned remote folders of calculations: {}'.format(' '.join(map(str, cleaned_calcs))))
+            self.report(f"cleaned remote folders of calculations: {' '.join(map(str, cleaned_calcs))}")
