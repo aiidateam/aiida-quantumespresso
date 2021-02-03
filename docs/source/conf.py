@@ -20,6 +20,12 @@ import time
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 import aiida_quantumespresso
 
+from aiida.manage.configuration import load_documentation_profile
+
+# Load the dummy profile even if we are running locally, this way the documentation will succeed even if the current
+# default profile of the AiiDA installation does not use a Django backend.
+load_documentation_profile()
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -116,8 +122,7 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#~ html_theme = 'basicstrap'
-## SET BELOW
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -286,32 +291,6 @@ latex_elements = {
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
-
-## BEFORE STARTING, LET'S LOAD THE CORRECT AIIDA DBENV
-# on_rtd is whether we are on readthedocs.org, this line of code grabbed
-# from docs.readthedocs.org
-# NOTE: it is needed to have these lines before load_dbenv()
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
-
-if not on_rtd:  # only import and set the theme if we're building docs locally
-    try:
-        import sphinx_rtd_theme
-        html_theme = 'sphinx_rtd_theme'
-        html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-    except ImportError:
-        # No sphinx_rtd_theme installed
-        pass
-    # Load the database environment by first loading the profile and then loading the backend through the manager
-    from aiida.manage.configuration import get_config, load_profile
-    from aiida.manage.manager import get_manager
-    config = get_config()
-    load_profile(config.default_profile_name)
-    get_manager().get_backend()
-else:
-    # Back-end settings for readthedocs online documentation.
-    from aiida.manage import configuration
-    configuration.IN_RT_DOC_MODE = True
-    configuration.BACKEND = 'django'
 
 # Warnings to ignore when using the -n (nitpicky) option
 # We should ignore any python built-in exception, for instance
