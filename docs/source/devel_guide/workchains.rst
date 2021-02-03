@@ -12,7 +12,7 @@ with. For example the calculation could fail to submit to the scheduler, or the 
 reasons. For each launched calculation, the workchain needed to check for all of these cases and act appropriately. To
 prevent from having to implement this same logic, it was abstracted to the |BaseRestartWorkChain|.
 
-Even though the |BaseRestartWorkChain| subclasses the :py:class:`~aiida.work.workchain.WorkChain` class, it is
+Even though the |BaseRestartWorkChain| subclasses the :py:class:`~aiida.engine.processes.workchains.WorkChain` class, it is
 technically in itself not a runnable workchain, for example because it does not define any inputs or an outline in its
 ``spec``. Rather, this class should be subclassed by actual workchains, such as the |PhBaseWorkChain| and the
 |PwBaseWorkChain|, which can then leverage its predefined outline methods.
@@ -153,8 +153,8 @@ To add entries to the error handler category from another package, simply define
 where the ``aiida_quantumespresso_epfl.workflows.pw.base`` file contains the additional decorated error handlers.
 
 .. |error_handler_entry_point| replace:: :py:attr:`~.common.workchain.base.restart.BaseRestartWorkChain._error_handler_entry_point`
-.. |register_error_handler| replace:: :py:func:`~aiida_quantumespresso.common.workchain.utils.register_error_handler`
-.. |BaseRestartWorkChain| replace:: :py:class:`~aiida_quantumespresso.common.workchain.base.restart.BaseRestartWorkChain`
+.. |register_error_handler| replace:: :py:func:`~aiida.engine.processes.workchains.utils.process_handler`
+.. |BaseRestartWorkChain| replace:: :py:class:`~aiida.engine.processes.workchains.restart.BaseRestartWorkChain`
 .. |PhCalculation| replace:: :py:class:`~aiida_quantumespresso.calculations.ph.PhCalculation`
 .. |PwCalculation| replace:: :py:class:`~aiida_quantumespresso.calculations.pw.PwCalculation`
 .. |PhBaseWorkChain| replace:: :py:class:`~aiida_quantumespresso.workflows.ph.base.PhBaseWorkChain`
