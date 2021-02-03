@@ -143,7 +143,7 @@ link any kpoint as input::
   calc.use_parameters(parameters)
 
 Finally, load the proper pseudopotentials using
-e.g. a pseudopotential family (see :ref:`my-ref-to-pseudo-tutorial`)::
+e.g. a pseudopotential family (see :ref:`aiida:topics:data_types:materials:upf`)::
 
   pseudo_family = 'lda_pslib'
   calc.use_pseudos_from_family(pseudo_family)
