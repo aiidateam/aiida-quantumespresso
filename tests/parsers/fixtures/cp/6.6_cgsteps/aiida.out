@@ -1,0 +1,415 @@
+
+     Program CP v.6.6 starts on  3Nov2020 at 21:58: 4 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI), running on     1 processors
+
+     MPI processes distributed on     1 nodes
+     Fft bands division:     nmany     =       1
+     Reading input from aiida.in
+
+   Job Title: WATER
+
+
+   Atomic Pseudopotentials Parameters
+   ----------------------------------
+
+   Reading pseudopotential for specie #  1 from file :
+   ../pseudo/H_HSCV_PBE-1.0.upf
+   file type is UPF v.1
+
+   Reading pseudopotential for specie #  2 from file :
+   ../pseudo/O_HSCV_PBE-1.0.upf
+     Message from routine scan_end:
+     No INFO block end statement, possibly corrupted file
+   file type is UPF v.1
+
+
+   Main Simulation Parameters (from input)
+   ---------------------------------------
+   Restart Mode       =      -1   from_scratch   
+   Number of MD Steps =      30
+   Print out every           10 MD Steps
+   Reads from unit    =      50
+   Writes to unit     =      51
+   MD Simulation time step            =       3.00
+   Electronic fictitious mass (emass) =      50.00
+   emass cut-off                      =       3.00
+
+   Simulation Cell Parameters (from input)
+   external pressure       =            0.00 [KBar]
+   wmass (calculated)      =         2493.41 [AU]
+   ibrav =    1
+   alat  =    10.00000000
+   a1    =    10.00000000    0.00000000    0.00000000
+   a2    =     0.00000000   10.00000000    0.00000000
+   a3    =     0.00000000    0.00000000   10.00000000
+
+   b1    =     0.10000000    0.00000000    0.00000000
+   b2    =     0.00000000    0.10000000    0.00000000
+   b3    =     0.00000000    0.00000000    0.10000000
+   omega =    1000.00000000
+
+    ========================================
+    |  CONJUGATE GRADIENT                  |
+    ========================================
+    | iterations   =           100         |
+    | conv_thr     = 0.00000100000 a.u.    |
+    | passop       =       0.30000 a.u.    |
+    | niter_cg_restart =  20      |
+    ========================================
+
+   Energy Cut-offs
+   ---------------
+   Ecutwfc =   80.0 Ry,      Ecutrho =  320.0 Ry,      Ecuts =  320.0 Ry
+   Gcutwfc =   14.2     ,    Gcutrho =   28.5          Gcuts =   28.5
+   NOTA BENE: refg, mmx =   0.050000  7680
+   Orthog. with Gram-Schmidt
+   Electron dynamics with conjugate gradient
+   Electron dynamics : the temperature is not controlled
+   initial random displacement of el. coordinates with  amplitude=  0.020000
+
+   Electronic states
+   -----------------
+   Number of Electrons=     8, of States =     4
+   Occupation numbers :
+   2.00 2.00 2.00 2.00
+
+
+   Exchange and correlations functionals
+   -------------------------------------
+     Exchange-correlation=  SLA  PW   PBX  PBC
+                           (   1   4   3   4   0   0   0)
+
+
+   Ions Simulation Parameters
+   --------------------------
+   Ions are allowed to move
+   Ions dynamics with newton equations
+   the temperature is computed for     9 degrees of freedom
+   ion dynamics with fricp =  0.0000 and greasp =  1.0000
+   Ionic position (from input)
+   sorted by specie, and converted to real a.u. coordinates
+   Species   1 atoms =    2 mass =      1822.89 (a.u.),         1.00 (amu) rcmax =   0.50 (a.u.)
+        0.571642     0.943352     0.965650
+       -0.243397    -0.435015    -1.378745
+   Species   2 atoms =    1 mass =     29166.22 (a.u.),        16.00 (amu) rcmax =   0.50 (a.u.)
+       -0.328246    -0.508525     0.413094
+   Ionic position read from input file
+
+   All atoms are allowed to move
+   Ionic temperature is not controlled
+
+
+   Cell Dynamics Parameters (from STDIN)
+   -------------------------------------
+   Starting cell generated from CELLDM
+   Constant VOLUME Molecular dynamics
+   cell parameters are not allowed to move
+
+   Verbosity: iverbosity =  0
+
+
+
+   Simulation dimensions initialization
+   ------------------------------------
+
+   unit vectors of full simulation cell
+   in real space:                         in reciprocal space (units 2pi/alat):
+   1    10.0000    0.0000    0.0000              1.0000    0.0000    0.0000
+   2     0.0000   10.0000    0.0000              0.0000    1.0000    0.0000
+   3     0.0000    0.0000   10.0000              0.0000    0.0000    1.0000
+
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum        2561    2561    641                96969    96969   12053
+
+
+   Real Mesh
+   ---------
+   Global Dimensions   Local  Dimensions   Processor Grid
+   .X.   .Y.   .Z.     .X.   .Y.   .Z.     .X.   .Y.   .Z.
+    60    60    60      60    60    60       1     1     1
+   Array leading dimensions ( nr1x, nr2x, nr3x )   =     60    60    60
+   Local number of cell to store the grid ( nrxx ) =     216000
+   Number of x-y planes for each processors: 
+  |  60,  60  |
+
+   Smooth Real Mesh
+   ----------------
+   Global Dimensions   Local  Dimensions   Processor Grid
+   .X.   .Y.   .Z.     .X.   .Y.   .Z.     .X.   .Y.   .Z.
+    60    60    60      60    60    60       1     1     1
+   Array leading dimensions ( nr1x, nr2x, nr3x )   =     60    60    60
+   Local number of cell to store the grid ( nrxx ) =     216000
+   Number of x-y planes for each processors: 
+  |  60,  60  |
+
+   Reciprocal Space Mesh
+   ---------------------
+   Large Mesh
+     Global(ngm_g)    MinLocal       MaxLocal      Average
+          48485          48485          48485       48485.00
+   Smooth Mesh
+     Global(ngms_g)   MinLocal       MaxLocal      Average
+          48485          48485          48485       48485.00
+   Wave function Mesh
+     Global(ngw_g)    MinLocal       MaxLocal      Average
+           6027           6027           6027        6027.00
+
+
+   System geometry initialization
+   ------------------------------
+   ibrav =    1       cell parameters read from input file
+
+   Matrix Multiplication Performances
+   ortho mmul, time for parallel driver      =   0.00000 with    1 procs
+
+   Constraints matrixes will be distributed block like on
+   ortho sub-group =    1*   1 procs
+
+
+
+   Pseudopotentials initialization
+   -------------------------------
+
+
+   Common initialization
+
+   Specie:     1
+
+                        dion 
+
+   Specie:     2
+   1  indv=  1   ang. mom=  0
+
+                        dion 
+   0.2201
+
+   Cell parameters from input file are used in electron mass preconditioning
+   init_tpiba2=    0.39478418
+
+   Short Legend and Physical Units in the Output
+   ---------------------------------------------
+   NFI    [int]          - step index
+   EKINC  [HARTREE A.U.] - kinetic energy of the fictitious electronic dynamics
+   TEMPH  [K]            - Temperature of the fictitious cell dynamics
+   TEMP   [K]            - Ionic temperature
+   ETOT   [HARTREE A.U.] - Scf total energy (Kohn-Sham hamiltonian)
+   ENTHAL [HARTREE A.U.] - Enthalpy ( ETOT + P * V )
+   ECONS  [HARTREE A.U.] - Enthalpy + kinetic energy of ions and cell
+   ECONT  [HARTREE A.U.] - Constant of motion for the CP lagrangian
+
+
+
+   Wave Initialization: random initial wave-functions
+   Occupation number from init
+   nbnd =     4
+    2.00 2.00 2.00 2.00
+ Randomizing ions velocities according to tempw (INPUT VELOCITIES DISCARDED) 
+
+   formf: eself=    30.31961
+   formf:     vps(g=0)=  -0.0007957     rhops(g=0)=  -0.0010000
+   formf:     vps(g=0)=  -0.0007862     rhops(g=0)=  -0.0009756
+   formf:     vps(g=0)=  -0.0007862     rhops(g=0)=  -0.0009756
+   formf:     vps(g=0)=  -0.0007862     rhops(g=0)=  -0.0009756
+   formf:     vps(g=0)=  -0.0007776     rhops(g=0)=  -0.0009518
+   formf: sum_g vps(g)=  -1.7264663 sum_g rhops(g)=  -0.7188485
+   formf:     vps(g=0)=  -0.0037910     rhops(g=0)=  -0.0060000
+   formf:     vps(g=0)=  -0.0037674     rhops(g=0)=  -0.0058538
+   formf:     vps(g=0)=  -0.0037674     rhops(g=0)=  -0.0058538
+   formf:     vps(g=0)=  -0.0037674     rhops(g=0)=  -0.0058538
+   formf:     vps(g=0)=  -0.0037505     rhops(g=0)=  -0.0057111
+   formf: sum_g vps(g)=  -2.9647389 sum_g rhops(g)=  -4.3130909
+   Delta V(G=0):   0.006278Ry,    0.170835eV
+ PERFORMING CONJUGATE GRADIENT MINIMIZATION OF EL. STATES
+
+  nfi     ekinc              temph  tempp     etot                 enthal               econs                econt              vnhh    xnhh0   vnhp    xnhp0
+
+       nfi   tempp            E -T.S-mu.nbsp         +K_p #Iter
+Step     1     392    -17.175705    -17.175705    -17.166948    36
+Step     2     386    -17.175616    -17.175616    -17.170115     8
+Step     3     379    -17.175523    -17.175523    -17.170115     6
+Step     4     372    -17.175426    -17.175426    -17.170115     6
+Step     5     365    -17.175326    -17.175326    -17.170115     6
+Step     6     358    -17.175225    -17.175225    -17.170115     6
+ cg_sub: missed minimum, case 1, iteration           3
+ cg_sub: missed minimum, case 3, iteration           5
+Step     7     351    -17.175123    -17.175123    -17.170115     6
+Step     8     344    -17.175021    -17.175021    -17.170115     6
+ cg_sub: missed minimum, case 1, iteration           5
+Step     9     337    -17.174921    -17.174921    -17.170115     6
+NOTE: eigenvalues are not computed without ortho
+
+       nfi   tempp            E -T.S-mu.nbsp         +K_p #Iter
+Step    10     330    -17.174823    -17.174823    -17.170115     6
+ cg_sub: missed minimum, case 1, iteration           4
+ cg_sub: missed minimum, case 2, iteration           3
+ cg_sub: missed minimum, case 3, iteration           4
+ cg_sub: missed minimum, case 3, iteration           5
+Step    11     323    -17.174729    -17.174729    -17.170115     6
+Step    12     317    -17.174639    -17.174639    -17.170114     6
+Step    13     311    -17.174555    -17.174555    -17.170114     6
+ cg_sub: missed minimum, case 1, iteration           3
+ cg_sub: missed minimum, case 1, iteration           4
+Step    14     306    -17.174477    -17.174477    -17.170114     6
+Step    15     301    -17.174405    -17.174405    -17.170114     6
+Step    16     296    -17.174342    -17.174342    -17.170114     6
+Step    17     292    -17.174286    -17.174286    -17.170114     6
+Step    18     289    -17.174238    -17.174238    -17.170114     6
+ cg_sub: missed minimum, case 1, iteration           3
+ cg_sub: missed minimum, case 1, iteration           4
+ cg_sub: missed minimum, case 3, iteration           5
+Step    19     286    -17.174200    -17.174200    -17.170114     6
+NOTE: eigenvalues are not computed without ortho
+
+       nfi   tempp            E -T.S-mu.nbsp         +K_p #Iter
+Step    20     284    -17.174170    -17.174170    -17.170114     6
+ cg_sub: missed minimum, case 1, iteration           1
+ cg_sub: missed minimum, case 2, iteration           5
+Step    21     283    -17.174148    -17.174148    -17.170114     6
+Step    22     282    -17.174136    -17.174136    -17.170114     6
+Step    23     281    -17.174131    -17.174131    -17.170114     6
+Step    24     282    -17.174135    -17.174135    -17.170114     6
+Step    25     282    -17.174145    -17.174145    -17.170114     6
+Step    26     284    -17.174163    -17.174163    -17.170115     6
+ cg_sub: missed minimum, case 1, iteration           4
+Step    27     285    -17.174186    -17.174186    -17.170115     6
+Step    28     287    -17.174214    -17.174214    -17.170115     6
+ cg_sub: missed minimum, case 3, iteration           5
+Step    29     289    -17.174245    -17.174245    -17.170115     6
+
+ * Physical Quantities at step:    30
+NOTE: eigenvalues are not computed without ortho
+
+
+                total energy =      -17.17428030220 Hartree a.u.
+              kinetic energy =       12.68029 Hartree a.u.
+        electrostatic energy =      -23.46428 Hartree a.u.
+                         esr =        0.00223 Hartree a.u.
+                       eself =       30.31961 Hartree a.u.
+      pseudopotential energy =       -4.09982 Hartree a.u.
+  n-l pseudopotential energy =        1.94751 Hartree a.u.
+ exchange-correlation energy =       -4.23797 Hartree a.u.
+           average potential =        0.00000 Hartree a.u.
+
+
+
+   Eigenvalues (eV), kp =   1 , spin =  1
+
+    0.00    0.00    0.00    0.00
+
+
+   CELL_PARAMETERS
+   10.00000000    0.00000000    0.00000000
+    0.00000000   10.00000000    0.00000000
+    0.00000000    0.00000000   10.00000000
+
+   System Density [g/cm^3] :              0.2017098000
+
+
+   System Volume [A.U.^3] :           1000.0000000000
+
+
+   Center of mass square displacement (a.u.):   0.000000
+
+   ATOMIC_POSITIONS
+   H       0.54901641883215E+00     0.88775297676191E+00     0.10546440033360E+01
+   H      -0.38110893635143E+00    -0.43184324135395E+00    -0.14221576052694E+01
+   O      -0.31822443015505E+00    -0.50524882533800E+00     0.41024550637084E+00
+
+   ATOMIC_VELOCITIES
+   H       0.27306635185580E-03     0.22369037886466E-03     0.12497048730804E-02
+   H      -0.15191022093195E-02     0.14829361885881E-03    -0.65286766402546E-03
+   O       0.77877241091475E-04    -0.23248999857714E-04    -0.37302325565948E-04
+
+
+
+   Partial temperatures (for each ionic specie) 
+   Species  Temp (K)   Mean Square Displacement (a.u.)
+        1   4.26E+02     1.6191E-02
+        2   2.46E+01     1.1928E-04
+
+       nfi   tempp            E -T.S-mu.nbsp         +K_p #Iter
+Step    30     292    -17.174280    -17.174280    -17.170115     6
+
+   writing restart file (with schema): ./out/cp_51.save/
+     restart      :      0.00s CPU      0.07s WALL (       1 calls)
+
+
+   Averaged Physical Quantities
+                      accumulated      this run
+   ekinc         :        0.00000       0.00000 (AU)
+   ekin          :       12.70030      12.70030 (AU)
+   epot          :      -31.82623     -31.82623 (AU)
+   total energy  :      -17.17462     -17.17462 (AU)
+   temperature   :      315.99411     315.99411 (K )
+   enthalpy      :        0.00000       0.00000 (AU)
+   econs         :      -17.17001     -17.17001 (AU)
+   pressure      :        0.00000       0.00000 (Gpa)
+   volume        :     1000.00000    1000.00000 (AU)
+
+
+
+     Called by MAIN_LOOP:
+     initialize   :      0.60s CPU      0.62s WALL (       1 calls)
+     main_loop    :     59.05s CPU     63.89s WALL (      30 calls)
+     cpr_total    :     59.05s CPU     63.96s WALL (       1 calls)
+
+     Called by INIT_RUN:
+
+     Called by CPR:
+     cpr_md       :     59.05s CPU     63.96s WALL (      30 calls)
+     move_electro :     59.01s CPU     63.81s WALL (      33 calls)
+
+     Called by move_electrons:
+     rhoofr       :      8.01s CPU      8.36s WALL (     464 calls)
+     vofrho       :     47.73s CPU     52.07s WALL (     464 calls)
+     dforce       :      2.44s CPU      2.52s WALL (     466 calls)
+     calphi       :      0.01s CPU      0.01s WALL (     230 calls)
+     nlfl         :      0.00s CPU      0.00s WALL (      33 calls)
+     gram         :      0.14s CPU      0.14s WALL (     469 calls)
+
+     Small boxes:
+
+     Low-level routines:
+     prefor       :      0.01s CPU      0.01s WALL (     294 calls)
+     nlfq         :      0.01s CPU      0.01s WALL (      33 calls)
+     nlsm1        :      0.14s CPU      0.14s WALL (    1545 calls)
+     nlsm2        :      0.01s CPU      0.01s WALL (      33 calls)
+     fft          :     16.98s CPU     17.65s WALL (    3713 calls)
+     ffts         :      3.93s CPU      4.00s WALL (     928 calls)
+     fftw         :      4.68s CPU      4.91s WALL (    1860 calls)
+     betagx       :      0.13s CPU      0.14s WALL (       1 calls)
+     qradx        :      0.00s CPU      0.00s WALL (       1 calls)
+     gram         :      0.14s CPU      0.14s WALL (     469 calls)
+     nlinit       :      0.57s CPU      0.59s WALL (       1 calls)
+     init_dim     :      0.02s CPU      0.02s WALL (       1 calls)
+     newnlinit    :      0.00s CPU      0.00s WALL (       1 calls)
+     from_scratch :      0.00s CPU      0.01s WALL (       1 calls)
+     strucf       :      0.02s CPU      0.02s WALL (      34 calls)
+     calbec       :      0.14s CPU      0.14s WALL (    1545 calls)
+     runcg_uspp   :     59.01s CPU     63.81s WALL (      33 calls)
+     calcmt       :      0.00s CPU      0.00s WALL (      33 calls)
+     pc2          :      0.19s CPU      0.20s WALL (     591 calls)
+     pcdaga2      :      0.06s CPU      0.06s WALL (     197 calls)
+     xminus1      :      0.01s CPU      0.01s WALL (     394 calls)
+     emass_p_tpa  :      0.00s CPU      0.00s WALL (      33 calls)
+
+
+     CP           :     59.70s CPU   1m 4.64s WALL
+
+
+   This run was terminated on:  21:59: 9   3Nov2020            
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=

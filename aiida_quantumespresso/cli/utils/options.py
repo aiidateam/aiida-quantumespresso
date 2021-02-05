@@ -4,15 +4,58 @@ import click
 
 from aiida.cmdline.params import types
 from aiida.cmdline.params.options import OverridableOption
+from aiida.cmdline.utils import decorators
+from aiida.common import exceptions
 
 from . import validate
 
-STRUCTURE = OverridableOption(
-    '-s', '--structure', type=types.DataParamType(sub_classes=('aiida.data:structure',)), help='StructureData node.'
-)
+
+class PseudoFamilyType(types.GroupParamType):
+    """Subclass of `GroupParamType` in order to be able to print warning with instructions."""
+
+    def __init__(self, pseudo_types=None, **kwargs):
+        """Construct a new instance."""
+        super().__init__(**kwargs)
+        self._pseudo_types = pseudo_types
+
+    @decorators.with_dbenv()
+    def convert(self, value, param, ctx):
+        """Convert the value to actual pseudo family instance."""
+        try:
+            group = super().convert(value, param, ctx)
+        except click.BadParameter:
+            try:
+                from aiida.orm import load_group
+                load_group(value)
+            except exceptions.NotExistent:  # pylint: disable=try-except-raise
+                raise
+            else:
+                raise click.BadParameter(  # pylint: disable=raise-missing-from
+                    f'`{value}` is not of a supported pseudopotential family type.\nTo install a supported '
+                    'pseudofamily, use the `aiida-pseudo` plugin. See the following link for detailed instructions:\n\n'
+                    '    https://github.com/aiidateam/aiida-quantumespresso#pseudopotentials'
+                )
+
+        if self._pseudo_types is not None and group.pseudo_type not in self._pseudo_types:
+            pseudo_types = ', '.join(self._pseudo_types)
+            raise click.BadParameter(
+                f'family `{group.label}` contains pseudopotentials of the wrong type `{group.pseudo_type}`.\nOnly the '
+                f'following types are supported: {pseudo_types}'
+            )
+
+        return group
+
 
 PSEUDO_FAMILY = OverridableOption(
-    '-p', '--pseudo-family', 'pseudo_family', type=click.STRING, help='Pseudo potential family name.'
+    '-F',
+    '--pseudo-family',
+    type=PseudoFamilyType(sub_classes=('aiida.groups:pseudo.family',), pseudo_types=('pseudo.upf',)),
+    required=True,
+    help='Select a pseudopotential family.'
+)
+
+STRUCTURE = OverridableOption(
+    '-S', '--structure', type=types.DataParamType(sub_classes=('aiida.data:structure',)), help='StructureData node.'
 )
 
 KPOINTS_DISTANCE = OverridableOption(
@@ -137,18 +180,9 @@ CLEAN_WORKDIR = OverridableOption(
     help='Clean the remote folder of all the launched calculations after completion of the workchain.'
 )
 
-ECUTWFC = OverridableOption(
-    '-W', '--ecutwfc', type=click.FLOAT, default=30., show_default=True, help='The plane wave cutoff energy in Ry.'
-)
+ECUTWFC = OverridableOption('-W', '--ecutwfc', type=click.FLOAT, help='The plane wave cutoff energy in Ry.')
 
-ECUTRHO = OverridableOption(
-    '-R',
-    '--ecutrho',
-    type=click.FLOAT,
-    default=240.,
-    show_default=True,
-    help='The charge density cutoff energy in Ry.'
-)
+ECUTRHO = OverridableOption('-R', '--ecutrho', type=click.FLOAT, help='The charge density cutoff energy in Ry.')
 
 HUBBARD_U = OverridableOption(
     '-U',
@@ -179,7 +213,6 @@ HUBBARD_FILE = OverridableOption(
 )
 
 STARTING_MAGNETIZATION = OverridableOption(
-    '-M',
     '--starting-magnetization',
     nargs=2,
     multiple=True,
@@ -189,7 +222,6 @@ STARTING_MAGNETIZATION = OverridableOption(
 )
 
 SMEARING = OverridableOption(
-    '-S',
     '--smearing',
     nargs=2,
     default=(None, None),

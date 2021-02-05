@@ -44,6 +44,7 @@ class MatdynCalculation(NamelistsCalculation):
             message='Number of kpoints not found in the output data')
         spec.exit_code(411, 'ERROR_OUTPUT_KPOINTS_INCOMMENSURATE',
             message='Number of kpoints in the inputs is not commensurate with those in the output')
+        # yapf: enable
 
     def _get_following_text(self):
         """Add the kpoints after the namelist."""

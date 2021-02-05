@@ -89,15 +89,16 @@
         ]
     },
     "install_requires": [
-        "aiida_core[atomic_tools]~=1.4,>=1.4.2",
+        "aiida_core[atomic_tools]~=1.4,>=1.4.4",
+        "aiida-pseudo~=0.4.0",
         "packaging",
         "qe-tools~=2.0rc1",
-        "xmlschema~=1.2",
+        "xmlschema~=1.2,>=1.2.5",
         "numpy"
     ],
     "license": "MIT License",
     "name": "aiida_quantumespresso",
     "python_requires": ">=3.6",
     "url": "https://github.com/aiidateam/aiida-quantumespresso",
-    "version": "3.2.0"
+    "version": "3.3.0"
 }

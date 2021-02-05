@@ -32,3 +32,4 @@ class DosCalculation(NamelistsCalculation):
             message='The stdout output file was incomplete probably because the calculation got interrupted.')
         spec.exit_code(330, 'ERROR_READING_DOS_FILE',
             message='The dos file could not be read from the retrieved folder.')
+        # yapf: enable

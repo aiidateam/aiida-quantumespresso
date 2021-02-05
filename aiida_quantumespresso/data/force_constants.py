@@ -9,13 +9,14 @@ from aiida.orm import SinglefileData
 class ForceConstantsData(SinglefileData):
     """Class to handle interatomic force constants from the Quantum ESPRESSO q2r.x code."""
 
-    def set_file(self, file):
+    def set_file(self, file, filename=None, **kwargs):
         """Add a file to the node, parse it and set the attributes found.
 
         :param file: absolute path to the file or a filelike object
+        :param filename: specify filename to use (defaults to name of provided file).
         """
-        # pylint: disable=redefined-builtin,arguments-differ
-        super().set_file(file)
+        # pylint: disable=redefined-builtin
+        super().set_file(file, filename, **kwargs)
 
         # Parse the force constants file
         dictionary, _, _ = parse_q2r_force_constants_file(self.get_content().splitlines(), also_force_constants=False)

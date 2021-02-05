@@ -37,3 +37,4 @@ class Q2rCalculation(NamelistsCalculation):
             message='The stdout output file was incomplete probably because the calculation got interrupted.')
         spec.exit_code(330, 'ERROR_READING_FORCE_CONSTANTS_FILE',
             message='The force constants file could not be read.')
+        # yapf: enable

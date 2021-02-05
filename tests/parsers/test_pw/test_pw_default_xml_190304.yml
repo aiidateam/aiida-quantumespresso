@@ -93,9 +93,6 @@ output_parameters:
   number_of_spin_components: 1
   number_of_symmetries: 48
   occupations: fixed
-  parser_info: aiida-quantumespresso parser pw.x v3.2.0
-  parser_version: 3.2.0
-  parser_warnings: []
   q_real_space: false
   rho_cutoff: 3265.366014072
   rho_cutoff_units: eV

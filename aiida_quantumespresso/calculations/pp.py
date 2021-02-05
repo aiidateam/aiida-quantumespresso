@@ -114,6 +114,7 @@ class PpCalculation(CalcJob):
             message='The data file format is not supported by the parser')
         spec.exit_code(333, 'ERROR_OUTPUT_DATAFILE_PARSE',
             message='The formatted data output file `{filename}` could not be parsed')
+        # yapf: enable
 
     def prepare_for_submission(self, folder):  # pylint: disable=too-many-branches,too-many-statements
         """Prepare the calculation job for submission by transforming input nodes into input files.
@@ -146,7 +147,8 @@ class PpCalculation(CalcJob):
                 if key in parameters[namelist]:
                     raise exceptions.InputValidationError(
                         "You cannot specify explicitly the '{}' key in the '{}' "
-                        'namelist.'.format(key, namelist))
+                        'namelist.'.format(key, namelist)
+                    )
             else:
                 parameters[namelist] = {}
             parameters[namelist][key] = value
@@ -178,7 +180,8 @@ class PpCalculation(CalcJob):
             raise exceptions.InputValidationError(
                 'The following namelists are specified in parameters, but are '
                 'not valid namelists for the current type of calculation: '
-                '{}'.format(','.join(list(parameters.keys()))))
+                '{}'.format(','.join(list(parameters.keys())))
+            )
 
         remote_copy_list = []
         local_copy_list = []
@@ -188,26 +191,20 @@ class PpCalculation(CalcJob):
         if isinstance(parent_calc_folder, orm.RemoteData):
             remote_copy_list.append((
                 parent_calc_folder.computer.uuid,
-                os.path.join(parent_calc_folder.get_remote_path(), self._INPUT_SUBFOLDER),
-                self._OUTPUT_SUBFOLDER
+                os.path.join(parent_calc_folder.get_remote_path(), self._INPUT_SUBFOLDER), self._OUTPUT_SUBFOLDER
             ))
             remote_copy_list.append((
                 parent_calc_folder.computer.uuid,
-                os.path.join(parent_calc_folder.get_remote_path(), self._PSEUDO_SUBFOLDER),
-                self._PSEUDO_SUBFOLDER
+                os.path.join(parent_calc_folder.get_remote_path(), self._PSEUDO_SUBFOLDER), self._PSEUDO_SUBFOLDER
             ))
         elif isinstance(parent_calc_folder, orm.FolderData):
             for filename in parent_calc_folder.list_object_names():
-                local_copy_list.append((
-                    parent_calc_folder.uuid,
-                    filename,
-                    os.path.join(self._OUTPUT_SUBFOLDER, filename)
-                ))
-                local_copy_list.append((
-                    parent_calc_folder.uuid,
-                    filename,
-                    os.path.join(self._PSEUDO_SUBFOLDER, filename)
-                ))
+                local_copy_list.append(
+                    (parent_calc_folder.uuid, filename, os.path.join(self._OUTPUT_SUBFOLDER, filename))
+                )
+                local_copy_list.append(
+                    (parent_calc_folder.uuid, filename, os.path.join(self._PSEUDO_SUBFOLDER, filename))
+                )
 
         codeinfo = datastructures.CodeInfo()
         codeinfo.cmdline_params = settings.pop('CMDLINE', [])
@@ -228,10 +225,7 @@ class PpCalculation(CalcJob):
         # files may be written. In that case, the data files will have `filplot` as a prefix with some suffix to
         # distinguish them from one another. The `fileout` filename will be the full data filename with the `fileout`
         # value as a suffix.
-        retrieve_tuples = [
-            self._FILEOUT,
-            (f'{self._FILPLOT}_*{self._FILEOUT}', '.', 0)
-        ]
+        retrieve_tuples = [self._FILEOUT, (f'{self._FILPLOT}_*{self._FILEOUT}', '.', 0)]
 
         if self.inputs.metadata.options.keep_plot_file:
             calcinfo.retrieve_list.extend(retrieve_tuples)

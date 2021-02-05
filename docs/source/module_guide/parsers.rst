@@ -36,12 +36,6 @@ Raw Cp Parser
 .. automodule:: aiida_quantumespresso.parsers.parse_raw.cp
    :members:
 
-Constants
----------
-
-.. automodule:: aiida_quantumespresso.parsers.constants
-   :members:
-
 Dos Parser
 ----------
 

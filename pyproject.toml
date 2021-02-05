@@ -28,6 +28,8 @@ good-names = [
     'i',
     'j',
     'k',
+    'SsspFamily',
+    'StructureData',
     'UpfData',
     'HpCalculation',
     'PwCalculation',
@@ -44,3 +46,35 @@ filterwarnings = [
     'ignore::DeprecationWarning:reentry:',
     'ignore::DeprecationWarning:sqlalchemy_utils:',
 ]
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py37
+
+[testenv]
+usedevelop=True
+
+[testenv:py{36,37,38,39}]
+extras = tests
+commands = pytest {posargs}
+
+[testenv:py38-pre-commit]
+description = Run the pre-commit checks
+extras =
+    tests
+    pre-commit
+commands = pre-commit run {posargs}
+
+[testenv:py38-docs-{clean,update}]
+description =
+    clean: Build the documentation (remove any existing build)
+    update: Build the documentation (modify any existing build)
+extras = docs
+changedir = docs
+whitelist_externals = make
+commands =
+    clean: make clean
+    make
+
+"""

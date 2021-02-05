@@ -4,12 +4,14 @@ import copy
 import re
 import numpy as np
 
-from aiida.orm import Code, Dict, UpfData
+from aiida.orm import Code, Dict
 from aiida.common.folders import Folder
-from aiida.plugins import CalculationFactory
+from aiida.plugins import CalculationFactory, DataFactory
 from qe_tools.parsers import PwInputFile as BasePwInputFile
 
 from .base import StructureParseMixin
+
+UpfData = DataFactory('pseudo.upf')
 
 
 class PwInputFile(StructureParseMixin, BasePwInputFile):
@@ -59,7 +61,7 @@ class PwInputFile(StructureParseMixin, BasePwInputFile):
         return kpoints
 
 
-def create_builder_from_file(input_folder, input_file_name, code, metadata, pseudo_folder_path=None, use_first=False):
+def create_builder_from_file(input_folder, input_file_name, code, metadata, pseudo_folder_path=None):
     """Create a populated process builder for a `PwCalculation` from a standard QE input file and pseudo (upf) files.
 
     :param input_folder: the folder containing the input file
@@ -72,8 +74,6 @@ def create_builder_from_file(input_folder, input_file_name, code, metadata, pseu
     :type metadata: dict
     :param pseudo_folder_path: the folder containing the upf files (if None, then input_folder is used)
     :type pseudo_folder_path: aiida.common.folders.Folder or str or None
-    :param use_first: passed to UpfData.get_or_create
-    :type use_first: bool
     :raises NotImplementedError: if the structure is not ibrav=0
     :return: a builder instance for PwCalculation
     """
@@ -120,8 +120,9 @@ def create_builder_from_file(input_folder, input_file_name, code, metadata, pseu
     for name, fname in zip(names, pseudo_file_names):
         if fname not in pseudo_file_map:
             local_path = pseudo_folder_path.get_abs_path(fname)
-            upf_node, _ = UpfData.get_or_create(local_path, use_first=use_first, store_upf=False)
-            pseudo_file_map[fname] = upf_node
+            with open(local_path, 'rb') as handle:
+                upf = UpfData(handle)
+            pseudo_file_map[fname] = upf
         pseudos_map[name] = pseudo_file_map[fname]
     builder.pseudos = pseudos_map
 

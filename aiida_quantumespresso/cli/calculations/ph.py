@@ -2,22 +2,23 @@
 """Command line scripts to launch a `PhCalculation` for testing and demonstration purposes."""
 import click
 
-from aiida.cmdline.params import options, types
+from aiida.cmdline.params import options as options_core
+from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
 
 from ..utils import launch
-from ..utils import options as options_qe
+from ..utils import options
 from . import cmd_launch
 
 
 @cmd_launch.command('ph')
-@options.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.ph'))
-@options.CALCULATION(required=True)
-@options_qe.KPOINTS_MESH(default=[1, 1, 1])
-@options_qe.MAX_NUM_MACHINES()
-@options_qe.MAX_WALLCLOCK_SECONDS()
-@options_qe.WITH_MPI()
-@options_qe.DAEMON()
+@options_core.CODE(required=True, type=types.CodeParamType(entry_point='quantumespresso.ph'))
+@options_core.CALCULATION(required=True)
+@options.KPOINTS_MESH(default=[1, 1, 1])
+@options.MAX_NUM_MACHINES()
+@options.MAX_WALLCLOCK_SECONDS()
+@options.WITH_MPI()
+@options.DAEMON()
 @decorators.with_dbenv()
 def launch_calculation(code, kpoints_mesh, calculation, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
     """Run a PhCalculation."""

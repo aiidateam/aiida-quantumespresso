@@ -228,6 +228,14 @@ class PwParser(Parser):
         threshold_stress = parameters.get('CELL', {}).get('press_conv_thr', pw.press_conv_thr)
         external_pressure = parameters.get('CELL', {}).get('press', 0)
 
+        # Through the `cell_dofree` the degrees of freedom of the cell can be constrained, which makes the threshold on
+        # the stress hard to interpret. Therefore, unless the `cell_dofree` is set to the default `all` where the cell
+        # is fully unconstrained, the stress is ignored even if an explicit `press_conv_thr` is specified in the inputs.
+        constrained_cell = parameters.get('CELL', {}).get('cell_dofree', 'all') != 'all'
+
+        if constrained_cell:
+            threshold_stress = None
+
         if relax_type == 'relax':
             return verify_convergence_trajectory(trajectory, -1, *[threshold_forces, None])
 
@@ -235,6 +243,7 @@ class PwParser(Parser):
             values = [threshold_forces, threshold_stress, external_pressure]
             converged_relax = verify_convergence_trajectory(trajectory, -2, *values)
             converged_final = verify_convergence_trajectory(trajectory, -1, *values)
+
             return converged_relax and (converged_final or except_final_scf)
 
         raise RuntimeError(f'unknown relax_type: {relax_type}')
@@ -246,7 +255,7 @@ class PwParser(Parser):
         :param parser_options: optional dictionary with parser options
         :return: tuple of two dictionaries, first with raw parsed data and second with log messages
         """
-        from .parse_xml.pw.exceptions import XMLParseError, XMLUnsupportedFormatError
+        from .parse_xml.exceptions import XMLParseError, XMLUnsupportedFormatError
         from .parse_xml.pw.parse import parse_xml
 
         logs = get_logging_container()
@@ -339,12 +348,8 @@ class PwParser(Parser):
 
         :param parsed_stdout: the raw parsed data dictionary from the stdout output file
         :param parsed_xml: the raw parsed data dictionary from the XML output file
-        :return: the union of the two parsed raw and information about the parser
+        :return: the union of the two raw parsed data dictionaries
         """
-        from aiida_quantumespresso.parsers import get_parser_info
-
-        parsed_info = get_parser_info(parser_info_template='aiida-quantumespresso parser pw.x v{}')
-
         for key in list(parsed_stdout.keys()):
             if key in list(parsed_xml.keys()):
                 if parsed_stdout[key] != parsed_xml[key]:
@@ -354,7 +359,7 @@ class PwParser(Parser):
                         )
                     )
 
-        parameters = dict(list(parsed_xml.items()) + list(parsed_stdout.items()) + list(parsed_info.items()))
+        parameters = dict(list(parsed_xml.items()) + list(parsed_stdout.items()))
 
         return parameters
 

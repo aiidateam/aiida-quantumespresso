@@ -3,8 +3,5 @@ number_of_irr_representations_for_each_q:
 - 2
 - 4
 number_of_qpoints: 3
-parser_info: aiida-quantumespresso parser ph.x v3.2.0
-parser_version: 3.2.0
-parser_warnings: []
 wall_time: '         7.13s '
 wall_time_seconds: 7.13

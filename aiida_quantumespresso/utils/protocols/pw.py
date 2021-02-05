@@ -63,7 +63,7 @@ def _get_all_protocol_modifiers():
             'parameters_default': 'default'
         }
     }
-    protocols['theos-ht-1.0']['parameters']['scdm'] = protocols['theos-ht-1.0']['parameters']['default']
+    protocols['theos-ht-1.0']['parameters']['scdm'] = deepcopy(protocols['theos-ht-1.0']['parameters']['default'])
     protocols['theos-ht-1.0']['parameters']['scdm']['num_bands_factor'] = 3.0
 
     # a protocol for testing purpose, decrease kmesh density & ecutoff

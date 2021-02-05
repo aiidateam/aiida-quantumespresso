@@ -77,6 +77,7 @@ class PhCalculation(CalcJob):
             message='The calculation stopped prematurely because it ran out of walltime.')
         spec.exit_code(410, 'ERROR_CONVERGENCE_NOT_REACHED',
             message='The minimization cycle did not reach self-consistency.')
+        # yapf: enable
 
     def prepare_for_submission(self, folder):
         """Prepare the calculation job for submission by transforming input nodes into input files.
@@ -86,7 +87,7 @@ class PhCalculation(CalcJob):
         lists that are to be retrieved after job completion.
 
         :param folder: a sandbox folder to temporarily write files on disk.
-        :return: :py:`~aiida.common.datastructures.CalcInfo` instance.
+        :return: :py:class:`~aiida.common.datastructures.CalcInfo` instance.
         """
         # pylint: disable=too-many-statements,too-many-branches
         local_copy_list = []
@@ -104,8 +105,7 @@ class PhCalculation(CalcJob):
         if not parent_calcs:
             raise exceptions.NotExistent(f'parent_folder<{parent_folder.pk}> has no parent calculation')
         elif len(parent_calcs) > 1:
-            raise exceptions.UniquenessError(
-                f'parent_folder<{parent_folder.pk}> has multiple parent calculations')
+            raise exceptions.UniquenessError(f'parent_folder<{parent_folder.pk}> has multiple parent calculations')
 
         parent_calc = parent_calcs[0].node
 
@@ -116,7 +116,9 @@ class PhCalculation(CalcJob):
         if not self.node.computer.uuid == parent_calc.computer.uuid:
             raise exceptions.InputValidationError(
                 'Calculation has to be launched on the same computer as that of the parent: {}'.format(
-                    parent_calc.computer.get_name()))
+                    parent_calc.computer.get_name()
+                )
+            )
 
         # put by default, default_parent_output_folder = ./out
         try:
@@ -135,18 +137,15 @@ class PhCalculation(CalcJob):
 
         prepare_for_d3 = settings.pop('PREPARE_FOR_D3', False)
         if prepare_for_d3:
-            self._blocked_keywords += [
-                ('INPUTPH', 'fildrho'),
-                ('INPUTPH', 'drho_star%open'),
-                ('INPUTPH', 'drho_star%ext'),
-                ('INPUTPH', 'drho_star%dir')
-            ]
+            self._blocked_keywords += [('INPUTPH', 'fildrho'), ('INPUTPH', 'drho_star%open'),
+                                       ('INPUTPH', 'drho_star%ext'), ('INPUTPH', 'drho_star%dir')]
 
         for namelist, flag in self._blocked_keywords:
             if namelist in parameters:
                 if flag in parameters[namelist]:
                     raise exceptions.InputValidationError(
-                        f"Cannot specify explicitly the '{flag}' flag in the '{namelist}' namelist or card.")
+                        f"Cannot specify explicitly the '{flag}' flag in the '{namelist}' namelist or card."
+                    )
 
         if 'INPUTPH' not in parameters:
             raise exceptions.InputValidationError('required namelist INPUTPH not specified')
@@ -172,7 +171,8 @@ class PhCalculation(CalcJob):
 
             if any([i != 0. for i in offset]):
                 raise NotImplementedError(
-                    'Computation of phonons on a mesh with non zero offset is not implemented, at the level of ph.x')
+                    'Computation of phonons on a mesh with non zero offset is not implemented, at the level of ph.x'
+                )
 
             parameters['INPUTPH']['ldisp'] = True
             parameters['INPUTPH']['nq1'] = mesh[0]
@@ -217,7 +217,8 @@ class PhCalculation(CalcJob):
             if not isinstance(namelists_toprint, list):
                 raise exceptions.InputValidationError(
                     "The 'NAMELISTS' value, if specified in the settings input "
-                    'node, must be a list of strings')
+                    'node, must be a list of strings'
+                )
         except KeyError:  # list of namelists not specified in the settings; do automatic detection
             namelists_toprint = self._compulsory_namelists
 
@@ -242,7 +243,8 @@ class PhCalculation(CalcJob):
             raise exceptions.InputValidationError(
                 'The following namelists are specified in parameters, but are '
                 'not valid namelists for the current type of calculation: '
-                '{}'.format(','.join(list(parameters.keys()))))
+                '{}'.format(','.join(list(parameters.keys())))
+            )
 
         # copy the parent scratch
         symlink = settings.pop('PARENT_FOLDER_SYMLINK', self._default_symlink_usage)  # a boolean
@@ -252,38 +254,34 @@ class PhCalculation(CalcJob):
 
             remote_symlink_list.append((
                 parent_folder.computer.uuid,
-                os.path.join(parent_folder.get_remote_path(), parent_calc_out_subfolder, '*'),
-                self._OUTPUT_SUBFOLDER
+                os.path.join(parent_folder.get_remote_path(), parent_calc_out_subfolder, '*'), self._OUTPUT_SUBFOLDER
             ))
 
             # I also create a symlink for the ./pseudo folder
             # Remove this when the recover option of QE will be fixed (bug when trying to find pseudo file)
             remote_symlink_list.append((
-                parent_folder.computer.uuid,
-                os.path.join(parent_folder.get_remote_path(), self._get_pseudo_folder()),
-                self._get_pseudo_folder()
+                parent_folder.computer.uuid, os.path.join(parent_folder.get_remote_path(),
+                                                          self._get_pseudo_folder()), self._get_pseudo_folder()
             ))
         else:
             # here I copy the whole folder ./out
             remote_copy_list.append((
-                parent_folder.computer.uuid,
-                os.path.join(parent_folder.get_remote_path(), parent_calc_out_subfolder),
-                self._OUTPUT_SUBFOLDER
+                parent_folder.computer.uuid, os.path.join(parent_folder.get_remote_path(),
+                                                          parent_calc_out_subfolder), self._OUTPUT_SUBFOLDER
             ))
             # I also copy the ./pseudo folder
             # Remove this when the recover option of QE will be fixed (bug when trying to find pseudo file)
             remote_copy_list.append((
-                parent_folder.computer.uuid,
-                os.path.join(parent_folder.get_remote_path(), self._get_pseudo_folder()),
-                self._get_pseudo_folder()
+                parent_folder.computer.uuid, os.path.join(parent_folder.get_remote_path(),
+                                                          self._get_pseudo_folder()), self._get_pseudo_folder()
             ))
 
         if restart_flag:  # in this case, copy in addition also the dynamical matrices
             if symlink:
                 remote_symlink_list.append((
                     parent_folder.computer.uuid,
-                    os.path.join(parent_folder.get_remote_path(), self._FOLDER_DYNAMICAL_MATRIX),
-                    self._FOLDER_DYNAMICAL_MATRIX
+                    os.path.join(parent_folder.get_remote_path(),
+                                 self._FOLDER_DYNAMICAL_MATRIX), self._FOLDER_DYNAMICAL_MATRIX
                 ))
 
             else:
@@ -291,8 +289,7 @@ class PhCalculation(CalcJob):
                 # no need to copy the _ph0, since I copied already the whole ./out folder
                 remote_copy_list.append((
                     parent_folder.computer.uuid,
-                    os.path.join(parent_folder.get_remote_path(), self._FOLDER_DYNAMICAL_MATRIX),
-                    '.'
+                    os.path.join(parent_folder.get_remote_path(), self._FOLDER_DYNAMICAL_MATRIX), '.'
                 ))
 
         # Create an `.EXIT` file if `only_initialization` flag in `settings` is set to `True`
@@ -302,8 +299,7 @@ class PhCalculation(CalcJob):
 
                 remote_copy_list.append((
                     parent_folder.computer.uuid,
-                    os.path.join(parent_folder.get_remote_path(), self._FOLDER_DYNAMICAL_MATRIX),
-                    '.'
+                    os.path.join(parent_folder.get_remote_path(), self._FOLDER_DYNAMICAL_MATRIX), '.'
                 ))
 
         codeinfo = datastructures.CodeInfo()
@@ -331,7 +327,6 @@ class PhCalculation(CalcJob):
             raise exceptions.InputValidationError(f'`settings` contained unexpected keys: {unknown_keys}')
 
         return calcinfo
-
 
     @staticmethod
     def _get_pseudo_folder():
