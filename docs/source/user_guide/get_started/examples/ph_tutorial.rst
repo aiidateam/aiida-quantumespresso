@@ -88,7 +88,7 @@ As for ``pw.x``, we simply do::
 
 and we set the parameters of the scheduler
 (and just like the PWscf, this is a configuration valid
-for the PBSpro and slurm schedulers only, see :ref:`my-reference-to-scheduler`).
+for the PBSpro and slurm schedulers only, see :ref:`aiida:topics:schedulers`).
 
 ::
 
