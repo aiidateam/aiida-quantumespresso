@@ -399,8 +399,10 @@ def test_tot_magnetization(
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_status
     assert 'output_parameters' in results
+    output_parameters = results['output_parameters'].get_dict()
     data_regression.check({
-        'output_parameters': results['output_parameters'].get_dict(),
+        'fermi_energy_up': output_parameters['fermi_energy_up'],
+        'fermi_energy_down': output_parameters['fermi_energy_down']
     })
 
 

@@ -744,15 +744,6 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                 except Exception:
                     logs.warning.append('Error while parsing Fermi energy from the output file.')
 
-            elif 'the spin up/dw Fermi energies are' in line:
-                try:
-                    value = line.split('are')[1].split('ev')[0].split()
-                    value = [float(e) for e in value]
-                    trajectory_data.setdefault('fermi_energy', []).extend(value)
-                    parsed_data['fermi_energy' + units_suffix] = default_energy_units
-                except Exception:
-                    logs.warning.append('Error while parsing spin up/dw Fermi energies from the output file.')
-
             elif 'Forces acting on atoms' in line:
                 try:
                     forces = []
