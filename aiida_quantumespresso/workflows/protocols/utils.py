@@ -70,6 +70,7 @@ def recursive_merge(left, right):
     """
     import collections
 
+    # Note that a deepcopy is not necessary, since this function is called recusively.
     right = right.copy()
 
     for key, value in left.items():
