@@ -47,8 +47,8 @@ protocols:
         kpoints_distance: 0.50
         meta_parameters:
             conv_thr_per_atom: 0.4e-9
-            etot_conv_thr_per_atom: 1.e-6
+            etot_conv_thr_per_atom: 1.e-4
         pw:
             parameters:
                 CONTROL:
-                    forc_conv_thr: 1.e-5
+                    forc_conv_thr: 1.e-3

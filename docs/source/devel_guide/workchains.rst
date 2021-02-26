@@ -12,7 +12,7 @@ with. For example the calculation could fail to submit to the scheduler, or the 
 reasons. For each launched calculation, the workchain needed to check for all of these cases and act appropriately. To
 prevent from having to implement this same logic, it was abstracted to the |BaseRestartWorkChain|.
 
-Even though the |BaseRestartWorkChain| subclasses the :py:class:`~aiida.work.workchain.WorkChain` class, it is
+Even though the |BaseRestartWorkChain| subclasses the :py:class:`~aiida.engine.processes.workchains.WorkChain` class, it is
 technically in itself not a runnable workchain, for example because it does not define any inputs or an outline in its
 ``spec``. Rather, this class should be subclassed by actual workchains, such as the |PhBaseWorkChain| and the
 |PwBaseWorkChain|, which can then leverage its predefined outline methods.
@@ -20,8 +20,9 @@ technically in itself not a runnable workchain, for example because it does not 
 There are just a few mandatory steps necessary to make this work.
 
 Define the ``_calculation_class``
-----------------------------------------------------------------------
-A workchain implementation that subclasses the |BaseRestartWorkChain| needs to override the :attr:`~.BaseRestartWorkChain._calculation_class` attribute with the correct calculation class, e.g. |PhCalculation| or
+---------------------------------
+
+A workchain implementation that subclasses the |BaseRestartWorkChain| needs to override the ``_process_class`` attribute with the correct calculation class, e.g. |PhCalculation| or
 |PwCalculation|. The workchain will submit instances of this job calculation class.
 
 Define the ``spec.outline``
@@ -91,7 +92,7 @@ would look something like this::
             return ErrorHandlerReport(True, True)
 
 If the conditional is matched, the inputs dictionary in the context is updated and we fire a report so it is logged.
-Finally a :class:`.ErrorHandlerReport` is returned to tell the |BaseRestartWorkChain| that the error was handled and no
+Finally a ``ProcessHandlerReport`` is returned to tell the |BaseRestartWorkChain| that the error was handled and no
 further error handlers should be called and the next iteration should be performed. If the ``calculation`` can be
 restarted from in the next iteration, despite the calculation failure, one can set it to the ``restart_calc`` member of
 the context. This will cause the workchain to automatically use this calculation to restart from::
@@ -121,7 +122,7 @@ The decorator takes two arguments: the workchain class to which the handler shou
 the priority with which it should be called with respect to other handlers. This allows the user to control the order
 in which handlers will be called. Handlers with a higher priority will be called first.
 That is all. The decorator will make sure that the workchain class gets the function as a class method and in the
-:meth:`~.BaseRestartWorkChain.inspect_calculation` call, when a calculation has failed, the workchain will loop over
+``inspect_calculation`` call, when a calculation has failed, the workchain will loop over
 all the registered error handlers and call them.
 
 The ``_error_handler_entry_point``
@@ -152,9 +153,9 @@ To add entries to the error handler category from another package, simply define
 
 where the ``aiida_quantumespresso_epfl.workflows.pw.base`` file contains the additional decorated error handlers.
 
-.. |error_handler_entry_point| replace:: :py:attr:`~.common.workchain.base.restart.BaseRestartWorkChain._error_handler_entry_point`
-.. |register_error_handler| replace:: :py:func:`~aiida_quantumespresso.common.workchain.utils.register_error_handler`
-.. |BaseRestartWorkChain| replace:: :py:class:`~aiida_quantumespresso.common.workchain.base.restart.BaseRestartWorkChain`
+.. |error_handler_entry_point| replace:: `_error_handler_entry_point`
+.. |register_error_handler| replace:: :py:func:`~aiida.engine.processes.workchains.utils.process_handler`
+.. |BaseRestartWorkChain| replace:: :py:class:`~aiida.engine.processes.workchains.restart.BaseRestartWorkChain`
 .. |PhCalculation| replace:: :py:class:`~aiida_quantumespresso.calculations.ph.PhCalculation`
 .. |PwCalculation| replace:: :py:class:`~aiida_quantumespresso.calculations.pw.PwCalculation`
 .. |PhBaseWorkChain| replace:: :py:class:`~aiida_quantumespresso.workflows.ph.base.PhBaseWorkChain`
