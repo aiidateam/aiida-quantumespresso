@@ -92,6 +92,16 @@ class PpParser(Parser):
             self.logger.error(traceback.format_exc())
             return self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
 
+        if 'plot_num' not in self.output_parameters:
+            try:
+                stdref_raw = retrieved.get_object_content('aiida.ref')
+                for dataline in stdref_raw.splitlines():
+                    if 'plot_num' in dataline:
+                        self.output_parameters['plot_num'] = int(dataline.split('=')[1])
+            except Exception:
+                self.logger.error(traceback.format_exc())
+                return self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
+
         self.emit_logs(logs)
 
         # Scan logs for known errors
@@ -102,9 +112,12 @@ class PpParser(Parser):
 
         # The following check should in principle always succeed since the iflag should in principle be set by the
         # `PpCalculation` plugin which only ever sets 0 - 4, but we check in order for the code not to except.
-        iflag = self.node.inputs.parameters.get_attribute('PLOT')['iflag']
-        if iflag not in range(5):
-            return self.exit_codes.ERROR_UNSUPPORTED_DATAFILE_FORMAT
+        # NOTE: The previous is no longer valid, needs to be corrected
+        plot_namelist = self.node.inputs.parameters.get_attribute('PLOT', None)
+        if plot_namelist is not None:
+            iflag = plot_namelist['iflag']
+            if iflag not in range(5):
+                return self.exit_codes.ERROR_UNSUPPORTED_DATAFILE_FORMAT
 
         data_parsed = []
         parsers = {
@@ -145,8 +158,9 @@ class PpParser(Parser):
         # If we don't have any parsed files, we exit. Note that this will not catch the case where there should be more
         # than one file, but the engine did not retrieve all of them. Since often we anyway don't know how many files
         # should be retrieved there really is no way to check this explicitly.
-        if not data_parsed:
-            return self.exit_codes.ERROR_OUTPUT_DATAFILE_MISSING.format(filename=filename_prefix)
+        #if not data_parsed:
+        #    return self.exit_codes.ERROR_OUTPUT_DATAFILE_MISSING.format(filename=filename_prefix)
+        # It is now also possible that nothing will be parsed
 
         # Create output nodes
         if len(data_parsed) == 1:
