@@ -367,6 +367,11 @@ def parse_xml_post_6_2(xml):
         if 'fermi_energy' in band_structure:
             xml_data['fermi_energy'] = band_structure['fermi_energy'] * CONSTANTS.hartree_to_ev
 
+        if 'two_fermi_energies' in band_structure:
+            xml_data['fermi_energy_up'], xml_data['fermi_energy_down'] = [
+                energy * CONSTANTS.hartree_to_ev for energy in band_structure['two_fermi_energies']
+            ]
+
         bands_dict = {
             'occupations': band_occupations,
             'bands': band_eigenvalues,

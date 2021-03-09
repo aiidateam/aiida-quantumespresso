@@ -379,6 +379,33 @@ def test_pw_npools_too_high(fixture_localhost, generate_calc_job_node, generate_
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_NPOOLS_TOO_HIGH.status
 
 
+def test_tot_magnetization(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+):
+    """Test the parsing of a calculation that specifies tot_magnetization.
+
+    In this case there are two Fermi energies, see:
+
+    https://lists.quantum-espresso.org/pipermail/users/2011-April/020089.html
+    """
+    name = 'tot_magnetization'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_status
+    assert 'output_parameters' in results
+    output_parameters = results['output_parameters'].get_dict()
+    data_regression.check({
+        'fermi_energy_up': output_parameters['fermi_energy_up'],
+        'fermi_energy_down': output_parameters['fermi_energy_down']
+    })
+
+
 def test_pw_failed_out_of_walltime(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):

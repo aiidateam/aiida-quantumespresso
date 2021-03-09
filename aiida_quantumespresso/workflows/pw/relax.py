@@ -97,7 +97,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
 
     @classmethod
     def get_builder_from_protocol(
-        cls, code, structure, protocol=None, overrides=None, relax_type=RelaxType.ATOMS_CELL, **kwargs
+        cls, code, structure, protocol=None, overrides=None, relax_type=RelaxType.POSITIONS_CELL, **kwargs
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
@@ -126,26 +126,31 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         base_final_scf['pw'].pop('structure', None)
         base_final_scf.pop('clean_workdir', None)
 
-        if relax_type in [RelaxType.VOLUME, RelaxType.SHAPE, RelaxType.CELL]:
+        # Quantum ESPRESSO currently only supports optimization of the volume for simple cubic systems. It requires
+        # to set `ibrav=1` or the code will except.
+        if relax_type in (RelaxType.VOLUME, RelaxType.POSITIONS_VOLUME):
+            raise ValueError(f'relax type `{relax_type} is not yet supported.')
+
+        if relax_type in (RelaxType.VOLUME, RelaxType.SHAPE, RelaxType.CELL):
             base.pw.settings = orm.Dict(dict=PwRelaxWorkChain._fix_atomic_positions(structure, base.pw.settings))
 
         if relax_type is RelaxType.NONE:
             base.pw.parameters['CONTROL']['calculation'] = 'scf'
             base.pw.parameters.delete_attribute('CELL')
 
-        elif relax_type is RelaxType.ATOMS:
+        elif relax_type is RelaxType.POSITIONS:
             base.pw.parameters['CONTROL']['calculation'] = 'relax'
             base.pw.parameters.delete_attribute('CELL')
         else:
             base.pw.parameters['CONTROL']['calculation'] = 'vc-relax'
 
-        if relax_type in [RelaxType.VOLUME, RelaxType.ATOMS_VOLUME]:
+        if relax_type in (RelaxType.VOLUME, RelaxType.POSITIONS_VOLUME):
             base.pw.parameters['CELL']['cell_dofree'] = 'volume'
 
-        if relax_type in [RelaxType.SHAPE, RelaxType.ATOMS_SHAPE]:
+        if relax_type in (RelaxType.SHAPE, RelaxType.POSITIONS_SHAPE):
             base.pw.parameters['CELL']['cell_dofree'] = 'shape'
 
-        if relax_type in [RelaxType.CELL, RelaxType.ATOMS_CELL]:
+        if relax_type in (RelaxType.CELL, RelaxType.POSITIONS_CELL):
             base.pw.parameters['CELL']['cell_dofree'] = 'all'
 
         builder.base = base
