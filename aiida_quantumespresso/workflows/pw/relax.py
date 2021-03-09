@@ -126,7 +126,12 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         base_final_scf['pw'].pop('structure', None)
         base_final_scf.pop('clean_workdir', None)
 
-        if relax_type in [RelaxType.VOLUME, RelaxType.SHAPE, RelaxType.CELL]:
+        # Quantum ESPRESSO currently only supports optimization of the volume for simple cubic systems. It requires
+        # to set `ibrav=1` or the code will except.
+        if relax_type in (RelaxType.VOLUME, RelaxType.POSITIONS_VOLUME):
+            raise ValueError(f'relax type `{relax_type} is not yet supported.')
+
+        if relax_type in (RelaxType.VOLUME, RelaxType.SHAPE, RelaxType.CELL):
             base.pw.settings = orm.Dict(dict=PwRelaxWorkChain._fix_atomic_positions(structure, base.pw.settings))
 
         if relax_type is RelaxType.NONE:
@@ -139,13 +144,13 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         else:
             base.pw.parameters['CONTROL']['calculation'] = 'vc-relax'
 
-        if relax_type in [RelaxType.VOLUME, RelaxType.POSITIONS_VOLUME]:
+        if relax_type in (RelaxType.VOLUME, RelaxType.POSITIONS_VOLUME):
             base.pw.parameters['CELL']['cell_dofree'] = 'volume'
 
-        if relax_type in [RelaxType.SHAPE, RelaxType.POSITIONS_SHAPE]:
+        if relax_type in (RelaxType.SHAPE, RelaxType.POSITIONS_SHAPE):
             base.pw.parameters['CELL']['cell_dofree'] = 'shape'
 
-        if relax_type in [RelaxType.CELL, RelaxType.POSITIONS_CELL]:
+        if relax_type in (RelaxType.CELL, RelaxType.POSITIONS_CELL):
             base.pw.parameters['CELL']['cell_dofree'] = 'all'
 
         builder.base = base
