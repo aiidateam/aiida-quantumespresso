@@ -3,37 +3,11 @@
 """Tests for the `PwBaseWorkChain` class."""
 import pytest
 
-from plumpy import ProcessState
-
 from aiida.common import AttributeDict
 from aiida.engine import ExitCode, ProcessHandlerReport
-from aiida.orm import Dict
 
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
-
-
-@pytest.fixture
-def generate_workchain_pw(generate_workchain, generate_inputs_pw, generate_calc_job_node):
-    """Generate an instance of a `PwBaseWorkChain`."""
-
-    def _generate_workchain_pw(exit_code=None):
-        entry_point = 'quantumespresso.pw.base'
-        inputs = generate_inputs_pw()
-        kpoints = inputs.pop('kpoints')
-        process = generate_workchain(entry_point, {'pw': inputs, 'kpoints': kpoints})
-
-        if exit_code is not None:
-            node = generate_calc_job_node(inputs={'parameters': Dict()})
-            node.set_process_state(ProcessState.FINISHED)
-            node.set_exit_status(exit_code.status)
-
-            process.ctx.iteration = 1
-            process.ctx.children = [node]
-
-        return process
-
-    return _generate_workchain_pw
 
 
 def test_setup(generate_workchain_pw):

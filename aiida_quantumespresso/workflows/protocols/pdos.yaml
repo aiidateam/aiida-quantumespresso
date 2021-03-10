@@ -1,0 +1,32 @@
+default_inputs:
+    clean_workdir: True
+    base:
+        pw:
+            parameters:
+                CONTROL:
+                    restart_mode: from_scratch
+    nscf:
+        kpoints_distance: 0.10
+        pw:
+            parameters:
+                CONTROL:
+                    calculation: nscf
+                    restart_mode: from_scratch
+                SYSTEM:
+                    occupations: tetrahedra
+                    nosym: True
+    parameters:
+        align_to_fermi: True
+        DeltaE: 0.02
+default_protocol: moderate
+protocols:
+    moderate:
+        description: 'Protocol to perform a projected density of states calculation at normal precision at moderate computational cost.'
+    precise:
+        description: 'Protocol to perform a projected density of states structure calculation at high precision at higher computational cost.'
+        parameters:
+            DeltaE: 0.01
+    fast:
+        description: 'Protocol to perform a projected density of states structure calculation at low precision at minimal computational cost for testing purposes.'
+        parameters:
+            DeltaE: 0.1
