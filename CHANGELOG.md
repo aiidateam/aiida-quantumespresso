@@ -1,10 +1,22 @@
-## v3.3.0
+## v3.3.1
 
+### Bug fixes
+- Protocols: fix unintended mutation of `overrides` dictionary passed as argument [[#650]](https://github.com/aiidateam/aiida-quantumespresso/pull/#650)
+- Protocols: fix ionic convergence thresholds for `fast` protocol [[#642]](https://github.com/aiidateam/aiida-quantumespresso/pull/#642)
+
+### Dependencies
+- Update requirement to `aiida-pseudo~=0.5.0` [[#646]](https://github.com/aiidateam/aiida-quantumespresso/pull/#646)
+
+### Devops
+- Fix nightly build vs `aiida-core` develop branch by dropping Python 3.6 and install `aiida-core` before `aiida-quantumespresso` [[#646]](https://github.com/aiidateam/aiida-quantumespresso/pull/#646)
+- Fix documentation and add tox configuration [[#643]](https://github.com/aiidateam/aiida-quantumespresso/pull/#643)
+
+
+## v3.3.0
 The input generation protocols are a new feature that are now in a beta stage.
 The API might still change in future releases, and it has not been fully tested.
 
 ### Features
-
 - **BETA** Add input generation protocols for the pw.x work chains [[#608]](https://github.com/aiidateam/aiida-quantumespresso/pull/608), [[#616]](https://github.com/aiidateam/aiida-quantumespresso/pull/616), [[#631]](https://github.com/aiidateam/aiida-quantumespresso/pull/631), [[#632]](https://github.com/aiidateam/aiida-quantumespresso/pull/631), [[#634]](https://github.com/aiidateam/aiida-quantumespresso/pull/634), [[#635]](https://github.com/aiidateam/aiida-quantumespresso/pull/635), [[#638]](https://github.com/aiidateam/aiida-quantumespresso/pull/638)
 - `CpCalculation`: add support for `AUTOPILOT` mode [[#455]](https://github.com/aiidateam/aiida-quantumespresso/pull/455)
 - `PwCalculation`: add explicit `parallelization` input port [[#554]](https://github.com/aiidateam/aiida-quantumespresso/pull/554)
@@ -12,7 +24,6 @@ The API might still change in future releases, and it has not been fully tested.
 
 
 ### Improvements
-
 - `PwRelaxWorkChain`: expose `PwBaseWorkChain` separately for final SCF [[#569]](https://github.com/aiidateam/aiida-quantumespresso/pull/569)
 - Replace old format string interpolation with f-strings [[#579]](https://github.com/aiidateam/aiida-quantumespresso/pull/579)
 - `Parsers`: remove explicit check for the retrieved folder's existence [[#580]](https://github.com/aiidateam/aiida-quantumespresso/pull/580)
@@ -24,29 +35,24 @@ The API might still change in future releases, and it has not been fully tested.
 - `PwBaseWorkChain`: add report on disabling bands sanity check [[#629]](https://github.com/aiidateam/aiida-quantumespresso/pull/629)
 
 ### Deprecated
-
 - `PwBaseWorkChain`: deprecate the `pseudo_family` input [[#603]](https://github.com/aiidateam/aiida-quantumespresso/pull/603)
 - `PwRelaxWorkChain`: replace `relaxation_scheme` with `relax_type` [[#614]](https://github.com/aiidateam/aiida-quantumespresso/pull/614)
 - `PwRelaxWorkChain`: deprecate the `final_scf` input [[#569]](https://github.com/aiidateam/aiida-quantumespresso/pull/569)
 
 ### Removed
-
 - Remove parser information from `output_parameters` [[#597]](https://github.com/aiidateam/aiida-quantumespresso/pull/597)
 
 ### Bug Fixes
-
 - Fix minor bug in `utils.protocols._get_all_protocol_modifiers` [[#592]](https://github.com/aiidateam/aiida-quantumespresso/pull/592)
 - `PwCalculation`: fix bug when `hubbard_file` is specified [[#596]](https://github.com/aiidateam/aiida-quantumespresso/pull/596)
 - `ProjwfcParser`: fix bug in case of for more than 1000 orbitals [[#624]](https://github.com/aiidateam/aiida-quantumespresso/pull/624)
 
 ### Dependencies
-
 - Drop support for Python 3.5 [[#578]](https://github.com/aiidateam/aiida-quantumespresso/pull/578)
 - Add support for `aiida-pseudo` [[#581]](https://github.com/aiidateam/aiida-quantumespresso/pull/581), [[#630]](https://github.com/aiidateam/aiida-quantumespresso/pull/630)
 - Update the `aiida-pseudo` requirements [[#609]](https://github.com/aiidateam/aiida-quantumespresso/pull/609)
 
 ### Devops
-
 - Add the `Framework :: AiiDA` trove classifier to the package [[#584]](https://github.com/aiidateam/aiida-quantumespresso/pull/584)
 - CLI: add tests for the process launch commands [[#589]](https://github.com/aiidateam/aiida-quantumespresso/pull/589)
 - Pre-commit: re-enable formatting after `define` methods [[#619]](https://github.com/aiidateam/aiida-quantumespresso/pull/619)
