@@ -10,8 +10,10 @@ This requires four computations:
 
 Additional functionality:
 
-- Setting ``'align_to_fermi': True`` in the input ``parameters`` node,
-  will ensure that the energy range is centred around the Fermi energy.
+- Setting ``'align_to_fermi': True`` in the inputs will ensure that the energy range is centred around the Fermi
+  energy when `Emin` and `Emax` are provided for both the `dos` and `projwfc` inputs. This is useful when you are only
+  interested in a certain energy range around the Fermi energy. By default the energy range is extracted from the
+  NSCF calculation.
 
 Storage memory management:
 
@@ -25,8 +27,8 @@ but instead run in serial and clean directories when they are no longer required
 - Run the dos calculation, then clean its directory
 - Run the projwfc calculation, then clean its directory
 
-Setting the input ``clean_workdir`` to ``True``, will clean any remaining directories,
-after the whole workchain has terminated.
+Setting the input ``clean_workdir`` to ``True``, will clean any remaining directories, after the whole workchain has
+terminated.
 
 Also note that projwfc will fail if the scf/nscf calculations were run with a different number of procs/pools and
 ``wf_collect=.false.`` (this setting is deprecated in newer version of QE).
@@ -192,7 +194,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         # yapf: disable
         """Define the process specification."""
         super().define(spec)
-        spec.input('structure')
+        spec.input('structure', valid_type=orm.StructureData, help='The input structure.')
         spec.input(
             'serial_clean',
             valid_type=orm.Bool,
@@ -249,7 +251,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         spec.expose_inputs(
             DosCalculation,
             namespace='dos',
-            exclude=('parent_folder'),
+            exclude=('parent_folder',),
             namespace_options={
                 'help': ('Input parameters for the `dos.x` calculation. Note that the `Emin`, `Emax` and `DeltaE` '
                          'values have to match with those in the `projwfc` inputs.'),
@@ -259,7 +261,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         spec.expose_inputs(
             ProjwfcCalculation,
             namespace='projwfc',
-            exclude=('parent_folder'),
+            exclude=('parent_folder',),
             namespace_options={
                 'help': ('Input parameters for the `projwfc.x` calculation. Note that the `Emin`, `Emax` and `DeltaE` '
                          'values have to match with those in the `dos` inputs.'),
@@ -352,7 +354,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
     def setup(self):
         """Initialize context variables that are used during the logical flow of the workchain."""
         self.ctx.serial_clean = 'serial_clean' in self.inputs and self.inputs.serial_clean.value
-        self.ctx.is_dry_run = 'dry_run' in self.inputs and self.inputs.dry_run.value
+        self.ctx.dry_run = 'dry_run' in self.inputs and self.inputs.dry_run.value
 
     def serial_clean(self):
         """Return whether dos and projwfc calculations should be run in serial.
@@ -373,7 +375,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         inputs.metadata.call_link_label = 'scf'
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
 
-        if self.ctx.is_dry_run:
+        if self.ctx.dry_run:
             return inputs
 
         future = self.submit(PwBaseWorkChain, **inputs)
@@ -411,7 +413,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         inputs.metadata.call_link_label = 'nscf'
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
 
-        if self.ctx.is_dry_run:
+        if self.ctx.dry_run:
             return inputs
 
         future = self.submit(PwBaseWorkChain, **inputs)
@@ -470,7 +472,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         """Run DOS calculation."""
         dos_inputs = self._generate_dos_inputs()
 
-        if self.ctx.is_dry_run:
+        if self.ctx.dry_run:
             return dos_inputs
 
         future_dos = self.submit(DosCalculation, **dos_inputs)
@@ -494,7 +496,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         """Run Projwfc calculation."""
         projwfc_inputs = self._generate_projwfc_inputs()
 
-        if self.ctx.is_dry_run:
+        if self.ctx.dry_run:
             return projwfc_inputs
 
         future_projwfc = self.submit(ProjwfcCalculation, **projwfc_inputs)
@@ -518,7 +520,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         dos_inputs = self._generate_dos_inputs()
         projwfc_inputs = self._generate_projwfc_inputs()
 
-        if self.ctx.is_dry_run:
+        if self.ctx.dry_run:
             return dos_inputs, projwfc_inputs
 
         future_dos = self.submit(DosCalculation, **dos_inputs)
