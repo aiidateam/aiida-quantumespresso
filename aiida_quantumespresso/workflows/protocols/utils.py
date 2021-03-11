@@ -97,7 +97,10 @@ def load_protocol_file(cls):
     parts = entry_point_name.split('.')
     parts.pop(0)
     filename = f'{parts.pop()}.yaml'
-    basepath = functools.reduce(os.path.join, parts)
+    try:
+        basepath = functools.reduce(os.path.join, parts)
+    except TypeError:
+        basepath = '.'
 
     with (pathlib.Path(__file__).resolve().parent / basepath / filename).open() as handle:
         return yaml.safe_load(handle)
