@@ -621,6 +621,7 @@ def generate_workchain_pdos(generate_workchain, generate_inputs_pw, fixture_code
     """Generate an instance of a `PdosWorkChain`."""
 
     def _generate_workchain_pdos():
+        from aiida.orm import Dict, Bool
         from aiida_quantumespresso.utils.resources import get_default_options
 
         entry_point = 'quantumespresso.pdos'
@@ -628,7 +629,7 @@ def generate_workchain_pdos(generate_workchain, generate_inputs_pw, fixture_code
         scf_pw_inputs = generate_inputs_pw()
         kpoints = scf_pw_inputs.pop('kpoints')
         structure = scf_pw_inputs.pop('structure')
-        base_scf = {'pw': scf_pw_inputs, 'kpoints': kpoints}
+        scf = {'pw': scf_pw_inputs, 'kpoints': kpoints}
 
         nscf_pw_inputs = generate_inputs_pw()
         nscf_pw_inputs.pop('kpoints')
@@ -637,29 +638,38 @@ def generate_workchain_pdos(generate_workchain, generate_inputs_pw, fixture_code
         nscf_pw_inputs['parameters']['SYSTEM']['occupations'] = 'tetrahedra'
         nscf_pw_inputs['parameters']['SYSTEM']['nosym'] = True
 
-        base_nscf = {'pw': nscf_pw_inputs, 'kpoints': kpoints}
+        nscf = {'pw': nscf_pw_inputs, 'kpoints': kpoints}
 
-        parameters = {
-            'Emin': -10,
-            'Emax': 10,
-            'DeltaE': 0.01,
-            'align_to_fermi': True,
-            'projwfc_only': {
-                'ngauss': 0,
-                'degauss': 0.01
+        dos_params = {
+            'DOS': {
+                'Emin': -10,
+                'Emax': 10,
+                'DeltaE': 0.01,
             }
         }
-        dos = {'code': fixture_code('quantumespresso.dos'), 'metadata': {'options': get_default_options()}}
-        projwfc = {'code': fixture_code('quantumespresso.projwfc'), 'metadata': {'options': get_default_options()}}
-
+        projwfc_params = {'PROJWFC': {'Emin': -10, 'Emax': 10, 'DeltaE': 0.01, 'ngauss': 0, 'degauss': 0.01}}
+        dos = {
+            'code': fixture_code('quantumespresso.dos'),
+            'parameters': Dict(dict=dos_params),
+            'metadata': {
+                'options': get_default_options()
+            }
+        }
+        projwfc = {
+            'code': fixture_code('quantumespresso.projwfc'),
+            'parameters': Dict(dict=projwfc_params),
+            'metadata': {
+                'options': get_default_options()
+            }
+        }
         inputs = {
             'structure': structure,
-            'base_scf': base_scf,
-            'base_nscf': base_nscf,
-            'parameters': parameters,
+            'scf': scf,
+            'nscf': nscf,
             'dos': dos,
             'projwfc': projwfc,
-            'test_run': True
+            'align_to_fermi': Bool(True),
+            'dry_run': Bool(True)
         }
 
         return generate_workchain(entry_point, inputs)

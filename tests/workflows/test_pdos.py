@@ -41,7 +41,7 @@ def test_default(
 
     wkchain = generate_workchain_pdos()
     assert wkchain.setup() is None
-    assert wkchain.clean_serial() is False
+    assert wkchain.serial_clean() is False
 
     # run scf
     scf_inputs = wkchain.run_scf()
