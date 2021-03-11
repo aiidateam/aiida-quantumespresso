@@ -1,6 +1,6 @@
 default_inputs:
     clean_workdir: True
-    base:
+    scf:
         pw:
             parameters:
                 CONTROL:
@@ -15,18 +15,51 @@ default_inputs:
                 SYSTEM:
                     occupations: tetrahedra
                     nosym: True
-    parameters:
-        align_to_fermi: True
-        DeltaE: 0.02
+    dos:
+        parameters:
+            DOS:
+                DeltaE: 0.02
+        metadata:
+            options:
+                resources:
+                    num_machines: 1
+                max_wallclock_seconds: 43200  # Twelve hours
+                withmpi: True
+    projwfc:
+        parameters:
+            PROJWFC:
+                DeltaE: 0.02
+        metadata:
+            options:
+                resources:
+                    num_machines: 1
+                max_wallclock_seconds: 43200  # Twelve hours
+                withmpi: True
 default_protocol: moderate
 protocols:
     moderate:
         description: 'Protocol to perform a projected density of states calculation at normal precision at moderate computational cost.'
     precise:
         description: 'Protocol to perform a projected density of states structure calculation at high precision at higher computational cost.'
-        parameters:
-            DeltaE: 0.01
+        dos:
+            parameters:
+                DOS:
+                    DeltaE: 0.01
+        projwfc:
+            parameters:
+                PROJWFC:
+                    DeltaE: 0.01
+        nscf:
+            kpoints_distance: 0.05
     fast:
         description: 'Protocol to perform a projected density of states structure calculation at low precision at minimal computational cost for testing purposes.'
-        parameters:
-            DeltaE: 0.1
+        dos:
+            parameters:
+                DOS:
+                    DeltaE: 0.1
+        projwfc:
+            parameters:
+                PROJWFC:
+                    DeltaE: 0.1
+        nscf:
+            kpoints_distance: 0.5
