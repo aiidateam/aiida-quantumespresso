@@ -1,0 +1,127 @@
+
+     Program PWSCF v.6.6 starts on 23Nov2020 at  0: 0:34 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Serial version
+     Fft bands division:     nmany     =       1
+     Reading input from aiida.in
+
+     Current dimensions of program PWSCF are:
+     Max number of different atomic species (ntypx) = 10
+     Max number of k-points (npk) =  40000
+     Max angular momentum in pseudopotentials (lmaxx) =  3
+     Message from routine iosys:
+     BEWARE:  force calculation with tetrahedra (not recommanded)
+     Message from routine iosys:
+     BEWARE: stress calculation with tetrahedra (not recommanded)
+     Message from routine  set_nelup_neldw :
+     BEWARE: non-integer number of up and down electrons!
+     Message from routine setup:
+     using ibrav=0 with symmetry is DISCOURAGED, use correct ibrav instead
+
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum        1465    1465    421                42115    42115    6619
+
+
+
+     bravais-lattice index     =            0
+     lattice parameter (alat)  =      21.4394  a.u.
+     unit-cell volume          =    9854.5957 (a.u.)^3
+     number of atoms/cell      =            2
+     number of atomic types    =            1
+     number of electrons       =         8.00 (up:   4.50, down:   3.50)
+     number of Kohn-Sham states=            9
+     kinetic-energy cutoff     =      10.0000  Ry
+     charge density cutoff     =      40.0000  Ry
+     convergence threshold     =      1.0E-05
+     mixing beta               =       0.4000
+     number of iterations used =            8  plain     mixing
+     Exchange-correlation= PBE
+                           (   1   4   3   4   0   0   0)
+
+     celldm(1)=  21.439415  celldm(2)=   0.000000  celldm(3)=   0.000000
+     celldm(4)=   0.000000  celldm(5)=   0.000000  celldm(6)=   0.000000
+
+     crystal axes: (cart. coord. in units of alat)
+               a(1) = (   1.000000   0.000000   0.000000 )  
+               a(2) = (   0.000000   1.000000   0.000000 )  
+               a(3) = (   0.000000   0.000000   1.000000 )  
+
+     reciprocal axes: (cart. coord. in units 2 pi/alat)
+               b(1) = (  1.000000  0.000000  0.000000 )  
+               b(2) = (  0.000000  1.000000  0.000000 )  
+               b(3) = (  0.000000  0.000000  1.000000 )  
+
+
+     PseudoPot. # 1 for Si read from file:
+     ./pseudo/Si.pbe-n-rrkjus_psl.1.0.0.UPF
+     MD5 check sum: 0b0bb1205258b0d07b9f9672cf965d36
+     Pseudo is Ultrasoft + core correction, Zval =  4.0
+     Generated using "atomic" code by A. Dal Corso v.5.1
+     Using radial grid of 1141 points,  6 beta functions with: 
+                l(1) =   0
+                l(2) =   0
+                l(3) =   1
+                l(4) =   1
+                l(5) =   2
+                l(6) =   2
+     Q(r) pseudized with 0 coefficients 
+
+
+     atomic species   valence    mass     pseudopotential
+        Si             4.00    28.08550     Si( 1.00)
+
+     Starting magnetic structure 
+     atomic species   magnetization
+        Si           0.500
+
+      6 Sym. Ops. (no inversion) found
+
+---- OUTPUT REMOVED ----
+
+     Self-consistent Calculation
+
+     iteration #  1     ecut=    10.00 Ry     beta= 0.40
+     Davidson diagonalization with overlap
+     ethr =  1.00E-02,  avg # of iterations =  5.4
+
+     Threshold (ethr) on eigenvalues was too large:
+     Diagonalizing with lowered threshold
+
+     Davidson diagonalization with overlap
+     ethr =  9.82E-04,  avg # of iterations =  1.4
+
+---- OUTPUT REMOVED ----
+
+     iteration #  9     ecut=    10.00 Ry     beta= 0.40
+     Davidson diagonalization with overlap
+     ethr =  2.32E-07,  avg # of iterations =  2.7
+
+     Magnetic moment per site:
+     atom:    1    charge:    1.5630    magn:    0.1123    constr:    0.0000
+     atom:    2    charge:    1.5756    magn:    0.1128    constr:    0.0000
+
+     total cpu time spent up to now is       43.2 secs
+
+     End of self-consistent calculation
+
+---- OUTPUT REMOVED ----
+
+     the spin up/dw Fermi energies are    -4.9052   -4.4818 ev
+
+---- OUTPUT REMOVED ----
+
+   This run was terminated on:   0: 1:20  23Nov2020            
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=

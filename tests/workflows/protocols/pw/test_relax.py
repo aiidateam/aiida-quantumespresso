@@ -74,14 +74,15 @@ def test_relax_type(fixture_code, generate_structure):
     assert builder.base['pw']['parameters']['CONTROL']['calculation'] == 'scf'
     assert 'CELL' not in builder.base['pw']['parameters'].get_dict()
 
-    builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, relax_type=RelaxType.ATOMS)
+    builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, relax_type=RelaxType.POSITIONS)
     assert builder.base['pw']['parameters']['CONTROL']['calculation'] == 'relax'
     assert 'CELL' not in builder.base['pw']['parameters'].get_dict()
 
-    builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, relax_type=RelaxType.VOLUME)
-    assert builder.base['pw']['parameters']['CONTROL']['calculation'] == 'vc-relax'
-    assert builder.base['pw']['parameters']['CELL']['cell_dofree'] == 'volume'
-    assert builder.base['pw']['settings'].get_dict() == {'FIXED_COORDS': [[True, True, True], [True, True, True]]}
+    with pytest.raises(ValueError):
+        builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, relax_type=RelaxType.VOLUME)
+        # assert builder.base['pw']['parameters']['CONTROL']['calculation'] == 'vc-relax'
+        # assert builder.base['pw']['parameters']['CELL']['cell_dofree'] == 'volume'
+        # assert builder.base['pw']['settings'].get_dict() == {'FIXED_COORDS': [[True, True, True], [True, True, True]]}
 
     builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, relax_type=RelaxType.SHAPE)
     assert builder.base['pw']['parameters']['CONTROL']['calculation'] == 'vc-relax'
@@ -93,17 +94,18 @@ def test_relax_type(fixture_code, generate_structure):
     assert builder.base['pw']['parameters']['CELL']['cell_dofree'] == 'all'
     assert builder.base['pw']['settings'].get_dict() == {'FIXED_COORDS': [[True, True, True], [True, True, True]]}
 
-    builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, relax_type=RelaxType.ATOMS_VOLUME)
-    assert builder.base['pw']['parameters']['CONTROL']['calculation'] == 'vc-relax'
-    assert builder.base['pw']['parameters']['CELL']['cell_dofree'] == 'volume'
-    assert 'settings' not in builder.base['pw']
+    with pytest.raises(ValueError):
+        builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, relax_type=RelaxType.POSITIONS_VOLUME)
+        # assert builder.base['pw']['parameters']['CONTROL']['calculation'] == 'vc-relax'
+        # assert builder.base['pw']['parameters']['CELL']['cell_dofree'] == 'volume'
+        # assert 'settings' not in builder.base['pw']
 
-    builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, relax_type=RelaxType.ATOMS_SHAPE)
+    builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, relax_type=RelaxType.POSITIONS_SHAPE)
     assert builder.base['pw']['parameters']['CONTROL']['calculation'] == 'vc-relax'
     assert builder.base['pw']['parameters']['CELL']['cell_dofree'] == 'shape'
     assert 'settings' not in builder.base['pw']
 
-    builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, relax_type=RelaxType.ATOMS_CELL)
+    builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, relax_type=RelaxType.POSITIONS_CELL)
     assert builder.base['pw']['parameters']['CONTROL']['calculation'] == 'vc-relax'
     assert builder.base['pw']['parameters']['CELL']['cell_dofree'] == 'all'
     assert 'settings' not in builder.base['pw']

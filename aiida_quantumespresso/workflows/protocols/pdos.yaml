@@ -1,0 +1,65 @@
+default_inputs:
+    clean_workdir: True
+    scf:
+        pw:
+            parameters:
+                CONTROL:
+                    restart_mode: from_scratch
+    nscf:
+        kpoints_distance: 0.10
+        pw:
+            parameters:
+                CONTROL:
+                    calculation: nscf
+                    restart_mode: from_scratch
+                SYSTEM:
+                    occupations: tetrahedra
+                    nosym: True
+    dos:
+        parameters:
+            DOS:
+                DeltaE: 0.02
+        metadata:
+            options:
+                resources:
+                    num_machines: 1
+                max_wallclock_seconds: 43200  # Twelve hours
+                withmpi: True
+    projwfc:
+        parameters:
+            PROJWFC:
+                DeltaE: 0.02
+        metadata:
+            options:
+                resources:
+                    num_machines: 1
+                max_wallclock_seconds: 43200  # Twelve hours
+                withmpi: True
+default_protocol: moderate
+protocols:
+    moderate:
+        description: 'Protocol to perform a projected density of states calculation at normal precision at moderate computational cost.'
+    precise:
+        description: 'Protocol to perform a projected density of states structure calculation at high precision at higher computational cost.'
+        dos:
+            parameters:
+                DOS:
+                    DeltaE: 0.01
+        projwfc:
+            parameters:
+                PROJWFC:
+                    DeltaE: 0.01
+        nscf:
+            kpoints_distance: 0.05
+    fast:
+        description: 'Protocol to perform a projected density of states structure calculation at low precision at minimal computational cost for testing purposes.'
+        dos:
+            parameters:
+                DOS:
+                    DeltaE: 0.1
+        projwfc:
+            parameters:
+                PROJWFC:
+                    DeltaE: 0.1
+        nscf:
+            kpoints_distance: 0.5

@@ -1,3 +1,16 @@
+## v3.4.0
+
+### Features
+Add the `PdosWorkChain` (#418)
+Add support for `pw.x` and `cp.x` v6.7 (#626)
+`PwCalculation`: Add parsing of up/dw Fermi energy (#622)
+
+### Changes
+Add support for Python 3.9 (#666)
+`PwRelaxWorkChain`: remove compatibility for volume optimization (only affects the input generation protocols added in beta phase in `v3.3.0`) (#660)
+`RelaxType`: Rename `ATOMS` to `POSITIONS`(only affects the input generation protocols added in beta phase in `v3.3.0`)  (#658)
+
+
 ## v3.3.1
 
 ### Bug fixes
@@ -21,7 +34,6 @@ The API might still change in future releases, and it has not been fully tested.
 - `CpCalculation`: add support for `AUTOPILOT` mode [[#455]](https://github.com/aiidateam/aiida-quantumespresso/pull/455)
 - `PwCalculation`: add explicit `parallelization` input port [[#554]](https://github.com/aiidateam/aiida-quantumespresso/pull/554)
 - `ProjwfcParser`: support kind names with numerals, dashes and underscores [[#591]](https://github.com/aiidateam/aiida-quantumespresso/pull/591)
-
 
 ### Improvements
 - `PwRelaxWorkChain`: expose `PwBaseWorkChain` separately for final SCF [[#569]](https://github.com/aiidateam/aiida-quantumespresso/pull/569)
