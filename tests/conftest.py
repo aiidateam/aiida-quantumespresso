@@ -111,7 +111,6 @@ def serialize_builder():
 @pytest.fixture(scope='session', autouse=True)
 def sssp(aiida_profile, generate_upf_data):
     """Create an SSSP pseudo potential family from scratch."""
-    from qe_tools import CONSTANTS
     from aiida.common.constants import elements
     from aiida.plugins import GroupFactory
 
@@ -119,7 +118,8 @@ def sssp(aiida_profile, generate_upf_data):
 
     SsspFamily = GroupFactory('pseudo.family.sssp')
 
-    cutoffs = {'standard': {}}
+    cutoffs = {}
+    stringency = 'standard'
 
     with tempfile.TemporaryDirectory() as dirpath:
         for values in elements.values():
@@ -133,15 +133,15 @@ def sssp(aiida_profile, generate_upf_data):
                     handle.write(source.read())
                     handle.flush()
 
-            cutoffs['standard'][element] = {
-                'cutoff_wfc': 30. * CONSTANTS.ry_to_ev,
-                'cutoff_rho': 240. * CONSTANTS.ry_to_ev
+            cutoffs[element] = {
+                'cutoff_wfc': 30.0,
+                'cutoff_rho': 240.0,
             }
 
         label = 'SSSP/1.1/PBE/efficiency'
         family = SsspFamily.create_from_folder(dirpath, label)
 
-    family.set_cutoffs(cutoffs)
+    family.set_cutoffs(cutoffs, stringency, unit='Ry')
 
     return family
 

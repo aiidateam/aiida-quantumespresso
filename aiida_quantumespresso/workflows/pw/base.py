@@ -32,7 +32,7 @@ def validate_pseudo_family(value, _):
 class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts."""
 
-    # pylint: disable=too-many-public-methods
+    # pylint: disable=too-many-public-methods, too-many-statements
 
     _process_class = PwCalculation
 
@@ -140,7 +140,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             guess for the magnetic moment is automatically set in case this argument is not provided.
         :return: a process builder instance with all inputs defined ready for launch.
         """
-        from qe_tools import CONSTANTS
         from aiida_quantumespresso.workflows.protocols.utils import get_starting_magnetization
 
         if isinstance(code, str):
@@ -176,13 +175,13 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 'install it.'
             ) from exception
 
-        cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure)
+        cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
 
         parameters = inputs['pw']['parameters']
         parameters['CONTROL']['etot_conv_thr'] = natoms * meta_parameters['etot_conv_thr_per_atom']
         parameters['ELECTRONS']['conv_thr'] = natoms * meta_parameters['conv_thr_per_atom']
-        parameters['SYSTEM']['ecutwfc'] = cutoff_wfc / CONSTANTS.ry_to_ev
-        parameters['SYSTEM']['ecutrho'] = cutoff_rho / CONSTANTS.ry_to_ev
+        parameters['SYSTEM']['ecutwfc'] = cutoff_wfc
+        parameters['SYSTEM']['ecutrho'] = cutoff_rho
 
         if electronic_type is ElectronicType.INSULATOR:
             parameters['SYSTEM']['occupations'] = 'fixed'
