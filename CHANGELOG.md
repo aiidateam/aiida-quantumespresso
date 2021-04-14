@@ -1,3 +1,15 @@
+## v3.4.1
+
+### Dependencies
+- Dependencies: update to `aiida-pseudo==0.6.0` [[#671]](https://github.com/aiidateam/aiida-quantumespresso/pull/#671)
+
+### Documentation
+- Docs: fix `gamma_only` value in `settings_dict` [[#672]](https://github.com/aiidateam/aiida-quantumespresso/pull/#672)
+
+### Devops
+- CI: use `postgres-12` for Github Actions since `ubuntu-latest` was updated to Ubuntu Focal 20.04 [[#674]](https://github.com/aiidateam/aiida-quantumespresso/pull/#674)
+
+
 ## v3.4.0
 
 ### Features
