@@ -75,7 +75,7 @@ jobs:
         -   name: Install system dependencies
             run: |
                 sudo apt update
-                sudo apt install postgresql-10
+                sudo apt install postgresql-12
 
         -   name: Install python dependencies
             run: |

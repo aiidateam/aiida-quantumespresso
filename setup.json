@@ -92,7 +92,7 @@
     },
     "install_requires": [
         "aiida_core[atomic_tools]~=1.4,>=1.4.4",
-        "aiida-pseudo~=0.5.0",
+        "aiida-pseudo~=0.6.0",
         "jsonschema",
         "packaging",
         "qe-tools~=2.0rc1",
@@ -103,5 +103,5 @@
     "name": "aiida_quantumespresso",
     "python_requires": ">=3.6",
     "url": "https://github.com/aiidateam/aiida-quantumespresso",
-    "version": "3.4.0"
+    "version": "3.4.1"
 }
