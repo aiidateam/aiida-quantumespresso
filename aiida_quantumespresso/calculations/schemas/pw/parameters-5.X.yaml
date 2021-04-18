@@ -5,30 +5,8 @@ properties:
     additionalProperties: false
     properties:
       cell_dofree:
-        enum:
-        - all
-        - x
-        - y
-        - z
-        - xy
-        - xz
-        - yz
-        - xyz
-        - shape
-        - volume
-        - 2Dxy
-        - 2Dshape
         type: string
       cell_dynamics:
-        enum:
-        - none
-        - sd
-        - damp-pr
-        - damp-w
-        - bfgs
-        - none
-        - pr
-        - w
         type: string
       cell_factor:
         type: number
@@ -43,23 +21,10 @@ properties:
     additionalProperties: false
     properties:
       calculation:
-        enum:
-        - scf
-        - nscf
-        - bands
-        - relax
-        - md
-        - vc-relax
-        - vc-md
         type: string
       dipfield:
         type: boolean
       disk_io:
-        enum:
-        - high
-        - medium
-        - low
-        - none
         type: string
       dt:
         type: number
@@ -67,8 +32,6 @@ properties:
         type: number
       forc_conv_thr:
         type: number
-      gate:
-        type: boolean
       gdir:
         type: integer
       iprint:
@@ -85,8 +48,6 @@ properties:
         type: boolean
       max_seconds:
         type: number
-      monopole:
-        type: boolean
       nberrycyc:
         type: integer
       nppstr:
@@ -100,9 +61,6 @@ properties:
       pseudo_dir:
         type: string
       restart_mode:
-        enum:
-        - from_scratch
-        - restart
         type: string
       tefield:
         type: boolean
@@ -113,9 +71,6 @@ properties:
       tstress:
         type: boolean
       verbosity:
-        enum:
-        - high
-        - low
         type: string
       wf_collect:
         type: boolean
@@ -142,22 +97,11 @@ properties:
       diago_thr_init:
         type: number
       diagonalization:
-        enum:
-        - david
-        - cg
-        - cg-serial
-        - david-serial
         type: string
       efield:
         type: number
       efield_cart:
         type: object
-      efield_phase:
-        enum:
-        - write
-        - none
-        - read
-        type: string
       electron_maxstep:
         type: integer
       mixing_beta:
@@ -165,30 +109,16 @@ properties:
       mixing_fixed_ns:
         type: integer
       mixing_mode:
-        enum:
-        - plain
-        - TF
-        - local-TF
         type: string
       mixing_ndim:
         type: integer
       ortho_para:
         type: integer
-      real_space:
-        type: boolean
       scf_must_converge:
         type: boolean
       startingpot:
-        enum:
-        - atomic
-        - file
         type: string
       startingwfc:
-        enum:
-        - atomic
-        - atomic+random
-        - random
-        - file
         type: string
       tqr:
         type: boolean
@@ -201,47 +131,16 @@ properties:
       delta_t:
         type: number
       ion_dynamics:
-        enum:
-        - bfgs
-        - damp
-        - verlet
-        - langevin
-        - langevin-smc
-        - bfgs
-        - damp
-        - beeman
         type: string
       ion_positions:
-        enum:
-        - default
-        - from_input
         type: string
       ion_temperature:
-        enum:
-        - rescaling
-        - rescale-v
-        - rescale-T
-        - reduce-T
-        - berendsen
-        - andersen
-        - initial
-        - not_controlled
-        type: string
-      ion_velocities:
-        enum:
-        - default
-        - from_input
         type: string
       nraise:
         type: integer
       phase_space:
         type: string
       pot_extrapolation:
-        enum:
-        - none
-        - atomic
-        - first_order
-        - second_order
         type: string
       refold_pos:
         type: boolean
@@ -264,10 +163,6 @@ properties:
       w_2:
         type: number
       wfc_extrapolation:
-        enum:
-        - none
-        - first_order
-        - second_order
         type: string
     type: object
   SYSTEM:
@@ -279,78 +174,25 @@ properties:
         type: number
       C:
         type: number
-      Hubbard_J:
-        items:
-          items:
-            type:
-            - number
-            - string
-          type: array
-        type: array
       Hubbard_J0:
         type: object
       Hubbard_U:
         type: object
-      Hubbard_V:
-        items:
-          items:
-            type:
-            - number
-            - string
-          type: array
-        type: array
       Hubbard_alpha:
         type: object
       Hubbard_beta:
         type: object
-      Hubbard_parameters:
-        enum:
-        - file
-        - input
-        type: string
       U_projection_type:
-        enum:
-        - atomic
-        - ortho-atomic
-        - norm-atomic
-        - file
-        - pseudo
         type: string
-      ace:
-        type: boolean
       angle1:
         type: object
       angle2:
         type: object
       assume_isolated:
-        enum:
-        - none
-        - makov-payne
-        - m-p
-        - mp
-        - martyna-tuckerman
-        - m-t
-        - mt
-        - esm
-        - 2D
         type: string
-      block:
-        type: boolean
-      block_1:
-        type: number
-      block_2:
-        type: number
-      block_height:
-        type: number
       celldm:
         type: object
       constrained_magnetization:
-        enum:
-        - none
-        - total
-        - atomic
-        - total direction
-        - atomic direction
         type: string
       cosAB:
         type: number
@@ -360,18 +202,6 @@ properties:
         type: number
       degauss:
         type: number
-      dftd3_threebody:
-        type: boolean
-      dftd3_version:
-        anyOf:
-        - type: integer
-        - enum:
-          - 32
-          - 33
-          - 34
-          - 35
-          - 36
-          type: integer
       eamp:
         type: number
       ecfixed:
@@ -388,16 +218,9 @@ properties:
         type: integer
       emaxpos:
         type: number
-      ensemble_energies:
-        type: boolean
       eopreg:
         type: number
       esm_bc:
-        enum:
-        - pbc
-        - bc1
-        - bc2
-        - bc3
         type: string
       esm_efield:
         type: number
@@ -408,11 +231,6 @@ properties:
       exx_fraction:
         type: number
       exxdiv_treatment:
-        enum:
-        - gygi-baldereschi
-        - vcut_spherical
-        - vcut_ws
-        - none
         type: string
       fcp_mu:
         type: number
@@ -429,15 +247,7 @@ properties:
       lda_plus_u:
         type: boolean
       lda_plus_u_kind:
-        enum:
-        - 0
-        - 1
-        - 2
         type: integer
-      lforcet:
-        type: boolean
-      localization_thr:
-        type: number
       london:
         type: boolean
       london_c6:
@@ -487,13 +297,6 @@ properties:
       ntyp:
         type: integer
       occupations:
-        enum:
-        - smearing
-        - tetrahedra
-        - tetrahedra_lin
-        - tetrahedra_opt
-        - fixed
-        - from_input
         type: string
       one_atom_occupations:
         type: boolean
@@ -503,10 +306,6 @@ properties:
         type: number
       qcutz:
         type: number
-      realxz:
-        type: boolean
-      relaxz:
-        type: boolean
       report:
         type: integer
       rhombohedral:
@@ -514,34 +313,11 @@ properties:
       screening_parameter:
         type: number
       smearing:
-        enum:
-        - gaussian
-        - gauss
-        - methfessel-paxton
-        - m-p
-        - mp
-        - marzari-vanderbilt
-        - cold
-        - m-v
-        - mv
-        - fermi-dirac
-        - f-d
-        - fd
         type: string
       space_group:
         type: integer
-      starting_charge:
-        type: object
       starting_magnetization:
         type: object
-      starting_ns_eigenvalue:
-        items:
-          items:
-            type:
-            - number
-            - string
-          type: array
-        type: array
       starting_ns_eigenvalue(m,ispin,I):
         type: number
       starting_spin_angle:
@@ -550,27 +326,11 @@ properties:
         type: number
       tot_magnetization:
         type: number
-      ts_vdw_econv_thr:
-        type: number
-      ts_vdw_isolated:
-        type: boolean
       uniqueb:
         type: boolean
       use_all_frac:
         type: boolean
       vdw_corr:
-        enum:
-        - grimme-d2
-        - Grimme-D2
-        - DFT-D
-        - dft-d
-        - TS
-        - ts
-        - ts-vdw
-        - ts-vdW
-        - tkatchenko-scheffler
-        - XDM
-        - xdm
         type: string
       x_gamma_extrapolation:
         type: boolean
@@ -579,10 +339,6 @@ properties:
       xdm_a1:
         type: number
       xdm_a2:
-        type: number
-      zgate:
-        type: number
-      zmon:
         type: number
     type: object
 type: object

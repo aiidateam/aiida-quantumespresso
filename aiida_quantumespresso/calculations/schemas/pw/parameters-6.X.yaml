@@ -6,29 +6,32 @@ properties:
     properties:
       cell_dofree:
         enum:
+        - epitaxial_bc
+        - xy
+        - y
+        - volume
+        - xyz
+        - 2Dxy
+        - xz
+        - 2Dshape
+        - epitaxial_ab
+        - ibrav
+        - z
+        - epitaxial_ac
+        - shape
+        - yz
         - all
         - x
-        - y
-        - z
-        - xy
-        - xz
-        - yz
-        - xyz
-        - shape
-        - volume
-        - 2Dxy
-        - 2Dshape
         type: string
       cell_dynamics:
         enum:
-        - none
-        - sd
+        - pr
         - damp-pr
         - damp-w
         - bfgs
-        - none
-        - pr
         - w
+        - none
+        - sd
         type: string
       cell_factor:
         type: number
@@ -44,21 +47,22 @@ properties:
     properties:
       calculation:
         enum:
+        - bands
+        - vc-relax
+        - relax
         - scf
         - nscf
-        - bands
-        - relax
-        - md
-        - vc-relax
         - vc-md
+        - md
         type: string
       dipfield:
         type: boolean
       disk_io:
         enum:
-        - high
-        - medium
         - low
+        - medium
+        - high
+        - nowf
         - none
         type: string
       dt:
@@ -114,8 +118,8 @@ properties:
         type: boolean
       verbosity:
         enum:
-        - high
         - low
+        - high
         type: string
       wf_collect:
         type: boolean
@@ -143,10 +147,13 @@ properties:
         type: number
       diagonalization:
         enum:
+        - ppcg
         - david
-        - cg
+        - paro
         - cg-serial
+        - ParO
         - david-serial
+        - cg
         type: string
       efield:
         type: number
@@ -166,9 +173,9 @@ properties:
         type: integer
       mixing_mode:
         enum:
+        - local-TF
         - plain
         - TF
-        - local-TF
         type: string
       mixing_ndim:
         type: integer
@@ -186,9 +193,9 @@ properties:
       startingwfc:
         enum:
         - atomic
-        - atomic+random
-        - random
         - file
+        - random
+        - atomic+random
         type: string
       tqr:
         type: boolean
@@ -202,13 +209,11 @@ properties:
         type: number
       ion_dynamics:
         enum:
-        - bfgs
-        - damp
-        - verlet
-        - langevin
         - langevin-smc
+        - verlet
         - bfgs
         - damp
+        - langevin
         - beeman
         type: string
       ion_positions:
@@ -219,13 +224,14 @@ properties:
       ion_temperature:
         enum:
         - rescaling
-        - rescale-v
-        - rescale-T
         - reduce-T
+        - rescale-v
+        - svr
         - berendsen
-        - andersen
         - initial
         - not_controlled
+        - rescale-T
+        - andersen
         type: string
       ion_velocities:
         enum:
@@ -234,14 +240,12 @@ properties:
         type: string
       nraise:
         type: integer
-      phase_space:
-        type: string
       pot_extrapolation:
         enum:
-        - none
         - atomic
         - first_order
         - second_order
+        - none
         type: string
       refold_pos:
         type: boolean
@@ -265,9 +269,9 @@ properties:
         type: number
       wfc_extrapolation:
         enum:
-        - none
         - first_order
         - second_order
+        - none
         type: string
     type: object
   SYSTEM:
@@ -311,10 +315,10 @@ properties:
       U_projection_type:
         enum:
         - atomic
-        - ortho-atomic
-        - norm-atomic
-        - file
         - pseudo
+        - file
+        - norm-atomic
+        - ortho-atomic
         type: string
       ace:
         type: boolean
@@ -324,15 +328,15 @@ properties:
         type: object
       assume_isolated:
         enum:
-        - none
-        - makov-payne
-        - m-p
-        - mp
-        - martyna-tuckerman
-        - m-t
         - mt
-        - esm
+        - makov-payne
         - 2D
+        - m-p
+        - martyna-tuckerman
+        - mp
+        - m-t
+        - none
+        - esm
         type: string
       block:
         type: boolean
@@ -346,11 +350,11 @@ properties:
         type: object
       constrained_magnetization:
         enum:
-        - none
-        - total
         - atomic
+        - total
         - total direction
         - atomic direction
+        - none
         type: string
       cosAB:
         type: number
@@ -394,10 +398,10 @@ properties:
         type: number
       esm_bc:
         enum:
-        - pbc
         - bc1
         - bc2
         - bc3
+        - pbc
         type: string
       esm_efield:
         type: number
@@ -409,10 +413,10 @@ properties:
         type: number
       exxdiv_treatment:
         enum:
-        - gygi-baldereschi
         - vcut_spherical
-        - vcut_ws
+        - gygi-baldereschi
         - none
+        - vcut_ws
         type: string
       fcp_mu:
         type: number
@@ -488,9 +492,9 @@ properties:
         type: integer
       occupations:
         enum:
-        - smearing
         - tetrahedra
         - tetrahedra_lin
+        - smearing
         - tetrahedra_opt
         - fixed
         - from_input
@@ -515,18 +519,18 @@ properties:
         type: number
       smearing:
         enum:
-        - gaussian
+        - m-v
         - gauss
-        - methfessel-paxton
         - m-p
         - mp
+        - mv
+        - fd
+        - methfessel-paxton
+        - fermi-dirac
+        - gaussian
         - marzari-vanderbilt
         - cold
-        - m-v
-        - mv
-        - fermi-dirac
         - f-d
-        - fd
         type: string
       space_group:
         type: integer
@@ -560,17 +564,21 @@ properties:
         type: boolean
       vdw_corr:
         enum:
+        - grimme-d3
         - grimme-d2
-        - Grimme-D2
+        - Grimme-D3
         - DFT-D
-        - dft-d
-        - TS
         - ts
         - ts-vdw
-        - ts-vdW
-        - tkatchenko-scheffler
+        - TS
         - XDM
+        - dft-d3
+        - ts-vdW
+        - DFT-D3
+        - dft-d
+        - tkatchenko-scheffler
         - xdm
+        - Grimme-D2
         type: string
       x_gamma_extrapolation:
         type: boolean

@@ -15,6 +15,9 @@ TODO: implement pre_... and post_... hooks to add arbitrary strings before
 TODO: all a lot of logger.debug stuff
 """
 import os
+import pathlib
+import yaml
+import jsonschema
 
 from aiida import orm
 from aiida.common.lang import classproperty
@@ -158,6 +161,15 @@ class CpCalculation(BasePwCpInputGenerator):
         spec.exit_code(340, 'ERROR_READING_TRAJECTORY_DATA',
             message='The required trajectory data could not be read.')
         # yapf: enable
+
+    @staticmethod
+    def validate_parameters(value, _):
+        """Validate the input parameters of the pw.x calculation."""
+
+        with (pathlib.Path(__file__).resolve().parent / 'schemas' / 'cp' / 'parameters.yaml').open() as handle:
+            parameters_schema = yaml.safe_load(handle)
+
+        jsonschema.validate(value.get_dict(), parameters_schema)
 
     @staticmethod
     def _generate_PWCP_input_tail(*args, **kwargs):

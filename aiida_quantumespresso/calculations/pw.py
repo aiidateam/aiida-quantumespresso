@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 """`CalcJob` implementation for the pw.x code of Quantum ESPRESSO."""
 import os
+import pathlib
 import yaml
 import jsonschema
 
-from pathlib import Path
 from aiida import orm
 from aiida.common.lang import classproperty
 from aiida.plugins import factories
-from ..workflows.protocols.utils import recursive_merge
 
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 
@@ -151,11 +150,11 @@ class PwCalculation(BasePwCpInputGenerator):
             message='The variable cell optimization broke the symmetry of the k-points.')
         # yapf: enable
 
-    @classmethod
-    def validate_parameters(cls, value, _):
+    @staticmethod
+    def validate_parameters(value, _):
         """Validate the input parameters of the pw.x calculation."""
 
-        with (Path(__file__).resolve().parent / 'schemas' / 'pw' / 'parameters.yaml').open() as handle:
+        with (pathlib.Path(__file__).resolve().parent / 'schemas' / 'pw' / 'parameters-6.X.yaml').open() as handle:
             parameters_schema = yaml.safe_load(handle)
 
         jsonschema.validate(value.get_dict(), parameters_schema)

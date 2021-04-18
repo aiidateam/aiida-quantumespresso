@@ -1,0 +1,360 @@
+$schema: http://json-schema.org/draft/2019-09/schema#
+additionalProperties: false
+properties:
+  CELL:
+    additionalProperties: false
+    properties:
+      cell_damping:
+        type: number
+      cell_dofree:
+        type: string
+      cell_dynamics:
+        type: string
+      cell_factor:
+        type: number
+      cell_parameters:
+        type: string
+      cell_temperature:
+        type: string
+      cell_velocities:
+        type: string
+      fnoseh:
+        type: number
+      greash:
+        type: number
+      press:
+        type: number
+      temph:
+        type: number
+      wmass:
+        type: number
+    type: object
+  CONTROL:
+    additionalProperties: false
+    properties:
+      calculation:
+        type: string
+      disk_io:
+        type: string
+      dt:
+        type: number
+      ekin_conv_thr:
+        type: number
+      etot_conv_thr:
+        type: number
+      forc_conv_thr:
+        type: number
+      iprint:
+        type: integer
+      isave:
+        type: integer
+      max_seconds:
+        type: number
+      memory:
+        type: string
+      ndr:
+        type: integer
+      ndw:
+        type: integer
+      nstep:
+        type: integer
+      outdir:
+        type: string
+      prefix:
+        type: string
+      pseudo_dir:
+        type: string
+      restart_mode:
+        type: string
+      saverho:
+        type: boolean
+      tabps:
+        type: boolean
+      tefield:
+        type: boolean
+      title:
+        type: string
+      tprnfor:
+        type: boolean
+      tstress:
+        type: boolean
+      verbosity:
+        type: string
+    type: object
+  ELECTRONS:
+    additionalProperties: false
+    properties:
+      ampre:
+        type: number
+      conv_thr:
+        type: number
+      efield:
+        type: number
+      ekincw:
+        type: number
+      electron_damping:
+        type: number
+      electron_dynamics:
+        type: string
+      electron_maxstep:
+        type: integer
+      electron_temperature:
+        type: string
+      electron_velocities:
+        type: string
+      emass:
+        type: number
+      emass_cutoff:
+        type: number
+      epol:
+        type: integer
+      fnosee:
+        type: number
+      grease:
+        type: number
+      lambda_cold:
+        type: number
+      maxiter:
+        type: integer
+      n_inner:
+        type: integer
+      ninter_cold_restart:
+        type: integer
+      niter_cg_restart:
+        type: integer
+      ortho_eps:
+        type: number
+      ortho_max:
+        type: integer
+      ortho_para:
+        type: integer
+      orthogonalization:
+        type: string
+      passop:
+        type: number
+      startingwfc:
+        type: string
+      tcg:
+        type: boolean
+    type: object
+  IONS:
+    additionalProperties: false
+    properties:
+      amprp:
+        type: object
+      fnhscl:
+        type: object
+      fnosep:
+        type: number
+      greasp:
+        type: number
+      iesr:
+        type: integer
+      ion_damping:
+        type: number
+      ion_dynamics:
+        type: string
+      ion_nstepe:
+        type: integer
+      ion_positions:
+        type: string
+      ion_radius:
+        type: object
+      ion_temperature:
+        type: string
+      ion_velocities:
+        type: string
+      ndega:
+        type: integer
+      nhgrp:
+        type: object
+      nhpcl:
+        type: integer
+      nhptyp:
+        type: integer
+      remove_rigid_rot:
+        type: boolean
+      tempw:
+        type: number
+      tolp:
+        type: number
+      tranp:
+        type: object
+    type: object
+  PRESS_AI:
+    additionalProperties: false
+    properties:
+      P_ext:
+        type: number
+      P_fin:
+        type: number
+      P_in:
+        type: number
+      Surf_t:
+        type: number
+      abisur:
+        type: boolean
+      abivol:
+        type: boolean
+      dthr:
+        type: number
+      pvar:
+        type: boolean
+      rho_thr:
+        type: number
+    type: object
+  SYSTEM:
+    additionalProperties: false
+    properties:
+      A:
+        type: number
+      B:
+        type: number
+      C:
+        type: number
+      Hubbard_U:
+        type: object
+      assume_isolated:
+        type: string
+      celldm:
+        type: object
+      cosAB:
+        type: number
+      cosAC:
+        type: number
+      cosBC:
+        type: number
+      degauss:
+        type: number
+      ecfixed:
+        type: number
+      ecutrho:
+        type: number
+      ecutwfc:
+        type: number
+      exx_fraction:
+        type: number
+      ibrav:
+        type: integer
+      input_dft:
+        type: string
+      lda_plus_u:
+        type: boolean
+      london_rcut:
+        type: number
+      london_s6:
+        type: number
+      nat:
+        type: integer
+      nbnd:
+        type: integer
+      nr1:
+        type: integer
+      nr1b:
+        type: integer
+      nr1s:
+        type: integer
+      nr2:
+        type: integer
+      nr2b:
+        type: integer
+      nr2s:
+        type: integer
+      nr3:
+        type: integer
+      nr3b:
+        type: integer
+      nr3s:
+        type: integer
+      nspin:
+        type: integer
+      ntyp:
+        type: integer
+      occupations:
+        type: string
+      q2sigma:
+        type: number
+      qcutz:
+        type: number
+      smearing:
+        type: string
+      tot_charge:
+        type: number
+      tot_magnetization:
+        type: number
+      ts_vdw:
+        type: boolean
+      ts_vdw_econv_thr:
+        type: number
+      ts_vdw_isolated:
+        type: boolean
+      vdw_corr:
+        type: string
+    type: object
+  WANNIER:
+    additionalProperties: false
+    properties:
+      adapt:
+        type: boolean
+      calwf:
+        type: integer
+      efx0:
+        type: number
+      efx1:
+        type: number
+      efy0:
+        type: number
+      efy1:
+        type: number
+      efz0:
+        type: number
+      efz1:
+        type: number
+      exx_dis_cutoff:
+        type: number
+      exx_me_rcut_pair:
+        type: number
+      exx_me_rcut_self:
+        type: number
+      exx_neigh:
+        type: integer
+      exx_poisson_eps:
+        type: number
+      exx_ps_rcut_pair:
+        type: number
+      exx_ps_rcut_self:
+        type: number
+      exx_use_cube_domain:
+        type: boolean
+      maxwfdt:
+        type: number
+      nit:
+        type: integer
+      nsd:
+        type: integer
+      nsteps:
+        type: integer
+      nwf:
+        type: integer
+      sw_len:
+        type: integer
+      tolw:
+        type: number
+      wf_efield:
+        type: boolean
+      wf_friction:
+        type: number
+      wf_q:
+        type: number
+      wf_switch:
+        type: boolean
+      wfdt:
+        type: number
+      wffort:
+        type: integer
+      wfsd:
+        type: integer
+      writev:
+        type: boolean
+    type: object
+type: object

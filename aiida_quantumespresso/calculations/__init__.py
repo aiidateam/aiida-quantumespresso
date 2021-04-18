@@ -8,12 +8,12 @@ import warnings
 from functools import partial
 from types import MappingProxyType
 
+from qe_tools.converters import get_parameters_from_cell
 from aiida import orm
 from aiida.common import datastructures, exceptions
 from aiida.common.lang import classproperty
 from aiida.common.warnings import AiidaDeprecationWarning
 from aiida.plugins import DataFactory
-from qe_tools.converters import get_parameters_from_cell
 
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 from .base import CalcJob
@@ -154,9 +154,9 @@ class BasePwCpInputGenerator(CalcJob):
                 return f'Parallelization values must be integers; got invalid values {invalid_values}.'
 
     @staticmethod
-    def validate_parameters(cls, value, _):
+    def validate_parameters(value, _):
         """Validate the input parameters of the pw.x calculation."""
-        pass
+        raise NotImplementedError
 
     def prepare_for_submission(self, folder):
         """Create the input files from the input nodes passed to this instance of the `CalcJob`.
