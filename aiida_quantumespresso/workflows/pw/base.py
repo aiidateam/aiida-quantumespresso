@@ -76,7 +76,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             cls.validate_parameters,
             cls.validate_kpoints,
             cls.validate_pseudos,
-            cls.validate_resources,
             if_(cls.should_run_init)(
                 cls.validate_init_inputs,
                 cls.run_init,
@@ -99,9 +98,11 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         spec.exit_code(202, 'ERROR_INVALID_INPUT_KPOINTS',
             message='Neither the `kpoints` nor the `kpoints_distance` input was specified.')
         spec.exit_code(203, 'ERROR_INVALID_INPUT_RESOURCES',
-            message='Neither the `options` nor `automatic_parallelization` input was specified.')
+            message='Neither the `options` nor `automatic_parallelization` input was specified. '
+                    'This exit status has been deprecated as the check it corresponded to was incorrect.')
         spec.exit_code(204, 'ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED',
-            message='The `metadata.options` did not specify both `resources.num_machines` and `max_wallclock_seconds`.')
+            message='The `metadata.options` did not specify both `resources.num_machines` and `max_wallclock_seconds`. '
+                    'This exit status has been deprecated as the check it corresponded to was incorrect.')
         spec.exit_code(210, 'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY',
             message='Required key for `automatic_parallelization` was not specified.')
         spec.exit_code(211, 'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY',
@@ -282,26 +283,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             self.report(f'{exception}')
             return self.exit_codes.ERROR_INVALID_INPUT_PSEUDO_POTENTIALS
 
-    def validate_resources(self):
-        """Validate the inputs related to the resources.
-
-        One can omit the normally required `options.resources` input for the `PwCalculation`, as long as the input
-        `automatic_parallelization` is specified. If this is not the case, the `metadata.options` should at least
-        contain the options `resources` and `max_wallclock_seconds`, where `resources` should define the `num_machines`.
-        """
-        if 'automatic_parallelization' not in self.inputs and 'options' not in self.ctx.inputs.metadata:
-            return self.exit_codes.ERROR_INVALID_INPUT_RESOURCES
-
-        # If automatic parallelization is not enabled, we better make sure that the options satisfy minimum requirements
-        if 'automatic_parallelization' not in self.inputs:
-            num_machines = self.ctx.inputs.metadata.options.get('resources', {}).get('num_machines', None)
-            max_wallclock_seconds = self.ctx.inputs.metadata.options.get('max_wallclock_seconds', None)
-
-            if num_machines is None or max_wallclock_seconds is None:
-                return self.exit_codes.ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED
-
-            self.set_max_seconds(max_wallclock_seconds)
-
     def set_max_seconds(self, max_wallclock_seconds):
         """Set the `max_seconds` to a fraction of `max_wallclock_seconds` option to prevent out-of-walltime problems.
 
@@ -419,6 +400,11 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         for the next calculation and the `restart_mode` is set to `restart`. Otherwise, no `parent_folder` is used and
         `restart_mode` is set to `from_scratch`.
         """
+        max_wallclock_seconds = self.ctx.inputs.metadata.options.get('max_wallclock_seconds', None)
+
+        if max_wallclock_seconds is not None and 'max_seconds' not in self.ctx.inputs.parameters['CONTROL']:
+            self.set_max_seconds(max_wallclock_seconds)
+
         if self.ctx.restart_calc:
             self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'restart'
             self.ctx.inputs.parent_folder = self.ctx.restart_calc.outputs.remote_folder

@@ -30,7 +30,6 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         spec.outline(
             cls.setup,
             cls.validate_parameters,
-            cls.validate_resources,
             while_(cls.should_run_process)(
                 cls.prepare_process,
                 cls.run_process,
@@ -40,7 +39,8 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         )
         spec.expose_outputs(PwCalculation, exclude=('retrieved_folder',))
         spec.exit_code(204, 'ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED',
-            message='The `metadata.options` did not specify both `resources.num_machines` and `max_wallclock_seconds`.')
+            message='The `metadata.options` did not specify both `resources.num_machines` and `max_wallclock_seconds`. '
+                    'This exit status has been deprecated as the check it corresponded to was incorrect.')
         spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
             message='The calculation failed with an unrecoverable error.')
         # yapf: enable
@@ -66,21 +66,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         if self.inputs.only_initialization.value:
             self.ctx.inputs.settings['ONLY_INITIALIZATION'] = True
 
-    def validate_resources(self):
-        """Validate the inputs related to the resources.
-
-        The `metadata.options` should at least contain the options `resources` and `max_wallclock_seconds`, where
-        `resources` should define the `num_machines`.
-        """
-        num_machines = self.ctx.inputs.metadata.options.get('resources', {}).get('num_machines', None)
-        max_wallclock_seconds = self.ctx.inputs.metadata.options.get('max_wallclock_seconds', None)
-
-        if num_machines is None or max_wallclock_seconds is None:
-            return self.exit_codes.ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED
-
-        self.set_max_seconds(max_wallclock_seconds)
-
-    def set_max_seconds(self, max_wallclock_seconds):
+    def set_max_seconds(self, max_wallclock_seconds: None):
         """Set the `max_seconds` to a fraction of `max_wallclock_seconds` option to prevent out-of-walltime problems.
 
         :param max_wallclock_seconds: the maximum wallclock time that will be set in the scheduler settings.
@@ -95,6 +81,11 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         If a `restart_calc` has been set in the context, its `remote_folder` will be used as the `parent_folder` input
         for the next calculation and the `restart_mode` is set to `restart`.
         """
+        max_wallclock_seconds = self.ctx.inputs.metadata.options.get('max_wallclock_seconds', None)
+
+        if max_wallclock_seconds is not None and 'max_seconds' not in self.ctx.inputs.parameters['INPUTPH']:
+            self.set_max_seconds(max_wallclock_seconds)
+
         if self.ctx.restart_calc:
             self.ctx.inputs.parameters['INPUTPH']['recover'] = True
             self.ctx.inputs.parent_folder = self.ctx.restart_calc.outputs.remote_folder
