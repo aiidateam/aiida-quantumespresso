@@ -100,7 +100,7 @@ def test_metadata_overrides(fixture_code, generate_structure):
     code = fixture_code('quantumespresso.pw')
     structure = generate_structure()
 
-    overrides = {'pw': {'metadata': {'options': {'resources': {'num_machines': 2}, 'max_wallclock_seconds': 3600}}}}
+    overrides = {'pw': {'metadata': {'options': {'resources': {'num_machines': 1e90}, 'max_wallclock_seconds': 1}}}}
     builder = PwBaseWorkChain.get_builder_from_protocol(
         code,
         structure,
@@ -108,8 +108,8 @@ def test_metadata_overrides(fixture_code, generate_structure):
     )
     metadata = builder.pw.metadata
 
-    assert metadata['options']['resources']['num_machines'] == 2
-    assert metadata['options']['max_wallclock_seconds'] == 3600
+    assert metadata['options']['resources']['num_machines'] == 1e90
+    assert metadata['options']['max_wallclock_seconds'] == 1
 
 
 def test_parallelization_overrides(fixture_code, generate_structure):
