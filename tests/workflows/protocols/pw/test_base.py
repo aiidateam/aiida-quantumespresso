@@ -93,3 +93,37 @@ def test_initial_magnetic_moments(fixture_code, generate_structure):
 
     assert parameters['SYSTEM']['nspin'] == 2
     assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.25}
+
+
+def test_metadata_overrides(fixture_code, generate_structure):
+    """Test that pw metadata is correctly passed through overrides."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure()
+
+    overrides = {'pw': {'metadata': {'options': {'resources': {'num_machines': 2}, 'max_wallclock_seconds': 3600}}}}
+    builder = PwBaseWorkChain.get_builder_from_protocol(
+        code,
+        structure,
+        overrides=overrides,
+    )
+    metadata = builder.pw.metadata
+
+    assert metadata['options']['resources']['num_machines'] == 2
+    assert metadata['options']['max_wallclock_seconds'] == 3600
+
+
+def test_parallelization_overrides(fixture_code, generate_structure):
+    """Test that pw parallelization settings are correctly passed through overrides."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure()
+
+    overrides = {'pw': {'parallelization': {'npool': 4, 'ndiag': 12}}}
+    builder = PwBaseWorkChain.get_builder_from_protocol(
+        code,
+        structure,
+        overrides=overrides,
+    )
+    parallelization = builder.pw.parallelization
+
+    assert parallelization['npool'] == 4
+    assert parallelization['ndiag'] == 12
