@@ -204,6 +204,20 @@ def parse_ph_text_output(lines, logs):
                     logs.warning.append('Number q-points found several times with different values')
                 else:
                     parsed_data['number_of_qpoints'] = num_qpoints
+                    for iq in range(num_qpoints): #parse the qpoints - mkotiuga
+                        q_ind = int(lines[count+iq+2].split()[0])
+                        qpt_str = lines[count+iq+2].split()[1:4]
+                        qpt = [float(i) for i in qpt_str]
+                        if f'q_point_{q_ind}' in list(parsed_data.keys()):
+                            if parsed_data[f'q_point_{q_ind}']['q_point'] == qpt:
+                                pass
+                            else:
+                                logs.warning.append('Unexpected q-point found in the header')
+                                #TODO exception
+                        else:
+                            parsed_data[f'q_point_{q_ind}'] = {'q_point':qpt}
+                            #parse the qpoints done- mkotiuga
+
             except Exception:
                 logs.warning.append('Error while parsing number of q points.')
 
@@ -217,6 +231,19 @@ def parse_ph_text_output(lines, logs):
                     logs.warning.append('Number q-points found several times with different values')
                 else:
                     parsed_data['number_of_qpoints'] = num_qpoints
+                    for iq in range(num_qpoints): #parse the qpoints - mkotiuga
+                        q_ind = int(lines[count+iq+2].split()[0])
+                        qpt_str = lines[count+iq+2].split()[1:4]
+                        qpt = [float(i) for i in qpt_str]
+                        if f'q_point_{q_ind}' in list(parsed_data.keys()):
+                            if parsed_data[f'q_point_{q_ind}']['q_point'] == qpt:
+                                pass
+                            else:
+                                logs.warning.append('Unexpected q-point found in the header')
+                                #TODO exception
+                        else:
+                            parsed_data[f'q_point_{q_ind}'] = {'q_point':qpt}
+                            #parse the qpoints done- mkotiuga
             except Exception:
                 logs.warning.append('Error while parsing number of q points.')
 
@@ -236,6 +263,61 @@ def parse_ph_text_output(lines, logs):
             except Exception:
                 pass
 
+    #parse the symmetry labels if there are q-points- mkotiuga
+    q_num = 0
+    for counter, line in enumerate(lines):
+        if 'Diagonalizing the dynamical matrix' in line:
+            #next will be a blank line and then the q-point
+            q_num += 1
+            this_q_data = {}
+            q_str=lines[counter+2].split('q = (')[-1].split(')')[0].split()
+            q =[float(i) for i in q_str]
+            this_q_data['q_point'] = q 
+            
+            #run through lines until mode symmetry 
+            qcounter = counter + 3
+            while ('Mode symmetry' in lines[qcounter]) == False:
+                qcounter += 1
+                
+            #save point group
+            this_q_data['point_group'] = lines[qcounter].split('Mode symmetry,')[1].split('point group:')[0].strip()
+            qcounter += 2
+
+            this_q_data['mode_symmetry'] = [None]*num_atoms*3
+            #run through the next lines that begin with freq, should be 3*number of atoms freqencies (w/ degneracies)
+            while len(lines[qcounter].split()) > 1 and lines[qcounter].split()[0] == 'freq':
+                freq_start = int(lines[qcounter].split()[2])
+                freq_end = int(lines[qcounter].split()[4].split(')')[0])
+                if lines[qcounter].split()[-1] == 'I':
+                    symm_label = lines[qcounter].split()[-2] 
+                else:
+                    symm_label = lines[qcounter].split()[-1]
+
+
+                for i_freq in range(freq_start-1, freq_end):
+                    this_q_data['mode_symmetry'][i_freq] = symm_label
+
+                qcounter += 1
+#            if None in this_q_data['mode_symmetry']:
+#                #a mode was missed
+#                except Exception:
+#                    logs.warning.append('Error while parsing mode symmetries.')
+
+            #which q-point is this?
+            for iq in range(1,num_qpoints+1):
+                if parsed_data[f'q_point_{iq}']['q_point'] ==  this_q_data['q_point']:
+                    parsed_data[f'q_point_{iq}'] = this_q_data
+
+            
+    if 'num_q_found' not in list(parsed_data.keys()):
+        parsed_data['num_q_found'] = []
+    try:
+        parsed_data['num_q_found'] = q_num
+    except Exception:
+        pass
+
+
+            
     return parsed_data
 
 
@@ -368,6 +450,7 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
         # I store what I got
         parsed_data['header'] = header_dict
 
+        
     for line_counter, line in enumerate(data[starting_line:], start=starting_line):
         if 'q = ' in line:
             # q point is written several times, because it can also be rotated.

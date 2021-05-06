@@ -2,11 +2,46 @@
 """Workchain to run a Quantum ESPRESSO ph.x calculation with automated error handling and restarts."""
 from aiida import orm
 from aiida.common import AttributeDict
-from aiida.engine import while_, BaseRestartWorkChain, process_handler, ProcessHandlerReport
+from aiida.engine import while_, BaseRestartWorkChain, process_handler, ProcessHandlerReport, calcfunction
 from aiida.plugins import CalculationFactory
 
 PhCalculation = CalculationFactory('quantumespresso.ph')
 PwCalculation = CalculationFactory('quantumespresso.pw')
+
+
+@calcfunction
+def merge_outputs(**kwargs):
+    #take output from last run
+    #from other runs merge the parsed q-points &  found irreps,
+    #                add times num_q_found
+    
+    final_index = max(kwargs.keys())
+    merged = kwargs[final_index].get_dict()
+    merged['number_of_irr_representations_for_each_q'] = [None for i in range(merged['number_of_qpoints'])]
+    for index, child_dict in kwargs.items():
+        which_q=[]
+        if index == final_index:
+            for k in child_dict.keys():
+                if 'q_point_' in k and 'mode_symmetry' in child_dict[k].keys():
+                    which_q.append(int(k.split('_')[-1]))
+        else:
+            for k in child_dict.keys():
+                if k == 'num_q_found' or k == 'wall_time_seconds':
+                    merged[k] += child_dict[k]
+                elif 'q_point_' in k and 'mode_symmetry' in child_dict[k].keys():
+                    #this qpoint has been parsed - keep
+                    merged[k] = child_dict[k]
+                    which_q.append(int(k.split('_')[-1]))
+
+        which_q.sort()
+        for i,qind in enumerate(which_q):
+            merged['number_of_irr_representations_for_each_q'][qind-1] = child_dict['number_of_irr_representations_for_each_q'][i]
+        
+    merged['wall_time'] = str(merged['wall_time_seconds']//60)+'m'+str(merged['wall_time_seconds']-merged['wall_time_seconds']//60*60)+'s'
+
+    merged = orm.Dict(dict=merged)
+    return merged
+        
 
 
 class PhBaseWorkChain(BaseRestartWorkChain):
@@ -37,8 +72,13 @@ class PhBaseWorkChain(BaseRestartWorkChain):
                 cls.inspect_process,
             ),
             cls.results,
+            cls.create_merged_output,
         )
+        #spec.expose_outputs(PhCalculation, exclude=('output_parameters',))
+
+
         spec.expose_outputs(PwCalculation, exclude=('retrieved_folder',))
+        spec.output('merged_output_parameters', valid_type=orm.Dict, required=False)
         spec.exit_code(204, 'ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED',
             message='The `metadata.options` did not specify both `resources.num_machines` and `max_wallclock_seconds`.')
         spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
@@ -54,7 +94,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         super().setup()
         self.ctx.restart_calc = None
         self.ctx.inputs = AttributeDict(self.exposed_inputs(PhCalculation, 'ph'))
-
+        
     def validate_parameters(self):
         """Validate inputs that might depend on each other and cannot be validated by the spec."""
         self.ctx.inputs.parameters = self.ctx.inputs.parameters.get_dict()
@@ -86,7 +126,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         :param max_wallclock_seconds: the maximum wallclock time that will be set in the scheduler settings.
         """
         max_seconds_factor = self.defaults.delta_factor_max_seconds
-        max_seconds = max_wallclock_seconds * max_seconds_factor
+        max_seconds = min(max_wallclock_seconds - 60, max_wallclock_seconds * max_seconds_factor)
         self.ctx.inputs.parameters['INPUTPH']['max_seconds'] = max_seconds
 
     def prepare_process(self):
@@ -99,6 +139,35 @@ class PhBaseWorkChain(BaseRestartWorkChain):
             self.ctx.inputs.parameters['INPUTPH']['recover'] = True
             self.ctx.inputs.parent_folder = self.ctx.restart_calc.outputs.remote_folder
 
+
+    def create_merged_output(self):
+        outputs = {}
+        for index, child in enumerate(self.ctx.children):
+            outputs['child_'+str(index)] = child.outputs.output_parameters
+
+        #check that runs have the same number of qpoints & all were parsed
+        num_q = None
+        q_found = 0
+        for index, child_dict in outputs.items():
+            q_found += child_dict['num_q_found']
+            if num_q:
+                if num_q == child_dict['number_of_qpoints']:
+                    pass
+                else:
+                    #need error
+                    self.report('All PhCalculations do not have the same number of q-points')
+            else:
+                num_q = child_dict['number_of_qpoints']
+                    
+        if q_found == num_q:
+            self.report('Merging {} q-points'.format(q_found))
+            self.out('merged_output_parameters', merge_outputs(**outputs))
+        else: #need error
+            self.report('Only {} of {} q-points were parsed'.format(q_found,num_q))
+            
+        
+ 
+                                  
     def report_error_handled(self, calculation, action):
         """Report an action taken for a calculation that has failed.
 
