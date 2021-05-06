@@ -92,7 +92,7 @@
     },
     "install_requires": [
         "aiida_core[atomic_tools]~=1.4,>=1.4.4",
-        "aiida-pseudo~=0.6,>=0.6.1",
+        "aiida-pseudo~=0.6.1",
         "jsonschema",
         "packaging",
         "qe-tools~=2.0rc1",
