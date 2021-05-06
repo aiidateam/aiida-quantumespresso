@@ -19,6 +19,7 @@ from ..protocols.utils import ProtocolMixin
 PwCalculation = CalculationFactory('quantumespresso.pw')
 SsspFamily = GroupFactory('pseudo.family.sssp')
 PseudoDojoFamily = GroupFactory('pseudo.family.pseudo_dojo')
+CutoffsPseudoPotentialFamily = GroupFactory('pseudo.family.cutoffs')
 
 
 def validate_pseudo_family(value, _):
@@ -167,7 +168,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         natoms = len(structure.sites)
 
         try:
-            pseudo_set = (PseudoDojoFamily, SsspFamily)
+            pseudo_set = (PseudoDojoFamily, SsspFamily, CutoffsPseudoPotentialFamily)
             pseudo_family = orm.QueryBuilder().append(pseudo_set, filters={'label': pseudo_family}).one()[0]
         except exceptions.NotExistent as exception:
             raise ValueError(
@@ -175,7 +176,12 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 'install it.'
             ) from exception
 
-        cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
+        try:
+            cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
+        except ValueError as exception:
+            raise ValueError(
+                f'failed to obtain recommended cutoffs for pseudo family `{pseudo_family}`: {exception}'
+            ) from exception
 
         parameters = inputs['pw']['parameters']
         parameters['CONTROL']['etot_conv_thr'] = natoms * meta_parameters['etot_conv_thr_per_atom']
