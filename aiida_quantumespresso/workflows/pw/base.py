@@ -200,14 +200,18 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             parameters['SYSTEM']['nspin'] = 2
             parameters['SYSTEM']['starting_magnetization'] = starting_magnetization
 
-        builder.pw['code'] = code  # pylint: disable=no-member
-        builder.pw['pseudos'] = pseudo_family.get_pseudos(structure=structure)  # pylint: disable=no-member
-        builder.pw['structure'] = structure  # pylint: disable=no-member
-        builder.pw['parameters'] = orm.Dict(dict=parameters)  # pylint: disable=no-member
-        builder.pw['metadata'] = inputs['metadata']  # pylint: disable=no-member
+        # pylint: disable=no-member
+        builder.pw['code'] = code
+        builder.pw['pseudos'] = pseudo_family.get_pseudos(structure=structure)
+        builder.pw['structure'] = structure
+        builder.pw['parameters'] = orm.Dict(dict=parameters)
+        builder.pw['metadata'] = inputs['pw']['metadata']
+        if 'parallelization' in inputs['pw']:
+            builder.pw['parallelization'] = orm.Dict(dict=inputs['pw']['parallelization'])
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
         builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
         builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
+        # pylint: enable=no-member
 
         return builder
 
