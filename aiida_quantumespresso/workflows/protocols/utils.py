@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Utilities to manipulate the workflow input protocols."""
-import functools
-import os
 import pathlib
 import yaml
 
@@ -10,13 +8,18 @@ class ProtocolMixin:
     """Utility class for processes to build input mappings for a given protocol based on a YAML configuration file."""
 
     @classmethod
+    def get_protocol_filepath(cls):
+        """Return the ``pathlib.Path`` to the ``.yaml`` file that defines the protocols."""
+        raise NotImplementedError
+
+    @classmethod
     def get_default_protocol(cls):
         """Return the default protocol for a given workflow class.
 
         :param cls: the workflow class.
         :return: the default protocol.
         """
-        return load_protocol_file(cls)['default_protocol']
+        return cls._load_protocol_file()['default_protocol']
 
     @classmethod
     def get_available_protocols(cls):
@@ -26,7 +29,7 @@ class ProtocolMixin:
         :return: dictionary of available protocols, where each key is a protocol and value is another dictionary that
             contains at least the key `description` and optionally other keys with supplementary information.
         """
-        data = load_protocol_file(cls)
+        data = cls._load_protocol_file()
         return {protocol: {'description': values['description']} for protocol, values in data['protocols'].items()}
 
     @classmethod
@@ -39,7 +42,7 @@ class ProtocolMixin:
             maintain the exact same nesting structure as the input port namespace of the corresponding workflow class.
         :return: mapping of inputs to be used for the workflow class.
         """
-        data = load_protocol_file(cls)
+        data = cls._load_protocol_file()
         protocol = protocol or data['default_protocol']
 
         try:
@@ -48,7 +51,6 @@ class ProtocolMixin:
             raise ValueError(
                 f'`{protocol}` is not a valid protocol. Call ``get_available_protocols`` to show available protocols.'
             ) from exception
-
         inputs = recursive_merge(data['default_inputs'], protocol_inputs)
         inputs.pop('description')
 
@@ -56,6 +58,12 @@ class ProtocolMixin:
             return recursive_merge(inputs, overrides)
 
         return inputs
+
+    @classmethod
+    def _load_protocol_file(cls):
+        """Return the contents of the protocol file for workflow class."""
+        with cls.get_protocol_filepath().open() as file:
+            return yaml.safe_load(file)
 
 
 def recursive_merge(left, right):
@@ -82,28 +90,6 @@ def recursive_merge(left, right):
     merged.update(right)
 
     return merged
-
-
-def load_protocol_file(cls):
-    """Load the protocol file for the given workflow class.
-
-    :param cls: the workflow class.
-    :return: the contents of the protocol file.
-    """
-    from aiida.plugins.entry_point import get_entry_point_from_class
-
-    _, entry_point = get_entry_point_from_class(cls.__module__, cls.__name__)
-    entry_point_name = entry_point.name
-    parts = entry_point_name.split('.')
-    parts.pop(0)
-    filename = f'{parts.pop()}.yaml'
-    try:
-        basepath = functools.reduce(os.path.join, parts)
-    except TypeError:
-        basepath = '.'
-
-    with (pathlib.Path(__file__).resolve().parent / basepath / filename).open() as handle:
-        return yaml.safe_load(handle)
 
 
 def get_magnetization_parameters() -> dict:
