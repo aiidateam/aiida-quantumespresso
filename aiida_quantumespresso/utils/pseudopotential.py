@@ -29,6 +29,9 @@ def validate_and_prepare_pseudos_inputs(structure, pseudos=None, pseudo_family=N
     :raises: ValueError if neither pseudos or pseudo_family is specified or if no UpfData is found for
         every element in the structure
     :returns: a dictionary of UpfData nodes where the key is the kind name
+
+    .. deprecated:: 4.0.0
+        This functionality is now implemented in ``aiida-pseudo``.
     """
     from aiida.orm import Str
 
@@ -60,6 +63,9 @@ def get_pseudos_of_calc(calc):
 
     :param calc: a pw.x or cp.x calculation.
     :return: a dictionary where the key is the kind name and the value is the UpfData object.
+
+    .. deprecated:: 4.0.0
+        This functionality is now implemented in ``aiida-pseudo``.
     """
     from aiida.common.links import LinkType
 
@@ -95,6 +101,9 @@ def get_pseudos_from_dict(structure, pseudos_uuids):
     :param pseudos_uuids: a dictionary of UUIDs of UpfData for each chemical element, as specified above
     :raise MultipleObjectsError: if more than one UPF for the same element is found in the group.
     :raise NotExistent: if no UPF for an element in the group is found in the group.
+
+    .. deprecated:: 4.0.0
+        This functionality is now implemented in ``aiida-pseudo``.
     """
     from aiida.common import NotExistent
     from aiida.orm import load_node
@@ -116,7 +125,7 @@ def get_pseudos_from_dict(structure, pseudos_uuids):
                 'No node found associated to the UUID {} given for element {} '
                 'in the provided pseudos_uuids dictionary'.format(uuid, symbol)
             ) from exception
-        if not isinstance(upf, UpfData):
+        if not isinstance(upf, (LegacyUpfData, UpfData)):
             raise ValueError(f'Node with UUID {uuid} is not a UpfData')
         if upf.element != symbol:
             raise ValueError(f'Node<{uuid}> is associated to element {upf.element} and not to {symbol} as expected')
