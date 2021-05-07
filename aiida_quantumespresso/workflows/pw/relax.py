@@ -280,7 +280,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
             structure = workchain.outputs.output_structure
         except exceptions.NotExistent:
             # If the calculation is set to 'scf', this is expected, so we are done
-            if self.inputs.base.pw.parameters['CONTROL']['calculation'] == 'scf':
+            if self.ctx.relax_inputs.pw.parameters['CONTROL']['calculation'] == 'scf':
                 self.ctx.is_converged = True
                 return
 
@@ -359,7 +359,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         # Get the latest relax workchain and pass the outputs
         final_relax_workchain = self.ctx.workchains[-1]
 
-        if self.inputs.base.pw.parameters['CONTROL']['calculation'] != 'scf':
+        if self.ctx.relax_inputs.pw.parameters['CONTROL']['calculation'] != 'scf':
             self.out('output_structure', final_relax_workchain.outputs.output_structure)
 
         try:
