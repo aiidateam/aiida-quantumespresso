@@ -308,6 +308,13 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         spec.expose_outputs(ProjwfcCalculation, namespace='projwfc')
 
     @classmethod
+    def get_protocol_filepath(cls):
+        """Return ``pathlib.Path`` to the ``.yaml`` file that defines the protocols."""
+        from importlib_resources import files
+        from . import protocols
+        return files(protocols) / 'pdos.yaml'
+
+    @classmethod
     def get_builder_from_protocol(
         cls, pw_code, dos_code, projwfc_code, structure, protocol=None, overrides=None, **kwargs
     ):
@@ -324,11 +331,10 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         :return: a process builder instance with all inputs defined ready for launch.
         """
 
-        args = (pw_code, structure, protocol)
 
         inputs = cls.get_protocol_inputs(protocol, overrides)
-        builder = cls.get_builder()
 
+        args = (pw_code, structure, protocol)
         scf = PwBaseWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('scf', None), **kwargs)
         scf['pw'].pop('structure', None)
         scf.pop('clean_workdir', None)
@@ -338,6 +344,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         nscf['pw']['parameters']['SYSTEM'].pop('degauss', None)
         nscf.pop('clean_workdir', None)
 
+        builder = cls.get_builder()
         builder.structure = structure
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
         builder.scf = scf

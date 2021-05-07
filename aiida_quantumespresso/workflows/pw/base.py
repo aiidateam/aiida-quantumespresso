@@ -118,6 +118,13 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         # yapf: enable
 
     @classmethod
+    def get_protocol_filepath(cls):
+        """Return ``pathlib.Path`` to the ``.yaml`` file that defines the protocols."""
+        from importlib_resources import files
+        from ..protocols import pw as pw_protocols
+        return files(pw_protocols) / 'base.yaml'
+
+    @classmethod
     def get_builder_from_protocol(
         cls,
         code,
@@ -160,7 +167,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if initial_magnetic_moments is not None and spin_type is not SpinType.COLLINEAR:
             raise ValueError(f'`initial_magnetic_moments` is specified but spin type `{spin_type}` is incompatible.')
 
-        builder = cls.get_builder()
         inputs = cls.get_protocol_inputs(protocol, overrides)
 
         meta_parameters = inputs.pop('meta_parameters')
@@ -202,6 +208,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             parameters['SYSTEM']['starting_magnetization'] = starting_magnetization
 
         # pylint: disable=no-member
+        builder = cls.get_builder()
         builder.pw['code'] = code
         builder.pw['pseudos'] = pseudo_family.get_pseudos(structure=structure)
         builder.pw['structure'] = structure
