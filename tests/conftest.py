@@ -591,15 +591,19 @@ def generate_inputs_cp(fixture_code, generate_structure, generate_upf_data):
 def generate_workchain_pw(generate_workchain, generate_inputs_pw, generate_calc_job_node):
     """Generate an instance of a `PwBaseWorkChain`."""
 
-    def _generate_workchain_pw(exit_code=None, inputs=None):
+    def _generate_workchain_pw(exit_code=None, inputs=None, return_inputs=False):
         from plumpy import ProcessState
         from aiida.orm import Dict
 
         entry_point = 'quantumespresso.pw.base'
+
         if inputs is None:
             pw_inputs = generate_inputs_pw()
             kpoints = pw_inputs.pop('kpoints')
             inputs = {'pw': pw_inputs, 'kpoints': kpoints}
+
+        if return_inputs:
+            return inputs
 
         process = generate_workchain(entry_point, inputs)
 
@@ -614,6 +618,36 @@ def generate_workchain_pw(generate_workchain, generate_inputs_pw, generate_calc_
         return process
 
     return _generate_workchain_pw
+
+
+@pytest.fixture
+def generate_workchain_ph(generate_workchain, generate_inputs_ph, generate_calc_job_node):
+    """Generate an instance of a `PhBaseWorkChain`."""
+
+    def _generate_workchain_ph(exit_code=None, inputs=None, return_inputs=False):
+        from plumpy import ProcessState
+
+        entry_point = 'quantumespresso.ph.base'
+
+        if inputs is None:
+            inputs = {'ph': generate_inputs_ph()}
+
+        if return_inputs:
+            return inputs
+
+        process = generate_workchain(entry_point, inputs)
+
+        if exit_code is not None:
+            node = generate_calc_job_node()
+            node.set_process_state(ProcessState.FINISHED)
+            node.set_exit_status(exit_code.status)
+
+            process.ctx.iteration = 1
+            process.ctx.children = [node]
+
+        return process
+
+    return _generate_workchain_ph
 
 
 @pytest.fixture

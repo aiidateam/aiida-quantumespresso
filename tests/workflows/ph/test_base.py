@@ -1,36 +1,11 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=no-member,redefined-outer-name
 """Tests for the `PhBaseWorkChain` class."""
-import pytest
-
-from plumpy import ProcessState
-
 from aiida.common import AttributeDict
 from aiida.engine import ProcessHandlerReport
 
 from aiida_quantumespresso.calculations.ph import PhCalculation
 from aiida_quantumespresso.workflows.ph.base import PhBaseWorkChain
-
-
-@pytest.fixture
-def generate_workchain_ph(generate_workchain, generate_inputs_ph, generate_calc_job_node):
-    """Generate an instance of a `PhBaseWorkChain`."""
-
-    def _generate_workchain_ph(exit_code=None):
-        entry_point = 'quantumespresso.ph.base'
-        process = generate_workchain(entry_point, {'ph': generate_inputs_ph()})
-
-        if exit_code is not None:
-            node = generate_calc_job_node()
-            node.set_process_state(ProcessState.FINISHED)
-            node.set_exit_status(exit_code.status)
-
-            process.ctx.iteration = 1
-            process.ctx.children = [node]
-
-        return process
-
-    return _generate_workchain_ph
 
 
 def test_setup(generate_workchain_ph):
@@ -84,3 +59,32 @@ def test_handle_convergence_not_achieved(generate_workchain_ph):
 
     result = process.inspect_process()
     assert result.status == 0
+
+
+def test_set_max_seconds(generate_workchain_ph):
+    """Test that `max_seconds` gets set in the parameters based on `max_wallclock_seconds` unless already set."""
+    inputs = generate_workchain_ph(return_inputs=True)
+    max_wallclock_seconds = inputs['ph']['metadata']['options']['max_wallclock_seconds']
+
+    process = generate_workchain_ph(inputs=inputs)
+    process.setup()
+    process.validate_parameters()
+    process.prepare_process()
+
+    expected_max_seconds = max_wallclock_seconds * process.defaults.delta_factor_max_seconds
+    assert 'max_seconds' in process.ctx.inputs['parameters']['INPUTPH']
+    assert process.ctx.inputs['parameters']['INPUTPH']['max_seconds'] == expected_max_seconds
+
+    # Now check that if `max_seconds` is already explicitly set in the parameters, it is not overwritten.
+    inputs = generate_workchain_ph(return_inputs=True)
+    max_seconds = 1
+    max_wallclock_seconds = inputs['ph']['metadata']['options']['max_wallclock_seconds']
+    inputs['ph']['parameters']['INPUTPH']['max_seconds'] = max_seconds
+
+    process = generate_workchain_ph(inputs=inputs)
+    process.setup()
+    process.validate_parameters()
+    process.prepare_process()
+
+    assert 'max_seconds' in process.ctx.inputs['parameters']['INPUTPH']
+    assert process.ctx.inputs['parameters']['INPUTPH']['max_seconds'] == max_seconds
