@@ -126,7 +126,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         :param max_wallclock_seconds: the maximum wallclock time that will be set in the scheduler settings.
         """
         max_seconds_factor = self.defaults.delta_factor_max_seconds
-        max_seconds = min(max_wallclock_seconds - 60, max_wallclock_seconds * max_seconds_factor)
+        max_seconds = max_wallclock_seconds * max_seconds_factor
         self.ctx.inputs.parameters['INPUTPH']['max_seconds'] = max_seconds
 
     def prepare_process(self):
