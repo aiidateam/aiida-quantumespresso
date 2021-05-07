@@ -1,19 +1,25 @@
 # -*- coding: utf-8 -*-
 """Utilities to manipulate the workflow input protocols."""
 import pathlib
+from typing import Optional, Union
 import yaml
+
+from aiida.plugins import DataFactory, GroupFactory
+
+StructureData = DataFactory('structure')
+PseudoPotentialFamily = GroupFactory('pseudo.family')
 
 
 class ProtocolMixin:
     """Utility class for processes to build input mappings for a given protocol based on a YAML configuration file."""
 
     @classmethod
-    def get_protocol_filepath(cls):
+    def get_protocol_filepath(cls) -> pathlib.Path:
         """Return the ``pathlib.Path`` to the ``.yaml`` file that defines the protocols."""
         raise NotImplementedError
 
     @classmethod
-    def get_default_protocol(cls):
+    def get_default_protocol(cls) -> str:
         """Return the default protocol for a given workflow class.
 
         :param cls: the workflow class.
@@ -22,7 +28,7 @@ class ProtocolMixin:
         return cls._load_protocol_file()['default_protocol']
 
     @classmethod
-    def get_available_protocols(cls):
+    def get_available_protocols(cls) -> dict:
         """Return the available protocols for a given workflow class.
 
         :param cls: the workflow class.
@@ -33,7 +39,11 @@ class ProtocolMixin:
         return {protocol: {'description': values['description']} for protocol, values in data['protocols'].items()}
 
     @classmethod
-    def get_protocol_inputs(cls, protocol=None, overrides=None):
+    def get_protocol_inputs(
+        cls,
+        protocol: Optional[dict] = None,
+        overrides: Union[dict, pathlib.Path, None] = None,
+    ) -> dict:
         """Return the inputs for the given workflow class and protocol.
 
         :param cls: the workflow class.
@@ -54,19 +64,23 @@ class ProtocolMixin:
         inputs = recursive_merge(data['default_inputs'], protocol_inputs)
         inputs.pop('description')
 
+        if isinstance(overrides, pathlib.Path):
+            with overrides.open() as file:
+                overrides = yaml.safe_load(file)
+
         if overrides:
             return recursive_merge(inputs, overrides)
 
         return inputs
 
     @classmethod
-    def _load_protocol_file(cls):
+    def _load_protocol_file(cls) -> dict:
         """Return the contents of the protocol file for workflow class."""
         with cls.get_protocol_filepath().open() as file:
             return yaml.safe_load(file)
 
 
-def recursive_merge(left, right):
+def recursive_merge(left: dict, right: dict) -> dict:
     """Recursively merge two dictionaries into a single dictionary.
 
     If any key is present in both ``left`` and ``right`` dictionaries, the value from the ``right`` dictionary is
@@ -101,7 +115,11 @@ def get_magnetization_parameters() -> dict:
         return yaml.safe_load(handle)
 
 
-def get_starting_magnetization(structure, pseudo_family, initial_magnetic_moments=None):
+def get_starting_magnetization(
+    structure: StructureData,
+    pseudo_family: PseudoPotentialFamily,
+    initial_magnetic_moments: Optional[dict] = None
+) -> dict:
     """Return the dictionary with starting magnetization for each kind in the structure.
 
     :param structure: the structure.
