@@ -87,7 +87,9 @@
         "docs": [
             "Sphinx",
             "docutils",
-            "sphinx_rtd_theme"
+            "sphinx-copybutton~=0.3.0",
+            "sphinx-book-theme~=0.1.0",
+            "sphinx-click~=2.7.1"
         ]
     },
     "install_requires": [
