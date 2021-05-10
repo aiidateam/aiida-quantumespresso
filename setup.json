@@ -106,5 +106,5 @@
     "name": "aiida_quantumespresso",
     "python_requires": ">=3.6",
     "url": "https://github.com/aiidateam/aiida-quantumespresso",
-    "version": "3.4.1"
+    "version": "3.4.2"
 }
