@@ -137,3 +137,32 @@ def test_sanity_check_no_bands(generate_workchain_pw):
 
     calculation = process.ctx.children[-1]
     assert process.sanity_check_insufficient_bands(calculation) is None
+
+
+def test_set_max_seconds(generate_workchain_pw):
+    """Test that `max_seconds` gets set in the parameters based on `max_wallclock_seconds` unless already set."""
+    inputs = generate_workchain_pw(return_inputs=True)
+    max_wallclock_seconds = inputs['pw']['metadata']['options']['max_wallclock_seconds']
+
+    process = generate_workchain_pw(inputs=inputs)
+    process.setup()
+    process.validate_parameters()
+    process.prepare_process()
+
+    expected_max_seconds = max_wallclock_seconds * process.defaults.delta_factor_max_seconds
+    assert 'max_seconds' in process.ctx.inputs['parameters']['CONTROL']
+    assert process.ctx.inputs['parameters']['CONTROL']['max_seconds'] == expected_max_seconds
+
+    # Now check that if `max_seconds` is already explicitly set in the parameters, it is not overwritten.
+    inputs = generate_workchain_pw(return_inputs=True)
+    max_seconds = 1
+    max_wallclock_seconds = inputs['pw']['metadata']['options']['max_wallclock_seconds']
+    inputs['pw']['parameters']['CONTROL']['max_seconds'] = max_seconds
+
+    process = generate_workchain_pw(inputs=inputs)
+    process.setup()
+    process.validate_parameters()
+    process.prepare_process()
+
+    assert 'max_seconds' in process.ctx.inputs['parameters']['CONTROL']
+    assert process.ctx.inputs['parameters']['CONTROL']['max_seconds'] == max_seconds

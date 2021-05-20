@@ -25,7 +25,19 @@ def validate_protocol(protocol_dict, ctx=None):  # pylint: disable=unused-argume
 
 
 class PwBandStructureWorkChain(WorkChain):
-    """Workchain to automatically compute a band structure for a given structure using Quantum ESPRESSO pw.x."""
+    """Workchain to automatically compute a band structure for a given structure using Quantum ESPRESSO pw.x.
+
+    .. deprecated:: 4.0.0
+        This work chain has been replaced by the ``PwBandsWorkchain``.
+    """
+
+    import warnings
+    from aiida.common.warnings import AiidaDeprecationWarning
+
+    warnings.warn(
+        'The `PwBandStructureWorkChain` has been deprecated in favor of the `PwBandsWorkChain` and will be '
+        'removed in `v4.0.0`', AiidaDeprecationWarning
+    )
 
     @classmethod
     def define(cls, spec):

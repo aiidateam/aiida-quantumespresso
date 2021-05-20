@@ -96,6 +96,13 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         # yapf: enable
 
     @classmethod
+    def get_protocol_filepath(cls):
+        """Return ``pathlib.Path`` to the ``.yaml`` file that defines the protocols."""
+        from importlib_resources import files
+        from ..protocols import pw as pw_protocols
+        return files(pw_protocols) / 'relax.yaml'
+
+    @classmethod
     def get_builder_from_protocol(
         cls, code, structure, protocol=None, overrides=None, relax_type=RelaxType.POSITIONS_CELL, **kwargs
     ):
@@ -112,10 +119,9 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         """
         type_check(relax_type, RelaxType)
 
-        args = (code, structure, protocol)
         inputs = cls.get_protocol_inputs(protocol, overrides)
-        builder = cls.get_builder()
 
+        args = (code, structure, protocol)
         base = PwBaseWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('base', None), **kwargs)
         base_final_scf = PwBaseWorkChain.get_builder_from_protocol(
             *args, overrides=inputs.get('base_final_scf', None), **kwargs
@@ -153,6 +159,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         if relax_type in (RelaxType.CELL, RelaxType.POSITIONS_CELL):
             base.pw.parameters['CELL']['cell_dofree'] = 'all'
 
+        builder = cls.get_builder()
         builder.base = base
         builder.base_final_scf = base_final_scf
         builder.structure = structure
@@ -280,7 +287,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
             structure = workchain.outputs.output_structure
         except exceptions.NotExistent:
             # If the calculation is set to 'scf', this is expected, so we are done
-            if self.inputs.base.pw.parameters['CONTROL']['calculation'] == 'scf':
+            if self.ctx.relax_inputs.pw.parameters['CONTROL']['calculation'] == 'scf':
                 self.ctx.is_converged = True
                 return
 
@@ -359,7 +366,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         # Get the latest relax workchain and pass the outputs
         final_relax_workchain = self.ctx.workchains[-1]
 
-        if self.inputs.base.pw.parameters['CONTROL']['calculation'] != 'scf':
+        if self.ctx.relax_inputs.pw.parameters['CONTROL']['calculation'] != 'scf':
             self.out('output_structure', final_relax_workchain.outputs.output_structure)
 
         try:

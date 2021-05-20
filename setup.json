@@ -87,21 +87,24 @@
         "docs": [
             "Sphinx",
             "docutils",
-            "sphinx_rtd_theme"
+            "sphinx-copybutton~=0.3.0",
+            "sphinx-book-theme~=0.1.0",
+            "sphinx-click~=2.7.1"
         ]
     },
     "install_requires": [
         "aiida_core[atomic_tools]~=1.4,>=1.4.4",
-        "aiida-pseudo~=0.6.0",
+        "aiida-pseudo~=0.6.1",
         "jsonschema",
         "packaging",
         "qe-tools~=2.0rc1",
         "xmlschema~=1.2,>=1.2.5",
-        "numpy"
+        "numpy",
+        "importlib_resources"
     ],
     "license": "MIT License",
     "name": "aiida_quantumespresso",
     "python_requires": ">=3.6",
     "url": "https://github.com/aiidateam/aiida-quantumespresso",
-    "version": "3.4.1"
+    "version": "3.4.2"
 }

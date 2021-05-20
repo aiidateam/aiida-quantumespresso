@@ -19,6 +19,7 @@ from ..protocols.utils import ProtocolMixin
 PwCalculation = CalculationFactory('quantumespresso.pw')
 SsspFamily = GroupFactory('pseudo.family.sssp')
 PseudoDojoFamily = GroupFactory('pseudo.family.pseudo_dojo')
+CutoffsPseudoPotentialFamily = GroupFactory('pseudo.family.cutoffs')
 
 
 def validate_pseudo_family(value, _):
@@ -75,7 +76,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             cls.validate_parameters,
             cls.validate_kpoints,
             cls.validate_pseudos,
-            cls.validate_resources,
             if_(cls.should_run_init)(
                 cls.validate_init_inputs,
                 cls.run_init,
@@ -98,9 +98,11 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         spec.exit_code(202, 'ERROR_INVALID_INPUT_KPOINTS',
             message='Neither the `kpoints` nor the `kpoints_distance` input was specified.')
         spec.exit_code(203, 'ERROR_INVALID_INPUT_RESOURCES',
-            message='Neither the `options` nor `automatic_parallelization` input was specified.')
+            message='Neither the `options` nor `automatic_parallelization` input was specified. '
+                    'This exit status has been deprecated as the check it corresponded to was incorrect.')
         spec.exit_code(204, 'ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED',
-            message='The `metadata.options` did not specify both `resources.num_machines` and `max_wallclock_seconds`.')
+            message='The `metadata.options` did not specify both `resources.num_machines` and `max_wallclock_seconds`. '
+                    'This exit status has been deprecated as the check it corresponded to was incorrect.')
         spec.exit_code(210, 'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY',
             message='Required key for `automatic_parallelization` was not specified.')
         spec.exit_code(211, 'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY',
@@ -114,6 +116,13 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         spec.exit_code(501, 'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
             message='Then ionic minimization cycle converged but the thresholds are exceeded in the final SCF.')
         # yapf: enable
+
+    @classmethod
+    def get_protocol_filepath(cls):
+        """Return ``pathlib.Path`` to the ``.yaml`` file that defines the protocols."""
+        from importlib_resources import files
+        from ..protocols import pw as pw_protocols
+        return files(pw_protocols) / 'base.yaml'
 
     @classmethod
     def get_builder_from_protocol(
@@ -158,7 +167,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if initial_magnetic_moments is not None and spin_type is not SpinType.COLLINEAR:
             raise ValueError(f'`initial_magnetic_moments` is specified but spin type `{spin_type}` is incompatible.')
 
-        builder = cls.get_builder()
         inputs = cls.get_protocol_inputs(protocol, overrides)
 
         meta_parameters = inputs.pop('meta_parameters')
@@ -167,7 +175,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         natoms = len(structure.sites)
 
         try:
-            pseudo_set = (PseudoDojoFamily, SsspFamily)
+            pseudo_set = (PseudoDojoFamily, SsspFamily, CutoffsPseudoPotentialFamily)
             pseudo_family = orm.QueryBuilder().append(pseudo_set, filters={'label': pseudo_family}).one()[0]
         except exceptions.NotExistent as exception:
             raise ValueError(
@@ -175,7 +183,12 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 'install it.'
             ) from exception
 
-        cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
+        try:
+            cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
+        except ValueError as exception:
+            raise ValueError(
+                f'failed to obtain recommended cutoffs for pseudo family `{pseudo_family}`: {exception}'
+            ) from exception
 
         parameters = inputs['pw']['parameters']
         parameters['CONTROL']['etot_conv_thr'] = natoms * meta_parameters['etot_conv_thr_per_atom']
@@ -194,14 +207,19 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             parameters['SYSTEM']['nspin'] = 2
             parameters['SYSTEM']['starting_magnetization'] = starting_magnetization
 
-        builder.pw['code'] = code  # pylint: disable=no-member
-        builder.pw['pseudos'] = pseudo_family.get_pseudos(structure=structure)  # pylint: disable=no-member
-        builder.pw['structure'] = structure  # pylint: disable=no-member
-        builder.pw['parameters'] = orm.Dict(dict=parameters)  # pylint: disable=no-member
-        builder.pw['metadata'] = inputs['metadata']  # pylint: disable=no-member
+        # pylint: disable=no-member
+        builder = cls.get_builder()
+        builder.pw['code'] = code
+        builder.pw['pseudos'] = pseudo_family.get_pseudos(structure=structure)
+        builder.pw['structure'] = structure
+        builder.pw['parameters'] = orm.Dict(dict=parameters)
+        builder.pw['metadata'] = inputs['pw']['metadata']
+        if 'parallelization' in inputs['pw']:
+            builder.pw['parallelization'] = orm.Dict(dict=inputs['pw']['parallelization'])
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
         builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
         builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
+        # pylint: enable=no-member
 
         return builder
 
@@ -271,26 +289,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         except ValueError as exception:
             self.report(f'{exception}')
             return self.exit_codes.ERROR_INVALID_INPUT_PSEUDO_POTENTIALS
-
-    def validate_resources(self):
-        """Validate the inputs related to the resources.
-
-        One can omit the normally required `options.resources` input for the `PwCalculation`, as long as the input
-        `automatic_parallelization` is specified. If this is not the case, the `metadata.options` should at least
-        contain the options `resources` and `max_wallclock_seconds`, where `resources` should define the `num_machines`.
-        """
-        if 'automatic_parallelization' not in self.inputs and 'options' not in self.ctx.inputs.metadata:
-            return self.exit_codes.ERROR_INVALID_INPUT_RESOURCES
-
-        # If automatic parallelization is not enabled, we better make sure that the options satisfy minimum requirements
-        if 'automatic_parallelization' not in self.inputs:
-            num_machines = self.ctx.inputs.metadata.options.get('resources', {}).get('num_machines', None)
-            max_wallclock_seconds = self.ctx.inputs.metadata.options.get('max_wallclock_seconds', None)
-
-            if num_machines is None or max_wallclock_seconds is None:
-                return self.exit_codes.ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED
-
-            self.set_max_seconds(max_wallclock_seconds)
 
     def set_max_seconds(self, max_wallclock_seconds):
         """Set the `max_seconds` to a fraction of `max_wallclock_seconds` option to prevent out-of-walltime problems.
@@ -409,6 +407,11 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         for the next calculation and the `restart_mode` is set to `restart`. Otherwise, no `parent_folder` is used and
         `restart_mode` is set to `from_scratch`.
         """
+        max_wallclock_seconds = self.ctx.inputs.metadata.options.get('max_wallclock_seconds', None)
+
+        if max_wallclock_seconds is not None and 'max_seconds' not in self.ctx.inputs.parameters['CONTROL']:
+            self.set_max_seconds(max_wallclock_seconds)
+
         if self.ctx.restart_calc:
             self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'restart'
             self.ctx.inputs.parent_folder = self.ctx.restart_calc.outputs.remote_folder

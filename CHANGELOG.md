@@ -1,3 +1,21 @@
+## v3.4.2
+
+This patch release fixes several bugs in the protocols feature, adds support for the `CutoffsPseudoPotentialFamily` introduced in `aiida-pseudo==0.6.1` and adapts the `ProtocolMixin` class so it can also be used by other packages.
+The legacy `PwBandStructureWorkChain` is now also fully deprecated and will be removed in the next major release.
+It has been replaced by the `PwBandsWorkChain`, which is now equipped with its own protocol through the `get_builder_from_protocol()` method.
+
+### Improvements
+- `ProtocolMixin`: increase flexibility and usability for other packages [[#678]](https://github.com/aiidateam/aiida-quantumespresso/pull/678)
+- Protocols: Add support for `CutoffsPseudoPotentialFamily` [[#684]](https://github.com/aiidateam/aiida-quantumespresso/pull/684)
+
+### Bug Fixes
+- Protocols: Add usage of metadata and parallelisation `overrides` [[#652]](https://github.com/aiidateam/aiida-quantumespresso/pull/652)
+- `PwBaseWorkChain`: fix bug in `validate_resources` validator [[#683]](https://github.com/aiidateam/aiida-quantumespresso/pull/683)
+
+### Deprecation
+- `PwBandStructureWorkChain`: Deprecate and fix [[#688]](https://github.com/aiidateam/aiida-quantumespresso/pull/688)
+
+
 ## v3.4.1
 
 ### Dependencies
