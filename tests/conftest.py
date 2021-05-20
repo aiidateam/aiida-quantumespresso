@@ -2,6 +2,7 @@
 # pylint: disable=redefined-outer-name,too-many-statements
 """Initialise a text database and profile for pytest."""
 import collections
+import io
 import os
 import shutil
 import tempfile
@@ -281,18 +282,15 @@ def generate_calc_job_node(fixture_localhost):
 
 
 @pytest.fixture(scope='session')
-def generate_upf_data(tmp_path_factory):
+def generate_upf_data():
     """Return a `UpfData` instance for the given element a file for which should exist in `tests/fixtures/pseudos`."""
 
     def _generate_upf_data(element):
         """Return `UpfData` node."""
         from aiida_pseudo.data.pseudo import UpfData
-
-        with open(tmp_path_factory.mktemp('pseudos') / f'{element}.upf', 'w+b') as handle:
-            content = f'<UPF version="2.0.1"><PP_HEADER\nelement="{element}"\nz_valence="4.0"\n/></UPF>\n'
-            handle.write(content.encode('utf-8'))
-            handle.flush()
-            return UpfData(file=handle)
+        content = f'<UPF version="2.0.1"><PP_HEADER\nelement="{element}"\nz_valence="4.0"\n/></UPF>\n'
+        stream = io.BytesIO(content.encode('utf-8'))
+        return UpfData(stream, filename=f'{element}.upf')
 
     return _generate_upf_data
 
