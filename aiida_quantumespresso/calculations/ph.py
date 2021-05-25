@@ -17,7 +17,7 @@ class PhCalculation(CalcJob):
     """`CalcJob` implementation for the ph.x code of Quantum ESPRESSO."""
 
     # Keywords that cannot be set by the user but will be set by the plugin
-    _blocked_keywords = [('INPUTPH', 'outdir'), ('INPUTPH', 'iverbosity'), ('INPUTPH', 'prefix'), ('INPUTPH', 'fildyn'),
+    _blocked_keywords = [('INPUTPH', 'outdir'), ('INPUTPH', 'verbosity'), ('INPUTPH', 'prefix'), ('INPUTPH', 'fildyn'),
                          ('INPUTPH', 'ldisp'), ('INPUTPH', 'nq1'), ('INPUTPH', 'nq2'), ('INPUTPH', 'nq3'),
                          ('INPUTPH', 'qplot')]
 
@@ -36,6 +36,7 @@ class PhCalculation(CalcJob):
     _DVSCF_PREFIX = 'dvscf'
     _DRHO_STAR_EXT = 'drho_rot'
     _FOLDER_DYNAMICAL_MATRIX = 'DYN_MAT'
+    _VERBOSITY = 'high'
     _OUTPUT_DYNAMICAL_MATRIX_PREFIX = os.path.join(_FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-')
 
     # Not using symlink in pw to allow multiple nscf to run on top of the same scf
@@ -151,7 +152,7 @@ class PhCalculation(CalcJob):
             raise exceptions.InputValidationError('required namelist INPUTPH not specified')
 
         parameters['INPUTPH']['outdir'] = self._OUTPUT_SUBFOLDER
-        parameters['INPUTPH']['iverbosity'] = 1
+        parameters['INPUTPH']['verbosity'] = self._VERBOSITY
         parameters['INPUTPH']['prefix'] = self._PREFIX
         parameters['INPUTPH']['fildyn'] = self._OUTPUT_DYNAMICAL_MATRIX_PREFIX
 

@@ -14,7 +14,7 @@ class EpwCalculation(CalcJob):
     """`CalcJob` implementation for the epw.x code of Quantum ESPRESSO."""
 
     # Keywords that cannot be set by the user but will be set by the plugin
-    _blocked_keywords = [('INPUTEPW', 'outdir'), ('INPUTEPW', 'iverbosity'), ('INPUTEPW', 'prefix'),
+    _blocked_keywords = [('INPUTEPW', 'outdir'), ('INPUTEPW', 'verbosity'), ('INPUTEPW', 'prefix'),
                          ('INPUTEPW', 'dvscf_dir'), ('INPUTEPW', 'amass'), ('INPUTEPW', 'nq1'), ('INPUTEPW', 'nq2'),
                          ('INPUTEPW', 'nq3'), ('INPUTEPW', 'nk1'), ('INPUTEPW', 'nk2'), ('INPUTEPW', 'nk3')]
 
@@ -30,6 +30,7 @@ class EpwCalculation(CalcJob):
     _OUTPUT_SUBFOLDER = './out/'
     _SAVE_PREFIX = '/save/'
     _FOLDER_SAVE = 'save'
+    _VERBOSITY = 'high'
     _FOLDER_DYNAMICAL_MATRIX = 'DYN_MAT'
 
     # Not using symlink in pw to allow multiple nscf to run on top of the same scf
@@ -121,7 +122,7 @@ class EpwCalculation(CalcJob):
             raise exceptions.InputValidationError('required namelist INPUTEPW not specified')
 
         parameters['INPUTEPW']['outdir'] = self._OUTPUT_SUBFOLDER
-        parameters['INPUTEPW']['iverbosity'] = 1
+        parameters['INPUTEPW']['verbosity'] = self._VERBOSITY
         parameters['INPUTEPW']['prefix'] = self._PREFIX
 
         try:
