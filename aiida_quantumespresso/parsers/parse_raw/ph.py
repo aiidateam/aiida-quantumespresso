@@ -195,7 +195,10 @@ def parse_ph_text_output(lines, logs):
 
         detect_important_message(logs, line)
 
-        if 'q-points for this run' in line:
+        if 'PHONON' in line and 'starts on' in line:
+            parsed_data['code_version'] = line.split('PHONON')[1].split('starts on')[0].strip()
+
+        elif 'q-points for this run' in line:
             try:
                 num_qpoints = int(line.split('/')[1].split('q-points')[0])
                 if (
