@@ -113,6 +113,13 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         # yapf: enable
 
     @classmethod
+    def get_protocol_filepath(cls):
+        """Return ``pathlib.Path`` to the ``.yaml`` file that defines the protocols."""
+        from importlib_resources import files
+        from ..protocols import pw as pw_protocols
+        return files(pw_protocols) / 'bands.yaml'
+
+    @classmethod
     def get_builder_from_protocol(cls, code, structure, protocol=None, overrides=None, **kwargs):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
@@ -124,10 +131,9 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
             sub processes that are called by this workchain.
         :return: a process builder instance with all inputs defined ready for launch.
         """
-        args = (code, structure, protocol)
         inputs = cls.get_protocol_inputs(protocol, overrides)
-        builder = cls.get_builder()
 
+        args = (code, structure, protocol)
         relax = PwRelaxWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('relax', None), **kwargs)
         scf = PwBaseWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('scf', None), **kwargs)
         bands = PwBaseWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('bands', None), **kwargs)
@@ -142,6 +148,7 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         bands.pop('kpoints_distance', None)
         bands.pop('kpoints_force_parity', None)
 
+        builder = cls.get_builder()
         builder.structure = structure
         builder.relax = relax
         builder.scf = scf

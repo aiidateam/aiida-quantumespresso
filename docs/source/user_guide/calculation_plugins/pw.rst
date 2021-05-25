@@ -34,8 +34,7 @@ Inputs
 * **pseudo**, class :py:class:`UpfData <aiida.orm.nodes.data.upf.UpfData>`
   One pseudopotential file per atomic species.
 
- If a pseudo potential family is uploaded, the :py:func:`~aiida.orm.nodes.data.upf.get_pseudos_from_structure`
- function can be used to automatically get the mapping of UpfData nodes for each kind in the StructureData one wants to use.
+If a pseudo potential family is uploaded, the `get_pseudos_from_structure()` function can be used to automatically get the mapping of UpfData nodes for each kind in the StructureData one wants to use.
 For example: ::
 
     from aiida.orm.nodes.data.upf import get_pseudos_from_structure
@@ -93,7 +92,8 @@ This can then be used directly in the process builder of for example a ``PwCalcu
 
   Those keywords should not be specified, otherwise the submission will fail.
 
-  The `SYSTEM`, `ibrav` keyword is optional. If it is not specified, `ibrav=0` is used. When a non-zero `ibrav` is given, `aiida-quantumespresso` automatically extracts the cell parameters. As a consistency check, the cell is re-constructed from these parameters and compared to the input cell. The input structure needs to match the convention detailed in the `pw.x documentation <https://www.quantum-espresso.org/Doc/INPUT_PW.html#idm199>`_. The tolerance used in this check can be adjusted with the `IBRAV_CELL_TOLERANCE` key in the `settings` dictionary. It defines the absolute tolerance on each element of the cell matrix.
+  The `SYSTEM`, `ibrav` keyword is optional. If it is not specified, `ibrav=0` is used. When a non-zero `ibrav` is given, `aiida-quantumespresso` automatically extracts the cell parameters. As a consistency check, the cell is re-constructed from these parameters and compared to the input cell. The input structure needs to match the convention detailed in the `pw.x documentation`_.
+  The tolerance used in this check can be adjusted with the `IBRAV_CELL_TOLERANCE` key in the `settings` dictionary. It defines the absolute tolerance on each element of the cell matrix.
 
 * **structure**, class :py:class:`StructureData <aiida.orm.nodes.data.structure.StructureData>`
 * **settings**, class :py:class:`Dict <aiida.orm.nodes.data.dict.Dict>` (optional)
@@ -290,7 +290,7 @@ may want to use the following flag to tell QE to use the gamma-only routines
 (typically twice faster)::
 
     settings_dict = {
-        'gamma_only': False,
+        'gamma_only': True,
     }
 
 Initialization only

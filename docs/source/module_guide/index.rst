@@ -1,5 +1,5 @@
-Modules provided with aiida-quantumespresso (API reference)
-===========================================================
+API reference
+=============
 
 .. toctree::
     :maxdepth: 3
@@ -7,4 +7,3 @@ Modules provided with aiida-quantumespresso (API reference)
     calculations
     workflows
     parsers
-    tcod_dbexporter

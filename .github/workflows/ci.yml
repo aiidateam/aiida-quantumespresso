@@ -4,37 +4,6 @@ on: [push, pull_request]
 
 jobs:
 
-    docs:
-
-        runs-on: ubuntu-latest
-
-        steps:
-        -   uses: actions/checkout@v1
-
-        -   name: Cache python dependencies
-            id: cache-pip
-            uses: actions/cache@v1
-            with:
-                path: ~/.cache/pip
-                key: pip-docs-${{ hashFiles('**/setup.json') }}
-                restore-keys:
-                    pip-docs-
-
-        -   name: Set up Python
-            uses: actions/setup-python@v2
-            with:
-                python-version: 3.8
-
-        -   name: Install python dependencies
-            run:
-                pip install -e .[docs]
-
-        -   name: Build documentation
-            env:
-                READTHEDOCS: 'True'
-            run:
-                SPHINXOPTS='-nW' make -C docs html
-
     pre-commit:
 
         runs-on: ubuntu-latest
@@ -70,7 +39,7 @@ jobs:
 
         strategy:
             matrix:
-                python-version: [3.6, 3.7, 3.8]
+                python-version: [3.6, 3.7, 3.8, 3.9]
 
         services:
             postgres:
@@ -106,7 +75,7 @@ jobs:
         -   name: Install system dependencies
             run: |
                 sudo apt update
-                sudo apt install postgresql-10
+                sudo apt install postgresql-12
 
         -   name: Install python dependencies
             run: |

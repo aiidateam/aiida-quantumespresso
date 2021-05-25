@@ -42,6 +42,7 @@ repos:
         name: yapf
         types: [python]
         args: ['-i']
+        exclude: 'docs/source/conf.py'
 
 -   repo: https://github.com/PyCQA/pylint
     rev: pylint-2.6.0

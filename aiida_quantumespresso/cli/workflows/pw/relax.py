@@ -47,19 +47,20 @@ def launch_workflow(
     """Run a `PwRelaxWorkChain`."""
     from aiida.orm import Bool, Float, Dict, Str
     from aiida.plugins import WorkflowFactory
-    from qe_tools import CONSTANTS
 
-    from aiida_quantumespresso.common.types import RelaxType
     from aiida_quantumespresso.utils.resources import get_default_options, get_automatic_parallelization_options
 
     builder = WorkflowFactory('quantumespresso.pw.relax').get_builder()
 
-    cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure)
+    cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
 
     parameters = {
+        'CONTROL': {
+            'calculation': 'relax',
+        },
         'SYSTEM': {
-            'ecutwfc': ecutwfc or cutoff_wfc / CONSTANTS.ry_to_ev,
-            'ecutrho': ecutrho or cutoff_rho / CONSTANTS.ry_to_ev,
+            'ecutwfc': ecutwfc or cutoff_wfc,
+            'ecutrho': ecutrho or cutoff_rho,
         },
     }
 
@@ -81,7 +82,6 @@ def launch_workflow(
         raise click.BadParameter(str(exception))
 
     builder.structure = structure
-    builder.relax_type = Str(RelaxType.ATOMS.value)
     builder.base.kpoints_distance = Float(kpoints_distance)
     builder.base.pw.code = code
     builder.base.pw.pseudos = pseudo_family.get_pseudos(structure=structure)

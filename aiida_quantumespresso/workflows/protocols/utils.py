@@ -1,36 +1,49 @@
 # -*- coding: utf-8 -*-
 """Utilities to manipulate the workflow input protocols."""
-import functools
-import os
 import pathlib
+from typing import Optional, Union
 import yaml
+
+from aiida.plugins import DataFactory, GroupFactory
+
+StructureData = DataFactory('structure')
+PseudoPotentialFamily = GroupFactory('pseudo.family')
 
 
 class ProtocolMixin:
     """Utility class for processes to build input mappings for a given protocol based on a YAML configuration file."""
 
     @classmethod
-    def get_default_protocol(cls):
+    def get_protocol_filepath(cls) -> pathlib.Path:
+        """Return the ``pathlib.Path`` to the ``.yaml`` file that defines the protocols."""
+        raise NotImplementedError
+
+    @classmethod
+    def get_default_protocol(cls) -> str:
         """Return the default protocol for a given workflow class.
 
         :param cls: the workflow class.
         :return: the default protocol.
         """
-        return load_protocol_file(cls)['default_protocol']
+        return cls._load_protocol_file()['default_protocol']
 
     @classmethod
-    def get_available_protocols(cls):
+    def get_available_protocols(cls) -> dict:
         """Return the available protocols for a given workflow class.
 
         :param cls: the workflow class.
         :return: dictionary of available protocols, where each key is a protocol and value is another dictionary that
             contains at least the key `description` and optionally other keys with supplementary information.
         """
-        data = load_protocol_file(cls)
+        data = cls._load_protocol_file()
         return {protocol: {'description': values['description']} for protocol, values in data['protocols'].items()}
 
     @classmethod
-    def get_protocol_inputs(cls, protocol=None, overrides=None):
+    def get_protocol_inputs(
+        cls,
+        protocol: Optional[dict] = None,
+        overrides: Union[dict, pathlib.Path, None] = None,
+    ) -> dict:
         """Return the inputs for the given workflow class and protocol.
 
         :param cls: the workflow class.
@@ -39,7 +52,7 @@ class ProtocolMixin:
             maintain the exact same nesting structure as the input port namespace of the corresponding workflow class.
         :return: mapping of inputs to be used for the workflow class.
         """
-        data = load_protocol_file(cls)
+        data = cls._load_protocol_file()
         protocol = protocol or data['default_protocol']
 
         try:
@@ -48,17 +61,26 @@ class ProtocolMixin:
             raise ValueError(
                 f'`{protocol}` is not a valid protocol. Call ``get_available_protocols`` to show available protocols.'
             ) from exception
-
         inputs = recursive_merge(data['default_inputs'], protocol_inputs)
         inputs.pop('description')
+
+        if isinstance(overrides, pathlib.Path):
+            with overrides.open() as file:
+                overrides = yaml.safe_load(file)
 
         if overrides:
             return recursive_merge(inputs, overrides)
 
         return inputs
 
+    @classmethod
+    def _load_protocol_file(cls) -> dict:
+        """Return the contents of the protocol file for workflow class."""
+        with cls.get_protocol_filepath().open() as file:
+            return yaml.safe_load(file)
 
-def recursive_merge(left, right):
+
+def recursive_merge(left: dict, right: dict) -> dict:
     """Recursively merge two dictionaries into a single dictionary.
 
     If any key is present in both ``left`` and ``right`` dictionaries, the value from the ``right`` dictionary is
@@ -69,6 +91,9 @@ def recursive_merge(left, right):
     :return: the recursively merged dictionary
     """
     import collections
+
+    # Note that a deepcopy is not necessary, since this function is called recusively.
+    right = right.copy()
 
     for key, value in left.items():
         if key in right:
@@ -81,25 +106,6 @@ def recursive_merge(left, right):
     return merged
 
 
-def load_protocol_file(cls):
-    """Load the protocol file for the given workflow class.
-
-    :param cls: the workflow class.
-    :return: the contents of the protocol file.
-    """
-    from aiida.plugins.entry_point import get_entry_point_from_class
-
-    _, entry_point = get_entry_point_from_class(cls.__module__, cls.__name__)
-    entry_point_name = entry_point.name
-    parts = entry_point_name.split('.')
-    parts.pop(0)
-    filename = f'{parts.pop()}.yaml'
-    basepath = functools.reduce(os.path.join, parts)
-
-    with (pathlib.Path(__file__).resolve().parent / basepath / filename).open() as handle:
-        return yaml.safe_load(handle)
-
-
 def get_magnetization_parameters() -> dict:
     """Return the mapping of suggested initial magnetic moments for each element.
 
@@ -109,7 +115,11 @@ def get_magnetization_parameters() -> dict:
         return yaml.safe_load(handle)
 
 
-def get_starting_magnetization(structure, pseudo_family, initial_magnetic_moments=None):
+def get_starting_magnetization(
+    structure: StructureData,
+    pseudo_family: PseudoPotentialFamily,
+    initial_magnetic_moments: Optional[dict] = None
+) -> dict:
     """Return the dictionary with starting magnetization for each kind in the structure.
 
     :param structure: the structure.
