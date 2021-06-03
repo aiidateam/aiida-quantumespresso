@@ -6,7 +6,6 @@
   elph = .true.
   epbwrite = .true.
   epwwrite = .true.
-  iverbosity = 1
   nbndsub = 8
   nk1 = 2
   nk2 = 2
@@ -23,6 +22,7 @@
   outdir = './out/'
   prefix = 'aiida'
   proj(1) = 'Si : sp3'
+  verbosity = 'high'
   wannierize = .true.
 /
 3 cartesian

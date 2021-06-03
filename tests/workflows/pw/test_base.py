@@ -3,37 +3,11 @@
 """Tests for the `PwBaseWorkChain` class."""
 import pytest
 
-from plumpy import ProcessState
-
 from aiida.common import AttributeDict
 from aiida.engine import ExitCode, ProcessHandlerReport
-from aiida.orm import Dict
 
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
-
-
-@pytest.fixture
-def generate_workchain_pw(generate_workchain, generate_inputs_pw, generate_calc_job_node):
-    """Generate an instance of a `PwBaseWorkChain`."""
-
-    def _generate_workchain_pw(exit_code=None):
-        entry_point = 'quantumespresso.pw.base'
-        inputs = generate_inputs_pw()
-        kpoints = inputs.pop('kpoints')
-        process = generate_workchain(entry_point, {'pw': inputs, 'kpoints': kpoints})
-
-        if exit_code is not None:
-            node = generate_calc_job_node(inputs={'parameters': Dict()})
-            node.set_process_state(ProcessState.FINISHED)
-            node.set_exit_status(exit_code.status)
-
-            process.ctx.iteration = 1
-            process.ctx.children = [node]
-
-        return process
-
-    return _generate_workchain_pw
 
 
 def test_setup(generate_workchain_pw):
@@ -163,3 +137,32 @@ def test_sanity_check_no_bands(generate_workchain_pw):
 
     calculation = process.ctx.children[-1]
     assert process.sanity_check_insufficient_bands(calculation) is None
+
+
+def test_set_max_seconds(generate_workchain_pw):
+    """Test that `max_seconds` gets set in the parameters based on `max_wallclock_seconds` unless already set."""
+    inputs = generate_workchain_pw(return_inputs=True)
+    max_wallclock_seconds = inputs['pw']['metadata']['options']['max_wallclock_seconds']
+
+    process = generate_workchain_pw(inputs=inputs)
+    process.setup()
+    process.validate_parameters()
+    process.prepare_process()
+
+    expected_max_seconds = max_wallclock_seconds * process.defaults.delta_factor_max_seconds
+    assert 'max_seconds' in process.ctx.inputs['parameters']['CONTROL']
+    assert process.ctx.inputs['parameters']['CONTROL']['max_seconds'] == expected_max_seconds
+
+    # Now check that if `max_seconds` is already explicitly set in the parameters, it is not overwritten.
+    inputs = generate_workchain_pw(return_inputs=True)
+    max_seconds = 1
+    max_wallclock_seconds = inputs['pw']['metadata']['options']['max_wallclock_seconds']
+    inputs['pw']['parameters']['CONTROL']['max_seconds'] = max_seconds
+
+    process = generate_workchain_pw(inputs=inputs)
+    process.setup()
+    process.validate_parameters()
+    process.prepare_process()
+
+    assert 'max_seconds' in process.ctx.inputs['parameters']['CONTROL']
+    assert process.ctx.inputs['parameters']['CONTROL']['max_seconds'] == max_seconds

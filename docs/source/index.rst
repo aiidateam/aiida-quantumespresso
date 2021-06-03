@@ -1,61 +1,56 @@
-.. aiida documentation master file, created by
-   sphinx-quickstart on Wed Oct 24 11:33:37 2012.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
 
-#######################################
-`AiiDA`_ plugin for `Quantum ESPRESSO`_
-#######################################
+#################################
+AiiDA plugin for Quantum ESPRESSO
+#################################
 
-.. figure:: images/AiiDA_transparent_logo.png
-    :width: 250px
-    :align: center
-    :height: 60px
-.. figure:: images/qe_logo.jpg
-    :width: 233px
-    :align: center
-    :height: 100px
+The |aiida-quantumespresso|_ package is an `AiiDA`_ plugin for running calculations and workflows with the `Quantum ESPRESSO`_ software suite.
 
-.. _AiiDA: http://www.aiida.net
-.. _Quantum ESPRESSO: http://www.quantumespresso.org
+.. rst-class:: center
 
+    |aiida_logo| |hyphen| |qe_logo|
 
-Welcome to documentation of the AiiDA plugin for the Quantum ESPRESSO code!
-===========================================================================
+.. |aiida_logo| image:: images/AiiDA_transparent_logo.png
+    :width: 40%
 
-The plugin is available at http://github.com/aiidateam/aiida-quantumespresso
+.. |hyphen| image:: images/hyphen.png
+    :width: 8%
 
-If you use this plugin and/or AiiDA for your research, please cite the following work:
+.. |qe_logo| image:: images/qe_logo.jpg
+    :width: 40%
 
-.. highlights:: Giovanni Pizzi, Andrea Cepellotti, Riccardo Sabatini, Nicola Marzari,
-  and Boris Kozinsky, *AiiDA: automated interactive infrastructure and database
-  for computational science*, Comp. Mat. Sci 111, 218-230 (2016);
-  http://dx.doi.org/10.1016/j.commatsci.2015.09.013; http://www.aiida.net.
+Installation
+============
 
-User's guide
-++++++++++++
+You can install ``aiida-quantumespresso`` in your Python environment using ``pip``:
+
+.. code-block:: console
+
+   $ pip install aiida-quantumespresso
+
+Note that this command will also install the ``aiida-core`` package as one of its dependencies.
+For more information on how to install AiiDA and the required services in different environments, we refer to the |aiida-core documentation|_.
+
+Getting Started
+===============
+
+A good place to get started with running `Quantum ESPRESSO`_ calculations using AiiDA is the `AiiDA Quantum ESPRESSO tutorial`_ on the main AiiDA tutorials page.
+You can either run the tutorial in your own installation if completed, or use the resources mentioned there, i.e. the `Quantum Mobile`_ virtual machine or `AiiDAlab demo cluster`_.
+
+.. warning::
+
+   The documentation is currently undergoing a major revision, but likely still contains some outdated content.
+   If you find any material that you think is incorrect, please `open an issue <https://github.com/aiidateam/aiida-quantumespresso/issues/new/choose>`_ on the GitHub repository.
+
+Contents
+========
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
 
    user_guide/index
-
-Modules provided with aiida-quantumespresso (API reference)
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-.. toctree::
-   :maxdepth: 4
-
-   module_guide/index
-
-Developer's guide
-+++++++++++++++++
-
-.. toctree::
-   :maxdepth: 4
-
    devel_guide/index
-
+   module_guide/index
+   cli/index
 
 Indices and tables
 ==================
@@ -65,24 +60,58 @@ Indices and tables
 * :ref:`search`
 
 Acknowledgements
-++++++++++++++++
-We acknowledge support from:
-* the `NCCR MARVEL`_ funded by the Swiss National Science Foundation;
-* the EU Centre of Excellence "`MaX – Materials Design at the Exascale`_" (Horizon 2020 EINFRA-5, Grant No. 676598);
-* the `swissuniversities P-5 project "Materials Cloud"`_.
+================
 
-.. figure:: images/MARVEL.png
-    :width: 300px
-    :align: center
-    :height: 157px
-.. figure:: images/MaX.png
-    :width: 300px
-    :align: center
-    :height: 84px
-.. figure:: images/swissuniversities.png
-    :width: 300px
-    :align: center
-    :height: 35px
+If you use this plugin and/or AiiDA for your research, please cite the following work:
+
+* Sebastiaan. P. Huber, Spyros Zoupanos, Martin Uhrin, Leopold Talirz, Leonid Kahle, Rico Häuselmann, Dominik Gresch, Tiziano Müller, Aliaksandr V. Yakutovich, Casper W. Andersen, Francisco F. Ramirez, Carl S. Adorf, Fernando Gargiulo, Snehal Kumbhar, Elsa Passaro, Conrad Johnston, Andrius Merkys, Andrea Cepellotti, Nicolas Mounet, Nicola Marzari, Boris Kozinsky, and Giovanni Pizzi, |AiiDA main paper|_, Scientific Data **7**, 300 (2020)
+
+* Martin Uhrin, Sebastiaan. P. Huber, Jusong Yu, Nicola Marzari, and Giovanni Pizzi, |AiiDA engine paper|_, Computational Materials Science **187**, 110086 (2021)
+
+
+.. rst-class:: bigfont
+
+    We acknowledge support from:
+
+.. list-table::
+    :widths: 60 40
+    :class: logo-table
+    :header-rows: 0
+
+    * - The `NCCR MARVEL`_ funded by the Swiss National Science Foundation.
+      - |marvel|
+    * - The EU Centre of Excellence "`MaX – Materials Design at the Exascale`_" (Horizon 2020 EINFRA-5, Grant No. 676598).
+      - |max|
+    * - The `swissuniversities P-5 project "Materials Cloud"`_.
+      - |swissuniversities|
+
+.. |marvel| image:: images/MARVEL.png
+    :width: 100%
+
+.. |max| image:: images/MaX.png
+    :width: 100%
+
+.. |swissuniversities| image:: images/swissuniversities.png
+    :width: 100%
+
+.. |aiida-core documentation| replace:: ``aiida-core`` documentation
+.. _aiida-core documentation: https://aiida.readthedocs.io/projects/aiida-core/en/latest/intro/get_started.html
+
+.. |aiida-quantumespresso| replace:: ``aiida-quantumespresso``
+.. _aiida-quantumespresso: https://github.com/aiidateam/aiida-quantumespresso
+
+.. _AiiDA Quantum ESPRESSO tutorial: https://aiida-tutorials.readthedocs.io/en/tutorial-qe-short/
+
+.. _AiiDA: http://aiida.net
+.. _Quantum ESPRESSO: http://www.quantumespresso.org
+.. _Quantum Mobile: https://quantum-mobile.readthedocs.io/en/latest/index.html
+.. _AiiDAlab demo cluster: https://aiidalab-demo.materialscloud.org/
+
+.. |AiiDA main paper| replace:: *AiiDA 1.0, a scalable computational infrastructure for automated reproducible workflows and data provenance*
+.. _AiiDA main paper: https://doi.org/10.1038/s41597-020-00638-4
+
+.. |AiiDA engine paper| replace:: *Workflows in AiiDA: Engineering a high-throughput, event-based engine for robust and modular computational workflows*
+.. _AiiDA engine paper: https://doi.org/10.1016/j.commatsci.2020.110086
 
 .. _NCCR MARVEL: http://nccr-marvel.ch/
 .. _MaX – Materials Design at the Exascale: http://www.max-centre.eu/

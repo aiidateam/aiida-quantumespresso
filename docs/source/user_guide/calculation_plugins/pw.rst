@@ -290,7 +290,7 @@ may want to use the following flag to tell QE to use the gamma-only routines
 (typically twice faster)::
 
     settings_dict = {
-        'gamma_only': False,
+        'gamma_only': True,
     }
 
 Initialization only

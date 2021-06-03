@@ -2,6 +2,7 @@
 # pylint: disable=redefined-outer-name,too-many-statements
 """Initialise a text database and profile for pytest."""
 import collections
+import io
 import os
 import shutil
 import tempfile
@@ -111,7 +112,6 @@ def serialize_builder():
 @pytest.fixture(scope='session', autouse=True)
 def sssp(aiida_profile, generate_upf_data):
     """Create an SSSP pseudo potential family from scratch."""
-    from qe_tools import CONSTANTS
     from aiida.common.constants import elements
     from aiida.plugins import GroupFactory
 
@@ -119,7 +119,8 @@ def sssp(aiida_profile, generate_upf_data):
 
     SsspFamily = GroupFactory('pseudo.family.sssp')
 
-    cutoffs = {'standard': {}}
+    cutoffs = {}
+    stringency = 'standard'
 
     with tempfile.TemporaryDirectory() as dirpath:
         for values in elements.values():
@@ -133,15 +134,15 @@ def sssp(aiida_profile, generate_upf_data):
                     handle.write(source.read())
                     handle.flush()
 
-            cutoffs['standard'][element] = {
-                'cutoff_wfc': 30. * CONSTANTS.ry_to_ev,
-                'cutoff_rho': 240. * CONSTANTS.ry_to_ev
+            cutoffs[element] = {
+                'cutoff_wfc': 30.0,
+                'cutoff_rho': 240.0,
             }
 
         label = 'SSSP/1.1/PBE/efficiency'
         family = SsspFamily.create_from_folder(dirpath, label)
 
-    family.set_cutoffs(cutoffs)
+    family.set_cutoffs(cutoffs, stringency, unit='Ry')
 
     return family
 
@@ -281,18 +282,15 @@ def generate_calc_job_node(fixture_localhost):
 
 
 @pytest.fixture(scope='session')
-def generate_upf_data(tmp_path_factory):
+def generate_upf_data():
     """Return a `UpfData` instance for the given element a file for which should exist in `tests/fixtures/pseudos`."""
 
     def _generate_upf_data(element):
         """Return `UpfData` node."""
         from aiida_pseudo.data.pseudo import UpfData
-
-        with open(tmp_path_factory.mktemp('pseudos') / f'{element}.upf', 'w+b') as handle:
-            content = f'<UPF version="2.0.1"><PP_HEADER\nelement="{element}"\nz_valence="4.0"\n/></UPF>\n'
-            handle.write(content.encode('utf-8'))
-            handle.flush()
-            return UpfData(file=handle)
+        content = f'<UPF version="2.0.1"><PP_HEADER\nelement="{element}"\nz_valence="4.0"\n/></UPF>\n'
+        stream = io.BytesIO(content.encode('utf-8'))
+        return UpfData(stream, filename=f'{element}.upf')
 
     return _generate_upf_data
 
@@ -379,6 +377,30 @@ def generate_remote_data():
         return remote
 
     return _generate_remote_data
+
+
+@pytest.fixture
+def generate_bands_data():
+    """Return a `BandsData` node."""
+
+    def _generate_bands_data():
+        """Return a `BandsData` instance with some basic `kpoints` and `bands` arrays."""
+        import numpy
+        from aiida.plugins import DataFactory
+        BandsData = DataFactory('array.bands')  #pylint: disable=invalid-name
+        bands_data = BandsData()
+
+        bands_data.set_kpoints(numpy.array([[0., 0., 0.], [0.625, 0.25, 0.625]]))
+
+        bands_data.set_bands(
+            numpy.array([[-5.64024889, 6.66929678, 6.66929678, 6.66929678, 8.91047649],
+                         [-1.71354964, -0.74425095, 1.82242466, 3.98697455, 7.37979746]]),
+            units='eV'
+        )
+
+        return bands_data
+
+    return _generate_bands_data
 
 
 @pytest.fixture
@@ -561,3 +583,127 @@ def generate_inputs_cp(fixture_code, generate_structure, generate_upf_data):
         return inputs
 
     return _generate_inputs_cp
+
+
+@pytest.fixture
+def generate_workchain_pw(generate_workchain, generate_inputs_pw, generate_calc_job_node):
+    """Generate an instance of a `PwBaseWorkChain`."""
+
+    def _generate_workchain_pw(exit_code=None, inputs=None, return_inputs=False):
+        from plumpy import ProcessState
+        from aiida.orm import Dict
+
+        entry_point = 'quantumespresso.pw.base'
+
+        if inputs is None:
+            pw_inputs = generate_inputs_pw()
+            kpoints = pw_inputs.pop('kpoints')
+            inputs = {'pw': pw_inputs, 'kpoints': kpoints}
+
+        if return_inputs:
+            return inputs
+
+        process = generate_workchain(entry_point, inputs)
+
+        if exit_code is not None:
+            node = generate_calc_job_node(inputs={'parameters': Dict()})
+            node.set_process_state(ProcessState.FINISHED)
+            node.set_exit_status(exit_code.status)
+
+            process.ctx.iteration = 1
+            process.ctx.children = [node]
+
+        return process
+
+    return _generate_workchain_pw
+
+
+@pytest.fixture
+def generate_workchain_ph(generate_workchain, generate_inputs_ph, generate_calc_job_node):
+    """Generate an instance of a `PhBaseWorkChain`."""
+
+    def _generate_workchain_ph(exit_code=None, inputs=None, return_inputs=False):
+        from plumpy import ProcessState
+
+        entry_point = 'quantumespresso.ph.base'
+
+        if inputs is None:
+            inputs = {'ph': generate_inputs_ph()}
+
+        if return_inputs:
+            return inputs
+
+        process = generate_workchain(entry_point, inputs)
+
+        if exit_code is not None:
+            node = generate_calc_job_node()
+            node.set_process_state(ProcessState.FINISHED)
+            node.set_exit_status(exit_code.status)
+
+            process.ctx.iteration = 1
+            process.ctx.children = [node]
+
+        return process
+
+    return _generate_workchain_ph
+
+
+@pytest.fixture
+def generate_workchain_pdos(generate_workchain, generate_inputs_pw, fixture_code):
+    """Generate an instance of a `PdosWorkChain`."""
+
+    def _generate_workchain_pdos():
+        from aiida.orm import Dict, Bool
+        from aiida_quantumespresso.utils.resources import get_default_options
+
+        entry_point = 'quantumespresso.pdos'
+
+        scf_pw_inputs = generate_inputs_pw()
+        kpoints = scf_pw_inputs.pop('kpoints')
+        structure = scf_pw_inputs.pop('structure')
+        scf = {'pw': scf_pw_inputs, 'kpoints': kpoints}
+
+        nscf_pw_inputs = generate_inputs_pw()
+        nscf_pw_inputs.pop('kpoints')
+        nscf_pw_inputs.pop('structure')
+        nscf_pw_inputs['parameters']['CONTROL']['calculation'] = 'nscf'
+        nscf_pw_inputs['parameters']['SYSTEM']['occupations'] = 'tetrahedra'
+        nscf_pw_inputs['parameters']['SYSTEM']['nosym'] = True
+
+        nscf = {'pw': nscf_pw_inputs, 'kpoints': kpoints}
+
+        dos_params = {
+            'DOS': {
+                'Emin': -10,
+                'Emax': 10,
+                'DeltaE': 0.01,
+            }
+        }
+        projwfc_params = {'PROJWFC': {'Emin': -10, 'Emax': 10, 'DeltaE': 0.01, 'ngauss': 0, 'degauss': 0.01}}
+        dos = {
+            'code': fixture_code('quantumespresso.dos'),
+            'parameters': Dict(dict=dos_params),
+            'metadata': {
+                'options': get_default_options()
+            }
+        }
+        projwfc = {
+            'code': fixture_code('quantumespresso.projwfc'),
+            'parameters': Dict(dict=projwfc_params),
+            'metadata': {
+                'options': get_default_options()
+            }
+        }
+        inputs = {
+            'structure': structure,
+            'scf': scf,
+            'nscf': nscf,
+            'dos': dos,
+            'projwfc': projwfc,
+            'align_to_fermi': Bool(True),
+            'dry_run': Bool(True)
+        }
+
+        return generate_workchain(entry_point, inputs)
+
+    return _generate_workchain_pdos

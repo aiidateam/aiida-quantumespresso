@@ -58,19 +58,18 @@ def launch_calculation(
     """Run a PwCalculation."""
     from aiida.orm import Dict, KpointsData
     from aiida.plugins import CalculationFactory
-    from qe_tools import CONSTANTS
 
     from aiida_quantumespresso.utils.resources import get_default_options
 
-    cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure)
+    cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
 
     parameters = {
         'CONTROL': {
             'calculation': mode,
         },
         'SYSTEM': {
-            'ecutwfc': ecutwfc or cutoff_wfc / CONSTANTS.ry_to_ev,
-            'ecutrho': ecutrho or cutoff_rho / CONSTANTS.ry_to_ev,
+            'ecutwfc': ecutwfc or cutoff_wfc,
+            'ecutrho': ecutrho or cutoff_rho,
         }
     }
 

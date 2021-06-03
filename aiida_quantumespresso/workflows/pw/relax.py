@@ -96,8 +96,15 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         # yapf: enable
 
     @classmethod
+    def get_protocol_filepath(cls):
+        """Return ``pathlib.Path`` to the ``.yaml`` file that defines the protocols."""
+        from importlib_resources import files
+        from ..protocols import pw as pw_protocols
+        return files(pw_protocols) / 'relax.yaml'
+
+    @classmethod
     def get_builder_from_protocol(
-        cls, code, structure, protocol=None, overrides=None, relax_type=RelaxType.ATOMS_CELL, **kwargs
+        cls, code, structure, protocol=None, overrides=None, relax_type=RelaxType.POSITIONS_CELL, **kwargs
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
@@ -112,10 +119,9 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         """
         type_check(relax_type, RelaxType)
 
-        args = (code, structure, protocol)
         inputs = cls.get_protocol_inputs(protocol, overrides)
-        builder = cls.get_builder()
 
+        args = (code, structure, protocol)
         base = PwBaseWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('base', None), **kwargs)
         base_final_scf = PwBaseWorkChain.get_builder_from_protocol(
             *args, overrides=inputs.get('base_final_scf', None), **kwargs
@@ -126,28 +132,34 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         base_final_scf['pw'].pop('structure', None)
         base_final_scf.pop('clean_workdir', None)
 
-        if relax_type in [RelaxType.VOLUME, RelaxType.SHAPE, RelaxType.CELL]:
+        # Quantum ESPRESSO currently only supports optimization of the volume for simple cubic systems. It requires
+        # to set `ibrav=1` or the code will except.
+        if relax_type in (RelaxType.VOLUME, RelaxType.POSITIONS_VOLUME):
+            raise ValueError(f'relax type `{relax_type} is not yet supported.')
+
+        if relax_type in (RelaxType.VOLUME, RelaxType.SHAPE, RelaxType.CELL):
             base.pw.settings = orm.Dict(dict=PwRelaxWorkChain._fix_atomic_positions(structure, base.pw.settings))
 
         if relax_type is RelaxType.NONE:
             base.pw.parameters['CONTROL']['calculation'] = 'scf'
             base.pw.parameters.delete_attribute('CELL')
 
-        elif relax_type is RelaxType.ATOMS:
+        elif relax_type is RelaxType.POSITIONS:
             base.pw.parameters['CONTROL']['calculation'] = 'relax'
             base.pw.parameters.delete_attribute('CELL')
         else:
             base.pw.parameters['CONTROL']['calculation'] = 'vc-relax'
 
-        if relax_type in [RelaxType.VOLUME, RelaxType.ATOMS_VOLUME]:
+        if relax_type in (RelaxType.VOLUME, RelaxType.POSITIONS_VOLUME):
             base.pw.parameters['CELL']['cell_dofree'] = 'volume'
 
-        if relax_type in [RelaxType.SHAPE, RelaxType.ATOMS_SHAPE]:
+        if relax_type in (RelaxType.SHAPE, RelaxType.POSITIONS_SHAPE):
             base.pw.parameters['CELL']['cell_dofree'] = 'shape'
 
-        if relax_type in [RelaxType.CELL, RelaxType.ATOMS_CELL]:
+        if relax_type in (RelaxType.CELL, RelaxType.POSITIONS_CELL):
             base.pw.parameters['CELL']['cell_dofree'] = 'all'
 
+        builder = cls.get_builder()
         builder.base = base
         builder.base_final_scf = base_final_scf
         builder.structure = structure
@@ -275,7 +287,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
             structure = workchain.outputs.output_structure
         except exceptions.NotExistent:
             # If the calculation is set to 'scf', this is expected, so we are done
-            if self.inputs.base.pw.parameters['CONTROL']['calculation'] == 'scf':
+            if self.ctx.relax_inputs.pw.parameters['CONTROL']['calculation'] == 'scf':
                 self.ctx.is_converged = True
                 return
 
@@ -354,7 +366,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         # Get the latest relax workchain and pass the outputs
         final_relax_workchain = self.ctx.workchains[-1]
 
-        if self.inputs.base.pw.parameters['CONTROL']['calculation'] != 'scf':
+        if self.ctx.relax_inputs.pw.parameters['CONTROL']['calculation'] != 'scf':
             self.out('output_structure', final_relax_workchain.outputs.output_structure)
 
         try:
