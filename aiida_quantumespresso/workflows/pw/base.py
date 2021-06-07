@@ -115,6 +115,9 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             message='The initialization calculation failed.')
         spec.exit_code(501, 'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
             message='Then ionic minimization cycle converged but the thresholds are exceeded in the final SCF.')
+        spec.exit_code(710, 'WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED',
+            message='The electronic minimization cycle did not reach self-consistency, but `scf_must_converge` '
+                    'is `False` and/or `electron_maxstep` is 0.')
         # yapf: enable
 
     @classmethod
@@ -588,3 +591,15 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         action = f'reduced beta mixing from {mixing_beta} to {mixing_beta_new} and restarting from the last calculation'
         self.report_error_handled(calculation, action)
         return ProcessHandlerReport(True)
+
+    @process_handler(priority=420, exit_codes=[
+        PwCalculation.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED,
+    ])
+    def handle_electronic_convergence_warning(self, calculation):
+        """Handle `WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED': consider finished."""
+        self.ctx.is_finished = True
+        self.ctx.restart_calc = calculation
+        action = 'electronic convergence not reached but inputs say this is ok: consider finished.'
+        self.report_error_handled(calculation, action)
+        self.results()  # Call the results method to attach the output nodes
+        return ProcessHandlerReport(True, self.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED)

@@ -145,6 +145,11 @@ class PwCalculation(BasePwCpInputGenerator):
             message='The electronic minimization cycle did not reach self-consistency.')
         spec.exit_code(541, 'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION',
             message='The variable cell optimization broke the symmetry of the k-points.')
+
+        # Strong warnings about calculation results, but something tells us that you're ok with that
+        spec.exit_code(710, 'WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED',
+            message='The electronic minimization cycle did not reach self-consistency, but `scf_must_converge` '
+                    'is `False` and/or `electron_maxstep` is 0.')
         # yapf: enable
 
     @classproperty
