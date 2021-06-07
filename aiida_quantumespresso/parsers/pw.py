@@ -150,7 +150,14 @@ class PwParser(Parser):
             return
 
         if 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED' in logs['error']:
-            return self.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED
+            scf_must_converge = self.node.inputs.parameters.get_attribute('ELECTRONS',
+                                                                          {}).get('scf_must_converge', True)
+            electron_maxstep = self.node.inputs.parameters.get_attribute('ELECTRONS', {}).get('electron_maxstep', 1)
+
+            if electron_maxstep == 0 or not scf_must_converge:
+                return self.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED
+            else:
+                return self.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED
 
     def validate_dynamics(self, trajectory, parameters, logs):
         """Analyze problems that are specific to `dynamics` type calculations: i.e. `md` and `vc-md`."""
