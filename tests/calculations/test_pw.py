@@ -250,3 +250,26 @@ def test_pw_parallelization_duplicate_cmdline_flag(fixture_sandbox, generate_cal
     with pytest.raises(InputValidationError) as exc:
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)
     assert 'Conflicting' in str(exc.value)
+
+
+def test_environ_namelists(fixture_sandbox, generate_calc_job, generate_inputs_pw):
+    """Test that Environ namelists are actually created."""
+    entry_point_name = 'quantumespresso.pw'
+
+    inputs = generate_inputs_pw()
+    inputs['settings'] = orm.Dict(
+        dict={
+            'ENVIRON': {
+                'electrolyte_linearized': True,
+                'environ_type': 'input',
+            },
+            'BOUNDARY': {
+                'solvent_mode': 'electronic',
+                'electrolyte_mode': 'electronic',
+            },
+            'ELECTROSTATIC': {
+                'pbc_correction': 'parabolic',
+            }
+        },
+    )
+    generate_calc_job(fixture_sandbox, entry_point_name, inputs)
