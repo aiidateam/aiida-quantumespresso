@@ -130,6 +130,34 @@ def test_handle_relax_recoverable_ionic_convergence_error(generate_workchain_pw,
     assert result.status == 0
 
 
+def test_handle_electronic_convergence_warning(generate_workchain_pw, generate_structure):
+    """Test `PwBaseWorkChain.handle_electronic_convergence_warning`."""
+    from aiida.common.links import LinkType
+
+    inputs = generate_workchain_pw(return_inputs=True)
+    inputs['pw']['parameters']['scf_maxstep'] = 0
+    inputs['pw']['parameters']['scf_must_converge'] = False
+
+    process = generate_workchain_pw(
+        exit_code=PwBaseWorkChain.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED, inputs=inputs
+    )
+    process.setup()
+
+    calculation = process.ctx.children[-1]
+    structure = generate_structure().store()
+    structure.add_incoming(calculation, link_label='output_structure', link_type=LinkType.CREATE)
+
+    result = process.handle_electronic_convergence_warning(calculation)
+    assert isinstance(result, ProcessHandlerReport)
+    assert result.do_break
+    assert result.exit_code == PwBaseWorkChain.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED
+    assert process.node.get_outgoing().all() is not None
+    assert process.ctx.restart_calc is calculation
+
+    result = process.inspect_process()
+    assert result == PwBaseWorkChain.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED
+
+
 def test_sanity_check_no_bands(generate_workchain_pw):
     """Test that `sanity_check_insufficient_bands` does not except if there is no `output_band`, which is optional."""
     process = generate_workchain_pw(exit_code=ExitCode(0))
