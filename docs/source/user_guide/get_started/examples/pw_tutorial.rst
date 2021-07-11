@@ -623,6 +623,32 @@ More options are available, and can be explored by expanding
 ``builder.metadata.options.`` + ``TAB``.
 
 
+Environ calculations
+--------------------
+
+Environ calculations can be run by supplying the required namelists to ``builder.settings``. For example, to run a calculation with a continuum dielectric of water above a 2D slab with the surface normal in the z-direction create the following dictionary.
+
+::
+
+    environ_param_dict = {
+        'ENVIRON':{
+            'environ_type': 'input',
+            'env_static_permittivity': 78.36,
+            'env_electrostatic': True,
+        },
+        'BOUNDARY':{
+            'solvent_mode':'full',
+        },
+        'ELECTROSTATIC':{
+            'pbc_correction':'parabolic',
+            'pbc_dim': 2,
+            'pbc_axis': 3,
+        }
+    }
+
+This dictionary can be passed on to the builder as ::
+
+    builder.pw.settings = orm.Dict(dict=environ_param_dict)
 
 
 Launching the calculation

@@ -743,6 +743,14 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                     parsed_data['fermi_energy' + units_suffix] = default_energy_units
                 except Exception:
                     logs.warning.append('Error while parsing Fermi energy from the output file.')
+            elif 'Gaussian-smeared nuclei' in line:
+                try:
+                    value_potential_shift = float(line.split()[-2])
+                    unit_potential_shift = line.split()[-1]
+                    parsed_data['environ_potential_shift'] = value
+                    parsed_data['environ_unit_potential_shift'] = unit_potential_shift
+                except Exception:
+                    pass
 
             elif 'Forces acting on atoms' in line:
                 try:

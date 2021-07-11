@@ -253,7 +253,7 @@ def test_pw_parallelization_duplicate_cmdline_flag(fixture_sandbox, generate_cal
 
 
 def test_environ_namelists(fixture_sandbox, generate_calc_job, generate_inputs_pw):
-    """Test that Environ namelists are actually created."""
+    """Test that Environ namelists are  created."""
     entry_point_name = 'quantumespresso.pw'
 
     inputs = generate_inputs_pw()
