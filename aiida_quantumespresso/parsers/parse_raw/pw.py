@@ -747,7 +747,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                 try:
                     value_potential_shift = float(line.split()[-2])
                     unit_potential_shift = line.split()[-1]
-                    parsed_data['environ_potential_shift'] = value
+                    parsed_data['environ_potential_shift'] = value_potential_shift
                     parsed_data['environ_unit_potential_shift'] = unit_potential_shift
                 except Exception:
                     pass
