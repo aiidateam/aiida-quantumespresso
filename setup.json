@@ -65,6 +65,7 @@
             "quantumespresso.pw.band_structure = aiida_quantumespresso.workflows.pw.band_structure:PwBandStructureWorkChain",
             "quantumespresso.q2r.base = aiida_quantumespresso.workflows.q2r.base:Q2rBaseWorkChain",
             "quantumespresso.matdyn.base = aiida_quantumespresso.workflows.matdyn.base:MatdynBaseWorkChain",
+            "quantumespresso.restart_setup = aiida_quantumespresso.workflows.restart_setup:RestartSetupWorkChain",
             "quantumespresso.pdos = aiida_quantumespresso.workflows.pdos:PdosWorkChain"
         ],
         "console_scripts": [
