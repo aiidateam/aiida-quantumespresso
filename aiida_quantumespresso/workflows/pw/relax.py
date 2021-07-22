@@ -339,7 +339,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         inputs.pw.structure = self.ctx.current_structure
 
         bnd = inputs.pw.parameters.get('SYSTEM', {}).get('nbnd', None)
-        if self.ctx.current_number_of_bands is not None and bnd is not None:
+        if self.ctx.current_number_of_bands is not None and bnd is None:
             inputs.pw.parameters.setdefault('SYSTEM', {})['nbnd'] = self.ctx.current_number_of_bands
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
