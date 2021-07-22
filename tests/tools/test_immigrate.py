@@ -35,6 +35,9 @@ def test_create_builder(fixture_sandbox, fixture_code, generate_upf_data, genera
 
     builder = create_builder_from_file(in_folderpath, 'test_pw_default.in', code, metadata, upf_folderpath)
 
+    # In certain versions of `aiida-core` the builder comes with the `stash` namespace by default.
+    builder['metadata']['options'].pop('stash', None)
+
     assert builder['code'] == code
     assert builder['metadata'] == metadata
     pseudo_hash = si_upf.get_hash()
@@ -86,6 +89,9 @@ def test_create_builder_nonzero_ibrav(fixture_sandbox, fixture_code, generate_up
     si_upf.store()
 
     builder = create_builder_from_file(in_folderpath, 'test_pw_ibrav.in', code, metadata, upf_folderpath)
+
+    # In certain versions of `aiida-core` the builder comes with the `stash` namespace by default.
+    builder['metadata']['options'].pop('stash', None)
 
     assert builder['code'] == code
     assert builder['metadata'] == metadata
