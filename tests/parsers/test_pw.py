@@ -483,6 +483,34 @@ def test_pw_failed_scf_not_converged(
     })
 
 
+@pytest.mark.parametrize('parameters', (  # yapf:disable
+    {'ELECTRONS': {'scf_must_converge': False}},
+    {'ELECTRONS': {'electron_maxstep': 0}},
+    {'ELECTRONS': {'scf_must_converge': False, 'electron_maxstep': 0}}
+))  # yapf:enable
+def test_pw_failed_scf_not_converged_intentional(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, parameters
+):
+    """Test the parsing of an scf calculation that intentionally did not reach convergence.
+
+    This can be the case if `scf_must_converge = False` or `electron_maxstep = 0`.
+    """
+    name = 'failed_scf_not_converged_intentional'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs(parameters=parameters))
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == node.process_class.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED.status
+    assert orm.Log.objects.get_logs_for(node)
+    assert 'output_parameters' in results
+    assert 'output_trajectory' in results
+
+
 def test_pw_relax_success(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression):
     """Test a `relax` that successfully converges."""
     name = 'relax_success'
