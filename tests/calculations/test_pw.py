@@ -252,7 +252,7 @@ def test_pw_parallelization_duplicate_cmdline_flag(fixture_sandbox, generate_cal
     assert 'Conflicting' in str(exc.value)
 
 
-def test_environ_namelists(fixture_sandbox, generate_calc_job, generate_inputs_pw):
+def test_environ_namelists(fixture_sandbox, generate_calc_job, generate_inputs_pw, file_regression):
     """Test that Environ namelists are  created."""
     entry_point_name = 'quantumespresso.pw'
 
@@ -273,3 +273,10 @@ def test_environ_namelists(fixture_sandbox, generate_calc_job, generate_inputs_p
         },
     )
     generate_calc_job(fixture_sandbox, entry_point_name, inputs)
+
+    with fixture_sandbox.open('aiida.in') as handle:
+        input_written = handle.read()
+
+    # Checks on the files written to the sandbox folder as raw input
+    assert sorted(fixture_sandbox.get_content_list()) == sorted(['aiida.in', 'pseudo', 'out', 'environ.in'])
+    file_regression.check(input_written, encoding='utf-8', extension='.in')

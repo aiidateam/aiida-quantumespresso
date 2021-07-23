@@ -907,3 +907,32 @@ def test_pw_vcrelax_failed_not_converged_nstep(
     assert 'output_parameters' in results
     assert 'output_structure' in results
     assert 'output_trajectory' in results
+
+
+def test_environ(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression, generate_structure
+):
+    """Test a simple Environ calculation."""
+    name = 'default'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+    environ_settings = {'ENVIRON': {'environ_type': 'water'}}
+    node = generate_calc_job_node(
+        entry_point_calc_job, fixture_localhost, name,
+        generate_inputs(generate_structure(structure_id='water'), settings=environ_settings)
+    )
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert not orm.Log.objects.get_logs_for(node), [log.message for log in orm.Log.objects.get_logs_for(node)]
+    assert 'output_kpoints' in results
+    assert 'output_parameters' in results
+    assert 'output_trajectory' in results
+
+    data_regression.check({
+        'output_kpoints': results['output_kpoints'].attributes,
+        'output_parameters': results['output_parameters'].get_dict(),
+        'output_trajectory': results['output_trajectory'].attributes,
+    })
