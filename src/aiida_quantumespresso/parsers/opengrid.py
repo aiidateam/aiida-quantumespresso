@@ -22,9 +22,9 @@ class OpengridParser(Parser):
             return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
 
         try:
-            filename_stdout = self.node.get_option('output_filename')  # or get_attribute(), but this is clearer
-            with out_folder.open(filename_stdout, 'r') as fil:
-                out_file = fil.read()
+            filename_stdout = self.node.get_option('output_filename')
+            with out_folder.open(filename_stdout, 'r') as f:
+                out_file = f.read()
         except OSError:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 
@@ -44,9 +44,10 @@ class OpengridParser(Parser):
                                                             link_type=LinkType.CREATE).one().node
             )
         except ValueError as e:
-            raise QEOutputParsingError('Could not get parent calculation of input folder: {}'.format(e))
+            raise QEOutputParsingError(f'Could not get parent calculation of input folder: {e}')
 
-        # projwfc parser needs number_of_spin_components
+        # We need to output additional nodes for a subsequent projwfc calculation:
+        # projwfc parser needs `number_of_spin_components`
         try:
             parent_param = parent_calc.get_outgoing(link_label_filter='output_parameters').one().node
         except ValueError:
