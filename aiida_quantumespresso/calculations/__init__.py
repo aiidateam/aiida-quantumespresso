@@ -238,6 +238,11 @@ class BasePwCpInputGenerator(CalcJob):
         if environ_namelist is not None:
             if not isinstance(environ_namelist, dict):
                 raise exceptions.InputValidationError('ENVIRON namelist should be specified as a dictionary')
+
+            ## Check for BOUNDARY and ELECTROSTATIC Keys as well
+            boundary_namelist = settings.pop('BOUNDARY', None)
+            electrostatic_namelist = settings.pop('ELECTROSTATIC', None)
+
             # We first add the environ flag to the command-line options (if not already present)
             try:
                 if '-environ' not in settings['CMDLINE']:
@@ -254,6 +259,18 @@ class BasePwCpInputGenerator(CalcJob):
                 for key, value in sorted(environ_namelist.items()):
                     handle.write(convert_input_to_namelist_entry(key, value, mapping=mapping_species))
                 handle.write('/\n')
+
+                if boundary_namelist is not None:
+                    handle.write('&BOUNDARY\n')
+                    for key, value in sorted(boundary_namelist.items()):
+                        handle.write(convert_input_to_namelist_entry(key, value, mapping=mapping_species))
+                    handle.write('/\n')
+
+                if electrostatic_namelist is not None:
+                    handle.write('&ELECTROSTATIC\n')
+                    for key, value in sorted(electrostatic_namelist.items()):
+                        handle.write(convert_input_to_namelist_entry(key, value, mapping=mapping_species))
+                    handle.write('/\n')
 
         # Check for the deprecated 'ALSO_BANDS' setting and if present fire a deprecation log message
         also_bands = settings.pop('ALSO_BANDS', None)
