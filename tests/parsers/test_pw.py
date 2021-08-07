@@ -910,7 +910,11 @@ def test_pw_vcrelax_failed_not_converged_nstep(
 
 
 def test_environ(
-    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression, generate_structure
+    fixture_localhost,
+    generate_calc_job_node,
+    generate_parser,
+    generate_inputs,
+    data_regression,
 ):
     """Test a simple Environ calculation."""
     name = 'default'
@@ -918,11 +922,9 @@ def test_environ(
     entry_point_parser = 'quantumespresso.pw'
     environ_settings = {'ENVIRON': {'environ_type': 'water'}}
     node = generate_calc_job_node(
-        entry_point_calc_job, fixture_localhost, name,
-        generate_inputs(settings=environ_settings)
+        entry_point_calc_job, fixture_localhost, name, generate_inputs(settings=environ_settings)
     )
     parser = generate_parser(entry_point_parser)
-
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
     assert calcfunction.is_finished, calcfunction.exception
