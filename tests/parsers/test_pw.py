@@ -922,6 +922,7 @@ def test_environ(
         generate_inputs(settings=environ_settings)
     )
     parser = generate_parser(entry_point_parser)
+
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
     assert calcfunction.is_finished, calcfunction.exception
