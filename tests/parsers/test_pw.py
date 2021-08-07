@@ -919,7 +919,7 @@ def test_environ(
     environ_settings = {'ENVIRON': {'environ_type': 'water'}}
     node = generate_calc_job_node(
         entry_point_calc_job, fixture_localhost, name,
-        generate_inputs(generate_structure(structure_id='water'), settings=environ_settings)
+        generate_inputs(settings=environ_settings)
     )
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
