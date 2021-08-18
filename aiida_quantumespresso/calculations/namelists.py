@@ -197,15 +197,15 @@ class NamelistsCalculation(CalcJob):
             elif isinstance(parent_calc_folder, FolderData):
                 for filename in parent_calc_folder.list_object_names():
                     # If filename is a folder
-               	    if parent_calc_folder.get_object(filename).file_type == FileType.DIRECTORY:
+                    if parent_calc_folder.get_object(filename).file_type == FileType.DIRECTORY:
                         for files in parent_calc_folder.list_objects(filename):
                             local_copy_list.append(
                                 (parent_calc_folder.uuid, os.path.join(filename, files.name), os.path.join(self._OUTPUT_SUBFOLDER, files.name))
                             )
                     else:
-	                    local_copy_list.append(
+                        local_copy_list.append(
                                 (parent_calc_folder.uuid, filename, os.path.join(self._OUTPUT_SUBFOLDER, filename))
-                	    )
+                        )
             elif isinstance(parent_calc_folder, SinglefileData):
                 single_file = parent_calc_folder
                 local_copy_list.append((single_file.uuid, single_file.filename, single_file.filename))
