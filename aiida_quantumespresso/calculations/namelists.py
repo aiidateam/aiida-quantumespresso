@@ -7,6 +7,7 @@ import os
 
 from aiida.common import datastructures, exceptions
 from aiida.orm import Dict, FolderData, RemoteData, SinglefileData
+from aiida.repository.common import FileType
 
 from aiida_quantumespresso.calculations import _lowercase_dict, _pop_parser_options, _uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
@@ -193,10 +194,16 @@ class NamelistsCalculation(CalcJob):
                                  parent_calc_out_subfolder), self._OUTPUT_SUBFOLDER
                 ))
             elif isinstance(parent_calc_folder, FolderData):
-                for filename in parent_calc_folder.list_object_names():
-                    local_copy_list.append(
-                        (parent_calc_folder.uuid, filename, os.path.join(self._OUTPUT_SUBFOLDER, filename))
-                    )
+                parent_calc_out_subfolder = settings.pop('PARENT_CALC_OUT_SUBFOLDER', self._INPUT_SUBFOLDER)
+                local_copy_list = self.get_local_file_list_tuples(
+                    node=parent_calc_folder,
+                    output_subfolder=self._OUTPUT_SUBFOLDER,
+                    sub_path=parent_calc_out_subfolder
+                )
+                #for filename in parent_calc_folder.list_object_names():
+                #    local_copy_list.append(
+                #        (parent_calc_folder.uuid, filename, os.path.join(self._OUTPUT_SUBFOLDER, filename))
+                #    )
             elif isinstance(parent_calc_folder, SinglefileData):
                 single_file = parent_calc_folder
                 local_copy_list.append((single_file.uuid, single_file.filename, single_file.filename))
@@ -231,3 +238,26 @@ class NamelistsCalculation(CalcJob):
             raise exceptions.InputValidationError(f'`settings` contained unexpected keys: {unknown_keys}')
 
         return calcinfo
+
+    def get_local_file_list_tuples(self, node, output_subfolder, sub_path=None):
+        """Recursive method to get all the files within a local repository.
+
+        The recursion is used to list all files within a director within the local repository
+        """
+        ret_list = []
+
+        sub_path_string = '' if sub_path is None else sub_path
+        for subitem in node.list_objects(sub_path):
+            if subitem.file_type == FileType.FILE:
+                ret_list.append((
+                    node.uuid, os.path.join(sub_path_string,
+                                            subitem.name), os.path.join(output_subfolder, subitem.name)
+                )  #sub_path_string, subitem.name))
+                                )
+            elif subitem.file_type == FileType.DIRECTORY:
+                ret_list += self.get_local_file_list_tuples(
+                    node, output_subfolder, os.path.join(sub_path_string, subitem.name)
+                )
+            else:
+                raise ValueError(f'Unknown file type {subitem.file_type} for file {subitem.name} in node {node.uuid}')
+        return ret_list
