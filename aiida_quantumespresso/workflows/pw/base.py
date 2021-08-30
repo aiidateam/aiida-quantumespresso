@@ -248,9 +248,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         self.ctx.inputs.parameters = self.ctx.inputs.parameters.get_dict()
         self.ctx.inputs.settings = self.ctx.inputs.settings.get_dict() if 'settings' in self.ctx.inputs else {}
 
-        if 'parent_folder' in self.ctx.inputs:
-            self.ctx.restart_calc = self.ctx.inputs.parent_folder.creator
-
         self.ctx.inputs.parameters.setdefault('CONTROL', {})
         self.ctx.inputs.parameters['CONTROL'].setdefault('calculation', 'scf')
 
@@ -421,9 +418,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if self.ctx.restart_calc:
             self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'restart'
             self.ctx.inputs.parent_folder = self.ctx.restart_calc.outputs.remote_folder
-        else:
-            self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'from_scratch'
-            self.ctx.inputs.pop('parent_folder', None)
 
     def report_error_handled(self, calculation, action):
         """Report an action taken for a calculation that has failed.
