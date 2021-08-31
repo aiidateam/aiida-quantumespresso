@@ -69,6 +69,8 @@ class PwCalculation(BasePwCpInputGenerator):
             help='kpoint mesh or kpoint path')
         spec.input('hubbard_file', valid_type=orm.SinglefileData, required=False,
             help='SinglefileData node containing the output Hubbard parameters from a HpCalculation')
+        spec.inputs.validator = cls.validate_inputs
+
         spec.output('output_parameters', valid_type=orm.Dict,
             help='The `output_parameters` output node of the successful calculation.')
         spec.output('output_structure', valid_type=orm.StructureData, required=False,
@@ -151,6 +153,26 @@ class PwCalculation(BasePwCpInputGenerator):
             message='The electronic minimization cycle did not reach self-consistency, but `scf_must_converge` '
                     'is `False` and/or `electron_maxstep` is 0.')
         # yapf: enable
+
+    @staticmethod
+    def validate_inputs(value, _):
+        """Validate the top level namespace.
+
+        - Check that the restart input parameters are set when a ``parent_folder`` is provided.
+        """
+        if 'parent_folder' in value:
+
+            parameters = value['parameters'].get_dict()
+            if (
+                parameters.get('CONTROL', {}).get('restart_mode', None) != 'restart' and
+                parameters.get('ELECTRONS', {}).get('startingpot', None) != 'file' and
+                parameters.get('ELECTRONS', {}).get('startingwfc', None) != 'file'
+            ):
+                import warnings
+                warnings.warn(
+                    '`parent_folder` input was provided for the `PwCalculation`, but no '
+                    'input parameters are set to restart from these files.'
+                )
 
     @classproperty
     def filename_input_hubbard_parameters(cls):
