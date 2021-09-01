@@ -248,6 +248,8 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         self.ctx.inputs.settings = self.ctx.inputs.settings.get_dict() if 'settings' in self.ctx.inputs else {}
 
         self.ctx.inputs.parameters.setdefault('CONTROL', {})
+        self.ctx.inputs.parameters.setdefault('ELECTRONS', {})
+        self.ctx.inputs.parameters.setdefault('SYSTEM', {})
         self.ctx.inputs.parameters['CONTROL'].setdefault('calculation', 'scf')
 
     def validate_kpoints(self):
@@ -301,8 +303,11 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         max_seconds = max_wallclock_seconds * max_seconds_factor
         self.ctx.inputs.parameters['CONTROL']['max_seconds'] = max_seconds
 
-    def set_restart_type(self, restart_type, calculation):
-        """Set the restart type for the calculation."""
+    def set_restart_type(self, restart_type, parent_folder=None):
+        """Set the restart type for the next iteration."""
+
+        if parent_folder is None and restart_type != RestartType.FROM_SCRATCH:
+            raise ValueError('When not restarting from scratch, a `parent_folder` must be provided.')
 
         if restart_type == RestartType.FROM_SCRATCH:
             self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'from_scratch'
@@ -314,19 +319,19 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'restart'
             self.ctx.inputs.parameters['ELECTRONS'].pop('startingpot', None)
             self.ctx.inputs.parameters['ELECTRONS'].pop('startingwfc', None)
-            self.ctx.inputs.parent_folder = calculation.outputs.remote_folder
+            self.ctx.inputs.parent_folder = parent_folder
 
         elif restart_type == RestartType.FROM_CHARGE_DENSITY:
             self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'from_scratch'
             self.ctx.inputs.parameters['ELECTRONS']['startingpot'] = 'file'
             self.ctx.inputs.parameters['ELECTRONS'].pop('startingwfc', None)
-            self.ctx.inputs.parent_folder = calculation.outputs.remote_folder
+            self.ctx.inputs.parent_folder = parent_folder
 
         elif restart_type == RestartType.FROM_WAVE_FUNCTIONS:
             self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'from_scratch'
             self.ctx.inputs.parameters['ELECTRONS'].pop('startingpot', None)
             self.ctx.inputs.parameters['ELECTRONS']['startingwfc'] = 'file'
-            self.ctx.inputs.parent_folder = calculation.outputs.remote_folder
+            self.ctx.inputs.parent_folder = parent_folder
 
     def should_run_init(self):
         """Return whether an initialization calculation should be run.
@@ -488,10 +493,9 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
             nbnd_cur = calculation.outputs.output_parameters.get_dict()['number_of_bands']
             nbnd_new = nbnd_cur + max(int(nbnd_cur * self.defaults.delta_factor_nbnd), self.defaults.delta_minimum_nbnd)
+            self.ctx.inputs.parameters['SYSTEM']['nbnd'] = nbnd_new
 
-            self.ctx.inputs.parameters.setdefault('SYSTEM', {})['nbnd'] = nbnd_new
-            self.set_restart_type(RestartType.FROM_CHARGE_DENSITY, calculation)
-
+            self.set_restart_type(RestartType.FROM_CHARGE_DENSITY, calculation.outputs.remote_folder)
             self.report(
                 f'Action taken: increased number of bands to {nbnd_new} and restarting from the previous charge '
                 'density.'
@@ -531,10 +535,10 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         try:
             self.ctx.inputs.structure = calculation.outputs.output_structure
         except exceptions.NotExistent:
-            self.set_restart_type(RestartType.FULL, calculation)
+            self.set_restart_type(RestartType.FULL, calculation.outputs.remote_folder)
             self.report_error_handled(calculation, 'simply restart from the last calculation')
         else:
-            self.set_restart_type(RestartType.FROM_SCRATCH, calculation)
+            self.set_restart_type(RestartType.FROM_SCRATCH)
             self.report_error_handled(calculation, 'out of walltime: structure changed so restarting from scratch')
 
         return ProcessHandlerReport(True)
@@ -570,9 +574,10 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         These exit codes signify that the ionic convergence thresholds were not met, but the output structure is usable,
         so the solution is to simply restart from scratch but from the output structure.
         """
-        self.set_restart_type(RestartType.FROM_SCRATCH, calculation)
         self.ctx.inputs.structure = calculation.outputs.output_structure
         action = 'no ionic convergence but clean shutdown: restarting from scratch but using output structure.'
+
+        self.set_restart_type(RestartType.FROM_SCRATCH)
         self.report_error_handled(calculation, action)
         return ProcessHandlerReport(True)
 
@@ -587,17 +592,19 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         """Handle various exit codes for recoverable `relax` calculations with failed electronic convergence.
 
         These exit codes signify that the electronic convergence thresholds were not met, but the output structure is
-        usable, so the solution is to simply restart from scratch but from the output structure.
+        usable, so the solution is to simply restart from scratch but from the output structure and with a reduced
+        ``mixing_beta``.
         """
         factor = self.defaults.delta_factor_mixing_beta
         mixing_beta = self.ctx.inputs.parameters.get('ELECTRONS', {}).get('mixing_beta', self.defaults.qe.mixing_beta)
         mixing_beta_new = mixing_beta * factor
 
-        self.set_restart_type(RestartType.FROM_SCRATCH, calculation)
-        self.ctx.inputs.parameters.setdefault('ELECTRONS', {})['mixing_beta'] = mixing_beta_new
+        self.ctx.inputs.parameters['ELECTRONS']['mixing_beta'] = mixing_beta_new
         self.ctx.inputs.structure = calculation.outputs.output_structure
         action = 'no electronic convergence but clean shutdown: reduced beta mixing from {} to {} restarting from ' \
                  'scratch but using output structure.'.format(mixing_beta, mixing_beta_new)
+
+        self.set_restart_type(RestartType.FROM_SCRATCH)
         self.report_error_handled(calculation, action)
         return ProcessHandlerReport(True)
 
@@ -613,10 +620,10 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         mixing_beta = self.ctx.inputs.parameters.get('ELECTRONS', {}).get('mixing_beta', self.defaults.qe.mixing_beta)
         mixing_beta_new = mixing_beta * factor
 
-        self.set_restart_type(RestartType.FULL, calculation)
-        self.ctx.inputs.parameters.setdefault('ELECTRONS', {})['mixing_beta'] = mixing_beta_new
-
+        self.ctx.inputs.parameters['ELECTRONS']['mixing_beta'] = mixing_beta_new
         action = f'reduced beta mixing from {mixing_beta} to {mixing_beta_new} and restarting from the last calculation'
+
+        self.set_restart_type(RestartType.FULL, calculation.outputs.remote_folder)
         self.report_error_handled(calculation, action)
         return ProcessHandlerReport(True)
 

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """`CalcJob` implementation for the pw.x code of Quantum ESPRESSO."""
 import os
+import warnings
 
 from aiida import orm
 from aiida.common.lang import classproperty
@@ -158,21 +159,33 @@ class PwCalculation(BasePwCpInputGenerator):
     def validate_inputs(value, _):
         """Validate the top level namespace.
 
-        - Check that the restart input parameters are set when a ``parent_folder`` is provided.
+        1. Check that the restart input parameters are set correctly. In case of 'nscf' and 'bands' calculations, this
+        means that ``parent_folder`` is provided, ``startingpot`` is set to 'file' and ``restart_mode`` is
+        'from_scratch'. For other calculations, if the ``parent_folder`` is provided, the restart settings must be set
+        to use some of the outputs.
         """
-        if 'parent_folder' in value:
+        parameters = value['parameters'].get_dict()
+        calculation_type = parameters.get('CONTROL', {}).get('calculation', 'scf')
 
-            parameters = value['parameters'].get_dict()
-            if (
-                parameters.get('CONTROL', {}).get('restart_mode', None) != 'restart' and
-                parameters.get('ELECTRONS', {}).get('startingpot', None) != 'file' and
-                parameters.get('ELECTRONS', {}).get('startingwfc', None) != 'file'
-            ):
-                import warnings
-                warnings.warn(
-                    '`parent_folder` input was provided for the `PwCalculation`, but no '
-                    'input parameters are set to restart from these files.'
-                )
+        # Check that the restart input parameters are set correctly
+        if calculation_type in ('nscf', 'bands'):
+            if 'parent_folder' not in value:
+                return f'`parent_folder` not provided for {calculation_type} calculation.'
+            if parameters.get('ELECTRONS', {}).get('startingpot', None) != 'file':
+                warnings.warn(f'`startingpot` should be set to `file` for a {calculation_type} calculation.')
+            if parameters.get('CONTROL', {}).get('CONTROL', None) == 'restart':
+                warnings.warn(f'`restart_mode` should be set to `from_scratch` for a {calculation_type} calculation.')
+        else:
+            if 'parent_folder' in value:
+                if (
+                    parameters.get('CONTROL', {}).get('CONTROL', None) != 'restart' and
+                    parameters.get('ELECTRONS', {}).get('startingpot', None) != 'file' and
+                    parameters.get('ELECTRONS', {}).get('startingwfc', None) != 'file'
+                ):
+                    warnings.warn(
+                        '`parent_folder` input was provided for the `PwCalculation`, but no '
+                        'input parameters are set to restart from these files.'
+                    )
 
     @classproperty
     def filename_input_hubbard_parameters(cls):
