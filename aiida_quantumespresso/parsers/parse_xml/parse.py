@@ -86,7 +86,7 @@ def parse_xml_post_6_2(xml):
             partial_pwscf = timing_info.find("partial[@label='PWSCF'][@calls='0']")
             try:
                 timing_info.remove(partial_pwscf)
-            except ValueError:
+            except (TypeError, ValueError):
                 pass
 
     xml_dictionary, errors = xsd.to_dict(xml, validation='lax')
