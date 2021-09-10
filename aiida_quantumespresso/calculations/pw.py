@@ -170,18 +170,18 @@ class PwCalculation(BasePwCpInputGenerator):
         # Check that the restart input parameters are set correctly
         if calculation_type in ('nscf', 'bands'):
             if 'parent_folder' not in value:
-                return f'`parent_folder` not provided for {calculation_type} calculation.'
-            if parameters.get('ELECTRONS', {}).get('startingpot', None) != 'file':
-                warnings.warn(f'`startingpot` should be set to `file` for a {calculation_type} calculation.')
+                return f'`parent_folder` not provided for `{calculation_type}` calculation.'
+            if parameters.get('ELECTRONS', {}).get('startingpot', 'file') != 'file':
+                return f'`startingpot` should be set to `file` for a `{calculation_type}` calculation.'
             if parameters.get('CONTROL', {}).get('CONTROL', None) == 'restart':
-                warnings.warn(f'`restart_mode` should be set to `from_scratch` for a {calculation_type} calculation.')
+                return f'`restart_mode` should be set to `from_scratch` for a `{calculation_type}` calculation.'
         else:
             if 'parent_folder' in value:
-                if (
-                    parameters.get('CONTROL', {}).get('CONTROL', None) != 'restart' and
-                    parameters.get('ELECTRONS', {}).get('startingpot', None) != 'file' and
-                    parameters.get('ELECTRONS', {}).get('startingwfc', None) != 'file'
-                ):
+                if not any([
+                    parameters.get('CONTROL', {}).get('CONTROL', None) == 'restart' and
+                    parameters.get('ELECTRONS', {}).get('startingpot', None) == 'file' and
+                    parameters.get('ELECTRONS', {}).get('startingwfc', None) == 'file'
+                ]):
                     warnings.warn(
                         '`parent_folder` input was provided for the `PwCalculation`, but no '
                         'input parameters are set to restart from these files.'
