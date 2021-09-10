@@ -217,6 +217,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         builder.pw['structure'] = structure
         builder.pw['parameters'] = orm.Dict(dict=parameters)
         builder.pw['metadata'] = inputs['pw']['metadata']
+        builder.pw['settings'] = orm.Dict(dict=inputs['pw']['settings'])
         if 'parallelization' in inputs['pw']:
             builder.pw['parallelization'] = orm.Dict(dict=inputs['pw']['parallelization'])
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
