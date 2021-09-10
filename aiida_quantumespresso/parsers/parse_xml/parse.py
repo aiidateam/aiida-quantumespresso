@@ -75,6 +75,20 @@ def parse_xml_post_6_2(xml):
     #  xml_dictionary['key']['@attr'] returns its attribute 'attr'
     #  xml_dictionary['key']['nested_key'] goes one level deeper.
 
+    # Fix a bug of QE 6.8: the output XML is not consistent with schema, see
+    # https://github.com/aiidateam/aiida-quantumespresso/pull/717
+    xml_creator = xml.find('./general_info/creator')
+    if xml_creator is not None and 'VERSION' in xml_creator.attrib:
+        creator_version = xml_creator.attrib['VERSION']
+        if creator_version == '6.8':
+            root = xml.getroot()
+            timing_info = root.find('./timing_info')
+            partial_pwscf = timing_info.find("partial[@label='PWSCF'][@calls='0']")
+            try:
+                timing_info.remove(partial_pwscf)
+            except (TypeError, ValueError):
+                pass
+
     xml_dictionary, errors = xsd.to_dict(xml, validation='lax')
     if errors:
         logs.error.append(f'{len(errors)} XML schema validation error(s) schema: {schema_filepath}:')
