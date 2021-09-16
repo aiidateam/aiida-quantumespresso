@@ -205,10 +205,11 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             parameters['SYSTEM'].pop('smearing')
 
         if spin_type is SpinType.COLLINEAR:
-            starting_magnetization = get_starting_magnetization(structure, pseudo_family, initial_magnetic_moments)
-
             parameters['SYSTEM']['nspin'] = 2
-            parameters['SYSTEM']['starting_magnetization'] = starting_magnetization
+            if 'starting_magnetization' not in parameters['SYSTEM']:
+                starting_magnetization = get_starting_magnetization(structure, pseudo_family, initial_magnetic_moments)
+
+                parameters['SYSTEM']['starting_magnetization'] = starting_magnetization
 
         # pylint: disable=no-member
         builder = cls.get_builder()
