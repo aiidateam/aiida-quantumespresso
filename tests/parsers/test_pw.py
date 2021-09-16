@@ -937,3 +937,28 @@ def test_pw_vcrelax_failed_not_converged_nstep(
     assert 'output_parameters' in results
     assert 'output_structure' in results
     assert 'output_trajectory' in results
+
+
+def test_magnetic_moments_v68(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+):
+    """Test the parsing of the magnetic moments in QE v6.8 from stdout."""
+    name = 'magnetic_moments_v68'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    # By setting the `without_xml` option the parsing can only use the stdout content
+    inputs = generate_inputs(calculation_type='relax', metadata={'options': {'without_xml': True}})
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_trajectory' in results
+
+    data_regression.check({
+        'atomic_charges':
+        results['output_trajectory'].get_array('atomic_charges').tolist(),
+        'atomic_magnetic_moments':
+        results['output_trajectory'].get_array('atomic_magnetic_moments').tolist(),
+    })
