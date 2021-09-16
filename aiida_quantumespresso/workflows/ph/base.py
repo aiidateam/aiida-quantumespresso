@@ -37,7 +37,7 @@ class PhBaseWorkChain(BaseRestartWorkChain):
             ),
             cls.results,
         )
-        spec.expose_outputs(PwCalculation, exclude=('retrieved_folder',))
+        spec.expose_outputs(PhCalculation, exclude=('retrieved_folder',))
         spec.exit_code(204, 'ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED',
             message='The `metadata.options` did not specify both `resources.num_machines` and `max_wallclock_seconds`. '
                     'This exit status has been deprecated as the check it corresponded to was incorrect.')
