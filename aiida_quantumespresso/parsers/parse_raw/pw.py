@@ -641,6 +641,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                         if 'atom:' in line2:
                             mag_moments.append(float(line2.split('magn:')[1].split()[0]))
                             charges.append(float(line2.split('charge:')[1].split()[0]))
+                        # Alternate parsing for new format introduced in v6.8
                         elif 'atom' in line2:
                             mag_moments.append(float(line2.split('magn=')[1].split()[0]))
                             charges.append(float(line2.split('charge=')[1].split()[0]))

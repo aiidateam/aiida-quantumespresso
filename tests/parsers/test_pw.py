@@ -942,7 +942,7 @@ def test_pw_vcrelax_failed_not_converged_nstep(
 def test_magnetic_moments_v68(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
-    """Test the parsing of the magnetic moments in QE v6.8."""
+    """Test the parsing of the magnetic moments in QE v6.8 from stdout."""
     name = 'magnetic_moments_v68'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
@@ -957,5 +957,8 @@ def test_magnetic_moments_v68(
     assert 'output_trajectory' in results
 
     data_regression.check({
-        'output_trajectory': results['output_trajectory'].attributes,
+        'atomic_charges':
+        results['output_trajectory'].get_array('atomic_charges').tolist(),
+        'atomic_magnetic_moments':
+        results['output_trajectory'].get_array('atomic_magnetic_moments').tolist(),
     })
