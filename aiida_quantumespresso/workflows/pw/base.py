@@ -150,7 +150,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         :param initial_magnetic_moments: optional dictionary that maps the initial magnetic moment of each kind to a
             desired value for a spin polarized calculation. Note that this takes precedence over any
             ``starting_magnetization`` provided in the ``overrides``, and that for ``spin_type == SpinType.COLLINEAR``
-            an initial guess for the magnetic moment is automatically set in case neither is not provided.
+            an initial guess for the magnetic moment is automatically set in case neither is provided.
         :return: a process builder instance with all inputs defined ready for launch.
         """
         from aiida_quantumespresso.workflows.protocols.utils import get_starting_magnetization

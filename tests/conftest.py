@@ -297,10 +297,10 @@ def generate_upf_data():
 
 @pytest.fixture
 def generate_structure():
-    """Return a `StructureData` representing either bulk silicon or a water molecule."""
+    """Return a ``StructureData`` representing either bulk silicon or a water molecule."""
 
     def _generate_structure(structure_id='silicon'):
-        """Return a `StructureData` representing bulk silicon or a snapshot of a single water molecule dynamics.
+        """Return a ``StructureData`` representing bulk silicon or a snapshot of a single water molecule dynamics.
 
         :param structure_id: identifies the ``StructureData`` you want to generate. Either 'silicon' or 'water'.
         """

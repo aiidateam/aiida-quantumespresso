@@ -101,7 +101,6 @@ def test_initial_magnetic_moments(fixture_code, generate_structure):
 
 def test_magnetization_overrides(fixture_code, generate_structure):
     """Test magnetization ``overrides`` for the ``PwBaseWorkChain.get_builder_from_protocol`` method."""
-
     code = fixture_code('quantumespresso.pw')
     structure = generate_structure('silicon')
     initial_magnetic_moments = {'Si': 1.0}
@@ -129,7 +128,6 @@ def test_magnetization_overrides(fixture_code, generate_structure):
 
 def test_parameter_overrides(fixture_code, generate_structure):
     """Test specifying parameter ``overrides`` for the ``get_builder_from_protocol()`` method."""
-
     code = fixture_code('quantumespresso.pw')
     structure = generate_structure('silicon')
 
@@ -140,7 +138,6 @@ def test_parameter_overrides(fixture_code, generate_structure):
 
 def test_settings_overrides(fixture_code, generate_structure):
     """Test specifying settings ``overrides`` for the ``get_builder_from_protocol()`` method."""
-
     code = fixture_code('quantumespresso.pw')
     structure = generate_structure('silicon')
 
