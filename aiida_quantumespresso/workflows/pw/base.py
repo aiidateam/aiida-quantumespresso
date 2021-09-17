@@ -148,8 +148,9 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         :param electronic_type: indicate the electronic character of the system through ``ElectronicType`` instance.
         :param spin_type: indicate the spin polarization type to use through a ``SpinType`` instance.
         :param initial_magnetic_moments: optional dictionary that maps the initial magnetic moment of each kind to a
-            desired value for a spin polarized calculation. Note that for ``spin_type == SpinType.COLLINEAR`` an initial
-            guess for the magnetic moment is automatically set in case this argument is not provided.
+            desired value for a spin polarized calculation. Note that this takes precedence over any
+            ``starting_magnetization`` provided in the ``overrides``, and that for ``spin_type == SpinType.COLLINEAR``
+            an initial guess for the magnetic moment is automatically set in case neither is provided.
         :return: a process builder instance with all inputs defined ready for launch.
         """
         from aiida_quantumespresso.workflows.protocols.utils import get_starting_magnetization
@@ -205,10 +206,10 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             parameters['SYSTEM'].pop('smearing')
 
         if spin_type is SpinType.COLLINEAR:
-            starting_magnetization = get_starting_magnetization(structure, pseudo_family, initial_magnetic_moments)
-
             parameters['SYSTEM']['nspin'] = 2
-            parameters['SYSTEM']['starting_magnetization'] = starting_magnetization
+            if 'starting_magnetization' not in parameters['SYSTEM'] or initial_magnetic_moments is not None:
+                starting_magnetization = get_starting_magnetization(structure, pseudo_family, initial_magnetic_moments)
+                parameters['SYSTEM']['starting_magnetization'] = starting_magnetization
 
         # pylint: disable=no-member
         builder = cls.get_builder()

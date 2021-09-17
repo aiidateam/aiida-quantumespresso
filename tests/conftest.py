@@ -47,7 +47,7 @@ def fixture_localhost(aiida_localhost):
 
 @pytest.fixture
 def fixture_code(fixture_localhost):
-    """Return a `Code` instance configured to run calculations of given entry point on localhost `Computer`."""
+    """Return a ``Code`` instance configured to run calculations of given entry point on localhost ``Computer``."""
 
     def _fixture_code(entry_point_name):
         from aiida.common import exceptions
@@ -297,10 +297,13 @@ def generate_upf_data():
 
 @pytest.fixture
 def generate_structure():
-    """Return a `StructureData` representing bulk silicon."""
+    """Return a ``StructureData`` representing either bulk silicon or a water molecule."""
 
     def _generate_structure(structure_id='silicon'):
-        """Return a `StructureData` representing bulk silicon or a snapshot of a single water molecule dynamics."""
+        """Return a ``StructureData`` representing bulk silicon or a snapshot of a single water molecule dynamics.
+
+        :param structure_id: identifies the ``StructureData`` you want to generate. Either 'silicon' or 'water'.
+        """
         from aiida.orm import StructureData
 
         if structure_id == 'silicon':

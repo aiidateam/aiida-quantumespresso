@@ -23,7 +23,7 @@ def test_get_default_protocol():
 def test_default(fixture_code, generate_structure, data_regression, serialize_builder):
     """Test ``PwBaseWorkChain.get_builder_from_protocol`` for the default protocol."""
     code = fixture_code('quantumespresso.pw')
-    structure = generate_structure()
+    structure = generate_structure('silicon')
     builder = PwBaseWorkChain.get_builder_from_protocol(code, structure)
 
     assert isinstance(builder, ProcessBuilder)
@@ -33,7 +33,7 @@ def test_default(fixture_code, generate_structure, data_regression, serialize_bu
 def test_electronic_type(fixture_code, generate_structure):
     """Test ``PwBaseWorkChain.get_builder_from_protocol`` with ``electronic_type`` keyword."""
     code = fixture_code('quantumespresso.pw')
-    structure = generate_structure()
+    structure = generate_structure('silicon')
 
     with pytest.raises(NotImplementedError):
         for electronic_type in [ElectronicType.AUTOMATIC]:
@@ -50,7 +50,12 @@ def test_electronic_type(fixture_code, generate_structure):
 def test_spin_type(fixture_code, generate_structure):
     """Test ``PwBaseWorkChain.get_builder_from_protocol`` with ``spin_type`` keyword."""
     code = fixture_code('quantumespresso.pw')
-    structure = generate_structure()
+    structure = generate_structure('silicon')
+
+    # Test specifying no magnetic inputs
+    builder = PwBaseWorkChain.get_builder_from_protocol(code, structure)
+    assert 'starting_magnetization' not in builder.pw.parameters['SYSTEM']
+    assert 'nspin' not in builder.pw.parameters['SYSTEM']
 
     with pytest.raises(NotImplementedError):
         for spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT]:
@@ -67,7 +72,7 @@ def test_spin_type(fixture_code, generate_structure):
 def test_initial_magnetic_moments_invalid(fixture_code, generate_structure, initial_magnetic_moments):
     """Test ``PwBaseWorkChain.get_builder_from_protocol`` with invalid ``initial_magnetic_moments`` keyword."""
     code = fixture_code('quantumespresso.pw')
-    structure = generate_structure()
+    structure = generate_structure('silicon')
 
     with pytest.raises(
         ValueError, match=r'`initial_magnetic_moments` is specified but spin type `.*` is incompatible.'
@@ -83,22 +88,68 @@ def test_initial_magnetic_moments_invalid(fixture_code, generate_structure, init
 def test_initial_magnetic_moments(fixture_code, generate_structure):
     """Test ``PwBaseWorkChain.get_builder_from_protocol`` with ``initial_magnetic_moments`` keyword."""
     code = fixture_code('quantumespresso.pw')
-    structure = generate_structure()
+    structure = generate_structure('silicon')
 
     initial_magnetic_moments = {'Si': 1.0}
     builder = PwBaseWorkChain.get_builder_from_protocol(
         code, structure, initial_magnetic_moments=initial_magnetic_moments, spin_type=SpinType.COLLINEAR
     )
     parameters = builder.pw.parameters.get_dict()
-
     assert parameters['SYSTEM']['nspin'] == 2
     assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.25}
 
 
-def test_metadata_overrides(fixture_code, generate_structure):
-    """Test that pw metadata is correctly passed through overrides."""
+def test_magnetization_overrides(fixture_code, generate_structure):
+    """Test magnetization ``overrides`` for the ``PwBaseWorkChain.get_builder_from_protocol`` method."""
     code = fixture_code('quantumespresso.pw')
-    structure = generate_structure()
+    structure = generate_structure('silicon')
+    initial_magnetic_moments = {'Si': 1.0}
+    initial_starting_magnetization = {'Si': 0.5}
+    overrides = {'pw': {'parameters': {'SYSTEM': {'starting_magnetization': initial_starting_magnetization}}}}
+
+    # Test specifying `starting_magnetization` via the `overrides`
+    builder = PwBaseWorkChain.get_builder_from_protocol(
+        code, structure, overrides=overrides, spin_type=SpinType.COLLINEAR
+    )
+    assert builder.pw.parameters['SYSTEM']['starting_magnetization'] == initial_starting_magnetization
+    assert builder.pw.parameters['SYSTEM']['nspin'] == 2
+
+    # Test that specifying `initial_magnetic_moments` overrides the `overrides`
+    builder = PwBaseWorkChain.get_builder_from_protocol(
+        code,
+        structure,
+        overrides=overrides,
+        spin_type=SpinType.COLLINEAR,
+        initial_magnetic_moments=initial_magnetic_moments
+    )
+    assert builder.pw.parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.25}
+    assert builder.pw.parameters['SYSTEM']['nspin'] == 2
+
+
+def test_parameter_overrides(fixture_code, generate_structure):
+    """Test specifying parameter ``overrides`` for the ``get_builder_from_protocol()`` method."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure('silicon')
+
+    overrides = {'pw': {'parameters': {'SYSTEM': {'nbnd': 123}}}}
+    builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)
+    assert builder.pw.parameters['SYSTEM']['nbnd'] == 123
+
+
+def test_settings_overrides(fixture_code, generate_structure):
+    """Test specifying settings ``overrides`` for the ``get_builder_from_protocol()`` method."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure('silicon')
+
+    overrides = {'pw': {'settings': {'cmdline': ['--kickass-mode']}}}
+    builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)
+    assert builder.pw.settings['cmdline'] == ['--kickass-mode']
+
+
+def test_metadata_overrides(fixture_code, generate_structure):
+    """Test specifying metadata ``overrides`` for the ``get_builder_from_protocol()`` method."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure('silicon')
 
     overrides = {'pw': {'metadata': {'options': {'resources': {'num_machines': 1e90}, 'max_wallclock_seconds': 1}}}}
     builder = PwBaseWorkChain.get_builder_from_protocol(
@@ -113,9 +164,9 @@ def test_metadata_overrides(fixture_code, generate_structure):
 
 
 def test_parallelization_overrides(fixture_code, generate_structure):
-    """Test that pw parallelization settings are correctly passed through overrides."""
+    """Test specifying parallelization ``overrides`` for the ``get_builder_from_protocol()`` method."""
     code = fixture_code('quantumespresso.pw')
-    structure = generate_structure()
+    structure = generate_structure('silicon')
 
     overrides = {'pw': {'parallelization': {'npool': 4, 'ndiag': 12}}}
     builder = PwBaseWorkChain.get_builder_from_protocol(
