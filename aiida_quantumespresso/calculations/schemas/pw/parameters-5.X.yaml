@@ -1,0 +1,344 @@
+$schema: http://json-schema.org/draft/2019-09/schema#
+additionalProperties: false
+properties:
+  CELL:
+    additionalProperties: false
+    properties:
+      cell_dofree:
+        type: string
+      cell_dynamics:
+        type: string
+      cell_factor:
+        type: number
+      press:
+        type: number
+      press_conv_thr:
+        type: number
+      wmass:
+        type: number
+    type: object
+  CONTROL:
+    additionalProperties: false
+    properties:
+      calculation:
+        type: string
+      dipfield:
+        type: boolean
+      disk_io:
+        type: string
+      dt:
+        type: number
+      etot_conv_thr:
+        type: number
+      forc_conv_thr:
+        type: number
+      gdir:
+        type: integer
+      iprint:
+        type: integer
+      lberry:
+        type: boolean
+      lelfield:
+        type: boolean
+      lfcpopt:
+        type: boolean
+      lkpoint_dir:
+        type: boolean
+      lorbm:
+        type: boolean
+      max_seconds:
+        type: number
+      nberrycyc:
+        type: integer
+      nppstr:
+        type: integer
+      nstep:
+        type: integer
+      outdir:
+        type: string
+      prefix:
+        type: string
+      pseudo_dir:
+        type: string
+      restart_mode:
+        type: string
+      tefield:
+        type: boolean
+      title:
+        type: string
+      tprnfor:
+        type: boolean
+      tstress:
+        type: boolean
+      verbosity:
+        type: string
+      wf_collect:
+        type: boolean
+      wfcdir:
+        type: string
+    type: object
+  ELECTRONS:
+    additionalProperties: false
+    properties:
+      adaptive_thr:
+        type: boolean
+      conv_thr:
+        type: number
+      conv_thr_init:
+        type: number
+      conv_thr_multi:
+        type: number
+      diago_cg_maxiter:
+        type: integer
+      diago_david_ndim:
+        type: integer
+      diago_full_acc:
+        type: boolean
+      diago_thr_init:
+        type: number
+      diagonalization:
+        type: string
+      efield:
+        type: number
+      efield_cart:
+        type: object
+      electron_maxstep:
+        type: integer
+      mixing_beta:
+        type: number
+      mixing_fixed_ns:
+        type: integer
+      mixing_mode:
+        type: string
+      mixing_ndim:
+        type: integer
+      ortho_para:
+        type: integer
+      scf_must_converge:
+        type: boolean
+      startingpot:
+        type: string
+      startingwfc:
+        type: string
+      tqr:
+        type: boolean
+    type: object
+  IONS:
+    additionalProperties: false
+    properties:
+      bfgs_ndim:
+        type: integer
+      delta_t:
+        type: number
+      ion_dynamics:
+        type: string
+      ion_positions:
+        type: string
+      ion_temperature:
+        type: string
+      nraise:
+        type: integer
+      phase_space:
+        type: string
+      pot_extrapolation:
+        type: string
+      refold_pos:
+        type: boolean
+      remove_rigid_rot:
+        type: boolean
+      tempw:
+        type: number
+      tolp:
+        type: number
+      trust_radius_ini:
+        type: number
+      trust_radius_max:
+        type: number
+      trust_radius_min:
+        type: number
+      upscale:
+        type: number
+      w_1:
+        type: number
+      w_2:
+        type: number
+      wfc_extrapolation:
+        type: string
+    type: object
+  SYSTEM:
+    additionalProperties: false
+    properties:
+      A:
+        type: number
+      B:
+        type: number
+      C:
+        type: number
+      Hubbard_J0:
+        type: object
+      Hubbard_U:
+        type: object
+      Hubbard_alpha:
+        type: object
+      Hubbard_beta:
+        type: object
+      U_projection_type:
+        type: string
+      angle1:
+        type: object
+      angle2:
+        type: object
+      assume_isolated:
+        type: string
+      celldm:
+        type: object
+      constrained_magnetization:
+        type: string
+      cosAB:
+        type: number
+      cosAC:
+        type: number
+      cosBC:
+        type: number
+      degauss:
+        type: number
+      eamp:
+        type: number
+      ecfixed:
+        type: number
+      ecutfock:
+        type: number
+      ecutrho:
+        type: number
+      ecutvcut:
+        type: number
+      ecutwfc:
+        type: number
+      edir:
+        type: integer
+      emaxpos:
+        type: number
+      eopreg:
+        type: number
+      esm_bc:
+        type: string
+      esm_efield:
+        type: number
+      esm_nfit:
+        type: integer
+      esm_w:
+        type: number
+      exx_fraction:
+        type: number
+      exxdiv_treatment:
+        type: string
+      fcp_mu:
+        type: number
+      fixed_magnetization:
+        type: object
+      force_symmorphic:
+        type: boolean
+      ibrav:
+        type: integer
+      input_dft:
+        type: string
+      lambda:
+        type: number
+      lda_plus_u:
+        type: boolean
+      lda_plus_u_kind:
+        type: integer
+      london:
+        type: boolean
+      london_c6:
+        type: object
+      london_rcut:
+        type: number
+      london_rvdw:
+        type: object
+      london_s6:
+        type: number
+      lspinorb:
+        type: boolean
+      nat:
+        type: integer
+      nbnd:
+        type: integer
+      no_t_rev:
+        type: boolean
+      noinv:
+        type: boolean
+      noncolin:
+        type: boolean
+      nosym:
+        type: boolean
+      nosym_evc:
+        type: boolean
+      nqx1:
+        type: integer
+      nqx2:
+        type: integer
+      nqx3:
+        type: integer
+      nr1:
+        type: integer
+      nr1s:
+        type: integer
+      nr2:
+        type: integer
+      nr2s:
+        type: integer
+      nr3:
+        type: integer
+      nr3s:
+        type: integer
+      nspin:
+        type: integer
+      ntyp:
+        type: integer
+      occupations:
+        type: string
+      one_atom_occupations:
+        type: boolean
+      origin_choice:
+        type: integer
+      q2sigma:
+        type: number
+      qcutz:
+        type: number
+      report:
+        type: integer
+      rhombohedral:
+        type: boolean
+      screening_parameter:
+        type: number
+      smearing:
+        type: string
+      space_group:
+        type: integer
+      starting_magnetization:
+        type: object
+      starting_ns_eigenvalue(m,ispin,I):
+        type: number
+      starting_spin_angle:
+        type: boolean
+      tot_charge:
+        type: number
+      tot_magnetization:
+        type: number
+      uniqueb:
+        type: boolean
+      use_all_frac:
+        type: boolean
+      vdw_corr:
+        type: string
+      x_gamma_extrapolation:
+        type: boolean
+      xdm:
+        type: boolean
+      xdm_a1:
+        type: number
+      xdm_a2:
+        type: number
+    type: object
+type: object

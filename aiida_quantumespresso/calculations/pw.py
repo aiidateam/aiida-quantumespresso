@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """`CalcJob` implementation for the pw.x code of Quantum ESPRESSO."""
 import os
+import pathlib
+import yaml
+import jsonschema
 
 from aiida import orm
 from aiida.common.lang import classproperty
@@ -151,6 +154,15 @@ class PwCalculation(BasePwCpInputGenerator):
             message='The electronic minimization cycle did not reach self-consistency, but `scf_must_converge` '
                     'is `False` and/or `electron_maxstep` is 0.')
         # yapf: enable
+
+    @staticmethod
+    def validate_parameters(value, _):
+        """Validate the input parameters of the pw.x calculation."""
+
+        with (pathlib.Path(__file__).resolve().parent / 'schemas' / 'pw' / 'parameters-6.X.yaml').open() as handle:
+            parameters_schema = yaml.safe_load(handle)
+
+        jsonschema.validate(value.get_dict(), parameters_schema)
 
     @classproperty
     def filename_input_hubbard_parameters(cls):

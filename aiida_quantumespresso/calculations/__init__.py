@@ -8,12 +8,12 @@ import warnings
 from functools import partial
 from types import MappingProxyType
 
+from qe_tools.converters import get_parameters_from_cell
 from aiida import orm
 from aiida.common import datastructures, exceptions
 from aiida.common.lang import classproperty
 from aiida.common.warnings import AiidaDeprecationWarning
 from aiida.plugins import DataFactory
-from qe_tools.converters import get_parameters_from_cell
 
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 from .base import CalcJob
@@ -115,7 +115,8 @@ class BasePwCpInputGenerator(CalcJob):
         spec.input('structure', valid_type=orm.StructureData,
             help='The input structure.')
         spec.input('parameters', valid_type=orm.Dict,
-            help='The input parameters that are to be used to construct the input file.')
+            help='The input parameters that are to be used to construct the input file.',
+            validator=cls.validate_parameters)
         spec.input('settings', valid_type=orm.Dict, required=False,
             help='Optional parameters to affect the way the calculation job and the parsing are performed.')
         spec.input('parent_folder', valid_type=orm.RemoteData, required=False,
@@ -151,6 +152,11 @@ class BasePwCpInputGenerator(CalcJob):
             invalid_values = [val for val in value_dict.values() if not isinstance(val, numbers.Integral)]
             if invalid_values:
                 return f'Parallelization values must be integers; got invalid values {invalid_values}.'
+
+    @staticmethod
+    def validate_parameters(value, _):
+        """Validate the input parameters of the pw.x calculation."""
+        raise NotImplementedError
 
     def prepare_for_submission(self, folder):
         """Create the input files from the input nodes passed to this instance of the `CalcJob`.
@@ -442,11 +448,8 @@ class BasePwCpInputGenerator(CalcJob):
             pseudo = pseudos[kind.name]
             if kind.is_alloy or kind.has_vacancies:
                 raise exceptions.InputValidationError(
-                    "Kind '{}' is an alloy or has "
-                    'vacancies. This is not allowed for pw.x input structures.'
-                    ''.format(kind.name)
+                    f'Kind `{kind.name}` is an alloy or has vacancies. This is not allowed for `pw.x` input structures.'
                 )
-
             try:
                 # If it is the same pseudopotential file, use the same filename
                 filename = pseudo_filenames[pseudo.pk]
