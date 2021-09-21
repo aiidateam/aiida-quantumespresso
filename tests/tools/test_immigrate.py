@@ -52,6 +52,9 @@ def test_create_builder(fixture_sandbox, fixture_code, generate_upf_data, genera
             'ecutrho': 240.0,
             'ecutwfc': 30.0,
             'ibrav': 0,
+        },
+        'ELECTRONS': {
+            'electron_maxstep': 60
         }
     }
     assert 'kpoints' in builder
