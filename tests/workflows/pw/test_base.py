@@ -41,7 +41,7 @@ def test_handle_unrecoverable_failure(generate_workchain_pw):
 
 def test_handle_out_of_walltime(generate_workchain_pw, fixture_localhost, generate_remote_data):
     """Test `PwBaseWorkChain.handle_out_of_walltime`."""
-    remote_data = generate_remote_data(computer=fixture_localhost, remote_path='/come_to_papa')
+    remote_data = generate_remote_data(computer=fixture_localhost, remote_path='/path/to/remote')
     process = generate_workchain_pw(
         exit_code=PwCalculation.exit_codes.ERROR_OUT_OF_WALLTIME, pw_outputs={'remote_folder': remote_data}
     )
@@ -76,7 +76,7 @@ def test_handle_out_of_walltime_structure_changed(generate_workchain_pw, generat
 
 def test_handle_electronic_convergence_not_achieved(generate_workchain_pw, fixture_localhost, generate_remote_data):
     """Test `PwBaseWorkChain.handle_electronic_convergence_not_achieved`."""
-    remote_data = generate_remote_data(computer=fixture_localhost, remote_path='/come_to_papa')
+    remote_data = generate_remote_data(computer=fixture_localhost, remote_path='/path/to/remote')
 
     process = generate_workchain_pw(
         exit_code=PwCalculation.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED,

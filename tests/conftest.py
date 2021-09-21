@@ -694,7 +694,9 @@ def generate_workchain_pdos(
         nscf_pw_inputs['parameters']['CONTROL']['calculation'] = 'nscf'
         nscf_pw_inputs['parameters']['SYSTEM']['occupations'] = 'tetrahedra'
         nscf_pw_inputs['parameters']['SYSTEM']['nosym'] = True
-        nscf_pw_inputs['parent_folder'] = generate_remote_data(computer=fixture_localhost, remote_path='/daddy_is_here')
+        nscf_pw_inputs['parent_folder'] = generate_remote_data(
+            computer=fixture_localhost, remote_path='/path/to/remote'
+        )
 
         nscf = {'pw': nscf_pw_inputs, 'kpoints': kpoints}
 
