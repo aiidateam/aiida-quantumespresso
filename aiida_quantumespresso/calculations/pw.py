@@ -160,17 +160,14 @@ class PwCalculation(BasePwCpInputGenerator):
         """Validate the top level namespace.
 
         1. Check that the restart input parameters are set correctly. In case of 'nscf' and 'bands' calculations, this
-        means that ``parent_folder`` is provided, ``startingpot`` is set to 'file' and ``restart_mode`` is
-        'from_scratch'. For other calculations, if the ``parent_folder`` is provided, the restart settings must be set
-        to use some of the outputs.
+        means that ``startingpot`` is set to 'file' and ``restart_mode`` is 'from_scratch'. For other calculations, if
+        the ``parent_folder`` is provided, the restart settings must be set to use some of the outputs.
         """
         parameters = value['parameters'].get_dict()
         calculation_type = parameters.get('CONTROL', {}).get('calculation', 'scf')
 
         # Check that the restart input parameters are set correctly
         if calculation_type in ('nscf', 'bands'):
-            if 'parent_folder' not in value:
-                return f'`parent_folder` not provided for `{calculation_type}` calculation.'
             if parameters.get('ELECTRONS', {}).get('startingpot', 'file') != 'file':
                 return f'`startingpot` should be set to `file` for a `{calculation_type}` calculation.'
             if parameters.get('CONTROL', {}).get('restart_mode', 'from_scratch') != 'from_scratch':

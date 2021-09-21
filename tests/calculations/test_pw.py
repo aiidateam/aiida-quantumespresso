@@ -299,11 +299,6 @@ def test_pw_validate_inputs_restart_nscf(
     parameters = inputs['parameters'].get_dict()
     parameters['CONTROL']['calculation'] = calculation
 
-    # No parent_folder -> raise
-    inputs['parameters'] = orm.Dict(dict=parameters)
-    with pytest.raises(ValueError, match='`parent_folder` not provided for `.*` calculation.'):
-        generate_calc_job(fixture_sandbox, entry_point_name, inputs)
-
     # Parent_folder + defaults -> works
     inputs['parent_folder'] = remote_data
     generate_calc_job(fixture_sandbox, entry_point_name, inputs)

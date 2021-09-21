@@ -340,6 +340,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         scf.pop('clean_workdir', None)
         nscf = PwBaseWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('nscf', None), **kwargs)
         nscf['pw'].pop('structure', None)
+        nscf['pw']['parameters']['SYSTEM']['occupations'] = 'tetrahedra'
         nscf['pw']['parameters']['SYSTEM'].pop('smearing', None)
         nscf['pw']['parameters']['SYSTEM'].pop('degauss', None)
         nscf.pop('clean_workdir', None)
