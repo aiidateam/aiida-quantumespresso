@@ -13,6 +13,7 @@
   ntyp = 1
 /
 &ELECTRONS
+  electron_maxstep = 60
 /
 ATOMIC_SPECIES
 Si     28.0855 Si.upf
