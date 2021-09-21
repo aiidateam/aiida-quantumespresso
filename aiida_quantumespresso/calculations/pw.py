@@ -174,7 +174,7 @@ class PwCalculation(BasePwCpInputGenerator):
             if parameters.get('ELECTRONS', {}).get('startingpot', 'file') != 'file':
                 return f'`startingpot` should be set to `file` for a `{calculation_type}` calculation.'
             if parameters.get('CONTROL', {}).get('restart_mode', 'from_scratch') != 'from_scratch':
-                return f'`restart_mode` should be set to `from_scratch` for a `{calculation_type}` calculation.'
+                warnings.warn(f'`restart_mode` should be set to `from_scratch` for a `{calculation_type}` calculation.')
         elif 'parent_folder' in value:
             if not any([
                 parameters.get('CONTROL', {}).get('restart_mode', None) == 'restart',
