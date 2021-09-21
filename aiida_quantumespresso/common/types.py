@@ -36,7 +36,7 @@ class SpinType(enum.Enum):
 class RestartType(enum.Enum):
     """Enumeration of ways to restart a calculation in Quantum ESPRESSO."""
 
-    FROM_SCRATCH = 'from_scratch'
     FULL = 'full'
+    FROM_SCRATCH = 'from_scratch'
     FROM_CHARGE_DENSITY = 'from_charge_density'
     FROM_WAVE_FUNCTIONS = 'from_wave_functions'

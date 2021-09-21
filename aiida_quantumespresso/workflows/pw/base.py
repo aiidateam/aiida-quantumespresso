@@ -73,7 +73,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         spec.outline(
             cls.setup,
-            cls.validate_parameters,
             cls.validate_kpoints,
             cls.validate_pseudos,
             if_(cls.should_run_init)(
@@ -230,27 +229,24 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         return builder
 
     def setup(self):
-        """Call the `setup` of the `BaseRestartWorkChain` and then create the inputs dictionary in `self.ctx.inputs`.
+        """Call the ``setup`` of the ``BaseRestartWorkChain`` and create the inputs dictionary in ``self.ctx.inputs``.
 
-        This `self.ctx.inputs` dictionary will be used by the `BaseRestartWorkChain` to submit the calculations in the
-        internal loop.
+        This ``self.ctx.inputs`` dictionary will be used by the ``BaseRestartWorkChain`` to submit the calculations
+        in the internal loop.
+
+        The ``parameters`` and ``settings`` input ``Dict`` nodes are converted into a regular dictionary and the
+        default namelists for the ``parameters`` are set to empty dictionaries if not specified.
         """
         super().setup()
         self.ctx.inputs = AttributeDict(self.exposed_inputs(PwCalculation, 'pw'))
 
-    def validate_parameters(self):
-        """Validate inputs that might depend on each other and cannot be validated by the spec.
-
-        Also define dictionary `inputs` in the context, that will contain the inputs for the calculation that will be
-        launched in the `run_calculation` step.
-        """
         self.ctx.inputs.parameters = self.ctx.inputs.parameters.get_dict()
-        self.ctx.inputs.settings = self.ctx.inputs.settings.get_dict() if 'settings' in self.ctx.inputs else {}
-
         self.ctx.inputs.parameters.setdefault('CONTROL', {})
         self.ctx.inputs.parameters.setdefault('ELECTRONS', {})
         self.ctx.inputs.parameters.setdefault('SYSTEM', {})
         self.ctx.inputs.parameters['CONTROL'].setdefault('calculation', 'scf')
+
+        self.ctx.inputs.settings = self.ctx.inputs.settings.get_dict() if 'settings' in self.ctx.inputs else {}
 
     def validate_kpoints(self):
         """Validate the inputs related to k-points.
@@ -459,8 +455,8 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         Verify that the occupation of the last band is below a certain threshold, unless `occupations` was explicitly
         set to `fixed` in the input parameters. If this is violated, the calculation used too few bands and cannot be
-        trusted. The number of bands is increased and the calculation is restarted, using the
-        charge density from the previous calculation.
+        trusted. The number of bands is increased and the calculation is restarted, using the charge density from the
+        previous calculation.
         """
         from aiida_quantumespresso.utils.bands import get_highest_occupied_band
 

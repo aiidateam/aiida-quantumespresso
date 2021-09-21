@@ -173,19 +173,18 @@ class PwCalculation(BasePwCpInputGenerator):
                 return f'`parent_folder` not provided for `{calculation_type}` calculation.'
             if parameters.get('ELECTRONS', {}).get('startingpot', 'file') != 'file':
                 return f'`startingpot` should be set to `file` for a `{calculation_type}` calculation.'
-            if parameters.get('CONTROL', {}).get('CONTROL', None) == 'restart':
+            if parameters.get('CONTROL', {}).get('restart_mode', None) == 'restart':
                 return f'`restart_mode` should be set to `from_scratch` for a `{calculation_type}` calculation.'
-        else:
-            if 'parent_folder' in value:
-                if not any([
-                    parameters.get('CONTROL', {}).get('CONTROL', None) == 'restart' and
-                    parameters.get('ELECTRONS', {}).get('startingpot', None) == 'file' and
-                    parameters.get('ELECTRONS', {}).get('startingwfc', None) == 'file'
-                ]):
-                    warnings.warn(
-                        '`parent_folder` input was provided for the `PwCalculation`, but no '
-                        'input parameters are set to restart from these files.'
-                    )
+        elif 'parent_folder' in value:
+            if not any([
+                parameters.get('CONTROL', {}).get('calculation', None) == 'restart',
+                parameters.get('ELECTRONS', {}).get('startingpot', None) == 'file',
+                parameters.get('ELECTRONS', {}).get('startingwfc', None) == 'file'
+            ]):
+                warnings.warn(
+                    '`parent_folder` input was provided for the `PwCalculation`, but no '
+                    'input parameters are set to restart from these files.'
+                )
 
     @classproperty
     def filename_input_hubbard_parameters(cls):
