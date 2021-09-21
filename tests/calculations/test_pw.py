@@ -314,9 +314,9 @@ def test_pw_validate_inputs_restart_nscf(
     with pytest.raises(ValueError, match='`startingpot` should be set to `file` for a `.*` calculation.'):
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
-    # Set `restart_mode` to `'restart'` -> raise
+    # Set `restart_mode` to `'restart'` -> warning
     parameters['ELECTRONS'].pop('startingpot')
     parameters['CONTROL']['restart_mode'] = 'restart'
     inputs['parameters'] = orm.Dict(dict=parameters)
-    with pytest.raises(ValueError, match='`restart_mode` should be set to `from_scratch` for a `.*`.'):
+    with pytest.warns(Warning, match='`restart_mode` should be set to `from_scratch` for a `.*`.'):
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)
