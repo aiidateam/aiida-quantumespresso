@@ -515,28 +515,25 @@ def generate_inputs_pw(fixture_code, generate_structure, generate_kpoints_mesh, 
         from aiida.orm import Dict
         from aiida_quantumespresso.utils.resources import get_default_options
 
-        inputs = {
-            'code':
-            fixture_code('quantumespresso.pw'),
-            'structure':
-            generate_structure(),
-            'kpoints':
-            generate_kpoints_mesh(2),
-            'parameters':
-            Dict(
-                dict={
-                    'CONTROL': {
-                        'calculation': 'scf'
-                    },
-                    'SYSTEM': {
-                        'ecutrho': 240.0,
-                        'ecutwfc': 30.0
-                    },
-                    'ELECTRONS': {
-                        'electron_maxstep': 60,
-                    }
+        parameters = Dict(
+            dict={
+                'CONTROL': {
+                    'calculation': 'scf'
+                },
+                'SYSTEM': {
+                    'ecutrho': 240.0,
+                    'ecutwfc': 30.0
+                },
+                'ELECTRONS': {
+                    'electron_maxstep': 60,
                 }
-            ),
+            }
+        )
+        inputs = {
+            'code': fixture_code('quantumespresso.pw'),
+            'structure': generate_structure(),
+            'kpoints': generate_kpoints_mesh(2),
+            'parameters': parameters,
             'pseudos': {
                 'Si': generate_upf_data('Si')
             },
@@ -544,7 +541,6 @@ def generate_inputs_pw(fixture_code, generate_structure, generate_kpoints_mesh, 
                 'options': get_default_options()
             }
         }
-
         return inputs
 
     return _generate_inputs_pw
