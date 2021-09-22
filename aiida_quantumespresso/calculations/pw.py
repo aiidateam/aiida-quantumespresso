@@ -122,6 +122,8 @@ class PwCalculation(BasePwCpInputGenerator):
             message='The code failed with negative dexx in the exchange calculation.')
         spec.exit_code(462, 'ERROR_COMPUTING_CHOLESKY',
             message='The code failed during the cholesky factorization.')
+        spec.exit_code(463, 'ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED',
+            message='Too many bands failed to converge during the diagonalization.')
 
         spec.exit_code(481, 'ERROR_NPOOLS_TOO_HIGH',
             message='The k-point parallelization "npools" is too high, some nodes have no k-points.')

@@ -246,6 +246,7 @@ def detect_important_message(logs, line):
             'problems computing cholesky': 'ERROR_COMPUTING_CHOLESKY',
             'dexx is negative': 'ERROR_DEXX_IS_NEGATIVE',
             'some nodes have no k-points': 'ERROR_NPOOLS_TOO_HIGH',
+            'too many bands are not converged': 'ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED',
         },
         'warning': {
             'Warning:': None,

@@ -140,6 +140,7 @@ class PwParser(Parser):
             'ERROR_DEXX_IS_NEGATIVE',
             'ERROR_COMPUTING_CHOLESKY',
             'ERROR_NPOOLS_TOO_HIGH',
+            'ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED',
         ]:
             if error_label in logs['error']:
                 return self.exit_codes.get(error_label)
