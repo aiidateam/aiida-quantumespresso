@@ -3,14 +3,23 @@
 """Tests for the `ProjwfcParser`."""
 
 
-def test_projwfc_nonpolarised(fixture_localhost, generate_calc_job_node, generate_parser, data_regression):
+def test_projwfc_nonpolarised(fixture_localhost, generate_calc_job_node, generate_parser, data_regression, tmpdir):
     """Test ``ProjwfcParser`` on the results of a non-polarised ``projwfc.x`` calculation."""
     entry_point_calc_job = 'quantumespresso.projwfc'
     entry_point_parser = 'quantumespresso.projwfc'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'nonpolarised')
+    retrieve_temporary_list = ['data-file-schema.xml']
+    attributes = {'retrieve_temporary_list': retrieve_temporary_list}
+
+    node = generate_calc_job_node(
+        entry_point_name=entry_point_calc_job,
+        computer=fixture_localhost,
+        test_name='nonpolarised',
+        attributes=attributes,
+        retrieve_temporary=(tmpdir, retrieve_temporary_list)
+    )
     parser = generate_parser(entry_point_parser)
-    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False, retrieved_temporary_folder=tmpdir)
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
@@ -26,14 +35,23 @@ def test_projwfc_nonpolarised(fixture_localhost, generate_calc_job_node, generat
     })
 
 
-def test_projwfc_spinpolarised(fixture_localhost, generate_calc_job_node, generate_parser, data_regression):
+def test_projwfc_spinpolarised(fixture_localhost, generate_calc_job_node, generate_parser, data_regression, tmpdir):
     """Test ``ProjwfcParser`` on the results of a spin-polarised ``projwfc.x`` calculation."""
     entry_point_calc_job = 'quantumespresso.projwfc'
     entry_point_parser = 'quantumespresso.projwfc'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'spinpolarised')
+    retrieve_temporary_list = ['data-file-schema.xml']
+    attributes = {'retrieve_temporary_list': retrieve_temporary_list}
+
+    node = generate_calc_job_node(
+        entry_point_name=entry_point_calc_job,
+        computer=fixture_localhost,
+        test_name='spinpolarised',
+        attributes=attributes,
+        retrieve_temporary=(tmpdir, retrieve_temporary_list)
+    )
     parser = generate_parser(entry_point_parser)
-    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False, retrieved_temporary_folder=tmpdir)
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
@@ -52,14 +70,23 @@ def test_projwfc_spinpolarised(fixture_localhost, generate_calc_job_node, genera
     })
 
 
-def test_projwfc_noncollinear(fixture_localhost, generate_calc_job_node, generate_parser, data_regression):
+def test_projwfc_noncollinear(fixture_localhost, generate_calc_job_node, generate_parser, data_regression, tmpdir):
     """Test ``ProjwfcParser`` on the results of a noncollinear ``projwfc.x`` calculation."""
     entry_point_calc_job = 'quantumespresso.projwfc'
     entry_point_parser = 'quantumespresso.projwfc'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'noncollinear')
+    retrieve_temporary_list = ['data-file-schema.xml']
+    attributes = {'retrieve_temporary_list': retrieve_temporary_list}
+
+    node = generate_calc_job_node(
+        entry_point_name=entry_point_calc_job,
+        computer=fixture_localhost,
+        test_name='noncollinear',
+        attributes=attributes,
+        retrieve_temporary=(tmpdir, retrieve_temporary_list)
+    )
     parser = generate_parser(entry_point_parser)
-    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False, retrieved_temporary_folder=tmpdir)
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
@@ -75,14 +102,23 @@ def test_projwfc_noncollinear(fixture_localhost, generate_calc_job_node, generat
     })
 
 
-def test_projwfc_spinorbit(fixture_localhost, generate_calc_job_node, generate_parser, data_regression):
+def test_projwfc_spinorbit(fixture_localhost, generate_calc_job_node, generate_parser, data_regression, tmpdir):
     """Test ``ProjwfcParser`` on the results of a spinorbit ``projwfc.x`` calculation."""
     entry_point_calc_job = 'quantumespresso.projwfc'
     entry_point_parser = 'quantumespresso.projwfc'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'spinorbit')
+    retrieve_temporary_list = ['data-file-schema.xml']
+    attributes = {'retrieve_temporary_list': retrieve_temporary_list}
+
+    node = generate_calc_job_node(
+        entry_point_name=entry_point_calc_job,
+        computer=fixture_localhost,
+        test_name='spinorbit',
+        attributes=attributes,
+        retrieve_temporary=(tmpdir, retrieve_temporary_list)
+    )
     parser = generate_parser(entry_point_parser)
-    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False, retrieved_temporary_folder=tmpdir)
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from pathlib import Path
 import re
 import fnmatch
 
@@ -281,8 +282,12 @@ class ProjwfcParser(Parser):
 
         Retrieves projwfc output, and some basic information from the out_file, such as warnings and wall_time
         """
-        # Check that the retrieved folder is there
         retrieved = self.retrieved
+        # Get the temporary retrieved folder
+        try:
+            retrieved_temporary_folder = kwargs['retrieved_temporary_folder']
+        except KeyError:
+            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
 
         # Read standard out
         try:
@@ -307,7 +312,7 @@ class ProjwfcParser(Parser):
         self.out('output_parameters', Dict(dict=parsed_data))
 
         # Parse the XML to obtain the `structure`, `kpoints` and spin-related settings from the parent calculation
-        parsed_xml, logs_xml = self._parse_xml()
+        parsed_xml, logs_xml = self._parse_xml(retrieved_temporary_folder)
         self.emit_logs(logs_xml)
 
         # we create a dictionary the progressively accumulates more info
@@ -356,7 +361,7 @@ class ProjwfcParser(Parser):
         Dos_out.set_y(dos, 'Dos', 'states/eV')
         self.out('Dos', Dos_out)
 
-    def _parse_xml(self):
+    def _parse_xml(self, retrieved_temporary_folder):
         """Parse the XML file.
 
         The XML must be parsed in order to obtain the required information for the orbital parsing.
@@ -364,13 +369,13 @@ class ProjwfcParser(Parser):
         from .parse_xml.exceptions import XMLParseError, XMLUnsupportedFormatError
         from .parse_xml.pw.parse import parse_xml
 
-        xml_filename = self.node.process_class.xml_filename
+        xml_filepath = Path(retrieved_temporary_folder) / self.node.process_class.xml_filename
 
-        if xml_filename not in self.retrieved.list_object_names():
+        if not xml_filepath.exists():
             self.exit(self.exit_codes.ERROR_OUTPUT_XML_MISSING)
 
         try:
-            with self.retrieved.open(xml_filename, 'r') as handle:
+            with xml_filepath.open('r') as handle:
                 parsed_xml, logs = parse_xml(handle, None)
         except IOError:
             self.exit(self.exit_codes.ERROR_OUTPUT_XML_READ)
