@@ -1,0 +1,132 @@
+
+     Program PROJWFC v.6.6 starts on  3Oct2021 at 13:44:39 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI), running on     1 processors
+
+     MPI processes distributed on     1 nodes
+     Fft bands division:     nmany     =       1
+
+     Reading xml data from directory:
+
+     ./out/aiida.save/
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation= PBE
+                           (   1   4   3   4   0   0   0)
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum         877     439    127                17261     6183     965
+
+
+     Linear tetrahedron method (read from file) 
+     [opt_tetra]  Linear tetrahedron method is used.
+
+     Calling projwave .... 
+
+  Problem Sizes 
+  natomwfc =            8
+  nbnd     =            8
+  nkstot   =            2
+  npwx     =          778
+  nkb      =           36
+
+
+     Atomic states used for projection
+     (read from pseudopotential files):
+
+     state #   1: atom   1 (Si ), wfc  1 (l=0 m= 1)
+     state #   2: atom   1 (Si ), wfc  2 (l=1 m= 1)
+     state #   3: atom   1 (Si ), wfc  2 (l=1 m= 2)
+     state #   4: atom   1 (Si ), wfc  2 (l=1 m= 3)
+     state #   5: atom   2 (Si ), wfc  1 (l=0 m= 1)
+     state #   6: atom   2 (Si ), wfc  2 (l=1 m= 1)
+     state #   7: atom   2 (Si ), wfc  2 (l=1 m= 2)
+     state #   8: atom   2 (Si ), wfc  2 (l=1 m= 3)
+
+ k =   0.0000000000  0.0000000000  0.0000000000
+==== e(   1) =    -5.79862 eV ==== 
+     psi = 0.498*[#   1]+0.498*[#   5]
+    |psi|^2 = 0.996
+==== e(   2) =     6.02858 eV ==== 
+     psi = 0.481*[#   2]+0.481*[#   6]
+    |psi|^2 = 0.962
+==== e(   3) =     6.02858 eV ==== 
+     psi = 0.481*[#   4]+0.481*[#   8]
+    |psi|^2 = 0.962
+==== e(   4) =     6.02858 eV ==== 
+     psi = 0.481*[#   3]+0.481*[#   7]
+    |psi|^2 = 0.962
+==== e(   5) =     8.56508 eV ==== 
+     psi = 0.482*[#   3]+0.482*[#   7]
+    |psi|^2 = 0.965
+==== e(   6) =     8.56508 eV ==== 
+     psi = 0.482*[#   4]+0.482*[#   8]
+    |psi|^2 = 0.965
+==== e(   7) =     8.56508 eV ==== 
+     psi = 0.482*[#   2]+0.482*[#   6]
+    |psi|^2 = 0.965
+==== e(   8) =     9.15264 eV ==== 
+     psi = 0.495*[#   1]+0.495*[#   5]
+    |psi|^2 = 0.989
+
+ k =  -0.5000000000  0.2886751346  0.2041241452
+==== e(   1) =    -3.51752 eV ==== 
+     psi = 0.388*[#   1]+0.388*[#   5]+0.074*[#   3]+0.074*[#   7]+0.025*[#   4]
+          +0.025*[#   8]+0.012*[#   2]+0.012*[#   6]
+    |psi|^2 = 0.997
+==== e(   2) =    -0.85516 eV ==== 
+     psi = 0.247*[#   3]+0.247*[#   7]+0.123*[#   1]+0.123*[#   5]+0.082*[#   4]
+          +0.082*[#   8]+0.041*[#   2]+0.041*[#   6]
+    |psi|^2 = 0.987
+==== e(   3) =     4.84298 eV ==== 
+     psi = 0.439*[#   2]+0.439*[#   6]+0.041*[#   3]+0.041*[#   7]+0.014*[#   4]
+          +0.014*[#   8]
+    |psi|^2 = 0.988
+==== e(   4) =     4.84299 eV ==== 
+     psi = 0.370*[#   4]+0.370*[#   8]+0.123*[#   3]+0.123*[#   7]
+    |psi|^2 = 0.988
+==== e(   5) =     7.48540 eV ==== 
+     psi = 0.338*[#   1]+0.338*[#   5]+0.083*[#   3]+0.083*[#   7]+0.028*[#   4]
+          +0.028*[#   8]+0.014*[#   2]+0.014*[#   6]
+    |psi|^2 = 0.923
+==== e(   6) =     9.35916 eV ==== 
+     psi = 0.288*[#   4]+0.288*[#   8]+0.096*[#   3]+0.096*[#   7]
+    |psi|^2 = 0.768
+==== e(   7) =     9.35916 eV ==== 
+     psi = 0.341*[#   2]+0.341*[#   6]+0.032*[#   3]+0.032*[#   7]+0.011*[#   4]
+          +0.011*[#   8]
+    |psi|^2 = 0.768
+==== e(   8) =    13.72363 eV ==== 
+     psi = 0.046*[#   3]+0.046*[#   7]+0.019*[#   1]+0.019*[#   5]+0.015*[#   4]
+          +0.015*[#   8]+0.008*[#   2]+0.008*[#   6]
+    |psi|^2 = 0.175
+
+Lowdin Charges: 
+
+     Atom #   1: total charge =   3.9205, s =  1.0086, 
+     Atom #   1: total charge =   3.9205, p =  2.9118, pz=  0.9734, px=  0.9664, py=  0.9720, 
+     Atom #   2: total charge =   3.9205, s =  1.0086, 
+     Atom #   2: total charge =   3.9205, p =  2.9118, pz=  0.9734, px=  0.9664, py=  0.9720, 
+     Spilling Parameter:   0.0199
+
+     PROJWFC      :      0.62s CPU      0.65s WALL
+
+
+   This run was terminated on:  13:44:40   3Oct2021            
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=
