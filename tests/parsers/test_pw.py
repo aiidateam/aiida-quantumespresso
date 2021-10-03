@@ -93,6 +93,36 @@ def test_pw_default_no_xml(
     })
 
 
+def test_pw_default_xml_210716(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+):
+    """Test a `pw.x` calculation in `scf` mode that produced the XML output with schema of 210716.
+
+    The output is created by running a dead simple SCF calculation for an aluminium structure. This test should test the
+    standard parsing of the stdout content and XML file stored in the standard results node.
+    """
+    name = 'default_xml_210716'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert not orm.Log.objects.get_logs_for(node), [log.message for log in orm.Log.objects.get_logs_for(node)]
+    assert 'output_band' in results
+    assert 'output_parameters' in results
+    assert 'output_trajectory' in results
+
+    data_regression.check({
+        'output_band': results['output_band'].attributes,
+        'output_parameters': results['output_parameters'].get_dict(),
+        'output_trajectory': results['output_trajectory'].attributes,
+    })
+
+
 def test_pw_default_xml_200420(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
@@ -907,3 +937,28 @@ def test_pw_vcrelax_failed_not_converged_nstep(
     assert 'output_parameters' in results
     assert 'output_structure' in results
     assert 'output_trajectory' in results
+
+
+def test_magnetic_moments_v68(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+):
+    """Test the parsing of the magnetic moments in QE v6.8 from stdout."""
+    name = 'magnetic_moments_v68'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    # By setting the `without_xml` option the parsing can only use the stdout content
+    inputs = generate_inputs(calculation_type='relax', metadata={'options': {'without_xml': True}})
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_trajectory' in results
+
+    data_regression.check({
+        'atomic_charges':
+        results['output_trajectory'].get_array('atomic_charges').tolist(),
+        'atomic_magnetic_moments':
+        results['output_trajectory'].get_array('atomic_magnetic_moments').tolist(),
+    })

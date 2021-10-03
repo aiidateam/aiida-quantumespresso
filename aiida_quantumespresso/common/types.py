@@ -31,3 +31,12 @@ class SpinType(enum.Enum):
     COLLINEAR = 'collinear'
     NON_COLLINEAR = 'non_collinear'
     SPIN_ORBIT = 'spin_orbit'
+
+
+class RestartType(enum.Enum):
+    """Enumeration of ways to restart a calculation in Quantum ESPRESSO."""
+
+    FULL = 'full'
+    FROM_SCRATCH = 'from_scratch'
+    FROM_CHARGE_DENSITY = 'from_charge_density'
+    FROM_WAVE_FUNCTIONS = 'from_wave_functions'

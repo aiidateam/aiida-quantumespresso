@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=redefined-outer-name,too-many-statements
 """Initialise a text database and profile for pytest."""
-import collections
 import io
 import os
 import shutil
 import tempfile
+
+from collections.abc import Mapping
 
 import pytest
 
@@ -47,7 +48,7 @@ def fixture_localhost(aiida_localhost):
 
 @pytest.fixture
 def fixture_code(fixture_localhost):
-    """Return a `Code` instance configured to run calculations of given entry point on localhost `Computer`."""
+    """Return a ``Code`` instance configured to run calculations of given entry point on localhost ``Computer``."""
 
     def _fixture_code(entry_point_name):
         from aiida.common import exceptions
@@ -182,7 +183,7 @@ def generate_calc_job_node(fixture_localhost):
         """Flatten inputs recursively like :meth:`aiida.engine.processes.process::Process._flatten_inputs`."""
         flat_inputs = []
         for key, value in inputs.items():
-            if isinstance(value, collections.Mapping):
+            if isinstance(value, Mapping):
                 flat_inputs.extend(flatten_inputs(value, prefix=prefix + key + '__'))
             else:
                 flat_inputs.append((prefix + key, value))
@@ -297,10 +298,13 @@ def generate_upf_data():
 
 @pytest.fixture
 def generate_structure():
-    """Return a `StructureData` representing bulk silicon."""
+    """Return a ``StructureData`` representing either bulk silicon or a water molecule."""
 
     def _generate_structure(structure_id='silicon'):
-        """Return a `StructureData` representing bulk silicon or a snapshot of a single water molecule dynamics."""
+        """Return a ``StructureData`` representing bulk silicon or a snapshot of a single water molecule dynamics.
+
+        :param structure_id: identifies the ``StructureData`` you want to generate. Either 'silicon' or 'water'.
+        """
         from aiida.orm import StructureData
 
         if structure_id == 'silicon':
@@ -511,19 +515,25 @@ def generate_inputs_pw(fixture_code, generate_structure, generate_kpoints_mesh, 
         from aiida.orm import Dict
         from aiida_quantumespresso.utils.resources import get_default_options
 
-        inputs = {
-            'code': fixture_code('quantumespresso.pw'),
-            'structure': generate_structure(),
-            'kpoints': generate_kpoints_mesh(2),
-            'parameters': Dict(dict={
+        parameters = Dict(
+            dict={
                 'CONTROL': {
                     'calculation': 'scf'
                 },
                 'SYSTEM': {
                     'ecutrho': 240.0,
                     'ecutwfc': 30.0
+                },
+                'ELECTRONS': {
+                    'electron_maxstep': 60,
                 }
-            }),
+            }
+        )
+        inputs = {
+            'code': fixture_code('quantumespresso.pw'),
+            'structure': generate_structure(),
+            'kpoints': generate_kpoints_mesh(2),
+            'parameters': parameters,
             'pseudos': {
                 'Si': generate_upf_data('Si')
             },
@@ -531,7 +541,6 @@ def generate_inputs_pw(fixture_code, generate_structure, generate_kpoints_mesh, 
                 'options': get_default_options()
             }
         }
-
         return inputs
 
     return _generate_inputs_pw
@@ -587,10 +596,19 @@ def generate_inputs_cp(fixture_code, generate_structure, generate_upf_data):
 
 @pytest.fixture
 def generate_workchain_pw(generate_workchain, generate_inputs_pw, generate_calc_job_node):
-    """Generate an instance of a `PwBaseWorkChain`."""
+    """Generate an instance of a ``PwBaseWorkChain``."""
 
-    def _generate_workchain_pw(exit_code=None, inputs=None, return_inputs=False):
+    def _generate_workchain_pw(exit_code=None, inputs=None, return_inputs=False, pw_outputs=None):
+        """Generate an instance of a ``PwBaseWorkChain``.
+
+        :param exit_code: exit code for the ``PwCalculation``.
+        :param inputs: inputs for the ``PwBaseWorkChain``.
+        :param return_inputs: return the inputs of the ``PwBaseWorkChain``.
+        :param pw_outputs: ``dict`` of outputs for the ``PwCalculation``. The keys must correspond to the link labels
+            and the values to the output nodes.
+        """
         from plumpy import ProcessState
+        from aiida.common import LinkType
         from aiida.orm import Dict
 
         entry_point = 'quantumespresso.pw.base'
@@ -605,13 +623,18 @@ def generate_workchain_pw(generate_workchain, generate_inputs_pw, generate_calc_
 
         process = generate_workchain(entry_point, inputs)
 
-        if exit_code is not None:
-            node = generate_calc_job_node(inputs={'parameters': Dict()})
-            node.set_process_state(ProcessState.FINISHED)
-            node.set_exit_status(exit_code.status)
+        pw_node = generate_calc_job_node(inputs={'parameters': Dict()})
+        process.ctx.iteration = 1
+        process.ctx.children = [pw_node]
 
-            process.ctx.iteration = 1
-            process.ctx.children = [node]
+        if pw_outputs is not None:
+            for link_label, output_node in pw_outputs.items():
+                output_node.add_incoming(pw_node, link_type=LinkType.CREATE, link_label=link_label)
+                output_node.store()
+
+        if exit_code is not None:
+            pw_node.set_process_state(ProcessState.FINISHED)
+            pw_node.set_exit_status(exit_code.status)
 
         return process
 
@@ -649,7 +672,9 @@ def generate_workchain_ph(generate_workchain, generate_inputs_ph, generate_calc_
 
 
 @pytest.fixture
-def generate_workchain_pdos(generate_workchain, generate_inputs_pw, fixture_code):
+def generate_workchain_pdos(
+    generate_workchain, generate_inputs_pw, fixture_localhost, fixture_code, generate_remote_data
+):
     """Generate an instance of a `PdosWorkChain`."""
 
     def _generate_workchain_pdos():
@@ -669,6 +694,9 @@ def generate_workchain_pdos(generate_workchain, generate_inputs_pw, fixture_code
         nscf_pw_inputs['parameters']['CONTROL']['calculation'] = 'nscf'
         nscf_pw_inputs['parameters']['SYSTEM']['occupations'] = 'tetrahedra'
         nscf_pw_inputs['parameters']['SYSTEM']['nosym'] = True
+        nscf_pw_inputs['parent_folder'] = generate_remote_data(
+            computer=fixture_localhost, remote_path='/path/to/remote'
+        )
 
         nscf = {'pw': nscf_pw_inputs, 'kpoints': kpoints}
 

@@ -250,3 +250,73 @@ def test_pw_parallelization_duplicate_cmdline_flag(fixture_sandbox, generate_cal
     with pytest.raises(InputValidationError) as exc:
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)
     assert 'Conflicting' in str(exc.value)
+
+
+@pytest.mark.parametrize('calculation', ['scf', 'relax', 'vc-relax'])
+def test_pw_validate_inputs_restart_base(
+    fixture_sandbox, generate_calc_job, generate_inputs_pw, fixture_localhost, generate_remote_data, calculation
+):
+    """Test the input validation of restart settings for the ``PwCalculation``."""
+    remote_data = generate_remote_data(computer=fixture_localhost, remote_path='/path/to/remote')
+    entry_point_name = 'quantumespresso.pw'
+
+    inputs = generate_inputs_pw()
+    parameters = inputs['parameters'].get_dict()
+    parameters['CONTROL']['calculation'] = calculation
+
+    # Add `parent_folder` but no restart tags -> warning
+    inputs['parent_folder'] = remote_data
+    with pytest.warns(Warning, match='`parent_folder` input was provided for the'):
+        generate_calc_job(fixture_sandbox, entry_point_name, inputs)
+
+    # Set `restart_mode` to `'restart'` -> no warning
+    parameters['CONTROL']['restart_mode'] = 'restart'
+    inputs['parameters'] = orm.Dict(dict=parameters)
+    with pytest.warns(None) as warnings:
+        generate_calc_job(fixture_sandbox, entry_point_name, inputs)
+    assert len(warnings.list) == 0
+    parameters['CONTROL'].pop('restart_mode')
+
+    # Set `startingwfc` or `startingpot` to `'file'` -> no warning
+    for restart_setting in ('startingpot', 'startingwfc'):
+        parameters['ELECTRONS'][restart_setting] = 'file'
+        inputs['parameters'] = orm.Dict(dict=parameters)
+        with pytest.warns(None) as warnings:
+            generate_calc_job(fixture_sandbox, entry_point_name, inputs)
+        assert len(warnings.list) == 0
+        parameters['ELECTRONS'].pop(restart_setting)
+
+
+@pytest.mark.parametrize('calculation', ['nscf', 'bands'])
+def test_pw_validate_inputs_restart_nscf(
+    fixture_sandbox, generate_calc_job, generate_inputs_pw, fixture_localhost, generate_remote_data, calculation
+):
+    """Test the input validation of restart settings for the ``PwCalculation``."""
+    remote_data = generate_remote_data(computer=fixture_localhost, remote_path='/path/to/remote')
+    entry_point_name = 'quantumespresso.pw'
+
+    inputs = generate_inputs_pw()
+    parameters = inputs['parameters'].get_dict()
+    parameters['CONTROL']['calculation'] = calculation
+
+    # No parent_folder -> raise
+    inputs['parameters'] = orm.Dict(dict=parameters)
+    with pytest.raises(ValueError, match='`parent_folder` not provided for `.*` calculation.'):
+        generate_calc_job(fixture_sandbox, entry_point_name, inputs)
+
+    # Parent_folder + defaults -> works
+    inputs['parent_folder'] = remote_data
+    generate_calc_job(fixture_sandbox, entry_point_name, inputs)
+
+    # Set `startingpot` to `'atomic'` -> raise
+    parameters['ELECTRONS']['startingpot'] = 'atomic'
+    inputs['parameters'] = orm.Dict(dict=parameters)
+    with pytest.raises(ValueError, match='`startingpot` should be set to `file` for a `.*` calculation.'):
+        generate_calc_job(fixture_sandbox, entry_point_name, inputs)
+
+    # Set `restart_mode` to `'restart'` -> warning
+    parameters['ELECTRONS'].pop('startingpot')
+    parameters['CONTROL']['restart_mode'] = 'restart'
+    inputs['parameters'] = orm.Dict(dict=parameters)
+    with pytest.warns(Warning, match='`restart_mode` should be set to `from_scratch` for a `.*`.'):
+        generate_calc_job(fixture_sandbox, entry_point_name, inputs)
