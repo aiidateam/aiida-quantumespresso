@@ -156,3 +156,30 @@ def convert_qe2aiida_structure(output_dict, input_structure=None):
         s.reset_sites_positions(new_pos)
 
     return s
+
+
+def convert_qe_to_kpoints(xml_dict, structure):
+    """Build the output kpoints from the raw parsed data.
+
+    :param parsed_parameters: the raw parsed data
+    :return: a `KpointsData` or None
+    """
+    from aiida.plugins import DataFactory
+
+    KpointsData = DataFactory('array.kpoints')
+
+    k_points_list = xml_dict.get('k_points', None)
+    k_points_units = xml_dict.get('k_points_units', None)
+    k_points_weights_list = xml_dict.get('k_points_weights', None)
+
+    if k_points_list is None or k_points_weights_list is None:
+        return None
+
+    if k_points_units != '1 / angstrom':
+        raise ValueError('k-points are not expressed in reciprocal cartesian coordinates')
+
+    kpoints = KpointsData()
+    kpoints.set_cell_from_structure(structure)
+    kpoints.set_kpoints(k_points_list, cartesian=True, weights=k_points_weights_list)
+
+    return kpoints
