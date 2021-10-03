@@ -8,7 +8,7 @@ def test_projwfc_nonpolarised(fixture_localhost, generate_calc_job_node, generat
     entry_point_calc_job = 'quantumespresso.projwfc'
     entry_point_parser = 'quantumespresso.projwfc'
 
-    retrieve_temporary_list = ['data-file-schema.xml']
+    retrieve_temporary_list = ['data-file-schema.xml', '*.pdos*']
     attributes = {'retrieve_temporary_list': retrieve_temporary_list}
 
     node = generate_calc_job_node(
@@ -40,7 +40,7 @@ def test_projwfc_spinpolarised(fixture_localhost, generate_calc_job_node, genera
     entry_point_calc_job = 'quantumespresso.projwfc'
     entry_point_parser = 'quantumespresso.projwfc'
 
-    retrieve_temporary_list = ['data-file-schema.xml']
+    retrieve_temporary_list = ['data-file-schema.xml', '*.pdos*']
     attributes = {'retrieve_temporary_list': retrieve_temporary_list}
 
     node = generate_calc_job_node(
@@ -75,7 +75,7 @@ def test_projwfc_noncollinear(fixture_localhost, generate_calc_job_node, generat
     entry_point_calc_job = 'quantumespresso.projwfc'
     entry_point_parser = 'quantumespresso.projwfc'
 
-    retrieve_temporary_list = ['data-file-schema.xml']
+    retrieve_temporary_list = ['data-file-schema.xml', '*.pdos*']
     attributes = {'retrieve_temporary_list': retrieve_temporary_list}
 
     node = generate_calc_job_node(
@@ -107,7 +107,7 @@ def test_projwfc_spinorbit(fixture_localhost, generate_calc_job_node, generate_p
     entry_point_calc_job = 'quantumespresso.projwfc'
     entry_point_parser = 'quantumespresso.projwfc'
 
-    retrieve_temporary_list = ['data-file-schema.xml']
+    retrieve_temporary_list = ['data-file-schema.xml', '*.pdos*']
     attributes = {'retrieve_temporary_list': retrieve_temporary_list}
 
     node = generate_calc_job_node(

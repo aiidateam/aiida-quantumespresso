@@ -30,10 +30,8 @@ class ProjwfcCalculation(NamelistsCalculation):
 
     xml_filename = 'data-file-schema.xml'
 
-    _internal_retrieve_list = [
-        NamelistsCalculation._PREFIX + '.pdos*',
-    ]
     _retrieve_temporary_list = [
+        NamelistsCalculation._PREFIX + '.pdos*',
         os.path.join(
             NamelistsCalculation._default_parent_output_folder, f'{NamelistsCalculation._PREFIX}.save', xml_filename
         )

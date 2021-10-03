@@ -34,14 +34,11 @@ class ProjwfcParser(Parser):
 
     def parse(self, **kwargs):
         """Parses the retrieved files of the ``ProjwfcCalculation`` and converts them into output nodes."""
-        retrieve_temporary_list = self.node.get_attribute('retrieve_temporary_list', None)
-
-        # If temporary files were specified, check that we have them
-        if retrieve_temporary_list:
-            try:
-                retrieved_temporary_folder = kwargs['retrieved_temporary_folder']
-            except KeyError:
-                return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
+        # Check that the temporary retrieved folder is there
+        try:
+            retrieved_temporary_folder = Path(kwargs['retrieved_temporary_folder'])
+        except KeyError:
+            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
 
         header, kpoint_blocks, lowdin_block = self.read_stdout()
 
@@ -64,7 +61,7 @@ class ProjwfcParser(Parser):
 
         orbitals = self._parse_orbitals(header, structure, non_collinear, spinorbit)
         bands, projections = self._parse_bands_and_projections(kpoint_blocks, len(orbitals))
-        energy, dos, pdos_array = self._parse_pdos_files(nspin, spinorbit)
+        energy, dos, pdos_array = self._parse_pdos_files(retrieved_temporary_folder, nspin, spinorbit)
 
         output_node_dict = self._build_bands_and_projections(
             kpoints, bands, energy, orbitals, projections, pdos_array, nspin
@@ -122,10 +119,11 @@ class ProjwfcParser(Parser):
         from .parse_xml.exceptions import XMLParseError, XMLUnsupportedFormatError
         from .parse_xml.pw.parse import parse_xml
 
-        xml_filepath = Path(retrieved_temporary_folder) / self.node.process_class.xml_filename
+        xml_filepath = retrieved_temporary_folder / self.node.process_class.xml_filename
 
         if not xml_filepath.exists():
             self.exit(self.exit_codes.ERROR_OUTPUT_XML_MISSING)
+            raise (ValueError)
 
         try:
             with xml_filepath.open('r') as handle:
@@ -281,7 +279,8 @@ class ProjwfcParser(Parser):
 
         return bands, projections
 
-    def _parse_pdos_files(self, nspin: int, spinorbit: bool) -> Tuple[ArrayLike, ArrayLike, ArrayLike]:
+    def _parse_pdos_files(self, retrieved_temporary_folder: Path, nspin: int,
+                          spinorbit: bool) -> Tuple[ArrayLike, ArrayLike, ArrayLike]:
         """Parse the PDOS files and convert them into arrays.
 
         Reads in all of the ``*.pdos*`` files and converts the data into arrays. The PDOS arrays are then concatenated
@@ -292,6 +291,7 @@ class ProjwfcParser(Parser):
         2. Concatenate all the PDOS files into one large array.
         3. Reorder the columns depending on the ``npsin`` value and if spin-orbit is used.
 
+        :param retrieved_temporary_folder: temporary folder of retrieved files that is deleted after parsing.
         :param nspin: nspin value of the parent calculation.
         :param spinorbit: True if the calculation used spin-orbit coupling.
 
@@ -314,10 +314,9 @@ class ProjwfcParser(Parser):
             return keys
 
         # Read the `pdos_tot` file
-        out_filenames = self.retrieved.list_object_names()
         try:
-            pdostot_filename = fnmatch.filter(out_filenames, '*pdos_tot*')[0]
-            with self.retrieved.open(pdostot_filename, 'r') as pdostot_file:
+            pdostot_filepath = next(retrieved_temporary_folder.glob('*pdos_tot*'))
+            with pdostot_filepath.open('r') as pdostot_file:
                 # Columns: Energy(eV), Ldos, Pdos
                 pdostot_array = np.atleast_2d(np.genfromtxt(pdostot_file))
                 energy = pdostot_array[:, 0]
@@ -333,9 +332,9 @@ class ProjwfcParser(Parser):
 
         # Read the `pdos_atm` files
         pdos_atm_array_dict = {}
-        for filename in fnmatch.filter(out_filenames, '*pdos_atm*'):
-            with self.retrieved.open(filename, 'r') as pdosatm_file:
-                pdos_atm_array_dict[filename] = np.atleast_2d(np.genfromtxt(pdosatm_file))[:, first_pdos_column:]
+        for path in retrieved_temporary_folder.glob('*pdos_atm*'):
+            with path.open('r') as pdosatm_file:
+                pdos_atm_array_dict[path.name] = np.atleast_2d(np.genfromtxt(pdosatm_file))[:, first_pdos_column:]
 
         # Keep the pdos in sync with the orbitals by properly sorting the filenames
         pdos_file_names = [k for k in pdos_atm_array_dict]
