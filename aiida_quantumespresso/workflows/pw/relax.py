@@ -338,8 +338,8 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         inputs = self.ctx.final_scf_inputs
         inputs.pw.structure = self.ctx.current_structure
 
-        bnd = inputs.pw.parameters.get('SYSTEM', {}).get('nbnd', None)
-        if self.ctx.current_number_of_bands is not None and bnd is None:
+        inputs_nbnd = inputs.pw.parameters.get('SYSTEM', {}).get('nbnd', None)
+        if self.ctx.current_number_of_bands is not None and inputs_nbnd is None:
             inputs.pw.parameters.setdefault('SYSTEM', {})['nbnd'] = self.ctx.current_number_of_bands
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
