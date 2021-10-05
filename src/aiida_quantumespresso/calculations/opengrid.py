@@ -11,6 +11,7 @@ class OpengridCalculation(NamelistsCalculation):
     _blocked_keywords = [
         ('INPUTPP', 'outdir', NamelistsCalculation._OUTPUT_SUBFOLDER),
         ('INPUTPP', 'prefix', NamelistsCalculation._PREFIX),
+        ('INPUTPP', 'overwrite_prefix', True),
     ]
     _default_parser = 'quantumespresso.opengrid'
 
@@ -25,7 +26,6 @@ class OpengridCalculation(NamelistsCalculation):
         spec.output('kpoints_mesh', valid_type=KpointsData)
         # Outputs an explicit list of kpoints of the unfolded kmesh
         spec.output('kpoints', valid_type=KpointsData)
-        spec.default_output_node = 'kpoints'
 
         spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
             message='The retrieved folder data node could not be accessed.')

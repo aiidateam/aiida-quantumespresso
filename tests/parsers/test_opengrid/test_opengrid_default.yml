@@ -1,0 +1,15 @@
+kpoints:
+  array|kpoints:
+  - 216
+  - 3
+  array|weights:
+  - 216
+kpoints_mesh:
+  mesh:
+  - 6
+  - 6
+  - 6
+  offset:
+  - 0.0
+  - 0.0
+  - 0.0
