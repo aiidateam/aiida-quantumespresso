@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """`CalcJob` implementation for the projwfc.x code of Quantum ESPRESSO."""
-import os
+from pathlib import Path
 
 from aiida.orm import RemoteData, FolderData, Dict, XyData
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
@@ -28,15 +28,13 @@ class ProjwfcCalculation(NamelistsCalculation):
     ]
     _default_parser = 'quantumespresso.projwfc'
 
-    xml_filename = 'data-file-schema.xml'
-
+    xml_path = Path(NamelistsCalculation._default_parent_output_folder
+                    ).joinpath(f'{NamelistsCalculation._PREFIX}.save', 'data-file-schema.xml')
     _internal_retrieve_list = [
         NamelistsCalculation._PREFIX + '.pdos*',
     ]
     _retrieve_temporary_list = [
-        os.path.join(
-            NamelistsCalculation._default_parent_output_folder, f'{NamelistsCalculation._PREFIX}.save', xml_filename
-        )
+        xml_path.as_posix(),
     ]
 
     @classmethod
@@ -58,7 +56,7 @@ class ProjwfcCalculation(NamelistsCalculation):
         spec.output('bands', valid_type=BandsData, required=False)
         spec.default_output_node = 'output_parameters'
         spec.exit_code(303, 'ERROR_OUTPUT_XML_MISSING',
-            message='The retrieved folder did not contain the required required XML file.')
+            message='The retrieved folder did not contain the required XML file.')
         spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
             message='The stdout output file could not be read.')
         spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',

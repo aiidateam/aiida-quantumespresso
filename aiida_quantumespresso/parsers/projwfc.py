@@ -5,8 +5,7 @@ import fnmatch
 
 import numpy as np
 
-from aiida.common import LinkType
-from aiida.orm import Dict, ProjectionData, BandsData, XyData, CalcJobNode
+from aiida.orm import Dict, ProjectionData, BandsData, XyData
 from aiida.plugins import OrbitalFactory
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
@@ -369,7 +368,7 @@ class ProjwfcParser(Parser):
         from .parse_xml.exceptions import XMLParseError, XMLUnsupportedFormatError
         from .parse_xml.pw.parse import parse_xml
 
-        xml_filepath = Path(retrieved_temporary_folder) / self.node.process_class.xml_filename
+        xml_filepath = Path(retrieved_temporary_folder) / self.node.process_class.xml_path.name
 
         if not xml_filepath.exists():
             self.exit(self.exit_codes.ERROR_OUTPUT_XML_MISSING)
