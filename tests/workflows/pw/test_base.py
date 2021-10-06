@@ -97,19 +97,19 @@ def test_handle_electronic_convergence_not_achieved(generate_workchain_pw, fixtu
     assert result.status == 0
 
 
-# This test should be reactivated once we have another known unrecoverable failure that is handled here
-# def test_handle_known_unrecoverable_failure(generate_workchain_pw):
-#     """Test `PwBaseWorkChain.handle_known_unrecoverable_failure`."""
-#     process = generate_workchain_pw(exit_code=PwCalculation.exit_codes.<INSERT EXIT CODE HERE>)
-#     process.setup()
+@pytest.mark.skip('Reactivate once we have an unrecoverable failure once again.')
+def test_handle_known_unrecoverable_failure(generate_workchain_pw):
+    """Test `PwBaseWorkChain.handle_known_unrecoverable_failure`."""
+    process = generate_workchain_pw()
+    process.setup()
 
-#     result = process.handle_known_unrecoverable_failure(process.ctx.children[-1])
-#     assert isinstance(result, ProcessHandlerReport)
-#     assert result.do_break
-#     assert result.exit_code == PwBaseWorkChain.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE
+    result = process.handle_known_unrecoverable_failure(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert result.do_break
+    assert result.exit_code == PwBaseWorkChain.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE
 
-#     result = process.inspect_process()
-#     assert result == PwBaseWorkChain.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE
+    result = process.inspect_process()
+    assert result == PwBaseWorkChain.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE
 
 
 @pytest.mark.parametrize(

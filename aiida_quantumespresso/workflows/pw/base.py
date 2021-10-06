@@ -529,7 +529,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         density. In case the run already used conjugate gradient diagonalization, abort.
         """
         if self.ctx.inputs.parameters['ELECTRONS'].get('diagonalization', None) == 'cg':
-            print('ELLO')
             action = 'found diagonalization issues but already running with conjugate gradient algorithm, aborting...'
             self.report_error_handled(calculation, action)
             return ProcessHandlerReport(True, self.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE)
@@ -537,7 +536,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         self.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = 'cg'
         action = 'found diagonalization issues, switching to conjugate gradient diagonalization.'
         self.report_error_handled(calculation, action)
-        print('WAVE')
         return ProcessHandlerReport(True)
 
     @process_handler(priority=580, exit_codes=[
