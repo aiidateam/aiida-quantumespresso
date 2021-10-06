@@ -258,6 +258,28 @@ def test_pw_failed_computing_cholesky(fixture_localhost, generate_calc_job_node,
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_COMPUTING_CHOLESKY.status
 
 
+def test_failed_too_many_bands_not_converged(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
+):
+    """Test the parsing of a calculation that failed during cholesky factorization.
+
+    In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
+    the relevant error message.
+    """
+    name = 'failed_too_many_bands_not_converged'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    desired_exit_status = node.process_class.exit_codes.ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED.status
+    assert calcfunction.exit_status == desired_exit_status
+
+
 def test_pw_failed_dexx_negative(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
     """Test the parsing of a calculation that failed due to negative dexx.
 
