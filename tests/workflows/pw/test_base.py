@@ -97,15 +97,41 @@ def test_handle_electronic_convergence_not_achieved(generate_workchain_pw, fixtu
     assert result.status == 0
 
 
+@pytest.mark.skip('Reactivate once we have an unrecoverable failure once again.')
 def test_handle_known_unrecoverable_failure(generate_workchain_pw):
     """Test `PwBaseWorkChain.handle_known_unrecoverable_failure`."""
-    process = generate_workchain_pw(exit_code=PwCalculation.exit_codes.ERROR_COMPUTING_CHOLESKY)
+    process = generate_workchain_pw()
     process.setup()
 
     result = process.handle_known_unrecoverable_failure(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
     assert result.do_break
     assert result.exit_code == PwBaseWorkChain.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE
+
+    result = process.inspect_process()
+    assert result == PwBaseWorkChain.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE
+
+
+@pytest.mark.parametrize(
+    'exit_code', (
+        PwCalculation.exit_codes.ERROR_COMPUTING_CHOLESKY,
+        PwCalculation.exit_codes.ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED,
+    )
+)
+def test_handle_diagonalization_errors(generate_workchain_pw, exit_code):
+    """Test `PwBaseWorkChain.handle_diagonalization_errors`."""
+    process = generate_workchain_pw(exit_code=exit_code)
+    process.setup()
+
+    process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = 'david'
+
+    result = process.handle_diagonalization_errors(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] == 'cg'
+    assert result.do_break
+
+    result = process.handle_diagonalization_errors(process.ctx.children[-1])
+    assert result.do_break
 
     result = process.inspect_process()
     assert result == PwBaseWorkChain.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE
