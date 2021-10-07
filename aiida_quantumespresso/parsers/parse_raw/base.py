@@ -74,29 +74,36 @@ def parse_output_error(lines, line_number_start, logs, message_map=None):
             if marker in line:
                 if message is None:
                     message = line
-                logs.error.append(message)
+                if message not in logs.error:
+                    logs.error.append(message)
 
         for marker, message in message_map['warning'].items():
             if marker in line:
                 if message is None:
                     message = line
-                logs.warning.append(message)
+                if message not in logs.warning:
+                    logs.warning.append(message)
 
     # First determine the line that closes the error block which is also marked by ``%%%%%%%`` in the line
-    for line_number, line in enumerate(lines[line_number_start + 1:]):
+    # Skip the starting line '%%%%%%%%%%%%'
+    line_number_start += 1
+    for line_number, line in enumerate(lines[line_number_start:]):
         if '%%%%%%%%%%%%' in line:
-            line_number_end = line_number
+            line_number_end = line_number_start + line_number
             break
     else:
         return
 
     # Get the set of unique lines between the error indicators and pass them through the message map, or if not provided
     # simply append the message to the `error` list of the logs container
-    for message in set(lines[line_number_start:line_number_end]):
+    for message in lines[line_number_start:line_number_end]:
+        if message.strip() == '':
+            continue
         if message_map is not None:
             map_message(message, message_map, logs)
         else:
-            logs.error(message)
+            if message not in logs.error:
+                logs.error.append(message)
 
     return
 

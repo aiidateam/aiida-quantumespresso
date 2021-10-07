@@ -1,0 +1,14 @@
+logs:
+  critical: []
+  debug: []
+  error:
+  - ERROR_OUTPUT_STDOUT_INCOMPLETE
+  - '     Error in routine scale_sym_ops (12):'
+  - '     incompatible FFT grid'
+  - '     stopping ...'
+  - '     Message from routine scale_sym_ops:'
+  - '     found rotation not compatible with FFT grid'
+  info: []
+  warning: []
+parsed_data:
+  code_version: v.6.8
