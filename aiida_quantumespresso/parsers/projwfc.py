@@ -12,6 +12,8 @@ from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.parse_raw.base import (
     parse_output_base, convert_qe2aiida_structure, convert_qe_to_kpoints
 )
+from aiida_quantumespresso.utils.mapping import get_logging_container
+
 from .base import Parser
 
 
@@ -311,8 +313,12 @@ class ProjwfcParser(Parser):
         self.out('output_parameters', Dict(dict=parsed_data))
 
         # Parse the XML to obtain the `structure`, `kpoints` and spin-related settings from the parent calculation
+        self.exit_code_xml = None
         parsed_xml, logs_xml = self._parse_xml(retrieved_temporary_folder)
         self.emit_logs(logs_xml)
+
+        if self.exit_code_xml:
+            return self.exit(self.exit_code_xml)
 
         # we create a dictionary the progressively accumulates more info
         out_info_dict = {}
@@ -368,22 +374,26 @@ class ProjwfcParser(Parser):
         from .parse_xml.exceptions import XMLParseError, XMLUnsupportedFormatError
         from .parse_xml.pw.parse import parse_xml
 
+        logs = get_logging_container()
+        parsed_xml = {}
+
         xml_filepath = Path(retrieved_temporary_folder) / self.node.process_class.xml_path.name
 
         if not xml_filepath.exists():
-            self.exit(self.exit_codes.ERROR_OUTPUT_XML_MISSING)
+            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_MISSING
+            return parsed_xml, logs
 
         try:
             with xml_filepath.open('r') as handle:
                 parsed_xml, logs = parse_xml(handle, None)
         except IOError:
-            self.exit(self.exit_codes.ERROR_OUTPUT_XML_READ)
+            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_READ
         except XMLParseError:
-            self.exit(self.exit_codes.ERROR_OUTPUT_XML_PARSE)
+            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_PARSE
         except XMLUnsupportedFormatError:
-            self.exit(self.exit_codes.ERROR_OUTPUT_XML_FORMAT)
+            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_FORMAT
         except Exception:
-            self.exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION)
+            self.exit_code_xml = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
 
         return parsed_xml, logs
 

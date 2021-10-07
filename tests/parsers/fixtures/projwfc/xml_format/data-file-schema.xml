@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<qes:espresso xsi:schemaLocation="I do not exist! 😭" Units="Hartree atomic units" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:qes="http://www.quantum-espresso.org/ns/qes/qes-1.0">
+  <!--All quantities are in Hartree atomic units unless otherwise specified-->
+</qes:espresso>

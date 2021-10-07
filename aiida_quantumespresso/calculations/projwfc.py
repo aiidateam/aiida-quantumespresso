@@ -55,6 +55,8 @@ class ProjwfcCalculation(NamelistsCalculation):
         spec.output('projections', valid_type=ProjectionData, required=False)
         spec.output('bands', valid_type=BandsData, required=False)
         spec.default_output_node = 'output_parameters'
+        spec.exit_code(301, 'ERROR_NO_RETRIEVED_TEMPORARY_FOLDER',
+            message='The retrieved temporary folder could not be accessed.')
         spec.exit_code(303, 'ERROR_OUTPUT_XML_MISSING',
             message='The retrieved folder did not contain the required XML file.')
         spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
