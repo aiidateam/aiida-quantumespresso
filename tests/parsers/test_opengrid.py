@@ -28,3 +28,17 @@ def test_opengrid_default(fixture_localhost, generate_calc_job_node, generate_pa
         'kpoints_array1': results['kpoints'].get_array('kpoints')[:, 1],
         'kpoints_array2': results['kpoints'].get_array('kpoints')[:, 2],
     })
+
+
+def test_opengrid_fftgrid(fixture_localhost, generate_calc_job_node, generate_parser):
+    """Test ``OpengridParser`` on the parsing of 'incompatible FFT grid' error."""
+    entry_point_calc_job = 'quantumespresso.opengrid'
+    entry_point_parser = 'quantumespresso.opengrid'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'fftgrid')
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_INCOMPATIBLE_FFT_GRID.status

@@ -26,6 +26,11 @@ class OpengridParser(Parser):
         parsed_data, logs = parse_output_base(out_file, codename='OPEN_GRID')
         self.emit_logs(logs)
 
+        lines = out_file.split('\n')
+        for line in lines:
+            if 'incompatible FFT grid' in line:
+                return self.exit(self.exit_codes.ERROR_INCOMPATIBLE_FFT_GRID)
+
         if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs.error:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE)
         elif logs.error:
