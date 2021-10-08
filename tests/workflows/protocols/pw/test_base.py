@@ -12,7 +12,7 @@ def test_get_available_protocols():
     """Test ``PwBaseWorkChain.get_available_protocols``."""
     protocols = PwBaseWorkChain.get_available_protocols()
     assert sorted(protocols.keys()) == ['fast', 'moderate', 'precise']
-    all('description' in protocol for protocol in protocols)
+    assert all('description' in protocol for protocol in protocols.values())
 
 
 def test_get_default_protocol():
@@ -114,7 +114,7 @@ def test_magnetization_overrides(fixture_code, generate_structure):
     assert builder.pw.parameters['SYSTEM']['starting_magnetization'] == initial_starting_magnetization
     assert builder.pw.parameters['SYSTEM']['nspin'] == 2
 
-    # Test that specifying `initial_magnetic_moments` overrides the `overrides`
+    # Test that specifying `overrides` override the `initial_magnetic_moments`
     builder = PwBaseWorkChain.get_builder_from_protocol(
         code,
         structure,
@@ -122,7 +122,7 @@ def test_magnetization_overrides(fixture_code, generate_structure):
         spin_type=SpinType.COLLINEAR,
         initial_magnetic_moments=initial_magnetic_moments
     )
-    assert builder.pw.parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.25}
+    assert builder.pw.parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.5}
     assert builder.pw.parameters['SYSTEM']['nspin'] == 2
 
 
@@ -178,3 +178,32 @@ def test_parallelization_overrides(fixture_code, generate_structure):
 
     assert parallelization['npool'] == 4
     assert parallelization['ndiag'] == 12
+
+
+def test_pseudos_overrides(fixture_code, generate_structure, generate_upf_data):
+    """Test specifying ``pw.pseudos`` ``overrides`` for the ``get_builder_from_protocol()`` method."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure('silicon')
+    silicon_pseudo = generate_upf_data('Si')
+
+    overrides = {'pw': {'pseudos': {'Si': silicon_pseudo}}}
+    builder = PwBaseWorkChain.get_builder_from_protocol(
+        code,
+        structure,
+        overrides=overrides,
+    )
+    pseudos = builder.pw.pseudos
+
+    assert pseudos['Si'] == silicon_pseudo
+
+
+def test_pseudos_family_structure_fail(fixture_code, generate_structure):
+    """Test that using structure with uranium fails for the ``get_builder_from_protocol()`` method."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure('uranium')
+
+    with pytest.raises(ValueError, match=r'failed to obtain recommended cutoffs for pseudo family'):
+        PwBaseWorkChain.get_builder_from_protocol(
+            code,
+            structure,
+        )
