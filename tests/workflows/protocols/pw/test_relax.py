@@ -12,7 +12,7 @@ def test_get_available_protocols():
     """Test ``PwRelaxWorkChain.get_available_protocols``."""
     protocols = PwRelaxWorkChain.get_available_protocols()
     assert sorted(protocols.keys()) == ['fast', 'moderate', 'precise']
-    all('description' in protocol for protocol in protocols)
+    assert all('description' in protocol for protocol in protocols.values())
 
 
 def test_get_default_protocol():
