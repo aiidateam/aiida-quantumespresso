@@ -1,15 +1,19 @@
 # -*- coding: utf-8 -*-
+from pathlib import Path
 import re
 import fnmatch
 
 import numpy as np
 
-from aiida.common import LinkType
-from aiida.orm import Dict, ProjectionData, BandsData, XyData, CalcJobNode
+from aiida.orm import Dict, ProjectionData, BandsData, XyData
 from aiida.plugins import OrbitalFactory
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers.parse_raw.base import parse_output_base
+from aiida_quantumespresso.parsers.parse_raw.base import (
+    parse_output_base, convert_qe2aiida_structure, convert_qe_to_kpoints
+)
+from aiida_quantumespresso.utils.mapping import get_logging_container
+
 from .base import Parser
 
 
@@ -168,16 +172,11 @@ def spin_dependent_subparser(out_info_dict):
         raise QEOutputParsingError('the standard out file does not comply with the official documentation.')
 
     bands_data = BandsData()
-    # Attempts to retrieve the kpoints from the parent calc
-    parent_calc = out_info_dict['parent_calc']
+    kpoints = od['kpoints']
     try:
-        parent_kpoints = parent_calc.get_incoming(link_label_filter='kpoints').one().node
-    except ValueError:
-        raise QEOutputParsingError('The parent had no input kpoints! Cannot parse from this!')
-    try:
-        if len(od['k_vect']) != len(parent_kpoints.get_kpoints()):
+        if len(od['k_vect']) != len(kpoints.get_kpoints()):
             raise AttributeError
-        bands_data.set_kpointsdata(parent_kpoints)
+        bands_data.set_kpointsdata(kpoints)
     except AttributeError:
         bands_data.set_kpoints(od['k_vect'].astype(float))
 
@@ -284,8 +283,12 @@ class ProjwfcParser(Parser):
 
         Retrieves projwfc output, and some basic information from the out_file, such as warnings and wall_time
         """
-        # Check that the retrieved folder is there
         retrieved = self.retrieved
+        # Get the temporary retrieved folder
+        try:
+            retrieved_temporary_folder = kwargs['retrieved_temporary_folder']
+        except KeyError:
+            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
 
         # Read standard out
         try:
@@ -309,6 +312,24 @@ class ProjwfcParser(Parser):
         self.emit_logs(logs)
         self.out('output_parameters', Dict(dict=parsed_data))
 
+        # Parse the XML to obtain the `structure`, `kpoints` and spin-related settings from the parent calculation
+        self.exit_code_xml = None
+        parsed_xml, logs_xml = self._parse_xml(retrieved_temporary_folder)
+        self.emit_logs(logs_xml)
+
+        if self.exit_code_xml:
+            return self.exit(self.exit_code_xml)
+
+        # we create a dictionary the progressively accumulates more info
+        out_info_dict = {}
+
+        out_info_dict['structure'] = convert_qe2aiida_structure(parsed_xml['structure'])
+        out_info_dict['kpoints'] = convert_qe_to_kpoints(parsed_xml, out_info_dict['structure'])
+        out_info_dict['nspin'] = parsed_xml.get('number_of_spin_components')
+        out_info_dict['collinear'] = not parsed_xml.get('non_colinear_calculation')
+        out_info_dict['spinorbit'] = parsed_xml.get('spin_orbit_calculation')
+        out_info_dict['spin'] = out_info_dict['nspin'] == 2
+
         # check and read pdos_tot file
         out_filenames = retrieved.list_object_names()
         try:
@@ -329,8 +350,6 @@ class ProjwfcParser(Parser):
                 pdos_atm_array_dict[name] = np.atleast_2d(np.genfromtxt(pdosatm_file))
 
         # finding the bands and projections
-        # we create a dictionary the progressively accumulates more info
-        out_info_dict = {}
         out_info_dict['out_file'] = out_file
         out_info_dict['energy'] = energy
         out_info_dict['pdos_atm_array_dict'] = pdos_atm_array_dict
@@ -346,6 +365,37 @@ class ProjwfcParser(Parser):
         Dos_out.set_x(energy, 'Energy', 'eV')
         Dos_out.set_y(dos, 'Dos', 'states/eV')
         self.out('Dos', Dos_out)
+
+    def _parse_xml(self, retrieved_temporary_folder):
+        """Parse the XML file.
+
+        The XML must be parsed in order to obtain the required information for the orbital parsing.
+        """
+        from .parse_xml.exceptions import XMLParseError, XMLUnsupportedFormatError
+        from .parse_xml.pw.parse import parse_xml
+
+        logs = get_logging_container()
+        parsed_xml = {}
+
+        xml_filepath = Path(retrieved_temporary_folder) / self.node.process_class.xml_path.name
+
+        if not xml_filepath.exists():
+            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_MISSING
+            return parsed_xml, logs
+
+        try:
+            with xml_filepath.open('r') as handle:
+                parsed_xml, logs = parse_xml(handle, None)
+        except IOError:
+            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_READ
+        except XMLParseError:
+            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_PARSE
+        except XMLUnsupportedFormatError:
+            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_FORMAT
+        except Exception:
+            self.exit_code_xml = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
+
+        return parsed_xml, logs
 
     def _parse_bands_and_projections(self, out_info_dict):
         """Function that parses the standard output into bands and projection data.
@@ -382,56 +432,20 @@ class ProjwfcParser(Parser):
         # calculates the number of bands
         out_info_dict['num_bands'] = len(out_info_dict['psi_lines']) // len(out_info_dict['k_lines'])
 
-        # Uses the parent input parameters, and checks if the parent used
-        # spin calculations. Try to replace with a query, if possible.
-        try:
-            parent_calc = (
-                self.node.inputs.parent_folder.get_incoming(node_class=CalcJobNode,
-                                                            link_type=LinkType.CREATE).one().node
-            )
-        except ValueError as e:
-            raise QEOutputParsingError(f'Could not get parent calculation of input folder: {e}')
-        out_info_dict['parent_calc'] = parent_calc
-        try:
-            parent_param = parent_calc.get_outgoing(link_label_filter='output_parameters').one().node
-        except ValueError:
-            raise QEOutputParsingError('The parent had no output_parameters! Cannot parse from this!')
-        try:
-            structure = parent_calc.get_incoming(link_label_filter='structure').one().node
-        except ValueError:
-            raise QEOutputParsingError('The parent had no input structure! Cannot parse from this!')
-        try:
-            nspin = parent_param.get_dict()['number_of_spin_components']
-            if nspin != 1:
-                spin = True
-            else:
-                spin = False
-            out_info_dict['spinorbit'] = parent_param.get_dict().get('spin_orbit_calculation', False)
-            out_info_dict['collinear'] = not parent_param.get_dict().get('non_colinear_calculation', False)
-            if not out_info_dict['collinear']:
-                # Sanity check
-                if nspin != 4:
-                    raise QEOutputParsingError('The calculation is non-collinear, but nspin is not set to 4!')
-                spin = False
-        except KeyError:
-            spin = False
-            out_info_dict['spinorbit'] = False
-            out_info_dict['collinear'] = True
-        out_info_dict['spin'] = spin
-
         # changes k-numbers to match spin
         # because if spin is on, k points double for up and down
         out_info_dict['k_states'] = len(out_info_dict['k_lines'])
-        if spin:
+        if out_info_dict['spin']:
             if out_info_dict['k_states'] % 2 != 0:
                 raise QEOutputParsingError('Internal formatting error regarding spin')
             out_info_dict['k_states'] = out_info_dict['k_states'] // 2
 
-        #   adds in the k-vector for each kpoint
+        # adds in the k-vector for each kpoint
         k_vect = [out_file[out_info_dict['k_lines'][i]].split()[2:] for i in range(out_info_dict['k_states'])]
         out_info_dict['k_vect'] = np.array(k_vect)
-        out_info_dict['structure'] = structure
         out_info_dict['orbitals'] = find_orbitals_from_statelines(out_info_dict)
+
+        spin = out_info_dict['spin']
 
         if spin:
             # I had to guess what the ordering of the spin is, because
