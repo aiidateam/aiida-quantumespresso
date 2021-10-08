@@ -31,11 +31,12 @@ class NamelistsCalculation(CalcJob):
     # parent_folder is of type RemoteData or FolderData
     _OUTPUT_SUBFOLDER = './out/'
     _PREFIX = 'aiida'
-    _internal_retrieve_list = []
     _default_namelists = ['INPUTPP']
     _blocked_keywords = []  # a list of tuples with key and value fixed
 
+    _internal_retrieve_list = []
     _retrieve_singlefile_list = []
+    _retrieve_temporary_list = []
 
     _DEFAULT_INPUT_FILE = 'aiida.in'
     _DEFAULT_OUTPUT_FILE = 'aiida.out'
@@ -218,10 +219,10 @@ class NamelistsCalculation(CalcJob):
         # Retrieve by default the output file and the xml file
         calcinfo.retrieve_list = []
         calcinfo.retrieve_list.append(self.inputs.metadata.options.output_filename)
-        settings_retrieve_list = settings.pop('ADDITIONAL_RETRIEVE_LIST', [])
-        calcinfo.retrieve_list += settings_retrieve_list
+        calcinfo.retrieve_list += settings.pop('ADDITIONAL_RETRIEVE_LIST', [])
         calcinfo.retrieve_list += self._internal_retrieve_list
 
+        calcinfo.retrieve_temporary_list = self._retrieve_temporary_list
         calcinfo.retrieve_singlefile_list = self._retrieve_singlefile_list
 
         # We might still have parser options in the settings dictionary: pop them.

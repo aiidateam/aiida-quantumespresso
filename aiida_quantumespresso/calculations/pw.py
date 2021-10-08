@@ -89,7 +89,7 @@ class PwCalculation(BasePwCpInputGenerator):
         spec.exit_code(302, 'ERROR_OUTPUT_STDOUT_MISSING',
             message='The retrieved folder did not contain the required stdout output file.')
         spec.exit_code(303, 'ERROR_OUTPUT_XML_MISSING',
-            message='The retrieved folder did not contain the required required XML file.')
+            message='The retrieved folder did not contain the required XML file.')
         spec.exit_code(304, 'ERROR_OUTPUT_XML_MULTIPLE',
             message='The retrieved folder contained multiple XML files.')
         spec.exit_code(305, 'ERROR_OUTPUT_FILES',

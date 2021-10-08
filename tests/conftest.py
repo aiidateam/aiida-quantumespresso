@@ -265,7 +265,10 @@ def generate_calc_job_node(fixture_localhost):
         if retrieve_temporary:
             dirpath, filenames = retrieve_temporary
             for filename in filenames:
-                shutil.copy(os.path.join(filepath_folder, filename), os.path.join(dirpath, filename))
+                try:
+                    shutil.copy(os.path.join(filepath_folder, filename), os.path.join(dirpath, filename))
+                except FileNotFoundError:
+                    pass  # To test the absence of files in the retrieve_temporary folder
 
         if filepath_folder:
             retrieved = orm.FolderData()
@@ -274,7 +277,10 @@ def generate_calc_job_node(fixture_localhost):
             # Remove files that are supposed to be only present in the retrieved temporary folder
             if retrieve_temporary:
                 for filename in filenames:
-                    retrieved.delete_object(filename)
+                    try:
+                        retrieved.delete_object(filename)
+                    except OSError:
+                        pass  # To test the absence of files in the retrieve_temporary folder
 
             retrieved.add_incoming(node, link_type=LinkType.CREATE, link_label='retrieved')
             retrieved.store()

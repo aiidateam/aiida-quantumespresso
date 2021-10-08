@@ -1,0 +1,1157 @@
+Dos:
+  array|x_array:
+  - 55
+  array|y_array_0:
+  - 55
+  x_name: Energy
+  x_units: eV
+  y_names:
+  - Dos
+  y_units:
+  - states/eV
+bands_down:
+  array|bands:
+  - 2
+  - 24
+  array|kpoints:
+  - 2
+  - 3
+  array|weights:
+  - 2
+  cell:
+  - - 2.833508987614911
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 2.833508987614911
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 2.833508987614911
+  label_numbers: []
+  labels: []
+  pbc1: true
+  pbc2: true
+  pbc3: true
+  units: eV
+bands_up:
+  array|bands:
+  - 2
+  - 24
+  array|kpoints:
+  - 2
+  - 3
+  array|weights:
+  - 2
+  cell:
+  - - 2.833508987614911
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 2.833508987614911
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 2.833508987614911
+  label_numbers: []
+  labels: []
+  pbc1: true
+  pbc2: true
+  pbc3: true
+  units: eV
+projections_down:
+  array|energy_array_0:
+  - 55
+  array|energy_array_1:
+  - 55
+  array|energy_array_10:
+  - 55
+  array|energy_array_11:
+  - 55
+  array|energy_array_12:
+  - 55
+  array|energy_array_13:
+  - 55
+  array|energy_array_14:
+  - 55
+  array|energy_array_15:
+  - 55
+  array|energy_array_16:
+  - 55
+  array|energy_array_17:
+  - 55
+  array|energy_array_18:
+  - 55
+  array|energy_array_19:
+  - 55
+  array|energy_array_2:
+  - 55
+  array|energy_array_20:
+  - 55
+  array|energy_array_21:
+  - 55
+  array|energy_array_22:
+  - 55
+  array|energy_array_23:
+  - 55
+  array|energy_array_24:
+  - 55
+  array|energy_array_25:
+  - 55
+  array|energy_array_3:
+  - 55
+  array|energy_array_4:
+  - 55
+  array|energy_array_5:
+  - 55
+  array|energy_array_6:
+  - 55
+  array|energy_array_7:
+  - 55
+  array|energy_array_8:
+  - 55
+  array|energy_array_9:
+  - 55
+  array|pdos_array_0:
+  - 55
+  array|pdos_array_1:
+  - 55
+  array|pdos_array_10:
+  - 55
+  array|pdos_array_11:
+  - 55
+  array|pdos_array_12:
+  - 55
+  array|pdos_array_13:
+  - 55
+  array|pdos_array_14:
+  - 55
+  array|pdos_array_15:
+  - 55
+  array|pdos_array_16:
+  - 55
+  array|pdos_array_17:
+  - 55
+  array|pdos_array_18:
+  - 55
+  array|pdos_array_19:
+  - 55
+  array|pdos_array_2:
+  - 55
+  array|pdos_array_20:
+  - 55
+  array|pdos_array_21:
+  - 55
+  array|pdos_array_22:
+  - 55
+  array|pdos_array_23:
+  - 55
+  array|pdos_array_24:
+  - 55
+  array|pdos_array_25:
+  - 55
+  array|pdos_array_3:
+  - 55
+  array|pdos_array_4:
+  - 55
+  array|pdos_array_5:
+  - 55
+  array|pdos_array_6:
+  - 55
+  array|pdos_array_7:
+  - 55
+  array|pdos_array_8:
+  - 55
+  array|pdos_array_9:
+  - 55
+  array|proj_array_0:
+  - 2
+  - 24
+  array|proj_array_1:
+  - 2
+  - 24
+  array|proj_array_10:
+  - 2
+  - 24
+  array|proj_array_11:
+  - 2
+  - 24
+  array|proj_array_12:
+  - 2
+  - 24
+  array|proj_array_13:
+  - 2
+  - 24
+  array|proj_array_14:
+  - 2
+  - 24
+  array|proj_array_15:
+  - 2
+  - 24
+  array|proj_array_16:
+  - 2
+  - 24
+  array|proj_array_17:
+  - 2
+  - 24
+  array|proj_array_18:
+  - 2
+  - 24
+  array|proj_array_19:
+  - 2
+  - 24
+  array|proj_array_2:
+  - 2
+  - 24
+  array|proj_array_20:
+  - 2
+  - 24
+  array|proj_array_21:
+  - 2
+  - 24
+  array|proj_array_22:
+  - 2
+  - 24
+  array|proj_array_23:
+  - 2
+  - 24
+  array|proj_array_24:
+  - 2
+  - 24
+  array|proj_array_25:
+  - 2
+  - 24
+  array|proj_array_3:
+  - 2
+  - 24
+  array|proj_array_4:
+  - 2
+  - 24
+  array|proj_array_5:
+  - 2
+  - 24
+  array|proj_array_6:
+  - 2
+  - 24
+  array|proj_array_7:
+  - 2
+  - 24
+  array|proj_array_8:
+  - 2
+  - 24
+  array|proj_array_9:
+  - 2
+  - 24
+  orbital_dicts:
+  - _orbital_type: realhydrogen
+    angular_momentum: 0
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 0
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 0
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 0
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 1
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 0
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 1
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 2
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 0
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 1
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 1
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 1
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 2
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 1
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 2
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 0
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 2
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 1
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 2
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 2
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 2
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 3
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 2
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 4
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 0
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 0
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 0
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 0
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 1
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 0
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 1
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 2
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 0
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 1
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 1
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 1
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 2
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 1
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 2
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 0
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 2
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 1
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 2
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 2
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 2
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 3
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 2
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 4
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+projections_up:
+  array|energy_array_0:
+  - 55
+  array|energy_array_1:
+  - 55
+  array|energy_array_10:
+  - 55
+  array|energy_array_11:
+  - 55
+  array|energy_array_12:
+  - 55
+  array|energy_array_13:
+  - 55
+  array|energy_array_14:
+  - 55
+  array|energy_array_15:
+  - 55
+  array|energy_array_16:
+  - 55
+  array|energy_array_17:
+  - 55
+  array|energy_array_18:
+  - 55
+  array|energy_array_19:
+  - 55
+  array|energy_array_2:
+  - 55
+  array|energy_array_20:
+  - 55
+  array|energy_array_21:
+  - 55
+  array|energy_array_22:
+  - 55
+  array|energy_array_23:
+  - 55
+  array|energy_array_24:
+  - 55
+  array|energy_array_25:
+  - 55
+  array|energy_array_3:
+  - 55
+  array|energy_array_4:
+  - 55
+  array|energy_array_5:
+  - 55
+  array|energy_array_6:
+  - 55
+  array|energy_array_7:
+  - 55
+  array|energy_array_8:
+  - 55
+  array|energy_array_9:
+  - 55
+  array|pdos_array_0:
+  - 55
+  array|pdos_array_1:
+  - 55
+  array|pdos_array_10:
+  - 55
+  array|pdos_array_11:
+  - 55
+  array|pdos_array_12:
+  - 55
+  array|pdos_array_13:
+  - 55
+  array|pdos_array_14:
+  - 55
+  array|pdos_array_15:
+  - 55
+  array|pdos_array_16:
+  - 55
+  array|pdos_array_17:
+  - 55
+  array|pdos_array_18:
+  - 55
+  array|pdos_array_19:
+  - 55
+  array|pdos_array_2:
+  - 55
+  array|pdos_array_20:
+  - 55
+  array|pdos_array_21:
+  - 55
+  array|pdos_array_22:
+  - 55
+  array|pdos_array_23:
+  - 55
+  array|pdos_array_24:
+  - 55
+  array|pdos_array_25:
+  - 55
+  array|pdos_array_3:
+  - 55
+  array|pdos_array_4:
+  - 55
+  array|pdos_array_5:
+  - 55
+  array|pdos_array_6:
+  - 55
+  array|pdos_array_7:
+  - 55
+  array|pdos_array_8:
+  - 55
+  array|pdos_array_9:
+  - 55
+  array|proj_array_0:
+  - 2
+  - 24
+  array|proj_array_1:
+  - 2
+  - 24
+  array|proj_array_10:
+  - 2
+  - 24
+  array|proj_array_11:
+  - 2
+  - 24
+  array|proj_array_12:
+  - 2
+  - 24
+  array|proj_array_13:
+  - 2
+  - 24
+  array|proj_array_14:
+  - 2
+  - 24
+  array|proj_array_15:
+  - 2
+  - 24
+  array|proj_array_16:
+  - 2
+  - 24
+  array|proj_array_17:
+  - 2
+  - 24
+  array|proj_array_18:
+  - 2
+  - 24
+  array|proj_array_19:
+  - 2
+  - 24
+  array|proj_array_2:
+  - 2
+  - 24
+  array|proj_array_20:
+  - 2
+  - 24
+  array|proj_array_21:
+  - 2
+  - 24
+  array|proj_array_22:
+  - 2
+  - 24
+  array|proj_array_23:
+  - 2
+  - 24
+  array|proj_array_24:
+  - 2
+  - 24
+  array|proj_array_25:
+  - 2
+  - 24
+  array|proj_array_3:
+  - 2
+  - 24
+  array|proj_array_4:
+  - 2
+  - 24
+  array|proj_array_5:
+  - 2
+  - 24
+  array|proj_array_6:
+  - 2
+  - 24
+  array|proj_array_7:
+  - 2
+  - 24
+  array|proj_array_8:
+  - 2
+  - 24
+  array|proj_array_9:
+  - 2
+  - 24
+  orbital_dicts:
+  - _orbital_type: realhydrogen
+    angular_momentum: 0
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 0
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 0
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 0
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 1
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 0
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 1
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 2
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 0
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 1
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 1
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 1
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 2
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 1
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 2
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 0
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 2
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 1
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 2
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 2
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 2
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 3
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 2
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 4
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 0
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 0
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 0
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 0
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 1
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 0
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 1
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 2
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 0
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 1
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 1
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 1
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 2
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 1
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 2
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 0
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 2
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 1
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 2
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 2
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 2
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 3
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: realhydrogen
+    angular_momentum: 2
+    diffusivity: null
+    kind_name: Fe
+    magnetic_number: 4
+    position:
+    - 1.416754493807456
+    - 1.416754493807456
+    - 1.416754493807456
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
