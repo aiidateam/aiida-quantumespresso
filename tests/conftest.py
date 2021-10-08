@@ -7,6 +7,7 @@ import shutil
 import tempfile
 
 from collections.abc import Mapping
+from pathlib import Path
 
 import pytest
 
@@ -258,8 +259,12 @@ def generate_calc_job_node(fixture_localhost):
 
         if retrieve_temporary:
             dirpath, filenames = retrieve_temporary
+            dirpath = Path(dirpath)
+            filepaths = []
             for filename in filenames:
-                shutil.copy(os.path.join(filepath_folder, filename), os.path.join(dirpath, filename))
+                filepaths.extend(Path(filepath_folder).glob(filename))
+            for filepath in filepaths:
+                shutil.copy(filepath, dirpath / filepath.name)
 
         if filepath_folder:
             retrieved = orm.FolderData()
@@ -267,8 +272,8 @@ def generate_calc_job_node(fixture_localhost):
 
             # Remove files that are supposed to be only present in the retrieved temporary folder
             if retrieve_temporary:
-                for filename in filenames:
-                    retrieved.delete_object(filename)
+                for filepath in filepaths:
+                    retrieved.delete_object(filepath.name)
 
             retrieved.add_incoming(node, link_type=LinkType.CREATE, link_label='retrieved')
             retrieved.store()
