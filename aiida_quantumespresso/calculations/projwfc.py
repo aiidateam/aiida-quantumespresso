@@ -33,6 +33,8 @@ class ProjwfcCalculation(NamelistsCalculation):
     _internal_retrieve_list = [
         NamelistsCalculation._PREFIX + '.pdos*',
     ]
+    # The XML file is added to the temporary retrieve list since it is required for parsing, but already in the
+    # repository of a an ancestor calculation.
     _retrieve_temporary_list = [
         xml_path.as_posix(),
     ]
