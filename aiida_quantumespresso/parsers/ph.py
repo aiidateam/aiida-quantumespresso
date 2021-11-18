@@ -56,6 +56,10 @@ class PhParser(Parser):
         self.emit_logs(logs)
         self.out('output_parameters', orm.Dict(dict=parsed_data))
 
+        # scheduler plugin detected a problem
+        if self.node.exit_status is not None:
+            return
+
         if 'ERROR_OUT_OF_WALLTIME' in logs['error']:
             return self.exit_codes.ERROR_OUT_OF_WALLTIME
 

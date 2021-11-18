@@ -71,7 +71,30 @@ def test_handle_out_of_walltime(generate_workchain_ph):
     assert result.status == 0
 
 
-def test_handle_convergence_not_achieved(generate_workchain_ph):
+def test_handle_scheduler_out_of_walltime(generate_workchain_ph):
+    """Test `PhBaseWorkChain.handle_scheduler_out_of_walltime`."""
+    inputs = generate_workchain_ph(return_inputs=True)
+    max_wallclock_seconds = inputs['ph']['metadata']['options']['max_wallclock_seconds']
+    max_seconds = max_wallclock_seconds * PhBaseWorkChain.defaults.delta_factor_max_seconds
+
+    process = generate_workchain_ph(exit_code=PhCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME)
+    process.setup()
+    process.validate_parameters()
+    process.prepare_process()
+
+    max_seconds_new = max_seconds * 0.5
+
+    result = process.handle_scheduler_out_of_walltime(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert result.do_break
+    assert process.ctx.inputs.parameters['INPUTPH']['max_seconds'] == max_seconds_new
+    assert not process.ctx.inputs.parameters['INPUTPH']['recover']
+
+    result = process.inspect_process()
+    assert result.status == 0
+
+
+def test_handle_convergence_not_reached(generate_workchain_ph):
     """Test `PhBaseWorkChain.handle_convergence_not_achieved`."""
     process = generate_workchain_ph(exit_code=PhCalculation.exit_codes.ERROR_CONVERGENCE_NOT_REACHED)
     process.setup()
@@ -79,7 +102,7 @@ def test_handle_convergence_not_achieved(generate_workchain_ph):
 
     alpha_new = PhBaseWorkChain.defaults.alpha_mix * PhBaseWorkChain.defaults.delta_factor_alpha_mix
 
-    result = process.handle_convergence_not_achieved(process.ctx.children[-1])
+    result = process.handle_convergence_not_reached(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
     assert result.do_break
     assert process.ctx.inputs.parameters['INPUTPH']['alpha_mix(1)'] == alpha_new
