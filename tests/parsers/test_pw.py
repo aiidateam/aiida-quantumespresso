@@ -11,7 +11,7 @@ from aiida.common import AttributeDict
 def generate_inputs(generate_structure):
     """Return only those inputs that the parser will expect to be there."""
 
-    def _generate_inputs(calculation_type='scf', parameters=None, settings=None, metadata=None,structure_id='silicon'):
+    def _generate_inputs(calculation_type='scf', parameters=None, settings=None, metadata=None, structure_id='silicon'):
         structure = generate_structure(structure_id=structure_id)
         parameters = {'CONTROL': {'calculation': calculation_type}, **(parameters or {})}
         kpoints = orm.KpointsData()
@@ -922,7 +922,8 @@ def test_environ(
     entry_point_parser = 'quantumespresso.pw'
     environ_settings = {'ENVIRON': {'environ_type': 'water'}}
     node = generate_calc_job_node(
-        entry_point_calc_job, fixture_localhost, name, generate_inputs(settings=environ_settings, structure_id='platinum')
+        entry_point_calc_job, fixture_localhost, name,
+        generate_inputs(settings=environ_settings, structure_id='platinum')
     )
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
