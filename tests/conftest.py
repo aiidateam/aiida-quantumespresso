@@ -234,7 +234,7 @@ def generate_calc_job_node(fixture_localhost):
             from qe_tools.exceptions import ParsingError
             from aiida_quantumespresso.tools.pwinputparser import PwInputFile
             try:
-                with open(filepath_input, 'r') as input_file:
+                with open(filepath_input, 'r') as input_file:  # pylint: disable=unspecified-encoding
                     parsed_input = PwInputFile(input_file.read())
             except (ParsingError, FileNotFoundError):
                 pass
@@ -315,6 +315,7 @@ def generate_structure():
             structure.append_atom(position=[-29.3865565, 9.51707929, -4.02515904], symbols='H', name='H')
             structure.append_atom(position=[1.04074437, -1.64320127, -1.27035021], symbols='O', name='O')
         elif structure_id == 'platinum':
+            # Used for environ tests
             structure = StructureData(cell=[[10.6881, 0., 0.], [0., 9.2561, 0.], [0., 0., 42.2630]])
             structure.append_atom(position=[5.335084148, 4.646723426, 12.901029877], symbols='C', name='C')
             structure.append_atom(position=[5.335009643, 4.619623254, 15.079854269], symbols='O', name='O')
@@ -327,7 +328,7 @@ def generate_structure():
             structure.append_atom(position=[2.697860636, 3.152173889, 4.688412329], symbols='Pt', name='Pt')
             structure.append_atom(position=[7.972463687, 3.152174491, 4.688415209], symbols='Pt', name='Pt')
         else:
-            raise KeyError('Unknown structure_id=\'{}\''.format(structure_id))
+            raise KeyError('Unknown structure_id=\'{}\''.format(structure_id))  # pylint: disable=consider-using-f-string
         return structure
 
     return _generate_structure
