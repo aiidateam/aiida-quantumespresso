@@ -20,14 +20,25 @@ examples folder from Environ
 """
 
 
-def calculator():
-    """
-    This is the SCF calculator, which is identical
-    and unchanged from what one would do in the case
-    of a standard SCF calculation - nothing environ
-    related. Remember to add in the tot_charge here
-    """
-    param_dict = {
+def runner(code, structure):
+
+    ## Base calculation for testing
+    PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
+    builder = PwBaseWorkChain.get_builder()
+    builder.pw.structure = structure
+
+    builder.metadata.label = 'Single point environ'
+    builder.metadata.description = 'Testing calculation with environ for Pt(111) + CO'
+
+    KpointsData = DataFactory('array.kpoints')
+    kpoints = KpointsData()
+    kpoints.set_kpoints_mesh([1, 1, 1])  # Not physical just a test
+    builder.kpoints = kpoints
+
+    family = load_group('SSSP/1.1/PBE/efficiency')
+    builder.pw.pseudos = family.get_pseudos(structure=structure)
+
+    calculation = {
         'CONTROL': {
             'calculation': 'scf',
             'tprnfor': True,
@@ -49,14 +60,7 @@ def calculator():
         },
     }
 
-    return param_dict
-
-
-def environ_calculator():
-    """
-    Environ parameters
-    """
-    param_dict = {
+    environ_calculation = {
         'ENVIRON': {
             'verbose': 0,
             'environ_thr': 1.0,
@@ -76,31 +80,8 @@ def environ_calculator():
             'tol': 5e-13,
         }
     }
-    return param_dict
-
-
-def runner(code, structure):
-
-    ## Base calculation for testing
-    PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
-    builder = PwBaseWorkChain.get_builder()
-    builder.pw.structure = structure
-
-    builder.metadata.label = 'Single point environ'
-    builder.metadata.description = 'Testing calculation with environ for Pt(111) + CO'
-
-    KpointsData = DataFactory('array.kpoints')
-    kpoints = KpointsData()
-    kpoints.set_kpoints_mesh([1, 1, 1])  # Not physical just a test
-    builder.kpoints = kpoints
-
-    family = load_group('SSSP/1.1/PBE/efficiency')
-    builder.pw.pseudos = family.get_pseudos(structure=structure)
-
-    calculation = calculator()
-    environ_calculation = environ_calculator()
-    ## these are the main cube files that could potentially be parsed
-    ## if the verbosity is set to 2 or higher
+    # these are the main cube files that could potentially be parsed
+    # if the verbosity is set to 2 or higher
     # environ_calculation['additional_retrieve_list'] = ['epsilon.cube', \
     #     'vreference.cube', 'velectrostatic.cube', 'vsoftcavity.cube', \
     #     'electrons.cube', 'charges.cube', 'smeared_ions.cube']
@@ -115,10 +96,10 @@ def runner(code, structure):
 
 
 if __name__ == '__main__':
-    code = load_code('pw_6-7@juwels')
+    code = load_code('insert-code-here')
 
     StructureData = DataFactory('structure')
-    ## these are the original coordinates for the Pt-CO system
+    # these are the original coordinates for the Pt-CO system
     positions = [
         [5.335084148, 4.646723426, 12.901029877],
         [5.335009643, 4.619623254, 15.079854269],

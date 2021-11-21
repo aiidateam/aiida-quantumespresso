@@ -314,6 +314,18 @@ def generate_structure():
             structure.append_atom(position=[12.73464656, 16.7741411, 24.35076238], symbols='H', name='H')
             structure.append_atom(position=[-29.3865565, 9.51707929, -4.02515904], symbols='H', name='H')
             structure.append_atom(position=[1.04074437, -1.64320127, -1.27035021], symbols='O', name='O')
+        elif structure_id == 'platinum':
+            structure = StructureData(cell=[[10.6881, 0., 0.], [0., 9.2561, 0.], [0., 0., 42.2630]])
+            structure.append_atom(position=[5.335084148, 4.646723426, 12.901029877], symbols='C', name='C')
+            structure.append_atom(position=[5.335009643, 4.619623254, 15.079854269], symbols='O', name='O')
+            structure.append_atom(position=[8.061327071, 0.098057998, 8.992142901], symbols='Pt', name='Pt')
+            structure.append_atom(position=[2.608989366, 0.098058283, 8.992140585], symbols='Pt', name='Pt')
+            structure.append_atom(position=[0.000036609, 4.720846294, 8.968756935], symbols='Pt', name='Pt')
+            structure.append_atom(position=[5.335159557, 4.721612729, 9.380196435], symbols='Pt', name='Pt')
+            structure.append_atom(position=[0.000041121, 7.802951963, 4.604626508], symbols='Pt', name='Pt')
+            structure.append_atom(position=[5.335161233, 7.697749113, 4.753489408], symbols='Pt', name='Pt')
+            structure.append_atom(position=[2.697860636, 3.152173889, 4.688412329], symbols='Pt', name='Pt')
+            structure.append_atom(position=[7.972463687, 3.152174491, 4.688415209], symbols='Pt', name='Pt')
         else:
             raise KeyError('Unknown structure_id=\'{}\''.format(structure_id))
         return structure
