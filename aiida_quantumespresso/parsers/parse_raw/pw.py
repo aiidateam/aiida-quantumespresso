@@ -307,7 +307,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
     lelfield = input_parameters.get('CONTROL', {}).get('lelfield', False)
 
     # Determine if an ENVIRON calculation run
-    is_environ = 'ENVIRON' in setttings
+    is_environ = 'ENVIRON' in settings
 
     # Find some useful quantities.
     if not parsed_xml.get('number_of_bands', None):
