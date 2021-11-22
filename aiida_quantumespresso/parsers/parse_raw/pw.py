@@ -267,7 +267,7 @@ def detect_important_message(logs, line):
             logs.warning.append(message)
 
 
-def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None):
+def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None, settings={}):
     """Parses the stdout content of a Quantum ESPRESSO `pw.x` calculation.
 
     :param stdout: the stdout content as a string
@@ -305,6 +305,9 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
 
     # Determine whether the input switched on an electric field
     lelfield = input_parameters.get('CONTROL', {}).get('lelfield', False)
+
+    # Determine if an ENVIRON calculation run
+    is_environ = 'ENVIRON' in setttings
 
     # Find some useful quantities.
     if not parsed_xml.get('number_of_bands', None):
@@ -743,7 +746,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
                     parsed_data['fermi_energy' + units_suffix] = default_energy_units
                 except Exception:
                     logs.warning.append('Error while parsing Fermi energy from the output file.')
-            elif 'Gaussian-smeared nuclei' in line:
+            elif is_environ and 'Gaussian-smeared nuclei' in line:
                 try:
                     value_potential_shift = float(line.split()[-2])
                     unit_potential_shift = line.split()[-1]

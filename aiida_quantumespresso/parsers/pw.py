@@ -44,7 +44,7 @@ class PwParser(Parser):
 
         parameters = self.node.inputs.parameters.get_dict()
         parsed_xml, logs_xml = self.parse_xml(dir_with_bands, parser_options)
-        parsed_stdout, logs_stdout = self.parse_stdout(parameters, parser_options, parsed_xml)
+        parsed_stdout, logs_stdout = self.parse_stdout(parameters, parser_options, parsed_xml, settings)
 
         parsed_bands = parsed_stdout.pop('bands', {})
         parsed_structure = parsed_stdout.pop('structure', {})
@@ -295,7 +295,7 @@ class PwParser(Parser):
 
         return parsed_data, logs
 
-    def parse_stdout(self, parameters, parser_options=None, parsed_xml=None):
+    def parse_stdout(self, parameters, parser_options=None, parsed_xml=None, settings={}):
         """Parse the stdout output file.
 
         :param parameters: the input parameters dictionary
@@ -321,7 +321,7 @@ class PwParser(Parser):
             return parsed_data, logs
 
         try:
-            parsed_data, logs = parse_stdout(stdout, parameters, parser_options, parsed_xml)
+            parsed_data, logs = parse_stdout(stdout, parameters, parser_options, parsed_xml, settings)
         except Exception:
             logs.critical.append(traceback.format_exc())
             self.exit_code_stdout = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
