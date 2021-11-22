@@ -73,7 +73,7 @@ def test_pw_ibrav(
     calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
     cmdline_params = ['-in', 'aiida.in']
-    local_copy_list = [(upf.uuid, upf.filename, u'./pseudo/Si.upf')]
+    local_copy_list = [(upf.uuid, upf.filename, './pseudo/Si.upf')]
     retrieve_list = ['aiida.out', './out/aiida.save/data-file-schema.xml', './out/aiida.save/data-file.xml']
     retrieve_temporary_list = [['./out/aiida.save/K*[0-9]/eigenval*.xml', '.', 2]]
 
@@ -252,7 +252,7 @@ def test_pw_parallelization_duplicate_cmdline_flag(fixture_sandbox, generate_cal
     assert 'Conflicting' in str(exc.value)
 
 
-def test_environ_pw_namelists(fixture_sandbox, generate_calc_job, generate_inputs_pw, file_regression):
+def test_environ_namelists(fixture_sandbox, generate_calc_job, generate_inputs_pw, file_regression):
     """Test that Environ does not change the contents of the pw file created."""
     entry_point_name = 'quantumespresso.pw'
 
@@ -276,38 +276,11 @@ def test_environ_pw_namelists(fixture_sandbox, generate_calc_job, generate_input
 
     with fixture_sandbox.open('aiida.in') as handle:
         input_written = handle.read()
-
-    # Checks on the files written to the sandbox folder as raw input
-    assert sorted(fixture_sandbox.get_content_list()) == sorted(['aiida.in', 'pseudo', 'out', 'environ.in'])
-    # Check the aiida.in files are written correctly
-    file_regression.check(input_written, encoding='utf-8', extension='.in')
-
-def test_environ_namelists(fixture_sandbox, generate_calc_job, generate_inputs_pw, file_regression):
-    """Test that Environ namelists are created."""
-    entry_point_name = 'quantumespresso.pw'
-
-    inputs = generate_inputs_pw()
-    inputs['settings'] = orm.Dict(
-        dict={
-            'ENVIRON': {
-                'electrolyte_linearized': True,
-                'environ_type': 'input',
-            },
-            'BOUNDARY': {
-                'solvent_mode': 'electronic',
-                'electrolyte_mode': 'electronic',
-            },
-            'ELECTROSTATIC': {
-                'pbc_correction': 'parabolic',
-            }
-        },
-    )
-    generate_calc_job(fixture_sandbox, entry_point_name, inputs)
-
     with fixture_sandbox.open('environ.in') as handle:
         environ_written = handle.read()
 
     # Checks on the files written to the sandbox folder as raw input
     assert sorted(fixture_sandbox.get_content_list()) == sorted(['aiida.in', 'pseudo', 'out', 'environ.in'])
-    # Checks on the files written to the sandbox folder as raw input
-    file_regression.check(environ_written, encoding='utf-8', extension='.in')
+    # Check the aiida.in files are written correctly
+    file_regression.check(input_written, encoding='utf-8', extension='.aiida.in')
+    file_regression.check(environ_written, encoding='utf-8', extension='.environ.in')
