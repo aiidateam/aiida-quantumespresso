@@ -328,7 +328,7 @@ def generate_structure():
             structure.append_atom(position=[2.697860636, 3.152173889, 4.688412329], symbols='Pt', name='Pt')
             structure.append_atom(position=[7.972463687, 3.152174491, 4.688415209], symbols='Pt', name='Pt')
         else:
-            raise KeyError('Unknown structure_id=\'{}\''.format(structure_id))  # pylint: disable=consider-using-f-string
+            raise KeyError(f'Unknown structure_id=\'{structure_id}\''
         return structure
 
     return _generate_structure
