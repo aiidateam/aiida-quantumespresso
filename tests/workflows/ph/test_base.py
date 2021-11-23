@@ -95,7 +95,7 @@ def test_handle_scheduler_out_of_walltime(generate_workchain_ph):
 
 
 def test_handle_convergence_not_reached(generate_workchain_ph):
-    """Test `PhBaseWorkChain.handle_convergence_not_achieved`."""
+    """Test `PhBaseWorkChain.handle_convergence_not_reached`."""
     process = generate_workchain_ph(exit_code=PhCalculation.exit_codes.ERROR_CONVERGENCE_NOT_REACHED)
     process.setup()
     process.validate_parameters()
