@@ -935,7 +935,6 @@ def test_environ(
     assert 'output_trajectory' in results
 
     data_regression.check({
-        # 'output_kpoints': results['output_kpoints'].attributes,
         'output_parameters': results['output_parameters'].get_dict(),
         'output_trajectory': results['output_trajectory'].attributes,
     })
