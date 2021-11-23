@@ -113,10 +113,14 @@ class PhBaseWorkChain(BaseRestartWorkChain):
     def handle_scheduler_out_of_walltime(self, node):
         """Handle `ERROR_SCHEDULER_OUT_OF_WALLTIME` exit code: decrease the max_secondes and restart from scratch."""
 
-        # decrease max_seconds a lot in order to make sure the calculation shut down neatly before reaching the
-        # scheduler wall time
+        # Decrease `max_seconds` significantly in order to make sure that the calculation has the time to shut down
+        # neatly before reaching the scheduler wall time and one can restart from this calculation.
         factor = 0.5
         max_seconds = self.ctx.inputs.parameters.get('INPUTPH', {}).get('max_seconds', None)
+        if max_seconds is None:
+            max_seconds = self.ctx.inputs.metadata.options.get(
+                'max_wallclock_seconds', None
+            ) * self.defaults.delta_factor_max_seconds
         max_seconds_new = max_seconds * factor
 
         self.ctx.restart_calc = node

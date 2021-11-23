@@ -56,8 +56,8 @@ class PhParser(Parser):
         self.emit_logs(logs)
         self.out('output_parameters', orm.Dict(dict=parsed_data))
 
-        # scheduler plugin detected a problem
-        if self.node.exit_status is not None:
+        # If the scheduler detected OOW, simply keep that exit code by not returning anything more specific.
+        if self.node.exit_status == PhCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME:
             return
 
         if 'ERROR_OUT_OF_WALLTIME' in logs['error']:
