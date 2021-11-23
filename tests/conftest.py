@@ -234,7 +234,7 @@ def generate_calc_job_node(fixture_localhost):
             from qe_tools.exceptions import ParsingError
             from aiida_quantumespresso.tools.pwinputparser import PwInputFile
             try:
-                with open(filepath_input, 'r') as input_file:  # pylint: disable=unspecified-encoding
+                with open(filepath_input, 'r', encoding='utf-8') as input_file:
                     parsed_input = PwInputFile(input_file.read())
             except (ParsingError, FileNotFoundError):
                 pass
