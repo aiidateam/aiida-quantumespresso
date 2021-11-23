@@ -109,6 +109,23 @@ class PhBaseWorkChain(BaseRestartWorkChain):
             self.report_error_handled(node, 'unrecoverable error, aborting...')
             return ProcessHandlerReport(True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
 
+    @process_handler(priority=585, exit_codes=PhCalculation.exit_codes.ERROR_COMPUTING_CHOLESKY)
+    def handle_diagonalization_errors(self, calculation):
+        """Handle known issues related to the diagonalization.
+
+        Switch to ``diagonalization = 'cg'`` if not already running with this setting, and restart from the charge
+        density. In case the run already used conjugate gradient diagonalization, abort.
+        """
+        if self.ctx.inputs.parameters['INPUTPH'].get('diagonalization', None) == 'cg':
+            action = 'found diagonalization issues but already running with conjugate gradient algorithm, aborting...'
+            self.report_error_handled(calculation, action)
+            return ProcessHandlerReport(True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
+
+        self.ctx.inputs.parameters['INPUTPH']['diagonalization'] = 'cg'
+        action = 'found diagonalization issues, switching to conjugate gradient diagonalization.'
+        self.report_error_handled(calculation, action)
+        return ProcessHandlerReport(True)
+
     @process_handler(priority=580, exit_codes=PhCalculation.exit_codes.ERROR_OUT_OF_WALLTIME)
     def handle_out_of_walltime(self, node):
         """Handle `ERROR_OUT_OF_WALLTIME` exit code: calculation shut down neatly and we can simply restart."""

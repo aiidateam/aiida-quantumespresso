@@ -57,3 +57,22 @@ def test_ph_out_of_walltime(fixture_localhost, generate_calc_job_node, generate_
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUT_OF_WALLTIME.status
     assert 'output_parameters' in results
     data_regression.check(results['output_parameters'].get_dict())
+
+
+def test_pw_failed_computing_cholesky(fixture_localhost, generate_calc_job_node, generate_parser):
+    """Test the parsing of a calculation that failed during cholesky factorization.
+
+    In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
+    the relevant error message.
+    """
+    name = 'failed_computing_cholesky'
+    entry_point_calc_job = 'quantumespresso.ph'
+    entry_point_parser = 'quantumespresso.ph'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_COMPUTING_CHOLESKY.status
