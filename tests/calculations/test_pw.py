@@ -281,6 +281,5 @@ def test_environ_namelists(fixture_sandbox, generate_calc_job, generate_inputs_p
 
     # Checks on the files written to the sandbox folder as raw input
     assert sorted(fixture_sandbox.get_content_list()) == sorted(['aiida.in', 'pseudo', 'out', 'environ.in'])
-    # Check the aiida.in files are written correctly
     file_regression.check(input_written, encoding='utf-8', extension='.aiida.in')
     file_regression.check(environ_written, encoding='utf-8', extension='.environ.in')
