@@ -648,7 +648,7 @@ Environ calculations can be run by supplying the required namelists to ``builder
 
 This dictionary can be passed on to the builder as ::
 
-    builder.pw.settings = orm.Dict(dict=environ_param_dict)
+    builder.settings = orm.Dict(dict=environ_param_dict)
 
 
 Launching the calculation
