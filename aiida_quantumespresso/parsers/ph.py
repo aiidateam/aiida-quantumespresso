@@ -65,3 +65,9 @@ class PhParser(Parser):
 
         if 'ERROR_CONVERGENCE_NOT_REACHED' in logs['error']:
             return self.exit_codes.ERROR_CONVERGENCE_NOT_REACHED
+
+        if 'ERROR_COMPUTING_CHOLESKY' in logs['error']:
+            return self.exit_codes.ERROR_COMPUTING_CHOLESKY
+
+        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs['error']:
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE

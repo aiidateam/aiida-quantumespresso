@@ -111,6 +111,27 @@ def test_handle_convergence_not_reached(generate_workchain_ph):
     assert result.status == 0
 
 
+def test_handle_diagonalization_errors(generate_workchain_ph):
+    """Test `PhBaseWorkChain.handle_diagonalization_errors`."""
+    process = generate_workchain_ph(exit_code=PhCalculation.exit_codes.ERROR_COMPUTING_CHOLESKY)
+    process.setup()
+    process.validate_parameters()
+    process.prepare_process()
+
+    process.ctx.inputs.parameters['INPUTPH']['diagonalization'] = 'david'
+
+    result = process.handle_diagonalization_errors(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert process.ctx.inputs.parameters['INPUTPH']['diagonalization'] == 'cg'
+    assert result.do_break
+
+    result = process.handle_diagonalization_errors(process.ctx.children[-1])
+    assert result.do_break
+
+    result = process.inspect_process()
+    assert result == PhBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE
+
+
 def test_set_max_seconds(generate_workchain_ph):
     """Test that `max_seconds` gets set in the parameters based on `max_wallclock_seconds` unless already set."""
     inputs = generate_workchain_ph(return_inputs=True)

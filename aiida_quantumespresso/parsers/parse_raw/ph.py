@@ -152,6 +152,7 @@ def parse_ph_text_output(lines, logs):
             'error': {
                 'Maximum CPU time exceeded': 'ERROR_OUT_OF_WALLTIME',
                 'No convergence has been achieved': 'ERROR_CONVERGENCE_NOT_REACHED',
+                'problems computing cholesky': 'ERROR_COMPUTING_CHOLESKY',
             },
             'warning': {
                 'Warning:': None,
