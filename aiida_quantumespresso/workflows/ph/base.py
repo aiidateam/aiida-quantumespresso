@@ -109,6 +109,28 @@ class PhBaseWorkChain(BaseRestartWorkChain):
             self.report_error_handled(node, 'unrecoverable error, aborting...')
             return ProcessHandlerReport(True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
 
+    @process_handler(priority=610, exit_codes=PhCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME)
+    def handle_scheduler_out_of_walltime(self, node):
+        """Handle `ERROR_SCHEDULER_OUT_OF_WALLTIME` exit code: decrease the max_secondes and restart from scratch."""
+
+        # Decrease `max_seconds` significantly in order to make sure that the calculation has the time to shut down
+        # neatly before reaching the scheduler wall time and one can restart from this calculation.
+        factor = 0.5
+        max_seconds = self.ctx.inputs.parameters.get('INPUTPH', {}).get('max_seconds', None)
+        if max_seconds is None:
+            max_seconds = self.ctx.inputs.metadata.options.get(
+                'max_wallclock_seconds', None
+            ) * self.defaults.delta_factor_max_seconds
+        max_seconds_new = max_seconds * factor
+
+        self.ctx.restart_calc = node
+        self.ctx.inputs.parameters.setdefault('INPUTPH', {})['recover'] = False
+        self.ctx.inputs.parameters.setdefault('INPUTPH', {})['max_seconds'] = max_seconds_new
+
+        action = f'reduced max_seconds from {max_seconds} to {max_seconds_new} and restarting'
+        self.report_error_handled(node, action)
+        return ProcessHandlerReport(True)
+
     @process_handler(priority=580, exit_codes=PhCalculation.exit_codes.ERROR_OUT_OF_WALLTIME)
     def handle_out_of_walltime(self, node):
         """Handle `ERROR_OUT_OF_WALLTIME` exit code: calculation shut down neatly and we can simply restart."""
@@ -117,8 +139,8 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         return ProcessHandlerReport(True)
 
     @process_handler(priority=410, exit_codes=PhCalculation.exit_codes.ERROR_CONVERGENCE_NOT_REACHED)
-    def handle_convergence_not_achieved(self, node):
-        """Handle `ERROR_CONVERGENCE_NOT_REACHED` exit code: decrease the mixing beta and restart from scratch."""
+    def handle_convergence_not_reached(self, node):
+        """Handle `ERROR_CONVERGENCE_NOT_REACHED` exit code: decrease the mixing beta and restart."""
         factor = self.defaults.delta_factor_alpha_mix
         alpha_mix = self.ctx.inputs.parameters.get('INPUTPH', {}).get('alpha_mix(1)', self.defaults.alpha_mix)
         alpha_mix_new = alpha_mix * factor

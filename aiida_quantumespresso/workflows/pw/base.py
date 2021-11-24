@@ -264,7 +264,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         the case of the latter, the `KpointsData` will be constructed for the input `StructureData` using the
         `create_kpoints_from_distance` calculation function.
         """
-        if all([key not in self.inputs for key in ['kpoints', 'kpoints_distance']]):
+        if all(key not in self.inputs for key in ['kpoints', 'kpoints_distance']):
             return self.exit_codes.ERROR_INVALID_INPUT_KPOINTS
 
         try:
@@ -637,7 +637,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     @process_handler(priority=410, exit_codes=[
         PwCalculation.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED,
     ])
-    def handle_electronic_convergence_not_achieved(self, calculation):
+    def handle_electronic_convergence_not_reached(self, calculation):
         """Handle `ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED` error.
 
         Decrease the mixing beta and fully restart from the previous calculation.
