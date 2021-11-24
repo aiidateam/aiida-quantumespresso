@@ -147,12 +147,12 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         :param electronic_type: indicate the electronic character of the system through ``ElectronicType`` instance.
         :param spin_type: indicate the spin polarization type to use through a ``SpinType`` instance.
         :param initial_magnetic_moments: optional dictionary that maps the initial magnetic moment of each kind to a
-            desired value for a spin polarized calculation. Note that this takes precedence over any
-            ``starting_magnetization`` provided in the ``overrides``, and that for ``spin_type == SpinType.COLLINEAR``
-            an initial guess for the magnetic moment is automatically set in case neither is provided.
+            desired value for a spin polarized calculation. Note that in case the ``starting_magnetization`` is also
+            provided in the ``overrides``, this takes precedence over the values provided here. In case neither is
+            provided and ``spin_type == SpinType.COLLINEAR``, an initial guess for the magnetic moments is used.
         :return: a process builder instance with all inputs defined ready for launch.
         """
-        from aiida_quantumespresso.workflows.protocols.utils import get_starting_magnetization
+        from aiida_quantumespresso.workflows.protocols.utils import get_starting_magnetization, recursive_merge
 
         if isinstance(code, str):
             code = orm.load_code(code)
@@ -188,11 +188,13 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         try:
             cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
+            pseudos = pseudo_family.get_pseudos(structure=structure)
         except ValueError as exception:
             raise ValueError(
                 f'failed to obtain recommended cutoffs for pseudo family `{pseudo_family}`: {exception}'
             ) from exception
 
+        # Update the parameters based on the protocol inputs
         parameters = inputs['pw']['parameters']
         parameters['CONTROL']['etot_conv_thr'] = natoms * meta_parameters['etot_conv_thr_per_atom']
         parameters['ELECTRONS']['conv_thr'] = natoms * meta_parameters['conv_thr_per_atom']
@@ -205,15 +207,22 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             parameters['SYSTEM'].pop('smearing')
 
         if spin_type is SpinType.COLLINEAR:
+            starting_magnetization = get_starting_magnetization(structure, pseudo_family, initial_magnetic_moments)
+            parameters['SYSTEM']['starting_magnetization'] = starting_magnetization
             parameters['SYSTEM']['nspin'] = 2
-            if 'starting_magnetization' not in parameters['SYSTEM'] or initial_magnetic_moments is not None:
-                starting_magnetization = get_starting_magnetization(structure, pseudo_family, initial_magnetic_moments)
-                parameters['SYSTEM']['starting_magnetization'] = starting_magnetization
+
+        # If overrides are provided, they are considered absolute
+        if overrides:
+            parameter_overrides = overrides.get('pw', {}).get('parameters', {})
+            parameters = recursive_merge(parameters, parameter_overrides)
+
+            pseudos_overrides = overrides.get('pw', {}).get('pseudos', {})
+            pseudos = recursive_merge(pseudos, pseudos_overrides)
 
         # pylint: disable=no-member
         builder = cls.get_builder()
         builder.pw['code'] = code
-        builder.pw['pseudos'] = pseudo_family.get_pseudos(structure=structure)
+        builder.pw['pseudos'] = pseudos
         builder.pw['structure'] = structure
         builder.pw['parameters'] = orm.Dict(dict=parameters)
         builder.pw['metadata'] = inputs['pw']['metadata']

@@ -127,6 +127,12 @@ def sssp(aiida_profile, generate_upf_data):
         for values in elements.values():
 
             element = values['symbol']
+
+            actinides = ('Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr')
+
+            if element in actinides:
+                continue
+
             upf = generate_upf_data(element)
             filename = os.path.join(dirpath, f'{element}.upf')
 
@@ -259,7 +265,10 @@ def generate_calc_job_node(fixture_localhost):
         if retrieve_temporary:
             dirpath, filenames = retrieve_temporary
             for filename in filenames:
-                shutil.copy(os.path.join(filepath_folder, filename), os.path.join(dirpath, filename))
+                try:
+                    shutil.copy(os.path.join(filepath_folder, filename), os.path.join(dirpath, filename))
+                except FileNotFoundError:
+                    pass  # To test the absence of files in the retrieve_temporary folder
 
         if filepath_folder:
             retrieved = orm.FolderData()
@@ -268,7 +277,10 @@ def generate_calc_job_node(fixture_localhost):
             # Remove files that are supposed to be only present in the retrieved temporary folder
             if retrieve_temporary:
                 for filename in filenames:
-                    retrieved.delete_object(filename)
+                    try:
+                        retrieved.delete_object(filename)
+                    except OSError:
+                        pass  # To test the absence of files in the retrieve_temporary folder
 
             retrieved.add_incoming(node, link_type=LinkType.CREATE, link_label='retrieved')
             retrieved.store()
@@ -318,8 +330,14 @@ def generate_structure():
             structure.append_atom(position=[12.73464656, 16.7741411, 24.35076238], symbols='H', name='H')
             structure.append_atom(position=[-29.3865565, 9.51707929, -4.02515904], symbols='H', name='H')
             structure.append_atom(position=[1.04074437, -1.64320127, -1.27035021], symbols='O', name='O')
+        elif structure_id == 'uranium':
+            param = 5.43
+            cell = [[param / 2., param / 2., 0], [param / 2., 0, param / 2.], [0, param / 2., param / 2.]]
+            structure = StructureData(cell=cell)
+            structure.append_atom(position=(0., 0., 0.), symbols='U', name='U')
+            structure.append_atom(position=(param / 4., param / 4., param / 4.), symbols='U', name='U')
         else:
-            raise KeyError('Unknown structure_id=\'{}\''.format(structure_id))
+            raise KeyError(f'Unknown structure_id="{structure_id}"')
         return structure
 
     return _generate_structure
