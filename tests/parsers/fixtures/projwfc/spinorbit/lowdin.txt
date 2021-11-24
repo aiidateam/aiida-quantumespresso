@@ -1,7 +1,0 @@
-
-Lowdin Charges:
-
-     Atom #   1: total charge =   7.9931, s =  1.9952,
-     Atom #   1: total charge =   7.9931, p =  0.0000,
-     Atom #   1: total charge =   7.9931, d =  5.9980,
-     Spilling Parameter:   0.0009

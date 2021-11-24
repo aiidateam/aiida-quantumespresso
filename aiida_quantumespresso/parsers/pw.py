@@ -140,6 +140,7 @@ class PwParser(Parser):
             'ERROR_DEXX_IS_NEGATIVE',
             'ERROR_COMPUTING_CHOLESKY',
             'ERROR_NPOOLS_TOO_HIGH',
+            'ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED',
         ]:
             if error_label in logs['error']:
                 return self.exit_codes.get(error_label)
@@ -150,7 +151,14 @@ class PwParser(Parser):
             return
 
         if 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED' in logs['error']:
-            return self.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED
+            scf_must_converge = self.node.inputs.parameters.get_attribute('ELECTRONS',
+                                                                          {}).get('scf_must_converge', True)
+            electron_maxstep = self.node.inputs.parameters.get_attribute('ELECTRONS', {}).get('electron_maxstep', 1)
+
+            if electron_maxstep == 0 or not scf_must_converge:
+                return self.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED
+            else:
+                return self.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED
 
     def validate_dynamics(self, trajectory, parameters, logs):
         """Analyze problems that are specific to `dynamics` type calculations: i.e. `md` and `vc-md`."""

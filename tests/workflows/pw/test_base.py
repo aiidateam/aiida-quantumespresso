@@ -15,7 +15,6 @@ def test_setup(generate_workchain_pw):
     process = generate_workchain_pw()
     process.setup()
 
-    assert process.ctx.restart_calc is None
     assert isinstance(process.ctx.inputs, AttributeDict)
 
 
@@ -40,43 +39,99 @@ def test_handle_unrecoverable_failure(generate_workchain_pw):
     assert result == PwBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE
 
 
-def test_handle_out_of_walltime(generate_workchain_pw):
+def test_handle_out_of_walltime(generate_workchain_pw, fixture_localhost, generate_remote_data):
     """Test `PwBaseWorkChain.handle_out_of_walltime`."""
-    process = generate_workchain_pw(exit_code=PwCalculation.exit_codes.ERROR_OUT_OF_WALLTIME)
+    remote_data = generate_remote_data(computer=fixture_localhost, remote_path='/path/to/remote')
+    process = generate_workchain_pw(
+        exit_code=PwCalculation.exit_codes.ERROR_OUT_OF_WALLTIME, pw_outputs={'remote_folder': remote_data}
+    )
+    process.setup()
+
+    result = process.handle_electronic_convergence_not_achieved(process.ctx.children[-1])
+    result = process.handle_out_of_walltime(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert process.ctx.inputs.parameters['CONTROL']['restart_mode'] == 'restart'
+    assert result.do_break
+
+    result = process.inspect_process()
+    assert result.status == 0
+
+
+def test_handle_out_of_walltime_structure_changed(generate_workchain_pw, generate_structure):
+    """Test `PwBaseWorkChain.handle_out_of_walltime`."""
+    structure = generate_structure()
+    process = generate_workchain_pw(
+        exit_code=PwCalculation.exit_codes.ERROR_OUT_OF_WALLTIME, pw_outputs={'output_structure': structure}
+    )
     process.setup()
 
     result = process.handle_out_of_walltime(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
+    assert process.ctx.inputs.parameters['CONTROL']['restart_mode'] == 'from_scratch'
     assert result.do_break
 
     result = process.inspect_process()
     assert result.status == 0
 
 
-def test_handle_electronic_convergence_not_reached(generate_workchain_pw):
+def test_handle_electronic_convergence_not_achieved(generate_workchain_pw, fixture_localhost, generate_remote_data):
     """Test `PwBaseWorkChain.handle_electronic_convergence_not_achieved`."""
-    process = generate_workchain_pw(exit_code=PwCalculation.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED)
+    remote_data = generate_remote_data(computer=fixture_localhost, remote_path='/path/to/remote')
+
+    process = generate_workchain_pw(
+        exit_code=PwCalculation.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED,
+        pw_outputs={'remote_folder': remote_data}
+    )
     process.setup()
-    process.validate_parameters()
+
+    process.ctx.inputs.parameters['ELECTRONS']['mixing_beta'] = 0.5
 
     result = process.handle_electronic_convergence_not_achieved(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
+    assert process.ctx.inputs.parameters['ELECTRONS']['mixing_beta'] == \
+        process.defaults.delta_factor_mixing_beta * 0.5
+    assert process.ctx.inputs.parameters['CONTROL']['restart_mode'] == 'restart'
     assert result.do_break
-    assert process.ctx.restart_calc is None
 
     result = process.inspect_process()
     assert result.status == 0
 
 
+@pytest.mark.skip('Reactivate once we have an unrecoverable failure once again.')
 def test_handle_known_unrecoverable_failure(generate_workchain_pw):
     """Test `PwBaseWorkChain.handle_known_unrecoverable_failure`."""
-    process = generate_workchain_pw(exit_code=PwCalculation.exit_codes.ERROR_COMPUTING_CHOLESKY)
+    process = generate_workchain_pw()
     process.setup()
 
     result = process.handle_known_unrecoverable_failure(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
     assert result.do_break
     assert result.exit_code == PwBaseWorkChain.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE
+
+    result = process.inspect_process()
+    assert result == PwBaseWorkChain.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE
+
+
+@pytest.mark.parametrize(
+    'exit_code', (
+        PwCalculation.exit_codes.ERROR_COMPUTING_CHOLESKY,
+        PwCalculation.exit_codes.ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED,
+    )
+)
+def test_handle_diagonalization_errors(generate_workchain_pw, exit_code):
+    """Test `PwBaseWorkChain.handle_diagonalization_errors`."""
+    process = generate_workchain_pw(exit_code=exit_code)
+    process.setup()
+
+    process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = 'david'
+
+    result = process.handle_diagonalization_errors(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] == 'cg'
+    assert result.do_break
+
+    result = process.handle_diagonalization_errors(process.ctx.children[-1])
+    assert result.do_break
 
     result = process.inspect_process()
     assert result == PwBaseWorkChain.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE
@@ -95,7 +150,6 @@ def test_handle_vcrelax_converged_except_final_scf(generate_workchain_pw):
     assert result.do_break
     assert result.exit_code == PwBaseWorkChain.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF
     assert process.node.get_outgoing().all() is not None
-    assert process.ctx.restart_calc is calculation
 
     result = process.inspect_process()
     assert result == PwBaseWorkChain.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF
@@ -111,23 +165,43 @@ def test_handle_vcrelax_converged_except_final_scf(generate_workchain_pw):
 )
 def test_handle_relax_recoverable_ionic_convergence_error(generate_workchain_pw, generate_structure, exit_code):
     """Test `PwBaseWorkChain.handle_relax_recoverable_ionic_convergence_error`."""
-    from aiida.common.links import LinkType
-
-    process = generate_workchain_pw(exit_code=exit_code)
+    structure = generate_structure()
+    process = generate_workchain_pw(pw_outputs={'output_structure': structure}, exit_code=exit_code)
     process.setup()
 
-    calculation = process.ctx.children[-1]
-    structure = generate_structure().store()
-    structure.add_incoming(calculation, link_label='output_structure', link_type=LinkType.CREATE)
-
-    result = process.handle_relax_recoverable_ionic_convergence_error(calculation)
+    result = process.handle_relax_recoverable_ionic_convergence_error(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
     assert result.do_break
     assert result.exit_code.status == 0
-    assert process.ctx.restart_calc is None
+    assert process.ctx.inputs.parameters['CONTROL']['restart_mode'] == 'from_scratch'
 
     result = process.inspect_process()
     assert result.status == 0
+
+
+def test_handle_electronic_convergence_warning(generate_workchain_pw, generate_structure):
+    """Test `PwBaseWorkChain.handle_electronic_convergence_warning`."""
+    inputs = generate_workchain_pw(return_inputs=True)
+    inputs['pw']['parameters']['scf_maxstep'] = 0
+    inputs['pw']['parameters']['scf_must_converge'] = False
+
+    structure = generate_structure()
+
+    process = generate_workchain_pw(
+        exit_code=PwBaseWorkChain.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED,
+        inputs=inputs,
+        pw_outputs={'output_structure': structure}
+    )
+    process.setup()
+
+    result = process.handle_electronic_convergence_warning(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert result.do_break
+    assert result.exit_code == PwBaseWorkChain.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED
+    assert process.node.get_outgoing().all() is not None
+
+    result = process.inspect_process()
+    assert result == PwBaseWorkChain.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED
 
 
 def test_sanity_check_no_bands(generate_workchain_pw):
@@ -146,7 +220,6 @@ def test_set_max_seconds(generate_workchain_pw):
 
     process = generate_workchain_pw(inputs=inputs)
     process.setup()
-    process.validate_parameters()
     process.prepare_process()
 
     expected_max_seconds = max_wallclock_seconds * process.defaults.delta_factor_max_seconds
@@ -161,7 +234,6 @@ def test_set_max_seconds(generate_workchain_pw):
 
     process = generate_workchain_pw(inputs=inputs)
     process.setup()
-    process.validate_parameters()
     process.prepare_process()
 
     assert 'max_seconds' in process.ctx.inputs['parameters']['CONTROL']

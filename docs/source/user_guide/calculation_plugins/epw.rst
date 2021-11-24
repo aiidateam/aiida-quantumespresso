@@ -48,7 +48,7 @@ Inputs
 
       'INPUTEPW', 'outdir': scratch directory
       'INPUTEPW', 'prefix': file prefix
-      'INPUTEPW', 'iverbosity': file prefix
+      'INPUTEPW', 'verbosity': file prefix
       'INPUTEPW', 'dvscf_dir': place where the dvscf from ph.x are.
       'INPUTEPW', 'amass': Atomic mass
       'INPUTEPW', 'nk1': coarse k-mesh on b1

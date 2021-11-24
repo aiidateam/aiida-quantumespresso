@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """`CalcJob` implementation for the pw.x code of Quantum ESPRESSO."""
 import os
+import warnings
 
 from aiida import orm
 from aiida.common.lang import classproperty
@@ -69,6 +70,8 @@ class PwCalculation(BasePwCpInputGenerator):
             help='kpoint mesh or kpoint path')
         spec.input('hubbard_file', valid_type=orm.SinglefileData, required=False,
             help='SinglefileData node containing the output Hubbard parameters from a HpCalculation')
+        spec.inputs.validator = cls.validate_inputs
+
         spec.output('output_parameters', valid_type=orm.Dict,
             help='The `output_parameters` output node of the successful calculation.')
         spec.output('output_structure', valid_type=orm.StructureData, required=False,
@@ -86,7 +89,7 @@ class PwCalculation(BasePwCpInputGenerator):
         spec.exit_code(302, 'ERROR_OUTPUT_STDOUT_MISSING',
             message='The retrieved folder did not contain the required stdout output file.')
         spec.exit_code(303, 'ERROR_OUTPUT_XML_MISSING',
-            message='The retrieved folder did not contain the required required XML file.')
+            message='The retrieved folder did not contain the required XML file.')
         spec.exit_code(304, 'ERROR_OUTPUT_XML_MULTIPLE',
             message='The retrieved folder contained multiple XML files.')
         spec.exit_code(305, 'ERROR_OUTPUT_FILES',
@@ -119,6 +122,8 @@ class PwCalculation(BasePwCpInputGenerator):
             message='The code failed with negative dexx in the exchange calculation.')
         spec.exit_code(462, 'ERROR_COMPUTING_CHOLESKY',
             message='The code failed during the cholesky factorization.')
+        spec.exit_code(463, 'ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED',
+            message='Too many bands failed to converge during the diagonalization.')
 
         spec.exit_code(481, 'ERROR_NPOOLS_TOO_HIGH',
             message='The k-point parallelization "npools" is too high, some nodes have no k-points.')
@@ -145,7 +150,64 @@ class PwCalculation(BasePwCpInputGenerator):
             message='The electronic minimization cycle did not reach self-consistency.')
         spec.exit_code(541, 'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION',
             message='The variable cell optimization broke the symmetry of the k-points.')
+
+        # Strong warnings about calculation results, but something tells us that you're ok with that
+        spec.exit_code(710, 'WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED',
+            message='The electronic minimization cycle did not reach self-consistency, but `scf_must_converge` '
+                    'is `False` and/or `electron_maxstep` is 0.')
         # yapf: enable
+
+    @staticmethod
+    def validate_inputs_base(value, _):
+        """Validate the top level namespace."""
+        parameters = value['parameters'].get_dict()
+        calculation_type = parameters.get('CONTROL', {}).get('calculation', 'scf')
+
+        # Check that the restart input parameters are set correctly
+        if calculation_type in ('nscf', 'bands'):
+            if parameters.get('ELECTRONS', {}).get('startingpot', 'file') != 'file':
+                return f'`startingpot` should be set to `file` for a `{calculation_type}` calculation.'
+            if parameters.get('CONTROL', {}).get('restart_mode', 'from_scratch') != 'from_scratch':
+                warnings.warn(f'`restart_mode` should be set to `from_scratch` for a `{calculation_type}` calculation.')
+        elif 'parent_folder' in value:
+            if not any([
+                parameters.get('CONTROL', {}).get('restart_mode', None) == 'restart',
+                parameters.get('ELECTRONS', {}).get('startingpot', None) == 'file',
+                parameters.get('ELECTRONS', {}).get('startingwfc', None) == 'file'
+            ]):
+                warnings.warn(
+                    '`parent_folder` input was provided for the `PwCalculation`, but no '
+                    'input parameters are set to restart from these files.'
+                )
+
+    @classmethod
+    def validate_inputs(cls, value, _):
+        """Validate the top level namespace.
+
+        Check that the restart input parameters are set correctly. In case of 'nscf' and 'bands' calculations, this
+        means ``parent_folder`` is provided, ``startingpot`` is set to 'file' and ``restart_mode`` is 'from_scratch'.
+        For other calculations, if the ``parent_folder`` is provided, the restart settings must be set to use some of
+        the outputs.
+
+        Note that the validator is split in two methods: ``validate_inputs`` and ``validate_inputs_base``. This is to
+        facilitate work chains that wrap this calculation that will provide the ``parent_folder`` themselves and so do
+        not require the user to provide it at launch of the work chain. This will fail because of the validation in this
+        validator, however, which is why the rest of the logic is moved to ``validate_inputs_base``. The wrapping work
+        chain can change the ``validate_input`` validator for ``validate_inputs_base`` thereby allowing the parent
+        folder to be defined during the work chains runtime, while still keep the rest of the namespace validation.
+        """
+        parameters = value['parameters'].get_dict()
+        calculation_type = parameters.get('CONTROL', {}).get('calculation', 'scf')
+
+        if calculation_type in ('nscf', 'bands'):
+            if 'parent_folder' not in value:
+                warnings.warn(
+                    f'`parent_folder` not provided for `{calculation_type}` calculation. For work chains wrapping this '
+                    'calculation, you can disable this warning by setting the validator of the `PwCalculation` port to '
+                    '`PwCalculation.validate_inputs_base`.'
+                )
+
+        return cls.validate_inputs_base(value, _)
 
     @classproperty
     def filename_input_hubbard_parameters(cls):

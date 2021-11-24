@@ -93,6 +93,36 @@ def test_pw_default_no_xml(
     })
 
 
+def test_pw_default_xml_210716(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+):
+    """Test a `pw.x` calculation in `scf` mode that produced the XML output with schema of 210716.
+
+    The output is created by running a dead simple SCF calculation for an aluminium structure. This test should test the
+    standard parsing of the stdout content and XML file stored in the standard results node.
+    """
+    name = 'default_xml_210716'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert not orm.Log.objects.get_logs_for(node), [log.message for log in orm.Log.objects.get_logs_for(node)]
+    assert 'output_band' in results
+    assert 'output_parameters' in results
+    assert 'output_trajectory' in results
+
+    data_regression.check({
+        'output_band': results['output_band'].attributes,
+        'output_parameters': results['output_parameters'].get_dict(),
+        'output_trajectory': results['output_trajectory'].attributes,
+    })
+
+
 def test_pw_default_xml_200420(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
@@ -226,6 +256,28 @@ def test_pw_failed_computing_cholesky(fixture_localhost, generate_calc_job_node,
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_failed, calcfunction.exit_status
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_COMPUTING_CHOLESKY.status
+
+
+def test_failed_too_many_bands_not_converged(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
+):
+    """Test the parsing of a calculation that failed during cholesky factorization.
+
+    In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
+    the relevant error message.
+    """
+    name = 'failed_too_many_bands_not_converged'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    desired_exit_status = node.process_class.exit_codes.ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED.status
+    assert calcfunction.exit_status == desired_exit_status
 
 
 def test_pw_failed_dexx_negative(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
@@ -481,6 +533,34 @@ def test_pw_failed_scf_not_converged(
         'output_parameters': results['output_parameters'].get_dict(),
         'output_trajectory': results['output_trajectory'].attributes,
     })
+
+
+@pytest.mark.parametrize('parameters', (  # yapf:disable
+    {'ELECTRONS': {'scf_must_converge': False}},
+    {'ELECTRONS': {'electron_maxstep': 0}},
+    {'ELECTRONS': {'scf_must_converge': False, 'electron_maxstep': 0}}
+))  # yapf:enable
+def test_pw_failed_scf_not_converged_intentional(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, parameters
+):
+    """Test the parsing of an scf calculation that intentionally did not reach convergence.
+
+    This can be the case if `scf_must_converge = False` or `electron_maxstep = 0`.
+    """
+    name = 'failed_scf_not_converged_intentional'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs(parameters=parameters))
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == node.process_class.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED.status
+    assert orm.Log.objects.get_logs_for(node)
+    assert 'output_parameters' in results
+    assert 'output_trajectory' in results
 
 
 def test_pw_relax_success(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression):
@@ -879,3 +959,28 @@ def test_pw_vcrelax_failed_not_converged_nstep(
     assert 'output_parameters' in results
     assert 'output_structure' in results
     assert 'output_trajectory' in results
+
+
+def test_magnetic_moments_v68(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+):
+    """Test the parsing of the magnetic moments in QE v6.8 from stdout."""
+    name = 'magnetic_moments_v68'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    # By setting the `without_xml` option the parsing can only use the stdout content
+    inputs = generate_inputs(calculation_type='relax', metadata={'options': {'without_xml': True}})
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_trajectory' in results
+
+    data_regression.check({
+        'atomic_charges':
+        results['output_trajectory'].get_array('atomic_charges').tolist(),
+        'atomic_magnetic_moments':
+        results['output_trajectory'].get_array('atomic_magnetic_moments').tolist(),
+    })
