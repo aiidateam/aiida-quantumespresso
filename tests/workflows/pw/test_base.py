@@ -47,7 +47,7 @@ def test_handle_out_of_walltime(generate_workchain_pw, fixture_localhost, genera
     )
     process.setup()
 
-    result = process.handle_electronic_convergence_not_achieved(process.ctx.children[-1])
+    result = process.handle_electronic_convergence_not_reached(process.ctx.children[-1])
     result = process.handle_out_of_walltime(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
     assert process.ctx.inputs.parameters['CONTROL']['restart_mode'] == 'restart'
@@ -74,8 +74,8 @@ def test_handle_out_of_walltime_structure_changed(generate_workchain_pw, generat
     assert result.status == 0
 
 
-def test_handle_electronic_convergence_not_achieved(generate_workchain_pw, fixture_localhost, generate_remote_data):
-    """Test `PwBaseWorkChain.handle_electronic_convergence_not_achieved`."""
+def test_handle_electronic_convergence_not_reached(generate_workchain_pw, fixture_localhost, generate_remote_data):
+    """Test `PwBaseWorkChain.handle_electronic_convergence_not_reached`."""
     remote_data = generate_remote_data(computer=fixture_localhost, remote_path='/path/to/remote')
 
     process = generate_workchain_pw(
@@ -86,7 +86,7 @@ def test_handle_electronic_convergence_not_achieved(generate_workchain_pw, fixtu
 
     process.ctx.inputs.parameters['ELECTRONS']['mixing_beta'] = 0.5
 
-    result = process.handle_electronic_convergence_not_achieved(process.ctx.children[-1])
+    result = process.handle_electronic_convergence_not_reached(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
     assert process.ctx.inputs.parameters['ELECTRONS']['mixing_beta'] == \
         process.defaults.delta_factor_mixing_beta * 0.5
