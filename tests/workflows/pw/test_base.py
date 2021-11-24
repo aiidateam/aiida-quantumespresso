@@ -204,6 +204,18 @@ def test_handle_electronic_convergence_warning(generate_workchain_pw, generate_s
     assert result == PwBaseWorkChain.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED
 
 
+def test_handle_npools_too_high(generate_workchain_pw):
+    """Test `PwBaseWorkChain.handle_handle_npools_too_high`."""
+    process = generate_workchain_pw(exit_code=PwCalculation.exit_codes.ERROR_NPOOLS_TOO_HIGH)
+    process.setup()
+
+    calculation = process.ctx.children[-1]
+    result = process.handle_npools_too_high(calculation)
+    assert isinstance(result, ProcessHandlerReport)
+    assert result.do_break
+    assert result.exit_code == PwBaseWorkChain.exit_codes.WARNING_NPOOLS_TOO_HIGH
+
+
 def test_sanity_check_no_bands(generate_workchain_pw):
     """Test that `sanity_check_insufficient_bands` does not except if there is no `output_band`, which is optional."""
     process = generate_workchain_pw(exit_code=ExitCode(0))

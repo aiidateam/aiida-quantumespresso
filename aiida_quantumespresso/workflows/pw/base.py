@@ -117,6 +117,8 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         spec.exit_code(710, 'WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED',
             message='The electronic minimization cycle did not reach self-consistency, but `scf_must_converge` '
                     'is `False` and/or `electron_maxstep` is 0.')
+        spec.exit_code(720, 'WARNING_NPOOLS_TOO_HIGH',
+            message='The npools set too high but the calculation still finished.')
         # yapf: enable
 
     @classmethod
@@ -663,3 +665,14 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         self.report_error_handled(calculation, action)
         self.results()  # Call the results method to attach the output nodes
         return ProcessHandlerReport(True, self.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED)
+
+    @process_handler(priority=320, exit_codes=[
+        PwCalculation.exit_codes.ERROR_NPOOLS_TOO_HIGH,
+    ])
+    def handle_npools_too_high(self, calculation):
+        """Handle `ERROR_NPOOLS_TOO_HIGH': consider finished."""
+        self.ctx.is_finished = True
+        action = 'npools set too high for the calculation but the calculation still finished: consider finished.'
+        self.report_error_handled(calculation, action)
+        self.results()  # Call the results method to attach the output nodes
+        return ProcessHandlerReport(True, self.exit_codes.WARNING_NPOOLS_TOO_HIGH)
