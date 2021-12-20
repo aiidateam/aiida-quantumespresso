@@ -63,7 +63,9 @@ def test_create_builder(fixture_sandbox, fixture_code, generate_upf_data, genera
     generate_calc_job(fixture_sandbox, entry_point_name, builder)
 
 
-def test_create_builder_nonzero_ibrav(fixture_sandbox, fixture_code, generate_upf_data, generate_calc_job):
+def test_create_builder_nonzero_ibrav(
+    fixture_sandbox, fixture_code, generate_upf_data, generate_calc_job, filepath_tests
+):
     """Test the `create_builder_from_file` method that parses an existing `pw.x` folder into a process builder.
 
     The input file used is the one generated for `tests.calculations.test_pw.test_pw_ibrav`.
@@ -83,10 +85,10 @@ def test_create_builder_nonzero_ibrav(fixture_sandbox, fixture_code, generate_up
         }
     }
 
-    in_foldername = os.path.join('tests', 'calculations', 'test_pw')
+    in_foldername = os.path.join(filepath_tests, 'calculations', 'test_pw')
     in_folderpath = os.path.abspath(in_foldername)
 
-    upf_foldername = os.path.join('tests', 'fixtures', 'pseudos')
+    upf_foldername = os.path.join(filepath_tests, 'fixtures', 'pseudos')
     upf_folderpath = os.path.abspath(upf_foldername)
     si_upf = generate_upf_data('Si')
     si_upf.store()
