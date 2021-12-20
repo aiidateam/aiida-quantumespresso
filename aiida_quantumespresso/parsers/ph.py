@@ -56,8 +56,18 @@ class PhParser(Parser):
         self.emit_logs(logs)
         self.out('output_parameters', orm.Dict(dict=parsed_data))
 
+        # If the scheduler detected OOW, simply keep that exit code by not returning anything more specific.
+        if self.node.exit_status == PhCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME:
+            return
+
         if 'ERROR_OUT_OF_WALLTIME' in logs['error']:
             return self.exit_codes.ERROR_OUT_OF_WALLTIME
 
         if 'ERROR_CONVERGENCE_NOT_REACHED' in logs['error']:
             return self.exit_codes.ERROR_CONVERGENCE_NOT_REACHED
+
+        if 'ERROR_COMPUTING_CHOLESKY' in logs['error']:
+            return self.exit_codes.ERROR_COMPUTING_CHOLESKY
+
+        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs['error']:
+            return self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE

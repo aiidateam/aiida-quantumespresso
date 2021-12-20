@@ -35,6 +35,9 @@ def test_create_builder(fixture_sandbox, fixture_code, generate_upf_data, genera
 
     builder = create_builder_from_file(in_folderpath, 'test_pw_default.in', code, metadata, upf_folderpath)
 
+    # In certain versions of `aiida-core` the builder comes with the `stash` namespace by default.
+    builder['metadata']['options'].pop('stash', None)
+
     assert builder['code'] == code
     assert builder['metadata'] == metadata
     pseudo_hash = si_upf.get_hash()
@@ -49,6 +52,9 @@ def test_create_builder(fixture_sandbox, fixture_code, generate_upf_data, genera
             'ecutrho': 240.0,
             'ecutwfc': 30.0,
             'ibrav': 0,
+        },
+        'ELECTRONS': {
+            'electron_maxstep': 60
         }
     }
     assert 'kpoints' in builder
@@ -57,7 +63,9 @@ def test_create_builder(fixture_sandbox, fixture_code, generate_upf_data, genera
     generate_calc_job(fixture_sandbox, entry_point_name, builder)
 
 
-def test_create_builder_nonzero_ibrav(fixture_sandbox, fixture_code, generate_upf_data, generate_calc_job):
+def test_create_builder_nonzero_ibrav(
+    fixture_sandbox, fixture_code, generate_upf_data, generate_calc_job, filepath_tests
+):
     """Test the `create_builder_from_file` method that parses an existing `pw.x` folder into a process builder.
 
     The input file used is the one generated for `tests.calculations.test_pw.test_pw_ibrav`.
@@ -77,15 +85,18 @@ def test_create_builder_nonzero_ibrav(fixture_sandbox, fixture_code, generate_up
         }
     }
 
-    in_foldername = os.path.join('tests', 'calculations', 'test_pw')
+    in_foldername = os.path.join(filepath_tests, 'calculations', 'test_pw')
     in_folderpath = os.path.abspath(in_foldername)
 
-    upf_foldername = os.path.join('tests', 'fixtures', 'pseudos')
+    upf_foldername = os.path.join(filepath_tests, 'fixtures', 'pseudos')
     upf_folderpath = os.path.abspath(upf_foldername)
     si_upf = generate_upf_data('Si')
     si_upf.store()
 
     builder = create_builder_from_file(in_folderpath, 'test_pw_ibrav.in', code, metadata, upf_folderpath)
+
+    # In certain versions of `aiida-core` the builder comes with the `stash` namespace by default.
+    builder['metadata']['options'].pop('stash', None)
 
     assert builder['code'] == code
     assert builder['metadata'] == metadata

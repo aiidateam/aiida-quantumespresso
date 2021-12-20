@@ -78,6 +78,8 @@ class PhCalculation(CalcJob):
             message='The calculation stopped prematurely because it ran out of walltime.')
         spec.exit_code(410, 'ERROR_CONVERGENCE_NOT_REACHED',
             message='The minimization cycle did not reach self-consistency.')
+        spec.exit_code(462, 'ERROR_COMPUTING_CHOLESKY',
+            message='The code failed during the cholesky factorization.')
         # yapf: enable
 
     def prepare_for_submission(self, folder):
@@ -170,7 +172,7 @@ class PhCalculation(CalcJob):
         try:
             mesh, offset = self.inputs.qpoints.get_kpoints_mesh()
 
-            if any([i != 0. for i in offset]):
+            if any(i != 0. for i in offset):
                 raise NotImplementedError(
                     'Computation of phonons on a mesh with non zero offset is not implemented, at the level of ph.x'
                 )

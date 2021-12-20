@@ -54,6 +54,7 @@ from aiida.common import AttributeDict
 from aiida.orm.nodes.data.base import to_aiida_type
 
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
+from aiida_quantumespresso.calculations.pw import PwCalculation
 
 from .protocols.utils import ProtocolMixin
 
@@ -248,6 +249,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
                 'validator': validate_nscf
             }
         )
+        spec.inputs['nscf']['pw'].validator = PwCalculation.validate_inputs_base
         spec.expose_inputs(
             DosCalculation,
             namespace='dos',
@@ -330,8 +332,6 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
             sub processes that are called by this workchain.
         :return: a process builder instance with all inputs defined ready for launch.
         """
-
-
         inputs = cls.get_protocol_inputs(protocol, overrides)
 
         args = (pw_code, structure, protocol)
