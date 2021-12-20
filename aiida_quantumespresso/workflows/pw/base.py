@@ -41,7 +41,9 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         'qe': qe_defaults,
         'delta_threshold_degauss': 30,
         'delta_factor_degauss': 0.1,
-        'delta_factor_mixing_beta': 0.8,
+        'delta_factor_mixing_beta': 0.8, # 20% less mixing
+        'delta_factor_electron_maxstep': 1.2, # 20% more steps
+        'max_electron_maxstep': 600,
         'delta_factor_max_seconds': 0.95,
         'delta_factor_nbnd': 0.05,
         'delta_minimum_nbnd': 4,
@@ -585,15 +587,10 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         self.results()  # Call the results method to attach the output nodes
         return ProcessHandlerReport(True, self.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF)
 
-    @process_handler(
-        priority=560,
-        exit_codes=[
-            PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_NOT_REACHED,
-            PwCalculation.exit_codes.ERROR_IONIC_CYCLE_EXCEEDED_NSTEP,
-            PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE,
-            PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE,
-        ]
-    )
+    @process_handler(priority=560, exit_codes=[
+         PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_NOT_REACHED,
+         PwCalculation.exit_codes.ERROR_IONIC_CYCLE_EXCEEDED_NSTEP,
+        ])
     def handle_relax_recoverable_ionic_convergence_error(self, calculation):
         """Handle various exit codes for recoverable `relax` calculations with failed ionic convergence.
 
@@ -604,6 +601,36 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         action = 'no ionic convergence but clean shutdown: restarting from scratch but using output structure.'
 
         self.set_restart_type(RestartType.FROM_SCRATCH)
+        self.report_error_handled(calculation, action)
+        return ProcessHandlerReport(True)
+
+    @process_handler(priority=565, exit_codes=[
+        PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE,
+        PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE,
+        ])
+    def handle_relax_recoverable_ionic_convergence_error_bfgs(self, calculation):
+        """Handle various exit codes for recoverable `relax` calculations with failed ionic convergence.
+
+        These exit codes signify that the ionic convergence thresholds were not met, but the output structure is usable,
+        so the solution is to simply restart from scratch but from the output structure.
+        In this case, as the BFGS history did not work, we restart with lowered trust_radius_min.
+        If the latter is lower than 1.0e-6, then we set the ion_dynamics (and cell_dynamics) to 'damp'.
+        """
+        self.ctx.restart_calc = None
+
+        trust_radius_min = self.ctx.inputs.parameters.setdefault('IONS', {}).setdefault('trust_radius_min', 1.0e-3)
+        if trust_radius_min >= 1.0e-6:
+            new_trust_radius_min = trust_radius_min/10.0
+            self.ctx.inputs.parameters.setdefault('IONS', {})['trust_radius_min'] = new_trust_radius_min
+            action = f'bfgs history failure: restarting with trust_radius_min={new_trust_radius_min}.'
+        else:
+            self.ctx.inputs.parameters.setdefault('IONS', {})['ion_dynamics'] = 'damp'
+            action = f'bfgs history failure and trust_radius_min<1.0e-6: restarting with damp dynamics.'
+            if self.ctx.inputs.parameters['CONTROL']['calculation'] == 'vc-relax':
+                self.ctx.inputs.parameters.setdefault('CELL', {})['cell_dynamics'] = 'damp-w'     
+        
+        self.ctx.inputs.structure = calculation.outputs.output_structure
+        
         self.report_error_handled(calculation, action)
         return ProcessHandlerReport(True)
 
@@ -644,12 +671,26 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         """
         factor = self.defaults.delta_factor_mixing_beta
         mixing_beta = self.ctx.inputs.parameters.get('ELECTRONS', {}).get('mixing_beta', self.defaults.qe.mixing_beta)
-        mixing_beta_new = mixing_beta * factor
+        mixing_beta_new = mixing_beta * factor # reducing by 20%
+        
+        electron_maxstep = self.ctx.inputs.parameters.get('ELECTRONS', {}).get('electron_maxstep', self.defaults.qe.electron_maxstep)
+        electron_maxstep_new = int(electron_maxstep*self.defaults.delta_factor_electron_maxstep)
+
+
+        self.ctx.inputs.parameters.setdefault('ELECTRONS', {})['mixing_beta'] = mixing_beta_new
+        if electron_maxstep < self.defaults.max_electron_maxstep: # will not exceed a certain value and will not change a large input
+            self.ctx.inputs.parameters.setdefault('ELECTRONS', {})['electron_maxstep'] = electron_maxstep_new
+
+        action = 'reduced beta mixing from {} to {}, '\
+                 'increased self-consinstent max number of steps from {} to {}, '\
+                 'and restarting from the last calculation'.format(mixing_beta,mixing_beta_new,
+                                                                   electron_maxstep,electron_maxstep_new)
 
         self.ctx.inputs.parameters['ELECTRONS']['mixing_beta'] = mixing_beta_new
         action = f'reduced beta mixing from {mixing_beta} to {mixing_beta_new} and restarting from the last calculation'
 
         self.set_restart_type(RestartType.FULL, calculation.outputs.remote_folder)
+
         self.report_error_handled(calculation, action)
         return ProcessHandlerReport(True)
 
