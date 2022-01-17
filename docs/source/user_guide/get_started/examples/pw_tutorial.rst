@@ -13,15 +13,12 @@ It is assumed that you have already performed the installation, and that you alr
   - installed Quantum ESPRESSO on your machine or a cluster;
   - setup the code and computer you want to use.
 
-Although the code could be quite readable, a basic knowledge of Python and object programming is useful.
-
 The classic ``pw.x`` input file
 --------------------------------
 
 This is the input file of Quantum ESPRESSO that we will try to execute.
-It consists in the total energy calculation of a 5 atom cubic cell of BaTiO\ :sub:`3`\.
-Note also that AiiDA is a tool to use other codes:
-if the following input is not clear to you, please refer to the Quantum ESPRESSO documentation.
+It consists in the total energy calculation of a 5-atom cubic cell of BaTiO\ :sub:`3`\.
+If the following input is not clear to you, please refer to the `Quantum ESPRESSO documentation <https://www.quantum-espresso.org/>`_.
 
 ::
 
@@ -61,9 +58,59 @@ if the following input is not clear to you, please refer to the Quantum ESPRESSO
           0.0000000000       4.0000000000       0.0000000000
           0.0000000000       0.0000000000       4.0000000000
 
-Without AiiDA, not only you would have to prepare 'manually' this file,
-but also prepare the scheduler submission script, send everything on the cluster, etc.
-We are going instead to prepare everything in a more programmatic way.
+Using the ``aiida-quantumespresso`` plugin, you may want to submit the same calculation via:
+
+.. code-block :: python
+
+    from aiida import load_profile, orm, plugins, engine
+    load_profile()
+
+    builder = orm.Code.get_from_string('pw-6.3@TheHive').get_builder()
+
+    # BaTiO3 cubic structure
+    alat = 4.  # angstrom
+    cell = [ [alat, 0., 0.], [0., alat, 0.], [0., 0., alat], ]
+    s = plugins.DataFactory('structure')(cell=cell)
+    s.append_atom(position=(0., 0., 0.), symbols='Ba')
+    s.append_atom(position=(alat / 2., alat / 2., alat / 2.), symbols='Ti')
+    s.append_atom(position=(alat / 2., alat / 2., 0.), symbols='O')
+    s.append_atom(position=(alat / 2., 0., alat / 2.), symbols='O')
+    s.append_atom(position=(0., alat / 2., alat / 2.), symbols='O')
+    builder.structure = s
+    builder.pseudos = get_pseudos_from_structure(s, 'SSSP_efficiency')
+
+    builder.parameters = plugins.DataFactory('dict')(
+        dict={
+            'CONTROL': {
+                'calculation': 'scf',
+                'restart_mode': 'from_scratch',
+                'wf_collect': True,
+            },
+            'SYSTEM': {
+                'ecutwfc': 30.,
+                'ecutrho': 240.,
+            },
+            'ELECTRONS': {
+                'conv_thr': 1.e-6,
+            }
+        }
+    )
+
+    kpoints = plugins.DataFactory('array.kpoints')()
+    kpoints.set_kpoints_mesh([4, 4, 4])
+    builder.kpoints = kpoints
+
+    builder.metadata.label = 'Label for this calculation'
+    builder.metadata.description = 'Description of this calculation'
+    builder.metadata.options.resources = {'num_machines': 1}
+    builder.metadata.options.max_wallclock_seconds = 1800
+
+    calc = engine.submit(builder)
+    print(f'created calculation with PK={calc.pk}')
+
+Not only will AiiDA track the provenance of the entire calculation, it will also take care of preparing the scheduler submission script, submitting the calculation on the cluster, and getting the results back when it's done.
+
+In the following sections, we will explain all aspects of this script one by one.
 
 Running a pw calculation with AiiDA
 -----------------------------------
