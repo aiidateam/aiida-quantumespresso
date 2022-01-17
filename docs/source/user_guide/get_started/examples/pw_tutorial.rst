@@ -58,7 +58,7 @@ If the following input is not clear to you, please refer to the `Quantum ESPRESS
           0.0000000000       4.0000000000       0.0000000000
           0.0000000000       0.0000000000       4.0000000000
 
-Using the ``aiida-quantumespresso`` plugin, you may want to submit the same calculation via:
+Using the ``aiida-quantumespresso`` plugin, you can want to submit the same calculation via the following Python script:
 
 .. code-block :: python
 
@@ -69,7 +69,7 @@ Using the ``aiida-quantumespresso`` plugin, you may want to submit the same calc
 
     # BaTiO3 cubic structure
     alat = 4.  # angstrom
-    cell = [ [alat, 0., 0.], [0., alat, 0.], [0., 0., alat], ]
+    cell = [[alat, 0., 0.], [0., alat, 0.], [0., 0., alat]]
     s = plugins.DataFactory('structure')(cell=cell)
     s.append_atom(position=(0., 0., 0.), symbols='Ba')
     s.append_atom(position=(alat / 2., alat / 2., alat / 2.), symbols='Ti')
@@ -110,7 +110,7 @@ Using the ``aiida-quantumespresso`` plugin, you may want to submit the same calc
 
 Not only will AiiDA track the provenance of the entire calculation, it will also take care of preparing the scheduler submission script, submitting the calculation on the cluster, and getting the results back when it's done.
 
-In the following sections, we will explain all aspects of this script one by one.
+In the following sections, we explain all aspects of this script step-by-step.
 
 Running a pw calculation with AiiDA
 -----------------------------------
