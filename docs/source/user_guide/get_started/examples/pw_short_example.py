@@ -13,7 +13,7 @@
 from aiida import load_profile, orm, plugins, engine
 load_profile()
 
-builder = orm.Code.get_from_string('pw-6.3@TheHive').get_builder()
+builder = orm.load_code('pw-6.3@TheHive').get_builder()
 
 # BaTiO3 cubic structure
 alat = 4.  # angstrom
