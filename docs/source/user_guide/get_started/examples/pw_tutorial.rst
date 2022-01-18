@@ -12,16 +12,14 @@ It is assumed that you have already performed the installation, and that you alr
   - setup a computer (with ``verdi``);
   - installed Quantum ESPRESSO on your machine or a cluster;
   - setup the code and computer you want to use.
-
-Although the code could be quite readable, a basic knowledge of Python and object programming is useful.
+  - installed pseudo potentials (with ``aiida-pseudo install sssp``)
 
 The classic ``pw.x`` input file
 --------------------------------
 
 This is the input file of Quantum ESPRESSO that we will try to execute.
-It consists in the total energy calculation of a 5 atom cubic cell of BaTiO\ :sub:`3`\.
-Note also that AiiDA is a tool to use other codes:
-if the following input is not clear to you, please refer to the Quantum ESPRESSO documentation.
+It consists in the total energy calculation of a 5-atom cubic cell of BaTiO\ :sub:`3`\.
+If the following input is not clear to you, please refer to the `Quantum ESPRESSO documentation <https://www.quantum-espresso.org/>`_.
 
 ::
 
@@ -61,9 +59,15 @@ if the following input is not clear to you, please refer to the Quantum ESPRESSO
           0.0000000000       4.0000000000       0.0000000000
           0.0000000000       0.0000000000       4.0000000000
 
-Without AiiDA, not only you would have to prepare 'manually' this file,
-but also prepare the scheduler submission script, send everything on the cluster, etc.
-We are going instead to prepare everything in a more programmatic way.
+Using the ``aiida-quantumespresso`` plugin, you can submit the same calculation via the following Python script:
+
+.. literalinclude:: pw_short_example.py
+    :language: python
+    :start-after: start-marker
+
+Not only will AiiDA track the provenance of the entire calculation, it will also take care of preparing the scheduler submission script, submitting the calculation on the cluster, and getting the results back when it's done.
+
+In the following sections, we explain all aspects of this script step-by-step.
 
 Running a pw calculation with AiiDA
 -----------------------------------
