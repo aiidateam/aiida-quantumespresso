@@ -12,6 +12,7 @@ It is assumed that you have already performed the installation, and that you alr
   - setup a computer (with ``verdi``);
   - installed Quantum ESPRESSO on your machine or a cluster;
   - setup the code and computer you want to use.
+  - installed pseudo potentials (with ``aiida-pseudo install sssp``)
 
 The classic ``pw.x`` input file
 --------------------------------
@@ -60,53 +61,9 @@ If the following input is not clear to you, please refer to the `Quantum ESPRESS
 
 Using the ``aiida-quantumespresso`` plugin, you can want to submit the same calculation via the following Python script:
 
-.. code-block :: python
-
-    from aiida import load_profile, orm, plugins, engine
-    load_profile()
-
-    builder = orm.Code.get_from_string('pw-6.3@TheHive').get_builder()
-
-    # BaTiO3 cubic structure
-    alat = 4.  # angstrom
-    cell = [[alat, 0., 0.], [0., alat, 0.], [0., 0., alat]]
-    s = plugins.DataFactory('structure')(cell=cell)
-    s.append_atom(position=(0., 0., 0.), symbols='Ba')
-    s.append_atom(position=(alat / 2., alat / 2., alat / 2.), symbols='Ti')
-    s.append_atom(position=(alat / 2., alat / 2., 0.), symbols='O')
-    s.append_atom(position=(alat / 2., 0., alat / 2.), symbols='O')
-    s.append_atom(position=(0., alat / 2., alat / 2.), symbols='O')
-    builder.structure = s
-    builder.pseudos = get_pseudos_from_structure(s, 'SSSP_efficiency')
-
-    builder.parameters = plugins.DataFactory('dict')(
-        dict={
-            'CONTROL': {
-                'calculation': 'scf',
-                'restart_mode': 'from_scratch',
-                'wf_collect': True,
-            },
-            'SYSTEM': {
-                'ecutwfc': 30.,
-                'ecutrho': 240.,
-            },
-            'ELECTRONS': {
-                'conv_thr': 1.e-6,
-            }
-        }
-    )
-
-    kpoints = plugins.DataFactory('array.kpoints')()
-    kpoints.set_kpoints_mesh([4, 4, 4])
-    builder.kpoints = kpoints
-
-    builder.metadata.label = 'Label for this calculation'
-    builder.metadata.description = 'Description of this calculation'
-    builder.metadata.options.resources = {'num_machines': 1}
-    builder.metadata.options.max_wallclock_seconds = 1800
-
-    calc = engine.submit(builder)
-    print(f'created calculation with PK={calc.pk}')
+.. literalinclude:: pw_short_example.py
+    :language: python
+    :start-after: start-marker
 
 Not only will AiiDA track the provenance of the entire calculation, it will also take care of preparing the scheduler submission script, submitting the calculation on the cluster, and getting the results back when it's done.
 
