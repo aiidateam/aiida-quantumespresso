@@ -59,7 +59,7 @@ If the following input is not clear to you, please refer to the `Quantum ESPRESS
           0.0000000000       4.0000000000       0.0000000000
           0.0000000000       0.0000000000       4.0000000000
 
-Using the ``aiida-quantumespresso`` plugin, you can want to submit the same calculation via the following Python script:
+Using the ``aiida-quantumespresso`` plugin, you can submit the same calculation via the following Python script:
 
 .. literalinclude:: pw_short_example.py
     :language: python
