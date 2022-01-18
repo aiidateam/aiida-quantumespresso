@@ -10,7 +10,7 @@ from aiida.plugins import OrbitalFactory
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.parse_raw.base import (
-    parse_output_base, convert_qe2aiida_structure, convert_qe_to_kpoints
+    parse_output_base, convert_qe_to_aiida_structure, convert_qe_to_kpoints
 )
 from aiida_quantumespresso.utils.mapping import get_logging_container
 
@@ -323,7 +323,7 @@ class ProjwfcParser(Parser):
         # we create a dictionary the progressively accumulates more info
         out_info_dict = {}
 
-        out_info_dict['structure'] = convert_qe2aiida_structure(parsed_xml['structure'])
+        out_info_dict['structure'] = convert_qe_to_aiida_structure(parsed_xml['structure'])
         out_info_dict['kpoints'] = convert_qe_to_kpoints(parsed_xml, out_info_dict['structure'])
         out_info_dict['nspin'] = parsed_xml.get('number_of_spin_components')
         out_info_dict['collinear'] = not parsed_xml.get('non_colinear_calculation')

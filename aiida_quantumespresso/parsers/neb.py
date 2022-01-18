@@ -3,7 +3,7 @@ from aiida.common import NotExistent
 from aiida.orm import Dict
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers.parse_raw import convert_qe2aiida_structure
+from aiida_quantumespresso.parsers.parse_raw import convert_qe_to_aiida_structure
 from aiida_quantumespresso.parsers.parse_raw.pw import reduce_symmetries
 from aiida_quantumespresso.parsers.parse_raw.pw import parse_stdout as parse_pw_stdout
 from aiida_quantumespresso.parsers.parse_xml.pw.parse import parse_xml as parse_pw_xml
@@ -147,7 +147,7 @@ class NebParser(Parser):
             if not all_symmetries and 'cell' in parsed_structure:
                 reduce_symmetries(parsed_parameters, parsed_structure, self.logger)
 
-            structure_data = convert_qe2aiida_structure(parsed_structure)
+            structure_data = convert_qe_to_aiida_structure(parsed_structure)
 
             key = f'pw_output_image_{i + 1}'
             image_data[key] = parsed_parameters
