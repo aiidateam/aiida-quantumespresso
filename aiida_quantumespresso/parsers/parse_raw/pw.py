@@ -234,20 +234,23 @@ def get_symmetry_mapping():
     return rotations
 
 
+REG_ERROR_NPOOLS_TOO_HIGH = re.compile(r'\s+some nodes have no k-points.*')
+
+
 def detect_important_message(logs, line):
 
     message_map = {
         'error': {
-            r'.*Maximum CPU time exceeded.*': 'ERROR_OUT_OF_WALLTIME',
-            r'.*convergence NOT achieved after.*': 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED',
-            r'.*history already reset at previous step: stopping.*': 'ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE',
-            r'.*problems computing cholesky.*': 'ERROR_DIAGONALIZATION_CHOLESKY_DECOMPOSITION',
-            r'.*charge is wrong.*': 'ERROR_CHARGE_IS_WRONG',
-            r'.*not orthogonal operation.*': 'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION',
-            r'.*problems computing cholesky.*': 'ERROR_COMPUTING_CHOLESKY',
-            r'.*dexx is negative.*': 'ERROR_DEXX_IS_NEGATIVE',
-            r'\s+some nodes have no k-points.*': 'ERROR_NPOOLS_TOO_HIGH',
-            r'.*too many bands are not converged.*': 'ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED',
+            'Maximum CPU time exceeded': 'ERROR_OUT_OF_WALLTIME',
+            'convergence NOT achieved after': 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED',
+            'history already reset at previous step: stopping': 'ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE',
+            'problems computing cholesky': 'ERROR_DIAGONALIZATION_CHOLESKY_DECOMPOSITION',
+            'charge is wrong': 'ERROR_CHARGE_IS_WRONG',
+            'not orthogonal operation': 'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION',
+            'problems computing cholesky': 'ERROR_COMPUTING_CHOLESKY',
+            'dexx is negative': 'ERROR_DEXX_IS_NEGATIVE',
+            'too many bands are not converged': 'ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED',
+            REG_ERROR_NPOOLS_TOO_HIGH: 'ERROR_NPOOLS_TOO_HIGH',
         },
         'warning': {
             'Warning:': None,
@@ -256,11 +259,17 @@ def detect_important_message(logs, line):
     }
 
     # Match any known error and warning messages
-    for marker_regex, message in message_map['error'].items():
-        if re.match(marker_regex, line):
-            if message is None:
-                message = line
-            logs.error.append(message)
+    for marker, message in message_map['error'].items():
+        if isinstance(marker, re.Pattern):
+            if marker.match(line):
+                if message is None:
+                    message = line
+                logs.error.append(message)
+        else:
+            if marker in line:
+                if message is None:
+                    message = line
+                logs.error.append(message)
 
     for marker, message in message_map['warning'].items():
         if marker in line:
