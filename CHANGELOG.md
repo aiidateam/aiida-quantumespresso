@@ -1,14 +1,27 @@
+## v3.5.1
+
+### Improvements
+- `PhBaseWorkChain`: add handler for diagonalization errors [[#757]](https://github.com/aiidateam/aiida-quantumespresso/pull/757)
+- `PhBaseWorkChain`: add handler for `ERROR_SCHEDULER_OUT_OF_WALLTIME` [[#754]](https://github.com/aiidateam/aiida-quantumespresso/pull/754)
+
+### Documentation
+- Fix "suggest edit" link [[#768]](https://github.com/aiidateam/aiida-quantumespresso/pull/768)
+
+### Packaging
+- Add `calculations/helpers/*.xml` to `MANIFEST.in` [[#760]](https://github.com/aiidateam/aiida-quantumespresso/pull/760)
+
+
 ## v3.5.0
 
 In this minor version release we provide support for Quantum ESPRESSO v6.8 and add several improvements and bug fixes mostly related to input overrides and restarting calculations.
 Another important addition is the introduction of [a compatibility policy for Quantum ESPRESSO](https://github.com/aiidateam/aiida-quantumespresso/blob/develop/README.md#compatibility-matrix), which will go into effect starting v4.0.0.
 
-### ✨ New
+### New
 
 - `PwParser`: add support for QE v6.8 with new XML schema file [[#717]](https://github.com/aiidateam/aiida-quantumespresso/pull/717)
 - `PwBaseWorkChain`: handle diagonalization issues [[#744]](https://github.com/aiidateam/aiida-quantumespresso/pull/744)
 
-### 👌 Improvements
+### Improvements
 
 - `PwBaseWorkChain`: add handler for intentional non-convergence [[#695]](https://github.com/aiidateam/aiida-quantumespresso/pull/695)
 - `PwBaseWorkChain`: make magnetism from `overrides` absolute [[#731]](https://github.com/aiidateam/aiida-quantumespresso/pull/731)
@@ -18,17 +31,17 @@ Another important addition is the introduction of [a compatibility policy for Qu
 - `PwBaseWorkChain`: make overrides absolute [[#741]](https://github.com/aiidateam/aiida-quantumespresso/pull/741)
 - `projwfc.x`: parse from XML instead of parent calc [[#747]](https://github.com/aiidateam/aiida-quantumespresso/pull/747)
 
-### 🐛 Bug Fixes
+### Bug Fixes
 
 - `PhCalculation`: use `verbosity` instead of `iverbosity` [[#633]](https://github.com/aiidateam/aiida-quantumespresso/pull/633)
 - Protocols: Add settings from `overrides` [[#725]](https://github.com/aiidateam/aiida-quantumespresso/pull/725)
 - `PhBaseWorkChain`: spec exposed outputs of incorrect process class [[#732]](https://github.com/aiidateam/aiida-quantumespresso/pull/732)
 
-### ⬆️ Dependencies
+### Dependencies
 
 - Temporarily set upper limit for `psycopg2` [[#707]](https://github.com/aiidateam/aiida-quantumespresso/pull/707)
 
-### 📚 Documentation
+### Documentation
 
 - Docs: add compatibility policy for Quantum ESPRESSO [[#737]](https://github.com/aiidateam/aiida-quantumespresso/pull/737)
 - `README.md`: cleanup the syntax of compatibility matrix [[#738]](https://github.com/aiidateam/aiida-quantumespresso/pull/738)
@@ -50,6 +63,7 @@ It has been replaced by the `PwBandsWorkChain`, which is now equipped with its o
 
 ### Deprecation
 - `PwBandStructureWorkChain`: Deprecate and fix [[#688]](https://github.com/aiidateam/aiida-quantumespresso/pull/688)
+
 
 ## v3.4.1
 

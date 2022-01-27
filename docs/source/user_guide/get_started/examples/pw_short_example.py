@@ -8,55 +8,26 @@
 # For further information on the license, see the LICENSE.txt file        #
 # For further information please visit http://www.aiida.net               #
 ###########################################################################
-from aiida import load_profile
+# start-marker for docs
 
-from aiida.orm import Code
-from aiida.plugins import DataFactory
-from aiida.engine import submit
-from aiida.orm.nodes.data.upf import get_pseudos_from_structure
-
+from aiida import load_profile, orm, plugins, engine
 load_profile()
 
-StructureData = DataFactory('structure')
-Dict = DataFactory('dict')
-KpointsData = DataFactory('array.kpoints')
-
-###############################
-# Set your values here
-codename = 'pw-6.3@TheHive'
-pseudo_family = 'SSSP_efficiency'
-###############################
-
-code = Code.get_from_string(codename)
-builder = code.get_builder()
+builder = orm.load_code('pw-6.3@TheHive').get_builder()
 
 # BaTiO3 cubic structure
 alat = 4.  # angstrom
-cell = [
-    [
-        alat,
-        0.,
-        0.,
-    ],
-    [
-        0.,
-        alat,
-        0.,
-    ],
-    [
-        0.,
-        0.,
-        alat,
-    ],
-]
-s = StructureData(cell=cell)
+cell = [[alat, 0., 0.], [0., alat, 0.], [0., 0., alat]]
+s = plugins.DataFactory('structure')(cell=cell)
 s.append_atom(position=(0., 0., 0.), symbols='Ba')
 s.append_atom(position=(alat / 2., alat / 2., alat / 2.), symbols='Ti')
 s.append_atom(position=(alat / 2., alat / 2., 0.), symbols='O')
 s.append_atom(position=(alat / 2., 0., alat / 2.), symbols='O')
 s.append_atom(position=(0., alat / 2., alat / 2.), symbols='O')
+builder.structure = s
+builder.pseudos = orm.load_group('SSSP/1.1/PBE/efficiency').get_pseudos(structure=s)
 
-parameters = Dict(
+builder.parameters = plugins.DataFactory('dict')(
     dict={
         'CONTROL': {
             'calculation': 'scf',
@@ -73,21 +44,13 @@ parameters = Dict(
     }
 )
 
-kpoints = KpointsData()
+kpoints = plugins.DataFactory('array.kpoints')()
 kpoints.set_kpoints_mesh([4, 4, 4])
+builder.kpoints = kpoints
 
-builder.pseudos = get_pseudos_from_structure(s, pseudo_family)
-
+builder.metadata.label = 'BaTiO3 test run'
 builder.metadata.options.resources = {'num_machines': 1}
 builder.metadata.options.max_wallclock_seconds = 1800
 
-builder.metadata.label = 'My generic title'
-builder.metadata.description = 'My generic description'
-
-builder.structure = s
-builder.parameters = parameters
-builder.kpoints = kpoints
-
-calc = submit(builder)
-
+calc = engine.submit(builder)
 print(f'created calculation with PK={calc.pk}')
