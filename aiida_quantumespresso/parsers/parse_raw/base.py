@@ -150,14 +150,9 @@ def convert_qe_to_aiida_structure(output_dict, input_structure=None):
 
         structure = StructureData(cell=cell_dict['lattice_vectors'])
 
-        for mass, name in zip(output_dict['species']['mass'], output_dict['species']['type']):
-
-            # Remove digits from the kind name to obtain the symbol
-            symbol = re.sub('\d+', '', name)
-            structure.append_kind(Kind(symbols=symbol, mass=mass, name=name))
-
         for kind_name, position in output_dict['atoms']:
-            structure.append_site(Site(kind_name=kind_name, position=position))
+            symbol = re.sub('\d+', '', kind_name)
+            structure.append_atom(position=position, symbols=symbol, name=kind_name)
 
     else:
 

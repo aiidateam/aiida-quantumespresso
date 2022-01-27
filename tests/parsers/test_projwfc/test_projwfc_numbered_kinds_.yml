@@ -1,8 +1,8 @@
 Dos:
   array|x_array:
-  - 1089
+  - 6
   array|y_array_0:
-  - 1089
+  - 6
   x_name: Energy
   x_units: eV
   y_names:
@@ -11,13 +11,13 @@ Dos:
   - states/eV
 bands:
   array|bands:
-  - 4004
+  - 1
   - 8
   array|kpoints:
-  - 4004
+  - 1
   - 3
   array|weights:
-  - 4004
+  - 1
   cell:
   - - 3.866974633097699
     - 0.0
@@ -36,60 +36,60 @@ bands:
   units: eV
 projections:
   array|energy_array_0:
-  - 1089
+  - 6
   array|energy_array_1:
-  - 1089
+  - 6
   array|energy_array_2:
-  - 1089
+  - 6
   array|energy_array_3:
-  - 1089
+  - 6
   array|energy_array_4:
-  - 1089
+  - 6
   array|energy_array_5:
-  - 1089
+  - 6
   array|energy_array_6:
-  - 1089
+  - 6
   array|energy_array_7:
-  - 1089
+  - 6
   array|pdos_array_0:
-  - 1089
+  - 6
   array|pdos_array_1:
-  - 1089
+  - 6
   array|pdos_array_2:
-  - 1089
+  - 6
   array|pdos_array_3:
-  - 1089
+  - 6
   array|pdos_array_4:
-  - 1089
+  - 6
   array|pdos_array_5:
-  - 1089
+  - 6
   array|pdos_array_6:
-  - 1089
+  - 6
   array|pdos_array_7:
-  - 1089
+  - 6
   array|proj_array_0:
-  - 4004
+  - 1
   - 8
   array|proj_array_1:
-  - 4004
+  - 1
   - 8
   array|proj_array_2:
-  - 4004
+  - 1
   - 8
   array|proj_array_3:
-  - 4004
+  - 1
   - 8
   array|proj_array_4:
-  - 4004
+  - 1
   - 8
   array|proj_array_5:
-  - 4004
+  - 1
   - 8
   array|proj_array_6:
-  - 4004
+  - 1
   - 8
   array|proj_array_7:
-  - 4004
+  - 1
   - 8
   orbital_dicts:
   - _orbital_type: realhydrogen
