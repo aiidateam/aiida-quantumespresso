@@ -4,6 +4,7 @@ import abc
 import os
 import copy
 import numbers
+from pathlib import Path
 import warnings
 from functools import partial
 from types import MappingProxyType
@@ -211,6 +212,7 @@ class BasePwCpInputGenerator(CalcJob):
 
         # operations for restart
         symlink = settings.pop('PARENT_FOLDER_SYMLINK', self._default_symlink_usage)  # a boolean
+        restart_copy_files = settings.pop('RESTART_COPY_FILES', None)  # a list of strings
         if symlink:
             if 'parent_folder' in self.inputs:
                 # I put the symlink to the old parent ./out folder
@@ -220,8 +222,32 @@ class BasePwCpInputGenerator(CalcJob):
                                  self._restart_copy_from), self._restart_copy_to
                 ))
         else:
-            # copy remote output dir, if specified
-            if 'parent_folder' in self.inputs:
+            # copy specific file(s) or all from remote output dir, if specified
+            if 'parent_folder' in self.inputs and restart_copy_files:
+                restart_copy_from = []
+                # if the `restart_copy_files`` field is specified, I put the path joined
+                # to './out' in the `remote_copy_list`. If the file is in a subfolder of
+                # './out', then I create as many subdirs as needed for the new calculation.
+                for file in restart_copy_files:
+                    path = Path(file)
+                    restart_copy_from.append(os.path.join(self._OUTPUT_SUBFOLDER, path))
+                    # here I create eventual subdir(s) in path
+                    subdir = self._OUTPUT_SUBFOLDER
+                    for part in path.parts:
+                        subdir = os.path.join(subdir, part)
+                        if subdir != restart_copy_from[-1]:
+                            folder.get_subfolder(subdir, create=True)
+
+                for copy_from in restart_copy_from:
+                    if Path(copy_from).parts[-1] == '*':
+                        restart_copy_to = Path(copy_from).parent.name
+                    else:
+                        restart_copy_to = copy_from
+                    remote_copy_list.append((
+                        self.inputs.parent_folder.computer.uuid,
+                        os.path.join(self.inputs.parent_folder.get_remote_path(), copy_from), restart_copy_to
+                    ))
+            elif 'parent_folder' in self.inputs:
                 remote_copy_list.append((
                     self.inputs.parent_folder.computer.uuid,
                     os.path.join(self.inputs.parent_folder.get_remote_path(),
