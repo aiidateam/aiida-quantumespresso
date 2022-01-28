@@ -10,7 +10,7 @@ def _load_pseudo_metadata(filename):
 
     suggested cutoffs) for a library of pseudopotentials.
     """
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)) as handle:
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), filename), encoding='utf-8') as handle:
         return json.load(handle)
 
 
@@ -115,12 +115,12 @@ class ProtocolManager:
         if parameters_modifier_name is None:
             raise ValueError(
                 "You did not specify a modifier name for 'parameters', but no default "
-                "modifier name exists for protocol '{}'.".format(self.name)
+                f"modifier name exists for protocol '{self.name}'."
             )
         if pseudo_modifier_name is None:
             raise ValueError(
                 "You did not specify a modifier name for 'pseudo', but no default "
-                "modifier name exists for protocol '{}'.".format(self.name)
+                f"modifier name exists for protocol '{self.name}'."
             )
 
         if pseudo_modifier_name == 'custom':
@@ -190,13 +190,12 @@ class ProtocolManager:
             modifier_name = self.get_default_pseudo_modifier_name()
         if modifier_name is None:
             raise ValueError(
-                'You did not specify a modifier name, but no default '
-                "modifier name exists for protocol '{}'.".format(self.name)
+                f"You did not specify a modifier name, but no default modifier name exists for protocol '{self.name}'."
             )
 
         if modifier_name == 'custom':
             if pseudo_data is None:
-                raise ValueError("You chose 'custom' as modifier_name, but did not provide a " 'pseudo_data!')
+                raise ValueError("You chose 'custom' as modifier_name, but did not provide a pseudo_data!")
         else:
             if pseudo_data is not None:
                 raise ValueError("You passed a pseudo_data, but the modifier name is not 'custom'!")

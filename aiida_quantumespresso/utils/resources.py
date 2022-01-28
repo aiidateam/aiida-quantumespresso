@@ -124,8 +124,8 @@ def get_pw_parallelization_parameters(
     .. note:: If there was an out-of-memory problem during the initial
         calculation, the number of machines is increased.
     """
-    # pylint: disable=invalid-name,deprecated-method
-    from fractions import gcd
+    # pylint: disable=invalid-name
+    from math import gcd
 
     default_num_mpiprocs_per_machine = calculation.computer.get_default_mpiprocs_per_machine()
 

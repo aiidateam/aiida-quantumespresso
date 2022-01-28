@@ -139,7 +139,7 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
             warnings.append('Wrong length for celldm')
         if ibrav != 0:
             warnings.append(f'ibrav ({ibrav}) is not 0; q-points path for phonon dispersion might be wrong')
-        if any([item != 0 for item in celldm[1:]]):
+        if any(item != 0 for item in celldm[1:]):
             warnings.append('celldm[1:] are not all zero; only celldm[0] will be used')
 
         parsed_data['number_of_species'] = ntyp
@@ -212,7 +212,7 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
                     for na1 in range(nat):
                         for na2 in range(nat):
 
-                            indices = tuple([int(c) for c in lines[current_line].split()])
+                            indices = tuple(int(c) for c in lines[current_line].split())
                             current_line += 1
                             if (ji1 + 1, ji2 + 1, na1 + 1, na2 + 1) != indices:
                                 raise ValueError('Wrong indices in force constants')

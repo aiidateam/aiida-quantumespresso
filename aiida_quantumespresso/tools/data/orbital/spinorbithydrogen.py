@@ -95,18 +95,12 @@ class SpinorbitHydrogenOrbital(Orbital):
 
     def __str__(self):
         """Printable representation of the orbital."""
-        orb_dict = self.get_orbital_dict()
+        orb = self.get_orbital_dict()
         try:
-            orb_name = 'j={},l={},m_j={}'.format(
-                orb_dict['total_angular_momentum'], orb_dict['angular_momentum'], orb_dict['magnetic_number']
-            )
-            position_string = '{:.4f},{:.4f},{:.4f}'.format(
-                orb_dict['position'][0], orb_dict['position'][1], orb_dict['position'][2]
-            )
-            out_string = 'r{} {} orbital {} @ {}'.format(
-                orb_dict['radial_nodes'], orb_name,
-                "for kind '{}'".format(orb_dict['kind_name']) if orb_dict['kind_name'] else '', position_string
-            )
+            orb_name = f"j={orb['total_angular_momentum']},l={orb['angular_momentum']},m_j={orb['magnetic_number']}"
+            position_string = f"{orb['position'][0]:.4f},{orb['position'][1]:.4f},{orb['position'][2]:.4f}"
+            orbital = f"for kind {orb['kind_name']}" if orb['kind_name'] else ''
+            out_string = f"r{orb['radial_nodes']} {orb_name} orbital {orbital} @ {position_string}"
         except KeyError:
             # Should not happen, but we want it not to crash in __str__
             out_string = '(not all parameters properly set)'

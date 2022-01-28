@@ -146,8 +146,7 @@ class PpCalculation(CalcJob):
             if namelist in parameters:
                 if key in parameters[namelist]:
                     raise exceptions.InputValidationError(
-                        "You cannot specify explicitly the '{}' key in the '{}' "
-                        'namelist.'.format(key, namelist)
+                        f"You cannot specify explicitly the '{key}' key in the '{namelist}' namelist."
                     )
             else:
                 parameters[namelist] = {}
@@ -178,9 +177,8 @@ class PpCalculation(CalcJob):
         # Check for specified namelists that are not expected
         if parameters:
             raise exceptions.InputValidationError(
-                'The following namelists are specified in parameters, but are '
-                'not valid namelists for the current type of calculation: '
-                '{}'.format(','.join(list(parameters.keys())))
+                'The following namelists are specified in parameters, but are not valid namelists for the current type '
+                f'of calculation: {",".join(list(parameters.keys()))}'
             )
 
         remote_copy_list = []

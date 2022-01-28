@@ -39,9 +39,7 @@ def launch_calculation(
     expected_process_type = 'aiida.calculations:quantumespresso.pw'
     if pw_nscf_parent.process_type != expected_process_type:
         raise click.BadParameter(
-            'The input calculation node has a process_type: {}; should be {}'.format(
-                pw_nscf_parent.process_type, expected_process_type
-            )
+            f'--pw-nscf-parent node has process_type: {pw_nscf_parent.process_type}; should be {expected_process_type}'
         )
 
     pw_nscf_parent_folder = pw_nscf_parent.get_outgoing(node_class=orm.RemoteData,
@@ -50,9 +48,7 @@ def launch_calculation(
     expected_process_type = 'aiida.calculations:quantumespresso.ph'
     if ph_parent.process_type != expected_process_type:
         raise click.BadParameter(
-            'The input calculation node has a process_type: {}; should be {}'.format(
-                ph_parent.process_type, expected_process_type
-            )
+            f'--ph-parent has process_type: {ph_parent.process_type}; should be {expected_process_type}'
         )
 
     ph_parent_folder = ph_parent.get_outgoing(node_class=orm.RemoteData, link_label_filter='remote_folder').one().node

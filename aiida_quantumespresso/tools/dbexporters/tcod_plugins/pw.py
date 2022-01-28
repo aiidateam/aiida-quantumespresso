@@ -58,10 +58,9 @@ class PwTcodtranslator(BaseTcodtranslator):
         if energy_type + '_units' not in parameters.attrs():
             raise ValueError(f'energy units for {energy_type} are unknown')
         if parameters.get_attr(energy_type + '_units') != 'eV':
+            units = parameters.get_attr(energy_type + '_units')
             raise ValueError(
-                'energy units for {} are {} instead of eV -- unit conversion is not possible yet'.format(
-                    energy_type, parameters.get_attr(energy_type + '_units')
-                )
+                f'energy units for {energy_type} are {units} instead of eV -- unit conversion is not possible yet'
             )
         return parameters.get_attr(energy_type)
 
@@ -316,7 +315,7 @@ class PwTcodtranslator(BaseTcodtranslator):
                 types[element] = None
                 continue
             upf_type = None
-            with open(node.filename) as handle:
+            with open(node.filename, encoding='utf-8') as handle:
                 for line in handle:
                     match = cls._upf_type_v2_regexp.match(line.strip())
                     if match:

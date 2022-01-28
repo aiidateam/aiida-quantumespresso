@@ -40,7 +40,7 @@ def test_electronic_type(fixture_code, generate_structure):
             PwBaseWorkChain.get_builder_from_protocol(code, structure, electronic_type=electronic_type)
 
     builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, electronic_type=ElectronicType.INSULATOR)
-    parameters = builder.pw.parameters.get_dict()
+    parameters = builder.pw.parameters.get_dict()  # pylint: disable=no-member
 
     assert parameters['SYSTEM']['occupations'] == 'fixed'
     assert 'degauss' not in parameters['SYSTEM']
@@ -54,15 +54,15 @@ def test_spin_type(fixture_code, generate_structure):
 
     # Test specifying no magnetic inputs
     builder = PwBaseWorkChain.get_builder_from_protocol(code, structure)
-    assert 'starting_magnetization' not in builder.pw.parameters['SYSTEM']
-    assert 'nspin' not in builder.pw.parameters['SYSTEM']
+    assert 'starting_magnetization' not in builder.pw.parameters['SYSTEM']  # pylint: disable=no-member
+    assert 'nspin' not in builder.pw.parameters['SYSTEM']  # pylint: disable=no-member
 
     with pytest.raises(NotImplementedError):
         for spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT]:
             PwBaseWorkChain.get_builder_from_protocol(code, structure, spin_type=spin_type)
 
     builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, spin_type=SpinType.COLLINEAR)
-    parameters = builder.pw.parameters.get_dict()
+    parameters = builder.pw.parameters.get_dict()  # pylint: disable=no-member
 
     assert parameters['SYSTEM']['nspin'] == 2
     assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.1}
@@ -94,7 +94,7 @@ def test_initial_magnetic_moments(fixture_code, generate_structure):
     builder = PwBaseWorkChain.get_builder_from_protocol(
         code, structure, initial_magnetic_moments=initial_magnetic_moments, spin_type=SpinType.COLLINEAR
     )
-    parameters = builder.pw.parameters.get_dict()
+    parameters = builder.pw.parameters.get_dict()  # pylint: disable=no-member
     assert parameters['SYSTEM']['nspin'] == 2
     assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.25}
 
@@ -111,8 +111,8 @@ def test_magnetization_overrides(fixture_code, generate_structure):
     builder = PwBaseWorkChain.get_builder_from_protocol(
         code, structure, overrides=overrides, spin_type=SpinType.COLLINEAR
     )
-    assert builder.pw.parameters['SYSTEM']['starting_magnetization'] == initial_starting_magnetization
-    assert builder.pw.parameters['SYSTEM']['nspin'] == 2
+    assert builder.pw.parameters['SYSTEM']['starting_magnetization'] == initial_starting_magnetization  # pylint: disable=no-member
+    assert builder.pw.parameters['SYSTEM']['nspin'] == 2  # pylint: disable=no-member
 
     # Test that specifying `overrides` override the `initial_magnetic_moments`
     builder = PwBaseWorkChain.get_builder_from_protocol(
@@ -122,8 +122,8 @@ def test_magnetization_overrides(fixture_code, generate_structure):
         spin_type=SpinType.COLLINEAR,
         initial_magnetic_moments=initial_magnetic_moments
     )
-    assert builder.pw.parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.5}
-    assert builder.pw.parameters['SYSTEM']['nspin'] == 2
+    assert builder.pw.parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.5}  # pylint: disable=no-member
+    assert builder.pw.parameters['SYSTEM']['nspin'] == 2  # pylint: disable=no-member
 
 
 def test_parameter_overrides(fixture_code, generate_structure):
@@ -133,7 +133,7 @@ def test_parameter_overrides(fixture_code, generate_structure):
 
     overrides = {'pw': {'parameters': {'SYSTEM': {'nbnd': 123}}}}
     builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)
-    assert builder.pw.parameters['SYSTEM']['nbnd'] == 123
+    assert builder.pw.parameters['SYSTEM']['nbnd'] == 123  # pylint: disable=no-member
 
 
 def test_settings_overrides(fixture_code, generate_structure):
@@ -143,7 +143,7 @@ def test_settings_overrides(fixture_code, generate_structure):
 
     overrides = {'pw': {'settings': {'cmdline': ['--kickass-mode']}}}
     builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)
-    assert builder.pw.settings['cmdline'] == ['--kickass-mode']
+    assert builder.pw.settings['cmdline'] == ['--kickass-mode']  # pylint: disable=no-member
 
 
 def test_metadata_overrides(fixture_code, generate_structure):
@@ -157,7 +157,7 @@ def test_metadata_overrides(fixture_code, generate_structure):
         structure,
         overrides=overrides,
     )
-    metadata = builder.pw.metadata
+    metadata = builder.pw.metadata  # pylint: disable=no-member
 
     assert metadata['options']['resources']['num_machines'] == 1e90
     assert metadata['options']['max_wallclock_seconds'] == 1
@@ -174,7 +174,7 @@ def test_parallelization_overrides(fixture_code, generate_structure):
         structure,
         overrides=overrides,
     )
-    parallelization = builder.pw.parallelization
+    parallelization = builder.pw.parallelization  # pylint: disable=no-member
 
     assert parallelization['npool'] == 4
     assert parallelization['ndiag'] == 12
@@ -192,7 +192,7 @@ def test_pseudos_overrides(fixture_code, generate_structure, generate_upf_data):
         structure,
         overrides=overrides,
     )
-    pseudos = builder.pw.pseudos
+    pseudos = builder.pw.pseudos  # pylint: disable=no-member
 
     assert pseudos['Si'] == silicon_pseudo
 

@@ -122,8 +122,8 @@ def get_pseudos_from_dict(structure, pseudos_uuids):
             upf = load_node(uuid)
         except NotExistent as exception:
             raise NotExistent(
-                'No node found associated to the UUID {} given for element {} '
-                'in the provided pseudos_uuids dictionary'.format(uuid, symbol)
+                f'No node found associated to the UUID {uuid} given for element {symbol} '
+                'in the provided pseudos_uuids dictionary'
             ) from exception
         if not isinstance(upf, (LegacyUpfData, UpfData)):
             raise ValueError(f'Node with UUID {uuid} is not a UpfData')

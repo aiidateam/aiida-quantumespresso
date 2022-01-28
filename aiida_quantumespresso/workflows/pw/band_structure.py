@@ -16,7 +16,7 @@ def validate_protocol(protocol_dict, ctx=None):  # pylint: disable=unused-argume
     """Check that the protocol is one for which we have a definition."""
     try:
         protocol_name = protocol_dict['name']
-    except KeyError as exception:
+    except KeyError:
         return 'Missing key `name` in protocol dictionary'
     try:
         ProtocolManager(protocol_name)

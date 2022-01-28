@@ -117,10 +117,9 @@ class PhCalculation(CalcJob):
 
         # Also, the parent calculation must be on the same computer
         if not self.node.computer.uuid == parent_calc.computer.uuid:
+            computer_label = parent_calc.computer.get_name()
             raise exceptions.InputValidationError(
-                'Calculation has to be launched on the same computer as that of the parent: {}'.format(
-                    parent_calc.computer.get_name()
-                )
+                f'Calculation has to be launched on the same computer as that of the parent: {computer_label}'
             )
 
         # put by default, default_parent_output_folder = ./out
@@ -203,7 +202,7 @@ class PhCalculation(CalcJob):
                 parameters['INPUTPH']['ldisp'] = True
                 postpend_text = f'{len(list_of_points)}\n'
                 for points in list_of_points:
-                    postpend_text += '{0:18.10f} {1:18.10f} {2:18.10f}  1\n'.format(*points)
+                    postpend_text += '{0:18.10f} {1:18.10f} {2:18.10f}  1\n'.format(*points)  # pylint: disable=consider-using-f-string
 
                 # Note: the weight is fixed to 1, because ph.x calls these
                 # things weights but they are not such. If they are going to
@@ -212,7 +211,7 @@ class PhCalculation(CalcJob):
                 parameters['INPUTPH']['ldisp'] = False
                 postpend_text = ''
                 for points in list_of_points:
-                    postpend_text += '{0:18.10f} {1:18.10f} {2:18.10f}\n'.format(*points)
+                    postpend_text += '{0:18.10f} {1:18.10f} {2:18.10f}\n'.format(*points)  # pylint: disable=consider-using-f-string
 
         # customized namelists, otherwise not present in the distributed ph code
         try:
@@ -244,9 +243,8 @@ class PhCalculation(CalcJob):
 
         if parameters:
             raise exceptions.InputValidationError(
-                'The following namelists are specified in parameters, but are '
-                'not valid namelists for the current type of calculation: '
-                '{}'.format(','.join(list(parameters.keys())))
+                'The following namelists are specified in parameters, but are not valid namelists for the current type '
+                f'of calculation: {",".join(list(parameters.keys()))}'
             )
 
         # copy the parent scratch
