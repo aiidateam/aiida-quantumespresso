@@ -1,7 +1,14 @@
 # -*- coding: utf-8 -*-
 """A basic parser for the common format of QE."""
+import re
 
-__all__ = ('parse_output_base', 'parse_output_error', 'convert_qe_time_to_sec', 'convert_qe2aiida_structure')
+from aiida.orm.nodes.data.structure import Kind, Site
+
+from aiida.plugins import DataFactory
+
+StructureData = DataFactory('structure')
+
+__all__ = ('parse_output_base', 'parse_output_error', 'convert_qe_time_to_sec', 'convert_qe_to_aiida_structure')
 
 
 def parse_output_base(filecontent, codename=None, message_map=None):
@@ -133,29 +140,28 @@ def convert_qe_time_to_sec(timestr):
     return num_seconds
 
 
-def convert_qe2aiida_structure(output_dict, input_structure=None):
-    """Receives the dictionary cell parsed from quantum espresso Convert it into an AiiDA structure object."""
-    from aiida.plugins import DataFactory
-
-    StructureData = DataFactory('structure')
+def convert_qe_to_aiida_structure(output_dict, input_structure=None):
+    """Convert the dictionary parsed from the Quantum ESPRESSO output into ``StructureData``."""
 
     cell_dict = output_dict['cell']
 
-    # If I don't have any help, I will set up the cell as it is in QE
+    # Without an input structure, try to recreate the structure from the output
     if not input_structure:
 
-        s = StructureData(cell=cell_dict['lattice_vectors'])
-        for atom in cell_dict['atoms']:
-            s.append_atom(position=tuple(atom[1]), symbols=[atom[0]])
+        structure = StructureData(cell=cell_dict['lattice_vectors'])
+
+        for kind_name, position in output_dict['atoms']:
+            symbol = re.sub('\d+', '', kind_name)
+            structure.append_atom(position=position, symbols=symbol, name=kind_name)
 
     else:
 
-        s = input_structure.clone()
-        s.reset_cell(cell_dict['lattice_vectors'])
+        structure = input_structure.clone()
+        structure.reset_cell(cell_dict['lattice_vectors'])
         new_pos = [i[1] for i in cell_dict['atoms']]
-        s.reset_sites_positions(new_pos)
+        structure.reset_sites_positions(new_pos)
 
-    return s
+    return structure
 
 
 def convert_qe_to_kpoints(xml_dict, structure):

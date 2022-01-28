@@ -1,0 +1,108 @@
+
+     Program PROJWFC v.7.0 starts on 27Jan2022 at 18:43:17 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+         "P. Giannozzi et al., J. Chem. Phys. 152 154105 (2020);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI), running on     1 processors
+
+     MPI processes distributed on     1 nodes
+     9213 MiB available memory on the printing compute node when the environment starts
+
+
+     Reading xml data from directory:
+
+     ./out/aiida.save/
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation= PBE
+                           (   1   4   3   4   0   0   0)
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum         877     439    109                17261     6183     749
+
+     Using Slab Decomposition
+
+
+     Linear tetrahedron method (read from file) 
+     [opt_tetra]  Linear tetrahedron method is used.
+
+     Calling projwave .... 
+
+     Subspace diagonalization in iterative solution of the eigenvalue problem:
+     a serial algorithm will be used
+
+
+  Problem Sizes 
+  natomwfc =            8
+  nbnd     =            8
+  nkstot   =            1
+  npwx     =          749
+  nkb      =           36
+
+
+     Atomic states used for projection
+     (read from pseudopotential files):
+
+     state #   1: atom   1 (Si1), wfc  1 (l=0 m= 1)
+     state #   2: atom   1 (Si1), wfc  2 (l=1 m= 1)
+     state #   3: atom   1 (Si1), wfc  2 (l=1 m= 2)
+     state #   4: atom   1 (Si1), wfc  2 (l=1 m= 3)
+     state #   5: atom   2 (Si2), wfc  1 (l=0 m= 1)
+     state #   6: atom   2 (Si2), wfc  2 (l=1 m= 1)
+     state #   7: atom   2 (Si2), wfc  2 (l=1 m= 2)
+     state #   8: atom   2 (Si2), wfc  2 (l=1 m= 3)
+
+ k =   0.0000000000  0.0000000000  0.0000000000
+==== e(   1) =    -5.79865 eV ==== 
+     psi = 0.498*[#   1]+0.498*[#   5]
+    |psi|^2 = 0.996
+==== e(   2) =     6.02855 eV ==== 
+     psi = 0.481*[#   4]+0.481*[#   8]
+    |psi|^2 = 0.962
+==== e(   3) =     6.02855 eV ==== 
+     psi = 0.481*[#   3]+0.481*[#   7]
+    |psi|^2 = 0.962
+==== e(   4) =     6.02855 eV ==== 
+     psi = 0.481*[#   2]+0.481*[#   6]
+    |psi|^2 = 0.962
+==== e(   5) =     8.56504 eV ==== 
+     psi = 0.482*[#   2]+0.482*[#   6]
+    |psi|^2 = 0.965
+==== e(   6) =     8.56504 eV ==== 
+     psi = 0.482*[#   3]+0.482*[#   7]
+    |psi|^2 = 0.965
+==== e(   7) =     8.56504 eV ==== 
+     psi = 0.482*[#   4]+0.482*[#   8]
+    |psi|^2 = 0.965
+==== e(   8) =     9.15261 eV ==== 
+     psi = 0.495*[#   1]+0.495*[#   5]
+    |psi|^2 = 0.989
+
+Lowdin Charges: 
+
+     Atom #   1: total charge =   3.8816, s =  0.9963, 
+     Atom #   1: total charge =   3.8816, p =  2.8853, pz=  0.9618, px=  0.9618, py=  0.9618, 
+     Atom #   2: total charge =   3.8816, s =  0.9963, 
+     Atom #   2: total charge =   3.8816, p =  2.8853, pz=  0.9618, px=  0.9618, py=  0.9618, 
+     Spilling Parameter:   0.0296
+
+     PROJWFC      :      0.68s CPU      0.71s WALL
+
+
+   This run was terminated on:  18:43:18  27Jan2022            
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=

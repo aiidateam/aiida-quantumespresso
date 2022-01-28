@@ -31,7 +31,7 @@ def generate_projwfc_node(generate_calc_job_node, fixture_localhost, tmpdir):
     return _generate_projwfc_node
 
 
-@pytest.mark.parametrize('test_name', ('nonpolarised', 'noncollinear', 'spinorbit'))
+@pytest.mark.parametrize('test_name', ('nonpolarised', 'noncollinear', 'spinorbit', 'numbered_kinds'))
 def test_projwfc(generate_projwfc_node, generate_parser, data_regression, tmpdir, test_name):
     """Test ``ProjwfcParser`` on the results of a non-polarised ``projwfc.x`` calculation."""
     node = generate_projwfc_node(test_name)
