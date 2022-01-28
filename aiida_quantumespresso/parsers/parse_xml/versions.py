@@ -70,6 +70,13 @@ def get_schema_filename(xml):
     if element_root is None:
         return None
 
+    # Patch for QE v7.0: The scheme file name was not updated in the `xsi.schemaLocation` element
+    try:
+        if element_root.find('general_info').find('creator').get('VERSION') == '7.0':
+            return 'qes_211101.xsd'
+    except AttributeError:
+        pass
+
     element_schema_location = element_root.get(xml_schema_location_key)
     # e.g. "http://www.quantum-espresso.org/ns/qes/qes-1.0 http://www.quantum-espresso.org/ns/qes/qes-1.0.xsd"
 
