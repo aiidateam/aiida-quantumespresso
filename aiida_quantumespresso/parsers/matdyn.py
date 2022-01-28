@@ -97,7 +97,7 @@ def parse_raw_matdyn_phonon_file(phonon_frequencies):
             # case in which there are two frequencies attached like -1204.1234-1020.536
             if '-' in b:
                 c = re.split('(-)', b)
-                d = [i for i in c if i is not '']
+                d = [i for i in c if i != '']
                 for i in range(0, len(d), 2):  # d should have an even number of elements
                     corrected_data.append(float(d[i] + d[i + 1]))
             else:
