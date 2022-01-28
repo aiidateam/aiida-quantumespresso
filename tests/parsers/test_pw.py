@@ -98,7 +98,7 @@ def test_pw_default_no_xml(
     '191206',
     '200420',
     '210716',
-    '211102',
+    '211101',
 ])
 def test_pw_default_xml(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression, xml_format
