@@ -128,13 +128,12 @@ class NebCalculation(CalcJob):
             manual_climbing_image = True
             if climbing_image_list is None:
                 raise InputValidationError(
-                    "'ci_scheme' is {}, but no climbing images were specified for this "
-                    'calculation.'.format(ci_scheme)
+                    f"'ci_scheme' is {ci_scheme}, but no climbing images were specified for this calculation."
                 )
             if not isinstance(climbing_image_list, list):
                 raise InputValidationError('Climbing images should be provided as a list.')
             num_of_images = input_params['PATH'].get('num_of_images', 2)
-            if any([(i < 2 or i >= num_of_images) for i in climbing_image_list]):
+            if any((i < 2 or i >= num_of_images) for i in climbing_image_list):
                 raise InputValidationError(
                     'The climbing images should be in the range between the first '
                     'and the last image (excluded).'
@@ -159,9 +158,8 @@ class NebCalculation(CalcJob):
 
         if input_params:
             raise InputValidationError(
-                'The following namelists are specified in input_params, but are '
-                'not valid namelists for the current type of calculation: '
-                '{}'.format(','.join(list(input_params.keys())))
+                'The following namelists are specified in input_params, but are not valid namelists for the current '
+                f'type of calculation: {",".join(list(input_params.keys()))}'
             )
 
         return input_data
@@ -211,9 +209,11 @@ class NebCalculation(CalcJob):
         # self.inputs.pw.pseudos is a plumpy.utils.AttributesFrozendict
         kindnames = [kind.name for kind in first_structure.kinds]
         if set(kindnames) != set(self.inputs.pw.pseudos.keys()):
+            formatted_pseudos = ', '.join(list(self.inputs.pw.pseudos.keys()))
+            formatted_kinds = ', '.join(list(kindnames))
             raise InputValidationError(
-                'Mismatch between the defined pseudos and the list of kinds of the structure.\nPseudos: {};\n'
-                'Kinds: {}'.format(', '.join(list(self.inputs.pw.pseudos.keys())), ', '.join(list(kindnames)))
+                'Mismatch between the defined pseudos and the list of kinds of the structure.\n'
+                f'Pseudos: {formatted_pseudos};\nKinds: {formatted_kinds}'
             )
 
         ##############################

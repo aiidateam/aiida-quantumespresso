@@ -24,7 +24,7 @@ def validate_kpoints_mesh(ctx, param, value):
     if not value:
         return None
 
-    if any([not isinstance(integer, int) for integer in value]) or any([int(i) <= 0 for i in value]):
+    if any(not isinstance(integer, int) for integer in value) or any(int(i) <= 0 for i in value):
         raise click.BadParameter('all values of the tuple should be positive greater than zero integers')
 
     try:
@@ -145,9 +145,7 @@ def validate_smearing(parameters, smearing=None):
             break
     else:
         raise ValueError(
-            'the smearing type "{}" is invalid, choose from {}'.format(
-                smearing[0], ', '.join(list(valid_smearing_types.keys()))
-            )
+            f'the smearing type "{smearing[0]}" is invalid, choose from {", ".join(list(valid_smearing_types.keys()))}'
         )
 
     if not isinstance(smearing[1], float):

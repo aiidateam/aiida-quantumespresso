@@ -167,9 +167,11 @@ class BasePwCpInputGenerator(CalcJob):
         # Check that a pseudo potential was specified for each kind present in the `StructureData`
         kinds = [kind.name for kind in self.inputs.structure.kinds]
         if set(kinds) != set(self.inputs.pseudos.keys()):
+            formatted_pseudos = ', '.join(list(self.inputs.pseudos.keys()))
+            formatted_kinds = ', '.join(list(kinds))
             raise exceptions.InputValidationError(
                 'Mismatch between the defined pseudos and the list of kinds of the structure.\n'
-                'Pseudos: {};\nKinds: {}'.format(', '.join(list(self.inputs.pseudos.keys())), ', '.join(list(kinds)))
+                f'Pseudos: {formatted_pseudos};\nKinds: {formatted_kinds}'
             )
 
         local_copy_list = []
@@ -259,11 +261,9 @@ class BasePwCpInputGenerator(CalcJob):
         also_bands = settings.pop('ALSO_BANDS', None)
         if also_bands:
             self.node.logger.warning(
-                "The '{}' setting is deprecated as bands are now parsed by default. "
-                "If you do not want the bands to be parsed set the '{}' to True {}. "
-                'Note that the eigenvalue.xml files are also no longer stored in the repository'.format(
-                    'also_bands', 'no_bands', type(self)
-                )
+                'The `also_bands` setting is deprecated as bands are now parsed by default. '
+                'If you do not want the bands to be parsed set the `no_bands` to True. '
+                'Note that the eigenvalue.xml files are also no longer stored in the repository'
             )
 
         calcinfo = datastructures.CalcInfo()
@@ -397,8 +397,7 @@ class BasePwCpInputGenerator(CalcJob):
                 stripped_inparams = [re.sub('[(0-9)]', '', _) for _ in input_params[namelist].keys()]
                 if flag in stripped_inparams:
                     raise exceptions.InputValidationError(
-                        "You cannot specify explicitly the '{}' flag in the '{}' "
-                        'namelist or card.'.format(flag, namelist)
+                        f"You cannot specify explicitly the '{flag}' flag in the '{namelist}' namelist or card."
                     )
                 if defaultvalue is not None:
                     if namelist not in input_params:
@@ -420,7 +419,7 @@ class BasePwCpInputGenerator(CalcJob):
         if input_params.get('SYSTEM', {}).get('ibrav', cls._DEFAULT_IBRAV) == 0:
             cell_parameters_card = 'CELL_PARAMETERS angstrom\n'
             for vector in structure.cell:
-                cell_parameters_card += ('{0:18.10f} {1:18.10f} {2:18.10f}' '\n'.format(*vector))
+                cell_parameters_card += ('{0:18.10f} {1:18.10f} {2:18.10f}\n'.format(*vector))  # pylint: disable=consider-using-f-string
         else:
             cell_parameters_card = ''
 
@@ -442,9 +441,7 @@ class BasePwCpInputGenerator(CalcJob):
             pseudo = pseudos[kind.name]
             if kind.is_alloy or kind.has_vacancies:
                 raise exceptions.InputValidationError(
-                    "Kind '{}' is an alloy or has "
-                    'vacancies. This is not allowed for pw.x input structures.'
-                    ''.format(kind.name)
+                    f"Kind '{kind.name}' is an alloy or has vacancies. This is not allowed for pw.x input structures."
                 )
 
             try:
@@ -486,8 +483,8 @@ class BasePwCpInputGenerator(CalcJob):
         else:
             if len(fixed_coords) != len(structure.sites):
                 raise exceptions.InputValidationError(
-                    'Input structure contains {:d} sites, but '
-                    'fixed_coords has length {:d}'.format(len(structure.sites), len(fixed_coords))
+                    f'Input structure contains {len(structure.sites)} sites, but fixed_coords has length '
+                    f'{len(fixed_coords)}'
                 )
 
             for i, this_atom_fix in enumerate(fixed_coords):
@@ -498,7 +495,7 @@ class BasePwCpInputGenerator(CalcJob):
                         raise exceptions.InputValidationError(f'fixed_coords({i + 1:d}) has non-boolean elements')
 
                 if_pos_values = [cls._if_pos(_) for _ in this_atom_fix]
-                fixed_coords_strings.append('  {:d} {:d} {:d}'.format(*if_pos_values))
+                fixed_coords_strings.append('  {:d} {:d} {:d}'.format(*if_pos_values))  # pylint: disable=consider-using-f-string
 
         abs_pos = [_.position for _ in structure.sites]
         if use_fractional:
@@ -511,7 +508,7 @@ class BasePwCpInputGenerator(CalcJob):
 
         for site, site_coords, fixed_coords_string in zip(structure.sites, coordinates, fixed_coords_strings):
             atomic_positions_card_list.append(
-                '{0} {1:18.10f} {2:18.10f} {3:18.10f} {4}\n'.format(
+                '{0} {1:18.10f} {2:18.10f} {3:18.10f} {4}\n'.format(  # pylint: disable=consider-using-f-string
                     site.kind_name.ljust(6), site_coords[0], site_coords[1], site_coords[2], fixed_coords_string
                 )
             )
@@ -526,9 +523,8 @@ class BasePwCpInputGenerator(CalcJob):
             # Checking that there are as many forces defined as there are sites in the structure
             if len(atomic_forces) != len(structure.sites):
                 raise exceptions.InputValidationError(
-                    'Input structure contains {:d} sites, but atomic forces has length {:d}'.format(
-                        len(structure.sites), len(atomic_forces)
-                    )
+                    f'Input structure contains {len(structure.sites):d} sites, but atomic forces has length '
+                    f'{len(atomic_forces):d}'
                 )
 
             lines = ['ATOMIC_FORCES\n']
@@ -538,7 +534,7 @@ class BasePwCpInputGenerator(CalcJob):
                 if len(vector) != 3:
                     raise exceptions.InputValidationError(f'Forces({vector}) for {site} has not length three')
 
-                lines.append('{0} {1:18.10f} {2:18.10f} {3:18.10f}\n'.format(site.kind_name.ljust(6), *vector))
+                lines.append('{0} {1:18.10f} {2:18.10f} {3:18.10f}\n'.format(site.kind_name.ljust(6), *vector))  # pylint: disable=consider-using-f-string
 
             # Append to atomic_positions_card so that this card will be printed directly after
             atomic_positions_card += ''.join(lines)
@@ -551,9 +547,8 @@ class BasePwCpInputGenerator(CalcJob):
             # Checking that there are as many velocities defined as there are sites in the structure
             if len(atomic_velocities) != len(structure.sites):
                 raise exceptions.InputValidationError(
-                    'Input structure contains {:d} sites, but atomic velocities has length {:d}'.format(
-                        len(structure.sites), len(atomic_velocities)
-                    )
+                    f'Input structure contains {len(structure.sites):d} sites, but atomic velocities has length '
+                    f'{len(atomic_velocities):d}'
                 )
 
             lines = ['ATOMIC_VELOCITIES\n']
@@ -563,7 +558,7 @@ class BasePwCpInputGenerator(CalcJob):
                 if len(vector) != 3:
                     raise exceptions.InputValidationError(f'Velocities({vector}) for {site} has not length three')
 
-                lines.append('{0} {1:18.10f} {2:18.10f} {3:18.10f}\n'.format(site.kind_name.ljust(6), *vector))
+                lines.append('{0} {1:18.10f} {2:18.10f} {3:18.10f}\n'.format(site.kind_name.ljust(6), *vector))  # pylint: disable=consider-using-f-string
 
             # Append to atomic_positions_card so that this card will be printed directly after
             atomic_positions_card += ''.join(lines)
@@ -646,11 +641,11 @@ class BasePwCpInputGenerator(CalcJob):
             kpoints_card_list = [f'K_POINTS {kpoints_type}\n']
 
             if kpoints_type == 'automatic':
-                if any([i not in [0, 0.5] for i in offset]):
+                if any(i not in [0, 0.5] for i in offset):
                     raise exceptions.InputValidationError('offset list must only be made of 0 or 0.5 floats')
                 the_offset = [0 if i == 0. else 1 for i in offset]
                 the_6_integers = list(mesh) + the_offset
-                kpoints_card_list.append('{:d} {:d} {:d} {:d} {:d} {:d}\n' ''.format(*the_6_integers))
+                kpoints_card_list.append('{:d} {:d} {:d} {:d} {:d} {:d}\n'.format(*the_6_integers))  # pylint: disable=consider-using-f-string
 
             elif kpoints_type == 'gamma':
                 # nothing to be written in this case
@@ -689,10 +684,8 @@ class BasePwCpInputGenerator(CalcJob):
                 namelists_toprint = cls._automatic_namelists[calculation_type]
             except KeyError as exception:
                 raise exceptions.InputValidationError(
-                    "Unknown 'calculation' value in "
-                    'CONTROL namelist {}. Otherwise, specify the list of '
-                    "namelists using the NAMELISTS inside the 'settings' input "
-                    'node'.format(calculation_type)
+                    'Unknown `calculation` value in CONTROL namelist {calculation_type}. Otherwise, specify the list of'
+                    'namelists using the NAMELISTS inside the `settings` input node'
                 ) from exception
 
         inputfile = ''
@@ -718,9 +711,8 @@ class BasePwCpInputGenerator(CalcJob):
 
         if input_params:
             raise exceptions.InputValidationError(
-                'The following namelists are specified in input_params, but are '
-                'not valid namelists for the current type of calculation: '
-                '{}'.format(','.join(list(input_params.keys())))
+                'The following namelists are specified in input_params, but are not valid namelists for the current '
+                f'type of calculation: {",".join(list(input_params.keys()))}'
             )
 
         return inputfile, local_copy_list_to_append
@@ -755,9 +747,8 @@ def _case_transform_dict(dictionary, dict_name, func_name, transform):
         num_items = Counter(transform(str(k)) for k in dictionary.keys())
         double_keys = ','.join([k for k, v in num_items if v > 1])
         raise exceptions.InputValidationError(
-            "Inside the dictionary '{}' there are the following keys that "
-            'are repeated more than once when compared case-insensitively: {}.'
-            'This is not allowed.'.format(dict_name, double_keys)
+            f'Inside the dictionary `{dict_name}` there are the following keys that are repeated more than once when '
+            f'compared case-insensitively: {double_keys}. This is not allowed.'
         )
     return new_dict
 

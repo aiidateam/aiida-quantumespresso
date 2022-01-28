@@ -30,9 +30,7 @@ def launch_calculation(code, calculation, max_num_machines, max_wallclock_second
     expected_process_type = 'aiida.calculations:quantumespresso.ph'
     if calculation.process_type != expected_process_type:
         raise click.BadParameter(
-            'The input calculation node has a process_type: {}; should be {}'.format(
-                calculation.process_type, expected_process_type
-            )
+            f'input calculation node has process_type: {calculation.process_type}; should be {expected_process_type}'
         )
 
     inputs = {

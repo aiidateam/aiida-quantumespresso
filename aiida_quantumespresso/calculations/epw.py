@@ -68,7 +68,7 @@ class EpwCalculation(CalcJob):
 
         def test_offset(offset):
             """Check if the grid has an offset."""
-            if any([i != 0. for i in offset]):
+            if any(i != 0. for i in offset):
                 raise NotImplementedError(
                     'Computation of electron-phonon on a mesh with non zero offset is not implemented, '
                     'at the level of epw.x'
@@ -93,10 +93,9 @@ class EpwCalculation(CalcJob):
 
         # Also, the parent calculation must be on the same computer
         if not self.node.computer.uuid == parent_calc_nscf.computer.uuid:
+            computer_label = parent_calc_nscf.computer.get_name()
             raise exceptions.InputValidationError(
-                'Calculation has to be launched on the same computer as that of the parent: {}'.format(
-                    parent_calc_nscf.computer.get_name()
-                )
+                f'Calculation has to be launched on the same computer as that of the parent: {computer_label}'
             )
 
         # put by default, default_parent_output_folder = ./out
@@ -108,10 +107,9 @@ class EpwCalculation(CalcJob):
 
         # Also, the parent calculation must be on the same computer
         if not self.node.computer.uuid == parent_calc_ph.computer.uuid:
+            computer_label = parent_calc_nscf.computer.get_name()
             raise exceptions.InputValidationError(
-                'Calculation has to be launched on the same computer as that of the parent: {}'.format(
-                    parent_calc_ph.computer.get_name()
-                )
+                f'Calculation has to be launched on the same computer as that of the parent: {computer_label}'
             )
 
         # I put the first-level keys as uppercase (i.e., namelist and card names) and the second-level keys as lowercase
@@ -196,7 +194,7 @@ class EpwCalculation(CalcJob):
         if len(list_of_points) > 1:
             postpend_text = f'{len(list_of_points)} cartesian\n'
             for points in list_of_points:
-                postpend_text += '{0:18.10f} {1:18.10f} {2:18.10f} \n'.format(*points)
+                postpend_text += '{0:18.10f} {1:18.10f} {2:18.10f} \n'.format(*points)  # pylint: disable=consider-using-f-string
 
         with folder.open(self.metadata.options.input_filename, 'w') as infile:
             for namelist_name in namelists_toprint:
@@ -213,9 +211,8 @@ class EpwCalculation(CalcJob):
 
         if parameters:
             raise exceptions.InputValidationError(
-                'The following namelists are specified in parameters, but are '
-                'not valid namelists for the current type of calculation: '
-                '{}'.format(','.join(list(parameters.keys())))
+                'The following namelists are specified in parameters, but are not valid namelists for the current type '
+                f'of calculation: {",".join(list(parameters.keys()))}'
             )
 
         # copy the parent scratch

@@ -627,8 +627,10 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         self.ctx.inputs.parameters['ELECTRONS']['mixing_beta'] = mixing_beta_new
         self.ctx.inputs.structure = calculation.outputs.output_structure
-        action = 'no electronic convergence but clean shutdown: reduced beta mixing from {} to {} restarting from ' \
-                 'scratch but using output structure.'.format(mixing_beta, mixing_beta_new)
+        action = (
+            f'no electronic convergence but clean shutdown: reduced beta mixing from {mixing_beta} to {mixing_beta_new}'
+            'restarting from scratch but using output structure.'
+        )
 
         self.set_restart_type(RestartType.FROM_SCRATCH)
         self.report_error_handled(calculation, action)

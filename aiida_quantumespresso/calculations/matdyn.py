@@ -55,7 +55,7 @@ class MatdynCalculation(NamelistsCalculation):
 
         kpoints_string = [f'{len(kpoints)}']
         for kpoint in kpoints:
-            kpoints_string.append('{:18.10f} {:18.10f} {:18.10f}'.format(*kpoint))
+            kpoints_string.append('{:18.10f} {:18.10f} {:18.10f}'.format(*kpoint))  # pylint: disable=consider-using-f-string
 
         return '\n'.join(kpoints_string) + '\n'
 

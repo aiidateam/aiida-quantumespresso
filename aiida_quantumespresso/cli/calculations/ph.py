@@ -32,9 +32,7 @@ def launch_calculation(code, kpoints_mesh, calculation, max_num_machines, max_wa
     expected_process_type = 'aiida.calculations:quantumespresso.pw'
     if calculation.process_type != expected_process_type:
         raise click.BadParameter(
-            'The input calculation node has a process_type: {}; should be {}'.format(
-                calculation.process_type, expected_process_type
-            )
+            f'input calculation node has process_type: {calculation.process_type}; should be {expected_process_type}'
         )
 
     parent_folder = calculation.get_outgoing(node_class=orm.RemoteData, link_label_filter='remote_folder').one().node

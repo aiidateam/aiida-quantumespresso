@@ -22,7 +22,7 @@ def validate_inputs(inputs, ctx=None):  # pylint: disable=unused-argument
         return PwBandsWorkChain.exit_codes.ERROR_INVALID_INPUT_NUMBER_OF_BANDS.message
 
     # Cannot specify both `bands_kpoints` and `bands_kpoints_distance`
-    if all([key in inputs for key in ['bands_kpoints', 'bands_kpoints_distance']]):
+    if all(key in inputs for key in ['bands_kpoints', 'bands_kpoints_distance']):
         return PwBandsWorkChain.exit_codes.ERROR_INVALID_INPUT_KPOINTS.message
 
 

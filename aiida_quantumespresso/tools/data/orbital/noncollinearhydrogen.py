@@ -52,13 +52,10 @@ class NoncollinearHydrogenOrbital(RealhydrogenOrbital):
             orb_name = self.get_name_from_quantum_numbers(
                 orb_dict['angular_momentum'], magnetic_number=orb_dict['magnetic_number']
             )
-            position_string = '{:.4f},{:.4f},{:.4f}'.format(
-                orb_dict['position'][0], orb_dict['position'][1], orb_dict['position'][2]
-            )
-            out_string = 'r{} {} (s_z={}) orbital {} @ {}'.format(
-                orb_dict['radial_nodes'], orb_name, orb_dict['spin'],
-                "for kind '{}'".format(orb_dict['kind_name']) if orb_dict['kind_name'] else '', position_string
-            )
+            pos = orb_dict['position']
+            pos_string = f'{pos[0]:.4f},{pos[1]:.4f},{pos[2]:.4f}'
+            orb = f"for kind {orb_dict['kind_name']}" if orb_dict['kind_name'] else ''
+            out_string = f"r{orb_dict['radial_nodes']} {orb_name} (s_z={orb_dict['spin']}) orbital {orb} @ {pos_string}"
         except KeyError:
             # Should not happen, but we want it not to crash in __str__
             out_string = '(not all parameters properly set)'

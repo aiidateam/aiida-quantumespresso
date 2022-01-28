@@ -318,15 +318,11 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         if volume_difference < volume_threshold:
             self.ctx.is_converged = True
             self.report(
-                'relative cell volume difference {} smaller than convergence threshold {}'.format(
-                    volume_difference, volume_threshold
-                )
+                f'relative cell volume difference {volume_difference} smaller than threshold {volume_threshold}'
             )
         else:
             self.report(
-                'current relative cell volume difference {} larger than convergence threshold {}'.format(
-                    volume_difference, volume_threshold
-                )
+                f'current relative cell volume difference {volume_difference} larger than threshold {volume_threshold}'
             )
 
         self.ctx.current_cell_volume = curr_cell_volume

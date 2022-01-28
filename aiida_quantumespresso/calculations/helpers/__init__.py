@@ -143,9 +143,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
             for key, value in content.items():
                 input_params_internal[key] = copy.deepcopy(value)
                 if key in input_original_namelists:
-                    err_str = "The keyword '{}' was specified both in the namelist {} and {}.".format(
-                        key, input_original_namelists[key], namelist
-                    )
+                    err_str = f"Keyword '{key}' was specified both in {input_original_namelists[key]} and {namelist}."
                     if stop_at_first_error:
                         raise QEInputValidationError(err_str)
                     else:
@@ -183,7 +181,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
         module_dir = os.curdir
     xml_path = os.path.join(module_dir, f'INPUT_PW-{version}.xml')
     try:
-        with open(xml_path, 'r') as handle:
+        with open(xml_path, 'r', encoding='utf-8') as handle:
             dom = xml.dom.minidom.parse(handle)
     except IOError as exception:
         prefix = 'INPUT_PW-'
@@ -211,8 +209,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
     for keyword in known_kws:
         if keyword in valid_kws:
             raise InternalError(
-                'Something strange, I found more than one '
-                "keyword '{}' in the XML description...".format(keyword)
+                f"Something strange, I found more than one keyword '{keyword}' in the XML description..."
             )
 
         valid_kws[keyword.getAttribute('name').lower()] = {}
@@ -241,10 +238,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
     valid_dims = {}
     for dim in known_dims:
         if dim in valid_dims:
-            raise InternalError(
-                'Something strange, I found more than one '
-                "keyword '{}' in the XML description...".format(dim)
-            )
+            raise InternalError(f"Something strange, I found more than one keyword '{dim}' in the XML description...")
 
         valid_dims[dim.getAttribute('name').lower()] = {}
         parent = dim
@@ -281,8 +275,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
     for dim in known_multidims:
         if dim in valid_multidims:
             raise InternalError(
-                'Something strange, I found more than one '
-                "multidimensional keyword '{}' in the XML description...".format(dim)
+                f"Something strange, I found more than one multidimensional keyword '{dim}' in the XML description..."
             )
 
         valid_multidims[dim.getAttribute('name').lower()] = {}
@@ -340,18 +333,16 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
         calculation_type = input_params_internal['calculation']
     except KeyError as exception:
         raise QEInputValidationError(
-            'Error, you need to specify at least the '
-            'calculation type (among {})'.format(', '.join(list(valid_calculations_and_opt_namelists.keys())))
+            'Error, you need to specify at least the calculation type (among '
+            f'{", ".join(list(valid_calculations_and_opt_namelists.keys()))})'
         ) from exception
 
     try:
         opt_namelists = valid_calculations_and_opt_namelists[calculation_type]
     except KeyError as exception:
         raise QEInputValidationError(
-            'Error, {} is not a valid value for '
-            'the calculation type (valid values: {})'.format(
-                calculation_type, ', '.join(list(valid_calculations_and_opt_namelists.keys()))
-            )
+            f'Error, {calculation_type} is not a valid value for '
+            f'the calculation type (valid values: {", ".join(list(valid_calculations_and_opt_namelists.keys()))}'
         ) from exception
 
     internal_dict = {i: {} for i in compulsory_namelists + opt_namelists}
@@ -363,9 +354,8 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
         # Unexpected namelists specified by the user
         additional_namelists = sorted(all_input_namelists - set(all_namelists))
         if additional_namelists:
-            err_str = 'Error, the following namelists were specified but are not expected: {}'.format(
-                ', '.join(additional_namelists)
-            )
+            formatted_namelists = ', '.join(additional_namelists)
+            err_str = f'Error, the following namelists were specified but are not expected: {formatted_namelists}'
             if stop_at_first_error:
                 raise QEInputValidationError(err_str)
             else:
@@ -385,8 +375,9 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
             if not flat_mode:
                 input_namelist_name = input_original_namelists[keyword]
                 if namelist_name != input_namelist_name:
-                    err_str = "Error, keyword '{}' specified in namelist '{}', but it should be instead in '{}'".format(
-                        keyword, input_namelist_name, namelist_name
+                    err_str = (
+                        f"Error, keyword '{keyword}' specified in namelist '{input_namelist_name}', but it should be "
+                        f"instead in '{namelist_name}'"
                     )
                     if stop_at_first_error:
                         raise QEInputValidationError(err_str)
@@ -420,8 +411,9 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
             if not flat_mode:
                 input_namelist_name = input_original_namelists[keyword]
                 if namelist_name != input_namelist_name:
-                    err_str = "Error, keyword '{}' specified in namelist '{}', but it should be instead in '{}'".format(
-                        keyword, input_namelist_name, namelist_name
+                    err_str = (
+                        f"Error, keyword '{keyword}' specified in namelist '{input_namelist_name}', but it should be "
+                        f"instead in '{namelist_name}'"
                     )
                     if stop_at_first_error:
                         raise QEInputValidationError(err_str)
@@ -531,9 +523,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
 
                 # Each array should contain N + 1 values, where N is the number of indexes for this multidimensional
                 if len(array) != len(indexes) + 1:
-                    err_str = 'Error, expected {} values per array for kw {}, got only {}.'.format(
-                        len(indexes) + 1, keyword, len(array)
-                    )
+                    err_str = f'Expected {len(indexes) + 1} values per array for kw {keyword}, got only {len(array)}.'
                     if stop_at_first_error:
                         raise QEInputValidationError(err_str)
                     else:
