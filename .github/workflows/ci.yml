@@ -1,4 +1,4 @@
-name: Continuous Integration
+name: ci
 
 on: [push, pull_request]
 
@@ -9,10 +9,9 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-        -   uses: actions/checkout@v1
+        -   uses: actions/checkout@v2
 
-        -   name: Cache python dependencies
-            id: cache-pip
+        -   name: Cache Python dependencies
             uses: actions/cache@v1
             with:
                 path: ~/.cache/pip
@@ -23,15 +22,15 @@ jobs:
         -   name: Set up Python
             uses: actions/setup-python@v2
             with:
-                python-version: 3.8
+                python-version: '3.8'
 
-        -   name: Install python dependencies
-            run:
+        -   name: Install Python dependencies
+            run: |
+                pip install --upgrade pip setuptools wheel
                 pip install -e .[pre-commit,tests]
 
         -   name: Run pre-commit
-            run:
-                pre-commit run --all-files || ( git status --short ; git diff ; exit 1 )
+            run: pre-commit run --all-files || ( git status --short ; git diff ; exit 1 )
 
     tests:
 
@@ -39,17 +38,11 @@ jobs:
 
         strategy:
             matrix:
-                python-version: [3.6, 3.7, 3.8, 3.9]
+                python-version: ['3.6', '3.7', '3.8', '3.9']
 
         services:
             postgres:
-                image: postgres:10
-                env:
-                    POSTGRES_DB: test_${{ matrix.backend }}
-                    POSTGRES_PASSWORD: ''
-                    POSTGRES_HOST_AUTH_METHOD: trust
-                ports:
-                -    5432:5432
+                image: postgres:12
             rabbitmq:
                 image: rabbitmq:latest
                 ports:
@@ -58,8 +51,7 @@ jobs:
         steps:
         -   uses: actions/checkout@v2
 
-        -   name: Cache python dependencies
-            id: cache-pip
+        -   name: Cache Python dependencies
             uses: actions/cache@v1
             with:
                 path: ~/.cache/pip
@@ -72,17 +64,11 @@ jobs:
             with:
                 python-version: ${{ matrix.python-version }}
 
-        -   name: Install system dependencies
+        -   name: Install Python dependencies
             run: |
-                sudo apt update
-                sudo apt install postgresql-12
-
-        -   name: Install python dependencies
-            run: |
-                pip install --upgrade setuptools
+                pip install --upgrade pip setuptools wheel
                 pip install -e .[tests]
                 reentry scan
 
         -   name: Run pytest
-            run:
-                pytest -sv tests
+            run: pytest -sv tests
