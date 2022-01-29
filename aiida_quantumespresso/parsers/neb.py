@@ -2,15 +2,16 @@
 from aiida.common import NotExistent
 from aiida.orm import Dict
 
+from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.parse_raw import convert_qe_to_aiida_structure
-from aiida_quantumespresso.parsers.parse_raw.pw import reduce_symmetries
-from aiida_quantumespresso.parsers.parse_raw.pw import parse_stdout as parse_pw_stdout
-from aiida_quantumespresso.parsers.parse_xml.pw.parse import parse_xml as parse_pw_xml
-from aiida_quantumespresso.parsers.parse_xml.exceptions import XMLParseError, XMLUnsupportedFormatError
 from aiida_quantumespresso.parsers.parse_raw.neb import parse_raw_output_neb
+from aiida_quantumespresso.parsers.parse_raw.pw import parse_stdout as parse_pw_stdout
+from aiida_quantumespresso.parsers.parse_raw.pw import reduce_symmetries
+from aiida_quantumespresso.parsers.parse_xml.exceptions import XMLParseError, XMLUnsupportedFormatError
+from aiida_quantumespresso.parsers.parse_xml.pw.parse import parse_xml as parse_pw_xml
 from aiida_quantumespresso.parsers.pw import PwParser
-from aiida_quantumespresso.calculations.pw import PwCalculation
+
 from .base import Parser
 
 
@@ -24,8 +25,9 @@ class NebParser(Parser):
         permanently in the repository. The second required node is a filepath under the key `retrieved_temporary_files`
         which should contain the temporary retrieved files.
         """
-        from aiida.orm import TrajectoryData, ArrayData
         import os
+
+        from aiida.orm import ArrayData, TrajectoryData
         import numpy
 
         PREFIX = self.node.process_class._PREFIX

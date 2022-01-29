@@ -6,10 +6,9 @@ These codes typically only require a few namelists (plus possibly some text afte
 import os
 
 from aiida.common import datastructures, exceptions
-from aiida.orm import Dict
-from aiida.orm import RemoteData, FolderData, SinglefileData
+from aiida.orm import Dict, FolderData, RemoteData, SinglefileData
 
-from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict, _pop_parser_options
+from aiida_quantumespresso.calculations import _lowercase_dict, _pop_parser_options, _uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
 from .base import CalcJob

@@ -4,11 +4,11 @@ import copy
 import os
 
 from aiida import orm
-from aiida.common import InputValidationError, CalcInfo, CodeInfo
+from aiida.common import CalcInfo, CodeInfo, InputValidationError
 from aiida.common.lang import classproperty
 
+from aiida_quantumespresso.calculations import _lowercase_dict, _pop_parser_options, _uppercase_dict
 from aiida_quantumespresso.calculations.pw import PwCalculation
-from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict, _pop_parser_options
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
 from .base import CalcJob

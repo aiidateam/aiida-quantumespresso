@@ -2,10 +2,10 @@
 # pylint: disable=redefined-outer-name
 """Tests for the `Pw2gwCalculation` class."""
 import os
-import pytest
 
 from aiida import orm
 from aiida.common import datastructures
+import pytest
 
 
 @pytest.fixture()

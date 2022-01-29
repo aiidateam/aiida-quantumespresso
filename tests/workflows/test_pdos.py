@@ -3,12 +3,11 @@
 """Tests for the `PdosWorkChain` class."""
 from __future__ import absolute_import
 
-from plumpy import ProcessState
-
-from aiida import orm, plugins, engine
+from aiida import engine, orm, plugins
 from aiida.common import LinkType
 from aiida.engine.utils import instantiate_process
 from aiida.manage.manager import get_manager
+from plumpy import ProcessState
 
 from aiida_quantumespresso.calculations.helpers import pw_input_helper
 

@@ -2,7 +2,8 @@
 """`CalcJob` implementation for the projwfc.x code of Quantum ESPRESSO."""
 from pathlib import Path
 
-from aiida.orm import RemoteData, FolderData, Dict, XyData
+from aiida.orm import Dict, FolderData, RemoteData, XyData
+
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 
 
@@ -43,7 +44,7 @@ class ProjwfcCalculation(NamelistsCalculation):
     def define(cls, spec):
         """Define the process specification."""
         # yapf: disable
-        from aiida.orm import ProjectionData, BandsData
+        from aiida.orm import BandsData, ProjectionData
         super().define(spec)
         spec.input('parent_folder', valid_type=(RemoteData, FolderData), help='The output folder of a pw.x calculation')
         spec.output('output_parameters', valid_type=Dict)

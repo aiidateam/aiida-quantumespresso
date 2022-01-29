@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=no-member,redefined-outer-name
 """Tests for the `PhBaseWorkChain` class."""
-import pytest
-
 from aiida.common import AttributeDict, LinkType
 from aiida.engine import ProcessHandlerReport
-from aiida.orm import RemoteData, FolderData, Dict
+from aiida.orm import Dict, FolderData, RemoteData
+import pytest
 
 from aiida_quantumespresso.calculations.ph import PhCalculation
 from aiida_quantumespresso.workflows.ph.base import PhBaseWorkChain

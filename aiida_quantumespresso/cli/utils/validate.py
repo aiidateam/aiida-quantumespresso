@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 """Utility functions for validation of command line interface parameter inputs."""
-import click
-
 from aiida.cmdline.utils import decorators
 from aiida.common import exceptions
+import click
 
 
 @decorators.with_dbenv()
@@ -50,7 +49,7 @@ def validate_hubbard_parameters(structure, parameters, hubbard_u=None, hubbard_v
     :returns: the loaded SinglefileData node with Hubbard parameters if valid pk was defined, None otherwise
     :raises ValueError: if the input is invalid
     """
-    from aiida.orm import load_node, SinglefileData
+    from aiida.orm import SinglefileData, load_node
 
     if len([value for value in [hubbard_u, hubbard_v, hubbard_file_pk] if value]) > 1:
         raise ValueError('the hubbard_u, hubbard_v and hubbard_file_pk options are mutually exclusive')

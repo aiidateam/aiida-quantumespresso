@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=wrong-import-position,wildcard-import
 """Module for the command line interface."""
+from aiida.cmdline.params import options, types
 import click
 import click_completion
-
-from aiida.cmdline.params import options, types
 
 # Activate the completion of parameter types provided by the click_completion package
 click_completion.init()

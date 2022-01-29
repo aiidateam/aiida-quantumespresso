@@ -4,6 +4,7 @@ import os
 
 from aiida import orm
 from aiida.common import datastructures
+
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 
 

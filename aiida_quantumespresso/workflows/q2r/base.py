@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO q2r.x calculation with automated error handling and restarts."""
 from aiida.common import AttributeDict
-from aiida.engine import while_, BaseRestartWorkChain, process_handler, ProcessHandlerReport
+from aiida.engine import BaseRestartWorkChain, ProcessHandlerReport, process_handler, while_
 from aiida.plugins import CalculationFactory
 
 Q2rCalculation = CalculationFactory('quantumespresso.q2r')

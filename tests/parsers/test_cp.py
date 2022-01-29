@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=redefined-outer-name
 """Tests for the `CpParser`."""
-import pytest
-
 from aiida import orm
 from aiida.common import AttributeDict
+import pytest
 
 
 @pytest.mark.parametrize('version', ['default', '6.6_autopilot', '6.6_verlet', '6.6_cgstep', '6.6_cgsteps'])

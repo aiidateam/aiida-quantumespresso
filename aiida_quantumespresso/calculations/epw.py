@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 """Plugin to create a Quantum Espresso epw.x input file."""
 import os
-import numpy as np
 
 from aiida import orm
 from aiida.common import datastructures, exceptions
+import numpy as np
+
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+
 from .base import CalcJob
 
 

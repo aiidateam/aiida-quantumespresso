@@ -6,6 +6,7 @@ from xml.dom.minidom import Element
 from qe_tools import CONSTANTS
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
+
 from .parse import cell_volume
 
 units_suffix = '_units'

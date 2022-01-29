@@ -17,8 +17,8 @@ TODO: all a lot of logger.debug stuff
 import os
 
 from aiida import orm
-from aiida.common.lang import classproperty
 from aiida.common import exceptions
+from aiida.common.lang import classproperty
 
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 

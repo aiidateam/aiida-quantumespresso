@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 """Command line scripts to launch a `PwBandStructureWorkChain` for testing and demonstration purposes."""
-import click
-
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
+import click
 
+from .. import cmd_launch
 from ...utils import launch
 from ...utils import options as options_qe
-from .. import cmd_launch
 
 
 @cmd_launch.command('pw-band-structure')

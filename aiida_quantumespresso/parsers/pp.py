@@ -4,13 +4,13 @@ import os
 import re
 import traceback
 
-import numpy as np
-
 from aiida import orm
 from aiida.common import exceptions
+import numpy as np
 
 from aiida_quantumespresso.calculations.pp import PpCalculation
 from aiida_quantumespresso.utils.mapping import get_logging_container
+
 from .base import Parser
 
 

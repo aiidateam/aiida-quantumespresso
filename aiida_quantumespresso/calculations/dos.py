@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """`CalcJob` implementation for the dos.x code of Quantum ESPRESSO."""
 from aiida import orm
+
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 
 

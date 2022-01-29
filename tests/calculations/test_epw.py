@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """Tests for the `EpwCalculation` class."""
 from aiida import orm
-from aiida.plugins import CalculationFactory
 from aiida.common.links import LinkType
+from aiida.plugins import CalculationFactory
+
 from aiida_quantumespresso.utils.resources import get_default_options
 
 EPWCALC = CalculationFactory('quantumespresso.epw')

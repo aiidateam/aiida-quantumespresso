@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=no-member,redefined-outer-name
 """Tests for the `MatdynBaseWorkChain` class."""
-import pytest
-
-from plumpy import ProcessState
-
 from aiida.common import AttributeDict
 from aiida.engine import ProcessHandlerReport
+from plumpy import ProcessState
+import pytest
 
 from aiida_quantumespresso.calculations.matdyn import MatdynCalculation
 from aiida_quantumespresso.workflows.matdyn.base import MatdynBaseWorkChain

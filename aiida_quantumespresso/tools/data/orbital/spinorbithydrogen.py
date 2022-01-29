@@ -6,7 +6,6 @@ and J_z operators, useful for projecting densities with spin-orbit coupling.
 """
 
 from aiida.common.exceptions import ValidationError
-
 from aiida.tools.data.orbital.orbital import Orbital
 
 

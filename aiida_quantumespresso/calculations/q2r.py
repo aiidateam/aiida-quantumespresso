@@ -3,6 +3,7 @@
 import os
 
 from aiida import orm
+
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 from aiida_quantumespresso.calculations.ph import PhCalculation
 from aiida_quantumespresso.data.force_constants import ForceConstantsData

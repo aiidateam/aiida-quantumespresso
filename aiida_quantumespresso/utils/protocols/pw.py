@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Protocol definitions for workflow input generation."""
+from copy import deepcopy
 import json
 import os
-from copy import deepcopy
 
 
 def _load_pseudo_metadata(filename):

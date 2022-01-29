@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from distutils.version import LooseVersion
-import numpy
 
 from aiida.orm import Dict, TrajectoryData
+import numpy
 from qe_tools import CONSTANTS
 
 from .base import Parser

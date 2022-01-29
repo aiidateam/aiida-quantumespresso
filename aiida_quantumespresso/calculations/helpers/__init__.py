@@ -4,9 +4,9 @@ import copy
 import difflib
 import os
 import xml.dom.minidom
-from packaging.version import Version
 
 from aiida.common import InputValidationError, InternalError
+from packaging.version import Version
 
 
 class QEInputValidationError(InputValidationError):

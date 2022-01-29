@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 from xml.dom.minidom import parseString
+
 from xmlschema.etree import ElementTree
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers.parse_xml.pw.legacy import (parse_xml_child_integer)
-from aiida_quantumespresso.parsers.parse_xml.parse import parse_xml_post_6_2
 from aiida_quantumespresso.parsers.parse_xml.cp.legacy import parse_cp_xml_output
-from aiida_quantumespresso.parsers.parse_xml.versions import get_xml_file_version, QeXmlVersion
+from aiida_quantumespresso.parsers.parse_xml.parse import parse_xml_post_6_2
+from aiida_quantumespresso.parsers.parse_xml.pw.legacy import parse_xml_child_integer
+from aiida_quantumespresso.parsers.parse_xml.versions import QeXmlVersion, get_xml_file_version
 
 
 def parse_cp_traj_stanzas(num_elements, splitlines, prepend_name, rescale=1.):

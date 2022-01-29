@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """`CalcJob` implementation for the pw2wannier.x code of Quantum ESPRESSO."""
-from aiida.orm import RemoteData, FolderData, SinglefileData, Dict
+from aiida.orm import Dict, FolderData, RemoteData, SinglefileData
 
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 

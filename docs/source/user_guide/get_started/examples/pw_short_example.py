@@ -10,7 +10,8 @@
 ###########################################################################
 # start-marker for docs
 
-from aiida import load_profile, orm, plugins, engine
+from aiida import engine, load_profile, orm, plugins
+
 load_profile()
 
 builder = orm.load_code('pw-6.3@TheHive').get_builder()

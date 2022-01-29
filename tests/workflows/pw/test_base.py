@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=no-member,redefined-outer-name
 """Tests for the `PwBaseWorkChain` class."""
-import pytest
-
 from aiida.common import AttributeDict
 from aiida.engine import ExitCode, ProcessHandlerReport
+import pytest
 
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain

@@ -2,12 +2,12 @@
 """`Parser` implementation for the `PwCalculation` calculation job class."""
 import traceback
 
-import numpy
-
 from aiida import orm
 from aiida.common import exceptions
+import numpy
 
 from aiida_quantumespresso.utils.mapping import get_logging_container
+
 from .base import Parser
 from .parse_raw.pw import reduce_symmetries
 

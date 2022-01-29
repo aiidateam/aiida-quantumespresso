@@ -10,6 +10,7 @@
 ###########################################################################
 # Load the database environment.
 from aiida import load_dbenv
+
 load_dbenv()
 
 from aiida.orm import Code
@@ -51,6 +52,7 @@ calc2.use_code(code)
 
 # Get the computer's transport and create an instance.
 from aiida.backends.utils import get_authinfo, get_automatic_user
+
 authinfo = get_authinfo(computer=computer, aiidauser=get_automatic_user())
 transport = a.get_transport()
 

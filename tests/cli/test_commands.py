@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for CLI commands."""
 from click import Context, Group
+
 from aiida_quantumespresso.cli import cmd_root
 
 

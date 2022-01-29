@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
+import fnmatch
 from pathlib import Path
 import re
-import fnmatch
 
-import numpy as np
-
-from aiida.orm import Dict, ProjectionData, BandsData, XyData
+from aiida.orm import BandsData, Dict, ProjectionData, XyData
 from aiida.plugins import OrbitalFactory
+import numpy as np
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.parse_raw.base import (
-    parse_output_base, convert_qe_to_aiida_structure, convert_qe_to_kpoints
+    convert_qe_to_aiida_structure,
+    convert_qe_to_kpoints,
+    parse_output_base,
 )
 from aiida_quantumespresso.utils.mapping import get_logging_container
 

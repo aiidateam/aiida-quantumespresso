@@ -3,7 +3,6 @@
 import re
 
 from aiida.orm.nodes.data.structure import Kind, Site
-
 from aiida.plugins import DataFactory
 
 StructureData = DataFactory('structure')

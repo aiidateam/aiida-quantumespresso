@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=invalid-name,redefined-outer-name
 """Tests for the `PwParser`."""
-import pytest
-
 from aiida import orm
 from aiida.common import AttributeDict
+import pytest
 
 
 @pytest.fixture
