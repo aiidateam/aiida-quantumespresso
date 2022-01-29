@@ -50,18 +50,3 @@ repos:
     -   id: pylint
         language: system
         exclude: *exclude_files
-
--   repo: local
-    hooks:
-    -   id: version-number
-        name: Check consistency in version number
-        entry: python ./utils/validate_version_number.py
-        args: ['version']
-        language: system
-        files: >-
-            (?x)^(
-                setup.json|
-                aiida_quantumespresso/__init__.py|
-                ./utils/validate_version_number.py|
-            )$
-        pass_filenames: false

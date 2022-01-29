@@ -1,6 +1,130 @@
 [build-system]
-requires = ['setuptools>=40.8.0', 'wheel', 'reentry~=1.3', 'fastentrypoints~=0.12']
-build-backend = 'setuptools.build_meta:__legacy__'
+requires = ['flit_core >=3.4,<4']
+build-backend = 'flit_core.buildapi'
+
+[project]
+name = 'aiida-quantumespresso'
+dynamic = ['version']
+description = 'The official AiiDA plugin for Quantum ESPRESSO'
+authors = [{name = 'The AiiDA team', email = 'developers@aiida.net'}]
+readme = 'README.md'
+license = {file = 'LICENSE.txt'}
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    'Framework :: AiiDA',
+    'License :: OSI Approved :: MIT License',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+]
+keywords = ['aiida', 'workflows']
+requires-python = '>=3.6'
+dependencies = [
+    'psycopg2-binary<2.9',
+    'aiida_core[atomic_tools]~=1.4,>=1.4.4',
+    'aiida-pseudo~=0.6.1',
+    'jsonschema',
+    'packaging',
+    'qe-tools~=2.0rc1',
+    'xmlschema~=1.2,>=1.2.5',
+    'numpy',
+    'importlib_resources'
+]
+
+[project.urls]
+Home = 'https://github.com/aiidateam/aiida-quantumespresso'
+Source = 'https://github.com/aiidateam/aiida-quantumespresso'
+Documentation = 'https://aiida-quantumespresso.readthedocs.io'
+
+[project.optional-dependencies]
+docs = [
+    'Sphinx',
+    'docutils',
+    'sphinx-copybutton~=0.3.0',
+    'sphinx-book-theme~=0.1.0',
+    'sphinx-click~=2.7.1'
+]
+pre-commit = [
+    'pre-commit~=2.2',
+    'pylint~=2.6.0'
+]
+tests = [
+    'pgtest~=1.3',
+    'pytest~=6.0',
+    'pytest-regressions~=1.0'
+]
+tcod = [
+    'aiida-tcod'
+]
+
+[project.scripts]
+aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
+
+[project.entry-points.'aiida.calculations']
+'quantumespresso.cp' = 'aiida_quantumespresso.calculations.cp:CpCalculation'
+'quantumespresso.create_kpoints_from_distance' = 'aiida_quantumespresso.calculations.functions.create_kpoints_from_distance:create_kpoints_from_distance'
+'quantumespresso.dos' = 'aiida_quantumespresso.calculations.dos:DosCalculation'
+'quantumespresso.epw' = 'aiida_quantumespresso.calculations.epw:EpwCalculation'
+'quantumespresso.matdyn' = 'aiida_quantumespresso.calculations.matdyn:MatdynCalculation'
+'quantumespresso.namelists' = 'aiida_quantumespresso.calculations.namelists:NamelistsCalculation'
+'quantumespresso.neb' = 'aiida_quantumespresso.calculations.neb:NebCalculation'
+'quantumespresso.ph' = 'aiida_quantumespresso.calculations.ph:PhCalculation'
+'quantumespresso.pp' = 'aiida_quantumespresso.calculations.pp:PpCalculation'
+'quantumespresso.projwfc' = 'aiida_quantumespresso.calculations.projwfc:ProjwfcCalculation'
+'quantumespresso.pw' = 'aiida_quantumespresso.calculations.pw:PwCalculation'
+'quantumespresso.pw2gw' = 'aiida_quantumespresso.calculations.pw2gw:Pw2gwCalculation'
+'quantumespresso.pw2wannier90' = 'aiida_quantumespresso.calculations.pw2wannier90:Pw2wannier90Calculation'
+'quantumespresso.pwimmigrant' = 'aiida_quantumespresso.calculations.pwimmigrant:PwimmigrantCalculation'
+'quantumespresso.q2r' = 'aiida_quantumespresso.calculations.q2r:Q2rCalculation'
+'quantumespresso.seekpath_structure_analysis' = 'aiida_quantumespresso.calculations.functions.seekpath_structure_analysis:seekpath_structure_analysis'
+
+[project.entry-points.'aiida.data']
+'quantumespresso.force_constants' = 'aiida_quantumespresso.data.force_constants:ForceConstantsData'
+
+[project.entry-points.'aiida.parsers']
+'quantumespresso.cp' = 'aiida_quantumespresso.parsers.cp:CpParser'
+'quantumespresso.dos' = 'aiida_quantumespresso.parsers.dos:DosParser'
+'quantumespresso.matdyn' = 'aiida_quantumespresso.parsers.matdyn:MatdynParser'
+'quantumespresso.neb' = 'aiida_quantumespresso.parsers.neb:NebParser'
+'quantumespresso.ph' = 'aiida_quantumespresso.parsers.ph:PhParser'
+'quantumespresso.pp' = 'aiida_quantumespresso.parsers.pp:PpParser'
+'quantumespresso.projwfc' = 'aiida_quantumespresso.parsers.projwfc:ProjwfcParser'
+'quantumespresso.pw' = 'aiida_quantumespresso.parsers.pw:PwParser'
+'quantumespresso.pw2gw' = 'aiida_quantumespresso.parsers.pw2gw:Pw2gwParser'
+'quantumespresso.q2r' = 'aiida_quantumespresso.parsers.q2r:Q2rParser'
+'quantumespresso.pw2wannier90' = 'aiida_quantumespresso.parsers.pw2wannier90:Pw2wannier90Parser'
+
+[project.entry-points.'aiida.tools.calculations']
+'quantumespresso.pw' = 'aiida_quantumespresso.tools.calculations.pw:PwCalculationTools'
+
+[project.entry-points.'aiida.tools.data.orbitals']
+'spinorbithydrogen' = 'aiida_quantumespresso.tools.data.orbital.spinorbithydrogen:SpinorbitHydrogenOrbital'
+'noncollinearhydrogen' = 'aiida_quantumespresso.tools.data.orbital.noncollinearhydrogen:NoncollinearHydrogenOrbital'
+
+[project.entry-points.'aiida.tools.dbexporters.tcod_plugins']
+'quantumespresso.cp' = 'aiida_quantumespresso.tools.dbexporters.tcod_plugins.cp:CpTcodtranslator'
+'quantumespresso.pw' = 'aiida_quantumespresso.tools.dbexporters.tcod_plugins.pw:PwTcodtranslator'
+
+[project.entry-points.'aiida.workflows']
+'quantumespresso.ph.base' = 'aiida_quantumespresso.workflows.ph.base:PhBaseWorkChain'
+'quantumespresso.pw.base' = 'aiida_quantumespresso.workflows.pw.base:PwBaseWorkChain'
+'quantumespresso.pw.relax' = 'aiida_quantumespresso.workflows.pw.relax:PwRelaxWorkChain'
+'quantumespresso.pw.bands' = 'aiida_quantumespresso.workflows.pw.bands:PwBandsWorkChain'
+'quantumespresso.pw.band_structure' = 'aiida_quantumespresso.workflows.pw.band_structure:PwBandStructureWorkChain'
+'quantumespresso.q2r.base' = 'aiida_quantumespresso.workflows.q2r.base:Q2rBaseWorkChain'
+'quantumespresso.matdyn.base' = 'aiida_quantumespresso.workflows.matdyn.base:MatdynBaseWorkChain'
+'quantumespresso.pdos' = 'aiida_quantumespresso.workflows.pdos:PdosWorkChain'
+
+[tool.flit.module]
+name = 'aiida_quantumespresso'
+
+[tool.flit.sdist]
+exclude = [
+    'docs/',
+    'tests/',
+]
 
 [tool.pylint.format]
 max-line-length = 120
@@ -76,5 +200,4 @@ whitelist_externals = make
 commands =
     clean: make clean
     make
-
 """
