@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """`CalcJob` implementation for the matdyn.x code of Quantum ESPRESSO."""
 from aiida import orm
+
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 from aiida_quantumespresso.data.force_constants import ForceConstantsData
 

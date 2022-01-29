@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 """Command line scripts to launch a `PpCalculation` for testing and demonstration purposes."""
-import click
-
 from aiida.cmdline.params import options as options_core
 from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
+import click
 
-from ..utils import launch
-from ..utils import options
 from . import cmd_launch
+from ..utils import launch, options
 
 
 @cmd_launch.command('pp')
@@ -23,6 +21,7 @@ def launch_calculation(code, calculation, max_num_machines, max_wallclock_second
     """Run a PpCalculation."""
     from aiida import orm
     from aiida.plugins import CalculationFactory
+
     from aiida_quantumespresso.utils.resources import get_default_options
 
     # Check that the parent calculation node comes from quantumespresso.pw.

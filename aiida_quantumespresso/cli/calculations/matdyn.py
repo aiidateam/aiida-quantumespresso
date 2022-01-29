@@ -4,9 +4,8 @@ from aiida.cmdline.params import options as options_core
 from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
 
-from ..utils import launch
-from ..utils import options
 from . import cmd_launch
+from ..utils import launch, options
 
 
 @cmd_launch.command('matdyn')
@@ -25,6 +24,7 @@ from . import cmd_launch
 def launch_calculation(code, datum, kpoints_mesh, max_num_machines, max_wallclock_seconds, with_mpi, daemon):
     """Run a MatdynCalculation."""
     from aiida.plugins import CalculationFactory
+
     from aiida_quantumespresso.utils.resources import get_default_options
 
     inputs = {

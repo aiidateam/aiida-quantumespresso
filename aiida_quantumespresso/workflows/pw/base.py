@@ -3,16 +3,20 @@
 from aiida import orm
 from aiida.common import AttributeDict, exceptions
 from aiida.common.lang import type_check
-from aiida.engine import ToContext, if_, while_, BaseRestartWorkChain, process_handler, ProcessHandlerReport, ExitCode
+from aiida.engine import BaseRestartWorkChain, ExitCode, ProcessHandlerReport, ToContext, if_, process_handler, while_
 from aiida.plugins import CalculationFactory, GroupFactory
 
 from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import create_kpoints_from_distance
-from aiida_quantumespresso.common.types import ElectronicType, SpinType, RestartType
+from aiida_quantumespresso.common.types import ElectronicType, RestartType, SpinType
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
-from aiida_quantumespresso.utils.mapping import update_mapping, prepare_process_inputs
+from aiida_quantumespresso.utils.mapping import prepare_process_inputs, update_mapping
 from aiida_quantumespresso.utils.pseudopotential import validate_and_prepare_pseudos_inputs
-from aiida_quantumespresso.utils.resources import get_default_options, get_pw_parallelization_parameters
-from aiida_quantumespresso.utils.resources import cmdline_remove_npools, create_scheduler_resources
+from aiida_quantumespresso.utils.resources import (
+    cmdline_remove_npools,
+    create_scheduler_resources,
+    get_default_options,
+    get_pw_parallelization_parameters,
+)
 
 from ..protocols.utils import ProtocolMixin
 
@@ -26,6 +30,7 @@ def validate_pseudo_family(value, _):
     """Validate the `pseudo_family` input."""
     if value:
         import warnings
+
         from aiida.common.warnings import AiidaDeprecationWarning
         warnings.warn('`pseudo_family` is deprecated, use `pw.pseudos` instead.', AiidaDeprecationWarning)
 
@@ -123,6 +128,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     def get_protocol_filepath(cls):
         """Return ``pathlib.Path`` to the ``.yaml`` file that defines the protocols."""
         from importlib_resources import files
+
         from ..protocols import pw as pw_protocols
         return files(pw_protocols) / 'base.yaml'
 

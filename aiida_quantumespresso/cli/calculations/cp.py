@@ -4,10 +4,8 @@ from aiida.cmdline.params import options as options_core
 from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
 
-from ..utils import defaults
-from ..utils import launch
-from ..utils import options
 from . import cmd_launch
+from ..utils import defaults, launch, options
 
 
 @cmd_launch.command('cp')

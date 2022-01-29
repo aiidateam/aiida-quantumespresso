@@ -13,18 +13,20 @@
 # serve to show the default.
 import time
 
+# ensure plugins are loaded
+from reentry import manager
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 import aiida_quantumespresso
 
-# ensure plugins are loaded
-from reentry import manager
 manager.scan()
 
 # Load the dummy profile even if we are running locally, this way the documentation will succeed even if the current
 # default profile of the AiiDA installation does not use a Django backend.
 from aiida.manage.configuration import load_documentation_profile
+
 load_documentation_profile()
 
 # -- Project information -----------------------------------------------------

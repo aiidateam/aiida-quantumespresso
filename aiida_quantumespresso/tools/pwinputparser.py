@@ -2,11 +2,11 @@
 """Utilities to parse Quantum ESPRESSO pw.x input files into AiiDA nodes or builders."""
 import copy
 import re
-import numpy as np
 
-from aiida.orm import Code, Dict
 from aiida.common.folders import Folder
+from aiida.orm import Code, Dict
 from aiida.plugins import CalculationFactory, DataFactory
+import numpy as np
 from qe_tools.parsers import PwInputFile as BasePwInputFile
 
 from .base import StructureParseMixin

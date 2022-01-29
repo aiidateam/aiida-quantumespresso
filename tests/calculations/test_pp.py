@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=redefined-outer-name
 """Tests for the `PpCalculation` class."""
-import pytest
-
 from aiida import orm
-from aiida.common import datastructures, AttributeDict
+from aiida.common import AttributeDict, datastructures
+import pytest
 
 
 @pytest.fixture

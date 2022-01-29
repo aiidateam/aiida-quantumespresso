@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=redefined-outer-name,too-many-statements
 """Initialise a text database and profile for pytest."""
+from collections.abc import Mapping
 import io
 import os
 import shutil
 import tempfile
-
-from collections.abc import Mapping
 
 import pytest
 
@@ -78,7 +77,7 @@ def serialize_builder():
 
     def serialize_data(data):
         # pylint: disable=too-many-return-statements
-        from aiida.orm import BaseType, Dict, Code
+        from aiida.orm import BaseType, Code, Dict
         from aiida.plugins import DataFactory
 
         StructureData = DataFactory('structure')
@@ -239,6 +238,7 @@ def generate_calc_job_node(fixture_localhost):
 
         if filepath_folder:
             from qe_tools.exceptions import ParsingError
+
             from aiida_quantumespresso.tools.pwinputparser import PwInputFile
             try:
                 with open(filepath_input, 'r', encoding='utf-8') as input_file:
@@ -407,8 +407,8 @@ def generate_bands_data():
 
     def _generate_bands_data():
         """Return a `BandsData` instance with some basic `kpoints` and `bands` arrays."""
-        import numpy
         from aiida.plugins import DataFactory
+        import numpy
         BandsData = DataFactory('array.bands')  #pylint: disable=invalid-name
         bands_data = BandsData()
 
@@ -507,6 +507,7 @@ def generate_inputs_ph(fixture_sandbox, fixture_localhost, fixture_code, generat
     def _generate_inputs_ph():
         """Generate default inputs for a `PhCalculation."""
         from aiida.orm import Dict
+
         from aiida_quantumespresso.utils.resources import get_default_options
 
         inputs = {
@@ -531,6 +532,7 @@ def generate_inputs_pw(fixture_code, generate_structure, generate_kpoints_mesh, 
     def _generate_inputs_pw():
         """Generate default inputs for a `PwCalculation."""
         from aiida.orm import Dict
+
         from aiida_quantumespresso.utils.resources import get_default_options
 
         parameters = Dict(
@@ -571,6 +573,7 @@ def generate_inputs_cp(fixture_code, generate_structure, generate_upf_data):
     def _generate_inputs_cp(autopilot=False):
         """Generate default inputs for a CpCalculation."""
         from aiida.orm import Dict
+
         from aiida_quantumespresso.utils.resources import get_default_options
 
         inputs = {
@@ -625,9 +628,9 @@ def generate_workchain_pw(generate_workchain, generate_inputs_pw, generate_calc_
         :param pw_outputs: ``dict`` of outputs for the ``PwCalculation``. The keys must correspond to the link labels
             and the values to the output nodes.
         """
-        from plumpy import ProcessState
         from aiida.common import LinkType
         from aiida.orm import Dict
+        from plumpy import ProcessState
 
         entry_point = 'quantumespresso.pw.base'
 
@@ -696,7 +699,8 @@ def generate_workchain_pdos(
     """Generate an instance of a `PdosWorkChain`."""
 
     def _generate_workchain_pdos():
-        from aiida.orm import Dict, Bool
+        from aiida.orm import Bool, Dict
+
         from aiida_quantumespresso.utils.resources import get_default_options
 
         entry_point = 'quantumespresso.pdos'

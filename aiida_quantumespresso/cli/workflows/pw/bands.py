@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
 """Command line scripts to launch a `PwBandsWorkChain` for testing and demonstration purposes."""
-import click
-
 from aiida.cmdline.params import options as options_core
 from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
+import click
 
-from ...utils import launch
-from ...utils import options
-from ...utils import validate
 from .. import cmd_launch
+from ...utils import launch, options, validate
 
 
 @cmd_launch.command('pw-bands')
@@ -38,10 +35,10 @@ def launch_workflow(
 ):
     """Run a `PwBandsWorkChain`."""
     # pylint: disable=too-many-statements
-    from aiida.orm import Bool, Float, Dict
+    from aiida.orm import Bool, Dict, Float
     from aiida.plugins import WorkflowFactory
 
-    from aiida_quantumespresso.utils.resources import get_default_options, get_automatic_parallelization_options
+    from aiida_quantumespresso.utils.resources import get_automatic_parallelization_options, get_default_options
 
     builder = WorkflowFactory('quantumespresso.pw.bands').get_builder()
 

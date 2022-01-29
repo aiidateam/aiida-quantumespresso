@@ -2,13 +2,25 @@
 """Code that was written to parse the legacy XML format of Quantum ESPRESSO, which was deprecated in version 6.4."""
 import os
 from xml.dom.minidom import parse, parseString
-from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers.parse_xml.legacy import xml_card_cell, xml_card_ions, xml_card_header, read_xml_card, \
-    parse_xml_child_bool, parse_xml_child_integer, parse_xml_child_float, xml_card_planewaves, xml_card_spin, \
-    parse_xml_child_attribute_str, xml_card_symmetries, xml_card_exchangecorrelation
-from aiida_quantumespresso.utils.mapping import get_logging_container
 
 from qe_tools import CONSTANTS
+
+from aiida_quantumespresso.parsers import QEOutputParsingError
+from aiida_quantumespresso.parsers.parse_xml.legacy import (
+    parse_xml_child_attribute_str,
+    parse_xml_child_bool,
+    parse_xml_child_float,
+    parse_xml_child_integer,
+    read_xml_card,
+    xml_card_cell,
+    xml_card_exchangecorrelation,
+    xml_card_header,
+    xml_card_ions,
+    xml_card_planewaves,
+    xml_card_spin,
+    xml_card_symmetries,
+)
+from aiida_quantumespresso.utils.mapping import get_logging_container
 
 units_suffix = '_units'
 default_energy_units = 'eV'

@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for the `CpCalculation` class."""
-import pytest
-
 from aiida.common import datastructures
+import pytest
 
 
 @pytest.mark.parametrize('autopilot', [True, False])

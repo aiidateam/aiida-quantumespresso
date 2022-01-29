@@ -6,6 +6,7 @@ specific functionalities. The parsing will try to convert whatever it can in som
 decision doesn't have much structure encoded, [the values are simple ]
 """
 import re
+
 import numpy
 from qe_tools import CONSTANTS
 

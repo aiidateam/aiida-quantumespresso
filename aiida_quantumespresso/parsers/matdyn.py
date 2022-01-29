@@ -3,6 +3,7 @@ from aiida import orm
 from qe_tools import CONSTANTS
 
 from aiida_quantumespresso.calculations.matdyn import MatdynCalculation
+
 from .base import Parser
 
 
@@ -66,8 +67,9 @@ def parse_raw_matdyn_phonon_file(phonon_frequencies):
          * num_kpoints: number of kpoints read from the file
          * phonon_bands: BandsData object with the bands for each kpoint
     """
-    import numpy
     import re
+
+    import numpy
 
     parsed_data = {}
     parsed_data['warnings'] = []

@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
 """Command line scripts to launch a `NebCalculation` for testing and demonstration purposes."""
-import click
-
 from aiida.cmdline.params import options as options_core
 from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
+import click
 
-from ..utils import launch
-from ..utils import options
-from ..utils import validate
 from . import cmd_launch
+from ..utils import launch, options, validate
 
 
 @cmd_launch.command('neb')

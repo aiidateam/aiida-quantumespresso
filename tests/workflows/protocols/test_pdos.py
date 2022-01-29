@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=redefined-outer-name
 """Tests for the ``PdosWorkChain.get_builder_from_protocol`` method."""
-import pytest
-
 from aiida.engine import ProcessBuilder
 from aiida.plugins import WorkflowFactory
+import pytest
 
 from aiida_quantumespresso.common.types import ElectronicType, SpinType
 

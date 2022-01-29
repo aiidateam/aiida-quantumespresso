@@ -5,7 +5,6 @@ The function that needs to be called from outside is parse_raw_ph_output(). Idea
 without aiida and will return a dictionary with parsed keys.
 """
 import numpy
-
 from qe_tools import CONSTANTS
 
 from aiida_quantumespresso.parsers import QEOutputParsingError

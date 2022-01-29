@@ -2,7 +2,7 @@
 """Tests for the calculation input helper utilities."""
 import pytest
 
-from aiida_quantumespresso.calculations.helpers import pw_input_helper, QEInputValidationError
+from aiida_quantumespresso.calculations.helpers import QEInputValidationError, pw_input_helper
 
 
 def test_pw_helper_multidimensional(generate_structure):

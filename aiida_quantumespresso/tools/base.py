@@ -21,7 +21,7 @@ class StructureParseMixin:
         :return: structure data node of the structure defined in the input file.
         :rtype: :class:`~aiida.orm.nodes.data.structure.StructureData`
         """
-        from aiida.orm.nodes.data.structure import StructureData, Kind, Site
+        from aiida.orm.nodes.data.structure import Kind, Site, StructureData
 
         valid_elements_regex = re.compile(
             """

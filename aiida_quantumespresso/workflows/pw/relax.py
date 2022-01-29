@@ -3,7 +3,7 @@
 from aiida import orm
 from aiida.common import AttributeDict, exceptions
 from aiida.common.lang import type_check
-from aiida.engine import WorkChain, ToContext, if_, while_, append_
+from aiida.engine import ToContext, WorkChain, append_, if_, while_
 from aiida.plugins import CalculationFactory, WorkflowFactory
 
 from aiida_quantumespresso.common.types import RelaxType
@@ -27,6 +27,7 @@ def validate_final_scf(value, _):
     """Validate the final scf input."""
     if isinstance(value, orm.Bool) and value:
         import warnings
+
         from aiida.common.warnings import AiidaDeprecationWarning
         warnings.warn(
             'this input is deprecated and will be removed. If you want to run a final scf, specify the inputs that '
@@ -38,6 +39,7 @@ def validate_relaxation_scheme(value, _):
     """Validate the relaxation scheme input."""
     if value:
         import warnings
+
         from aiida.common.warnings import AiidaDeprecationWarning
         warnings.warn(
             'the `relaxation_scheme` input is deprecated and will be removed. Use the `get_builder_from_protocol` '
@@ -99,6 +101,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
     def get_protocol_filepath(cls):
         """Return ``pathlib.Path`` to the ``.yaml`` file that defines the protocols."""
         from importlib_resources import files
+
         from ..protocols import pw as pw_protocols
         return files(pw_protocols) / 'relax.yaml'
 

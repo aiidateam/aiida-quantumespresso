@@ -3,9 +3,9 @@
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
+from .. import cmd_launch
 from ...utils import launch
 from ...utils import options as options_qe
-from .. import cmd_launch
 
 
 @cmd_launch.command('ph-base')
@@ -24,6 +24,7 @@ def launch_workflow(
     """Run the `PhBaseWorkChain` for a previously completed `PwCalculation`."""
     from aiida.orm import Bool, Dict
     from aiida.plugins import WorkflowFactory
+
     from aiida_quantumespresso.utils.resources import get_default_options
 
     inputs = {

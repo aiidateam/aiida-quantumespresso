@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """Base `CalcJob` for implementations for pw.x and cp.x of Quantum ESPRESSO."""
 import abc
-import os
 import copy
-import numbers
-import warnings
 from functools import partial
+import numbers
+import os
 from types import MappingProxyType
+import warnings
 
 from aiida import orm
 from aiida.common import datastructures, exceptions
@@ -16,6 +16,7 @@ from aiida.plugins import DataFactory
 from qe_tools.converters import get_parameters_from_cell
 
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+
 from .base import CalcJob
 from .helpers import QEInputValidationError
 
@@ -374,8 +375,9 @@ class BasePwCpInputGenerator(CalcJob):
     def _generate_PWCPinputdata(cls, parameters, settings, pseudos, structure, kpoints=None, use_fractional=False):  # pylint: disable=invalid-name
         """Create the input file in string format for a pw.x or cp.x calculation for the given inputs."""
         # pylint: disable=too-many-branches,too-many-statements
-        from aiida.common.utils import get_unique_filename
         import re
+
+        from aiida.common.utils import get_unique_filename
         local_copy_list_to_append = []
 
         # I put the first-level keys as uppercase (i.e., namelist and card names)
@@ -759,8 +761,8 @@ def _pop_parser_options(calc_job_instance, settings_dict, ignore_errors=True):
     The parser options key is found via the get_parser_settings_key() method of the parser class specified as a metadata
     input.
     """
-    from aiida.plugins import ParserFactory
     from aiida.common import EntryPointError
+    from aiida.plugins import ParserFactory
     try:
         parser_name = calc_job_instance.inputs['metadata']['options']['parser_name']
         parser_class = ParserFactory(parser_name)

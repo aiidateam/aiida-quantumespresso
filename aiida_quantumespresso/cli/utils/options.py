@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 """Pre-defined overridable options for commonly used command line interface parameters."""
-import click
-
 from aiida.cmdline.params import types
 from aiida.cmdline.params.options import OverridableOption
 from aiida.cmdline.utils import decorators
 from aiida.common import exceptions
+import click
 
 from . import validate
 

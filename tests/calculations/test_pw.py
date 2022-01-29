@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """Tests for the `PwCalculation` class."""
 
-import pytest
-
 from aiida import orm
 from aiida.common import datastructures
-from aiida.common.warnings import AiidaDeprecationWarning
 from aiida.common.exceptions import InputValidationError
-from aiida_quantumespresso.utils.resources import get_default_options
+from aiida.common.warnings import AiidaDeprecationWarning
+import pytest
+
 from aiida_quantumespresso.calculations.helpers import QEInputValidationError
+from aiida_quantumespresso.utils.resources import get_default_options
 
 
 def test_pw_default(fixture_sandbox, generate_calc_job, generate_inputs_pw, file_regression):

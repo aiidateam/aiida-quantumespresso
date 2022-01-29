@@ -29,8 +29,8 @@ def get_highest_occupied_band(bands, threshold=0.005):
     :raises ValueError: if any occupation above LUMO exceeds `2 * threshold`
     :raises ValueError: if the last band has an occupation above the threshold
     """
-    from numpy import shape
     from aiida.orm import BandsData
+    from numpy import shape
 
     if not isinstance(bands, BandsData):
         raise ValueError(f'bands should be a `{BandsData.__name__}` node')

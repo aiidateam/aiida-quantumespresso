@@ -46,15 +46,14 @@ Related Resources:
     (see `this post <https://lists.quantum-espresso.org/pipermail/users/2017-November/039656.html>`_).
 
 """
+from aiida import orm, plugins
+from aiida.common import AttributeDict
+from aiida.engine import ToContext, WorkChain, if_
+from aiida.orm.nodes.data.base import to_aiida_type
 import jsonschema
 
-from aiida import orm, plugins
-from aiida.engine import WorkChain, ToContext, if_
-from aiida.common import AttributeDict
-from aiida.orm.nodes.data.base import to_aiida_type
-
-from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 from aiida_quantumespresso.calculations.pw import PwCalculation
+from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 
 from .protocols.utils import ProtocolMixin
 
@@ -313,6 +312,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
     def get_protocol_filepath(cls):
         """Return ``pathlib.Path`` to the ``.yaml`` file that defines the protocols."""
         from importlib_resources import files
+
         from . import protocols
         return files(protocols) / 'pdos.yaml'
 

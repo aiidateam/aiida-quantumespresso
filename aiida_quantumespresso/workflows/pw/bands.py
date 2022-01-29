@@ -2,8 +2,8 @@
 """Workchain to compute a band structure for a given structure using Quantum ESPRESSO pw.x."""
 from aiida import orm
 from aiida.common import AttributeDict
+from aiida.engine import ToContext, WorkChain, if_
 from aiida.plugins import WorkflowFactory
-from aiida.engine import WorkChain, ToContext, if_
 
 from aiida_quantumespresso.calculations.functions.seekpath_structure_analysis import seekpath_structure_analysis
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
@@ -116,6 +116,7 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
     def get_protocol_filepath(cls):
         """Return ``pathlib.Path`` to the ``.yaml`` file that defines the protocols."""
         from importlib_resources import files
+
         from ..protocols import pw as pw_protocols
         return files(pw_protocols) / 'bands.yaml'
 

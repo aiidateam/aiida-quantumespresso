@@ -4,16 +4,14 @@
 This launcher assumes that the SEED and the PREFIX used in the previous PW calculation (parent_folder) are the same as
 those hardcoded in the Pw2wannier90Calculation class. We also hardcode some parameters and options.
 """
-import click
-
 from aiida.cmdline.params import options as options_core
 from aiida.cmdline.params import types
 from aiida.cmdline.params.options import OverridableOption
 from aiida.cmdline.utils import decorators
+import click
 
-from ..utils import launch
-from ..utils import options
 from . import cmd_launch
+from ..utils import launch, options
 
 NNKP_FILE = OverridableOption(
     '-S',
@@ -58,6 +56,7 @@ def launch_calculation(
     """Run a Pw2wannier90Calculation with some sample parameters and the provided inputs."""
     from aiida.orm import Dict
     from aiida.plugins import CalculationFactory
+
     from aiida_quantumespresso.utils.resources import get_default_options
 
     parameters = {

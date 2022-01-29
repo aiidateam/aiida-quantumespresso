@@ -12,8 +12,8 @@ def get_structure():
 
     :return: a `StructureData` representing bulk silicon
     """
-    from ase.spacegroup import crystal
     from aiida.orm import QueryBuilder, StructureData
+    from ase.spacegroup import crystal
 
     # Filters that will match any elemental Silicon structure with 2 or less sites in total
     filters = {

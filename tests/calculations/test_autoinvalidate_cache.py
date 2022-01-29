@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """Test the automatic 'invalidates_cache' attribute for exit codes."""
 import inspect
-import pytest
 
 from aiida.engine import CalcJob
 from aiida.plugins import CalculationFactory
 from aiida.plugins.entry_point import get_entry_point_names
+import pytest
 
 QE_CALC_ENTRY_POINT_NAMES = [
     ep_name for ep_name in get_entry_point_names(group='aiida.calculations') if ep_name.startswith('quantumespresso')

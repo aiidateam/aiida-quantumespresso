@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """Tests for the `PwCalculationTools` class."""
-import numpy as np
-import pytest
-
 from aiida import orm
 from aiida.common.links import LinkType
+import numpy as np
+import pytest
 
 
 def test_pw_get_scf_accuracy(fixture_localhost, generate_calc_job_node):

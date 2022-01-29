@@ -2,7 +2,7 @@
 """Workchain to automatically compute a band structure for a given structure using Quantum ESPRESSO pw.x."""
 from aiida import orm
 from aiida.common import AttributeDict
-from aiida.engine import WorkChain, ToContext
+from aiida.engine import ToContext, WorkChain
 from aiida.plugins import WorkflowFactory
 
 from aiida_quantumespresso.utils.protocols.pw import ProtocolManager
@@ -32,6 +32,7 @@ class PwBandStructureWorkChain(WorkChain):
     """
 
     import warnings
+
     from aiida.common.warnings import AiidaDeprecationWarning
 
     warnings.warn(

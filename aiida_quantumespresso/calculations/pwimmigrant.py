@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 """Plugin to immigrate a Quantum Espresso pw.x job that was not run using AiiDa."""
 # TODO: Document the current limitations (e.g. ibrav == 0)
-import os
 from copy import deepcopy
-from aiida_quantumespresso.calculations.pw import PwCalculation
-from aiida.orm.nodes.data.remote import RemoteData
-from aiida.orm.nodes.data.dict import Dict
-from aiida.orm.nodes.data.upf import UpfData
+import os
+
+from aiida.common import FeatureNotAvailable, InputValidationError, InvalidOperation
 from aiida.common.folders import SandboxFolder
-from aiida.common import (FeatureNotAvailable, InvalidOperation, InputValidationError)
 from aiida.common.links import LinkType
+from aiida.orm.nodes.data.dict import Dict
+from aiida.orm.nodes.data.remote import RemoteData
+from aiida.orm.nodes.data.upf import UpfData
+
+from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.tools import pwinputparser
 
 
@@ -123,6 +125,7 @@ class PwimmigrantCalculation(PwCalculation):
         :raises IOError: if there are issues reading the input file.
         """
         import re
+
         # Make sure the remote workdir and input + output file names were
         # provided either before or during the call to this method. If they
         # were just provided during this method call, store the values.

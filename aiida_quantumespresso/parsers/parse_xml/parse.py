@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 from distutils.version import StrictVersion
-import numpy as np
 from urllib.error import URLError
 
-from xmlschema import XMLSchema
+import numpy as np
 from qe_tools import CONSTANTS
+from xmlschema import XMLSchema
 
 from aiida_quantumespresso.utils.mapping import get_logging_container
 
 from .exceptions import XMLParseError
-from .versions import get_schema_filepath, get_default_schema_filepath
+from .versions import get_default_schema_filepath, get_schema_filepath
 
 
 def raise_parsing_error(message):

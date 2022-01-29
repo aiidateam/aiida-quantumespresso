@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """`Parser` implementation for the `Pw2gwCalculation` calculation job class."""
 import io
-import numpy as np
 
 from aiida import orm
+import numpy as np
 
 from aiida_quantumespresso.calculations.pw2gw import Pw2gwCalculation
+
 from .base import Parser
 
 
@@ -79,8 +80,8 @@ class Pw2gwParser(Parser):
 
     def parse_stdout(self):
         """Parse the stdout file of pw2gw to build the `output_parameters` node."""
-        from aiida_quantumespresso.utils.mapping import get_logging_container
         from aiida_quantumespresso.parsers.parse_raw.pw2gw import parse_stdout
+        from aiida_quantumespresso.utils.mapping import get_logging_container
 
         logs = get_logging_container()
         parsed_data = {}

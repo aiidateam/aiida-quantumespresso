@@ -14,7 +14,7 @@ def launch_process(process, daemon, **inputs):
     :param daemon: boolean, if True will submit to the daemon instead of running in current interpreter
     :param inputs: inputs for the process
     """
-    from aiida.engine import launch, Process, ProcessBuilder
+    from aiida.engine import Process, ProcessBuilder, launch
 
     if isinstance(process, ProcessBuilder):
         process_name = process.process_class.__name__

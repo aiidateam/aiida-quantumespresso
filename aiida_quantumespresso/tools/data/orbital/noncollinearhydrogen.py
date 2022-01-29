@@ -2,7 +2,6 @@
 """A module defining hydrogen-like orbitals with non-collinear spin component."""
 
 from aiida.common.exceptions import ValidationError
-
 from aiida.tools.data.orbital.realhydrogen import RealhydrogenOrbital
 
 

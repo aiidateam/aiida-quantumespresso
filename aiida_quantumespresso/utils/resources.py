@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Utilities for calculation job resources."""
-from math import exp, ceil
+from math import ceil, exp
+
 import numpy as np
 
 from aiida_quantumespresso.utils.defaults.calculation import pw as pw_defaults

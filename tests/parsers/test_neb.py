@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 """Tests for the `NebParser`."""
-import numpy as np
-
 from aiida import orm
 from aiida.common import AttributeDict
+import numpy as np
 
 
 def generate_inputs(parser_options=None):

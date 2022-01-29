@@ -93,12 +93,12 @@ def parse_neb_text_output(data, input_dict={}):
     :return critical_messages: a list with critical messages. If any is found in
                                parsed_data['warnings'], the calculation is FAILED!
     """
-    from aiida_quantumespresso.parsers.parse_raw import parse_output_error
-    from aiida_quantumespresso.utils.mapping import get_logging_container
     from collections import defaultdict
 
-    # TODO: find a more exhaustive list of the common errors of neb
+    from aiida_quantumespresso.parsers.parse_raw import parse_output_error
+    from aiida_quantumespresso.utils.mapping import get_logging_container
 
+    # TODO: find a more exhaustive list of the common errors of neb
     # critical warnings: if any is found, the calculation status is FAILED
     critical_warnings = {
         'scf convergence NOT achieved on image': 'SCF did not converge for a given image',

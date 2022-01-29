@@ -2,9 +2,9 @@
 """Utilities to manipulate the workflow input protocols."""
 import pathlib
 from typing import Optional, Union
-import yaml
 
 from aiida.plugins import DataFactory, GroupFactory
+import yaml
 
 StructureData = DataFactory('structure')
 PseudoPotentialFamily = GroupFactory('pseudo.family')

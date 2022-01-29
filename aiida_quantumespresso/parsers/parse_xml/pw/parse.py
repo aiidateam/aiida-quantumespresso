@@ -2,8 +2,8 @@
 from xmlschema.etree import ElementTree
 
 from aiida_quantumespresso.parsers.parse_xml.exceptions import XMLParseError
-from aiida_quantumespresso.parsers.parse_xml.versions import get_xml_file_version, QeXmlVersion
 from aiida_quantumespresso.parsers.parse_xml.parse import parse_xml_post_6_2
+from aiida_quantumespresso.parsers.parse_xml.versions import QeXmlVersion, get_xml_file_version
 
 from .legacy import parse_pw_xml_pre_6_2
 

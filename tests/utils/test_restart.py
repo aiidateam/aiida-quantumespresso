@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Unit tests for the :py:mod:`~aiida_quantumespresso.utils.restart` module."""
+from aiida.engine import ProcessBuilder
 import pytest
 
-from aiida.engine import ProcessBuilder
 from aiida_quantumespresso.utils import restart
 
 

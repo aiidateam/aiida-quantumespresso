@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 """Sub class of `Data` to handle interatomic force constants produced by the Quantum ESPRESSO q2r.x code."""
+from aiida.orm import SinglefileData
 import numpy
 from qe_tools import CONSTANTS
-
-from aiida.orm import SinglefileData
 
 
 class ForceConstantsData(SinglefileData):

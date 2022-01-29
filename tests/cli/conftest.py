@@ -24,6 +24,7 @@ def run_cli_command():
         :param raises: optionally an exception class that is expected to be raised
         """
         import traceback
+
         from click.testing import CliRunner
 
         runner = CliRunner()

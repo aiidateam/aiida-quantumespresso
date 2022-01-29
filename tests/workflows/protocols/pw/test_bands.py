@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for the ``PwBandsWorkChain.get_builder_from_protocol`` method."""
-import pytest
-
 from aiida.engine import ProcessBuilder
+import pytest
 
 from aiida_quantumespresso.common.types import ElectronicType, RelaxType, SpinType
 from aiida_quantumespresso.workflows.pw.bands import PwBandsWorkChain

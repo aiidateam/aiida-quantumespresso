@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 """Command line scripts to launch a `Q2rBaseWorkChain` for testing and demonstration purposes."""
-import click
-
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
+import click
 
+from .. import cmd_launch
 from ...utils import launch
 from ...utils import options as options_qe
-from .. import cmd_launch
 
 
 @cmd_launch.command('q2r-base')
@@ -23,6 +22,7 @@ def launch_workflow(code, calculation, clean_workdir, max_num_machines, max_wall
     """Run the `Q2rBaseWorkChain` for a previously completed `PhCalculation`."""
     from aiida.orm import Bool
     from aiida.plugins import WorkflowFactory
+
     from aiida_quantumespresso.utils.resources import get_default_options
 
     expected_process_type = 'aiida.calculations:quantumespresso.ph'
