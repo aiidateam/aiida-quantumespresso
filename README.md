@@ -8,14 +8,16 @@ This is the official AiiDA plugin for [Quantum ESPRESSO](https://www.quantum-esp
 
 ## Compatibility matrix
 
+The matrix below assumes the user always install the latest patch release of the specified minor version, which is recommended.
+
 | Plugin | AiiDA | Python | Quantum ESPRESSO |
 |-|-|-|-|
-| `v3.5.2 < v4.0.0` | ![Compatibility for v3.5][AiiDA v3.4] |  [![PyPI pyversions](https://img.shields.io/pypi/pyversions/aiida-quantumespresso.svg)](https://pypi.org/project/aiida-quantumespresso.svg) | ![Quantum ESPRESSO compatibility][QE v6-7] |
-| `v3.4.0 < v3.5.0` | ![Compatibility for v3.4][AiiDA v3.4] |  [![PyPI pyversions](https://img.shields.io/pypi/pyversions/aiida-quantumespresso.svg)](https://pypi.org/project/aiida-quantumespresso.svg) | ![Quantum ESPRESSO compatibility][QE v6] |
-| `v3.3.0 < v3.4.0` | ![Compatibility for v3.3][AiiDA v3.3] |  [![PyPI pyversions](https://img.shields.io/pypi/pyversions/aiida-quantumespresso.svg)](https://pypi.org/project/aiida-quantumespresso.svg) | ![Quantum ESPRESSO compatibility][QE v6] |
-| `v3.1.0 < v3.3.0` | ![Compatibility for v3.1][AiiDA v3.1] |  | ![Quantum ESPRESSO compatibility][QE v6] |
-| `v3.0.0 < v3.1.0` | ![Compatibility for v3.0][AiiDA v3.0] |  | ![Quantum ESPRESSO compatibility][QE v6] |
-| `v2.0.0 < v3.0.0` | ![Compatibility for v2.0][AiiDA v2.0] |  | ![Quantum ESPRESSO compatibility][QE v6] |
+| `v3.5 < v4.0` | ![Compatibility for v3.5][AiiDA v3.4] |  [![PyPI pyversions](https://img.shields.io/pypi/pyversions/aiida-quantumespresso.svg)](https://pypi.org/project/aiida-quantumespresso.svg) | ![Quantum ESPRESSO compatibility][QE v6-7] |
+| `v3.4 < v3.5` | ![Compatibility for v3.4][AiiDA v3.4] |  [![PyPI pyversions](https://img.shields.io/pypi/pyversions/aiida-quantumespresso.svg)](https://pypi.org/project/aiida-quantumespresso.svg) | ![Quantum ESPRESSO compatibility][QE v6] |
+| `v3.3 < v3.4` | ![Compatibility for v3.3][AiiDA v3.3] |  [![PyPI pyversions](https://img.shields.io/pypi/pyversions/aiida-quantumespresso.svg)](https://pypi.org/project/aiida-quantumespresso.svg) | ![Quantum ESPRESSO compatibility][QE v6] |
+| `v3.1 < v3.3` | ![Compatibility for v3.1][AiiDA v3.1] |  | ![Quantum ESPRESSO compatibility][QE v6] |
+| `v3.0 < v3.1` | ![Compatibility for v3.0][AiiDA v3.0] |  | ![Quantum ESPRESSO compatibility][QE v6] |
+| `v2.0 < v3.0` | ![Compatibility for v2.0][AiiDA v2.0] |  | ![Quantum ESPRESSO compatibility][QE v6] |
 
 Starting from `aiida-quantumespresso==4.0`, the last three minor versions of Quantum ESPRESSO are supported.
 Older versions are supported up to a maximum of two years.
