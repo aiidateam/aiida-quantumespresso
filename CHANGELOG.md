@@ -1,3 +1,25 @@
+## v3.5.2
+
+### New
+
+- `PwParser`: Add support for QE v7.0 [[#774]](https://github.com/aiidateam/aiida-quantumespresso/pull/774)
+
+### Bug Fixes
+
+- Fix XML parsing for structures with numbered kinds [[#770]](https://github.com/aiidateam/aiida-quantumespresso/pull/770)
+
+### Documentation
+
+- Update pw_tutorial.rst [[#769]](https://github.com/aiidateam/aiida-quantumespresso/pull/769)
+
+### Devops
+
+- Add GitHub Actions workflow for continuous deployment [[#776]](https://github.com/aiidateam/aiida-quantumespresso/pull/776)
+- Adopt PEP 621 and move build spec to pyproject.toml [[#779]](https://github.com/aiidateam/aiida-quantumespresso/pull/779)
+- CI: update the GHA ci.yml workflow [[#780]](https://github.com/aiidateam/aiida-quantumespresso/pull/780)
+- Update pre-commit dependencies and configuration [[#781]](https://github.com/aiidateam/aiida-quantumespresso/pull/781)
+- CI: add the isort pre-commit hook [[#781]](https://github.com/aiidateam/aiida-quantumespresso/pull/781)
+
 ## v3.5.1
 
 ### Improvements
