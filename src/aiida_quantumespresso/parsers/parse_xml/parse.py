@@ -138,8 +138,8 @@ def parse_xml_post_6_2(xml):
 
     lsda = inputs.get('spin', {}).get('lsda', False)
     spin_orbit_calculation = inputs.get('spin', {}).get('spinorbit', False)
-    non_colinear_calculation = outputs['magnetization']['noncolin']
-    do_magnetization = outputs['magnetization'].get('do_magnetization', False)
+    non_colinear_calculation = outputs.get('magnetization', {}).get('noncolin', False)
+    do_magnetization = outputs.get('magnetization', {}).get('do_magnetization', False)
 
     # Time reversal symmetry of the system
     if non_colinear_calculation and do_magnetization:
