@@ -60,8 +60,8 @@ def inputs(fixture_code, remote, parameters, settings):
     inputs = {
         'code': fixture_code('quantumespresso.pw2gw'),
         'parent_folder': remote,
-        'parameters': orm.Dict(dict=parameters),
-        'settings': orm.Dict(dict=settings),
+        'parameters': orm.Dict(parameters),
+        'settings': orm.Dict(settings),
         'metadata': {
             'options': get_default_options()
         }

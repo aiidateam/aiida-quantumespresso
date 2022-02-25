@@ -51,7 +51,7 @@ class MatdynParser(Parser):
         for message in parsed_data['warnings']:
             self.logger.error(message)
 
-        self.out('output_parameters', orm.Dict(dict=parsed_data))
+        self.out('output_parameters', orm.Dict(parsed_data))
         self.out('output_phonon_bands', output_bands)
 
         return

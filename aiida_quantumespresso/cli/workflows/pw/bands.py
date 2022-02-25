@@ -72,7 +72,7 @@ def launch_workflow(
         raise click.BadParameter(str(exception))
 
     pseudos = pseudo_family.get_pseudos(structure=structure)
-    parameters = Dict(dict=parameters)
+    parameters = Dict(parameters)
 
     builder.structure = structure
     builder.relax.base.pw.code = code
@@ -94,7 +94,7 @@ def launch_workflow(
         builder.bands.base.pw.hubbard_file = hubbard_file
 
     if automatic_parallelization:
-        auto_para = Dict(dict=get_automatic_parallelization_options(max_num_machines, max_wallclock_seconds))
+        auto_para = Dict(get_automatic_parallelization_options(max_num_machines, max_wallclock_seconds))
         builder.relax.base.automatic_parallelization = auto_para
         builder.scf.automatic_parallelization = auto_para
         builder.bands.automatic_parallelization = auto_para

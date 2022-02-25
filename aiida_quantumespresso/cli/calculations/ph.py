@@ -39,7 +39,7 @@ def launch_calculation(code, kpoints_mesh, calculation, max_num_machines, max_wa
     inputs = {
         'code': code,
         'qpoints': kpoints_mesh,
-        'parameters': orm.Dict(dict={'INPUTPH': {}}),
+        'parameters': orm.Dict({'INPUTPH': {}}),
         'parent_folder': parent_folder,
         'metadata': {
             'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),

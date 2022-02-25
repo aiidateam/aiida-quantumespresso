@@ -350,10 +350,10 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         builder.scf = scf
         builder.nscf = nscf
         builder.dos.code = dos_code  # pylint: disable=no-member
-        builder.dos.parameters = orm.Dict(dict=inputs.get('dos', {}).get('parameters')) # pylint: disable=no-member
+        builder.dos.parameters = orm.Dict(inputs.get('dos', {}).get('parameters')) # pylint: disable=no-member
         builder.dos.metadata = inputs.get('dos', {}).get('metadata') # pylint: disable=no-member
         builder.projwfc.code = projwfc_code  # pylint: disable=no-member
-        builder.projwfc.parameters = orm.Dict(dict=inputs.get('projwfc', {}).get('parameters')) # pylint: disable=no-member
+        builder.projwfc.parameters = orm.Dict(inputs.get('projwfc', {}).get('parameters')) # pylint: disable=no-member
         builder.projwfc.metadata = inputs.get('projwfc', {}).get('metadata') # pylint: disable=no-member
 
         return builder
@@ -457,7 +457,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
             dos_parameters['DOS']['Emin'] = dos_parameters['Emin'] + self.ctx.nscf_fermi
             dos_parameters['DOS']['Emax'] = dos_parameters['Emax'] + self.ctx.nscf_fermi
 
-        dos_inputs.parameters = orm.Dict(dict=dos_parameters)
+        dos_inputs.parameters = orm.Dict(dos_parameters)
         dos_inputs['metadata']['call_link_label'] = 'dos'
         return dos_inputs
 
@@ -471,7 +471,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
             projwfc_parameters['PROJWFC']['Emin'] = projwfc_parameters['Emin'] + self.ctx.nscf_fermi
             projwfc_parameters['PROJWFC']['Emax'] = projwfc_parameters['Emax'] + self.ctx.nscf_fermi
 
-        projwfc_inputs.parameters = orm.Dict(dict=projwfc_parameters)
+        projwfc_inputs.parameters = orm.Dict(projwfc_parameters)
         projwfc_inputs['metadata']['call_link_label'] = 'projwfc'
         return projwfc_inputs
 

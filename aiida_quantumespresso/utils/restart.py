@@ -49,7 +49,7 @@ def get_builder_restart(node, from_scratch=False, use_symlink=False):
     settings = builder.settings.get_dict()
     settings.setdefault('PARENT_FOLDER_SYMLINK', use_symlink or node.process_class._default_symlink_usage)  # pylint: disable=protected-access
 
-    builder.parameters = Dict(dict=parameters)
-    builder.settings = Dict(dict=settings)
+    builder.parameters = Dict(parameters)
+    builder.settings = Dict(settings)
 
     return builder

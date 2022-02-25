@@ -250,7 +250,7 @@ class CpParser(Parser):
             out_dict.pop(key, None)
 
         # convert the dictionary into an AiiDA object
-        output_params = Dict(dict=out_dict)
+        output_params = Dict(out_dict)
         self.out('output_parameters', output_params)
 
     def get_linkname_trajectory(self):

@@ -82,14 +82,14 @@ def launch_workflow(
     builder.base.kpoints_distance = Float(kpoints_distance)
     builder.base.pw.code = code
     builder.base.pw.pseudos = pseudo_family.get_pseudos(structure=structure)
-    builder.base.pw.parameters = Dict(dict=parameters)
+    builder.base.pw.parameters = Dict(parameters)
 
     if hubbard_file:
         builder.base.pw.hubbard_file = hubbard_file
 
     if automatic_parallelization:
         automatic_parallelization = get_automatic_parallelization_options(max_num_machines, max_wallclock_seconds)
-        builder.base.automatic_parallelization = Dict(dict=automatic_parallelization)
+        builder.base.automatic_parallelization = Dict(automatic_parallelization)
     else:
         builder.base.pw.metadata.options = get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)
 
@@ -100,7 +100,7 @@ def launch_workflow(
         builder.base_final_scf.pseudo_family = Str(pseudo_family)
         builder.base_final_scf.kpoints_distance = Float(kpoints_distance)
         builder.base_final_scf.pw.code = code
-        builder.base_final_scf.pw.parameters = Dict(dict=parameters)
+        builder.base_final_scf.pw.parameters = Dict(parameters)
         builder.base_final_scf.pw.metadata.options = get_default_options(
             max_num_machines, max_wallclock_seconds, with_mpi
         )

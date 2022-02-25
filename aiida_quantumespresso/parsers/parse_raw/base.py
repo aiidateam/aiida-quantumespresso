@@ -5,7 +5,7 @@ import re
 from aiida.orm.nodes.data.structure import Kind, Site
 from aiida.plugins import DataFactory
 
-StructureData = DataFactory('structure')
+StructureData = DataFactory('core.structure')
 
 __all__ = ('parse_output_base', 'parse_output_error', 'convert_qe_time_to_sec', 'convert_qe_to_aiida_structure')
 
@@ -171,7 +171,7 @@ def convert_qe_to_kpoints(xml_dict, structure):
     """
     from aiida.plugins import DataFactory
 
-    KpointsData = DataFactory('array.kpoints')
+    KpointsData = DataFactory('core.array.kpoints')
 
     k_points_list = xml_dict.get('k_points', None)
     k_points_units = xml_dict.get('k_points_units', None)

@@ -14,19 +14,17 @@ def generate_inputs_1d():
         'parent_folder':
         orm.FolderData().store(),
         'parameters':
-        orm.Dict(
-            dict={
-                'INPUTPP': {
-                    'plot_num': 11
-                },
-                'PLOT': {
-                    'iflag': 1,
-                    'e1': [[1, 1.0], [2, 0.0], [3, 0.0]],
-                    'x0': [[1, 0.], [2, 0.], [3, 0.]],
-                    'nx': 100
-                }
+        orm.Dict({
+            'INPUTPP': {
+                'plot_num': 11
+            },
+            'PLOT': {
+                'iflag': 1,
+                'e1': [[1, 1.0], [2, 0.0], [3, 0.0]],
+                'x0': [[1, 0.], [2, 0.], [3, 0.]],
+                'nx': 100
             }
-        )
+        })
     }
     return AttributeDict(inputs)
 
@@ -39,19 +37,17 @@ def generate_inputs_1d_spherical():
         'parent_folder':
         orm.FolderData().store(),
         'parameters':
-        orm.Dict(
-            dict={
-                'INPUTPP': {
-                    'plot_num': 11
-                },
-                'PLOT': {
-                    'iflag': 0,
-                    'e1': [[1, 1.0], [2, 0.0], [3, 0.0]],
-                    'x0': [[1, 0.], [2, 0.], [3, 0.]],
-                    'nx': 100
-                }
+        orm.Dict({
+            'INPUTPP': {
+                'plot_num': 11
+            },
+            'PLOT': {
+                'iflag': 0,
+                'e1': [[1, 1.0], [2, 0.0], [3, 0.0]],
+                'x0': [[1, 0.], [2, 0.], [3, 0.]],
+                'nx': 100
             }
-        )
+        })
     }
     return AttributeDict(inputs)
 
@@ -64,21 +60,19 @@ def generate_inputs_2d():
         'parent_folder':
         orm.FolderData().store(),
         'parameters':
-        orm.Dict(
-            dict={
-                'INPUTPP': {
-                    'plot_num': 11
-                },
-                'PLOT': {
-                    'iflag': 2,
-                    'e1': [[1, 1.0], [2, 0.0], [3, 0.0]],
-                    'e2': [[1, 0.0], [2, 1.0], [3, 0.0]],
-                    'x0': [[1, 0.], [2, 0.], [3, 0.]],
-                    'nx': 10,
-                    'ny': 10
-                }
+        orm.Dict({
+            'INPUTPP': {
+                'plot_num': 11
+            },
+            'PLOT': {
+                'iflag': 2,
+                'e1': [[1, 1.0], [2, 0.0], [3, 0.0]],
+                'e2': [[1, 0.0], [2, 1.0], [3, 0.0]],
+                'x0': [[1, 0.], [2, 0.], [3, 0.]],
+                'nx': 10,
+                'ny': 10
             }
-        )
+        })
     }
     return AttributeDict(inputs)
 
@@ -91,19 +85,17 @@ def generate_inputs_polar():
         'parent_folder':
         orm.FolderData().store(),
         'parameters':
-        orm.Dict(
-            dict={
-                'INPUTPP': {
-                    'plot_num': 11
-                },
-                'PLOT': {
-                    'iflag': 4,
-                    'e1': [[1, 1.0], [2, 0.0], [3, 0.0]],
-                    'x0': [[1, 0.], [2, 0.], [3, 0.]],
-                    'nx': 100
-                }
+        orm.Dict({
+            'INPUTPP': {
+                'plot_num': 11
+            },
+            'PLOT': {
+                'iflag': 4,
+                'e1': [[1, 1.0], [2, 0.0], [3, 0.0]],
+                'x0': [[1, 0.], [2, 0.], [3, 0.]],
+                'nx': 100
             }
-        )
+        })
     }
     return AttributeDict(inputs)
 
@@ -114,7 +106,7 @@ def generate_inputs_3d():
 
     inputs = {
         'parent_folder': orm.FolderData().store(),
-        'parameters': orm.Dict(dict={
+        'parameters': orm.Dict({
             'INPUTPP': {
                 'plot_num': 11
             },

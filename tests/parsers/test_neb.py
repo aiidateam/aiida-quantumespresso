@@ -8,13 +8,13 @@ import numpy as np
 def generate_inputs(parser_options=None):
     """Return only those inputs that the parser will expect to be there."""
     inputs = {
-        'parameters': orm.Dict(dict={'PATH': {
+        'parameters': orm.Dict({'PATH': {
             'num_of_images': 3
         }}),
         'pw': {
             'parameters': orm.Dict()
         },
-        'settings': orm.Dict(dict={'parser_options': parser_options})
+        'settings': orm.Dict({'parser_options': parser_options})
     }
     return AttributeDict(inputs)
 

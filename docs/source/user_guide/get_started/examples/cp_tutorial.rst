@@ -85,7 +85,7 @@ Then create the StructureData with the structure, and a Dict
 node for the inputs. This time, of course, you have to specify the correct
 variables for a ``cp.x`` calculation::
 
-  StructureData = DataFactory('structure')
+  StructureData = DataFactory('core.structure')
   alat = 4. # angstrom
   cell = [[alat, 0., 0.,],
           [0., alat, 0.,],
@@ -98,8 +98,8 @@ variables for a ``cp.x`` calculation::
   s.append_atom(position=(alat/2.,0.,alat/2.),symbols=['O'])
   s.append_atom(position=(0.,alat/2.,alat/2.),symbols=['O'])
 
-  Dict = DataFactory('dict')
-  parameters = Dict(dict={
+  Dict = DataFactory('core.dict')
+  parameters = Dict({
             'CONTROL': {
                 'calculation': 'cp',
                 'restart_mode': 'from_scratch',

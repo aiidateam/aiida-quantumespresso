@@ -99,7 +99,7 @@ def launch_calculation(
         'structure': structure,
         'pseudos': pseudo_family.get_pseudos(structure=structure),
         'kpoints': kpoints_mesh,
-        'parameters': Dict(dict=parameters),
+        'parameters': Dict(parameters),
         'metadata': {
             'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
         }

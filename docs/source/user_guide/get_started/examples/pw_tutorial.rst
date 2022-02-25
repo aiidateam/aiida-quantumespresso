@@ -214,7 +214,7 @@ the class is our definition of the object ``Structure``,
 while its instance is what will be saved as an object in the database::
 
   from aiida.plugins import DataFactory
-  StructureData = DataFactory('structure')
+  StructureData = DataFactory('core.structure')
 
 We define the cell with a 3x3 matrix (we choose the convention
 where each ROW represents a lattice vector), which in this case is just a cube of size 4 Angstroms::
@@ -282,9 +282,9 @@ Note also that numbers and booleans are written in Python, i.e. ``False`` and
 not the Fortran string ``.false.``!
 ::
 
-    Dict = DataFactory('dict')
+    Dict = DataFactory('core.dict')
 
-    parameters = Dict(dict={
+    parameters = Dict({
         'CONTROL': {
             'calculation': 'scf',
             'restart_mode': 'from_scratch',
@@ -302,7 +302,7 @@ not the Fortran string ``.false.``!
 .. note:: also in this case, we chose not to store the ``parameters`` node.
   If we wanted, we could even have done it in a single line::
 
-    parameters = Dict(dict={...}).store()
+    parameters = Dict({...}).store()
 
 The experienced Quantum ESPRESSO user will have noticed also that a couple of variables
 are missing: the *prefix*, the *pseudo directory* and the *scratch directory* are
@@ -348,7 +348,7 @@ you will find the same dictionary you passed in input, potentially slightly modi
 to fix some small mistakes (e.g., if you pass an integer value where a float is expected,
 the type will be converted). You can then use the output for the input ``Dict`` node::
 
-  parameters = Dict(dict=resdict)
+  parameters = Dict(resdict)
 
 As an example, if you pass an incorrect input, e.g. the following where we have introduced
 a few errors::
@@ -530,7 +530,7 @@ K-points mesh
 
 The k-points have to be saved in another kind of data, namely ``KpointsData``::
 
-  KpointsData = DataFactory('array.kpoints')
+  KpointsData = DataFactory('core.array.kpoints')
   kpoints = KpointsData()
   kpoints.set_kpoints_mesh([4,4,4])
 
@@ -553,7 +553,7 @@ A Gamma point calculation can be submitted by providing the 'gamma_only' flag to
 the options dictionary ::
 
    kpoints.set_kpoints_mesh([1,1,1])
-   builder.settings = Dict(dict={'gamma_only': True})
+   builder.settings = Dict({'gamma_only': True})
 
 Pseudopotentials
 ----------------

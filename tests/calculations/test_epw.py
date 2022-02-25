@@ -58,7 +58,7 @@ def test_epw_default(
         }
     }
 
-    parameters2 = orm.Dict(dict=qibz)
+    parameters2 = orm.Dict(qibz)
     parameters2.base.links.add_incoming(parent_ph.creator, link_label='output_parameters', link_type=LinkType.CREATE)
     parameters2.store()
 
@@ -70,7 +70,7 @@ def test_epw_default(
         'kfpoints': generate_kpoints_mesh(2),
         'parent_folder_nscf': parent_pw,
         'parent_folder_ph': parent_ph,
-        'parameters': orm.Dict(dict=parameters),
+        'parameters': orm.Dict(parameters),
         'metadata': {
             'options': get_default_options()
         }

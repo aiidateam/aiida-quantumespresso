@@ -30,7 +30,7 @@ def launch_workflow(code, structure, daemon, protocol):
     inputs = {
         'code': code,
         'structure': structure,
-        'protocol': orm.Dict(dict={'name': protocol}),
+        'protocol': orm.Dict({'name': protocol}),
     }
 
     launch.launch_process(WorkflowFactory('quantumespresso.pw.band_structure'), daemon, **inputs)

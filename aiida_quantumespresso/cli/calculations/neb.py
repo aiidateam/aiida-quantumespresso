@@ -15,7 +15,7 @@ from ..utils import launch, options, validate
     '-s',
     '--structures',
     nargs=2,
-    type=types.DataParamType(sub_classes=('aiida.data:structure',)),
+    type=types.DataParamType(sub_classes=('aiida.data:core.structure',)),
     help='Two StructureData nodes representing the initial and final structures',
     metavar='<FIRST LAST>',
     required=True,
@@ -92,9 +92,9 @@ def launch_calculation(
         'pw': {
             'pseudos': pseudo_family.get_pseudos(structure=structures[0]),
             'kpoints': kpoints_mesh,
-            'parameters': Dict(dict=pw_parameters),
+            'parameters': Dict(pw_parameters),
         },
-        'parameters': Dict(dict=neb_parameters),
+        'parameters': Dict(neb_parameters),
         'metadata': {
             'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
         }

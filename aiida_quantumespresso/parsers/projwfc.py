@@ -113,7 +113,7 @@ def find_orbitals_from_statelines(out_info_dict):
     elif not out_info_dict['collinear']:
         OrbitalCls = OrbitalFactory('noncollinearhydrogen')
     else:
-        OrbitalCls = OrbitalFactory('realhydrogen')
+        OrbitalCls = OrbitalFactory('core.realhydrogen')
     for state_dict in state_dicts:
         orbitals.append(OrbitalCls(**state_dict))
 
@@ -311,7 +311,7 @@ class ProjwfcParser(Parser):
         # Parse basic info and warnings, and output them as output_parmeters
         parsed_data, logs = parse_output_base(out_file, 'PROJWFC')
         self.emit_logs(logs)
-        self.out('output_parameters', Dict(dict=parsed_data))
+        self.out('output_parameters', Dict(parsed_data))
 
         # Parse the XML to obtain the `structure`, `kpoints` and spin-related settings from the parent calculation
         self.exit_code_xml = None

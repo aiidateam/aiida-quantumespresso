@@ -28,8 +28,8 @@ def generate_inputs():
     inputs = {
         'parent_folder': orm.FolderData().store(),
         'nnkp_file': orm.SinglefileData(file=nnkp_filepath).store(),
-        'parameters': orm.Dict(dict=parameters),
-        'settings': orm.Dict(dict=settings),
+        'parameters': orm.Dict(parameters),
+        'settings': orm.Dict(settings),
     }
 
     return AttributeDict(inputs)

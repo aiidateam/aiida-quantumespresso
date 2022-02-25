@@ -154,7 +154,7 @@ class PpParser(Parser):
         else:
             self.out('output_data_multiple', dict(data_parsed))
 
-        self.out('output_parameters', orm.Dict(dict=self.output_parameters))
+        self.out('output_parameters', orm.Dict(self.output_parameters))
 
     def parse_stdout(self, stdout_str):
         """

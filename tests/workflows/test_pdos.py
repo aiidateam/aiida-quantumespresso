@@ -76,7 +76,7 @@ def test_default(
     remote.store()
     remote.base.links.add_incoming(mock_wknode, link_type=LinkType.RETURN, link_label='remote_folder')
 
-    result = orm.Dict(dict={'fermi_energy': 6.9029595890428})
+    result = orm.Dict({'fermi_energy': 6.9029595890428})
     result.store()
     result.base.links.add_incoming(mock_wknode, link_type=LinkType.RETURN, link_label='output_parameters')
 

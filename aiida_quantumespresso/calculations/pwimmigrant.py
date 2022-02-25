@@ -258,7 +258,7 @@ class PwimmigrantCalculation(PwCalculation):
                     if re.sub('[(0-9)]', '', this_key) == blocked_key:
                         parameters_dict[namelist].pop(this_key, None)
 
-            parameters = Dict(dict=parameters_dict)
+            parameters = Dict(parameters_dict)
             self.use_parameters(parameters)
 
             # Initialize the dictionary for settings parameter data for possible
@@ -299,7 +299,7 @@ class PwimmigrantCalculation(PwCalculation):
         # If the settings_dict has been filled in, create a Dict
         # node from it and link as input.
         if settings_dict:
-            self.use_settings(Dict(dict=settings_dict))
+            self.use_settings(Dict(settings_dict))
 
         self.set_attribute('input_nodes_created', True)
 

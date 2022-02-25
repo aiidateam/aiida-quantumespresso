@@ -69,7 +69,7 @@ def launch_workflow(
 
     builder.pw.code = code
     builder.pw.structure = structure
-    builder.pw.parameters = Dict(dict=parameters)
+    builder.pw.parameters = Dict(parameters)
     builder.pw.pseudos = pseudo_family.get_pseudos(structure=structure)
     builder.kpoints_distance = Float(kpoints_distance)
 
@@ -78,7 +78,7 @@ def launch_workflow(
 
     if automatic_parallelization:
         automatic_parallelization = get_automatic_parallelization_options(max_num_machines, max_wallclock_seconds)
-        builder.automatic_parallelization = Dict(dict=automatic_parallelization)
+        builder.automatic_parallelization = Dict(automatic_parallelization)
     else:
         builder.pw.metadata.options = get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)
 

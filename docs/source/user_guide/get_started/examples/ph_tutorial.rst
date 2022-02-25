@@ -67,8 +67,8 @@ But this time of course, we need to use the variables of *PHonon*!
 
 ::
 
-    Dict = DataFactory('dict')
-    parameters = Dict(dict={
+    Dict = DataFactory('core.dict')
+    parameters = Dict({
 		'INPUTPH': {
 		    'tr2_ph' : 1.0e-8,
 		    'epsil' : True,
@@ -166,8 +166,8 @@ the code, and the proper scheduler info.
 
     code = Code.get_from_string(codename)
 
-    Dict = DataFactory('dict')
-    parameters = Dict(dict={
+    Dict = DataFactory('core.dict')
+    parameters = Dict({
 		'INPUTPH': {
 		    'tr2_ph' : 1.0e-8,
 		    'epsil' : True,
