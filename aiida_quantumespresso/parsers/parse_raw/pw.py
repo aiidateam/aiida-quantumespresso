@@ -260,6 +260,7 @@ def detect_important_message(logs, line):
 
     # Match any known error and warning messages
     for marker, message in message_map['error'].items():
+        # Replace with isinstance(marker, re.Pattern) once Python 3.6 is dropped
         if hasattr(marker, 'search'):
             if marker.match(line):
                 if message is None:
