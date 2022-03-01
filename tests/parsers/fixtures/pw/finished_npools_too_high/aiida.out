@@ -1,0 +1,189 @@
+
+     Program PWSCF v.6.8 starts on 18Jan2022 at 18: 9:56 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+         "P. Giannozzi et al., J. Chem. Phys. 152 154105 (2020);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI & OpenMP), running on      16 processor cores
+     Number of MPI processes:                16
+     Threads/MPI process:                     1
+
+     MPI processes distributed on     1 nodes
+     K-points division:     npool     =       4
+     R & G space division:  proc/nbgrp/npool/nimage =       4
+     482439 MiB available memory on the printing compute node when the environment starts
+ 
+     Reading input from aiida.in
+
+     Current dimensions of program PWSCF are:
+     Max number of different atomic species (ntypx) = 10
+     Max number of k-points (npk) =  40000
+     Max angular momentum in pseudopotentials (lmaxx) =  4
+     file Fe.pbe-spn-kjpaw_psl.0.2.1.UPF: wavefunction(s)  3D renormalized
+     Message from routine setup:
+     using ibrav=0 with symmetry is DISCOURAGED, use correct ibrav instead
+     Message from routine divide_et_impera:
+     suboptimal parallelization: some nodes have no k-points
+
+     Subspace diagonalization in iterative solution of the eigenvalue problem:
+     one sub-group per band group will be used
+     scalapack distributed-memory algorithm (size of sub-group:  2*  2 procs)
+
+ 
+     Parallelization info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Min        7364    3686    948               951074   336348   43920
+     Max        7365    3687    949               951075   336349   43923
+     Sum       29457   14745   3793              3804297  1345393  175685
+ 
+     Using Slab Decomposition
+ 
+
+
+     bravais-lattice index     =            0
+     lattice parameter (alat)  =      22.6767  a.u.
+     unit-cell volume          =   11661.1220 (a.u.)^3
+     number of atoms/cell      =            1
+     number of atomic types    =            1
+     number of electrons       =        16.00
+     number of Kohn-Sham states=           12
+     kinetic-energy cutoff     =      90.0000  Ry
+     charge density cutoff     =     720.0000  Ry
+     scf convergence threshold =      1.0E-08
+     mixing beta               =       0.7000
+     number of iterations used =            8  plain     mixing
+     Exchange-correlation= SLA  PW   PBX  PBC
+                           (   1   4   3   4   0   0   0)
+
+     celldm(1)=  22.676713  celldm(2)=   0.000000  celldm(3)=   0.000000
+     celldm(4)=   0.000000  celldm(5)=   0.000000  celldm(6)=   0.000000
+
+     crystal axes: (cart. coord. in units of alat)
+               a(1) = (   1.000000   0.000000   0.000000 )  
+               a(2) = (   0.000000   1.000000   0.000000 )  
+               a(3) = (   0.000000   0.000000   1.000000 )  
+
+     reciprocal axes: (cart. coord. in units 2 pi/alat)
+               b(1) = (  1.000000  0.000000  0.000000 )  
+               b(2) = (  0.000000  1.000000  0.000000 )  
+               b(3) = (  0.000000  0.000000  1.000000 )  
+
+
+     PseudoPot. # 1 for Fe read from file:
+     ./pseudo/Fe.pbe-spn-kjpaw_psl.0.2.1.UPF
+     MD5 check sum: e86618425769142926afa95317d90200
+     Pseudo is Projector augmented-wave + core cor, Zval = 16.0
+     Generated using "atomic" code by A. Dal Corso  v.5.0.99 svn rev. 10869
+     Shape of augmentation charge: PSQ
+     Using radial grid of 1191 points,  6 beta functions with: 
+                l(1) =   0
+                l(2) =   0
+                l(3) =   1
+                l(4) =   1
+                l(5) =   2
+                l(6) =   2
+     Q(r) pseudized with 0 coefficients 
+
+
+     atomic species   valence    mass     pseudopotential
+        Fe            16.00    55.84500     Fe( 1.00)
+
+...... SYMMETRIES REMOVED
+
+   Cartesian axes
+
+     site n.     atom                  positions (alat units)
+         1           Fe  tau(   1) = (   0.5000000   0.5000000   0.5000000  )
+
+   Crystallographic axes
+
+     site n.     atom                  positions (cryst. coord.)
+         1           Fe  tau(   1) = (  0.5000000  0.5000000  0.5000000  )
+
+
+...... K-POINTS REMOVED
+
+...... MEMORY INFO REMOVED
+
+...... SCF REMOVED
+
+     iteration # 57     ecut=    90.00 Ry     beta= 0.70
+     Davidson diagonalization with overlap
+
+---- Real-time Memory Report at c_bands before calling an iterative solver
+       1653664 MiB given to the printing process from OS
+             7 MiB allocation reported by mallinfo(arena+hblkhd)
+        470965 MiB available memory on the node where the printing process lives
+------------------
+     ethr =  7.38E-10,  avg # of iterations =  1.0
+
+     negative rho (up, down):  1.661E-03 0.000E+00
+
+     total cpu time spent up to now is      729.0 secs
+
+     total energy              =    -328.68767430 Ry
+     estimated scf accuracy    <       0.00000033 Ry
+
+     iteration # 58     ecut=    90.00 Ry     beta= 0.70
+     Davidson diagonalization with overlap
+
+---- Real-time Memory Report at c_bands before calling an iterative solver
+       1653664 MiB given to the printing process from OS
+             7 MiB allocation reported by mallinfo(arena+hblkhd)
+        480267 MiB available memory on the node where the printing process lives
+------------------
+     ethr =  7.38E-10,  avg # of iterations =  1.0
+
+     negative rho (up, down):  1.661E-03 0.000E+00
+
+     total cpu time spent up to now is      741.0 secs
+
+     End of self-consistent calculation
+
+          k = 0.0000 0.0000 0.0000 (168285 PWs)   bands (ev):
+
+   -90.1257 -56.2677 -56.2677 -56.2677  -4.3037  -4.3037  -4.3037  -4.3037
+    -4.3037  -4.2897  -0.7954  -0.7954
+
+     occupation numbers 
+     1.0000   1.0000   1.0000   1.0000   0.6790   0.6790   0.6790   0.6789
+     0.6789   0.6052   0.0000   0.0000
+
+     the Fermi energy is    -4.2709 ev
+
+!    total energy              =    -328.68767430 Ry
+
+     total all-electron energy =     -2544.984210 Ry
+     estimated scf accuracy    <          2.6E-09 Ry
+     smearing contrib. (-TS)   =      -0.02261285 Ry
+     internal energy E=F+TS    =    -328.66506144 Ry
+
+     The total energy is F=E-TS. E is the sum of the following terms:
+     one-electron contribution =    -367.98720683 Ry
+     hartree contribution      =     181.91266004 Ry
+     xc contribution           =     -34.43153795 Ry
+     ewald contribution        =     -32.03057422 Ry
+     one-center paw contrib.   =     -76.12840247 Ry
+      -> PAW hartree energy AE =     204.54908170 Ry
+      -> PAW hartree energy PS =    -203.69852858 Ry
+      -> PAW xc energy AE      =    -111.08683553 Ry
+      -> PAW xc energy PS      =      34.10787993 Ry
+      -> total E_H with PAW    =     182.76321316 Ry
+      -> total E_XC with PAW   =    -111.41049355 Ry
+
+     convergence has been achieved in  58 iterations
+
+     Writing output data file ./out/aiida.save/
+ 
+...... TIMING REMOVED
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=

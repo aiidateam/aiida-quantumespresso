@@ -234,6 +234,9 @@ def get_symmetry_mapping():
     return rotations
 
 
+REG_ERROR_NPOOLS_TOO_HIGH = re.compile(r'\s+some nodes have no k-points.*')
+
+
 def detect_important_message(logs, line):
 
     message_map = {
@@ -246,8 +249,8 @@ def detect_important_message(logs, line):
             'not orthogonal operation': 'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION',
             'problems computing cholesky': 'ERROR_COMPUTING_CHOLESKY',
             'dexx is negative': 'ERROR_DEXX_IS_NEGATIVE',
-            'some nodes have no k-points': 'ERROR_NPOOLS_TOO_HIGH',
             'too many bands are not converged': 'ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED',
+            REG_ERROR_NPOOLS_TOO_HIGH: 'ERROR_NPOOLS_TOO_HIGH',
         },
         'warning': {
             'Warning:': None,
@@ -257,10 +260,17 @@ def detect_important_message(logs, line):
 
     # Match any known error and warning messages
     for marker, message in message_map['error'].items():
-        if marker in line:
-            if message is None:
-                message = line
-            logs.error.append(message)
+        # Replace with isinstance(marker, re.Pattern) once Python 3.6 is dropped
+        if hasattr(marker, 'search'):
+            if marker.match(line):
+                if message is None:
+                    message = line
+                logs.error.append(message)
+        else:
+            if marker in line:
+                if message is None:
+                    message = line
+                logs.error.append(message)
 
     for marker, message in message_map['warning'].items():
         if marker in line:

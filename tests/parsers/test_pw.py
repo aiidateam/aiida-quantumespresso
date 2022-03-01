@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=invalid-name,redefined-outer-name
+# pylint: disable=invalid-name,redefined-outer-name, too-many-lines
 """Tests for the `PwParser`."""
 from aiida import orm
 from aiida.common import AttributeDict
@@ -328,7 +328,7 @@ def test_pw_failed_interrupted_xml(
     data_regression.check(results['output_parameters'].get_dict())
 
 
-def test_pw_npools_too_high(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
+def test_pw_npools_too_high_error(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
     """Test the parsing of a calculation that failed because some nodes have no k-points.
 
     In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
@@ -345,6 +345,26 @@ def test_pw_npools_too_high(fixture_localhost, generate_calc_job_node, generate_
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_failed, calcfunction.exit_status
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_NPOOLS_TOO_HIGH.status
+
+
+def test_pw_npools_too_high_not_error(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
+    """Test the parsing of a success calculation that report 'some nodes have no k-points'.
+
+    For new QE version (test on v6.8) 'some nodes have no k-points' is not raised as an error and stop the
+    calculation. The output is different but still contain the same content, so instead of check content in
+    line use regex match.
+    """
+    name = 'finished_npools_too_high'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_parameters' in results
 
 
 def test_tot_magnetization(
