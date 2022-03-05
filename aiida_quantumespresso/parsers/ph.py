@@ -50,9 +50,9 @@ class PhParser(Parser):
 
         try:
             parsed_data, logs = parse_stdout(stdout, tensor_file, dynmat_files)
-        except Exception:
+        except Exception as exc:
             self.logger.error(traceback.format_exc())
-            return self.exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION)
+            return self.exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc))
 
         self.emit_logs(logs)
         self.out('output_parameters', orm.Dict(dict=parsed_data))

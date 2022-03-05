@@ -110,7 +110,7 @@ class PwCalculation(BasePwCpInputGenerator):
             message='The calculation stopped prematurely because it ran out of walltime but the job was killed by the '
                     'scheduler before the files were safely written to disk for a potential restart.')
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
-            message='The parser raised an unexpected exception.')
+            message='The parser raised an unexpected exception: {exception}')
 
         # Significant errors but calculation can be used to restart
         spec.exit_code(400, 'ERROR_OUT_OF_WALLTIME',

@@ -91,7 +91,7 @@ class NebCalculation(CalcJob):
         spec.exit_code(322, 'ERROR_OUTPUT_XML_FORMAT',
             message='The XML output file has an unsupported format.')
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
-            message='The parser raised an unexpected exception.')
+            message='The parser raised an unexpected exception: {exception}')
         # yapf: enable
 
     @classmethod

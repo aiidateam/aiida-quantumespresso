@@ -100,10 +100,10 @@ class Pw2gwParser(Parser):
 
         try:
             parsed_data, logs = parse_stdout(stdout)
-        except Exception:
+        except Exception as exc:
             import traceback
             traceback.print_exc()
-            self.exit_code_stdout = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
+            self.exit_code_stdout = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc)
 
         # If the stdout was incomplete, most likely the job was interrupted before it could cleanly finish, so the
         # output files are most likely corrupt and cannot be restarted from
