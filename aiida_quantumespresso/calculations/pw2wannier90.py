@@ -38,7 +38,7 @@ class Pw2wannier90Calculation(NamelistsCalculation):
         spec.exit_code(340, 'ERROR_GENERIC_QE_ERROR',
             message='Encountered a generic error message')
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
-            message='An error happened while parsing the output file')
+            message='The parser raised an unexpected exception: {exception}')
         # yapf: enable
 
     def prepare_for_submission(self, folder):

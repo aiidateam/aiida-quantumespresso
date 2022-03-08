@@ -290,9 +290,9 @@ class PwParser(Parser):
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_PARSE
         except XMLUnsupportedFormatError:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_FORMAT
-        except Exception:
+        except Exception as exc:
             logs.critical.append(traceback.format_exc())
-            self.exit_code_xml = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
+            self.exit_code_xml = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc)
 
         return parsed_data, logs
 
@@ -323,9 +323,9 @@ class PwParser(Parser):
 
         try:
             parsed_data, logs = parse_stdout(stdout, parameters, parser_options, parsed_xml)
-        except Exception:
+        except Exception as exc:
             logs.critical.append(traceback.format_exc())
-            self.exit_code_stdout = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
+            self.exit_code_stdout = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc)
 
         # If the stdout was incomplete, most likely the job was interrupted before it could cleanly finish, so the
         # output files are most likely corrupt and cannot be restarted from

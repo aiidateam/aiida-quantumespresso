@@ -393,8 +393,8 @@ class ProjwfcParser(Parser):
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_PARSE
         except XMLUnsupportedFormatError:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_FORMAT
-        except Exception:
-            self.exit_code_xml = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
+        except Exception as exc:
+            self.exit_code_xml = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc)
 
         return parsed_xml, logs
 

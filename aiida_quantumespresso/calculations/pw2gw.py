@@ -53,7 +53,7 @@ class Pw2gwCalculation(NamelistsCalculation):
         spec.exit_code(331, 'ERROR_OUTPUT_FILES_ENERGY_MISMATCH',
             message='The eps*.dat output files contains different values of energies.')
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
-            message='The parser raised an unexpected exception.')
+            message='The parser raised an unexpected exception: {exception}')
         # yapf: enable
 
     def prepare_for_submission(self, folder):

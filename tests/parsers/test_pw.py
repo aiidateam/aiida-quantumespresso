@@ -155,6 +155,41 @@ def test_pw_initialization_xml_new(
     })
 
 
+def test_pw_failed_base_exception(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, monkeypatch
+):
+    """Test the parsing of a calculation where an unknown exception is raised.
+
+    This should return ``ERROR_UNEXPECTED_PARSER_EXCEPTION`` formatted with exception title.
+    """
+    from aiida_quantumespresso.parsers.parse_raw import pw
+
+    exception = 'the parser encountered an error.'
+
+    def parse_xml(*_, **__):
+        return {}, {}
+
+    def parse_stdout(*_, **__):
+        raise RuntimeError(exception)
+
+    name = 'failed_base_exception'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
+    parser = generate_parser(entry_point_parser)
+
+    monkeypatch.setattr(pw, 'parse_stdout', parse_stdout)
+    monkeypatch.setattr(parser, 'parse_xml', parse_xml)
+
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.status
+    assert exception in calcfunction.exit_message
+
+
 def test_pw_failed_computing_cholesky(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
     """Test the parsing of a calculation that failed during cholesky factorization.
 

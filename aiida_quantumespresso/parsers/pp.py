@@ -88,9 +88,9 @@ class PpParser(Parser):
 
         try:
             logs, self.output_parameters = self.parse_stdout(stdout_raw)
-        except Exception:
+        except Exception as exc:
             self.logger.error(traceback.format_exc())
-            return self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
+            return self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc)
 
         self.emit_logs(logs)
 

@@ -104,10 +104,10 @@ class NebParser(Parser):
                         return self.exit(self.exit_codes.ERROR_OUTPUT_XML_PARSE)
                     except XMLUnsupportedFormatError:
                         return self.exit(self.exit_codes.ERROR_OUTPUT_XML_FORMAT)
-                    except Exception:
+                    except Exception as exc:
                         import traceback
                         traceback.print_exc()
-                        return self.exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION)
+                        return self.exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc))
                     # this image is dealt with, so break the inner loop and go to the next image
                     break
             # otherwise, if none of the filenames we tried exists, exit with an error
@@ -126,8 +126,8 @@ class NebParser(Parser):
                 parsed_data_stdout, logs_stdout = parse_pw_stdout(
                     pw_out_text, pw_input_dict, parser_options, parsed_data_xml
                 )
-            except Exception:
-                return self.exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION)
+            except Exception as exc:
+                return self.exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc))
 
             parsed_structure = parsed_data_stdout.pop('structure', {})
             parsed_trajectory = parsed_data_stdout.pop('trajectory', {})
