@@ -70,7 +70,7 @@ class PwCalculation(BasePwCpInputGenerator):
             help='kpoint mesh or kpoint path')
         spec.input('hubbard_file', valid_type=orm.SinglefileData, required=False,
             help='SinglefileData node containing the output Hubbard parameters from a HpCalculation')
-        spec.inputs.validator = cls.validate_inputs
+        spec.inputs.validator = cls._validate_inputs
 
         spec.output('output_parameters', valid_type=orm.Dict,
             help='The `output_parameters` output node of the successful calculation.')

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Utilities for the validation of `TrajectoryData` content."""
-from typing import Optional
+from typing import List, Optional
 
 from aiida.orm import TrajectoryData
 import numpy
@@ -12,7 +12,7 @@ def verify_convergence_trajectory(
     threshold_forces: Optional[float] = None,
     threshold_stress: Optional[float] = None,
     reference_pressure: float = 0,
-    fixed_coords: Optional[list] = None
+    fixed_coords: Optional[List[List[bool]]] = None
 ) -> bool:
     """Verify that the data of the given ``TrajectoryData`` is converged with respect to the given thresholds.
 
@@ -52,7 +52,7 @@ def verify_convergence_forces(
     trajectory: TrajectoryData,
     index: int = -1,
     threshold: Optional[float] = None,
-    fixed_coords: Optional[list] = None
+    fixed_coords: Optional[List[List[bool]]] = None
 ) -> bool:
     """Verify that the `forces` of the given `TrajectoryData` are converged with respect to given threshold.
 
@@ -81,6 +81,8 @@ def verify_convergence_forces(
     if fixed_coords is not None:
         fixed_coords = numpy.array(fixed_coords)
         # Set the forces corresponding to fixed coordinates to zero, as they should not be checked versus threshold
+        # Since `fixed_coords` is a list of lists of booleans, where `True` indicates that a coordinate is fixed, we can
+        # invert this array and multiply it with the forces to set all fixed coordinates to zero.
         abs_forces *= numpy.invert(fixed_coords)
 
     return numpy.all(abs_forces < threshold)
