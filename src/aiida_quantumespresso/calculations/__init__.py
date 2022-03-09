@@ -172,6 +172,10 @@ class BasePwCpInputGenerator(CalcJob):
             if fixed_coords is not None:
 
                 fixed_coords = numpy.array(fixed_coords)
+
+                if len(fixed_coords.shape) != 2 or fixed_coords.shape[1] != 3:
+                    return 'The `fixed_coords` setting must be a list of lists with length 3.'
+
                 if fixed_coords.dtype != bool:
                     return 'All elements in the `fixed_coords` setting lists must be either `True` or `False`.'
 
