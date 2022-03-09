@@ -250,13 +250,14 @@ class PwParser(Parser):
             return verify_convergence_trajectory(
                 trajectory=trajectory,
                 index=-1,
-                threshold_forces=threshold_forces
+                threshold_forces=threshold_forces,
+                fixed_coords=fixed_coords
             )
 
         if relax_type == 'vc-relax':
-            values = [threshold_forces, threshold_stress, external_pressure]
-            converged_relax = verify_convergence_trajectory(trajectory, -2, *values, fixed_coords)
-            converged_final = verify_convergence_trajectory(trajectory, -1, *values, fixed_coords)
+            values = [threshold_forces, threshold_stress, external_pressure, fixed_coords]
+            converged_relax = verify_convergence_trajectory(trajectory, -2, *values)
+            converged_final = verify_convergence_trajectory(trajectory, -1, *values)
 
             return converged_relax and (converged_final or except_final_scf)
 

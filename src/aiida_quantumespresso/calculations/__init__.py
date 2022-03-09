@@ -525,16 +525,15 @@ class BasePwCpInputGenerator(CalcJob):
         # ------------ ATOMIC_POSITIONS -----------
         coordinates = [site.position for site in structure.sites]
         if use_fractional:
-            atomic_positions_card_list = ['ATOMIC_POSITIONS crystal']
+            atomic_positions_card_header = 'ATOMIC_POSITIONS crystal\n'
             coordinates = numpy.dot(coordinates, numpy.linalg.inv(numpy.array(structure.cell))).tolist()
         else:
-            atomic_positions_card_list = ['ATOMIC_POSITIONS angstrom']
+            atomic_positions_card_header = 'ATOMIC_POSITIONS angstrom\n'
 
-        for site, site_coords in zip(structure.sites, coordinates):
-            atomic_positions_card_list.append(
-                '{0} {1:18.10f} {2:18.10f} {3:18.10f}'.  # pylint: disable=consider-using-f-string
-                format(site.kind_name.ljust(6), *site_coords)
-            )
+        atomic_positions_card_list = [
+            '{0} {1:18.10f} {2:18.10f} {3:18.10f}'.format(site.kind_name.ljust(6), *site_coords)  # pylint: disable=consider-using-f-string
+            for site, site_coords in zip(structure.sites, coordinates)
+        ]
 
         fixed_coords = settings.pop('FIXED_COORDS', None)
 
@@ -545,12 +544,15 @@ class BasePwCpInputGenerator(CalcJob):
                 raise exceptions.InputValidationError(
                     f'Input structure has {len(structure.sites)} sites, but fixed_coords has length {len(fixed_coords)}'
                 )
-            fixed_coords_strings = [' {:d} {:d} {:d}'.format(*row) for row in numpy.int32(fixed_coords).tolist()]  # pylint: disable=consider-using-f-string
+            fixed_coords_strings = [
+                ' {:d} {:d} {:d}'.format(*row) for row in numpy.int32(numpy.invert(fixed_coords)).tolist()  # pylint: disable=consider-using-f-string
+            ]
+            atomic_positions_card_list = [
+                atomic_pos_str + fixed_coords_str
+                for atomic_pos_str, fixed_coords_str in zip(atomic_positions_card_list, fixed_coords_strings)
+            ]
 
-            for atomic_pos_str, fixed_coords_str in zip(atomic_positions_card_list[1:], fixed_coords_strings):
-                atomic_pos_str += fixed_coords_str
-
-        atomic_positions_card = '\n'.join(atomic_positions_card_list) + '\n'
+        atomic_positions_card = atomic_positions_card_header + '\n'.join(atomic_positions_card_list) + '\n'
 
         # Optional ATOMIC_FORCES card
         atomic_forces = settings.pop('ATOMIC_FORCES', None)
