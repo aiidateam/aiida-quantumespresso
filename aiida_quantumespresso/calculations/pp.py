@@ -14,28 +14,30 @@ from .base import CalcJob
 def validate_parameters(value, ctx=None):  # pylint: disable=unused-argument
     """Validate 'parameters' dict."""
     parameters = value.get_dict()
+    missing_namelists = 0
 
     try:
         plot_num = parameters['INPUTPP']['plot_num']
+        # Check that a valid plot type is requested
+        if plot_num in range(23) and plot_num not in [14, 15, 16]:  # Must be integer in range 0-22, but not 14-16:
+            parameters['INPUTPP']['plot_num'] = int(plot_num)  # If this test passes, we can safely cast to int
+        else:
+            return '`INTPUTPP.plot_num` must be an integer in the range 0-23 excluding [14, 15, 16]'
     except KeyError:
-        return 'parameter `INPUTPP.plot_num` must be explicitly set'
-
-    # Check that a valid plot type is requested
-    if plot_num in range(23) and plot_num not in [14, 15, 16]:  # Must be integer in range 0-22, but not 14-16:
-        parameters['INPUTPP']['plot_num'] = int(plot_num)  # If this test passes, we can safely cast to int
-    else:
-        return '`INTPUTPP.plot_num` must be an integer in the range 0-23 excluding [14, 15, 16]'
+        missing_namelists = missing_namelists + 1
 
     try:
         dimension = parameters['PLOT']['iflag']
+        # Check for valid plot dimension:
+        if dimension in range(5):  # Must be in range 0-4:
+            parameters['PLOT']['iflag'] = int(dimension)
+        else:
+            return '`PLOT.iflag` must be an integer in the range 0-4'
     except KeyError:
-        return 'parameter `PLOT.iflag` must be explicitly set'
+        missing_namelists = missing_namelists + 1
 
-    # Check for valid plot dimension:
-    if dimension in range(5):  # Must be in range 0-4:
-        parameters['PLOT']['iflag'] = int(dimension)
-    else:
-        return '`PLOT.iflag` must be an integer in the range 0-4'
+    if missing_namelists > 1:
+        return 'Either `INPUTPP.plot_num` or `PLOT.iflag` must be explicitly set'
 
 
 class PpCalculation(CalcJob):
@@ -138,6 +140,9 @@ class PpCalculation(CalcJob):
         else:
             settings = {}
 
+        skip_plot = 'PLOT' not in parameters
+        copy_files = 'INPUTPP' not in parameters
+
         # Set default values. NOTE: this is different from PW/CP
         for blocked in self._blocked_keywords:
             namelist = blocked[0].upper()
@@ -153,17 +158,23 @@ class PpCalculation(CalcJob):
                 parameters[namelist] = {}
             parameters[namelist][key] = value
 
-        # Restrict the plot output to the file types that we want to be able to parse
-        dimension_to_output_format = {
-            0: 0,  # Spherical integration -> Gnuplot, 1D
-            1: 0,  # 1D -> Gnuplot, 1D
-            2: 7,  # 2D -> Gnuplot, 2D
-            3: 6,  # 3D -> Gaussian cube
-            4: 0,  # Polar on a sphere -> # Gnuplot, 1D
-        }
-        parameters['PLOT']['output_format'] = dimension_to_output_format[parameters['PLOT']['iflag']]
-
-        namelists_toprint = self._default_namelists
+        if skip_plot:
+            parameters.pop('PLOT')
+            namelists_toprint = list(self._default_namelists)
+            if 'PLOT' in namelists_toprint:
+                namelists_toprint.remove('PLOT')
+        else:
+            # Restrict the plot output to the file types that we want to be able to parse
+            dimension_to_output_format = {
+                0: 0,  # Spherical integration -> Gnuplot, 1D
+                1: 0,  # 1D -> Gnuplot, 1D
+                2: 7,  # 2D -> Gnuplot, 2D
+                3: 6,  # 3D -> Gaussian cube
+                4: 0,  # Polar on a sphere -> # Gnuplot, 1D
+            }
+            parameters['PLOT']['output_format'] = dimension_to_output_format[parameters['PLOT']['iflag']]
+        
+            namelists_toprint = self._default_namelists
 
         input_filename = self.inputs.metadata.options.input_filename
         with folder.open(input_filename, 'w') as infile:
@@ -184,6 +195,7 @@ class PpCalculation(CalcJob):
 
         remote_copy_list = []
         local_copy_list = []
+        remote_symlink_list = []
 
         # Copy remote output dir
         parent_calc_folder = self.inputs.get('parent_folder', None)
@@ -196,6 +208,17 @@ class PpCalculation(CalcJob):
                 parent_calc_folder.computer.uuid,
                 os.path.join(parent_calc_folder.get_remote_path(), self._PSEUDO_SUBFOLDER), self._PSEUDO_SUBFOLDER
             ))
+
+            if copy_files:
+                remote_symlink_list.append((
+                    parent_calc_folder.computer.uuid,
+                    os.path.join(parent_calc_folder.get_remote_path(), f'aiida.in'), 'aiida.ref'
+                ))
+                remote_symlink_list.append((
+                    parent_calc_folder.computer.uuid,
+                    os.path.join(parent_calc_folder.get_remote_path(), f'{self._FILPLOT}_*'), '.'
+                ))
+
         elif isinstance(parent_calc_folder, orm.FolderData):
             for filename in parent_calc_folder.list_object_names():
                 local_copy_list.append(
@@ -215,9 +238,10 @@ class PpCalculation(CalcJob):
         calcinfo.codes_info = [codeinfo]
         calcinfo.local_copy_list = local_copy_list
         calcinfo.remote_copy_list = remote_copy_list
+        calcinfo.remote_symlink_list = remote_symlink_list
 
         # Retrieve by default the output file
-        calcinfo.retrieve_list = [self.inputs.metadata.options.output_filename]
+        calcinfo.retrieve_list = [self.inputs.metadata.options.output_filename, 'aiida.ref']
         calcinfo.retrieve_temporary_list = []
 
         # Depending on the `plot_num` and the corresponding parameters, more than one pair of `filplot` + `fileout`
