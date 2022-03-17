@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """`CalcJob` implementation for the matdyn.x code of Quantum ESPRESSO."""
 from aiida import orm
-
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 from aiida_quantumespresso.data.force_constants import ForceConstantsData
 
@@ -12,16 +11,18 @@ class MatdynCalculation(NamelistsCalculation):
     _PHONON_FREQUENCIES_NAME = 'phonon_frequencies.dat'
     _PHONON_MODES_NAME = 'phonon_displacements.dat'
     _PHONON_DOS_NAME = 'phonon_dos.dat'
+    _PHONON_ELASTICITY_NAME = 'phonon_elasticity.yaml'
 
     _default_namelists = ['INPUT']
     _blocked_keywords = [
         ('INPUT', 'flfrq', _PHONON_FREQUENCIES_NAME),  # output frequencies
         ('INPUT', 'flvec', _PHONON_MODES_NAME),  # output displacements
         ('INPUT', 'fldos', _PHONON_DOS_NAME),  # output density of states
+        ('INPUT', 'flelc', _PHONON_ELASTICITY_NAME),  # output elastic properties
         ('INPUT', 'q_in_cryst_coord', True),  # kpoints always in crystal coordinates
     ]
 
-    _internal_retrieve_list = [_PHONON_FREQUENCIES_NAME, _PHONON_DOS_NAME]
+    _internal_retrieve_list = [_PHONON_FREQUENCIES_NAME, _PHONON_DOS_NAME, _PHONON_ELASTICITY_NAME]
     _default_parser = 'quantumespresso.matdyn'
 
     @classmethod
@@ -34,6 +35,7 @@ class MatdynCalculation(NamelistsCalculation):
         spec.inputs.pop('parent_folder')
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.output('output_phonon_bands', valid_type=orm.BandsData)
+        spec.output('output_elasticity', valid_type=orm.Dict)
         spec.default_output_node = 'output_parameters'
         spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
             message='The stdout output file could not be read.')
@@ -41,6 +43,8 @@ class MatdynCalculation(NamelistsCalculation):
             message='The stdout output file was incomplete probably because the calculation got interrupted.')
         spec.exit_code(330, 'ERROR_OUTPUT_FREQUENCIES',
             message='The output frequencies file could not be read from the retrieved folder.')
+        spec.exit_code(340, 'ERROR_OUTPUT_ELASTICITY',
+            message='The output elasticity file could not be read from the retrieved folder.')
         spec.exit_code(410, 'ERROR_OUTPUT_KPOINTS_MISSING',
             message='Number of kpoints not found in the output data')
         spec.exit_code(411, 'ERROR_OUTPUT_KPOINTS_INCOMMENSURATE',
@@ -56,7 +60,7 @@ class MatdynCalculation(NamelistsCalculation):
 
         kpoints_string = [f'{len(kpoints)}']
         for kpoint in kpoints:
-            kpoints_string.append('{:18.10f} {:18.10f} {:18.10f}'.format(*kpoint))  # pylint: disable=consider-using-f-string
+            kpoints_string.append('{:18.10f} {:18.10f} {:18.10f}'.format(*kpoint))
 
         return '\n'.join(kpoints_string) + '\n'
 
@@ -71,7 +75,9 @@ class MatdynCalculation(NamelistsCalculation):
         :return: :py:`~aiida.common.datastructures.CalcInfo` instance.
         """
         force_constants = self.inputs.force_constants
-        self._blocked_keywords.append(('INPUT', 'flfrc', force_constants.filename))
+        flfrc_tuple = ('INPUT', 'flfrc', force_constants.filename)
+        if flfrc_tuple not in self._blocked_keywords:
+            self._blocked_keywords.append(flfrc_tuple)
 
         calcinfo = super().prepare_for_submission(folder)
         calcinfo.local_copy_list.append((force_constants.uuid, force_constants.filename, force_constants.filename))

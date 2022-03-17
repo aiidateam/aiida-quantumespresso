@@ -3,7 +3,6 @@ from aiida import orm
 from qe_tools import CONSTANTS
 
 from aiida_quantumespresso.calculations.matdyn import MatdynCalculation
-
 from .base import Parser
 
 
@@ -15,6 +14,7 @@ class MatdynParser(Parser):
         retrieved = self.retrieved
         filename_stdout = self.node.get_option('output_filename')
         filename_frequencies = MatdynCalculation._PHONON_FREQUENCIES_NAME
+        filename_elasticity = MatdynCalculation._PHONON_ELASTICITY_NAME
 
         if filename_stdout not in retrieved.list_object_names():
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
@@ -48,6 +48,12 @@ class MatdynParser(Parser):
         output_bands.set_kpointsdata(kpoints_for_bands)
         output_bands.set_bands(parsed_data.pop('phonon_bands'), units='THz')
 
+        if filename_elasticity in retrieved.list_object_names():
+            output_elasticity = parse_elasticity_file(retrieved.get_object_content(filename_elasticity))
+            self.out('output_elasticity', orm.Dict(dict=output_elasticity))
+        else:
+            return self.exit(self.exit_codes.ERROR_OUTPUT_ELASTICITY)
+
         for message in parsed_data['warnings']:
             self.logger.error(message)
 
@@ -67,9 +73,8 @@ def parse_raw_matdyn_phonon_file(phonon_frequencies):
          * num_kpoints: number of kpoints read from the file
          * phonon_bands: BandsData object with the bands for each kpoint
     """
-    import re
-
     import numpy
+    import re
 
     parsed_data = {}
     parsed_data['warnings'] = []
@@ -99,7 +104,7 @@ def parse_raw_matdyn_phonon_file(phonon_frequencies):
             # case in which there are two frequencies attached like -1204.1234-1020.536
             if '-' in b:
                 c = re.split('(-)', b)
-                d = [i for i in c if i != '']
+                d = [i for i in c if i is not '']
                 for i in range(0, len(d), 2):  # d should have an even number of elements
                     corrected_data.append(float(d[i] + d[i + 1]))
             else:
@@ -121,5 +126,21 @@ def parse_raw_matdyn_phonon_file(phonon_frequencies):
         counter += 3  # move past the kpoint coordinates
 
     parsed_data['phonon_bands'] = freq_matrix
+
+    return parsed_data
+
+
+def parse_elasticity_file(elasticity_file):
+    """Parses the elastic properties file.
+
+    :param elasticity_file: elasticity file from the matdyn calculation
+
+    :return dict parsed_data:
+        A dictionary of elastic properties, see example output yaml file
+        of elasticity about the supported keys.
+    """
+    import yaml
+
+    parsed_data = yaml.full_load(elasticity_file)
 
     return parsed_data
