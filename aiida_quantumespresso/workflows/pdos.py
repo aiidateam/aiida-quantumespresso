@@ -307,6 +307,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         spec.expose_outputs(PwBaseWorkChain, namespace='nscf')
         spec.expose_outputs(DosCalculation, namespace='dos')
         spec.expose_outputs(ProjwfcCalculation, namespace='projwfc')
+        # yapf: enable
 
     @classmethod
     def get_protocol_filepath(cls):
