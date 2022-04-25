@@ -112,6 +112,8 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 
 [project.entry-points.'aiida.workflows']
 'quantumespresso.ph.base' = 'aiida_quantumespresso.workflows.ph.base:PhBaseWorkChain'
+'quantumespresso.ph.parallelize_qpoints' = 'aiida_quantumespresso.workflows.ph.parallelize_qpoints:PhParallelizeQpointsWorkChain'
+'quantumespresso.ph.main' = 'aiida_quantumespresso.workflows.ph.main:PhWorkChain'
 'quantumespresso.pw.base' = 'aiida_quantumespresso.workflows.pw.base:PwBaseWorkChain'
 'quantumespresso.pw.relax' = 'aiida_quantumespresso.workflows.pw.relax:PwRelaxWorkChain'
 'quantumespresso.pw.bands' = 'aiida_quantumespresso.workflows.pw.bands:PwBandsWorkChain'
