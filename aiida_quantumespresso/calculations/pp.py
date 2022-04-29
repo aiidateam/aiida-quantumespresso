@@ -185,25 +185,16 @@ class PpCalculation(CalcJob):
         remote_copy_list = []
         local_copy_list = []
 
-        # Copy remote output dir
-        parent_calc_folder = self.inputs.get('parent_folder', None)
-        if isinstance(parent_calc_folder, orm.RemoteData):
-            remote_copy_list.append((
-                parent_calc_folder.computer.uuid,
-                os.path.join(parent_calc_folder.get_remote_path(), self._INPUT_SUBFOLDER), self._OUTPUT_SUBFOLDER
-            ))
-            remote_copy_list.append((
-                parent_calc_folder.computer.uuid,
-                os.path.join(parent_calc_folder.get_remote_path(), self._PSEUDO_SUBFOLDER), self._PSEUDO_SUBFOLDER
-            ))
-        elif isinstance(parent_calc_folder, orm.FolderData):
-            for filename in parent_calc_folder.list_object_names():
-                local_copy_list.append(
-                    (parent_calc_folder.uuid, filename, os.path.join(self._OUTPUT_SUBFOLDER, filename))
-                )
-                local_copy_list.append(
-                    (parent_calc_folder.uuid, filename, os.path.join(self._PSEUDO_SUBFOLDER, filename))
-                )
+        source = self.inputs.get('parent_folder', None)
+
+        if isinstance(source, orm.RemoteData):
+            dirpath = os.path.join(source.get_remote_path(), self._INPUT_SUBFOLDER)
+            remote_copy_list.append((source.computer.uuid, dirpath, self._OUTPUT_SUBFOLDER))
+            dirpath = os.path.join(source.get_remote_path(), self._PSEUDO_SUBFOLDER)
+            remote_copy_list.append((source.computer.uuid, dirpath, self._PSEUDO_SUBFOLDER))
+        elif isinstance(source, orm.FolderData):
+            local_copy_list.append((source.uuid, self._OUTPUT_SUBFOLDER, self._OUTPUT_SUBFOLDER))
+            local_copy_list.append((source.uuid, self._PSEUDO_SUBFOLDER, self._PSEUDO_SUBFOLDER))
 
         codeinfo = datastructures.CodeInfo()
         codeinfo.cmdline_params = settings.pop('CMDLINE', [])

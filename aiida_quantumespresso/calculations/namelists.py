@@ -3,7 +3,7 @@
 
 These codes typically only require a few namelists (plus possibly some text afterwards).
 """
-import os
+import pathlib
 
 from aiida.common import datastructures, exceptions
 from aiida.orm import Dict, FolderData, RemoteData, SinglefileData
@@ -179,27 +179,19 @@ class NamelistsCalculation(CalcJob):
         remote_copy_list = []
         local_copy_list = []
         remote_symlink_list = []
+        remote_list = remote_symlink_list if symlink else remote_copy_list
 
-        ptr = remote_symlink_list if symlink else remote_copy_list
+        source = self.inputs.get('parent_folder', None)
 
-        # copy remote output dir, if specified
-        parent_calc_folder = self.inputs.get('parent_folder', None)
-        if parent_calc_folder is not None:
-            if isinstance(parent_calc_folder, RemoteData):
-                parent_calc_out_subfolder = settings.pop('PARENT_CALC_OUT_SUBFOLDER', self._INPUT_SUBFOLDER)
-                ptr.append((
-                    parent_calc_folder.computer.uuid,
-                    os.path.join(parent_calc_folder.get_remote_path(),
-                                 parent_calc_out_subfolder), self._OUTPUT_SUBFOLDER
-                ))
-            elif isinstance(parent_calc_folder, FolderData):
-                for filename in parent_calc_folder.list_object_names():
-                    local_copy_list.append(
-                        (parent_calc_folder.uuid, filename, os.path.join(self._OUTPUT_SUBFOLDER, filename))
-                    )
-            elif isinstance(parent_calc_folder, SinglefileData):
-                single_file = parent_calc_folder
-                local_copy_list.append((single_file.uuid, single_file.filename, single_file.filename))
+        if source is not None:
+            if isinstance(source, RemoteData):
+                dirname = settings.pop('PARENT_CALC_OUT_SUBFOLDER', self._default_parent_output_folder)
+                dirpath = pathlib.Path(source.get_remote_path()) / dirname
+                remote_list.append((source.computer.uuid, str(dirpath), self._OUTPUT_SUBFOLDER))
+            elif isinstance(source, FolderData):
+                local_copy_list.append((source.uuid, self._OUTPUT_SUBFOLDER, self._OUTPUT_SUBFOLDER))
+            elif isinstance(source, SinglefileData):
+                local_copy_list.append((source.uuid, source.filename, source.filename))
 
         codeinfo = datastructures.CodeInfo()
         codeinfo.cmdline_params = settings.pop('CMDLINE', [])

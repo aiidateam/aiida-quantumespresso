@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """`CalcJob` implementation for the pw2gw.x code of Quantum ESPRESSO."""
-import os
+import pathlib
 
 from aiida import orm
 from aiida.common import datastructures
@@ -73,7 +73,7 @@ class Pw2gwCalculation(NamelistsCalculation):
         parent_calc_folder = self.inputs.parent_folder
         calcinfo.remote_copy_list.append((
             parent_calc_folder.computer.uuid,
-            os.path.join(parent_calc_folder.get_remote_path(), self._INPUT_PSEUDOFOLDER), self._INPUT_PSEUDOFOLDER
+            str(pathlib.Path(parent_calc_folder.get_remote_path()) / self._INPUT_PSEUDOFOLDER), self._INPUT_PSEUDOFOLDER
         ))
 
         return calcinfo

@@ -1,92 +1,62 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=redefined-outer-name
-"""Tests for the `Pw2gwCalculation` class."""
-import os
+"""Tests for the :class:`aiida_quantumespresso.calculations.pw2gw.Pw2gwCalculation` class."""
+import pathlib
 
 from aiida import orm
 from aiida.common import datastructures
 import pytest
 
-
-@pytest.fixture()
-def parameters():
-    """Fixture: parameters for pw calculation."""
-    parameters = {
-        'INPUTPP': {
-            'qplda': False,
-            'vxcdiag': False,
-            'vkb': False,
-            'Emin': 0.0,
-            'Emax': 15.0,
-            'DeltaE': 0.001,
-        }
-    }
-
-    return parameters
-
-
-@pytest.fixture(params=[
-    False,
-], ids=[
-    'base',
-])
-def settings(request):
-    """Fixture: parameters for z2pack calculation."""
-    settings = {}
-
-    if request.param:
-        settings['PARENT_FOLDER_SYMLINK'] = True
-
-    return settings
+from aiida_quantumespresso.utils.resources import get_default_options
 
 
 @pytest.fixture
-def remote(fixture_localhost, tmpdir, generate_remote_data):
-    """Fixture: Remote folder created by a CalcJob with inputs."""
-    remote = generate_remote_data(
-        fixture_localhost,
-        str(tmpdir),
-        'quantumespresso.pw',
-    )
+def generate_inputs(tmp_path, fixture_localhost, fixture_code, generate_remote_data):
+    """Fixture: inputs for `Pw2gwCalculation`."""
 
-    return remote
+    def _factory(with_symlink=False, parameters=None):
 
+        if parameters is None:
+            parameters = {
+                'INPUTPP': {
+                    'qplda': False,
+                    'vxcdiag': False,
+                    'vkb': False,
+                    'Emin': 0.0,
+                    'Emax': 15.0,
+                    'DeltaE': 0.001,
+                }
+            }
 
-@pytest.fixture()
-def inputs(fixture_code, remote, parameters, settings):
-    """Fixture: inputs for Z2packBaseWorkChain."""
-    from aiida_quantumespresso.utils.resources import get_default_options
-
-    inputs = {
-        'code': fixture_code('quantumespresso.pw2gw'),
-        'parent_folder': remote,
-        'parameters': orm.Dict(parameters),
-        'settings': orm.Dict(settings),
-        'metadata': {
-            'options': get_default_options()
+        inputs = {
+            'code': fixture_code('quantumespresso.pw2gw'),
+            'parent_folder': generate_remote_data(fixture_localhost, str(tmp_path), 'quantumespresso.pw'),
+            'parameters': orm.Dict(parameters),
+            'settings': orm.Dict({'PARENT_FOLDER_SYMLINK': with_symlink}),
+            'metadata': {
+                'options': get_default_options()
+            }
         }
-    }
-    return inputs
+        return inputs
+
+    return _factory
 
 
-@pytest.mark.parametrize(
-    'settings,with_symlink', [(False, False), (True, True)], ids=['base', 'with_symlink'], indirect=['settings']
-)
-def test_pw2gw_default(fixture_sandbox, generate_calc_job, file_regression, remote, inputs, with_symlink):
+@pytest.mark.parametrize('with_symlink', (False, True))
+def test_pw2gw_default(fixture_sandbox, generate_calc_job, generate_inputs, file_regression, with_symlink):
     """Test a default `Pw2gwCalculation`."""
     entry_point_name = 'quantumespresso.pw2gw'
 
+    inputs = generate_inputs(with_symlink=with_symlink)
+    remote = inputs['parent_folder']
     calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
     retrieve_list = ['aiida.out', 'epsX.dat', 'epsY.dat', 'epsZ.dat', 'epsTOT.dat']
-
-    remote_copy_list = [
-        (remote.computer.uuid, os.path.join(remote.get_remote_path(), path), path) for path in ['./pseudo/']
-    ]
+    remote_copy_list = [(remote.computer.uuid, str(pathlib.Path(remote.get_remote_path()) / './pseudo/'), './pseudo/')]
     remote_symlink_list = []
 
     ptr = remote_copy_list if not with_symlink else remote_symlink_list
-    ptr.extend([(remote.computer.uuid, os.path.join(remote.get_remote_path(), path), path) for path in ['./out/']])
+    ptr.extend([(remote.computer.uuid, str(pathlib.Path(remote.get_remote_path()) / './out/'), './out/')])
 
     assert isinstance(calc_info, datastructures.CalcInfo)
     assert sorted(calc_info.retrieve_list) == sorted(retrieve_list)
