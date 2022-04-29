@@ -21,15 +21,15 @@ classifiers = [
 keywords = ['aiida', 'workflows']
 requires-python = '>=3.8'
 dependencies = [
-    'psycopg2-binary<2.9',
-    'aiida_core[atomic_tools]~=1.4,>=1.4.4',
-    'aiida-pseudo~=0.6.1',
+    'aiida_core[atomic_tools]~=2.0',
+    'aiida-pseudo~=0.7.0',
+    'click~=8.0',
+    'importlib_resources',
     'jsonschema',
+    'numpy',
     'packaging',
     'qe-tools~=2.0rc1',
-    'xmlschema~=1.2,>=1.2.5',
-    'numpy',
-    'importlib_resources'
+    'xmlschema~=1.2,>=1.2.5'
 ]
 
 [project.urls]
@@ -39,12 +39,10 @@ Documentation = 'https://aiida-quantumespresso.readthedocs.io'
 
 [project.optional-dependencies]
 docs = [
-    'Sphinx',
-    'docutils',
-    'markupsafe<2.1',
-    'sphinx-copybutton~=0.3.0',
-    'sphinx-book-theme~=0.1.0',
-    'sphinx-click~=2.7.1'
+    'sphinx~=4.1',
+    'sphinx-copybutton~=0.5.0',
+    'sphinx-book-theme~=0.3.2',
+    'sphinx-click~=4.0',
 ]
 pre-commit = [
     'pre-commit~=2.17',
@@ -190,7 +188,6 @@ testpaths = [
 filterwarnings = [
     'ignore::DeprecationWarning:frozendict:',
     'ignore::DeprecationWarning:pkg_resources:',
-    'ignore::DeprecationWarning:reentry:',
     'ignore::DeprecationWarning:sqlalchemy_utils:',
 ]
 

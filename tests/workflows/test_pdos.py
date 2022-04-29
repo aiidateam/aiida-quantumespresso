@@ -52,7 +52,7 @@ def test_default(
 
     remote = generate_remote_data(computer=fixture_localhost, remote_path='/path/on/remote')
     remote.store()
-    remote.add_incoming(scf_wkchain.node, link_type=LinkType.RETURN, link_label='remote_folder')
+    remote.base.links.add_incoming(scf_wkchain.node, link_type=LinkType.RETURN, link_label='remote_folder')
 
     wkchain.ctx.workchain_scf = scf_wkchain.node
     wkchain.ctx.scf_parent_folder = remote
@@ -74,15 +74,15 @@ def test_default(
 
     remote = generate_remote_data(computer=fixture_localhost, remote_path='/path/on/remote')
     remote.store()
-    remote.add_incoming(mock_wknode, link_type=LinkType.RETURN, link_label='remote_folder')
+    remote.base.links.add_incoming(mock_wknode, link_type=LinkType.RETURN, link_label='remote_folder')
 
     result = orm.Dict(dict={'fermi_energy': 6.9029595890428})
     result.store()
-    result.add_incoming(mock_wknode, link_type=LinkType.RETURN, link_label='output_parameters')
+    result.base.links.add_incoming(mock_wknode, link_type=LinkType.RETURN, link_label='output_parameters')
 
     bands_data = generate_bands_data()
     bands_data.store()
-    bands_data.add_incoming(mock_wknode, link_type=LinkType.RETURN, link_label='output_band')
+    bands_data.base.links.add_incoming(mock_wknode, link_type=LinkType.RETURN, link_label='output_band')
 
     wkchain.ctx.workchain_nscf = mock_wknode
 
@@ -101,7 +101,7 @@ def test_default(
         mock_calc.set_process_state(engine.ProcessState.FINISHED)
 
         result = orm.Dict()
-        result.add_incoming(mock_calc, link_type=LinkType.CREATE, link_label='output_parameters')
+        result.base.links.add_incoming(mock_calc, link_type=LinkType.CREATE, link_label='output_parameters')
         result.store()
 
         wkchain.ctx['calc_' + calc_type] = mock_calc

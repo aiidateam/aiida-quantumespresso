@@ -92,7 +92,7 @@ projections:
   - 1
   - 8
   orbital_dicts:
-  - _orbital_type: realhydrogen
+  - _orbital_type: core.realhydrogen
     angular_momentum: 0
     diffusivity: null
     kind_name: Si1
@@ -106,7 +106,7 @@ projections:
     spin_orientation: null
     x_orientation: null
     z_orientation: null
-  - _orbital_type: realhydrogen
+  - _orbital_type: core.realhydrogen
     angular_momentum: 1
     diffusivity: null
     kind_name: Si1
@@ -120,7 +120,7 @@ projections:
     spin_orientation: null
     x_orientation: null
     z_orientation: null
-  - _orbital_type: realhydrogen
+  - _orbital_type: core.realhydrogen
     angular_momentum: 1
     diffusivity: null
     kind_name: Si1
@@ -134,7 +134,7 @@ projections:
     spin_orientation: null
     x_orientation: null
     z_orientation: null
-  - _orbital_type: realhydrogen
+  - _orbital_type: core.realhydrogen
     angular_momentum: 1
     diffusivity: null
     kind_name: Si1
@@ -148,7 +148,7 @@ projections:
     spin_orientation: null
     x_orientation: null
     z_orientation: null
-  - _orbital_type: realhydrogen
+  - _orbital_type: core.realhydrogen
     angular_momentum: 0
     diffusivity: null
     kind_name: Si2
@@ -162,7 +162,7 @@ projections:
     spin_orientation: null
     x_orientation: null
     z_orientation: null
-  - _orbital_type: realhydrogen
+  - _orbital_type: core.realhydrogen
     angular_momentum: 1
     diffusivity: null
     kind_name: Si2
@@ -176,7 +176,7 @@ projections:
     spin_orientation: null
     x_orientation: null
     z_orientation: null
-  - _orbital_type: realhydrogen
+  - _orbital_type: core.realhydrogen
     angular_momentum: 1
     diffusivity: null
     kind_name: Si2
@@ -190,7 +190,7 @@ projections:
     spin_orientation: null
     x_orientation: null
     z_orientation: null
-  - _orbital_type: realhydrogen
+  - _orbital_type: core.realhydrogen
     angular_momentum: 1
     diffusivity: null
     kind_name: Si2

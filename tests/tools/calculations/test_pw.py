@@ -18,7 +18,7 @@ def test_pw_get_scf_accuracy(fixture_localhost, generate_calc_job_node):
     # Missing `scf_accuracy` array
     node = generate_calc_job_node(entry_point_name, fixture_localhost)
     trajectory = orm.ArrayData()
-    trajectory.add_incoming(node, link_type=LinkType.CREATE, link_label='output_trajectory')
+    trajectory.base.links.add_incoming(node, link_type=LinkType.CREATE, link_label='output_trajectory')
     trajectory.store()
 
     with pytest.raises(ValueError):
@@ -28,7 +28,7 @@ def test_pw_get_scf_accuracy(fixture_localhost, generate_calc_job_node):
     node = generate_calc_job_node(entry_point_name, fixture_localhost)
     trajectory = orm.ArrayData()
     trajectory.set_array('scf_accuracy', np.array([1, 1, 1, 2, 2, 2, 2, 2]))
-    trajectory.add_incoming(node, link_type=LinkType.CREATE, link_label='output_trajectory')
+    trajectory.base.links.add_incoming(node, link_type=LinkType.CREATE, link_label='output_trajectory')
     trajectory.store()
 
     with pytest.raises(ValueError):
@@ -38,7 +38,7 @@ def test_pw_get_scf_accuracy(fixture_localhost, generate_calc_job_node):
     trajectory = orm.ArrayData()
     trajectory.set_array('scf_accuracy', np.array([1, 1, 1, 2, 2, 2, 2, 2]))
     trajectory.set_array('scf_iterations', np.array([3, 5]))
-    trajectory.add_incoming(node, link_type=LinkType.CREATE, link_label='output_trajectory')
+    trajectory.base.links.add_incoming(node, link_type=LinkType.CREATE, link_label='output_trajectory')
     trajectory.store()
 
     # Invalid indices, there are only two frames

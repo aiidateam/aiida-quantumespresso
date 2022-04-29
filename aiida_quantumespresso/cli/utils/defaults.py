@@ -27,9 +27,9 @@ def get_structure():
     }
 
     builder = QueryBuilder().append(StructureData, filters=filters)
-    results = builder.first()
+    structure = builder.first(flat=True)
 
-    if not results:
+    if not structure:
         alat = 5.43
         ase_structure = crystal(
             'Si',
@@ -40,7 +40,5 @@ def get_structure():
         )
         structure = StructureData(ase=ase_structure)
         structure.store()
-    else:
-        structure = results[0]
 
     return structure.uuid
