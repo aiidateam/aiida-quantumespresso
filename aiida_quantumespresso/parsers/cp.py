@@ -20,7 +20,7 @@ class CpParser(Parser):
         retrieved = self.retrieved
 
         # check what is inside the folder
-        list_of_files = retrieved._repository.list_object_names()
+        list_of_files = retrieved.list_object_names()
 
         # options.metadata become attributes like this:
         stdout_filename = self.node.get_attribute('output_filename')

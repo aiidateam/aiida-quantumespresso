@@ -258,7 +258,7 @@ def generate_calc_job_node(fixture_localhost):
 
             for link_label, input_node in flatten_inputs(inputs):
                 input_node.store()
-                node.add_incoming(input_node, link_type=LinkType.INPUT_CALC, link_label=link_label)
+                node.base.links.add_incoming(input_node, link_type=LinkType.INPUT_CALC, link_label=link_label)
 
         node.store()
 
@@ -282,11 +282,11 @@ def generate_calc_job_node(fixture_localhost):
                     except OSError:
                         pass  # To test the absence of files in the retrieve_temporary folder
 
-            retrieved.add_incoming(node, link_type=LinkType.CREATE, link_label='retrieved')
+            retrieved.base.links.add_incoming(node, link_type=LinkType.CREATE, link_label='retrieved')
             retrieved.store()
 
             remote_folder = orm.RemoteData(computer=computer, remote_path='/tmp')
-            remote_folder.add_incoming(node, link_type=LinkType.CREATE, link_label='remote_folder')
+            remote_folder.base.links.add_incoming(node, link_type=LinkType.CREATE, link_label='remote_folder')
             remote_folder.store()
 
         return node
@@ -393,7 +393,7 @@ def generate_remote_data():
         if entry_point_name is not None:
             creator = CalcJobNode(computer=computer, process_type=entry_point)
             creator.set_option('resources', {'num_machines': 1, 'num_mpiprocs_per_machine': 1})
-            remote.add_incoming(creator, link_type=LinkType.CREATE, link_label='remote_folder')
+            remote.base.links.add_incoming(creator, link_type=LinkType.CREATE, link_label='remote_folder')
             creator.store()
 
         return remote
@@ -650,7 +650,7 @@ def generate_workchain_pw(generate_workchain, generate_inputs_pw, generate_calc_
 
         if pw_outputs is not None:
             for link_label, output_node in pw_outputs.items():
-                output_node.add_incoming(pw_node, link_type=LinkType.CREATE, link_label=link_label)
+                output_node.base.links.add_incoming(pw_node, link_type=LinkType.CREATE, link_label=link_label)
                 output_node.store()
 
         if exit_code is not None:

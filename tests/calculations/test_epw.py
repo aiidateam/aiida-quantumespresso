@@ -59,7 +59,7 @@ def test_epw_default(
     }
 
     parameters2 = orm.Dict(dict=qibz)
-    parameters2.add_incoming(parent_ph.creator, link_label='output_parameters', link_type=LinkType.CREATE)
+    parameters2.base.links.add_incoming(parent_ph.creator, link_label='output_parameters', link_type=LinkType.CREATE)
     parameters2.store()
 
     inputs = {
