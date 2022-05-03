@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-from distutils.version import LooseVersion
-
 from aiida.orm import Dict, TrajectoryData
 import numpy
+from packaging.version import Version
 from qe_tools import CONSTANTS
 
 from .base import Parser
@@ -81,7 +80,7 @@ class CpParser(Parser):
             ]
 
             # order of atom in the output trajectory changed somewhere after 6.5
-            if LooseVersion(out_dict['creator_version']) > LooseVersion('6.5'):
+            if Version(out_dict['creator_version']) > Version('6.5'):
                 new_cp_ordering = True
             else:
                 new_cp_ordering = False
@@ -145,7 +144,7 @@ class CpParser(Parser):
                 except IndexError:
                     matrix = numpy.array(numpy.matrix(matrix))
 
-                if LooseVersion(out_dict['creator_version']) > LooseVersion('5.1'):
+                if Version(out_dict['creator_version']) > Version('5.1'):
                     # Between version 5.1 and 5.1.1, someone decided to change
                     # the .evp output format, without any way to know that this
                     # happened... SVN commit 11158.
