@@ -83,7 +83,7 @@ class DosParser(Parser):
         self.emit_logs(logs)
 
         self.out('output_dos', xy_data)
-        self.out('output_parameters', Dict(dict=parsed_data))
+        self.out('output_parameters', Dict(parsed_data))
 
 
 def parse_raw_dos(dos_file, array_names, array_units):

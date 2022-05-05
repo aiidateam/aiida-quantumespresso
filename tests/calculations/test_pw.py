@@ -61,7 +61,7 @@ def test_pw_ibrav(
         'code': fixture_code(entry_point_name),
         'structure': structure,
         'kpoints': generate_kpoints_mesh(2),
-        'parameters': orm.Dict(dict=parameters),
+        'parameters': orm.Dict(parameters),
         'pseudos': {
             'Si': upf
         },
@@ -112,7 +112,7 @@ def test_pw_wrong_ibrav(fixture_sandbox, generate_calc_job, fixture_code, genera
         'code': fixture_code(entry_point_name),
         'structure': structure,
         'kpoints': generate_kpoints_mesh(2),
-        'parameters': orm.Dict(dict=parameters),
+        'parameters': orm.Dict(parameters),
         'pseudos': {
             'Si': upf
         },
@@ -144,7 +144,7 @@ def test_pw_ibrav_tol(fixture_sandbox, generate_calc_job, fixture_code, generate
         'code': fixture_code(entry_point_name),
         'structure': structure,
         'kpoints': generate_kpoints_mesh(2),
-        'parameters': orm.Dict(dict=parameters),
+        'parameters': orm.Dict(parameters),
         'pseudos': {
             'Si': upf
         },
@@ -157,7 +157,7 @@ def test_pw_ibrav_tol(fixture_sandbox, generate_calc_job, fixture_code, generate
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
     # After adjusting the tolerance, the input validation no longer fails.
-    inputs['settings'] = orm.Dict(dict={'ibrav_cell_tolerance': eps})
+    inputs['settings'] = orm.Dict({'ibrav_cell_tolerance': eps})
     generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
 
@@ -166,7 +166,7 @@ def test_pw_parallelization_inputs(fixture_sandbox, generate_calc_job, generate_
     entry_point_name = 'quantumespresso.pw'
 
     inputs = generate_inputs_pw()
-    inputs['parallelization'] = orm.Dict(dict={'npool': 4, 'nband': 2, 'ntg': 3, 'ndiag': 12})
+    inputs['parallelization'] = orm.Dict({'npool': 4, 'nband': 2, 'ntg': 3, 'ndiag': 12})
     calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
     cmdline_params = ['-npool', '4', '-nband', '2', '-ntg', '3', '-ndiag', '12', '-in', 'aiida.in']
@@ -186,7 +186,7 @@ def test_pw_parallelization_deprecation(fixture_sandbox, generate_calc_job, gene
 
     inputs = generate_inputs_pw()
     extra_cmdline_args = [f'-{flag_name}', '2']
-    inputs['settings'] = orm.Dict(dict={'CMDLINE': extra_cmdline_args})
+    inputs['settings'] = orm.Dict({'CMDLINE': extra_cmdline_args})
     with pytest.warns(AiidaDeprecationWarning) as captured_warnings:
         calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
         assert calc_info.codes_info[0].cmdline_params == extra_cmdline_args + ['-in', 'aiida.in']
@@ -204,8 +204,8 @@ def test_pw_parallelization_conflict_error(fixture_sandbox, generate_calc_job, g
 
     inputs = generate_inputs_pw()
     extra_cmdline_args = ['-nk', '2']
-    inputs['settings'] = orm.Dict(dict={'CMDLINE': extra_cmdline_args})
-    inputs['parallelization'] = orm.Dict(dict={'npool': 2})
+    inputs['settings'] = orm.Dict({'CMDLINE': extra_cmdline_args})
+    inputs['parallelization'] = orm.Dict({'npool': 2})
     with pytest.raises(InputValidationError) as exc:
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)
     assert 'conflicts' in str(exc.value)
@@ -220,7 +220,7 @@ def test_pw_parallelization_incorrect_flag(fixture_sandbox, generate_calc_job, g
     entry_point_name = 'quantumespresso.pw'
 
     inputs = generate_inputs_pw()
-    inputs['parallelization'] = orm.Dict(dict={'invalid_flag_name': 2})
+    inputs['parallelization'] = orm.Dict({'invalid_flag_name': 2})
     with pytest.raises(ValueError) as exc:
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)
     assert 'Unknown' in str(exc.value)
@@ -235,7 +235,7 @@ def test_pw_parallelization_incorrect_value(fixture_sandbox, generate_calc_job, 
     entry_point_name = 'quantumespresso.pw'
 
     inputs = generate_inputs_pw()
-    inputs['parallelization'] = orm.Dict(dict={'npool': 2.2})
+    inputs['parallelization'] = orm.Dict({'npool': 2.2})
     with pytest.raises(ValueError) as exc:
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)
     assert 'integer' in str(exc.value)
@@ -246,7 +246,7 @@ def test_pw_parallelization_duplicate_cmdline_flag(fixture_sandbox, generate_cal
     entry_point_name = 'quantumespresso.pw'
 
     inputs = generate_inputs_pw()
-    inputs['settings'] = orm.Dict(dict={'CMDLINE': ['-nk', '2', '-npools', '2']})
+    inputs['settings'] = orm.Dict({'CMDLINE': ['-nk', '2', '-npools', '2']})
     with pytest.raises(InputValidationError) as exc:
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)
     assert 'Conflicting' in str(exc.value)
@@ -271,7 +271,7 @@ def test_pw_validate_inputs_restart_base(
 
     # Set `restart_mode` to `'restart'` -> no warning
     parameters['CONTROL']['restart_mode'] = 'restart'
-    inputs['parameters'] = orm.Dict(dict=parameters)
+    inputs['parameters'] = orm.Dict(parameters)
     with pytest.warns(None) as warnings:
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)
     assert len(warnings.list) == 0
@@ -280,7 +280,7 @@ def test_pw_validate_inputs_restart_base(
     # Set `startingwfc` or `startingpot` to `'file'` -> no warning
     for restart_setting in ('startingpot', 'startingwfc'):
         parameters['ELECTRONS'][restart_setting] = 'file'
-        inputs['parameters'] = orm.Dict(dict=parameters)
+        inputs['parameters'] = orm.Dict(parameters)
         with pytest.warns(None) as warnings:
             generate_calc_job(fixture_sandbox, entry_point_name, inputs)
         assert len(warnings.list) == 0
@@ -300,7 +300,7 @@ def test_pw_validate_inputs_restart_nscf(
     parameters['CONTROL']['calculation'] = calculation
 
     # No parent_folder -> warn
-    inputs['parameters'] = orm.Dict(dict=parameters)
+    inputs['parameters'] = orm.Dict(parameters)
     with pytest.warns(Warning, match='`parent_folder` not provided for `.*` calculation.'):
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
@@ -310,13 +310,13 @@ def test_pw_validate_inputs_restart_nscf(
 
     # Set `startingpot` to `'atomic'` -> raise
     parameters['ELECTRONS']['startingpot'] = 'atomic'
-    inputs['parameters'] = orm.Dict(dict=parameters)
+    inputs['parameters'] = orm.Dict(parameters)
     with pytest.raises(ValueError, match='`startingpot` should be set to `file` for a `.*` calculation.'):
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
     # Set `restart_mode` to `'restart'` -> warning
     parameters['ELECTRONS'].pop('startingpot')
     parameters['CONTROL']['restart_mode'] = 'restart'
-    inputs['parameters'] = orm.Dict(dict=parameters)
+    inputs['parameters'] = orm.Dict(parameters)
     with pytest.warns(Warning, match='`restart_mode` should be set to `from_scratch` for a `.*`.'):
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)

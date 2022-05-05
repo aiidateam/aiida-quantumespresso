@@ -18,14 +18,14 @@ def test_cp_default(
         def generate_inputs():
             return AttributeDict({
                 'structure': generate_structure(structure_id='silicon'),
-                'parameters': orm.Dict(dict={}),
+                'parameters': orm.Dict({}),
             })
     else:
 
         def generate_inputs():
             return AttributeDict({
                 'structure': generate_structure(structure_id='water'),
-                'parameters': orm.Dict(dict={}),
+                'parameters': orm.Dict({}),
             })
 
     node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, version, generate_inputs())

@@ -32,7 +32,7 @@ def launch_workflow(
             'code': code,
             'qpoints': kpoints_mesh,
             'parent_folder': calculation.outputs.remote_folder,
-            'parameters': Dict(dict={'INPUTPH': {}}),
+            'parameters': Dict({'INPUTPH': {}}),
             'metadata': {
                 'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
             }

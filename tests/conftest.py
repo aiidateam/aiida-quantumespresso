@@ -80,7 +80,7 @@ def serialize_builder():
         from aiida.orm import BaseType, Code, Dict
         from aiida.plugins import DataFactory
 
-        StructureData = DataFactory('structure')
+        StructureData = DataFactory('core.structure')
         UpfData = DataFactory('pseudo.upf')
 
         if isinstance(data, dict):
@@ -247,7 +247,7 @@ def generate_calc_job_node(fixture_localhost):
                 pass
             else:
                 inputs['structure'] = parsed_input.get_structuredata()
-                inputs['parameters'] = orm.Dict(dict=parsed_input.namelists)
+                inputs['parameters'] = orm.Dict(parsed_input.namelists)
 
         if inputs:
             metadata = inputs.pop('metadata', {})
@@ -409,7 +409,7 @@ def generate_bands_data():
         """Return a `BandsData` instance with some basic `kpoints` and `bands` arrays."""
         from aiida.plugins import DataFactory
         import numpy
-        BandsData = DataFactory('array.bands')  #pylint: disable=invalid-name
+        BandsData = DataFactory('core.array.bands')  #pylint: disable=invalid-name
         bands_data = BandsData()
 
         bands_data.set_kpoints(numpy.array([[0., 0., 0.], [0.625, 0.25, 0.625]]))
@@ -514,7 +514,7 @@ def generate_inputs_ph(fixture_sandbox, fixture_localhost, fixture_code, generat
             'code': fixture_code('quantumespresso.matdyn'),
             'parent_folder': generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.pw'),
             'qpoints': generate_kpoints_mesh(2),
-            'parameters': Dict(dict={'INPUTPH': {}}),
+            'parameters': Dict({'INPUTPH': {}}),
             'metadata': {
                 'options': get_default_options()
             }
@@ -535,20 +535,18 @@ def generate_inputs_pw(fixture_code, generate_structure, generate_kpoints_mesh, 
 
         from aiida_quantumespresso.utils.resources import get_default_options
 
-        parameters = Dict(
-            dict={
-                'CONTROL': {
-                    'calculation': 'scf'
-                },
-                'SYSTEM': {
-                    'ecutrho': 240.0,
-                    'ecutwfc': 30.0
-                },
-                'ELECTRONS': {
-                    'electron_maxstep': 60,
-                }
+        parameters = Dict({
+            'CONTROL': {
+                'calculation': 'scf'
+            },
+            'SYSTEM': {
+                'ecutrho': 240.0,
+                'ecutwfc': 30.0
+            },
+            'ELECTRONS': {
+                'electron_maxstep': 60,
             }
-        )
+        })
         inputs = {
             'code': fixture_code('quantumespresso.pw'),
             'structure': generate_structure(),
@@ -579,7 +577,7 @@ def generate_inputs_cp(fixture_code, generate_structure, generate_upf_data):
         inputs = {
             'code': fixture_code('quantumespresso.cp'),
             'structure': generate_structure(),
-            'parameters': Dict(dict={
+            'parameters': Dict({
                 'CONTROL': {
                     'calculation': 'cp'
                 },
@@ -596,19 +594,17 @@ def generate_inputs_cp(fixture_code, generate_structure, generate_upf_data):
             }
         }
         if autopilot:
-            inputs['settings'] = Dict(
-                dict={
-                    'AUTOPILOT': [{
-                        'onstep': 2,
-                        'what': 'dt',
-                        'newvalue': 42.0
-                    }, {
-                        'onstep': 3,
-                        'what': 'dt',
-                        'newvalue': 42.42
-                    }]
-                }
-            )
+            inputs['settings'] = Dict({
+                'AUTOPILOT': [{
+                    'onstep': 2,
+                    'what': 'dt',
+                    'newvalue': 42.0
+                }, {
+                    'onstep': 3,
+                    'what': 'dt',
+                    'newvalue': 42.42
+                }]
+            })
 
         return inputs
 
@@ -732,14 +728,14 @@ def generate_workchain_pdos(
         projwfc_params = {'PROJWFC': {'Emin': -10, 'Emax': 10, 'DeltaE': 0.01, 'ngauss': 0, 'degauss': 0.01}}
         dos = {
             'code': fixture_code('quantumespresso.dos'),
-            'parameters': Dict(dict=dos_params),
+            'parameters': Dict(dos_params),
             'metadata': {
                 'options': get_default_options()
             }
         }
         projwfc = {
             'code': fixture_code('quantumespresso.projwfc'),
-            'parameters': Dict(dict=projwfc_params),
+            'parameters': Dict(projwfc_params),
             'metadata': {
                 'options': get_default_options()
             }

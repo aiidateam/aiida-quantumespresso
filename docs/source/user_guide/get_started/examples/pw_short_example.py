@@ -19,7 +19,7 @@ builder = orm.load_code('pw-6.3@TheHive').get_builder()
 # BaTiO3 cubic structure
 alat = 4.  # angstrom
 cell = [[alat, 0., 0.], [0., alat, 0.], [0., 0., alat]]
-s = plugins.DataFactory('structure')(cell=cell)
+s = plugins.DataFactory('core.structure')(cell=cell)
 s.append_atom(position=(0., 0., 0.), symbols='Ba')
 s.append_atom(position=(alat / 2., alat / 2., alat / 2.), symbols='Ti')
 s.append_atom(position=(alat / 2., alat / 2., 0.), symbols='O')
@@ -28,7 +28,7 @@ s.append_atom(position=(0., alat / 2., alat / 2.), symbols='O')
 builder.structure = s
 builder.pseudos = orm.load_group('SSSP/1.1/PBE/efficiency').get_pseudos(structure=s)
 
-builder.parameters = plugins.DataFactory('dict')(
+builder.parameters = plugins.DataFactory('core.dict')(
     dict={
         'CONTROL': {
             'calculation': 'scf',
@@ -45,7 +45,7 @@ builder.parameters = plugins.DataFactory('dict')(
     }
 )
 
-kpoints = plugins.DataFactory('array.kpoints')()
+kpoints = plugins.DataFactory('core.array.kpoints')()
 kpoints.set_kpoints_mesh([4, 4, 4])
 builder.kpoints = kpoints
 

@@ -50,7 +50,7 @@ def update_mapping(original, source):
             original[key] = value
 
     if return_node:
-        original = Dict(dict=original)
+        original = Dict(original)
 
     return original
 
@@ -92,7 +92,7 @@ def wrap_bare_dict_inputs(port_namespace, inputs):
         if isinstance(port, PortNamespace):
             wrapped[key] = wrap_bare_dict_inputs(port, value)
         elif port.valid_type == Dict and isinstance(value, dict):
-            wrapped[key] = Dict(dict=value)
+            wrapped[key] = Dict(value)
         else:
             wrapped[key] = value
 

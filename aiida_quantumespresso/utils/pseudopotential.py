@@ -6,7 +6,7 @@ from aiida.common.warnings import AiidaDeprecationWarning
 from aiida.orm.nodes.data.upf import get_pseudos_from_structure
 from aiida.plugins import DataFactory
 
-LegacyUpfData = DataFactory('upf')
+LegacyUpfData = DataFactory('core.upf')
 UpfData = DataFactory('pseudo.upf')
 
 

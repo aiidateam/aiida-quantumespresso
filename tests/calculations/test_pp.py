@@ -22,9 +22,9 @@ def generate_inputs(fixture_localhost, fixture_sandbox, fixture_code, generate_r
             'parent_folder':
             generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.pw'),
             'parameters':
-            orm.Dict(dict=parameters),
+            orm.Dict(parameters),
             'settings':
-            orm.Dict(dict=settings),
+            orm.Dict(settings),
             'metadata': {
                 'options': get_default_options()
             }

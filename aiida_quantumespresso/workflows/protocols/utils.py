@@ -6,7 +6,7 @@ from typing import Optional, Union
 from aiida.plugins import DataFactory, GroupFactory
 import yaml
 
-StructureData = DataFactory('structure')
+StructureData = DataFactory('core.structure')
 PseudoPotentialFamily = GroupFactory('pseudo.family')
 
 

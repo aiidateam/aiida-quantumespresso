@@ -51,7 +51,7 @@ class PwBandStructureWorkChain(WorkChain):
             help='The input structure.')
         spec.input('options', valid_type=orm.Dict, required=False,
             help='Optional `options` to use for the `PwCalculations`.')
-        spec.input('protocol', valid_type=orm.Dict, default=lambda: orm.Dict(dict={'name': 'theos-ht-1.0'}),
+        spec.input('protocol', valid_type=orm.Dict, default=lambda: orm.Dict({'name': 'theos-ht-1.0'}),
             help='The protocol to use for the workchain.', validator=validate_protocol)
         spec.expose_outputs(PwBandsWorkChain)
         spec.outline(
@@ -106,25 +106,23 @@ class PwBandStructureWorkChain(WorkChain):
                 self.report(f'failed to retrieve the cutoff or dual factor for {kind}')
                 return self.exit_codes.ERROR_INVALID_INPUT_UNRECOGNIZED_KIND
 
-        self.ctx.parameters = orm.Dict(
-            dict={
-                'CONTROL': {
-                    'restart_mode': 'from_scratch',
-                    'tstress': self.ctx.protocol['tstress'],
-                    'tprnfor': self.ctx.protocol['tprnfor'],
-                },
-                'SYSTEM': {
-                    'ecutwfc': max(ecutwfc),
-                    'ecutrho': max(ecutrho),
-                    'smearing': self.ctx.protocol['smearing'],
-                    'degauss': self.ctx.protocol['degauss'],
-                    'occupations': self.ctx.protocol['occupations'],
-                },
-                'ELECTRONS': {
-                    'conv_thr': self.ctx.protocol['convergence_threshold_per_atom'] * len(self.inputs.structure.sites),
-                }
+        self.ctx.parameters = orm.Dict({
+            'CONTROL': {
+                'restart_mode': 'from_scratch',
+                'tstress': self.ctx.protocol['tstress'],
+                'tprnfor': self.ctx.protocol['tprnfor'],
+            },
+            'SYSTEM': {
+                'ecutwfc': max(ecutwfc),
+                'ecutrho': max(ecutrho),
+                'smearing': self.ctx.protocol['smearing'],
+                'degauss': self.ctx.protocol['degauss'],
+                'occupations': self.ctx.protocol['occupations'],
+            },
+            'ELECTRONS': {
+                'conv_thr': self.ctx.protocol['convergence_threshold_per_atom'] * len(self.inputs.structure.sites),
             }
-        )
+        })
 
     def run_bands(self):
         """Run the `PwBandsWorkChain` to compute the band structure."""

@@ -25,7 +25,7 @@ class Pw2wannier90Parser(Parser):
         parsed_data, logs = parse_output_base(out_file, codename='PW2WANNIER')
         self.emit_logs(logs)
 
-        self.out('output_parameters', Dict(dict=parsed_data))
+        self.out('output_parameters', Dict(parsed_data))
 
         if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs.error:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE)

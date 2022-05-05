@@ -88,9 +88,9 @@ class PwParser(Parser):
         # Separate the atomic_occupations dictionary in its own node if it is present
         atomic_occupations = parsed_parameters.pop('atomic_occupations', None)
         if atomic_occupations:
-            self.out('output_atomic_occupations', orm.Dict(dict=atomic_occupations))
+            self.out('output_atomic_occupations', orm.Dict(atomic_occupations))
 
-        self.out('output_parameters', orm.Dict(dict=parsed_parameters))
+        self.out('output_parameters', orm.Dict(parsed_parameters))
 
         # Emit the logs returned by the XML and stdout parsing through the logger
         # If the calculation was an initialization run, reset the XML logs because they will contain a lot of verbose

@@ -54,7 +54,10 @@ PSEUDO_FAMILY = OverridableOption(
 )
 
 STRUCTURE = OverridableOption(
-    '-S', '--structure', type=types.DataParamType(sub_classes=('aiida.data:structure',)), help='StructureData node.'
+    '-S',
+    '--structure',
+    type=types.DataParamType(sub_classes=('aiida.data:core.structure',)),
+    help='StructureData node.'
 )
 
 KPOINTS_DISTANCE = OverridableOption(
@@ -146,7 +149,7 @@ PARENT_FOLDER = OverridableOption(
     '-P',
     '--parent-folder',
     'parent_folder',
-    type=types.DataParamType(sub_classes=('aiida.data:remote',)),
+    type=types.DataParamType(sub_classes=('aiida.data:core.remote',)),
     show_default=True,
     required=False,
     help='The PK of a parent remote folder (for restarts).'
@@ -207,7 +210,7 @@ HUBBARD_FILE = OverridableOption(
     '-H',
     '--hubbard-file',
     'hubbard_file_pk',
-    type=types.DataParamType(sub_classes=('aiida.data:singlefile',)),
+    type=types.DataParamType(sub_classes=('aiida.data:core.singlefile',)),
     help='SinglefileData containing Hubbard parameters from a HpCalculation to use as input for Hubbard V.'
 )
 

@@ -20,8 +20,8 @@ def generate_inputs(generate_structure):
         return AttributeDict({
             'structure': generate_structure(),
             'kpoints': kpoints,
-            'parameters': orm.Dict(dict=parameters),
-            'settings': orm.Dict(dict=settings),
+            'parameters': orm.Dict(parameters),
+            'settings': orm.Dict(settings),
             'metadata': metadata or {}
         })
 

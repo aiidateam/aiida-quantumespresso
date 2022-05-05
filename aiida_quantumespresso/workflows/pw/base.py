@@ -230,12 +230,12 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         builder.pw['code'] = code
         builder.pw['pseudos'] = pseudos
         builder.pw['structure'] = structure
-        builder.pw['parameters'] = orm.Dict(dict=parameters)
+        builder.pw['parameters'] = orm.Dict(parameters)
         builder.pw['metadata'] = inputs['pw']['metadata']
         if 'settings' in inputs['pw']:
-            builder.pw['settings'] = orm.Dict(dict=inputs['pw']['settings'])
+            builder.pw['settings'] = orm.Dict(inputs['pw']['settings'])
         if 'parallelization' in inputs['pw']:
-            builder.pw['parallelization'] = orm.Dict(dict=inputs['pw']['parallelization'])
+            builder.pw['parallelization'] = orm.Dict(inputs['pw']['parallelization'])
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
         builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
         builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
@@ -421,7 +421,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         parallelization = get_pw_parallelization_parameters(calculation, **self.ctx.automatic_parallelization)
 
         # Note: don't do this at home, we are losing provenance here. This should be done by a calculation function
-        node = orm.Dict(dict=parallelization).store()
+        node = orm.Dict(parallelization).store()
         self.out('automatic_parallelization', node)
         self.report(f'results of automatic parallelization in {node.__class__.__name__}<{node.pk}>')
 

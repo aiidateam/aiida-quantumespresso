@@ -106,7 +106,7 @@ def create_builder_from_file(input_folder, input_file_name, code, metadata, pseu
             # take into account that celldm and celldm(*) must be blocked
             if re.sub('[(0-9)]', '', key) == blocked_key:
                 parameters_dict[namelist].pop(key, None)
-    builder.parameters = Dict(dict=parameters_dict)
+    builder.parameters = Dict(parameters_dict)
 
     # Get or create a UpfData node for the pseudopotentials used for the calculation.
     pseudos_map = {}

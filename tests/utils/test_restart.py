@@ -9,7 +9,7 @@ from aiida_quantumespresso.utils import restart
 def generate_inputs():
     """Return a dictionary of inputs for a `CalcJobNode` fixture to be created."""
     from aiida import orm
-    return {'parameters': orm.Dict(dict={}), 'settings': orm.Dict(dict={})}
+    return {'parameters': orm.Dict({}), 'settings': orm.Dict({})}
 
 
 def test_restart(fixture_localhost, generate_calc_job_node):

@@ -118,7 +118,7 @@ Example run
   updated_parameters['CONTROL']['calculation'] = 'nscf'
   updated_parameters['SYSTEM']['nbnd'] = 10
 
-  KpointsData = DataFactory('array.kpoints')
+  KpointsData = DataFactory('core.array.kpoints')
   kpoints = KpointsData()
 
   klist = np.zeros((216, 3))
@@ -132,7 +132,7 @@ Example run
   kpoints.store()
 
   builder.kpoints = kpoints
-  builder.parameters = Dict(dict=updated_parameters)
+  builder.parameters = Dict(updated_parameters)
 
   builder.parent_folder = first_pw.outputs.remote_folder
 

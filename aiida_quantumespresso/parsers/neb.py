@@ -167,7 +167,7 @@ class NebParser(Parser):
         # Symbols can be obtained simply from the last image
         symbols = [str(site.kind_name) for site in structure_data.sites]
 
-        output_params = Dict(dict=dict(list(neb_out_dict.items()) + list(image_data.items())))
+        output_params = Dict(dict(list(neb_out_dict.items()) + list(image_data.items())))
         self.out('output_parameters', output_params)
 
         trajectory = TrajectoryData()

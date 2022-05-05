@@ -40,8 +40,8 @@ the code, and the proper scheduler info.
 
     code = Code.get_from_string(codename)
 
-    Dict = DataFactory('dict')
-    parameters = Dict(dict={
+    Dict = DataFactory('core.dict')
+    parameters = Dict({
         'PROJWFC': {
             'DeltaE' : 0.2,
             'ngauss' : 1,

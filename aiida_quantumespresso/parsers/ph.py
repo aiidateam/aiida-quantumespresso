@@ -55,7 +55,7 @@ class PhParser(Parser):
             return self.exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc))
 
         self.emit_logs(logs)
-        self.out('output_parameters', orm.Dict(dict=parsed_data))
+        self.out('output_parameters', orm.Dict(parsed_data))
 
         # If the scheduler detected OOW, simply keep that exit code by not returning anything more specific.
         if self.node.exit_status == PhCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME:

@@ -20,7 +20,7 @@ from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 from .base import CalcJob
 from .helpers import QEInputValidationError
 
-LegacyUpfData = DataFactory('upf')
+LegacyUpfData = DataFactory('core.upf')
 UpfData = DataFactory('pseudo.upf')
 
 

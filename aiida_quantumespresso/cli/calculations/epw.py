@@ -73,7 +73,7 @@ def launch_calculation(
         'kpoints': kpoints_mesh,
         'qfpoints': qfpoints_mesh,
         'kfpoints': kfpoints_mesh,
-        'parameters': orm.Dict(dict=parameters),
+        'parameters': orm.Dict(parameters),
         'parent_folder_nscf': pw_nscf_parent_folder,
         'parent_folder_ph': ph_parent_folder,
         'metadata': {

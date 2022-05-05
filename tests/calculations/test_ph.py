@@ -23,7 +23,7 @@ def test_ph_default(
         'code': fixture_code(entry_point_name),
         'parent_folder': generate_remote_data(fixture_localhost, remote_path, parent_entry_point),
         'qpoints': generate_kpoints_mesh(2),
-        'parameters': orm.Dict(dict={'INPUTPH': {}}),
+        'parameters': orm.Dict({'INPUTPH': {}}),
         'metadata': {
             'options': get_default_options()
         }
@@ -69,7 +69,7 @@ def test_ph_qpoint_list(
         'code': fixture_code(entry_point_name),
         'parent_folder': generate_remote_data(fixture_localhost, remote_path, parent_entry_point),
         'qpoints': qpoints,
-        'parameters': orm.Dict(dict={'INPUTPH': {}}),
+        'parameters': orm.Dict({'INPUTPH': {}}),
         'metadata': {
             'options': get_default_options()
         }

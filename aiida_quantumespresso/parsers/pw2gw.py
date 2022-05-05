@@ -31,7 +31,7 @@ class Pw2gwParser(Parser):
         if self.exit_code_stdout:
             return self.exit(self.exit_code_stdout)
 
-        self.out('output_parameters', orm.Dict(dict=data))
+        self.out('output_parameters', orm.Dict(data))
 
         # Parse the pw2g outputfiles
         eps = self.parse_eps_files()

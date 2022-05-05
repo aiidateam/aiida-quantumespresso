@@ -141,7 +141,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
             raise ValueError(f'relax type `{relax_type} is not yet supported.')
 
         if relax_type in (RelaxType.VOLUME, RelaxType.SHAPE, RelaxType.CELL):
-            base.pw.settings = orm.Dict(dict=PwRelaxWorkChain._fix_atomic_positions(structure, base.pw.settings))
+            base.pw.settings = orm.Dict(PwRelaxWorkChain._fix_atomic_positions(structure, base.pw.settings))
 
         if relax_type is RelaxType.NONE:
             base.pw.parameters['CONTROL']['calculation'] = 'scf'
