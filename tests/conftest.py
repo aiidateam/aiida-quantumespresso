@@ -511,7 +511,7 @@ def generate_inputs_ph(fixture_sandbox, fixture_localhost, fixture_code, generat
         from aiida_quantumespresso.utils.resources import get_default_options
 
         inputs = {
-            'code': fixture_code('quantumespresso.matdyn'),
+            'code': fixture_code('quantumespresso.ph'),
             'parent_folder': generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.pw'),
             'qpoints': generate_kpoints_mesh(2),
             'parameters': Dict({'INPUTPH': {}}),
