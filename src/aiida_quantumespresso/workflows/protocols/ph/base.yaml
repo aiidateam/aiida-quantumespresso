@@ -1,0 +1,36 @@
+default_inputs:
+    clean_workdir: True
+    ph:
+        metadata:
+            options:
+                resources:
+                    num_machines: 1
+                max_wallclock_seconds: 43200  # Twelve hours
+                withmpi: True
+        parameters:
+            INPUTPH:
+                tr2_ph: 1.0e-18
+        qpoints:
+          - 3
+          - 3
+          - 3
+default_protocol: moderate
+protocols:
+    moderate:
+        description: 'Protocol to perform the computation at normal precision at moderate computational cost.'
+    precise:
+        description: 'Protocol to perform the computation at high precision at higher computational cost.'
+        ph:
+            parameters:
+                INPUTPH:
+                    tr2_ph: 1.0e-20
+    fast:
+        description: 'Protocol to perform the computation at low precision at minimal computational cost for testing purposes.'
+        ph:
+            parameters:
+                INPUTPH:
+                    tr2_ph: 1.0e-16
+            qpoints:
+              - 2
+              - 2
+              - 2
