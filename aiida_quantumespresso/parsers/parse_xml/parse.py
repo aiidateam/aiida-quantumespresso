@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from distutils.version import StrictVersion
 from urllib.error import URLError
 
 import numpy as np
+from packaging.version import Version
 from qe_tools import CONSTANTS
 from xmlschema import XMLSchema
 
@@ -95,7 +95,7 @@ def parse_xml_post_6_2(xml):
         for err in errors:
             logs.error.append(str(err))
 
-    xml_version = StrictVersion(xml_dictionary['general_info']['xml_format']['@VERSION'])
+    xml_version = Version(xml_dictionary['general_info']['xml_format']['@VERSION'])
     inputs = xml_dictionary.get('input', {})
     outputs = xml_dictionary['output']
 
@@ -285,7 +285,7 @@ def parse_xml_post_6_2(xml):
             degauss = smearing_xml['@degauss']
 
             # Versions below 19.03.04 (Quantum ESPRESSO<=6.4.1) incorrectly print degauss in Ry instead of Hartree
-            if xml_version < StrictVersion('19.03.04'):
+            if xml_version < Version('19.03.04'):
                 degauss *= CONSTANTS.ry_to_ev
             else:
                 degauss *= CONSTANTS.hartree_to_ev
