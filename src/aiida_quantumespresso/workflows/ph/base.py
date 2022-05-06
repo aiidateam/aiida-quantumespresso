@@ -2,14 +2,17 @@
 """Workchain to run a Quantum ESPRESSO ph.x calculation with automated error handling and restarts."""
 from aiida import orm
 from aiida.common import AttributeDict
+from aiida.common.lang import type_check
 from aiida.engine import BaseRestartWorkChain, ProcessHandlerReport, process_handler, while_
 from aiida.plugins import CalculationFactory
+
+from aiida_quantumespresso.workflows.protocols.utils import ProtocolMixin
 
 PhCalculation = CalculationFactory('quantumespresso.ph')
 PwCalculation = CalculationFactory('quantumespresso.pw')
 
 
-class PhBaseWorkChain(BaseRestartWorkChain):
+class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     """Workchain to run a Quantum ESPRESSO ph.x calculation with automated error handling and restarts."""
 
     _process_class = PhCalculation
@@ -44,6 +47,50 @@ class PhBaseWorkChain(BaseRestartWorkChain):
         spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
             message='The calculation failed with an unrecoverable error.')
         # yapf: enable
+
+    @classmethod
+    def get_protocol_filepath(cls):
+        """Return ``pathlib.Path`` to the ``.yaml`` file that defines the protocols."""
+        from importlib_resources import files
+
+        from ..protocols import ph as ph_protocols
+        return files(ph_protocols) / 'base.yaml'
+
+    @classmethod
+    def get_builder_from_protocol(cls, code, parent_folder=None, protocol=None, overrides=None, **_):
+        """Return a builder prepopulated with inputs selected according to the chosen protocol.
+
+        :param code: the ``Code`` instance configured for the ``quantumespresso.ph`` plugin.
+        :param structure: the ``StructureData`` instance to use.
+        :param protocol: protocol to use, if not specified, the default will be used.
+        :param overrides: optional dictionary of inputs to override the defaults of the protocol.
+        :return: a process builder instance with all inputs defined ready for launch.
+        """
+        if isinstance(code, str):
+            code = orm.load_code(code)
+
+        type_check(code, orm.Code)
+
+        inputs = cls.get_protocol_inputs(protocol, overrides)
+
+        qpoints_mesh = inputs['ph'].pop('qpoints')
+        qpoints = orm.KpointsData()
+        qpoints.set_kpoints_mesh(qpoints_mesh)
+
+        # pylint: disable=no-member
+        builder = cls.get_builder()
+        builder.ph['code'] = code
+        if parent_folder is not None:
+            builder.ph['parent_folder'] = parent_folder
+        builder.ph['parameters'] = orm.Dict(inputs['ph']['parameters'])
+        builder.ph['metadata'] = inputs['ph']['metadata']
+        if 'settings' in inputs['ph']:
+            builder.ph['settings'] = orm.Dict(inputs['ph']['settings'])
+        builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
+        builder.ph['qpoints'] = qpoints
+        # pylint: enable=no-member
+
+        return builder
 
     def setup(self):
         """Call the `setup` of the `BaseRestartWorkChain` and then create the inputs dictionary in `self.ctx.inputs`.
