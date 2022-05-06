@@ -32,8 +32,8 @@ repos:
         args: ['-i']
         exclude: &exclude_files >
             (?x)^(
-                aiida_quantumespresso/calculations/pwimmigrant.*|
-                aiida_quantumespresso/parsers/.*|
+                src/aiida_quantumespresso/calculations/pwimmigrant.*|
+                src/aiida_quantumespresso/parsers/.*|
                 docs/.*|
                 tests/.*(?<!\.py)$
             )$
