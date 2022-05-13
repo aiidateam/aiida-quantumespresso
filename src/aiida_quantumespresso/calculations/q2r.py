@@ -19,7 +19,7 @@ class Q2rCalculation(NamelistsCalculation):
     _default_namelists = ['INPUT']
     _blocked_keywords = [
         ('INPUT', 'fildyn', PhCalculation._OUTPUT_DYNAMICAL_MATRIX_PREFIX),  # pylint: disable=protected-access
-        ('INPUT', 'flfrc', _FORCE_CONSTANTS_NAME),
+        ('INPUT', 'flfrc', _FORCE_CONSTANTS_NAME),  # Real space force constants
     ]
 
     _internal_retrieve_list = [_FORCE_CONSTANTS_NAME]

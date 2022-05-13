@@ -31,10 +31,12 @@ class MatdynCalculation(NamelistsCalculation):
         super().define(spec)
         spec.input('force_constants', valid_type=ForceConstantsData, required=True)
         spec.input('kpoints', valid_type=orm.KpointsData, help='Kpoints on which to calculate the phonon frequencies.')
-        spec.inputs.pop('parent_folder')
+        spec.inputs.validator = cls._validate_inputs
+
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.output('output_phonon_bands', valid_type=orm.BandsData)
         spec.default_output_node = 'output_parameters'
+
         spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
             message='The stdout output file could not be read.')
         spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
@@ -47,18 +49,40 @@ class MatdynCalculation(NamelistsCalculation):
             message='Number of kpoints in the inputs is not commensurate with those in the output')
         # yapf: enable
 
-    def _get_following_text(self):
-        """Add the kpoints after the namelist."""
-        try:
-            kpoints = self.inputs.kpoints.get_kpoints()
-        except AttributeError:
-            kpoints = self.inputs.kpoints.get_kpoints_mesh(print_list=True)
+    @staticmethod
+    def _validate_inputs(value, _):
+        """Validate the top level namespace."""
+        if 'parameters' in value:
+            parameters = value['parameters'].get_dict()
+        else:
+            parameters = {}
 
-        kpoints_string = [f'{len(kpoints)}']
-        for kpoint in kpoints:
+        if parameters.get('INPUT', {}).get('flfrc', None) is not None:
+            return '`INPUT.flfrc` is set automatically from the `force_constants` input.'
+
+    def generate_input_file(self, parameters):
+        """Generate namelist input_file content given a dict of parameters.
+
+        :param parameters: 'dict' containing the fortran namelists and parameters to be used.
+          e.g.: {'CONTROL':{'calculation':'scf'}, 'SYSTEM':{'ecutwfc':30}}
+        :return: 'str' containing the input_file content a plain text.
+        """
+        kpoints = self.inputs.kpoints
+        parameters.setdefault('INPUT', {})['flfrc'] = self.inputs.force_constants.filename
+        file_content = super().generate_input_file(parameters)
+
+        try:
+            kpoints_list = kpoints.get_kpoints()
+        except AttributeError:
+            kpoints_list = kpoints.get_kpoints_mesh(print_list=True)
+
+        kpoints_string = [f'{len(kpoints_list)}']
+        for kpoint in kpoints_list:
             kpoints_string.append('{:18.10f} {:18.10f} {:18.10f}'.format(*kpoint))  # pylint: disable=consider-using-f-string
 
-        return '\n'.join(kpoints_string) + '\n'
+        file_content += '\n'.join(kpoints_string) + '\n'
+
+        return file_content
 
     def prepare_for_submission(self, folder):
         """Prepare the calculation job for submission by transforming input nodes into input files.
@@ -70,10 +94,9 @@ class MatdynCalculation(NamelistsCalculation):
         :param folder: a sandbox folder to temporarily write files on disk.
         :return: :py:`~aiida.common.datastructures.CalcInfo` instance.
         """
-        force_constants = self.inputs.force_constants
-        self._blocked_keywords.append(('INPUT', 'flfrc', force_constants.filename))
-
         calcinfo = super().prepare_for_submission(folder)
+
+        force_constants = self.inputs.force_constants
         calcinfo.local_copy_list.append((force_constants.uuid, force_constants.filename, force_constants.filename))
 
         return calcinfo
