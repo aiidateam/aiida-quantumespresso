@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-""" Classes and methods for running the ufp2plotcore.sh shell script using AiiDA """
+"""Classes and methods for running the ufp2plotcore.sh shell script using AiiDA."""
 import os
 from aiida import orm
 from aiida.common import exceptions
@@ -13,13 +13,13 @@ upf = DataFactory('upf')
 SingleFileData = DataFactory('singlefile')
 
 class UPF2PlotcoreCalculation(CalcJob):
-    """ Calcjob class to run ufp2plotcore.sh """
+    """Calcjob class to run the ufp2plotcore shell script."""
     
     _default_parser = 'quantumespresso.upf2plotcore'
 
     @classmethod
     def define(cls, spec: CalcJobProcessSpec):
-        """ Define the process specification """
+        """Define the process specification."""
         
         super().define(spec)
         spec.input('upf_data', valid_type=(pseudo_upf, upf), required=True, help='UPF data node to be read by upf2plotcore.sh. This must be an aiida-pseudo type of node ("pseudo.upf") and contain GIPAW information in order to return any meaningful data')
@@ -34,7 +34,7 @@ class UPF2PlotcoreCalculation(CalcJob):
         spec.exit_code(315, 'ERROR_OUTPUT_EMPTY', message='No data were retrieved from the pseudopotential. Please ensure that the chosen upf file contains GIPAW information')
         
     def prepare_for_submission(self, folder: Folder) -> CalcInfo:
-        """ Prepare the calculation for submission 
+        """Prepare the calculation for submission. 
         
         Convert the input nodes into the corresponding input files in the format that the 
         code will expect. In addition, define and return a `CalcInfo` instance, which is a 
@@ -46,7 +46,7 @@ class UPF2PlotcoreCalculation(CalcJob):
         :returns: the CalcInfo instance
         """
         
-        # upf2plotcore.sh expects a UPF format plaintext file as input
+        # upf2plotcore.sh expects a UPF-format (v1 or v2) plaintext file as input
         with folder.open(self.options.input_filename, 'w', encoding='utf8') as handle:
             handle.write(self.inputs.upf_data.get_content())
                 
@@ -63,3 +63,4 @@ class UPF2PlotcoreCalculation(CalcJob):
         calcinfo.retrieve_list = [self.options.output_filename]
         
         return calcinfo
+    
