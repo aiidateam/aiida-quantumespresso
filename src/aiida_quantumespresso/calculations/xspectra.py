@@ -12,7 +12,7 @@ from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 
 KpointsData = DataFactory('array.kpoints')
 
-class XSpectraCalculation(NamelistsCalculation): 
+class XspectraCalculation(NamelistsCalculation): 
     """CalcJob implementation for the xspectra.x code of Quantum ESPRESSO."""
 
     _Plotcore_FILENAME = 'plotcore.out'
