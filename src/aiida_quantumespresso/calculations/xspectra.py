@@ -42,7 +42,7 @@ class XSpectraCalculation(NamelistsCalculation):
                    required=True,
                    help='The K-point sampling to be used for the XSpectra calculation')
         spec.output('output_parameters', valid_type=Dict)
-        spec.output('spectra_data', valid_type=XyData)
+        spec.output('spectra', valid_type=XyData)
         spec.default_output_node = 'output_parameters'
 
         spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
