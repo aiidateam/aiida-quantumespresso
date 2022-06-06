@@ -79,7 +79,7 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 'quantumespresso.pwimmigrant' = 'aiida_quantumespresso.calculations.pwimmigrant:PwimmigrantCalculation'
 'quantumespresso.q2r' = 'aiida_quantumespresso.calculations.q2r:Q2rCalculation'
 'quantumespresso.seekpath_structure_analysis' = 'aiida_quantumespresso.calculations.functions.seekpath_structure_analysis:seekpath_structure_analysis'
-'quantumespresso.xspectra' = 'aiida_quantumespresso.calculations.xspectra:XSpectraCalculation'
+'quantumespresso.xspectra' = 'aiida_quantumespresso.calculations.xspectra:XspectraCalculation'
 
 [project.entry-points.'aiida.data']
 'quantumespresso.force_constants' = 'aiida_quantumespresso.data.force_constants:ForceConstantsData'
