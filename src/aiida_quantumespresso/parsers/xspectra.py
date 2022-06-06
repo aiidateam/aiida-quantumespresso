@@ -5,7 +5,7 @@ from aiida.orm import Dict, XyData
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.base import Parser
 
-class XSpectraParser(Parser):
+class XspectraParser(Parser):
     """ Parser for the XSpectraCalculation calcjob plugin """
 
     def parse(self, **kwargs):
