@@ -96,7 +96,7 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 'quantumespresso.pw2gw' = 'aiida_quantumespresso.parsers.pw2gw:Pw2gwParser'
 'quantumespresso.q2r' = 'aiida_quantumespresso.parsers.q2r:Q2rParser'
 'quantumespresso.pw2wannier90' = 'aiida_quantumespresso.parsers.pw2wannier90:Pw2wannier90Parser'
-'quantumespresso.xspectra' = 'aiida_quantumespresso.parsers.xspectra:XSpectraParser'
+'quantumespresso.xspectra' = 'aiida_quantumespresso.parsers.xspectra:XspectraParser'
 
 [project.entry-points.'aiida.tools.calculations']
 'quantumespresso.pw' = 'aiida_quantumespresso.tools.calculations.pw:PwCalculationTools'
