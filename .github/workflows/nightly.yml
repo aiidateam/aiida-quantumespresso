@@ -3,9 +3,13 @@ name: nightly
 on:
     schedule:
     -   cron: '0 0 * * *'  # Run every day at midnight
+    push:
+        paths:
+        - '.github/workflows/nightly.yml'
     pull_request:
         paths:
         - '.github/workflows/nightly.yml'
+
 
 jobs:
 
@@ -53,7 +57,7 @@ jobs:
             run: pytest -sv tests
 
         -   name: Slack notification
-            if: always()
+            if: always() && (steps.install.outcome == 'Failure' || steps.tests.outcome == 'Failure')
             uses: rtCamp/action-slack-notify@master
             env:
                 SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
