@@ -298,11 +298,6 @@ class PhCalculation(CalcJob):
             with folder.open(f'{self._PREFIX}.EXIT', 'w') as handle:
                 handle.write('\n')
 
-                remote_copy_list.append((
-                    parent_folder.computer.uuid,
-                    os.path.join(parent_folder.get_remote_path(), self._FOLDER_DYNAMICAL_MATRIX), '.'
-                ))
-
         codeinfo = datastructures.CodeInfo()
         codeinfo.cmdline_params = (list(settings.pop('CMDLINE', [])) + ['-in', self.metadata.options.input_filename])
         codeinfo.stdout_name = self.metadata.options.output_filename

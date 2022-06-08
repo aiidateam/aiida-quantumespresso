@@ -53,21 +53,12 @@ class NamelistsCalculation(CalcJob):
         if cls._default_parser is not None:
             spec.input('metadata.options.parser_name', valid_type=str, default=cls._default_parser)
         spec.input('parameters', valid_type=Dict, required=False,
-            help='Use a node that specifies the input parameters for the namelists')
+            help='Parameters for the namelists in the input file.')
         spec.input('settings', valid_type=Dict, required=False,
             help='Use an additional node for special settings')
         spec.input('parent_folder', valid_type=(RemoteData, FolderData, SinglefileData), required=False,
             help='Use a local or remote folder as parent folder (for restarts and similar)')
         # yapf: enable
-
-    def _get_following_text(self):
-        """Return any optional text that is to be written after the normal namelists in the input file.
-
-        By default, no text follows the namelists section. If in a sub class, any additional information needs to be
-        added to the input file, this method can be overridden to return the lines that should be appended.
-        """
-        # pylint: disable=no-self-use
-        return ''
 
     @classmethod
     def set_blocked_keywords(cls, parameters):
@@ -119,7 +110,7 @@ class NamelistsCalculation(CalcJob):
 
         :param parameters: 'dict' containing the fortran namelists and parameters to be used.
           e.g.: {'CONTROL':{'calculation':'scf'}, 'SYSTEM':{'ecutwfc':30}}
-        :return: 'str' containing the input_file content a plain text.
+        :return: 'str' containing the input file content a plain text.
         """
 
         file_lines = []
@@ -129,7 +120,7 @@ class NamelistsCalculation(CalcJob):
                 file_lines.append(convert_input_to_namelist_entry(key, value)[:-1])
             file_lines.append('/')
 
-        return '\n'.join(file_lines)
+        return '\n'.join(file_lines) + '\n'
 
     def prepare_for_submission(self, folder):
         """Prepare the calculation job for submission by transforming input nodes into input files.
@@ -146,8 +137,6 @@ class NamelistsCalculation(CalcJob):
             settings = _uppercase_dict(self.inputs.settings.get_dict(), dict_name='settings')
         else:
             settings = {}
-
-        following_text = self._get_following_text()
 
         # Put the first-level keys as uppercase (i.e., namelist and card names) and the second-level keys as lowercase
         if 'parameters' in self.inputs:
@@ -169,7 +158,6 @@ class NamelistsCalculation(CalcJob):
         parameters = self.set_blocked_keywords(parameters)
         parameters = self.filter_namelists(parameters, namelists_toprint)
         file_content = self.generate_input_file(parameters)
-        file_content += '\n' + following_text
         input_filename = self.inputs.metadata.options.input_filename
         with folder.open(input_filename, 'w') as infile:
             infile.write(file_content)

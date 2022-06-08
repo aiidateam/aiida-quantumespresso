@@ -511,7 +511,7 @@ def generate_inputs_ph(fixture_sandbox, fixture_localhost, fixture_code, generat
         from aiida_quantumespresso.utils.resources import get_default_options
 
         inputs = {
-            'code': fixture_code('quantumespresso.matdyn'),
+            'code': fixture_code('quantumespresso.ph'),
             'parent_folder': generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.pw'),
             'qpoints': generate_kpoints_mesh(2),
             'parameters': Dict({'INPUTPH': {}}),
@@ -689,9 +689,7 @@ def generate_workchain_ph(generate_workchain, generate_inputs_ph, generate_calc_
 
 
 @pytest.fixture
-def generate_workchain_pdos(
-    generate_workchain, generate_inputs_pw, fixture_localhost, fixture_code, generate_remote_data
-):
+def generate_workchain_pdos(generate_workchain, generate_inputs_pw, fixture_code):
     """Generate an instance of a `PdosWorkChain`."""
 
     def _generate_workchain_pdos():
@@ -712,9 +710,6 @@ def generate_workchain_pdos(
         nscf_pw_inputs['parameters']['CONTROL']['calculation'] = 'nscf'
         nscf_pw_inputs['parameters']['SYSTEM']['occupations'] = 'tetrahedra'
         nscf_pw_inputs['parameters']['SYSTEM']['nosym'] = True
-        nscf_pw_inputs['parent_folder'] = generate_remote_data(
-            computer=fixture_localhost, remote_path='/path/to/remote'
-        )
 
         nscf = {'pw': nscf_pw_inputs, 'kpoints': kpoints}
 

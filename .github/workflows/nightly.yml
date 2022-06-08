@@ -3,6 +3,13 @@ name: nightly
 on:
     schedule:
     -   cron: '0 0 * * *'  # Run every day at midnight
+    push:
+        paths:
+        - '.github/workflows/nightly.yml'
+    pull_request:
+        paths:
+        - '.github/workflows/nightly.yml'
+
 
 jobs:
 
@@ -40,19 +47,17 @@ jobs:
                 python-version: ${{ matrix.python-version }}
 
         -   name: Install Python dependencies
-            continue-on-error: true
             id: install
             run: |
                 pip install -e .[tests]
                 pip install git+https://github.com/aiidateam/aiida-core@main#egg=aiida-core[atomic_tools]
 
         -   name: Run pytest
-            continue-on-error: true
             id: tests
             run: pytest -sv tests
 
         -   name: Slack notification
-            if: steps.install.outcome == 'Failure' || steps.tests.outcome == 'Failure'
+            if: always() && (steps.install.outcome == 'Failure' || steps.tests.outcome == 'Failure')
             uses: rtCamp/action-slack-notify@master
             env:
                 SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
