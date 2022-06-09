@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
 import re
-import numpy as np
+
 from aiida.orm import Dict, XyData
+import numpy as np
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.base import Parser
+
 
 class XspectraParser(Parser):
     """ Parser for the XSpectraCalculation calcjob plugin """
@@ -11,7 +14,7 @@ class XspectraParser(Parser):
     def parse(self, **kwargs):
         """Parse the contents of the output files stored in the `retrieved` output node."""
         from aiida.plugins import DataFactory
-        
+
         retrieved = self.retrieved
         try:
             filename_stdout = self.node.get_option('output_filename')
@@ -20,9 +23,9 @@ class XspectraParser(Parser):
         except OSError:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 
+        # Check the stdout for obvious errors
         job_done = False
-        for i in range(len(out_file)):
-            line = out_file[-i]
+        for line in out_file:
             if 'Wrong xiabs!!!' in line:
                 return self.exit(self.exit_codes.ERROR_OUTPUT_ABSORBING_SPECIES_WRONG)
             if 'xiabs < 1 or xiabs > ntyp' in line:
@@ -32,40 +35,63 @@ class XspectraParser(Parser):
                 break
         if not job_done:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE)
-        
+
+        # Check that the spectra data file exists and is readable
         try:
             with retrieved.open(self.node.process_class._Spectrum_FILENAME, 'r') as fil:
                 xspectra_file = fil.readlines()
         except OSError:
-            return self.exit(self.exit_codes.ERROR_READING_XSPECTRA_FILE)
-        
+            return self.exit(self.exit_codes.ERROR_READING_SPECTRUM_FILE)
+
+        # Check that the data in the spectra file can be read by NumPy
+        try:
+            xspectra_data = np.genfromtxt(xspectra_file)
+        except ValueError:
+            return self.exit(self.exit_codes.ERROR_READING_SPECTRUM_FILE_DATA)
+
         # end of initial checks
-        
-        array_names = ['energy', 'calculated_intensity']
-        array_units = ['eV', 'n/a']
-        
-        array_data = parse_raw_xspectra(xspectra_file, array_names, array_units)
-        
+
+        array_names = [[], []]
+        array_units = [[], []]
+
+        array_names[0] = ['energy', 'sigma'] # for non-spin-polarised calculations
+        array_units[0] = ['eV', 'n/a']
+
+        array_names[1] = ['energy', 'sigma_tot', 'sigma_up', 'sigma_down'] # for spin-polarised calculations
+        array_units[1] = ['eV', 'n/a', 'n/a', 'n/a']
+
+        array_data, spin = parse_raw_xspectra(xspectra_file, array_names, array_units)
+
         energy_units = 'eV'
         xy_data = XyData()
         xy_data.set_x(array_data['energy'], 'energy', energy_units)
-        
+
         y_arrays = []
         y_names = []
         y_units = []
-        y_arrays += [array_data['calculated_intensity']]
-        y_names += ['calculated_intensity']
-        y_units += ['n/a']
+        if spin:
+            y_arrays += [array_data['sigma_tot']]
+            y_names += ['sigma_tot']
+            y_arrays += [array_data['sigma_up']]
+            y_arrays += [array_data['sigma_down']]
+            y_names += ['sigma_up']
+            y_names += ['sigma_down']
+            y_units += ['n/a'] * 3
+        else:
+            y_arrays += [array_data['sigma']]
+            y_names += ['sigma']
+            y_units += ['n/a']
+
         xy_data.set_y(y_arrays, y_names, y_units)
 
         parsed_data, logs = parse_stdout_xspectra(filecontent=out_file, codename='XSpectra')
         self.emit_logs(logs)
 
-        self.out('spectra_data', xy_data)
+        self.out('spectra', xy_data)
         self.out('output_parameters', Dict(dict=parsed_data))
-        
+
 def parse_raw_xspectra(xspectra_file, array_names, array_units):
-    """This function takes as input the xspectra_file as a list of filelines 
+    """This function takes as input the xspectra_file as a list of filelines
     along with information on how to give labels and units to the parsed data.
 
     :param xspectra_file: xspectra file lines in the form of a list
@@ -75,19 +101,27 @@ def parse_raw_xspectra(xspectra_file, array_names, array_units):
     :param array_units: list of all array units.
     :type array_units: list
 
-    :return array_data: narray, a dictionary for ArrayData type, which 
+    :return array_data: narray, a dictionary for ArrayData type, which
     contains all parsed xspectra output along with labels and units
     """
 
     xspectra_header = xspectra_file[:4]
-    try:
-        xspectra_data = np.genfromtxt(xspectra_file)
-    except ValueError:
-        raise QEOutputParsingError('XSpectra file could not be loaded using genfromtxt')
+    xspectra_data = np.genfromtxt(xspectra_file)
     if len(xspectra_data) == 0:
         raise QEOutputParsingError('XSpectra file is empty.')
     if np.isnan(xspectra_data).any():
         raise QEOutputParsingError('XSpectra file contains non-numeric elements.')
+
+    if len(xspectra_data[0]) == 2:
+        array_names = array_names[0]
+        array_units = array_units[0]
+        spin = False
+    elif len(xspectra_data[0]) == 4:
+        array_names = array_names[1]
+        array_units = array_units[1]
+        spin = True
+    else:
+        raise QEOutputParsingError('XSpectra data file in unsuitable format for the parser')
 
     i = 0
     array_data = {}
@@ -96,21 +130,22 @@ def parse_raw_xspectra(xspectra_file, array_names, array_units):
         array_data[array_names[i]] = xspectra_data[:, i]
         array_data[array_names[i] + '_units'] = np.array(array_units[i])
         i += 1
-    return array_data
-    
+    return array_data, spin
+
 def parse_stdout_xspectra(filecontent, codename=None, message_map=None):
-    """Parses the output file of an XSpectra calculation, checking for 
+    """Parses the output file of an XSpectra calculation, checking for
     basic content like END JOB, errors with %%%%, and the core level energy
     and the energy zero of the spectrum.
-    
+
     :param filecontent: a string with the output file content
-    :param codename: the string printed both in the header and near the 
-                    walltime. If passed, a few more things are parsed (e.g. 
+    :param codename: the string printed both in the header and near the
+                    walltime. If passed, a few more things are parsed (e.g.
                     code version, walltime, ...)
-    :returns: tuple of two dictionaries, with the parsed data and log 
+    :returns: tuple of two dictionaries, with the parsed data and log
               messages, respectively
     """
     from aiida_quantumespresso.utils.mapping import get_logging_container
+
     from .parse_raw.base import convert_qe_time_to_sec
 
     keys = ['error', 'warning']
@@ -123,27 +158,21 @@ def parse_stdout_xspectra(filecontent, codename=None, message_map=None):
 
     lines = filecontent if isinstance(filecontent, list) else filecontent.split('\n')
 
-    for line in lines:
-        if 'END JOB' in line: # this differs from the 'JOB DONE' printed by other codes for some reason 
-            break
-    else:
-        logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
-        
-    # Parse the necessary information for data plotting: core level energy of the 
+    # Parse the necessary information for data plotting: core level energy of the
     # absorbing atom and the energy zero of the spectrum (typically the Fermi level)
     for line in lines:
-        # parse dynamical RAM estimates
         if 'ehomo' in line:
             homo_energy = line.split(':')[-1].split('(')[0].strip()
             parsed_data['highest_occupied_level'] = homo_energy
-        
+
         if 'elumo' in line:
             lumo_energy = line.split(':')[-1].split('(')[0].strip()
             parsed_data['lowest_unoccupied_level'] = lumo_energy
-            parsed_data['LUMO_found'] = True
+            parsed_data['lumo_found'] = True
         elif 'No LUMO value' in line:
-            parsed_data['LUMO_found'] = False
-            
+            parsed_data['lumo_found'] = False
+
+        # parse dynamical RAM estimates
         if 'Estimated max dynamical RAM per process' in line:
             value = line.split('>')[-1]
             match = re.match(r'\s+([+-]?\d+(\.\d*)?|\.\d+([eE][+-]?\d+)?)\s*(Mb|MB|GB)', value)
@@ -164,7 +193,7 @@ def parse_stdout_xspectra(filecontent, codename=None, message_map=None):
                     parsed_data['estimated_ram_total_units'] = match.group(4)
                 except (IndexError, ValueError):
                     pass
-                
+
         if 'Core level energy' in line:
             core_energy_line = line
             parsed_data['core_level_energy'] = core_energy_line.split('[')[1].split(':')[1].strip()
@@ -202,4 +231,3 @@ def parse_stdout_xspectra(filecontent, codename=None, message_map=None):
                 parse_output_error(lines, line_number, logs, message_map)
 
     return parsed_data, logs
-
