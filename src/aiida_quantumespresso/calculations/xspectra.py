@@ -57,12 +57,13 @@ class XspectraCalculation(NamelistsCalculation):
         spec.exit_code(
             313,
             'ERROR_OUTPUT_ABSORBING_SPECIES_WRONG',
-            message='The absorbing atom species was set incorrectly, check and ensure that the index value of '
-            '"xiabs" correctly refers to the ATOMIC SPECIES containing the core-hole (where the index '
-            'starts from 1).'
+            message='xiabs was set incorrectly, check and ensure that the index value correctly refers '
+            'to the atomic species containing the core-hole (where the index starts from 1).'
         )
         spec.exit_code(
-            314, 'ERROR_OUTPUT_ABSORBING_SPECIES_ZERO', message='The absorbing atom species was set to 0 or less.'
+            314,
+            'ERROR_OUTPUT_ABSORBING_SPECIES_ZERO',
+            message='xiabs was either set to 0 or less, or was greater than ntyp.'
         )
         spec.exit_code(
             330,
