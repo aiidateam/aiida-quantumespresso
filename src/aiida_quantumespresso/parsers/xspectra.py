@@ -161,16 +161,36 @@ def parse_stdout_xspectra(filecontent, codename=None, message_map=None):
     # Parse the necessary information for data plotting: core level energy of the
     # absorbing atom and the energy zero of the spectrum (typically the Fermi level)
     for line in lines:
-        if 'ehomo' in line:
-            homo_energy = line.split(':')[-1].split('(')[0].strip()
+        if 'From SCF save directory' in line:
+            if '(spin polarized work)' in line:
+                spin = True
+            else:
+                spin = False
+            parsed_data['lsda'] = spin
+        if 'ehomo [eV]' in line:
+            if spin:
+                homo_energy = line.split(':')[-2].split('(')[0].strip()
+            else:
+                homo_energy = line.split(':')[-1].split('(')[0].strip()
+            homo_energy_units = line.split('[')[1].split(':')[0].replace(']', '')
             parsed_data['highest_occupied_level'] = homo_energy
-
-        if 'elumo' in line:
-            lumo_energy = line.split(':')[-1].split('(')[0].strip()
+            parsed_data['highest_occupied_level_units'] = homo_energy_units
+        if 'elumo [eV]' in line:
+            if spin:
+                lumo_energy = line.split(':')[-2].split('(')[0].strip()
+            else:
+                lumo_energy = line.split(':')[-1].split('(')[0].strip()
+            lumo_energy_units = line.split('[')[1].split(':')[0].replace(']', '')
             parsed_data['lowest_unoccupied_level'] = lumo_energy
+            parsed_data['lowest_unoccupied_level_units'] = lumo_energy_units
             parsed_data['lumo_found'] = True
         elif 'No LUMO value' in line:
             parsed_data['lumo_found'] = False
+        if 'ef    [eV]' in line:
+            ef_energy = line.split(':')[-1].split('(')[0].strip()
+            ef_energy_units = line.split('[')[1].split(':')[0].replace(']', '')
+            parsed_data['fermi_energy'] = ef_energy
+            parsed_data['fermi_energy_units'] = ef_energy_units
 
         # parse dynamical RAM estimates
         if 'Estimated max dynamical RAM per process' in line:
