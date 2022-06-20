@@ -1,0 +1,359 @@
+
+     Program XSpectra v.6.5 starts on 13Jun2022 at 18:23:11 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI), running on    16 processors
+
+     MPI processes distributed on     1 nodes
+     R & G space division:  proc/nbgrp/npool/nimage =      16
+
+     -------------------------------------------------------------------------
+                    __  ____                 _
+                    \ \/ / _\_ __   ___  ___| |_ _ __ __ _
+                     \  /\ \| '_ \ / _ \/ __| __| \__/ _\ |
+                     /  \_\ \ |_) |  __/ (__| |_| | | (_| |
+                    /_/\_\__/ .__/ \___|\___|\__|_|  \__,_|
+                            |_|
+
+     In publications arising from the use of XSpectra, please cite:
+      - O. Bunau and M. Calandra,
+        Phys. Rev. B 87, 205105 (2013)
+      - Ch. Gougoussis, M. Calandra, A. P. Seitsonen, F. Mauri,
+        Phys. Rev. B 80, 075102 (2009)
+      - M. Taillefumier, D. Cabaret, A. M. Flank, and F. Mauri,
+        Phys. Rev. B 66, 195107 (2002)
+
+     -------------------------------------------------------------------------
+                                Reading input_file
+     -------------------------------------------------------------------------
+
+     calculation: xanes_dipole
+
+     xepsilon  [crystallographic coordinates]:   1.000000   0.000000   0.000000
+
+     xonly_plot: FALSE
+        => complete calculation: Lanczos + spectrum plot
+
+     filecore (core-wavefunction file): plotcore.out        
+ 
+     main plot parameters:
+        cut_occ_states: TRUE
+        gamma_mode:  constant
+        -> using xgamma [eV]:  0.80
+        xemin [eV]: -10.00
+        xemax [eV]:  50.00
+        xnepoint: 1000
+        energy zero automatically set to the Fermi level
+
+     Fermi level determined from SCF save directory (aiida.save)
+     NB: For an insulator (SCF calculated with occupations="fixed")
+         the Fermi level will be placed at the position of HOMO.
+ 
+     WARNING: variable ef_r is obsolete
+
+     -------------------------------------------------------------------------
+                      Reading SCF save directory: aiida.save
+     -------------------------------------------------------------------------
+
+
+     Reading xml data from directory:
+
+     ./out/aiida.save/
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation= PBE
+                           (   1   4   3   4   0   0   0)
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+ 
+     Parallelization info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Min         131     126     34                 4046     3729     539
+     Max         133     127     35                 4050     3732     542
+     Sum        2107    2017    559                64767    59679    8657
+ 
+     Generating pointlists ...
+     new r_m :   0.1458 (alat units)  1.5850 (a.u.) for type    1
+     new r_m :   0.1458 (alat units)  1.5850 (a.u.) for type    2
+     new r_m :   0.1458 (alat units)  1.5850 (a.u.) for type    3
+
+     Check: negative core charge=   -0.000001
+     Reading collected, re-writing distributed wavefunctions
+
+     -------------------------------------------------------------------------
+                           Getting the Fermi energy 
+     -------------------------------------------------------------------------
+
+     From SCF save directory (spin polarized work):
+        ehomo [eV]:   10.3647 (highest occupied level:max of up and down)
+        elumo [eV]:    9.1247 (lowest occupied level:min of up and down)
+        ef    [eV]:   10.3647
+
+     -> ef (in eV) will be written in x_save_file
+
+     -------------------------------------------------------------------------
+                           Energy zero of the spectrum 
+     -------------------------------------------------------------------------
+
+     -> ef will be used as energy zero of the spectrum
+ 
+     Parallelization info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Min         131     126     34                 4046     3729     539
+     Max         133     127     35                 4050     3732     542
+     Sum        2107    2017    559                64767    59679    8657
+ 
+
+
+     bravais-lattice index     =            0
+     lattice parameter (alat)  =      10.8682  a.u.
+     unit-cell volume          =     907.7387 (a.u.)^3
+     number of atoms/cell      =           16
+     number of atomic types    =            3
+     number of electrons       =        81.00 (up:  41.00, down:  40.00)
+     number of Kohn-Sham states=           41
+     kinetic-energy cutoff     =      61.9294  Ry
+     charge density cutoff     =     261.9611  Ry
+     Exchange-correlation= PBE
+                           (   1   4   3   4   0   0   0)
+
+     celldm(1)=  10.868225  celldm(2)=   0.000000  celldm(3)=   0.000000
+     celldm(4)=   0.000000  celldm(5)=   0.000000  celldm(6)=   0.000000
+
+     crystal axes: (cart. coord. in units of alat)
+               a(1) = (   1.000000   0.000000   0.000000 )  
+               a(2) = (   0.500000   0.866025   0.000000 )  
+               a(3) = (   0.500000   0.288675   0.816497 )  
+
+     reciprocal axes: (cart. coord. in units 2 pi/alat)
+               b(1) = (  1.000000 -0.577350 -0.408248 )  
+               b(2) = (  0.000000  1.154701 -0.408248 )  
+               b(3) = (  0.000000  0.000000  1.224745 )  
+
+
+     PseudoPot. # 1 for F  read from file:
+     ./pseudo/F.pbe-gpaw_kj_no_hole.UPF
+     MD5 check sum: a62788f81f19b667c8b3900239644a29
+     Pseudo is Projector augmented-wave + core cor, Zval =  7.0
+     Generated using 'atomic' code by A. Dal Corso v.6.8
+     Shape of augmentation charge: PSQ
+     Using radial grid of 1105 points,  4 beta functions with: 
+                l(1) =   0
+                l(2) =   0
+                l(3) =   1
+                l(4) =   1
+     Q(r) pseudized with 0 coefficients 
+
+
+     PseudoPot. # 2 for F  read from file:
+     ./pseudo/F.star1s-pbe-gpaw_kj.UPF
+     MD5 check sum: 552ac1013557f9fc106fb738a04a8d95
+     Pseudo is Projector augmented-wave + core cor, Zval =  8.0
+     Generated using 'atomic' code by A. Dal Corso v.6.8
+     Shape of augmentation charge: PSQ
+     Using radial grid of 1105 points,  4 beta functions with: 
+                l(1) =   0
+                l(2) =   0
+                l(3) =   1
+                l(4) =   1
+     Q(r) pseudized with 0 coefficients 
+
+
+     PseudoPot. # 3 for Li read from file:
+     ./pseudo/li_pbe_v1.4.uspp.F.UPF
+     MD5 check sum: e912e257baa3777c20ea3d68f190483c
+     Pseudo is Ultrasoft, Zval =  3.0
+     Generated by new atomic code, or converted to UPF format
+     Using radial grid of  751 points,  5 beta functions with: 
+                l(1) =   0
+                l(2) =   0
+                l(3) =   0
+                l(4) =   1
+                l(5) =   1
+     Q(r) pseudized with 10 coefficients,  rinner =    1.150   1.150   1.150
+
+
+     atomic species   valence    mass     pseudopotential
+        F              7.00    18.99840     F ( 1.00)
+        F1             8.00    18.99840     F ( 1.00)
+        Li             3.00     6.94100     Li( 1.00)
+
+     Starting magnetic structure 
+     atomic species   magnetization
+        F            0.000
+        F1           0.000
+        Li           0.000
+
+     12 Sym. Ops., with inversion, found
+
+
+
+   Cartesian axes
+
+     site n.     atom                  positions (alat units)
+         1           Li  tau(   1) = (   0.0000000   0.0000000   0.0000000  )
+         2           F1  tau(   2) = (   0.5000000   0.2886751   0.2041242  )
+         3           Li  tau(   3) = (   0.2500000   0.1443376   0.4082483  )
+         4           F   tau(   4) = (   0.7500000   0.4330127   0.6123725  )
+         5           Li  tau(   5) = (   0.2500000   0.4330127   0.0000000  )
+         6           F   tau(   6) = (   0.7500000   0.7216878   0.2041242  )
+         7           Li  tau(   7) = (   0.5000000   0.5773503   0.4082483  )
+         8           F   tau(   8) = (   1.0000000   0.8660254   0.6123725  )
+         9           Li  tau(   9) = (   0.5000000   0.0000000   0.0000000  )
+        10           F   tau(  10) = (   1.0000000   0.2886751   0.2041242  )
+        11           Li  tau(  11) = (   0.7500000   0.1443376   0.4082483  )
+        12           F   tau(  12) = (   1.2500000   0.4330127   0.6123725  )
+        13           Li  tau(  13) = (   0.7500000   0.4330127   0.0000000  )
+        14           F   tau(  14) = (   1.2500000   0.7216878   0.2041242  )
+        15           Li  tau(  15) = (   1.0000000   0.5773503   0.4082483  )
+        16           F   tau(  16) = (   1.5000000   0.8660254   0.6123725  )
+
+     number of k points=     8
+                       cart. coord. in units 2pi/alat
+        k(    1) = (   0.0000000   0.0000000   0.0000000), wk =   0.1250000
+        k(    2) = (   0.0000000   0.0000000   0.6123724), wk =   0.1250000
+        k(    3) = (   0.0000000   0.5773503  -0.2041241), wk =   0.1250000
+        k(    4) = (   0.0000000   0.5773503   0.4082483), wk =   0.1250000
+        k(    5) = (   0.5000000  -0.2886751  -0.2041241), wk =   0.1250000
+        k(    6) = (   0.5000000  -0.2886751   0.4082483), wk =   0.1250000
+        k(    7) = (   0.5000000   0.2886751  -0.4082483), wk =   0.1250000
+        k(    8) = (   0.5000000   0.2886751   0.2041241), wk =   0.1250000
+
+     Dense  grid:    64767 G-vectors     FFT dimensions: (  60,  60,  60)
+
+     Smooth grid:    59679 G-vectors     FFT dimensions: (  60,  60,  60)
+
+     Estimated max dynamical RAM per process >      10.36 MB
+
+     Estimated total dynamical RAM >     165.73 MB
+     Generating pointlists ...
+
+     Check: negative core charge=   -0.000001
+
+     The potential is recalculated from file :
+     ./out/aiida.save/charge-density
+
+     Starting wfcs are   72 atomic wfcs
+     Checking if some PAW data can be deallocated... 
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine main program (8):
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine main program (8):
+     Wrong xiabs!!!
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine main program (8):
+     Wrong xiabs!!!
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+     Wrong xiabs!!!
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine main program (8):
+     Wrong xiabs!!!
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine main program (8):
+     Wrong xiabs!!!
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine main program (8):
+     Wrong xiabs!!!
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine main program (8):
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine main program (8):
+     Wrong xiabs!!!
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine main program (8):
+     Wrong xiabs!!!
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+     Wrong xiabs!!!
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine main program (8):
+     Wrong xiabs!!!
+     Error in routine main program (8):
+     Wrong xiabs!!!
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine main program (8):
+     Wrong xiabs!!!
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine main program (8):
+     Wrong xiabs!!!
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine main program (8):
+     Wrong xiabs!!!
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine main program (8):
+     Wrong xiabs!!!
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+     stopping ...
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine main program (8):
+     Wrong xiabs!!!
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
