@@ -14,7 +14,7 @@ KpointsData = DataFactory('array.kpoints')
 class XspectraCalculation(NamelistsCalculation):
     """CalcJob implementation for the xspectra.x code of Quantum ESPRESSO."""
 
-    _Plotcore_FILENAME = 'plotcore.out'
+    _Plotcore_FILENAME = 'stdout'
     _Spectrum_FILENAME = 'xanes.dat'
     _default_namelists = ['INPUT_XSPECTRA', 'PLOT', 'PSEUDOS', 'CUT_OCC']
     _blocked_keywords = [('INPUT_XSPECTRA', 'outdir', NamelistsCalculation._OUTPUT_SUBFOLDER),
