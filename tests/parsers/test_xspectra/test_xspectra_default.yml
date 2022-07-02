@@ -1,0 +1,25 @@
+parameters:
+  code_version: v.6.5
+  core_level_energy: '-1839.'
+  core_level_energy_units: eV
+  energy_zero: '4.1718'
+  energy_zero_units: eV
+  estimated_ram_per_process: 4.54
+  estimated_ram_per_process_units: MB
+  estimated_ram_total: 72.59
+  estimated_ram_total_units: MB
+  fermi_energy: '4.1718'
+  fermi_energy_units: eV
+  highest_occupied_level: '4.1718'
+  highest_occupied_level_units: eV
+  lsda: false
+  lumo_found: false
+  wall_time: 5.66s
+  wall_time_seconds: 5.66
+xspectra:
+  labels:
+  - energy
+  - sigma
+  units:
+  - eV
+  - n/a
