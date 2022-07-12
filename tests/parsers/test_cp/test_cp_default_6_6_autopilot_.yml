@@ -94,6 +94,8 @@ trajectory:
   - 8
   array|steps:
   - 8
+  array|stresses:
+  - 0
   array|times:
   - 8
   array|velocities:

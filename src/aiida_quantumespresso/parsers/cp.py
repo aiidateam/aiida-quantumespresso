@@ -110,6 +110,7 @@ class CpParser(Parser):
                 ('cells', 'cel', CONSTANTS.bohr_to_ang, 3),
                 ('velocities', 'vel', CONSTANTS.bohr_to_ang / (CONSTANTS.timeau_to_sec * 10**12), number_of_atoms),
                 ('forces', 'for', CONSTANTS.hartree_to_ev / CONSTANTS.bohr_to_ang, number_of_atoms),
+                ('stresses', 'str', 1.0, 3) #stress in GPa
             ]
 
             for name, extension, scale, elements in trajectories:
@@ -120,15 +121,16 @@ class CpParser(Parser):
                     traj_data = parse_cp_traj_stanzas(
                         num_elements=elements, splitlines=data, prepend_name=f'{name}_traj', rescale=scale
                     )
-                    # here initialize the dictionary. If the parsing of positions fails, though, I don't have anything
-                    # out of the CP dynamics. Therefore, the calculation status is set to FAILED.
-                    if extension != 'cel':
+                    # here initialize the dictionary.
+                    if extension == 'cel':
+                        # NOTE: the trajectory output has the cell matrix transposed!!
+                        raw_trajectory['cells'] = numpy.array(traj_data['cells_traj_data']).transpose((0, 2, 1))
+                    elif extension == 'str':
+                        raw_trajectory['stresses'] = numpy.array(traj_data['stresses_traj_data'])
+                    else:
                         raw_trajectory[f'{name}_ordered'] = self._get_reordered_array(
                             traj_data[f'{name}_traj_data'], reordering
                         )
-                    else:
-                        # NOTE: the trajectory output has the cell matrix transposed!!
-                        raw_trajectory['cells'] = numpy.array(traj_data['cells_traj_data']).transpose((0, 2, 1))
                     if extension == 'pos':
                         raw_trajectory['traj_times'] = numpy.array(traj_data[f'{name}_traj_times'])
                 except IOError:
@@ -230,6 +232,10 @@ class CpParser(Parser):
                 traj.set_array('forces', raw_trajectory['forces_ordered'])
             except KeyError:
                 out_dict['warnings'].append('failed to set forces')
+
+            # eventually set the stress
+            if 'stresses' in raw_trajectory:
+                traj.set_array('stresses',raw_trajectory['stresses'])
 
             for this_name in evp_keys:
                 try:
