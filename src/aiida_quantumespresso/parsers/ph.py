@@ -38,8 +38,8 @@ class PhParser(Parser):
 
         # Look for dynamical matrices
         dynmat_files = []
-        dynmat_folder = PhCalculation._FOLDER_DYNAMICAL_MATRIX
-        dynmat_prefix = os.path.split(PhCalculation._OUTPUT_DYNAMICAL_MATRIX_PREFIX)[1]
+        dynmat_folder = PhCalculation._FOLDER_DYNAMICAL_MATRIX  # pylint: disable=protected-access
+        dynmat_prefix = os.path.split(PhCalculation._OUTPUT_DYNAMICAL_MATRIX_PREFIX)[1]  # pylint: disable=protected-access
 
         natural_sort = lambda string: [int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', string)]
         for filename in sorted(retrieved.list_object_names(dynmat_folder), key=natural_sort):
