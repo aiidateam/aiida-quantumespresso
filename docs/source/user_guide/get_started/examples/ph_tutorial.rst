@@ -6,194 +6,165 @@ Phonon
 .. toctree::
    :maxdepth: 2
 
-In this chapter will get you through the launching of a phonon calculation with Quantum Espresso, with ``ph.x``, a density functional perturbation theory code.
+In this chapter will get you through the launching of a phonon calculation with Quantum ESPRESSO, with ``ph.x``, a density functional perturbation theory code.
 For this tutorial, it is required that you managed to launch the ``pw.x`` calculation, which is at the base of the phonon code; and of course it is assumed that you already know how to use the QE code.
 
-The input of a phonon calculation can be actually simple, the only care that has to be taken, is to point to the same scratch of the previous pw calculation.
+The input of a phonon calculation can be very simple, but requires the output of a previous ``pw.x`` calculation.
 Here we will try to compute the dynamical matrix on a mesh of points (actually consisting of a 1x1x1 mesh for brevity).
-The input file that we should create is more or less this one::
+The input file that we want to create is this one::
 
-  AiiDA calculation
-  &INPUTPH
-     epsil = .true.
-     fildyn = 'DYN_MAT/dynamical-matrix-'
-     verbosity = 'high'
-     ldisp = .true.
-     nq1 = 1
-     nq2 = 1
-     nq3 = 1
-     outdir = './out/'
-     prefix = 'aiida'
-     tr2_ph =   1.0000000000d-08
-  /
-
-
+    &INPUTPH
+        fildyn = 'DYN_MAT/dynamical-matrix-'
+        ldisp = .true.
+        nq1 = 1
+        nq2 = 1
+        nq3 = 1
+        outdir = './out/'
+        prefix = 'aiida'
+        tr2_ph =   1.0000000000d-08
+        verbosity = 'high'
+    /
 
 Walkthrough
 -----------
 
-This input is much simpler than the previous PWscf work, here the only novel thing you will have to learn is how to set a parent calculation.
+Setting up the input for a ``PhCalculation`` is typically simpler than doing so for the ``PwCalculation``.
+The only novel thing you will have to learn is how to link the ``pw.x`` calculation as a a parent.
+As before, we'll write the script step by step.
 
-As before, we write a script step-by-step.
+We first load a couple of useful modules, and load the AiiDA profile::
 
-We first load a couple of useful modules that you already met in the previous tutorial, and load the database settings::
+    from aiida import orm, load_profile
+    load_profile()
 
-    #!/usr/bin/env python
-    from aiida import load_dbenv
-    load_dbenv()
+We'll also assume you've managed to run a previous ``pw.x`` calculation with AiiDA, and know the PK of the corresponding calculation job.
 
-    from aiida.orm import Code
-    from aiida.plugins import CalculationFactory, DataFactory
-
-
-
-So, you were able to launch previously a ``pw.x`` calculation.
-
-Code
-----
-
-Again, you need to have compiled the code on the cluster and configured a new code ``ph.x`` in AiiDA in the very same way you installed ``pw.x`` (see ....).
+You need to have compiled the code, either locally or on a remote machine, and have configured a new ``ph.x`` code for AiiDA in the same way as you set up the one for ``pw.x``.
 Then we load the ``Code`` class-instance from the database::
 
-    codename = 'my-ph.x'
-    code = Code.get_from_string(codename)
+    code_label = 'qe-7.0-ph@localhost'
+    code = orm.load_code(code_label)
 
-Parameter
----------
+Here, the full label of the code we want to run is ``qe-7.0-ph@localhost``, indicating it is a code set up on the local ``localhost`` computer.
+From the code instance, we can obtain a builder for the calculation using the ``get_builder()`` method::
 
-Just like the *PWscf* calculation, here we load the class Dict and we instanciate it in parameters.
+    builder = code.get_builder()
+
+Next, we'll populate this builder with the required inputs.
+
+Parameters
+^^^^^^^^^^
+
+Just like the for the ``pw.x`` calculation, we have to provide the input parameters as an instance of a ``Dict`` node.
 Again, ``Dict`` will simply represent a nested dictionary in the database, namelists at the first level, and then variables and values.
-But this time of course, we need to use the variables of *PHonon*!
+But this time of course, we need to use the variables of ``ph.x``.
+For this example, the parameters will be exceedingly simple::
 
-::
+    parameters = orm.Dict(
+        dict={
+            'INPUTPH': {
+                'tr2_ph' : 1.0e-8,
+            }
+        }
+    )
+    builder.parameters = parameters
 
-    Dict = DataFactory('core.dict')
-    parameters = Dict({
-		'INPUTPH': {
-		    'tr2_ph' : 1.0e-8,
-		    'epsil' : True,
-		    'ldisp' : True,
-		    'nq1' : 1,
-		    'nq2' : 1,
-		    'nq3' : 1,
-		    }})
+You may be wondering why inputs like ``fildyn`` and ``prefix`` are not specified.
+These are set automatically by the ``PhCalculation`` plugin, and hence do not need to be provided.
+In fact, trying to run with these inputs in the parameters will fail, since they are blocked to only allow certain defaults and avoid issues with linking the ``ph.x`` calculation to e.g. future ``q2r.x`` calculations.
+Similarly, the ``ldisp`` and ``nq1`` inputs are not specified through the ``parameters`` input, but rather by the ``qpoints`` one, as we'll show in the next section.
 
-Calculation
------------
+Q-points
+^^^^^^^^
 
-Now we create the object PH-calculation.
-As for ``pw.x``, we simply do::
+Next we'll specify the q-point mesh we want to use for the ``ph.x`` calculation.
+As mentioned above, for this example we'll be running a single q-point (i.e. a 1x1x1 mesh)::
 
-    calc = code.new_calc()
+    q_points = orm.KpointsData()
+    q_points.set_kpoints_mesh([1, 1, 1])
 
-and we set the parameters of the scheduler
-(and just like the PWscf, this is a configuration valid
-for the PBSpro and slurm schedulers only, see :ref:`aiida:topics:schedulers`).
+    builder.qpoints = q_points
 
-::
+The plugin will automatically convert this ``KpointsData`` input to the necessary tags in the input file, similar to what is done for the ``PwCalculation``.
 
-    calc.set_option('max_wallclock_seconds', 30*60) # 30 min
-    calc.set_option('resources', {"num_machines": 1})
-
-We then tell the calculation to use the code and the parameters that we prepared above::
-
-    calc.use_parameters(parameters)
 
 Parent calculation
-------------------
+^^^^^^^^^^^^^^^^^^
 
-The phonon calculation needs to know on which PWscf do the perturbation theory calculation.
-From the database point of view, it means that the ``PHonon`` calculation
-is always a child of a ``PWscf``.
-In practice, this means that when you want to impose this relationship,
-you decided to take the input parameters of the parent PWscf calculation,
-take its charge density and use them in the phonon run.
-That's way we need to set the parent calculation.
+The phonon calculation needs to start from an already completed ``pw.x`` do the perturbation theory calculation.
+In order to do this, you will set the directory where you ran the ``pw.x`` calculation as a ``parent_folder`` of the ``ph.x`` calculation.
 
-You first need to remember the ID of the parent calculation that you launched
-before (let's say it's #6): so that you can load the class of *a*
-QE-PWscf calculation (with the CalculationFactory),
-and load the object that represent *the* QE-PWscf calculation with ID #6::
+You first need to remember the PK of the parent calculation that you launched previously (let's say it's ``8394``).
+Let's load this calculation job node and get the ``remote_folder`` where the calculation ran from its outputs::
 
-    from aiida.plugins import CalculationFactory
-    PwCalculation = CalculationFactory('quantumespresso.pw')
-    parent_id = 6
-    parentcalc = load_node(parent_id)
+    parent_calculation = orm.load_node(8394)
+    parent_folder = parent_calculation.outputs.remote_folder
 
-Now that we loaded the parent calculation, we can set the phonon calc to
-inherit the right information from it::
+Next, we'll add this ``RemoteData`` node as an input to the ``builder``::
 
-    calc.use_parent_calculation( parentcalc )
+    builder.parent_folder = parent_folder
 
-Note that in our database schema relations between two calculation
-objects are prohibited. The link between the two is indirect and is
-mediated by a third Data object, which represent the scratch folder
-on the remote cluster. Therefore the relation between the parent Pw
-and the child Ph appears like: Pw -> remotescratch -> Ph.
+Now, the ``PhCalculation`` plugin will copy the required output of the ``pw.x`` calculation before starting the ``ph.x`` run.
+
+Scheduler settings
+^^^^^^^^^^^^^^^^^^
+
+Finally, we'll set the walltime of our calculation, as well as the resources we want to use::
+
+    builder.metadata.options.max_wallclock_seconds = 30 * 60 # 30 min
+    builder.metadata.options.resources = {'num_machines': 1}
+
+These can depend on whether the code has been set up locally or remotely, and the scheduler used, see :ref:`aiida:topics:schedulers`.
 
 Execution
----------
+^^^^^^^^^
 
-Now, everything is ready, and just like PWscf, you just need to store all the
-nodes and submit this input to AiiDA, and the calculation will launch!
+Now, everything is ready, and just like the ``PwCalculation``, you only need to instruct AiiDA to submit the calculation to the daemon::
 
-::
+    from aiida.engine import submit
+    submit(builder)
 
-    calc.store_all()
-    calc.submit()
+Complete script
+---------------
 
-Script to execute
------------------
-
-This is the script described in the tutorial above. You can use it, just
-remember to customize it using the right parent_id,
-the code, and the proper scheduler info.
+The tutorial above describes how to set up the basic inputs for a ``ph.x`` calculation step by step.
+Below you can find a complete script for you to adapt and run directly.
+Make sure not to forget to change the ``parent_pk`` and ``code_label``!
 
 ::
 
-    #!/usr/bin/env python
-    from aiida import load_dbenv
-    load_dbenv()
-
-    from aiida.orm import Code
-    from aiida.plugins import CalculationFactory, DataFactory
+    from aiida import orm, load_profile
+    load_profile()
 
     #####################
     # ADAPT TO YOUR NEEDS
-    parent_id = 6
-    codename = 'my-ph.x'
+    parent_pk = 8394
+    code_label = 'qe-7.0-ph@localhost'
     #####################
 
-    code = Code.get_from_string(codename)
+    code = orm.load_code(code_label)
 
-    Dict = DataFactory('core.dict')
-    parameters = Dict({
-		'INPUTPH': {
-		    'tr2_ph' : 1.0e-8,
-		    'epsil' : True,
-		    'ldisp' : True,
-		    'nq1' : 1,
-		    'nq2' : 1,
-		    'nq3' : 1,
-		    }})
+    parameters = orm.Dict(
+        dict={
+            'INPUTPH': {
+                'tr2_ph' : 1.0e-8,
+            }
+        }
+    )
 
-    QEPwCalc = CalculationFactory('quantumespresso.pw')
-    parentcalc = load_node(parent_id)
+    q_points = orm.KpointsData()
+    q_points.set_kpoints_mesh([1, 1, 1])
 
-    calc = code.new_calc()
-    calc.set_option('max_wallclock_seconds', 30*60) # 30 min
-    calc.set_option('resources', {"num_machines": 1})
+    parent_calculation = orm.load_node(parent_pk)
+    parent_folder = parent_calculation.outputs.remote_folder
 
-    calc.use_parameters(parameters)
-    calc.use_code(code)
-    calc.use_parent_calculation(parentcalc)
+    builder = code.get_builder()
 
-    calc.store_all()
-    print "created calculation with PK={}".format(calc.pk)
-    calc.submit()
+    builder.parameters = parameters
+    builder.qpoints = q_points
+    builder.parent_folder = parent_folder
+    builder.metadata.options.max_wallclock_seconds = 30 * 60 # 30 min
+    builder.metadata.options.resources = {'num_machines': 1}
 
-Exception tolerant code
------------------------
-You can find a more sophisticated example, that checks the possible exceptions
-and prints nice error messages inside your AiiDA folder, under
-``examples/submission/quantumespresso/test_ph.py``.
+    from aiida.engine import submit
+    submit(builder)
