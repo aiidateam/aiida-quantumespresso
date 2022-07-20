@@ -24,6 +24,6 @@ class Q2rParser(Parser):
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE)
 
         with retrieved.open(filename_force_constants, 'rb') as handle:
-            self.out('force_constants', ForceConstantsData(file=handle))
+            self.out('force_constants', ForceConstantsData(file=handle, filename=filename_force_constants))
 
         return
