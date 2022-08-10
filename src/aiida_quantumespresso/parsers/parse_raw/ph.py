@@ -75,8 +75,13 @@ def parse_raw_ph_output(stdout, tensors=None, dynamical_matrices=None):
         if key in list(dynmat_data.keys()):
             raise AssertionError(f'{key} found in two dictionaries')
 
-    # I don't check the dynmat_data and parser_info keys
+    symmetry_labels = out_data.pop('symmetry_labels', {})
+
     parsed_data = dict(list(dynmat_data.items()) + list(out_data.items()) + list(tensor_data.items()))
+
+    for q_index, q_symlabels in symmetry_labels.items():
+        if f'dynamical_matrix_{q_index}' in parsed_data:
+            parsed_data[f'dynamical_matrix_{q_index}'].update(q_symlabels)
 
     return parsed_data, logs
 
@@ -172,6 +177,11 @@ def parse_ph_text_output(lines, logs):
                     message = line
                 logs.warning.append(message)
 
+    def parse_qpoints(lines):
+        """Parse the q-points from the corresponding lines in the stdout."""
+
+        return {int(line.split()[0]): [float(coord) for coord in line.split()[1:4]] for line in lines}
+
     parsed_data = {}
 
     # Parse time, starting from the end because the time is written multiple times
@@ -190,6 +200,8 @@ def parse_ph_text_output(lines, logs):
                 raise QEOutputParsingError('Unable to convert wall_time in seconds.')
             break
 
+    parsed_data['num_q_found'] = 0
+
     # Parse number of q-points and number of atoms
     for count, line in enumerate(lines):
 
@@ -197,28 +209,20 @@ def parse_ph_text_output(lines, logs):
 
         if 'q-points for this run' in line:
             try:
-                num_qpoints = int(line.split('/')[1].split('q-points')[0])
-                if (
-                    'number_of_qpoints' in list(parsed_data.keys()) and num_qpoints != parsed_data['number_of_qpoints']
-                ):
-                    logs.warning.append('Number q-points found several times with different values')
-                else:
-                    parsed_data['number_of_qpoints'] = num_qpoints
-            except Exception:
-                logs.warning.append('Error while parsing number of q points.')
+                parsed_data['number_of_qpoints'] = int(line.split('/')[1].split('q-points')[0])
+                parsed_data['q_points'] = parse_qpoints(lines[count + 2:count + parsed_data['number_of_qpoints'] + 2])
+
+            except Exception as exc:
+                logs.warning.append(f'Error while parsing number of q points: {exc}')
 
         elif 'q-points)' in line:
             # case of a 'only_wfc' calculation
             try:
-                num_qpoints = int(line.split('q-points')[0].split('(')[1])
-                if (
-                    'number_of_qpoints' in list(parsed_data.keys()) and num_qpoints != parsed_data['number_of_qpoints']
-                ):
-                    logs.warning.append('Number q-points found several times with different values')
-                else:
-                    parsed_data['number_of_qpoints'] = num_qpoints
-            except Exception:
-                logs.warning.append('Error while parsing number of q points.')
+                parsed_data['number_of_qpoints'] = int(line.split('q-points')[0].split('(')[1])
+                parsed_data['q_points'] = parse_qpoints(lines[count + 2:count + parsed_data['number_of_qpoints'] + 2])
+
+            except Exception as exc:
+                logs.warning.append(f'Error while parsing number of q points: {exc}')
 
         elif 'number of atoms/cell' in line:
             try:
@@ -235,6 +239,51 @@ def parse_ph_text_output(lines, logs):
                 parsed_data['number_of_irr_representations_for_each_q'].append(num_irr_repr)
             except Exception:
                 pass
+
+        elif 'Diagonalizing the dynamical matrix' in line:
+
+            q_data = {}
+            symlabel_q_point = [float(i) for i in lines[count + 2].split('q = (')[-1].split(')')[0].split()]
+
+            q_count = count
+
+            while 'Mode symmetry' not in lines[q_count]:
+                q_count += 1
+
+            q_data['point_group'] = lines[q_count].split('Mode symmetry,')[1].split('point group:')[0].strip()
+            q_count += 2
+
+            q_data['mode_symmetry'] = [None] * num_atoms * 3
+
+            while 'freq' in lines[q_count]:
+
+                freq_start = int(lines[q_count].split('(')[1].split(')')[0].split('-')[0])
+                freq_end = int(lines[q_count].split('(')[1].split(')')[0].split('-')[1])
+
+                if lines[q_count].split()[-1] == 'I':
+                    symm_label = lines[q_count].split()[-2]
+                else:
+                    symm_label = lines[q_count].split()[-1]
+
+                for i_freq in range(freq_start-1, freq_end):
+                    q_data['mode_symmetry'][i_freq] = symm_label
+
+                q_count += 1
+
+            for q_index, q_point in parsed_data['q_points'].items():
+                if q_point == symlabel_q_point:
+                    parsed_data.setdefault('symmetry_labels', {})
+                    parsed_data['symmetry_labels'][q_index] = q_data
+
+            parsed_data['num_q_found'] += 1
+
+    # Remove the q-points from the parsed data; these are only used to assign the symmetry labels to the right index
+    parsed_data.pop('q_points')
+
+    # Trim the number of irreps to the number of q-points finished in this run
+    if parsed_data['num_q_found'] > 0:
+        parsed_data['number_of_irr_representations_for_each_q'] = \
+            parsed_data['number_of_irr_representations_for_each_q'][:parsed_data['num_q_found']]
 
     return parsed_data
 
