@@ -28,7 +28,7 @@ dependencies = [
     'jsonschema',
     'numpy',
     'packaging',
-    'qe-tools~=2.0rc1',
+    'qe-tools~=2.0',
     'xmlschema~=1.2,>=1.2.5'
 ]
 
