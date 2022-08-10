@@ -1,3 +1,43 @@
+## v4.0.0
+
+This major release mainly provides support for `aiida-core` v2.0, as well as the `xspectra.x` code of Quantum ESPRESSO.
+Version 7.1 of Quantum ESPRESSO is also now supported.
+Note that in line with our new [compatibility policy](https://github.com/aiidateam/aiida-quantumespresso#compatibility-matrix), from this major version onwards we will no longer be supporting Quantum ESPRESSO versions below v6.6.
+
+### New
+
+- `PhBaseWorkChain`: Add a first draft for the protocols [[#810]](https://github.com/aiidateam/aiida-quantumespresso/pull/810)
+- Add the `XspectraCalculation` and `XspectraParser` plugins [[#815]](https://github.com/aiidateam/aiida-quantumespresso/pull/815)
+
+### Improvements
+
+- `PwCalculation`: allow regex patterns in detect_important_message [[#771]](https://github.com/aiidateam/aiida-quantumespresso/pull/771)
+- Parsers: add exception title to `ERROR_UNEXPECTED_PARSER_EXCEPTION` [[#793]](https://github.com/aiidateam/aiida-quantumespresso/pull/793)
+- `CalcJob`: simplify `parent_folder` handling [[#805]](https://github.com/aiidateam/aiida-quantumespresso/pull/805)
+- `MatDynCalculation`: use validator to check `flfrc` input [[#814]](https://github.com/aiidateam/aiida-quantumespresso/pull/814)
+- `CpParser`: add stresses and fix for QE v7.0 [[#786]](https://github.com/aiidateam/aiida-quantumespresso/pull/786)
+- `PwParser`: Add support for QE v7.1 [[#822]](https://github.com/aiidateam/aiida-quantumespresso/pull/822)
+
+### Bug Fixes
+
+- `PhCalculation`: Fix bug when `only_initialization=True` [[#813]](https://github.com/aiidateam/aiida-quantumespresso/pull/813)
+
+### Devops
+
+- Devops: fix the nightly build [[#784]](https://github.com/aiidateam/aiida-quantumespresso/pull/784)
+- DevOps: Move the source directory into `src/` [[#812]](https://github.com/aiidateam/aiida-quantumespresso/pull/812)
+- DevOps: update nightly to show as failed on error [[#817]](https://github.com/aiidateam/aiida-quantumespresso/pull/817)
+- DevOps: only run Slack notification if tests failed [[#819]](https://github.com/aiidateam/aiida-quantumespresso/pull/819)
+- DevOps: address deprecation warnings [[#820]](https://github.com/aiidateam/aiida-quantumespresso/pull/820)
+
+### Dependencies
+
+- Dependencies: put upper limit markupsafe<2.1 [[#790]](https://github.com/aiidateam/aiida-quantumespresso/pull/790)
+- Dependencies: Update Python requirements [[#803]](https://github.com/aiidateam/aiida-quantumespresso/pull/803)
+- Dependencies: Update requirement for `aiida-core~=2.0` [[#804]](https://github.com/aiidateam/aiida-quantumespresso/pull/804)
+- Refactor: Additional compatibility for `aiida-core` v2.0 [[#806]](https://github.com/aiidateam/aiida-quantumespresso/pull/806)
+- Remove the use of deprecated distutils package [[#808]](https://github.com/aiidateam/aiida-quantumespresso/pull/808)
+
 ## v3.5.2
 
 ### New
