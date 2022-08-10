@@ -17,14 +17,6 @@ def test_setup(generate_workchain_pw):
     assert isinstance(process.ctx.inputs, AttributeDict)
 
 
-@pytest.mark.filterwarnings('ignore::aiida.common.warnings.AiidaDeprecationWarning')
-def test_validate_pseudos(generate_workchain_pw):
-    """Test `PwBaseWorkChain.validate_pseudos`."""
-    process = generate_workchain_pw()
-    process.setup()
-    assert process.validate_pseudos() is None
-
-
 def test_handle_unrecoverable_failure(generate_workchain_pw):
     """Test `PwBaseWorkChain.handle_unrecoverable_failure`."""
     process = generate_workchain_pw(exit_code=PwCalculation.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
