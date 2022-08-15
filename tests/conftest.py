@@ -4,6 +4,7 @@
 from collections.abc import Mapping
 import io
 import os
+import pathlib
 import shutil
 import tempfile
 
@@ -133,7 +134,8 @@ def sssp(aiida_profile, generate_upf_data):
                 continue
 
             upf = generate_upf_data(element)
-            filename = os.path.join(dirpath, f'{element}.upf')
+            dirpath = pathlib.Path(dirpath)
+            filename = dirpath / f'{element}.upf'
 
             with open(filename, 'w+b') as handle:
                 with upf.open(mode='rb') as source:
