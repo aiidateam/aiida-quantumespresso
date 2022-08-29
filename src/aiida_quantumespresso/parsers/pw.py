@@ -542,7 +542,7 @@ class PwParser(Parser):
         from aiida_quantumespresso.parsers.parse_raw.pw import get_symmetry_mapping
 
         possible_symmetries = get_symmetry_mapping()
-        parameters = self.node.get_outgoing(node_class=orm.Dict).get_node_by_label('output_parameters')
+        parameters = self.node.base.links.get_outgoing(node_class=orm.Dict).get_node_by_label('output_parameters')
 
         symmetries_extended = []
         symmetries_reduced = parameters.get_dict()['symmetries']  # rimetti lo zero

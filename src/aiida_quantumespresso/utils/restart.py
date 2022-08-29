@@ -31,7 +31,7 @@ def get_builder_restart(node, from_scratch=False, use_symlink=False):
     builder = node.get_builder_restart()
 
     if not from_scratch:
-        builder.parent_folder = node.get_outgoing(link_label_filter='remote_folder').one().node
+        builder.parent_folder = node.base.links.get_outgoing(link_label_filter='remote_folder').one().node
     else:
         builder.pop('parent_folder', None)
 

@@ -272,7 +272,7 @@ def generate_calc_job_node(fixture_localhost):
 
         if filepath_folder:
             retrieved = orm.FolderData()
-            retrieved.put_object_from_tree(filepath_folder)
+            retrieved.base.repository.put_object_from_tree(filepath_folder)
 
             # Remove files that are supposed to be only present in the retrieved temporary folder
             if retrieve_temporary:
