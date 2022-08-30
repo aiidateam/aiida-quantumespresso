@@ -316,7 +316,7 @@ class PwParser(Parser):
             return parsed_data, logs
 
         try:
-            stdout = self.retrieved.get_object_content(filename_stdout)
+            stdout = self.retrieved.base.repository.get_object_content(filename_stdout)
         except IOError:
             self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_READ
             return parsed_data, logs
