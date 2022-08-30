@@ -41,8 +41,9 @@ def launch_calculation(
             f'--pw-nscf-parent node has process_type: {pw_nscf_parent.process_type}; should be {expected_process_type}'
         )
 
-    pw_nscf_parent_folder = pw_nscf_parent.base.links.get_outgoing(node_class=orm.RemoteData,
-                                                        link_label_filter='remote_folder').one().node
+    pw_nscf_parent_folder = pw_nscf_parent.base.links.get_outgoing(
+        node_class=orm.RemoteData, link_label_filter='remote_folder'
+    ).one().node
 
     expected_process_type = 'aiida.calculations:quantumespresso.ph'
     if ph_parent.process_type != expected_process_type:
@@ -50,7 +51,8 @@ def launch_calculation(
             f'--ph-parent has process_type: {ph_parent.process_type}; should be {expected_process_type}'
         )
 
-    ph_parent_folder = ph_parent.base.links.get_outgoing(node_class=orm.RemoteData, link_label_filter='remote_folder').one().node
+    ph_parent_folder = ph_parent.base.links.get_outgoing(node_class=orm.RemoteData,
+                                                         link_label_filter='remote_folder').one().node
 
     parameters = {
         'INPUTEPW': {
