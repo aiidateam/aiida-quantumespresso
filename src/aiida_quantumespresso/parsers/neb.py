@@ -36,7 +36,7 @@ class NebParser(Parser):
         list_of_files = retrieved.base.repository.list_object_names()  # Note: this includes folders, but not the files they contain.
 
         # The stdout is required for parsing
-        filename_stdout = self.node.get_attribute('output_filename')
+        filename_stdout = self.node.base.attributes.get('output_filename')
 
         if filename_stdout not in list_of_files:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)

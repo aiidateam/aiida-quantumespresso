@@ -227,14 +227,14 @@ def generate_calc_job_node(fixture_localhost):
         entry_point = format_entry_point_string('aiida.calculations', entry_point_name)
 
         node = orm.CalcJobNode(computer=computer, process_type=entry_point)
-        node.set_attribute('input_filename', 'aiida.in')
-        node.set_attribute('output_filename', 'aiida.out')
-        node.set_attribute('error_filename', 'aiida.err')
+        node.base.attributes.set('input_filename', 'aiida.in')
+        node.base.attributes.set('output_filename', 'aiida.out')
+        node.base.attributes.set('error_filename', 'aiida.err')
         node.set_option('resources', {'num_machines': 1, 'num_mpiprocs_per_machine': 1})
         node.set_option('max_wallclock_seconds', 1800)
 
         if attributes:
-            node.set_attribute_many(attributes)
+            node.base.attributes.set_many(attributes)
 
         if filepath_folder:
             from qe_tools.exceptions import ParsingError
@@ -278,7 +278,7 @@ def generate_calc_job_node(fixture_localhost):
             if retrieve_temporary:
                 for filename in filenames:
                     try:
-                        retrieved.delete_object(filename)
+                        retrieved.base.repository.delete_object(filename)
                     except OSError:
                         pass  # To test the absence of files in the retrieve_temporary folder
 

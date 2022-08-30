@@ -45,6 +45,6 @@ def test_cp_default(
         # In a single cg step we don't have the trajectory output and a message is produced in the log
         assert not orm.Log.objects.get_logs_for(node)
         assert 'output_trajectory' in results
-        data['trajectory'] = results['output_trajectory'].attributes
+        data['trajectory'] = results['output_trajectory'].base.attributes.all
 
     data_regression.check(data)

@@ -576,7 +576,7 @@ class BasePwCpInputGenerator(CalcJob):
             try:
                 structure_parameters = get_parameters_from_cell(
                     ibrav=ibrav,
-                    cell=structure.get_attribute('cell'),
+                    cell=structure.base.attributes.get('cell'),
                     tolerance=settings.pop('IBRAV_CELL_TOLERANCE', 1e-6)
                 )
             except ValueError as exc:

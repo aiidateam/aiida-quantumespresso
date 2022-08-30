@@ -36,7 +36,7 @@ class PwParser(Parser):
         parser_options = settings.get(self.get_parser_settings_key(), None)
 
         # Verify that the retrieved_temporary_folder is within the arguments if temporary files were specified
-        if self.node.get_attribute('retrieve_temporary_list', None):
+        if self.node.base.attributes.get('retrieve_temporary_list', None):
             try:
                 dir_with_bands = kwargs['retrieved_temporary_folder']
             except KeyError:
@@ -126,7 +126,7 @@ class PwParser(Parser):
 
     def get_calculation_type(self):
         """Return the type of the calculation."""
-        return self.node.inputs.parameters.get_attribute('CONTROL', {}).get('calculation', 'scf')
+        return self.node.inputs.parameters.base.attributes.get('CONTROL', {}).get('calculation', 'scf')
 
     def validate_premature_exit(self, logs):
         """Analyze problems that will cause a pre-mature termination of the calculation, controlled or not."""
@@ -151,9 +151,9 @@ class PwParser(Parser):
             return
 
         if 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED' in logs['error']:
-            scf_must_converge = self.node.inputs.parameters.get_attribute('ELECTRONS',
+            scf_must_converge = self.node.inputs.parameters.base.attributes.get('ELECTRONS',
                                                                           {}).get('scf_must_converge', True)
-            electron_maxstep = self.node.inputs.parameters.get_attribute('ELECTRONS', {}).get('electron_maxstep', 1)
+            electron_maxstep = self.node.inputs.parameters.base.attributes.get('ELECTRONS', {}).get('electron_maxstep', 1)
 
             if electron_maxstep == 0 or not scf_must_converge:
                 return self.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED
@@ -269,7 +269,7 @@ class PwParser(Parser):
         logs = get_logging_container()
         parsed_data = {}
 
-        object_names = self.retrieved.list_object_names()
+        object_names = self.retrieved.base.repository.list_object_names()
         xml_files = [xml_file for xml_file in self.node.process_class.xml_filenames if xml_file in object_names]
 
         if not xml_files:
@@ -282,7 +282,7 @@ class PwParser(Parser):
             return parsed_data, logs
 
         try:
-            with self.retrieved.open(xml_files[0]) as xml_file:
+            with self.retrieved.base.repository.open(xml_files[0]) as xml_file:
                 parsed_data, logs = parse_xml(xml_file, dir_with_bands)
         except IOError:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_READ
@@ -309,9 +309,9 @@ class PwParser(Parser):
         logs = get_logging_container()
         parsed_data = {}
 
-        filename_stdout = self.node.get_attribute('output_filename')
+        filename_stdout = self.node.base.attributes.get('output_filename')
 
-        if filename_stdout not in self.retrieved.list_object_names():
+        if filename_stdout not in self.retrieved.base.repository.list_object_names():
             self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_MISSING
             return parsed_data, logs
 

@@ -50,9 +50,9 @@ def test_pw_default(fixture_localhost, generate_calc_job_node, generate_parser, 
     assert 'output_trajectory' in results
 
     data_regression.check({
-        'output_kpoints': results['output_kpoints'].attributes,
+        'output_kpoints': results['output_kpoints'].base.attributes.all,
         'output_parameters': results['output_parameters'].get_dict(),
-        'output_trajectory': results['output_trajectory'].attributes,
+        'output_trajectory': results['output_trajectory'].base.attributes.all,
     })
 
 
@@ -87,8 +87,8 @@ def test_pw_default_no_xml(
 
     data_regression.check({
         'output_parameters': results['output_parameters'].get_dict(),
-        'output_structure': results['output_structure'].attributes,
-        'output_trajectory': results['output_trajectory'].attributes,
+        'output_structure': results['output_structure'].base.attributes.all,
+        'output_trajectory': results['output_trajectory'].base.attributes.all,
     })
 
 
@@ -124,9 +124,9 @@ def test_pw_default_xml(
     assert 'output_trajectory' in results
 
     data_regression.check({
-        'output_band': results['output_band'].attributes,
+        'output_band': results['output_band'].base.attributes.all,
         'output_parameters': results['output_parameters'].get_dict(),
-        'output_trajectory': results['output_trajectory'].attributes,
+        'output_trajectory': results['output_trajectory'].base.attributes.all,
     })
 
 
@@ -152,7 +152,7 @@ def test_pw_initialization_xml_new(
     assert 'output_trajectory' in results
     data_regression.check({
         'output_parameters': results['output_parameters'].get_dict(),
-        'output_trajectory': results['output_trajectory'].attributes,
+        'output_trajectory': results['output_trajectory'].base.attributes.all,
     })
 
 
@@ -450,7 +450,7 @@ def test_pw_failed_out_of_walltime(
     assert 'output_trajectory' in results
     data_regression.check({
         'output_parameters': results['output_parameters'].get_dict(),
-        'output_trajectory': results['output_trajectory'].attributes,
+        'output_trajectory': results['output_trajectory'].base.attributes.all,
     })
 
 
@@ -479,7 +479,7 @@ def test_pw_failed_out_of_walltime_interrupted(
     assert 'output_trajectory' in results
     data_regression.check({
         'output_parameters': results['output_parameters'].get_dict(),
-        'output_trajectory': results['output_trajectory'].attributes,
+        'output_trajectory': results['output_trajectory'].base.attributes.all,
     })
 
 
@@ -503,7 +503,7 @@ def test_pw_failed_scf_not_converged(
     assert 'output_trajectory' in results
     data_regression.check({
         'output_parameters': results['output_parameters'].get_dict(),
-        'output_trajectory': results['output_trajectory'].attributes,
+        'output_trajectory': results['output_trajectory'].base.attributes.all,
     })
 
 
@@ -554,10 +554,10 @@ def test_pw_relax_success(fixture_localhost, generate_calc_job_node, generate_pa
     assert 'output_structure' in results
     assert 'output_trajectory' in results
     data_regression.check({
-        'output_kpoints': results['output_kpoints'].attributes,
+        'output_kpoints': results['output_kpoints'].base.attributes.all,
         'output_parameters': results['output_parameters'].get_dict(),
-        'output_structure': results['output_structure'].attributes,
-        'output_trajectory': results['output_trajectory'].attributes,
+        'output_structure': results['output_structure'].base.attributes.all,
+        'output_trajectory': results['output_trajectory'].base.attributes.all,
     })
 
 
@@ -626,10 +626,10 @@ def test_pw_vcrelax_success(
     assert 'output_structure' in results
     assert 'output_trajectory' in results
     data_regression.check({
-        'output_kpoints': results['output_kpoints'].attributes,
+        'output_kpoints': results['output_kpoints'].base.attributes.all,
         'output_parameters': results['output_parameters'].get_dict(),
-        'output_structure': results['output_structure'].attributes,
-        'output_trajectory': results['output_trajectory'].attributes,
+        'output_structure': results['output_structure'].base.attributes.all,
+        'output_trajectory': results['output_trajectory'].base.attributes.all,
     })
 
 
@@ -657,10 +657,10 @@ def test_pw_vcrelax_success_fractional(
     assert 'output_structure' in results
     assert 'output_trajectory' in results
     data_regression.check({
-        'output_kpoints': results['output_kpoints'].attributes,
+        'output_kpoints': results['output_kpoints'].base.attributes.all,
         'output_parameters': results['output_parameters'].get_dict(),
-        'output_structure': results['output_structure'].attributes,
-        'output_trajectory': results['output_trajectory'].attributes,
+        'output_structure': results['output_structure'].base.attributes.all,
+        'output_trajectory': results['output_trajectory'].base.attributes.all,
     })
 
 
@@ -684,7 +684,7 @@ def test_pw_vcrelax_success_rVV10(
     assert 'output_trajectory' in results
     data_regression.check({
         'energy_vdw': results['output_parameters']['energy_vdw'],
-        'array|stress': results['output_trajectory'].attributes['array|stress'],
+        'array|stress': results['output_trajectory'].base.attributes.all['array|stress'],
     })
 
 

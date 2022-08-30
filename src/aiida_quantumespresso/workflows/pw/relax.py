@@ -117,11 +117,11 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
 
         if relax_type is RelaxType.NONE:
             base.pw.parameters['CONTROL']['calculation'] = 'scf'
-            base.pw.parameters.delete_attribute('CELL')
+            base.pw.parameters.base.attributes.delete('CELL')
 
         elif relax_type is RelaxType.POSITIONS:
             base.pw.parameters['CONTROL']['calculation'] = 'relax'
-            base.pw.parameters.delete_attribute('CELL')
+            base.pw.parameters.base.attributes.delete('CELL')
         else:
             base.pw.parameters['CONTROL']['calculation'] = 'vc-relax'
 

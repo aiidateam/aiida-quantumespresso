@@ -301,7 +301,7 @@ class PwimmigrantCalculation(PwCalculation):
         if settings_dict:
             self.use_settings(Dict(settings_dict))
 
-        self.set_attribute('input_nodes_created', True)
+        self.base.attributes.set('input_nodes_created', True)
 
     def _prepare_for_retrieval(self, open_transport):
         """Prepare the calculation for retrieval by daemon.
@@ -322,8 +322,8 @@ class PwimmigrantCalculation(PwCalculation):
         # Manually set the files that will be copied to the repository and that
         # the parser will extract the results from. This would normally be
         # performed in self._prepare_for_submission prior to submission.
-        self.set_attribute('retrieve_list', [self._OUTPUT_FILE_NAME] + self.xml_filenames)
-        self.set_attribute('retrieve_singlefile_list', [])
+        self.base.attributes.set('retrieve_list', [self._OUTPUT_FILE_NAME] + self.xml_filenames)
+        self.base.attributes.set('retrieve_singlefile_list', [])
 
         # Make sure the calculation and input links are stored.
         self.store_all()
@@ -403,7 +403,7 @@ class PwimmigrantCalculation(PwCalculation):
         """
         # This is the functionality as self._set_remote_workir, but it bypasses
         # the need to have the calculation state set as SUBMITTING.
-        self.set_attribute('remote_workdir', remote_workdir)
+        self.base.attributes.set('remote_workdir', remote_workdir)
 
     def set_output_subfolder(self, output_subfolder):
         """Manually set the job's ``outdir`` variable (e.g. ``'./out/'``).
@@ -469,7 +469,7 @@ class PwimmigrantCalculation(PwCalculation):
 
     @_OUTPUT_SUBFOLDER.setter
     def _OUTPUT_SUBFOLDER(self, value):
-        self.set_attribute('output_subfolder', value)
+        self.base.attributes.set('output_subfolder', value)
 
     @property
     def _PREFIX(self):
@@ -477,7 +477,7 @@ class PwimmigrantCalculation(PwCalculation):
 
     @_PREFIX.setter
     def _PREFIX(self, value):
-        self.set_attribute('prefix', value)
+        self.base.attributes.set('prefix', value)
 
     @property
     def _INPUT_FILE_NAME(self):
@@ -485,7 +485,7 @@ class PwimmigrantCalculation(PwCalculation):
 
     @_INPUT_FILE_NAME.setter
     def _INPUT_FILE_NAME(self, value):
-        self.set_attribute('input_file_name', value)
+        self.base.attributes.set('input_file_name', value)
 
     @property
     def _OUTPUT_FILE_NAME(self):
@@ -493,4 +493,4 @@ class PwimmigrantCalculation(PwCalculation):
 
     @_OUTPUT_FILE_NAME.setter
     def _OUTPUT_FILE_NAME(self, value):
-        self.set_attribute('output_file_name', value)
+        self.base.attributes.set('output_file_name', value)

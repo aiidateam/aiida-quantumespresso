@@ -30,5 +30,5 @@ def test_matdyn_default(fixture_localhost, generate_calc_job_node, generate_pars
     assert 'output_phonon_bands' in results
     data_regression.check({
         'output_parameters': results['output_parameters'].get_dict(),
-        'output_phonon_bands': results['output_phonon_bands'].attributes
+        'output_phonon_bands': results['output_phonon_bands'].base.attributes.all
     })
