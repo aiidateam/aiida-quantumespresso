@@ -222,6 +222,8 @@ trajectory:
   - 10
   array|steps:
   - 10
+  array|stresses:
+  - 0
   array|times:
   - 10
   array|velocities:

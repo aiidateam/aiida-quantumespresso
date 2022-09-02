@@ -115,6 +115,8 @@ trajectory:
   - 3
   array|steps:
   - 3
+  array|stresses:
+  - 0
   array|times:
   - 3
   array|velocities:

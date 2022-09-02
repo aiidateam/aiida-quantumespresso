@@ -15,6 +15,7 @@ class Q2rCalculation(NamelistsCalculation):
     _FORCE_CONSTANTS_NAME = 'real_space_force_constants.dat'
     _OUTPUT_SUBFOLDER = PhCalculation._FOLDER_DYNAMICAL_MATRIX  # pylint: disable=protected-access
     _INPUT_SUBFOLDER = os.path.join('.', PhCalculation._FOLDER_DYNAMICAL_MATRIX)  # pylint: disable=protected-access
+    _default_parent_output_folder = PhCalculation._FOLDER_DYNAMICAL_MATRIX  # pylint: disable=protected-access
 
     _default_namelists = ['INPUT']
     _blocked_keywords = [
