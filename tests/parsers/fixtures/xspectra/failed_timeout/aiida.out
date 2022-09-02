@@ -1,0 +1,469 @@
+
+     Program XSpectra v.6.5 starts on  1Sep2022 at 10: 2:20 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI), running on    16 processors
+
+     MPI processes distributed on     1 nodes
+     R & G space division:  proc/nbgrp/npool/nimage =      16
+
+     -------------------------------------------------------------------------
+                    __  ____                 _
+                    \ \/ / _\_ __   ___  ___| |_ _ __ __ _
+                     \  /\ \| '_ \ / _ \/ __| __| \__/ _\ |
+                     /  \_\ \ |_) |  __/ (__| |_| | | (_| |
+                    /_/\_\__/ .__/ \___|\___|\__|_|  \__,_|
+                            |_|
+
+     In publications arising from the use of XSpectra, please cite:
+      - O. Bunau and M. Calandra,
+        Phys. Rev. B 87, 205105 (2013)
+      - Ch. Gougoussis, M. Calandra, A. P. Seitsonen, F. Mauri,
+        Phys. Rev. B 80, 075102 (2009)
+      - M. Taillefumier, D. Cabaret, A. M. Flank, and F. Mauri,
+        Phys. Rev. B 66, 195107 (2002)
+
+     -------------------------------------------------------------------------
+                                Reading input_file
+     -------------------------------------------------------------------------
+
+     calculation: xanes_dipole
+
+     xepsilon  [crystallographic coordinates]:   1.000000   0.000000   0.000000
+
+     xonly_plot: FALSE
+        => complete calculation: Lanczos + spectrum plot
+
+     filecore (core-wavefunction file): stdout              
+ 
+     main plot parameters:
+        cut_occ_states: TRUE
+        gamma_mode:  constant
+        -> using xgamma [eV]:  0.80
+        xemin [eV]: -10.00
+        xemax [eV]:  50.00
+        xnepoint: 1000
+        energy zero automatically set to the Fermi level
+
+     Fermi level determined from SCF save directory (aiida.save)
+     NB: For an insulator (SCF calculated with occupations="fixed")
+         the Fermi level will be placed at the position of HOMO.
+ 
+     WARNING: variable ef_r is obsolete
+
+     -------------------------------------------------------------------------
+                      Reading SCF save directory: aiida.save
+     -------------------------------------------------------------------------
+
+
+     Reading xml data from directory:
+
+     ./out/aiida.save/
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation= PBE
+                           (   1   4   3   4   0   0   0)
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+               file C.pbe-n-kjgipaw_psl.1.0.0.UPF: wavefunction(s)  2S 2P renormalized
+               file C.star1s.pbe-n-kjgipaw_psl.1.0.0.UPF: wavefunction(s)  2S 2P renormalized
+               file O.pbe-n-kjpaw_psl.0.1.UPF: wavefunction(s)  2P renormalized
+ 
+     Parallelization info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Min         603     300     80                56022    19795    2738
+     Max         604     301     81                56026    19800    2740
+     Sum        9653    4815   1293               896383   316779   43815
+ 
+     Generating pointlists ...
+     new r_m :   0.0630 (alat units)  1.0020 (a.u.) for type    1
+     new r_m :   0.0630 (alat units)  1.0020 (a.u.) for type    2
+     new r_m :   0.0943 (alat units)  1.5001 (a.u.) for type    3
+     new r_m :   0.0630 (alat units)  1.0020 (a.u.) for type    4
+
+     Check: negative core charge=   -0.000004
+     Reading collected, re-writing distributed wavefunctions
+
+     -------------------------------------------------------------------------
+                           Getting the Fermi energy 
+     -------------------------------------------------------------------------
+
+     From SCF save directory (spin polarized work):
+        ehomo [eV]:    6.2077 (highest occupied level:max of up and down)
+        elumo [eV]:    7.1068 (lowest occupied level:min of up and down)
+        ef    [eV]:    6.2077
+
+     -> ef (in eV) will be written in x_save_file
+
+     -------------------------------------------------------------------------
+                           Energy zero of the spectrum 
+     -------------------------------------------------------------------------
+
+     -> ef will be used as energy zero of the spectrum
+ 
+     Parallelization info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Min         603     300     85                56022    19795    3023
+     Max         604     301     86                56026    19800    3028
+     Sum        9653    4815   1371               896383   316779   48417
+ 
+
+
+     bravais-lattice index     =            0
+     lattice parameter (alat)  =      15.9081  a.u.
+     unit-cell volume          =    6634.8698 (a.u.)^3
+     number of atoms/cell      =           96
+     number of atomic types    =            4
+     number of electrons       =       449.00 (up: 225.00, down: 224.00)
+     number of Kohn-Sham states=          270
+     kinetic-energy cutoff     =      50.0000  Ry
+     charge density cutoff     =     400.0000  Ry
+     Exchange-correlation= PBE
+                           (   1   4   3   4   0   0   0)
+
+     celldm(1)=  15.908093  celldm(2)=   0.000000  celldm(3)=   0.000000
+     celldm(4)=   0.000000  celldm(5)=   0.000000  celldm(6)=   0.000000
+
+     crystal axes: (cart. coord. in units of alat)
+               a(1) = (   1.000000   0.000000   0.000000 )  
+               a(2) = (   0.000000   1.198440   0.000000 )  
+               a(3) = (  -0.619079   0.000000   1.375188 )  
+
+     reciprocal axes: (cart. coord. in units 2 pi/alat)
+               b(1) = (  1.000000  0.000000  0.450178 )  
+               b(2) = (  0.000000  0.834418  0.000000 )  
+               b(3) = (  0.000000  0.000000  0.727174 )  
+
+
+     PseudoPot. # 1 for C  read from file:
+     ./pseudo/C.pbe-n-kjgipaw_psl.1.0.0.UPF
+     MD5 check sum: d4a55e2b55f016b31e8cf04d9433f0e7
+     Pseudo is Projector augmented-wave + core cor, Zval =  4.0
+     Generated using 'atomic' code by A. Dal Corso v.6.8
+     Shape of augmentation charge: PSQ
+     Using radial grid of 1073 points,  4 beta functions with: 
+                l(1) =   0
+                l(2) =   0
+                l(3) =   1
+                l(4) =   1
+     Q(r) pseudized with 0 coefficients 
+
+
+     PseudoPot. # 2 for C  read from file:
+     ./pseudo/C.star1s.pbe-n-kjgipaw_psl.1.0.0.UPF
+     MD5 check sum: 701cf4b8f261fbcd42f3c7d7f55419f2
+     Pseudo is Projector augmented-wave + core cor, Zval =  5.0
+     Generated using 'atomic' code by A. Dal Corso v.6.8
+     Shape of augmentation charge: PSQ
+     Using radial grid of 1073 points,  4 beta functions with: 
+                l(1) =   0
+                l(2) =   0
+                l(3) =   1
+                l(4) =   1
+     Q(r) pseudized with 0 coefficients 
+
+
+     PseudoPot. # 3 for Li read from file:
+     ./pseudo/li_pbe_v1.4.uspp.F.UPF
+     MD5 check sum: e912e257baa3777c20ea3d68f190483c
+     Pseudo is Ultrasoft, Zval =  3.0
+     Generated by new atomic code, or converted to UPF format
+     Using radial grid of  751 points,  5 beta functions with: 
+                l(1) =   0
+                l(2) =   0
+                l(3) =   0
+                l(4) =   1
+                l(5) =   1
+     Q(r) pseudized with 10 coefficients,  rinner =    1.150   1.150   1.150
+
+
+     PseudoPot. # 4 for O  read from file:
+     ./pseudo/O.pbe-n-kjpaw_psl.0.1.UPF
+     MD5 check sum: 0234752ac141de4415c5fc33072bef88
+     Pseudo is Projector augmented-wave + core cor, Zval =  6.0
+     Generated using "atomic" code by A. Dal Corso v.5.0.99 svn rev. 10869
+     Shape of augmentation charge: BESSEL
+     Using radial grid of 1095 points,  4 beta functions with: 
+                l(1) =   0
+                l(2) =   0
+                l(3) =   1
+                l(4) =   1
+     Q(r) pseudized with 0 coefficients 
+
+
+     atomic species   valence    mass     pseudopotential
+        C              4.00    12.01070     C ( 1.00)
+        C1             5.00    12.01070     C ( 1.00)
+        Li             3.00     6.94100     Li( 1.00)
+        O              6.00    15.99940     O ( 1.00)
+
+     Starting magnetic structure 
+     atomic species   magnetization
+        C            0.000
+        C1           0.000
+        Li           0.000
+        O            0.000
+
+      2 Sym. Ops. (no inversion) found
+
+
+
+   Cartesian axes
+
+     site n.     atom                  positions (alat units)
+         1           Li  tau(   1) = (  -0.0608387   0.2691057   0.5768609  )
+         2           Li  tau(   2) = (   0.7512990   0.3301141   0.1107329  )
+         3           Li  tau(   3) = (   0.5965291   0.2691057   0.4545297  )
+         4           Li  tau(   4) = (   0.0939312   0.3301141   0.2330640  )
+         5           Li  tau(   5) = (   0.4391613   0.5687156   0.5768609  )
+         6           Li  tau(   6) = (   0.2512990   0.0305042   0.1107329  )
+         7           Li  tau(   7) = (   0.0965291   0.5687156   0.4545297  )
+         8           Li  tau(   8) = (   0.5939312   0.0305042   0.2330640  )
+         9           C1  tau(   9) = (  -0.0773849   0.0389715   0.1718984  )
+        10           C   tau(  10) = (  -0.2321548   0.5602483   0.5156953  )
+        11           C   tau(  11) = (   0.4226151   0.3385814   0.1718984  )
+        12           C   tau(  12) = (   0.2678452   0.2606384   0.5156953  )
+        13           O   tau(  13) = (  -0.1053215   0.0388252   0.5602150  )
+        14           O   tau(  14) = (   0.7957818   0.5603945   0.1273788  )
+        15           O   tau(  15) = (   0.6410120   0.0388252   0.4711757  )
+        16           O   tau(  16) = (   0.0494483   0.5603945   0.2164181  )
+        17           O   tau(  17) = (   0.3946785   0.3384351   0.5602150  )
+        18           O   tau(  18) = (   0.2957818   0.2607846   0.1273788  )
+        19           O   tau(  19) = (   0.1410120   0.3384351   0.4711757  )
+        20           O   tau(  20) = (   0.5494483   0.2607846   0.2164181  )
+        21           O   tau(  21) = (  -0.0773849   0.1916628   0.1718984  )
+        22           O   tau(  22) = (  -0.2321548   0.4075569   0.5156953  )
+        23           O   tau(  23) = (   0.4226151   0.4912727   0.1718984  )
+        24           O   tau(  24) = (   0.2678452   0.1079470   0.5156953  )
+        25           Li  tau(  25) = (  -0.3703784   0.2691057   1.2644547  )
+        26           Li  tau(  26) = (   0.4417593   0.3301141   0.7983266  )
+        27           Li  tau(  27) = (   0.2869895   0.2691057   1.1421235  )
+        28           Li  tau(  28) = (  -0.2156085   0.3301141   0.9206578  )
+        29           Li  tau(  29) = (   0.1296216   0.5687156   1.2644547  )
+        30           Li  tau(  30) = (  -0.0582407   0.0305042   0.7983266  )
+        31           Li  tau(  31) = (  -0.2130105   0.5687156   1.1421235  )
+        32           Li  tau(  32) = (   0.2843915   0.0305042   0.9206578  )
+        33           C   tau(  33) = (  -0.3869246   0.0389715   0.8594922  )
+        34           C   tau(  34) = (  -0.5416945   0.5602483   1.2032891  )
+        35           C   tau(  35) = (   0.1130754   0.3385814   0.8594922  )
+        36           C   tau(  36) = (  -0.0416945   0.2606384   1.2032891  )
+        37           O   tau(  37) = (  -0.4148612   0.0388252   1.2478088  )
+        38           O   tau(  38) = (   0.4862422   0.5603945   0.8149726  )
+        39           O   tau(  39) = (   0.3314723   0.0388252   1.1587695  )
+        40           O   tau(  40) = (  -0.2600914   0.5603945   0.9040119  )
+        41           O   tau(  41) = (   0.0851388   0.3384351   1.2478088  )
+        42           O   tau(  42) = (  -0.0137578   0.2607846   0.8149726  )
+        43           O   tau(  43) = (  -0.1685277   0.3384351   1.1587695  )
+        44           O   tau(  44) = (   0.2399086   0.2607846   0.9040119  )
+        45           O   tau(  45) = (  -0.3869246   0.1916628   0.8594922  )
+        46           O   tau(  46) = (  -0.5416945   0.4075569   1.2032891  )
+        47           O   tau(  47) = (   0.1130754   0.4912727   0.8594922  )
+        48           O   tau(  48) = (  -0.0416945   0.1079470   1.2032891  )
+        49           Li  tau(  49) = (  -0.0608387   0.8683255   0.5768609  )
+        50           Li  tau(  50) = (   0.7512990   0.9293339   0.1107329  )
+        51           Li  tau(  51) = (   0.5965291   0.8683255   0.4545297  )
+        52           Li  tau(  52) = (   0.0939312   0.9293339   0.2330640  )
+        53           Li  tau(  53) = (   0.4391613   1.1679354   0.5768609  )
+        54           Li  tau(  54) = (   0.2512990   0.6297240   0.1107329  )
+        55           Li  tau(  55) = (   0.0965291   1.1679354   0.4545297  )
+        56           Li  tau(  56) = (   0.5939312   0.6297240   0.2330640  )
+        57           C   tau(  57) = (  -0.0773849   0.6381912   0.1718984  )
+        58           C   tau(  58) = (  -0.2321548   1.1594681   0.5156953  )
+        59           C   tau(  59) = (   0.4226151   0.9378011   0.1718984  )
+        60           C   tau(  60) = (   0.2678452   0.8598582   0.5156953  )
+        61           O   tau(  61) = (  -0.1053215   0.6380450   0.5602150  )
+        62           O   tau(  62) = (   0.7957818   1.1596143   0.1273788  )
+        63           O   tau(  63) = (   0.6410120   0.6380450   0.4711757  )
+        64           O   tau(  64) = (   0.0494483   1.1596143   0.2164181  )
+        65           O   tau(  65) = (   0.3946785   0.9376549   0.5602150  )
+        66           O   tau(  66) = (   0.2957818   0.8600044   0.1273788  )
+        67           O   tau(  67) = (   0.1410120   0.9376549   0.4711757  )
+        68           O   tau(  68) = (   0.5494483   0.8600044   0.2164181  )
+        69           O   tau(  69) = (  -0.0773849   0.7908826   0.1718984  )
+        70           O   tau(  70) = (  -0.2321548   1.0067767   0.5156953  )
+        71           O   tau(  71) = (   0.4226151   1.0904925   0.1718984  )
+        72           O   tau(  72) = (   0.2678452   0.7071668   0.5156953  )
+        73           Li  tau(  73) = (  -0.3703784   0.8683255   1.2644547  )
+        74           Li  tau(  74) = (   0.4417593   0.9293339   0.7983266  )
+        75           Li  tau(  75) = (   0.2869895   0.8683255   1.1421235  )
+        76           Li  tau(  76) = (  -0.2156085   0.9293339   0.9206578  )
+        77           Li  tau(  77) = (   0.1296216   1.1679354   1.2644547  )
+        78           Li  tau(  78) = (  -0.0582407   0.6297240   0.7983266  )
+        79           Li  tau(  79) = (  -0.2130105   1.1679354   1.1421235  )
+        80           Li  tau(  80) = (   0.2843915   0.6297240   0.9206578  )
+        81           C   tau(  81) = (  -0.3869246   0.6381912   0.8594922  )
+        82           C   tau(  82) = (  -0.5416945   1.1594681   1.2032891  )
+        83           C   tau(  83) = (   0.1130754   0.9378011   0.8594922  )
+        84           C   tau(  84) = (  -0.0416945   0.8598582   1.2032891  )
+        85           O   tau(  85) = (  -0.4148612   0.6380450   1.2478088  )
+        86           O   tau(  86) = (   0.4862422   1.1596143   0.8149726  )
+        87           O   tau(  87) = (   0.3314723   0.6380450   1.1587695  )
+        88           O   tau(  88) = (  -0.2600914   1.1596143   0.9040119  )
+        89           O   tau(  89) = (   0.0851388   0.9376549   1.2478088  )
+        90           O   tau(  90) = (  -0.0137578   0.8600044   0.8149726  )
+        91           O   tau(  91) = (  -0.1685277   0.9376549   1.1587695  )
+        92           O   tau(  92) = (   0.2399086   0.8600044   0.9040119  )
+        93           O   tau(  93) = (  -0.3869246   0.7908826   0.8594922  )
+        94           O   tau(  94) = (  -0.5416945   1.0067767   1.2032891  )
+        95           O   tau(  95) = (   0.1130754   1.0904925   0.8594922  )
+        96           O   tau(  96) = (  -0.0416945   0.7071668   1.2032891  )
+
+     number of k points=    36  Methfessel-Paxton smearing, width (Ry)=  0.0200
+                       cart. coord. in units 2pi/alat
+        k(    1) = (   0.0000000   0.0000000   0.0000000), wk =   0.0277778
+        k(    2) = (   0.0000000   0.0000000   0.2423912), wk =   0.0277778
+        k(    3) = (   0.0000000   0.0000000   0.4847824), wk =   0.0277778
+        k(    4) = (   0.0000000   0.2781395   0.0000000), wk =   0.0277778
+        k(    5) = (   0.0000000   0.2781395   0.2423912), wk =   0.0277778
+        k(    6) = (   0.0000000   0.2781395   0.4847824), wk =   0.0277778
+        k(    7) = (   0.0000000   0.5562789   0.0000000), wk =   0.0277778
+        k(    8) = (   0.0000000   0.5562789   0.2423912), wk =   0.0277778
+        k(    9) = (   0.0000000   0.5562789   0.4847824), wk =   0.0277778
+        k(   10) = (   0.2500000   0.0000000   0.1125445), wk =   0.0277778
+        k(   11) = (   0.2500000   0.0000000   0.3549357), wk =   0.0277778
+        k(   12) = (   0.2500000   0.0000000   0.5973269), wk =   0.0277778
+        k(   13) = (   0.2500000   0.2781395   0.1125445), wk =   0.0277778
+        k(   14) = (   0.2500000   0.2781395   0.3549357), wk =   0.0277778
+        k(   15) = (   0.2500000   0.2781395   0.5973269), wk =   0.0277778
+        k(   16) = (   0.2500000   0.5562789   0.1125445), wk =   0.0277778
+        k(   17) = (   0.2500000   0.5562789   0.3549357), wk =   0.0277778
+        k(   18) = (   0.2500000   0.5562789   0.5973269), wk =   0.0277778
+        k(   19) = (   0.5000000   0.0000000   0.2250891), wk =   0.0277778
+        k(   20) = (   0.5000000   0.0000000   0.4674802), wk =   0.0277778
+        k(   21) = (   0.5000000   0.0000000   0.7098714), wk =   0.0277778
+        k(   22) = (   0.5000000   0.2781395   0.2250891), wk =   0.0277778
+        k(   23) = (   0.5000000   0.2781395   0.4674802), wk =   0.0277778
+        k(   24) = (   0.5000000   0.2781395   0.7098714), wk =   0.0277778
+        k(   25) = (   0.5000000   0.5562789   0.2250891), wk =   0.0277778
+        k(   26) = (   0.5000000   0.5562789   0.4674802), wk =   0.0277778
+        k(   27) = (   0.5000000   0.5562789   0.7098714), wk =   0.0277778
+        k(   28) = (   0.7500000   0.0000000   0.3376336), wk =   0.0277778
+        k(   29) = (   0.7500000   0.0000000   0.5800248), wk =   0.0277778
+        k(   30) = (   0.7500000   0.0000000   0.8224160), wk =   0.0277778
+        k(   31) = (   0.7500000   0.2781395   0.3376336), wk =   0.0277778
+        k(   32) = (   0.7500000   0.2781395   0.5800248), wk =   0.0277778
+        k(   33) = (   0.7500000   0.2781395   0.8224160), wk =   0.0277778
+        k(   34) = (   0.7500000   0.5562789   0.3376336), wk =   0.0277778
+        k(   35) = (   0.7500000   0.5562789   0.5800248), wk =   0.0277778
+        k(   36) = (   0.7500000   0.5562789   0.8224160), wk =   0.0277778
+
+     Dense  grid:   896383 G-vectors     FFT dimensions: ( 108, 125, 160)
+
+     Smooth grid:   316779 G-vectors     FFT dimensions: (  72,  90, 108)
+
+     Estimated max dynamical RAM per process >     163.90 MB
+
+     Estimated total dynamical RAM >       2.56 GB
+     Generating pointlists ...
+
+     Check: negative core charge=   -0.000004
+
+     The potential is recalculated from file :
+     ./out/aiida.save/charge-density
+
+     Starting wfcs are  480 atomic wfcs
+     Checking if some PAW data can be deallocated... 
+
+     -------------------------------------------------------------------------
+               Reading core wavefunction file for the absorbing atom
+     -------------------------------------------------------------------------
+
+     stdout successfully read
+
+     -------------------------------------------------------------------------
+                              Attributing the PAW radii 
+                     for the absorbing atom [units: Bohr radius]
+     -------------------------------------------------------------------------
+
+        PAW proj 1: r_paw(l= 0)= 1.50  (1.5*r_cut)
+        PAW proj 2: r_paw(l= 0)= 1.50  (set to 1.5)
+ 
+        NB: The calculation will not necessary use all these r_paw values.
+            - For a edge in the electric-dipole approximation,
+              only the r_paw(l=1) values are used.
+            - For a K edge in the electric-quadrupole approximation,
+              only the r_paw(l=2) values are used.
+
+            - For a L2 or L3 edge in the electric-quadrupole approximation,
+
+              all projectors (s, p and d) are used.
+
+
+     init_gipaw_1: projectors nearly linearly dependent:
+     ntyp =  1, l/n1/n2 =  0 2 1  0.99741955
+     init_gipaw_1: projectors nearly linearly dependent:
+     ntyp =  1, l/n1/n2 =  1 2 1  0.99943971
+
+
+     -------------------------------------------------------------------------
+                          Starting XANES calculation
+                     in the electric dipole approximation
+     -------------------------------------------------------------------------
+
+     Method of calculation based on the Lanczos recursion algorithm
+     --------------------------------------------------------------
+        - STEP 1: Construction of a kpoint-dependent Lanczos basis,
+          in which the Hamiltonian is tridiagonal (each 'iter' 
+          corresponds to the calculation of one more Lanczos vector)
+        - STEP 2: Calculation of the cross-section as a continued fraction
+          averaged over the k-points.
+
+     ... Begin STEP 1 ...
+
+        Radial transition matrix element(s) used in the calculation of the
+        initial vector of the Lanczos basis (|tilde{phi}_abs> normalized)
+        | For PAW proj. (l=1) #1: radial matrix element =   0.216709384
+        | For PAW proj. (l=1) #2: radial matrix element =   0.280170580
+ 
+        |-------------------------------------------------------------
+        ! k-point #     1:  ( 0.0000,  0.0000,  0.0000),  0.0278,   1
+        |-------------------------------------------------------------
+ okvan= T
+        |   Norm of the initial Lanczos vector: 0.15256369E+00
+        |   Estimated error at iter     50:   1.00175167
+        |   Estimated error at iter    100:   0.14025841
+        |   Estimated error at iter    150:   0.03363932
+        |   Estimated error at iter    200:   0.01889611
+        |   Estimated error at iter    250:   0.00904366
+        |   Estimated error at iter    300:   0.00944902
+        |   Estimated error at iter    350:   0.00765434
+        |   Estimated error at iter    400:   0.00352717
+        |   Estimated error at iter    450:   0.00300173
+        |   Estimated error at iter    500:   0.00165434
+        !   => CONVERGED at iter    550 with error=  0.00049918
+        |-------------------------------------------------------------
+        ! k-point #     2:  ( 0.0000,  0.0000,  0.2424),  0.0278,   1
+        |-------------------------------------------------------------
+ okvan= T
+        |   Norm of the initial Lanczos vector: 0.15256763E+00
+        |   Estimated error at iter     50:   1.00175181
+        |   Estimated error at iter    100:   0.14005235
+        |   Estimated error at iter    150:   0.02275438
+        |   Estimated error at iter    200:   0.02000214
+        |   Estimated error at iter    250:   0.01149207
+        |   Estimated error at iter    300:   0.00888432
+        |   Estimated error at iter    350:   0.00338927
+        |   Estimated error at iter    400:   0.00212453
+        |   Estimated error at iter    450:   0.00170624
+        !   => CONVERGED at iter    500 with error=  0.00067699
+        |-------------------------------------------------------------
+        ! k-point #     3:  ( 0.0000,  0.0000,  0.4848),  0.0278,   1
+        |-------------------------------------------------------------
+     Calculation not finished
+
+     Results of STEP 1 successfully written in x_save_file
+     x_save_file name: 
+     ->  xanes.sav                                                        
+     x_save_file version:  2
+
+     ... End STEP 1 ...
