@@ -252,6 +252,28 @@ def test_pw_parallelization_duplicate_cmdline_flag(fixture_sandbox, generate_cal
     assert 'Conflicting' in str(exc.value)
 
 
+def test_pw_validate_pseudos_missing(fixture_sandbox, generate_calc_job, generate_inputs_pw):
+    """Test the validation for the ``pseudos`` port when it is not specified at all."""
+    entry_point_name = 'quantumespresso.pw'
+
+    inputs = generate_inputs_pw()
+    inputs.pop('pseudos', None)
+
+    with pytest.raises(ValueError, match=r'required value was not provided for the `pseudos` namespace\.'):
+        generate_calc_job(fixture_sandbox, entry_point_name, inputs)
+
+
+def test_pw_validate_pseudos_incorrect_kinds(fixture_sandbox, generate_calc_job, generate_inputs_pw, generate_upf_data):
+    """Test the validation for the ``pseudos`` port when the kinds do not match that of the structure."""
+    entry_point_name = 'quantumespresso.pw'
+
+    inputs = generate_inputs_pw()
+    inputs['pseudos'] = {'X': generate_upf_data('X')}
+
+    with pytest.raises(ValueError, match=r'The `pseudos` specified and structure kinds do not match:.*'):
+        generate_calc_job(fixture_sandbox, entry_point_name, inputs)
+
+
 @pytest.mark.parametrize('calculation', ['scf', 'relax', 'vc-relax'])
 def test_pw_validate_inputs_restart_base(
     fixture_sandbox, generate_calc_job, generate_inputs_pw, fixture_localhost, generate_remote_data, calculation

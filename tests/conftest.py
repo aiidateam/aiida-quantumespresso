@@ -547,14 +547,13 @@ def generate_inputs_pw(fixture_code, generate_structure, generate_kpoints_mesh, 
                 'electron_maxstep': 60,
             }
         })
+        structure = generate_structure()
         inputs = {
             'code': fixture_code('quantumespresso.pw'),
             'structure': generate_structure(),
             'kpoints': generate_kpoints_mesh(2),
             'parameters': parameters,
-            'pseudos': {
-                'Si': generate_upf_data('Si')
-            },
+            'pseudos': {kind: generate_upf_data(kind) for kind in structure.get_kind_names()},
             'metadata': {
                 'options': get_default_options()
             }
