@@ -56,7 +56,7 @@ def fixture_code(fixture_localhost):
         label = f'test.{entry_point_name}'
 
         try:
-            return Code.objects.get(label=label)  # pylint: disable=no-member
+            return Code.collection.get(label=label)  # pylint: disable=no-member
         except exceptions.NotExistent:
             return Code(
                 label=label,
@@ -115,7 +115,7 @@ def sssp(aiida_profile, generate_upf_data):
     from aiida.common.constants import elements
     from aiida.plugins import GroupFactory
 
-    aiida_profile.reset_db()
+    aiida_profile.clear_profile()
 
     SsspFamily = GroupFactory('pseudo.family.sssp')
 

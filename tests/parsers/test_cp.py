@@ -43,7 +43,7 @@ def test_cp_default(
 
     if version != '6.6_cgstep':
         # In a single cg step we don't have the trajectory output and a message is produced in the log
-        assert not orm.Log.objects.get_logs_for(node)
+        assert not orm.Log.collection.get_logs_for(node)
         assert 'output_trajectory' in results
         data['trajectory'] = results['output_trajectory'].base.attributes.all
 

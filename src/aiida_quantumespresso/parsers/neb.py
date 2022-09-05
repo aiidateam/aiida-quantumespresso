@@ -52,7 +52,7 @@ class NebParser(Parser):
             parser_options = {}
 
         # load the pw input parameters dictionary
-        pw_input_dict = self.node.inputs.pw__parameters.get_dict()
+        pw_input_dict = self.node.inputs.pw.parameters.get_dict()
 
         # load the neb input parameters dictionary
         neb_input_dict = self.node.inputs.parameters.get_dict()
