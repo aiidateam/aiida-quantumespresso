@@ -1,0 +1,90 @@
+default_inputs:
+    clean_workdir: True
+    scf:
+        pw:
+            parameters:
+                SYSTEM:
+                    tot_charge: 1
+    xs_prod:
+        parameters:
+            INPUT_XSPECTRA:
+                calculation: xanes_dipole
+                xonly_plot: False
+                xniter: 2000
+                xcheck_conv: 50
+                xerror: 0.001
+            PLOT:
+                xgamma: 0.8
+                xnepoint: 1000
+                xemin: -10
+                xemax: 50
+                terminator: True
+                cut_occ_states: True
+            CUT_OCC:
+                cut_desmooth: 0.1
+        metadata:
+            options:
+                resources:
+                    num_machines: 1
+                max_wallclock_seconds: 43200  # Twelve hours
+                withmpi: True
+    xs_plot:
+        parameters:
+            INPUT_XSPECTRA:
+                calculation: xanes_dipole
+                xonly_plot: True
+                xniter: 2000
+                xcheck_conv: 50
+                xerror: 0.001
+            PLOT:
+                xgamma: 0.1
+                xnepoint: 1000
+                xemin: -10
+                xemax: 50
+                terminator: True
+                cut_occ_states: True
+            CUT_OCC:
+                cut_desmooth: 0.1
+        metadata:
+            options:
+                resources:
+                    num_machines: 1
+                max_wallclock_seconds: 43200  # Twelve hours
+                withmpi: True
+default_protocol: full
+protocols:
+    full:
+        description: 'Protocol to perform an XANES dipole calculation using the full-core-hole (FCH) approach.'
+    half:
+        description: 'Protocol to perform an XANES dipole calculation using the half-core-hole (HCH) approach.'
+        scf:
+            pw:
+                parameters:
+                    SYSTEM:
+                        tot_charge: 0.5
+    xch_smear:
+        description: 'Protocol to perform an XANES dipole calculation using the excited-core-hole (XCH) method (population smearing variant).'
+        scf:
+            pw:
+                parameters:
+                    SYSTEM:
+                        tot_charge: 0
+                        nspin: 2
+                        starting_magnetization: 1
+    xch_fix:
+        description: 'Protocol to perform an XANES dipole calculation using the excited-core-hole (XCH) method (fixed populations variant).'
+        scf:
+            pw:
+                parameters:
+                    SYSTEM:
+                        occupations: 'fixed'
+                        tot_charge: 0
+                        nspin: 2
+                        tot_magnetization: 1
+    none:
+        description: 'Protocol to perform an XANES dipole calculation with no core-hole treatment (simply cancels out the total charge set by `full`).'
+        scf:
+            pw:
+                parameters:
+                    SYSTEM:
+                        tot_charge: 0
