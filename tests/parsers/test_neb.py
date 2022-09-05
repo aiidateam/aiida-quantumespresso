@@ -57,7 +57,7 @@ def test_neb_default(fixture_localhost, generate_calc_job_node, generate_parser,
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
-    assert not orm.Log.objects.get_logs_for(node)
+    assert not orm.Log.collection.get_logs_for(node)
     assert 'output_parameters' in results
     assert 'output_mep' in results
     assert 'output_trajectory' in results
@@ -65,8 +65,8 @@ def test_neb_default(fixture_localhost, generate_calc_job_node, generate_parser,
 
     data = {
         'parameters': results['output_parameters'].get_dict(),
-        'output_mep': results['output_mep'].attributes,
-        'output_trajectory': results['output_trajectory'].attributes,
+        'output_mep': results['output_mep'].base.attributes.all,
+        'output_trajectory': results['output_trajectory'].base.attributes.all,
     }
     data_regression.check(data)
 
@@ -89,13 +89,13 @@ def test_neb_all_iterations(
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
-    assert not orm.Log.objects.get_logs_for(node)
+    assert not orm.Log.collection.get_logs_for(node)
     assert 'output_parameters' in results
     assert 'output_mep' in results
     assert 'output_trajectory' in results
     assert 'iteration_array' in results
 
-    data = {'iteration_array': results['iteration_array'].attributes}
+    data = {'iteration_array': results['iteration_array'].base.attributes.all}
     data_regression.check(data)
 
     data = build_num_regression_dictionary([results['iteration_array']], [results['iteration_array'].get_arraynames()])

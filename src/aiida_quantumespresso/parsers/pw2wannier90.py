@@ -17,7 +17,7 @@ class Pw2wannier90Parser(Parser):
         """
         try:
             filename_stdout = self.node.get_option('output_filename')  # or get_attribute(), but this is clearer
-            with self.retrieved.open(filename_stdout, 'r') as fil:
+            with self.retrieved.base.repository.open(filename_stdout, 'r') as fil:
                 out_file = fil.read()
         except OSError:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)

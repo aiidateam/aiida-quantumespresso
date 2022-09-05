@@ -22,7 +22,7 @@ class ForceConstantsData(SinglefileData):
 
         # Add all other attributes found in the parsed dictionary
         for key, value in dictionary.items():
-            self.set_attribute(key, value)
+            self.base.attributes.set(key, value)
 
     @property
     def number_of_species(self):
@@ -30,7 +30,7 @@ class ForceConstantsData(SinglefileData):
 
         :return: a scalar
         """
-        return self.get_attribute('number_of_species')
+        return self.base.attributes.get('number_of_species')
 
     @property
     def number_of_atoms(self):
@@ -38,7 +38,7 @@ class ForceConstantsData(SinglefileData):
 
         :return: a scalar
         """
-        return self.get_attribute('number_of_atoms')
+        return self.base.attributes.get('number_of_atoms')
 
     @property
     def cell(self):
@@ -46,7 +46,7 @@ class ForceConstantsData(SinglefileData):
 
         :return: a 3x3 numpy.array
         """
-        return numpy.array(self.get_attribute('cell'))
+        return numpy.array(self.base.attributes.get('cell'))
 
     @property
     def atom_list(self):
@@ -54,7 +54,7 @@ class ForceConstantsData(SinglefileData):
 
         :return: a list of length-5 tuple (element name, element mass amu_ry, 3 coordinates in cartesian Angstrom)
         """
-        return self.get_attribute('atom_list')
+        return self.base.attributes.get('atom_list')
 
     @property
     def has_done_electric_field(self):
@@ -62,7 +62,7 @@ class ForceConstantsData(SinglefileData):
 
         :return: a boolean
         """
-        return self.get_attribute('has_done_electric_field')
+        return self.base.attributes.get('has_done_electric_field')
 
     @property
     def dielectric_tensor(self):
@@ -70,7 +70,7 @@ class ForceConstantsData(SinglefileData):
 
         :return: a 3x3 tuple
         """
-        return self.get_attribute('dielectric_tensor')
+        return self.base.attributes.get('dielectric_tensor')
 
     @property
     def effective_charges_eu(self):
@@ -78,7 +78,7 @@ class ForceConstantsData(SinglefileData):
 
         :return: a list of number_of_atoms elements, each being a 3x3 tuple
         """
-        return self.get_attribute('effective_charges_eu')
+        return self.base.attributes.get('effective_charges_eu')
 
     @property
     def qpoints_mesh(self):
@@ -86,7 +86,7 @@ class ForceConstantsData(SinglefileData):
 
         :return: a length-3 tuple
         """
-        return tuple(self.get_attribute('qpoints_mesh'))
+        return tuple(self.base.attributes.get('qpoints_mesh'))
 
 
 def parse_q2r_force_constants_file(lines, also_force_constants=False):

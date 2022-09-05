@@ -18,7 +18,7 @@ def validate_inputs(inputs, ctx=None):  # pylint: disable=unused-argument
     """Validate the inputs of the entire input namespace."""
     # pylint: disable=no-member
 
-    if 'nbands_factor' in inputs and 'nbnd' in inputs['bands']['pw']['parameters'].get_attribute('SYSTEM', {}):
+    if 'nbands_factor' in inputs and 'nbnd' in inputs['bands']['pw']['parameters'].base.attributes.get('SYSTEM', {}):
         return PwBandsWorkChain.exit_codes.ERROR_INVALID_INPUT_NUMBER_OF_BANDS.message
 
     # Cannot specify both `bands_kpoints` and `bands_kpoints_distance`
@@ -195,7 +195,7 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
 
         self.ctx.current_structure = workchain.outputs.output_structure
-        self.ctx.current_number_of_bands = workchain.outputs.output_parameters.get_attribute('number_of_bands')
+        self.ctx.current_number_of_bands = workchain.outputs.output_parameters.base.attributes.get('number_of_bands')
 
     def run_seekpath(self):
         """Run the structure through SeeKpath to get the normalized structure and path along high-symmetry k-points .
@@ -245,7 +245,7 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_SCF
 
         self.ctx.current_folder = workchain.outputs.remote_folder
-        self.ctx.current_number_of_bands = workchain.outputs.output_parameters.get_attribute('number_of_bands')
+        self.ctx.current_number_of_bands = workchain.outputs.output_parameters.base.attributes.get('number_of_bands')
 
     def run_bands(self):
         """Run the PwBaseWorkChain in bands mode along the path of high-symmetry determined by seekpath."""
