@@ -1,0 +1,4 @@
+&INPUT
+  fildyn = 'DYN_MAT/dynamical-matrix-'
+  flfrc = 'real_space_force_constants.dat'
+/

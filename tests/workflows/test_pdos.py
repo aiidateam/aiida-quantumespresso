@@ -115,7 +115,7 @@ def test_default(
 
     wkchain.update_outputs()
 
-    assert set(wkchain.node.get_outgoing().all_link_labels()) == {
+    assert set(wkchain.node.base.links.get_outgoing().all_link_labels()) == {
         'projwfc__output_parameters', 'dos__output_parameters', 'nscf__remote_folder', 'nscf__output_parameters',
         'nscf__output_band'
     }

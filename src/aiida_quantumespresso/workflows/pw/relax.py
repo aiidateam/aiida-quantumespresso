@@ -19,32 +19,8 @@ def validate_inputs(inputs, _):
     """Validate the top level namespace."""
     parameters = inputs['base']['pw']['parameters'].get_dict()
 
-    if 'relaxation_scheme' not in inputs and 'calculation' not in parameters.get('CONTROL', {}):
+    if 'calculation' not in parameters.get('CONTROL', {}):
         return 'The parameters in `base.pw.parameters` do not specify the required key `CONTROL.calculation`.'
-
-
-def validate_final_scf(value, _):
-    """Validate the final scf input."""
-    if isinstance(value, orm.Bool) and value:
-        import warnings
-
-        from aiida.common.warnings import AiidaDeprecationWarning
-        warnings.warn(
-            'this input is deprecated and will be removed. If you want to run a final scf, specify the inputs that '
-            'should be used in the `base_final_scf` namespace.', AiidaDeprecationWarning
-        )
-
-
-def validate_relaxation_scheme(value, _):
-    """Validate the relaxation scheme input."""
-    if value:
-        import warnings
-
-        from aiida.common.warnings import AiidaDeprecationWarning
-        warnings.warn(
-            'the `relaxation_scheme` input is deprecated and will be removed. Use the `get_builder_from_protocol` '
-            'instead to obtain a prepopulated builder using the `RelaxType` enum.', AiidaDeprecationWarning
-        )
 
 
 class PwRelaxWorkChain(ProtocolMixin, WorkChain):
@@ -63,10 +39,6 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
             namespace_options={'required': False, 'populate_defaults': False,
                 'help': 'Inputs for the `PwBaseWorkChain` for the final scf.'})
         spec.input('structure', valid_type=orm.StructureData, help='The inputs structure.')
-        spec.input('final_scf', valid_type=orm.Bool, default=lambda: orm.Bool(False), validator=validate_final_scf,
-            help='If `True`, a final SCF calculation will be performed on the successfully relaxed structure.')
-        spec.input('relaxation_scheme', valid_type=orm.Str, required=False, validator=validate_relaxation_scheme,
-            help='The relaxation scheme to use: choose either `relax` or `vc-relax` for variable cell relax.')
         spec.input('meta_convergence', valid_type=orm.Bool, default=lambda: orm.Bool(True),
             help='If `True` the workchain will perform a meta-convergence on the cell volume.')
         spec.input('max_meta_convergence_iterations', valid_type=orm.Int, default=lambda: orm.Int(5),
@@ -145,11 +117,11 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
 
         if relax_type is RelaxType.NONE:
             base.pw.parameters['CONTROL']['calculation'] = 'scf'
-            base.pw.parameters.delete_attribute('CELL')
+            base.pw.parameters.base.attributes.delete('CELL')
 
         elif relax_type is RelaxType.POSITIONS:
             base.pw.parameters['CONTROL']['calculation'] = 'relax'
-            base.pw.parameters.delete_attribute('CELL')
+            base.pw.parameters.base.attributes.delete('CELL')
         else:
             base.pw.parameters['CONTROL']['calculation'] = 'vc-relax'
 
@@ -187,13 +159,6 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         self.ctx.relax_inputs.pw.parameters.setdefault('CONTROL', {})
         self.ctx.relax_inputs.pw.parameters['CONTROL']['restart_mode'] = 'from_scratch'
 
-        # Adjust the inputs for the chosen relaxation scheme
-        if 'relaxation_scheme' in self.inputs:
-            if self.inputs.relaxation_scheme.value in ('relax', 'vc-relax'):
-                self.ctx.relax_inputs.pw.parameters['CONTROL']['calculation'] = self.inputs.relaxation_scheme.value
-            else:
-                raise ValueError('unsupported value for the `relaxation_scheme` input.')
-
         # Set the meta_convergence and add it to the context
         self.ctx.meta_convergence = self.inputs.meta_convergence.value
         volume_cannot_change = (
@@ -207,14 +172,9 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
             self.ctx.meta_convergence = False
 
         # Add the final scf inputs to the context if a final scf should be run
-        if self.inputs.final_scf and 'base_final_scf' in self.inputs:
-            raise ValueError('cannot specify `final_scf=True` and `base_final_scf` at the same time.')
-        elif self.inputs.final_scf:
-            self.ctx.final_scf_inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base'))
-        elif 'base_final_scf' in self.inputs:
+        if 'base_final_scf' in self.inputs:
             self.ctx.final_scf_inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base_final_scf'))
 
-        if 'final_scf_inputs' in self.ctx:
             if self.ctx.relax_inputs.pw.parameters['CONTROL']['calculation'] == 'scf':
                 self.report(
                     'Work chain will not run final SCF when `calculation` is set to `scf` for the relaxation '

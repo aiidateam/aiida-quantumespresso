@@ -123,7 +123,7 @@ class BasePwCpInputGenerator(CalcJob):
             help='An optional working directory of a previously completed calculation to restart from.')
         spec.input('vdw_table', valid_type=orm.SinglefileData, required=False,
             help='Optional van der Waals table contained in a `SinglefileData`.')
-        spec.input_namespace('pseudos', valid_type=(LegacyUpfData, UpfData), dynamic=True,
+        spec.input_namespace('pseudos', valid_type=(LegacyUpfData, UpfData), dynamic=True, required=True,
             help='A mapping of `UpfData` nodes onto the kind name to which they should apply.')
         # yapf: enable
         spec.input(
@@ -136,11 +136,29 @@ class BasePwCpInputGenerator(CalcJob):
                     for flag_name in cls._ENABLED_PARALLELIZATION_FLAGS
                 )
             ),
-            validator=cls._validate_parallelization
+            validator=cls.validate_parallelization
         )
+        spec.inputs.validator = cls.validate_inputs
 
     @classmethod
-    def _validate_parallelization(cls, value, port_namespace):  # pylint: disable=unused-argument
+    def validate_inputs(cls, value, _):
+        """Validate the entire inputs namespace."""
+        if 'pseudos' not in value:
+            return 'required value was not provided for the `pseudos` namespace.'
+
+        # Some wrapping processes expose the inputs excluding the ``structure``, in which case we can't validate.
+        if 'structure' not in value:
+            return
+
+        structure_kinds = set(value['structure'].get_kind_names())
+        pseudo_kinds = set(value['pseudos'].keys())
+
+        if structure_kinds != pseudo_kinds:
+            return f'The `pseudos` specified and structure kinds do not match: {pseudo_kinds} vs {structure_kinds}'
+
+    @classmethod
+    def validate_parallelization(cls, value, _):
+        """Validate the ``parallelization`` port."""
         if value:
             value_dict = value.get_dict()
             unknown_flags = set(value_dict.keys()) - set(cls._ENABLED_PARALLELIZATION_FLAGS)
@@ -576,7 +594,7 @@ class BasePwCpInputGenerator(CalcJob):
             try:
                 structure_parameters = get_parameters_from_cell(
                     ibrav=ibrav,
-                    cell=structure.get_attribute('cell'),
+                    cell=structure.base.attributes.get('cell'),
                     tolerance=settings.pop('IBRAV_CELL_TOLERANCE', 1e-6)
                 )
             except ValueError as exc:

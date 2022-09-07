@@ -47,7 +47,7 @@ class PpParser(Parser):
         Parse raw files retrieved from remote dir
         """
         retrieved = self.retrieved
-        retrieve_temporary_list = self.node.get_attribute('retrieve_temporary_list', None)
+        retrieve_temporary_list = self.node.base.attributes.get('retrieve_temporary_list', None)
         filename_stdout = self.node.get_option('output_filename')
 
         # If temporary files were specified, check that we have them
@@ -58,11 +58,11 @@ class PpParser(Parser):
                 return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
 
         # The stdout is required for parsing
-        if filename_stdout not in retrieved.list_object_names():
+        if filename_stdout not in retrieved.base.repository.list_object_names():
             return self.exit_codes.ERROR_OUTPUT_STDOUT_MISSING
 
         try:
-            stdout_raw = retrieved.get_object_content(filename_stdout)
+            stdout_raw = retrieved.base.repository.get_object_content(filename_stdout)
         except (IOError, OSError):
             return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
@@ -83,8 +83,8 @@ class PpParser(Parser):
             filenames = os.listdir(retrieved_temporary_folder)
             file_opener = lambda filename: open(os.path.join(retrieved_temporary_folder, filename))
         else:
-            filenames = retrieved.list_object_names()
-            file_opener = retrieved.open
+            filenames = retrieved.base.repository.list_object_names()
+            file_opener = retrieved.base.repository.open
 
         try:
             logs, self.output_parameters = self.parse_stdout(stdout_raw)
@@ -102,7 +102,7 @@ class PpParser(Parser):
 
         # The following check should in principle always succeed since the iflag should in principle be set by the
         # `PpCalculation` plugin which only ever sets 0 - 4, but we check in order for the code not to except.
-        iflag = self.node.inputs.parameters.get_attribute('PLOT')['iflag']
+        iflag = self.node.inputs.parameters.base.attributes.get('PLOT')['iflag']
         if iflag not in range(5):
             return self.exit_codes.ERROR_UNSUPPORTED_DATAFILE_FORMAT
 

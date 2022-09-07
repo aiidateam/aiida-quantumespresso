@@ -18,7 +18,7 @@ def test_pw2gw_default(fixture_localhost, generate_parser, generate_calc_job_nod
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
-    assert not orm.Log.objects.get_logs_for(node)
+    assert not orm.Log.collection.get_logs_for(node)
 
     data_regression.check({'output_parameters': results['output_parameters'].get_dict()},
                           basename='test_pw2gw_default_data')
@@ -41,7 +41,7 @@ def test_pw2gw_failed_missing_output(fixture_localhost, generate_parser, generat
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_failed, calcfunction.exit_status
     assert calcfunction.exit_status, node.process_class.exit_codes.ERROR_OUTPUT_FILES.status
-    assert orm.Log.objects.get_logs_for(node)
+    assert orm.Log.collection.get_logs_for(node)
 
 
 def test_pw2gw_failed_missing_stdout(fixture_localhost, generate_parser, generate_calc_job_node):
@@ -59,7 +59,7 @@ def test_pw2gw_failed_missing_stdout(fixture_localhost, generate_parser, generat
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_failed, calcfunction.exit_status
     assert calcfunction.exit_status, node.process_class.exit_codes.ERROR_OUTPUT_STDOUT_MISSING.status
-    assert orm.Log.objects.get_logs_for(node)
+    assert orm.Log.collection.get_logs_for(node)
 
 
 def test_pw2gw_failed_corrupted_file(fixture_localhost, generate_parser, generate_calc_job_node):
@@ -77,4 +77,4 @@ def test_pw2gw_failed_corrupted_file(fixture_localhost, generate_parser, generat
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_failed, calcfunction.exit_status
     assert calcfunction.exit_status, node.process_class.exit_codes.ERROR_OUTPUT_FILES.status
-    assert orm.Log.objects.get_logs_for(node)
+    assert orm.Log.collection.get_logs_for(node)
