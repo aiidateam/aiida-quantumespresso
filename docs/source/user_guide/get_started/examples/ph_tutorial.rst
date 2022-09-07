@@ -7,10 +7,10 @@ Phonon
    :maxdepth: 2
 
 In this chapter will get you through the launching of a phonon calculation with Quantum ESPRESSO, with ``ph.x``, a density functional perturbation theory code.
-For this tutorial, it is required that you managed to launch the ``pw.x`` calculation, which is at the base of the phonon code; and of course it is assumed that you already know how to use the QE code.
+For this tutorial, it is required that you managed to run the ``pw.x`` calculation, which is at the base of the phonon code; and of course it is assumed that you already know how to use the QE code.
 
 The input of a phonon calculation can be very simple, but requires the output of a previous ``pw.x`` calculation.
-Here we will try to compute the dynamical matrix on a mesh of points (actually consisting of a 1x1x1 mesh for brevity).
+Here we will try to compute the dynamical matrix on a mesh of points (actually consisting of a 1x1x1 mesh - i.e. only the gamma point - for brevity).
 The input file that we want to create is this one::
 
     &INPUTPH
@@ -28,8 +28,8 @@ The input file that we want to create is this one::
 Walkthrough
 -----------
 
-Setting up the input for a ``PhCalculation`` is typically simpler than doing so for the ``PwCalculation``.
-The only novel thing you will have to learn is how to link the ``pw.x`` calculation as a a parent.
+Setting up the input for a ``PhCalculation`` is simpler than doing so for the ``PwCalculation``.
+The only novel thing you will have to learn is how to link the ``pw.x`` calculation as a a parent, so AiiDA can restart properly from the output files of this run.
 As before, we'll write the script step by step.
 
 We first load a couple of useful modules, and load the AiiDA profile::
@@ -70,8 +70,7 @@ For this example, the parameters will be exceedingly simple::
     builder.parameters = parameters
 
 You may be wondering why inputs like ``fildyn`` and ``prefix`` are not specified.
-These are set automatically by the ``PhCalculation`` plugin, and hence do not need to be provided.
-In fact, trying to run with these inputs in the parameters will fail, since they are blocked to only allow certain defaults and avoid issues with linking the ``ph.x`` calculation to e.g. future ``q2r.x`` calculations.
+These are set automatically by the ``PhCalculation`` plugin, and are blocked to only allow certain defaults and avoid issues with linking the ``ph.x`` calculation to e.g. future ``q2r.x`` calculations.
 Similarly, the ``ldisp`` and ``nq1`` inputs are not specified through the ``parameters`` input, but rather by the ``qpoints`` one, as we'll show in the next section.
 
 Q-points
@@ -87,11 +86,14 @@ As mentioned above, for this example we'll be running a single q-point (i.e. a 1
 
 The plugin will automatically convert this ``KpointsData`` input to the necessary tags in the input file, similar to what is done for the ``PwCalculation``.
 
+.. note::
+
+    Instead of defining a q-points mesh, you can also define the q-points as a list, see the :ref:`topics:data_types:materials:kpoints` documentation.
 
 Parent calculation
 ^^^^^^^^^^^^^^^^^^
 
-The phonon calculation needs to start from an already completed ``pw.x`` do the perturbation theory calculation.
+The phonon calculation needs to start from an already completed ``pw.x`` to do the DFPT calculation.
 In order to do this, you will set the directory where you ran the ``pw.x`` calculation as a ``parent_folder`` of the ``ph.x`` calculation.
 
 You first need to remember the PK of the parent calculation that you launched previously (let's say it's ``8394``).
