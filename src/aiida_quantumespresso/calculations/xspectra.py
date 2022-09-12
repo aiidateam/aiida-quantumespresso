@@ -128,7 +128,7 @@ class XspectraCalculation(NamelistsCalculation):
         calcinfo.local_copy_list.append(core_file_info)
 
         # if included as an input, append the gamma file node to the copy list
-        if 'gamma_file' in self.inputs.keys():
+        if 'gamma_file' in self.inputs:
             gamma_file = self.inputs.gamma_file
             gamma_file_info = (gamma_file.uuid, gamma_file.filename, gamma_file.filename)
             calcinfo.local_copy_list.append(gamma_file_info)
