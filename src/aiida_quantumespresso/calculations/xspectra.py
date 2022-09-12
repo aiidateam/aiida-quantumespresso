@@ -136,10 +136,9 @@ class XspectraCalculation(NamelistsCalculation):
         # Check if the parent folder is an XspectraCalculation type, if so we then copy the
         # save file to enable calculation restarts and re-plots.
         parent_folder = self.inputs.parent_folder
-        parent_calcs = parent_folder.get_incoming(node_class=orm.CalcJobNode).all()
-        parent_calc = parent_calcs[0].node
-        restart_flag = parent_calc.process_type == 'aiida.calculations:quantumespresso.xspectra'
-        if restart_flag:
+        parent_calc = parent_folder.creator
+
+        if parent_calc.process_type == 'aiida.calculations:quantumespresso.xspectra':
             calcinfo.remote_copy_list.append((
                 parent_folder.computer.uuid, os.path.join(parent_folder.get_remote_path(),
                                                           self._XSPECTRA_SAVE_FILE), '.'
