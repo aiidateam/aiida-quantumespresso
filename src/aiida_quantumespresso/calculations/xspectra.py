@@ -79,8 +79,8 @@ class XspectraCalculation(NamelistsCalculation):
             message='xiabs was either set to 0 or less, or was greater than ntyp.'
         )
         spec.exit_code(
-            315,
-            'ERROR_OUTPUT_TIME_LIMIT_EXCEEDED',
+            400,
+            'ERROR_OUT_OF_WALLTIME',
             message='The time limit set for the calculation was exceeded, and the job wrote a save file '
             'before exiting.'
         )
