@@ -66,4 +66,6 @@ jobs:
             run: pip install -e .[tests]
 
         -   name: Run pytest
+            env:
+                AIIDA_WARN_v3: 1
             run: pytest -sv tests

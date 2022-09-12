@@ -443,7 +443,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         """
         from aiida_quantumespresso.utils.bands import get_highest_occupied_band
 
-        occupations = calculation.inputs.parameters.get_attribute('SYSTEM', {}).get('occupations', None)
+        occupations = calculation.inputs.parameters.base.attributes.get('SYSTEM', {}).get('occupations', None)
 
         if occupations is None:
             self.report(

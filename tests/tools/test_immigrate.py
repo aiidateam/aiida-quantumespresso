@@ -40,9 +40,9 @@ def test_create_builder(fixture_sandbox, fixture_code, generate_upf_data, genera
 
     assert builder['code'] == code
     assert builder['metadata'] == metadata
-    pseudo_hash = si_upf.get_hash()
+    pseudo_hash = si_upf.base.caching.get_hash()
     assert pseudo_hash is not None
-    assert builder['pseudos']['Si'].store().get_hash() == pseudo_hash
+    assert builder['pseudos']['Si'].store().base.caching.get_hash() == pseudo_hash
     assert builder['parameters'].get_dict() == {
         'CONTROL': {
             'calculation': 'scf',
@@ -100,9 +100,9 @@ def test_create_builder_nonzero_ibrav(
 
     assert builder['code'] == code
     assert builder['metadata'] == metadata
-    pseudo_hash = si_upf.get_hash()
+    pseudo_hash = si_upf.base.caching.get_hash()
     assert pseudo_hash is not None
-    assert builder['pseudos']['Si'].store().get_hash() == pseudo_hash
+    assert builder['pseudos']['Si'].store().base.caching.get_hash() == pseudo_hash
     assert builder['parameters'].get_dict() == {
         'CONTROL': {
             'calculation': 'scf',
@@ -118,6 +118,6 @@ def test_create_builder_nonzero_ibrav(
     assert 'structure' in builder
     param = 5.43
     np.testing.assert_allclose([[-param / 2., 0, param / 2.], [0, param / 2., param / 2.], [-param / 2., param / 2., 0]
-                                ], builder.structure.get_attribute('cell'))
+                                ], builder.structure.base.attributes.get('cell'))
 
     generate_calc_job(fixture_sandbox, entry_point_name, builder)

@@ -13,7 +13,7 @@ def echo_process_results(node):
     from aiida.common.links import LinkType
 
     class_name = node.process_class.__name__
-    outputs = node.get_outgoing(link_type=(LinkType.CREATE, LinkType.RETURN)).all()
+    outputs = node.base.links.get_outgoing(link_type=(LinkType.CREATE, LinkType.RETURN)).all()
 
     if hasattr(node, 'dry_run_info'):
         # It is a dry-run: get the information and print it

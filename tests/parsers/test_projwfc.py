@@ -45,10 +45,10 @@ def test_projwfc(generate_projwfc_node, generate_parser, data_regression, tmpdir
         assert link_name in results, list(results.keys())
 
     data_regression.check({
-        'Dos': results['Dos'].attributes,
-        'bands': results['bands'].attributes,
+        'Dos': results['Dos'].base.attributes.all,
+        'bands': results['bands'].base.attributes.all,
         'projections':
-        {k: v for k, v in results['projections'].attributes.items() if k not in ['reference_bandsdata_uuid']}
+        {k: v for k, v in results['projections'].base.attributes.all.items() if k not in ['reference_bandsdata_uuid']}
     })
 
 
@@ -65,13 +65,19 @@ def test_projwfc_spinpolarised(generate_projwfc_node, generate_parser, data_regr
         assert link_name in results, list(results.keys())
 
     data_regression.check({
-        'Dos': results['Dos'].attributes,
-        'bands_up': results['bands_up'].attributes,
-        'bands_down': results['bands_down'].attributes,
-        'projections_up':
-        {k: v for k, v in results['projections_up'].attributes.items() if k not in ['reference_bandsdata_uuid']},
-        'projections_down':
-        {k: v for k, v in results['projections_down'].attributes.items() if k not in ['reference_bandsdata_uuid']}
+        'Dos': results['Dos'].base.attributes.all,
+        'bands_up': results['bands_up'].base.attributes.all,
+        'bands_down': results['bands_down'].base.attributes.all,
+        'projections_up': {
+            k: v
+            for k, v in results['projections_up'].base.attributes.all.items()
+            if k not in ['reference_bandsdata_uuid']
+        },
+        'projections_down': {
+            k: v
+            for k, v in results['projections_down'].base.attributes.all.items()
+            if k not in ['reference_bandsdata_uuid']
+        }
     })
 
 

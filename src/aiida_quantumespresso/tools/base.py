@@ -46,7 +46,7 @@ class StructureParseMixin:
         species = self.atomic_species
 
         structure = StructureData()
-        structure.set_attribute('cell', data['cell'])
+        structure.base.attributes.set('cell', data['cell'])
 
         for mass, name, pseudo in zip(species['masses'], species['names'], species['pseudo_file_names']):
             try:

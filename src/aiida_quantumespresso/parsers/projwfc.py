@@ -294,7 +294,7 @@ class ProjwfcParser(Parser):
         # Read standard out
         try:
             filename_stdout = self.node.get_option('output_filename')  # or get_attribute(), but this is clearer
-            with retrieved.open(filename_stdout, 'r') as fil:
+            with retrieved.base.repository.open(filename_stdout, 'r') as fil:
                 out_file = fil.readlines()
         except OSError:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
@@ -332,10 +332,10 @@ class ProjwfcParser(Parser):
         out_info_dict['spin'] = out_info_dict['nspin'] == 2
 
         # check and read pdos_tot file
-        out_filenames = retrieved.list_object_names()
+        out_filenames = retrieved.base.repository.list_object_names()
         try:
             pdostot_filename = fnmatch.filter(out_filenames, '*pdos_tot*')[0]
-            with retrieved.open(pdostot_filename, 'r') as pdostot_file:
+            with retrieved.base.repository.open(pdostot_filename, 'r') as pdostot_file:
                 # Columns: Energy(eV), Ldos, Pdos
                 pdostot_array = np.atleast_2d(np.genfromtxt(pdostot_file))
                 energy = pdostot_array[:, 0]
@@ -347,7 +347,7 @@ class ProjwfcParser(Parser):
         pdos_atm_filenames = fnmatch.filter(out_filenames, '*pdos_atm*')
         pdos_atm_array_dict = {}
         for name in pdos_atm_filenames:
-            with retrieved.open(name, 'r') as pdosatm_file:
+            with retrieved.base.repository.open(name, 'r') as pdosatm_file:
                 pdos_atm_array_dict[name] = np.atleast_2d(np.genfromtxt(pdosatm_file))
 
         # finding the bands and projections

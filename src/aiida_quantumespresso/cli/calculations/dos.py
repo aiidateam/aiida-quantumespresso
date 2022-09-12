@@ -32,7 +32,8 @@ def launch_calculation(code, calculation, max_num_machines, max_wallclock_second
         raise click.BadParameter(
             f'input calculation node has process_type: {calculation.process_type}; should be {expected_process_type}'
         )
-    parent_folder = calculation.get_outgoing(node_class=RemoteData, link_label_filter='remote_folder').one().node
+    parent_folder = calculation.base.links.get_outgoing(node_class=RemoteData,
+                                                        link_label_filter='remote_folder').one().node
 
     inputs = {
         'code': code,
