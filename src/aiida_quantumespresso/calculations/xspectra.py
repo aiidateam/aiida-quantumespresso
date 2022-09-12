@@ -36,7 +36,7 @@ class XspectraCalculation(NamelistsCalculation):
 
         super().define(spec)
 
-        spec.input('parent_folder', valid_type=(orm.RemoteData), required=True)
+        spec.input('parent_folder', valid_type=orm.RemoteData, required=True)
         spec.input(
             'core_wfc_data',
             valid_type=SinglefileData,
