@@ -123,4 +123,4 @@ def test_xspectra_failed_timeout(fixture_localhost, generate_calc_job_node, gene
     _, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
     assert calcfunction.is_failed
-    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_TIME_LIMIT_EXCEEDED.status
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUT_OF_WALLTIME.status

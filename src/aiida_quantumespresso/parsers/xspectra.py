@@ -31,7 +31,7 @@ class XspectraParser(Parser):
             if 'xiabs < 1 or xiabs > ntyp' in line:
                 return self.exit(self.exit_codes.ERROR_OUTPUT_ABSORBING_SPECIES_ZERO)
             if 'Calculation not finished' in line:
-                return self.exit(self.exit_codes.ERROR_OUTPUT_TIME_LIMIT_EXCEEDED)
+                return self.exit(self.exit_codes.ERROR_OUT_OF_WALLTIME)
             if 'END JOB' in line:
                 job_done = True
                 break

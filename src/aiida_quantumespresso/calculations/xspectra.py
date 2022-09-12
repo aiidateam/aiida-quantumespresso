@@ -36,7 +36,7 @@ class XspectraCalculation(NamelistsCalculation):
 
         super().define(spec)
 
-        spec.input('parent_folder', valid_type=(orm.RemoteData), required=True)
+        spec.input('parent_folder', valid_type=orm.RemoteData, required=True)
         spec.input(
             'core_wfc_data',
             valid_type=SinglefileData,
@@ -79,8 +79,8 @@ class XspectraCalculation(NamelistsCalculation):
             message='xiabs was either set to 0 or less, or was greater than ntyp.'
         )
         spec.exit_code(
-            315,
-            'ERROR_OUTPUT_TIME_LIMIT_EXCEEDED',
+            400,
+            'ERROR_OUT_OF_WALLTIME',
             message='The time limit set for the calculation was exceeded, and the job wrote a save file '
             'before exiting.'
         )
@@ -128,7 +128,7 @@ class XspectraCalculation(NamelistsCalculation):
         calcinfo.local_copy_list.append(core_file_info)
 
         # if included as an input, append the gamma file node to the copy list
-        if 'gamma_file' in self.inputs.keys():
+        if 'gamma_file' in self.inputs:
             gamma_file = self.inputs.gamma_file
             gamma_file_info = (gamma_file.uuid, gamma_file.filename, gamma_file.filename)
             calcinfo.local_copy_list.append(gamma_file_info)
@@ -136,10 +136,9 @@ class XspectraCalculation(NamelistsCalculation):
         # Check if the parent folder is an XspectraCalculation type, if so we then copy the
         # save file to enable calculation restarts and re-plots.
         parent_folder = self.inputs.parent_folder
-        parent_calcs = parent_folder.get_incoming(node_class=orm.CalcJobNode).all()
-        parent_calc = parent_calcs[0].node
-        restart_flag = parent_calc.process_type == 'aiida.calculations:quantumespresso.xspectra'
-        if restart_flag:
+        parent_calc = parent_folder.creator
+
+        if parent_calc.process_type == 'aiida.calculations:quantumespresso.xspectra':
             calcinfo.remote_copy_list.append((
                 parent_folder.computer.uuid, os.path.join(parent_folder.get_remote_path(),
                                                           self._XSPECTRA_SAVE_FILE), '.'
