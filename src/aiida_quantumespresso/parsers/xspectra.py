@@ -184,13 +184,15 @@ def parse_stdout_xspectra(filecontent, codename=None, message_map=None):
             parsed_data['epsilon_vector'] = eps_vector_list
             parsed_data['eps_k_vector_coords'] = 'cartesian'
         # There is an oversight in the XSpectra code where the value of xepsilon is reported
-        # as being in "Cartesian frame" when read from the save file regardless of the
-        # coordinate set in the parent calculation, thus we don't report the coordinate system
-        # used in the case of an "only_plot" run.
+        # in Cartesian coordinates regardless of the coordinate system used in the parent
+        # calculation. This is also reported in the event of a calculation restart, thus we
+        # need to distinguish between `plot_only` and `restart` in order not overwrite the
+        # value reported earlier in the stdout.
         if 'xepsilon [Cartesian frame]' in line and parsed_data['plot_only']:
             eps_vector_string = line.split(':')[-1].strip()
             eps_vector_list = [float(i) for i in eps_vector_string.split('   ')]
             parsed_data['epsilon_vector'] = eps_vector_list
+            parsed_data['eps_k_vector_coords'] = 'cartesian'
         if 'From SCF save directory' in line:
             if '(spin polarized work)' in line:
                 spin = True
