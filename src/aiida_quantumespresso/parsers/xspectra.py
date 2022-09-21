@@ -159,22 +159,38 @@ def parse_stdout_xspectra(filecontent, codename=None, message_map=None):
 
     logs = get_logging_container()
     parsed_data = {}
+    # We need to assign this before the loop over each line due to a bug spotted in the code
+    # when `only_plot=True`. Since the epsilon vector is reported before the value of
+    # `xonly_plot`, we need a starting value before the loop begins.
+    parsed_data['plot_only'] = False
 
     lines = filecontent if isinstance(filecontent, list) else filecontent.split('\n')
 
     # Parse the necessary information for data plotting: core level energy of the
     # absorbing atom and the energy zero of the spectrum (typically the Fermi level)
     for line in lines:
-        if 'xepsilon' in line:
+        if 'xonly_plot:' in line:
+            is_only_plot_string = line.split(':')[-1].strip()
+            if is_only_plot_string == 'TRUE':
+                parsed_data['plot_only'] = True
+        if 'xepsilon  [crystallographic coordinates]' in line:
             eps_vector_string = line.split(':')[-1].strip()
             eps_vector_list = [float(i) for i in eps_vector_string.split('   ')]
             parsed_data['epsilon_vector'] = eps_vector_list
-        if 'xonly_plot:' in line:
-            is_only_plot_string = line.split(':')[-1].strip()
-            if is_only_plot_string == 'FALSE':
-                parsed_data['plot_only'] = False
-            elif is_only_plot_string == 'TRUE':
-                parsed_data['plot_only'] = True
+            parsed_data['eps_k_vector_coords'] = 'crystal'
+        elif 'xepsilon  [cartesian coordinates]' in line:
+            eps_vector_string = line.split(':')[-1].strip()
+            eps_vector_list = [float(i) for i in eps_vector_string.split('   ')]
+            parsed_data['epsilon_vector'] = eps_vector_list
+            parsed_data['eps_k_vector_coords'] = 'cartesian'
+        # There is an oversight in the XSpectra code where the value of xepsilon is reported
+        # as being in "Cartesian frame" when read from the save file regardless of the
+        # coordinate set in the parent calculation, thus we don't report the coordinate system
+        # used in the case of an "only_plot" run.
+        if 'xepsilon [Cartesian frame]' in line and parsed_data['plot_only']:
+            eps_vector_string = line.split(':')[-1].strip()
+            eps_vector_list = [float(i) for i in eps_vector_string.split('   ')]
+            parsed_data['epsilon_vector'] = eps_vector_list
         if 'From SCF save directory' in line:
             if '(spin polarized work)' in line:
                 spin = True
@@ -206,7 +222,7 @@ def parse_stdout_xspectra(filecontent, codename=None, message_map=None):
             parsed_data['fermi_energy'] = ef_energy
             parsed_data['fermi_energy_units'] = ef_energy_units
 
-        # parse dynamical RAM estimates
+        # parse per-process dynamical RAM estimates
         if 'Estimated max dynamical RAM per process' in line:
             value = line.split('>')[-1]
             match = re.match(r'\s+([+-]?\d+(\.\d*)?|\.\d+([eE][+-]?\d+)?)\s*(Mb|MB|GB)', value)
@@ -217,7 +233,7 @@ def parse_stdout_xspectra(filecontent, codename=None, message_map=None):
                 except (IndexError, ValueError):
                     pass
 
-        # parse dynamical RAM estimates
+        # parse total dynamical RAM estimates
         if 'Estimated total dynamical RAM' in line:
             value = line.split('>')[-1]
             match = re.match(r'\s+([+-]?\d+(\.\d*)?|\.\d+([eE][+-]?\d+)?)\s*(Mb|MB|GB)', value)
