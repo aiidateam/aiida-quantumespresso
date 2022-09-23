@@ -2,7 +2,7 @@
 """Workchain to compute the X-ray absorption spectrum for a given structure using Quantum ESPRESSO pw.x."""
 from aiida import orm
 from aiida.common import AttributeDict
-from aiida.engine import ToContext, WorkChain, calcfunction, if_
+from aiida.engine import ToContext, WorkChain, calcfunction, if_, while_
 from aiida.orm.nodes.data.base import to_aiida_type
 from aiida.plugins import CalculationFactory, DataFactory, WorkflowFactory
 
@@ -13,31 +13,6 @@ PwCalculation = CalculationFactory('quantumespresso.pw')
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 XspectraCalculation = CalculationFactory('quantumespresso.xspectra')
 XyData = DataFactory('array.xy')
-
-
-@calcfunction
-def get_xspectra_data(**kwargs):
-    """Collect the relevant node pks for each spectrum calculated by the workchain.
-
-    This will collect the `CalcJob` PK, output parameters, and output spectrum PK for each
-    `XspectraCalculation` and organise it into a Dict node.
-    """
-
-    spectra_calc_dict = {}
-    calculations = {label: orm.load_node(pk) for label, pk in kwargs.items() if label != 'metadata'}
-
-    for label, calc in calculations.items():
-        spectrum_node = calc.get_outgoing().get_node_by_label('spectra')
-        parameter_node = calc.get_outgoing().get_node_by_label('output_parameters')
-
-        # spectra_dict[f'vector_{eps_vectors[0]}{eps_vectors[1]}{eps_vectors[2]}'] = {
-        spectra_calc_dict[label] = {
-            'calcjob_node': calc.pk,
-            'spectrum_node': spectrum_node.pk,
-            'output_parameters': parameter_node.pk
-        }
-
-    return orm.Dict(dict=spectra_calc_dict)
 
 
 @calcfunction
@@ -53,17 +28,20 @@ def get_all_spectra(**kwargs):
     y_units_list = []
     y_labels_list = []
 
-    calculations = {label: orm.load_node(pk) for label, pk in kwargs.items() if label != 'metadata'}
+    calculations = [orm.load_node(pk) for label, pk in kwargs.items() if label != 'metadata']
 
-    for label, calc in calculations.items():
+    for calc in calculations:
         spectrum_node = calc.get_outgoing().get_node_by_label('spectra')
+        parent_calc = calc.get_incoming().get_node_by_label('parent_folder').creator
+        parent_out_params = parent_calc.get_outgoing().get_node_by_label('output_parameters').get_dict()
+        eps_vector = parent_out_params['epsilon_vector']
 
         old_y_component = spectrum_node.get_y()[0]
         y_array = old_y_component[1]
         y_units = old_y_component[2]
         y_arrays_list.append(y_array)
         y_units_list.append(y_units)
-        y_labels_list.append(label)
+        y_labels_list.append(f'sigma_{eps_vector[0]}_{eps_vector[1]}_{eps_vector[2]}')
 
     x_array = spectrum_node.get_x()[1]
     x_label = spectrum_node.get_x()[0]
@@ -144,19 +122,21 @@ def get_powder_spectrum(**kwargs):
     return powder_data
 
 
-def validate_scf(value, _):
+def validate_scf(inputs, _):
     """Validate the scf parameters."""
-    parameters = value['pw']['parameters'].get_dict()
+    parameters = inputs['pw']['parameters'].get_dict()
     if parameters.get('CONTROL', {}).get('calculation', 'scf') != 'scf':
         return '`CONTOL.calculation` in `scf.pw.parameters` is not set to `scf`.'
 
 
-def validate_inputs(inputs):
+def validate_inputs(inputs, _):
     """Validate the inputs before launching the WorkChain."""
 
     eps_vector_list = inputs['eps_vectors'].get_list()
     if len(eps_vector_list) == 0:
-        return 'eps_vectors list empty.'
+        return 'Error: eps_vectors list empty.'
+    if 'core_wfc_data' not in inputs and 'upf2plotcore_code' not in inputs:
+        return 'Error: either a core wavefunction file or a code node for upf2plotcore must be provided.'
 
 
 class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
@@ -186,6 +166,8 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
               core-hole pseudopotentials become available.
     """
 
+    # pylint: disable=too-many-public-methods, too-many-statements
+
     @classmethod
     def define(cls, spec):
         """Define the process specification."""
@@ -212,7 +194,7 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         spec.input(
             'eps_vectors',
             valid_type=orm.List,
-            default=lambda: orm.List(list=[[1, 0, 0], [0, 1, 0], [0, 0, 1]]),
+            default=lambda: orm.List(list=[[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]),
             help=(
                 'The list of 3-vectors to use in XSpectra sub-processes. '
                 'The number of sub-lists will subsequently define the number of XSpectra calculations to perform'
@@ -223,6 +205,12 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
             valid_type=orm.SinglefileData,
             required=False,
             help='The core wavefunction data file extracted from the ground-state pseudo for the absorbing atom'
+        )
+        spec.input(
+            'upf2plotcore_code',
+            valid_type=orm.Code,
+            required=False,
+            help='The code node required for upf2plotcore.sh. Must be provided if `core_wfc_data` is not provided'
         )
         spec.input(
             'dry_run',
@@ -258,8 +246,10 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
             cls.run_scf,
             cls.inspect_scf,
             if_(cls.should_run_upf2plotcore)(cls.run_upf2plotcore),
+            while_(cls.should_repeat_xs_prod)(
             cls.run_all_xspectra_prod,
             cls.inspect_all_xspectra_prod,
+            ),
             cls.run_all_xspectra_plot,
             cls.inspect_all_xspectra_plot,
             cls.results,
@@ -267,11 +257,13 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
 
         spec.exit_code(401, 'ERROR_SUB_PROCESS_FAILED_SCF', message='The SCF sub process failed')
         spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_XSPECTRA', message='One or more XSpectra sub processes failed')
-        spec.output('scf_parameters', valid_type=orm.Dict, help='The output parameters of the SCF `PwBaseWorkChain`.')
-        spec.output(
-            'calculation_dictionary',
+        spec.output('output_parameters_scf', valid_type=orm.Dict, help='The output parameters of the SCF'
+                    ' `PwBaseWorkChain`.')
+        spec.output_namespace(
+            'output_parameters_xspectra',
             valid_type=orm.Dict,
-            help='A dictionary of the outputs from each `XspectraCalculation` performed'
+            help='The output dictionaries of each `XspectraCalculation` performed',
+            dynamic=True
         )
         spec.output(
             'output_spectra',
@@ -313,7 +305,7 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         """
 
         # Get the default inputs from the PwBaseWorkChain and override them with those
-        # required for the core-hole treatment
+        # required for the chosen core-hole treatment
         inputs = recursive_merge(
             left=PwBaseWorkChain.get_protocol_inputs(protocol=pw_protocol,),
             right=cls.get_protocol_inputs(protocol=xs_protocol, overrides=overrides)
@@ -341,6 +333,14 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
 
         self.ctx.serial_clean = 'serial_clean' in self.inputs and self.inputs.serial_clean.value
         self.ctx.dry_run = 'dry_run' in self.inputs and self.inputs.dry_run.value
+        self.ctx.all_lanczos_computed = False
+        self.ctx.lanczos_to_restart = []
+        self.ctx.finished_lanczos = []
+
+    def should_repeat_xs_prod(self):
+        """Return whether the Lanczos production step is finished or not."""
+
+        return not self.ctx.all_lanczos_computed
 
     def run_scf(self):
         """Run an SCF calculation as a first step."""
@@ -359,7 +359,7 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         return ToContext(scf_workchain=future)
 
     def inspect_scf(self):
-        """Verify that the SCF calculation finished successfully."""
+        """Verify that the PwBaseWorkChain finished successfully."""
 
         workchain = self.ctx.scf_workchain
         if not workchain.is_finished_ok:
@@ -426,7 +426,7 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         return ToContext(upf2plotcore_node=shelljob_node)
 
     def run_all_xspectra_prod(self):
-        """Run an `XspectraCalculation` for each 3-vector given for epsilon to produce the Lanczos."""
+        """Run an `XspectraCalculation` for each 3-vector given for epsilon to produce the Lanczos coefficients."""
 
         eps_vectors = self.inputs.eps_vectors.get_list()
         scf_workchain = self.ctx.scf_workchain
@@ -440,7 +440,7 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         kinds_list = [kind.name for kind in structure.kinds]
         kinds_list.sort()
 
-        # This will work, so long as the PwCalculation part adds the atomic species to
+        # This will work so long as the PwCalculation part adds the atomic species to
         # the input file in alphabetical order
         kind_counter = 1
         for kind in kinds_list:
@@ -450,111 +450,160 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
                 kind_counter += 1
 
         xspectra_prod_calcs = {}
-        xspectra_labels = []
-        for vector in eps_vectors:
-            xspectra_inputs = AttributeDict(self.exposed_inputs(XspectraCalculation, 'xs_prod'))
-            xspectra_parameters = xspectra_inputs.parameters.get_dict()
-            xspectra_parameters['INPUT_XSPECTRA']['xiabs'] = xiabs
+        xspectra_calc_labels = []
+        calc_number = 0
+        if len(self.ctx.lanczos_to_restart) == 0: # No restarts have been ordered yet
+            for vector in eps_vectors:
+                xspectra_inputs = AttributeDict(self.exposed_inputs(XspectraCalculation, 'xs_prod'))
+                xspectra_parameters = xspectra_inputs.parameters.get_dict()
+                xspectra_parameters['INPUT_XSPECTRA']['xiabs'] = xiabs
+                max_walltime_seconds = self.inputs.xs_prod.metadata.options.max_wallclock_seconds
+                xspectra_parameters['INPUT_XSPECTRA']['time_limit'] = max_walltime_seconds * 0.9
 
-            xspectra_inputs.parent_folder = self.ctx.scf_parent_folder
-            xspectra_inputs.kpoints = self.ctx.scf_kpoint_mesh
-            xspectra_inputs.core_wfc_data = core_wfc_data
-            label = f'eps_{vector[0]}{vector[1]}{vector[2]}'
-            xspectra_inputs.metadata.call_link_label = f'{label}_prod'
-            xspectra_labels.append(label)
+                xspectra_inputs.parent_folder = self.ctx.scf_parent_folder
+                xspectra_inputs.kpoints = self.ctx.scf_kpoint_mesh
+                xspectra_inputs.core_wfc_data = core_wfc_data
+                label = f'xas_prod_{calc_number}'
+                xspectra_inputs.metadata.call_link_label = f'{label}_iter_1'
+                xspectra_inputs.metadata.label = f'{label}_iter_1'
+                xspectra_calc_labels.append(label)
 
-            for index in [0, 1, 2]:
-                xspectra_parameters['INPUT_XSPECTRA'][f'xepsilon({index + 1})'] = vector[index]
-            xspectra_inputs.parameters = orm.Dict(dict=xspectra_parameters)
+                for index in [0, 1, 2]:
+                    xspectra_parameters['INPUT_XSPECTRA'][f'xepsilon({index + 1})'] = vector[index]
+                xspectra_inputs.parameters = orm.Dict(dict=xspectra_parameters)
 
-            future_xspectra = self.submit(XspectraCalculation, **xspectra_inputs)
-            self.report(
-                f'launching XspectraCalculation<{future_xspectra.pk}> for epsilon vector {vector} (Lanczos production)'
-            )
-            xspectra_prod_calcs[f'{label}_prod'] = future_xspectra
+                future_xspectra = self.submit(XspectraCalculation, **xspectra_inputs)
+                self.report(
+                    f'launching XspectraCalculation<{future_xspectra.pk}> for epsilon vector {vector}'
+                    ' (Lanczos production) (iteration #1)'
+                )
+                xspectra_prod_calcs[label] = future_xspectra
+                calc_number += 1
 
-        self.ctx.xspectra_labels = xspectra_labels
+        else: # Some calculations need restarting, so we process these instead
+            for calculation in self.ctx.lanczos_to_restart:
+                xspectra_inputs = AttributeDict(self.exposed_inputs(XspectraCalculation, 'xs_prod'))
+                xspectra_parameters = calculation.get_incoming().get_node_by_label('parameters').get_dict()
+                xspectra_parameters['INPUT_XSPECTRA']['restart_mode'] = 'restart'
+                vector = [
+                    xspectra_parameters['INPUT_XSPECTRA']['xepsilon(1)'],
+                    xspectra_parameters['INPUT_XSPECTRA']['xepsilon(2)'],
+                    xspectra_parameters['INPUT_XSPECTRA']['xepsilon(3)']
+                ]
+
+                xspectra_inputs.parent_folder = calculation.get_outgoing().get_node_by_label('remote_folder')
+                xspectra_inputs.kpoints = self.ctx.scf_kpoint_mesh
+                xspectra_inputs.core_wfc_data = core_wfc_data
+                parent_label_pieces = calculation.label.split('_')
+                iteration = int(parent_label_pieces[-1])
+                iteration += 1
+                label = f'{parent_label_pieces[0]}_{parent_label_pieces[1]}_{parent_label_pieces[2]}'
+                xspectra_inputs.metadata.call_link_label = f'{label}_iter_{iteration}'
+                xspectra_inputs.metadata.label = f'{label}_iter_{iteration}'
+                xspectra_calc_labels.append(label)
+
+                xspectra_inputs.parameters = orm.Dict(dict=xspectra_parameters)
+
+                future_xspectra = self.submit(XspectraCalculation, **xspectra_inputs)
+                self.report(
+                    f'launching XspectraCalculation<{future_xspectra.pk}> for epsilon vector {vector}'
+                    ' (Lanczos production) (iteration #{iteration})'
+                )
+                xspectra_prod_calcs[f'{label}'] = future_xspectra
+
+        self.ctx.xspectra_calc_labels = xspectra_calc_labels
         return ToContext(**xspectra_prod_calcs)
 
     def inspect_all_xspectra_prod(self):
         """Verify that the `XspectraCalculation` Lanczos production sub-processes finished successfully."""
 
         calculations = []
-        labels = self.ctx.xspectra_labels
+        labels = self.ctx.xspectra_calc_labels
         for label in labels:
-            calculation = self.ctx[f'{label}_prod']
+            calculation = self.ctx[label]
             calculations.append(calculation)
-        sub_process_failures = False
+        unrecoverable_failures = False # pylint: disable=unused-variable
+        restarts_required = False
 
+        lanczos_to_restart = []
         for calculation in calculations:
             if not calculation.is_finished_ok:
-                self.report(f'XspectraCalculation failed with exit status {calculation.exit_status}')
-                sub_process_failures = True
-        if sub_process_failures:
-            return self.exit_codes.ERROR_SUB_PROCESS_FAILED_XSPECTRA
+                # Check if any calculations failed due to out-of-walltime
+                label_pieces = calculation.label.split('_')
+                report_label = f'{label_pieces[0]}_{label_pieces[1]}_{label_pieces[2]}'
+                if calculation.exit_status == 400:
+                    lanczos_to_restart.append(calculation)
+                    self.report(f'Lanczos calculation {report_label} added to restart list.')
+                    restarts_required = True
+                else:
+                    self.report(f'XspectraCalculation <{report_label}>'
+                                ' failed with exit status {calculation.exit_status}.')
+                    unrecoverable_failures = True
+                    return self.exit_codes.ERROR_SUB_PROCESS_FAILED_XSPECTRA
+            else:
+                self.ctx['finished_lanczos'].append(calculation)
+        if restarts_required: # If there are restarts, then pass them to the context
+            self.ctx['lanczos_to_restart'] = lanczos_to_restart
+        else: # If all is well, then we can continue to the replot stage
+            self.ctx.all_lanczos_computed = True
 
     def run_all_xspectra_plot(self):
-        """Run an `XspectraCalculation` for each 3-vector given for epsilon to replot the spectra."""
+        """Run an `XspectraCalculation` for each 3-vector given for epsilon to plot the final spectra.
 
-        eps_vectors = self.inputs.eps_vectors.get_list()
-        scf_workchain = self.ctx.scf_workchain
-        structure = scf_workchain.get_incoming().get_node_by_label('pw__structure')
+        This part simply prints the spectra from the already-computed Lanczos stored in.
+        """
+
+        finished_calculations = self.ctx.finished_lanczos
 
         if 'core_wfc_data' in self.inputs:
             core_wfc_data = self.inputs.core_wfc_data
         else:
             core_wfc_data = self.ctx.upf2plotcore_node.get_outgoing().get_node_by_label('stdout')
 
-        kinds_list = [kind.name for kind in structure.kinds]
-        kinds_list.sort()
-
-        kind_counter = 1
-        for kind in kinds_list:
-            if '1' in kind:
-                xiabs = kind_counter
-            else:
-                kind_counter += 1
-
         xspectra_plot_calcs = {}
-        # xspectra_labels = self.ctx.xspectra_labels
-        for vector in eps_vectors:
+        for calculation in finished_calculations:
             xspectra_inputs = AttributeDict(self.exposed_inputs(XspectraCalculation, 'xs_plot'))
             xspectra_parameters = xspectra_inputs.parameters.get_dict()
-            xspectra_parameters['INPUT_XSPECTRA']['xiabs'] = xiabs
 
-            label = f'eps_{vector[0]}{vector[1]}{vector[2]}'
-            parent_xspectra = self.ctx[f'{label}_prod']
+            parent_xspectra = calculation
+            parent_output_dict = parent_xspectra.get_outgoing().get_node_by_label('output_parameters').get_dict()
+            eps_vector = parent_output_dict['epsilon_vector']
+            parent_label_pieces = calculation.label.split('_')
+            label = f'{parent_label_pieces[0]}_{parent_label_pieces[1]}_{parent_label_pieces[2]}'
             xspectra_inputs.parent_folder = parent_xspectra.get_outgoing().get_node_by_label('remote_folder')
             xspectra_inputs.kpoints = self.ctx.scf_kpoint_mesh
             xspectra_inputs.core_wfc_data = core_wfc_data
-            xspectra_inputs.metadata.call_link_label = f'{label}_plot'
+            xspectra_inputs.metadata.label = label.replace('prod', 'plot')
+            xspectra_inputs.metadata.call_link_label = label.replace('prod', 'plot')
 
-            for index in [0, 1, 2]:
-                xspectra_parameters['INPUT_XSPECTRA'][f'xepsilon({index + 1})'] = vector[index]
             xspectra_inputs.parameters = orm.Dict(dict=xspectra_parameters)
 
             future_xspectra = self.submit(XspectraCalculation, **xspectra_inputs)
-            self.report(f'launching XspectraCalculation<{future_xspectra.pk}> for epsilon vector {vector} (Replot)')
+            self.report(f'launching XspectraCalculation<{future_xspectra.pk}> for epsilon vector {eps_vector} (Replot)')
             xspectra_plot_calcs[f'{label}_plot'] = future_xspectra
 
         return ToContext(**xspectra_plot_calcs)
 
     def inspect_all_xspectra_plot(self):
-        """Verify that the `XspectraCalculation` Lanczos production sub-processes finished successfully."""
+        """Verify that the `XspectraCalculation` re-plot sub-processes finished successfully."""
 
         calculations = []
-        labels = self.ctx.xspectra_labels
+        labels = self.ctx.xspectra_calc_labels
         for label in labels:
             calculation = self.ctx[f'{label}_plot']
             calculations.append(calculation)
-        sub_process_failures = False
+        unrecoverable_failures = False
 
+        finished_replots = []
         for calculation in calculations:
             if not calculation.is_finished_ok:
                 self.report(f'XspectraCalculation failed with exit status {calculation.exit_status}')
-                sub_process_failures = True
-        if sub_process_failures:
+                unrecoverable_failures = True
+            else:
+                finished_replots.append(calculation)
+        if unrecoverable_failures:
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_XSPECTRA
+        self.ctx.finished_replots = finished_replots
 
     def results(self):
         """Attach the important output nodes to the outputs of the WorkChain.
@@ -563,19 +612,34 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         'Powder' spectrum (if requested)
         """
 
-        labels = self.ctx.xspectra_labels
-        xspectra_calcs = {label: self.ctx[f'{label}_plot'].pk for label in labels}
+        xspectra_prod_calcs = self.ctx.finished_lanczos
+        xspectra_plot_calcs = self.ctx.finished_replots
 
         should_collect_powder = False
-        powder_vectors = ['eps_100', 'eps_010', 'eps_001']
-        for label in labels:
-            if label in powder_vectors:
+        eps_powder_vectors = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]
+        for calc in xspectra_prod_calcs:
+            output_parameters = calc.get_outgoing().get_node_by_label('output_parameters').get_dict()
+            eps_vectors = output_parameters['epsilon_vector']
+            if eps_vectors in eps_powder_vectors:
                 should_collect_powder = True
 
+        eps_basis_calcs = {}
         if self.inputs.collect_powder and should_collect_powder:
-            xspectra_basis_calcs = {label: xspectra_calcs[label] for label in xspectra_calcs if label in powder_vectors}
-            xspectra_basis_calcs['metadata'] = {'call_link_label': 'compile_powder'}
-            powder_spectrum = get_powder_spectrum(**xspectra_basis_calcs)
+            for plot_calc in xspectra_plot_calcs:
+                parent_folder = plot_calc.get_incoming().get_node_by_label('parent_folder')
+                parent_calc = parent_folder.creator
+                parent_output_params = parent_calc.get_outgoing().get_node_by_label('output_parameters').get_dict()
+                parent_vector = parent_output_params['epsilon_vector']
+                if parent_vector in eps_powder_vectors:
+                    if parent_vector == [1., 0., 0.]:
+                        eps_basis_calcs['eps_100'] = plot_calc.pk
+                    if parent_vector == [0., 1., 0.]:
+                        eps_basis_calcs['eps_010'] = plot_calc.pk
+                    if parent_vector == [0., 0., 1.]:
+                        eps_basis_calcs['eps_001'] = plot_calc.pk
+
+            eps_basis_calcs['metadata'] = {'call_link_label': 'compile_powder'}
+            powder_spectrum = get_powder_spectrum(**eps_basis_calcs)
             self.out('powder_spectrum', powder_spectrum)
         elif self.inputs.collect_powder and not should_collect_powder:
             # This should be upgraded to a more obvious warning, but I'm not sure yet how
@@ -585,15 +649,27 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
                 'given are suitable to compute this.'
             )
 
-        self.out('scf_parameters', self.ctx.scf_workchain.outputs.output_parameters)
+        self.out('output_parameters_scf', self.ctx.scf_workchain.outputs.output_parameters)
 
-        xspectra_calcs['metadata'] = {'call_link_label': 'compile_xspectra_data'}
-        calculation_dictionary = get_xspectra_data(**xspectra_calcs)
+        all_xspectra_prod_calcs = {}
+        for calc in xspectra_prod_calcs:
+            label_pieces = calc.label.split('_')[:-2]
+            label = f'{label_pieces[0]}_{label_pieces[1]}_{label_pieces[2]}'
+            all_xspectra_prod_calcs[label] = calc
 
-        xspectra_calcs['metadata'] = {'call_link_label': 'compile_all_spectra'}
-        output_spectra = get_all_spectra(**xspectra_calcs)
+        xspectra_prod_params = {}
+        for key, node  in all_xspectra_prod_calcs.items():
+            output_params = node.get_outgoing().get_node_by_label('output_parameters')
+            xspectra_prod_params[key] = output_params
+        self.out('output_parameters_xspectra', xspectra_prod_params)
 
-        self.out('calculation_dictionary', calculation_dictionary)
+        all_xspectra_plot_pks = {}
+        for calc in xspectra_plot_calcs:
+            all_xspectra_plot_pks[calc.label] = calc.pk
+
+        all_xspectra_plot_pks['metadata'] = {'call_link_label': 'compile_all_spectra'}
+        output_spectra = get_all_spectra(**all_xspectra_plot_pks)
+
         self.out('output_spectra', output_spectra)
         if self.inputs.clean_workdir.value is True:
             self.report('workchain succesfully completed, cleaning remote folders')
