@@ -1,3 +1,15 @@
+## v4.0.1
+
+### Fixes
+- `PwCalculation/PhCalculation`: Add validation for `pseudos` port [[#839]](https://github.com/aiidateam/aiida-quantumespresso/pull/839)
+- `Q2rParser`: Set `filename` for `force_constants` [[#827]](https://github.com/aiidateam/aiida-quantumespresso/pull/827)
+- Docs: Update the `Get Started` example for `PhCalculation` [[#829]](https://github.com/aiidateam/aiida-quantumespresso/pull/829)
+- DevOps: Add `AIIDA_WARN_V3` environment variable to CI and address all deprecation warnings [[#836]](https://github.com/aiidateam/aiida-quantumespresso/pull/836)
+
+### Dependencies
+- Add lower requirement `aiida-core>=2.0.4`, fixes error in `NamelistCalculation` restarting from `FolderData` [[#841]](https://github.com/aiidateam/aiida-quantumespresso/pull/841)
+
+
 ## v4.0.0
 
 This major release mainly provides support for `aiida-core` v2.0, as well as the `xspectra.x` code of Quantum ESPRESSO.
