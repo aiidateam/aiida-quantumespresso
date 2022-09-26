@@ -1,5 +1,7 @@
 default_inputs:
-    clean_workdir: True
+    clean_workdir: False
+    collect_powder: False
+    abs_atom_marker: X
     scf:
         pw:
             parameters:
