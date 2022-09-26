@@ -10,7 +10,6 @@ from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance i
 from aiida_quantumespresso.common.types import ElectronicType, RestartType, SpinType
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs, update_mapping
-from aiida_quantumespresso.utils.pseudopotential import validate_and_prepare_pseudos_inputs
 from aiida_quantumespresso.utils.resources import (
     cmdline_remove_npools,
     create_scheduler_resources,
@@ -24,15 +23,6 @@ PwCalculation = CalculationFactory('quantumespresso.pw')
 SsspFamily = GroupFactory('pseudo.family.sssp')
 PseudoDojoFamily = GroupFactory('pseudo.family.pseudo_dojo')
 CutoffsPseudoPotentialFamily = GroupFactory('pseudo.family.cutoffs')
-
-
-def validate_pseudo_family(value, _):
-    """Validate the `pseudo_family` input."""
-    if value:
-        import warnings
-
-        from aiida.common.warnings import AiidaDeprecationWarning
-        warnings.warn('`pseudo_family` is deprecated, use `pw.pseudos` instead.', AiidaDeprecationWarning)
 
 
 class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
@@ -68,10 +58,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             help='Optional input when constructing the k-points based on a desired `kpoints_distance`. Setting this to '
                  '`True` will force the k-point mesh to have an even number of points along each lattice vector except '
                  'for any non-periodic directions.')
-        spec.input('pseudo_family', valid_type=orm.Str, required=False, validator=validate_pseudo_family,
-            help='[Deprecated: use `pw.pseudos` instead] An alternative to specifying the pseudo potentials manually in'
-                 ' `pseudos`: one can specify the name of an existing pseudo potential family and the work chain will '
-                 'generate the pseudos automatically based on the input structure.')
         spec.input('automatic_parallelization', valid_type=orm.Dict, required=False,
             help='When defined, the work chain will first launch an initialization calculation to determine the '
                  'dimensions of the problem, and based on this it will try to set optimal parallelization flags.')
@@ -79,7 +65,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         spec.outline(
             cls.setup,
             cls.validate_kpoints,
-            cls.validate_pseudos,
             if_(cls.should_run_init)(
                 cls.validate_init_inputs,
                 cls.run_init,
@@ -288,23 +273,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         self.ctx.inputs.kpoints = kpoints
 
-    def validate_pseudos(self):
-        """Validate the inputs related to pseudopotentials.
-
-        Either the pseudo potentials should be defined explicitly in the `pseudos` namespace, or alternatively, a family
-        can be defined in `pseudo_family` that will be used together with the input `StructureData` to generate the
-        required mapping.
-        """
-        structure = self.ctx.inputs.structure
-        pseudos = self.ctx.inputs.get('pseudos', None)
-        pseudo_family = self.inputs.get('pseudo_family', None)
-
-        try:
-            self.ctx.inputs.pseudos = validate_and_prepare_pseudos_inputs(structure, pseudos, pseudo_family)
-        except ValueError as exception:
-            self.report(f'{exception}')
-            return self.exit_codes.ERROR_INVALID_INPUT_PSEUDO_POTENTIALS
-
     def set_max_seconds(self, max_wallclock_seconds):
         """Set the `max_seconds` to a fraction of `max_wallclock_seconds` option to prevent out-of-walltime problems.
 
@@ -475,7 +443,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         """
         from aiida_quantumespresso.utils.bands import get_highest_occupied_band
 
-        occupations = calculation.inputs.parameters.get_attribute('SYSTEM', {}).get('occupations', None)
+        occupations = calculation.inputs.parameters.base.attributes.get('SYSTEM', {}).get('occupations', None)
 
         if occupations is None:
             self.report(

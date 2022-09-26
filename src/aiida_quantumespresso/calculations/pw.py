@@ -181,7 +181,7 @@ class PwCalculation(BasePwCpInputGenerator):
                 )
 
     @classmethod
-    def validate_inputs(cls, value, _):
+    def validate_inputs(cls, value, port_namespace):
         """Validate the top level namespace.
 
         Check that the restart input parameters are set correctly. In case of 'nscf' and 'bands' calculations, this
@@ -196,6 +196,11 @@ class PwCalculation(BasePwCpInputGenerator):
         chain can change the ``validate_input`` validator for ``validate_inputs_base`` thereby allowing the parent
         folder to be defined during the work chains runtime, while still keep the rest of the namespace validation.
         """
+        result = super().validate_inputs(value, port_namespace)
+
+        if result is not None:
+            return result
+
         parameters = value['parameters'].get_dict()
         calculation_type = parameters.get('CONTROL', {}).get('calculation', 'scf')
 
@@ -207,7 +212,7 @@ class PwCalculation(BasePwCpInputGenerator):
                     '`PwCalculation.validate_inputs_base`.'
                 )
 
-        return cls.validate_inputs_base(value, _)
+        return cls.validate_inputs_base(value, port_namespace)
 
     @classproperty
     def filename_input_hubbard_parameters(cls):

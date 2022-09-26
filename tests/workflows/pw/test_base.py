@@ -17,14 +17,6 @@ def test_setup(generate_workchain_pw):
     assert isinstance(process.ctx.inputs, AttributeDict)
 
 
-@pytest.mark.filterwarnings('ignore::aiida.common.warnings.AiidaDeprecationWarning')
-def test_validate_pseudos(generate_workchain_pw):
-    """Test `PwBaseWorkChain.validate_pseudos`."""
-    process = generate_workchain_pw()
-    process.setup()
-    assert process.validate_pseudos() is None
-
-
 def test_handle_unrecoverable_failure(generate_workchain_pw):
     """Test `PwBaseWorkChain.handle_unrecoverable_failure`."""
     process = generate_workchain_pw(exit_code=PwCalculation.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
@@ -149,7 +141,7 @@ def test_handle_vcrelax_converged_except_final_scf(generate_workchain_pw):
     assert isinstance(result, ProcessHandlerReport)
     assert result.do_break
     assert result.exit_code == PwBaseWorkChain.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF
-    assert process.node.get_outgoing().all() is not None
+    assert process.node.base.links.get_outgoing().all() is not None
 
     result = process.inspect_process()
     assert result == PwBaseWorkChain.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF
@@ -198,7 +190,7 @@ def test_handle_electronic_convergence_warning(generate_workchain_pw, generate_s
     assert isinstance(result, ProcessHandlerReport)
     assert result.do_break
     assert result.exit_code == PwBaseWorkChain.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED
-    assert process.node.get_outgoing().all() is not None
+    assert process.node.base.links.get_outgoing().all() is not None
 
     result = process.inspect_process()
     assert result == PwBaseWorkChain.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED

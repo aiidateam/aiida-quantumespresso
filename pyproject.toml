@@ -21,14 +21,14 @@ classifiers = [
 keywords = ['aiida', 'workflows']
 requires-python = '>=3.8'
 dependencies = [
-    'aiida_core[atomic_tools]~=2.0',
+    'aiida_core[atomic_tools]~=2.0,>=2.0.4',
     'aiida-pseudo~=0.7.0',
     'click~=8.0',
     'importlib_resources',
     'jsonschema',
     'numpy',
     'packaging',
-    'qe-tools~=2.0rc1',
+    'qe-tools~=2.0',
     'xmlschema~=1.2,>=1.2.5'
 ]
 
@@ -114,7 +114,6 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 'quantumespresso.pw.base' = 'aiida_quantumespresso.workflows.pw.base:PwBaseWorkChain'
 'quantumespresso.pw.relax' = 'aiida_quantumespresso.workflows.pw.relax:PwRelaxWorkChain'
 'quantumespresso.pw.bands' = 'aiida_quantumespresso.workflows.pw.bands:PwBandsWorkChain'
-'quantumespresso.pw.band_structure' = 'aiida_quantumespresso.workflows.pw.band_structure:PwBandStructureWorkChain'
 'quantumespresso.q2r.base' = 'aiida_quantumespresso.workflows.q2r.base:Q2rBaseWorkChain'
 'quantumespresso.matdyn.base' = 'aiida_quantumespresso.workflows.matdyn.base:MatdynBaseWorkChain'
 'quantumespresso.pdos' = 'aiida_quantumespresso.workflows.pdos:PdosWorkChain'

@@ -18,15 +18,15 @@ def generate_ph_calc_job_node(generate_calc_job_node, fixture_localhost):
         node = generate_calc_job_node()
 
         remote_folder = RemoteData(computer=fixture_localhost, remote_path='/tmp')
-        remote_folder.add_incoming(node, link_type=LinkType.CREATE, link_label='remote_folder')
+        remote_folder.base.links.add_incoming(node, link_type=LinkType.CREATE, link_label='remote_folder')
         remote_folder.store()
 
         retrieved = FolderData()
-        retrieved.add_incoming(node, link_type=LinkType.CREATE, link_label='retrieved')
+        retrieved.base.links.add_incoming(node, link_type=LinkType.CREATE, link_label='retrieved')
         retrieved.store()
 
         output_parameters = Dict()
-        output_parameters.add_incoming(node, link_type=LinkType.CREATE, link_label='output_parameters')
+        output_parameters.base.links.add_incoming(node, link_type=LinkType.CREATE, link_label='output_parameters')
         output_parameters.store()
 
         return node
@@ -171,4 +171,5 @@ def test_results(generate_workchain_ph, generate_ph_calc_job_node):
     process.results()
     process.update_outputs()
 
-    assert sorted(process.node.get_outgoing().all_link_labels()) == ['output_parameters', 'remote_folder', 'retrieved']
+    assert sorted(process.node.base.links.get_outgoing().all_link_labels()
+                  ) == ['output_parameters', 'remote_folder', 'retrieved']

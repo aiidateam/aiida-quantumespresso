@@ -21,7 +21,7 @@ class DosParser(Parser):
         # Read standard out
         try:
             filename_stdout = self.node.get_option('output_filename')  # or get_attribute(), but this is clearer
-            with retrieved.open(filename_stdout, 'r') as fil:
+            with retrieved.base.repository.open(filename_stdout, 'r') as fil:
                 out_file = fil.readlines()
         except OSError:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
@@ -37,7 +37,7 @@ class DosParser(Parser):
 
         # check that the dos file is present, if it is, read it
         try:
-            with retrieved.open(self.node.process_class._DOS_FILENAME, 'r') as fil:
+            with retrieved.base.repository.open(self.node.process_class._DOS_FILENAME, 'r') as fil:
                 dos_file = fil.readlines()
         except OSError:
             return self.exit(self.exit_codes.ERROR_READING_DOS_FILE)
