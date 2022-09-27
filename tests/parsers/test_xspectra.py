@@ -114,7 +114,7 @@ def test_xspectra_failed_xiabs_zero(fixture_localhost, generate_calc_job_node, g
 
 
 def test_xspectra_failed_timeout(fixture_localhost, generate_calc_job_node, generate_parser):
-    """Test `XspectraParser` to correctly report error code 315 (time limit exceeded)."""
+    """Test ``XspectraParser`` to correctly report ``ERROR_OUT_OF_WALLTIME``."""
     entry_point_calc_job = 'quantumespresso.xspectra'
     entry_point_parser = 'quantumespresso.xspectra'
 
