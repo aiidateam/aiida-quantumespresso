@@ -1,5 +1,5 @@
 
-     Program XSpectra v.6.5 starts on 20Jun2022 at 18:31:54 
+     Program XSpectra v.6.5 starts on  2Sep2022 at 10:50:48 
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
@@ -440,7 +440,7 @@
 
      ... End STEP 2 ...
 
-     xanes        :      5.58s CPU      6.62s WALL (       1 calls)
+     xanes        :      5.81s CPU      6.33s WALL (       1 calls)
 
      -------------------------------------------------------------------------
                                 END JOB XSpectra

@@ -111,3 +111,16 @@ def test_xspectra_failed_xiabs_zero(fixture_localhost, generate_calc_job_node, g
 
     assert calcfunction.is_failed
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_ABSORBING_SPECIES_ZERO.status
+
+
+def test_xspectra_failed_timeout(fixture_localhost, generate_calc_job_node, generate_parser):
+    """Test ``XspectraParser`` to correctly report ``ERROR_OUT_OF_WALLTIME``."""
+    entry_point_calc_job = 'quantumespresso.xspectra'
+    entry_point_parser = 'quantumespresso.xspectra'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'failed_timeout', generate_inputs())
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_failed
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUT_OF_WALLTIME.status
