@@ -44,7 +44,7 @@ class Pw2gwParser(Parser):
     def parse_eps_files(self):
         """Parse the eps*.dat files produced by pw2gw.x and store them in the `eps` node."""
         retrieved = self.retrieved
-        retrieved_names = retrieved.list_object_names()
+        retrieved_names = retrieved.base.repository.list_object_names()
 
         files = Pw2gwCalculation._internal_retrieve_list
         if any(_ not in retrieved_names for _ in files):
@@ -54,7 +54,7 @@ class Pw2gwParser(Parser):
         energy = None
         eps = orm.ArrayData()
         for name in Pw2gwCalculation._internal_retrieve_list:
-            content = retrieved.get_object_content(name)
+            content = retrieved.base.repository.get_object_content(name)
             base = name.split('.')[0]
 
             try:
@@ -86,14 +86,14 @@ class Pw2gwParser(Parser):
         logs = get_logging_container()
         parsed_data = {}
 
-        filename_stdout = self.node.get_attribute('output_filename')
+        filename_stdout = self.node.base.attributes.get('output_filename')
 
-        if filename_stdout not in self.retrieved.list_object_names():
+        if filename_stdout not in self.retrieved.base.repository.list_object_names():
             self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_MISSING
             return parsed_data, logs
 
         try:
-            stdout = self.retrieved.get_object_content(filename_stdout)
+            stdout = self.retrieved.base.repository.get_object_content(filename_stdout)
         except IOError:
             self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_READ
             return parsed_data, logs

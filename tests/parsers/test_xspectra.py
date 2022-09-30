@@ -28,7 +28,7 @@ def test_xspectra_default(fixture_localhost, generate_calc_job_node, generate_pa
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
-    assert not orm.Log.objects.get_logs_for(node)
+    assert not orm.Log.collection.get_logs_for(node)
     assert 'output_parameters' in results
     assert 'spectra' in results
     data_regression.check({
@@ -60,7 +60,7 @@ def test_xspectra_spin(fixture_localhost, generate_calc_job_node, generate_parse
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
-    assert not orm.Log.objects.get_logs_for(node)
+    assert not orm.Log.collection.get_logs_for(node)
     assert 'output_parameters' in results
     assert 'spectra' in results
     data_regression.check({
@@ -114,7 +114,7 @@ def test_xspectra_failed_xiabs_zero(fixture_localhost, generate_calc_job_node, g
 
 
 def test_xspectra_failed_timeout(fixture_localhost, generate_calc_job_node, generate_parser):
-    """Test `XspectraParser` to correctly report error code 315 (time limit exceeded)."""
+    """Test ``XspectraParser`` to correctly report ``ERROR_OUT_OF_WALLTIME``."""
     entry_point_calc_job = 'quantumespresso.xspectra'
     entry_point_parser = 'quantumespresso.xspectra'
 

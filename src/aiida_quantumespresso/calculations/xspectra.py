@@ -10,7 +10,7 @@ from aiida.plugins import DataFactory
 
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 
-KpointsData = DataFactory('array.kpoints')
+KpointsData = DataFactory('core.array.kpoints')
 
 
 class XspectraCalculation(NamelistsCalculation):

@@ -16,13 +16,13 @@ class MatdynParser(Parser):
         filename_stdout = self.node.get_option('output_filename')
         filename_frequencies = MatdynCalculation._PHONON_FREQUENCIES_NAME
 
-        if filename_stdout not in retrieved.list_object_names():
+        if filename_stdout not in retrieved.base.repository.list_object_names():
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 
-        if 'JOB DONE' not in retrieved.get_object_content(filename_stdout):
+        if 'JOB DONE' not in retrieved.base.repository.get_object_content(filename_stdout):
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE)
 
-        if filename_frequencies not in retrieved.list_object_names():
+        if filename_frequencies not in retrieved.base.repository.list_object_names():
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 
         # Extract the kpoints from the input data and create the `KpointsData` for the `BandsData`
@@ -34,7 +34,7 @@ class MatdynParser(Parser):
             kpoints_for_bands = orm.KpointsData()
             kpoints_for_bands.set_kpoints(kpoints)
 
-        parsed_data = parse_raw_matdyn_phonon_file(retrieved.get_object_content(filename_frequencies))
+        parsed_data = parse_raw_matdyn_phonon_file(retrieved.base.repository.get_object_content(filename_frequencies))
 
         try:
             num_kpoints = parsed_data.pop('num_kpoints')

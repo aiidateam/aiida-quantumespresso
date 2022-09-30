@@ -103,7 +103,7 @@ class PhCalculation(CalcJob):
             settings = {}
 
         parent_folder = self.inputs.parent_folder
-        parent_calcs = parent_folder.get_incoming(node_class=orm.CalcJobNode).all()
+        parent_calcs = parent_folder.base.links.get_incoming(node_class=orm.CalcJobNode).all()
 
         if not parent_calcs:
             raise exceptions.NotExistent(f'parent_folder<{parent_folder.pk}> has no parent calculation')

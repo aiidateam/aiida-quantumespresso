@@ -18,7 +18,7 @@ class XspectraParser(Parser):
         retrieved = self.retrieved
         try:
             filename_stdout = self.node.get_option('output_filename')
-            with retrieved.open(filename_stdout, 'r') as fil:
+            with retrieved.base.repository.open(filename_stdout, 'r') as fil:
                 out_file = fil.readlines()
         except OSError:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
@@ -40,7 +40,7 @@ class XspectraParser(Parser):
 
         # Check that the spectra data file exists and is readable
         try:
-            with retrieved.open(self.node.process_class._Spectrum_FILENAME, 'r') as fil:
+            with retrieved.base.repository.open(self.node.process_class._Spectrum_FILENAME, 'r') as fil:
                 xspectra_file = fil.readlines()
         except OSError:
             return self.exit(self.exit_codes.ERROR_READING_SPECTRUM_FILE)

@@ -19,10 +19,10 @@ class CpParser(Parser):
         retrieved = self.retrieved
 
         # check what is inside the folder
-        list_of_files = retrieved.list_object_names()
+        list_of_files = retrieved.base.repository.list_object_names()
 
         # options.metadata become attributes like this:
-        stdout_filename = self.node.get_attribute('output_filename')
+        stdout_filename = self.node.base.attributes.get('output_filename')
         # at least the stdout should exist
         if stdout_filename not in list_of_files:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
@@ -63,9 +63,9 @@ class CpParser(Parser):
                 self.logger.info('print counter in xml format')
                 filename_counter = filename_counter_xml
 
-        output_stdout = retrieved.get_object_content(stdout_filename)
-        output_xml = retrieved.get_object_content(xml_files[0])
-        output_xml_counter = None if no_trajectory_output else retrieved.get_object_content(filename_counter)
+        output_stdout = retrieved.base.repository.get_object_content(stdout_filename)
+        output_xml = retrieved.base.repository.get_object_content(xml_files[0])
+        output_xml_counter = None if no_trajectory_output else retrieved.base.repository.get_object_content(filename_counter)
         out_dict, _raw_successful = parse_cp_raw_output(
             output_stdout, output_xml, output_xml_counter, print_counter_xml
         )
@@ -115,7 +115,7 @@ class CpParser(Parser):
 
             for name, extension, scale, elements in trajectories:
                 try:
-                    with retrieved.open(f'{self.node.process_class._PREFIX}.{extension}') as datafile:
+                    with retrieved.base.repository.open(f'{self.node.process_class._PREFIX}.{extension}') as datafile:
                         data = [l.split() for l in datafile]
                         # POSITIONS stored in angstrom
                     traj_data = parse_cp_traj_stanzas(
@@ -138,7 +138,7 @@ class CpParser(Parser):
 
             # =============== EVP trajectory ============================
             try:
-                with retrieved.open(f'{self._node.process_class._PREFIX}.evp') as handle:
+                with retrieved.base.repository.open(f'{self._node.process_class._PREFIX}.evp') as handle:
                     matrix = numpy.genfromtxt(handle)
                 # there might be a different format if the matrix has one row only
                 try:
