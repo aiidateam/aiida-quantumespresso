@@ -87,6 +87,22 @@ class XspectraParser(Parser):
         xy_data.set_y(y_arrays, y_names, y_units)
 
         parsed_data, logs = parse_stdout_xspectra(filecontent=out_file, codename='XSpectra')
+
+        # Parse some additional info which the stdout does not reliably report
+        input_params = self.node.get_incoming().get_node_by_label('parameters').get_dict()
+
+        epsilon_vector = [input_params['INPUT_XSPECTRA'][f'xepsilon({n})'] for n in [1, 2, 3]]
+        parsed_data['epsilon_vector'] = epsilon_vector
+        if 'xcoordcrys' in input_params['INPUT_XSPECTRA']:
+            if input_params['INPUT_XSPECTRA']['xcoordcrys']:
+                parsed_data['vector_coord_system'] = 'crystal_system'
+            else:
+                parsed_data['vector_coord_system'] = 'cartesian_system'
+# The default setting for `xcoordcrys` is `True`, thus we can collect this if it isn't stated explicitly
+        else:
+            parsed_data['vector_coord_system'] = 'crystal_system'
+        parsed_data['only_plot_spectrum'] = input_params['INPUT_XSPECTRA']['xonly_plot']
+
         self.emit_logs(logs)
 
         self.out('spectra', xy_data)
@@ -160,37 +176,13 @@ def parse_stdout_xspectra(filecontent, codename=None, message_map=None):
     # We need to assign this before the loop over each line due to a bug spotted in the code
     # when `only_plot=True`. Since the epsilon vector is reported before the value of
     # `xonly_plot`, we need a starting value before the loop begins.
-    parsed_data['plot_only'] = False
+    # parsed_data['plot_only'] = False
 
     lines = filecontent if isinstance(filecontent, list) else filecontent.split('\n')
 
     # Parse the necessary information for data plotting: core level energy of the
     # absorbing atom and the energy zero of the spectrum (typically the Fermi level)
     for line in lines:
-        if 'xonly_plot:' in line:
-            is_only_plot_string = line.split(':')[-1].strip()
-            if is_only_plot_string == 'TRUE':
-                parsed_data['plot_only'] = True
-        if 'xepsilon  [crystallographic coordinates]' in line:
-            eps_vector_string = line.split(':')[-1].strip()
-            eps_vector_list = [float(i) for i in eps_vector_string.split('   ')]
-            parsed_data['epsilon_vector'] = eps_vector_list
-            parsed_data['eps_k_vector_coords'] = 'crystal'
-        elif 'xepsilon  [cartesian coordinates]' in line:
-            eps_vector_string = line.split(':')[-1].strip()
-            eps_vector_list = [float(i) for i in eps_vector_string.split('   ')]
-            parsed_data['epsilon_vector'] = eps_vector_list
-            parsed_data['eps_k_vector_coords'] = 'cartesian'
-        # There is an oversight in the XSpectra code where the value of xepsilon is reported
-        # in Cartesian coordinates regardless of the coordinate system used in the parent
-        # calculation. This is also reported in the event of a calculation restart, thus we
-        # need to distinguish between `plot_only` and `restart` in order not overwrite the
-        # value reported earlier in the stdout.
-        if 'xepsilon [Cartesian frame]' in line and parsed_data['plot_only']:
-            eps_vector_string = line.split(':')[-1].strip()
-            eps_vector_list = [float(i) for i in eps_vector_string.split('   ')]
-            parsed_data['epsilon_vector'] = eps_vector_list
-            parsed_data['eps_k_vector_coords'] = 'cartesian'
         if 'From SCF save directory' in line:
             if '(spin polarized work)' in line:
                 spin = True

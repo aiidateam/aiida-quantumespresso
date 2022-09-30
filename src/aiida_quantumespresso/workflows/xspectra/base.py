@@ -572,11 +572,16 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         xspectra_plot_calcs = {}
         for calculation in finished_calculations:
             xspectra_inputs = AttributeDict(self.exposed_inputs(XspectraCalculation, 'xs_plot'))
+            # The epsilon or k vectors are not needed in the case of a replot, however they
+            # will be needed by the Parser at the end
             xspectra_parameters = xspectra_inputs.parameters.get_dict()
 
             parent_xspectra = calculation
             parent_output_dict = parent_xspectra.get_outgoing().get_node_by_label('output_parameters').get_dict()
             eps_vector = parent_output_dict['epsilon_vector']
+            xspectra_parameters['INPUT_XSPECTRA']['xepsilon(1)'] = eps_vector[0]
+            xspectra_parameters['INPUT_XSPECTRA']['xepsilon(2)'] = eps_vector[1]
+            xspectra_parameters['INPUT_XSPECTRA']['xepsilon(3)'] = eps_vector[2]
             parent_label_pieces = calculation.label.split('_')
             label = f'{parent_label_pieces[0]}_{parent_label_pieces[1]}_{parent_label_pieces[2]}'
             xspectra_inputs.parent_folder = parent_xspectra.get_outgoing().get_node_by_label('remote_folder')
