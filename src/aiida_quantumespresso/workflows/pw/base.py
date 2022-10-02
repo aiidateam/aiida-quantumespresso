@@ -151,7 +151,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if isinstance(code, str):
             code = orm.load_code(code)
 
-        type_check(code, orm.Code)
+        type_check(code, orm.AbstractCode)
         type_check(electronic_type, ElectronicType)
         type_check(spin_type, SpinType)
 

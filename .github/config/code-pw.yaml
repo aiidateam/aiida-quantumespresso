@@ -1,8 +1,7 @@
 ---
 label: pw
 description: Quantum ESPRESSO pw.x
-input_plugin: quantumespresso.pw
-on_computer: true
+default_calc_job_plugin: quantumespresso.pw
 computer: localhost
 prepend_text: ' '
 append_text: ' '

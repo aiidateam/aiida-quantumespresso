@@ -4,7 +4,7 @@ import copy
 import re
 
 from aiida.common.folders import Folder
-from aiida.orm import Code, Dict
+from aiida.orm import Dict, load_code
 from aiida.plugins import CalculationFactory, DataFactory
 import numpy as np
 from qe_tools.parsers import PwInputFile as BasePwInputFile
@@ -69,7 +69,7 @@ def create_builder_from_file(input_folder, input_file_name, code, metadata, pseu
     :param input_file_name: the name of the input file
     :type input_file_name: str
     :param code: the code associated with the calculation
-    :type code: aiida.orm.Code or str
+    :type code: aiida.orm.AbstractCode or str
     :param metadata: metadata values for the calculation (e.g. resources)
     :type metadata: dict
     :param pseudo_folder_path: the folder containing the upf files (if None, then input_folder is used)
@@ -83,7 +83,7 @@ def create_builder_from_file(input_folder, input_file_name, code, metadata, pseu
     builder.metadata = metadata
 
     if isinstance(code, str):
-        code = Code.get_from_string(code)
+        code = load_code(code)
     builder.code = code
 
     # read input_file
