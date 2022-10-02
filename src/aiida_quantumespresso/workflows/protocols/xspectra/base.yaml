@@ -72,7 +72,6 @@ protocols:
                     SYSTEM:
                         tot_charge: 0
                         nspin: 2
-                        starting_magnetization: 1
     xch_fix:
         description: 'Protocol to perform an XANES dipole calculation using the excited-core-hole (XCH) method (fixed populations variant).'
         scf:
