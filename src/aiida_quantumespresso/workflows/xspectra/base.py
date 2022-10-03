@@ -30,13 +30,12 @@ def get_all_spectra(**kwargs):
     y_units_list = []
     y_labels_list = []
 
-    calculations = [orm.load_node(pk) for label, pk in kwargs.items() if label != 'metadata']
+    spectra = [node for label, node in kwargs.items() if label != 'metadata']
 
-    for calc in calculations:
-        spectrum_node = calc.get_outgoing().get_node_by_label('spectra')
-        parent_calc = calc.get_incoming().get_node_by_label('parent_folder').creator
-        parent_out_params = parent_calc.get_outgoing().get_node_by_label('output_parameters').get_dict()
-        eps_vector = parent_out_params['epsilon_vector']
+    for spectrum_node in spectra:
+        calc_node = spectrum_node.creator
+        calc_out_params = calc_node.get_outgoing().get_node_by_label('output_parameters').get_dict()
+        eps_vector = calc_out_params['epsilon_vector']
 
         old_y_component = spectrum_node.get_y()[0]
         y_array = old_y_component[1]
@@ -45,9 +44,10 @@ def get_all_spectra(**kwargs):
         y_units_list.append(y_units)
         y_labels_list.append(f'sigma_{eps_vector[0]}_{eps_vector[1]}_{eps_vector[2]}')
 
-    x_array = spectrum_node.get_x()[1]
-    x_label = spectrum_node.get_x()[0]
-    x_units = spectrum_node.get_x()[2]
+        x_array = spectrum_node.get_x()[1]
+        x_label = spectrum_node.get_x()[0]
+        x_units = spectrum_node.get_x()[2]
+
     output_spectra.set_x(x_array, x_label, x_units)
     output_spectra.set_y(y_arrays_list, y_labels_list, y_units_list)
 
@@ -63,13 +63,13 @@ def get_powder_spectrum(**kwargs):
     trichorism.
     """
 
-    calculations = {label: orm.load_node(pk) for label, pk in kwargs.items() if label != 'metadata'}
+    spectra = {label: node for label, node in kwargs.items() if label != 'metadata'}
 
     # If the system is isochoric (e.g. a cubic system) then the three basis vectors are equal
     # to each other, thus we simply return the
-    if len(calculations) == 1:
-        vectors = list(calculations.keys())
-        powder_spectrum = calculations[vectors[0]].get_outgoing().get_node_by_label('spectra')
+    if len(spectra) == 1:
+        vectors = list(spectra.keys())
+        powder_spectrum = spectra[vectors[0]]
         powder_x = powder_spectrum.get_x()[1]
         powder_y = powder_spectrum.get_y()[0][1]
 
@@ -80,16 +80,16 @@ def get_powder_spectrum(**kwargs):
     # if the system is dichoric (e.g. a hexagonal system) then the A and B periodic
     # dimensions are equal to each other by symmetry, thus the powder spectrum is simply
     # the average of 2x the 1 0 0 eps vector and 1x the 0 0 1 eps vector
-    if len(calculations) == 2:
-        # Since the individual vectors are labelled, we can extract just the spectra needed to
-        # produce the powder and leave the rest
-        vectors = list(calculations.keys())
+    if len(spectra) == 2:
+        # Since the individual vectors are labelled, we can extract just the spectra needed
+        # to produce the powder and leave the rest
+        vectors = list(spectra.keys())
 
         for label in vectors:
             if label in ['eps_100', 'eps_010']:
-                spectrum_a = calculations[label].get_outgoing().get_node_by_label('spectra')
+                spectrum_a = spectra[label]
             elif label in ['eps_001']:
-                spectrum_c = calculations[label].get_outgoing().get_node_by_label('spectra')
+                spectrum_c = spectra[label]
 
         powder_x = spectrum_a.get_x()[1]
         yvals_a = spectrum_a.get_y()[0][1]
@@ -103,12 +103,12 @@ def get_powder_spectrum(**kwargs):
     # if the system is trichoric (e.g. a monoclinic system) then no periodic dimensions
     # are equal by symmetry, thus the powder spectrum is the average of the three basis
     # dipole vectors (1 0 0, 0 1 0, 0 0 1)
-    if len(calculations) == 3:
+    if len(spectra) == 3:
         # Since the individual vectors are labelled, we can extract just the spectra needed to
         # produce the powder and leave the rest
-        spectrum_a = calculations['eps_100'].get_outgoing().get_node_by_label('spectra')
-        spectrum_b = calculations['eps_010'].get_outgoing().get_node_by_label('spectra')
-        spectrum_c = calculations['eps_001'].get_outgoing().get_node_by_label('spectra')
+        spectrum_a = spectra['eps_100']
+        spectrum_b = spectra['eps_010']
+        spectrum_c = spectra['eps_001']
 
         powder_x = spectrum_a.get_x()[1]
         yvals_a = spectrum_a.get_y()[0][1]
@@ -138,7 +138,18 @@ def validate_inputs(inputs, _):
     if len(eps_vector_list) == 0:
         return 'Error: eps_vectors list empty.'
     if 'core_wfc_data' not in inputs and 'upf2plotcore_code' not in inputs:
-        return 'Error: either a core wavefunction file or a code node for upf2plotcore must be provided.'
+        return 'Error: either a core wavefunction file or a code node for upf2plotcore.sh must be provided.'
+    structure = inputs['structure']
+    kinds_present = structure.kinds
+    abs_atom_found = False
+    for kind in kinds_present:
+        if kind.name == inputs['abs_atom_marker'].value:
+            abs_atom_found = True
+    if not abs_atom_found:
+        return (
+            f'Error: the marker given for the absorbing atom ("{inputs["abs_atom_marker"].value}") ' +
+            'does not appear in the structure provided.'
+        )
 
 
 class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
@@ -635,27 +646,44 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
             output_parameters = calc.get_outgoing().get_node_by_label('output_parameters').get_dict()
             eps_vectors = output_parameters['epsilon_vector']
             if eps_vectors in eps_powder_vectors:
-                should_collect_powder = True
+                basis_vectors_present = True
 
         eps_basis_calcs = {}
         if self.inputs.collect_powder and should_collect_powder:
+            a_vector_present = False
+            b_vector_present = False
+            c_vector_present = False
             for plot_calc in xspectra_plot_calcs:
                 parent_folder = plot_calc.get_incoming().get_node_by_label('parent_folder')
                 parent_calc = parent_folder.creator
                 parent_output_params = parent_calc.get_outgoing().get_node_by_label('output_parameters').get_dict()
                 parent_vector = parent_output_params['epsilon_vector']
+                spectrum_node = plot_calc.get_outgoing().get_node_by_label('spectra')
                 if parent_vector in eps_powder_vectors:
                     if parent_vector == [1., 0., 0.]:
-                        eps_basis_calcs['eps_100'] = plot_calc.pk
+                        eps_basis_calcs['eps_100'] = spectrum_node
+                        a_vector_present = True
                     if parent_vector == [0., 1., 0.]:
-                        eps_basis_calcs['eps_010'] = plot_calc.pk
+                        eps_basis_calcs['eps_010'] = spectrum_node
+                        b_vector_present = True
                     if parent_vector == [0., 0., 1.]:
-                        eps_basis_calcs['eps_001'] = plot_calc.pk
+                        eps_basis_calcs['eps_001'] = spectrum_node
+                        c_vector_present = True
 
-            eps_basis_calcs['metadata'] = {'call_link_label': 'compile_powder'}
-            powder_spectrum = get_powder_spectrum(**eps_basis_calcs)
-            self.out('powder_spectrum', powder_spectrum)
-        elif self.inputs.collect_powder and not should_collect_powder:
+            # Here, we control for the case where the A and B vectors are given, but C is
+            # missing, which would cause a problem for the CalcFunction
+            if a_vector_present and b_vector_present and not c_vector_present:
+                self.report(
+                    'Warning: epsilon vectors for [1.0 0.0 0.0] and [0.0 1.0 0.0] were '
+                    'found, but not for [0.0 0.0 1.0]. Please ensure that the vectors '
+                    'perpendicular and parallel to the C-axis are defined in the case '
+                    'of a system with dichorism.'
+                )
+            else:
+                eps_basis_calcs['metadata'] = {'call_link_label': 'compile_powder'}
+                powder_spectrum = get_powder_spectrum(**eps_basis_calcs)
+                self.out('powder_spectrum', powder_spectrum)
+        elif self.inputs.collect_powder and not basis_vectors_present:
             # This should be upgraded to a more obvious warning, but I'm not sure yet how
             # to do this in practice.
             self.report(
@@ -677,12 +705,12 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
             xspectra_prod_params[key] = output_params
         self.out('output_parameters_xspectra', xspectra_prod_params)
 
-        all_xspectra_plot_pks = {}
+        all_final_spectra = {}
         for calc in xspectra_plot_calcs:
-            all_xspectra_plot_pks[calc.label] = calc.pk
+            all_final_spectra[calc.label] = calc.get_outgoing().get_node_by_label('spectra')
 
-        all_xspectra_plot_pks['metadata'] = {'call_link_label': 'compile_all_spectra'}
-        output_spectra = get_all_spectra(**all_xspectra_plot_pks)
+        all_final_spectra['metadata'] = {'call_link_label': 'compile_all_spectra'}
+        output_spectra = get_all_spectra(**all_final_spectra)
 
         self.out('output_spectra', output_spectra)
         if self.inputs.clean_workdir.value is True:
