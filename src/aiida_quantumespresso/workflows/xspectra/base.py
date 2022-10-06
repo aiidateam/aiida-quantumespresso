@@ -161,25 +161,26 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
 
     The radial part of the core wavefunction (i.e. the atomic state containing the core-hole
     in the absorbing atom) derived from the ground-state of the absorbing element can be
-    provided as a top-level input or produced by the WorkChain. If left to the WorkChain, the
+    provided as a top-level input or produced by the WorkChain. If left to the WorkChain,
+    the
     ground-state pseudopotential assigned to the absorbing element will be used to generate
-    this data using the upf2plotcore.sh utility script (via the AiiDA-Shell plugin).
+    this data using the upf2plotcore.sh utility script (via the ``AiiDA-Shell`` plugin).
 
     In its current stage of development, the workflow requires the following:
-        * An input structure where the desired absorbing atom in the system is marked in some
-          way. The default behaviour for the WorkChain is to set this as 'X' by default,
-          however this can be changed via the `overrides` dictionary.
-        * An already-installed code node for 'upf2plotcore.sh@localhost', produced by running
-          the AiiDA-Shell plugin with upf2plotcore.sh once via the launch_shell_job() method.
-          Alternatively, a pre-computed `stdout` node can be supplied under
-          `builder.core_wfc_data`.
+        * An input structure where the desired absorbing atom in the system is marked in
+          some way. The default behaviour for the WorkChain is to set this as 'X' by
+          default, however this can be changed via the `overrides` dictionary.
+        * A code node for ``upf2plotcore``, configured for the AiiDA-Shell plugin
+          (https://github.com/sphuber/aiida-shell). Alternatively, a ``stdout`` node from a
+          previous ``ShellJob`` run can be supplied under ``builder.core_wfc_data``.
         * A suitable pair of pseudopotentials for the element type of the absorbing atom,
-          one for the ground-state occupancy which contains GIPAW informtation on the core
-          level of interest for the XAS (e.g. 1s in the case of a K-edge calculation) and the
-          other containing a core hole.
-            * For the moment, this must be passed through the use of overrides in the
-              get_builder_from_protocol step, but will be changed later once full families of
-              core-hole pseudopotentials become available.
+          one for the ground-state occupancy which contains GIPAW informtation for the core
+          level of interest for the XAS (e.g. 1s in the case of a K-edge calculation) and
+          the other containing a core hole.
+            * For the moment this can be passed either via the ``core_hole_pseudos`` field
+              in ``get_builder_from_protocol`` or via the overrides, but will be
+              changed later once full families of core-hole pseudopotentials become
+              available.
     """
 
     # pylint: disable=too-many-public-methods, too-many-statements
@@ -257,13 +258,13 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
             'core_wfc_data',
             valid_type=orm.SinglefileData,
             required=False,
-            help='The core wavefunction data file extracted from the ground-state pseudo for the absorbing atom'
+            help='The core wavefunction data file extracted from the ground-state pseudo for the absorbing atom.'
         )
         spec.input(
             'upf2plotcore_code',
             valid_type=orm.Code,
             required=False,
-            help='The code node required for upf2plotcore.sh. Must be provided if `core_wfc_data` is not provided'
+            help='The code node required for upf2plotcore.sh. Must be provided if `core_wfc_data` is not provided.'
         )
         spec.outline(
             cls.setup,
@@ -306,22 +307,28 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
 
     @classmethod
     def get_builder_from_protocol(
-        cls, pw_code, xs_code, structure, pw_protocol=None, overrides=None, xs_protocol=None, **kwargs
+        cls, pw_code, xs_code, upf2plotcore_code, structure, core_hole_pseudos=None,
+        pw_protocol=None, xs_protocol=None, overrides=None, **kwargs
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
         :param pw_code: the ``Code`` instance configured for the ``quantumespresso.pw``
-            plugin.
+                        plugin.
         :param xs_code: the ``Code`` instance configured for the
-            ``quantumespresso.xspectra`` plugin.
+                        ``quantumespresso.xspectra`` plugin.
+        :param upf2plotcore_code: the AiiDA-Shell ``Code`` instance configured for the
+                                  upf2plotcore.sh shell script, used to generate the core
+                                  wavefunction data.
         :param structure: the ``StructureData`` instance to use.
+        :param core_hole_pseudos: the core-hole pseudopotential pair (ground-state and
+                                  excited-state) for the chosen absorbing atom.
         :param pw_protocol: the px.x protocol to use. If not specified, the default set by
                             the PwBaseWorkChain will be used instead.
         :param overrides: optional dictionary of inputs to override the defaults of the
                           XspectraWorkChain itself.
         :param xs_protocol: the xspectra.x protocol to use, which defines pw.x settings
-                                  to be used for the core-hole treatment. Defaults to the
-                                  "Full-core-hole" approach ("full") if not specified.
+                            to be used for the core-hole treatment. Defaults to the
+                            "Full-core-hole" approach ("full") if not specified.
         :param kwargs: additional keyword arguments that will be passed to the
             ``get_builder_from_protocol`` of all the sub processes that are called by this
             workchain.
@@ -340,15 +347,24 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
 
         scf.pop('clean_workdir', None)
         scf['pw'].pop('structure', None)
+        abs_atom_marker = inputs['abs_atom_marker']
+        for kind in structure.kinds:
+            if kind.name == abs_atom_marker:
+                abs_element = kind.symbol
+
         # pylint: disable=no-member
         builder = cls.get_builder()
         builder.scf = scf
+        if core_hole_pseudos:
+            builder.scf.pw.pseudos[abs_atom_marker] = core_hole_pseudos[abs_atom_marker]
+            builder.scf.pw.pseudos[abs_element] = core_hole_pseudos[abs_element]
         builder.xs_prod.code = xs_code
         builder.xs_prod.parameters = orm.Dict(inputs.get('xs_prod', {}).get('parameters'))
         builder.xs_prod.metadata = inputs.get('xs_prod', {}).get('metadata')
         builder.xs_plot.code = xs_code
         builder.xs_plot.parameters = orm.Dict(inputs.get('xs_plot', {}).get('parameters'))
         builder.xs_plot.metadata = inputs.get('xs_prod', {}).get('metadata')
+        builder.upf2plotcore_code = upf2plotcore_code
         builder.structure = structure
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
         builder.collect_powder = orm.Bool(inputs['collect_powder'])
@@ -411,7 +427,6 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         """
 
         ShellJob = CalculationFactory('core.shell') # pylint: disable=invalid-name
-        code_label = 'upf2plotcore.sh@localhost'
 
         pw_inputs = self.exposed_inputs(PwBaseWorkChain, 'scf')
         absorbing_species = self.inputs.abs_atom_marker.value
@@ -436,7 +451,7 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         # For now, the code node will be the one that we already have, but in the future we
         # will need to re-use the code in the launch_shell_job method in order to dynamically
         # produce the required code node in the same way.
-        shell_inputs['code'] = orm.load_code(code_label)
+        shell_inputs['code'] = self.inputs.upf2plotcore_code
         shell_inputs['files'] = {'upf': upf}
         shell_inputs['arguments'] = orm.List(list=['{upf}'])
         shell_inputs['metadata'] = {'call_link_label': 'upf2plotcore'}
