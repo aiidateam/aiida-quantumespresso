@@ -79,7 +79,14 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
 
     @classmethod
     def get_builder_from_protocol(
-        cls, code, structure, protocol=None, overrides=None, relax_type=RelaxType.POSITIONS_CELL, **kwargs
+        cls,
+        code,
+        structure,
+        protocol=None,
+        overrides=None,
+        relax_type=RelaxType.POSITIONS_CELL,
+        options=None,
+        **kwargs
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
@@ -88,6 +95,8 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         :param protocol: protocol to use, if not specified, the default will be used.
         :param overrides: optional dictionary of inputs to override the defaults of the protocol.
         :param relax_type: the relax type to use: should be a value of the enum ``common.types.RelaxType``.
+        :param options: A dictionary of options that will be recursively set for the ``metadata.options`` input of all
+            the ``CalcJobs`` that are nested in this work chain.
         :param kwargs: additional keyword arguments that will be passed to the ``get_builder_from_protocol`` of all the
             sub processes that are called by this workchain.
         :return: a process builder instance with all inputs defined ready for launch.
@@ -97,9 +106,11 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         inputs = cls.get_protocol_inputs(protocol, overrides)
 
         args = (code, structure, protocol)
-        base = PwBaseWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('base', None), **kwargs)
+        base = PwBaseWorkChain.get_builder_from_protocol(
+            *args, overrides=inputs.get('base', None), options=options, **kwargs
+        )
         base_final_scf = PwBaseWorkChain.get_builder_from_protocol(
-            *args, overrides=inputs.get('base_final_scf', None), **kwargs
+            *args, overrides=inputs.get('base_final_scf', None), options=options, **kwargs
         )
 
         base['pw'].pop('structure', None)

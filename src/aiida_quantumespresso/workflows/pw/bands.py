@@ -121,13 +121,15 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         return files(pw_protocols) / 'bands.yaml'
 
     @classmethod
-    def get_builder_from_protocol(cls, code, structure, protocol=None, overrides=None, **kwargs):
+    def get_builder_from_protocol(cls, code, structure, protocol=None, overrides=None, options=None, **kwargs):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
         :param code: the ``Code`` instance configured for the ``quantumespresso.pw`` plugin.
         :param structure: the ``StructureData`` instance to use.
         :param protocol: protocol to use, if not specified, the default will be used.
         :param overrides: optional dictionary of inputs to override the defaults of the protocol.
+        :param options: A dictionary of options that will be recursively set for the ``metadata.options`` input of all
+            the ``CalcJobs`` that are nested in this work chain.
         :param kwargs: additional keyword arguments that will be passed to the ``get_builder_from_protocol`` of all the
             sub processes that are called by this workchain.
         :return: a process builder instance with all inputs defined ready for launch.
@@ -135,9 +137,15 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         inputs = cls.get_protocol_inputs(protocol, overrides)
 
         args = (code, structure, protocol)
-        relax = PwRelaxWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('relax', None), **kwargs)
-        scf = PwBaseWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('scf', None), **kwargs)
-        bands = PwBaseWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('bands', None), **kwargs)
+        relax = PwRelaxWorkChain.get_builder_from_protocol(
+            *args, overrides=inputs.get('relax', None), options=options, **kwargs
+        )
+        scf = PwBaseWorkChain.get_builder_from_protocol(
+            *args, overrides=inputs.get('scf', None), options=options, **kwargs
+        )
+        bands = PwBaseWorkChain.get_builder_from_protocol(
+            *args, overrides=inputs.get('bands', None), options=options, **kwargs
+        )
 
         relax.pop('structure', None)
         relax.pop('clean_workdir', None)
