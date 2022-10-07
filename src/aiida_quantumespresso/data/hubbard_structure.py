@@ -13,10 +13,16 @@ class HubbardStructureData(StructureData):
     """Structure data containing code independent info on Hubbard parameters.
     
     TODO:
-        * write a `~shuffle` method for ordering the atoms following the QE standards
-        * write as a consequence a `~shuffle` method that replace the indecis in the hubbard parameters 
-        * maybe put everything in a `Mixin`?
+        * maybe put parts in one or more `Mixin`?
+        * general clean up
+        * finish typings and docstrings
+        * add a `is_ordered_atoms` method?
+        * add (py)tests
+        * refine name of variables
+        * decide upon final structure of hubbard parameters
+        * understand how much to be restrictive in the input checks
     NOTES:
+        * the class is initialised from a StructureData object - more convenient to let this free?
         * `hubbard_parameters` could be very long: shall we dump them into e.g. yaml files or similar?
         * the sorting algorithm is not the fastest, but usually not needed, so is it ok?
     """
@@ -30,8 +36,26 @@ class HubbardStructureData(StructureData):
         ):
         """Constructor of HubbardStructureData.
         
-        :param structure: StructureData
-        :param hubbard_parameters: list of Hubbard parameters following the conventions
+        :param structure: a StructureData object
+        :param hubbard_parameters: list of Hubbard parameters following the convention:
+            * the list must contain onsite/intersite parameters as list of list: e.g. [[parameters 1], [parameters 2], ...]
+            * each onsite/intersite parameters must have the information in this precise order:
+                1. Hubbard atom index (in the structure sites) for the first atom
+                2. Hubbard atom orbital/manifold for the first atom
+                3. Hubbard atom index (in the structure sites) for the second atom (the same for onsite/traditional Hubbard)
+                4. Hubbard atom orbital/manifold for the second atom
+                5. Value of the Hubbard parameter in eV
+                6. Translation vector (useful for intersite to specify neighbouring atoms)
+                   outside the unitcell; for traditional Hubbard, this is [0,0,0])
+                7. Hubbard formulation (e.g. `dudarev`) and type (e.g. `dudarev-j`)
+            
+            Examples: 
+                * Structure containing 1 Fe atom ==> [[0,'3d',0,'3d',5.0,[0,0,0],'dudarev']]
+                * Structure containing 1 Fe and 1 O atoms:
+                    - [[0,'3d',0,'3d',5.0,[0,0,0],'dudarev'], [0,'3d',1,'2p',1.0,[0,0,0],'dudarev']]
+
+            .. note:: many methods are provided to make this definition much easier using atom names/kind names.
+        :param hubbard_projectors: Hubbard projector type that are used for the occupations
         """
         kwargs['cell'] = structure.cell
         
@@ -866,9 +890,70 @@ class HubbardStructureData(StructureData):
                     manifold_complete = manifold_complete[:-1]
                 value = float(data[2])
 
-                self.initialize_onsites_hubbard(name, manifold, value)                
-            
+                self.initialize_onsites_hubbard(name, manifold, value)  
     
+    def reorder_atoms(self):
+        """Reorder the atoms following the QuantumESPRESSO standards,
+        meaning Hubbard atoms must be first in the list of atoms.
+        
+        .. note:: this will not work if the data node has been already stored!
+        """              
+        new_structure = deepcopy(self)
+        new_structure.clear_kinds()
+        
+        hub_param = np.array(self.hubbard_parameters, dtype=object)
+        
+        sites = deepcopy(self.sites)
+        indices = hub_param[:,0].tolist()+hub_param[:,2].tolist()
+        indices =  list(set(indices))
+        hubbard_kinds = [] 
+        
+        for index in indices:
+            hubbard_kinds.append(sites[index].kind_name)
+
+        hubbard_kinds = list(set(hubbard_kinds))
+        hubbard_kinds.sort(reverse=True)
+
+        ordered_sites = []
+        
+
+        while hubbard_kinds:
+
+            hubbard_kind = hubbard_kinds.pop()
+
+            hubbard_sites = []
+            remaining_sites = []
+
+            hubbard_sites = [s for s in sites if s.kind_name == hubbard_kind]
+            remaining_sites = [s for s in sites if not s.kind_name == hubbard_kind]
+
+            ordered_sites.extend(hubbard_sites)
+            sites = deepcopy(remaining_sites)
+
+        # Extend the current site list with the remaining non-hubbard sites
+        ordered_sites.extend(sites)
+
+        for site in ordered_sites:
+
+            if site.kind_name not in new_structure.get_kind_names():
+                kind = self.get_kind(site.kind_name)
+                new_structure.append_kind(kind)
+
+            new_structure.append_site(site)
+            
+        new_hubbard_parameters = self.hubbard_parameters_to_new_structure(new_structure=new_structure)
+                
+        self.clear_kinds()
+        
+        for kind in new_structure.kinds:
+            self.append_kind(kind)
+        for site in new_structure.sites:
+            self.append_site(site)
+        
+
+        self.clean_hubbard_parameters()
+        self.hubbard_parameters = new_hubbard_parameters
+
 def get_orbital_number_array(array: list) -> list:
     """Return an array with conventional quantum letters into an array with corresponding integers."""
     return [assign_orbital_number(orbital_letter[-1]) for orbital_letter in array]
