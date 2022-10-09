@@ -43,6 +43,7 @@ docs = [
     'sphinx-copybutton~=0.5.0',
     'sphinx-book-theme~=0.3.2',
     'sphinx-click~=4.0',
+    'sphinx-design~=0.0.13',
 ]
 pre-commit = [
     'pre-commit~=2.17',
