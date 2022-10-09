@@ -3,4 +3,7 @@ Topic guides
 ============
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
+
+   calculations/index
+   workflows/index
