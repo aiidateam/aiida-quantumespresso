@@ -1,2 +1,0 @@
-setuptools>34
-aiida_core[atomic_tools]>=1.0.0,<2.0.0
