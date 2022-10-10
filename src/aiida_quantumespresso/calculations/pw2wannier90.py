@@ -49,7 +49,7 @@ class Pw2wannier90Calculation(NamelistsCalculation):
         lists that are to be retrieved after job completion.
 
         :param folder: a sandbox folder to temporarily write files on disk.
-        :return: :py:`~aiida.common.datastructures.CalcInfo` instance.
+        :return: :class:`~aiida.common.datastructures.CalcInfo` instance.
         """
         calcinfo = super().prepare_for_submission(folder)
 

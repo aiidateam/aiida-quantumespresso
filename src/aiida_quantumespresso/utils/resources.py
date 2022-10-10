@@ -108,8 +108,7 @@ def get_pw_parallelization_parameters(
     :param scaling_law: list or tuple with 2 numbers giving the
         fit parameters for a power law expressing the single-CPU time to do
         1 scf step, for 1 k-point, 1 spin and 1 small box of the fft grid,
-        as a function of number of electrons, in the form:
-            normalized_single_CPU_time = A*n_elec^B
+        as a function of number of electrons, in the form: normalized_single_CPU_time = A*n_elec^B
         where A is the first number and B the second.
         Default values were obtained on piz-dora (CSCS) in 2015, on a set of
         4370 calculations (with a very rough fit).
@@ -119,8 +118,8 @@ def get_pw_parallelization_parameters(
         * num_machines: the recommended number of nodes
         * num_mpiprocs_per_machine: the recommended number of processes per nodes
         * estimated_time: the estimated time the calculation should take in seconds
-        * max_wallclock_seconds: the recommended max_wall_clock_seconds setting based on the
-            estimated_time value and the round_interval argument
+        * max_wallclock_seconds: the recommended max_wall_clock_seconds setting based on the estimated_time value and
+        the round_interval argument
 
     .. note:: If there was an out-of-memory problem during the initial
         calculation, the number of machines is increased.
