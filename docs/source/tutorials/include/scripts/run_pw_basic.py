@@ -2,15 +2,14 @@
 # -*- coding: utf-8 -*-
 from aiida.engine import run
 from aiida.orm import Dict, KpointsData, StructureData, load_code, load_group
+from ase.build import bulk
 
 # Load the code configured for ``pw.x``. Make sure to replace this string
-# with the label that you used in the :ref:`code setup <installation:setup:code>`_.
+# with the label of a ``Code`` that you configured in your profile.
 code = load_code('pw@localhost')
 builder = code.get_builder()
 
 # Create a silicon fcc crystal
-from ase.build import bulk
-
 structure = StructureData(ase=bulk('Si', 'fcc', 5.43))
 builder.structure = structure
 
