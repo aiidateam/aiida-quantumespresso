@@ -125,7 +125,7 @@ class PpCalculation(CalcJob):
         lists that are to be retrieved after job completion.
 
         :param folder: a sandbox folder to temporarily write files on disk.
-        :return: :py:`~aiida.common.datastructures.CalcInfo` instance.
+        :return: :class:`~aiida.common.datastructures.CalcInfo` instance.
         """
 
         # Put the first-level keys as uppercase (i.e., namelist and card names) and the second-level keys as lowercase

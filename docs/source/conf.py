@@ -11,6 +11,7 @@
 #
 # All configuration values have a default; values that are commented out
 # serve to show the default.
+import pathlib
 import time
 
 # Load the dummy profile even if we are running locally, this way the documentation will succeed even if the current
@@ -52,20 +53,31 @@ extensions = [
     'sphinx_copybutton',
     'sphinx_click',
     'sphinx_design',
+    'aiida.sphinxext',
+    'autoapi.extension',
 ]
 
 # Setting the intersphinx mapping to other readthedocs
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3.8', None),
     'aiida': ('http://aiida_core.readthedocs.io/en/latest/', None),
+    'aiida_pseudo': ('http://aiida-pseudo.readthedocs.io/en/latest/', None),
 }
+
+# Settings for the `autoapi.extenstion` automatically generating API docs
+filepath_docs = pathlib.Path(__file__).parent.parent
+filepath_src = filepath_docs.parent / 'src'
+autoapi_type = 'python'
+autoapi_dirs = [filepath_src]
+autoapi_ignore = [filepath_src / 'aiida_quantumespresso' / '*cli*']
+autoapi_root = str(filepath_docs / 'source' / 'reference' / 'api')
+autoapi_keep_files = True
+autoapi_add_toctree_entry = False
 
 # Settings for the `sphinx_copybutton` extension
 copybutton_selector = 'div:not(.no-copy)>div.highlight pre'
 copybutton_prompt_text = r'>>> |\.\.\. |(?:\(.*\) )?\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: '
 copybutton_prompt_is_regexp = True
-
-nitpick_ignore = [('py:obj', 'module')]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -251,4 +263,8 @@ nitpick_ignore = [
     ('py:obj', 'float'),
     ('py:obj', 'bool'),
     ('py:obj', 'Mapping'),
+    ('py:obj', 'qe_tools.parsers.CpInputFile'),
+    ('py:obj', 'qe_tools.parsers.PwInputFile'),
+    ('py:class', 'StructureData'),
+    ('py:class', 'PseudoPotentialFamily'),
 ]
