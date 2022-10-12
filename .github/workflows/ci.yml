@@ -127,6 +127,9 @@ jobs:
         -   name: Setup `pw.x`
             run: verdi code setup -n --config .github/config/code-pw.yaml --remote-abs-path $(which pw.x)
 
+        -   name: Setup `ph.x`
+            run: verdi code setup -n --config .github/config/code-ph.yaml --remote-abs-path $(which ph.x)
+
         -   name: Setup SSSP
             run: aiida-pseudo install sssp
 
