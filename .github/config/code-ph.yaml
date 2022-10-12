@@ -1,0 +1,8 @@
+---
+label: ph
+description: Quantum ESPRESSO ph.x
+input_plugin: quantumespresso.ph
+on_computer: true
+computer: localhost
+prepend_text: ' '
+append_text: ' '
