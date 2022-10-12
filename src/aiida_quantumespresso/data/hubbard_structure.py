@@ -333,16 +333,12 @@ class HubbardStructureData(StructureData):
         
         return sc_indecis, sc_positions, sc_symbols
         
-    def get_quantum_espresso_hubbard_card(self, shuffle: bool = False) -> str:
-        """Get QuantumESPRESSO `HUBBARD` input card for `pw.x` for versions > v.7.1.
-        
-        :param shuffle: when using multiple Hubbard parameters on the same atoms (or couple of atoms), the order
-            with which they are given to QE is important. When True, it will rearrange the 
-            Hubbard parameters correctly."""
-        hubbard_parameters = self._get_quantum_espresso_ordered_params() if shuffle else self.hubbard_parameters
-        
+    def get_quantum_espresso_hubbard_card(self) -> str:
+        """Get QuantumESPRESSO `HUBBARD` input card for `pw.x` for versions > v.7.1."""
+        hubbard_parameters = self.hubbard_parameters
         sites = self.sites
         natoms = len(sites)
+        
         card = f'HUBBARD ({self.hubbard_projectors})\n'
         sc_indecis, _, _ = self._get_quantum_espresso_hubbard_info()
         
@@ -693,7 +689,16 @@ class HubbardStructureData(StructureData):
         hubbard_type="dudarev"
     ):
         """Initialize and append onsite Hubbard values of atoms with specific name."""
-        self.initialize_intersites_hubbard(atom_name, atom_manifold, atom_name, atom_manifold, value, number_of_neighbours=1, hubbard_type=hubbard_type)
+        self.initialize_intersites_hubbard(
+            atom_name, 
+            atom_manifold,
+            atom_name, 
+            atom_manifold, 
+            value, 
+            number_of_neighbours=1,
+            use_kinds=use_kinds,
+            hubbard_type=hubbard_type
+        )
     
     def hubbard_parameters_to_new_structure(self, new_structure: StructureData, thr=1e-5):
         """It produces the Hubbard parameters for a new structure (e.g. a supercell) from the local parameters.
