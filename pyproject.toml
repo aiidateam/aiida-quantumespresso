@@ -55,9 +55,6 @@ tests = [
     'pytest~=6.0',
     'pytest-regressions~=2.3'
 ]
-tcod = [
-    'aiida-tcod'
-]
 
 [project.scripts]
 aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
@@ -104,10 +101,6 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 [project.entry-points.'aiida.tools.data.orbitals']
 'spinorbithydrogen' = 'aiida_quantumespresso.tools.data.orbital.spinorbithydrogen:SpinorbitHydrogenOrbital'
 'noncollinearhydrogen' = 'aiida_quantumespresso.tools.data.orbital.noncollinearhydrogen:NoncollinearHydrogenOrbital'
-
-[project.entry-points.'aiida.tools.dbexporters.tcod_plugins']
-'quantumespresso.cp' = 'aiida_quantumespresso.tools.dbexporters.tcod_plugins.cp:CpTcodtranslator'
-'quantumespresso.pw' = 'aiida_quantumespresso.tools.dbexporters.tcod_plugins.pw:PwTcodtranslator'
 
 [project.entry-points.'aiida.workflows']
 'quantumespresso.ph.base' = 'aiida_quantumespresso.workflows.ph.base:PhBaseWorkChain'
