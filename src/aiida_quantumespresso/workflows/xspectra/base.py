@@ -34,7 +34,7 @@ def get_all_spectra(**kwargs):
 
     for spectrum_node in spectra:
         calc_node = spectrum_node.creator
-        calc_out_params = calc_node.get_outgoing().get_node_by_label('output_parameters').get_dict()
+        calc_out_params = calc_node.res
         eps_vector = calc_out_params['epsilon_vector']
 
         old_y_component = spectrum_node.get_y()[0]
@@ -408,7 +408,7 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_SCF
 
         self.ctx.scf_parent_folder = workchain.outputs.remote_folder
-        self.ctx.scf_kpoint_mesh = workchain.called[0].get_incoming().get_node_by_label('kpoints')
+        self.ctx.scf_kpoint_mesh = workchain.called[0].inputs.kpoints
 
     def should_run_upf2plotcore(self):
         """Don't calculate the core wavefunction data if one has already been provided."""
@@ -470,7 +470,7 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         if 'core_wfc_data' in self.inputs:
             core_wfc_data = self.inputs.core_wfc_data
         else:
-            core_wfc_data = self.ctx.upf2plotcore_node.get_outgoing().get_node_by_label('stdout')
+            core_wfc_data = self.ctx.upf2plotcore_node.outputs.stdout
 
         kinds_list = [kind.name for kind in structure.kinds]
         kinds_list.sort()
@@ -518,7 +518,7 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         else: # Some calculations need restarting, so we process these instead
             for calculation in self.ctx.lanczos_to_restart:
                 xspectra_inputs = AttributeDict(self.exposed_inputs(XspectraCalculation, 'xs_prod'))
-                xspectra_parameters = calculation.get_incoming().get_node_by_label('parameters').get_dict()
+                xspectra_parameters = calculation.inputs.parameters.get_dict()
                 xspectra_parameters['INPUT_XSPECTRA']['restart_mode'] = 'restart'
                 vector = [
                     xspectra_parameters['INPUT_XSPECTRA']['xepsilon(1)'],
@@ -526,7 +526,7 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
                     xspectra_parameters['INPUT_XSPECTRA']['xepsilon(3)']
                 ]
 
-                xspectra_inputs.parent_folder = calculation.get_outgoing().get_node_by_label('remote_folder')
+                xspectra_inputs.parent_folder = calculation.outputs.remote_folder
                 xspectra_inputs.kpoints = self.ctx.scf_kpoint_mesh
                 xspectra_inputs.core_wfc_data = core_wfc_data
                 parent_label_pieces = calculation.label.split('_')
@@ -593,24 +593,23 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         if 'core_wfc_data' in self.inputs:
             core_wfc_data = self.inputs.core_wfc_data
         else:
-            core_wfc_data = self.ctx.upf2plotcore_node.get_outgoing().get_node_by_label('stdout')
+            core_wfc_data = self.ctx.upf2plotcore_node.outputs.stdout
 
         xspectra_plot_calcs = {}
-        for calculation in finished_calculations:
+        for parent_xspectra in finished_calculations:
             xspectra_inputs = AttributeDict(self.exposed_inputs(XspectraCalculation, 'xs_plot'))
             # The epsilon or k vectors are not needed in the case of a replot, however they
             # will be needed by the Parser at the end
             xspectra_parameters = xspectra_inputs.parameters.get_dict()
 
-            parent_xspectra = calculation
-            parent_output_dict = parent_xspectra.get_outgoing().get_node_by_label('output_parameters').get_dict()
+            parent_output_dict = parent_xspectra.res
             eps_vector = parent_output_dict['epsilon_vector']
             xspectra_parameters['INPUT_XSPECTRA']['xepsilon(1)'] = eps_vector[0]
             xspectra_parameters['INPUT_XSPECTRA']['xepsilon(2)'] = eps_vector[1]
             xspectra_parameters['INPUT_XSPECTRA']['xepsilon(3)'] = eps_vector[2]
-            parent_label_pieces = calculation.label.split('_')
+            parent_label_pieces = parent_xspectra.label.split('_')
             label = f'{parent_label_pieces[0]}_{parent_label_pieces[1]}_{parent_label_pieces[2]}'
-            xspectra_inputs.parent_folder = parent_xspectra.get_outgoing().get_node_by_label('remote_folder')
+            xspectra_inputs.parent_folder = parent_xspectra.outputs.remote_folder
             xspectra_inputs.kpoints = self.ctx.scf_kpoint_mesh
             xspectra_inputs.core_wfc_data = core_wfc_data
             xspectra_inputs.metadata.label = label.replace('prod', 'plot')
@@ -658,7 +657,7 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         should_collect_powder = False
         eps_powder_vectors = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]
         for calc in xspectra_prod_calcs:
-            output_parameters = calc.get_outgoing().get_node_by_label('output_parameters').get_dict()
+            output_parameters = calc.res
             eps_vectors = output_parameters['epsilon_vector']
             if eps_vectors in eps_powder_vectors:
                 basis_vectors_present = True
@@ -669,11 +668,11 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
             b_vector_present = False
             c_vector_present = False
             for plot_calc in xspectra_plot_calcs:
-                parent_folder = plot_calc.get_incoming().get_node_by_label('parent_folder')
+                parent_folder = plot_calc.outputs.parent_folder
                 parent_calc = parent_folder.creator
-                parent_output_params = parent_calc.get_outgoing().get_node_by_label('output_parameters').get_dict()
+                parent_output_params = parent_calc.res
                 parent_vector = parent_output_params['epsilon_vector']
-                spectrum_node = plot_calc.get_outgoing().get_node_by_label('spectra')
+                spectrum_node = plot_calc.outputs.spectra
                 if parent_vector in eps_powder_vectors:
                     if parent_vector == [1., 0., 0.]:
                         eps_basis_calcs['eps_100'] = spectrum_node
@@ -716,13 +715,13 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
 
         xspectra_prod_params = {}
         for key, node  in all_xspectra_prod_calcs.items():
-            output_params = node.get_outgoing().get_node_by_label('output_parameters')
+            output_params = node.outputs.output_parameters
             xspectra_prod_params[key] = output_params
         self.out('output_parameters_xspectra', xspectra_prod_params)
 
         all_final_spectra = {}
         for calc in xspectra_plot_calcs:
-            all_final_spectra[calc.label] = calc.get_outgoing().get_node_by_label('spectra')
+            all_final_spectra[calc.label] = calc.outputs.spectra
 
         all_final_spectra['metadata'] = {'call_link_label': 'compile_all_spectra'}
         output_spectra = get_all_spectra(**all_final_spectra)
