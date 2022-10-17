@@ -4,7 +4,6 @@ parameters:
   core_level_energy_units: eV
   energy_zero: '4.1718'
   energy_zero_units: eV
-  eps_k_vector_coords: crystal
   epsilon_vector:
   - 1.0
   - 0.0
@@ -19,7 +18,8 @@ parameters:
   highest_occupied_level_units: eV
   lsda: false
   lumo_found: false
-  plot_only: false
+  only_plot_spectrum: false
+  vector_coord_system: crystal
   wall_time: 5.77s
   wall_time_seconds: 5.77
 xspectra:
