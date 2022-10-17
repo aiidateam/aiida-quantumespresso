@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Workchain to compute the X-ray absorption spectrum for a given structure.
 
-Uses QuantumESPRESSO pw.x and xspectra.x.
+Uses QuantumESPRESSO pw.x and xspectra.x, requires ``AiiDA-Shell`` to run ``upf2plotcore.sh``.
 """
 from aiida import orm
 from aiida.common import AttributeDict
@@ -21,7 +21,7 @@ XyData = DataFactory('array.xy')
 def get_all_spectra(**kwargs):
     """Compile all calculated spectra into a single XyData node for easier plotting.
 
-    This will take only the "total sigma" value for each spectrum produced during the
+    This will take only the total sigma value for each spectrum produced during the
     re-plot step and output a single XyData node containing all the obtained spectra.
     """
 
@@ -56,11 +56,16 @@ def get_all_spectra(**kwargs):
 
 @calcfunction
 def get_powder_spectrum(**kwargs):
-    """Combine the output spectra into a single "Powder" spectrum.
+    """Combine the output spectra into a single "Powder" spectrum, representing the K-edge XAS of a powder sample.
 
-    Note that this step should only be requested (``get_powder=True``) if the chosen
-    crystal system meaningfully obeys the rules for either isochorism, dichorism, or
-    trichorism.
+    Note that this step should only be requested (``inputs.collect_powder = True``, defaults to
+    ``False``) for valid crystal structures. The function interprets the crystal symmetry to be
+    exploited based on the polarisation (epsilon) vectors given to the function, since (by
+    default) the WorkChain calls for calculations of all three basis vectors and thus it is
+    assumed that the user would know the symmetry of the structure before deciding to set the
+    vectors manually. If the polarisation vectors supplied to the ``WorkChain`` would cause a
+    failure in the ``CalcFunction`` step, then the step is skipped entirely with a warning (see
+    ``cls.results``)
     """
 
     spectra = {label: node for label, node in kwargs.items() if label != 'metadata'}
@@ -302,9 +307,10 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         """Return ``pathlib.Path`` to the ``.yaml`` file that defines the protocols."""
         from importlib_resources import files
 
-        from ..protocols import xspectra as xs_protocols  # pylint: disable=relative-beyond-top-level
+        # pylint: disable=relative-beyond-top-level
+        from ..protocols import xspectra as xs_protocols
         return files(xs_protocols) / 'base.yaml'
-
+# pylint: enable=relative-beyond-top-level
     @classmethod
     def get_builder_from_protocol(
         cls, pw_code, xs_code, upf2plotcore_code, structure, core_hole_pseudos=None,
@@ -436,21 +442,6 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
 
         shell_inputs = {}
 
-        # This part would require a new profile or attempt to run the shell script on a
-        # remote machine in order to test, so we will leave it aside for now.
-        # try:
-        #     plotcore_code = orm.load_code(code_label)
-        # except exceptions.NotExistent:
-        #     self.report('No upf2plotcore.sh@localhost code found, creating one now')
-        #     plotcore_code = orm.Code(
-        #         label='upf2plotcore.sh',
-        #         remote_computer_exec=('localhost', 'upf2plotcore.sh'),
-        #         input_plugin_name='core.shell'
-        #     ).store()
-
-        # For now, the code node will be the one that we already have, but in the future we
-        # will need to re-use the code in the launch_shell_job method in order to dynamically
-        # produce the required code node in the same way.
         shell_inputs['code'] = self.inputs.upf2plotcore_code
         shell_inputs['files'] = {'upf': upf}
         shell_inputs['arguments'] = orm.List(list=['{upf}'])
@@ -647,48 +638,56 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
     def results(self):
         """Attach the important output nodes to the outputs of the WorkChain.
 
-        This will collect the SCF and XSpectra output parameters,as well as the
-        'Powder' spectrum (if requested)
+        This will collect the SCF and XSpectra output parameters, as well as the
+        powder spectrum (if requested)
         """
 
         xspectra_prod_calcs = self.ctx.finished_lanczos
         xspectra_plot_calcs = self.ctx.finished_replots
 
-        should_collect_powder = False
         eps_powder_vectors = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]
         for calc in xspectra_prod_calcs:
-            output_parameters = calc.res
-            eps_vectors = output_parameters['epsilon_vector']
-            if eps_vectors in eps_powder_vectors:
+            out_params = calc.res
+            in_params = calc.inputs.parameters.get_dict()
+            eps_vectors = out_params['epsilon_vector']
+            coord_system = out_params['vector_coord_system']
+            calc_type = in_params['INPUT_XSPECTRA']['calculation']
+            if coord_system == 'cartesian':
+                self.report(
+                    'WARNING: calculations were set to use a cartesian basis instead of a '
+                    'crystallographic one. Please use ``"xcoordcrys" : True`` to compute the '
+                    'powder spectrum.'
+                )
+                basis_vectors_present = False
+                break
+            if eps_vectors in eps_powder_vectors and calc_type == 'xanes_dipole':
                 basis_vectors_present = True
 
         eps_basis_calcs = {}
-        if self.inputs.collect_powder and should_collect_powder:
+        if self.inputs.collect_powder and basis_vectors_present:
             a_vector_present = False
             b_vector_present = False
             c_vector_present = False
             for plot_calc in xspectra_plot_calcs:
-                parent_folder = plot_calc.outputs.parent_folder
-                parent_calc = parent_folder.creator
-                parent_output_params = parent_calc.res
-                parent_vector = parent_output_params['epsilon_vector']
+                out_params = plot_calc.res
+                plot_vector = out_params['epsilon_vector']
                 spectrum_node = plot_calc.outputs.spectra
-                if parent_vector in eps_powder_vectors:
-                    if parent_vector == [1., 0., 0.]:
+                if plot_vector in eps_powder_vectors:
+                    if plot_vector == [1., 0., 0.]:
                         eps_basis_calcs['eps_100'] = spectrum_node
                         a_vector_present = True
-                    if parent_vector == [0., 1., 0.]:
+                    if plot_vector == [0., 1., 0.]:
                         eps_basis_calcs['eps_010'] = spectrum_node
                         b_vector_present = True
-                    if parent_vector == [0., 0., 1.]:
+                    if plot_vector == [0., 0., 1.]:
                         eps_basis_calcs['eps_001'] = spectrum_node
                         c_vector_present = True
 
             # Here, we control for the case where the A and B vectors are given, but C is
-            # missing, which would cause a problem for the CalcFunction
+            # missing, which would cause a problem for ``get_powder_spectrum``
             if a_vector_present and b_vector_present and not c_vector_present:
                 self.report(
-                    'Warning: epsilon vectors for [1.0 0.0 0.0] and [0.0 1.0 0.0] were '
+                    'WARNING: epsilon vectors for [1.0 0.0 0.0] and [0.0 1.0 0.0] were '
                     'found, but not for [0.0 0.0 1.0]. Please ensure that the vectors '
                     'perpendicular and parallel to the C-axis are defined in the case '
                     'of a system with dichorism.'
@@ -698,10 +697,8 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
                 powder_spectrum = get_powder_spectrum(**eps_basis_calcs)
                 self.out('powder_spectrum', powder_spectrum)
         elif self.inputs.collect_powder and not basis_vectors_present:
-            # This should be upgraded to a more obvious warning, but I'm not sure yet how
-            # to do this in practice.
             self.report(
-                'Warning: A powder spectrum was requested, but none of the epsilon vectors '
+                'WARNING: A powder spectrum was requested, but none of the epsilon vectors '
                 'given are suitable to compute this.'
             )
 
@@ -733,7 +730,7 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
             self.report('workchain succesfully completed, remote folders will be kept')
 
     def on_terminated(self):
-        """Clean the working directories of all child calculations if `clean_workdir=True` in the inputs."""
+        """Clean the working directories of all child calculations if ``clean_workdir=True`` in the inputs."""
 
         super().on_terminated()
 

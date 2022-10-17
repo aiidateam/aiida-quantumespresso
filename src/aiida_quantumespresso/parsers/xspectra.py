@@ -91,17 +91,23 @@ class XspectraParser(Parser):
         # Parse some additional info which the stdout does not reliably report
         input_params = self.node.get_incoming().get_node_by_label('parameters').get_dict()
 
-        epsilon_vector = [input_params['INPUT_XSPECTRA'][f'xepsilon({n})'] for n in [1, 2, 3]]
+        epsilon_vector = [
+            float(input_params['INPUT_XSPECTRA'][f'xepsilon({n})']) for n in [1, 2, 3]
+        ]
         parsed_data['epsilon_vector'] = epsilon_vector
+
         if 'xcoordcrys' in input_params['INPUT_XSPECTRA']:
             if input_params['INPUT_XSPECTRA']['xcoordcrys']:
-                parsed_data['vector_coord_system'] = 'crystal_system'
+                parsed_data['vector_coord_system'] = 'crystal'
             else:
-                parsed_data['vector_coord_system'] = 'cartesian_system'
-# The default setting for `xcoordcrys` is `True`, thus we can collect this if it isn't stated explicitly
+                parsed_data['vector_coord_system'] = 'cartesian'
         else:
-            parsed_data['vector_coord_system'] = 'crystal_system'
-        parsed_data['only_plot_spectrum'] = input_params['INPUT_XSPECTRA']['xonly_plot']
+            parsed_data['vector_coord_system'] = 'crystal'
+
+        if 'xonly_plot' in input_params['INPUT_XSPECTRA']:
+            parsed_data['only_plot_spectrum'] = input_params['INPUT_XSPECTRA']['xonly_plot']
+        else:
+            parsed_data['only_plot_spectrum'] = False
 
         self.emit_logs(logs)
 
