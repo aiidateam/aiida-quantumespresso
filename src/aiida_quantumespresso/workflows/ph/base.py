@@ -155,6 +155,9 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
     def create_merged_output(self):
         """Merge outputs from multiple ``PhCalculation`` runs called by the workchain if necessary."""
+        if self.inputs.only_initialization.value:
+            return
+
         output_dict = {
             'output_' + str(index + 1): child.outputs.output_parameters
             for index, child in enumerate(self.ctx.children)
