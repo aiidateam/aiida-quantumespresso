@@ -1,0 +1,58 @@
+dynamical_matrix_1:
+  frequencies:
+  - -3.205876
+  - -3.194079
+  - -3.194079
+  frequencies_units: cm-1
+  mode_symmetry:
+  - L_2'
+  - L_3'
+  - L_3'
+  point_group: D_3d (-3m)
+  q_point:
+  - 0.0
+  - 0.0
+  - 0.0
+  q_point_units: 2pi/lattice_parameter
+dynamical_matrix_2:
+  frequencies:
+  - 65.862765
+  - 65.862765
+  - 112.146012
+  frequencies_units: cm-1
+  mode_symmetry:
+  - L_3'
+  - L_3'
+  - L_2'
+  point_group: D_3d (-3m)
+  q_point:
+  - 0.0
+  - 0.0
+  - -0.612372436
+  q_point_units: 2pi/lattice_parameter
+dynamical_matrix_4:
+  frequencies:
+  - 83.202774
+  - 83.20789
+  - 105.820001
+  frequencies_units: cm-1
+  mode_symmetry:
+  - A_u
+  - B_u
+  - B_u
+  point_group: C_2h (2/m)
+  q_point:
+  - 0.0
+  - -0.577350269
+  - -0.40824829
+  q_point_units: 2pi/lattice_parameter
+num_q_found: 2
+number_of_atoms: 1
+number_of_irr_representations_for_each_q:
+- 2
+- 2
+- 3
+- 3
+number_of_qpoints: 4
+wall_time: '     55.47s '
+wall_time_seconds: 113.61

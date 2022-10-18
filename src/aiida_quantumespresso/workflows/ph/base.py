@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO ph.x calculation with automated error handling and restarts."""
+from typing import Mapping
+
 from aiida import orm
 from aiida.common import AttributeDict
 from aiida.common.lang import type_check
@@ -153,7 +155,6 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
     def create_merged_output(self):
         """Merge outputs from multiple ``PhCalculation`` runs called by the workchain if necessary."""
-        self.report('Merging outputs from `ph.x` runs.')
         output_dict = {
             'output_' + str(index + 1): child.outputs.output_parameters
             for index, child in enumerate(self.ctx.children)
@@ -169,10 +170,19 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         if num_qpoints_found == num_qpoints:
             self.report(f'Merging {num_qpoints} q-points data from `PhCalculation`s.')
-            self.out('output_parameters', merge_ph_outputs(**output_dict))
+            self.ctx.merged_output_parameters = merge_ph_outputs(**output_dict)
         else:
             self.report(f'Only {num_qpoints_found} of {num_qpoints} q-points were parsed.')
             return self.exit_codes.ERROR_MERGING_QPOINTS
+
+    def get_outputs(self, node) -> Mapping[str, orm.Node]:
+        """Return a mapping of the outputs that should be attached as outputs to the work chain."""
+        outputs = super().get_outputs(node)
+
+        if 'merged_output_parameters' in self.ctx:
+            outputs['output_parameters'] = self.ctx.merged_output_parameters
+
+        return outputs
 
     def report_error_handled(self, calculation, action):
         """Report an action taken for a calculation that has failed.
