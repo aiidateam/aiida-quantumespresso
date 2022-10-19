@@ -276,7 +276,9 @@ def parse_ph_text_output(lines, logs):
                 q_count += 1
 
             for q_index, q_point in parsed_data['q_points'].items():
-                if q_point == symlabel_q_point:
+                if numpy.isclose(
+                    numpy.array(q_point), numpy.array(symlabel_q_point), rtol=0, atol=1e-7
+                ).all():
                     parsed_data.setdefault('symmetry_labels', {})
                     parsed_data['symmetry_labels'][q_index] = q_data
 

@@ -15,7 +15,7 @@ def merge_ph_outputs(**kwargs):
     total_walltime = 0
     number_irreps = []
 
-    for output in outputs:
+    for index, output in enumerate(outputs):
 
         output = output.get_dict()
         total_walltime += output.get('wall_time_seconds', 0)
@@ -24,7 +24,11 @@ def merge_ph_outputs(**kwargs):
         for key, value in output.items():
 
             if key.startswith('dynamical_matrix_') and 'mode_symmetry' in value.keys():
-                merged[key] = value
+                if '0' in key:
+                    merged.pop('dynamical_matrix_0', None)
+                    merged[f'dynamical_matrix_{index + 1}'] = value
+                else:
+                    merged[key] = value
 
     merged['wall_time_seconds'] = total_walltime
     merged['number_of_irr_representations_for_each_q'] = number_irreps
