@@ -4,6 +4,11 @@ dynamical_matrix_0:
   - -3.194082
   - -3.194082
   frequencies_units: cm-1
+  mode_symmetry:
+  - L_2'
+  - L_3'
+  - L_3'
+  point_group: D_3d (-3m)
   q_point:
   - 0.0
   - 0.0

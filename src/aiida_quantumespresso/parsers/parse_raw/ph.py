@@ -227,7 +227,7 @@ def parse_ph_text_output(lines, logs):
         # start of the stdout. Then we have to parse the q-point further down the output file.
         elif 'number_of_qpoints' not in parsed_data and 'Calculation of q =' in line:
             parsed_data['number_of_qpoints'] = 1
-            parsed_data['q_points'] = {1: [float(coord) for coord in line.split()[-3:0]]}
+            parsed_data['q_points'] = {0: [float(coord) for coord in line.split('=')[-1].split()]}
 
         elif 'number of atoms/cell' in line:
             try:
