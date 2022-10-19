@@ -206,3 +206,19 @@ def test_pseudos_family_structure_fail(fixture_code, generate_structure):
             code,
             structure,
         )
+
+
+def test_options(fixture_code, generate_structure):
+    """Test specifying ``options`` for the ``get_builder_from_protocol()`` method."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure()
+
+    queue_name = 'super-fast'
+    withmpi = False  # The protocol default is ``True``
+
+    options = {'queue_name': queue_name, 'withmpi': withmpi}
+    builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, options=options)
+    metadata = builder.pw.metadata  # pylint: disable=no-member
+
+    assert metadata['options']['queue_name'] == queue_name
+    assert metadata['options']['withmpi'] == withmpi

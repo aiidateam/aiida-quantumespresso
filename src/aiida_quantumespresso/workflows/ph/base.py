@@ -57,15 +57,19 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         return files(ph_protocols) / 'base.yaml'
 
     @classmethod
-    def get_builder_from_protocol(cls, code, parent_folder=None, protocol=None, overrides=None, **_):
+    def get_builder_from_protocol(cls, code, parent_folder=None, protocol=None, overrides=None, options=None, **_):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
         :param code: the ``Code`` instance configured for the ``quantumespresso.ph`` plugin.
         :param structure: the ``StructureData`` instance to use.
         :param protocol: protocol to use, if not specified, the default will be used.
         :param overrides: optional dictionary of inputs to override the defaults of the protocol.
+        :param options: A dictionary of options that will be recursively set for the ``metadata.options`` input of all
+            the ``CalcJobs`` that are nested in this work chain.
         :return: a process builder instance with all inputs defined ready for launch.
         """
+        from aiida_quantumespresso.workflows.protocols.utils import recursive_merge
+
         if isinstance(code, str):
             code = orm.load_code(code)
 
@@ -77,13 +81,18 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         qpoints = orm.KpointsData()
         qpoints.set_kpoints_mesh(qpoints_mesh)
 
+        metadata = inputs['ph']['metadata']
+
+        if options:
+            metadata['options'] = recursive_merge(inputs['ph']['metadata']['options'], options)
+
         # pylint: disable=no-member
         builder = cls.get_builder()
         builder.ph['code'] = code
         if parent_folder is not None:
             builder.ph['parent_folder'] = parent_folder
         builder.ph['parameters'] = orm.Dict(inputs['ph']['parameters'])
-        builder.ph['metadata'] = inputs['ph']['metadata']
+        builder.ph['metadata'] = metadata
         if 'settings' in inputs['ph']:
             builder.ph['settings'] = orm.Dict(inputs['ph']['settings'])
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])

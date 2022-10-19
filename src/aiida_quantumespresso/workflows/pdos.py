@@ -318,7 +318,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
 
     @classmethod
     def get_builder_from_protocol(
-        cls, pw_code, dos_code, projwfc_code, structure, protocol=None, overrides=None, **kwargs
+        cls, pw_code, dos_code, projwfc_code, structure, protocol=None, overrides=None, options=None, **kwargs
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
@@ -328,21 +328,36 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         :param structure: the ``StructureData`` instance to use.
         :param protocol: protocol to use, if not specified, the default will be used.
         :param overrides: optional dictionary of inputs to override the defaults of the protocol.
+        :param options: A dictionary of options that will be recursively set for the ``metadata.options`` input of all
+            the ``CalcJobs`` that are nested in this work chain.
         :param kwargs: additional keyword arguments that will be passed to the ``get_builder_from_protocol`` of all the
             sub processes that are called by this workchain.
         :return: a process builder instance with all inputs defined ready for launch.
         """
+        from aiida_quantumespresso.workflows.protocols.utils import recursive_merge
+
         inputs = cls.get_protocol_inputs(protocol, overrides)
 
         args = (pw_code, structure, protocol)
-        scf = PwBaseWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('scf', None), **kwargs)
+        scf = PwBaseWorkChain.get_builder_from_protocol(
+            *args, overrides=inputs.get('scf', None), options=options, **kwargs
+        )
         scf['pw'].pop('structure', None)
         scf.pop('clean_workdir', None)
-        nscf = PwBaseWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('nscf', None), **kwargs)
+        nscf = PwBaseWorkChain.get_builder_from_protocol(
+            *args, overrides=inputs.get('nscf', None), options=options, **kwargs
+        )
         nscf['pw'].pop('structure', None)
         nscf['pw']['parameters']['SYSTEM'].pop('smearing', None)
         nscf['pw']['parameters']['SYSTEM'].pop('degauss', None)
         nscf.pop('clean_workdir', None)
+
+        metadata_dos = inputs.get('dos', {}).get('metadata', {'options': {}})
+        metadata_projwfc = inputs.get('projwfc', {}).get('metadata', {'options': {}})
+
+        if options:
+            metadata_dos['options'] = recursive_merge(metadata_dos['options'], options)
+            metadata_projwfc['options'] = recursive_merge(metadata_projwfc['options'], options)
 
         builder = cls.get_builder()
         builder.structure = structure
@@ -351,10 +366,10 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         builder.nscf = nscf
         builder.dos.code = dos_code  # pylint: disable=no-member
         builder.dos.parameters = orm.Dict(inputs.get('dos', {}).get('parameters')) # pylint: disable=no-member
-        builder.dos.metadata = inputs.get('dos', {}).get('metadata') # pylint: disable=no-member
+        builder.dos.metadata = metadata_dos  # pylint: disable=no-member
         builder.projwfc.code = projwfc_code  # pylint: disable=no-member
         builder.projwfc.parameters = orm.Dict(inputs.get('projwfc', {}).get('parameters')) # pylint: disable=no-member
-        builder.projwfc.metadata = inputs.get('projwfc', {}).get('metadata') # pylint: disable=no-member
+        builder.projwfc.metadata = metadata_projwfc  # pylint: disable=no-member
 
         return builder
 
