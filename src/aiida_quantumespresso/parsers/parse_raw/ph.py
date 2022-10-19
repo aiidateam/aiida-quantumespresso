@@ -202,7 +202,6 @@ def parse_ph_text_output(lines, logs):
 
     parsed_data['num_q_found'] = 0
 
-    # Parse number of q-points and number of atoms
     for count, line in enumerate(lines):
 
         detect_important_message(logs, line)
@@ -223,6 +222,12 @@ def parse_ph_text_output(lines, logs):
 
             except Exception as exc:
                 logs.warning.append(f'Error while parsing number of q points: {exc}')
+
+        # In case a single q-point is provided at the end of the input file, there is no summary of the q-points at the
+        # start of the stdout. Then we have to parse the q-point further down the output file.
+        elif 'number_of_qpoints' not in parsed_data and 'Calculation of q =' in line:
+            parsed_data['number_of_qpoints'] = 1
+            parsed_data['q_points'] = {1: [float(coord) for coord in line.split()[-3:0]]}
 
         elif 'number of atoms/cell' in line:
             try:
