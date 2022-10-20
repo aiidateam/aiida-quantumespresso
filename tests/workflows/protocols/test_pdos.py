@@ -75,3 +75,20 @@ def test_nscf_smearing_raises(get_pdos_generator_inputs):
     overrides = {'nscf': {'pw': {'parameters': {'SYSTEM': {'occupations': 'smearing'}}}}}
     with pytest.raises(ValueError, match=r'`SYSTEM.occupations` in `nscf.pw.parameters`'):
         PdosWorkChain.get_builder_from_protocol(**get_pdos_generator_inputs, overrides=overrides)
+
+
+def test_options(get_pdos_generator_inputs):
+    """Test specifying ``options`` for the ``get_builder_from_protocol()`` method."""
+    queue_name = 'super-fast'
+    withmpi = False  # The protocol default is ``True``
+
+    options = {'queue_name': queue_name, 'withmpi': withmpi}
+    builder = PdosWorkChain.get_builder_from_protocol(**get_pdos_generator_inputs, options=options)
+
+    for subspace in (
+        builder.scf.pw.metadata,
+        builder.nscf.pw.metadata,
+        builder.dos.metadata,
+        builder.projwfc.metadata,
+    ):
+        assert subspace['options']['queue_name'] == queue_name, subspace

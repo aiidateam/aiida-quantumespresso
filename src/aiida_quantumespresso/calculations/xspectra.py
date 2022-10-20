@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Classes and methods for running xspectra.x with AiiDA."""
 
+import os
+
 from aiida import orm
 from aiida.common import exceptions
 from aiida.orm import Dict, SinglefileData, XyData
@@ -16,10 +18,13 @@ class XspectraCalculation(NamelistsCalculation):
 
     _Plotcore_FILENAME = 'stdout'
     _Spectrum_FILENAME = 'xanes.dat'
+    _XSPECTRA_SAVE_FILE = 'xanes.sav'
+    _XSPECTRA_GAMMA_FILE = 'gamma.dat'
     _default_namelists = ['INPUT_XSPECTRA', 'PLOT', 'PSEUDOS', 'CUT_OCC']
     _blocked_keywords = [('INPUT_XSPECTRA', 'outdir', NamelistsCalculation._OUTPUT_SUBFOLDER),
                          ('INPUT_XSPECTRA', 'prefix', NamelistsCalculation._PREFIX),
-                         ('PSEUDOS', 'filecore', _Plotcore_FILENAME)]
+                         ('INPUT_XSPECTRA', 'x_save_file', _XSPECTRA_SAVE_FILE),
+                         ('PLOT', 'gamma_file', _XSPECTRA_GAMMA_FILE), ('PSEUDOS', 'filecore', _Plotcore_FILENAME)]
     _internal_retrieve_list = [_Spectrum_FILENAME]
     _retrieve_singlefile_list = []
     _retrieve_temporary_list = []
@@ -31,7 +36,7 @@ class XspectraCalculation(NamelistsCalculation):
 
         super().define(spec)
 
-        spec.input('parent_folder', valid_type=(orm.RemoteData, orm.FolderData), required=True)
+        spec.input('parent_folder', valid_type=orm.RemoteData, required=True)
         spec.input(
             'core_wfc_data',
             valid_type=SinglefileData,
@@ -44,6 +49,14 @@ class XspectraCalculation(NamelistsCalculation):
             required=True,
             help='The K-point sampling to be used for the XSpectra calculation'
         )
+        spec.input(
+            'gamma_file',
+            valid_type=SinglefileData,
+            required=False,
+            help='An optional file containing the data for the broadening function used when'
+            ' `gamma_mode=file`'
+        )
+
         spec.output('output_parameters', valid_type=Dict)
         spec.output('spectra', valid_type=XyData)
         spec.default_output_node = 'output_parameters'
@@ -64,6 +77,12 @@ class XspectraCalculation(NamelistsCalculation):
             314,
             'ERROR_OUTPUT_ABSORBING_SPECIES_ZERO',
             message='xiabs was either set to 0 or less, or was greater than ntyp.'
+        )
+        spec.exit_code(
+            400,
+            'ERROR_OUT_OF_WALLTIME',
+            message='The time limit set for the calculation was exceeded, and the job wrote a save file '
+            'before exiting.'
         )
         spec.exit_code(
             330,
@@ -108,4 +127,20 @@ class XspectraCalculation(NamelistsCalculation):
         core_file_info = (core_file.uuid, core_file.filename, core_file.filename)
         calcinfo.local_copy_list.append(core_file_info)
 
+        # if included as an input, append the gamma file node to the copy list
+        if 'gamma_file' in self.inputs:
+            gamma_file = self.inputs.gamma_file
+            gamma_file_info = (gamma_file.uuid, gamma_file.filename, gamma_file.filename)
+            calcinfo.local_copy_list.append(gamma_file_info)
+
+        # Check if the parent folder is an XspectraCalculation type, if so we then copy the
+        # save file to enable calculation restarts and re-plots.
+        parent_folder = self.inputs.parent_folder
+        parent_calc = parent_folder.creator
+
+        if parent_calc.process_type == 'aiida.calculations:quantumespresso.xspectra':
+            calcinfo.remote_copy_list.append((
+                parent_folder.computer.uuid, os.path.join(parent_folder.get_remote_path(),
+                                                          self._XSPECTRA_SAVE_FILE), '.'
+            ))
         return calcinfo

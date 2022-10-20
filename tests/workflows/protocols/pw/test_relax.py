@@ -108,3 +108,21 @@ def test_relax_type(fixture_code, generate_structure):
     assert builder.base['pw']['parameters']['CONTROL']['calculation'] == 'vc-relax'
     assert builder.base['pw']['parameters']['CELL']['cell_dofree'] == 'all'
     assert 'settings' not in builder.base['pw']
+
+
+def test_options(fixture_code, generate_structure):
+    """Test specifying ``options`` for the ``get_builder_from_protocol()`` method."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure()
+
+    queue_name = 'super-fast'
+    withmpi = False  # The protocol default is ``True``
+
+    options = {'queue_name': queue_name, 'withmpi': withmpi}
+    builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, options=options)
+
+    for subspace in (
+        builder.base.pw.metadata,
+        builder.base_final_scf.pw.metadata,
+    ):
+        assert subspace['options']['queue_name'] == queue_name

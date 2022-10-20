@@ -30,6 +30,8 @@ class XspectraParser(Parser):
                 return self.exit(self.exit_codes.ERROR_OUTPUT_ABSORBING_SPECIES_WRONG)
             if 'xiabs < 1 or xiabs > ntyp' in line:
                 return self.exit(self.exit_codes.ERROR_OUTPUT_ABSORBING_SPECIES_ZERO)
+            if 'Calculation not finished' in line:
+                return self.exit(self.exit_codes.ERROR_OUT_OF_WALLTIME)
             if 'END JOB' in line:
                 job_done = True
                 break
@@ -161,6 +163,16 @@ def parse_stdout_xspectra(filecontent, codename=None, message_map=None):
     # Parse the necessary information for data plotting: core level energy of the
     # absorbing atom and the energy zero of the spectrum (typically the Fermi level)
     for line in lines:
+        if 'xepsilon' in line:
+            eps_vector_string = line.split(':')[-1].strip()
+            eps_vector_list = [float(i) for i in eps_vector_string.split('   ')]
+            parsed_data['epsilon_vector'] = eps_vector_list
+        if 'xonly_plot:' in line:
+            is_only_plot_string = line.split(':')[-1].strip()
+            if is_only_plot_string == 'FALSE':
+                parsed_data['plot_only'] = False
+            elif is_only_plot_string == 'TRUE':
+                parsed_data['plot_only'] = True
         if 'From SCF save directory' in line:
             if '(spin polarized work)' in line:
                 spin = True

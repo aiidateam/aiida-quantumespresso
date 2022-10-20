@@ -1,0 +1,122 @@
+
+     Program XSpectra v.6.5 starts on  1Sep2022 at 10: 2:20 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI), running on    16 processors
+
+     MPI processes distributed on     1 nodes
+     R & G space division:  proc/nbgrp/npool/nimage =      16
+
+     -------------------------------------------------------------------------
+                    __  ____                 _
+                    \ \/ / _\_ __   ___  ___| |_ _ __ __ _
+                     \  /\ \| '_ \ / _ \/ __| __| \__/ _\ |
+                     /  \_\ \ |_) |  __/ (__| |_| | | (_| |
+                    /_/\_\__/ .__/ \___|\___|\__|_|  \__,_|
+                            |_|
+
+     In publications arising from the use of XSpectra, please cite:
+      - O. Bunau and M. Calandra,
+        Phys. Rev. B 87, 205105 (2013)
+      - Ch. Gougoussis, M. Calandra, A. P. Seitsonen, F. Mauri,
+        Phys. Rev. B 80, 075102 (2009)
+      - M. Taillefumier, D. Cabaret, A. M. Flank, and F. Mauri,
+        Phys. Rev. B 66, 195107 (2002)
+
+     -------------------------------------------------------------------------
+                                Reading input_file
+     -------------------------------------------------------------------------
+
+     calculation: xanes_dipole
+
+     xepsilon  [crystallographic coordinates]:   1.000000   0.000000   0.000000
+
+     xonly_plot: FALSE
+        => complete calculation: Lanczos + spectrum plot
+
+     filecore (core-wavefunction file): stdout              
+ 
+     main plot parameters:
+        cut_occ_states: TRUE
+        gamma_mode:  constant
+        -> using xgamma [eV]:  0.80
+        xemin [eV]: -10.00
+        xemax [eV]:  50.00
+        xnepoint: 1000
+        energy zero automatically set to the Fermi level
+
+     Fermi level determined from SCF save directory (aiida.save)
+     NB: For an insulator (SCF calculated with occupations="fixed")
+         the Fermi level will be placed at the position of HOMO.
+ 
+     WARNING: variable ef_r is obsolete
+     
+     -------------------------------------------------------------------------
+                          Starting XANES calculation
+                     in the electric dipole approximation
+     -------------------------------------------------------------------------
+
+     Method of calculation based on the Lanczos recursion algorithm
+     --------------------------------------------------------------
+        - STEP 1: Construction of a kpoint-dependent Lanczos basis,
+          in which the Hamiltonian is tridiagonal (each 'iter' 
+          corresponds to the calculation of one more Lanczos vector)
+        - STEP 2: Calculation of the cross-section as a continued fraction
+          averaged over the k-points.
+
+     ... Begin STEP 1 ...
+
+        Radial transition matrix element(s) used in the calculation of the
+        initial vector of the Lanczos basis (|tilde{phi}_abs> normalized)
+        | For PAW proj. (l=1) #1: radial matrix element =   0.216709384
+        | For PAW proj. (l=1) #2: radial matrix element =   0.280170580
+ 
+        |-------------------------------------------------------------
+        ! k-point #     1:  ( 0.0000,  0.0000,  0.0000),  0.0278,   1
+        |-------------------------------------------------------------
+ okvan= T
+        |   Norm of the initial Lanczos vector: 0.15256369E+00
+        |   Estimated error at iter     50:   1.00175167
+        |   Estimated error at iter    100:   0.14025841
+        |   Estimated error at iter    150:   0.03363932
+        |   Estimated error at iter    200:   0.01889611
+        |   Estimated error at iter    250:   0.00904366
+        |   Estimated error at iter    300:   0.00944902
+        |   Estimated error at iter    350:   0.00765434
+        |   Estimated error at iter    400:   0.00352717
+        |   Estimated error at iter    450:   0.00300173
+        |   Estimated error at iter    500:   0.00165434
+        !   => CONVERGED at iter    550 with error=  0.00049918
+        |-------------------------------------------------------------
+        ! k-point #     2:  ( 0.0000,  0.0000,  0.2424),  0.0278,   1
+        |-------------------------------------------------------------
+ okvan= T
+        |   Norm of the initial Lanczos vector: 0.15256763E+00
+        |   Estimated error at iter     50:   1.00175181
+        |   Estimated error at iter    100:   0.14005235
+        |   Estimated error at iter    150:   0.02275438
+        |   Estimated error at iter    200:   0.02000214
+        |   Estimated error at iter    250:   0.01149207
+        |   Estimated error at iter    300:   0.00888432
+        |   Estimated error at iter    350:   0.00338927
+        |   Estimated error at iter    400:   0.00212453
+        |   Estimated error at iter    450:   0.00170624
+        !   => CONVERGED at iter    500 with error=  0.00067699
+        |-------------------------------------------------------------
+        ! k-point #     3:  ( 0.0000,  0.0000,  0.4848),  0.0278,   1
+        |-------------------------------------------------------------
+     Calculation not finished
+
+     Results of STEP 1 successfully written in x_save_file
+     x_save_file name: 
+     ->  xanes.sav                                                        
+     x_save_file version:  2
+
+     ... End STEP 1 ...
