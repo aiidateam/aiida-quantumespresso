@@ -6,8 +6,10 @@ Uses QuantumESPRESSO pw.x and xspectra.x, requires ``AiiDA-Shell`` to run ``upf2
 from aiida import orm
 from aiida.common import AttributeDict
 from aiida.engine import ToContext, WorkChain, calcfunction, if_, while_
+from aiida.orm.nodes.data.base import to_aiida_type
 from aiida.plugins import CalculationFactory, DataFactory, WorkflowFactory
 
+from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import create_kpoints_from_distance
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 from aiida_quantumespresso.workflows.protocols.utils import ProtocolMixin, recursive_merge
 
@@ -21,8 +23,8 @@ XyData = DataFactory('array.xy')
 def get_all_spectra(**kwargs):
     """Compile all calculated spectra into a single XyData node for easier plotting.
 
-    This will take only the total sigma value for each spectrum produced during the
-    re-plot step and output a single XyData node containing all the obtained spectra.
+    This will take all the data for each spectrum produced during the re-plot step and output
+    them into a single XyData node.
     """
 
     output_spectra = XyData()
@@ -37,12 +39,34 @@ def get_all_spectra(**kwargs):
         calc_out_params = calc_node.res
         eps_vector = calc_out_params['epsilon_vector']
 
-        old_y_component = spectrum_node.get_y()[0]
-        y_array = old_y_component[1]
-        y_units = old_y_component[2]
-        y_arrays_list.append(y_array)
-        y_units_list.append(y_units)
-        y_labels_list.append(f'sigma_{eps_vector[0]}_{eps_vector[1]}_{eps_vector[2]}')
+        old_y_component = spectrum_node.get_y()
+        if len(old_y_component) == 1:
+            y_array = old_y_component[0][1]
+            y_units = old_y_component[0][2]
+            y_arrays_list.append(y_array)
+            y_units_list.append(y_units)
+            y_labels_list.append(f'sigma_{eps_vector[0]}_{eps_vector[1]}_{eps_vector[2]}')
+        elif len(old_y_component) == 3:
+            y_tot = old_y_component[0][1]
+            y_tot_units = old_y_component[0][2]
+            y_tot_label = f'sigma_tot_{eps_vector[0]}_{eps_vector[1]}_{eps_vector[2]}'
+            y_arrays_list.append(y_tot)
+            y_units_list.append(y_tot_units)
+            y_labels_list.append(y_tot_label)
+
+            y_up = old_y_component[1][1]
+            y_up_units = old_y_component[1][2]
+            y_up_label = f'sigma_up_{eps_vector[0]}_{eps_vector[1]}_{eps_vector[2]}'
+            y_arrays_list.append(y_up)
+            y_units_list.append(y_up_units)
+            y_labels_list.append(y_up_label)
+
+            y_down = old_y_component[2][1]
+            y_down_units = old_y_component[2][2]
+            y_down_label = f'sigma_down_{eps_vector[0]}_{eps_vector[1]}_{eps_vector[2]}'
+            y_arrays_list.append(y_down)
+            y_units_list.append(y_down_units)
+            y_labels_list.append(y_down_label)
 
         x_array = spectrum_node.get_x()[1]
         x_label = spectrum_node.get_x()[0]
@@ -58,7 +82,7 @@ def get_all_spectra(**kwargs):
 def get_powder_spectrum(**kwargs):
     """Combine the output spectra into a single "Powder" spectrum, representing the K-edge XAS of a powder sample.
 
-    Note that this step should only be requested (``inputs.collect_powder = True``, defaults to
+    Note that this step should only be requested (``inputs.get_powder_spectrum= True``, defaults to
     ``False``) for valid crystal structures. The function interprets the crystal symmetry to be
     exploited based on the polarisation (epsilon) vectors given to the function, since (by
     default) the WorkChain calls for calculations of all three basis vectors and thus it is
@@ -162,22 +186,31 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
 
     The workflow follows the process required to compute the XAS of an input structure:
     an SCF calculation is performed using the provided structure, which is then followed by
-    the calculation of the XAS itself by XSpectra.
+    the calculation of the XAS itself by XSpectra. The calculations performed by the WorkChain
+    in a typical run will be:
+        * PwSCF calculation with pw.x of the input structure with a core-hole present.
+        * Generation of core-wavefunction data with upf2plotcore.sh (if requested).
+        * XAS calculation with xspectra.x to compute the Lanczos coefficients at a high level
+          of broadening (0.8 eV by default).
+        * XAS calculation with xspectra.x to re-plot the XANES spectrum from the computed
+          Lanczos coefficients at a lower level of broadening (0.3 eV by default).
+        * Collation of output data from pw.x and xspectra.x calculations, including a
+          combination of XANES dipole spectra based on polarisation vectors to represent the
+          powder spectrum of the structure (if requested).
 
     The radial part of the core wavefunction (i.e. the atomic state containing the core-hole
     in the absorbing atom) derived from the ground-state of the absorbing element can be
     provided as a top-level input or produced by the WorkChain. If left to the WorkChain,
-    the
-    ground-state pseudopotential assigned to the absorbing element will be used to generate
+    the ground-state pseudopotential assigned to the absorbing element will be used to generate
     this data using the upf2plotcore.sh utility script (via the ``AiiDA-Shell`` plugin).
 
     In its current stage of development, the workflow requires the following:
         * An input structure where the desired absorbing atom in the system is marked in
-          some way. The default behaviour for the WorkChain is to set this as 'X' by
-          default, however this can be changed via the `overrides` dictionary.
-        * A code node for ``upf2plotcore``, configured for the AiiDA-Shell plugin
-          (https://github.com/sphuber/aiida-shell). Alternatively, a ``stdout`` node from a
-          previous ``ShellJob`` run can be supplied under ``builder.core_wfc_data``.
+          some way. The default behaviour for the WorkChain is to set this as 'X', however
+          this can be changed via the `overrides` dictionary.
+        * A code node for ``upf2plotcore``, configured for the ``AiiDA-Shell`` plugin
+          (https://github.com/sphuber/aiida-shell). Alternatively, a ``SinglefileData`` node
+          from a previous ``ShellJob`` run can be supplied under ``builder.core_wfc_data``.
         * A suitable pair of pseudopotentials for the element type of the absorbing atom,
           one for the ground-state occupancy which contains GIPAW informtation for the core
           level of interest for the XAS (e.g. 1s in the case of a K-edge calculation) and
@@ -209,13 +242,14 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
             XspectraCalculation,
             namespace='xs_prod',
             exclude=('parent_folder', 'kpoints', 'core_wfc_data'),
-            namespace_options={'help': ('Input parameters for the `xspectra.x` calculation.')}
+            namespace_options={'help': ('Input parameters for the initial `xspectra.x` calculation'
+           ' to compute the Lanczos.')}
         )
         spec.expose_inputs(
             XspectraCalculation,
             namespace='xs_plot',
             exclude=('parent_folder', 'kpoints', 'core_wfc_data'),
-            namespace_options={'help': ('Input parameters for the `xspectra.x` calculation.')}
+            namespace_options={'help': ('Input parameters for the re-plot `xspectra.x` calculation of the Lanczos.')}
         )
         spec.inputs.validator = validate_inputs
         spec.input(
@@ -229,34 +263,26 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         spec.input(
             'eps_vectors',
             valid_type=orm.List,
-            default=lambda: orm.List(list=[[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]),
             help=(
                 'The list of 3-vectors to use in XSpectra sub-processes. '
                 'The number of sub-lists will subsequently define the number of XSpectra calculations to perform'
             ),
         )
         spec.input(
-            'clean_workdir',
-            valid_type=orm.Bool,
-            default=lambda: orm.Bool(False),
-            help=('If `True`, work directories of all called calculation will be cleaned at the end of execution.'),
-        )
-        spec.input(
             'abs_atom_marker',
             valid_type=orm.Str,
-            default=lambda: orm.Str('X'),
             help=(
                 'The name for the Kind representing the absorbing atom in the structure. '
                 'Must corespond to a Kind within the StructureData node supplied to the calculation.'
             ),
         )
         spec.input(
-            'collect_powder',
+            'get_powder_spectrum',
             valid_type=orm.Bool,
             default=lambda: orm.Bool(False),
             help=(
-                'If `True`, the WorkChain will combine XAS spectra computed using the XAS basis vectors defined '
-                'according to the `get_powder_spectrum` CalcFunction.'
+                'If `True`, the WorkChain will combine XANES dipole spectra computed using the XAS basis vectors'
+                ' defined according to the `get_powder_spectrum` CalcFunction.'
             ),
         )
         spec.input(
@@ -269,10 +295,36 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
             'upf2plotcore_code',
             valid_type=orm.Code,
             required=False,
-            help='The code node required for upf2plotcore.sh. Must be provided if `core_wfc_data` is not provided.'
+            help='The code node required for upf2plotcore.sh configured for ``AiiDA-Shell``. '
+            'Must be provided if `core_wfc_data` is not provided.'
         )
+        spec.input(
+            'clean_workdir',
+            valid_type=orm.Bool,
+            default=lambda: orm.Bool(False),
+            help=('If `True`, work directories of all called calculation will be cleaned at the end of execution.'),
+        )
+        spec.input(
+            'dry_run',
+            valid_type=orm.Bool,
+            serializer=to_aiida_type,
+            required=False,
+            help='Terminate workchain steps before submitting calculations (test purposes only).'
+        )
+        spec.input('kpoints', valid_type=orm.KpointsData, required=False,
+            help='An explicit k-points list or mesh for the xspectra.x calculations. Either this or `kpoints_distance`'
+                   ' has to be provided.')
+        spec.input('kpoints_distance', valid_type=orm.Float, required=False,
+            help='The minimum desired distance in 1/Å between k-points in reciprocal space. The explicit k-points will '
+                 'be generated automatically by a calculation function based on the input structure. '
+                   'Applies only to the xspectra.x calculations.')
+        spec.input('kpoints_force_parity', valid_type=orm.Bool, required=False,
+            help='Optional input when constructing the k-points based on a desired `kpoints_distance`. Setting this to '
+                 '`True` will force the k-point mesh to have an even number of points along each lattice vector except '
+                 'for any non-periodic directions. Applies only to the xspectra.x calculations.')
         spec.outline(
             cls.setup,
+            cls.validate_kpoints,
             cls.run_scf,
             cls.inspect_scf,
             if_(cls.should_run_upf2plotcore)(cls.run_upf2plotcore),
@@ -285,6 +337,8 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
             cls.results,
         )
 
+        spec.exit_code(202, 'ERROR_INVALID_INPUT_KPOINTS',
+            message='Neither the `kpoints` nor the `kpoints_distance` input was specified.')
         spec.exit_code(401, 'ERROR_SUB_PROCESS_FAILED_SCF', message='The SCF sub process failed')
         spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_XSPECTRA', message='One or more XSpectra sub processes failed')
         spec.output('output_parameters_scf', valid_type=orm.Dict, help='The output parameters of the SCF'
@@ -313,8 +367,8 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
 # pylint: enable=relative-beyond-top-level
     @classmethod
     def get_builder_from_protocol(
-        cls, pw_code, xs_code, upf2plotcore_code, structure, core_hole_pseudos=None,
-        pw_protocol=None, xs_protocol=None, overrides=None, **kwargs
+        cls, pw_code, xs_code, structure, core_wfc_data=None, upf2plotcore_code=None,
+        core_hole_pseudos=None, pw_protocol=None, xs_protocol=None, overrides=None, **kwargs
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
@@ -344,7 +398,7 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         # Get the default inputs from the PwBaseWorkChain and override them with those
         # required for the chosen core-hole treatment
         inputs = recursive_merge(
-            left=PwBaseWorkChain.get_protocol_inputs(protocol=pw_protocol,),
+            left=PwBaseWorkChain.get_protocol_inputs(protocol=pw_protocol),
             right=cls.get_protocol_inputs(protocol=xs_protocol, overrides=overrides)
         )
 
@@ -370,21 +424,55 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         builder.xs_plot.code = xs_code
         builder.xs_plot.parameters = orm.Dict(inputs.get('xs_plot', {}).get('parameters'))
         builder.xs_plot.metadata = inputs.get('xs_prod', {}).get('metadata')
-        builder.upf2plotcore_code = upf2plotcore_code
+
+        if upf2plotcore_code:
+            builder.upf2plotcore_code = upf2plotcore_code
+        elif core_wfc_data:
+            builder.core_wfc_data = core_wfc_data
+
         builder.structure = structure
+        builder.eps_vectors = orm.List(list=inputs['eps_vectors'])
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
-        builder.collect_powder = orm.Bool(inputs['collect_powder'])
+        builder.get_powder_spectrum = orm.Bool(inputs['get_powder'])
         builder.abs_atom_marker = orm.Str(inputs['abs_atom_marker'])
+        builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
+        builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
         # pylint: enable=no-member
         return builder
 
     def setup(self):
         """Initialize context variables that are used during the logical flow of the workchain."""
 
-        self.ctx.serial_clean = 'serial_clean' in self.inputs and self.inputs.serial_clean.value
+        # self.ctx.serial_clean = 'serial_clean' in self.inputs and self.inputs.serial_clean.value
+        self.ctx.dry_run = 'dry_run' in self.inputs and self.inputs.dry_run.value
         self.ctx.all_lanczos_computed = False
         self.ctx.lanczos_to_restart = []
         self.ctx.finished_lanczos = []
+
+    def validate_kpoints(self):
+        """Validate the inputs related to k-points for the ``XspectraCalculation``s.
+
+        Either an explicit ``KpointsData`` with given mesh/path, or a desired k-points distance should be specified. In
+        the case of the latter, the ``KpointsData`` will be constructed for the input ``StructureData`` using the
+        ``create_kpoints_from_distance`` calculation function.
+        """
+        if all(key not in self.inputs for key in ['kpoints', 'kpoints_distance']):
+            return self.exit_codes.ERROR_INVALID_INPUT_KPOINTS
+
+        try:
+            kpoints = self.inputs.kpoints
+        except AttributeError:
+            inputs = {
+                'structure': self.inputs.structure,
+                'distance': self.inputs.kpoints_distance,
+                'force_parity': self.inputs.get('kpoints_force_parity', orm.Bool(False)),
+                'metadata': {
+                    'call_link_label': 'create_kpoints_from_distance'
+                }
+            }
+            kpoints = create_kpoints_from_distance(**inputs)  # pylint: disable=unexpected-keyword-arg
+
+        self.ctx.xspectra_kpoints = kpoints
 
     def should_repeat_xs_prod(self):
         """Return whether the Lanczos production step is finished or not."""
@@ -400,6 +488,9 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         inputs.pw.structure = self.inputs.structure
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
 
+        if self.ctx.dry_run:
+            return inputs
+
         future = self.submit(PwBaseWorkChain, **inputs)
         self.report(f'launching SCF PwBaseWorkChain<{future.pk}>')
 
@@ -413,8 +504,7 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
             self.report(f'SCF PwBaseWorkChain failed with exit status {workchain.exit_status}')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_SCF
 
-        self.ctx.scf_parent_folder = workchain.outputs.remote_folder
-        self.ctx.scf_kpoint_mesh = workchain.called[0].inputs.kpoints
+        # self.ctx.scf_parent_folder = workchain.outputs.remote_folder
 
     def should_run_upf2plotcore(self):
         """Don't calculate the core wavefunction data if one has already been provided."""
@@ -457,7 +547,7 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
 
         eps_vectors = self.inputs.eps_vectors.get_list()
         structure = self.inputs.structure
-
+        kpoints = self.ctx.xspectra_kpoints
         if 'core_wfc_data' in self.inputs:
             core_wfc_data = self.inputs.core_wfc_data
         else:
@@ -476,7 +566,8 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
                 kind_counter += 1
 
         xspectra_prod_calcs = {}
-        xspectra_calc_labels = []
+        if 'xspectra_calc_labels' not in self.ctx.keys():
+            xspectra_calc_labels = []
         calc_number = 0
         if len(self.ctx.lanczos_to_restart) == 0: # No restarts have been ordered yet
             for vector in eps_vectors:
@@ -486,24 +577,27 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
                 max_walltime_seconds = self.inputs.xs_prod.metadata.options.max_wallclock_seconds
                 xspectra_parameters['INPUT_XSPECTRA']['time_limit'] = max_walltime_seconds * 0.9
 
-                xspectra_inputs.parent_folder = self.ctx.scf_parent_folder
-                xspectra_inputs.kpoints = self.ctx.scf_kpoint_mesh
+                xspectra_inputs.parent_folder = self.ctx.scf_workchain.outputs.remote_folder
+                xspectra_inputs.kpoints = kpoints
                 xspectra_inputs.core_wfc_data = core_wfc_data
-                label = f'xas_prod_{calc_number}'
-                xspectra_inputs.metadata.call_link_label = f'{label}_iter_1'
-                xspectra_inputs.metadata.label = f'{label}_iter_1'
+                label = f'xas_{calc_number}'
+                xspectra_inputs.metadata.call_link_label = f'{label}_prod_iter_1'
+                xspectra_inputs.metadata.label = f'{label}_prod_iter_1'
                 xspectra_calc_labels.append(label)
 
                 for index in [0, 1, 2]:
                     xspectra_parameters['INPUT_XSPECTRA'][f'xepsilon({index + 1})'] = vector[index]
                 xspectra_inputs.parameters = orm.Dict(dict=xspectra_parameters)
 
+                if self.ctx.dry_run:
+                    return xspectra_inputs
+
                 future_xspectra = self.submit(XspectraCalculation, **xspectra_inputs)
                 self.report(
                     f'launching XspectraCalculation<{future_xspectra.pk}> for epsilon vector {vector}'
                     ' (Lanczos production) (iteration #1)'
                 )
-                xspectra_prod_calcs[label] = future_xspectra
+                xspectra_prod_calcs[f'{label}_prod'] = future_xspectra
                 calc_number += 1
 
         else: # Some calculations need restarting, so we process these instead
@@ -518,7 +612,7 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
                 ]
 
                 xspectra_inputs.parent_folder = calculation.outputs.remote_folder
-                xspectra_inputs.kpoints = self.ctx.scf_kpoint_mesh
+                xspectra_inputs.kpoints = kpoints
                 xspectra_inputs.core_wfc_data = core_wfc_data
                 parent_label_pieces = calculation.label.split('_')
                 iteration = int(parent_label_pieces[-1])
@@ -526,18 +620,21 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
                 label = f'{parent_label_pieces[0]}_{parent_label_pieces[1]}_{parent_label_pieces[2]}'
                 xspectra_inputs.metadata.call_link_label = f'{label}_iter_{iteration}'
                 xspectra_inputs.metadata.label = f'{label}_iter_{iteration}'
-                xspectra_calc_labels.append(label)
 
                 xspectra_inputs.parameters = orm.Dict(dict=xspectra_parameters)
+
+                if self.ctx.dry_run:
+                    return xspectra_inputs
 
                 future_xspectra = self.submit(XspectraCalculation, **xspectra_inputs)
                 self.report(
                     f'launching XspectraCalculation<{future_xspectra.pk}> for epsilon vector {vector}'
-                    ' (Lanczos production) (iteration #{iteration})'
+                    f' (Lanczos production) (iteration #{iteration})'
                 )
                 xspectra_prod_calcs[f'{label}'] = future_xspectra
 
-        self.ctx.xspectra_calc_labels = xspectra_calc_labels
+        if 'xspectra_calc_labels' not in self.ctx.keys():
+            self.ctx.xspectra_calc_labels = xspectra_calc_labels
         return ToContext(**xspectra_prod_calcs)
 
     def inspect_all_xspectra_prod(self):
@@ -546,7 +643,7 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         calculations = []
         labels = self.ctx.xspectra_calc_labels
         for label in labels:
-            calculation = self.ctx[label]
+            calculation = self.ctx[f'{label}_prod']
             calculations.append(calculation)
         unrecoverable_failures = False # pylint: disable=unused-variable
         restarts_required = False
@@ -580,6 +677,7 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         """
 
         finished_calculations = self.ctx.finished_lanczos
+        kpoints = self.ctx.xspectra_kpoints
 
         if 'core_wfc_data' in self.inputs:
             core_wfc_data = self.inputs.core_wfc_data
@@ -599,18 +697,22 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
             xspectra_parameters['INPUT_XSPECTRA']['xepsilon(2)'] = eps_vector[1]
             xspectra_parameters['INPUT_XSPECTRA']['xepsilon(3)'] = eps_vector[2]
             parent_label_pieces = parent_xspectra.label.split('_')
-            label = f'{parent_label_pieces[0]}_{parent_label_pieces[1]}_{parent_label_pieces[2]}'
+            old_label = f'{parent_label_pieces[0]}_{parent_label_pieces[1]}_{parent_label_pieces[2]}'
+            new_label = old_label.replace('prod', 'plot')
             xspectra_inputs.parent_folder = parent_xspectra.outputs.remote_folder
-            xspectra_inputs.kpoints = self.ctx.scf_kpoint_mesh
+            xspectra_inputs.kpoints = kpoints
             xspectra_inputs.core_wfc_data = core_wfc_data
-            xspectra_inputs.metadata.label = label.replace('prod', 'plot')
-            xspectra_inputs.metadata.call_link_label = label.replace('prod', 'plot')
+            xspectra_inputs.metadata.label = new_label
+            xspectra_inputs.metadata.call_link_label = new_label
 
             xspectra_inputs.parameters = orm.Dict(dict=xspectra_parameters)
 
+            if self.ctx.dry_run:
+                return xspectra_inputs
+
             future_xspectra = self.submit(XspectraCalculation, **xspectra_inputs)
             self.report(f'launching XspectraCalculation<{future_xspectra.pk}> for epsilon vector {eps_vector} (Replot)')
-            xspectra_plot_calcs[f'{label}_plot'] = future_xspectra
+            xspectra_plot_calcs[f'{new_label}'] = future_xspectra
 
         return ToContext(**xspectra_plot_calcs)
 
@@ -646,7 +748,7 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         xspectra_plot_calcs = self.ctx.finished_replots
 
         eps_powder_vectors = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]
-        for calc in xspectra_prod_calcs:
+        for calc in xspectra_plot_calcs:
             out_params = calc.res
             in_params = calc.inputs.parameters.get_dict()
             eps_vectors = out_params['epsilon_vector']
@@ -664,7 +766,7 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
                 basis_vectors_present = True
 
         eps_basis_calcs = {}
-        if self.inputs.collect_powder and basis_vectors_present:
+        if self.inputs.get_powder_spectrum and basis_vectors_present:
             a_vector_present = False
             b_vector_present = False
             c_vector_present = False
@@ -696,7 +798,7 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
                 eps_basis_calcs['metadata'] = {'call_link_label': 'compile_powder'}
                 powder_spectrum = get_powder_spectrum(**eps_basis_calcs)
                 self.out('powder_spectrum', powder_spectrum)
-        elif self.inputs.collect_powder and not basis_vectors_present:
+        elif self.inputs.get_powder_spectrum and not basis_vectors_present:
             self.report(
                 'WARNING: A powder spectrum was requested, but none of the epsilon vectors '
                 'given are suitable to compute this.'

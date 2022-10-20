@@ -1,7 +1,13 @@
 default_inputs:
     clean_workdir: False
-    collect_powder: False
+    kpoints_distance: 0.15
+    kpoints_force_parity: False
+    get_powder: False
     abs_atom_marker: X
+    eps_vectors:
+        - [1., 0., 0.]
+        - [0., 1., 0.]
+        - [0., 0., 1.]
     scf:
         pw:
             parameters:
@@ -17,7 +23,7 @@ default_inputs:
                 xerror: 0.001
             PLOT:
                 xgamma: 0.8
-                xnepoint: 1000
+                xnepoint: 61
                 xemin: -10
                 xemax: 50
                 terminator: True
@@ -39,7 +45,7 @@ default_inputs:
                 xcheck_conv: 50
                 xerror: 0.001
             PLOT:
-                xgamma: 0.1
+                xgamma: 0.3
                 xnepoint: 1000
                 xemin: -10
                 xemax: 50
@@ -65,7 +71,7 @@ protocols:
                     SYSTEM:
                         tot_charge: 0.5
     xch_smear:
-        description: 'Protocol to perform an XANES dipole calculation using the excited-core-hole (XCH) method (population smearing variant).'
+        description: 'Protocol to perform an XANES dipole calculation using the excited-core-hole (XCH) method (smeared occupations variant).'
         scf:
             pw:
                 parameters:
