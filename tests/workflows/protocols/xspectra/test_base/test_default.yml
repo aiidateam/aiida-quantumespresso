@@ -1,0 +1,96 @@
+abs_atom_marker: X
+clean_workdir: false
+eps_vectors:
+- - 1.0
+  - 0.0
+  - 0.0
+- - 0.0
+  - 1.0
+  - 0.0
+- - 0.0
+  - 0.0
+  - 1.0
+get_powder_spectrum: false
+kpoints_distance: 0.15
+kpoints_force_parity: false
+scf:
+  kpoints_distance: 0.15
+  kpoints_force_parity: false
+  pw:
+    code: test.quantumespresso.pw@localhost-test
+    metadata:
+      options:
+        max_wallclock_seconds: 43200
+        resources:
+          num_machines: 1
+        withmpi: true
+    parameters:
+      CONTROL:
+        calculation: scf
+        etot_conv_thr: 2.0e-05
+        forc_conv_thr: 0.0001
+        tprnfor: true
+        tstress: true
+      ELECTRONS:
+        conv_thr: 4.0e-10
+        electron_maxstep: 80
+        mixing_beta: 0.4
+      SYSTEM:
+        degauss: 0.01
+        ecutrho: 240.0
+        ecutwfc: 30.0
+        nosym: false
+        occupations: smearing
+        smearing: cold
+        tot_charge: 1
+    pseudos:
+      Si: Si<md5=57fa15d98af99972c7b7aa5c179b0bb8>
+structure: Si2
+xs_plot:
+  code: test.quantumespresso.xspectra@localhost-test
+  metadata:
+    options:
+      max_wallclock_seconds: 43200
+      resources:
+        num_machines: 1
+      withmpi: true
+  parameters:
+    CUT_OCC:
+      cut_desmooth: 0.1
+    INPUT_XSPECTRA:
+      calculation: xanes_dipole
+      xcheck_conv: 50
+      xerror: 0.001
+      xniter: 2000
+      xonly_plot: true
+    PLOT:
+      cut_occ_states: true
+      terminator: true
+      xemax: 50
+      xemin: -10
+      xgamma: 0.3
+      xnepoint: 1000
+xs_prod:
+  code: test.quantumespresso.xspectra@localhost-test
+  metadata:
+    options:
+      max_wallclock_seconds: 43200
+      resources:
+        num_machines: 1
+      withmpi: true
+  parameters:
+    CUT_OCC:
+      cut_desmooth: 0.1
+    INPUT_XSPECTRA:
+      calculation: xanes_dipole
+      xcheck_conv: 50
+      xerror: 0.001
+      xniter: 2000
+      xonly_plot: false
+    PLOT:
+      cut_occ_states: true
+      terminator: true
+      xemax: 50
+      xemin: -10
+      xgamma: 0.8
+      xnepoint: 61

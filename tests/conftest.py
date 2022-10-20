@@ -77,7 +77,7 @@ def serialize_builder():
 
     def serialize_data(data):
         # pylint: disable=too-many-return-statements
-        from aiida.orm import BaseType, Code, Dict
+        from aiida.orm import BaseType, Code, Dict, List
         from aiida.plugins import DataFactory
 
         StructureData = DataFactory('core.structure')
@@ -100,6 +100,9 @@ def serialize_builder():
 
         if isinstance(data, UpfData):
             return f'{data.element}<md5={data.md5}>'
+
+        if isinstance(data, List):
+            return data.get_list()
 
         return data
 
@@ -306,6 +309,48 @@ def generate_upf_data():
         return UpfData(stream, filename=f'{element}.upf')
 
     return _generate_upf_data
+
+
+@pytest.fixture(scope='session')
+def generate_core_wfc_data():
+    """Return a ``SinglefileData`` instance for the core wfc data required to run an ``XspectraCalculation``."""
+
+    def _generate_core_wfc_data():
+        """Return a ``SinglefileData`` node."""
+        from aiida.orm import SinglefileData
+
+        content = '# number of core states 1 =  1 0\n6.51344e-05 6.741724399250000e-3\n0.0789408 0.000000000000000e0'
+        stream = io.BytesIO(content.encode('utf-8'))
+        filename = 'stdout'
+
+        return SinglefileData(stream, filename=filename)
+
+    return _generate_core_wfc_data
+
+
+@pytest.fixture(scope='session')
+def generate_xy_data():
+    """Return an ``XyData`` instance."""
+
+    def _generate_xy_data():
+        """Return an ``XyData`` node."""
+        from aiida.orm import XyData
+        import numpy as np
+
+        xvals = [1, 2, 3]
+        yvals = [10, 20, 30]
+        xlabel = 'X'
+        ylabel = 'Y'
+        xunits = 'n/a'
+        yunits = 'n/a'
+
+        xy_node = XyData()
+        xy_node.set_x(np.array(xvals), xlabel, xunits)
+        xy_node.set_y([np.array(yvals)], [ylabel], [yunits])
+
+        return xy_node
+
+    return _generate_xy_data
 
 
 @pytest.fixture
@@ -611,6 +656,46 @@ def generate_inputs_cp(fixture_code, generate_structure, generate_upf_data):
 
 
 @pytest.fixture
+def generate_inputs_xspectra(
+    fixture_sandbox, fixture_localhost, fixture_code, generate_remote_data, generate_kpoints_mesh,
+    generate_core_wfc_data
+):
+    """Generate inputs for an ``XspectraCalculation``."""
+
+    def _generate_inputs_xspectra(is_plot_calc=False):
+        from aiida.orm import Dict
+
+        from aiida_quantumespresso.utils.resources import get_default_options
+
+        parameters = {
+            'INPUT_XSPECTRA': {
+                'calculation': 'xanes_dipole',
+                'xonly_plot': is_plot_calc,
+            },
+            'PLOT': {
+                'xnepoint': 31,
+                'xemin': -10,
+                'xemax': 10,
+            },
+        }
+
+        inputs = {
+            'code': fixture_code('quantumespresso.xspectra'),
+            'parameters': Dict(parameters),
+            'parent_folder': generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.pw'),
+            'core_wfc_data': generate_core_wfc_data(),
+            'kpoints': generate_kpoints_mesh(2),
+            'metadata': {
+                'options': get_default_options()
+            }
+        }
+
+        return inputs
+
+    return _generate_inputs_xspectra
+
+
+@pytest.fixture
 def generate_workchain_pw(generate_workchain, generate_inputs_pw, generate_calc_job_node):
     """Generate an instance of a ``PwBaseWorkChain``."""
 
@@ -747,3 +832,44 @@ def generate_workchain_pdos(generate_workchain, generate_inputs_pw, fixture_code
         return generate_workchain(entry_point, inputs)
 
     return _generate_workchain_pdos
+
+
+@pytest.fixture
+def generate_workchain_xspectra(generate_workchain, generate_inputs_pw, generate_inputs_xspectra):
+    """Generate an instance of a `XspectraBaseWorkChain`."""
+
+    def _generate_workchain_xspectra():
+        from aiida.orm import Bool, List, Str
+
+        entry_point = 'quantumespresso.xspectra.base'
+
+        scf_inputs = generate_inputs_pw()
+        structure = scf_inputs.pop('structure')
+        kpoints = scf_inputs.pop('kpoints')
+        scf = {'pw': scf_inputs, 'kpoints': kpoints}
+
+        eps_vectors = List(list=[[1., 0., 0.]])
+        xspectra_prod_inputs = generate_inputs_xspectra()
+        xspectra_prod_inputs.pop('kpoints')
+        xspectra_plot_inputs = generate_inputs_xspectra(is_plot_calc=True)
+        xspectra_plot_inputs.pop('kpoints')
+        abs_atom_marker = Str('Si')
+        core_wfc_data = xspectra_prod_inputs.pop('core_wfc_data')
+
+        xspectra_plot_inputs.pop('core_wfc_data')
+
+        inputs = {
+            'core_wfc_data': core_wfc_data,
+            'abs_atom_marker': abs_atom_marker,
+            'eps_vectors': eps_vectors,
+            'structure': structure,
+            'kpoints': kpoints,
+            'scf': scf,
+            'xs_prod': xspectra_prod_inputs,
+            'xs_plot': xspectra_plot_inputs,
+            'dry_run': Bool(True)
+        }
+
+        return generate_workchain(entry_point, inputs)
+
+    return _generate_workchain_xspectra
