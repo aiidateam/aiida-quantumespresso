@@ -84,6 +84,7 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 
 [project.entry-points.'aiida.data']
 'quantumespresso.force_constants' = 'aiida_quantumespresso.data.force_constants:ForceConstantsData'
+'quantumespresso.hubbard_structure' = 'aiida_quantumespresso.data.hubbard_structure:HubbardStructureData'
 
 [project.entry-points.'aiida.parsers']
 'quantumespresso.cp' = 'aiida_quantumespresso.parsers.cp:CpParser'
