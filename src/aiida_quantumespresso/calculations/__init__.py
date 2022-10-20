@@ -15,6 +15,7 @@ from aiida.common.warnings import AiidaDeprecationWarning
 from aiida.plugins import DataFactory
 from qe_tools.converters import get_parameters_from_cell
 
+from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 
 from .base import CalcJob
@@ -680,6 +681,10 @@ class BasePwCpInputGenerator(CalcJob):
             kpoints_card = ''.join(kpoints_card_list)
             del kpoints_card_list
 
+        # HUBBARD CARD
+        hubbard_card = structure.get_quantum_espresso_hubbard_card() if isinstance(structure, HubbardStructureData) \
+            else None
+
         # =================== NAMELISTS AND CARDS ========================
         try:
             namelists_toprint = settings.pop('NAMELISTS')
@@ -723,6 +728,8 @@ class BasePwCpInputGenerator(CalcJob):
         if cls._use_kpoints:
             inputfile += kpoints_card
         inputfile += cell_parameters_card
+        if hubbard_card is not None:
+            inputfile += hubbard_card
 
         # Generate additional cards bases on input parameters and settings that are subclass specific
         tail = cls._generate_PWCP_input_tail(input_params=input_params, settings=settings)
