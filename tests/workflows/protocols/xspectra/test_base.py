@@ -37,3 +37,19 @@ def test_default(get_xspectra_generator_inputs, data_regression, serialize_build
 
     assert isinstance(builder, ProcessBuilder)
     data_regression.check(serialize_builder(builder))
+
+
+def test_options(get_xspectra_generator_inputs):
+    """Test the ``options`` input for the XspectraBaseWorkChain.get_builder_from_protocol() method."""
+    queue_name = 'super-fast'
+    withmpi = False  # The protocol default is ``True``
+
+    options = {'queue_name': queue_name, 'withmpi': withmpi}
+    builder = XspectraBaseWorkChain.get_builder_from_protocol(**get_xspectra_generator_inputs, options=options)
+
+    for subspace in (
+        builder.scf.pw.metadata,
+        builder.xs_prod.metadata,
+        builder.xs_plot.metadata,
+    ):
+        assert subspace['options']['queue_name'] == queue_name, subspace

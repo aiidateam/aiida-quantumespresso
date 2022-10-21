@@ -368,7 +368,8 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
     @classmethod
     def get_builder_from_protocol(
         cls, pw_code, xs_code, structure, core_wfc_data=None, upf2plotcore_code=None,
-        core_hole_pseudos=None, pw_protocol=None, xs_protocol=None, overrides=None, **kwargs
+        core_hole_pseudos=None, pw_protocol=None, xs_protocol=None, overrides=None,
+        options=None, **kwargs
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
@@ -403,7 +404,9 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         )
 
         args = (pw_code, structure, pw_protocol)
-        scf = PwBaseWorkChain.get_builder_from_protocol(*args, overrides=inputs.get('scf', None), **kwargs)
+        scf = PwBaseWorkChain.get_builder_from_protocol(
+            *args, overrides=inputs.get('scf', None), options=options, **kwargs
+        )
 
         scf.pop('clean_workdir', None)
         scf['pw'].pop('structure', None)
@@ -415,15 +418,22 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         # pylint: disable=no-member
         builder = cls.get_builder()
         builder.scf = scf
+        metadata_xs_prod = inputs.get('xs_prod', {}).get('metadata', {'options': {}})
+        metadata_xs_plot = inputs.get('xs_plot', {}).get('metadata', {'options': {}})
+
+        if options:
+            metadata_xs_prod['options'] = recursive_merge(metadata_xs_prod['options'], options)
+            metadata_xs_plot['options'] = recursive_merge(metadata_xs_plot['options'], options)
         if core_hole_pseudos:
             builder.scf.pw.pseudos[abs_atom_marker] = core_hole_pseudos[abs_atom_marker]
             builder.scf.pw.pseudos[abs_element] = core_hole_pseudos[abs_element]
+
         builder.xs_prod.code = xs_code
         builder.xs_prod.parameters = orm.Dict(inputs.get('xs_prod', {}).get('parameters'))
-        builder.xs_prod.metadata = inputs.get('xs_prod', {}).get('metadata')
+        builder.xs_prod.metadata = metadata_xs_prod
         builder.xs_plot.code = xs_code
         builder.xs_plot.parameters = orm.Dict(inputs.get('xs_plot', {}).get('parameters'))
-        builder.xs_plot.metadata = inputs.get('xs_prod', {}).get('metadata')
+        builder.xs_plot.metadata = metadata_xs_plot
 
         if upf2plotcore_code:
             builder.upf2plotcore_code = upf2plotcore_code
