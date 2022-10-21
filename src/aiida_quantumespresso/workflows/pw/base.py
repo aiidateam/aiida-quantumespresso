@@ -127,6 +127,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         electronic_type=ElectronicType.METAL,
         spin_type=SpinType.NONE,
         initial_magnetic_moments=None,
+        options=None,
         **_
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
@@ -141,6 +142,8 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             desired value for a spin polarized calculation. Note that in case the ``starting_magnetization`` is also
             provided in the ``overrides``, this takes precedence over the values provided here. In case neither is
             provided and ``spin_type == SpinType.COLLINEAR``, an initial guess for the magnetic moments is used.
+        :param options: A dictionary of options that will be recursively set for the ``metadata.options`` input of all
+            the ``CalcJobs`` that are nested in this work chain.
         :return: a process builder instance with all inputs defined ready for launch.
         """
         from aiida_quantumespresso.workflows.protocols.utils import get_starting_magnetization, recursive_merge
@@ -210,13 +213,18 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             pseudos_overrides = overrides.get('pw', {}).get('pseudos', {})
             pseudos = recursive_merge(pseudos, pseudos_overrides)
 
+        metadata = inputs['pw']['metadata']
+
+        if options:
+            metadata['options'] = recursive_merge(inputs['pw']['metadata']['options'], options)
+
         # pylint: disable=no-member
         builder = cls.get_builder()
         builder.pw['code'] = code
         builder.pw['pseudos'] = pseudos
         builder.pw['structure'] = structure
         builder.pw['parameters'] = orm.Dict(parameters)
-        builder.pw['metadata'] = inputs['pw']['metadata']
+        builder.pw['metadata'] = metadata
         if 'settings' in inputs['pw']:
             builder.pw['settings'] = orm.Dict(inputs['pw']['settings'])
         if 'parallelization' in inputs['pw']:
