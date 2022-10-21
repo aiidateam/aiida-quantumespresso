@@ -72,3 +72,22 @@ def test_relax_type(fixture_code, generate_structure):
     builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, relax_type=RelaxType.NONE)
     assert builder.relax['base']['pw']['parameters']['CONTROL']['calculation'] == 'scf'
     assert 'CELL' not in builder.relax['base']['pw']['parameters'].get_dict()
+
+
+def test_options(fixture_code, generate_structure):
+    """Test specifying ``options`` for the ``get_builder_from_protocol()`` method."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure()
+
+    queue_name = 'super-fast'
+    withmpi = False  # The protocol default is ``True``
+
+    options = {'queue_name': queue_name, 'withmpi': withmpi}
+    builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, options=options)
+
+    for subspace in (
+        builder.relax.base.pw.metadata,
+        builder.scf.pw.metadata,
+        builder.bands.pw.metadata,
+    ):
+        assert subspace['options']['queue_name'] == queue_name, subspace
