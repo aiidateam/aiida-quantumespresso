@@ -535,10 +535,21 @@ class XspectraBaseWorkChain(ProtocolMixin, WorkChain):
         ShellJob = CalculationFactory('core.shell') # pylint: disable=invalid-name
 
         pw_inputs = self.exposed_inputs(PwBaseWorkChain, 'scf')
-        absorbing_species = self.inputs.abs_atom_marker.value
-
         pseudo_dict = pw_inputs['pw']['pseudos']
-        upf = pseudo_dict[absorbing_species]
+        absorbing_atom_name = self.inputs.abs_atom_marker.value
+        structure = self.inputs.structure
+
+        # first, extract the absorbing atom kind from the structure
+        for kind in structure.kinds:
+            if kind.name == absorbing_atom_name:
+                absorbing_kind = kind
+                break
+
+        # then find which of the non-marked kinds it matches and find its pseudo
+        for kind in structure.kinds:
+            if kind.compare_with(absorbing_kind)[0]:
+                upf = pseudo_dict[kind.name]
+                break
 
         shell_inputs = {}
 
