@@ -1,14 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for the XspectraBaseWorkChain.
-
-Currently ToDo:
-* Compile required fixtures:
-    * Core WFC Data (Done)
-* Complete generate_inputs_xspectra (Done)
-* Complete generate_workchain_xspectra (Done)
-* Finish test_base.py:
-    *
-"""
+"""Tests for the XspectraBaseWorkChain."""
 
 from __future__ import absolute_import
 
