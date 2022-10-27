@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tools for nodes created by running the `PwCalculation` class."""
 from aiida.common import exceptions
-from aiida.tools.calculations import CalculationTools
+from aiida.tools.calculations.base import CalculationTools
 
 
 class PwCalculationTools(CalculationTools):

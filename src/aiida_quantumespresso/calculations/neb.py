@@ -172,7 +172,7 @@ class NebCalculation(CalcJob):
         lists that are to be retrieved after job completion.
 
         :param folder: a sandbox folder to temporarily write files on disk.
-        :return: :py:`~aiida.common.datastructures.CalcInfo` instance.
+        :return: :class:`~aiida.common.datastructures.CalcInfo` instance.
         """
         # pylint: disable=too-many-branches,too-many-statements
         import numpy as np

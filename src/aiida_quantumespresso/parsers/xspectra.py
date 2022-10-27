@@ -93,8 +93,10 @@ class XspectraParser(Parser):
         self.out('output_parameters', Dict(dict=parsed_data))
 
 def parse_raw_xspectra(xspectra_file, array_names, array_units):
-    """This function takes as input the xspectra_file as a list of filelines
-    along with information on how to give labels and units to the parsed data.
+    """Parse the content of the output spectrum.
+
+    This function takes as input the xspectra_file as a list of filelines along with information on how to give labels
+    and units to the parsed data.
 
     :param xspectra_file: xspectra file lines in the form of a list
     :type xspectra_file: list
@@ -104,7 +106,7 @@ def parse_raw_xspectra(xspectra_file, array_names, array_units):
     :type array_units: list
 
     :return array_data: narray, a dictionary for ArrayData type, which
-    contains all parsed xspectra output along with labels and units
+        contains all parsed xspectra output along with labels and units
     """
 
     xspectra_header = xspectra_file[:4]

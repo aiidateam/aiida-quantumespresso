@@ -641,7 +641,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         PwCalculation.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED,
     ])
     def handle_electronic_convergence_warning(self, calculation):
-        """Handle `WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED': consider finished."""
+        """Handle `WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED`: consider finished."""
         self.ctx.is_finished = True
         action = 'electronic convergence not reached but inputs say this is ok: consider finished.'
         self.report_error_handled(calculation, action)

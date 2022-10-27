@@ -11,6 +11,7 @@
 #
 # All configuration values have a default; values that are commented out
 # serve to show the default.
+import pathlib
 import time
 
 # Load the dummy profile even if we are running locally, this way the documentation will succeed even if the current
@@ -27,9 +28,10 @@ load_documentation_profile()
 # -- Project information -----------------------------------------------------
 
 project = 'aiida-quantumespresso'
-copyright = '2014-{}, ECOLE POLYTECHNIQUE FEDERALE DE LAUSANNE (Theory and Simulation of Materials (THEOS) and National Centre for Computational Design and Discovery of Novel Materials (NCCR MARVEL)), Switzerland. All rights reserved'.format(
-    time.localtime().tm_year
-)
+copyright = f"""2014-{time.localtime().tm_year}, ECOLE POLYTECHNIQUE FEDERALE DE LAUSANNE (Theory and Simulation of
+Materials (THEOS) and National Centre for Computational Design and Discovery of Novel Materials (NCCR MARVEL)),
+Switzerland. All rights reserved"""
+
 # The full version, including alpha/beta/rc tags.
 release = aiida_quantumespresso.__version__
 # The short X.Y version.
@@ -50,20 +52,32 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx_copybutton',
     'sphinx_click',
+    'sphinx_design',
+    'aiida.sphinxext',
+    'autoapi.extension',
 ]
 
 # Setting the intersphinx mapping to other readthedocs
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3.8', None),
     'aiida': ('http://aiida_core.readthedocs.io/en/latest/', None),
+    'aiida_pseudo': ('http://aiida-pseudo.readthedocs.io/en/latest/', None),
 }
+
+# Settings for the `autoapi.extenstion` automatically generating API docs
+filepath_docs = pathlib.Path(__file__).parent.parent
+filepath_src = filepath_docs.parent / 'src'
+autoapi_type = 'python'
+autoapi_dirs = [filepath_src]
+autoapi_ignore = [filepath_src / 'aiida_quantumespresso' / '*cli*']
+autoapi_root = str(filepath_docs / 'source' / 'reference' / 'api')
+autoapi_keep_files = True
+autoapi_add_toctree_entry = False
 
 # Settings for the `sphinx_copybutton` extension
 copybutton_selector = 'div:not(.no-copy)>div.highlight pre'
 copybutton_prompt_text = r'>>> |\.\.\. |(?:\(.*\) )?\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: '
 copybutton_prompt_is_regexp = True
-
-nitpick_ignore = [('py:obj', 'module')]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -83,23 +97,26 @@ exclude_patterns = []
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'sphinx_book_theme'
+
+html_theme = 'pydata_sphinx_theme'
+html_theme_options = {
+    'github_url': 'https://github.com/aiidateam/aiida-quantumespresso',
+    'twitter_url': 'https://twitter.com/aiidateam',
+    'use_edit_page_button': True,
+}
+html_static_path = ['_static']
+html_context = {
+    'github_user': 'aiidateam',
+    'github_repo': 'aiida-quantumespresso',
+    'github_version': 'main',
+    'doc_path': 'docs/source',
+}
+
+# The name of an image file (relative to this directory) to place at the top
+# of the sidebar.
+html_logo = 'images/logo_docs.png'
 html_static_path = ['_static']
 html_css_files = ['aiida-custom.css', 'aiida-qe-custom.css']
-html_theme_options = {
-    'home_page_in_toc': True,
-    'repository_url': 'https://github.com/aiidateam/aiida-quantumespresso',
-    'repository_branch': 'develop',
-    'use_repository_button': True,
-    'use_issues_button': True,
-    'use_fullscreen_button': False,
-    'path_to_docs': 'docs/source',
-    'use_edit_page_button': True,
-    'extra_navbar': '<p>Made possible by the support of <a href="http://nccr-marvel.ch/" target="_blank"> NCCR MARVEL</a>, <a href="http://www.max-centre.eu/" target="_blank"> MaX CoE</a> and the <a href="https://www.materialscloud.org/swissuniversities" target="_blank"> swissuniversities P-5 project</a>.</p>'
-}
-html_domain_indices = True
-html_logo = '_static/logo.png'
-html_show_sourcelink = False
 
 # If true, an OpenSearch description file will be output, and all pages will
 # contain a <link> tag referring to it.  The value of this option must be the
@@ -246,4 +263,8 @@ nitpick_ignore = [
     ('py:obj', 'float'),
     ('py:obj', 'bool'),
     ('py:obj', 'Mapping'),
+    ('py:obj', 'qe_tools.parsers.CpInputFile'),
+    ('py:obj', 'qe_tools.parsers.PwInputFile'),
+    ('py:class', 'StructureData'),
+    ('py:class', 'PseudoPotentialFamily'),
 ]

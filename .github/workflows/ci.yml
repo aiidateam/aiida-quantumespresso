@@ -69,3 +69,69 @@ jobs:
             env:
                 AIIDA_WARN_v3: 1
             run: pytest -sv tests
+
+    integration:
+
+        runs-on: ubuntu-latest
+
+        strategy:
+            matrix:
+                python-version: ['3.10']
+
+        services:
+            postgres:
+                image: postgres:12
+                env:
+                    POSTGRES_HOST: 127.0.0.1
+                    POSTGRES_USER: postgres
+                    POSTGRES_PASSWORD: postgres
+                    POSTGRES_DB: postgres
+                ports:
+                -   5432:5432
+            rabbitmq:
+                image: rabbitmq:latest
+                ports:
+                -   5672:5672
+
+        steps:
+        -   uses: actions/checkout@v2
+
+        -   name: Cache Python dependencies
+            uses: actions/cache@v1
+            with:
+                path: ~/.cache/pip
+                key: pip-${{ matrix.python-version }}-tests-${{ hashFiles('**/setup.json') }}
+                restore-keys:
+                    pip-${{ matrix.python-version }}-tests
+
+        -   name: Set up Python ${{ matrix.python-version }}
+            uses: actions/setup-python@v2
+            with:
+                python-version: ${{ matrix.python-version }}
+
+        -   name: Install system dependencies
+            run: sudo apt update && sudo apt install --no-install-recommends libfftw3-dev quantum-espresso
+
+        -   name: Install Python dependencies
+            run: pip install -e .
+
+        -   name: Create AiiDA profile
+            run: verdi setup -n --config .github/config/profile.yaml
+
+        -   name: Setup localhost
+            run: verdi computer setup -n --config .github/config/localhost-setup.yaml
+
+        -   name: Configure localhost
+            run: verdi computer configure core.local localhost -n --config .github/config/localhost-config.yaml
+
+        -   name: Setup `pw.x`
+            run: verdi code setup -n --config .github/config/code-pw.yaml --remote-abs-path $(which pw.x)
+
+        -   name: Setup `ph.x`
+            run: verdi code setup -n --config .github/config/code-ph.yaml --remote-abs-path $(which ph.x)
+
+        -   name: Setup SSSP
+            run: aiida-pseudo install sssp
+
+        -   name: Run test script
+            run: python .github/scripts/run_documentation_scripts.py

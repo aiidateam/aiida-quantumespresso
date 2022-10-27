@@ -1,0 +1,8 @@
+---
+label: pw
+description: Quantum ESPRESSO pw.x
+input_plugin: quantumespresso.pw
+on_computer: true
+computer: localhost
+prepend_text: ' '
+append_text: ' '
