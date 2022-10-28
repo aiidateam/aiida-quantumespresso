@@ -7,7 +7,11 @@ from aiida.common import AttributeDict
 
 def generate_inputs():
     """Return only those inputs that the parser will expect to be there."""
-    return AttributeDict()
+
+    parameters = {'INPUT_XSPECTRA': {}, 'PLOT': {}, 'PSEUDOS': {}, 'CUT_OCC': {}}
+
+    inputs = {'parameters': orm.Dict(parameters)}
+    return AttributeDict(inputs)
 
 
 def test_xspectra_default(fixture_localhost, generate_calc_job_node, generate_parser, data_regression, num_regression):

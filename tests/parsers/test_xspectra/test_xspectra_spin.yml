@@ -4,10 +4,6 @@ parameters:
   core_level_energy_units: eV
   energy_zero: '6.8316'
   energy_zero_units: eV
-  epsilon_vector:
-  - 1.0
-  - 0.0
-  - 0.0
   estimated_ram_per_process: 5.08
   estimated_ram_per_process_units: MB
   estimated_ram_total: 81.31
@@ -20,9 +16,14 @@ parameters:
   lowest_unoccupied_level_units: eV
   lsda: true
   lumo_found: true
-  plot_only: false
   wall_time: 6.33s
   wall_time_seconds: 6.33
+  xcoordcrys: true
+  xepsilon:
+  - 0.0
+  - 0.0
+  - 1.0
+  xonly_plot: false
 xspectra:
   labels:
   - energy
