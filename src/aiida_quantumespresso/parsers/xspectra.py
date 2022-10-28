@@ -89,7 +89,7 @@ class XspectraParser(Parser):
         parsed_data, logs = parse_stdout_xspectra(filecontent=out_file, codename='XSpectra')
 
         # Parse some additional info which the stdout does not reliably report
-        parameters = self.node.inputs.parameters.get_attribute('INPUT_XSPECTRA', None)
+        parameters = self.node.inputs.parameters.base.attributes.get('INPUT_XSPECTRA', {})
 
         xepsilon_defaults = {
             '1': 0,

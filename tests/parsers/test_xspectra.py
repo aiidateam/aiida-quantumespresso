@@ -10,7 +10,7 @@ def generate_inputs():
 
     parameters = {'INPUT_XSPECTRA': {}, 'PLOT': {}, 'PSEUDOS': {}, 'CUT_OCC': {}}
 
-    inputs = {'parameters': orm.Dict(dict=parameters)}
+    inputs = {'parameters': orm.Dict(parameters)}
     return AttributeDict(inputs)
 
 
