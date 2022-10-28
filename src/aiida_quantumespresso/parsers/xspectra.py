@@ -89,26 +89,17 @@ class XspectraParser(Parser):
         parsed_data, logs = parse_stdout_xspectra(filecontent=out_file, codename='XSpectra')
 
         # Parse some additional info which the stdout does not reliably report
-        input_params = self.node.get_incoming().get_node_by_label('parameters').get_dict()
+        parameters = self.node.inputs.parameters.get_attribute('INPUT_XSPECTRA', None)
 
-        epsilon_vector = [
-            float(input_params['INPUT_XSPECTRA'][f'xepsilon({n})']) for n in [1, 2, 3]
-        ]
-        parsed_data['epsilon_vector'] = epsilon_vector
-
-        if 'xcoordcrys' in input_params['INPUT_XSPECTRA']:
-            if input_params['INPUT_XSPECTRA']['xcoordcrys']:
-                parsed_data['vector_coord_system'] = 'crystal'
-            else:
-                parsed_data['vector_coord_system'] = 'cartesian'
-        else:
-            parsed_data['vector_coord_system'] = 'crystal'
-
-        if 'xonly_plot' in input_params['INPUT_XSPECTRA']:
-            parsed_data['only_plot_spectrum'] = input_params['INPUT_XSPECTRA']['xonly_plot']
-        else:
-            parsed_data['only_plot_spectrum'] = False
-
+        xepsilon_defaults = {
+            '1': 0,
+            '2': 0,
+            '3': 1,
+        }
+        raw_xepsilon = [parameters.get(f'xepsilon({n})', xepsilon_defaults[n]) for n in ['1', '2', '3']]
+        parsed_data['xepsilon'] = [float(n) for n in raw_xepsilon]
+        parsed_data['xcoordcrys'] = parameters.get('xcoordcrys', True)
+        parsed_data['xonly_plot'] = parameters.get('xonly_plot', False)
         self.emit_logs(logs)
 
         self.out('spectra', xy_data)
@@ -181,10 +172,6 @@ def parse_stdout_xspectra(filecontent, codename=None, message_map=None):
 
     logs = get_logging_container()
     parsed_data = {}
-    # We need to assign this before the loop over each line due to a bug spotted in the code
-    # when `only_plot=True`. Since the epsilon vector is reported before the value of
-    # `xonly_plot`, we need a starting value before the loop begins.
-    # parsed_data['plot_only'] = False
 
     lines = filecontent if isinstance(filecontent, list) else filecontent.split('\n')
 
@@ -263,9 +250,8 @@ def parse_stdout_xspectra(filecontent, codename=None, message_map=None):
                 parsed_data['code_version'] = line.split(codestring)[1].split('starts on')[0].strip()
 
             # Parse the walltime
-            # XSpectra does not appear next to the timing data, so we must find either 'xanes' or 'nrixs' instead.
-            if 'xanes' in line or 'nrixs' in line:
-                if 'WALL' in line:
+            # XSpectra does not appear next to the timing data, so we must find 'xanes' instead.
+            if 'xanes' in line and 'WALL' in line:
                     try:
                         time = line.split('CPU')[1].split('WALL')[0].strip()
                         parsed_data['wall_time'] = time

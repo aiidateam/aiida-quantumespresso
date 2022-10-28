@@ -8,13 +8,7 @@ from aiida.common import AttributeDict
 def generate_inputs():
     """Return only those inputs that the parser will expect to be there."""
 
-    parameters = {
-        'INPUT_XSPECTRA': {
-            'xepsilon(1)': 1,
-            'xepsilon(2)': 0,
-            'xepsilon(3)': 0,
-        }
-    }
+    parameters = {'INPUT_XSPECTRA': {}, 'PLOT': {}, 'PSEUDOS': {}, 'CUT_OCC': {}}
 
     inputs = {'parameters': orm.Dict(dict=parameters)}
     return AttributeDict(inputs)
