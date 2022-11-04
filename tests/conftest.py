@@ -82,6 +82,7 @@ def serialize_builder():
 
         StructureData = DataFactory('core.structure')
         UpfData = DataFactory('pseudo.upf')
+        SinglefileData = DataFactory('core.singlefile')
 
         if isinstance(data, dict):
             return {key: serialize_data(value) for key, value in data.items()}
@@ -97,6 +98,9 @@ def serialize_builder():
 
         if isinstance(data, StructureData):
             return data.get_formula()
+
+        if isinstance(data, SinglefileData) and not isinstance(data, UpfData):
+            return data.get_content()
 
         if isinstance(data, UpfData):
             return f'{data.element}<md5={data.md5}>'
@@ -306,6 +310,48 @@ def generate_upf_data():
         return UpfData(stream, filename=f'{element}.upf')
 
     return _generate_upf_data
+
+
+@pytest.fixture(scope='session')
+def generate_singlefile_data():
+    """Return a ``SinglefileData`` instance, using the core wfc data required to run an ``XspectraCalculation``."""
+
+    def _generate_singlefile_data():
+        """Return a ``SinglefileData`` node."""
+        from aiida.orm import SinglefileData
+
+        content = '# number of core states 1 =  1 0\n6.51344e-05 6.741724399250000e-3\n0.0789408 0.000000000000000e0'
+        stream = io.BytesIO(content.encode('utf-8'))
+        filename = 'stdout'
+
+        return SinglefileData(stream, filename=filename)
+
+    return _generate_singlefile_data
+
+
+@pytest.fixture(scope='session')
+def generate_xy_data():
+    """Return an ``XyData`` instance."""
+
+    def _generate_xy_data():
+        """Return an ``XyData`` node."""
+        from aiida.orm import XyData
+        import numpy as np
+
+        xvals = [1, 2, 3]
+        yvals = [10, 20, 30]
+        xlabel = 'X'
+        ylabel = 'Y'
+        xunits = 'n/a'
+        yunits = 'n/a'
+
+        xy_node = XyData()
+        xy_node.set_x(np.array(xvals), xlabel, xunits)
+        xy_node.set_y([np.array(yvals)], [ylabel], [yunits])
+
+        return xy_node
+
+    return _generate_xy_data
 
 
 @pytest.fixture
@@ -611,6 +657,40 @@ def generate_inputs_cp(fixture_code, generate_structure, generate_upf_data):
 
 
 @pytest.fixture
+def generate_inputs_xspectra(
+    fixture_sandbox, fixture_localhost, fixture_code, generate_remote_data, generate_kpoints_mesh,
+    generate_singlefile_data
+):
+    """Generate inputs for an ``XspectraCalculation``."""
+
+    def _generate_inputs_xspectra():
+        from aiida.orm import Dict
+
+        from aiida_quantumespresso.utils.resources import get_default_options
+
+        parameters = {
+            'INPUT_XSPECTRA': {
+                'calculation': 'xanes_dipole',
+            },
+        }
+
+        inputs = {
+            'code': fixture_code('quantumespresso.xspectra'),
+            'parameters': Dict(parameters),
+            'parent_folder': generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.pw'),
+            'core_wfc_data': generate_singlefile_data(),
+            'kpoints': generate_kpoints_mesh(2),
+            'metadata': {
+                'options': get_default_options()
+            }
+        }
+
+        return inputs
+
+    return _generate_inputs_xspectra
+
+
+@pytest.fixture
 def generate_workchain_pw(generate_workchain, generate_inputs_pw, generate_calc_job_node):
     """Generate an instance of a ``PwBaseWorkChain``."""
 
@@ -747,3 +827,40 @@ def generate_workchain_pdos(generate_workchain, generate_inputs_pw, fixture_code
         return generate_workchain(entry_point, inputs)
 
     return _generate_workchain_pdos
+
+
+@pytest.fixture
+def generate_workchain_xspectra(generate_workchain, generate_inputs_xspectra, generate_calc_job_node):
+    """Generate an instance of a `XspectraBaseWorkChain`."""
+
+    def _generate_workchain_xspectra(exit_code=None, inputs=None, return_inputs=False, xspectra_outputs=None):
+        from aiida.common import LinkType
+        from plumpy import ProcessState
+
+        entry_point = 'quantumespresso.xspectra.base'
+
+        if inputs is None:
+            inputs_xspectra = generate_inputs_xspectra()
+            kpoints = inputs_xspectra.pop('kpoints')
+            inputs = {'xspectra': inputs_xspectra, 'kpoints': kpoints}
+
+        if return_inputs:
+            return inputs
+
+        process = generate_workchain(entry_point, inputs)
+        xspectra_node = generate_calc_job_node()
+        process.ctx.iteration = 1
+        process.ctx.children = [xspectra_node]
+
+        if xspectra_outputs is not None:
+            for link_label, output_node in xspectra_outputs.items():
+                output_node.base.links.add_incoming(xspectra_node, link_type=LinkType.CREATE, link_label=link_label)
+                output_node.store()
+
+        if exit_code is not None:
+            xspectra_node.set_process_state(ProcessState.FINISHED)
+            xspectra_node.set_exit_status(exit_code.status)
+
+        return process
+
+    return _generate_workchain_xspectra

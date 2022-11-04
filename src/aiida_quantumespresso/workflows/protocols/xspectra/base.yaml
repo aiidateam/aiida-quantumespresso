@@ -1,0 +1,46 @@
+default_inputs:
+    clean_workdir: True
+    kpoints_distance: 0.15
+    kpoints_force_parity: False
+    xspectra:
+        parameters:
+            INPUT_XSPECTRA:
+                calculation: xanes_dipole
+                xonly_plot: False
+                xniter: 2000
+                xcheck_conv: 10
+                xerror: 0.001
+            PLOT:
+                xgamma: 0.5
+                xnepoint: 2000
+                xemin: -10
+                xemax: 30
+                terminator: True
+                cut_occ_states: True
+            CUT_OCC:
+                cut_desmooth: 0.1
+        metadata:
+            options:
+                resources:
+                    num_machines: 1
+                max_wallclock_seconds: 43200  # Twelve hours
+                withmpi: True
+default_protocol: one_shot
+protocols:
+    one_shot:
+        description: 'Protocol to perform an XANES dipole calculation in a single run using a moderate broadening parameter'
+    production:
+        description: 'Protocol to perform a faster XANES dipole calculation using a higher level of broadening, with the intention to re-plot the spectrum afterwards.'
+        xspectra:
+            parameters:
+                PLOT:
+                    xgamma: 0.8
+                    xnepoint: 5
+    re_plot:
+        description: 'Protocol to perform a re-plot of an XANES dipole calculation with a low level of broadening (Note: requires the `parent_folder` of a previous XspectraCalculation to work).'
+        xspectra:
+            parameters:
+                INPUT_XSPECTRA:
+                    xonly_plot: True
+                PLOT:
+                    xgamma: 0.3

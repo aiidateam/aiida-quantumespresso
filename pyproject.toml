@@ -113,6 +113,7 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 'quantumespresso.q2r.base' = 'aiida_quantumespresso.workflows.q2r.base:Q2rBaseWorkChain'
 'quantumespresso.matdyn.base' = 'aiida_quantumespresso.workflows.matdyn.base:MatdynBaseWorkChain'
 'quantumespresso.pdos' = 'aiida_quantumespresso.workflows.pdos:PdosWorkChain'
+'quantumespresso.xspectra.base' = 'aiida_quantumespresso.workflows.xspectra.base:XspectraBaseWorkChain'
 
 [tool.flit.module]
 name = 'aiida_quantumespresso'
@@ -172,6 +173,7 @@ good-names = [
     'k',
     'SsspFamily',
     'StructureData',
+    'SinglefileData',
     'UpfData',
     'HpCalculation',
     'PwCalculation',

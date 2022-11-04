@@ -1,0 +1,34 @@
+clean_workdir: true
+kpoints_distance: 0.15
+kpoints_force_parity: false
+structure: Si2
+xspectra:
+  code: test.quantumespresso.xspectra@localhost-test
+  core_wfc_data: '# number of core states 1 =  1 0
+
+    6.51344e-05 6.741724399250000e-3
+
+    0.0789408 0.000000000000000e0'
+  metadata:
+    options:
+      max_wallclock_seconds: 43200
+      resources:
+        num_machines: 1
+      withmpi: true
+  parameters:
+    CUT_OCC:
+      cut_desmooth: 0.1
+    INPUT_XSPECTRA:
+      calculation: xanes_dipole
+      xcheck_conv: 10
+      xerror: 0.001
+      xiabs: 1
+      xniter: 2000
+      xonly_plot: false
+    PLOT:
+      cut_occ_states: true
+      terminator: true
+      xemax: 30
+      xemin: -10
+      xgamma: 0.5
+      xnepoint: 2000
