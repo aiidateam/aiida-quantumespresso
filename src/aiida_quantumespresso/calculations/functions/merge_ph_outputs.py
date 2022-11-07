@@ -12,7 +12,9 @@ def merge_ph_outputs(**kwargs):
     outputs = [el[1] for el in sorted(list(kwargs.items()), key=lambda l: l[0])]
 
     merged = outputs[-1].get_dict()
+    merged.pop('num_q_found', 0)
     total_walltime = 0
+    number_of_qpoints = 0
     number_irreps = []
 
     for index, output in enumerate(outputs):
@@ -20,6 +22,7 @@ def merge_ph_outputs(**kwargs):
         output = output.get_dict()
         total_walltime += output.get('wall_time_seconds', 0)
         number_irreps.extend(output['number_of_irr_representations_for_each_q'])
+        number_of_qpoints += output.pop('num_q_found', 0)
 
         for key, value in output.items():
 
@@ -32,6 +35,7 @@ def merge_ph_outputs(**kwargs):
 
     merged['wall_time_seconds'] = total_walltime
     merged['number_of_irr_representations_for_each_q'] = number_irreps
+    merged['number_of_qpoints'] = number_of_qpoints
 
     merged = orm.Dict(dict=merged)
     return merged
