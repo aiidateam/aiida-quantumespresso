@@ -182,6 +182,37 @@ def parse_ph_text_output(lines, logs):
 
         return {int(line.split()[0]): [float(coord) for coord in line.split()[1:4]] for line in lines}
 
+    def parse_mode_symmetries(lines, num_atoms):
+        """Parse the mode symmetries from the block after diagonalization of the dynamical matrix."""
+
+        q_data = {}
+        symlabel_q_point = [float(i) for i in lines[2].split('q = (')[-1].split(')')[0].split()]
+
+        q_data['mode_symmetry'] = []
+
+        for line in lines:
+
+            if 'Mode symmetry' in line:
+                q_data['point_group'] = line.split('Mode symmetry,')[1].split('point group:')[0].strip()
+
+            if '-->' in line:
+                freq_start = int(line.split('(')[1].split(')')[0].split('-')[0])
+                freq_end = int(line.split('(')[1].split(')')[0].split('-')[1])
+
+                if line.split()[-1] == 'I':
+                    symm_label = line.split()[-2]
+                else:
+                    symm_label = line.split()[-1]
+
+                q_data['mode_symmetry'].extend([symm_label] * (freq_end - freq_start + 1))
+
+        # If the mode symmetries are not printed, set those for the non-symmetry case
+        if 'point_group' not in q_data:
+            q_data['point_group'] = 'C_1'
+            q_data['mode_symmetry'] = ['A_1'] * (3 * num_atoms)
+
+        return symlabel_q_point, q_data
+
     parsed_data = {}
 
     # Parse time, starting from the end because the time is written multiple times
@@ -247,33 +278,12 @@ def parse_ph_text_output(lines, logs):
 
         elif 'Diagonalizing the dynamical matrix' in line:
 
-            q_data = {}
-            symlabel_q_point = [float(i) for i in lines[count + 2].split('q = (')[-1].split(')')[0].split()]
+            mode_count = count
 
-            q_count = count
+            while not 'Calculation' in lines[mode_count] and not 'CPU' in lines[mode_count]:
+                mode_count += 1
 
-            while 'Mode symmetry' not in lines[q_count]:
-                q_count += 1
-
-            q_data['point_group'] = lines[q_count].split('Mode symmetry,')[1].split('point group:')[0].strip()
-            q_count += 2
-
-            q_data['mode_symmetry'] = [None] * num_atoms * 3
-
-            while 'freq' in lines[q_count]:
-
-                freq_start = int(lines[q_count].split('(')[1].split(')')[0].split('-')[0])
-                freq_end = int(lines[q_count].split('(')[1].split(')')[0].split('-')[1])
-
-                if lines[q_count].split()[-1] == 'I':
-                    symm_label = lines[q_count].split()[-2]
-                else:
-                    symm_label = lines[q_count].split()[-1]
-
-                for i_freq in range(freq_start-1, freq_end):
-                    q_data['mode_symmetry'][i_freq] = symm_label
-
-                q_count += 1
+            symlabel_q_point, q_data = parse_mode_symmetries(lines[count: mode_count], num_atoms)
 
             for q_index, q_point in parsed_data['q_points'].items():
                 if numpy.isclose(
@@ -285,7 +295,7 @@ def parse_ph_text_output(lines, logs):
             parsed_data['num_q_found'] += 1
 
     # Remove the q-points from the parsed data; these are only used to assign the symmetry labels to the right index
-    parsed_data.pop('q_points')
+    parsed_data.pop('q_points', None)
 
     # Trim the number of irreps to the number of q-points finished in this run
     if parsed_data['num_q_found'] > 0:

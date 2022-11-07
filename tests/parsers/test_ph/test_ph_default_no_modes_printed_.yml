@@ -1,0 +1,29 @@
+dynamical_matrix_0:
+  frequencies:
+  - 147.433165
+  - 147.435786
+  - 397.893089
+  - 397.901179
+  - 440.170896
+  - 440.171741
+  frequencies_units: cm-1
+  mode_symmetry:
+  - A_1
+  - A_1
+  - A_1
+  - A_1
+  - A_1
+  - A_1
+  point_group: C_1
+  q_point:
+  - 0.0
+  - -0.577350269
+  - -0.408248239
+  q_point_units: 2pi/lattice_parameter
+num_q_found: 1
+number_of_atoms: 2
+number_of_irr_representations_for_each_q:
+- 6
+number_of_qpoints: 1
+wall_time: '     26.71s '
+wall_time_seconds: 26.71
