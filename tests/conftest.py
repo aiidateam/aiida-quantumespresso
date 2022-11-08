@@ -84,7 +84,6 @@ def serialize_builder():
 
         StructureData = DataFactory('core.structure')
         UpfData = DataFactory('pseudo.upf')
-        SinglefileData = DataFactory('core.singlefile')
 
         if isinstance(data, dict):
             return {key: serialize_data(value) for key, value in data.items()}
@@ -100,9 +99,6 @@ def serialize_builder():
 
         if isinstance(data, StructureData):
             return data.get_formula()
-
-        if isinstance(data, SinglefileData) and not isinstance(data, UpfData):
-            return data.get_content()
 
         if isinstance(data, UpfData):
             return f'{data.element}<md5={data.md5}>'

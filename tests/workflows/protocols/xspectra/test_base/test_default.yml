@@ -1,14 +1,8 @@
 clean_workdir: true
-kpoints_distance: 0.15
-kpoints_force_parity: false
-structure: Si2
+kpoints: 3a91e383b97279decd5729f70ce57e2f5cbb3c6b219e0b2dca6a4ee9d60328d0
 xspectra:
   code: test.quantumespresso.xspectra@localhost-test
-  core_wfc_data: '# number of core states 1 =  1 0
-
-    6.51344e-05 6.741724399250000e-3
-
-    0.0789408 0.000000000000000e0'
+  core_wfc_data: 8e75477732164e09e273f150363bb5884faaca76bd89b273a6f32205d0e8fd7e
   metadata:
     options:
       max_wallclock_seconds: 43200
@@ -32,3 +26,4 @@ xspectra:
       xemin: -10
       xgamma: 0.5
       xnepoint: 2000
+  parent_folder: 076c4a75b0e7f3de89d0f21d3c4fad9c09fb83054f8e6c467b875095d93fd154

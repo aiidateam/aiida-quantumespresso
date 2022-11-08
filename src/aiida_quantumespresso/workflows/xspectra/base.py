@@ -23,14 +23,7 @@ class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     def define(cls, spec):
         """Define the process specification."""
         super().define(spec)
-        spec.expose_inputs(XspectraCalculation, namespace='xspectra', exclude=('kpoints'))
-        spec.input(
-            'structure',
-            valid_type=orm.StructureData,
-            required=False,
-            help='A StructureData object, used only to generate the k-point mesh for the calculation '
-            'if no explicit k-points mesh is given.'
-        )
+        spec.expose_inputs(XspectraCalculation, namespace='xspectra', exclude=('kpoints',))
         spec.input(
             'kpoints',
             valid_type=orm.KpointsData,
@@ -69,13 +62,6 @@ class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             message='Neither the `kpoints` nor the `kpoints_distance` input was specified.'
         )
         spec.exit_code(
-            205,
-            'ERROR_MISSING_STRUCTURE_DATA',
-            message='The `kpoints_distance` was given with no corresponding `structure`.'
-        )
-        # spec.exit_code(206, 'ERROR_EXPLICIT_KPOINTS_USED',
-        #     message='The KpointsData given was an explicit list, which XSpectra cannot use.')
-        spec.exit_code(
             300, 'ERROR_UNRECOVERABLE_FAILURE', message='The calculation failed with an unrecoverable error.'
         )
 
@@ -89,22 +75,11 @@ class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
     @classmethod
     def get_builder_from_protocol(
-        cls,
-        code,
-        structure,
-        core_wfc_data,
-        parent_folder=None,
-        abs_atom_marker='X',
-        protocol=None,
-        overrides=None,
-        options=None,
-        **_
+        cls, code, core_wfc_data, parent_folder, abs_atom_marker='X', protocol=None, overrides=None, options=None, **_
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
         :param code: the ``Code`` instance configured for the ``quantumespresso.xspectra`` plugin.
-        :param structure: the ``StructureData`` instance to use. Not used in the calculation,
-                          but required in order to set the absorbing atom correctly.
         :param core_wfc_data: a ``SinglefileData`` object for the initial-state core
                               wavefunction, normally derived from upf2plotcore.sh, required
                               for the xspectra.x calculation.
@@ -134,26 +109,38 @@ class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if options:
             metadata['options'] = recursive_merge(inputs['xspectra']['metadata']['options'], options)
 
-        kinds_present = sorted([Kind.name for Kind in structure.kinds])
-        if abs_atom_marker not in kinds_present:
-            raise AttributeError(f'given abs_atom_marker ({abs_atom_marker}) does not match a Kind in the structure.')
+        parent_calc = parent_folder.creator
+        if parent_calc.process_type == 'aiida.calculations:quantumespresso.xspectra':
+            inputs['xspectra']['kpoints'] = parent_calc.inputs.kpoints
+            xiabs = parent_calc.inputs.parameters.get_dict()['INPUT_XSPECTRA'].get('xiabs', 1)
+            parameters['INPUT_XSPECTRA']['xiabs'] = xiabs
+        elif parent_calc.process_type == 'aiida.calculations:quantumespresso.pw':
+            structure = parent_folder.creator.inputs.structure
+            kinds_present = sorted([Kind.name for Kind in structure.kinds])
+            if abs_atom_marker not in kinds_present:
+                raise AttributeError(
+                    f'given abs_atom_marker ({abs_atom_marker}) does not match a Kind in the structure.'
+                )
+            else:
+                parameters['INPUT_XSPECTRA']['xiabs'] = kinds_present.index(abs_atom_marker) + 1
         else:
-            parameters['INPUT_XSPECTRA']['xiabs'] = kinds_present.index(abs_atom_marker) + 1
+            raise AttributeError(f'Parent calculation type ({parent_calc.process_type}) is not  suitable.')
 
         # pylint: disable=no-member
         builder = cls.get_builder()
         builder.xspectra['code'] = code
-        if parent_folder is not None:
-            builder.xspectra['parent_folder'] = parent_folder
+        builder.xspectra['parent_folder'] = parent_folder
         builder.xspectra['core_wfc_data'] = core_wfc_data
         builder.xspectra['parameters'] = orm.Dict(inputs['xspectra']['parameters'])
         builder.xspectra['metadata'] = metadata
         if 'settings' in inputs['xspectra']:
             builder.xspectra['settings'] = orm.Dict(inputs['xspectra']['settings'])
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
-        builder.structure = structure
-        builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
-        builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
+        if 'kpoints' in inputs['xspectra']:
+            builder.kpoints = parent_calc.inputs.kpoints
+        else:
+            builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
+            builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
         # pylint: enable=no-member
 
         return builder
@@ -169,7 +156,6 @@ class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         self.ctx.inputs = AttributeDict(self.exposed_inputs(XspectraCalculation, 'xspectra'))
 
         self.ctx.inputs.parameters = self.ctx.inputs.parameters.get_dict()
-        self.ctx.inputs.settings = self.ctx.inputs.settings.get_dict() if 'settings' in self.ctx.inputs else {}
 
     def validate_kpoints(self):
         """Validate the inputs related to k-points.
@@ -180,9 +166,9 @@ class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         """
         if all(key not in self.inputs for key in ['kpoints', 'kpoints_distance']):
             return self.exit_codes.ERROR_INVALID_INPUT_KPOINTS
-        if 'kpoints_distance' in self.inputs and 'structure' not in self.inputs:
-            return self.exit_codes.ERROR_MISSING_STRUCTURE_DATA
-        # test that the kpoints mesh supplied is not an explicit list of kpoints:
+
+        # xspectra.x can only work with a kpoints mesh, so we check that the KpointsData has a
+        # mesh property:
         if 'kpoints' in self.inputs:
             try:
                 self.inputs.kpoints.get_kpoints_mesh()
@@ -193,7 +179,7 @@ class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             kpoints = self.inputs.kpoints
         except AttributeError:
             inputs = {
-                'structure': self.inputs.structure,
+                'structure': self.inputs.xspectra.parent_folder.creator.inputs.structure,
                 'distance': self.inputs.kpoints_distance,
                 'force_parity': self.inputs.get('kpoints_force_parity', orm.Bool(False)),
                 'metadata': {
