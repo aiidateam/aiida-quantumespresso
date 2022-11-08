@@ -159,7 +159,7 @@ In this example, we will setup the ``pw.x`` code that is installed on the comput
 
         .. code-block:: console
 
-            $ verdi code setup -n --on-computer -Y localhost -L pw -P quantumespresso.pw --remote-abs-path /path/to/pw.x
+            $ verdi code create core.code.installed -n --computer localhost --label pw --default-calc-job-plugin quantumespresso.pw --filepath-executable /path/to/pw.x
 
     .. tab-item:: API
 
@@ -167,13 +167,14 @@ In this example, we will setup the ``pw.x`` code that is installed on the comput
 
         .. code-block:: python
 
-            from aiida.orm import Code
+            from aiida.orm import InstalledCode
 
             computer = load_computer('localhost')
-            code = Code(
+            code = InstalledCode(
                 label='pw',
-                remote_computer_exec=(computer, '/path/to/pw.x')
-                input_plugin_name='quantumespresso.pw',
+                computer=computer,
+                filepath_executable='/path/to/pw.x',
+                default_calc_job_plugin='quantumespresso.pw',
             ).store()
 
 .. important::

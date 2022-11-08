@@ -48,21 +48,22 @@ def fixture_localhost(aiida_localhost):
 
 @pytest.fixture
 def fixture_code(fixture_localhost):
-    """Return a ``Code`` instance configured to run calculations of given entry point on localhost ``Computer``."""
+    """Return an ``InstalledCode`` instance configured to run calculations of given entry point on localhost."""
 
     def _fixture_code(entry_point_name):
         from aiida.common import exceptions
-        from aiida.orm import Code
+        from aiida.orm import InstalledCode, load_code
 
         label = f'test.{entry_point_name}'
 
         try:
-            return Code.collection.get(label=label)  # pylint: disable=no-member
+            return load_code(label=label)
         except exceptions.NotExistent:
-            return Code(
+            return InstalledCode(
                 label=label,
-                input_plugin_name=entry_point_name,
-                remote_computer_exec=[fixture_localhost, '/bin/true'],
+                computer=fixture_localhost,
+                filepath_executable='/bin/true',
+                default_calc_job_plugin=entry_point_name,
             )
 
     return _fixture_code
@@ -78,7 +79,7 @@ def serialize_builder():
 
     def serialize_data(data):
         # pylint: disable=too-many-return-statements
-        from aiida.orm import BaseType, Code, Dict
+        from aiida.orm import AbstractCode, BaseType, Dict
         from aiida.plugins import DataFactory
 
         StructureData = DataFactory('core.structure')
@@ -90,7 +91,7 @@ def serialize_builder():
         if isinstance(data, BaseType):
             return data.value
 
-        if isinstance(data, Code):
+        if isinstance(data, AbstractCode):
             return data.full_label
 
         if isinstance(data, Dict):
