@@ -320,23 +320,6 @@ def generate_upf_data():
 
 
 @pytest.fixture(scope='session')
-def generate_singlefile_data():
-    """Return a ``SinglefileData`` instance, using the core wfc data required to run an ``XspectraCalculation``."""
-
-    def _generate_singlefile_data():
-        """Return a ``SinglefileData`` node."""
-        from aiida.orm import SinglefileData
-
-        content = '# number of core states 1 =  1 0\n6.51344e-05 6.741724399250000e-3\n0.0789408 0.000000000000000e0'
-        stream = io.BytesIO(content.encode('utf-8'))
-        filename = 'stdout'
-
-        return SinglefileData(stream, filename=filename)
-
-    return _generate_singlefile_data
-
-
-@pytest.fixture(scope='session')
 def generate_xy_data():
     """Return an ``XyData`` instance."""
 
@@ -665,13 +648,16 @@ def generate_inputs_cp(fixture_code, generate_structure, generate_upf_data):
 
 @pytest.fixture
 def generate_inputs_xspectra(
-    fixture_sandbox, fixture_localhost, fixture_code, generate_remote_data, generate_kpoints_mesh,
-    generate_singlefile_data
+    fixture_sandbox,
+    fixture_localhost,
+    fixture_code,
+    generate_remote_data,
+    generate_kpoints_mesh,
 ):
     """Generate inputs for an ``XspectraCalculation``."""
 
     def _generate_inputs_xspectra():
-        from aiida.orm import Dict
+        from aiida.orm import Dict, SinglefileData
 
         from aiida_quantumespresso.utils.resources import get_default_options
 
@@ -682,11 +668,22 @@ def generate_inputs_xspectra(
         }
 
         inputs = {
-            'code': fixture_code('quantumespresso.xspectra'),
-            'parameters': Dict(parameters),
-            'parent_folder': generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.pw'),
-            'core_wfc_data': generate_singlefile_data(),
-            'kpoints': generate_kpoints_mesh(2),
+            'code':
+            fixture_code('quantumespresso.xspectra'),
+            'parameters':
+            Dict(parameters),
+            'parent_folder':
+            generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.pw'),
+            'core_wfc_data':
+            SinglefileData(
+                io.StringIO(
+                    '# number of core states 3 =  1 0;  2 0;'
+                    '\n6.51344e-05 6.615743462459999e-3'
+                    '\n6.59537e-05 6.698882211449999e-3'
+                )
+            ),
+            'kpoints':
+            generate_kpoints_mesh(2),
             'metadata': {
                 'options': get_default_options()
             }
