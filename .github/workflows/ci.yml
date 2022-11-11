@@ -36,7 +36,7 @@ jobs:
 
         strategy:
             matrix:
-                python-version: ['3.8', '3.9', '3.10']
+                python-version: ['3.8', '3.9', '3.10', '3.11']
 
         services:
             postgres:
@@ -125,10 +125,10 @@ jobs:
             run: verdi computer configure core.local localhost -n --config .github/config/localhost-config.yaml
 
         -   name: Setup `pw.x`
-            run: verdi code setup -n --config .github/config/code-pw.yaml --remote-abs-path $(which pw.x)
+            run: verdi code create core.code.installed -n --config .github/config/code-pw.yaml --filepath-executable $(which pw.x)
 
         -   name: Setup `ph.x`
-            run: verdi code setup -n --config .github/config/code-ph.yaml --remote-abs-path $(which ph.x)
+            run: verdi code create core.code.installed -n --config .github/config/code-ph.yaml --filepath-executable $(which ph.x)
 
         -   name: Setup SSSP
             run: aiida-pseudo install sssp

@@ -4,6 +4,7 @@
 from collections.abc import Mapping
 import io
 import os
+import pathlib
 import shutil
 import tempfile
 
@@ -47,21 +48,22 @@ def fixture_localhost(aiida_localhost):
 
 @pytest.fixture
 def fixture_code(fixture_localhost):
-    """Return a ``Code`` instance configured to run calculations of given entry point on localhost ``Computer``."""
+    """Return an ``InstalledCode`` instance configured to run calculations of given entry point on localhost."""
 
     def _fixture_code(entry_point_name):
         from aiida.common import exceptions
-        from aiida.orm import Code
+        from aiida.orm import InstalledCode, load_code
 
         label = f'test.{entry_point_name}'
 
         try:
-            return Code.collection.get(label=label)  # pylint: disable=no-member
+            return load_code(label=label)
         except exceptions.NotExistent:
-            return Code(
+            return InstalledCode(
                 label=label,
-                input_plugin_name=entry_point_name,
-                remote_computer_exec=[fixture_localhost, '/bin/true'],
+                computer=fixture_localhost,
+                filepath_executable='/bin/true',
+                default_calc_job_plugin=entry_point_name,
             )
 
     return _fixture_code
@@ -77,7 +79,7 @@ def serialize_builder():
 
     def serialize_data(data):
         # pylint: disable=too-many-return-statements
-        from aiida.orm import BaseType, Code, Dict
+        from aiida.orm import AbstractCode, BaseType, Data, Dict, RemoteData
         from aiida.plugins import DataFactory
 
         StructureData = DataFactory('core.structure')
@@ -89,7 +91,7 @@ def serialize_builder():
         if isinstance(data, BaseType):
             return data.value
 
-        if isinstance(data, Code):
+        if isinstance(data, AbstractCode):
             return data.full_label
 
         if isinstance(data, Dict):
@@ -100,6 +102,14 @@ def serialize_builder():
 
         if isinstance(data, UpfData):
             return f'{data.element}<md5={data.md5}>'
+
+        if isinstance(data, RemoteData):
+            # For `RemoteData` we compute the hash of the repository. The value returned by `Node._get_hash` is not
+            # useful since it includes the hash of the absolute filepath and the computer UUID which vary between tests
+            return data.base.repository.hash()
+
+        if isinstance(data, Data):
+            return data.base.caching._get_hash()  # pylint: disable=protected-access
 
         return data
 
@@ -133,7 +143,8 @@ def sssp(aiida_profile, generate_upf_data):
                 continue
 
             upf = generate_upf_data(element)
-            filename = os.path.join(dirpath, f'{element}.upf')
+            dirpath = pathlib.Path(dirpath)
+            filename = dirpath / f'{element}.upf'
 
             with open(filename, 'w+b') as handle:
                 with upf.open(mode='rb') as source:
