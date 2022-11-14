@@ -230,7 +230,10 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if 'parallelization' in inputs['pw']:
             builder.pw['parallelization'] = orm.Dict(inputs['pw']['parallelization'])
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
-        builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
+        if 'kpoints' in inputs:
+            builder.kpoints = inputs['kpoints']
+        else:
+            builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
         builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
         # pylint: enable=no-member
 
