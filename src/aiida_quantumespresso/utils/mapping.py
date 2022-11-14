@@ -88,10 +88,11 @@ def wrap_bare_dict_inputs(port_namespace, inputs):
             continue
 
         port = port_namespace[key]
+        valid_types = port.valid_type if isinstance(port.valid_type, (list, tuple)) else (port.valid_type,)
 
         if isinstance(port, PortNamespace):
             wrapped[key] = wrap_bare_dict_inputs(port, value)
-        elif port.valid_type == Dict and isinstance(value, dict):
+        elif Dict in valid_types and isinstance(value, dict):
             wrapped[key] = Dict(value)
         else:
             wrapped[key] = value
