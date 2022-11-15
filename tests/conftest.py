@@ -79,7 +79,7 @@ def serialize_builder():
 
     def serialize_data(data):
         # pylint: disable=too-many-return-statements
-        from aiida.orm import AbstractCode, BaseType, Data, Dict, RemoteData
+        from aiida.orm import AbstractCode, BaseType, Data, Dict, KpointsData, RemoteData
         from aiida.plugins import DataFactory
 
         StructureData = DataFactory('core.structure')
@@ -107,6 +107,12 @@ def serialize_builder():
             # For `RemoteData` we compute the hash of the repository. The value returned by `Node._get_hash` is not
             # useful since it includes the hash of the absolute filepath and the computer UUID which vary between tests
             return data.base.repository.hash()
+
+        if isinstance(data, KpointsData):
+            try:
+                return data.get_kpoints()
+            except AttributeError:
+                return data.get_kpoints_mesh()
 
         if isinstance(data, Data):
             return data.base.caching._get_hash()  # pylint: disable=protected-access
