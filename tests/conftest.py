@@ -79,7 +79,7 @@ def serialize_builder():
 
     def serialize_data(data):
         # pylint: disable=too-many-return-statements
-        from aiida.orm import AbstractCode, BaseType, Data, Dict, KpointsData, RemoteData
+        from aiida.orm import AbstractCode, BaseType, Data, Dict, KpointsData, RemoteData, SinglefileData
         from aiida.plugins import DataFactory
 
         StructureData = DataFactory('core.structure')
@@ -113,6 +113,9 @@ def serialize_builder():
                 return data.get_kpoints()
             except AttributeError:
                 return data.get_kpoints_mesh()
+
+        if isinstance(data, SinglefileData):
+            return data.get_content()
 
         if isinstance(data, Data):
             return data.base.caching._get_hash()  # pylint: disable=protected-access

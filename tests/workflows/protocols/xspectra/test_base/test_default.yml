@@ -1,8 +1,18 @@
 clean_workdir: true
-kpoints: 3a91e383b97279decd5729f70ce57e2f5cbb3c6b219e0b2dca6a4ee9d60328d0
+kpoints:
+- - 2
+  - 2
+  - 2
+- - 0.0
+  - 0.0
+  - 0.0
 xspectra:
   code: test.quantumespresso.xspectra@localhost-test
-  core_wfc_data: 8e75477732164e09e273f150363bb5884faaca76bd89b273a6f32205d0e8fd7e
+  core_wfc_data: '# number of core states 3 =  1 0;  2 0;
+
+    6.51344e-05 6.615743462459999e-3
+
+    6.59537e-05 6.698882211449999e-3'
   metadata:
     options:
       max_wallclock_seconds: 43200
