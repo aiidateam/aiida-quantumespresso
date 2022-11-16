@@ -209,7 +209,7 @@ def parse_ph_text_output(lines, logs):
         # If the mode symmetries are not printed, set those for the non-symmetry case
         if 'point_group' not in q_data:
             q_data['point_group'] = 'C_1'
-            q_data['mode_symmetry'] = ['A_1'] * (3 * num_atoms)
+            q_data['mode_symmetry'] = ['A'] * (3 * num_atoms)
 
         return symlabel_q_point, q_data
 
