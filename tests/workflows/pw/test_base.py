@@ -3,6 +3,7 @@
 """Tests for the `PwBaseWorkChain` class."""
 from aiida.common import AttributeDict
 from aiida.engine import ExitCode, ProcessHandlerReport
+from aiida.orm import Dict
 import pytest
 
 from aiida_quantumespresso.calculations.pw import PwCalculation
@@ -230,3 +231,25 @@ def test_set_max_seconds(generate_workchain_pw):
 
     assert 'max_seconds' in process.ctx.inputs['parameters']['CONTROL']
     assert process.ctx.inputs['parameters']['CONTROL']['max_seconds'] == max_seconds
+
+
+@pytest.mark.parametrize('restart_mode, expected', (
+    (None, 'restart'),
+    ('from_scratch', 'from_scratch'),
+))
+def test_parent_folder(generate_workchain_pw, generate_calc_job_node, restart_mode, expected):
+    """Test that ``parameters`` gets automatically updated if ``parent_folder`` in the inputs.
+
+    Specifically, the ``parameters`` should define the ``CONTROL.restart_mode`` unless it was explicitly set to
+    ``from_scratch`` by the caller.
+    """
+    node = generate_calc_job_node('pw', test_name='default')
+
+    inputs = generate_workchain_pw(return_inputs=True)
+    inputs['pw']['parent_folder'] = node.outputs.remote_folder
+    inputs['pw']['parameters'] = Dict({'CONTROL': {'restart_mode': restart_mode}})
+
+    process = generate_workchain_pw(inputs=inputs)
+    process.setup()
+
+    assert process.ctx.inputs['parameters']['CONTROL']['restart_mode'] == expected
