@@ -1,3 +1,31 @@
+## v4.1.0
+
+### New
+
+- Add the `options` argument to all `get_builder_from_protocol` [[#846]](https://github.com/aiidateam/aiida-quantumespresso/pull/846)
+- `XspectraParser`: Parse parameters from `CalcJob` inputs [[#853]](https://github.com/aiidateam/aiida-quantumespresso/pull/853)
+
+### Fixes
+
+- `XspectraCalculation`/`XspectraParser`: various improvements and fixes [[#837]](https://github.com/aiidateam/aiida-quantumespresso/pull/837)
+- CLI: update to be compatible with `aiida-core==2.1` [[#855]](https://github.com/aiidateam/aiida-quantumespresso/pull/855)
+- Fix bug in wrap_bare_dict_inputs [[#860]](https://github.com/aiidateam/aiida-quantumespresso/pull/860)
+- `PwBaseWorkChain`: Fix kpoints override in `get_builder_from_protocol` [[#862]](https://github.com/aiidateam/aiida-quantumespresso/pull/862)
+- `BasePwCpInputGenerator`: do not require pseudos in validate_inputs [[#866]](https://github.com/aiidateam/aiida-quantumespresso/pull/866)
+- `PwBaseWorkChain`: Set `restart_mode` in `parameters` if `parent_folder` [[#867]](https://github.com/aiidateam/aiida-quantumespresso/pull/867)
+
+### Deprecation
+
+- Remove obsolete and broken TCOD related code [[#850]](https://github.com/aiidateam/aiida-quantumespresso/pull/850)
+
+### Devops
+
+- DevOps: Add a job with integration tests to the CI workflow
+
+### Dependencies
+
+- Dependencies: Add support for Python 3.11 [[#857]](https://github.com/aiidateam/aiida-quantumespresso/pull/857)
+
 ## v4.0.1
 
 ### Fixes
