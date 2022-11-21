@@ -26,7 +26,6 @@ xspectra:
       calculation: xanes_dipole
       xcheck_conv: 10
       xerror: 0.001
-      xiabs: 1
       xniter: 2000
       xonly_plot: false
     PLOT:

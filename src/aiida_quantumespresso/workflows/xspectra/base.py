@@ -109,38 +109,34 @@ class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if options:
             metadata['options'] = recursive_merge(inputs['xspectra']['metadata']['options'], options)
 
+        # pylint: disable=no-member
+        builder = cls.get_builder()
         parent_calc = parent_folder.creator
         if parent_calc.process_type == 'aiida.calculations:quantumespresso.xspectra':
-            inputs['xspectra']['kpoints'] = parent_calc.inputs.kpoints
-            xiabs = parent_calc.inputs.parameters.get_dict()['INPUT_XSPECTRA'].get('xiabs', 1)
-            parameters['INPUT_XSPECTRA']['xiabs'] = xiabs
+            builder.kpoints = parent_calc.inputs.kpoints
         elif parent_calc.process_type == 'aiida.calculations:quantumespresso.pw':
-            structure = parent_folder.creator.inputs.structure
-            kinds_present = sorted([Kind.name for Kind in structure.kinds])
+            structure = parent_calc.inputs.structure
+            kinds_present = sorted([kind.name for kind in structure.kinds])
+            if 'kpoints' in inputs['xspectra']:
+                builder.kpoints = inputs['xspectra']['kpoints']
+            else:
+                builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
+            builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
             if abs_atom_marker not in kinds_present:
-                raise AttributeError(
-                    f'given abs_atom_marker ({abs_atom_marker}) does not match a Kind in the structure.'
-                )
+                raise ValueError(f'given abs_atom_marker `{abs_atom_marker}` does not match a kind in the structure.')
             else:
                 parameters['INPUT_XSPECTRA']['xiabs'] = kinds_present.index(abs_atom_marker) + 1
         else:
-            raise AttributeError(f'Parent calculation type ({parent_calc.process_type}) is not  suitable.')
+            raise ValueError(f'process type of `parent_folder` creator `{parent_calc.process_type}` is not supported.')
 
-        # pylint: disable=no-member
-        builder = cls.get_builder()
         builder.xspectra['code'] = code
         builder.xspectra['parent_folder'] = parent_folder
         builder.xspectra['core_wfc_data'] = core_wfc_data
-        builder.xspectra['parameters'] = orm.Dict(inputs['xspectra']['parameters'])
+        builder.xspectra['parameters'] = orm.Dict(parameters)
         builder.xspectra['metadata'] = metadata
         if 'settings' in inputs['xspectra']:
             builder.xspectra['settings'] = orm.Dict(inputs['xspectra']['settings'])
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
-        if 'kpoints' in inputs['xspectra']:
-            builder.kpoints = parent_calc.inputs.kpoints
-        else:
-            builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
-            builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
         # pylint: enable=no-member
 
         return builder
