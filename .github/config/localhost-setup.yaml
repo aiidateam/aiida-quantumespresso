@@ -1,0 +1,12 @@
+---
+label: localhost
+description: localhost
+hostname: localhost
+transport: core.local
+scheduler: core.direct
+shebang: '#!/usr/bin/env bash'
+work_dir: /tmp
+mpirun_command: ' '
+mpiprocs_per_machine: 1
+prepend_text: ' '
+append_text: ' '

@@ -6,7 +6,7 @@ from aiida.common import InputValidationError
 
 
 class StructureParseMixin:
-    """Mixin that extends :class:`~qe_tools.parsers.qeinputparser.QeInputFile` to parse a ``StructureData``."""
+    """Mixin that extends ``~qe_tools.parsers.qeinputparser.QeInputFile`` to parse a ``StructureData``."""
 
     # pylint: disable=too-few-public-methods
 

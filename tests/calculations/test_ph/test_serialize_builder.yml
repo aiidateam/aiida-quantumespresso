@@ -1,0 +1,17 @@
+code: test.quantumespresso.ph@localhost-test
+metadata:
+  options:
+    max_wallclock_seconds: 1800
+    resources:
+      num_machines: 1
+    withmpi: false
+parameters:
+  INPUTPH: {}
+parent_folder: 076c4a75b0e7f3de89d0f21d3c4fad9c09fb83054f8e6c467b875095d93fd154
+qpoints:
+- - 2
+  - 2
+  - 2
+- - 0.0
+  - 0.0
+  - 0.0

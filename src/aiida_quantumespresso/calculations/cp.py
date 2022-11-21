@@ -1,19 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Plugin to create a Quantum Espresso cp.x file.
-
-TODO: COPY OUTDIR FROM PREVIOUS CALCULATION! Should be an input node of type
-     RemoteData (or maybe subclass it?).
-TODO: tests!
-TODO: DOC + implementation of SETTINGS
-TODO: preexec, postexec
-TODO: Check that no further parameters are passed in SETTINGS
-TODO: many cards missing: check and implement
-      e.g.: ['CONSTRAINTS', 'OCCUPATIONS']
-TODO: implement pre_... and post_... hooks to add arbitrary strings before
-      and after a namelist, and a 'final_string' (all optional); useful
-      for development when new cards are needed
-TODO: all a lot of logger.debug stuff
-"""
+"""Plugin to create a Quantum Espresso cp.x file."""
 import os
 
 from aiida import orm

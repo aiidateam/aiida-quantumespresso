@@ -87,14 +87,29 @@ class XspectraParser(Parser):
         xy_data.set_y(y_arrays, y_names, y_units)
 
         parsed_data, logs = parse_stdout_xspectra(filecontent=out_file, codename='XSpectra')
+
+        # Parse some additional info which the stdout does not reliably report
+        parameters = self.node.inputs.parameters.base.attributes.get('INPUT_XSPECTRA', {})
+
+        xepsilon_defaults = {
+            '1': 0,
+            '2': 0,
+            '3': 1,
+        }
+        raw_xepsilon = [parameters.get(f'xepsilon({n})', xepsilon_defaults[n]) for n in ['1', '2', '3']]
+        parsed_data['xepsilon'] = [float(n) for n in raw_xepsilon]
+        parsed_data['xcoordcrys'] = parameters.get('xcoordcrys', True)
+        parsed_data['xonly_plot'] = parameters.get('xonly_plot', False)
         self.emit_logs(logs)
 
         self.out('spectra', xy_data)
         self.out('output_parameters', Dict(dict=parsed_data))
 
 def parse_raw_xspectra(xspectra_file, array_names, array_units):
-    """This function takes as input the xspectra_file as a list of filelines
-    along with information on how to give labels and units to the parsed data.
+    """Parse the content of the output spectrum.
+
+    This function takes as input the xspectra_file as a list of filelines along with information on how to give labels
+    and units to the parsed data.
 
     :param xspectra_file: xspectra file lines in the form of a list
     :type xspectra_file: list
@@ -104,7 +119,7 @@ def parse_raw_xspectra(xspectra_file, array_names, array_units):
     :type array_units: list
 
     :return array_data: narray, a dictionary for ArrayData type, which
-    contains all parsed xspectra output along with labels and units
+        contains all parsed xspectra output along with labels and units
     """
 
     xspectra_header = xspectra_file[:4]
@@ -163,16 +178,6 @@ def parse_stdout_xspectra(filecontent, codename=None, message_map=None):
     # Parse the necessary information for data plotting: core level energy of the
     # absorbing atom and the energy zero of the spectrum (typically the Fermi level)
     for line in lines:
-        if 'xepsilon' in line:
-            eps_vector_string = line.split(':')[-1].strip()
-            eps_vector_list = [float(i) for i in eps_vector_string.split('   ')]
-            parsed_data['epsilon_vector'] = eps_vector_list
-        if 'xonly_plot:' in line:
-            is_only_plot_string = line.split(':')[-1].strip()
-            if is_only_plot_string == 'FALSE':
-                parsed_data['plot_only'] = False
-            elif is_only_plot_string == 'TRUE':
-                parsed_data['plot_only'] = True
         if 'From SCF save directory' in line:
             if '(spin polarized work)' in line:
                 spin = True
@@ -204,7 +209,7 @@ def parse_stdout_xspectra(filecontent, codename=None, message_map=None):
             parsed_data['fermi_energy'] = ef_energy
             parsed_data['fermi_energy_units'] = ef_energy_units
 
-        # parse dynamical RAM estimates
+        # parse per-process dynamical RAM estimates
         if 'Estimated max dynamical RAM per process' in line:
             value = line.split('>')[-1]
             match = re.match(r'\s+([+-]?\d+(\.\d*)?|\.\d+([eE][+-]?\d+)?)\s*(Mb|MB|GB)', value)
@@ -215,7 +220,7 @@ def parse_stdout_xspectra(filecontent, codename=None, message_map=None):
                 except (IndexError, ValueError):
                     pass
 
-        # parse dynamical RAM estimates
+        # parse total dynamical RAM estimates
         if 'Estimated total dynamical RAM' in line:
             value = line.split('>')[-1]
             match = re.match(r'\s+([+-]?\d+(\.\d*)?|\.\d+([eE][+-]?\d+)?)\s*(Mb|MB|GB)', value)
@@ -245,9 +250,8 @@ def parse_stdout_xspectra(filecontent, codename=None, message_map=None):
                 parsed_data['code_version'] = line.split(codestring)[1].split('starts on')[0].strip()
 
             # Parse the walltime
-            # XSpectra does not appear next to the timing data, so we must find either 'xanes' or 'nrixs' instead.
-            if 'xanes' in line or 'nrixs' in line:
-                if 'WALL' in line:
+            # XSpectra does not appear next to the timing data, so we must find 'xanes' instead.
+            if 'xanes' in line and 'WALL' in line:
                     try:
                         time = line.split('CPU')[1].split('WALL')[0].strip()
                         parsed_data['wall_time'] = time

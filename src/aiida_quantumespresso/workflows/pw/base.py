@@ -151,7 +151,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if isinstance(code, str):
             code = orm.load_code(code)
 
-        type_check(code, orm.Code)
+        type_check(code, orm.AbstractCode)
         type_check(electronic_type, ElectronicType)
         type_check(spin_type, SpinType)
 
@@ -230,7 +230,10 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if 'parallelization' in inputs['pw']:
             builder.pw['parallelization'] = orm.Dict(inputs['pw']['parallelization'])
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
-        builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
+        if 'kpoints' in inputs:
+            builder.kpoints = inputs['kpoints']
+        else:
+            builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
         builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
         # pylint: enable=no-member
 
@@ -255,6 +258,13 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         self.ctx.inputs.parameters['CONTROL'].setdefault('calculation', 'scf')
 
         self.ctx.inputs.settings = self.ctx.inputs.settings.get_dict() if 'settings' in self.ctx.inputs else {}
+
+        # If a ``parent_folder`` is specified, automatically set the parameters for a ``RestartType.Full`` unless the
+        # ``CONTROL.restart_mode`` has explicitly been set to ``from_scratch``. In that case, the user most likely set
+        # that, and we do not want to override it.
+        restart_mode = self.ctx.inputs.parameters['CONTROL'].get('restart_mode', None)
+        if 'parent_folder' in self.ctx.inputs and restart_mode != 'from_scratch':
+            self.set_restart_type(RestartType.FULL, self.ctx.inputs.parent_folder)
 
     def validate_kpoints(self):
         """Validate the inputs related to k-points.
@@ -641,7 +651,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         PwCalculation.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED,
     ])
     def handle_electronic_convergence_warning(self, calculation):
-        """Handle `WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED': consider finished."""
+        """Handle `WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED`: consider finished."""
         self.ctx.is_finished = True
         action = 'electronic convergence not reached but inputs say this is ok: consider finished.'
         self.report_error_handled(calculation, action)

@@ -17,12 +17,13 @@ classifiers = [
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
 ]
 keywords = ['aiida', 'workflows']
 requires-python = '>=3.8'
 dependencies = [
-    'aiida_core[atomic_tools]~=2.0,>=2.0.4',
-    'aiida-pseudo~=0.7.0',
+    'aiida_core[atomic_tools]~=2.1',
+    'aiida-pseudo~=0.8.0',
     'click~=8.0',
     'importlib_resources',
     'jsonschema',
@@ -43,6 +44,9 @@ docs = [
     'sphinx-copybutton~=0.5.0',
     'sphinx-book-theme~=0.3.2',
     'sphinx-click~=4.0',
+    'sphinx-design~=0.0.13',
+    'sphinxcontrib-details-directive~=0.1.0',
+    'sphinx-autoapi',
 ]
 pre-commit = [
     'pre-commit~=2.17',

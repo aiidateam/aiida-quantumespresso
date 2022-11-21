@@ -1,81 +1,147 @@
 
-#################################
-AiiDA plugin for Quantum ESPRESSO
-#################################
+.. grid::
+   :reverse:
+   :gutter: 2 3 3 3
+   :margin: 1 2 1 2
 
-The |aiida-quantumespresso|_ package is an `AiiDA`_ plugin for running calculations and workflows with the `Quantum ESPRESSO`_ software suite.
+   .. grid-item::
+      :columns: 12 4 4 4
 
-.. rst-class:: center
+      .. image:: images/logo_aiida_quantumespresso.png
+         :width: 200px
+         :class: sd-m-auto
 
-    |aiida_logo| |hyphen| |qe_logo|
+   .. grid-item::
+      :columns: 12 8 8 8
+      :child-align: justify
+      :class: sd-fs-5
 
-.. |aiida_logo| image:: images/AiiDA_transparent_logo.png
-    :width: 40%
+      .. rubric:: AiiDA Quantum ESPRESSO
 
-.. |hyphen| image:: images/hyphen.png
-    :width: 8%
+      An AiiDA plugin package to integrate the `Quantum ESPRESSO`_ software suite.
+      Compute a variety of material properties with the popular open source DFT code with automatic data provenance provided by AiiDA.
+      Geometry optimizations, ground-state electronic structure, band structures, phonons, and much more.
 
-.. |qe_logo| image:: images/qe_logo.jpg
-    :width: 40%
+      **aiida-quantumespresso version:** |release|
 
-Installation
-============
 
-You can install ``aiida-quantumespresso`` in your Python environment using ``pip``:
+------------------------------
 
-.. code-block:: console
+.. grid:: 1 2 2 2
+    :gutter: 3
 
-   $ pip install aiida-quantumespresso
+    .. grid-item-card:: :fa:`rocket;mr-1` Get started
+        :text-align: center
+        :shadow: md
 
-Note that this command will also install the ``aiida-core`` package as one of its dependencies.
-For more information on how to install AiiDA and the required services in different environments, we refer to the |aiida-core documentation|_.
+        Instructions to install, configure and setup the plugin package.
 
-Compatibility
-=============
-For an overview of the plugin's compatibility with Python, AiiDA and Quantum ESPRESSO, please refer to the |README.md of the repository|_.
+        +++++++++++++++++++++++++++++++++++++++++++++
 
-Getting Started
-===============
+        .. button-ref:: installation/index
+            :ref-type: doc
+            :click-parent:
+            :expand:
+            :color: primary
+            :outline:
 
-A good place to get started with running `Quantum ESPRESSO`_ calculations using AiiDA is the `AiiDA Quantum ESPRESSO tutorial`_ on the main AiiDA tutorials page.
-You can either run the tutorial in your own installation if completed, or use the resources mentioned there, i.e. the `Quantum Mobile`_ virtual machine or `AiiDAlab demo cluster`_.
+            To the installation guides
 
-.. warning::
+    .. grid-item-card:: :fa:`info-circle;mr-1` Tutorials
+        :text-align: center
+        :shadow: md
 
-   The documentation is currently undergoing a major revision, but likely still contains some outdated content.
-   If you find any material that you think is incorrect, please `open an issue <https://github.com/aiidateam/aiida-quantumespresso/issues/new/choose>`_ on the GitHub repository.
+        Easy examples to take the first steps with the plugin package.
 
-Contents
-========
+        +++++++++++++++++++++++++++++++++++++++++++++
+
+        .. button-ref:: tutorials/index
+            :ref-type: doc
+            :click-parent:
+            :expand:
+            :color: primary
+            :outline:
+
+            To the tutorials
+
+    .. grid-item-card:: :fa:`question-circle;mr-1` How-to guides
+        :text-align: center
+        :shadow: md
+
+        Hands-on guides to achieve specific goals.
+
+        +++++++++++++++++++++++++++++++++++++++++++++
+
+        .. button-ref:: howto/index
+            :ref-type: doc
+            :click-parent:
+            :expand:
+            :color: primary
+            :outline:
+
+            To the how-to guides
+
+    .. grid-item-card:: :fa:`bookmark;mr-1` Topic guides
+        :text-align: center
+        :shadow: md
+
+        Detailed background information on various concepts.
+
+        +++++++++++++++++++++++++++++++++++++++++++++
+
+        .. button-ref:: topics/index
+            :ref-type: doc
+            :click-parent:
+            :expand:
+            :color: primary
+            :outline:
+
+            To the topic guides
+
+    .. grid-item-card:: :fa:`cogs;mr-1` Reference guides
+        :text-align: center
+        :shadow: md
+
+        Detailed reference guides on the application programming and command line interfaces.
+
+        +++++++++++++++++++++++++++++++++++++++++++++
+
+        .. button-ref:: reference/index
+            :ref-type: doc
+            :click-parent:
+            :expand:
+            :color: primary
+            :outline:
+
+            To the reference guides
 
 .. toctree::
    :maxdepth: 2
+   :hidden:
 
-   user_guide/index
-   devel_guide/index
-   module_guide/index
-   cli/index
+   installation/index
+   tutorials/index
+   howto/index
+   topics/index
+   reference/index
 
-Indices and tables
-==================
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+***********
+How to cite
+***********
 
+If you use this plugin for your research, please cite the following work:
+
+.. highlights:: Sebastiaan. P. Huber, Spyros Zoupanos, Martin Uhrin, Leopold Talirz, Leonid Kahle, Rico Häuselmann, Dominik Gresch, Tiziano Müller, Aliaksandr V. Yakutovich, Casper W. Andersen, Francisco F. Ramirez, Carl S. Adorf, Fernando Gargiulo, Snehal Kumbhar, Elsa Passaro, Conrad Johnston, Andrius Merkys, Andrea Cepellotti, Nicolas Mounet, Nicola Marzari, Boris Kozinsky, and Giovanni Pizzi, |AiiDA main paper|_, Scientific Data **7**, 300 (2020)
+
+.. highlights:: Martin Uhrin, Sebastiaan. P. Huber, Jusong Yu, Nicola Marzari, and Giovanni Pizzi, |AiiDA engine paper|_, Computational Materials Science **187**, 110086 (2021)
+
+
+****************
 Acknowledgements
-================
+****************
 
-If you use this plugin and/or AiiDA for your research, please cite the following work:
-
-* Sebastiaan. P. Huber, Spyros Zoupanos, Martin Uhrin, Leopold Talirz, Leonid Kahle, Rico Häuselmann, Dominik Gresch, Tiziano Müller, Aliaksandr V. Yakutovich, Casper W. Andersen, Francisco F. Ramirez, Carl S. Adorf, Fernando Gargiulo, Snehal Kumbhar, Elsa Passaro, Conrad Johnston, Andrius Merkys, Andrea Cepellotti, Nicolas Mounet, Nicola Marzari, Boris Kozinsky, and Giovanni Pizzi, |AiiDA main paper|_, Scientific Data **7**, 300 (2020)
-
-* Martin Uhrin, Sebastiaan. P. Huber, Jusong Yu, Nicola Marzari, and Giovanni Pizzi, |AiiDA engine paper|_, Computational Materials Science **187**, 110086 (2021)
-
-
-.. rst-class:: bigfont
-
-    We acknowledge support from:
+We acknowledge support from:
 
 .. list-table::
     :widths: 60 40

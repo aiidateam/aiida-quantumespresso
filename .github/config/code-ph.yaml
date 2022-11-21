@@ -1,0 +1,7 @@
+---
+label: ph
+description: Quantum ESPRESSO ph.x
+default_calc_job_plugin: quantumespresso.ph
+computer: localhost
+prepend_text: ' '
+append_text: ' '

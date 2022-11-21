@@ -4,7 +4,7 @@ import copy
 import re
 
 from aiida.common.folders import Folder
-from aiida.orm import Code, Dict
+from aiida.orm import Dict, load_code
 from aiida.plugins import CalculationFactory, DataFactory
 import numpy as np
 from qe_tools.parsers import PwInputFile as BasePwInputFile
@@ -18,10 +18,10 @@ class PwInputFile(StructureParseMixin, BasePwInputFile):
     """Parser of Quantum ESPRESSO pw.x input file into AiiDA nodes.
 
     .. note:: This mixes in :class:`~aiida_quantumespresso.tools.base.StructureParseMixin` which adds the functionality
-        to parse a :class:`~aiida.nodes.orm.data.structure.StructureData` from the input file, instead of a plain
-        dictionary returned by :meth:`qe_tools.parsers.qeinputparser.get_structure_from_qeinput`. Note that one cannot
-        directly add this functionality to a sub class of :class:`~qe_tools.parsers.qeinputparser.QeInputFile` and then
-        subsequently sub class that here, because the :class:`~qe_tools.parsers.qeinputparser.CpInputFile` is also
+        to parse a :class:`~aiida.orm.nodes.data.structure.StructureData` from the input file, instead of a plain
+        dictionary returned by ``qe_tools.parsers.qeinputparser.get_structure_from_qeinput``. Note that one cannot
+        directly add this functionality to a sub class of ``~qe_tools.parsers.qeinputparser.QeInputFile`` and then
+        subsequently sub class that here, because the ``~qe_tools.parsers.qeinputparser.CpInputFile`` is also
         required and sub classing both leads to problems with the MRO.
     """
 
@@ -69,7 +69,7 @@ def create_builder_from_file(input_folder, input_file_name, code, metadata, pseu
     :param input_file_name: the name of the input file
     :type input_file_name: str
     :param code: the code associated with the calculation
-    :type code: aiida.orm.Code or str
+    :type code: aiida.orm.AbstractCode or str
     :param metadata: metadata values for the calculation (e.g. resources)
     :type metadata: dict
     :param pseudo_folder_path: the folder containing the upf files (if None, then input_folder is used)
@@ -83,7 +83,7 @@ def create_builder_from_file(input_folder, input_file_name, code, metadata, pseu
     builder.metadata = metadata
 
     if isinstance(code, str):
-        code = Code.get_from_string(code)
+        code = load_code(code)
     builder.code = code
 
     # read input_file
