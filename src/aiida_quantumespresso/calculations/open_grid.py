@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """``CalcJob`` implementation for the ``open_grid.x`` code of Quantum ESPRESSO."""
-from aiida.orm import RemoteData, FolderData, KpointsData
+from aiida.orm import FolderData, KpointsData, RemoteData
+
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 
 

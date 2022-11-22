@@ -3,7 +3,7 @@
 """Tests for the ``OpenGridParser``."""
 
 
-def test_opengrid_default(fixture_localhost, generate_calc_job_node, generate_parser, data_regression, num_regression):
+def test_open_grid_default(fixture_localhost, generate_calc_job_node, generate_parser, data_regression, num_regression):
     """Test ``OpenGridParser`` on the results of a simple ``open_grid.x`` calculation."""
     entry_point_calc_job = 'quantumespresso.open_grid'
     entry_point_parser = 'quantumespresso.open_grid'
@@ -30,7 +30,7 @@ def test_opengrid_default(fixture_localhost, generate_calc_job_node, generate_pa
     })
 
 
-def test_opengrid_fftgrid(fixture_localhost, generate_calc_job_node, generate_parser):
+def test_open_grid_fftgrid(fixture_localhost, generate_calc_job_node, generate_parser):
     """Test ``OpenGridParser`` on the parsing of 'incompatible FFT grid' error."""
     entry_point_calc_job = 'quantumespresso.open_grid'
     entry_point_parser = 'quantumespresso.open_grid'

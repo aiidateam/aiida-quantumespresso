@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=redefined-outer-name
 """Tests for the `OpenGridCalculation` class."""
-import pytest
-
 from aiida import orm
-from aiida.common import datastructures, AttributeDict
+from aiida.common import AttributeDict, datastructures
 from aiida.common.exceptions import InputValidationError
+import pytest
 
 
 @pytest.fixture
@@ -35,7 +34,7 @@ def generate_inputs(fixture_localhost, fixture_sandbox, fixture_code, generate_r
     return _generate_inputs
 
 
-def test_opengrid_default(fixture_sandbox, generate_calc_job, generate_inputs, file_regression):
+def test_open_grid_default(fixture_sandbox, generate_calc_job, generate_inputs, file_regression):
     """Test a default `OpenGridCalculation`."""
     entry_point_name = 'quantumespresso.open_grid'
     inputs = generate_inputs()
@@ -76,7 +75,7 @@ def test_opengrid_default(fixture_sandbox, generate_calc_job, generate_inputs, f
         }, r"You cannot specify explicitly the 'prefix' key in the 'INPUTPP' namelist"),
     ),
 )
-def test_opengrid_invalid_parameters(fixture_sandbox, generate_calc_job, generate_inputs, parameters, message):
+def test_open_grid_invalid_parameters(fixture_sandbox, generate_calc_job, generate_inputs, parameters, message):
     """Test that launching `OpenGridCalculation` fails for invalid parameters."""
     entry_point_name = 'quantumespresso.open_grid'
 

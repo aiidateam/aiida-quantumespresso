@@ -2,8 +2,8 @@
 from aiida.common import NotExistent
 from aiida.orm import KpointsData
 
-from aiida_quantumespresso.parsers.parse_raw.base import parse_output_base
 from aiida_quantumespresso.parsers.base import Parser
+from aiida_quantumespresso.parsers.parse_raw.base import parse_output_base
 
 
 class OpenGridParser(Parser):
