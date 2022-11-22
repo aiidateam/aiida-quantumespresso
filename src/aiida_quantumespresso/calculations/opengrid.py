@@ -22,10 +22,8 @@ class OpengridCalculation(NamelistsCalculation):
         super().define(spec)
         spec.input('parent_folder', valid_type=(RemoteData, FolderData),
             help='The output folder of a completed `PwCalculation` on an irreducible Brillouin zone')
-        # Outputs the dimensions of the unfolded kmesh
-        spec.output('kpoints_mesh', valid_type=KpointsData)
-        # Outputs an explicit list of kpoints of the unfolded kmesh
-        spec.output('kpoints', valid_type=KpointsData)
+        spec.output('kpoints_mesh', valid_type=KpointsData, help='The dimensions of the unfolded kmesh')
+        spec.output('kpoints', valid_type=KpointsData, help='The explicit list of kpoints of the unfolded kmesh')
 
         spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
             message='The retrieved folder data node could not be accessed.')

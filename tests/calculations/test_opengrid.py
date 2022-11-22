@@ -63,24 +63,24 @@ def test_opengrid_default(fixture_sandbox, generate_calc_job, generate_inputs, f
             'INPUTPP': {
                 'outdir': './out/'
             }
-        }, "You cannot specify explicitly the 'outdir' key in the 'INPUTPP' namelist"),
+        }, r"You cannot specify explicitly the 'outdir' key in the 'INPUTPP' namelist"),
         ({
             'INPUTPP': {
                 'overwrite_prefix': True
             }
-        }, "You cannot specify explicitly the 'overwrite_prefix' key in the 'INPUTPP' namelist"),
+        }, r"You cannot specify explicitly the 'overwrite_prefix' key in the 'INPUTPP' namelist"),
         ({
             'INPUTPP': {
                 'prefix': 'aiida'
             }
-        }, "You cannot specify explicitly the 'prefix' key in the 'INPUTPP' namelist"),
+        }, r"You cannot specify explicitly the 'prefix' key in the 'INPUTPP' namelist"),
     ),
 )
 def test_opengrid_invalid_parameters(fixture_sandbox, generate_calc_job, generate_inputs, parameters, message):
     """Test that launching `OpengridCalculation` fails for invalid parameters."""
     entry_point_name = 'quantumespresso.opengrid'
 
-    with pytest.raises(InputValidationError) as exception:
+    with pytest.raises(InputValidationError, match=message) as exception:
         inputs = generate_inputs(parameters=parameters)
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
