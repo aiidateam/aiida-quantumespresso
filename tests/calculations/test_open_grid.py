@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=redefined-outer-name
-"""Tests for the `OpengridCalculation` class."""
+"""Tests for the `OpenGridCalculation` class."""
 import pytest
 
 from aiida import orm
@@ -20,9 +20,9 @@ def generate_inputs(fixture_localhost, fixture_sandbox, fixture_code, generate_r
 
         return AttributeDict({
             'code':
-            fixture_code('quantumespresso.opengrid'),
+            fixture_code('quantumespresso.open_grid'),
             'parent_folder':
-            generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.opengrid'),
+            generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.open_grid'),
             'parameters':
             orm.Dict(dict=parameters),
             'settings':
@@ -36,8 +36,8 @@ def generate_inputs(fixture_localhost, fixture_sandbox, fixture_code, generate_r
 
 
 def test_opengrid_default(fixture_sandbox, generate_calc_job, generate_inputs, file_regression):
-    """Test a default `OpengridCalculation`."""
-    entry_point_name = 'quantumespresso.opengrid'
+    """Test a default `OpenGridCalculation`."""
+    entry_point_name = 'quantumespresso.open_grid'
     inputs = generate_inputs()
 
     calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
@@ -77,8 +77,8 @@ def test_opengrid_default(fixture_sandbox, generate_calc_job, generate_inputs, f
     ),
 )
 def test_opengrid_invalid_parameters(fixture_sandbox, generate_calc_job, generate_inputs, parameters, message):
-    """Test that launching `OpengridCalculation` fails for invalid parameters."""
-    entry_point_name = 'quantumespresso.opengrid'
+    """Test that launching `OpenGridCalculation` fails for invalid parameters."""
+    entry_point_name = 'quantumespresso.open_grid'
 
     with pytest.raises(InputValidationError, match=message) as exception:
         inputs = generate_inputs(parameters=parameters)

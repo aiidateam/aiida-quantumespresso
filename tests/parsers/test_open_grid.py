@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=redefined-outer-name
-"""Tests for the `OpengridParser`."""
+"""Tests for the ``OpenGridParser``."""
 
 
 def test_opengrid_default(fixture_localhost, generate_calc_job_node, generate_parser, data_regression, num_regression):
-    """Test ``OpengridParser`` on the results of a simple ``open_grid.x`` calculation."""
-    entry_point_calc_job = 'quantumespresso.opengrid'
-    entry_point_parser = 'quantumespresso.opengrid'
+    """Test ``OpenGridParser`` on the results of a simple ``open_grid.x`` calculation."""
+    entry_point_calc_job = 'quantumespresso.open_grid'
+    entry_point_parser = 'quantumespresso.open_grid'
 
     node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'default')
     parser = generate_parser(entry_point_parser)
@@ -31,9 +31,9 @@ def test_opengrid_default(fixture_localhost, generate_calc_job_node, generate_pa
 
 
 def test_opengrid_fftgrid(fixture_localhost, generate_calc_job_node, generate_parser):
-    """Test ``OpengridParser`` on the parsing of 'incompatible FFT grid' error."""
-    entry_point_calc_job = 'quantumespresso.opengrid'
-    entry_point_parser = 'quantumespresso.opengrid'
+    """Test ``OpenGridParser`` on the parsing of 'incompatible FFT grid' error."""
+    entry_point_calc_job = 'quantumespresso.open_grid'
+    entry_point_parser = 'quantumespresso.open_grid'
 
     node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'fftgrid')
     parser = generate_parser(entry_point_parser)

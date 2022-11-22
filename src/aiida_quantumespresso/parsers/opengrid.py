@@ -6,11 +6,11 @@ from aiida_quantumespresso.parsers.parse_raw.base import parse_output_base
 from aiida_quantumespresso.parsers.base import Parser
 
 
-class OpengridParser(Parser):
-    """`Parser` implementation for the `OpengridCalculation` calculation job class."""
+class OpenGridParser(Parser):
+    """``Parser`` implementation for the ``OpenGridCalculation`` calculation job class."""
 
     def parse(self, **kwargs):
-        """Parse the retrieved files of a completed `OpengridCalculation` into output nodes."""
+        """Parse the retrieved files of a completed ``OpenGridCalculation`` into output nodes."""
         try:
             out_folder = self.retrieved
         except NotExistent:
@@ -18,8 +18,8 @@ class OpengridParser(Parser):
 
         try:
             filename_stdout = self.node.get_option('output_filename')
-            with out_folder.open(filename_stdout, 'r') as f:
-                out_file = f.read()
+            with out_folder.open(filename_stdout, 'r') as handle:
+                out_file = handle.read()
         except OSError:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""`CalcJob` implementation for the open_grid.x code of Quantum ESPRESSO."""
+"""``CalcJob`` implementation for the ``open_grid.x`` code of Quantum ESPRESSO."""
 from aiida.orm import RemoteData, FolderData, KpointsData
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 
 
-class OpengridCalculation(NamelistsCalculation):
-    """`CalcJob` implementation for the open_grid.x code of Quantum ESPRESSO."""
+class OpenGridCalculation(NamelistsCalculation):
+    """``CalcJob`` implementation for the ``open_grid.x`` code of Quantum ESPRESSO."""
 
     _default_namelists = ['INPUTPP']
     _blocked_keywords = [
@@ -13,7 +13,7 @@ class OpengridCalculation(NamelistsCalculation):
         ('INPUTPP', 'prefix', NamelistsCalculation._PREFIX),
         ('INPUTPP', 'overwrite_prefix', True),
     ]
-    _default_parser = 'quantumespresso.opengrid'
+    _default_parser = 'quantumespresso.open_grid'
 
     @classmethod
     def define(cls, spec):
