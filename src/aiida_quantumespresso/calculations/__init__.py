@@ -141,14 +141,19 @@ class BasePwCpInputGenerator(CalcJob):
         spec.inputs.validator = cls.validate_inputs
 
     @classmethod
-    def validate_inputs(cls, value, _):
+    def validate_inputs(cls, value, port_namespace):
         """Validate the entire inputs namespace."""
-        if 'pseudos' not in value:
-            return 'required value was not provided for the `pseudos` namespace.'
 
-        # Some wrapping processes expose the inputs excluding the ``structure``, in which case we can't validate.
-        if 'structure' not in value:
+        # Wrapping processes may choose to exclude certain input ports in which case we can't validate. If the ports
+        # have been excluded, and so are no longer part of the ``port_namespace``, skip the validation.
+        if any(key not in port_namespace for key in ('pseudos', 'structure')):
             return
+
+        # At this point, both ports are part of the namespace, and both are required so return an error message if any
+        # of the two is missing.
+        for key in ('pseudos', 'structure'):
+            if key not in value:
+                return f'required value was not provided for the `{key}` namespace.'
 
         structure_kinds = set(value['structure'].get_kind_names())
         pseudo_kinds = set(value['pseudos'].keys())
