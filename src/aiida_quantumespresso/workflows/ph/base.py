@@ -158,17 +158,17 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if self.inputs.only_initialization.value:
             return
 
+        if len(self.ctx.children) == 1:
+            return
+
         output_dict = {
             'output_' + str(index + 1): child.outputs.output_parameters
             for index, child in enumerate(self.ctx.children)
         }
 
         num_qpoints = self.ctx.children[0].outputs.output_parameters['number_of_qpoints']
-        num_qpoints_final = self.ctx.children[-1].outputs.output_parameters['num_q_found']
-
-        if num_qpoints == num_qpoints_final:
-            return
-
+        num_qpoints = self.ctx.inputs.parameters['INPUTPH'].get('last_q', num_qpoints) \
+            - self.ctx.inputs.parameters['INPUTPH'].get('start_q', 1)
         num_qpoints_found = sum(output['num_q_found'] for output in output_dict.values())
 
         if num_qpoints_found == num_qpoints:

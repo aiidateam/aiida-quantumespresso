@@ -259,10 +259,10 @@ def parse_ph_text_output(lines, logs):
         elif 'number_of_qpoints' not in parsed_data and 'Calculation of q =' in line:
             parsed_data['number_of_qpoints'] = 1
             parsed_data['q_points'] = {0: [float(coord) for coord in line.split('=')[-1].split()]}
-   elif  'number_of_qpoints' in parsed_data and 'Calculation of q =' in line:
-      if parsed_data['number_of_qpoints'] == 1 and [float(coord) for coord in line.split('=')[-1].split()] == parsed_data['q_points'][1]:
-         parsed_data['q_points'] = {0: [float(coord) for coord in line.split('=')[-1].split()]}
-      
+        elif 'number_of_qpoints' in parsed_data and 'Calculation of q =' in line:
+            if parsed_data['number_of_qpoints'] == 1 and [float(coord) for coord in line.split('=')[-1].split()] == parsed_data['q_points'][1]:
+                parsed_data['q_points'] = {0: [float(coord) for coord in line.split('=')[-1].split()]}
+
         elif 'number of atoms/cell' in line:
             try:
                 num_atoms = int(line.split('=')[1])
@@ -304,7 +304,7 @@ def parse_ph_text_output(lines, logs):
     if parsed_data['num_q_found'] >= 0:
         parsed_data['number_of_irr_representations_for_each_q'] = \
             parsed_data['number_of_irr_representations_for_each_q'][:parsed_data['num_q_found']]
- 
+
     return parsed_data
 
 

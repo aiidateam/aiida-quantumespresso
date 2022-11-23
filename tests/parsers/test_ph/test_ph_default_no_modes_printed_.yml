@@ -8,12 +8,12 @@ dynamical_matrix_0:
   - 440.171741
   frequencies_units: cm-1
   mode_symmetry:
-  - A_1
-  - A_1
-  - A_1
-  - A_1
-  - A_1
-  - A_1
+  - A
+  - A
+  - A
+  - A
+  - A
+  - A
   point_group: C_1
   q_point:
   - 0.0
