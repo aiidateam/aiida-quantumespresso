@@ -36,6 +36,6 @@ def merge_ph_outputs(**kwargs):
     merged['wall_time_seconds'] = total_walltime
     merged['number_of_irr_representations_for_each_q'] = number_irreps
     merged['number_of_qpoints'] = number_of_qpoints
-
+    merged.pop('wall_time',0)
     merged = orm.Dict(dict=merged)
     return merged
