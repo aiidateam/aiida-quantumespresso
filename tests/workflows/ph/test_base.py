@@ -176,7 +176,11 @@ def test_results(generate_workchain_ph, generate_ph_calc_job_node):
 
 
 def test_merge_outputs(
-    generate_calc_job_node, fixture_localhost, generate_parser, generate_workchain_ph, data_regression
+    generate_calc_job_node,
+    fixture_localhost,
+    generate_parser,
+    generate_workchain_ph,
+    data_regression,
 ):
     """Test the ``create_merged_outputs`` step."""
 
@@ -211,6 +215,8 @@ def test_merge_outputs(
 
     ph_base = generate_workchain_ph()
     ph_base.ctx.children = [node_1, node_2]
+    ph_base.ctx.inputs = AttributeDict()
+    ph_base.ctx.inputs.parameters = {'INPUTPH': {}}
 
     ph_base.create_merged_output()
     outputs = ph_base.get_outputs(node_2)

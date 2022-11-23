@@ -168,7 +168,7 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         num_qpoints = self.ctx.children[0].outputs.output_parameters['number_of_qpoints']
         num_qpoints = self.ctx.inputs.parameters['INPUTPH'].get('last_q', num_qpoints) \
-            - self.ctx.inputs.parameters['INPUTPH'].get('start_q', 1)
+            - self.ctx.inputs.parameters['INPUTPH'].get('start_q', 1) + 1
         num_qpoints_found = sum(output['num_q_found'] for output in output_dict.values())
 
         if num_qpoints_found == num_qpoints:

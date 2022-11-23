@@ -30,12 +30,12 @@ def merge_ph_outputs(**kwargs):
                 if '0' in key:
                     merged.pop('dynamical_matrix_0', None)
                     merged[f'dynamical_matrix_{index + 1}'] = value
-            else:
-                merged[key] = value
+                else:
+                    merged[key] = value
 
     merged['wall_time_seconds'] = total_walltime
     merged['number_of_irr_representations_for_each_q'] = number_irreps
     merged['number_of_qpoints'] = number_of_qpoints
-    merged.pop('wall_time',0)
+    merged.pop('wall_time', 0)
     merged = orm.Dict(dict=merged)
     return merged

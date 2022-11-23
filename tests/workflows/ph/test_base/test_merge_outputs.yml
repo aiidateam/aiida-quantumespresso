@@ -46,7 +46,6 @@ dynamical_matrix_4:
   - -0.577350269
   - -0.40824829
   q_point_units: 2pi/lattice_parameter
-num_q_found: 2
 number_of_atoms: 1
 number_of_irr_representations_for_each_q:
 - 2
@@ -54,5 +53,4 @@ number_of_irr_representations_for_each_q:
 - 3
 - 3
 number_of_qpoints: 4
-wall_time: '     55.47s '
 wall_time_seconds: 113.61
