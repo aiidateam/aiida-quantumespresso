@@ -222,16 +222,10 @@ def parse_ph_text_output(lines, logs):
     for line in reversed(lines):
         if 'PHONON' in line and 'WALL' in line:
             try:
-                time = line.split('CPU')[1].split('WALL')[0]
-                parsed_data['wall_time'] = time
-            except Exception:
-                logs.warning.append('Error while parsing wall time.')
-
-            try:
                 parsed_data['wall_time_seconds'] = \
-                    convert_qe_time_to_sec(parsed_data['wall_time'])
-            except ValueError:
-                raise QEOutputParsingError('Unable to convert wall_time in seconds.')
+                    convert_qe_time_to_sec(line.split('CPU')[1].split('WALL')[0])
+            except (ValueError, IndexError):
+                raise QEOutputParsingError('Error during parsing of walltime.')
             break
 
     parsed_data['num_q_found'] = 0
