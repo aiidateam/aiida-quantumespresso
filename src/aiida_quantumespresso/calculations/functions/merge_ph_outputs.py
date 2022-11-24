@@ -19,9 +19,10 @@ def merge_ph_outputs(**kwargs):
 
     for output in outputs:
 
-        number_of_qpoints += output.pop('num_q_found', 0)
+        num_irreps_per_q = output.pop('number_of_irr_representations_for_each_q', [])
+        number_of_qpoints += len(num_irreps_per_q)
+        number_irreps.extend(num_irreps_per_q)
         total_walltime += output.pop('wall_time_seconds', 0)
-        number_irreps.extend(output.pop('number_of_irr_representations_for_each_q', []))
 
         for key, value in output.items():
             # Skip uncomplete dynamical matrix results

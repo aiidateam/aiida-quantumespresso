@@ -14,7 +14,6 @@ dynamical_matrix_1:
   - 0.0
   - 0.0
   q_point_units: 2pi/lattice_parameter
-num_q_found: 1
 number_of_atoms: 1
 number_of_irr_representations_for_each_q:
 - 2
