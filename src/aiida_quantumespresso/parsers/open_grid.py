@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from aiida.common import NotExistent
-from aiida.orm import KpointsData
+from aiida.orm import Dict, KpointsData
 
 from aiida_quantumespresso.parsers.base import Parser
 from aiida_quantumespresso.parsers.parse_raw.base import parse_output_base
@@ -25,6 +25,7 @@ class OpenGridParser(Parser):
 
         parsed_data, logs = parse_output_base(out_file, codename='OPEN_GRID')
         self.emit_logs(logs)
+        self.out('output_parameters', Dict(parsed_data))
 
         lines = out_file.split('\n')
         for line in lines:
@@ -45,9 +46,9 @@ class OpenGridParser(Parser):
         self.out('kpoints_mesh', kpoints_mesh)
         self.out('kpoints', kpoints)
 
-    @classmethod
-    def parse_kpoints(cls, out_file):
-        """Parse and output the dimensions and the explicit list of kpoints"""
+    @staticmethod
+    def parse_kpoints(out_file):
+        """Parse and output the dimensions and the explicit list of kpoints."""
         lines = out_file.split('\n')
 
         kpoints = []

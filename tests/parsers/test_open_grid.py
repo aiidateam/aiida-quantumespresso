@@ -15,10 +15,11 @@ def test_open_grid_default(fixture_localhost, generate_calc_job_node, generate_p
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
 
-    for link_name in ['kpoints_mesh', 'kpoints']:
+    for link_name in ['output_parameters', 'kpoints_mesh', 'kpoints']:
         assert link_name in results, list(results.keys())
 
     data_regression.check({
+        'output_parameters': results['output_parameters'].get_dict(),
         'kpoints_mesh': results['kpoints_mesh'].attributes,
         'kpoints': results['kpoints'].attributes,
     })

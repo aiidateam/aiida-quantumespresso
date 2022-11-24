@@ -13,3 +13,7 @@ kpoints_mesh:
   - 0.0
   - 0.0
   - 0.0
+output_parameters:
+  code_version: v.6.8
+  wall_time: 0.53s
+  wall_time_seconds: 0.53
