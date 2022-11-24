@@ -301,9 +301,9 @@ def parse_ph_text_output(lines, logs):
     parsed_data.pop('q_points', None)
 
     # Trim the number of irreps to the number of q-points finished in this run
-    if parsed_data['num_q_found'] > 0:
-        parsed_data['number_of_irr_representations_for_each_q'] = \
-            parsed_data['number_of_irr_representations_for_each_q'][:parsed_data['num_q_found']]
+    parsed_data['number_of_irr_representations_for_each_q'] = parsed_data.get(
+        'number_of_irr_representations_for_each_q', []
+    )[:parsed_data['num_q_found']]
 
     return parsed_data
 
