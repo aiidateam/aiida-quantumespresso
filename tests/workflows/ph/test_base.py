@@ -175,12 +175,14 @@ def test_results(generate_workchain_ph, generate_ph_calc_job_node):
                   ) == ['output_parameters', 'remote_folder', 'retrieved']
 
 
+@pytest.mark.parametrize('name', ('merge_outputs', 'merge_outputs_singleq'))
 def test_merge_outputs(
     generate_calc_job_node,
     fixture_localhost,
     generate_parser,
     generate_workchain_ph,
     data_regression,
+    name,
 ):
     """Test the ``create_merged_outputs`` step."""
 
@@ -188,7 +190,7 @@ def test_merge_outputs(
     parser = generate_parser('quantumespresso.ph')
 
     node_1 = generate_calc_job_node(
-        entry_point_name=entry_point_calc_job, computer=fixture_localhost, test_name='merge_outputs1'
+        entry_point_name=entry_point_calc_job, computer=fixture_localhost, test_name=f'{name}_1'
     )
     results_1, calcjob_1 = parser.parse_from_node(node_1, store_provenance=False)
 
@@ -201,7 +203,7 @@ def test_merge_outputs(
     assert calcjob_1.exit_status == PhCalculation.exit_codes.ERROR_OUT_OF_WALLTIME.status
 
     node_2 = generate_calc_job_node(
-        entry_point_name=entry_point_calc_job, computer=fixture_localhost, test_name='merge_outputs2'
+        entry_point_name=entry_point_calc_job, computer=fixture_localhost, test_name=f'{name}_2'
     )
     results_2, calcjob_2 = parser.parse_from_node(node_2, store_provenance=False)
 

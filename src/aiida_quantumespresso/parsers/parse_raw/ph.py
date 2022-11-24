@@ -77,6 +77,9 @@ def parse_raw_ph_output(stdout, tensors=None, dynamical_matrices=None):
 
     symmetry_labels = out_data.pop('symmetry_labels', {})
 
+    if len(dynmat_data) == 1 and 'dynamical_matrix_0' in dynmat_data:
+        dynmat_data['dynamical_matrix_1'] = dynmat_data.pop('dynamical_matrix_0')
+
     parsed_data = dict(list(dynmat_data.items()) + list(out_data.items()) + list(tensor_data.items()))
 
     for q_index, q_symlabels in symmetry_labels.items():
@@ -258,10 +261,7 @@ def parse_ph_text_output(lines, logs):
         # start of the stdout. Then we have to parse the q-point further down the output file.
         elif 'number_of_qpoints' not in parsed_data and 'Calculation of q =' in line:
             parsed_data['number_of_qpoints'] = 1
-            parsed_data['q_points'] = {0: [float(coord) for coord in line.split('=')[-1].split()]}
-        # elif 'number_of_qpoints' in parsed_data and 'Calculation of q =' in line:
-        #     if parsed_data['number_of_qpoints'] == 1 and [float(coord) for coord in line.split('=')[-1].split()] == parsed_data['q_points'][1]:
-        #         parsed_data['q_points'] = {0: [float(coord) for coord in line.split('=')[-1].split()]}
+            parsed_data['q_points'] = {1: [float(coord) for coord in line.split('=')[-1].split()]}
 
         elif 'number of atoms/cell' in line:
             try:
