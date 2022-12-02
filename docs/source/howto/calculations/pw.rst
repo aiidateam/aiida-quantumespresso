@@ -246,6 +246,60 @@ Similar to the pseudopotentials themselves, these can easily be retrieved for an
 Be sure to specify the ``unit`` as ``Ry`` as that is the unit that ``pw.x`` will expect.
 
 
+How to run an initialization-only calculation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Specify ``ONLY_INITIALIZATION: True`` in the ``settings`` input:
+
+.. code-block:: python
+
+    builder = load_code('pw').get_builder()
+    builder.settings = Dict({'ONLY_INITIALIZATION': True})
+
+If this setting is specified, the plugin will write the file ``aiida.EXIT`` in the working directory of the calculation.
+This will cause Quantum ESPRESSO to just run the preamble of the code and then shutdown cleanly.
+
+
+How to run a gamma-only calculation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Specify ``GAMMA_ONLY: True`` in the ``settings`` input:
+
+.. code-block:: python
+
+    builder = load_code('pw').get_builder()
+    builder.settings = Dict({'GAMMA_ONLY': True})
+
+
+How to fix the coordinates of atoms
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Quantum ESPRESSO pw.x allows to optionally fix the coordinates of atoms during relaxation and molecular-dynamics simulations.
+This functionality is enabled in ``PwCalculation`` through the ``FIXED_COORDS`` setting which is a list of length equal to the number of sites in the input structure.
+Each element is a list of length three containing booleans, where ``True`` means that the position of the site in that direction should be fixed.
+For example:
+
+.. code-block:: python
+
+    builder = load_code('pw').get_builder()
+    builder.settings = Dict({'FIXED_COORDS': [[False, False, False], [False, False, True]]})
+
+will fix the position of the second site along the z-axis only.
+All other coordinates are allowed to change.
+
+
+How to retrieve additional files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``PwCalculation`` plugin will retrieve the most important and common output files by default.
+To retrieve additional output files, specify the list of files in the ``ADDITIONAL_RETRIEVE_LIST`` key in the ``settings`` input:
+
+.. code-block:: python
+
+    builder = load_code('pw').get_builder()
+    builder.settings = Dict({'ADDITIONAL_RETRIEVE_LIST': ['custom-file.txt', 'some-other.xml']})
+
+
 .. |starting_magnetization| replace:: ``starting_magnetization``
 .. _starting_magnetization: https://www.quantum-espresso.org/Doc/INPUT_PW.html#idm287
 
