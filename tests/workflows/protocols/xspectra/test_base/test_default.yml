@@ -7,7 +7,7 @@ kpoints:
   - 0.0
   - 0.0
 xspectra:
-  code: test.quantumespresso.xspectra@localhost-test
+  code: test.quantumespresso.xspectra@localhost
   core_wfc_data: '# number of core states 3 =  1 0;  2 0;
 
     6.51344e-05 6.615743462459999e-3
