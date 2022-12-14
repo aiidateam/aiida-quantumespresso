@@ -2,7 +2,7 @@ clean_workdir: true
 kpoints_distance: 0.15
 kpoints_force_parity: false
 pw:
-  code: test.quantumespresso.pw@localhost-test
+  code: test.quantumespresso.pw@localhost
   metadata:
     options:
       max_wallclock_seconds: 43200
