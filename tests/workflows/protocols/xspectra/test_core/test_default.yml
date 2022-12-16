@@ -52,7 +52,7 @@ structure: Si2
 xs_prod:
   kpoints_distance: 0.15
   xspectra:
-    code: test.quantumespresso.xspectra@localhost-test
+    code: test.quantumespresso.xspectra@localhost
     metadata:
       options:
         max_wallclock_seconds: 43200
