@@ -79,7 +79,7 @@ def serialize_builder():
 
     def serialize_data(data):
         # pylint: disable=too-many-return-statements
-        from aiida.orm import AbstractCode, BaseType, Data, Dict, KpointsData, RemoteData, SinglefileData
+        from aiida.orm import AbstractCode, BaseType, Data, Dict, KpointsData, List, RemoteData, SinglefileData
         from aiida.plugins import DataFactory
 
         StructureData = DataFactory('core.structure')
@@ -96,6 +96,9 @@ def serialize_builder():
 
         if isinstance(data, Dict):
             return data.get_dict()
+
+        if isinstance(data, List):
+            return data.get_list()
 
         if isinstance(data, StructureData):
             return data.get_formula()
