@@ -1,6 +1,6 @@
 clean_workdir: true
 dos:
-  code: test.quantumespresso.dos@localhost-test
+  code: test.quantumespresso.dos@localhost
   metadata:
     options:
       max_wallclock_seconds: 43200
@@ -14,7 +14,7 @@ nscf:
   kpoints_distance: 0.1
   kpoints_force_parity: false
   pw:
-    code: test.quantumespresso.pw@localhost-test
+    code: test.quantumespresso.pw@localhost
     metadata:
       options:
         max_wallclock_seconds: 43200
@@ -41,7 +41,7 @@ nscf:
     pseudos:
       Si: Si<md5=57fa15d98af99972c7b7aa5c179b0bb8>
 projwfc:
-  code: test.quantumespresso.projwfc@localhost-test
+  code: test.quantumespresso.projwfc@localhost
   metadata:
     options:
       max_wallclock_seconds: 43200
@@ -55,7 +55,7 @@ scf:
   kpoints_distance: 0.15
   kpoints_force_parity: false
   pw:
-    code: test.quantumespresso.pw@localhost-test
+    code: test.quantumespresso.pw@localhost
     metadata:
       options:
         max_wallclock_seconds: 43200
