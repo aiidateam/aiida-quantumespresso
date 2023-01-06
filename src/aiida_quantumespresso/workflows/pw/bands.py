@@ -38,8 +38,8 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         used. If the `nbands_factor` is specified the maximum value of the following values will be used:
 
         * `nbnd` of the preceding SCF calculation
-        * 0.5 * nspin * nelectrons * nbands_factor
-        * 0.5 * nspin * nelectrons + 4 * nspin
+        * 0.5 * nelectrons * nbands_factor
+        * 0.5 * nelectrons + 4
 
     Kpoints:
         There are three options; specify either an existing `KpointsData` through `bands_kpoints`, or specify the
@@ -278,16 +278,9 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         if 'nbands_factor' in self.inputs:
             factor = self.inputs.nbands_factor.value
             parameters = self.ctx.workchain_scf.outputs.output_parameters.get_dict()
-            if int(parameters['number_of_spin_components']) > 1:
-                nspin_factor = 2
-            else:
-                nspin_factor = 1
             nbands = int(parameters['number_of_bands'])
             nelectron = int(parameters['number_of_electrons'])
-            nbnd = max(
-                int(0.5 * nelectron * nspin_factor * factor),
-                int(0.5 * nelectron * nspin_factor) + 4 * nspin_factor, nbands
-            )
+            nbnd = max(int(0.5 * nelectron * factor), int(0.5 * nelectron) + 4, nbands)
             inputs.pw.parameters['SYSTEM']['nbnd'] = nbnd
 
         # Otherwise set the current number of bands, unless explicitly set in the inputs
