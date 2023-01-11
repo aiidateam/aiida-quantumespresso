@@ -1,0 +1,814 @@
+# -*- coding: utf-8 -*-
+"""Workchain to compute the X-ray absorption spectrum for a given structure.
+
+Uses QuantumESPRESSO pw.x.
+"""
+import pathlib
+from typing import Optional, Union
+
+from aiida import orm
+from aiida.common import AttributeDict, ValidationError
+from aiida.engine import ToContext, WorkChain, calcfunction, if_
+from aiida.orm.nodes.data.base import to_aiida_type
+from aiida.plugins import CalculationFactory, DataFactory, WorkflowFactory
+from aiida_pseudo.data.pseudo import UpfData
+import numpy as np
+import yaml
+
+from aiida_quantumespresso.utils.mapping import prepare_process_inputs
+from aiida_quantumespresso.workflows.protocols.utils import ProtocolMixin, recursive_merge
+
+PwCalculation = CalculationFactory('quantumespresso.pw')
+PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
+PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
+XyData = DataFactory('array.xy')
+
+
+@calcfunction
+def get_spectra_by_element(elements_list, equivalent_sites_data, voight_gamma, voight_sigma, **kwargs):  # pylint: disable=too-many-statements
+    """Generate a final spectrum for each element from the powder spectra of the ``CoreWorkChain`` sub-processes."""
+    from scipy.special import voigt_profile  # pylint: disable=no-name-in-module
+
+    incoming_param_nodes = {key: value for key, value in kwargs.items() if key != 'metadata'}
+    elements = elements_list.get_list()
+    sigma = voight_sigma.value
+    gamma = voight_gamma.value
+    equivalency_data = equivalent_sites_data.get_dict()
+
+    data_dict = {element: {} for element in elements}
+    for key in incoming_param_nodes:
+        xspectra_out_params = incoming_param_nodes[key].get_dict()
+        fermi_energy = xspectra_out_params['fermi_energy']
+        multiplicity = equivalency_data[key]['multiplicity']
+        element = equivalency_data[key]['symbol']
+        total_energy = xspectra_out_params['energy']
+
+        if 'total_multiplicity' not in data_dict[element]:
+            data_dict[element]['total_multiplicity'] = multiplicity
+        else:
+            old_mult = data_dict[element]['total_multiplicity']
+            new_mult = old_mult + multiplicity
+            data_dict[element]['total_multiplicity'] = new_mult
+
+        data_dict[element][key] = {
+            'element': element,
+            'multiplicity': multiplicity,
+            'fermi_energy': fermi_energy,
+            'total_energy': total_energy
+        }
+
+    spectra_by_element = {}
+    all_core_level_shifts = {}
+    for element in elements:
+        spectra_list = []
+        total_multiplicity = data_dict[element].pop('total_multiplicity')
+        for key in data_dict[element]:
+            site_multiplicity = data_dict[element][key]['multiplicity']
+            spectra_list.append(
+                (site_multiplicity, float(data_dict[element][key]['total_energy']), key)
+            )  ############### Sorting by Total energy instead, replacing the weighted spectrumm by site multiplicity
+            #spectra_list.append((weighted_spectrum, float(data_dict[element][key]['fermi_energy'])))
+
+        # Sort according to Fermi level, then correct to align all spectra to the
+        # highest value. Note that this is needed because XSpectra automatically aligns the
+        # final spectrum such that the system's Fermi level is at 0 eV.
+        spectra_list.sort(key=lambda entry: entry[1])
+
+        lowest_total_energy = spectra_list[0][1]
+        core_level_shift = [(entry[0], entry[1] - lowest_total_energy, entry[2]) for entry in spectra_list]
+        all_core_level_shifts[element] = {entry[2]: entry[1] for entry in core_level_shift}
+        #max_core_level_shift = core_level_shift[0][-1]
+        #core_level_shift = [(entry[0], entry[1] - lowest_total_energy, max_core_level_shift) for entry in spectra_list]
+        #        corrected_spectrum = [
+        #            np.column_stack((entry[0][:,0] - entry[1], entry[0][:,1])) for entry in core_level_shift
+        #        ]
+        spectra_by_element[element] = core_level_shift
+
+################################ Modifications ###########################
+
+    result = {}
+    fwhm_voight = gamma / 2 + np.sqrt(gamma**2 / 4 + sigma**2)
+    for element in elements:
+        result[f'{element}_cls'] = orm.Dict(dict=all_core_level_shifts[element])
+
+    for element in elements:
+        final_spectra_y_arrays = []  ##### Initalize
+        final_spectra_y_labels = []
+        final_spectra_y_units = []
+
+        total_multiplicity = sum([i[0] for i in spectra_by_element[element]])
+
+        final_spectra = orm.XyData()
+        max_core_level_shift = spectra_by_element[element][-1][1]
+        x_energy_range = np.linspace(
+            0 - fwhm_voight - 1.5, max_core_level_shift + fwhm_voight + 1.5, 500
+        )  ############# Energy range for the Broadening function
+
+        for atoms, index in zip(spectra_by_element[element], range(len(spectra_by_element[element]))):
+            intensity = atoms[0]  ###### Weight for the spectra of every atom
+            relative_peak_position = atoms[1]  ###### Peak position
+            final_spectra_y_labels.append(f'{element}{index}_xps')
+            final_spectra_y_units.append('sigma')
+            final_spectra_y_arrays.append(
+                intensity * voigt_profile(x_energy_range - relative_peak_position, sigma, gamma) / total_multiplicity
+            )
+
+        final_spectra_y_labels.append(f'{element}_total_xps')
+        final_spectra_y_units.append('sigma')
+        final_spectra_y_arrays.append(sum(final_spectra_y_arrays))
+
+        final_spectra_x_label = 'energy'
+        final_spectra_x_units = 'eV'
+        final_spectra_x_array = x_energy_range  ############# Energy range for the Bradening function
+        #        final_spectra_x_array = corrected_spectrum[:,0]
+        final_spectra.set_x(final_spectra_x_array, final_spectra_x_label, final_spectra_x_units)
+        final_spectra.set_y(final_spectra_y_arrays, final_spectra_y_labels, final_spectra_y_units)
+        result[f'{element}_xps'] = final_spectra
+
+
+#        final_spectra_y_labels = [f'{element}_dipole']
+
+#final_spectra_y_arrays = [corrected_spectrum[:,1]]
+
+    return result
+
+
+def validate_inputs(inputs, _):
+    """Validate the inputs before launching the WorkChain."""
+    structure = inputs['structure']
+    elements_present = [kind.name for kind in structure.kinds]
+    abs_atom_marker = inputs['abs_atom_marker'].value
+    if abs_atom_marker in elements_present:
+        raise ValidationError(
+            f'The marker given for the absorbing atom ("{abs_atom_marker}") matches an existing Kind in the '
+            f'input structure ({elements_present}).'
+        )
+
+    if 'structure_preparation_settings' in inputs:
+        structure_prep_settings = inputs['structure_preparation_settings'].get_dict()
+        allowed_keys = ['supercell_min_parameter', 'standardize_structure']
+        invalid_keys = []
+        for key in structure_prep_settings:
+            if key not in allowed_keys:
+                invalid_keys.append(key)
+        if len(invalid_keys) > 0:
+            raise ValidationError(
+                'The dictionary provided for ``structure_preparation_settings`` contained invalid keys '
+                f'({invalid_keys}).'
+            )
+        if 'abs_atom_marker' in structure_prep_settings:
+            raise ValidationError(
+                'The absorbing atom marker must only be specified in the main input and nowhere else.'
+            )
+        if 'abs_elements_list' in structure_prep_settings:
+            raise ValidationError(
+                'The list of absorbing elements must only be specified in the main input and nowhere else.'
+            )
+        if 'supercell_min_parameter' in structure_prep_settings:
+            min_parameter = structure_prep_settings['supercell_min_parameter'].value
+            if not isinstance(min_parameter, (float, int)):
+                raise ValidationError(
+                    f'The provided minimum cell parameter ({min_parameter}) was neither a float nor integer.'
+                )
+        if 'standardize_structure' in structure_prep_settings:
+            value = structure_prep_settings['standardize_structure'].value
+            if not isinstance(value, bool):
+                raise ValidationError(f'The value given for standardize_structure ({value}) was not a boolean.')
+
+    if 'spglib_settings' in inputs:
+        spglib_settings = inputs['spglib_settings'].get_dict()
+        allowed_keys = ['symprec', 'angle_tolerance']
+        invalid_keys = []
+        for key in spglib_settings:
+            if key not in allowed_keys:
+                invalid_keys.append(key)
+        if len(invalid_keys) > 0:
+            raise ValidationError(
+                f'The dictionary provided for ``spglib_settings`` contained invalid keys ({invalid_keys}).'
+            )
+        if 'symprec' in spglib_settings:
+            value = spglib_settings['symprec']
+            if not isinstance(value, float):
+                raise ValidationError(
+                    f'The value given for ``symprec`` was of the wrong type (got {type(value)}, expected {float}.'
+                )
+        if 'angle_tolerance' in spglib_settings:
+            value = spglib_settings['angle_tolerance']
+            if not isinstance(value, float):
+                raise ValidationError(
+                    f'The value given for ``angle_tolerance`` was of the wrong type (got {type(value)}, '
+                    f'expected {float}.'
+                )
+
+
+class XpsWorkChain(ProtocolMixin, WorkChain):
+    """Workchain to compute all X-ray photoelectron spectra for a given structure using Quantum ESPRESSO.
+
+    The WorkChain follows the process required to compute all the K-edge XAS spectra for each
+    element in a given structure. The WorkChain itself firstly calls the PwRelaxWorkChain to
+    relax the input structure, then determines the input settings for each XAS
+    calculation automatically using ``get_xspectra_structures()``:
+        - Firstly the input structure is converted to its conventional standard cell using
+          ``spglib`` and detects the space group number for the conventional cell.
+        - Symmetry analysis of the standardized structure using ``spglib`` is then used to
+          determine the number of non-equivalent atomic sites in the structure for each
+          element considered for analysis.
+
+    Using the symmetry data returned from ``get_xspectra_structures``, input structures for
+    the XspectraCoreWorkChain are generated from the standardized structure by converting each
+    to a supercell with cell dimensions of at least 8.0 angstrom in each periodic dimension -
+    required in order to sufficiently reduce the unphysical interaction of the core-hole with
+    neighbouring images. The size of the minimum size requirement can be overriden by the
+    user if required. The WorkChain then uses the space group number to set the list of
+    polarisation vectors for the ``XspectraCoreWorkChain`` to consider for all subsequent
+    calculations.
+
+
+    """
+
+    # pylint: disable=too-many-public-methods, too-many-statements
+
+    @classmethod
+    def define(cls, spec):
+        """Define the process specification."""
+
+        super().define(spec)
+        # yapf: disable
+        spec.expose_inputs(
+            PwRelaxWorkChain,
+            namespace='relax',
+            exclude=('structure', 'clean_workdir', 'base_final_scf'),
+            namespace_options={
+                'help': (
+                    'Input parameters for the relax process. If not specified at all, the relaxation step is skipped.'
+                ),
+                'required' : False,
+                'populate_defaults' : False,
+            }
+        )
+        spec.expose_inputs(
+            PwBaseWorkChain,
+            namespace='ch_scf',
+            exclude=(
+                'kpoints', 'structure'
+            ),
+            namespace_options={
+                'help': ('Input parameters for the basic xspectra workflow (core-hole SCF + XAS.'),
+                'validator': None
+            }
+        )
+        spec.input_namespace(
+            'core_hole_pseudos',
+            valid_type=(orm.UpfData, UpfData),
+            dynamic=True,
+            help=(
+                'Dynamic namespace for pairs of excited-state pseudopotentials for each absorbing'
+                ' element. Must use the mapping "{element}" : {Upf}".'
+            )
+        )
+        spec.input_namespace(
+            'gipaw_pseudos',
+            valid_type=(orm.UpfData, UpfData),
+            dynamic=True,
+            help=(
+                'Dynamic namespace for pairs of ground-state pseudopotentials for each absorbing'
+                ' element. Must use the mapping "{element}" : {Upf}".'
+            )
+        )
+        spec.input(
+            'core_hole_treatments',
+            valid_type=orm.Dict,
+            required=False,
+            help=('Optional dictionary to set core-hole treatment to all elements present. '
+                  'The default full-core-hole treatment will be used if not specified.'
+                 )
+        )
+        spec.input(
+            'structure',
+            valid_type=orm.StructureData,
+            help=(
+                'Structure to be used for calculation.'
+            )
+        )
+        spec.input(
+            'voight_gamma',
+            valid_type=orm.Float,
+            default=lambda: orm.Float(0.3),
+            help=(
+                'The gamma parameter for the Lorenzian broadening in the Voight method.'
+            )
+        )
+        spec.input(
+            'voight_sigma',
+            valid_type=orm.Float,
+            default=lambda: orm.Float(0.3),
+            help=(
+                'The sigma parameter for the gaussian broadening in the Voight method.'
+            )
+        )
+        spec.input(
+            'abs_atom_marker',
+            valid_type=orm.Str,
+            default=lambda: orm.Str('X'),
+            help=(
+                'The name for the Kind representing the absorbing atom in the structure. '
+                'Will be used in all structures generated in ``get_xspectra_structures`` step.'
+            ),
+        )
+        spec.input(
+            'structure_preparation_settings',
+            valid_type=orm.Dict,
+            required=False,
+            help=(
+                'Optional settings dictionary for the ``get_xspectra_structures()`` method.'
+            )
+        )
+        spec.input(
+            'spglib_settings',
+            valid_type=orm.Dict,
+            required=False,
+            help=(
+                'Optional settings dictionary for the spglib call within ``get_xspectra_structures``.'
+            )
+        )
+        spec.input(
+            'elements_list',
+            valid_type=orm.List,
+            required=False,
+            help=(
+            'The list of elements to be considered for analysis, each must be valid elements of the periodic table.'
+            )
+        )
+        spec.input(
+            'clean_workdir',
+            valid_type=orm.Bool,
+            default=lambda: orm.Bool(False),
+            help=('If `True`, work directories of all called calculations will be cleaned at the end of execution.'),
+        )
+        spec.input(
+            'dry_run',
+            valid_type=orm.Bool,
+            serializer=to_aiida_type,
+            required=False,
+            help='Terminate workchain steps before submitting calculations (test purposes only).'
+        )
+        spec.inputs.validator = validate_inputs
+        spec.outline(
+            cls.setup,
+            if_(cls.should_run_relax)(
+                cls.run_relax,
+                cls.inspect_relax,
+            ),
+            cls.prepare_structures,
+            cls.run_all_ch_scf,
+            cls.inspect_all_ch_scf,
+            cls.results,
+        )
+
+        spec.exit_code(401, 'ERROR_SUB_PROCESS_FAILED_RELAX', message='The Relax sub process failed')
+        spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_SCF', message='One or more Pw sub processes failed')
+        spec.output(
+            'optimized_structure',
+            valid_type=orm.StructureData,
+            required=False,
+            help='The optimized structure from the ``relax`` process.',
+        )
+        spec.output(
+            'output_parameters_relax',
+            valid_type=orm.Dict,
+            required=False,
+            help='The output_parameters of the relax step.'
+        )
+        spec.output(
+            'standardized_structure',
+            valid_type=orm.StructureData,
+            required=False,
+            help='The standardized crystal structure used to generate structures for XSpectra sub-processes.',
+        )
+        spec.output(
+            'supercell_structure',
+            valid_type=orm.StructureData,
+            help=('The supercell of ``outputs.standardized_structure`` used to generate structures for'
+            ' XSpectra sub-processes.')
+        )
+        spec.output(
+            'symmetry_analysis_data',
+            valid_type=orm.Dict,
+            help='The output parameters from ``get_xspectra_structures()``.'
+        )
+        spec.output_namespace(
+            'output_parameters_ch_scf',
+            valid_type=orm.Dict,
+            dynamic=True,
+            help='The output parameters of each ``PwBaseWorkChain`` performed``.'
+        )
+        spec.output_namespace(
+            'chemical_shifts',
+            valid_type=orm.Dict,
+            dynamic=True,
+            help='All the chemical shift values for each element calculated by the WorkChain.'
+        )
+        spec.output_namespace(
+            'final_spectra',
+            valid_type=orm.XyData,
+            dynamic=True,
+            help='The fully-resolved spectra for each element'
+        )
+        # yapf: disable
+
+    @classmethod
+    def get_protocol_filepath(cls):
+        """Return ``pathlib.Path`` to the ``.yaml`` file that defines the protocols."""
+        from importlib_resources import files
+
+        from . import protocols  # pylint: disable=relative-beyond-top-level
+
+        # import protocols  # pylint: disable=relative-beyond-top-level
+        return files(protocols) / 'xps.yaml'
+
+    @classmethod
+    def get_default_treatment(cls) -> str:
+        """Return the default core-hole treatment.
+
+        :param cls: the workflow class.
+        :return: the default core-hole treatment
+        """
+
+        return cls._load_treatment_file()['default_treatment']
+
+    @classmethod
+    def get_available_treatments(cls) -> dict:
+        """Return the available core-hole treatments.
+
+        :param cls: the workflow class.
+        :return: dictionary of available treatments, where each key is a treatment and value
+                 is another dictionary that contains at least the key `description` and
+                 optionally other keys with supplimentary information.
+        """
+        data = cls._load_treatment_file()
+        return {treatment: {'description': values['description']} for treatment, values in data['treatments'].items()}
+
+    @classmethod
+    def get_treatment_inputs(
+        cls,
+        treatment: Optional[dict] = None,
+        overrides: Union[dict, pathlib.Path, None] = None,
+    ) -> dict:
+        """Return the inputs for the given workflow class and core-hole treatment.
+
+        :param cls: the workflow class.
+        :param treatment: optional specific treatment, if not specified, the default will be used
+        :param overrides: dictionary of inputs that should override those specified by the treatment. The mapping should
+            maintain the exact same nesting structure as the input port namespace of the corresponding workflow class.
+        :return: mapping of inputs to be used for the workflow class.
+        """
+        data = cls._load_treatment_file()
+        treatment = treatment or data['default_treatment']
+
+        try:
+            treatment_inputs = data['treatments'][treatment]
+        except KeyError as exception:
+            raise ValueError(
+                f'`{treatment}` is not a valid treatment. '
+                'Call ``get_available_treatments`` to show available treatments.'
+            ) from exception
+        inputs = recursive_merge(data['default_inputs'], treatment_inputs)
+        inputs.pop('description')
+
+        if isinstance(overrides, pathlib.Path):
+            with overrides.open() as file:
+                overrides = yaml.safe_load(file)
+
+        if overrides:
+            return recursive_merge(inputs, overrides)
+
+        return inputs
+
+    @classmethod
+    def _load_treatment_file(cls) -> dict:
+        """Return the contents of the core-hole treatment file."""
+        with cls.get_treatment_filepath().open() as file:
+            return yaml.safe_load(file)
+
+    @classmethod
+    def get_treatment_filepath(cls):
+        """Return ``pathlib.Path`` to the ``.yaml`` file that defines the core-hole treatments for the SCF step."""
+        from importlib_resources import files
+
+        from . import protocols
+
+        # import protocols
+        return files(protocols) / 'core_hole_treatments.yaml'
+
+    @classmethod
+    def get_builder_from_protocol(
+        cls, code, structure, pseudos, core_hole_treatments=None, protocol=None,
+        overrides=None, elements_list=None, options=None, **kwargs
+    ):
+        """Return a builder prepopulated with inputs selected according to the chosen protocol.
+
+        :param pw_code: the ``Code`` instance configured for the ``quantumespresso.pw``
+            plugin.
+        :param xs_code: the ``Code`` instance configured for the
+            ``quantumespresso.xspectra`` plugin.
+        :param upf2plotcore_code: the AiiDA-Shell ``Code`` instance configured for the
+                                  upf2plotcore shell script.
+        :param structure: the ``StructureData`` instance to use.
+        :param pseudos: the core-hole pseudopotential pairs (ground-state and
+                        excited-state) for the elements to be calculated. These must
+                        use the mapping of {"element" : {"core_hole" : <upf>,
+                                                         "gipaw" : <upf>}}
+        :param protocol: the protocol to use. If not specified, the default will be used.
+        :param overrides: optional dictionary of inputs to override the defaults of the
+                          XspectraWorkChain itself.
+        :param kwargs: additional keyword arguments that will be passed to the
+            ``get_builder_from_protocol`` of all the sub processes that are called by this
+            workchain.
+        :return: a process builder instance with all inputs defined ready for launch.
+        """
+
+        inputs = cls.get_protocol_inputs(protocol, overrides)
+
+        pw_args = (code, structure, protocol)
+        # xspectra_args = (pw_code, xs_code, structure, protocol, upf2plotcore_code)
+
+        relax = PwRelaxWorkChain.get_builder_from_protocol(
+            *pw_args, overrides=inputs.get('relax', None), options=options, **kwargs
+        )
+        ch_scf = PwBaseWorkChain.get_builder_from_protocol(
+            *pw_args, overrides=inputs.get('ch_scf', None), options=options, **kwargs
+        )
+
+        relax.pop('clean_workdir', None)
+        relax.pop('structure', None)
+        relax.pop('base_final_scf', None)
+        ch_scf.pop('clean_workdir', None)
+        ch_scf.pop('structure', None)
+
+        abs_atom_marker = orm.Str(inputs['abs_atom_marker'])
+        # pylint: disable=no-member
+        builder = cls.get_builder()
+        builder.relax = relax
+        builder.ch_scf = ch_scf
+        builder.structure = structure
+        builder.abs_atom_marker = abs_atom_marker
+        builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
+        core_hole_pseudos = {}
+        gipaw_pseudos = {}
+        if elements_list:
+            elements_not_present = []
+            elements_present = [kind.symbol for kind in structure.kinds]
+            for element in elements_list:
+                if element not in elements_present:
+                    elements_not_present.append(element)
+
+            if len(elements_not_present) > 0:
+                raise ValueError(
+                    f'The following elements: {elements_not_present} are not present in the'
+                    f' structure ({elements_present}) provided.'
+                    )
+            else:
+                builder.elements_list = orm.List(elements_list)
+                for element in elements_list:
+                    core_hole_pseudos[element] = pseudos[element]['core_hole']
+                    gipaw_pseudos[element] = pseudos[element]['gipaw']
+        # if no elements list is given, we instead initalise the pseudos dict with all
+        # elements in the structure
+        else:
+            for element in pseudos:
+                core_hole_pseudos[element] = pseudos[element]['core_hole']
+                gipaw_pseudos[element] = pseudos[element]['gipaw']
+        builder.core_hole_pseudos = core_hole_pseudos
+        builder.gipaw_pseudos = gipaw_pseudos
+        if core_hole_treatments:
+            builder.core_hole_treatments = orm.Dict(dict=core_hole_treatments)
+        # pylint: enable=no-member
+        return builder
+
+
+    def setup(self):
+        """Init required context variables."""
+        custom_elements_list = self.inputs.get('elements_list', None)
+        if not custom_elements_list:
+            structure = self.inputs.structure
+            self.ctx.elements_list = [Kind.symbol for Kind in structure.kinds]
+        else:
+            self.ctx.elements_list = custom_elements_list.get_list()
+
+
+    def should_run_relax(self):
+        """If the 'relax' input namespace was specified, we relax the input structure."""
+        return 'relax' in self.inputs
+
+    def run_relax(self):
+        """Run the PwRelaxWorkChain to run a relax PwCalculation."""
+        inputs = AttributeDict(self.exposed_inputs(PwRelaxWorkChain, namespace='relax'))
+        inputs.metadata.call_link_label = 'relax'
+        inputs.structure = self.inputs.structure
+
+        running = self.submit(PwRelaxWorkChain, **inputs)
+
+        self.report(f'launching PwRelaxWorkChain<{running.pk}>')
+
+        return ToContext(relax_workchain=running)
+
+    def inspect_relax(self):
+        """Verify that the PwRelaxWorkChain finished successfully."""
+        workchain = self.ctx.relax_workchain
+
+        if not workchain.is_finished_ok:
+            self.report(f'PwRelaxWorkChain failed with exit status {workchain.exit_status}')
+            return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
+
+        relaxed_structure = workchain.outputs.output_structure
+        relax_params = workchain.outputs.output_parameters
+        self.ctx.relaxed_structure = relaxed_structure
+        self.out('optimized_structure', relaxed_structure)
+        self.out('output_parameters_relax', relax_params)
+
+    def prepare_structures(self):
+        """Run the relaxed structure though ``get_xspectra_structures()`` to get a marked structure for each site.
+
+        Analyses the given structure using ``get_xspectra_structures()`` to obtain both the
+        conventional standard form of the crystal structure and the list of symmetrically
+        non-equivalent sites. This list is then used to produce a supercell of the
+        standardized structure for each selected site with the site marked using a unique
+        label.
+
+        If provided, this step will use inputs from ``inputs.structure_preparation_settings``
+        and apply them to the CalcFunction call. The accepted inputs (format, default) are:
+            - supercell_min_parameter (float, 8.0)
+            - standardize_structure (bool, True)
+
+        Input settings for the spglib analysis within ``get_xspectra_structures`` can be
+        provided via ``inputs.spglib_settings`` in the form of a Dict node and must be
+        formatted as {<variable_name> : <parameter>} for each variable in the
+        ``get_symmetry_dataset()`` method.
+        """
+        from aiida_quantumespresso.workflows.functions.get_xspectra_structures import get_xspectra_structures
+
+        # from get_xspectra_structures import get_xspectra_structures
+
+        elements_list = orm.List(self.ctx.elements_list)
+        inputs = {
+            'absorbing_elements_list' : elements_list,
+            'absorbing_atom_marker' : self.inputs.abs_atom_marker,
+            'metadata' : {
+                'call_link_label' : 'get_xspectra_structures'
+            }
+        } # populate this further once the schema for WorkChain options is figured out
+        if 'structure_preparation_settings' in self.inputs:
+            optional_cell_prep = self.inputs.structure_preparation_settings
+            for key, value in optional_cell_prep.items():
+                inputs[key] = value
+
+        if 'spglib_settings' in self.inputs:
+            spglib_settings = self.inputs.spglib_settings
+        else:
+            spglib_settings = None
+
+        if 'relax' in self.inputs:
+            relaxed_structure = self.ctx.relaxed_structure
+            result = get_xspectra_structures(relaxed_structure, spglib_settings, **inputs)
+        else:
+            result = get_xspectra_structures(self.inputs.structure, spglib_settings, **inputs)
+
+        supercell = result.pop('supercell')
+        out_params = result.pop('output_parameters')
+        if out_params.get_dict()['input_standardized']:
+            standardized = result.pop('standardized_structure')
+            self.out('standardized_structure', standardized)
+
+        # structures_to_process = {Key : Value for Key, Value in result.items()}
+        self.ctx.structures_to_process = result
+        self.ctx.equivalent_sites_data = out_params['equivalent_sites_data']
+
+        self.out('supercell_structure', supercell)
+        self.out('symmetry_analysis_data', out_params)
+
+    def run_all_ch_scf(self):
+        """Call all ``PwBaseWorkChain``s required to compute total energies for each absorbing atom site."""
+
+        # from .protocols.core_hole_treatments import CoreHoleTreatments
+
+        # from protocols.core_hole_treatments import CoreHoleTreatments
+
+        structures_to_process = self.ctx.structures_to_process
+        equivalent_sites_data = self.ctx.equivalent_sites_data
+        abs_atom_marker = self.inputs.abs_atom_marker.value
+
+        futures = {}
+
+        for site in structures_to_process:
+            inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='ch_scf'))
+            structure = structures_to_process[site]
+            inputs.pw.structure = structure
+            abs_element = equivalent_sites_data[site]['symbol']
+
+            if 'core_hole_treatments' in self.inputs:
+                ch_treatments = self.inputs.core_hole_treatments.get_dict()
+                ch_treatment = ch_treatments.get(abs_element, 'xch_smear')
+            else:
+                ch_treatment = 'xch_smear'
+
+
+            inputs.metadata.call_link_label = f'{site}_xps'
+
+            # Get the given settings for the SCF inputs and then overwrite them with the
+            # chosen core-hole approximation, then apply the correct pseudopotential pair
+            scf_params = inputs.pw.parameters.get_dict()
+            ch_treatment_inputs = self.get_treatment_inputs(treatment=ch_treatment)
+
+            new_scf_params = recursive_merge(left=scf_params, right=ch_treatment_inputs)
+            if ch_treatment == 'xch_smear':
+                structure_kinds = [kind.name for kind in structure.kinds]
+                structure_kinds.sort()
+                abs_species = structure_kinds.index(abs_atom_marker)
+                new_scf_params['SYSTEM'][f'starting_magnetization({abs_species + 1})'] = 1
+
+            core_hole_pseudo = self.inputs.core_hole_pseudos[abs_element]
+            gipaw_pseudo = self.inputs.gipaw_pseudos[abs_element]
+            inputs.pw.pseudos[abs_atom_marker] = core_hole_pseudo
+            inputs.pw.pseudos[abs_element] = gipaw_pseudo
+
+            inputs.pw.parameters = orm.Dict(dict=new_scf_params)
+
+            inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
+
+            future = self.submit(PwBaseWorkChain, **inputs)
+            futures[site] = future
+            self.report(f'launched PwBaseWorkChain for {site}<{future.pk}>')
+
+        return ToContext(**futures)
+
+    def inspect_all_ch_scf(self):
+        """Check that all the PwBaseWorkChain sub-processes finished sucessfully."""
+
+        labels = self.ctx.structures_to_process.keys()
+        work_chains = [self.ctx[label] for label in labels]
+        failed_work_chains = []
+        for work_chain, label in zip(work_chains, labels):
+            if not work_chain.is_finished_ok:
+                failed_work_chains.append(work_chain)
+                self.report(f'PwBaseWorkChain for ({label}) failed with exit status {work_chain.exit_status}')
+        if len(failed_work_chains) > 0:
+            return self.exit_codes.ERROR_SUB_PROCESS_FAILED_SCF
+
+    def results(self):
+        """Compile all output spectra, organise and post-process all computed spectra, and send to outputs."""
+
+        import copy  # pylint: disable=unused-import
+
+        site_labels = list(self.ctx.structures_to_process.keys())
+        output_params_ch_scf = {label : self.ctx[label].outputs.output_parameters for label in site_labels}
+        self.out('output_parameters_ch_scf', output_params_ch_scf)
+
+        param_nodes = output_params_ch_scf.copy()
+        param_nodes['metadata'] = {'call_link_label' : 'compile_final_spectra'}
+
+        equivalent_sites_data = orm.Dict(dict=self.ctx.equivalent_sites_data)  # fixed
+        elements_list = orm.List(list=self.ctx.elements_list)
+        voight_gamma = self.inputs.voight_gamma                               #fixed
+        voight_sigma = self.inputs.voight_sigma                               #fixed
+
+        result = get_spectra_by_element(
+            elements_list,
+            equivalent_sites_data,
+            voight_gamma,
+            voight_sigma,
+            **param_nodes
+        )
+
+        final_spectra = {}
+        chemical_shifts = {}
+        for key, value in result.items():
+            if key == 'xps':
+                final_spectra[key] = value
+            if key == 'cls':
+                chemical_shifts[key] = value
+
+        self.out('chemical_shifts', chemical_shifts)
+        self.out('final_spectra', final_spectra)
+
+
+    def on_terminated(self):
+        """Clean the working directories of all child calculations if ``clean_workdir=True`` in the inputs."""
+
+        super().on_terminated()
+
+        if self.inputs.clean_workdir.value is False:
+            self.report('remote folders will not be cleaned')
+            return
+
+        cleaned_calcs = []
+
+        for called_descendant in self.node.called_descendants:
+            if isinstance(called_descendant, orm.CalcJobNode):
+                try:
+                    called_descendant.outputs.remote_folder._clean()  # pylint: disable=protected-access
+                    cleaned_calcs.append(called_descendant.pk)
+                except (IOError, OSError, KeyError):
+                    pass
+
+        if cleaned_calcs:
+            self.report(f"cleaned remote folders of calculations: {' '.join(map(str, cleaned_calcs))}")
