@@ -449,6 +449,21 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         return ProcessHandlerReport(True)
 
+    @process_handler(priority=575, exit_codes=[
+        PwCalculation.exit_codes.ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY,
+    ])
+    def handle_ionic_interrupted_partial_trajectory(self, calculation):
+        """Handle `ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY` exit code.
+
+        In this case the calculation got interrupted during an ionic optimization due to a problem that is likely
+        transient, so we can restart from the last output structure. Note that since the job got interrupted the charge
+        density and wave functions are likely corrupt so those cannot be used in the restart.
+        """
+        self.ctx.inputs.structure = calculation.outputs.output_structure
+        self.set_restart_type(RestartType.FROM_SCRATCH)
+        self.report_error_handled(calculation, 'restarting from scratch from the last output structure')
+        return ProcessHandlerReport(True)
+
     @process_handler(
         priority=570, exit_codes=[
             PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF,
