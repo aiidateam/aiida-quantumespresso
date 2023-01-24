@@ -5,6 +5,8 @@ from aiida import orm
 from aiida.common import AttributeDict
 import pytest
 
+from aiida_quantumespresso.calculations.pw import PwCalculation
+
 
 @pytest.fixture
 def generate_inputs(generate_structure):
@@ -494,6 +496,40 @@ def test_pw_failed_interrupted_xml(
     assert 'output_parameters' in results
     assert 'output_trajectory' in results
     data_regression.check(results['output_parameters'].get_dict())
+
+
+@pytest.mark.parametrize(
+    'test_case, expected_exit_code', (
+        ('default', None),
+        ('failed_interrupted', PwCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME),
+    )
+)
+def test_pw_failed_interrupted_scheduler(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, test_case, expected_exit_code
+):
+    """Test that an exit code set by the scheduler is not overridden unless a more specific error is parsed.
+
+    The test is run twice, once for the ``default`` test case and once for ``failed_interrupted``, which correspond to a
+    successful run and a run that got interrupted (usually due to scheduler killing the job). Before calling the parser
+    the ``ERROR_SCHEDULER_OUT_OF_WALLTIME`` is set on the node. In the case of the ``default`` test case, this should be
+    ignored and the parser should return ``ExitCode(0)``. For the interrupted case, the exit code of the scheduler
+    should not be overridden so the parser should return ``ERROR_SCHEDULER_OUT_OF_WALLTIME``.
+    """
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    # Generate the node and set an exit status as if it would have been set by the scheduler parser
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, test_case, generate_inputs())
+    node.set_exit_status(PwCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME.status)
+
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    if expected_exit_code is None:
+        assert calcfunction.is_finished_ok, (calcfunction.exit_status, calcfunction.exception)
+    else:
+        assert not calcfunction.is_finished_ok, calcfunction.exception
+        assert calcfunction.exit_status == expected_exit_code.status
 
 
 @pytest.mark.parametrize('filename', ('', '_stdout'))
