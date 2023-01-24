@@ -17,7 +17,6 @@ from qe_tools.converters import get_parameters_from_cell
 
 from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
-from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
 
 from .base import CalcJob
 from .helpers import QEInputValidationError
