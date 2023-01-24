@@ -61,6 +61,7 @@ class PwCalculation(BasePwCpInputGenerator):
     @classmethod
     def define(cls, spec):
         """Define the process specification."""
+        # pylint: disable=too-many-statements
         # yapf: disable
         super().define(spec)
         spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.pw')

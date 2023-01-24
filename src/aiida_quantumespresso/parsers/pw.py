@@ -4,6 +4,7 @@ import traceback
 
 from aiida import orm
 from aiida.common import exceptions
+from aiida.engine import ExitCode
 import numpy
 
 from aiida_quantumespresso.utils.mapping import get_logging_container
@@ -107,7 +108,16 @@ class PwParser(Parser):
         ignore = ['Error while parsing ethr.', 'DEPRECATED: symmetry with ibrav=0, use correct ibrav instead']
         self.emit_logs([logs_stdout, logs_xml], ignore=ignore)
 
-        # First check for specific known problems that can cause a pre-mature termination of the calculation
+        # If either the stdout or XML were incomplete or corrupt investigate the potential cause
+        if self.exit_code_stdout or self.exit_code_xml:
+
+            # First check whether the scheduler already reported an exit code.
+            if self.node.exit_status is not None:
+
+                # Now it is unlikely we can provide a more specific exit code so we keep the scheduler one.
+                return ExitCode(self.node.exit_status, self.node.exit_message)
+
+        # Check for specific known problems that can cause a pre-mature termination of the calculation
         exit_code = self.validate_premature_exit(logs_stdout)
         if exit_code:
             return self.exit(exit_code)
