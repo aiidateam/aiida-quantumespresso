@@ -147,6 +147,9 @@ class PwCalculation(BasePwCpInputGenerator):
             message='Then ionic minimization cycle converged but the thresholds are exceeded in the final SCF.')
         spec.exit_code(502, 'ERROR_IONIC_CYCLE_EXCEEDED_NSTEP',
             message='The ionic minimization cycle did not converge after the maximum number of steps.')
+        spec.exit_code(503, 'ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY',
+            message='The ionic minimization cycle did not finish because the calculation was interrupted but a partial '
+                    'trajectory and output structure was successfully parsed which can be used for a restart.')
         spec.exit_code(510, 'ERROR_IONIC_CYCLE_ELECTRONIC_CONVERGENCE_NOT_REACHED',
             message='The electronic minimization cycle failed during an ionic minimization cycle.')
         spec.exit_code(511, 'ERROR_IONIC_CONVERGENCE_REACHED_FINAL_SCF_FAILED',

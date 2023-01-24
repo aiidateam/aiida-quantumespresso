@@ -532,6 +532,30 @@ def test_pw_failed_interrupted_scheduler(
         assert calcfunction.exit_status == expected_exit_code.status
 
 
+def test_pw_failed_interrupted_relax(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
+    """Test that a `relax` calculation that was interrupted by the scheduler is nevertheless (partially) parsed.
+
+    In this case, since a partial trajectory could be parsed from which one can restart, the scheduler code is replaced
+    with the more specific ``ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY``.
+    """
+    name = 'failed_interrupted_relax'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    inputs = generate_inputs(calculation_type='relax')
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
+    node.set_exit_status(PwCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME.status)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_failed
+    assert calcfunction.exit_status == PwCalculation.exit_codes.ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY.status
+    assert orm.Log.collection.get_logs_for(node)
+    assert 'output_parameters' in results
+    assert 'output_structure' in results
+    assert 'output_trajectory' in results
+
+
 @pytest.mark.parametrize('filename', ('', '_stdout'))
 def test_pw_npools_too_high_error(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename

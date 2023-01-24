@@ -7,6 +7,7 @@ from aiida.common import exceptions
 from aiida.engine import ExitCode
 import numpy
 
+from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.utils.mapping import get_logging_container
 
 from .base import Parser
@@ -23,6 +24,7 @@ class PwParser(Parser):
         permanently in the repository. The second required node is a filepath under the key `retrieved_temporary_files`
         which should contain the temporary retrieved files.
         """
+        # pylint: disable=too-many-statements
         dir_with_bands = None
         crash_file = None
         self.exit_code_xml = None
@@ -113,6 +115,16 @@ class PwParser(Parser):
 
             # First check whether the scheduler already reported an exit code.
             if self.node.exit_status is not None:
+
+                # The following scheduler errors should correspond to cases where we can simply restart the calculation
+                # and have a chance that the calculation will succeed as the error can be transient.
+                recoverable_scheduler_error = self.node.exit_status in [
+                    PwCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME.status,
+                    PwCalculation.exit_codes.ERROR_SCHEDULER_NODE_FAILURE.status,
+                ]
+
+                if self.get_calculation_type() in ['relax', 'vc-relax'] and recoverable_scheduler_error:
+                    return PwCalculation.exit_codes.ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY
 
                 # Now it is unlikely we can provide a more specific exit code so we keep the scheduler one.
                 return ExitCode(self.node.exit_status, self.node.exit_message)
