@@ -19,8 +19,10 @@ treatments:
     xch_smear:
         description: 'Core-hole treatment which places the excited electron into the conduction band (smeared occupations).'
         SYSTEM:
+            occupations: smearing
             tot_charge: 0
             nspin: 2
+            starting_magnetization(1): 0
     none:
         description: 'Applies no core-hole treatment (overrides the default tot_charge and changes it to 0).'
         SYSTEM:

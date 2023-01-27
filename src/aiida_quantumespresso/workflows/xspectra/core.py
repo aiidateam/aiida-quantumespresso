@@ -8,180 +8,19 @@ from typing import Optional, Union
 
 from aiida import orm
 from aiida.common import AttributeDict
-from aiida.engine import ToContext, WorkChain, calcfunction, if_
+from aiida.engine import ToContext, WorkChain, append_, if_
 from aiida.orm.nodes.data.base import to_aiida_type
-from aiida.plugins import CalculationFactory, DataFactory, WorkflowFactory
+from aiida.plugins import CalculationFactory, WorkflowFactory
 import yaml
 
+from aiida_quantumespresso.calculations.functions.xspectra.get_powder_spectrum import get_powder_spectrum
+from aiida_quantumespresso.calculations.functions.xspectra.merge_spectra import merge_spectra
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 from aiida_quantumespresso.workflows.protocols.utils import ProtocolMixin, recursive_merge
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 XspectraBaseWorkChain = WorkflowFactory('quantumespresso.xspectra.base')
-XyData = DataFactory('array.xy')
-
-
-@calcfunction
-def get_all_spectra(**kwargs):
-    """Compile all calculated spectra into a single XyData node for easier plotting.
-
-    This will take all the data for each spectrum produced during the re-plot step and output
-    them into a single XyData node.
-    """
-
-    output_spectra = XyData()
-    y_arrays_list = []
-    y_units_list = []
-    y_labels_list = []
-
-    spectra = [node for label, node in kwargs.items() if isinstance(node, orm.Data)]
-
-    for spectrum_node in spectra:
-        calc_node = spectrum_node.creator
-        calc_out_params = calc_node.res
-        eps_vector = calc_out_params['xepsilon']
-
-        old_y_component = spectrum_node.get_y()
-        if len(old_y_component) == 1:
-            y_array = old_y_component[0][1]
-            y_units = old_y_component[0][2]
-            y_arrays_list.append(y_array)
-            y_units_list.append(y_units)
-            y_labels_list.append(f'sigma_{eps_vector[0]}_{eps_vector[1]}_{eps_vector[2]}')
-        elif len(old_y_component) == 3:
-            y_tot = old_y_component[0][1]
-            y_tot_units = old_y_component[0][2]
-            y_tot_label = f'sigma_tot_{eps_vector[0]}_{eps_vector[1]}_{eps_vector[2]}'
-            y_arrays_list.append(y_tot)
-            y_units_list.append(y_tot_units)
-            y_labels_list.append(y_tot_label)
-
-            y_up = old_y_component[1][1]
-            y_up_units = old_y_component[1][2]
-            y_up_label = f'sigma_up_{eps_vector[0]}_{eps_vector[1]}_{eps_vector[2]}'
-            y_arrays_list.append(y_up)
-            y_units_list.append(y_up_units)
-            y_labels_list.append(y_up_label)
-
-            y_down = old_y_component[2][1]
-            y_down_units = old_y_component[2][2]
-            y_down_label = f'sigma_down_{eps_vector[0]}_{eps_vector[1]}_{eps_vector[2]}'
-            y_arrays_list.append(y_down)
-            y_units_list.append(y_down_units)
-            y_labels_list.append(y_down_label)
-
-        x_array = spectrum_node.get_x()[1]
-        x_label = spectrum_node.get_x()[0]
-        x_units = spectrum_node.get_x()[2]
-
-    output_spectra.set_x(x_array, x_label, x_units)
-    output_spectra.set_y(y_arrays_list, y_labels_list, y_units_list)
-
-    return output_spectra
-
-
-@calcfunction
-def get_powder_spectrum(**kwargs):
-    """Combine the output spectra into a single "Powder" spectrum, representing the K-edge XAS of a powder sample.
-
-    Note that this step should only be requested (``inputs.get_powder_spectrum = True``,
-    defaults to ``False``) for valid crystal structures. The function interprets the crystal
-    symmetry to be exploited based on the polarisation (epsilon) vectors given to the
-    function, since (by default) the WorkChain calls for calculations of all three basis
-    vectors and thus it is assumed that the user would know the symmetry of the structure
-    before deciding to set the vectors manually. If the polarisation vectors supplied to the
-    ``WorkChain`` would cause a failure in the ``CalcFunction`` step, then the step is skipped
-    entirely with a warning (see ``cls.results``)
-    """
-
-    spectra = {label: node for label, node in kwargs.items() if label != 'metadata'}
-
-    # If the system is isochoric (e.g. a cubic system) then the three basis vectors are equal
-    # to each other, thus we simply return the
-    if len(spectra) == 1:
-        vectors = list(spectra.keys())
-        powder_spectrum = spectra[vectors[0]]
-        powder_x = powder_spectrum.get_x()[1]
-        powder_y = powder_spectrum.get_y()[0][1]
-
-        powder_data = orm.XyData()
-        powder_data.set_x(powder_x, 'energy', 'eV')
-        powder_data.set_y(powder_y, 'sigma', 'n/a')
-
-    # if the system is dichoric (e.g. a hexagonal system) then the A and B periodic
-    # dimensions are equal to each other by symmetry, thus the powder spectrum is simply
-    # the average of 2x the 1 0 0 eps vector and 1x the 0 0 1 eps vector
-    if len(spectra) == 2:
-        # Since the individual vectors are labelled, we can extract just the spectra needed
-        # to produce the powder and leave the rest
-        vectors = list(spectra.keys())
-
-        for label in vectors:
-            if label in ['eps_100', 'eps_010']:
-                spectrum_a = spectra[label]
-            elif label in ['eps_001']:
-                spectrum_c = spectra[label]
-
-        powder_x = spectrum_a.get_x()[1]
-        yvals_a = spectrum_a.get_y()[0][1]
-        yvals_c = spectrum_c.get_y()[0][1]
-
-        powder_y = ((yvals_a * 2) + yvals_c) / 3
-        powder_data = orm.XyData()
-        powder_data.set_x(powder_x, 'energy', 'eV')
-        powder_data.set_y(powder_y, 'sigma', 'n/a')
-
-    # if the system is trichoric (e.g. a monoclinic system) then no periodic dimensions
-    # are equal by symmetry, thus the powder spectrum is the average of the three basis
-    # dipole vectors (1 0 0, 0 1 0, 0 0 1)
-    if len(spectra) == 3:
-        # Since the individual vectors are labelled, we can extract just the spectra needed to
-        # produce the powder and leave the rest
-        spectrum_a = spectra['eps_100']
-        spectrum_b = spectra['eps_010']
-        spectrum_c = spectra['eps_001']
-
-        powder_x = spectrum_a.get_x()[1]
-        yvals_a = spectrum_a.get_y()[0][1]
-        yvals_b = spectrum_b.get_y()[0][1]
-        yvals_c = spectrum_c.get_y()[0][1]
-
-        powder_y = (yvals_a + yvals_b + yvals_c) / 3
-
-        powder_data = orm.XyData()
-        powder_data.set_x(powder_x, 'energy', 'eV')
-        powder_data.set_y(powder_y, 'sigma', 'n/a')
-
-    return powder_data
-
-
-def validate_scf(inputs, _):
-    """Validate the scf parameters."""
-    parameters = inputs['pw']['parameters'].get_dict()
-    if parameters.get('CONTROL', {}).get('calculation', 'scf') != 'scf':
-        return '`CONTOL.calculation` in `scf.pw.parameters` is not set to `scf`.'
-
-
-def validate_inputs(inputs, _):
-    """Validate the inputs before launching the WorkChain."""
-
-    eps_vector_list = inputs['eps_vectors'].get_list()
-    if len(eps_vector_list) == 0:
-        return 'Error: eps_vectors list empty.'
-    if 'core_wfc_data' not in inputs and 'upf2plotcore_code' not in inputs:
-        return 'Error: either a core wavefunction file or a code node for upf2plotcore.sh must be provided.'
-    structure = inputs['structure']
-    kinds_present = structure.kinds
-    abs_atom_found = False
-    for kind in kinds_present:
-        if kind.name == inputs['abs_atom_marker'].value:
-            abs_atom_found = True
-    if not abs_atom_found:
-        return (
-            f'Error: the marker given for the absorbing atom ("{inputs["abs_atom_marker"].value}") ' +
-            'does not appear in the structure provided.'
-        )
 
 
 class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
@@ -205,7 +44,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
     broadening significantly speed up the convergence of the Lanczos procedure. Inputs for the
     replot calculation are found in the ``xs_plot`` namespace.
 
-    The the core-wavefunction plot derived from the ground-state of the absorbing element can
+    The core-wavefunction plot derived from the ground-state of the absorbing element can
     be provided as a top-level input or produced by the WorkChain. If left to the WorkChain,
     the ground-state pseudopotential assigned to the absorbing element will be used to
     generate this data using the upf2plotcore.sh utility script (via the ``AiiDA-Shell``
@@ -215,7 +54,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         - An input structure where the desired absorbing atom in the system is marked as a
           separate Kind. The default behaviour for the WorkChain is to set the Kind name as
           'X', however this can be changed via the `overrides` dictionary.
-        - A code node for ``upf2plotcore``, configured for the ``AiiDA-Shell`` plugin
+        - A code node for ``upf2plotcore``, configured for the ``aiida-shell`` plugin
           (https://github.com/sphuber/aiida-shell). Alternatively, a ``SinglefileData`` node
           from a previous ``ShellJob`` run can be supplied under ``inputs.core_wfc_data``.
         - A suitable pair of pseudopotentials for the element type of the absorbing atom,
@@ -235,22 +74,23 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         """Define the process specification."""
 
         super().define(spec)
-        # yapf: disable
         spec.expose_inputs(
             PwBaseWorkChain,
             namespace='scf',
             exclude=('pw.parent_folder', 'pw.structure', 'clean_workdir'),
             namespace_options={
                 'help': ('Input parameters for the `pw.x` calculation.'),
-                'validator': validate_scf,
+                'validator': cls.validate_scf,
             }
         )
         spec.expose_inputs(
             XspectraBaseWorkChain,
             namespace='xs_prod',
             exclude=('clean_workdir', 'xspectra.parent_folder', 'xspectra.core_wfc_data'),
-            namespace_options={'help': ('Input parameters for the `xspectra.x` calculation'
-           ' to compute the Lanczos.')}
+            namespace_options={
+                'help': ('Input parameters for the `xspectra.x` calculation'
+                         ' to compute the Lanczos.')
+            }
         )
         spec.expose_inputs(
             XspectraBaseWorkChain,
@@ -258,11 +98,11 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
             exclude=('clean_workdir', 'xspectra.parent_folder', 'xspectra.core_wfc_data'),
             namespace_options={
                 'help': ('Input parameters for the re-plot `xspectra.x` calculation of the Lanczos.'),
-                'required' : False,
+                'required': False,
                 'populate_defaults': False
             }
         )
-        spec.inputs.validator = validate_inputs
+        spec.inputs.validator = cls.validate_inputs
         spec.input(
             'structure',
             valid_type=orm.StructureData,
@@ -312,9 +152,8 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         spec.input(
             'upf2plotcore_code',
             valid_type=orm.Code,
-            serializer=to_aiida_type,
             required=False,
-            help='The code node required for upf2plotcore.sh configured for ``AiiDA-Shell``. '
+            help='The code node required for upf2plotcore.sh configured for ``aiida-shell``. '
             'Must be provided if `core_wfc_data` is not provided.'
         )
         spec.input(
@@ -350,22 +189,29 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
 
         spec.exit_code(401, 'ERROR_SUB_PROCESS_FAILED_SCF', message='The SCF sub process failed')
         spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_XSPECTRA', message='One or more XSpectra sub processes failed')
-        spec.exit_code(403, 'ERROR_NO_GIPAW_INFO_FOUND', message='The pseudo for the absorbing element contains no'
-                       ' GIPAW information.')
-        spec.output('output_parameters_scf', valid_type=orm.Dict, help='The output parameters of the SCF'
-                    ' `PwBaseWorkChain`.')
+        spec.exit_code(
+            403,
+            'ERROR_NO_GIPAW_INFO_FOUND',
+            message='The pseudo for the absorbing element contains no'
+            ' GIPAW information.'
+        )
+        spec.output(
+            'parameters_scf', valid_type=orm.Dict, help='The output parameters of the SCF'
+            ' `PwBaseWorkChain`.'
+        )
         spec.output_namespace(
-            'output_parameters_xspectra',
+            'parameters_xspectra',
             valid_type=orm.Dict,
             help='The output dictionaries of each `XspectraBaseWorkChain` performed',
             dynamic=True
         )
         spec.output(
-            'output_spectra',
+            'spectra',
             valid_type=orm.XyData,
             help='An XyData node containing all the final spectra produced by the WorkChain.'
         )
         spec.output('powder_spectrum', valid_type=orm.XyData, required=False, help='The simulated powder spectrum')
+
     @classmethod
     def get_protocol_filepath(cls):
         """Return ``pathlib.Path`` to the ``.yaml`` file that defines the protocols."""
@@ -448,9 +294,18 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
 
     @classmethod
     def get_builder_from_protocol(
-        cls, pw_code, xs_code, structure, upf2plotcore_code=None, core_wfc_data=None,
-        core_hole_pseudos=None, core_hole_treatment=None, protocol=None,
-        overrides=None, options=None, **kwargs
+        cls,
+        pw_code,
+        xs_code,
+        structure,
+        upf2plotcore_code=None,
+        core_wfc_data=None,
+        core_hole_pseudos=None,
+        core_hole_treatment=None,
+        protocol=None,
+        overrides=None,
+        options=None,
+        **kwargs
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
@@ -459,7 +314,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         :param xs_code: the ``Code`` instance configured for the
                         ``quantumespresso.xspectra`` plugin.
         :param structure: the ``StructureData`` instance to use.
-        :param upf2plotcore_code: the AiiDA-Shell ``Code`` instance configured for the
+        :param upf2plotcore_code: the aiida-shell ``Code`` instance configured for the
                                   upf2plotcore.sh shell script, used to generate the core
                                   wavefunction data.
         :param core_wfc_data:
@@ -486,21 +341,20 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         inputs = cls.get_protocol_inputs(protocol, overrides)
         pw_inputs = PwBaseWorkChain.get_protocol_inputs(protocol=protocol)
         pw_params = pw_inputs['pw']['parameters']
+        kinds_present = sorted([kind.name for kind in structure.kinds])
         # Get the default inputs from the PwBaseWorkChain and override them with those
         # required for the chosen core-hole treatment
         pw_params = recursive_merge(
             left=pw_params,
             right=cls.get_treatment_inputs(
-                treatment=core_hole_treatment,
-                overrides=inputs.get('scf', {}).get('pw', {}).get('parameters', None)
+                treatment=core_hole_treatment, overrides=inputs.get('scf', {}).get('pw', {}).get('parameters', None)
             )
         )
+
         pw_inputs['pw']['parameters'] = pw_params
 
         pw_args = (pw_code, structure, protocol)
-        scf = PwBaseWorkChain.get_builder_from_protocol(
-            *pw_args, overrides=pw_inputs, options=options, **kwargs
-        )
+        scf = PwBaseWorkChain.get_builder_from_protocol(*pw_args, overrides=pw_inputs, options=options, **kwargs)
 
         scf.pop('clean_workdir', None)
         scf['pw'].pop('structure', None)
@@ -516,8 +370,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
             xs_prod_metadata['options'] = recursive_merge(xs_prod_metadata['options'], options)
 
         abs_atom_marker = inputs['abs_atom_marker']
-        kinds_present = sorted([Kind.name for Kind in structure.kinds])
-        xs_prod_parameters['INPUT_XSPECTRA']['xiabs'] = kinds_present.index(abs_atom_marker)+1
+        xs_prod_parameters['INPUT_XSPECTRA']['xiabs'] = kinds_present.index(abs_atom_marker) + 1
         if core_hole_pseudos:
             for kind in structure.kinds:
                 if kind.name == abs_atom_marker:
@@ -564,6 +417,34 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         # pylint: enable=no-member
         return builder
 
+    @staticmethod
+    def validate_scf(inputs, _):
+        """Validate the scf parameters."""
+        parameters = inputs['pw']['parameters'].get_dict()
+        if parameters.get('CONTROL', {}).get('calculation', 'scf') != 'scf':
+            return '`CONTROL.calculation` in `scf.pw.parameters` is not set to `scf`.'
+
+    @staticmethod
+    def validate_inputs(inputs, _):
+        """Validate the inputs before launching the WorkChain."""
+
+        eps_vector_list = inputs['eps_vectors'].get_list()
+        if len(eps_vector_list) == 0:
+            return '`eps_vectors` list empty.'
+        if 'core_wfc_data' not in inputs and 'upf2plotcore_code' not in inputs:
+            return 'Either a core wavefunction file or a code node for upf2plotcore.sh must be provided.'
+        structure = inputs['structure']
+        kinds_present = structure.kinds
+        abs_atom_found = False
+        for kind in kinds_present:
+            if kind.name == inputs['abs_atom_marker'].value:
+                abs_atom_found = True
+        if not abs_atom_found:
+            return (
+                f'Error: the marker given for the absorbing atom ("{inputs["abs_atom_marker"].value}") ' +
+                'does not appear in the structure provided.'
+            )
+
     def setup(self):
         """Initialize context variables that are used during the logical flow of the workchain."""
 
@@ -580,7 +461,6 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         self.ctx.abs_kind = abs_kind
         if 'core_wfc_data' in self.inputs:
             self.ctx.core_wfc_data = self.inputs.core_wfc_data
-
 
     def run_scf(self):
         """Run an SCF calculation as a first step."""
@@ -628,7 +508,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         As this uses the AiiDA-Shell plugin, we assume that this is already installed.
         """
 
-        ShellJob = CalculationFactory('core.shell') # pylint: disable=invalid-name
+        ShellJob = CalculationFactory('core.shell')  # pylint: disable=invalid-name
 
         pw_inputs = self.exposed_inputs(PwBaseWorkChain, 'scf')
         pseudo_dict = pw_inputs['pw']['pseudos']
@@ -670,60 +550,44 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         parent_folder = self.ctx.scf_workchain.outputs.remote_folder
         core_wfc_data = self.ctx.core_wfc_data
 
-        xspectra_prod_calcs = {}
-        xspectra_calc_labels = []
         calc_number = 0
-        for vector in eps_vectors:
+        for calc_number, vector in enumerate(eps_vectors):
             xspectra_inputs = AttributeDict(self.exposed_inputs(XspectraBaseWorkChain, 'xs_prod'))
             xspectra_parameters = xspectra_inputs.xspectra.parameters.get_dict()
 
             parent_folder = self.ctx.scf_workchain.outputs.remote_folder
             xspectra_inputs.xspectra.parent_folder = parent_folder
             xspectra_inputs.xspectra.core_wfc_data = core_wfc_data
-
-            label = f'xas_{calc_number}'
-            xspectra_inputs.metadata.call_link_label = f'{label}_prod'
-            xspectra_inputs.metadata.label = f'{label}_prod'
-            xspectra_calc_labels.append(label)
+            xspectra_inputs.metadata.call_link_label = f'xas_{calc_number}_prod'
 
             for index in [0, 1, 2]:
                 xspectra_parameters['INPUT_XSPECTRA'][f'xepsilon({index + 1})'] = vector[index]
-            xspectra_inputs.xspectra.parameters = orm.Dict(dict=xspectra_parameters)
+            xspectra_inputs.xspectra.parameters = orm.Dict(xspectra_parameters)
 
             if self.ctx.dry_run:
                 return xspectra_inputs
 
             future_xspectra = self.submit(XspectraBaseWorkChain, **xspectra_inputs)
+            self.to_context(xspectra_prod_calculations=append_(future_xspectra))
             self.report(
                 f'launching XspectraWorkChain<{future_xspectra.pk}> for epsilon vector {vector}'
                 ' (Lanczos production)'
             )
-            xspectra_prod_calcs[f'{label}_prod'] = future_xspectra
-            calc_number += 1
-
-        if 'xspectra_calc_labels' not in self.ctx.keys():
-            self.ctx.xspectra_calc_labels = xspectra_calc_labels
-        return ToContext(**xspectra_prod_calcs)
 
     def inspect_all_xspectra_prod(self):
         """Verify that the `XspectraBaseWorkChain` Lanczos production sub-processes finished successfully."""
 
-        calculations = []
-        labels = self.ctx.xspectra_calc_labels
-        for label in labels:
-            calculation = self.ctx[f'{label}_prod']
-            calculations.append(calculation)
-        unrecoverable_failures = False # pylint: disable=unused-variable
+        calculations = self.ctx.xspectra_prod_calculations
+        unrecoverable_failures = False  # pylint: disable=unused-variable
 
         for calculation in calculations:
+            vector = calculation.outputs.output_parameters.get_dict()['xepsilon']
             if not calculation.is_finished_ok:
-                label_pieces = calculation.label.split('_')
-                report_label = f'{label_pieces[0]}_{label_pieces[1]}_{label_pieces[2]}'
-                self.report(f'XspectraBaseWorkChain <{report_label}>'
+                self.report(f'XspectraBaseWorkChain <{vector}>'
                             ' failed with exit status {calculation.exit_status}.')
-                # return self.exit_codes.ERROR_SUB_PROCESS_FAILED_XSPECTRA
                 unrecoverable_failures = True
             else:
+                self.report(f'XspectraBaseWorkChain <{vector}> finished successfully.')
                 self.ctx['finished_lanczos'].append(calculation)
         if unrecoverable_failures:
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_XSPECTRA
@@ -741,8 +605,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
 
         core_wfc_data = self.ctx.core_wfc_data
 
-        xspectra_plot_calcs = {}
-        for parent_xspectra in finished_calculations:
+        for calc_number, parent_xspectra in enumerate(finished_calculations):
             xspectra_inputs = AttributeDict(self.exposed_inputs(XspectraBaseWorkChain, 'xs_plot'))
             # The epsilon vectors are not needed in the case of a replot, however they
             # will be needed by the Parser at the end
@@ -754,15 +617,12 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
             xspectra_parameters['INPUT_XSPECTRA']['xepsilon(1)'] = eps_vector[0]
             xspectra_parameters['INPUT_XSPECTRA']['xepsilon(2)'] = eps_vector[1]
             xspectra_parameters['INPUT_XSPECTRA']['xepsilon(3)'] = eps_vector[2]
-            old_label = parent_xspectra.label
-            new_label = old_label.replace('prod', 'plot')
             xspectra_inputs.xspectra.parent_folder = parent_xspectra.outputs.remote_folder
             xspectra_inputs.kpoints = parent_calc_job.inputs.kpoints
             xspectra_inputs.xspectra.core_wfc_data = core_wfc_data
-            xspectra_inputs.metadata.label = new_label
-            xspectra_inputs.metadata.call_link_label = new_label
+            xspectra_inputs.metadata.call_link_label = f'xas_{calc_number}_plot'
 
-            xspectra_inputs.xspectra.parameters = orm.Dict(dict=xspectra_parameters)
+            xspectra_inputs.xspectra.parameters = orm.Dict(xspectra_parameters)
 
             if self.ctx.dry_run:
                 return xspectra_inputs
@@ -771,21 +631,15 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
             self.report(
                 f'launching XspectraBaseWorkChain<{future_xspectra.pk}> for epsilon vector {eps_vector} (Replot)'
             )
-            xspectra_plot_calcs[f'{new_label}'] = future_xspectra
-
-        return ToContext(**xspectra_plot_calcs)
+            self.to_context(xspectra_plot_calculations=append_(future_xspectra))
 
     def inspect_all_xspectra_plot(self):
         """Verify that the `XspectraBaseWorkChain` re-plot sub-processes finished successfully."""
 
-        calculations = []
-        labels = self.ctx.xspectra_calc_labels
-        for label in labels:
-            calculation = self.ctx[f'{label}_plot']
-            calculations.append(calculation)
-        unrecoverable_failures = False
+        calculations = self.ctx.xspectra_plot_calculations
 
         finished_replots = []
+        unrecoverable_failures = False
         for calculation in calculations:
             if not calculation.is_finished_ok:
                 self.report(f'XspectraBaseWorkChain failed with exit status {calculation.exit_status}')
@@ -809,20 +663,20 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         else:
             final_calcs = self.ctx.finished_lanczos
 
-        eps_powder_vectors = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]
+        eps_powder_vectors = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+        basis_vectors_present = False
         for calc in final_calcs:
             out_params = calc.outputs.output_parameters
             in_params = calc.inputs.xspectra.parameters.get_dict()
             eps_vectors = out_params['xepsilon']
-            coord_system = out_params['xcoordcrys']
+            xcoordcrys = out_params['xcoordcrys']
             calc_type = in_params['INPUT_XSPECTRA']['calculation']
-            if coord_system == 'cartesian':
+            if xcoordcrys is False:
                 self.report(
                     'WARNING: calculations were set to use a cartesian basis instead of a '
                     'crystallographic one. Please use ``"xcoordcrys" : True`` to compute the '
                     'powder spectrum using this WorkChain.'
                 )
-                basis_vectors_present = False
                 break
             if eps_vectors in eps_powder_vectors and calc_type == 'xanes_dipole':
                 basis_vectors_present = True
@@ -866,26 +720,26 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
                 'given are suitable to compute this.'
             )
 
-        self.out('output_parameters_scf', self.ctx.scf_workchain.outputs.output_parameters)
+        self.out('parameters_scf', self.ctx.scf_workchain.outputs.output_parameters)
 
         all_xspectra_prod_calcs = {}
-        for calc in xspectra_prod_calcs:
-            all_xspectra_prod_calcs[calc.label] = calc
+        for index, calc in enumerate(xspectra_prod_calcs):
+            all_xspectra_prod_calcs[f'xas_{index}'] = calc
 
         xspectra_prod_params = {}
-        for key, node  in all_xspectra_prod_calcs.items():
+        for key, node in all_xspectra_prod_calcs.items():
             output_params = node.outputs.output_parameters
             xspectra_prod_params[key] = output_params
-        self.out('output_parameters_xspectra', xspectra_prod_params)
+        self.out('parameters_xspectra', xspectra_prod_params)
 
         all_final_spectra = {}
-        for calc in final_calcs:
-            all_final_spectra[calc.label] = calc.outputs.spectra
+        for index, calc in enumerate(final_calcs):
+            all_final_spectra[f'xas_{index}'] = calc.outputs.spectra
 
-        all_final_spectra['metadata'] = {'call_link_label': 'get_all_spectra'}
-        output_spectra = get_all_spectra(**all_final_spectra)
+        all_final_spectra['metadata'] = {'call_link_label': 'merge_spectra'}
+        output_spectra = merge_spectra(**all_final_spectra)
 
-        self.out('output_spectra', output_spectra)
+        self.out('spectra', output_spectra)
 
     def on_terminated(self):
         """Clean the working directories of all child calculations if ``clean_workdir=True`` in the inputs."""

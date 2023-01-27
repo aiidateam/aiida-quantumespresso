@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for the `PdosWorkChain` class."""
-from __future__ import absolute_import
+"""Tests for the `XspectraCoreWorkChain` class."""
 
 import io
 
@@ -146,8 +145,9 @@ def test_default(
     spectra.base.links.add_incoming(xs_prod_node, link_type=LinkType.RETURN, link_label='spectra')
     spectra.base.links.add_incoming(xspectra_node, link_type=LinkType.CREATE, link_label='spectra')
 
-    wkchain.ctx['xas_0_prod'] = xs_prod_node
-    wkchain.ctx.xspectra_calc_labels = ['xas_0']
+    wkchain.ctx.xspectra_prod_calculations = [
+        xs_prod_node,
+    ]
 
     assert wkchain.inspect_all_xspectra_prod() is None
     assert wkchain.ctx.all_lanczos_computed is True
@@ -158,4 +158,4 @@ def test_default(
     wkchain.update_outputs()
 
     assert set(wkchain.node.base.links.get_outgoing().all_link_labels()
-               ) == {'output_parameters_scf', 'output_parameters_xspectra__xas_0_prod', 'output_spectra'}
+               ) == {'parameters_scf', 'parameters_xspectra__xas_0', 'spectra'}
