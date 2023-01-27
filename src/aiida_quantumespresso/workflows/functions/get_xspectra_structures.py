@@ -40,7 +40,7 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
         - absorbing_elements_list: a List object defining the list of elements to consider
                                    when producing structures. All elements in the structure
                                    will be considered if no input is given.
-        - molecule_input: a Bool object to define for the function that the input structure is
+        - is_molecule_input: a Bool object to define for the function that the input structure is
                     a molecule and not a periodic solid system. Required in order to instruct
                     the CF to use Pymatgen rather than spglib to determine the symmetry. The
                     CF will assume the structure to be a periodic solid if no input is given.
@@ -54,15 +54,15 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
               all generated structure and associated symmetry data
     """
 
-    molecule_input = False
+    is_molecule_input = False
     elements_present = [kind.symbol for kind in structure.kinds]
     unwrapped_kwargs = {key: node for key, node in kwargs.items() if isinstance(node, orm.Data)}
     if 'abs_atom_marker' in unwrapped_kwargs.keys():
         abs_atom_marker = unwrapped_kwargs['abs_atom_marker'].value
         if abs_atom_marker in elements_present:
             raise ValidationError(
-                f'The marker given for the absorbing atom ("{abs_atom_marker}") matches an existing Kind in the '
-                f'input structure ({elements_present}.'
+                f'The marker given for the absorbing atom ("{abs_atom_marker}") should not match an existing Kind in '
+                f'the input structure ({elements_present}.'
             )
         unwrapped_kwargs.pop('abs_atom_marker')
     else:
@@ -70,7 +70,10 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
     if 'supercell_min_parameter' in unwrapped_kwargs.keys():
         supercell_min_parameter = unwrapped_kwargs.pop('supercell_min_parameter').value
         if supercell_min_parameter < 0:
-            raise ValueError(f'The requested minimum supercell parameter ({supercell_min_parameter}) is less than 0.')
+            raise ValueError(
+                f'The requested minimum supercell parameter ({supercell_min_parameter}) should not be'
+                ' less than 0.'
+            )
         elif supercell_min_parameter == 0:  # useful if no core-hole treatment is required
             scale_unit_cell = False
         else:
@@ -95,8 +98,9 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
                 )
     else:
         elements_defined = False
-    if 'molecule_input' in unwrapped_kwargs.keys():
-        molecule_input = unwrapped_kwargs['molecule_input'].value
+        abs_elements_list = [Kind.symbol for Kind in structure.kinds]
+    if 'is_molecule_input' in unwrapped_kwargs.keys():
+        is_molecule_input = unwrapped_kwargs['is_molecule_input'].value
         # If we're working with a molecule, check for pymatgen_settings
         if 'pymatgen_settings' in unwrapped_kwargs.keys():
             pymatgen_settings_dict = unwrapped_kwargs.keys()['pymatgen_settings'].get_dict()
@@ -114,21 +118,20 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
 
     output_params = {}
     result = {}
-    if not elements_defined:
-        abs_elements_list = [Kind.symbol for Kind in structure.kinds]
 
     output_params['absorbing_elements_list'] = abs_elements_list
 
-    # Process a non-periodic system
-    if molecule_input:
-        from pymatgen.symmetry.analyzer import PointGroupAnalyzer
-        incoming_structure_size = len(structure.sites)
-        incoming_structure_cell = structure.cell
-        incoming_structure_params = structure.cell_lengths
+    incoming_structure_size = len(structure.sites)
+    incoming_structure_cell = structure.cell
+    incoming_structure_params = structure.cell_lengths
 
-        output_params['structure_num_sites'] = incoming_structure_size
-        output_params['input_structure_cell_matrix'] = incoming_structure_cell
-        output_params['input_structure_cell_lengths'] = incoming_structure_params
+    output_params['input_structure_num_sites'] = incoming_structure_size
+    output_params['input_structure_cell_matrix'] = incoming_structure_cell
+    output_params['input_structure_cell_lengths'] = incoming_structure_params
+
+    # Process a non-periodic system
+    if is_molecule_input:
+        from pymatgen.symmetry.analyzer import PointGroupAnalyzer
 
         pymatgen_molecule = structure.get_pymatgen_molecule()
         centred_molecule = pymatgen_molecule.get_centered_molecule()
@@ -219,13 +222,6 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
 
     # Process a periodic system
     else:
-        incoming_structure_size = len(structure.sites)
-        incoming_structure_cell = structure.cell
-        incoming_structure_params = structure.cell_lengths
-        output_params['input_structure_num_sites'] = incoming_structure_size
-        output_params['input_structure_cell_matrix'] = incoming_structure_cell
-        output_params['input_structure_cell_lengths'] = incoming_structure_params
-
         incoming_structure_tuple = structure_to_spglib_tuple(structure)
 
         symmetry_dataset = spglib.get_symmetry_dataset(incoming_structure_tuple[0], **spglib_kwargs)
@@ -236,14 +232,14 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
         # be changed.
         if symmetry_dataset['number'] in [1, 2] or not standardize_structure:
             standardized_structure_node = spglib_tuple_to_structure(incoming_structure_tuple[0])
-            input_standardized = False
+            structure_is_standardized = False
         else:  # otherwise, we proceed with the standardized structure.
             standardized_structure_tuple = spglib.standardize_cell(incoming_structure_tuple[0], **spglib_kwargs)
             standardized_structure_node = spglib_tuple_to_structure(standardized_structure_tuple)
             # if we are standardizing the structure, then we need to update the symmetry
             # information for the standardized structure
             symmetry_dataset = spglib.get_symmetry_dataset(standardized_structure_tuple, **spglib_kwargs)
-            input_standardized = True
+            structure_is_standardized = True
 
         equivalent_atoms_array = symmetry_dataset['equivalent_atoms']
         element_types = symmetry_dataset['std_types']
@@ -281,8 +277,8 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
         output_params['international_symbol'] = symmetry_dataset['international']
 
         result['standardized_structure'] = standardized_structure_node
-        output_params['input_standardized'] = input_standardized
-        if input_standardized:
+        output_params['structure_is_standardized'] = structure_is_standardized
+        if structure_is_standardized:
             output_params['standardized_structure_num_sites'] = len(standardized_structure_node.sites)
             output_params['standardized_structure_cell_matrix'] = standardized_structure_node.cell
             output_params['standardized_structure_params'] = standardized_structure_node.cell_lengths
@@ -330,7 +326,7 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
 
             result[f'site_{target_site}'] = marked_structure
 
-    output_params['molecule_input'] = molecule_input
+    output_params['is_molecule_input'] = is_molecule_input
     result['output_parameters'] = orm.Dict(dict=output_params)
 
     return result
