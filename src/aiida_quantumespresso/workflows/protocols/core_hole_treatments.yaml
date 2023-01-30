@@ -1,0 +1,29 @@
+default_inputs:
+    SYSTEM:
+        tot_charge: 1
+default_treatment: full
+treatments:
+    full:
+        description: 'Core-hole treatment using a formal countercharge of +1, equivalent to removing one electron from the system.'
+    half:
+        description: 'Core-hole treatment using a formal countercharge of +0.5, equivalent to removing half an electron from the system.'
+        SYSTEM:
+            tot_charge: 0.5
+    xch_fixed:
+        description: 'Core-hole treatment which places the excited electron into the conduction band (fixed occupations).'
+        SYSTEM:
+            occupations: fixed
+            tot_charge: 0
+            nspin: 2
+            tot_magnetization: 1
+    xch_smear:
+        description: 'Core-hole treatment which places the excited electron into the conduction band (smeared occupations).'
+        SYSTEM:
+            occupations: smearing
+            tot_charge: 0
+            nspin: 2
+            starting_magnetization(1): 0
+    none:
+        description: 'Applies no core-hole treatment (overrides the default tot_charge and changes it to 0).'
+        SYSTEM:
+            tot_charge: 0
