@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Workchain to compute the X-ray absorption spectrum for a given structure.
 
-Uses QuantumESPRESSO pw.x and xspectra.x, requires ``AiiDA-Shell`` to run ``upf2plotcore.sh``.
+Uses QuantumESPRESSO pw.x and xspectra.x, requires ``aiida-shell`` to run ``upf2plotcore.sh``.
 """
 import pathlib
 from typing import Optional, Union
@@ -47,7 +47,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
     The core-wavefunction plot derived from the ground-state of the absorbing element can
     be provided as a top-level input or produced by the WorkChain. If left to the WorkChain,
     the ground-state pseudopotential assigned to the absorbing element will be used to
-    generate this data using the upf2plotcore.sh utility script (via the ``AiiDA-Shell``
+    generate this data using the upf2plotcore.sh utility script (via the ``aiida-shell``
     plugin).
 
     In its current stage of development, the workflow requires the following:

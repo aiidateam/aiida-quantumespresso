@@ -10,21 +10,12 @@ from aiida.manage.manager import get_manager
 from plumpy import ProcessState
 import pytest
 
-from aiida_quantumespresso.calculations.helpers import pw_input_helper
 
-
-def instantiate_process_builder(builder):
-    """Instantiate a process, from a `ProcessBuilder`."""
+def instantiate_process(cls_or_builder, inputs=None):
+    """Instantiate a process, from a ``Process`` class or ``ProcessBuilder`` instance."""
     manager = get_manager()
     runner = manager.get_runner()
-    return instantiate_process(runner, builder)
-
-
-def instantiate_process_cls(process_cls, inputs):
-    """Instantiate a process, from its class and inputs."""
-    manager = get_manager()
-    runner = manager.get_runner()
-    return instantiate_process(runner, process_cls, **inputs)
+    return instantiate_process(runner, cls_or_builder **{inputs or {})
 
 
 @pytest.fixture
@@ -103,7 +94,6 @@ def test_default(
     scf_wkchain = generate_workchain_pw(inputs=scf_inputs)
     scf_wkchain.node.set_process_state(ProcessState.FINISHED)
     scf_wkchain.node.set_exit_status(0)
-    pw_input_helper(scf_wkchain.inputs.pw.parameters.get_dict(), scf_wkchain.inputs.pw.structure)
 
     remote = generate_remote_data(computer=fixture_localhost, remote_path='/path/on/remote')
     remote.store()
