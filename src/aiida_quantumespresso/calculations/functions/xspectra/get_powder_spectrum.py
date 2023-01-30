@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-"""CalcFunction to compute the powder spectrum of a set of XANES spectra from `XspectraCalculation`s."""
-
+"""CalcFunction to compute the powder spectrum of a set of XANES spectra from ``XspectraCalculation``."""
 from aiida.common import ValidationError
 from aiida.engine import calcfunction
 from aiida.orm import XyData
@@ -10,10 +9,9 @@ from aiida.orm import XyData
 def get_powder_spectrum(**kwargs):  # pylint: disable=too-many-statements
     """Combine the given spectra into a single "Powder" spectrum, representing the XAS of a powder sample.
 
-    The function expects between 1 and 3 XyData nodes from `XspectraCalculation`s whose
+    The function expects between 1 and 3 XyData nodes from ``XspectraCalculation`` whose
     polarisation vectors are the basis vectors of the original crystal structure (100, 010, 001).
     """
-
     spectra = [node for node in kwargs.values() if isinstance(node, XyData)]
     vectors = [node.creator.res['xepsilon'] for node in spectra]
 

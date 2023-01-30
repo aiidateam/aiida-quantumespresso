@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 """Tests for the `XspectraCoreWorkChain` class."""
-
 import io
 
 from aiida import engine, orm
 from aiida.common import LinkType
-from aiida.engine.utils import instantiate_process
 from aiida.manage.manager import get_manager
 from plumpy import ProcessState
 import pytest
@@ -13,9 +11,10 @@ import pytest
 
 def instantiate_process(cls_or_builder, inputs=None):
     """Instantiate a process, from a ``Process`` class or ``ProcessBuilder`` instance."""
+    from aiida.engine.utils import instantiate_process as _instantiate_process
     manager = get_manager()
     runner = manager.get_runner()
-    return instantiate_process(runner, cls_or_builder **{inputs or {})
+    return _instantiate_process(runner, cls_or_builder, **(inputs or {}))
 
 
 @pytest.fixture

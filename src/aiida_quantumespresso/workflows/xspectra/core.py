@@ -26,45 +26,41 @@ XspectraBaseWorkChain = WorkflowFactory('quantumespresso.xspectra.base')
 class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
     """Workchain to compute X-ray absorption spectra for a given structure using Quantum ESPRESSO.
 
-    The workflow follows the process required to compute the XAS of an input structure:
-    an SCF calculation is performed using the provided structure, which is then followed by
-    the calculation of the XAS itself by XSpectra. The calculations performed by the WorkChain
-    in a typical run will be:
-        - PwSCF calculation with pw.x of the input structure with a core-hole present.
-        - Generation of core-wavefunction data with upf2plotcore.sh (if requested).
-        - XAS calculation with xspectra.x to compute the Lanczos coefficients and print the
-          XANES spectra for the polarisation vectors requested in the input.
-        - Collation of output data from pw.x and xspectra.x calculations, including a
-          combination of XANES dipole spectra based on polarisation vectors to represent the
-          powder spectrum of the structure (if requested).
-    If ``run_replot = True`` is set in the inputs (defaults to False), the WorkChain will run
-    a second xspectra.x calculation which replots the spectra produced from the ``xs_prod``
-    step. This option can be very useful for obtaining a final spectrum at low levels of
-    broadening (relative to the default of 0.5 eV), particularly as higher levels of
-    broadening significantly speed up the convergence of the Lanczos procedure. Inputs for the
-    replot calculation are found in the ``xs_plot`` namespace.
+    The workflow follows the process required to compute the XAS of an input structure: an SCF calculation is performed
+    using the provided structure, which is then followed by the calculation of the XAS itself by XSpectra. The
+    calculations performed by the WorkChain in a typical run will be:
 
-    The core-wavefunction plot derived from the ground-state of the absorbing element can
-    be provided as a top-level input or produced by the WorkChain. If left to the WorkChain,
-    the ground-state pseudopotential assigned to the absorbing element will be used to
-    generate this data using the upf2plotcore.sh utility script (via the ``aiida-shell``
-    plugin).
+    - PwSCF calculation with pw.x of the input structure with a core-hole present.
+    - Generation of core-wavefunction data with upf2plotcore.sh (if requested).
+    - XAS calculation with xspectra.x to compute the Lanczos coefficients and print the XANES spectra for the
+      polarisation vectors requested in the input.
+    - Collation of output data from pw.x and xspectra.x calculations, including a combination of XANES dipole spectra
+      based on polarisation vectors to represent the powder spectrum of the structure (if requested).
+
+    If ``run_replot = True`` is set in the inputs (defaults to False), the WorkChain will run a second xspectra.x
+    calculation which replots the spectra produced from the ``xs_prod`` step. This option can be very useful for
+    obtaining a final spectrum at low levels of broadening (relative to the default of 0.5 eV), particularly as higher
+    levels of broadening significantly speed up the convergence of the Lanczos procedure. Inputs for the replot
+    calculation are found in the ``xs_plot`` namespace.
+
+    The core-wavefunction plot derived from the ground-state of the absorbing element can be provided as a top-level
+    input or produced by the WorkChain. If left to the WorkChain, the ground-state pseudopotential assigned to the
+    absorbing element will be used to generate this data using the upf2plotcore.sh utility script (via the
+    ``aiida-shell`` plugin).
 
     In its current stage of development, the workflow requires the following:
-        - An input structure where the desired absorbing atom in the system is marked as a
-          separate Kind. The default behaviour for the WorkChain is to set the Kind name as
-          'X', however this can be changed via the `overrides` dictionary.
-        - A code node for ``upf2plotcore``, configured for the ``aiida-shell`` plugin
-          (https://github.com/sphuber/aiida-shell). Alternatively, a ``SinglefileData`` node
-          from a previous ``ShellJob`` run can be supplied under ``inputs.core_wfc_data``.
-        - A suitable pair of pseudopotentials for the element type of the absorbing atom,
-          one for the ground-state occupancy which contains GIPAW informtation for the core
-          level of interest for the XAS (e.g. 1s in the case of a K-edge calculation) and
-          the other containing a core hole.
-            - For the moment this can be passed either via the ``core_hole_pseudos`` field
-              in ``get_builder_from_protocol`` or via the overrides, but will be
-              changed later once full families of core-hole pseudopotentials become
-              available.
+
+    - An input structure where the desired absorbing atom in the system is marked as a separate Kind. The default
+      behaviour for the WorkChain is to set the Kind name as 'X', however this can be changed via the `overrides`
+      dictionary.
+    - A code node for ``upf2plotcore``, configured for the ``aiida-shell`` plugin
+      (https://github.com/sphuber/aiida-shell). Alternatively, a ``SinglefileData`` node from a previous ``ShellJob``
+      run can be supplied under ``inputs.core_wfc_data``.
+    - A suitable pair of pseudopotentials for the element type of the absorbing atom, one for the ground-state occupancy
+      which contains GIPAW informtation for the core level of interest for the XAS (e.g. 1s in the case of a K-edge
+      calculation) and the other containing a core hole. (For the moment this can be passed either via the
+      ``core_hole_pseudos`` field in ``get_builder_from_protocol`` or via the overrides, but will be changed later once
+      full families of core-hole pseudopotentials become available).
     """
 
     # pylint: disable=too-many-public-methods, too-many-statements

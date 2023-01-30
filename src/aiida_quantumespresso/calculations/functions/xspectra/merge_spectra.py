@@ -1,22 +1,20 @@
 # -*- coding: utf-8 -*-
-"""CalcFunction to merge multiple XyData nodes of calculated XANES spectra into a new XyData node."""
-
+"""CalcFunction to merge multiple ``XyData`` nodes of calculated XANES spectra into a new ``XyData`` node."""
 from aiida.engine import calcfunction
 from aiida.orm import XyData
 
 
 @calcfunction
 def merge_spectra(**kwargs):
-    """Compile all calculated spectra into a single XyData node for easier plotting.
+    """Compile all calculated spectra into a single ``XyData`` node for easier plotting.
 
-    The keyword arguments must be an arbitrary number of XyData nodes from
+    The keyword arguments must be an arbitrary number of ``XyData`` nodes from
     the `output_spectra` of `XspectraCalculation`s, all other `kwargs` will be discarded at
     runtime.
 
-    Returns a single XyData node where each set of y values is labelled
+    Returns a single ``XyData`` node where each set of y values is labelled
     according to the polarisation vector used for the `XspectraCalculation`.
     """
-
     output_spectra = XyData()
     y_arrays_list = []
     y_units_list = []
