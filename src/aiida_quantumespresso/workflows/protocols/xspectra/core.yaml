@@ -1,0 +1,17 @@
+default_inputs:
+    abs_atom_marker: X
+    clean_workdir: True
+    get_powder_spectrum: False
+    run_replot: False
+    eps_vectors:
+        - [1., 0., 0.]
+        - [0., 1., 0.]
+        - [0., 0., 1.]
+default_protocol: moderate
+protocols:
+    moderate:
+        description: 'Protocol to perform XANES dipole calculations at normal precision and moderate computational cost.'
+    precise:
+        description: 'Protocol to perform XANES dipole calculations at high precision and higher computational cost.'
+    fast:
+        description: 'Protocol to perform XANES dipole calculations at low precision and minimal computational cost for testing purposes.'
