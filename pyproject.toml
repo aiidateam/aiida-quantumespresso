@@ -23,7 +23,7 @@ keywords = ['aiida', 'workflows']
 requires-python = '>=3.8'
 dependencies = [
     'aiida_core[atomic_tools]~=2.1',
-    'aiida-pseudo~=0.8.0',
+    'aiida-pseudo~=1.0',
     'click~=8.0',
     'importlib_resources',
     'jsonschema',
@@ -115,6 +115,7 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 'quantumespresso.matdyn.base' = 'aiida_quantumespresso.workflows.matdyn.base:MatdynBaseWorkChain'
 'quantumespresso.pdos' = 'aiida_quantumespresso.workflows.pdos:PdosWorkChain'
 'quantumespresso.xspectra.base' = 'aiida_quantumespresso.workflows.xspectra.base:XspectraBaseWorkChain'
+'quantumespresso.xspectra.core' = 'aiida_quantumespresso.workflows.xspectra.core:XspectraCoreWorkChain'
 
 [tool.flit.module]
 name = 'aiida_quantumespresso'
