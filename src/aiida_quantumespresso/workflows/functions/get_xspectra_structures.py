@@ -199,24 +199,20 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
 
         for value in equivalency_dict.values():
             target_site = value['site_index']
-            marked_structure = StructureData()
-            centred_kinds = centred_structure.kinds
+            marked_structure = StructureData(pbc=False)
+            centred_kinds = {kind.name: kind for kind in centred_structure.kinds}
 
-            marked_structure.set_cell(centred_structure.cell)
-            for kind in centred_kinds:
-                marked_structure.append_kind(kind)
-
-            index_counter = 0
-            for site in centred_structure.sites:
-                if index_counter == target_site:
+            for index, site in enumerate(centred_structure.sites):
+                if index == target_site:
                     absorbing_kind = Kind(name=abs_atom_marker, symbols=site.kind_name)
                     absorbing_site = Site(kind_name=absorbing_kind.name, position=site.position)
                     marked_structure.append_kind(absorbing_kind)
                     marked_structure.append_site(absorbing_site)
                 else:
+                    if site.kind_name not in [kind.name for kind in marked_structure.kinds]:
+                        marked_structure.append_kind(centred_kinds[site.kind_name])
                     new_site = Site(kind_name=site.kind_name, position=site.position)
                     marked_structure.append_site(new_site)
-                index_counter += 1
 
             result[f'site_{target_site}'] = marked_structure
 
@@ -285,10 +281,9 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
 
         standard_pbc = standardized_structure_node.cell_lengths
 
-        multiples = []
-        if not scale_unit_cell:
-            multiples = [1, 1, 1]
-        else:
+        multiples = [1, 1, 1]
+        if scale_unit_cell:
+            multiples = []
             for length in standard_pbc:
                 multiple = np.ceil(supercell_min_parameter / length)
                 multiples.append(int(multiple))
@@ -301,30 +296,28 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
         output_params['supercell_factors'] = multiples
         output_params['supercell_num_sites'] = len(new_supercell.sites)
         output_params['supercell_cell_matrix'] = new_supercell.cell
-        output_params['supercell_params'] = new_supercell.cell_lengths
+        output_params['supercell_cell_lengths'] = new_supercell.cell_lengths
 
         for value in equivalency_dict.values():
+            element = value['symbol']
             target_site = value['site_index']
             marked_structure = StructureData()
-            supercell_kinds = new_supercell.kinds
-
+            supercell_kinds = {kind.name: kind for kind in new_supercell.kinds}
             marked_structure.set_cell(new_supercell.cell)
-            for kind in supercell_kinds:
-                marked_structure.append_kind(kind)
 
-            index_counter = 0
-            for site in new_supercell.sites:
-                if index_counter == target_site:
+            for index, site in enumerate(new_supercell.sites):
+                if index == target_site:
                     absorbing_kind = Kind(name=abs_atom_marker, symbols=site.kind_name)
                     absorbing_site = Site(kind_name=absorbing_kind.name, position=site.position)
                     marked_structure.append_kind(absorbing_kind)
                     marked_structure.append_site(absorbing_site)
                 else:
+                    if site.kind_name not in [kind.name for kind in marked_structure.kinds]:
+                        marked_structure.append_kind(supercell_kinds[site.kind_name])
                     new_site = Site(kind_name=site.kind_name, position=site.position)
                     marked_structure.append_site(new_site)
-                index_counter += 1
 
-            result[f'site_{target_site}'] = marked_structure
+            result[f'site_{target_site}_{element}'] = marked_structure
 
     output_params['is_molecule_input'] = is_molecule_input
     result['output_parameters'] = orm.Dict(dict=output_params)
