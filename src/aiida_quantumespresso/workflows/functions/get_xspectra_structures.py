@@ -101,7 +101,7 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
         abs_elements_list = [Kind.symbol for Kind in structure.kinds]
     if 'is_molecule_input' in unwrapped_kwargs.keys():
         is_molecule_input = unwrapped_kwargs['is_molecule_input'].value
-        # If we're working with a molecule, check for pymatgen_settings
+        # If we are working with a molecule, check for pymatgen_settings
         if 'pymatgen_settings' in unwrapped_kwargs.keys():
             pymatgen_settings_dict = unwrapped_kwargs.keys()['pymatgen_settings'].get_dict()
             valid_keys = ['tolerance', 'eigen_tolerance', 'matrix_tolerance']
@@ -134,8 +134,8 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
         from pymatgen.symmetry.analyzer import PointGroupAnalyzer
 
         pymatgen_molecule = structure.get_pymatgen_molecule()
-        centred_molecule = pymatgen_molecule.get_centered_molecule()
-        centred_positions = centred_molecule.cart_coords
+        centered_molecule = pymatgen_molecule.get_centered_molecule()
+        centered_positions = centered_molecule.cart_coords
 
         analyzer_data = PointGroupAnalyzer(pymatgen_molecule, **pymatgen_kwargs)
         eq_atoms_data = analyzer_data.get_equivalent_atoms()['eq_sets']
@@ -181,40 +181,22 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
         box_b = max((high_y - low_y) * 2, supercell_min_parameter)
         box_c = max((high_z - low_z) * 2, supercell_min_parameter)
 
-        centred_structure = StructureData()
-        centred_structure.set_cell(value=([box_a, 0., 0.], [0., box_b, 0.], [0., 0., box_c]))
+        new_supercell = StructureData()
+        new_supercell.set_cell(value=([box_a, 0., 0.], [0., box_b, 0.], [0., 0., box_c]))
 
         for kind in structure.kinds:
-            centred_structure.append_kind(kind)
+            new_supercell.append_kind(kind)
 
         for site in structure.sites:
-            centred_structure.append_site(site)
+            new_supercell.append_site(site)
 
         # Reset the positions so that the centre of mass is at the centre of the new box
-        centred_structure.reset_sites_positions(centred_positions + (np.array(centred_structure.cell_lengths) / 2))
+        new_supercell.reset_sites_positions(centered_positions + (np.array(new_supercell.cell_lengths) / 2))
 
-        output_params['centred_structure_cell_matrix'] = centred_structure.cell
-        output_params['centred_structure_cell_lengths'] = centred_structure.cell_lengths
-        result['centred_structure'] = centred_structure
-
-        for value in equivalency_dict.values():
-            target_site = value['site_index']
-            marked_structure = StructureData(pbc=False)
-            centred_kinds = {kind.name: kind for kind in centred_structure.kinds}
-
-            for index, site in enumerate(centred_structure.sites):
-                if index == target_site:
-                    absorbing_kind = Kind(name=abs_atom_marker, symbols=site.kind_name)
-                    absorbing_site = Site(kind_name=absorbing_kind.name, position=site.position)
-                    marked_structure.append_kind(absorbing_kind)
-                    marked_structure.append_site(absorbing_site)
-                else:
-                    if site.kind_name not in [kind.name for kind in marked_structure.kinds]:
-                        marked_structure.append_kind(centred_kinds[site.kind_name])
-                    new_site = Site(kind_name=site.kind_name, position=site.position)
-                    marked_structure.append_site(new_site)
-
-            result[f'site_{target_site}'] = marked_structure
+        output_params['supercell_cell_matrix'] = new_supercell.cell
+        output_params['supercell_cell_lengths'] = new_supercell.cell_lengths
+        output_params['supercell_num_sites'] = len(new_supercell.sites)
+        result['supercell'] = new_supercell
 
     # Process a periodic system
     else:
@@ -298,26 +280,25 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
         output_params['supercell_cell_matrix'] = new_supercell.cell
         output_params['supercell_cell_lengths'] = new_supercell.cell_lengths
 
-        for value in equivalency_dict.values():
-            element = value['symbol']
-            target_site = value['site_index']
-            marked_structure = StructureData()
-            supercell_kinds = {kind.name: kind for kind in new_supercell.kinds}
-            marked_structure.set_cell(new_supercell.cell)
+    for value in equivalency_dict.values():
+        target_site = value['site_index']
+        marked_structure = StructureData()
+        supercell_kinds = {kind.name: kind for kind in new_supercell.kinds}
+        marked_structure.set_cell(new_supercell.cell)
 
-            for index, site in enumerate(new_supercell.sites):
-                if index == target_site:
-                    absorbing_kind = Kind(name=abs_atom_marker, symbols=site.kind_name)
-                    absorbing_site = Site(kind_name=absorbing_kind.name, position=site.position)
-                    marked_structure.append_kind(absorbing_kind)
-                    marked_structure.append_site(absorbing_site)
-                else:
-                    if site.kind_name not in [kind.name for kind in marked_structure.kinds]:
-                        marked_structure.append_kind(supercell_kinds[site.kind_name])
-                    new_site = Site(kind_name=site.kind_name, position=site.position)
-                    marked_structure.append_site(new_site)
+        for index, site in enumerate(new_supercell.sites):
+            if index == target_site:
+                absorbing_kind = Kind(name=abs_atom_marker, symbols=site.kind_name)
+                absorbing_site = Site(kind_name=absorbing_kind.name, position=site.position)
+                marked_structure.append_kind(absorbing_kind)
+                marked_structure.append_site(absorbing_site)
+            else:
+                if site.kind_name not in [kind.name for kind in marked_structure.kinds]:
+                    marked_structure.append_kind(supercell_kinds[site.kind_name])
+                new_site = Site(kind_name=site.kind_name, position=site.position)
+                marked_structure.append_site(new_site)
 
-            result[f'site_{target_site}_{element}'] = marked_structure
+        result[f'site_{target_site}_{value["symbol"]}'] = marked_structure
 
     output_params['is_molecule_input'] = is_molecule_input
     result['output_parameters'] = orm.Dict(dict=output_params)
