@@ -14,7 +14,7 @@ structure = StructureData(ase=bulk('Si', 'fcc', 5.43))
 builder.structure = structure
 
 # Load the pseudopotential family.
-pseudo_family = load_group('SSSP/1.1/PBE/efficiency')
+pseudo_family = load_group('SSSP/1.2/PBEsol/efficiency')
 builder.pseudos = pseudo_family.get_pseudos(structure=structure)
 
 # Request the recommended wavefunction and charge density cutoffs
