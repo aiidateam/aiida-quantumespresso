@@ -94,7 +94,8 @@ See the `LICENSE.txt` file for more details.
 ## Acknowlegements
 We acknowledge support from:
 * the [NCCR MARVEL](http://nccr-marvel.ch/) funded by the Swiss National Science Foundation;
-* the EU Centre of Excellence "[MaX – Materials Design at the Exascale](http://www.max-centre.eu/)" (Horizon 2020 EINFRA-5, Grant No. 676598);
+* the EU Centre of Excellence "[MaX – Materials Design at the Exascale](http://www.max-centre.eu/)" (Horizon 2020 EINFRA-5, Grant No. 676598; H2020-INFRAEDI-2018-1, Grant No. 824143; HORIZON-EUROHPC-JU-2021-COE-1, Grant No. 101093324);
+* the European Union's Horizon 2020 research and innovation programme (Grant No. 957189, [project BIG-MAP](https://www.big-map.eu), also part of the [BATTERY 2030+ initiative](https://battery2030.eu), Grant No. 957213);
 * the [swissuniversities P-5 project "Materials Cloud"](https://www.materialscloud.org/swissuniversities).
 
 <img src="https://raw.githubusercontent.com/aiidateam/aiida-quantumespresso/develop/docs/source/images/MARVEL.png" width="300px" height="157px"/>
