@@ -22,6 +22,7 @@ class RelaxType(enum.Enum):
     POSITIONS_VOLUME = 'positions_volume'  # Same as `VOLUME` but atomic positions are relaxed as well
     POSITIONS_SHAPE = 'positions_shape'  # Same as `SHAPE`  but atomic positions are relaxed as well
     POSITIONS_CELL = 'positions_cell'  # Same as `CELL`  but atomic positions are relaxed as well
+    POSITIONS_2D = 'positions_2D'
 
 
 class SpinType(enum.Enum):
@@ -40,3 +41,10 @@ class RestartType(enum.Enum):
     FROM_SCRATCH = 'from_scratch'
     FROM_CHARGE_DENSITY = 'from_charge_density'
     FROM_WAVE_FUNCTIONS = 'from_wave_functions'
+
+class PeriodicityType(enum.Enum):
+    """Enumeration to indicate the dimensionality type of a system."""
+
+    X = 'x'
+    XY = 'xy'
+    XYZ = 'xyz'

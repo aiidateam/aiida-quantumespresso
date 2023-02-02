@@ -7,7 +7,7 @@ from aiida.engine import BaseRestartWorkChain, ExitCode, ProcessHandlerReport, T
 from aiida.plugins import CalculationFactory, GroupFactory
 
 from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import create_kpoints_from_distance
-from aiida_quantumespresso.common.types import ElectronicType, RestartType, SpinType
+from aiida_quantumespresso.common.types import ElectronicType, RestartType, SpinType, PeriodicityType
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs, update_mapping
 from aiida_quantumespresso.utils.resources import (
@@ -58,6 +58,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             help='Optional input when constructing the k-points based on a desired `kpoints_distance`. Setting this to '
                  '`True` will force the k-point mesh to have an even number of points along each lattice vector except '
                  'for any non-periodic directions.')
+        spec.input('periodicity', valid_type=orm.Str, required=False, default=orm.Str('xyz'), help='')
         spec.input('automatic_parallelization', valid_type=orm.Dict, required=False,
             help='When defined, the work chain will first launch an initialization calculation to determine the '
                  'dimensions of the problem, and based on this it will try to set optimal parallelization flags.')
@@ -126,6 +127,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         overrides=None,
         electronic_type=ElectronicType.METAL,
         spin_type=SpinType.NONE,
+        periodicity=PeriodicityType.XYZ,
         initial_magnetic_moments=None,
         options=None,
         **_
@@ -154,6 +156,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         type_check(code, orm.AbstractCode)
         type_check(electronic_type, ElectronicType)
         type_check(spin_type, SpinType)
+        type_check(periodicity, PeriodicityType)
 
         if electronic_type not in [ElectronicType.METAL, ElectronicType.INSULATOR]:
             raise NotImplementedError(f'electronic type `{electronic_type}` is not supported.')
@@ -236,6 +239,9 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
         builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
         # pylint: enable=no-member
+        
+        builder.periodicity = orm.Str(periodicity.value)
+        
 
         return builder
 
@@ -283,6 +289,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 'structure': self.inputs.pw.structure,
                 'distance': self.inputs.kpoints_distance,
                 'force_parity': self.inputs.get('kpoints_force_parity', orm.Bool(False)),
+                'periodicity': self.inputs.periodicity, 
                 'metadata': {
                     'call_link_label': 'create_kpoints_from_distance'
                 }

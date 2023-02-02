@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """Calculation function to compute a k-point mesh for a structure with a guaranteed minimum k-point distance."""
 from aiida.engine import calcfunction
-
+from aiida_quantumespresso.common.types import PeriodicityType
 
 @calcfunction
-def create_kpoints_from_distance(structure, distance, force_parity):
+def create_kpoints_from_distance(structure, distance, force_parity, periodicity = PeriodicityType.XYZ):
     """Generate a uniformly spaced kpoint mesh for a given structure.
 
     The spacing between kpoints in reciprocal space is guaranteed to be at least the defined distance.
@@ -26,6 +26,15 @@ def create_kpoints_from_distance(structure, distance, force_parity):
     lengths_vector = [linalg.norm(vector) for vector in structure.cell]
     lengths_kpoint = kpoints.get_kpoints_mesh()[0]
 
+    if periodicity == 'x':
+        kpoints.set_kpoints_mesh([lengths_kpoint[0], 1, 1])
+    elif periodicity == 'xy':
+        kpoints.set_kpoints_mesh([lengths_kpoint[0], lengths_kpoint[1], 1])
+    elif periodicity == 'xyz':    
+        kpoints.set_kpoints_mesh([lengths_kpoint[0], lengths_kpoint[1], lengths_kpoint[2]])
+    else:
+        raise Exception(f"Unknown periodicity {periodicity}")
+
     is_symmetric_cell = all(abs(length - lengths_vector[0]) < epsilon for length in lengths_vector)
     is_symmetric_mesh = all(length == lengths_kpoint[0] for length in lengths_kpoint)
 
@@ -33,5 +42,8 @@ def create_kpoints_from_distance(structure, distance, force_parity):
     if is_symmetric_cell and not is_symmetric_mesh:
         nkpoints = max(lengths_kpoint)
         kpoints.set_kpoints_mesh([nkpoints, nkpoints, nkpoints])
+        
+
+    
 
     return kpoints

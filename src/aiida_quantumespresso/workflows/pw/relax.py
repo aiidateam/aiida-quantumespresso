@@ -6,7 +6,7 @@ from aiida.common.lang import type_check
 from aiida.engine import ToContext, WorkChain, append_, if_, while_
 from aiida.plugins import CalculationFactory, WorkflowFactory
 
-from aiida_quantumespresso.common.types import RelaxType
+from aiida_quantumespresso.common.types import RelaxType, PeriodicityType
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 
 from ..protocols.utils import ProtocolMixin
@@ -85,6 +85,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         protocol=None,
         overrides=None,
         relax_type=RelaxType.POSITIONS_CELL,
+        periodicity = PeriodicityType.XYZ,
         options=None,
         **kwargs
     ):
@@ -102,15 +103,16 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         :return: a process builder instance with all inputs defined ready for launch.
         """
         type_check(relax_type, RelaxType)
+        type_check(periodicity, PeriodicityType)
 
         inputs = cls.get_protocol_inputs(protocol, overrides)
 
         args = (code, structure, protocol)
         base = PwBaseWorkChain.get_builder_from_protocol(
-            *args, overrides=inputs.get('base', None), options=options, **kwargs
+            *args, overrides=inputs.get('base', None), periodicity=periodicity, options=options, **kwargs
         )
         base_final_scf = PwBaseWorkChain.get_builder_from_protocol(
-            *args, overrides=inputs.get('base_final_scf', None), options=options, **kwargs
+            *args, overrides=inputs.get('base_final_scf', None), periodicity=periodicity, options=options, **kwargs
         )
 
         base['pw'].pop('structure', None)
@@ -143,7 +145,12 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
             base.pw.parameters['CELL']['cell_dofree'] = 'shape'
 
         if relax_type in (RelaxType.CELL, RelaxType.POSITIONS_CELL):
-            base.pw.parameters['CELL']['cell_dofree'] = 'all'
+            if periodicity == PeriodicityType.XY:
+                base.pw.parameters['CELL']['cell_dofree'] = '2Dxy'
+            elif periodicity == PeriodicityType.X:
+                base.pw.parameters['CELL']['cell_dofree'] = 'x'
+            else:
+                base.pw.parameters['CELL']['cell_dofree'] = 'all'
 
         builder = cls.get_builder()
         builder.base = base
