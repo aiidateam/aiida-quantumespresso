@@ -26,6 +26,7 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
     The default setting for the cell size is 8.0 angstrom, which can be changed by including
     'supercell_min_parameter' as a Float node in the keyword arguments. Accepted keyword
     arguments are:
+
         - abs_atom_marker: a Str node defining the name of the absorbing atom Kind. The
                            absorbing Kind will be labelled 'X' if no input is given.
         - supercell_min_parameter: a Float node defining the minimum cell length in
@@ -49,6 +50,7 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
         - pymatgen_settings: an optional Dict object containing overrides for the symmetry
                              tolerance parameters used by Pymatgen when processing molecular
                              systems (tolerance, eigen_tolerance, matrix_tolerance).
+
     :param structure: the StructureData object to be analysed
     :returns: StructureData objects for the standardized crystal structure, the supercell, and
               all generated structure and associated symmetry data
