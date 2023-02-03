@@ -1,3 +1,26 @@
+## v4.2.0
+
+### Features
+- Add the `XspectraBaseWorkChain` [[#854]](https://github.com/aiidateam/aiida-quantumespresso/pull/854)
+- Add the `XspectraCoreWorkChain` [[#872]](https://github.com/aiidateam/aiida-quantumespresso/pull/872)
+
+### Changes
+- Protocols: Use v1.2 of SSSP and PBEsol by default for pw.x protocols [[#884]](https://github.com/aiidateam/aiida-quantumespresso/pull/884)
+
+### Fixes
+- `PwBandsWorkChain`: Fix `nbnd` for spin-polarised calculations [[#875]](https://github.com/aiidateam/aiida-quantumespresso/pull/875)
+
+### Dependencies
+- Update requirement `aiida-pseudo~=1.0` [[#882]](https://github.com/aiidateam/aiida-quantumespresso/pull/882)
+- Update pre-commit requirement `isort==5.12.0` [[#883]](https://github.com/aiidateam/aiida-quantumespresso/pull/883)
+
+### Devops
+- Fix nightly build tests [[#870]](https://github.com/aiidateam/aiida-quantumespresso/pull/870)
+
+### Documentation
+- Add various `settings` parameters for `PwCalculation` [[#869]](https://github.com/aiidateam/aiida-quantumespresso/pull/869)
+
+
 ## v4.1.0
 
 ### New
@@ -25,6 +48,7 @@
 ### Dependencies
 
 - Dependencies: Add support for Python 3.11 [[#857]](https://github.com/aiidateam/aiida-quantumespresso/pull/857)
+
 
 ## v4.0.1
 
@@ -78,6 +102,7 @@ Note that in line with our new [compatibility policy](https://github.com/aiidate
 - Refactor: Additional compatibility for `aiida-core` v2.0 [[#806]](https://github.com/aiidateam/aiida-quantumespresso/pull/806)
 - Remove the use of deprecated distutils package [[#808]](https://github.com/aiidateam/aiida-quantumespresso/pull/808)
 
+
 ## v3.5.2
 
 ### New
@@ -99,6 +124,7 @@ Note that in line with our new [compatibility policy](https://github.com/aiidate
 - CI: update the GHA ci.yml workflow [[#780]](https://github.com/aiidateam/aiida-quantumespresso/pull/780)
 - Update pre-commit dependencies and configuration [[#781]](https://github.com/aiidateam/aiida-quantumespresso/pull/781)
 - CI: add the isort pre-commit hook [[#781]](https://github.com/aiidateam/aiida-quantumespresso/pull/781)
+
 
 ## v3.5.1
 
@@ -148,6 +174,7 @@ Another important addition is the introduction of [a compatibility policy for Qu
 - Docs: add compatibility policy for Quantum ESPRESSO [[#737]](https://github.com/aiidateam/aiida-quantumespresso/pull/737)
 - `README.md`: cleanup the syntax of compatibility matrix [[#738]](https://github.com/aiidateam/aiida-quantumespresso/pull/738)
 - `README.md`: add shields for Quantum ESPRESSO compatibility [[#739]](https://github.com/aiidateam/aiida-quantumespresso/pull/739)
+
 
 ## v3.4.2
 
