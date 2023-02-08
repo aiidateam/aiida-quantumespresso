@@ -130,6 +130,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         spin_type=SpinType.NONE,
         periodicity=PeriodicityType.XYZ,
         initial_magnetic_moments=None,
+        tot_charge=0.0,
         options=None,
         **_
     ):
@@ -167,6 +168,10 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         if initial_magnetic_moments is not None and spin_type is not SpinType.COLLINEAR:
             raise ValueError(f'`initial_magnetic_moments` is specified but spin type `{spin_type}` is incompatible.')
+        
+        if not isinstance(tot_charge, (int, float)):
+            raise ValueError(f'`tot_charge` must be an int or float value')
+
 
         inputs = cls.get_protocol_inputs(protocol, overrides)
 
@@ -198,6 +203,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         parameters['ELECTRONS']['conv_thr'] = natoms * meta_parameters['conv_thr_per_atom']
         parameters['SYSTEM']['ecutwfc'] = cutoff_wfc
         parameters['SYSTEM']['ecutrho'] = cutoff_rho
+        parameters['SYSTEM']['tot_charge'] = tot_charge
 
         if electronic_type is ElectronicType.INSULATOR:
             parameters['SYSTEM']['occupations'] = 'fixed'
