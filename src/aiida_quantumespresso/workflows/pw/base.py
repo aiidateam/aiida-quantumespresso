@@ -208,6 +208,12 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             starting_magnetization = get_starting_magnetization(structure, pseudo_family, initial_magnetic_moments)
             parameters['SYSTEM']['starting_magnetization'] = starting_magnetization
             parameters['SYSTEM']['nspin'] = 2
+        
+        if spin_type is SpinType.SPIN_ORBIT:
+            parameters['SYSTEM']['noncolin'] = '.true.'
+            parameters['SYSTEM']['lspinorb'] = '.true.'
+
+
 
         # If overrides are provided, they are considered absolute
         if overrides:
