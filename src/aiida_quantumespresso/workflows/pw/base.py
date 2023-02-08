@@ -216,8 +216,8 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             parameters['SYSTEM']['nspin'] = 2
         
         if spin_type is SpinType.SPIN_ORBIT:
-            parameters['SYSTEM']['noncolin'] = '.true.'
-            parameters['SYSTEM']['lspinorb'] = '.true.'
+            parameters['SYSTEM']['noncolin'] = True
+            parameters['SYSTEM']['lspinorb'] = True
 
 
 
