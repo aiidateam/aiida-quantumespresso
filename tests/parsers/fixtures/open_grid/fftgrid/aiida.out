@@ -1,0 +1,130 @@
+
+     Program OPEN_GRID v.6.8 starts on  7Oct2021 at  1:52:44 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+         "P. Giannozzi et al., J. Chem. Phys. 152 154105 (2020);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI & OpenMP), running on       8 processor cores
+     Number of MPI processes:                 8
+     Threads/MPI process:                     1
+
+     MPI processes distributed on     1 nodes
+     R & G space division:  proc/nbgrp/npool/nimage =       8
+     248208 MiB available memory on the printing compute node when the environment starts
+ 
+ 
+  Reading nscf_save data
+
+     Reading xml data from directory:
+
+     ./out/aiida.save/
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation= PBE
+                           (   1   4   3   4   0   0   0)
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+ 
+     Parallelization info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Min         205     171     54                 5940     4534     829
+     Max         207     172     55                 5942     4536     831
+     Sum        1647    1373    439                47529    36275    6645
+ 
+     Using Slab Decomposition
+ 
+     Reading collected, re-writing distributed wavefunctions
+ 
+     EXX: q-point mesh:     8    8    8
+     EXX: setup a grid of 512 q-points centered on each k-point
+     (set verbosity='high' to see the list)
+
+     EXX grid:    36275 G-vectors     FFT dimensions: (  48,  48,  45)
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine scale_sym_ops (12):
+     incompatible FFT grid
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine scale_sym_ops (12):
+     incompatible FFT grid
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine scale_sym_ops (12):
+     incompatible FFT grid
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine scale_sym_ops (12):
+     incompatible FFT grid
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+     Message from routine scale_sym_ops:
+     found rotation not compatible with FFT grid
+     Message from routine scale_sym_ops:
+     found rotation not compatible with FFT grid
+     Message from routine scale_sym_ops:
+     found rotation not compatible with FFT grid
+     Message from routine scale_sym_ops:
+     found rotation not compatible with FFT grid
+     Message from routine scale_sym_ops:
+     found rotation not compatible with FFT grid
+     Message from routine scale_sym_ops:
+     found rotation not compatible with FFT grid
+     Message from routine scale_sym_ops:
+     found rotation not compatible with FFT grid
+     Message from routine scale_sym_ops:
+     found rotation not compatible with FFT grid
+     Message from routine scale_sym_ops:
+     found rotation not compatible with FFT grid
+     Message from routine scale_sym_ops:
+     found rotation not compatible with FFT grid
+     Message from routine scale_sym_ops:
+     found rotation not compatible with FFT grid
+     Message from routine scale_sym_ops:
+     found rotation not compatible with FFT grid
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine scale_sym_ops (12):
+     incompatible FFT grid
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine scale_sym_ops (12):
+     incompatible FFT grid
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine scale_sym_ops (12):
+     incompatible FFT grid
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine scale_sym_ops (12):
+     incompatible FFT grid
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
