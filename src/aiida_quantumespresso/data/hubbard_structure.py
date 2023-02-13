@@ -2,6 +2,7 @@
 # pylint: disable=invalid-name,too-many-lines
 """Data plugin that represents a crystal structure with Hubbard parameters."""
 from copy import deepcopy
+import json
 from typing import Union
 
 from aiida.orm import SinglefileData, StructureData
@@ -31,6 +32,8 @@ class HubbardStructureData(StructureData):
     """
 
     # pylint: disable=too-many-public-methods
+
+    _hubbard_filename = 'hubbard_parameters.json'
 
     def __init__(
         self,
@@ -177,7 +180,7 @@ class HubbardStructureData(StructureData):
     def hubbard_projectors(self, value: str):
         """Set the Hubbard projectors."""
         if isinstance(value, str):
-            self.set_attribute('hubbard_projectors', deepcopy(value))
+            self.base.attributes.set('hubbard_projectors', deepcopy(value))
         else:
             raise ValueError(f'type <{type(value)}> is not correct; only class <{type(str)}> is accepted')
 
@@ -187,11 +190,11 @@ class HubbardStructureData(StructureData):
 
         :return: list of list with 7 values describing the Hubbard parameters.
         """
-        try:
-            the_hps = self.get_attribute('hubbard_parameters')
-        except AttributeError:
-            the_hps = []
-        return the_hps
+        if self._hubbard_filename in self.base.repository.list_object_names():
+            with self.base.repository.open(self._hubbard_filename, mode='rb') as handle:
+                return json.load(handle)
+
+        return None
 
     @hubbard_parameters.setter
     def hubbard_parameters(self, hp_parameters: list):
@@ -240,7 +243,8 @@ class HubbardStructureData(StructureData):
         else:
             raise ValueError('Hubbard parameters must be given as a list.')
 
-        self.set_attribute('hubbard_parameters', hubbard_parameters)
+        serialized = json.dumps(hubbard_parameters)
+        self.base.repository.put_object_from_bytes(serialized.encode('utf-8'), 'hubbard_parameters.json')
 
     def append_hubbard_parameter(
         self,
@@ -350,7 +354,7 @@ class HubbardStructureData(StructureData):
         sites = self.sites
         natoms = len(sites)
 
-        card = f'HUBBARD ({self.hubbard_projectors})\n'
+        lines = [f'HUBBARD\t{self.hubbard_projectors}\n']
         sc_indecis, _, _ = self._get_quantum_espresso_hubbard_info()
 
         translations = self._get_standard_translations()
@@ -375,10 +379,15 @@ class HubbardStructureData(StructureData):
             index_j = sc_indecis[base_index * natoms + hp[2]]
 
             if hubbard_type.lower().startswith('dudarev'):
-                pre = 'J' if hubbard_type[-1].lower() == 'j' else 'V'
+                if hubbard_type[-1].lower() == 'j':
+                    pre = 'J'
+                elif atom_i == atom_j and manifold_i == manifold_j:
+                    pre = 'U'
+                else:
+                    pre = 'V'
 
-                if pre == 'J':
-                    line = f'{pre}\t{atom_i}-{manifold_i} \t{value}'
+                if pre in ['U', 'J']:
+                    line = f'{pre}\t{atom_i}-{manifold_i}\t{value}'
                 else:
                     line = f'{pre}\t{atom_i}-{manifold_i}\t{atom_j}-{manifold_j}\t{index_i}\t{index_j}\t{value}'
             elif hubbard_type.lower().startswith('liechtenstein-'):
@@ -388,9 +397,10 @@ class HubbardStructureData(StructureData):
                 raise ValueError(f'Hubbard type {hubbard_type} is not recognised.')
 
             line += '\n'
-            card += line
+            if line not in lines:
+                lines.append(line)
 
-        return card
+        return str.join(lines)
 
     def get_quantum_espresso_hubbard_parameters(self) -> str:
         """Get QuantumESPRESSO `parameters.in` data for `pw.x` in `str`."""
