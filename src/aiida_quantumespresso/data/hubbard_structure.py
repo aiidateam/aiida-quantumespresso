@@ -194,7 +194,7 @@ class HubbardStructureData(StructureData):
             with self.base.repository.open(self._hubbard_filename, mode='rb') as handle:
                 return json.load(handle)
 
-        return None
+        return []
 
     @hubbard_parameters.setter
     def hubbard_parameters(self, hp_parameters: list):
@@ -400,7 +400,7 @@ class HubbardStructureData(StructureData):
             if line not in lines:
                 lines.append(line)
 
-        return str.join(lines)
+        return ' '.join(lines)
 
     def get_quantum_espresso_hubbard_parameters(self) -> str:
         """Get QuantumESPRESSO `parameters.in` data for `pw.x` in `str`."""
