@@ -132,7 +132,7 @@ class HubbardStructureData(StructureData):
         inv_cell = np.linalg.inv(cell)
         positions = ase.positions
 
-        if not positions:
+        if not positions.any():
             raise ValueError('the structure has no positions')
 
         index = 0
