@@ -789,7 +789,7 @@ class HubbardStructureData(StructureData):
                     new_j_index,
                     hubbard_parameter[3],
                     hubbard_parameter[4],
-                    new_translation,
+                    new_translation.tolist(),
                     hubbard_parameter[6],
                 ]
 
