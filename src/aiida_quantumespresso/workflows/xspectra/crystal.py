@@ -122,8 +122,9 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
         spec.input(
             'upf2plotcore_code',
             valid_type=orm.Code,
+            required=False,
             help=(
-                'Code node for the upf2plotcore.sh ShellJob code'
+                'Code node for the upf2plotcore.sh ShellJob code.'
             )
         )
         spec.input(
@@ -163,6 +164,14 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             help=('If ``True``, the WorkChain will return all ``powder_spectrum`` nodes from each '
                   '``XspectraCoreWorkChain`` sub-process.')
         )
+        spec.input_namespace(
+            'core_wfc_data',
+            valid_type=orm.SinglefileData,
+            dynamic=True,
+            required=False,
+            help=('Input namespace to provide core wavefunction inputs for each element. Must follow the format: '
+                   '``core_wfc_data__{symbol} = {node}``')
+        )
         spec.inputs.validator = cls.validate_inputs
         spec.outline(
             cls.setup,
@@ -171,8 +180,10 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
                 cls.inspect_relax,
             ),
             cls.get_xspectra_structures,
-            cls.run_upf2plotcore,
-            cls.inspect_upf2plotcore,
+            if_(cls.should_run_upf2plotcore)(
+                cls.run_upf2plotcore,
+                cls.inspect_upf2plotcore,
+            ),
             cls.run_all_xspectra_core,
             cls.inspect_all_xspectra_core,
             cls.results,
@@ -248,11 +259,11 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
         return files(protocols) / 'crystal.yaml'
 
     @classmethod
-    def get_builder_from_protocol(
-        cls, pw_code, xs_code, upf2plotcore_code, structure, pseudos,
+    def get_builder_from_protocol( # pylint: disable=too-many-statements
+        cls, pw_code, xs_code, structure, pseudos, upf2plotcore_code=None, core_wfc_data=None,
         core_hole_treatments=None, protocol=None, overrides=None, elements_list=None,
         options=None, **kwargs
-    ):
+    ): # pylint: enable:too-many-statments
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
         :param pw_code: the ``Code`` instance configured for the ``quantumespresso.pw``
@@ -304,7 +315,6 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
         # pylint: disable=no-member
         builder = cls.get_builder()
         builder.relax = relax
-        builder.upf2plotcore_code = upf2plotcore_code
         builder.structure = structure
         builder.abs_atom_marker = abs_atom_marker
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
@@ -344,6 +354,14 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
         builder.gipaw_pseudos = gipaw_pseudos
         if core_hole_treatments:
             builder.core_hole_treatments = orm.Dict(dict=core_hole_treatments)
+        if core_wfc_data:
+            builder.core_wfc_data = core_wfc_data
+        elif upf2plotcore_code:
+            builder.upf2plotcore_code = upf2plotcore_code
+        else:
+            raise ValueError(
+                'No code node for upf2plotcore.sh or core wavefunction data were provided.'
+            )
         # pylint: enable=no-member
         return builder
 
@@ -352,18 +370,58 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
     def validate_inputs(inputs, _):
         """Validate the inputs before launching the WorkChain."""
         structure = inputs['structure']
-        elements_present = [kind.name for kind in structure.kinds]
+        kinds_present = [kind.name for kind in structure.kinds]
+        elements_present = [kind.symbol for kind in structure.kinds]
+        if 'elements_list' in inputs:
+            absorbing_elements_list = sorted(inputs['elements_list'])
+            extra_elements = []
+            for element in absorbing_elements_list:
+                if element not in elements_present:
+                    extra_elements.append(element)
+            if len(extra_elements) > 0:
+                raise ValidationError(
+                    f'The some elements in ``elements_list`` {extra_elements} do not exist in the'
+                    f' structure provided {elements_present}.'
+                )
+        else:
+            absorbing_elements_list = sorted([kind.symbol for kind in structure.kinds])
         abs_atom_marker = inputs['abs_atom_marker'].value
-        if abs_atom_marker in elements_present:
+        if abs_atom_marker in kinds_present:
             raise ValidationError(
                 f'The marker given for the absorbing atom ("{abs_atom_marker}") matches an existing Kind in the '
-                f'input structure ({elements_present}).'
+                f'input structure ({kinds_present}).'
             )
 
         if not inputs['core']['get_powder_spectrum'].value:
             raise ValidationError(
                 'The ``get_powder_spectrum`` input for the XspectraCoreWorkChain namespace must be ``True``.'
             )
+
+        if 'upf2plotcore_code' not in inputs and 'core_wfc_data' not in inputs:
+            raise ValidationError(
+                'Neither a ``Code`` node for upf2plotcore.sh or a set of ``core_wfc_data`` were provided.'
+            )
+
+        if 'core_wfc_data' in inputs:
+            core_wfc_data_list = sorted(inputs['core_wfc_data'].keys())
+            if core_wfc_data_list != absorbing_elements_list:
+                raise ValidationError(
+                    f'The ``core_wfc_data`` provided ({core_wfc_data_list}) does not match the list of'
+                    f' absorbing elements ({absorbing_elements_list})'
+                )
+            else:
+                empty_core_wfc_data = []
+                for key, value in inputs['core_wfc_data'].items():
+                    header_line = value.get_content()[:40]
+                    num_core_states = int(header_line.split(' ')[5])
+                    if num_core_states == 0:
+                        empty_core_wfc_data.append(key)
+                if len(empty_core_wfc_data) > 0:
+                    raise ValidationError(
+                        f'The ``core_wfc_data`` provided for elements {empty_core_wfc_data} do not contain '
+                        'any wavefunction data.'
+                    )
+
 
     def setup(self):
         """Set required context variables."""
@@ -373,6 +431,9 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             self.ctx.elements_list = [kind.symbol for kind in structure.kinds]
         else:
             self.ctx.elements_list = custom_elements_list.get_list()
+
+        if 'core_wfc_data' in self.inputs.keys():
+            self.ctx.core_wfc_data = self.inputs.core_wfc_data
 
 
     def should_run_relax(self):
@@ -460,6 +521,10 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
         self.out('supercell_structure', supercell)
         self.out('symmetry_analysis_data', out_params)
 
+    def should_run_upf2plotcore(self):
+        """If core wavefunction data files are specified, we skip the upf2plotcore step."""
+        return 'core_wfc_data' not in self.inputs
+
     def run_upf2plotcore(self):
         """Run the upf2plotcore.sh utility script for each element and return the core-wavefunction data."""
 
@@ -521,7 +586,10 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
 
             inputs.metadata.call_link_label = f'{site}_xspectra'
             inputs.eps_vectors = orm.List(list=self.ctx.eps_vectors)
-            inputs.core_wfc_data = self.ctx[f'upf2plotcore_{abs_element}'].outputs.stdout
+            if 'core_wfc_data' in self.inputs:
+                inputs.core_wfc_data = self.inputs.core_wfc_data[abs_element]
+            else:
+                inputs.core_wfc_data = self.ctx[f'upf2plotcore_{abs_element}'].outputs.stdout
 
             # Get the given settings for the SCF inputs and then overwrite them with the
             # chosen core-hole approximation, then apply the correct pseudopotential pair
