@@ -81,6 +81,7 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 'quantumespresso.q2r' = 'aiida_quantumespresso.calculations.q2r:Q2rCalculation'
 'quantumespresso.seekpath_structure_analysis' = 'aiida_quantumespresso.calculations.functions.seekpath_structure_analysis:seekpath_structure_analysis'
 'quantumespresso.xspectra' = 'aiida_quantumespresso.calculations.xspectra:XspectraCalculation'
+'quantumespresso.open_grid' = 'aiida_quantumespresso.calculations.open_grid:OpenGridCalculation'
 
 [project.entry-points.'aiida.data']
 'quantumespresso.force_constants' = 'aiida_quantumespresso.data.force_constants:ForceConstantsData'
@@ -98,6 +99,7 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 'quantumespresso.q2r' = 'aiida_quantumespresso.parsers.q2r:Q2rParser'
 'quantumespresso.pw2wannier90' = 'aiida_quantumespresso.parsers.pw2wannier90:Pw2wannier90Parser'
 'quantumespresso.xspectra' = 'aiida_quantumespresso.parsers.xspectra:XspectraParser'
+'quantumespresso.open_grid' = 'aiida_quantumespresso.parsers.open_grid:OpenGridParser'
 
 [project.entry-points.'aiida.tools.calculations']
 'quantumespresso.pw' = 'aiida_quantumespresso.tools.calculations.pw:PwCalculationTools'
