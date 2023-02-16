@@ -86,6 +86,21 @@ to install the default SSSP version.
 List the installed pseudopotential families with the command `aiida-pseudo list`.
 You can then use the name of any family in the command line using the `-F` flag.
 
+## Development
+
+### Test
+```shell
+git clone https://github.com/aiidateam/aiida-quantumespresso .
+cd aiida-quantumespresso
+pip install -e .[tests]  # install extra dependencies for test
+pytest tests/calculations/test_pw.py # run tests
+```
+
+One can also use `tox` to run the test. `tox` allows setting the Python version for the test.
+```shell
+pip install tox
+tox -e py39 -- tests/calculations/test_pw.py
+```
 
 ## License
 The `aiida-quantumespresso` plugin package is released under the MIT license.
