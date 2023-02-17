@@ -89,6 +89,8 @@ You can then use the name of any family in the command line using the `-F` flag.
 ## Development
 
 ### Running tests
+To run the tests, simply clone and install the package locally with the [tests] optional dependencies:
+
 ```shell
 git clone https://github.com/aiidateam/aiida-quantumespresso .
 cd aiida-quantumespresso
@@ -102,11 +104,20 @@ pip install tox
 tox -e py39 -- tests/calculations/test_pw.py
 ```
 
+### Pre-commit
+To contribute to this repository, please enable pre-commit so the code in commits are conform to the standards.
+Simply install the repository with the `pre-commit` extra dependencies:
+```shell
+cd aiida-quantumespresso
+pip install -e .[pre-commit]
+pre-commit install
+```
+
 ## License
 The `aiida-quantumespresso` plugin package is released under the MIT license.
 See the `LICENSE.txt` file for more details.
 
-## Acknowlegements
+## Acknowledgements
 We acknowledge support from:
 * the [NCCR MARVEL](http://nccr-marvel.ch/) funded by the Swiss National Science Foundation;
 * the EU Centre of Excellence "[MaX – Materials Design at the Exascale](http://www.max-centre.eu/)" (Horizon 2020 EINFRA-5, Grant No. 676598; H2020-INFRAEDI-2018-1, Grant No. 824143; HORIZON-EUROHPC-JU-2021-COE-1, Grant No. 101093324);
