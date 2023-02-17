@@ -96,7 +96,7 @@ pip install -e .[tests]  # install extra dependencies for test
 pytest # run tests
 ```
 
-One can also use `tox` to run the test. `tox` allows setting the Python version for the test.
+You can also use `tox` to run the test set. Here you can also use the `-e` option to specify the Python version for the test run:
 ```shell
 pip install tox
 tox -e py39 -- tests/calculations/test_pw.py
