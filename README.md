@@ -88,7 +88,7 @@ You can then use the name of any family in the command line using the `-F` flag.
 
 ## Development
 
-### Test
+### Running tests
 ```shell
 git clone https://github.com/aiidateam/aiida-quantumespresso .
 cd aiida-quantumespresso
