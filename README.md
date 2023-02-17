@@ -93,7 +93,7 @@ You can then use the name of any family in the command line using the `-F` flag.
 git clone https://github.com/aiidateam/aiida-quantumespresso .
 cd aiida-quantumespresso
 pip install -e .[tests]  # install extra dependencies for test
-pytest tests/calculations/test_pw.py # run tests
+pytest # run tests
 ```
 
 One can also use `tox` to run the test. `tox` allows setting the Python version for the test.
