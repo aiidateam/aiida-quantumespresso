@@ -227,6 +227,7 @@ class PwParser(Parser):
         :param trajectory: the output trajectory data
         :param except_final_scf: if True will return whether the calculation is converged except for the final scf.
         """
+        from aiida_quantumespresso.calculations import _uppercase_dict
         from aiida_quantumespresso.utils.defaults.calculation import pw
         from aiida_quantumespresso.utils.validation.trajectory import verify_convergence_trajectory
 
@@ -236,7 +237,10 @@ class PwParser(Parser):
         threshold_stress = parameters.get('CELL', {}).get('press_conv_thr', pw.press_conv_thr)
         external_pressure = parameters.get('CELL', {}).get('press', 0)
 
-        fixed_coords = self.node.inputs.settings.get_dict().get('fixed_coords', None)
+        if 'settings' in self.node.inputs:
+            settings = _uppercase_dict(self.node.inputs.settings.get_dict(), dict_name='settings')
+
+        fixed_coords = settings.get('FIXED_COORDS', None)
 
         # Through the `cell_dofree` the degrees of freedom of the cell can be constrained, which makes the threshold on
         # the stress hard to interpret. Therefore, unless the `cell_dofree` is set to the default `all` where the cell
