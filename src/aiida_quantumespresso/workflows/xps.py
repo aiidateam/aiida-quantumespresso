@@ -683,7 +683,8 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         # structures_to_process = {Key : Value for Key, Value in result.items()}
         for site in ['output_parameters', 'supercell']:
             result.pop(site, None)
-        self.ctx.structures_to_process = result
+        structures_to_process = {f'{Key.split("_")[0]}_{Key.split("_")[1]}' : Value for Key, Value in result.items()}
+        self.ctx.structures_to_process = structures_to_process
         self.ctx.equivalent_sites_data = out_params['equivalent_sites_data']
 
         self.out('supercell_structure', supercell)
