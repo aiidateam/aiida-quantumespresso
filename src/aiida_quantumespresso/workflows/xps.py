@@ -664,22 +664,25 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
 
         if 'spglib_settings' in self.inputs:
             spglib_settings = self.inputs.spglib_settings
+            inputs['spglib_settings'] = spglib_settings
         else:
             spglib_settings = None
 
         if 'relax' in self.inputs:
             relaxed_structure = self.ctx.relaxed_structure
-            result = get_xspectra_structures(relaxed_structure, spglib_settings, **inputs)
+            result = get_xspectra_structures(relaxed_structure, **inputs)
         else:
-            result = get_xspectra_structures(self.inputs.structure, spglib_settings, **inputs)
+            result = get_xspectra_structures(self.inputs.structure, **inputs)
 
         supercell = result.pop('supercell')
         out_params = result.pop('output_parameters')
-        if out_params.get_dict()['input_standardized']:
+        if out_params.get_dict()['structure_is_standardized']:
             standardized = result.pop('standardized_structure')
             self.out('standardized_structure', standardized)
 
         # structures_to_process = {Key : Value for Key, Value in result.items()}
+        for site in ['output_parameters', 'supercell']:
+            result.pop(site, None)
         self.ctx.structures_to_process = result
         self.ctx.equivalent_sites_data = out_params['equivalent_sites_data']
 
