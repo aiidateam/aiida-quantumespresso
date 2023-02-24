@@ -270,6 +270,9 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         # The following flags always have to be set in the parameters, regardless of what caller specified in the inputs
         inputs.pw.parameters['CONTROL']['calculation'] = 'bands'
 
+        # Always set restart mode to 'from_scratch' for the bands calculation
+        inputs.pw.parameters['CONTROL']['restart_mode'] = 'from_scratch'
+
         # Only set the following parameters if not directly explicitly defined in the inputs
         inputs.pw.parameters['ELECTRONS'].setdefault('diagonalization', 'cg')
         inputs.pw.parameters['ELECTRONS'].setdefault('diago_full_acc', True)
