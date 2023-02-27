@@ -46,14 +46,6 @@ def get_spectra_by_element(elements_list, equivalent_sites_data, voight_gamma, v
         multiplicity = equivalency_data[key]['multiplicity']
         element = equivalency_data[key]['symbol']
         total_energy = xspectra_out_params['energy']
-
-        if 'total_multiplicity' not in data_dict[element]:
-            data_dict[element]['total_multiplicity'] = multiplicity
-        else:
-            old_mult = data_dict[element]['total_multiplicity']
-            new_mult = old_mult + multiplicity
-            data_dict[element]['total_multiplicity'] = new_mult
-
         data_dict[element][key] = {'element': element, 'multiplicity': multiplicity, 'total_energy': total_energy}
 
     result = {}
