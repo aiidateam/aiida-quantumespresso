@@ -29,7 +29,12 @@ def get_spectra_by_element(elements_list, equivalent_sites_data, voight_gamma, v
     """Generate a final spectrum for each element from the powder spectra of the ``CoreWorkChain`` sub-processes."""
     from scipy.special import voigt_profile  # pylint: disable=no-name-in-module
 
+    ground_state_node = kwargs.pop('ground_state', None)
+    correction_energies = kwargs.pop('correction_energies', orm.Dict()).get_dict()
     incoming_param_nodes = {key: value for key, value in kwargs.items() if key != 'metadata'}
+    group_state_energy = None
+    if ground_state_node is not None:
+        group_state_energy = ground_state_node.get_dict()['energy']
     elements = elements_list.get_list()
     sigma = voight_sigma.value
     gamma = voight_gamma.value
@@ -38,7 +43,6 @@ def get_spectra_by_element(elements_list, equivalent_sites_data, voight_gamma, v
     data_dict = {element: {} for element in elements}
     for key in incoming_param_nodes:
         xspectra_out_params = incoming_param_nodes[key].get_dict()
-        fermi_energy = xspectra_out_params['fermi_energy']
         multiplicity = equivalency_data[key]['multiplicity']
         element = equivalency_data[key]['symbol']
         total_energy = xspectra_out_params['energy']
@@ -50,18 +54,13 @@ def get_spectra_by_element(elements_list, equivalent_sites_data, voight_gamma, v
             new_mult = old_mult + multiplicity
             data_dict[element]['total_multiplicity'] = new_mult
 
-        data_dict[element][key] = {
-            'element': element,
-            'multiplicity': multiplicity,
-            'fermi_energy': fermi_energy,
-            'total_energy': total_energy
-        }
+        data_dict[element][key] = {'element': element, 'multiplicity': multiplicity, 'total_energy': total_energy}
 
-    spectra_by_element = {}
-    all_core_level_shifts = {}
+    result = {}
+    core_level_shifts = {}
+    binding_energies = {}
     for element in elements:
         spectra_list = []
-        total_multiplicity = data_dict[element].pop('total_multiplicity')
         for key in data_dict[element]:
             site_multiplicity = data_dict[element][key]['multiplicity']
             spectra_list.append(
@@ -76,60 +75,65 @@ def get_spectra_by_element(elements_list, equivalent_sites_data, voight_gamma, v
 
         lowest_total_energy = spectra_list[0][1]
         core_level_shift = [(entry[0], entry[1] - lowest_total_energy, entry[2]) for entry in spectra_list]
-        all_core_level_shifts[element] = {entry[2]: entry[1] for entry in core_level_shift}
-        #max_core_level_shift = core_level_shift[0][-1]
-        #core_level_shift = [(entry[0], entry[1] - lowest_total_energy, max_core_level_shift) for entry in spectra_list]
-        #        corrected_spectrum = [
-        #            np.column_stack((entry[0][:,0] - entry[1], entry[0][:,1])) for entry in core_level_shift
-        #        ]
-        spectra_by_element[element] = core_level_shift
+        core_level_shifts[element] = core_level_shift
+        result[f'{element}_cls'] = orm.Dict(dict={entry[2]: entry[1] for entry in core_level_shift})
+
+        if group_state_energy is not None:
+            binding_energy = [(entry[0], entry[1] - group_state_energy + correction_energies[element], entry[2])
+                              for entry in spectra_list]
+            binding_energies[element] = binding_energy
+            result[f'{element}_be'] = orm.Dict(dict={entry[2]: entry[1] for entry in binding_energy})
+
 
 ################################ Modifications ###########################
 
-    result = {}
     fwhm_voight = gamma / 2 + np.sqrt(gamma**2 / 4 + sigma**2)
-    for element in elements:
-        result[f'{element}_cls'] = orm.Dict(dict=all_core_level_shifts[element])
 
-    for element in elements:
-        final_spectra_y_arrays = []  ##### Initalize
-        final_spectra_y_labels = []
-        final_spectra_y_units = []
+    def spectra_broadening(points, label='cls_spectra'):
+        result_spectra = {}
+        for element in elements:
+            final_spectra_y_arrays = []  ##### Initalize
+            final_spectra_y_labels = []
+            final_spectra_y_units = []
 
-        total_multiplicity = sum([i[0] for i in spectra_by_element[element]])
+            total_multiplicity = sum([i[0] for i in points[element]])
 
-        final_spectra = orm.XyData()
-        max_core_level_shift = spectra_by_element[element][-1][1]
-        x_energy_range = np.linspace(
-            0 - fwhm_voight - 1.5, max_core_level_shift + fwhm_voight + 1.5, 500
-        )  ############# Energy range for the Broadening function
+            final_spectra = orm.XyData()
+            max_core_level_shift = points[element][-1][1]
+            min_core_level_shift = points[element][0][1]
+            x_energy_range = np.linspace(
+                min_core_level_shift - fwhm_voight - 1.5, max_core_level_shift + fwhm_voight + 1.5, 500
+            )  ############# Energy range for the Broadening function
 
-        for atoms, index in zip(spectra_by_element[element], range(len(spectra_by_element[element]))):
-            intensity = atoms[0]  ###### Weight for the spectra of every atom
-            relative_peak_position = atoms[1]  ###### Peak position
-            final_spectra_y_labels.append(f'{element}{index}_xps')
+            for atoms, index in zip(points[element], range(len(points[element]))):
+                intensity = atoms[0]  ###### Weight for the spectra of every atom
+                relative_peak_position = atoms[1]  ###### Peak position
+                final_spectra_y_labels.append(f'{element}{index}_xps')
+                final_spectra_y_units.append('sigma')
+                final_spectra_y_arrays.append(
+                    intensity * voigt_profile(x_energy_range - relative_peak_position, sigma, gamma) /
+                    total_multiplicity
+                )
+
+            final_spectra_y_labels.append(f'{element}_total_xps')
             final_spectra_y_units.append('sigma')
-            final_spectra_y_arrays.append(
-                intensity * voigt_profile(x_energy_range - relative_peak_position, sigma, gamma) / total_multiplicity
-            )
+            final_spectra_y_arrays.append(sum(final_spectra_y_arrays))
 
-        final_spectra_y_labels.append(f'{element}_total_xps')
-        final_spectra_y_units.append('sigma')
-        final_spectra_y_arrays.append(sum(final_spectra_y_arrays))
+            final_spectra_x_label = 'energy'
+            final_spectra_x_units = 'eV'
+            final_spectra_x_array = x_energy_range  ############# Energy range for the Bradening function
+            #        final_spectra_x_array = corrected_spectrum[:,0]
+            final_spectra.set_x(final_spectra_x_array, final_spectra_x_label, final_spectra_x_units)
+            final_spectra.set_y(final_spectra_y_arrays, final_spectra_y_labels, final_spectra_y_units)
+            result_spectra[f'{element}_{label}'] = final_spectra
+        return result_spectra
 
-        final_spectra_x_label = 'energy'
-        final_spectra_x_units = 'eV'
-        final_spectra_x_array = x_energy_range  ############# Energy range for the Bradening function
-        #        final_spectra_x_array = corrected_spectrum[:,0]
-        final_spectra.set_x(final_spectra_x_array, final_spectra_x_label, final_spectra_x_units)
-        final_spectra.set_y(final_spectra_y_arrays, final_spectra_y_labels, final_spectra_y_units)
-        result[f'{element}_xps'] = final_spectra
-
-
-#        final_spectra_y_labels = [f'{element}_dipole']
-
-#final_spectra_y_arrays = [corrected_spectrum[:,1]]
-
+    # print(core_level_shifts)
+    # print(binding_energies)
+    result.update(spectra_broadening(core_level_shifts))
+    if ground_state_node is not None:
+        result.update(spectra_broadening(binding_energies, label='be_spectra'))
+    # print(result)
     return result
 
 
@@ -143,37 +147,6 @@ def validate_inputs(inputs, _):
             f'The marker given for the absorbing atom ("{abs_atom_marker}") matches an existing Kind in the '
             f'input structure ({elements_present}).'
         )
-
-    if 'structure_preparation_settings' in inputs:
-        structure_prep_settings = inputs['structure_preparation_settings'].get_dict()
-        allowed_keys = ['supercell_min_parameter', 'standardize_structure']
-        invalid_keys = []
-        for key in structure_prep_settings:
-            if key not in allowed_keys:
-                invalid_keys.append(key)
-        if len(invalid_keys) > 0:
-            raise ValidationError(
-                'The dictionary provided for ``structure_preparation_settings`` contained invalid keys '
-                f'({invalid_keys}).'
-            )
-        if 'abs_atom_marker' in structure_prep_settings:
-            raise ValidationError(
-                'The absorbing atom marker must only be specified in the main input and nowhere else.'
-            )
-        if 'abs_elements_list' in structure_prep_settings:
-            raise ValidationError(
-                'The list of absorbing elements must only be specified in the main input and nowhere else.'
-            )
-        if 'supercell_min_parameter' in structure_prep_settings:
-            min_parameter = structure_prep_settings['supercell_min_parameter'].value
-            if not isinstance(min_parameter, (float, int)):
-                raise ValidationError(
-                    f'The provided minimum cell parameter ({min_parameter}) was neither a float nor integer.'
-                )
-        if 'standardize_structure' in structure_prep_settings:
-            value = structure_prep_settings['standardize_structure'].value
-            if not isinstance(value, bool):
-                raise ValidationError(f'The value given for standardize_structure ({value}) was not a boolean.')
 
     if 'spglib_settings' in inputs:
         spglib_settings = inputs['spglib_settings'].get_dict()
@@ -340,6 +313,19 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
             )
         )
         spec.input(
+            'calc_binding_energy',
+            valid_type=orm.Bool,
+            default=lambda: orm.Bool(False),
+            help=('If `True`, run scf calculation for the supercell.'),
+        )
+        spec.input(
+            'correction_energies',
+            valid_type=orm.Dict,
+            required=False,
+            help=('Optional dictionary to set the correction energy to all elements present. '
+                 )
+        )
+        spec.input(
             'clean_workdir',
             valid_type=orm.Bool,
             default=lambda: orm.Bool(False),
@@ -360,13 +346,14 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
                 cls.inspect_relax,
             ),
             cls.prepare_structures,
-            cls.run_all_ch_scf,
-            cls.inspect_all_ch_scf,
+            cls.run_all_scf,
+            cls.inspect_all_scf,
             cls.results,
         )
 
         spec.exit_code(401, 'ERROR_SUB_PROCESS_FAILED_RELAX', message='The Relax sub process failed')
-        spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_SCF', message='One or more Pw sub processes failed')
+        spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_SCF', message='The SCF Pw sub processes failed')
+        spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_CH_SCF', message='One or more CH_SCF Pw sub processes failed')
         spec.output(
             'optimized_structure',
             valid_type=orm.StructureData,
@@ -396,6 +383,12 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
             valid_type=orm.Dict,
             help='The output parameters from ``get_xspectra_structures()``.'
         )
+        spec.output(
+            'output_parameters_scf',
+            valid_type=orm.Dict,
+            required=False,
+            help='The output_parameters of the scf step.'
+        )
         spec.output_namespace(
             'output_parameters_ch_scf',
             valid_type=orm.Dict,
@@ -409,10 +402,22 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
             help='All the chemical shift values for each element calculated by the WorkChain.'
         )
         spec.output_namespace(
-            'final_spectra',
+            'binding_energies',
+            valid_type=orm.Dict,
+            dynamic=True,
+            help='All the binding energy values for each element calculated by the WorkChain.'
+        )
+        spec.output_namespace(
+            'final_spectra_cls',
             valid_type=orm.XyData,
             dynamic=True,
-            help='The fully-resolved spectra for each element'
+            help='The fully-resolved spectra for each element based on chemical shift.'
+        )
+        spec.output_namespace(
+            'final_spectra_be',
+            valid_type=orm.XyData,
+            dynamic=True,
+            help='The fully-resolved spectra for each element based on binding energy.'
         )
         # yapf: disable
 
@@ -503,7 +508,8 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
     @classmethod
     def get_builder_from_protocol(
         cls, code, structure, pseudos, core_hole_treatments=None, protocol=None,
-        overrides=None, elements_list=None, options=None, **kwargs
+        overrides=None, elements_list=None, options=None,
+        structure_preparation_settings=None, **kwargs
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
@@ -528,6 +534,8 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         """
 
         inputs = cls.get_protocol_inputs(protocol, overrides)
+        calc_binding_energy = kwargs.pop('calc_binding_energy', False)
+        correction_energies = kwargs.pop('correction_energies', orm.Dict())
 
         pw_args = (code, structure, protocol)
         # xspectra_args = (pw_code, xs_code, structure, protocol, upf2plotcore_code)
@@ -552,6 +560,8 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         builder.ch_scf = ch_scf
         builder.structure = structure
         builder.abs_atom_marker = abs_atom_marker
+        builder.calc_binding_energy = calc_binding_energy
+        builder.correction_energies = correction_energies
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
         core_hole_pseudos = {}
         gipaw_pseudos = {}
@@ -582,6 +592,9 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         builder.gipaw_pseudos = gipaw_pseudos
         if core_hole_treatments:
             builder.core_hole_treatments = orm.Dict(dict=core_hole_treatments)
+        # for get_xspectra_structures
+        if structure_preparation_settings:
+            builder.structure_preparation_settings = orm.Dict(dict=structure_preparation_settings)
         # pylint: enable=no-member
         return builder
 
@@ -639,6 +652,7 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         and apply them to the CalcFunction call. The accepted inputs (format, default) are:
             - supercell_min_parameter (float, 8.0)
             - standardize_structure (bool, True)
+            - is_molecule_input (bool, False)
 
         Input settings for the spglib analysis within ``get_xspectra_structures`` can be
         provided via ``inputs.spglib_settings`` in the form of a Dict node and must be
@@ -660,8 +674,15 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         if 'structure_preparation_settings' in self.inputs:
             optional_cell_prep = self.inputs.structure_preparation_settings
             for key, value in optional_cell_prep.items():
-                inputs[key] = value
-
+                if isinstance(value, float):
+                    node_value = orm.Float(value)
+                if isinstance(value, int):
+                    node_value = orm.Int(value)
+                if isinstance(value, bool):
+                    node_value = orm.Bool(value)
+                if isinstance(value, str):
+                    node_value = orm.Str(value)
+                inputs[key] = node_value
         if 'spglib_settings' in self.inputs:
             spglib_settings = self.inputs.spglib_settings
             inputs['spglib_settings'] = spglib_settings
@@ -676,32 +697,71 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
 
         supercell = result.pop('supercell')
         out_params = result.pop('output_parameters')
-        if out_params.get_dict()['structure_is_standardized']:
+        if out_params.get_dict().get('structure_is_standardized', None):
             standardized = result.pop('standardized_structure')
             self.out('standardized_structure', standardized)
 
         # structures_to_process = {Key : Value for Key, Value in result.items()}
-        for site in ['output_parameters', 'supercell']:
+        for site in ['output_parameters', 'supercell', 'standardized_structure']:
             result.pop(site, None)
         structures_to_process = {f'{Key.split("_")[0]}_{Key.split("_")[1]}' : Value for Key, Value in result.items()}
+        self.ctx.supercell = supercell
         self.ctx.structures_to_process = structures_to_process
         self.ctx.equivalent_sites_data = out_params['equivalent_sites_data']
 
         self.out('supercell_structure', supercell)
         self.out('symmetry_analysis_data', out_params)
 
-    def run_all_ch_scf(self):
+    def should_run_gs_scf(self):
+        """If the 'calc_binding_energy' input namespace is True, we run a scf calculation for the supercell."""
+        return self.inputs.calc_binding_energy
+
+    def run_gs_scf(self):
+        """Call ``PwBaseWorkChain`` to compute total energy for the supercell."""
+
+        inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='ch_scf'))
+        inputs.pw.structure = self.ctx.supercell
+        inputs.metadata.call_link_label = 'supercell_xps'
+
+        inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
+        equivalent_sites_data = self.ctx.equivalent_sites_data
+        for site in equivalent_sites_data:
+            abs_element = equivalent_sites_data[site]['symbol']
+            inputs.pw.pseudos[abs_element] = self.inputs.gipaw_pseudos[abs_element]
+        running = self.submit(PwBaseWorkChain, **inputs)
+
+        self.report(f'launched PwBaseWorkChain for supercell<{running.pk}>')
+
+        return running
+
+    def inspect_scf(self):
+        """Verify that the PwBaseWorkChain finished successfully."""
+        workchain = self.ctx.scf_workchain
+
+        if not workchain.is_finished_ok:
+            self.report(f'PwBaseWorkChain failed with exit status {workchain.exit_status}')
+            return self.exit_codes.ERROR_SUB_PROCESS_FAILED_SCF
+
+        scf_params = workchain.outputs.output_parameters
+        self.out('output_parameters_scf', scf_params)
+
+    def run_all_scf(self):
         """Call all ``PwBaseWorkChain``s required to compute total energies for each absorbing atom site."""
 
         # from .protocols.core_hole_treatments import CoreHoleTreatments
 
         # from protocols.core_hole_treatments import CoreHoleTreatments
 
+        # scf for supercell
+        futures = {}
+        if self.inputs.calc_binding_energy:
+            gs_future = self.run_gs_scf()
+            futures['ground_state'] = gs_future
+        # scf for core hole
         structures_to_process = self.ctx.structures_to_process
         equivalent_sites_data = self.ctx.equivalent_sites_data
         abs_atom_marker = self.inputs.abs_atom_marker.value
 
-        futures = {}
 
         for site in structures_to_process:
             inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='ch_scf'))
@@ -731,9 +791,12 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
                 new_scf_params['SYSTEM'][f'starting_magnetization({abs_species + 1})'] = 1
 
             core_hole_pseudo = self.inputs.core_hole_pseudos[abs_element]
-            gipaw_pseudo = self.inputs.gipaw_pseudos[abs_element]
             inputs.pw.pseudos[abs_atom_marker] = core_hole_pseudo
-            inputs.pw.pseudos[abs_element] = gipaw_pseudo
+            # all element in the elements_list should be replaced
+            for element in self.inputs.elements_list:
+                inputs.pw.pseudos[element] = self.inputs.gipaw_pseudos[element]
+            # remove pseudo if the only element is replaced by the marker
+            inputs.pw.pseudos = {kind.name: inputs.pw.pseudos[kind.name] for kind in structure.kinds}
 
             inputs.pw.parameters = orm.Dict(dict=new_scf_params)
 
@@ -745,7 +808,7 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
 
         return ToContext(**futures)
 
-    def inspect_all_ch_scf(self):
+    def inspect_all_scf(self):
         """Check that all the PwBaseWorkChain sub-processes finished sucessfully."""
 
         labels = self.ctx.structures_to_process.keys()
@@ -756,7 +819,7 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
                 failed_work_chains.append(work_chain)
                 self.report(f'PwBaseWorkChain for ({label}) failed with exit status {work_chain.exit_status}')
         if len(failed_work_chains) > 0:
-            return self.exit_codes.ERROR_SUB_PROCESS_FAILED_SCF
+            return self.exit_codes.ERROR_SUB_PROCESS_FAILED_CH_SCF
 
     def results(self):
         """Compile all output spectra, organise and post-process all computed spectra, and send to outputs."""
@@ -767,8 +830,11 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         output_params_ch_scf = {label : self.ctx[label].outputs.output_parameters for label in site_labels}
         self.out('output_parameters_ch_scf', output_params_ch_scf)
 
-        param_nodes = output_params_ch_scf.copy()
-        param_nodes['metadata'] = {'call_link_label' : 'compile_final_spectra'}
+        kwargs = output_params_ch_scf.copy()
+        if self.inputs.calc_binding_energy:
+            kwargs['ground_state'] = self.ctx['ground_state'].outputs.output_parameters
+            kwargs['correction_energies'] = self.inputs.correction_energies
+        kwargs['metadata'] = {'call_link_label' : 'compile_final_spectra'}
 
         equivalent_sites_data = orm.Dict(dict=self.ctx.equivalent_sites_data)  # fixed
         elements_list = orm.List(list=self.ctx.elements_list)
@@ -780,19 +846,26 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
             equivalent_sites_data,
             voight_gamma,
             voight_sigma,
-            **param_nodes
+            **kwargs
         )
-
-        final_spectra = {}
+        final_spectra_cls = {}
+        final_spectra_be = {}
         chemical_shifts = {}
+        binding_energies = {}
         for key, value in result.items():
-            if key == 'xps':
-                final_spectra[key] = value
-            if key == 'cls':
+            if key.endswith('cls_spectra'):
+                final_spectra_cls[key] = value
+            elif key.endswith('be_spectra'):
+                final_spectra_be[key] = value
+            elif key.endswith('cls'):
                 chemical_shifts[key] = value
-
+            elif key.endswith('be'):
+                binding_energies[key] = value
         self.out('chemical_shifts', chemical_shifts)
-        self.out('final_spectra', final_spectra)
+        self.out('final_spectra_cls', final_spectra_cls)
+        if self.inputs.calc_binding_energy:
+            self.out('binding_energies', binding_energies)
+            self.out('final_spectra_be', final_spectra_be)
 
 
     def on_terminated(self):
