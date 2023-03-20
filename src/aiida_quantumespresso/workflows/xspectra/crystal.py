@@ -380,7 +380,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
                     extra_elements.append(element)
             if len(extra_elements) > 0:
                 raise ValidationError(
-                    f'The some elements in ``elements_list`` {extra_elements} do not exist in the'
+                    f'Some elements in ``elements_list`` {extra_elements} do not exist in the'
                     f' structure provided {elements_present}.'
                 )
         else:
