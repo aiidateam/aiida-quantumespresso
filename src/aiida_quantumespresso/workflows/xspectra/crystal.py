@@ -371,7 +371,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
         """Validate the inputs before launching the WorkChain."""
         structure = inputs['structure']
         kinds_present = [kind.name for kind in structure.kinds]
-        elements_present = [kind.symbol for kind in structure.kinds]
+        elements_present = sorted([kind.symbol for kind in structure.kinds])
         if 'elements_list' in inputs:
             absorbing_elements_list = sorted(inputs['elements_list'])
             extra_elements = []
@@ -384,7 +384,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
                     f' structure provided {elements_present}.'
                 )
         else:
-            absorbing_elements_list = sorted([kind.symbol for kind in structure.kinds])
+            absorbing_elements_list = elements_present
         abs_atom_marker = inputs['abs_atom_marker'].value
         if abs_atom_marker in kinds_present:
             raise ValidationError(
@@ -491,10 +491,8 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
                 inputs[key] = node_value
 
         if 'spglib_settings' in self.inputs:
-            spglib_settings = self.inputs.spglib_settings
-            inputs['spglib_settings'] = spglib_settings
-        else:
-            spglib_settings = None
+            inputs['spglib_settings'] = self.inputs.spglib_settings
+
 
         if 'relax' in self.inputs:
             result = get_xspectra_structures(self.ctx.relaxed_structure, **inputs)
