@@ -47,7 +47,7 @@ def get_hubbard():
 
 
 def test_valid_hubbard_projectors():
-    """Test valid inputs for py:meth:`~aiida_quantumespresso.common.hubbard.HubbardProjectors`."""
+    """Test valid inputs for py:meth:`HubbardProjectors`."""
     from aiida_quantumespresso.common.hubbard import allowed_projectors
     for projectors in allowed_projectors:
         hubbard_projectors = HubbardProjectors(hubbard_projectors=projectors)
@@ -55,21 +55,20 @@ def test_valid_hubbard_projectors():
 
 
 def test_invalid_hubbard_projectors():
-    """Test valid inputs for py:meth:`~aiida_quantumespresso.common.hubbard.HubbardProjectors`."""
+    """Test valid inputs for py:meth:`HubbardProjectors`."""
     invalid_name = 'invalid-name'
     with pytest.raises(ValidationError):
         HubbardProjectors(hubbard_projectors=invalid_name)
 
 
 def test_safe_hubbard_parameters(get_hubbard_parameters):
-    """Test valid inputs are stored correctly for py:meth:`~aiida_quantumespresso.common.hubbard.HubbardParameters`."""
+    """Test valid inputs are stored correctly for py:meth:`HubbardParameters`."""
     hp_dict = get_hubbard_parameters().dict()
     assert hp_dict == valid_parameters
 
 
 def test_from_to_list_parameters(get_hubbard_parameters):
-    """Test py:meth:`~aiida_quantumespresso.common.hubbard.HubbardParameters.to_list` and
-    py:meth:`~aiida_quantumespresso.common.hubbard.HubbardParameters.from_list`."""
+    """Test py:meth:`HubbardParameters.to_list` and py:meth:`HubbardParameters.from_list`."""
     hp = get_hubbard_parameters()
     hp_list = [0, '3d', 1, '2p', 5.0, [0, 0, 0], 'Dudarev-U']
     assert hp.to_list() == hp_list
@@ -95,7 +94,7 @@ def test_from_to_list_parameters(get_hubbard_parameters):
     ]
 )
 def test_valid_hubbard_parameters(get_hubbard_parameters, overrides):
-    """Test valid inputs for py:meth:`~aiida_quantumespresso.common.hubbard.HubbardParameters`."""
+    """Test valid inputs for py:meth:`HubbardParameters`."""
     hp_dict = get_hubbard_parameters(overrides=overrides).dict()
     new_dict = valid_parameters.copy()
     new_dict.update(overrides)
@@ -140,15 +139,14 @@ def test_valid_hubbard_parameters(get_hubbard_parameters, overrides):
     ]
 )
 def test_invalid_hubbard_parameters(get_hubbard_parameters, overrides):
-    """Test invalid inputs for py:meth:`~aiida_quantumespresso.common.hubbard.HubbardParameters`."""
+    """Test invalid inputs for py:meth:`HubbardParameters`."""
     with pytest.raises(ValidationError):
         get_hubbard_parameters(overrides=overrides)
     # maybe we should add the check on the Exception info as well
 
 
 def test_from_to_list_hubbard(get_hubbard):
-    """Test py:meth:`~aiida_quantumespresso.common.hubbard.Hubbard.to_list` and
-    py:meth:`~aiida_quantumespresso.common.hubbard.Hubbard.from_list`."""
+    """Test py:meth:`Hubbard.to_list` and py:meth:`Hubbard.from_list`."""
     hubbard = get_hubbard()
     hp_list = [0, '3d', 1, '2p', 5.0, [0, 0, 0], 'Dudarev-U']
 

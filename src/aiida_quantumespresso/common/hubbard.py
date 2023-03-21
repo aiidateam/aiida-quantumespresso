@@ -17,6 +17,7 @@ allowed_projectors = [
 
 class HubbardParameters(BaseModel):  # Or `HubbardInteraction` ?
     """Class for describing onsite and intersite Hubbard interaction parameters."""
+
     atom_index: conint(strict=True)
     atom_manifold: constr(strip_whitespace=True, to_lower=True, min_length=2, max_length=5)
     neighbour_index: conint(strict=True)
@@ -27,18 +28,28 @@ class HubbardParameters(BaseModel):  # Or `HubbardInteraction` ?
 
     @validator('atom_index', 'neighbour_index')
     def check_index(cls, value):
+        """Check the positiveness of the atomic indecis."""
         if value < 0:
             raise ValueError('non integer index')
         return value
 
     @validator('translation_vector')
     def check_translation_vector(cls, value):
+        """Check the validity of the traslation vector."""
         if len(value) != 3:
             raise ValueError('only 3 integers')
         return value
 
     @validator('atom_manifold', 'neighbour_manifold')
     def check_manifolds(cls, value):
+        """Check the validity of the manifold input.
+
+        Allowed formats are:
+            * {N}{L} (2 characters)
+            * {N1}{L1}-{N2}{L2} (5 characters)
+
+        N = quantum number (1,2,3,...); L = orbital letter (s,p,d,f,g,h)
+        """
         le = len(value)
         if le not in [2, 5]:
             raise ValueError(f'invalid length. Only 2 or 5.')
@@ -58,6 +69,7 @@ class HubbardParameters(BaseModel):  # Or `HubbardInteraction` ?
 
     @validator('hubbard_type')
     def check_hubbard_type(cls, value):
+        """Check the validity of the `hubbard_type` input."""
         message = (
             'Hubbard type must be `{left}-{right}`, where the allowed values are:\n'\
             '* left: '+', '.join(allowed_types_left)+'\n'
@@ -75,6 +87,17 @@ class HubbardParameters(BaseModel):  # Or `HubbardInteraction` ?
         return normalized
 
     def to_list(self):
+        """Return the parameters as a list.
+
+        The parameters have the following order:
+            * atom_index
+            * atom_manifold
+            * neighbour_index
+            * neighbour_manifold
+            * hubbard_value
+            * translation_vector
+            * hubbard_type
+        """
         return [
             self.atom_index, self.atom_manifold, self.neighbour_index, self.neighbour_manifold, self.hubbard_value,
             self.translation_vector, self.hubbard_type
@@ -82,6 +105,17 @@ class HubbardParameters(BaseModel):  # Or `HubbardInteraction` ?
 
     @classmethod
     def from_list(cls, hubbard_parameters: list):
+        """Return a `HubbardParameters` instance from a list.
+
+        The parameters within the list must have the following order:
+            * atom_index
+            * atom_manifold
+            * neighbour_index
+            * neighbour_manifold
+            * hubbard_value
+            * translation_vector
+            * hubbard_type
+        """
         keys = [
             'atom_index',
             'atom_manifold',
@@ -96,10 +130,12 @@ class HubbardParameters(BaseModel):  # Or `HubbardInteraction` ?
 
 class HubbardProjectors(BaseModel):
     """Class defining the Hubbard projectors."""
+
     hubbard_projectors: str = 'ortho-atomic'  # only `projectors`?
 
     @validator('hubbard_projectors')
     def check_projectors(cls, value):
+        """Check the validity of the `hubbard_parameters` input."""
         normalized = value.lower()
         if normalized not in allowed_projectors:
             raise ValueError('Hubbard projectors not in the allowed list: ' + ', '.join(allowed_projectors))
@@ -108,11 +144,36 @@ class HubbardProjectors(BaseModel):
 
 class Hubbard(HubbardProjectors):
     """Class for complete description of Hubbard interactions."""
+
     hubbard_parameters: List[HubbardParameters]  # only `parameters`?
 
-    def to_list(self):
+    def to_list(self) -> List[List[Union[int, str, int, str, float, list, str]]]:
+        """Return the `hubbard_parameters` as a list of lists.
+
+        The parameters have the following order within each list:
+            * atom_index
+            * atom_manifold
+            * neighbour_index
+            * neighbour_manifold
+            * hubbard_value
+            * translation_vector
+            * hubbard_type
+        """
         return [hp.to_list() for hp in self.hubbard_parameters]
 
     @classmethod
     def from_list(cls, hubbard_parameters: List[List[Union[int, str, int, str, list, float, str]]]):
+        """Return a `Hubbard` instance from a list of lists.
+
+        Each list must contain the hubbard parameters in the following order:
+            * atom_index
+            * atom_manifold
+            * neighbour_index
+            * neighbour_manifold
+            * hubbard_value
+            * translation_vector
+            * hubbard_type
+
+        .. note:: the `hubbard_projectors` cannot be specified directly from this method
+        """
         return cls(hubbard_parameters=[HubbardParameters.from_list(value) for value in hubbard_parameters])

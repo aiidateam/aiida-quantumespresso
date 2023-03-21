@@ -364,12 +364,14 @@ def generate_structure():
         """
         from aiida.orm import StructureData
 
-        if structure_id == 'silicon':
+        if structure_id.startswith('silicon'):
+            name1 = 'Si0' if structure_id.endswith('kinds') else 'Si'
+            name2 = 'Si1' if structure_id.endswith('kinds') else 'Si'
             param = 5.43
             cell = [[param / 2., param / 2., 0], [param / 2., 0, param / 2.], [0, param / 2., param / 2.]]
             structure = StructureData(cell=cell)
-            structure.append_atom(position=(0., 0., 0.), symbols='Si', name='Si')
-            structure.append_atom(position=(param / 4., param / 4., param / 4.), symbols='Si', name='Si')
+            structure.append_atom(position=(0., 0., 0.), symbols='Si', name=name1)
+            structure.append_atom(position=(param / 4., param / 4., param / 4.), symbols='Si', name=name2)
         elif structure_id == 'water':
             structure = StructureData(cell=[[5.29177209, 0., 0.], [0., 5.29177209, 0.], [0., 0., 5.29177209]])
             structure.append_atom(position=[12.73464656, 16.7741411, 24.35076238], symbols='H', name='H')
