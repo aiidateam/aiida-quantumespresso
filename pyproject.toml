@@ -118,6 +118,7 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 'quantumespresso.pdos' = 'aiida_quantumespresso.workflows.pdos:PdosWorkChain'
 'quantumespresso.xspectra.base' = 'aiida_quantumespresso.workflows.xspectra.base:XspectraBaseWorkChain'
 'quantumespresso.xspectra.core' = 'aiida_quantumespresso.workflows.xspectra.core:XspectraCoreWorkChain'
+'quantumespresso.xspectra.crystal' = 'aiida_quantumespresso.workflows.xspectra.crystal:XspectraCrystalWorkChain'
 
 [tool.flit.module]
 name = 'aiida_quantumespresso'
