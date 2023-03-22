@@ -276,8 +276,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
         :param structure: the ``StructureData`` instance to use.
         :param pseudos: the core-hole pseudopotential pairs (ground-state and
                         excited-state) for the elements to be calculated. These must
-                        use the mapping of {"element" : {"core_hole" : <upf>,
-                                                         "gipaw" : <upf>}}
+                        use the mapping of {"element" : {"core_hole" : <upf>,"gipaw" : <upf>}}
         :param protocol: the protocol to use. If not specified, the default will be used.
         :param overrides: optional dictionary of inputs to override the defaults of the
                           XspectraWorkChain itself.
