@@ -554,7 +554,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
                 return self.exit_codes.ERROR_NO_GIPAW_INFO_FOUND
 
     def run_all_xspectra_core(self):
-        """Call all ``XspectraCoreWorkChain``s required to compute all requested spectra."""
+        """Call all XspectraCoreWorkChains required to compute all requested spectra."""
 
         structures_to_process = self.ctx.structures_to_process
         equivalent_sites_data = self.ctx.equivalent_sites_data

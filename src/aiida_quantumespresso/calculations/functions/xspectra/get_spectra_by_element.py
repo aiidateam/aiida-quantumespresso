@@ -14,8 +14,8 @@ def get_spectra_by_element(elements_list, equivalent_sites_data, **kwargs):
 
     :param elements_list: a List object defining the elements to compile spectra for.
     :param equivalent_sites_data: a Dict object, defining the symmetry properties of the sites associated with each
-    powder spectrum in ``kwargs``. Must be in the format used in the ``equivalent_sites_data`` dictionary of
-    ``get_xspectra_structures.outputs.output_parameters``
+        powder spectrum in ``kwargs``. Must be in the format used in the ``equivalent_sites_data`` dictionary of
+        ``get_xspectra_structures.outputs.output_parameters``
     """
 
     incoming_spectra_nodes = {key: value for key, value in kwargs.items() if key != 'metadata'}
