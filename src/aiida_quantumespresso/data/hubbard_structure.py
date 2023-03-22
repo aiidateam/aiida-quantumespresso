@@ -33,9 +33,7 @@ class HubbardStructureData(StructureData):
         super().__init__(cell=cell, **kwargs)
         self.sites = sites
         self.pbc = pbc
-        self.hubbard = Hubbard(
-            hubbard_parameters=[]
-        ) if hubbard is None else hubbard  # pylint disable=dangerous-default-value
+        self.hubbard = Hubbard(parameters=[]) if hubbard is None else hubbard  # pylint: disable=dangerous-default-value
 
     @property
     def sites(self):
@@ -75,8 +73,8 @@ class HubbardStructureData(StructureData):
         """Return an instance of HubbardStructureData from a StructureData object.
 
         :param structure: :meth:`aiida.orm.StructureData` instance
-        :param hubbard_parameters: the Hubbard parameters
-        :param hubbard_projectors: the Hubbard projector type
+        :param parameters: the Hubbard parameters
+        :param projectors: the Hubbard projector type
         :returns: HubbardStructureData instance
         """
         sites = [[structure.get_kind(site.kind_name).symbol, site.kind_name, site.position] for site in structure.sites]
@@ -91,9 +89,9 @@ class HubbardStructureData(StructureData):
         atom_manifold: str,
         neighbour_index: int,
         neighbour_manifold: str,
-        hubbard_value: float,
+        value: float,
         translation: List[Union[int, int, int]] = None,
-        hubbard_type: str = 'Dudarev-Ueff',
+        hubbard_type: str = 'Ueff',
     ):
         """Append a Hubbard parameter."""
         pymat = self.get_pymatgen_structure()
@@ -103,26 +101,24 @@ class HubbardStructureData(StructureData):
             _, translation = sites[atom_index].distance_and_image(sites[neighbour_index])
             translation = np.array(translation, dtype=np.int64).tolist()
 
-        hp_list = [
-            atom_index, atom_manifold, neighbour_index, neighbour_manifold, hubbard_value, translation, hubbard_type
-        ]
-        hubbard_parameters = HubbardParameters.from_list(hp_list)
+        hp_list = [atom_index, atom_manifold, neighbour_index, neighbour_manifold, value, translation, hubbard_type]
+        parameters = HubbardParameters.from_list(hp_list)
         hubbard = self.hubbard
 
-        if hubbard_parameters not in hubbard.hubbard_parameters:
-            hubbard.hubbard_parameters.append(hubbard_parameters)
+        if parameters not in hubbard.parameters:
+            hubbard.parameters.append(parameters)
             self.hubbard = hubbard
 
-    def pop_hubbard_parameter(self, index: int):
-        """Pop a Hubbard parameter."""
+    def pop_hubbard_parameters(self, index: int):
+        """Pop a Hubbard parameters."""
         hubbard = self.hubbard
-        hubbard.hubbard_parameters.pop(index)
+        hubbard.parameters.pop(index)
         self.hubbard = hubbard
 
     def clear_hubbard_parameters(self):
         """Clear all the Hubbard parameters."""
         hubbard = self.hubbard
-        hubbard.hubbard_parameters = []
+        hubbard.parameters = []
         self.hubbard = hubbard
 
     def initialize_intersites_hubbard(
@@ -131,8 +127,8 @@ class HubbardStructureData(StructureData):
         atom_manifold: str,
         neighbour_name: str,
         neighbour_manifold: str,
-        hubbard_value: float = 1e-8,
-        hubbard_type: str = 'Dudarev-Ueff',
+        value: float = 1e-8,
+        hubbard_type: str = 'Ueff',
         use_kinds: bool = True,
     ):
         """Initialize and append intersite Hubbard values between an atom and its neighbour(s).
@@ -155,8 +151,7 @@ class HubbardStructureData(StructureData):
                 _, translation = sites[atom_index].distance_and_image(sites[neighbour_index])
                 translation = np.array(translation, dtype=np.int64).tolist()
                 args = (
-                    atom_index, atom_manifold, neighbour_index, neighbour_manifold, hubbard_value, translation,
-                    hubbard_type
+                    atom_index, atom_manifold, neighbour_index, neighbour_manifold, value, translation, hubbard_type
                 )
                 self.append_hubbard_parameter(*args)
 
@@ -164,8 +159,8 @@ class HubbardStructureData(StructureData):
         self,
         atom_name: str,
         atom_manifold: str,
-        hubbard_value: float = 1e-8,
-        hubbard_type: str = 'Dudarev-Ueff',
+        value: float = 1e-8,
+        hubbard_type: str = 'Ueff',
         use_kinds: bool = True,
     ):
         """Initialize and append onsite Hubbard values of atoms with specific name."""
@@ -176,7 +171,7 @@ class HubbardStructureData(StructureData):
             raise ValueError('species or kind names not in structure')
 
         for atom_index in atom_indecis:
-            args = (atom_index, atom_manifold, atom_index, atom_manifold, hubbard_value, [0, 0, 0], hubbard_type)
+            args = (atom_index, atom_manifold, atom_index, atom_manifold, value, [0, 0, 0], hubbard_type)
             self.append_hubbard_parameter(*args)
 
     def _get_one_kind_index(self, kind_name: str) -> List[int]:
