@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tests for the :mod:`data.hubbard_structure` module."""
+# pylint: disable=redefined-outer-name,protected-access
 import pytest
 
 from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
@@ -67,9 +68,9 @@ def test_append_hubbard_parameters(generate_hubbard_structure):
     hubbard_structure = generate_hubbard_structure()
     args = [0, '1s', 1, '1s', 5.0, [0, 0, 0], 'U']
     hubbard_structure.append_hubbard_parameter(*args)
-    hp = HubbardParameters.from_list(args)
+    params = HubbardParameters.from_list(args)
     assert len(hubbard_structure.hubbard.parameters) == 2
-    assert hp == hubbard_structure.hubbard.parameters[1]
+    assert params == hubbard_structure.hubbard.parameters[1]
 
 
 @pytest.mark.usefixtures('aiida_profile')
@@ -146,4 +147,4 @@ def test_get_one_kind_index(generate_hubbard_structure):
 def test_get_symbol_indecis(generate_hubbard_structure):
     """Test the `_get_symbol_indecis` method."""
     hubbard_structure = generate_hubbard_structure()
-    assert hubbard_structure._get_symbol_indecis('Si') == [0,1]
+    assert hubbard_structure._get_symbol_indecis('Si') == [0, 1]

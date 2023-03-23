@@ -63,6 +63,13 @@ def test_valid_init(generate_hubbard_utils, generate_hubbard_structure):
     assert hubbard_utils.hubbard_structure.hubbard == generate_hubbard_structure().hubbard
 
 
+@pytest.mark.usefixtures('aiida_profile')
+def test_is_intersite(generate_hubbard_structure):
+    """Test the `is_intersite_hubbard` method."""
+    from aiida_quantumespresso.utils.hubbard import is_intersite_hubbard
+    assert is_intersite_hubbard(generate_hubbard_structure().hubbard)
+
+
 @pytest.mark.parametrize(('filename', 'projectors'), (
     ('HUBBARD.dat', 'ortho-atomic'),
     ('HUBBARD_2.dat', 'atomic'),

@@ -87,7 +87,7 @@ class HubbardParameters(BaseModel):
             'translation',
             'hubbard_type',
         ]
-        return HubbardParameters(dict(zip(keys, hubbard_parameters)))
+        return HubbardParameters(**dict(zip(keys, hubbard_parameters)))
 
 
 class Hubbard(BaseModel):

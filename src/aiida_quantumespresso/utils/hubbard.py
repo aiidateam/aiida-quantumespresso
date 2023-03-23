@@ -65,10 +65,11 @@ class HubbardUtils:
             if hubbard.formulation == 'liechtenstein':
                 line = f'{pre}\t{atom_i}-{man_i} \t{value}'
 
+            is_intersite = is_intersite_hubbard(hubbard=hubbard)
             if hubbard.formulation == 'dudarev':
                 if param.hubbard_type == 'J':
                     pre = 'J'
-                elif atom_i == atom_j and param.atom_manifold == param.neighbour_manifold:
+                elif is_intersite and atom_i == atom_j and param.atom_manifold == param.neighbour_manifold:
                     pre = 'U'
                 else:
                     pre = 'V'
@@ -116,7 +117,7 @@ class HubbardUtils:
 
             if data[0] == 'U':
                 manifold = data[1].split('-')
-                index = int(self.hubbard_structure.get_one_kind_index(manifold.pop(0))[0])
+                index = int(self.hubbard_structure._get_one_kind_index(manifold.pop(0))[0])  # pylint: disable=protected-access
                 manifold = '-'.join(manifold)
                 args = (index, manifold, index, manifold, float(data[2]), [0, 0, 0], 'U')
             else:
@@ -250,3 +251,9 @@ def get_hubbard_indices(hubbard: Hubbard) -> List[int]:
     neigh_indecis = {parameters.neighbour_index for parameters in hubbard.parameters}
     atom_indecis.update(neigh_indecis)
     return list(atom_indecis)
+
+
+def is_intersite_hubbard(hubbard: Hubbard) -> bool:
+    """Return whether `Hubbard` contains intersite interactions (+V)."""
+    couples = [(param.atom_index != param.neighbour_index) for param in hubbard.parameters]
+    return any(couples)
