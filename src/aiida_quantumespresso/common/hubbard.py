@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Utility class and functions for HubbardStructureData."""
+# pylint: disable=no-name-in-module, invalid-name
 from typing import List, Literal, Union
 
 from pydantic import BaseModel, conint, conlist, constr, validator
@@ -20,8 +21,8 @@ class HubbardParameters(BaseModel):
     value: float
     hubbard_type: type_names  # default to 'U' ?
 
-    @validator('atom_manifold', 'neighbour_manifold')
-    def check_manifolds(cls, value):
+    @validator('atom_manifold', 'neighbour_manifold')  # cls is mandatory to use
+    def check_manifolds(cls, value):  # pylint: disable=no-self-argument
         """Check the validity of the manifold input.
 
         Allowed formats are:
@@ -32,7 +33,7 @@ class HubbardParameters(BaseModel):
         """
         le = len(value)
         if le not in [2, 5]:
-            raise ValueError(f'invalid length. Only 2 or 5.')
+            raise ValueError(f'invalid length ``{le}``. Only 2 or 5.')
         if le == 2:
             if not value[0] in [str(_ + 1) for _ in range(6)]:
                 raise ValueError(f'invalid quantum number {value[0]}')
@@ -86,7 +87,7 @@ class HubbardParameters(BaseModel):
             'translation',
             'hubbard_type',
         ]
-        return HubbardParameters(**{key: value for key, value in zip(keys, hubbard_parameters)})
+        return HubbardParameters(dict(zip(keys, hubbard_parameters)))
 
 
 class Hubbard(BaseModel):
@@ -111,7 +112,11 @@ class Hubbard(BaseModel):
         return [hp.to_list() for hp in self.parameters]
 
     @staticmethod
-    def from_list(parameters: List[List[Union[int, str, int, str, float, list, str]]]):
+    def from_list(
+        parameters: List[List[Union[int, str, int, str, float, list, str]]],
+        projectors: str = 'ortho-atomic',
+        formulation: str = 'dudarev',
+    ):
         """Return a `Hubbard` instance from a list of lists.
 
         Each list must contain the hubbard parameters in the following order:
@@ -122,7 +127,6 @@ class Hubbard(BaseModel):
             * value
             * translation
             * hubbard_type
-
-        .. note:: the `hubbard_projectors` cannot be specified directly from this method
         """
-        return Hubbard(parameters=[HubbardParameters.from_list(value) for value in parameters])
+        parameters = [HubbardParameters.from_list(value) for value in parameters]
+        return Hubbard(parameters=parameters, projectors=projectors, formulation=formulation)

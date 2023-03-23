@@ -1,22 +1,24 @@
 # -*- coding: utf-8 -*-
 """Utility class for handling the :py:meth:`data.hubbard_structure.HubbardStructureData`."""
+from math import floor
 from typing import List, Union
-from pydantic import FilePath
 
+from pydantic import FilePath  # pylint: disable=no-name-in-module
+
+from aiida_quantumespresso.common.hubbard import Hubbard
 from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
 
-qe_translations = [
-    [0, 0, 0],   [-1, -1, -1], [-1, -1, 0], [-1, -1, 1], [-1, 0, -1], [-1, 0, 0], [-1, 0, 1], 
-    [-1, 1, -1], [-1, 1, 0],   [-1, 1, 1],  [0, -1, -1], [0, -1, 0],  [0, -1, 1], [0, 0, -1],
-    [0, 0, 1],   [0, 1, -1],   [0, 1, 0],   [0, 1, 1],   [1, -1, -1], [1, -1, 0], [1, -1, 1],
-    [1, 0, -1],  [1, 0, 0],    [1, 0, 1],   [1, 1, -1],  [1, 1, 0],   [1, 1, 1]
- ]
+qe_translations = [[0, 0, 0], [-1, -1, -1], [-1, -1, 0], [-1, -1, 1], [-1, 0, -1], [-1, 0, 0], [-1, 0, 1], [-1, 1, -1],
+                   [-1, 1, 0], [-1, 1, 1], [0, -1, -1], [0, -1, 0], [0, -1, 1], [0, 0, -1], [0, 0, 1], [0, 1, -1],
+                   [0, 1, 0], [0, 1, 1], [1, -1, -1], [1, -1, 0], [1, -1, 1], [1, 0, -1], [1, 0, 0], [1, 0, 1],
+                   [1, 1, -1], [1, 1, 0], [1, 1, 1]]
 # They can be generated with the following snippet:
 #     from itertools import product
 #     qe_translations = list(list(item) for item in product((-1, 0, 1), repeat=3))
 #     first = qe_translations.pop(13)
 #     qe_translations.insert(0, first)
 #     return qe_translations
+
 
 class HubbardUtils:
     """Utility class for handling `HubbardStructureData` for QuantumESPRESSO."""
@@ -30,14 +32,14 @@ class HubbardUtils:
         :param hubbard_projectors: Hubbard projector type that are used for the occupations
         """
         if isinstance(hubbard_structure, HubbardStructureData):
-            self._hs = hubbard_structure
+            self._hubbard_structure = hubbard_structure
         else:
             raise ValueError('input is not of type `HubbardStructureData')
 
     @property
     def hubbard_structure(self) -> HubbardStructureData:
         """Return the HubbardStructureData."""
-        return self._hs
+        return self._hubbard_structure
 
     def get_hubbard_card(self) -> str:
         """Return QuantumESPRESSO `HUBBARD` input card for `pw.x`."""
@@ -48,25 +50,25 @@ class HubbardUtils:
 
         lines = [f'HUBBARD\t{hubbard.projectors}\n']
 
-        for hp in hubbard_parameters:
-            atom_i = sites[hp.atom_index].kind_name
-            atom_j = sites[hp.neighbour_index].kind_name
-            index_i = hp.atom_index +1 # QE indecis start from 1
-            index_j = self._get_supercell_atomic_index(hp.neighbour_index, natoms, hp.translation) +1
-            man_i = hp.atom_manifold
-            man_j = hp.neighbour_manifold
-            value = hp.value
+        for param in hubbard_parameters:
+            atom_i = sites[param.atom_index].kind_name
+            atom_j = sites[param.neighbour_index].kind_name
+            index_i = param.atom_index + 1  # QE indecis start from 1
+            index_j = get_supercell_atomic_index(param.neighbour_index, natoms, param.translation) + 1
+            man_i = param.atom_manifold
+            man_j = param.neighbour_manifold
+            value = param.value
 
             if hubbard.formulation not in ['dudarev', 'liechtenstein']:
                 raise ValueError(f'Hubbard formulation {hubbard.formulation} is not implemented.')
-            
-            if hubbard.formulation=='liechtenstein':
+
+            if hubbard.formulation == 'liechtenstein':
                 line = f'{pre}\t{atom_i}-{man_i} \t{value}'
 
-            if hubbard.formulation=='dudarev':
-                if hp.hubbard_type == 'J':
+            if hubbard.formulation == 'dudarev':
+                if param.hubbard_type == 'J':
                     pre = 'J'
-                elif atom_i == atom_j and hp.atom_manifold == hp.neighbour_manifold:
+                elif atom_i == atom_j and param.atom_manifold == param.neighbour_manifold:
                     pre = 'U'
                 else:
                     pre = 'V'
@@ -91,7 +93,7 @@ class HubbardUtils:
 
         This function is needed for parsing the HUBBARD.dat file generated in a `hp.x` calculation.
 
-        .. note:: overrides any Hubbard stored information.
+        .. note:: overrides current Hubbard information.
         """
         self.hubbard_structure.clear_hubbard_parameters()
         natoms = len(self.hubbard_structure.sites)
@@ -104,42 +106,34 @@ class HubbardUtils:
                     hubbard_data.append(list(line.strip().split()))
 
         projectors = hubbard_data.pop(0)[1]
-        if projectors.startswith(('(','[','{')):
+        if projectors.startswith(('(', '[', '{')):
             projectors = projectors[1:-1]
 
-        # A sample of parsed array is: ['V', 'Co-3d', 'O-2p', '1', '4', '6.0']
+        # Samples of parsed array are:
+        # ['U', 'Co-3d', '6.0']
+        # ['V', 'Co-3d', 'O-2p', '1', '4', '6.0']
         for data in hubbard_data:
-            
+
             if data[0] == 'U':
                 manifold = data[1].split('-')
-                index = int(self.hubbard_structure._get_one_kind_index(manifold.pop(0))[0])
+                index = int(self.hubbard_structure.get_one_kind_index(manifold.pop(0))[0])
                 manifold = '-'.join(manifold)
-                args = (index, manifold, index, manifold, float(data[2]), [0,0,0], 'U')
+                args = (index, manifold, index, manifold, float(data[2]), [0, 0, 0], 'U')
             else:
                 manifolds = []
-                for i in [1,2]:
+                for i in [1, 2]:
                     manifold = data[i].split('-')
-                    manifold.pop(0) # removing atom name
+                    manifold.pop(0)  # removing atom name
                     manifolds.append('-'.join(manifold))
 
-                index_i = int(data[3])
-                index_j = int(data[4])
-                found_i = False
-                found_j = False
+                # -1 because QE index starts from 1
+                index_i, _ = get_supercell_site_properties(int(data[3]) - 1, natoms)  # pylint =
+                index_j, tra = get_supercell_site_properties(int(data[4]) - 1, natoms)
 
-                for i, translation in enumerate(qe_translations):
-                    if index_i - (i+1) * natoms <= 0 and not found_i:
-                        index_0i = index_i - i * natoms - 1
-                        found_i = True
-                    if index_j - (i+1) * natoms <= 0 and not found_j:
-                        index_0j = index_j - i * natoms - 1
-                        translation_0 = translation
-                        found_j = True
+                args = (index_i, manifolds[0], index_j, manifolds[1], float(data[5]), tra, data[0])
 
-                args = (index_0i, manifolds[0], index_0j, manifolds[1], float(data[5]), translation_0, data[0])
-            
             self.hubbard_structure.append_hubbard_parameter(*args)
-        
+
         hubbard = self.hubbard_structure.hubbard
         hubbard.projectors = projectors
         self.hubbard_structure.hubbard = hubbard
@@ -151,15 +145,15 @@ class HubbardUtils:
         sites = self.hubbard_structure.sites
         natoms = len(sites)
 
-        if not hubbard.formulation  == 'dudarev':
+        if not hubbard.formulation == 'dudarev':
             raise ValueError('only `dudarev` formulation is implemented')
 
         card = '#\tAtom 1\tAtom 2\tHubbard V (eV)\n'
 
-        for hp in hubbard_parameters:
-            index_i = hp.atom_index +1 # QE indecis start from 1
-            index_j = self._get_supercell_atomic_index(hp.neighbour_index, natoms, hp.translation) +1
-            value = hp.value
+        for param in hubbard_parameters:
+            index_i = param.atom_index + 1  # QE indecis start from 1
+            index_j = get_supercell_atomic_index(param.neighbour_index, natoms, param.translation) + 1
+            value = param.value
 
             line = f'\t{index_i}\t{index_j}\t{value}'
             line += '\n'
@@ -167,13 +161,92 @@ class HubbardUtils:
 
         return card
 
-    def _get_supercell_atomic_index(self, index: int, num_sites: int, translation: List[Union[int,int,int]]) -> int:
-        """Return the atomic index in 3x3x3 supercell.
-        
-        :param index: atomic index in unit cell
-        :param num_sites: number of sites in structure
-        :param translation: (3,) shape list of int referring to the translated atom in the 3x3x3 supercell
-        
-        :returns: atomic index in supercell standardized with the QuantumESPRESSO loop
+    def reorder_atoms(self):
+        """Reorder the atoms with with the kinds in the right order necessary for an ``hp.x`` calculation.
+
+        An ``HpCalculation`` which restarts from a completed ``PwCalculation``, requires that the all
+        Hubbard atoms appear first in  the atomic positions card of the ``PwCalculation`` input file.
+        This order is based on the order of the kinds in the structure.
+        So a suitable structure has all Hubbard kinds in the begining of kinds list.
+
+        .. note:: overrides current ``HubbardStructureData``
         """
-        return index + qe_translations.index(translation)*num_sites
+        structure = self.hubbard_structure  # current
+        reordered = structure.clone()  # to be set at the end
+        reordered.clear_kinds()
+
+        hubbard = structure.hubbard.copy()
+        parameters = hubbard.to_list()
+
+        sites = structure.sites
+        indices = get_hubbard_indices(hubbard=hubbard)
+        hubbard_kinds = list(set([sites[index].kind_name for index in indices]))  # pylint: disable=consider-using-set-comprehension
+        hubbard_kinds.sort(reverse=False)
+
+        ordered_sites = []
+        index_map = [index for index, site in enumerate(sites) if site.kind_name in hubbard_kinds]
+
+        while hubbard_kinds:
+
+            hubbard_kind = hubbard_kinds.pop()
+            hubbard_sites = [s for s in sites if s.kind_name == hubbard_kind]
+            remaining_sites = [s for s in sites if not s.kind_name == hubbard_kind]
+
+            ordered_sites.extend(hubbard_sites)
+            sites = remaining_sites
+
+        # Extend the current site list with the remaining non-hubbard sites
+        ordered_sites.extend(sites)
+
+        for site in ordered_sites:
+
+            if site.kind_name not in reordered.get_kind_names():
+                kind = structure.get_kind(site.kind_name)
+                reordered.append_kind(kind)
+
+            reordered.append_site(site)
+
+        reordered_parameters = []
+
+        for parameter in parameters:
+            new_parameter = parameter.copy()
+            new_parameter[0] = index_map.index(parameter[0])
+            new_parameter[2] = index_map.index(parameter[2])
+            print(parameter, new_parameter)
+            reordered_parameters.append(new_parameter)
+
+        args = (reordered_parameters, hubbard.projectors, hubbard.formulation)
+        hubbard = hubbard.from_list(*args)
+        reordered.hubbard = hubbard
+
+        self._hubbard_structure = reordered
+
+
+def get_supercell_atomic_index(index: int, num_sites: int, translation: List[Union[int, int, int]]) -> int:
+    """Return the atomic index in 3x3x3 supercell.
+
+    :param index: atomic index in unit cell
+    :param num_sites: number of sites in structure
+    :param translation: (3,) shape list of int referring to the translated atom in the 3x3x3 supercell
+
+    :returns: atomic index in supercell standardized with the QuantumESPRESSO loop
+    """
+    return index + qe_translations.index(translation) * num_sites
+
+
+def get_supercell_site_properties(index: int, num_sites: int) -> List[Union[int, int, int]]:
+    """Return the atomic index in unitcell and the associated translation from a 3x3x3 QuantumESPRESSO supercell index.
+
+    :param index: atomic index
+    :param num_sites: number of sites in structure
+    """
+    number = floor(index / num_sites)  # associated supercell number
+    return (index - num_sites * number, qe_translations[number])
+
+
+def get_hubbard_indices(hubbard: Hubbard) -> List[int]:
+    """Return the set list of Hubbard indices."""
+    atom_indecis = {parameters.atom_index for parameters in hubbard.parameters}
+    neigh_indecis = {parameters.neighbour_index for parameters in hubbard.parameters}
+    atom_indecis.update(neigh_indecis)
+    return list(atom_indecis)

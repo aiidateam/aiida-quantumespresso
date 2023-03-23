@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tests for :py:mod:`~aiida_quantumespresso.common.hubbard`."""
+# pylint: disable=redefined-outer-name
 from pydantic import ValidationError
 import pytest
 
@@ -39,26 +40,26 @@ def get_hubbard():
 
     def _get_hubbard():
         """Return an `Hubbard` intstance."""
-        hp = HubbardParameters(**valid_parameters)
+        param = HubbardParameters(**valid_parameters)
 
-        return Hubbard(parameters=[hp, hp])
+        return Hubbard(parameters=[param, param])
 
     return _get_hubbard
 
 
 def test_safe_hubbard_parameters(get_hubbard_parameters):
     """Test valid inputs are stored correctly for py:meth:`HubbardParameters`."""
-    hp_dict = get_hubbard_parameters().dict()
-    assert hp_dict == valid_parameters
+    params = get_hubbard_parameters().dict()
+    assert params == valid_parameters
 
 
 def test_from_to_list_parameters(get_hubbard_parameters):
     """Test py:meth:`HubbardParameters.to_list` and py:meth:`HubbardParameters.from_list`."""
-    hp = get_hubbard_parameters()
+    param = get_hubbard_parameters()
     hp_list = [0, '3d', 1, '2p', 5.0, [0, 0, 0], 'U']
-    assert hp.to_list() == hp_list
-    hp = HubbardParameters.from_list(hp_list)
-    assert hp.dict() == valid_parameters
+    assert param.to_list() == hp_list
+    param = HubbardParameters.from_list(hp_list)
+    assert param.dict() == valid_parameters
 
 
 @pytest.mark.parametrize(

@@ -18,7 +18,7 @@ class HubbardStructureData(StructureData):
         self,
         cell: List[List[float]],
         sites: List[Union[str, str, List[float]]],
-        pbc: List[bool] = [True, True, True],
+        pbc: List[bool] = (True, True, True),
         hubbard: Hubbard = None,
         **kwargs,
     ):
@@ -33,7 +33,7 @@ class HubbardStructureData(StructureData):
         super().__init__(cell=cell, **kwargs)
         self.sites = sites
         self.pbc = pbc
-        self.hubbard = Hubbard(parameters=[]) if hubbard is None else hubbard  # pylint: disable=dangerous-default-value
+        self.hubbard = Hubbard(parameters=[]) if hubbard is None else hubbard
 
     @property
     def sites(self):
