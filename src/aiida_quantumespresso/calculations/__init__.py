@@ -17,6 +17,7 @@ from qe_tools.converters import get_parameters_from_cell
 
 from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+from aiida_quantumespresso.utils.hubbard import HubbardUtils
 
 from .base import CalcJob
 from .helpers import QEInputValidationError
@@ -687,7 +688,7 @@ class BasePwCpInputGenerator(CalcJob):
             del kpoints_card_list
 
         # HUBBARD CARD
-        hubbard_card = structure.get_quantum_espresso_hubbard_card() if isinstance(structure, HubbardStructureData) \
+        hubbard_card = HubbardUtils(structure).get_hubbard_card() if isinstance(structure, HubbardStructureData) \
             else None
 
         # =================== NAMELISTS AND CARDS ========================
