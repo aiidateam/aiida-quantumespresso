@@ -70,7 +70,7 @@ class HubbardUtils:
             if hubbard.formulation == 'dudarev':
                 if param.hubbard_type == 'J':
                     pre = 'J'
-                elif is_intersite and atom_i == atom_j and param.atom_manifold == param.neighbour_manifold:
+                elif not is_intersite and atom_i == atom_j and param.atom_manifold == param.neighbour_manifold:
                     pre = 'U'
                 else:
                     pre = 'V'
@@ -186,7 +186,7 @@ class HubbardUtils:
         hubbard_kinds.sort(reverse=False)
 
         ordered_sites = []
-        index_map = [index for index, site in enumerate(sites) if site.kind_name in hubbard_kinds]
+        index_map = {index: site.get_raw() for index, site in enumerate(sites) if site.kind_name in hubbard_kinds}
 
         while hubbard_kinds:
 
@@ -210,11 +210,12 @@ class HubbardUtils:
 
         reordered_parameters = []
 
+        site_map = [site.get_raw() for site in reordered.sites]
+
         for parameter in parameters:
             new_parameter = parameter.copy()
-            new_parameter[0] = index_map.index(parameter[0])
-            new_parameter[2] = index_map.index(parameter[2])
-            print(parameter, new_parameter)
+            new_parameter[0] = site_map.index(index_map[parameter[0]])
+            new_parameter[2] = site_map.index(index_map[parameter[2]])
             reordered_parameters.append(new_parameter)
 
         args = (reordered_parameters, hubbard.projectors, hubbard.formulation)

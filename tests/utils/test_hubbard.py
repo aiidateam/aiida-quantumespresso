@@ -73,6 +73,7 @@ def test_is_intersite(generate_hubbard_structure):
 @pytest.mark.parametrize(('filename', 'projectors'), (
     ('HUBBARD.dat', 'ortho-atomic'),
     ('HUBBARD_2.dat', 'atomic'),
+    ('HUBBARD_3.dat', 'atomic'),
 ))
 @pytest.mark.usefixtures('aiida_profile')
 def test_invertibility(generate_hubbard_utils, filepath_hubbard, filename, projectors):
@@ -133,7 +134,7 @@ def test_invertibility(generate_hubbard_utils, filepath_hubbard, filename, proje
         [[0, '3d', 0, '3d', 5.0, [0, 0, 0], 'U'], [3, '1s', 3, '1s', 0.0, [0, 0, 0], 'U']],
         [
             ['Li', 'Co', 'O', 'O'],
-            [[0, '3d', 0, '3d', 5.0, [0, 0, 0], 'U'], [1, '1s', 1, '1s', 0.0, [0, 0, 0], 'U']],
+            [[0, '1s', 0, '1s', 0.0, [0, 0, 0], 'U'], [1, '3d', 1, '3d', 5.0, [0, 0, 0], 'U']],
         ],
     ),
     (
@@ -161,8 +162,35 @@ def test_reorder_atoms(generate_hubbard_structure, parameters, values):
     for name, site in zip(values[0], sites):
         assert site.kind_name == name
 
-    expected_hubbard = Hubbard.from_list(values[1], projectors, formulation)
-    assert hubbard_utils.hubbard_structure.hubbard == expected_hubbard
+    expected = Hubbard.from_list(values[1]).to_list()
+    assert hubbard_utils.hubbard_structure.hubbard.projectors == projectors
+    assert hubbard_utils.hubbard_structure.hubbard.formulation == formulation
+    for param in hubbard_utils.hubbard_structure.hubbard.to_list():
+        assert param in expected
+
+
+@pytest.mark.usefixtures('aiida_profile')
+def test_reorder_supercell_atoms(generate_hubbard_structure):
+    """Test the `reorder_atoms` method with a supercell."""
+    from aiida.orm import StructureData
+    parameters = [
+        [0, '3d', 0, '3d', 5.0, [0, 0, 0], 'U'],
+        [0, '3d', 1, '2p', 5.0, [0, 0, 0], 'U'],
+    ]
+    hubbard_structure = generate_hubbard_structure(parameters=parameters)
+    hubbard_utils = HubbardUtils(hubbard_structure=hubbard_structure)
+
+    pymatgen = hubbard_structure.get_pymatgen_structure()
+    pymatgen.make_supercell([2, 2, 2])
+    supercell = StructureData(pymatgen=pymatgen)
+    hubbard_supercell = hubbard_utils.get_hubbard_for_supercell(supercell=supercell, thr=1e-5)
+    supercell_utils = HubbardUtils(hubbard_supercell)
+    supercell_utils.reorder_atoms()
+    hubbard_supercell = supercell_utils.hubbard_structure
+
+    for parameters in hubbard_supercell.hubbard.to_list():
+        if parameters[0] == parameters[2]:
+            assert hubbard_supercell.sites[parameters[0]].kind_name == 'Co'
 
 
 @pytest.mark.usefixtures('aiida_profile')
