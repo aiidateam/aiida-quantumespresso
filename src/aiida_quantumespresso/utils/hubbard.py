@@ -3,6 +3,7 @@
 from math import floor
 from typing import List, Union
 
+from aiida.orm import StructureData
 from pydantic import FilePath  # pylint: disable=no-name-in-module
 
 from aiida_quantumespresso.common.hubbard import Hubbard
@@ -53,7 +54,7 @@ class HubbardUtils:
         for param in hubbard_parameters:
             atom_i = sites[param.atom_index].kind_name
             atom_j = sites[param.neighbour_index].kind_name
-            index_i = param.atom_index + 1  # QE indecis start from 1
+            index_i = param.atom_index + 1  # QE indices start from 1
             index_j = get_supercell_atomic_index(param.neighbour_index, natoms, param.translation) + 1
             man_i = param.atom_manifold
             man_j = param.neighbour_manifold
@@ -152,7 +153,7 @@ class HubbardUtils:
         card = '#\tAtom 1\tAtom 2\tHubbard V (eV)\n'
 
         for param in hubbard_parameters:
-            index_i = param.atom_index + 1  # QE indecis start from 1
+            index_i = param.atom_index + 1  # QE indices start from 1
             index_j = get_supercell_atomic_index(param.neighbour_index, natoms, param.translation) + 1
             value = param.value
 
@@ -222,6 +223,71 @@ class HubbardUtils:
 
         self._hubbard_structure = reordered
 
+    def get_hubbard_for_supercell(self, supercell: StructureData, thr: float = 1e-3) -> HubbardStructureData:
+        """Return the ``HubbbardStructureData`` for a supercell.
+
+        .. note:: the two structure need to be commensurate (no rotation)
+
+        .. warning:: this method has been tested showing that the energy calculation
+            of a supercell structure obtained through this method is the same as the
+            unitcell (within numerical noise). **Always check** this applies to your
+            case; if not, please report us!
+        """
+        import numpy as np
+
+        uc_pymat = self.hubbard_structure.get_pymatgen_structure()
+        sc_pymat = supercell.get_pymatgen_structure()
+        uc_positions = uc_pymat.cart_coords  # positions in Cartesian coordinates
+        sc_positions = sc_pymat.cart_coords
+        uc_cell = uc_pymat.lattice.matrix
+        uc_cell_inv = np.linalg.inv(uc_cell)
+
+        hubbard = self.hubbard_structure.hubbard
+        sc_hubbard_parameters = []
+
+        for param in hubbard.parameters:
+            uc_i_position = uc_positions[param.atom_index]
+            uc_j_position = uc_positions[param.neighbour_index]
+
+            # i -> atom_index | j -> neighbour_index
+            sc_i_indices, sc_j_index, sc_i_translations = [], [], []
+
+            for i, position in enumerate(sc_positions):
+                translation = np.dot(position - uc_i_position, uc_cell_inv)
+                translation_int = np.rint(translation)
+                if np.all(np.isclose(translation, translation_int, thr)):
+                    sc_i_translations.append(translation_int.tolist())
+                    sc_i_indices.append(i)
+
+                translation = np.dot(position - uc_j_position, uc_cell_inv)
+                translation_int = np.rint(translation)
+                if np.all(np.isclose(translation, translation_int, thr)):
+                    uc_j_translation = np.array(translation_int)
+                    sc_j_index = i
+
+            sc_j_position = sc_positions[sc_j_index]
+
+            for sc_i_index, sc_i_translation in zip(sc_i_indices, sc_i_translations):
+                j_position = sc_j_position + np.dot(sc_i_translation - uc_j_translation + param.translation, uc_cell)
+                local_site = sc_pymat.get_sites_in_sphere(pt=j_position, r=thr)[0]
+
+                sc_hubbard_parameter = [
+                    int(sc_i_index),
+                    param.atom_manifold,
+                    int(local_site.index),  # otherwise the class validator complains
+                    param.neighbour_manifold,
+                    param.value,
+                    np.array(local_site.image, dtype=np.int64).tolist(),  # otherwise the class validator complains
+                    param.hubbard_type,
+                ]
+
+                sc_hubbard_parameters.append(sc_hubbard_parameter)
+
+        args = (sc_hubbard_parameters, hubbard.projectors, hubbard.formulation)
+        new_hubbard = Hubbard.from_list(*args)
+
+        return HubbardStructureData.from_structure(structure=supercell, hubbard=new_hubbard)
+
 
 def get_supercell_atomic_index(index: int, num_sites: int, translation: List[Union[int, int, int]]) -> int:
     """Return the atomic index in 3x3x3 supercell.
@@ -247,10 +313,10 @@ def get_supercell_site_properties(index: int, num_sites: int) -> List[Union[int,
 
 def get_hubbard_indices(hubbard: Hubbard) -> List[int]:
     """Return the set list of Hubbard indices."""
-    atom_indecis = {parameters.atom_index for parameters in hubbard.parameters}
-    neigh_indecis = {parameters.neighbour_index for parameters in hubbard.parameters}
-    atom_indecis.update(neigh_indecis)
-    return list(atom_indecis)
+    atom_indices = {parameters.atom_index for parameters in hubbard.parameters}
+    neigh_indices = {parameters.neighbour_index for parameters in hubbard.parameters}
+    atom_indices.update(neigh_indices)
+    return list(atom_indices)
 
 
 def is_intersite_hubbard(hubbard: Hubbard) -> bool:

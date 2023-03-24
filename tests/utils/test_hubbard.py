@@ -150,8 +150,8 @@ def test_reorder_atoms(generate_hubbard_structure, parameters, values):
         of the input ``values`` should be performed.
     """
     # Sanity check - we must not override with default value
-    formulation = 'liechtenstein'
     projectors = 'atomic'
+    formulation = 'liechtenstein'
     args = (parameters, projectors, formulation)
     hubbard_structure = generate_hubbard_structure(*args)
     hubbard_utils = HubbardUtils(hubbard_structure=hubbard_structure)
@@ -163,3 +163,33 @@ def test_reorder_atoms(generate_hubbard_structure, parameters, values):
 
     expected_hubbard = Hubbard.from_list(values[1], projectors, formulation)
     assert hubbard_utils.hubbard_structure.hubbard == expected_hubbard
+
+
+@pytest.mark.usefixtures('aiida_profile')
+def test_hubbard_for_supercell(generate_hubbard_structure):
+    """Test the `get_hubbard_for_supercell` method.
+
+    .. warning:: we only test for the ``U`` case, assuming that if U is transfered
+        to the supercell correctly, any parameter will.
+    """
+    from aiida.orm import StructureData
+    parameters = [[3, '1s', 3, '2s', 5.0, [0, 0, 0], 'U']]  # Li atom
+    projectors = 'atomic'
+    formulation = 'liechtenstein'
+    args = (parameters, projectors, formulation)
+    hubbard_structure = generate_hubbard_structure(*args)
+    hubbard_utils = HubbardUtils(hubbard_structure=hubbard_structure)
+
+    pymatgen = hubbard_structure.get_pymatgen_structure()
+    pymatgen.make_supercell([2, 2, 2])
+    supercell = StructureData(pymatgen=pymatgen)
+
+    hubbard_supercell = hubbard_utils.get_hubbard_for_supercell(supercell=supercell, thr=1e-5)
+
+    assert hubbard_supercell.hubbard.projectors == projectors
+    assert hubbard_supercell.hubbard.formulation == formulation
+    for parameters in hubbard_supercell.hubbard.to_list():
+        assert parameters[0] == parameters[2]
+        assert parameters[1] == '1s'
+        assert parameters[3] == '2s'
+        assert hubbard_supercell.sites[parameters[0]].kind_name == 'Li'
