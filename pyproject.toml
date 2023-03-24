@@ -149,7 +149,7 @@ ignore = [
 ]
 
 [tool.pylint.master]
-load-plugins = ['pylint_aiida']
+load-plugins = ['pylint_aiida','pylint.extensions.no_self_use']
 
 [tool.pylint.format]
 max-line-length = 120

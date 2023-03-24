@@ -22,7 +22,7 @@ class HubbardParameters(BaseModel):
     hubbard_type: type_names  # default to 'U' ?
 
     @validator('atom_manifold', 'neighbour_manifold')  # cls is mandatory to use
-    def check_manifolds(cls, value):  # pylint: disable=no-self-argument
+    def check_manifolds(cls, value):  # pylint: disable=no-self-argument, no-self-use
         """Check the validity of the manifold input.
 
         Allowed formats are:
