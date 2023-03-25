@@ -10,7 +10,7 @@ from aiida_quantumespresso.common.hubbard import Hubbard, HubbardParameters
 
 
 class HubbardStructureData(StructureData):
-    """Structure data containing code independent info on Hubbard parameters."""
+    """Structure data containing code agnostic info on Hubbard parameters."""
 
     _hubbard_filename = 'hubbard.json'
 
@@ -22,12 +22,12 @@ class HubbardStructureData(StructureData):
         hubbard: Hubbard = None,
         **kwargs,
     ):
-        """Set a `HubbardStructureData` instance.
+        """Set a ``HubbardStructureData`` instance.
 
-        :param cell: (3,3) shape list of ints
+        :param cell: (3,3) shape list of floats
         :param pbc: (3,) shape list in bools
         :param sites: list of lists, each of the shape [symbol, name, position],
-            where position is a (3,) shape list
+            where position is a (3,) shape list of floats
         :param hubbard: a :py:meth:`~aiida_quantumespresso.common.hubbrd.Hubbard` istance
         """
         super().__init__(cell=cell, **kwargs)
@@ -37,21 +37,23 @@ class HubbardStructureData(StructureData):
 
     @property
     def sites(self):
-        """Return the `Sites`."""
+        """Return the :meth:`aiida.core.Sites`."""
         return super().sites
 
     @sites.setter
-    def sites(self, values):
-        """Set the `Sites`."""
+    def sites(self, values: List[Union[str, str, List[float]]]):
+        """Set the :meth:`aiida.core.Sites`.
+
+        :param values: list of sites, each as [symbol, name, (3,) shape list of positions]
+        """
         for simbols, kind_name, position in values:
-            # Is it enough?
             self.append_atom(symbols=simbols, name=kind_name, position=position)
 
     @property
     def hubbard(self) -> Hubbard:
         """Get the `Hubbard` instance.
 
-        :return: a :py:meth:`~aiida_quantumespresso.common.hubbard.Hubbard` instance.
+        :returns: a :py:meth:`~aiida_quantumespresso.common.hubbard.Hubbard` instance.
         """
         with self.base.repository.open(self._hubbard_filename, mode='rb') as handle:
             return Hubbard.parse_raw(json.load(handle))
@@ -70,12 +72,11 @@ class HubbardStructureData(StructureData):
         structure: StructureData,
         hubbard: Hubbard = None,
     ):
-        """Return an instance of HubbardStructureData from a StructureData object.
+        """Return an instance of ``HubbardStructureData`` from a ``StructureData`` node.
 
         :param structure: :meth:`aiida.orm.StructureData` instance
-        :param parameters: the Hubbard parameters
-        :param projectors: the Hubbard projector type
-        :returns: HubbardStructureData instance
+        :param hubbad: :meth:`~aiida_quantumespresso.common.hubbard.Hubbard` instance
+        :returns: ``HubbardStructureData`` instance
         """
         sites = [[structure.get_kind(site.kind_name).symbol, site.kind_name, site.position] for site in structure.sites]
         cell = structure.cell
@@ -93,7 +94,18 @@ class HubbardStructureData(StructureData):
         translation: List[Union[int, int, int]] = None,
         hubbard_type: str = 'Ueff',
     ):
-        """Append a Hubbard parameter."""
+        """Append a :meth:`~aiida_quantumespresso.common.hubbard.HubbardParameters``.
+
+        :param atom_index: atom index in unitcell
+        :param atom_manifold: atomic manifold (e.g. 3d, 3d-2p)
+        :param neighbour_index: neighbouring atom index in unitcell
+        :param neighbour_manifold: neighbour manifold (e.g. 3d, 3d-2p)
+        :param value: value of the Hubbard parameter, in eV
+        :param translation: (3,) list of ints, describing the translation vector
+            associated with the neighbour atom, defaults to None
+        :param hubbard_type: hubbard type (U, V, J, ...), defaults to 'Ueff'
+            (see :meth:`~aiida_quantumespresso.common.hubbard.Hubbard` for full allowed values)
+        """
         pymat = self.get_pymatgen_structure()
         sites = pymat.sites
 
@@ -110,7 +122,10 @@ class HubbardStructureData(StructureData):
             self.hubbard = hubbard
 
     def pop_hubbard_parameters(self, index: int):
-        """Pop a Hubbard parameters."""
+        """Pop Hubbard parameters in the list.
+
+        :param index: index of the Hubbard parameters to pop
+        """
         hubbard = self.hubbard
         hubbard.parameters.pop(index)
         self.hubbard = hubbard
@@ -136,6 +151,16 @@ class HubbardStructureData(StructureData):
         .. note:: this only initialize the value between the first neighbour. In case
             `use_kinds` is False, all the possible combination of couples having
             kind  name equal to symbol are initialized.
+
+        :param atom_name: atom name in unitcell
+        :param atom_manifold: atomic manifold (e.g. 3d, 3d-2p)
+        :param neighbour_index: neighbouring atom name in unitcell
+        :param neighbour_manifold: neighbour manifold (e.g. 3d, 3d-2p)
+        :param value: value of the Hubbard parameter, in eV
+        :param hubbard_type: hubbard type (U, V, J, ...), defaults to 'Ueff'
+            (see :meth:`~aiida_quantumespresso.common.hubbard.Hubbard` for full allowed values)
+        :param use_kinds: whether to use kinds for initializing the parameters; when False, it
+            initializes all the ``Kinds`` matching the ``atom_name``
         """
         sites = self.get_pymatgen_structure().sites
 
@@ -163,7 +188,16 @@ class HubbardStructureData(StructureData):
         hubbard_type: str = 'Ueff',
         use_kinds: bool = True,
     ):
-        """Initialize and append onsite Hubbard values of atoms with specific name."""
+        """Initialize and append onsite Hubbard values of atoms with specific name.
+
+        :param atom_name: atom name in unitcell
+        :param atom_manifold: atomic manifold (e.g. 3d, 3d-2p)
+        :param value: value of the Hubbard parameter, in eV
+        :param hubbard_type: hubbard type (U, J, ...), defaults to 'Ueff'
+            (see :meth:`~aiida_quantumespresso.common.hubbard.Hubbard` for full allowed values)
+        :param use_kinds: whether to use kinds for initializing the parameters; when False, it
+            initializes all the ``Kinds`` matching the ``atom_name``
+        """
         function = self._get_one_kind_index if use_kinds else self._get_symbol_indecis
         atom_indecis = function(atom_name)
 

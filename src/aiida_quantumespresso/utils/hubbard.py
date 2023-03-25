@@ -28,10 +28,7 @@ class HubbardUtils:
         self,
         hubbard_structure: HubbardStructureData,
     ):
-        """Set a the `HubbardStructureData` to manipulate.
-
-        :param hubbard_projectors: Hubbard projector type that are used for the occupations
-        """
+        """Set a the `HubbardStructureData` to manipulate."""
         if isinstance(hubbard_structure, HubbardStructureData):
             self._hubbard_structure = hubbard_structure
         else:
@@ -66,6 +63,10 @@ class HubbardUtils:
             if hubbard.formulation == 'liechtenstein':
                 line = f'{pre}\t{atom_i}-{man_i} \t{value}'
 
+            # This variable is to meet QE implementation. If intersite interactions
+            # (+V) are present, onsite parameters might not be relabelled by the ``hp.x``
+            # code, causing a subsequent ``pw.x`` calculation to crash. That is,
+            # we need to avoid writing "U Co-3d 5.0", but instead "V Co-3d Co-3d 1 1 5.0".
             is_intersite = is_intersite_hubbard(hubbard=hubbard)
             if hubbard.formulation == 'dudarev':
                 if param.hubbard_type == 'J':
@@ -96,6 +97,8 @@ class HubbardUtils:
         This function is needed for parsing the HUBBARD.dat file generated in a `hp.x` calculation.
 
         .. note:: overrides current Hubbard information.
+
+        :param filepath: the filepath of the *HUBBARD.dat* to parse
         """
         self.hubbard_structure.clear_hubbard_parameters()
         natoms = len(self.hubbard_structure.sites)
@@ -129,8 +132,8 @@ class HubbardUtils:
                     manifolds.append('-'.join(manifold))
 
                 # -1 because QE index starts from 1
-                index_i, _ = get_supercell_site_properties(int(data[3]) - 1, natoms)  # pylint =
-                index_j, tra = get_supercell_site_properties(int(data[4]) - 1, natoms)
+                index_i, _ = get_index_and_translation(int(data[3]) - 1, natoms)
+                index_j, tra = get_index_and_translation(int(data[4]) - 1, natoms)
 
                 args = (index_i, manifolds[0], index_j, manifolds[1], float(data[5]), tra, data[0])
 
@@ -141,7 +144,7 @@ class HubbardUtils:
         self.hubbard_structure.hubbard = hubbard
 
     def get_hubbard_file(self) -> str:
-        """Return QuantumESPRESSO `parameters.in` data for `pw.x`."""
+        """Return QuantumESPRESSO ``parameters.in`` data for ``pw.x```."""
         hubbard = self.hubbard_structure.hubbard
         hubbard_parameters = hubbard.parameters
         sites = self.hubbard_structure.sites
@@ -186,6 +189,10 @@ class HubbardUtils:
         hubbard_kinds.sort(reverse=False)
 
         ordered_sites = []
+
+        # We define a map from ``index`` to ``site specifications``. We need the complete
+        # specification, as we will loose track of the index ordering with the following shuffle.
+        # The ``index`` are needed for re-indexing later the hubbard parameters.
         index_map = {index: site.get_raw() for index, site in enumerate(sites) if site.kind_name in hubbard_kinds}
 
         while hubbard_kinds:
@@ -210,14 +217,16 @@ class HubbardUtils:
 
         reordered_parameters = []
 
+        # Reordered site map, to match with raw sites of ``index_map``
         site_map = [site.get_raw() for site in reordered.sites]
 
         for parameter in parameters:
             new_parameter = parameter.copy()
-            new_parameter[0] = site_map.index(index_map[parameter[0]])
-            new_parameter[2] = site_map.index(index_map[parameter[2]])
+            new_parameter[0] = site_map.index(index_map[parameter[0]])  # atom index
+            new_parameter[2] = site_map.index(index_map[parameter[2]])  # neighbour index
             reordered_parameters.append(new_parameter)
 
+        # making sure we keep track of the other info as well
         args = (reordered_parameters, hubbard.projectors, hubbard.formulation)
         hubbard = hubbard.from_list(*args)
         reordered.hubbard = hubbard
@@ -227,12 +236,12 @@ class HubbardUtils:
     def get_hubbard_for_supercell(self, supercell: StructureData, thr: float = 1e-3) -> HubbardStructureData:
         """Return the ``HubbbardStructureData`` for a supercell.
 
-        .. note:: the two structure need to be commensurate (no rotation)
+        .. note:: the two structure need to be commensurate (no rigid rotations)
 
-        .. warning:: this method has been tested showing that the energy calculation
-            of a supercell structure obtained through this method is the same as the
-            unitcell (within numerical noise). **Always check** this applies to your
-            case; if not, please report us!
+        .. warning:: **always check** that the energy calculation of a pristine supercell
+            structure obtained through this method is the same as the unitcell (within numerical noise)
+
+        :returns: a new ``HubbbardStructureData`` with all the mapped Hubbard parameters
         """
         import numpy as np
 
@@ -246,13 +255,17 @@ class HubbardUtils:
         hubbard = self.hubbard_structure.hubbard
         sc_hubbard_parameters = []
 
+        # Dumb, but fairly safe, way to map all the hubbard parameters.
+        # The idea is to map for each interaction in unitcell the
+        # correspective one in supercell matching all the positions.
         for param in hubbard.parameters:
+            # i -> atom_index | j -> neighbour_index
             uc_i_position = uc_positions[param.atom_index]
             uc_j_position = uc_positions[param.neighbour_index]
-
-            # i -> atom_index | j -> neighbour_index
             sc_i_indices, sc_j_index, sc_i_translations = [], [], []
 
+            # Each atom in supercell is matched if a unitcell
+            # translation vector is found.
             for i, position in enumerate(sc_positions):
                 translation = np.dot(position - uc_i_position, uc_cell_inv)
                 translation_int = np.rint(translation)
@@ -266,11 +279,14 @@ class HubbardUtils:
                     uc_j_translation = np.array(translation_int)
                     sc_j_index = i
 
+            # The position of the neighbour must be still translated;
+            # This might happen in the supercell itself, or outside, thus
+            # we neeed to recompute its position and its translation vector in supercell.
             sc_j_position = sc_positions[sc_j_index]
 
             for sc_i_index, sc_i_translation in zip(sc_i_indices, sc_i_translations):
                 j_position = sc_j_position + np.dot(sc_i_translation - uc_j_translation + param.translation, uc_cell)
-                local_site = sc_pymat.get_sites_in_sphere(pt=j_position, r=thr)[0]
+                local_site = sc_pymat.get_sites_in_sphere(pt=j_position, r=thr)[0]  # pymatgen PeriodicSite
 
                 sc_hubbard_parameter = [
                     int(sc_i_index),
@@ -302,11 +318,12 @@ def get_supercell_atomic_index(index: int, num_sites: int, translation: List[Uni
     return index + qe_translations.index(translation) * num_sites
 
 
-def get_supercell_site_properties(index: int, num_sites: int) -> List[Union[int, int, int]]:
+def get_index_and_translation(index: int, num_sites: int) -> Union[int, List[Union[int, int, int]]]:
     """Return the atomic index in unitcell and the associated translation from a 3x3x3 QuantumESPRESSO supercell index.
 
     :param index: atomic index
     :param num_sites: number of sites in structure
+    :returns: tuple (index, (3,) shape list of ints)
     """
     number = floor(index / num_sites)  # associated supercell number
     return (index - num_sites * number, qe_translations[number])

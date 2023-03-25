@@ -11,7 +11,22 @@ projectors_name = Literal['atomic', 'ortho-atomic', 'norm-atomic', 'wannier-func
 
 
 class HubbardParameters(BaseModel):
-    """Class for describing onsite and intersite Hubbard interaction parameters."""
+    """Class for describing onsite and intersite Hubbard interaction parameters.
+
+    .. note: allowed manifold formats are:
+            * {N}{L} (2 characters)
+            * {N1}{L1}-{N2}{L2} (5 characters)
+
+        N = quantum number (1,2,3,...); L = orbital letter (s,p,d,f,g,h)
+
+    :param atom_index: atom index in the abstract structure
+    :param atom_manifold: atom manifold (syntax is `3d`, `3d-2p`)
+    :param neighbour_index: neighbour index in the abstract structure
+    :param neighbour_manifold: atom manifold (syntax is `3d`, `3d-2p`)
+    :param translation: translation vector referring to the neighbour atom, (3,) shape list of ints
+    :param value: value of the Hubbard parameter, expessed in eV
+    :param hubbard_type: type of the Hubbard parameters used (`Ueff`, `U`, `V`, `J`, `B`, `E2`, `E3`)
+    """
 
     atom_index: conint(strict=True, ge=0)
     atom_manifold: constr(strip_whitespace=True, to_lower=True, min_length=2, max_length=5)
@@ -67,7 +82,7 @@ class HubbardParameters(BaseModel):
 
     @staticmethod
     def from_list(hubbard_parameters: list):
-        """Return a `HubbardParameters` instance from a list.
+        """Return a :meth:`~aiida_quantumespresso.common.hubbard.HubbardParameters`  instance from a list.
 
         The parameters within the list must have the following order:
             * atom_index
@@ -91,7 +106,13 @@ class HubbardParameters(BaseModel):
 
 
 class Hubbard(BaseModel):
-    """Class for complete description of Hubbard interactions."""
+    """Class for complete description of Hubbard interactions.
+
+    :param projectors: name of the projectors used. Allowed values are:
+    :param parameters: list of :meth:`~aiida_quantumespress.common.hubbard.HubbardParameters`
+        'atomic', 'ortho-atomic', 'norm-atomic', 'wannier-functions', 'pseudo-potentials'
+    :param formulation: Hubbard formulation used. Allowed values are: 'dudarev', `liechtenstein`
+    """
 
     parameters: List[HubbardParameters]
     projectors: projectors_name = 'ortho-atomic'
@@ -109,7 +130,7 @@ class Hubbard(BaseModel):
             * translation
             * hubbard_type
         """
-        return [hp.to_list() for hp in self.parameters]
+        return [params.to_list() for params in self.parameters]
 
     @staticmethod
     def from_list(
@@ -117,7 +138,7 @@ class Hubbard(BaseModel):
         projectors: str = 'ortho-atomic',
         formulation: str = 'dudarev',
     ):
-        """Return a `Hubbard` instance from a list of lists.
+        """Return a :meth:`~aiida_quantumespresso.common.hubbard.Hubbard` instance from a list of lists.
 
         Each list must contain the hubbard parameters in the following order:
             * atom_index
