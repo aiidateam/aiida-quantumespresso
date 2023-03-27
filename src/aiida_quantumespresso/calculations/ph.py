@@ -117,7 +117,7 @@ class PhCalculation(CalcJob):
 
         # Also, the parent calculation must be on the same computer
         if not self.node.computer.uuid == parent_calc.computer.uuid:
-            computer_label = parent_calc.computer.get_name()
+            computer_label = parent_calc.computer.label
             raise exceptions.InputValidationError(
                 f'Calculation has to be launched on the same computer as that of the parent: {computer_label}'
             )
