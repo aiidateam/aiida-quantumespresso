@@ -82,40 +82,62 @@ def test_valid_hubbard_parameters(get_hubbard_parameters, overrides):
     assert hp_dict == new_dict
 
 
-@pytest.mark.parametrize(
-    'overrides', [
-        {
-            'atom_index': -1
-        },
+@pytest.mark.parametrize(('overrides', 'match'), (
+    ({
+        'atom_index': -1
+    }, r'ensure this value is greater than or equal to 0'),
+    (
         {
             'atom_index': 0.5
         },
+        r'value is not a valid integer',
+    ),
+    (
         {
             'atom_manifold': '3z'
         },
+        r'invalid manifold symbol z',
+    ),
+    (
         {
             'atom_manifold': '3d2p'
         },
+        r'invalid length ``4``. Only 2 or 5',
+    ),
+    (
         {
             'atom_manifold': '3d-3p-2s'
         },
+        r'ensure this value has at most 5 characters',
+    ),
+    (
         {
             'translation': (0, 0)
         },
+        r'wrong tuple length 2, expected 3',
+    ),
+    (
         {
             'translation': (0, 0, 0, 0)
         },
+        r'wrong tuple length 4, expected 3',
+    ),
+    (
         {
             'translation': (0, 0, -1.5)
         },
+        r'value is not a valid integer',
+    ),
+    (
         {
             'hubbard_type': 'L'
         },
-    ]
-)
-def test_invalid_hubbard_parameters(get_hubbard_parameters, overrides):
+        r"permitted: 'Ueff', 'U', 'V', 'J', 'B', 'E2', 'E3'",
+    ),
+))
+def test_invalid_hubbard_parameters(get_hubbard_parameters, overrides, match):
     """Test invalid inputs for py:meth:`HubbardParameters`."""
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match=match):
         get_hubbard_parameters(overrides=overrides)
 
 
