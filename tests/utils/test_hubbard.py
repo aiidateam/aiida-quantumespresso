@@ -27,7 +27,7 @@ def generate_hubbard_structure():
             structure.append_atom(position=position, symbols=symbol)
 
         if parameters is None:
-            parameters = [[0, '3d', 0, '3d', 5.0, [0, 0, 0], 'U'], [0, '3d', 1, '2p', 1.0, [0, 0, 0], 'V']]
+            parameters = [(0, '3d', 0, '3d', 5.0, (0, 0, 0), 'U'), (0, '3d', 1, '2p', 1.0, (0, 0, 0), 'V')]
         if projectors is None:
             projectors = 'ortho-atomic'
         if formulation is None:
@@ -53,7 +53,7 @@ def generate_hubbard_utils(generate_hubbard_structure):
 @pytest.fixture
 def filepath_hubbard(filepath_tests):
     """Return the absolute filepath to the directory containing the file `fixtures`."""
-    return os.path.join(filepath_tests, 'utils/fixtures/hubbard')
+    return os.path.join(filepath_tests, 'utils', 'fixtures', 'hubbard')
 
 
 @pytest.mark.usefixtures('aiida_profile')
@@ -97,7 +97,7 @@ def test_invertibility(generate_hubbard_utils, filepath_hubbard, filename, proje
         lines = file.readlines()
         for line in lines:
             if line.strip().split()[0] != '#':
-                hubbard_data.append(list(line.strip().split()))
+                hubbard_data.append(tuple(line.strip().split()))
 
     hubbard_data.pop(0)  # removing header
 
@@ -105,7 +105,7 @@ def test_invertibility(generate_hubbard_utils, filepath_hubbard, filename, proje
     card = hubbard_utils.get_hubbard_card()
     card = card.splitlines()
     for line in card:
-        parsed_data.append(list(line.strip().split()))
+        parsed_data.append(tuple(line.strip().split()))
 
     parsed_data.pop(0)  # removing header
 
@@ -174,8 +174,8 @@ def test_reorder_supercell_atoms(generate_hubbard_structure):
     """Test the `reorder_atoms` method with a supercell."""
     from aiida.orm import StructureData
     parameters = [
-        [0, '3d', 0, '3d', 5.0, [0, 0, 0], 'U'],
-        [0, '3d', 1, '2p', 5.0, [0, 0, 0], 'U'],
+        (0, '3d', 0, '3d', 5.0, (0, 0, 0), 'U'),
+        (0, '3d', 1, '2p', 5.0, (0, 0, 0), 'U'),
     ]
     hubbard_structure = generate_hubbard_structure(parameters=parameters)
     hubbard_utils = HubbardUtils(hubbard_structure=hubbard_structure)

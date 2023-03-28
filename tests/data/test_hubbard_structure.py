@@ -12,7 +12,7 @@ def generate_hubbard():
 
     def _generate_hubbard():
         from aiida_quantumespresso.common.hubbard import Hubbard
-        return Hubbard.from_list([[0, '1s', 0, '1s', 5.0, [0, 0, 0], 'Ueff']])
+        return Hubbard.from_list([(0, '1s', 0, '1s', 5.0, (0, 0, 0), 'Ueff')])
 
     return _generate_hubbard
 
@@ -24,7 +24,7 @@ def generate_hubbard_structure(generate_structure):
     def _generate_hubbard_structure():
         from aiida_quantumespresso.common.hubbard import Hubbard
         structure = generate_structure('silicon-kinds')
-        hp_list = [[0, '1s', 0, '1s', 5.0, [0, 0, 0], 'Ueff']]
+        hp_list = [(0, '1s', 0, '1s', 5.0, (0, 0, 0), 'Ueff')]
         hubbard = Hubbard.from_list(hp_list)
         return HubbardStructureData.from_structure(structure=structure, hubbard=hubbard)
 
@@ -35,13 +35,13 @@ def generate_hubbard_structure(generate_structure):
 def test_valid_init(generate_hubbard):
     """Test the constructor."""
     cell = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
-    sites = [['Si', 'Si0', [0, 0, 0]]]
+    sites = [['Si', 'Si0', (0, 0, 0)]]
     hubbard = generate_hubbard()
     hubbard_structure = HubbardStructureData(cell=cell, sites=sites, hubbard=hubbard)
     assert hubbard_structure.cell == cell
     assert hubbard_structure.kinds[0].symbol == sites[0][0]
     assert hubbard_structure.sites[0].kind_name == sites[0][1]
-    assert list(hubbard_structure.sites[0].position) == sites[0][2]
+    assert hubbard_structure.sites[0].position == sites[0][2]
     assert hubbard_structure.hubbard == hubbard
 
 
@@ -66,9 +66,9 @@ def test_append_hubbard_parameters(generate_hubbard_structure):
     """Test the `append_hubbard_parameters` method."""
     from aiida_quantumespresso.common.hubbard import HubbardParameters
     hubbard_structure = generate_hubbard_structure()
-    args = [0, '1s', 1, '1s', 5.0, [0, 0, 0], 'U']
+    args = (0, '1s', 1, '1s', 5.0, (0, 0, 0), 'U')
     hubbard_structure.append_hubbard_parameter(*args)
-    params = HubbardParameters.from_list(args)
+    params = HubbardParameters.from_tuple(args)
     assert len(hubbard_structure.hubbard.parameters) == 2
     assert params == hubbard_structure.hubbard.parameters[1]
 
@@ -107,11 +107,11 @@ def test_initialize_intersites_hubbard(generate_hubbard_structure):
     #           intersites among first neighbours. The method was designed for different
     #           interacting species. We may want to improve it for this special cases,
     #           although it is still rather futuristic.
-    assert hubbard_structure.hubbard.parameters[1].to_list() == [0, '1s', 0, '2s', 0.0, [0, 0, 0], 'Ueff']
+    assert hubbard_structure.hubbard.parameters[1].to_tuple() == (0, '1s', 0, '2s', 0.0, (0, 0, 0), 'Ueff')
 
     hubbard_structure.clear_hubbard_parameters()
     hubbard_structure.initialize_intersites_hubbard('Si0', '1s', 'Si1', '2s', 0.0, 'Ueff')
-    assert [0, '1s', 1, '2s', 0, [-1, 0, 0], 'Ueff'] in hubbard_structure.hubbard.to_list()
+    assert (0, '1s', 1, '2s', 0, (-1, 0, 0), 'Ueff') in hubbard_structure.hubbard.to_list()
     assert len(hubbard_structure.hubbard.parameters) == 1
 
     with pytest.raises(ValueError):
@@ -126,7 +126,7 @@ def test_initialize_onsites_hubbard(generate_hubbard_structure):
     hubbard_structure.clear_hubbard_parameters()
     hubbard_structure.initialize_onsites_hubbard('Si', '1s', 0.0, 'Ueff', False)
 
-    assert [0, '1s', 0, '1s', 0, [0, 0, 0], 'Ueff'] in hubbard_structure.hubbard.to_list()
+    assert (0, '1s', 0, '1s', 0, (0, 0, 0), 'Ueff') in hubbard_structure.hubbard.to_list()
     assert len(hubbard_structure.hubbard.parameters) == 2
 
     hubbard_structure.clear_hubbard_parameters()

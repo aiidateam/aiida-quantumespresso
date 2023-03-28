@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """Data plugin that represents a crystal structure with Hubbard parameters."""
+from __future__ import annotations
+
 import json
-from typing import List, Union
+from typing import List
 
 from aiida.orm import StructureData
 import numpy as np
@@ -17,8 +19,8 @@ class HubbardStructureData(StructureData):
     def __init__(
         self,
         cell: List[List[float]],
-        sites: List[Union[str, str, List[float]]],
-        pbc: List[bool] = (True, True, True),
+        sites: List[tuple[str, str, tuple[float, float, float]]],
+        pbc: tuple[bool, bool, bool] = (True, True, True),
         hubbard: Hubbard = None,
         **kwargs,
     ):
@@ -41,11 +43,12 @@ class HubbardStructureData(StructureData):
         return super().sites
 
     @sites.setter
-    def sites(self, values: List[Union[str, str, List[float]]]):
+    def sites(self, values: List[tuple[str, str, tuple[float, float, float]]]):
         """Set the :meth:`aiida.core.Sites`.
 
         :param values: list of sites, each as [symbol, name, (3,) shape list of positions]
         """
+        self.clear_sites()
         for simbols, kind_name, position in values:
             self.append_atom(symbols=simbols, name=kind_name, position=position)
 
@@ -63,14 +66,14 @@ class HubbardStructureData(StructureData):
         """Set the full Hubbard information."""
         if not isinstance(hubbard, Hubbard):
             raise ValueError('the input is not of type `Hubbard`')
-        else:
-            serialized = json.dumps(hubbard.json())
-            self.base.repository.put_object_from_bytes(serialized.encode('utf-8'), self._hubbard_filename)
+
+        serialized = json.dumps(hubbard.json())
+        self.base.repository.put_object_from_bytes(serialized.encode('utf-8'), self._hubbard_filename)
 
     @staticmethod
     def from_structure(
         structure: StructureData,
-        hubbard: Hubbard = None,
+        hubbard: Hubbard | None = None,
     ):
         """Return an instance of ``HubbardStructureData`` from a ``StructureData`` node.
 
@@ -91,7 +94,7 @@ class HubbardStructureData(StructureData):
         neighbour_index: int,
         neighbour_manifold: str,
         value: float,
-        translation: List[Union[int, int, int]] = None,
+        translation: tuple[int, int, int] = None,
         hubbard_type: str = 'Ueff',
     ):
         """Append a :meth:`~aiida_quantumespresso.common.hubbard.HubbardParameters``.
@@ -113,8 +116,8 @@ class HubbardStructureData(StructureData):
             _, translation = sites[atom_index].distance_and_image(sites[neighbour_index])
             translation = np.array(translation, dtype=np.int64).tolist()
 
-        hp_list = [atom_index, atom_manifold, neighbour_index, neighbour_manifold, value, translation, hubbard_type]
-        parameters = HubbardParameters.from_list(hp_list)
+        hp_tuple = (atom_index, atom_manifold, neighbour_index, neighbour_manifold, value, translation, hubbard_type)
+        parameters = HubbardParameters.from_tuple(hp_tuple)
         hubbard = self.hubbard
 
         if parameters not in hubbard.parameters:

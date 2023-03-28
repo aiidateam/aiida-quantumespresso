@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Utility class for handling the :py:meth:`data.hubbard_structure.HubbardStructureData`."""
+"""Utility class for handling the :class:`data.hubbard_structure.HubbardStructureData`."""
+from itertools import product
 from math import floor
 from typing import List, Union
 
@@ -9,16 +10,10 @@ from pydantic import FilePath  # pylint: disable=no-name-in-module
 from aiida_quantumespresso.common.hubbard import Hubbard
 from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
 
-qe_translations = [[0, 0, 0], [-1, -1, -1], [-1, -1, 0], [-1, -1, 1], [-1, 0, -1], [-1, 0, 0], [-1, 0, 1], [-1, 1, -1],
-                   [-1, 1, 0], [-1, 1, 1], [0, -1, -1], [0, -1, 0], [0, -1, 1], [0, 0, -1], [0, 0, 1], [0, 1, -1],
-                   [0, 1, 0], [0, 1, 1], [1, -1, -1], [1, -1, 0], [1, -1, 1], [1, 0, -1], [1, 0, 0], [1, 0, 1],
-                   [1, 1, -1], [1, 1, 0], [1, 1, 1]]
-# They can be generated with the following snippet:
-#     from itertools import product
-#     qe_translations = list(list(item) for item in product((-1, 0, 1), repeat=3))
-#     first = qe_translations.pop(13)
-#     qe_translations.insert(0, first)
-#     return qe_translations
+QE_TRANSLATIONS = list(list(item) for item in product((-1, 0, 1), repeat=3))
+first = QE_TRANSLATIONS.pop(13)
+QE_TRANSLATIONS.insert(0, first)
+QE_TRANSLATIONS = tuple(tuple(item) for item in QE_TRANSLATIONS)
 
 
 class HubbardUtils:
@@ -87,10 +82,6 @@ class HubbardUtils:
 
         return ' '.join(lines)
 
-    def print_hubbard_card(self):
-        """Print the `HUBBARD` card."""
-        print(self.get_hubbard_card())
-
     def parse_hubbard_dat(self, filepath: FilePath):
         """Parse the `HUBBARD.dat` of QuantumESPRESSO file associated to the current structure.
 
@@ -104,8 +95,8 @@ class HubbardUtils:
         natoms = len(self.hubbard_structure.sites)
         hubbard_data = []
 
-        with open(filepath, encoding='utf-8') as file:
-            lines = file.readlines()
+        with open(filepath, encoding='utf-8') as handle:
+            lines = handle.readlines()
             for line in lines:
                 if line.strip().split()[0] != '#':
                     hubbard_data.append(list(line.strip().split()))
@@ -123,7 +114,7 @@ class HubbardUtils:
                 manifold = data[1].split('-')
                 index = int(self.hubbard_structure._get_one_kind_index(manifold.pop(0))[0])  # pylint: disable=protected-access
                 manifold = '-'.join(manifold)
-                args = (index, manifold, index, manifold, float(data[2]), [0, 0, 0], 'U')
+                args = (index, manifold, index, manifold, float(data[2]), (0, 0, 0), 'U')
             else:
                 manifolds = []
                 for i in [1, 2]:
@@ -135,7 +126,7 @@ class HubbardUtils:
                 index_i, _ = get_index_and_translation(int(data[3]) - 1, natoms)
                 index_j, tra = get_index_and_translation(int(data[4]) - 1, natoms)
 
-                args = (index_i, manifolds[0], index_j, manifolds[1], float(data[5]), tra, data[0])
+                args = (index_i, manifolds[0], index_j, manifolds[1], float(data[5]), tuple(tra), data[0])
 
             self.hubbard_structure.append_hubbard_parameter(*args)
 
@@ -176,6 +167,8 @@ class HubbardUtils:
 
         .. note:: overrides current ``HubbardStructureData``
         """
+        from copy import deepcopy
+
         structure = self.hubbard_structure  # current
         reordered = structure.clone()  # to be set at the end
         reordered.clear_kinds()
@@ -185,7 +178,7 @@ class HubbardUtils:
 
         sites = structure.sites
         indices = get_hubbard_indices(hubbard=hubbard)
-        hubbard_kinds = list(set([sites[index].kind_name for index in indices]))  # pylint: disable=consider-using-set-comprehension
+        hubbard_kinds = list(set(sites[index].kind_name for index in indices))
         hubbard_kinds.sort(reverse=False)
 
         ordered_sites = []
@@ -221,7 +214,7 @@ class HubbardUtils:
         site_map = [site.get_raw() for site in reordered.sites]
 
         for parameter in parameters:
-            new_parameter = parameter.copy()
+            new_parameter = list(deepcopy(parameter))
             new_parameter[0] = site_map.index(index_map[parameter[0]])  # atom index
             new_parameter[2] = site_map.index(index_map[parameter[2]])  # neighbour index
             reordered_parameters.append(new_parameter)
@@ -315,7 +308,7 @@ def get_supercell_atomic_index(index: int, num_sites: int, translation: List[Uni
 
     :returns: atomic index in supercell standardized with the QuantumESPRESSO loop
     """
-    return index + qe_translations.index(translation) * num_sites
+    return index + QE_TRANSLATIONS.index(translation) * num_sites
 
 
 def get_index_and_translation(index: int, num_sites: int) -> Union[int, List[Union[int, int, int]]]:
@@ -326,7 +319,7 @@ def get_index_and_translation(index: int, num_sites: int) -> Union[int, List[Uni
     :returns: tuple (index, (3,) shape list of ints)
     """
     number = floor(index / num_sites)  # associated supercell number
-    return (index - num_sites * number, qe_translations[number])
+    return (index - num_sites * number, QE_TRANSLATIONS[number])
 
 
 def get_hubbard_indices(hubbard: Hubbard) -> List[int]:
