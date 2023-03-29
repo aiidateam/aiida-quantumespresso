@@ -1,0 +1,19 @@
+kpoints:
+  array|kpoints:
+  - 216
+  - 3
+  array|weights:
+  - 216
+kpoints_mesh:
+  mesh:
+  - 6
+  - 6
+  - 6
+  offset:
+  - 0.0
+  - 0.0
+  - 0.0
+output_parameters:
+  code_version: v.6.8
+  wall_time: 0.53s
+  wall_time_seconds: 0.53
