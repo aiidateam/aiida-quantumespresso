@@ -22,7 +22,6 @@ class RelaxType(enum.Enum):
     POSITIONS_VOLUME = 'positions_volume'  # Same as `VOLUME` but atomic positions are relaxed as well
     POSITIONS_SHAPE = 'positions_shape'  # Same as `SHAPE`  but atomic positions are relaxed as well
     POSITIONS_CELL = 'positions_cell'  # Same as `CELL`  but atomic positions are relaxed as well
-    POSITIONS_2D = 'positions_2D'
 
 
 class SpinType(enum.Enum):
