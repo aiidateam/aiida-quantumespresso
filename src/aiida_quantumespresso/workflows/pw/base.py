@@ -209,12 +209,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             parameters['SYSTEM']['starting_magnetization'] = starting_magnetization
             parameters['SYSTEM']['nspin'] = 2
         
-        if spin_type is SpinType.SPIN_ORBIT:
-            parameters['SYSTEM']['noncolin'] = True
-            parameters['SYSTEM']['lspinorb'] = True
-
-
-
         # If overrides are provided, they are considered absolute
         if overrides:
             parameter_overrides = overrides.get('pw', {}).get('parameters', {})
