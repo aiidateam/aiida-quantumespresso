@@ -41,6 +41,7 @@ class RestartType(enum.Enum):
     FROM_CHARGE_DENSITY = 'from_charge_density'
     FROM_WAVE_FUNCTIONS = 'from_wave_functions'
 
+
 class PeriodicityType(enum.Enum):
     """Enumeration to indicate the dimensionality type of a system."""
 

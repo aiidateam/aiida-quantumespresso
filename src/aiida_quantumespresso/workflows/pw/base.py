@@ -7,7 +7,7 @@ from aiida.engine import BaseRestartWorkChain, ExitCode, ProcessHandlerReport, T
 from aiida.plugins import CalculationFactory, GroupFactory
 
 from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import create_kpoints_from_distance
-from aiida_quantumespresso.common.types import ElectronicType, RestartType, SpinType, PeriodicityType
+from aiida_quantumespresso.common.types import ElectronicType, PeriodicityType, RestartType, SpinType
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs, update_mapping
 from aiida_quantumespresso.utils.resources import (
@@ -167,7 +167,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         if initial_magnetic_moments is not None and spin_type is not SpinType.COLLINEAR:
             raise ValueError(f'`initial_magnetic_moments` is specified but spin type `{spin_type}` is incompatible.')
-        
+
         inputs = cls.get_protocol_inputs(protocol, overrides)
 
         meta_parameters = inputs.pop('meta_parameters')
@@ -208,7 +208,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             starting_magnetization = get_starting_magnetization(structure, pseudo_family, initial_magnetic_moments)
             parameters['SYSTEM']['starting_magnetization'] = starting_magnetization
             parameters['SYSTEM']['nspin'] = 2
-        
+
         # If overrides are provided, they are considered absolute
         if overrides:
             parameter_overrides = overrides.get('pw', {}).get('parameters', {})
@@ -240,9 +240,8 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
         builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
         # pylint: enable=no-member
-        
+
         builder.periodicity = orm.Str(periodicity.value)
-        
 
         return builder
 
@@ -290,7 +289,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 'structure': self.inputs.pw.structure,
                 'distance': self.inputs.kpoints_distance,
                 'force_parity': self.inputs.get('kpoints_force_parity', orm.Bool(False)),
-                'periodicity': self.inputs.periodicity, 
+                'periodicity': self.inputs.periodicity,
                 'metadata': {
                     'call_link_label': 'create_kpoints_from_distance'
                 }

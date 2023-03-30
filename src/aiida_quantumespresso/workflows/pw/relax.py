@@ -6,7 +6,7 @@ from aiida.common.lang import type_check
 from aiida.engine import ToContext, WorkChain, append_, if_, while_
 from aiida.plugins import CalculationFactory, WorkflowFactory
 
-from aiida_quantumespresso.common.types import RelaxType, PeriodicityType
+from aiida_quantumespresso.common.types import PeriodicityType, RelaxType
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 
 from ..protocols.utils import ProtocolMixin
@@ -85,7 +85,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         protocol=None,
         overrides=None,
         relax_type=RelaxType.POSITIONS_CELL,
-        periodicity = PeriodicityType.XYZ,
+        periodicity=PeriodicityType.XYZ,
         options=None,
         **kwargs
     ):
