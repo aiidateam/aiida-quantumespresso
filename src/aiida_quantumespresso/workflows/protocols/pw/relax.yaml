@@ -3,6 +3,7 @@ default_inputs:
     max_meta_convergence_iterations: 5
     meta_convergence: True
     volume_convergence: 0.02
+    periodicity: xyz
     base:
         pw:
             parameters:

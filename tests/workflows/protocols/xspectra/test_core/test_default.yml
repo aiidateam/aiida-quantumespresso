@@ -19,6 +19,7 @@ get_powder_spectrum: false
 scf:
   kpoints_distance: 0.15
   kpoints_force_parity: false
+  periodicity: xyz
   pw:
     code: test.quantumespresso.pw@localhost
     metadata:

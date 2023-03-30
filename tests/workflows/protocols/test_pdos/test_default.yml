@@ -13,6 +13,7 @@ dos:
 nscf:
   kpoints_distance: 0.1
   kpoints_force_parity: false
+  periodicity: xyz
   pw:
     code: test.quantumespresso.pw@localhost
     metadata:
@@ -54,6 +55,7 @@ projwfc:
 scf:
   kpoints_distance: 0.15
   kpoints_force_parity: false
+  periodicity: xyz
   pw:
     code: test.quantumespresso.pw@localhost
     metadata:

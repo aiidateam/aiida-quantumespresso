@@ -2,6 +2,7 @@ default_inputs:
     clean_workdir: True
     kpoints_distance: 0.15
     kpoints_force_parity: False
+    periodicity: xyz
     xspectra:
         parameters:
             INPUT_XSPECTRA:
