@@ -5,7 +5,7 @@ default_inputs:
     meta_parameters:
         conv_thr_per_atom: 0.2e-9
         etot_conv_thr_per_atom: 1.e-5
-    pseudo_family: 'SSSP/1.1/PBE/efficiency'
+    pseudo_family: 'SSSP/1.2/PBEsol/efficiency'
     pw:
         metadata:
             options:
@@ -37,7 +37,7 @@ protocols:
         meta_parameters:
             conv_thr_per_atom: 0.1e-9
             etot_conv_thr_per_atom: 0.5e-5
-        pseudo_family: 'SSSP/1.1/PBE/precision'
+        pseudo_family: 'SSSP/1.2/PBEsol/precision'
         pw:
             parameters:
                 CONTROL:
