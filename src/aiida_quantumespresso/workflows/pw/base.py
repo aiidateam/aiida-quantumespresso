@@ -141,6 +141,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         :param overrides: optional dictionary of inputs to override the defaults of the protocol.
         :param electronic_type: indicate the electronic character of the system through ``ElectronicType`` instance.
         :param spin_type: indicate the spin polarization type to use through a ``SpinType`` instance.
+        :param periodicity: indicate the periodicity of the system through a ``PeriodicityType`` instance.
         :param initial_magnetic_moments: optional dictionary that maps the initial magnetic moment of each kind to a
             desired value for a spin polarized calculation. Note that in case the ``starting_magnetization`` is also
             provided in the ``overrides``, this takes precedence over the values provided here. In case neither is
