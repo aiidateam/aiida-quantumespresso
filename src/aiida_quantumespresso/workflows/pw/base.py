@@ -58,8 +58,8 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             help='Optional input when constructing the k-points based on a desired `kpoints_distance`. Setting this to '
                  '`True` will force the k-point mesh to have an even number of points along each lattice vector except '
                  'for any non-periodic directions.')
-        spec.input('periodicity', valid_type=orm.Str, required=False, default=orm.Str('xyz'), help='Periodicity'
-                'for Relax and Kpoint mesh. Options x, xy, and xyz')
+        spec.input('periodicity', valid_type=orm.Str, required=False, default=orm.Str('xyz'),
+            help='Periodicity for Relax and Kpoint mesh. Options x, xy, and xyz')
         spec.input('automatic_parallelization', valid_type=orm.Dict, required=False,
             help='When defined, the work chain will first launch an initialization calculation to determine the '
                  'dimensions of the problem, and based on this it will try to set optimal parallelization flags.')
