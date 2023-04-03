@@ -335,7 +335,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         """
 
         inputs = cls.get_protocol_inputs(protocol, overrides)
-        pw_inputs = PwBaseWorkChain.get_protocol_inputs(protocol=protocol)
+        pw_inputs = PwBaseWorkChain.get_protocol_inputs(protocol=protocol, overrides=inputs.get('scf', {}))
         pw_params = pw_inputs['pw']['parameters']
         kinds_present = sorted([kind.name for kind in structure.kinds])
         # Get the default inputs from the PwBaseWorkChain and override them with those
