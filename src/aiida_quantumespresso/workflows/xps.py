@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Workchain to compute the X-ray absorption spectrum for a given structure.
+"""Workchain to compute the X-ray photoelectron spectroscopy (XPS) for a given structure.
 
 Uses QuantumESPRESSO pw.x.
 """
@@ -26,7 +26,21 @@ XyData = DataFactory('array.xy')
 
 @calcfunction
 def get_spectra_by_element(elements_list, equivalent_sites_data, voight_gamma, voight_sigma, **kwargs):  # pylint: disable=too-many-statements
-    """Generate a final spectrum for each element from the powder spectra of the ``CoreWorkChain`` sub-processes."""
+    """Generate the XPS spectra for each element.
+
+    Calculate the core level shift and binding energy for each element.
+    Generate the final spectra using the Voigt profile.
+
+    :param elements_list: a List object defining the list of elements to consider
+            when producing spectrum.
+    :param equivalent_sites_data: an Dict object containing symmetry data.
+    :param voight_gamma: a Float node for the gamma parameter of the voigt profile.
+    :param voight_sigma: a Float node for the sigma parameter of the voigt profile.
+    :param structure: the StructureData object to be analysed
+    :returns: Dict objects for all generated spectra and associated binding energy
+            and core level shift.
+
+    """
     from scipy.special import voigt_profile  # pylint: disable=no-name-in-module
 
     ground_state_node = kwargs.pop('ground_state', None)
@@ -55,16 +69,8 @@ def get_spectra_by_element(elements_list, equivalent_sites_data, voight_gamma, v
         spectra_list = []
         for key in data_dict[element]:
             site_multiplicity = data_dict[element][key]['multiplicity']
-            spectra_list.append(
-                (site_multiplicity, float(data_dict[element][key]['total_energy']), key)
-            )  ############### Sorting by Total energy instead, replacing the weighted spectrumm by site multiplicity
-            #spectra_list.append((weighted_spectrum, float(data_dict[element][key]['fermi_energy'])))
-
-        # Sort according to Fermi level, then correct to align all spectra to the
-        # highest value. Note that this is needed because XSpectra automatically aligns the
-        # final spectrum such that the system's Fermi level is at 0 eV.
+            spectra_list.append((site_multiplicity, float(data_dict[element][key]['total_energy']), key))
         spectra_list.sort(key=lambda entry: entry[1])
-
         lowest_total_energy = spectra_list[0][1]
         core_level_shift = [(entry[0], entry[1] - lowest_total_energy, entry[2]) for entry in spectra_list]
         core_level_shifts[element] = core_level_shift
@@ -76,15 +82,13 @@ def get_spectra_by_element(elements_list, equivalent_sites_data, voight_gamma, v
             binding_energies[element] = binding_energy
             result[f'{element}_be'] = orm.Dict(dict={entry[2]: entry[1] for entry in binding_energy})
 
-
-################################ Modifications ###########################
-
     fwhm_voight = gamma / 2 + np.sqrt(gamma**2 / 4 + sigma**2)
 
     def spectra_broadening(points, label='cls_spectra'):
+        """Broadening base on the binding energy."""
         result_spectra = {}
         for element in elements:
-            final_spectra_y_arrays = []  ##### Initalize
+            final_spectra_y_arrays = []
             final_spectra_y_labels = []
             final_spectra_y_units = []
 
@@ -93,13 +97,15 @@ def get_spectra_by_element(elements_list, equivalent_sites_data, voight_gamma, v
             final_spectra = orm.XyData()
             max_core_level_shift = points[element][-1][1]
             min_core_level_shift = points[element][0][1]
+            # Energy range for the Broadening function
             x_energy_range = np.linspace(
                 min_core_level_shift - fwhm_voight - 1.5, max_core_level_shift + fwhm_voight + 1.5, 500
-            )  ############# Energy range for the Broadening function
+            )
 
             for atoms, index in zip(points[element], range(len(points[element]))):
-                intensity = atoms[0]  ###### Weight for the spectra of every atom
-                relative_peak_position = atoms[1]  ###### Peak position
+                # Weight for the spectra of every atom
+                intensity = atoms[0]
+                relative_peak_position = atoms[1]
                 final_spectra_y_labels.append(f'{element}{index}_xps')
                 final_spectra_y_units.append('sigma')
                 final_spectra_y_arrays.append(
@@ -113,19 +119,15 @@ def get_spectra_by_element(elements_list, equivalent_sites_data, voight_gamma, v
 
             final_spectra_x_label = 'energy'
             final_spectra_x_units = 'eV'
-            final_spectra_x_array = x_energy_range  ############# Energy range for the Bradening function
-            #        final_spectra_x_array = corrected_spectrum[:,0]
+            final_spectra_x_array = x_energy_range
             final_spectra.set_x(final_spectra_x_array, final_spectra_x_label, final_spectra_x_units)
             final_spectra.set_y(final_spectra_y_arrays, final_spectra_y_labels, final_spectra_y_units)
             result_spectra[f'{element}_{label}'] = final_spectra
         return result_spectra
 
-    # print(core_level_shifts)
-    # print(binding_energies)
     result.update(spectra_broadening(core_level_shifts))
     if ground_state_node is not None:
         result.update(spectra_broadening(binding_energies, label='be_spectra'))
-    # print(result)
     return result
 
 
@@ -167,31 +169,19 @@ def validate_inputs(inputs, _):
 
 
 class XpsWorkChain(ProtocolMixin, WorkChain):
-    """Workchain to compute all X-ray photoelectron spectra for a given structure using Quantum ESPRESSO.
+    """Workchain to compute X-ray photoelectron spectra (XPS) for a given structure.
 
-    The WorkChain follows the process required to compute all the K-edge XAS spectra for each
-    element in a given structure. The WorkChain itself firstly calls the PwRelaxWorkChain to
-    relax the input structure, then determines the input settings for each XAS
-    calculation automatically using ``get_xspectra_structures()``:
-        - Firstly the input structure is converted to its conventional standard cell using
-          ``spglib`` and detects the space group number for the conventional cell.
-        - Symmetry analysis of the standardized structure using ``spglib`` is then used to
-          determine the number of non-equivalent atomic sites in the structure for each
-          element considered for analysis.
-
-    Using the symmetry data returned from ``get_xspectra_structures``, input structures for
-    the XspectraCoreWorkChain are generated from the standardized structure by converting each
-    to a supercell with cell dimensions of at least 8.0 angstrom in each periodic dimension -
-    required in order to sufficiently reduce the unphysical interaction of the core-hole with
-    neighbouring images. The size of the minimum size requirement can be overriden by the
-    user if required. The WorkChain then uses the space group number to set the list of
-    polarisation vectors for the ``XspectraCoreWorkChain`` to consider for all subsequent
-    calculations.
-
+    The WorkChain itself firstly calls the PwRelaxWorkChain to relax the input structure if
+    required. Then determines the input settings for each XPS calculation automatically using
+    ``get_xspectra_structures()``. The input structures are generated from the standardized
+    structure by converting each to a supercell with cell dimensions of at least 8.0 angstrom
+    in each periodic dimension in order to sufficiently reduce the unphysical interaction
+    of the core-hole with neighbouring images. The size of the minimum size requirement can be
+    overriden by the user if required. Then the standard Delta-Self-Consistent-Field (ΔSCF)
+    method is used to get the XPS binding energy. Finally, the XPS spectrum is calculated
+    using the Voigt profile.
 
     """
-
-    # pylint: disable=too-many-public-methods, too-many-statements
 
     @classmethod
     def define(cls, spec):
@@ -282,7 +272,8 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         )
         spec.input(
             'structure_preparation_settings',
-            valid_type=orm.Dict,
+            valid_type=(orm.Dict, orm.Float, orm.Int, orm.Bool, orm.Str),
+            dynamic=True,
             required=False,
             help=(
                 'Optional settings dictionary for the ``get_xspectra_structures()`` method.'
@@ -505,20 +496,14 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
-        :param pw_code: the ``Code`` instance configured for the ``quantumespresso.pw``
-            plugin.
-        :param xs_code: the ``Code`` instance configured for the
-            ``quantumespresso.xspectra`` plugin.
-        :param upf2plotcore_code: the AiiDA-Shell ``Code`` instance configured for the
-                                  upf2plotcore shell script.
+        :param code: the ``Code`` instance configured for the ``quantumespresso.pw`` plugin.
         :param structure: the ``StructureData`` instance to use.
         :param pseudos: the core-hole pseudopotential pairs (ground-state and
                         excited-state) for the elements to be calculated. These must
-                        use the mapping of {"element" : {"core_hole" : <upf>,
-                                                         "gipaw" : <upf>}}
+                        use the mapping of {"element" : {"core_hole" : <upf>, "gipaw" : <upf>}}
         :param protocol: the protocol to use. If not specified, the default will be used.
         :param overrides: optional dictionary of inputs to override the defaults of the
-                          XspectraWorkChain itself.
+                          XpsWorkChain itself.
         :param kwargs: additional keyword arguments that will be passed to the
             ``get_builder_from_protocol`` of all the sub processes that are called by this
             workchain.
@@ -632,7 +617,7 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         self.out('output_parameters_relax', relax_params)
 
     def prepare_structures(self):
-        """Run the relaxed structure though ``get_xspectra_structures()`` to get a marked structure for each site.
+        """Get a marked structure for each site.
 
         Analyses the given structure using ``get_xspectra_structures()`` to obtain both the
         conventional standard form of the crystal structure and the list of symmetrically
@@ -642,9 +627,9 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
 
         If provided, this step will use inputs from ``inputs.structure_preparation_settings``
         and apply them to the CalcFunction call. The accepted inputs (format, default) are:
-            - supercell_min_parameter (float, 8.0)
-            - standardize_structure (bool, True)
-            - is_molecule_input (bool, False)
+        - supercell_min_parameter (float, 8.0)
+        - standardize_structure (bool, True)
+        - is_molecule_input (bool, False)
 
         Input settings for the spglib analysis within ``get_xspectra_structures`` can be
         provided via ``inputs.spglib_settings`` in the form of a Dict node and must be
@@ -652,8 +637,6 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         ``get_symmetry_dataset()`` method.
         """
         from aiida_quantumespresso.workflows.functions.get_xspectra_structures import get_xspectra_structures
-
-        # from get_xspectra_structures import get_xspectra_structures
 
         elements_list = orm.List(self.ctx.elements_list)
         inputs = {
@@ -665,16 +648,8 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         } # populate this further once the schema for WorkChain options is figured out
         if 'structure_preparation_settings' in self.inputs:
             optional_cell_prep = self.inputs.structure_preparation_settings
-            for key, value in optional_cell_prep.items():
-                if isinstance(value, float):
-                    node_value = orm.Float(value)
-                if isinstance(value, int):
-                    node_value = orm.Int(value)
-                if isinstance(value, bool):
-                    node_value = orm.Bool(value)
-                if isinstance(value, str):
-                    node_value = orm.Str(value)
-                inputs[key] = node_value
+            for key, node in optional_cell_prep.items():
+                inputs[key] = node
         if 'spglib_settings' in self.inputs:
             spglib_settings = self.inputs.spglib_settings
             inputs['spglib_settings'] = spglib_settings
@@ -738,11 +713,7 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         self.out('output_parameters_scf', scf_params)
 
     def run_all_scf(self):
-        """Call all ``PwBaseWorkChain``s required to compute total energies for each absorbing atom site."""
-
-        # from .protocols.core_hole_treatments import CoreHoleTreatments
-
-        # from protocols.core_hole_treatments import CoreHoleTreatments
+        """Call all PwBaseWorkChain's required to compute total energies for each absorbing atom site."""
 
         # scf for supercell
         futures = {}
@@ -828,10 +799,10 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
             kwargs['correction_energies'] = self.inputs.correction_energies
         kwargs['metadata'] = {'call_link_label' : 'compile_final_spectra'}
 
-        equivalent_sites_data = orm.Dict(dict=self.ctx.equivalent_sites_data)  # fixed
+        equivalent_sites_data = orm.Dict(dict=self.ctx.equivalent_sites_data)
         elements_list = orm.List(list=self.ctx.elements_list)
-        voight_gamma = self.inputs.voight_gamma                               #fixed
-        voight_sigma = self.inputs.voight_sigma                               #fixed
+        voight_gamma = self.inputs.voight_gamma
+        voight_sigma = self.inputs.voight_sigma
 
         result = get_spectra_by_element(
             elements_list,
