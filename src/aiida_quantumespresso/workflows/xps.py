@@ -135,6 +135,7 @@ def validate_inputs(inputs, _):
     """Validate the inputs before launching the WorkChain."""
     structure = inputs['structure']
     elements_present = [kind.name for kind in structure.kinds]
+    absorbing_elements_list = sorted(inputs['elements_list'])
     abs_atom_marker = inputs['abs_atom_marker'].value
     if abs_atom_marker in elements_present:
         raise ValidationError(
@@ -142,30 +143,13 @@ def validate_inputs(inputs, _):
             f'input structure ({elements_present}).'
         )
 
-    if 'spglib_settings' in inputs:
-        spglib_settings = inputs['spglib_settings'].get_dict()
-        allowed_keys = ['symprec', 'angle_tolerance']
-        invalid_keys = []
-        for key in spglib_settings:
-            if key not in allowed_keys:
-                invalid_keys.append(key)
-        if len(invalid_keys) > 0:
+    if inputs['calc_binding_energy'].value:
+        ce_list = sorted(inputs['correction_energies'].get_dict().keys())
+        if ce_list != absorbing_elements_list:
             raise ValidationError(
-                f'The dictionary provided for ``spglib_settings`` contained invalid keys ({invalid_keys}).'
+                f'The ``correction_energies`` provided ({ce_list}) does not match the list of'
+                f' absorbing elements ({absorbing_elements_list})'
             )
-        if 'symprec' in spglib_settings:
-            value = spglib_settings['symprec']
-            if not isinstance(value, float):
-                raise ValidationError(
-                    f'The value given for ``symprec`` was of the wrong type (got {type(value)}, expected {float}.'
-                )
-        if 'angle_tolerance' in spglib_settings:
-            value = spglib_settings['angle_tolerance']
-            if not isinstance(value, float):
-                raise ValidationError(
-                    f'The value given for ``angle_tolerance`` was of the wrong type (got {type(value)}, '
-                    f'expected {float}.'
-                )
 
 
 class XpsWorkChain(ProtocolMixin, WorkChain):
@@ -204,11 +188,9 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         spec.expose_inputs(
             PwBaseWorkChain,
             namespace='ch_scf',
-            exclude=(
-                'kpoints', 'structure'
-            ),
+            exclude=('kpoints', 'pw.structure'),
             namespace_options={
-                'help': ('Input parameters for the basic xspectra workflow (core-hole SCF + XAS.'),
+                'help': ('Input parameters for the basic xps workflow (core-hole SCF).'),
                 'validator': None
             }
         )
@@ -353,13 +335,13 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
             'standardized_structure',
             valid_type=orm.StructureData,
             required=False,
-            help='The standardized crystal structure used to generate structures for XSpectra sub-processes.',
+            help='The standardized crystal structure used to generate structures for XPS sub-processes.',
         )
         spec.output(
             'supercell_structure',
             valid_type=orm.StructureData,
             help=('The supercell of ``outputs.standardized_structure`` used to generate structures for'
-            ' XSpectra sub-processes.')
+            ' XPS sub-processes.')
         )
         spec.output(
             'symmetry_analysis_data',
