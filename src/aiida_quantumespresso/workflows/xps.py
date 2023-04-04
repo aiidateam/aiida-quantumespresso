@@ -270,7 +270,7 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
                 'Will be used in all structures generated in ``get_xspectra_structures`` step.'
             ),
         )
-        spec.input(
+        spec.input_namespace(
             'structure_preparation_settings',
             valid_type=(orm.Dict, orm.Float, orm.Int, orm.Bool, orm.Str),
             dynamic=True,
@@ -571,7 +571,7 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
             builder.core_hole_treatments = orm.Dict(dict=core_hole_treatments)
         # for get_xspectra_structures
         if structure_preparation_settings:
-            builder.structure_preparation_settings = orm.Dict(dict=structure_preparation_settings)
+            builder.structure_preparation_settings = structure_preparation_settings
         # pylint: enable=no-member
         return builder
 
