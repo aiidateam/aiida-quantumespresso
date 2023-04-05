@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=no-member,redefined-outer-name
 """Tests for the `PhBaseWorkChain` class."""
+from aiida import orm
 from aiida.common import AttributeDict, LinkType
 from aiida.engine import ProcessHandlerReport
-from aiida.orm import Dict, FolderData, RemoteData
 import pytest
 
 from aiida_quantumespresso.calculations.ph import PhCalculation
@@ -17,15 +17,15 @@ def generate_ph_calc_job_node(generate_calc_job_node, fixture_localhost):
     def _generate_ph_calc_job_node():
         node = generate_calc_job_node()
 
-        remote_folder = RemoteData(computer=fixture_localhost, remote_path='/tmp')
+        remote_folder = orm.RemoteData(computer=fixture_localhost, remote_path='/tmp')
         remote_folder.base.links.add_incoming(node, link_type=LinkType.CREATE, link_label='remote_folder')
         remote_folder.store()
 
-        retrieved = FolderData()
+        retrieved = orm.FolderData()
         retrieved.base.links.add_incoming(node, link_type=LinkType.CREATE, link_label='retrieved')
         retrieved.store()
 
-        output_parameters = Dict()
+        output_parameters = orm.Dict()
         output_parameters.base.links.add_incoming(node, link_type=LinkType.CREATE, link_label='output_parameters')
         output_parameters.store()
 
@@ -173,3 +173,54 @@ def test_results(generate_workchain_ph, generate_ph_calc_job_node):
 
     assert sorted(process.node.base.links.get_outgoing().all_link_labels()
                   ) == ['output_parameters', 'remote_folder', 'retrieved']
+
+
+@pytest.mark.parametrize('name', ('merge_outputs', 'merge_outputs_singleq'))
+def test_merge_outputs(
+    generate_calc_job_node,
+    fixture_localhost,
+    generate_parser,
+    generate_workchain_ph,
+    data_regression,
+    name,
+):
+    """Test the ``create_merged_outputs`` step."""
+
+    entry_point_calc_job = 'quantumespresso.ph'
+    parser = generate_parser('quantumespresso.ph')
+
+    node_1 = generate_calc_job_node(
+        entry_point_name=entry_point_calc_job, computer=fixture_localhost, test_name=f'{name}_1'
+    )
+    results_1, calcjob_1 = parser.parse_from_node(node_1, store_provenance=False)
+
+    results_1['output_parameters'].base.links.add_incoming(
+        node_1, link_type=LinkType.CREATE, link_label='output_parameters'
+    )
+    results_1['output_parameters'].store()
+
+    assert calcjob_1.is_finished, calcjob_1.exception
+    assert calcjob_1.exit_status == PhCalculation.exit_codes.ERROR_OUT_OF_WALLTIME.status
+
+    node_2 = generate_calc_job_node(
+        entry_point_name=entry_point_calc_job, computer=fixture_localhost, test_name=f'{name}_2'
+    )
+    results_2, calcjob_2 = parser.parse_from_node(node_2, store_provenance=False)
+
+    results_2['output_parameters'].base.links.add_incoming(
+        node_2, link_type=LinkType.CREATE, link_label='output_parameters'
+    )
+    results_2['output_parameters'].store()
+
+    assert calcjob_2.is_finished, calcjob_2.exception
+    assert calcjob_2.exit_status == 0
+
+    ph_base = generate_workchain_ph()
+    ph_base.ctx.children = [node_1, node_2]
+    ph_base.ctx.inputs = AttributeDict()
+    ph_base.ctx.inputs.parameters = {'INPUTPH': {}}
+
+    ph_base.create_merged_output()
+    outputs = ph_base.get_outputs(node_2)
+
+    data_regression.check(outputs['output_parameters'].get_dict())

@@ -19,6 +19,14 @@ dynamical_matrix_1:
   - 585.586945
   - 585.586945
   frequencies_units: cm-1
+  mode_symmetry:
+  - G_4-
+  - G_4-
+  - G_4-
+  - R
+  - R
+  - R
+  point_group: O_h (m-3m)
   q_point:
   - 0.0
   - 0.0
@@ -47,5 +55,4 @@ number_of_atoms: 2
 number_of_irr_representations_for_each_q:
 - 2
 number_of_qpoints: 1
-wall_time: '        15.25s '
 wall_time_seconds: 15.25
