@@ -117,6 +117,7 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 'quantumespresso.matdyn.base' = 'aiida_quantumespresso.workflows.matdyn.base:MatdynBaseWorkChain'
 'quantumespresso.pdos' = 'aiida_quantumespresso.workflows.pdos:PdosWorkChain'
 'quantumespresso.xspectra.base' = 'aiida_quantumespresso.workflows.xspectra.base:XspectraBaseWorkChain'
+'quantumespresso.xps' = 'aiida_quantumespresso.workflows.xps:XpsWorkChain'
 'quantumespresso.xspectra.core' = 'aiida_quantumespresso.workflows.xspectra.core:XspectraCoreWorkChain'
 'quantumespresso.xspectra.crystal' = 'aiida_quantumespresso.workflows.xspectra.crystal:XspectraCrystalWorkChain'
 
