@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """Utility class and functions for HubbardStructureData."""
 # pylint: disable=no-name-in-module, invalid-name
-from __future__ import annotations
-
 from typing import List, Literal, Tuple
 
 from pydantic import BaseModel, conint, constr, validator
+
+__all__ = ('HubbardParameters', 'Hubbard')
 
 
 class HubbardParameters(BaseModel):
@@ -126,7 +126,7 @@ class Hubbard(BaseModel):
     formulation: Literal['dudarev', 'liechtenstein'] = 'dudarev'
     """Hubbard formulation used. Allowed values are: 'dudarev', `liechtenstein`."""
 
-    def to_list(self) -> list[Tuple[int, str, int, str, float, Tuple[int, int, int], str]]:
+    def to_list(self) -> List[Tuple[int, str, int, str, float, Tuple[int, int, int], str]]:
         """Return the Hubbard `parameters` as a list of lists.
 
         The parameters have the following order within each list:
@@ -142,7 +142,7 @@ class Hubbard(BaseModel):
 
     @staticmethod
     def from_list(
-        parameters: list[Tuple[int, str, int, str, float, Tuple[int, int, int], str]],
+        parameters: List[Tuple[int, str, int, str, float, Tuple[int, int, int], str]],
         projectors: str = 'ortho-atomic',
         formulation: str = 'dudarev',
     ):

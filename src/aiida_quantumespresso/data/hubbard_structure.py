@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """Data plugin that represents a crystal structure with Hubbard parameters."""
-from __future__ import annotations
-
 import json
-from typing import List
+from typing import List, Tuple, Union
 
 from aiida.orm import StructureData
 import numpy as np
 
 from aiida_quantumespresso.common.hubbard import Hubbard, HubbardParameters
+
+__all__ = ('HubbardStructureData',)
 
 
 class HubbardStructureData(StructureData):
@@ -19,8 +19,8 @@ class HubbardStructureData(StructureData):
     def __init__(
         self,
         cell: List[List[float]],
-        sites: List[tuple[str, str, tuple[float, float, float]]],
-        pbc: tuple[bool, bool, bool] = (True, True, True),
+        sites: List[Tuple[str, str, Tuple[float, float, float]]],
+        pbc: Tuple[bool, bool, bool] = (True, True, True),
         hubbard: Hubbard = None,
         **kwargs,
     ):
@@ -43,7 +43,7 @@ class HubbardStructureData(StructureData):
         return super().sites
 
     @sites.setter
-    def sites(self, values: List[tuple[str, str, tuple[float, float, float]]]):
+    def sites(self, values: List[Tuple[str, str, Tuple[float, float, float]]]):
         """Set the :meth:`aiida.core.Sites`.
 
         :param values: list of sites, each as [symbol, name, (3,) shape list of positions]
@@ -73,7 +73,7 @@ class HubbardStructureData(StructureData):
     @staticmethod
     def from_structure(
         structure: StructureData,
-        hubbard: Hubbard | None = None,
+        hubbard: Union[Hubbard, None] = None,
     ):
         """Return an instance of ``HubbardStructureData`` from a ``StructureData`` node.
 
@@ -94,7 +94,7 @@ class HubbardStructureData(StructureData):
         neighbour_index: int,
         neighbour_manifold: str,
         value: float,
-        translation: tuple[int, int, int] = None,
+        translation: Tuple[int, int, int] = None,
         hubbard_type: str = 'Ueff',
     ):
         """Append a :meth:`~aiida_quantumespresso.common.hubbard.HubbardParameters``.
@@ -167,15 +167,15 @@ class HubbardStructureData(StructureData):
         """
         sites = self.get_pymatgen_structure().sites
 
-        function = self._get_one_kind_index if use_kinds else self._get_symbol_indecis
-        atom_indecis = function(atom_name)
-        neigh_indecis = function(neighbour_name)
+        function = self._get_one_kind_index if use_kinds else self._get_symbol_indices
+        atom_indices = function(atom_name)
+        neigh_indices = function(neighbour_name)
 
-        if atom_indecis is None or neigh_indecis is None:
+        if atom_indices is None or neigh_indices is None:
             raise ValueError('species or kind names not in structure')
 
-        for atom_index in atom_indecis:
-            for neighbour_index in neigh_indecis:
+        for atom_index in atom_indices:
+            for neighbour_index in neigh_indices:
                 _, translation = sites[atom_index].distance_and_image(sites[neighbour_index])
                 translation = np.array(translation, dtype=np.int64).tolist()
                 args = (
@@ -201,13 +201,13 @@ class HubbardStructureData(StructureData):
         :param use_kinds: whether to use kinds for initializing the parameters; when False, it
             initializes all the ``Kinds`` matching the ``atom_name``
         """
-        function = self._get_one_kind_index if use_kinds else self._get_symbol_indecis
-        atom_indecis = function(atom_name)
+        function = self._get_one_kind_index if use_kinds else self._get_symbol_indices
+        atom_indices = function(atom_name)
 
-        if atom_indecis is None:
+        if atom_indices is None:
             raise ValueError('species or kind names not in structure')
 
-        for atom_index in atom_indecis:
+        for atom_index in atom_indices:
             args = (atom_index, atom_manifold, atom_index, atom_manifold, value, [0, 0, 0], hubbard_type)
             self.append_hubbard_parameter(*args)
 
@@ -217,7 +217,7 @@ class HubbardStructureData(StructureData):
             if site.kind_name == kind_name:
                 return [i]
 
-    def _get_symbol_indecis(self, symbol: str) -> List[int]:
+    def _get_symbol_indices(self, symbol: str) -> List[int]:
         """Return one site index for each kind name matching symbol."""
         site_kindnames = self.get_site_kindnames()
         matching_kinds = [kind.name for kind in self.kinds if symbol in kind.symbol]

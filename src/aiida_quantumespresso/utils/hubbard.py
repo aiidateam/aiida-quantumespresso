@@ -1,15 +1,22 @@
 # -*- coding: utf-8 -*-
 """Utility class for handling the :class:`data.hubbard_structure.HubbardStructureData`."""
-from __future__ import annotations
-
+# pylint: disable=no-name-in-module
 from itertools import product
-from typing import List
+import os
+from typing import List, Tuple, Union
 
 from aiida.orm import StructureData
-from pydantic import FilePath  # pylint: disable=no-name-in-module
 
 from aiida_quantumespresso.common.hubbard import Hubbard
 from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
+
+__all__ = (
+    'HubbardUtils',
+    'get_supercell_atomic_index',
+    'get_index_and_translation',
+    'get_hubbard_indices',
+    'is_intersite_hubbard',
+)
 
 QE_TRANSLATIONS = list(list(item) for item in product((-1, 0, 1), repeat=3))
 first = QE_TRANSLATIONS.pop(13)
@@ -83,7 +90,7 @@ class HubbardUtils:
 
         return ' '.join(lines)
 
-    def parse_hubbard_dat(self, filepath: FilePath):
+    def parse_hubbard_dat(self, filepath: Union[str, os.PathLike]):
         """Parse the `HUBBARD.dat` of QuantumESPRESSO file associated to the current structure.
 
         This function is needed for parsing the HUBBARD.dat file generated in a `hp.x` calculation.
@@ -307,7 +314,7 @@ class HubbardUtils:
         return HubbardStructureData.from_structure(structure=supercell, hubbard=new_hubbard)
 
 
-def get_supercell_atomic_index(index: int, num_sites: int, translation: list[tuple[int, int, int]]) -> int:
+def get_supercell_atomic_index(index: int, num_sites: int, translation: List[Tuple[int, int, int]]) -> int:
     """Return the atomic index in 3x3x3 supercell.
 
     :param index: atomic index in unit cell
@@ -319,7 +326,7 @@ def get_supercell_atomic_index(index: int, num_sites: int, translation: list[tup
     return index + QE_TRANSLATIONS.index(translation) * num_sites
 
 
-def get_index_and_translation(index: int, num_sites: int) -> tuple[int, list[tuple[int, int, int]]]:
+def get_index_and_translation(index: int, num_sites: int) -> Tuple[int, List[Tuple[int, int, int]]]:
     """Return the atomic index in unitcell and the associated translation from a 3x3x3 QuantumESPRESSO supercell index.
 
     :param index: atomic index

@@ -144,7 +144,7 @@ def test_get_one_kind_index(generate_hubbard_structure):
 
 
 @pytest.mark.usefixtures('aiida_profile')
-def test_get_symbol_indecis(generate_hubbard_structure):
-    """Test the `_get_symbol_indecis` method."""
+def test_get_symbol_indices(generate_hubbard_structure):
+    """Test the `_get_symbol_indices` method."""
     hubbard_structure = generate_hubbard_structure()
-    assert hubbard_structure._get_symbol_indecis('Si') == [0, 1]
+    assert hubbard_structure._get_symbol_indices('Si') == [0, 1]
