@@ -146,7 +146,7 @@ class HubbardStructureData(StructureData):
         neighbour_name: str,
         neighbour_manifold: str,
         value: float = 1e-8,
-        hubbard_type: str = 'Ueff',
+        hubbard_type: str = 'V',
         use_kinds: bool = True,
     ):
         """Initialize and append intersite Hubbard values between an atom and its neighbour(s).
@@ -160,7 +160,7 @@ class HubbardStructureData(StructureData):
         :param neighbour_index: neighbouring atom name in unitcell
         :param neighbour_manifold: neighbour manifold (e.g. 3d, 3d-2p)
         :param value: value of the Hubbard parameter, in eV
-        :param hubbard_type: hubbard type (U, V, J, ...), defaults to 'Ueff'
+        :param hubbard_type: hubbard type (U, V, J, ...), defaults to 'V'
             (see :meth:`~aiida_quantumespresso.common.hubbard.Hubbard` for full allowed values)
         :param use_kinds: whether to use kinds for initializing the parameters; when False, it
             initializes all the ``Kinds`` matching the ``atom_name``
