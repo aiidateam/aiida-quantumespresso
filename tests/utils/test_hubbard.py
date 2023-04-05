@@ -170,6 +170,20 @@ def test_reorder_atoms(generate_hubbard_structure, parameters, values):
 
 
 @pytest.mark.usefixtures('aiida_profile')
+def test_is_to_reorder(generate_hubbard_structure):
+    """Test the `is_to_reorder` method."""
+    parameters = [[1, '1s', 3, '2p', 0.0, [0, 0, 0], 'U']]
+    hubbard_structure = generate_hubbard_structure(parameters)
+    hubbard_utils = HubbardUtils(hubbard_structure=hubbard_structure)
+    assert hubbard_utils.is_to_reorder()
+
+    parameters = [[0, '1s', 0, '2p', 0.0, [0, 0, 0], 'U']]
+    hubbard_structure = generate_hubbard_structure(parameters)
+    hubbard_utils = HubbardUtils(hubbard_structure=hubbard_structure)
+    assert not hubbard_utils.is_to_reorder()
+
+
+@pytest.mark.usefixtures('aiida_profile')
 def test_reorder_supercell_atoms(generate_hubbard_structure):
     """Test the `reorder_atoms` method with a supercell."""
     from aiida.orm import StructureData

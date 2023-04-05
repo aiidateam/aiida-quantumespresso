@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """Utility class for handling the :class:`data.hubbard_structure.HubbardStructureData`."""
+from __future__ import annotations
+
 from itertools import product
-from math import floor
-from typing import List, Union
+from typing import List
 
 from aiida.orm import StructureData
 from pydantic import FilePath  # pylint: disable=no-name-in-module
@@ -226,6 +227,13 @@ class HubbardUtils:
 
         self._hubbard_structure = reordered
 
+    def is_to_reorder(self) -> bool:
+        """Return whether the atoms should be reordered for an ``hp.x`` calculation."""
+        indices = get_hubbard_indices(self.hubbard_structure.hubbard)
+        indices.sort()
+
+        return indices != list(range(len(indices)))
+
     def get_hubbard_for_supercell(self, supercell: StructureData, thr: float = 1e-3) -> HubbardStructureData:
         """Return the ``HubbbardStructureData`` for a supercell.
 
@@ -299,7 +307,7 @@ class HubbardUtils:
         return HubbardStructureData.from_structure(structure=supercell, hubbard=new_hubbard)
 
 
-def get_supercell_atomic_index(index: int, num_sites: int, translation: List[Union[int, int, int]]) -> int:
+def get_supercell_atomic_index(index: int, num_sites: int, translation: list[tuple[int, int, int]]) -> int:
     """Return the atomic index in 3x3x3 supercell.
 
     :param index: atomic index in unit cell
@@ -311,13 +319,15 @@ def get_supercell_atomic_index(index: int, num_sites: int, translation: List[Uni
     return index + QE_TRANSLATIONS.index(translation) * num_sites
 
 
-def get_index_and_translation(index: int, num_sites: int) -> Union[int, List[Union[int, int, int]]]:
+def get_index_and_translation(index: int, num_sites: int) -> tuple[int, list[tuple[int, int, int]]]:
     """Return the atomic index in unitcell and the associated translation from a 3x3x3 QuantumESPRESSO supercell index.
 
     :param index: atomic index
     :param num_sites: number of sites in structure
     :returns: tuple (index, (3,) shape list of ints)
     """
+    from math import floor
+
     number = floor(index / num_sites)  # associated supercell number
     return (index - num_sites * number, QE_TRANSLATIONS[number])
 
