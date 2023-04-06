@@ -2,20 +2,22 @@
 """Base `CalcJob` for implementations for pw.x and cp.x of Quantum ESPRESSO."""
 import abc
 import copy
-from functools import partial
 import numbers
 import os
 from types import MappingProxyType
 import warnings
 
 from aiida import orm
-from aiida.common import datastructures, exceptions
+from aiida.common import AttributeDict, datastructures, exceptions
 from aiida.common.lang import classproperty
 from aiida.common.warnings import AiidaDeprecationWarning
 from aiida.plugins import DataFactory
+import numpy
 from qe_tools.converters import get_parameters_from_cell
 
+from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+from aiida_quantumespresso.utils.hubbard import HubbardUtils
 
 from .base import CalcJob
 from .helpers import QEInputValidationError
@@ -162,9 +164,31 @@ class BasePwCpInputGenerator(CalcJob):
         if structure_kinds != pseudo_kinds:
             return f'The `pseudos` specified and structure kinds do not match: {pseudo_kinds} vs {structure_kinds}'
 
+        if 'settings' in value:
+            settings = _uppercase_dict(value['settings'].get_dict(), dict_name='settings')
+
+            # Validate the FIXED_COORDS setting
+            fixed_coords = settings.get('FIXED_COORDS', None)
+
+            if fixed_coords is not None:
+
+                fixed_coords = numpy.array(fixed_coords)
+
+                if len(fixed_coords.shape) != 2 or fixed_coords.shape[1] != 3:
+                    return 'The `fixed_coords` setting must be a list of lists with length 3.'
+
+                if fixed_coords.dtype != bool:
+                    return 'All elements in the `fixed_coords` setting lists must be either `True` or `False`.'
+
+                if 'structure' in value:
+                    nsites = len(value['structure'].sites)
+
+                    if len(fixed_coords) != nsites:
+                        return f'Input structure has {nsites} sites, but fixed_coords has length {len(fixed_coords)}'
+
     @classmethod
     def validate_parallelization(cls, value, _):
-        """Validate the ``parallelization`` port."""
+        """Validate the ``parallelization`` input."""
         if value:
             value_dict = value.get_dict()
             unknown_flags = set(value_dict.keys()) - set(cls._ENABLED_PARALLELIZATION_FLAGS)
@@ -501,47 +525,36 @@ class BasePwCpInputGenerator(CalcJob):
         del atomic_species_card_list
 
         # ------------ ATOMIC_POSITIONS -----------
-        # Check on validity of FIXED_COORDS
-        fixed_coords_strings = []
-        fixed_coords = settings.pop('FIXED_COORDS', None)
-        if fixed_coords is None:
-            # No fixed_coords specified: I store a list of empty strings
-            fixed_coords_strings = [''] * len(structure.sites)
+        coordinates = [site.position for site in structure.sites]
+        if use_fractional:
+            atomic_positions_card_header = 'ATOMIC_POSITIONS crystal\n'
+            coordinates = numpy.dot(coordinates, numpy.linalg.inv(numpy.array(structure.cell))).tolist()
         else:
+            atomic_positions_card_header = 'ATOMIC_POSITIONS angstrom\n'
+
+        atomic_positions_card_list = [
+            '{0} {1:18.10f} {2:18.10f} {3:18.10f}'.format(site.kind_name.ljust(6), *site_coords)  # pylint: disable=consider-using-f-string
+            for site, site_coords in zip(structure.sites, coordinates)
+        ]
+
+        fixed_coords = settings.pop('FIXED_COORDS', None)
+
+        if fixed_coords is not None:
+            # Note that this check is also in the validation of the top-level namespace, but this is only checked in
+            # in case the structure is provided
             if len(fixed_coords) != len(structure.sites):
                 raise exceptions.InputValidationError(
-                    f'Input structure contains {len(structure.sites)} sites, but fixed_coords has length '
-                    f'{len(fixed_coords)}'
+                    f'Input structure has {len(structure.sites)} sites, but fixed_coords has length {len(fixed_coords)}'
                 )
+            fixed_coords_strings = [
+                ' {:d} {:d} {:d}'.format(*row) for row in numpy.int32(numpy.invert(fixed_coords)).tolist()  # pylint: disable=consider-using-f-string
+            ]
+            atomic_positions_card_list = [
+                atomic_pos_str + fixed_coords_str
+                for atomic_pos_str, fixed_coords_str in zip(atomic_positions_card_list, fixed_coords_strings)
+            ]
 
-            for i, this_atom_fix in enumerate(fixed_coords):
-                if len(this_atom_fix) != 3:
-                    raise exceptions.InputValidationError(f'fixed_coords({i + 1:d}) has not length three')
-                for fixed_c in this_atom_fix:
-                    if not isinstance(fixed_c, bool):
-                        raise exceptions.InputValidationError(f'fixed_coords({i + 1:d}) has non-boolean elements')
-
-                if_pos_values = [cls._if_pos(_) for _ in this_atom_fix]
-                fixed_coords_strings.append('  {:d} {:d} {:d}'.format(*if_pos_values))  # pylint: disable=consider-using-f-string
-
-        abs_pos = [_.position for _ in structure.sites]
-        if use_fractional:
-            import numpy as np
-            atomic_positions_card_list = ['ATOMIC_POSITIONS crystal\n']
-            coordinates = np.dot(np.array(abs_pos), np.linalg.inv(np.array(structure.cell)))
-        else:
-            atomic_positions_card_list = ['ATOMIC_POSITIONS angstrom\n']
-            coordinates = abs_pos
-
-        for site, site_coords, fixed_coords_string in zip(structure.sites, coordinates, fixed_coords_strings):
-            atomic_positions_card_list.append(
-                '{0} {1:18.10f} {2:18.10f} {3:18.10f} {4}\n'.format(  # pylint: disable=consider-using-f-string
-                    site.kind_name.ljust(6), site_coords[0], site_coords[1], site_coords[2], fixed_coords_string
-                )
-            )
-
-        atomic_positions_card = ''.join(atomic_positions_card_list)
-        del atomic_positions_card_list
+        atomic_positions_card = atomic_positions_card_header + '\n'.join(atomic_positions_card_list) + '\n'
 
         # Optional ATOMIC_FORCES card
         atomic_forces = settings.pop('ATOMIC_FORCES', None)
@@ -687,6 +700,10 @@ class BasePwCpInputGenerator(CalcJob):
             kpoints_card = ''.join(kpoints_card_list)
             del kpoints_card_list
 
+        # HUBBARD CARD
+        hubbard_card = HubbardUtils(structure).get_hubbard_card() if isinstance(structure, HubbardStructureData) \
+            else None
+
         # =================== NAMELISTS AND CARDS ========================
         try:
             namelists_toprint = settings.pop('NAMELISTS')
@@ -730,6 +747,8 @@ class BasePwCpInputGenerator(CalcJob):
         if cls._use_kpoints:
             inputfile += kpoints_card
         inputfile += cell_parameters_card
+        if hubbard_card is not None:
+            inputfile += hubbard_card
 
         # Generate additional cards bases on input parameters and settings that are subclass specific
         tail = cls._generate_PWCP_input_tail(input_params=input_params, settings=settings)
@@ -743,17 +762,6 @@ class BasePwCpInputGenerator(CalcJob):
             )
 
         return inputfile, local_copy_list_to_append
-
-    @staticmethod
-    def _if_pos(fixed):
-        """Return 0 if fixed is True, 1 otherwise.
-
-        Useful to convert from the boolean value of fixed_coords to the value required by Quantum Espresso as if_pos.
-        """
-        if fixed:
-            return 0
-
-        return 1
 
 
 def _lowercase_dict(dictionary, dict_name):
