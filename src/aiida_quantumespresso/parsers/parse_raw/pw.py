@@ -311,11 +311,10 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
 
     # First check whether the `JOB DONE` message was written, otherwise the job was interrupted
     for line in data_lines:
-        if 'JOB DONE' in line:
+        if 'JOB DONE' in line and crash_file is None:
             break
     else:
-        if crash_file is None:
-            logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
+        logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
 
     # Determine whether the input switched on an electric field
     lelfield = input_parameters.get('CONTROL', {}).get('lelfield', False)
@@ -915,30 +914,22 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
     if maximum_ionic_steps is not None and maximum_ionic_steps == parsed_data.get('number_ionic_steps', None):
         logs.warning.append('ERROR_MAXIMUM_IONIC_STEPS_REACHED')
 
-    # Remove duplicate log messages by turning it into a set. Then convert back to list as that is what is expected
-    logs.error = list(set(logs.error))
-    logs.warning = list(set(logs.warning))
-
     parsed_data['bands'] = bands_data
     parsed_data['structure'] = structure_data
     parsed_data['trajectory'] = trajectory_data
 
     # Double check to detect error messages if CRASH is found
     if crash_file is not None:
-        lines = crash_file.split('\n')
-
-        for line_number, line in enumerate(lines):
+        for line in crash_file.split('\n'):
             # Compare the line to the known set of error and warning messages and add them to the log container
             detect_important_message(logs, line)
 
-        if len(logs.error) or len(logs.warning) > 0:
-            parsed_data['bands'] = bands_data
-            parsed_data['structure'] = structure_data
-            parsed_data['trajectory'] = trajectory_data
-            return parsed_data, logs
+        if len(logs.error) == len(logs.warning) == 0:
+            raise QEOutputParsingError('Parser cannot load basic info.')
 
-        # did not find any error message -> raise an Error and do not return anything
-        raise QEOutputParsingError('Parser cannot load basic info.')
+    # Remove duplicate log messages by turning it into a set. Then convert back to list as that is what is expected
+    logs.error = list(set(logs.error))
+    logs.warning = list(set(logs.warning))
 
     return parsed_data, logs
 
