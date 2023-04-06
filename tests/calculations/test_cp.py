@@ -16,11 +16,25 @@ def test_cp_autopilot(fixture_sandbox, generate_calc_job, generate_inputs_cp, fi
     cmdline_params = ['-in', 'aiida.in']
     local_copy_list = [(upf.uuid, upf.filename, './pseudo/Si.upf')]
     retrieve_list = [
-        'aiida.out', './out/aiida_51.save/data-file-schema.xml', './out/aiida_51.save/data-file.xml', './out/aiida.cel',
-        './out/aiida.con', './out/aiida.eig', './out/aiida.evp', './out/aiida.for', './out/aiida.nos',
-        './out/aiida.pol', './out/aiida.pos', './out/aiida.spr', './out/aiida.str', './out/aiida.the',
-        './out/aiida.vel', './out/aiida.wfc', './out/aiida_51.save/print_counter',
-        './out/aiida_51.save/print_counter.xml'
+        'aiida.out',
+        './out/aiida_51.save/data-file-schema.xml',
+        './out/aiida_51.save/data-file.xml',
+        './out/aiida.cel',
+        './out/aiida.con',
+        './out/aiida.eig',
+        './out/aiida.evp',
+        './out/aiida.for',
+        './out/aiida.nos',
+        './out/aiida.pol',
+        './out/aiida.pos',
+        './out/aiida.spr',
+        './out/aiida.str',
+        './out/aiida.the',
+        './out/aiida.vel',
+        './out/aiida.wfc',
+        './out/aiida_51.save/print_counter',
+        './out/aiida_51.save/print_counter.xml',
+        'CRASH',
     ]
     retrieve_temporary_list = [['./out/aiida.save/K*[0-9]/eigenval*.xml', '.', 2]]
 

@@ -21,7 +21,7 @@ def test_pw_default(fixture_sandbox, generate_calc_job, generate_inputs_pw, file
 
     cmdline_params = ['-in', 'aiida.in']
     local_copy_list = [(upf.uuid, upf.filename, './pseudo/Si.upf')]
-    retrieve_list = ['aiida.out', './out/aiida.save/data-file-schema.xml', './out/aiida.save/data-file.xml']
+    retrieve_list = ['aiida.out', './out/aiida.save/data-file-schema.xml', './out/aiida.save/data-file.xml', 'CRASH']
     retrieve_temporary_list = [['./out/aiida.save/K*[0-9]/eigenval*.xml', '.', 2]]
 
     # Check the attributes of the returned `CalcInfo`
@@ -74,7 +74,7 @@ def test_pw_ibrav(
 
     cmdline_params = ['-in', 'aiida.in']
     local_copy_list = [(upf.uuid, upf.filename, './pseudo/Si.upf')]
-    retrieve_list = ['aiida.out', './out/aiida.save/data-file-schema.xml', './out/aiida.save/data-file.xml']
+    retrieve_list = ['aiida.out', './out/aiida.save/data-file-schema.xml', './out/aiida.save/data-file.xml', 'CRASH']
     retrieve_temporary_list = [['./out/aiida.save/K*[0-9]/eigenval*.xml', '.', 2]]
 
     # Check the attributes of the returned `CalcInfo`

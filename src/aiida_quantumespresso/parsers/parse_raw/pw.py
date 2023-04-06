@@ -279,11 +279,12 @@ def detect_important_message(logs, line):
             logs.warning.append(message)
 
 
-def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None):
+def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None, crash=None):
     """Parses the stdout content of a Quantum ESPRESSO `pw.x` calculation.
 
     :param stdout: the stdout content as a string
     :param input_parameters: dictionary with the input parameters
+    :param crash: the ``CRASH`` content as a string
     :param parser_options: the parser options from the settings input parameter node
     :param parsed_xml: dictionary with data parsed from the XML output file
     :returns: tuple of two dictionaries, with the parsed data and log messages, respectively
@@ -313,7 +314,8 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
         if 'JOB DONE' in line:
             break
     else:
-        logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
+        if crash is None:
+            logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
 
     # Determine whether the input switched on an electric field
     lelfield = input_parameters.get('CONTROL', {}).get('lelfield', False)
@@ -359,7 +361,10 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
         except NameError:  # nat or other variables where not found, and thus not initialized
 
             # Try to get some error messages
-            lines = stdout.split('\n')
+            if crash is None:
+                lines = stdout.split('\n')
+            else:
+                lines = crash.split('\n')
 
             for line_number, line in enumerate(lines):
                 # Compare the line to the known set of error and warning messages and add them to the log container
