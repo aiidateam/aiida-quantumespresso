@@ -404,6 +404,30 @@ def test_pw_npools_too_high_not_error(fixture_localhost, generate_calc_job_node,
     assert 'output_parameters' in results
 
 
+@pytest.mark.parametrize('calculation', ('relax', 'vc-relax'))
+@pytest.mark.parametrize('settings_key', ('fixed_coords', 'FIXED_COORDS'))
+def test_fixed_coords(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, calculation, settings_key
+):
+    """Test the parsing of a successful calculation that has specified a ``fixed_coords`` setting.
+
+    The output files of this test were generated for a calculation of a FCC Si supercell where
+    """
+    name = f"fixed_coords_{calculation.replace('-', '')}"
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    inputs = generate_inputs(
+        calculation_type=calculation, settings={settings_key: [[True, True, True], [True, True, False]]}
+    )
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+
+
 def test_tot_magnetization(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):

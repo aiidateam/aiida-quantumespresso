@@ -227,6 +227,7 @@ class PwParser(Parser):
         :param trajectory: the output trajectory data
         :param except_final_scf: if True will return whether the calculation is converged except for the final scf.
         """
+        from aiida_quantumespresso.calculations import _uppercase_dict
         from aiida_quantumespresso.utils.defaults.calculation import pw
         from aiida_quantumespresso.utils.validation.trajectory import verify_convergence_trajectory
 
@@ -235,6 +236,11 @@ class PwParser(Parser):
         threshold_forces = parameters.get('CONTROL', {}).get('forc_conv_thr', pw.forc_conv_thr)
         threshold_stress = parameters.get('CELL', {}).get('press_conv_thr', pw.press_conv_thr)
         external_pressure = parameters.get('CELL', {}).get('press', 0)
+
+        if 'settings' in self.node.inputs:
+            settings = _uppercase_dict(self.node.inputs.settings.get_dict(), dict_name='settings')
+
+        fixed_coords = settings.get('FIXED_COORDS', None)
 
         # Through the `cell_dofree` the degrees of freedom of the cell can be constrained, which makes the threshold on
         # the stress hard to interpret. Therefore, unless the `cell_dofree` is set to the default `all` where the cell
@@ -245,10 +251,15 @@ class PwParser(Parser):
             threshold_stress = None
 
         if relax_type == 'relax':
-            return verify_convergence_trajectory(trajectory, -1, *[threshold_forces, None])
+            return verify_convergence_trajectory(
+                trajectory=trajectory,
+                index=-1,
+                threshold_forces=threshold_forces,
+                fixed_coords=fixed_coords
+            )
 
         if relax_type == 'vc-relax':
-            values = [threshold_forces, threshold_stress, external_pressure]
+            values = [threshold_forces, threshold_stress, external_pressure, fixed_coords]
             converged_relax = verify_convergence_trajectory(trajectory, -2, *values)
             converged_final = verify_convergence_trajectory(trajectory, -1, *values)
 
