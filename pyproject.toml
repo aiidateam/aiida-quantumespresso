@@ -51,7 +51,7 @@ docs = [
 ]
 pre-commit = [
     'pre-commit~=2.17',
-    'pylint~=2.12.2',
+    'pylint~=2.17.2',
     'pylint-aiida~=0.1.1',
     'toml',
 ]
@@ -162,17 +162,18 @@ generated-members = 'self.exit_codes.*'
 
 [tool.pylint.messages_control]
 disable = [
-    'bad-continuation',
     'duplicate-code',
-    'locally-disabled',
-    'logging-format-interpolation',
+    'fixme',
     'inconsistent-return-statements',
     'import-outside-toplevel',
+    'locally-disabled',
+    'logging-format-interpolation',
     'no-else-raise',
     'too-many-arguments',
     'too-many-ancestors',
     'too-many-branches',
     'too-many-locals',
+    'use-dict-literal',
 ]
 
 [tool.pylint.basic]

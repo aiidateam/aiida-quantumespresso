@@ -4,9 +4,7 @@
 
 class XMLParseError(Exception):
     """Raised when the XML output could not be parsed."""
-    pass
 
 
 class XMLUnsupportedFormatError(Exception):
     """Raised when the XML output has an unsupported format."""
-    pass
