@@ -311,10 +311,11 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
 
     # First check whether the `JOB DONE` message was written, otherwise the job was interrupted
     for line in data_lines:
-        if 'JOB DONE' in line and crash_file is None:
+        if 'JOB DONE' in line:
             break
     else:
-        logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
+        if crash_file is None:
+            logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
 
     # Determine whether the input switched on an electric field
     lelfield = input_parameters.get('CONTROL', {}).get('lelfield', False)
