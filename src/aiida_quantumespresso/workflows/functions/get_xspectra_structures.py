@@ -256,9 +256,9 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
         output_params['spacegroup_number'] = symmetry_dataset['number']
         output_params['international_symbol'] = symmetry_dataset['international']
 
-        result['standardized_structure'] = standardized_structure_node
         output_params['structure_is_standardized'] = structure_is_standardized
         if structure_is_standardized:
+            result['standardized_structure'] = standardized_structure_node
             output_params['standardized_structure_num_sites'] = len(standardized_structure_node.sites)
             output_params['standardized_structure_cell_matrix'] = standardized_structure_node.cell
             output_params['standardized_structure_params'] = standardized_structure_node.cell_lengths

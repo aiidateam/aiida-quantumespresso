@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO ph.x calculation with automated error handling and restarts."""
+from typing import Mapping
+
 from aiida import orm
 from aiida.common import AttributeDict
 from aiida.common.lang import type_check
 from aiida.engine import BaseRestartWorkChain, ProcessHandlerReport, process_handler, while_
 from aiida.plugins import CalculationFactory
 
+from aiida_quantumespresso.calculations.functions.merge_ph_outputs import merge_ph_outputs
 from aiida_quantumespresso.workflows.protocols.utils import ProtocolMixin
 
 PhCalculation = CalculationFactory('quantumespresso.ph')
@@ -38,6 +41,7 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 cls.run_process,
                 cls.inspect_process,
             ),
+            cls.create_merged_output,
             cls.results,
         )
         spec.expose_outputs(PhCalculation, exclude=('retrieved_folder',))
@@ -46,6 +50,9 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                     'This exit status has been deprecated as the check it corresponded to was incorrect.')
         spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
             message='The calculation failed with an unrecoverable error.')
+        spec.exit_code(401, 'ERROR_MERGING_QPOINTS',
+            message='The work chain failed to merge the q-points data from multiple `PhCalculation`s because not all '
+                    'q-points were parsed.')
         # yapf: enable
 
     @classmethod
@@ -145,6 +152,42 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if self.ctx.restart_calc:
             self.ctx.inputs.parameters['INPUTPH']['recover'] = True
             self.ctx.inputs.parent_folder = self.ctx.restart_calc.outputs.remote_folder
+
+    def create_merged_output(self):
+        """Merge outputs from multiple ``PhCalculation`` runs called by the workchain if necessary."""
+        if self.inputs.only_initialization.value:
+            return
+
+        if len(self.ctx.children) == 1:
+            return
+
+        output_dict = {
+            'output_' + str(index + 1): child.outputs.output_parameters
+            for index, child in enumerate(self.ctx.children)
+        }
+
+        num_qpoints = self.ctx.children[0].outputs.output_parameters['number_of_qpoints']
+        num_qpoints = self.ctx.inputs.parameters['INPUTPH'].get('last_q', num_qpoints) \
+            - self.ctx.inputs.parameters['INPUTPH'].get('start_q', 1) + 1
+        num_qpoints_found = sum(
+            len(output['number_of_irr_representations_for_each_q']) for output in output_dict.values()
+        )
+
+        if num_qpoints_found == num_qpoints:
+            self.report(f'Merging {num_qpoints} q-points data from `PhCalculation`s.')
+            self.ctx.merged_output_parameters = merge_ph_outputs(**output_dict)
+        else:
+            self.report(f'Only {num_qpoints_found} of {num_qpoints} q-points were parsed.')
+            return self.exit_codes.ERROR_MERGING_QPOINTS
+
+    def get_outputs(self, node) -> Mapping[str, orm.Node]:
+        """Return a mapping of the outputs that should be attached as outputs to the work chain."""
+        outputs = super().get_outputs(node)
+
+        if 'merged_output_parameters' in self.ctx:
+            outputs['output_parameters'] = self.ctx.merged_output_parameters
+
+        return outputs
 
     def report_error_handled(self, calculation, action):
         """Report an action taken for a calculation that has failed.

@@ -880,3 +880,36 @@ def generate_workchain_xspectra(generate_workchain, generate_inputs_xspectra, ge
         return process
 
     return _generate_workchain_xspectra
+
+
+@pytest.fixture
+def generate_workchain_xps(generate_inputs_pw, generate_workchain, generate_upf_data):
+    """Generate an instance of a `XpsWorkChain`."""
+
+    def _generate_workchain_xps():
+        from aiida.orm import Bool, List, Str
+
+        entry_point = 'quantumespresso.xps'
+
+        scf_pw_inputs = generate_inputs_pw()
+        kpoints = scf_pw_inputs.pop('kpoints')
+        structure = scf_pw_inputs.pop('structure')
+        ch_scf = {'pw': scf_pw_inputs, 'kpoints': kpoints}
+
+        inputs = {
+            'structure': structure,
+            'ch_scf': ch_scf,
+            'dry_run': Bool(True),
+            'elements_list': List(['Si']),
+            'abs_atom_marker': Str('X'),
+            'core_hole_pseudos': {
+                'Si': generate_upf_data('Si')
+            },
+            'gipaw_pseudos': {
+                'Si': generate_upf_data('Si')
+            },
+        }
+
+        return generate_workchain(entry_point, inputs)
+
+    return _generate_workchain_xps
