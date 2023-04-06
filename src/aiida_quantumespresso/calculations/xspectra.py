@@ -95,7 +95,7 @@ class XspectraCalculation(NamelistsCalculation):
             message='The spectrum data file could not be read using NumPy genfromtxt'
         )
 
-    def generate_input_file(self, parameters):
+    def generate_input_file(self, parameters):  # pylint: disable=arguments-differ
         """Add kpoint handling to the inherited method.
 
         This checks that the offset for the mesh is in a valid format, converts the offset

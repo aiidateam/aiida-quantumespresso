@@ -73,7 +73,7 @@ def get_spectra_by_element(elements_list, equivalent_sites_data, voight_gamma, v
             final_spectra_y_labels = []
             final_spectra_y_units = []
 
-            total_multiplicity = sum([i[0] for i in points[element]])
+            total_multiplicity = sum(i[0] for i in points[element])
 
             final_spectra = orm.XyData()
             max_core_level_shift = points[element][-1][1]

@@ -152,14 +152,14 @@ def get_pw_parallelization_parameters(
     time_single_cpu = np.prod(fft_grid) * nspin * nkpoints * niterations * scaling_law[0] * nbands**scaling_law[1]
 
     # The number of nodes is the maximum number we can use that is dividing nkpoints
-    num_machines = max([m for m in range(1, max_num_machines + 1) if nkpoints % m == 0])
+    num_machines = max(m for m in range(1, max_num_machines + 1) if nkpoints % m == 0)
 
     # If possible try to make number of kpoints even by changing the number of machines
     if (
         num_machines == 1 and nkpoints > 6 and max_num_machines > 1 and
         time_single_cpu / default_num_mpiprocs_per_machine > target_time_seconds
     ):
-        num_machines = max([m for m in range(1, max_num_machines + 1) if (nkpoints + 1) % m == 0])
+        num_machines = max(m for m in range(1, max_num_machines + 1) if (nkpoints + 1) % m == 0)
 
     # Now we will try to decrease the number of processes per machine (by not more than one fourth)
     # until we manage to get an efficient plane wave parallelization
@@ -185,7 +185,7 @@ def get_pw_parallelization_parameters(
 
     # Increase the number of machines in case of memory problem during initialization
     if calculation.get_scheduler_stderr() and 'OOM' in calculation.get_scheduler_stderr():
-        num_machines = max([i for i in range(num_machines, max_num_machines + 1) if i % num_machines == 0])
+        num_machines = max(i for i in range(num_machines, max_num_machines + 1) if i % num_machines == 0)
 
     estimated_time = time_single_cpu / (num_mpiprocs_per_machine * num_machines)
     max_wallclock_seconds = min(ceil(estimated_time / round_interval) * round_interval, max_wallclock_seconds)

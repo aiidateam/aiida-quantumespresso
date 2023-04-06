@@ -60,11 +60,11 @@ def validate_hubbard_parameters(structure, parameters, hubbard_u=None, hubbard_v
 
         try:
             hubbard_file = load_node(pk=hubbard_file_pk)
-        except exceptions.NotExistent:
-            ValueError(f'{hubbard_file_pk} is not a valid pk')
+        except exceptions.NotExistent as exc:
+            raise ValueError(f'{hubbard_file_pk} is not a valid pk') from exc
         else:
             if not isinstance(hubbard_file, SinglefileData):
-                ValueError(f'Node<{hubbard_file_pk}> is not a SinglefileData but {type(hubbard_file)}')
+                raise ValueError(f'Node<{hubbard_file_pk}> is not a SinglefileData but {type(hubbard_file)}')
 
         parameters['SYSTEM']['lda_plus_u'] = True
         parameters['SYSTEM']['lda_plus_u_kind'] = 2

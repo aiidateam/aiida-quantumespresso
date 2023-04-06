@@ -60,7 +60,7 @@ class MatdynCalculation(NamelistsCalculation):
         if parameters.get('INPUT', {}).get('flfrc', None) is not None:
             return '`INPUT.flfrc` is set automatically from the `force_constants` input.'
 
-    def generate_input_file(self, parameters):
+    def generate_input_file(self, parameters):  # pylint: disable=arguments-differ
         """Generate namelist input_file content given a dict of parameters.
 
         :param parameters: 'dict' containing the fortran namelists and parameters to be used.

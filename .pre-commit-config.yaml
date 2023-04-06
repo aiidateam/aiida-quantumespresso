@@ -39,11 +39,13 @@ repos:
             )$
         additional_dependencies: ['toml']
 
--   repo: https://github.com/PyCQA/pylint
-    rev: v2.12.2
+-   repo: local
     hooks:
     -   id: pylint
+        name: pylint
+        entry: pylint
         language: system
+        types: [python]
         exclude: *exclude_files
 
 -   repo: https://github.com/PyCQA/pydocstyle

@@ -518,7 +518,7 @@ class BasePwCpInputGenerator(CalcJob):
         # Note the (idx+1) to convert to fortran 1-based lists
         mapping_species = {sp_name: (idx + 1) for idx, sp_name in enumerate(mapping_species)}
         # I add the first line
-        sorted_atomic_species_card_list = (['ATOMIC_SPECIES\n'] + list(sorted_atomic_species_card_list))
+        sorted_atomic_species_card_list = ['ATOMIC_SPECIES\n'] + list(sorted_atomic_species_card_list)
         atomic_species_card = ''.join(sorted_atomic_species_card_list)
         # Free memory
         del sorted_atomic_species_card_list
@@ -624,6 +624,8 @@ class BasePwCpInputGenerator(CalcJob):
         input_params['SYSTEM']['ntyp'] = len(structure.kinds)
 
         # ============ I prepare the k-points =============
+        kpoints_card = ''
+
         if cls._use_kpoints:
             try:
                 mesh, offset = kpoints.get_kpoints_mesh()
@@ -744,8 +746,7 @@ class BasePwCpInputGenerator(CalcJob):
         # Write cards now
         inputfile += atomic_species_card
         inputfile += atomic_positions_card
-        if cls._use_kpoints:
-            inputfile += kpoints_card
+        inputfile += kpoints_card
         inputfile += cell_parameters_card
         if hubbard_card is not None:
             inputfile += hubbard_card
