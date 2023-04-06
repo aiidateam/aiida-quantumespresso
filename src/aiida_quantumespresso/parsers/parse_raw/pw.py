@@ -250,6 +250,12 @@ def detect_important_message(logs, line):
             'problems computing cholesky': 'ERROR_COMPUTING_CHOLESKY',
             'dexx is negative': 'ERROR_DEXX_IS_NEGATIVE',
             'too many bands are not converged': 'ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED',
+            'S matrix not positive definite': 'ERROR_S_MATRIX_NOT_POSITIVE_DEFINITE',
+            'zhegvd failed': 'ERROR_ZHEGVD_FAILED',
+            '[Q, R] = qr(X, 0) failed': 'ERROR_QR_FAILED',
+            'probably because G_par is NOT a reciprocal lattice vector': 'ERROR_G_PAR',
+            'eigenvectors failed to converge': 'ERROR_EIGENVECTOR_CONVERGENCE',
+            'factorization': 'ERROR_BROYDEN_FACTORIZATION',
             REG_ERROR_NPOOLS_TOO_HIGH: 'ERROR_NPOOLS_TOO_HIGH',
         },
         'warning': {
@@ -842,22 +848,22 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
             # For every property only get the last entry if possible
             try:
                 ed_cell = trajectory_frame['electronic_dipole_cell_average'].pop()
-            except IndexError:
+            except (IndexError, KeyError):
                 ed_cell = None
 
             try:
                 ed_axes = trajectory_frame['electronic_dipole_cartesian_axes'].pop()
-            except IndexError:
+            except (IndexError, KeyError):
                 ed_axes = None
 
             try:
                 id_cell = trajectory_frame['ionic_dipole_cell_average'].pop()
-            except IndexError:
+            except (IndexError, KeyError):
                 id_cell = None
 
             try:
                 id_axes = trajectory_frame['ionic_dipole_cartesian_axes'].pop()
-            except IndexError:
+            except (IndexError, KeyError):
                 id_axes = None
 
             # Only add them if all four properties were successfully parsed

@@ -112,6 +112,14 @@ class PwCalculation(BasePwCpInputGenerator):
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
             message='The parser raised an unexpected exception: {exception}')
 
+        # Significant errors but no known solution
+        spec.exit_code(360, 'ERROR_G_PAR',
+            message='The code failed in finding a valid reciprocal lattice vector.')
+        spec.exit_code(361, 'ERROR_EIGENVECTOR_CONVERGENCE',
+            message='The eigenvector failed to converge.')
+        spec.exit_code(362, 'ERROR_BROYDEN_FACTORIZATION',
+            message='The factorization in the Broyden routine failed.')
+
         # Significant errors but calculation can be used to restart
         spec.exit_code(400, 'ERROR_OUT_OF_WALLTIME',
             message='The calculation stopped prematurely because it ran out of walltime.')
@@ -124,6 +132,12 @@ class PwCalculation(BasePwCpInputGenerator):
             message='The code failed during the cholesky factorization.')
         spec.exit_code(463, 'ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED',
             message='Too many bands failed to converge during the diagonalization.')
+        spec.exit_code(464, 'ERROR_S_MATRIX_NOT_POSITIVE_DEFINITE',
+            message='The S matrix was found to be not positive definite.')
+        spec.exit_code(465, 'ERROR_ZHEGVD_FAILED',
+            message='The `zhegvd` failed in the PPCG diagonalization.')
+        spec.exit_code(466, 'ERROR_QR_FAILED',
+            message='The `[Q, R] = qr(X, 0)` failed in the PPCG diagonalization.')
 
         spec.exit_code(481, 'ERROR_NPOOLS_TOO_HIGH',
             message='The k-point parallelization "npools" is too high, some nodes have no k-points.')
