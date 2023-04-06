@@ -279,12 +279,12 @@ def detect_important_message(logs, line):
             logs.warning.append(message)
 
 
-def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None, crash=None):
+def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None, crash_file=None):
     """Parses the stdout content of a Quantum ESPRESSO `pw.x` calculation.
 
     :param stdout: the stdout content as a string
     :param input_parameters: dictionary with the input parameters
-    :param crash: the ``CRASH`` content as a string
+    :param crash_file: the content of the ``CRASH`` file as a string if it was written, ``None`` otherwise.
     :param parser_options: the parser options from the settings input parameter node
     :param parsed_xml: dictionary with data parsed from the XML output file
     :returns: tuple of two dictionaries, with the parsed data and log messages, respectively
@@ -314,7 +314,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
         if 'JOB DONE' in line:
             break
     else:
-        if crash is None:
+        if crash_file is None:
             logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
 
     # Determine whether the input switched on an electric field
@@ -361,10 +361,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
         except NameError:  # nat or other variables where not found, and thus not initialized
 
             # Try to get some error messages
-            if crash is None:
-                lines = stdout.split('\n')
-            else:
-                lines = crash.split('\n')
+            lines = stdout.split('\n') if crash_file is None else crash_file.split('\n')
 
             for line_number, line in enumerate(lines):
                 # Compare the line to the known set of error and warning messages and add them to the log container
@@ -925,6 +922,23 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
     parsed_data['bands'] = bands_data
     parsed_data['structure'] = structure_data
     parsed_data['trajectory'] = trajectory_data
+
+    # Double check to detect error messages if CRASH is found
+    if crash_file is not None:
+        lines = crash_file.split('\n')
+
+        for line_number, line in enumerate(lines):
+            # Compare the line to the known set of error and warning messages and add them to the log container
+            detect_important_message(logs, line)
+
+        if len(logs.error) or len(logs.warning) > 0:
+            parsed_data['bands'] = bands_data
+            parsed_data['structure'] = structure_data
+            parsed_data['trajectory'] = trajectory_data
+            return parsed_data, logs
+
+        # did not find any error message -> raise an Error and do not return anything
+        raise QEOutputParsingError('Parser cannot load basic info.')
 
     return parsed_data, logs
 
