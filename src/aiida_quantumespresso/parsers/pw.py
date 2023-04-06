@@ -23,6 +23,7 @@ class PwParser(Parser):
         which should contain the temporary retrieved files.
         """
         dir_with_bands = None
+        crash_file = None
         self.exit_code_xml = None
         self.exit_code_stdout = None
         self.exit_code_parser = None
@@ -42,9 +43,14 @@ class PwParser(Parser):
             except KeyError:
                 return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
 
+        # We check if the `CRASH` file was retrieved. If so, we parse its output
+        crash_file_filename = self.node.process_class._CRASH_FILE
+        if crash_file_filename in self.retrieved.base.repository.list_object_names():
+            crash_file = self.retrieved.base.repository.get_object_content(crash_file_filename)
+
         parameters = self.node.inputs.parameters.get_dict()
         parsed_xml, logs_xml = self.parse_xml(dir_with_bands, parser_options)
-        parsed_stdout, logs_stdout = self.parse_stdout(parameters, parser_options, parsed_xml)
+        parsed_stdout, logs_stdout = self.parse_stdout(parameters, parser_options, parsed_xml, crash_file)
 
         parsed_bands = parsed_stdout.pop('bands', {})
         parsed_structure = parsed_stdout.pop('structure', {})
@@ -307,7 +313,7 @@ class PwParser(Parser):
 
         return parsed_data, logs
 
-    def parse_stdout(self, parameters, parser_options=None, parsed_xml=None):
+    def parse_stdout(self, parameters, parser_options=None, parsed_xml=None, crash_file=None):
         """Parse the stdout output file.
 
         :param parameters: the input parameters dictionary
@@ -333,7 +339,7 @@ class PwParser(Parser):
             return parsed_data, logs
 
         try:
-            parsed_data, logs = parse_stdout(stdout, parameters, parser_options, parsed_xml)
+            parsed_data, logs = parse_stdout(stdout, parameters, parser_options, parsed_xml, crash_file)
         except Exception as exc:
             logs.critical.append(traceback.format_exc())
             self.exit_code_stdout = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc)

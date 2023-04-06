@@ -1,5 +1,5 @@
 
-     Program PWSCF v.6.4.1 starts on 14Oct2019 at  8:41:38
+     Program PWSCF v.6.4.1 starts on 15Oct2019 at 14:12: 0
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
@@ -9,8 +9,11 @@
      in publications or presentations arising from this work. More details at
      http://www.quantum-espresso.org/quote
 
-# NOTE: lines of output removed.
+# NOTE: 25 lines of output removed
 
-     Davidson diagonalization with overlap
 
-# NOTE: lines of output removed.
+# NOTE: duplicate error messages removed
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine divide_et_impera (1):
+     some nodes have no k-points
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -10,12 +10,3 @@
      http://www.quantum-espresso.org/quote
 
 # NOTE: roughly 3870 lines of output removed.
-
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-     Error in routine electrons (1):
-     dexx is negative!  Check that exxdiv_treatment is appropriate for the system, or ecutfock may be too low
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-     stopping ...
-
-# NOTE: duplicate error messages removed

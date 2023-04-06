@@ -102,6 +102,7 @@
 
      Smooth grid:     5985 G-vectors     FFT dimensions: (  25,  25,  25)
 
-     Estimated max dynamical RAM per process >      10.86MB
-
-     WARNING: integrated charge=     0.00003902, expected=   114.00000000
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine checkallsym (2):
+     not orthogonal operation
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

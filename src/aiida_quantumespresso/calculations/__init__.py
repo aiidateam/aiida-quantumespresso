@@ -34,6 +34,7 @@ class BasePwCpInputGenerator(CalcJob):
     _PREFIX = 'aiida'
     _DEFAULT_INPUT_FILE = 'aiida.in'
     _DEFAULT_OUTPUT_FILE = 'aiida.out'
+    _CRASH_FILE = 'CRASH'
     _DATAFILE_XML_PRE_6_2 = 'data-file.xml'
     _DATAFILE_XML_POST_6_2 = 'data-file-schema.xml'
     _ENVIRON_INPUT_FILE_NAME = 'environ.in'
@@ -338,6 +339,7 @@ class BasePwCpInputGenerator(CalcJob):
         # Retrieve by default the output file and the xml file
         calcinfo.retrieve_list = []
         calcinfo.retrieve_list.append(self.metadata.options.output_filename)
+        calcinfo.retrieve_list.append(self._CRASH_FILE)
         calcinfo.retrieve_list.extend(self.xml_filepaths)
         calcinfo.retrieve_list += settings.pop('ADDITIONAL_RETRIEVE_LIST', [])
         calcinfo.retrieve_list += self._internal_retrieve_list

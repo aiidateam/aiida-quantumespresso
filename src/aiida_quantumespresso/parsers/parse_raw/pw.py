@@ -279,11 +279,12 @@ def detect_important_message(logs, line):
             logs.warning.append(message)
 
 
-def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None):
+def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None, crash_file=None):
     """Parses the stdout content of a Quantum ESPRESSO `pw.x` calculation.
 
     :param stdout: the stdout content as a string
     :param input_parameters: dictionary with the input parameters
+    :param crash_file: the content of the ``CRASH`` file as a string if it was written, ``None`` otherwise.
     :param parser_options: the parser options from the settings input parameter node
     :param parsed_xml: dictionary with data parsed from the XML output file
     :returns: tuple of two dictionaries, with the parsed data and log messages, respectively
@@ -313,7 +314,8 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
         if 'JOB DONE' in line:
             break
     else:
-        logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
+        if crash_file is None:
+            logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
 
     # Determine whether the input switched on an electric field
     lelfield = input_parameters.get('CONTROL', {}).get('lelfield', False)
@@ -359,7 +361,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
         except NameError:  # nat or other variables where not found, and thus not initialized
 
             # Try to get some error messages
-            lines = stdout.split('\n')
+            lines = stdout.split('\n') if crash_file is None else crash_file.split('\n')
 
             for line_number, line in enumerate(lines):
                 # Compare the line to the known set of error and warning messages and add them to the log container
@@ -913,13 +915,22 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None)
     if maximum_ionic_steps is not None and maximum_ionic_steps == parsed_data.get('number_ionic_steps', None):
         logs.warning.append('ERROR_MAXIMUM_IONIC_STEPS_REACHED')
 
-    # Remove duplicate log messages by turning it into a set. Then convert back to list as that is what is expected
-    logs.error = list(set(logs.error))
-    logs.warning = list(set(logs.warning))
-
     parsed_data['bands'] = bands_data
     parsed_data['structure'] = structure_data
     parsed_data['trajectory'] = trajectory_data
+
+    # Double check to detect error messages if CRASH is found
+    if crash_file is not None:
+        for line in crash_file.split('\n'):
+            # Compare the line to the known set of error and warning messages and add them to the log container
+            detect_important_message(logs, line)
+
+        if len(logs.error) == len(logs.warning) == 0:
+            raise QEOutputParsingError('Parser cannot load basic info.')
+
+    # Remove duplicate log messages by turning it into a set. Then convert back to list as that is what is expected
+    logs.error = list(set(logs.error))
+    logs.warning = list(set(logs.warning))
 
     return parsed_data, logs
 

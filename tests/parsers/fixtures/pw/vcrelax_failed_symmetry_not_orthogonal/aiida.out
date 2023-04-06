@@ -101,10 +101,3 @@
      Dense  grid:    16889 G-vectors     FFT dimensions: (  36,  36,  36)
 
      Smooth grid:     5985 G-vectors     FFT dimensions: (  25,  25,  25)
-
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-     Error in routine checkallsym (2):
-     not orthogonal operation
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-     stopping ...
