@@ -99,6 +99,7 @@ def test_pw_default_no_xml(
     '210716',
     '211101',
     '220603',
+    '230310',
 ])
 def test_pw_default_xml(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression, xml_format
