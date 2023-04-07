@@ -21,7 +21,6 @@ from ...utils import launch, options, validate
 @options.HUBBARD_FILE()
 @options.STARTING_MAGNETIZATION()
 @options.SMEARING()
-@options.AUTOMATIC_PARALLELIZATION()
 @options.CLEAN_WORKDIR()
 @options.MAX_NUM_MACHINES()
 @options.MAX_WALLCLOCK_SECONDS()
@@ -38,14 +37,14 @@ from ...utils import launch, options, validate
 @decorators.with_dbenv()
 def launch_workflow(
     code, structure, pseudo_family, kpoints_distance, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file_pk,
-    starting_magnetization, smearing, automatic_parallelization, clean_workdir, max_num_machines, max_wallclock_seconds,
-    with_mpi, daemon, final_scf
+    starting_magnetization, smearing, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi, daemon,
+    final_scf
 ):
     """Run a `PwRelaxWorkChain`."""
     from aiida.orm import Bool, Dict, Float, Str
     from aiida.plugins import WorkflowFactory
 
-    from aiida_quantumespresso.utils.resources import get_automatic_parallelization_options, get_default_options
+    from aiida_quantumespresso.utils.resources import get_default_options
 
     builder = WorkflowFactory('quantumespresso.pw.relax').get_builder()
 
@@ -87,11 +86,7 @@ def launch_workflow(
     if hubbard_file:
         builder.base.pw.hubbard_file = hubbard_file
 
-    if automatic_parallelization:
-        automatic_parallelization = get_automatic_parallelization_options(max_num_machines, max_wallclock_seconds)
-        builder.base.automatic_parallelization = Dict(automatic_parallelization)
-    else:
-        builder.base.pw.metadata.options = get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)
+    builder.base.pw.metadata.options = get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)
 
     if clean_workdir:
         builder.clean_workdir = Bool(True)
