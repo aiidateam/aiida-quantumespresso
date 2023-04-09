@@ -244,7 +244,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         self.ctx.inputs.parameters.setdefault('CONTROL', {})
         self.ctx.inputs.parameters.setdefault('ELECTRONS', {})
         self.ctx.inputs.parameters.setdefault('SYSTEM', {})
-        self.ctx.inputs.parameters['CONTROL'].setdefault('calculation', 'scf')
 
         self.ctx.inputs.settings = self.ctx.inputs.settings.get_dict() if 'settings' in self.ctx.inputs else {}
 
