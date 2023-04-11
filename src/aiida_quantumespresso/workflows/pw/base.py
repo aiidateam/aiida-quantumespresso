@@ -195,6 +195,10 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         parameters['SYSTEM']['ecutwfc'] = cutoff_wfc
         parameters['SYSTEM']['ecutrho'] = cutoff_rho
 
+        #If 2D periodicity set assume_isolate
+        if (True, True, False) == structure.pbc:
+            parameters['SYSTEM']['assume_isolated'] = '2D'
+
         if electronic_type is ElectronicType.INSULATOR:
             parameters['SYSTEM']['occupations'] = 'fixed'
             parameters['SYSTEM'].pop('degauss')
