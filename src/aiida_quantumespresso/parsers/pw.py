@@ -23,6 +23,7 @@ class PwParser(Parser):
         which should contain the temporary retrieved files.
         """
         dir_with_bands = None
+        crash_file = None
         self.exit_code_xml = None
         self.exit_code_stdout = None
         self.exit_code_parser = None
@@ -42,9 +43,14 @@ class PwParser(Parser):
             except KeyError:
                 return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
 
+        # We check if the `CRASH` file was retrieved. If so, we parse its output
+        crash_file_filename = self.node.process_class._CRASH_FILE
+        if crash_file_filename in self.retrieved.base.repository.list_object_names():
+            crash_file = self.retrieved.base.repository.get_object_content(crash_file_filename)
+
         parameters = self.node.inputs.parameters.get_dict()
         parsed_xml, logs_xml = self.parse_xml(dir_with_bands, parser_options)
-        parsed_stdout, logs_stdout = self.parse_stdout(parameters, parser_options, parsed_xml)
+        parsed_stdout, logs_stdout = self.parse_stdout(parameters, parser_options, parsed_xml, crash_file)
 
         parsed_bands = parsed_stdout.pop('bands', {})
         parsed_structure = parsed_stdout.pop('structure', {})
@@ -227,6 +233,7 @@ class PwParser(Parser):
         :param trajectory: the output trajectory data
         :param except_final_scf: if True will return whether the calculation is converged except for the final scf.
         """
+        from aiida_quantumespresso.calculations import _uppercase_dict
         from aiida_quantumespresso.utils.defaults.calculation import pw
         from aiida_quantumespresso.utils.validation.trajectory import verify_convergence_trajectory
 
@@ -235,6 +242,11 @@ class PwParser(Parser):
         threshold_forces = parameters.get('CONTROL', {}).get('forc_conv_thr', pw.forc_conv_thr)
         threshold_stress = parameters.get('CELL', {}).get('press_conv_thr', pw.press_conv_thr)
         external_pressure = parameters.get('CELL', {}).get('press', 0)
+
+        if 'settings' in self.node.inputs:
+            settings = _uppercase_dict(self.node.inputs.settings.get_dict(), dict_name='settings')
+
+        fixed_coords = settings.get('FIXED_COORDS', None)
 
         # Through the `cell_dofree` the degrees of freedom of the cell can be constrained, which makes the threshold on
         # the stress hard to interpret. Therefore, unless the `cell_dofree` is set to the default `all` where the cell
@@ -245,10 +257,15 @@ class PwParser(Parser):
             threshold_stress = None
 
         if relax_type == 'relax':
-            return verify_convergence_trajectory(trajectory, -1, *[threshold_forces, None])
+            return verify_convergence_trajectory(
+                trajectory=trajectory,
+                index=-1,
+                threshold_forces=threshold_forces,
+                fixed_coords=fixed_coords
+            )
 
         if relax_type == 'vc-relax':
-            values = [threshold_forces, threshold_stress, external_pressure]
+            values = [threshold_forces, threshold_stress, external_pressure, fixed_coords]
             converged_relax = verify_convergence_trajectory(trajectory, -2, *values)
             converged_final = verify_convergence_trajectory(trajectory, -1, *values)
 
@@ -296,7 +313,7 @@ class PwParser(Parser):
 
         return parsed_data, logs
 
-    def parse_stdout(self, parameters, parser_options=None, parsed_xml=None):
+    def parse_stdout(self, parameters, parser_options=None, parsed_xml=None, crash_file=None):
         """Parse the stdout output file.
 
         :param parameters: the input parameters dictionary
@@ -322,7 +339,7 @@ class PwParser(Parser):
             return parsed_data, logs
 
         try:
-            parsed_data, logs = parse_stdout(stdout, parameters, parser_options, parsed_xml)
+            parsed_data, logs = parse_stdout(stdout, parameters, parser_options, parsed_xml, crash_file)
         except Exception as exc:
             logs.critical.append(traceback.format_exc())
             self.exit_code_stdout = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc)

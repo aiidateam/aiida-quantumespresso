@@ -199,11 +199,11 @@ If this is not the case, it can be installed using:
     $ pip install aiida-pseudo
 
 At a minimum, at least one pseudo potential family should be installed.
-We recommend using the |SSSP|_:
+We recommend using the |SSSP|_ with the PBEsol functional:
 
 .. code-block:: console
 
-    $ aiida-pseudo install sssp
+    $ aiida-pseudo install sssp -x PBEsol
 
 For more detailed information on installing other pseudo potential families, please refer to the documentation of |aiida-pseudo|_.
 

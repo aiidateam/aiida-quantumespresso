@@ -99,6 +99,7 @@ def test_pw_default_no_xml(
     '210716',
     '211101',
     '220603',
+    '230310',
 ])
 def test_pw_default_xml(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression, xml_format
@@ -191,13 +192,16 @@ def test_pw_failed_base_exception(
     assert exception in calcfunction.exit_message
 
 
-def test_pw_failed_computing_cholesky(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
+@pytest.mark.parametrize('filename', ('', '_stdout'))
+def test_pw_failed_computing_cholesky(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
+):
     """Test the parsing of a calculation that failed during cholesky factorization.
 
     In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
     the relevant error message.
     """
-    name = 'failed_computing_cholesky'
+    name = f'failed_computing_cholesky{filename}'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
@@ -210,15 +214,16 @@ def test_pw_failed_computing_cholesky(fixture_localhost, generate_calc_job_node,
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_COMPUTING_CHOLESKY.status
 
 
+@pytest.mark.parametrize('filename', ('', '_stdout'))
 def test_failed_too_many_bands_not_converged(
-    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
 ):
     """Test the parsing of a calculation that failed during cholesky factorization.
 
     In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
     the relevant error message.
     """
-    name = 'failed_too_many_bands_not_converged'
+    name = f'failed_too_many_bands_not_converged{filename}'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
@@ -232,13 +237,14 @@ def test_failed_too_many_bands_not_converged(
     assert calcfunction.exit_status == desired_exit_status
 
 
-def test_pw_failed_dexx_negative(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
+@pytest.mark.parametrize('filename', ('', '_stdout'))
+def test_pw_failed_dexx_negative(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename):
     """Test the parsing of a calculation that failed due to negative dexx.
 
     In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
     the relevant error message.
     """
-    name = 'failed_dexx_negative'
+    name = f'failed_dexx_negative{filename}'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
@@ -364,13 +370,16 @@ def test_pw_failed_interrupted_xml(
     data_regression.check(results['output_parameters'].get_dict())
 
 
-def test_pw_npools_too_high_error(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
+@pytest.mark.parametrize('filename', ('', '_stdout'))
+def test_pw_npools_too_high_error(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
+):
     """Test the parsing of a calculation that failed because some nodes have no k-points.
 
     In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
     the relevant error message.
     """
-    name = 'failed_npools_too_high'
+    name = f'failed_npools_too_high{filename}'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
@@ -401,6 +410,30 @@ def test_pw_npools_too_high_not_error(fixture_localhost, generate_calc_job_node,
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
     assert 'output_parameters' in results
+
+
+@pytest.mark.parametrize('calculation', ('relax', 'vc-relax'))
+@pytest.mark.parametrize('settings_key', ('fixed_coords', 'FIXED_COORDS'))
+def test_fixed_coords(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, calculation, settings_key
+):
+    """Test the parsing of a successful calculation that has specified a ``fixed_coords`` setting.
+
+    The output files of this test were generated for a calculation of a FCC Si supercell where
+    """
+    name = f"fixed_coords_{calculation.replace('-', '')}"
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    inputs = generate_inputs(
+        calculation_type=calculation, settings={settings_key: [[True, True, True], [True, True, False]]}
+    )
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
 
 
 def test_tot_magnetization(
@@ -732,9 +765,12 @@ def test_pw_vcrelax_success_atoms_shape(fixture_localhost, generate_calc_job_nod
     assert 'output_trajectory' in results
 
 
-def test_pw_vcrelax_failed_charge_wrong(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
+@pytest.mark.parametrize('filename', ('', '_stdout'))
+def test_pw_vcrelax_failed_charge_wrong(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
+):
     """Test a `vc-relax` that failed because the integrated charge is different from the expected one."""
-    name = 'vcrelax_failed_charge_wrong'
+    name = f'vcrelax_failed_charge_wrong{filename}'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
@@ -751,11 +787,12 @@ def test_pw_vcrelax_failed_charge_wrong(fixture_localhost, generate_calc_job_nod
     assert 'output_parameters' in results
 
 
+@pytest.mark.parametrize('filename', ('', '_stdout'))
 def test_pw_vcrelax_failed_symmetry_not_orthogonal(
-    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
 ):
     """Test a `vc-relax` that failed because original symmetries no longer map onto new structure."""
-    name = 'vcrelax_failed_symmetry_not_orthogonal'
+    name = f'vcrelax_failed_symmetry_not_orthogonal{filename}'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 

@@ -1,0 +1,5 @@
+# Copy this data in the pw.x input file for DFT+Hubbard calculations
+HUBBARD (atomic)
+V     Co-3d      Co-3d   1    1    6.3334
+V     Co-3d      O-2p    1    11   0.3787
+V     Co-3d      O-2p    1    22   0.3772

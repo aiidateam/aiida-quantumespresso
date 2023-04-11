@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for the `PhParser`."""
 from aiida import orm
+import pytest
 
 
 def generate_inputs():
@@ -8,9 +9,10 @@ def generate_inputs():
     return {}
 
 
-def test_ph_default(fixture_localhost, generate_calc_job_node, generate_parser, data_regression):
-    """Test a default `ph.x` calculation."""
-    name = 'default'
+@pytest.mark.parametrize('test_name', ['default', 'single_qpoint', 'no_modes_printed'])
+def test_ph_default(test_name, fixture_localhost, generate_calc_job_node, generate_parser, data_regression):
+    """Default tests for the `ph.x` parser."""
+    name = test_name
     entry_point_calc_job = 'quantumespresso.ph'
     entry_point_parser = 'quantumespresso.ph'
 
