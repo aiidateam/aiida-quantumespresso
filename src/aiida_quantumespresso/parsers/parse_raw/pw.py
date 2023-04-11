@@ -255,7 +255,7 @@ def detect_important_message(logs, line):
             '[Q, R] = qr(X, 0) failed': 'ERROR_QR_FAILED',
             'probably because G_par is NOT a reciprocal lattice vector': 'ERROR_G_PAR',
             'eigenvectors failed to converge': 'ERROR_EIGENVECTOR_CONVERGENCE',
-            'factorization': 'ERROR_BROYDEN_FACTORIZATION',
+            'Error in routine broyden': 'ERROR_BROYDEN_FACTORIZATION',
             REG_ERROR_NPOOLS_TOO_HIGH: 'ERROR_NPOOLS_TOO_HIGH',
         },
         'warning': {
