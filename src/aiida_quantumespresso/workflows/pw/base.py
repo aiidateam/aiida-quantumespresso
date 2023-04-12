@@ -7,7 +7,7 @@ from aiida.engine import BaseRestartWorkChain, ExitCode, ProcessHandlerReport, p
 from aiida.plugins import CalculationFactory, GroupFactory
 
 from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import create_kpoints_from_distance
-from aiida_quantumespresso.common.types import ElectronicType, RestartType, SpinType
+from aiida_quantumespresso.common.types import DiagonalizationType, ElectronicType, RestartType, SpinType
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 
 from ..protocols.utils import ProtocolMixin
@@ -238,6 +238,8 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         default namelists for the ``parameters`` are set to empty dictionaries if not specified.
         """
         super().setup()
+        self.ctx.diagonalizations = list(DiagonalizationType)
+        self.ctx.diagonalizations.pop(0)  # pop CG
         self.ctx.inputs = AttributeDict(self.exposed_inputs(PwCalculation, 'pw'))
 
         self.ctx.inputs.parameters = self.ctx.inputs.parameters.get_dict()
@@ -301,6 +303,39 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             self.ctx.inputs.parameters['ELECTRONS'].pop('startingpot', None)
             self.ctx.inputs.parameters['ELECTRONS']['startingwfc'] = 'file'
             self.ctx.inputs.parent_folder = parent_folder
+
+    def set_diagonalization(self, diagonalization_type) -> str:
+        """Set the diagonalization algorithm for the next iteration."""
+
+        if diagonalization_type == DiagonalizationType.DAVIDSON:
+            self.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = 'david'
+            action = 'found diagonalization issues, switching to Davidson diagonalization.'
+
+        if diagonalization_type == DiagonalizationType.PPCG:
+            self.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = 'ppcg'
+            action = 'found diagonalization issues, switching to projected preconditioned CG (PPCG) diagonalization.'
+
+        if diagonalization_type == DiagonalizationType.PARO:
+            self.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = 'paro'
+            action = 'found diagonalization issues, switching to parallel orbital-update (ParO) diagonalization.'
+
+        if diagonalization_type == DiagonalizationType.CG:
+            self.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = 'cg'
+            action = 'found diagonalization issues, switching to conjugate gradient diagonalization.'
+
+        return action
+
+    def get_current_diagonalization(self) -> DiagonalizationType:
+        """Get the current diagonalization used."""
+        diagonalization = self.ctx.inputs.parameters['ELECTRONS'].get('diagonalization', 'david')
+        if diagonalization == 'cg':
+            return DiagonalizationType.CG
+        if diagonalization == 'david':
+            return DiagonalizationType.DAVIDSON
+        if diagonalization == 'ppcg':
+            return DiagonalizationType.PPCG
+        if diagonalization == 'paro':
+            return DiagonalizationType.PARO
 
     def prepare_process(self):
         """Prepare the inputs for the next calculation."""
@@ -393,21 +428,35 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         exit_codes=[
             PwCalculation.exit_codes.ERROR_COMPUTING_CHOLESKY,
             PwCalculation.exit_codes.ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED,
+            PwCalculation.exit_codes.ERROR_S_MATRIX_NOT_POSITIVE_DEFINITE,
+            PwCalculation.exit_codes.ERROR_ZHEGVD_FAILED,
+            PwCalculation.exit_codes.ERROR_QR_FAILED,
+            PwCalculation.exit_codes.ERROR_EIGENVECTOR_CONVERGENCE,
+            PwCalculation.exit_codes.ERROR_BROYDEN_FACTORIZATION,
         ]
     )
     def handle_diagonalization_errors(self, calculation):
         """Handle known issues related to the diagonalization.
 
-        Switch to ``diagonalization = 'cg'`` if not already running with this setting, and restart from the charge
-        density. In case the run already used conjugate gradient diagonalization, abort.
+        We use the following strategy. When a diagonalization algorithm fails, we try using an other one
+        still not used. Conjugate gradient (CG) is kept as last option, as it is the slowest among the
+        available ones, but on the contrary it is the most stable as well, thus kept as `last resort`.
+
+        If also CG is failing, abort.
         """
-        if self.ctx.inputs.parameters['ELECTRONS'].get('diagonalization', None) == 'cg':
+        current_diagonalization = self.get_current_diagonalization()
+        if current_diagonalization == DiagonalizationType.CG:
             action = 'found diagonalization issues but already running with conjugate gradient algorithm, aborting...'
             self.report_error_handled(calculation, action)
             return ProcessHandlerReport(True, self.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE)
 
-        self.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = 'cg'
-        action = 'found diagonalization issues, switching to conjugate gradient diagonalization.'
+        self.ctx.diagonalizations.pop(self.ctx.diagonalizations.index(current_diagonalization))
+        if self.ctx.diagonalizations:
+            new_diagonalization = self.ctx.diagonalizations[0]
+        else:
+            new_diagonalization = DiagonalizationType.CG
+
+        action = self.set_diagonalization(new_diagonalization)
         self.report_error_handled(calculation, action)
         return ProcessHandlerReport(True)
 
