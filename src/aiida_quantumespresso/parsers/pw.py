@@ -147,6 +147,12 @@ class PwParser(Parser):
             'ERROR_COMPUTING_CHOLESKY',
             'ERROR_NPOOLS_TOO_HIGH',
             'ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED',
+            'ERROR_S_MATRIX_NOT_POSITIVE_DEFINITE',
+            'ERROR_ZHEGVD_FAILED',
+            'ERROR_QR_FAILED',
+            'ERROR_G_PAR',
+            'ERROR_EIGENVECTOR_CONVERGENCE',
+            'ERROR_BROYDEN_FACTORIZATION',
         ]:
             if error_label in logs['error']:
                 return self.exit_codes.get(error_label)
