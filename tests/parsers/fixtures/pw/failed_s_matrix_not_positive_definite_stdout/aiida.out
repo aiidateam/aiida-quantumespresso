@@ -11,7 +11,7 @@
 
      Parallel version (MPI), running on    40 processors
 
-# NOTE: lines of code removed 
+# NOTE: lines of output removed 
 
      iteration #117     ecut=    60.00 Ry     beta= 0.32
      Davidson diagonalization with overlap
