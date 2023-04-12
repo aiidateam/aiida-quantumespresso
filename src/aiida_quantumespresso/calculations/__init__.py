@@ -34,6 +34,7 @@ class BasePwCpInputGenerator(CalcJob):
     _PREFIX = 'aiida'
     _DEFAULT_INPUT_FILE = 'aiida.in'
     _DEFAULT_OUTPUT_FILE = 'aiida.out'
+    _CRASH_FILE = 'CRASH'
     _DATAFILE_XML_PRE_6_2 = 'data-file.xml'
     _DATAFILE_XML_POST_6_2 = 'data-file-schema.xml'
     _ENVIRON_INPUT_FILE_NAME = 'environ.in'
@@ -338,6 +339,7 @@ class BasePwCpInputGenerator(CalcJob):
         # Retrieve by default the output file and the xml file
         calcinfo.retrieve_list = []
         calcinfo.retrieve_list.append(self.metadata.options.output_filename)
+        calcinfo.retrieve_list.append(self._CRASH_FILE)
         calcinfo.retrieve_list.extend(self.xml_filepaths)
         calcinfo.retrieve_list += settings.pop('ADDITIONAL_RETRIEVE_LIST', [])
         calcinfo.retrieve_list += self._internal_retrieve_list
@@ -516,7 +518,7 @@ class BasePwCpInputGenerator(CalcJob):
         # Note the (idx+1) to convert to fortran 1-based lists
         mapping_species = {sp_name: (idx + 1) for idx, sp_name in enumerate(mapping_species)}
         # I add the first line
-        sorted_atomic_species_card_list = (['ATOMIC_SPECIES\n'] + list(sorted_atomic_species_card_list))
+        sorted_atomic_species_card_list = ['ATOMIC_SPECIES\n'] + list(sorted_atomic_species_card_list)
         atomic_species_card = ''.join(sorted_atomic_species_card_list)
         # Free memory
         del sorted_atomic_species_card_list
@@ -622,6 +624,8 @@ class BasePwCpInputGenerator(CalcJob):
         input_params['SYSTEM']['ntyp'] = len(structure.kinds)
 
         # ============ I prepare the k-points =============
+        kpoints_card = ''
+
         if cls._use_kpoints:
             try:
                 mesh, offset = kpoints.get_kpoints_mesh()
@@ -742,8 +746,7 @@ class BasePwCpInputGenerator(CalcJob):
         # Write cards now
         inputfile += atomic_species_card
         inputfile += atomic_positions_card
-        if cls._use_kpoints:
-            inputfile += kpoints_card
+        inputfile += kpoints_card
         inputfile += cell_parameters_card
         if hubbard_card is not None:
             inputfile += hubbard_card

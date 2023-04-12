@@ -192,13 +192,16 @@ def test_pw_failed_base_exception(
     assert exception in calcfunction.exit_message
 
 
-def test_pw_failed_computing_cholesky(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
+@pytest.mark.parametrize('filename', ('', '_stdout'))
+def test_pw_failed_computing_cholesky(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
+):
     """Test the parsing of a calculation that failed during cholesky factorization.
 
     In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
     the relevant error message.
     """
-    name = 'failed_computing_cholesky'
+    name = f'failed_computing_cholesky{filename}'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
@@ -211,15 +214,16 @@ def test_pw_failed_computing_cholesky(fixture_localhost, generate_calc_job_node,
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_COMPUTING_CHOLESKY.status
 
 
+@pytest.mark.parametrize('filename', ('', '_stdout'))
 def test_failed_too_many_bands_not_converged(
-    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
 ):
     """Test the parsing of a calculation that failed during cholesky factorization.
 
     In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
     the relevant error message.
     """
-    name = 'failed_too_many_bands_not_converged'
+    name = f'failed_too_many_bands_not_converged{filename}'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
@@ -233,13 +237,14 @@ def test_failed_too_many_bands_not_converged(
     assert calcfunction.exit_status == desired_exit_status
 
 
-def test_pw_failed_dexx_negative(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
+@pytest.mark.parametrize('filename', ('', '_stdout'))
+def test_pw_failed_dexx_negative(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename):
     """Test the parsing of a calculation that failed due to negative dexx.
 
     In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
     the relevant error message.
     """
-    name = 'failed_dexx_negative'
+    name = f'failed_dexx_negative{filename}'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
@@ -250,6 +255,132 @@ def test_pw_failed_dexx_negative(fixture_localhost, generate_calc_job_node, gene
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_failed, calcfunction.exit_status
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_DEXX_IS_NEGATIVE.status
+
+
+@pytest.mark.parametrize('filename', ('', '_stdout'))
+def test_failed_s_matrix_not_positive_definite(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
+):
+    """Test the parsing of a calculation for which the overlap S matrix was not positive definitive (Davidson).
+
+    In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
+    the relevant error message.
+    """
+    name = f'failed_s_matrix_not_positive_definite{filename}'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_S_MATRIX_NOT_POSITIVE_DEFINITE.status
+
+
+@pytest.mark.parametrize('filename', ('', '_stdout'))
+def test_failed_zhegvd(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename):
+    """Test the parsing of a calculation for which the ``zhegvd`` failed (PPCG).
+
+    In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
+    the relevant error message.
+    """
+    name = f'failed_zhegvd_failed{filename}'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_ZHEGVD_FAILED.status
+
+
+@pytest.mark.parametrize('filename', ('', '_stdout'))
+def test_failed_qr(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename):
+    """Test the parsing of a calculation for which the ``[Q, R] = qr(X, 0)``failed (PPCG).
+
+    In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
+    the relevant error message.
+    """
+    name = f'failed_qr_failed{filename}'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_QR_FAILED.status
+
+
+@pytest.mark.parametrize('filename', ('', '_stdout'))
+def test_failed_eigenvectors_convergence(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
+):
+    """Test the parsing of a calculation that failed to converge the eigenvectors.
+
+    In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
+    the relevant error message.
+    """
+    name = f'failed_eigenvectors_convergence{filename}'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_EIGENVECTOR_CONVERGENCE.status
+
+
+@pytest.mark.parametrize('filename', ('', '_stdout'))
+def test_failed_broyden_factorization(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
+):
+    """Test the parsing of a calculation that failed the factorization in the Broyden routine.
+
+    In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
+    the relevant error message.
+    """
+    name = f'failed_broyden_factorization{filename}'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_BROYDEN_FACTORIZATION.status
+
+
+@pytest.mark.parametrize('filename', ('', '_stdout'))
+def test_failed_g_par(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename):
+    """Test the parsing of a calculation that failed to find unique G vector (finite electric field routine).
+
+    In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
+    the relevant error message.
+    """
+    name = f'failed_g_par{filename}'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_G_PAR.status
 
 
 def test_pw_failed_missing(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
@@ -365,13 +496,16 @@ def test_pw_failed_interrupted_xml(
     data_regression.check(results['output_parameters'].get_dict())
 
 
-def test_pw_npools_too_high_error(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
+@pytest.mark.parametrize('filename', ('', '_stdout'))
+def test_pw_npools_too_high_error(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
+):
     """Test the parsing of a calculation that failed because some nodes have no k-points.
 
     In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
     the relevant error message.
     """
-    name = 'failed_npools_too_high'
+    name = f'failed_npools_too_high{filename}'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
@@ -757,9 +891,12 @@ def test_pw_vcrelax_success_atoms_shape(fixture_localhost, generate_calc_job_nod
     assert 'output_trajectory' in results
 
 
-def test_pw_vcrelax_failed_charge_wrong(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
+@pytest.mark.parametrize('filename', ('', '_stdout'))
+def test_pw_vcrelax_failed_charge_wrong(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
+):
     """Test a `vc-relax` that failed because the integrated charge is different from the expected one."""
-    name = 'vcrelax_failed_charge_wrong'
+    name = f'vcrelax_failed_charge_wrong{filename}'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
@@ -776,11 +913,12 @@ def test_pw_vcrelax_failed_charge_wrong(fixture_localhost, generate_calc_job_nod
     assert 'output_parameters' in results
 
 
+@pytest.mark.parametrize('filename', ('', '_stdout'))
 def test_pw_vcrelax_failed_symmetry_not_orthogonal(
-    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
 ):
     """Test a `vc-relax` that failed because original symmetries no longer map onto new structure."""
-    name = 'vcrelax_failed_symmetry_not_orthogonal'
+    name = f'vcrelax_failed_symmetry_not_orthogonal{filename}'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
