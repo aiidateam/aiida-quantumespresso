@@ -26,7 +26,7 @@
       <stress>true</stress>
       <forces>true</forces>
       <wf_collect>true</wf_collect>
-      <disk_io>nowf</disk_io>
+      <disk_io>low</disk_io>
       <max_seconds>41040</max_seconds>
       <nstep>1</nstep>
       <etot_conv_thr>1.000000000000000e-5</etot_conv_thr>
