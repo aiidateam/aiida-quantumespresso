@@ -111,14 +111,8 @@ class PwCalculation(BasePwCpInputGenerator):
                     'scheduler before the files were safely written to disk for a potential restart.')
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
             message='The parser raised an unexpected exception: {exception}')
-
-        # Significant errors but no known solution
         spec.exit_code(360, 'ERROR_G_PAR',
             message='The code failed in finding a valid reciprocal lattice vector.')
-        spec.exit_code(361, 'ERROR_EIGENVECTOR_CONVERGENCE',
-            message='The eigenvector failed to converge.')
-        spec.exit_code(362, 'ERROR_BROYDEN_FACTORIZATION',
-            message='The factorization in the Broyden routine failed.')
 
         # Significant errors but calculation can be used to restart
         spec.exit_code(400, 'ERROR_OUT_OF_WALLTIME',
@@ -138,6 +132,10 @@ class PwCalculation(BasePwCpInputGenerator):
             message='The `zhegvd` failed in the PPCG diagonalization.')
         spec.exit_code(466, 'ERROR_QR_FAILED',
             message='The `[Q, R] = qr(X, 0)` failed in the PPCG diagonalization.')
+        spec.exit_code(467, 'ERROR_EIGENVECTOR_CONVERGENCE',
+            message='The eigenvector failed to converge.')
+        spec.exit_code(468, 'ERROR_BROYDEN_FACTORIZATION',
+            message='The factorization in the Broyden routine failed.')
 
         spec.exit_code(481, 'ERROR_NPOOLS_TOO_HIGH',
             message='The k-point parallelization "npools" is too high, some nodes have no k-points.')
