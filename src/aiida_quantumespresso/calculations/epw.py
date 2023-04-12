@@ -57,7 +57,7 @@ class EpwCalculation(CalcJob):
         spec.input('parent_folder_ph', valid_type=orm.RemoteData, help='the folder of a completed `PhCalculation`')
         # yapf: enable
 
-    def prepare_for_submission(self, folder):  # pylint: disable=too-many-statements,too-many-branches
+    def prepare_for_submission(self, folder):
         """Prepare the calculation job for submission by transforming input nodes into input files.
 
         In addition to the input files being written to the sandbox folder, a `CalcInfo` instance will be returned that
@@ -68,6 +68,8 @@ class EpwCalculation(CalcJob):
         :return: :class:`~aiida.common.datastructures.CalcInfo` instance.
         """
 
+        # pylint: disable=too-many-statements,too-many-branches
+
         def test_offset(offset):
             """Check if the grid has an offset."""
             if any(i != 0. for i in offset):
@@ -76,7 +78,6 @@ class EpwCalculation(CalcJob):
                     'at the level of epw.x'
                 )
 
-        # pylint: disable=too-many-statements,too-many-branches
         local_copy_list = []
         remote_copy_list = []
         remote_symlink_list = []

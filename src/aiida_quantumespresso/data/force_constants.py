@@ -178,7 +178,7 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
         parsed_data['atom_list'] = atom_list
 
         # read lrigid (flag for dielectric constant and effective charges
-        has_done_electric_field = (lines[current_line].split()[0] == 'T')
+        has_done_electric_field = lines[current_line].split()[0] == 'T'
         parsed_data['has_done_electric_field'] = has_done_electric_field
         current_line += 1
 

@@ -117,6 +117,6 @@ def verify_convergence_stress(
     except (KeyError, IndexError) as exception:
         raise ValueError('the `stress` array does not exist or the given index exceeds the length.') from exception
 
-    pressure = (numpy.trace(stress) / 3.)
+    pressure = numpy.trace(stress) / 3.
 
     return abs(pressure - reference_pressure) < threshold

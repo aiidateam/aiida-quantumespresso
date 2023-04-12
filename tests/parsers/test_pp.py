@@ -137,11 +137,16 @@ def test_pp_default_1d(
     data_array = results['output_data'].get_array('data')
     coords_array = results['output_data'].get_array('x_coordinates')
     units_array = results['output_data'].get_array('x_coordinates_units')
-    num_regression.check({
-        'data_array': data_array,
-        'coords_array': coords_array
-    },
-                         default_tolerance=dict(atol=0, rtol=1e-18))
+    num_regression.check(
+        data_dict={
+            'data_array': data_array,
+            'coords_array': coords_array
+        },
+        default_tolerance={
+            'atol': 0,
+            'rtol': 1e-18
+        }
+    )
     data_regression.check({'parameters': results['output_parameters'].get_dict(), 'units_array': units_array.tolist()})
 
 
@@ -170,12 +175,17 @@ def test_pp_default_1d_spherical(
     data_units_array = results['output_data'].get_array('data_units')
     data_int_units_array = results['output_data'].get_array('integrated_data_units')
     coords_units_array = results['output_data'].get_array('x_coordinates_units')
-    num_regression.check({
-        'data_array': data_array,
-        'data_array_int': data_array_int,
-        'coords_array': coords_array
-    },
-                         default_tolerance=dict(atol=0, rtol=1e-18))
+    num_regression.check(
+        data_dict={
+            'data_array': data_array,
+            'data_array_int': data_array_int,
+            'coords_array': coords_array
+        },
+        default_tolerance={
+            'atol': 0,
+            'rtol': 1e-18
+        }
+    )
     data_regression.check({
         'parameters': results['output_parameters'].get_dict(),
         'data_units_array': data_units_array.tolist(),
@@ -204,11 +214,16 @@ def test_pp_default_2d(
     coords_array = results['output_data'].get_array('xy_coordinates').flatten()
     data_units_array = results['output_data'].get_array('data_units')
     coords_units_array = results['output_data'].get_array('xy_coordinates_units')
-    num_regression.check({
-        'data_array': data_array,
-        'coords_array': coords_array
-    },
-                         default_tolerance=dict(atol=0, rtol=1e-18))
+    num_regression.check(
+        data_dict={
+            'data_array': data_array,
+            'coords_array': coords_array
+        },
+        default_tolerance={
+            'atol': 0,
+            'rtol': 1e-18
+        }
+    )
     data_regression.check({
         'parameters': results['output_parameters'].get_dict(),
         'data_units': data_units_array.tolist(),
@@ -236,7 +251,10 @@ def test_pp_default_polar(
     data_units_array = results['output_data'].get_array('data_units')
     num_regression.check({
         'data_array': data_array,
-    }, default_tolerance=dict(atol=0, rtol=1e-18))
+    }, default_tolerance={
+        'atol': 0,
+        'rtol': 1e-18
+    })
     data_regression.check({
         'parameters': results['output_parameters'].get_dict(),
         'data_units': data_units_array.tolist(),
@@ -263,11 +281,15 @@ def test_pp_default_3d(
     voxel_array = results['output_data'].get_array('voxel').flatten()
     data_units_array = results['output_data'].get_array('data_units')
     coordinates_units_array = results['output_data'].get_array('coordinates_units')
-    num_regression.check({
-        'data_array': data_array,
-        'voxel_array': voxel_array,
-    },
-                         default_tolerance=dict(atol=0, rtol=1e-18))
+    num_regression.check(
+        data_dict={
+            'data_array': data_array,
+            'voxel_array': voxel_array
+        }, default_tolerance={
+            'atol': 0,
+            'rtol': 1e-18
+        }
+    )
     data_regression.check({
         'parameters': results['output_parameters'].get_dict(),
         'data_units': data_units_array.tolist(),

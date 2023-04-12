@@ -60,7 +60,7 @@ extensions = [
 # Setting the intersphinx mapping to other readthedocs
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3.8', None),
-    'aiida': ('http://aiida_core.readthedocs.io/en/latest/', None),
+    'aiida': ('http://aiida.readthedocs.io/en/latest/', None),
     'aiida_pseudo': ('http://aiida-pseudo.readthedocs.io/en/latest/', None),
 }
 

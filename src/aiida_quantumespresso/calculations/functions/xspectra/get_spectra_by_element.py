@@ -66,8 +66,8 @@ def get_spectra_by_element(elements_list, equivalent_sites_data, **kwargs):
         ]
 
         spectra_by_element[element] = np.column_stack((
-            sum([array[:, 0] for array in corrected_spectra]) / len(corrected_spectra),
-            sum([array[:, 1] for array in corrected_spectra])
+            sum(array[:, 0] for array in corrected_spectra) / len(corrected_spectra),
+            sum(array[:, 1] for array in corrected_spectra)
         ))
 
     all_final_spectra = {}
