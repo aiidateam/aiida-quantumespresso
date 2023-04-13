@@ -201,7 +201,10 @@ datecode 220603
   <simpleType name="lowhighType">
   	<restriction base="string">
   	  <enumeration value="low"/>
+  	  <enumeration value="medium"/>
   	  <enumeration value="high"/>
+  	  <enumeration value="nowf"/>
+  	  <enumeration value="none"/>
   	</restriction>
   </simpleType>
   <!-- INPUT TYPE -->
