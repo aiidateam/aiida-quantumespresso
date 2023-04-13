@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Utility functions for validation of command line interface parameter inputs."""
 from aiida.cmdline.utils import decorators
-from aiida.common import exceptions
 import click
 
 
@@ -36,35 +35,30 @@ def validate_kpoints_mesh(ctx, param, value):
 
 
 @decorators.with_dbenv()
-def validate_hubbard_parameters(structure, parameters, hubbard_u=None, hubbard_v=None, hubbard_file_pk=None):
+def validate_hubbard_parameters(structure, parameters, hubbard_u=None, hubbard_v=None, hubbard_file=None):
     """Validate Hubbard input parameters and update the parameters input node accordingly.
 
-    If a valid hubbard_file_pk is provided, the node will be loaded and returned.
+    If a valid hubbard_file is provided, the node will be loaded and returned.
 
     :param structure: the StructureData node that will be used in the inputs
     :param parameters: the Dict node that will be used in the inputs
     :param hubbard_u: the Hubbard U inputs values from the cli
     :param hubbard_v: the Hubbard V inputs values from the cli
-    :param hubbard_file_pk: a pk referencing a SinglefileData with Hubbard parameters
+    :param hubbard_file: a SinglefileData with Hubbard parameters
     :returns: the loaded SinglefileData node with Hubbard parameters if valid pk was defined, None otherwise
     :raises ValueError: if the input is invalid
     """
-    from aiida.orm import SinglefileData, load_node
+    from aiida.orm import SinglefileData
 
-    if len([value for value in [hubbard_u, hubbard_v, hubbard_file_pk] if value]) > 1:
-        raise ValueError('the hubbard_u, hubbard_v and hubbard_file_pk options are mutually exclusive')
+    if len([value for value in [hubbard_u, hubbard_v, hubbard_file] if value]) > 1:
+        raise ValueError('the hubbard_u, hubbard_v and hubbard_file options are mutually exclusive')
 
     hubbard_file = None
 
-    if hubbard_file_pk:
+    if hubbard_file:
 
-        try:
-            hubbard_file = load_node(pk=hubbard_file_pk.pk)
-        except exceptions.NotExistent as exception:
-            raise ValueError(f'{hubbard_file_pk} is not a valid pk') from exception
-        else:
-            if not isinstance(hubbard_file, SinglefileData):
-                raise ValueError(f'Node<{hubbard_file_pk}> is not a SinglefileData but {type(hubbard_file)}')
+        if not isinstance(hubbard_file, SinglefileData):
+            raise ValueError(f'Node<{hubbard_file}> is not a SinglefileData but {type(hubbard_file)}')
 
         parameters['SYSTEM']['lda_plus_u'] = True
         parameters['SYSTEM']['lda_plus_u_kind'] = 2

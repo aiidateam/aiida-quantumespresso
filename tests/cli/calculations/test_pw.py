@@ -14,14 +14,22 @@ def test_command_base(run_cli_process_launch_command, fixture_code, sssp):
     run_cli_process_launch_command(launch_calculation, options=options)
 
 
+# yapf: disable
 @pytest.mark.parametrize(('cmd_options', 'match'), (
-    (['--hubbard-u', 'Mg'], ".*Option '--hubbard-u' requires 2 arguments.*"),
-    (['--hubbard-u', 'Mg', '5.0'
-      ], '.*kinds in the specified Hubbard U is not a strict subset of the structure kinds.*'),
-    (['--hubbard-file', '1000000'], '.*no SinglefileData found with ID*'),
+    (
+        ['--hubbard-u', 'Mg'],
+        ".*Option '--hubbard-u' requires 2 arguments.*"),
+    (
+        ['--hubbard-u', 'Mg', '5.0'],
+        '.*kinds in the specified Hubbard U is not a strict subset of the structure kinds.*'),
+    (
+        ['--hubbard-file', '1000000'],
+        '.*no SinglefileData found with ID*'
+    ),
 ))
+# yapf: enable
 def test_invalid_hubbard_parameters(run_cli_process_launch_command, fixture_code, sssp, cmd_options, match):
-    """Test invoking the calculation launch command with only required inputs."""
+    """Test invoking the calculation launch command with invalid Hubbard inputs."""
     code = fixture_code('quantumespresso.pw').store()
     options = ['-X', code.full_label, '-F', sssp.label] + cmd_options
     result = run_cli_process_launch_command(launch_calculation, options=options, raises=ValueError)
@@ -30,9 +38,8 @@ def test_invalid_hubbard_parameters(run_cli_process_launch_command, fixture_code
 
 @pytest.mark.usefixtures('aiida_profile')
 def test_valid_hubbard_parameters(run_cli_process_launch_command, fixture_code, sssp):
-    """Test invoking the calculation launch command with only required inputs."""
-    import pathlib
-    import tempfile
+    """Test invoking the calculation launch command with valid Hubbard inputs."""
+    import io
 
     from aiida.orm import SinglefileData
 
@@ -41,13 +48,8 @@ def test_valid_hubbard_parameters(run_cli_process_launch_command, fixture_code, 
     options = ['-X', code.full_label, '-F', sssp.label, '--hubbard-u', 'Si', '5.0']
     run_cli_process_launch_command(launch_calculation, options=options)
 
-    content_original = 'a very creative content'
-
-    with tempfile.NamedTemporaryFile(mode='w+') as handle:
-        filepath = pathlib.Path(handle.name).resolve()
-        handle.write(content_original)
-        handle.flush()
-        filepk = SinglefileData(file=filepath).store().pk
+    content_original = 'for sure some correct Hubbard parameters'
+    filepk = SinglefileData(io.StringIO(content_original)).store().pk
 
     options = ['-X', code.full_label, '-F', sssp.label, '--hubbard-file', filepk]
     run_cli_process_launch_command(launch_calculation, options=options)
