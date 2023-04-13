@@ -153,7 +153,7 @@ class PwParser(Parser):
             'ERROR_G_PAR',
             'ERROR_EIGENVECTOR_CONVERGENCE',
             'ERROR_BROYDEN_FACTORIZATION',
-            'ERROR_SCALE_H',
+            'ERROR_RADIAL_FFT_SIGNIFICANT_VOLUME_CONTRACTION',
         ]:
             if error_label in logs['error']:
                 return self.exit_codes.get(error_label)

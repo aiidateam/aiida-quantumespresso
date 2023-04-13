@@ -256,7 +256,7 @@ def detect_important_message(logs, line):
             'probably because G_par is NOT a reciprocal lattice vector': 'ERROR_G_PAR',
             'eigenvectors failed to converge': 'ERROR_EIGENVECTOR_CONVERGENCE',
             'Error in routine broyden': 'ERROR_BROYDEN_FACTORIZATION',
-            'Not enough space allocated for radial FFT: try restarting with a larger cell_factor': 'ERROR_SCALE_H',
+            'Not enough space allocated for radial FFT: try restarting with a larger cell_factor': 'ERROR_RADIAL_FFT_SIGNIFICANT_VOLUME_CONTRACTION',
             REG_ERROR_NPOOLS_TOO_HIGH: 'ERROR_NPOOLS_TOO_HIGH',
         },
         'warning': {

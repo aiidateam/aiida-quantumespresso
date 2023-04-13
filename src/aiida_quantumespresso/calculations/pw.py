@@ -146,9 +146,6 @@ class PwCalculation(BasePwCpInputGenerator):
             message='Then ionic minimization cycle converged but the thresholds are exceeded in the final SCF.')
         spec.exit_code(502, 'ERROR_IONIC_CYCLE_EXCEEDED_NSTEP',
             message='The ionic minimization cycle did not converge after the maximum number of steps.')
-        spec.exit_code(503, 'ERROR_SCALE_H',
-            message=('The cell relaxation caused a significant volume contraction '
-                     'and there is not enoguh space allocated for radial FFT.'))
         spec.exit_code(510, 'ERROR_IONIC_CYCLE_ELECTRONIC_CONVERGENCE_NOT_REACHED',
             message='The electronic minimization cycle failed during an ionic minimization cycle.')
         spec.exit_code(511, 'ERROR_IONIC_CONVERGENCE_REACHED_FINAL_SCF_FAILED',
@@ -165,6 +162,9 @@ class PwCalculation(BasePwCpInputGenerator):
             message='The electronic minimization cycle did not reach self-consistency.')
         spec.exit_code(541, 'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION',
             message='The variable cell optimization broke the symmetry of the k-points.')
+        spec.exit_code(542, 'ERROR_RADIAL_FFT_SIGNIFICANT_VOLUME_CONTRACTION',
+            message=('The cell relaxation caused a significant volume contraction '
+                     'and there is not enough space allocated for radial FFT.'))
 
         # Strong warnings about calculation results, but something tells us that you're ok with that
         spec.exit_code(710, 'WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED',

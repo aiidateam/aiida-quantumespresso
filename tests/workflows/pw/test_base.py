@@ -154,7 +154,7 @@ def test_handle_vcrelax_converged_except_final_scf(generate_workchain_pw):
         PwCalculation.exit_codes.ERROR_IONIC_CYCLE_EXCEEDED_NSTEP,
         PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE,
         PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE,
-        PwCalculation.exit_codes.ERROR_SCALE_H,
+        PwCalculation.exit_codes.ERROR_RADIAL_FFT_SIGNIFICANT_VOLUME_CONTRACTION,
     )
 )
 def test_handle_relax_recoverable_ionic_convergence_error(generate_workchain_pw, generate_structure, exit_code):
