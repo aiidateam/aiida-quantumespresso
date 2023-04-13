@@ -146,6 +146,9 @@ class PwCalculation(BasePwCpInputGenerator):
             message='Then ionic minimization cycle converged but the thresholds are exceeded in the final SCF.')
         spec.exit_code(502, 'ERROR_IONIC_CYCLE_EXCEEDED_NSTEP',
             message='The ionic minimization cycle did not converge after the maximum number of steps.')
+        spec.exit_code(503, 'ERROR_SCALE_H',
+            message=('The cell relaxation caused a significant volume contraction '
+                     'and there is not enoguh space allocated for radial FFT.'))
         spec.exit_code(510, 'ERROR_IONIC_CYCLE_ELECTRONIC_CONVERGENCE_NOT_REACHED',
             message='The electronic minimization cycle failed during an ionic minimization cycle.')
         spec.exit_code(511, 'ERROR_IONIC_CONVERGENCE_REACHED_FINAL_SCF_FAILED',
