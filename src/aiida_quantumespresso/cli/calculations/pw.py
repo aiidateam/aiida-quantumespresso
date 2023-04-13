@@ -47,7 +47,7 @@ CALCS_REQUIRING_PARENT = set(['nscf'])
 )
 @decorators.with_dbenv()
 def launch_calculation(
-    code, structure, pseudo_family, kpoints_mesh, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file_pk,
+    code, structure, pseudo_family, kpoints_mesh, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file,
     starting_magnetization, smearing, max_num_machines, max_wallclock_seconds, with_mpi, daemon, parent_folder, dry_run,
     mode, unfolded_kpoints
 ):
@@ -73,9 +73,7 @@ def launch_calculation(
         raise click.BadParameter(f"calculation '{mode}' requires a parent folder", param_hint='--parent-folder')
 
     try:
-        hubbard_file = validate.validate_hubbard_parameters(
-            structure, parameters, hubbard_u, hubbard_v, hubbard_file_pk
-        )
+        validate.validate_hubbard_parameters(structure, parameters, hubbard_u, hubbard_v, hubbard_file)
     except ValueError as exception:
         raise click.BadParameter(str(exception))
 
