@@ -40,12 +40,3 @@ class RestartType(enum.Enum):
     FROM_SCRATCH = 'from_scratch'
     FROM_CHARGE_DENSITY = 'from_charge_density'
     FROM_WAVE_FUNCTIONS = 'from_wave_functions'
-
-
-class DiagonalizationType(enum.Enum):
-    """Enumeration of avaliable diagonalization algorithms in Quantum ESPRESSO."""
-
-    CG = 'cg'
-    DAVIDSON = 'david'
-    PPCG = 'ppcg'
-    PARO = 'paro'
