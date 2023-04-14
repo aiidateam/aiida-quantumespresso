@@ -1,26 +1,3 @@
-
-     Program PWSCF v.6.7MaX starts on  6Mar2023 at 14:36:19 
-
-     This program is part of the open-source Quantum ESPRESSO suite
-     for quantum simulation of materials; please cite
-         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
-         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
-          URL http://www.quantum-espresso.org", 
-     in publications or presentations arising from this work. More details at
-     http://www.quantum-espresso.org/quote
-
-     Parallel version (MPI), running on    40 processors
-
 # NOTE: lines of output removed
-
-     total cpu time spent up to now is    25251.4 secs
-
-     total energy              =   -2035.59194642 Ry
-     estimated scf accuracy    <       0.09128248 Ry
-
-     total magnetization       =     1.00 Bohr mag/cell
-     absolute magnetization    =    17.55 Bohr mag/cell
-
-     iteration #326     ecut=    60.00 Ry     beta= 0.40
-     PPCG style diagonalization
  [Q, R] = qr(X, 0) failed
+# NOTE: lines of output removed
