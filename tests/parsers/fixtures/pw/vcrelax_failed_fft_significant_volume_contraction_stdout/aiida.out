@@ -1,11 +1,6 @@
-
-     Program PWSCF v.6.1 (svn rev. 13369) starts on 31May2019 at  9:26:28
-
 # NOTE: lines of output removed
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      Error in routine scale_h (1):
      Not enough space allocated for radial FFT: try restarting with a larger cell_factor.
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 # NOTE: lines of output removed

@@ -1,4 +1,1 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-     Error in routine scale_h (1):
-     Not enough space allocated for radial FFT: try restarting with a larger cell_factor.
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+../vcrelax_failed_fft_significant_volume_contraction/CRASH
