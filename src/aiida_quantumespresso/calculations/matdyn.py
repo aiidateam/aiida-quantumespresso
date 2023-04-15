@@ -64,16 +64,19 @@ class MatdynCalculation(NamelistsCalculation):
         else:
             parameters = {'INPUT': {}}
 
+        if 'INPUT' not in parameters:
+            return 'Required namelist `INPUT` not in `parameters` input.'
+
         if parameters['INPUT'].get('flfrc', None) is not None:
             return '`INPUT.flfrc` is set automatically from the `force_constants` input.'
 
         if parameters['INPUT'].get('q_in_cryst_coord', None) is not None:
             return '`INPUT.q_in_cryst_coords` is always set to `.true.` if `kpoints` input corresponds to list.'
 
-        if 'parent_folder' in value and not parameters.get('INPUT').get('la2F', False):
+        if 'parent_folder' in value and not parameters['INPUT'].get('la2F', False):
             return (
                 'The `parent_folder` input is only used to calculate the el-ph coefficients but `la2F` is not set '
-                'to `.true.`'
+                'to `.true.` in input `parameters`'
             )
 
     def generate_input_file(self, parameters):  # pylint: disable=arguments-differ
@@ -138,11 +141,11 @@ class MatdynCalculation(NamelistsCalculation):
         if 'parameters' in self.inputs:
             parameters = _uppercase_dict(self.inputs.parameters.get_dict(), dict_name='parameters')
         else:
-            parameters = {}
+            parameters = {'INPUT': {}}
 
         source = self.inputs.get('parent_folder', None)
 
-        if source is not None and parameters.get('INPUT').get('la2F', False):
+        if source is not None and parameters['INPUT'].get('la2F', False):
 
             # pylint: disable=protected-access
             dirpath = Path(source.get_remote_path()) / PhCalculation._FOLDER_ELECTRON_PHONON
