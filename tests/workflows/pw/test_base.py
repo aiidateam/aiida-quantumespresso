@@ -252,15 +252,11 @@ def test_set_max_seconds(generate_workchain_pw):
 
 
 @pytest.mark.parametrize('restart_mode, expected', (
-    (None, 'restart'),
+    ('restart', 'restart'),
     ('from_scratch', 'from_scratch'),
 ))
-def test_parent_folder(generate_workchain_pw, generate_calc_job_node, restart_mode, expected):
-    """Test that ``parameters`` gets automatically updated if ``parent_folder`` in the inputs.
-
-    Specifically, the ``parameters`` should define the ``CONTROL.restart_mode`` unless it was explicitly set to
-    ``from_scratch`` by the caller.
-    """
+def test_restart_mode(generate_workchain_pw, generate_calc_job_node, restart_mode, expected):
+    """Test that the ``CONTROL.restart_mode`` specified by the user is always respected."""
     node = generate_calc_job_node('pw', test_name='default')
 
     inputs = generate_workchain_pw(return_inputs=True)

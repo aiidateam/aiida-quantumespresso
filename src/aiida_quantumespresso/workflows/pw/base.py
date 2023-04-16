@@ -247,13 +247,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         self.ctx.inputs.settings = self.ctx.inputs.settings.get_dict() if 'settings' in self.ctx.inputs else {}
 
-        # If a ``parent_folder`` is specified, automatically set the parameters for a ``RestartType.Full`` unless the
-        # ``CONTROL.restart_mode`` has explicitly been set to ``from_scratch``. In that case, the user most likely set
-        # that, and we do not want to override it.
-        restart_mode = self.ctx.inputs.parameters['CONTROL'].get('restart_mode', None)
-        if 'parent_folder' in self.ctx.inputs and restart_mode != 'from_scratch':
-            self.set_restart_type(RestartType.FULL, self.ctx.inputs.parent_folder)
-
     def validate_kpoints(self):
         """Validate the inputs related to k-points.
 
@@ -278,15 +271,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             kpoints = create_kpoints_from_distance(**inputs)  # pylint: disable=unexpected-keyword-arg
 
         self.ctx.inputs.kpoints = kpoints
-
-    def set_max_seconds(self, max_wallclock_seconds):
-        """Set the `max_seconds` to a fraction of `max_wallclock_seconds` option to prevent out-of-walltime problems.
-
-        :param max_wallclock_seconds: the maximum wallclock time that will be set in the scheduler settings.
-        """
-        max_seconds_factor = self.defaults.delta_factor_max_seconds
-        max_seconds = max_wallclock_seconds * max_seconds_factor
-        self.ctx.inputs.parameters['CONTROL']['max_seconds'] = max_seconds
 
     def set_restart_type(self, restart_type, parent_folder=None):
         """Set the restart type for the next iteration."""
@@ -323,7 +307,8 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         max_wallclock_seconds = self.ctx.inputs.metadata.options.get('max_wallclock_seconds', None)
 
         if max_wallclock_seconds is not None and 'max_seconds' not in self.ctx.inputs.parameters['CONTROL']:
-            self.set_max_seconds(max_wallclock_seconds)
+            max_seconds = max_wallclock_seconds * self.defaults.delta_factor_max_seconds
+            self.ctx.inputs.parameters['CONTROL']['max_seconds'] = max_seconds
 
     def report_error_handled(self, calculation, action):
         """Report an action taken for a calculation that has failed.
