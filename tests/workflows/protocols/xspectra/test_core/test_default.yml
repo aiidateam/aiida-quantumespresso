@@ -1,5 +1,5 @@
 abs_atom_marker: Si
-clean_workdir: true
+clean_workdir: false
 core_wfc_data: '# number of core states 3 =  1 0;  2 0;
 
   6.51344e-05 6.615743462459999e-3
