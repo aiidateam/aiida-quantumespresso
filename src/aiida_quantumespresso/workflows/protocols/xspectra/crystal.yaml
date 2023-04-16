@@ -1,6 +1,6 @@
 default_inputs:
     abs_atom_marker: X
-    clean_workdir: True
+    clean_workdir: False
     return_all_powder_spectra: False
     core:
         get_powder_spectrum: True

@@ -1,5 +1,5 @@
 default_inputs:
-    clean_workdir: True
+    clean_workdir: False
     max_meta_convergence_iterations: 5
     meta_convergence: True
     volume_convergence: 0.02
