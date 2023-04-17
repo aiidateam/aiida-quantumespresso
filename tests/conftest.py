@@ -386,6 +386,23 @@ def generate_structure():
             structure = StructureData(cell=cell)
             structure.append_atom(position=(0., 0., 0.), symbols='U', name='U')
             structure.append_atom(position=(param / 4., param / 4., param / 4.), symbols='U', name='U')
+        elif structure_id == '2D-xy-arsenic':
+            cell = [[3.61, 0, 0], [-1.80, 3.13, 0], [0, 0, 21.3]]
+            structure = StructureData(cell=cell, pbc=(True, True, False))
+            structure.append_atom(position=(1.804, 1.042, 11.352), symbols='As', name='As')
+            structure.append_atom(position=(0, 2.083, 9.960), symbols='As', name='As')
+        elif structure_id == '1D-x-carbon':
+            cell = [[4.2, 0, 0], [0, 20, 0], [0, 0, 20]]
+            structure = StructureData(cell=cell, pbc=(True, False, False))
+            structure.append_atom(position=(0, 0, 0), symbols='C', name='C')
+        elif structure_id == '1D-y-carbon':
+            cell = [[20, 0, 0], [0, 4.2, 0], [0, 0, 20]]
+            structure = StructureData(cell=cell, pbc=(False, True, False))
+            structure.append_atom(position=(0, 0, 0), symbols='C', name='C')
+        elif structure_id == '1D-z-carbon':
+            cell = [[20, 0, 0], [0, 20, 0], [0, 0, 4.2]]
+            structure = StructureData(cell=cell, pbc=(False, False, True))
+            structure.append_atom(position=(0, 0, 0), symbols='C', name='C')
         else:
             raise KeyError(f'Unknown structure_id="{structure_id}"')
         return structure

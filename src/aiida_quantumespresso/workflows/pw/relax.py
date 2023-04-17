@@ -143,7 +143,18 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
             base.pw.parameters['CELL']['cell_dofree'] = 'shape'
 
         if relax_type in (RelaxType.CELL, RelaxType.POSITIONS_CELL):
-            base.pw.parameters['CELL']['cell_dofree'] = 'all'
+
+            pbc_cell_dofree_map = {
+                (True, True, True): 'all',
+                (True, False, False): 'x',
+                (False, True, False): 'y',
+                (False, False, True): 'z',
+                (True, True, False): '2Dxy',
+            }
+            if structure.pbc in pbc_cell_dofree_map:
+                base.pw.parameters['CELL']['cell_dofree'] = pbc_cell_dofree_map[structure.pbc]
+            else:
+                raise ValueError(f'Structures with periodic boundary conditions `{structure.pbc}` are not supported.')
 
         builder = cls.get_builder()
         builder.base = base

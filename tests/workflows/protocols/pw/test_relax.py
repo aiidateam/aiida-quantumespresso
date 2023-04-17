@@ -126,3 +126,21 @@ def test_options(fixture_code, generate_structure):
         builder.base_final_scf.pw.metadata,
     ):
         assert subspace['options']['queue_name'] == queue_name
+
+
+@pytest.mark.parametrize(
+    'struc_name,cell_dofree', (
+        ('silicon', 'all'),
+        ('2D-xy-arsenic', '2Dxy'),
+        ('1D-x-carbon', 'x'),
+        ('1D-y-carbon', 'y'),
+        ('1D-z-carbon', 'z'),
+    )
+)
+def test_pbc_cell(fixture_code, generate_structure, struc_name, cell_dofree):
+    """Test structures with various ``pbc`` set the correct ``CELL`` parameters."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure(struc_name)
+
+    builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure)
+    assert builder.base.pw.parameters['CELL'].get('cell_dofree', None) == cell_dofree
