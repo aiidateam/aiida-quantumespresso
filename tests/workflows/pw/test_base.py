@@ -172,6 +172,24 @@ def test_handle_relax_recoverable_ionic_convergence_error(generate_workchain_pw,
     assert result.status == 0
 
 
+def test_handle_vcrelax_recoverable_fft_significant_volume_contraction_error(generate_workchain_pw, generate_structure):
+    """Test `PwBaseWorkChain.handle_vcrelax_recoverable_fft_significant_volume_contraction_error`."""
+    exit_code = PwCalculation.exit_codes.ERROR_RADIAL_FFT_SIGNIFICANT_VOLUME_CONTRACTION
+    structure = generate_structure()
+    process = generate_workchain_pw(pw_outputs={'output_structure': structure}, exit_code=exit_code)
+    process.setup()
+
+    result = process.handle_vcrelax_recoverable_fft_significant_volume_contraction_error(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert result.do_break
+    assert result.exit_code.status == 0
+    assert process.ctx.inputs.parameters['CONTROL']['restart_mode'] == 'from_scratch'
+    assert process.ctx.inputs.parameters['CELL']['cell_factor'] == 4
+
+    result = process.inspect_process()
+    assert result.status == 0
+
+
 def test_handle_electronic_convergence_warning(generate_workchain_pw, generate_structure):
     """Test `PwBaseWorkChain.handle_electronic_convergence_warning`."""
     inputs = generate_workchain_pw(return_inputs=True)
