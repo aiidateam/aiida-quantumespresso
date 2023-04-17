@@ -209,7 +209,7 @@ HUBBARD_V = OverridableOption(
 HUBBARD_FILE = OverridableOption(
     '-H',
     '--hubbard-file',
-    'hubbard_file_pk',
+    'hubbard_file',
     type=types.DataParamType(sub_classes=('aiida.data:core.singlefile',)),
     help='SinglefileData containing Hubbard parameters from a HpCalculation to use as input for Hubbard V.'
 )

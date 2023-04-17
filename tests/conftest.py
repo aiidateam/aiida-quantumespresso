@@ -168,7 +168,7 @@ def sssp(aiida_profile, generate_upf_data):
                 'cutoff_rho': 240.0,
             }
 
-        label = 'SSSP/1.1/PBE/efficiency'
+        label = 'SSSP/1.2/PBEsol/efficiency'
         family = SsspFamily.create_from_folder(dirpath, label)
 
     family.set_cutoffs(cutoffs, stringency, unit='Ry')
@@ -367,12 +367,14 @@ def generate_structure():
         """
         from aiida.orm import StructureData
 
-        if structure_id == 'silicon':
+        if structure_id.startswith('silicon'):
+            name1 = 'Si0' if structure_id.endswith('kinds') else 'Si'
+            name2 = 'Si1' if structure_id.endswith('kinds') else 'Si'
             param = 5.43
             cell = [[param / 2., param / 2., 0], [param / 2., 0, param / 2.], [0, param / 2., param / 2.]]
             structure = StructureData(cell=cell)
-            structure.append_atom(position=(0., 0., 0.), symbols='Si', name='Si')
-            structure.append_atom(position=(param / 4., param / 4., param / 4.), symbols='Si', name='Si')
+            structure.append_atom(position=(0., 0., 0.), symbols='Si', name=name1)
+            structure.append_atom(position=(param / 4., param / 4., param / 4.), symbols='Si', name=name2)
         elif structure_id == 'water':
             structure = StructureData(cell=[[5.29177209, 0., 0.], [0., 5.29177209, 0.], [0., 0., 5.29177209]])
             structure.append_atom(position=[12.73464656, 16.7741411, 24.35076238], symbols='H', name='H')
@@ -897,3 +899,36 @@ def generate_workchain_xspectra(generate_workchain, generate_inputs_xspectra, ge
         return process
 
     return _generate_workchain_xspectra
+
+
+@pytest.fixture
+def generate_workchain_xps(generate_inputs_pw, generate_workchain, generate_upf_data):
+    """Generate an instance of a `XpsWorkChain`."""
+
+    def _generate_workchain_xps():
+        from aiida.orm import Bool, List, Str
+
+        entry_point = 'quantumespresso.xps'
+
+        scf_pw_inputs = generate_inputs_pw()
+        kpoints = scf_pw_inputs.pop('kpoints')
+        structure = scf_pw_inputs.pop('structure')
+        ch_scf = {'pw': scf_pw_inputs, 'kpoints': kpoints}
+
+        inputs = {
+            'structure': structure,
+            'ch_scf': ch_scf,
+            'dry_run': Bool(True),
+            'elements_list': List(['Si']),
+            'abs_atom_marker': Str('X'),
+            'core_hole_pseudos': {
+                'Si': generate_upf_data('Si')
+            },
+            'gipaw_pseudos': {
+                'Si': generate_upf_data('Si')
+            },
+        }
+
+        return generate_workchain(entry_point, inputs)
+
+    return _generate_workchain_xps

@@ -1,0 +1,3 @@
+# Copy this data in the pw.x input file for DFT+Hubbard calculations
+HUBBARD {ortho-atomic}
+U     Co-3d      6.0799

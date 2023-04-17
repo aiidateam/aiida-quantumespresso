@@ -21,7 +21,7 @@ def test_pw_default(fixture_sandbox, generate_calc_job, generate_inputs_pw, file
 
     cmdline_params = ['-in', 'aiida.in']
     local_copy_list = [(upf.uuid, upf.filename, './pseudo/Si.upf')]
-    retrieve_list = ['aiida.out', './out/aiida.save/data-file-schema.xml', './out/aiida.save/data-file.xml']
+    retrieve_list = ['aiida.out', './out/aiida.save/data-file-schema.xml', './out/aiida.save/data-file.xml', 'CRASH']
     retrieve_temporary_list = [['./out/aiida.save/K*[0-9]/eigenval*.xml', '.', 2]]
 
     # Check the attributes of the returned `CalcInfo`
@@ -74,7 +74,7 @@ def test_pw_ibrav(
 
     cmdline_params = ['-in', 'aiida.in']
     local_copy_list = [(upf.uuid, upf.filename, './pseudo/Si.upf')]
-    retrieve_list = ['aiida.out', './out/aiida.save/data-file-schema.xml', './out/aiida.save/data-file.xml']
+    retrieve_list = ['aiida.out', './out/aiida.save/data-file-schema.xml', './out/aiida.save/data-file.xml', 'CRASH']
     retrieve_temporary_list = [['./out/aiida.save/K*[0-9]/eigenval*.xml', '.', 2]]
 
     # Check the attributes of the returned `CalcInfo`
@@ -341,4 +341,36 @@ def test_pw_validate_inputs_restart_nscf(
     parameters['CONTROL']['restart_mode'] = 'restart'
     inputs['parameters'] = orm.Dict(parameters)
     with pytest.warns(Warning, match='`restart_mode` should be set to `from_scratch` for a `.*`.'):
+        generate_calc_job(fixture_sandbox, entry_point_name, inputs)
+
+
+def test_fixed_coords(fixture_sandbox, generate_calc_job, generate_inputs_pw, file_regression):
+    """Test a ``PwCalculation`` where the ``fixed_coords`` setting was provided."""
+    entry_point_name = 'quantumespresso.pw'
+
+    inputs = generate_inputs_pw()
+    inputs['settings'] = orm.Dict(dict={'FIXED_COORDS': [[True, True, False], [False, True, False]]})
+    generate_calc_job(fixture_sandbox, entry_point_name, inputs)
+
+    with fixture_sandbox.open('aiida.in') as handle:
+        input_written = handle.read()
+
+    file_regression.check(input_written, encoding='utf-8', extension='.in')
+
+
+@pytest.mark.parametrize(['fixed_coords', 'error_message'], [
+    ([[True, True], [False, True]], 'The `fixed_coords` setting must be a list of lists with length 3.'),
+    ([[True, True, 1], [False, True, False]
+      ], 'All elements in the `fixed_coords` setting lists must be either `True` or `False`.'),
+    ([
+        [True, True, False],
+    ], 'Input structure has 2 sites, but fixed_coords has length 1'),
+])
+def test_fixed_coords_validation(fixture_sandbox, generate_calc_job, generate_inputs_pw, fixed_coords, error_message):
+    """Test the validation of the ``fixed_coords`` setting for the ``PwCalculation``."""
+    entry_point_name = 'quantumespresso.pw'
+
+    inputs = generate_inputs_pw()
+    inputs['settings'] = orm.Dict(dict={'FIXED_COORDS': fixed_coords})
+    with pytest.raises(ValueError, match=error_message):
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)

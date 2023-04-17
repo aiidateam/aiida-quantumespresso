@@ -1,0 +1,13 @@
+default_inputs:
+    clean_workdir: True
+    abs_atom_marker: X
+    voight_gamma: 0.3
+    voight_sigma: 0.3
+default_protocol: moderate
+protocols:
+    moderate:
+        description: 'Protocol to perform an XPS calculation at normal precision at moderate computational cost.'
+    precise:
+        description: 'Protocol to perform an XPS calculation at high precision at higher computational cost.'
+    fast:
+        description: 'Protocol to perform an XPS calculation at low precision at minimal computational cost for testing purposes.'

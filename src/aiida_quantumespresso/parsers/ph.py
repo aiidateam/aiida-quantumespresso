@@ -7,7 +7,7 @@ import traceback
 from aiida import orm
 
 from aiida_quantumespresso.calculations.ph import PhCalculation
-from aiida_quantumespresso.parsers.parse_raw.ph import parse_raw_ph_output as parse_stdout
+from aiida_quantumespresso.parsers.parse_raw.ph import parse_raw_ph_output
 
 from .base import Parser
 
@@ -49,7 +49,7 @@ class PhParser(Parser):
             dynmat_files.append(retrieved.base.repository.get_object_content(os.path.join(dynmat_folder, filename)))
 
         try:
-            parsed_data, logs = parse_stdout(stdout, tensor_file, dynmat_files)
+            parsed_data, logs = parse_raw_ph_output(stdout, tensor_file, dynmat_files)
         except Exception as exc:
             self.logger.error(traceback.format_exc())
             return self.exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc))

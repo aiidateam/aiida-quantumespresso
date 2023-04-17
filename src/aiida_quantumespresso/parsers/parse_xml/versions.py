@@ -17,7 +17,7 @@ class QeXmlVersion(enum.Enum):
 
 
 def get_xml_file_version(xml):
-    """Return the version of the Quantum ESPRESSO pw.x XML output file.
+    """Return the version of the Quantum ESPRESSO pw.x and cp.x XML output file.
 
     :param xml: the pre-parsed XML object
     :raises XMLUnsupportedFormatError: if the file cannot be read, parsed or if the version cannot be determined
@@ -27,7 +27,7 @@ def get_xml_file_version(xml):
     elif is_valid_pre_6_2_version(xml):
         return QeXmlVersion.PRE_6_2
     else:
-        raise XMLUnsupportedFormatError('unrecognized XML file version')
+        raise XMLUnsupportedFormatError(f'unrecognized XML file version: cannot find schema {get_schema_filename(xml)} in {os.path.join(os.path.dirname(os.path.abspath(__file__)), "schemas")}. You can look for it in https://github.com/QEF/qeschemas')
 
 
 def get_schema_filepath(xml):
@@ -37,7 +37,7 @@ def get_schema_filepath(xml):
     :return: the XSD absolute filepath
     """
     schema_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'schemas')
-    schema_filename = get_schema_filename(xml)  # if schema == 'pw' else 'qes_cp_devel_030920.xsd'
+    schema_filename = get_schema_filename(xml)
     schema_filepath = os.path.join(schema_directory, schema_filename)
 
     return schema_filepath

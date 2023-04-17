@@ -28,6 +28,7 @@ dependencies = [
     'importlib_resources',
     'jsonschema',
     'numpy',
+    'pydantic',
     'packaging',
     'qe-tools~=2.0',
     'xmlschema~=1.2,>=1.2.5'
@@ -50,7 +51,7 @@ docs = [
 ]
 pre-commit = [
     'pre-commit~=2.17',
-    'pylint~=2.12.2',
+    'pylint~=2.17.2',
     'pylint-aiida~=0.1.1',
     'toml',
 ]
@@ -66,6 +67,7 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 [project.entry-points.'aiida.calculations']
 'quantumespresso.cp' = 'aiida_quantumespresso.calculations.cp:CpCalculation'
 'quantumespresso.create_kpoints_from_distance' = 'aiida_quantumespresso.calculations.functions.create_kpoints_from_distance:create_kpoints_from_distance'
+'quantumespresso.merge_ph_outputs' = 'aiida_quantumespresso.calculations.functions.merge_ph_outputs:merge_ph_outputs'
 'quantumespresso.dos' = 'aiida_quantumespresso.calculations.dos:DosCalculation'
 'quantumespresso.epw' = 'aiida_quantumespresso.calculations.epw:EpwCalculation'
 'quantumespresso.matdyn' = 'aiida_quantumespresso.calculations.matdyn:MatdynCalculation'
@@ -81,9 +83,11 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 'quantumespresso.q2r' = 'aiida_quantumespresso.calculations.q2r:Q2rCalculation'
 'quantumespresso.seekpath_structure_analysis' = 'aiida_quantumespresso.calculations.functions.seekpath_structure_analysis:seekpath_structure_analysis'
 'quantumespresso.xspectra' = 'aiida_quantumespresso.calculations.xspectra:XspectraCalculation'
+'quantumespresso.open_grid' = 'aiida_quantumespresso.calculations.open_grid:OpenGridCalculation'
 
 [project.entry-points.'aiida.data']
 'quantumespresso.force_constants' = 'aiida_quantumespresso.data.force_constants:ForceConstantsData'
+'quantumespresso.hubbard_structure' = 'aiida_quantumespresso.data.hubbard_structure:HubbardStructureData'
 
 [project.entry-points.'aiida.parsers']
 'quantumespresso.cp' = 'aiida_quantumespresso.parsers.cp:CpParser'
@@ -98,6 +102,7 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 'quantumespresso.q2r' = 'aiida_quantumespresso.parsers.q2r:Q2rParser'
 'quantumespresso.pw2wannier90' = 'aiida_quantumespresso.parsers.pw2wannier90:Pw2wannier90Parser'
 'quantumespresso.xspectra' = 'aiida_quantumespresso.parsers.xspectra:XspectraParser'
+'quantumespresso.open_grid' = 'aiida_quantumespresso.parsers.open_grid:OpenGridParser'
 
 [project.entry-points.'aiida.tools.calculations']
 'quantumespresso.pw' = 'aiida_quantumespresso.tools.calculations.pw:PwCalculationTools'
@@ -115,7 +120,9 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 'quantumespresso.matdyn.base' = 'aiida_quantumespresso.workflows.matdyn.base:MatdynBaseWorkChain'
 'quantumespresso.pdos' = 'aiida_quantumespresso.workflows.pdos:PdosWorkChain'
 'quantumespresso.xspectra.base' = 'aiida_quantumespresso.workflows.xspectra.base:XspectraBaseWorkChain'
+'quantumespresso.xps' = 'aiida_quantumespresso.workflows.xps:XpsWorkChain'
 'quantumespresso.xspectra.core' = 'aiida_quantumespresso.workflows.xspectra.core:XspectraCoreWorkChain'
+'quantumespresso.xspectra.crystal' = 'aiida_quantumespresso.workflows.xspectra.crystal:XspectraCrystalWorkChain'
 
 [tool.flit.module]
 name = 'aiida_quantumespresso'
@@ -145,7 +152,7 @@ ignore = [
 ]
 
 [tool.pylint.master]
-load-plugins = ['pylint_aiida']
+load-plugins = ['pylint_aiida','pylint.extensions.no_self_use']
 
 [tool.pylint.format]
 max-line-length = 120
@@ -155,17 +162,18 @@ generated-members = 'self.exit_codes.*'
 
 [tool.pylint.messages_control]
 disable = [
-    'bad-continuation',
     'duplicate-code',
-    'locally-disabled',
-    'logging-format-interpolation',
+    'fixme',
     'inconsistent-return-statements',
     'import-outside-toplevel',
+    'locally-disabled',
+    'logging-format-interpolation',
     'no-else-raise',
     'too-many-arguments',
     'too-many-ancestors',
     'too-many-branches',
     'too-many-locals',
+    'use-dict-literal',
 ]
 
 [tool.pylint.basic]

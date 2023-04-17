@@ -1,0 +1,218 @@
+
+     Program PHONON v.7.0 starts on 24Nov2022 at  0:21:12 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+         "P. Giannozzi et al., J. Chem. Phys. 152 154105 (2020);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI), running on     1 processors
+
+     MPI processes distributed on     1 nodes
+     39849 MiB available memory on the printing compute node when the environment starts
+
+     Reading input from aiida.in
+      Title line not specified: using 'default'.
+
+     Reading xml data from directory:
+
+     ./out/aiida.save/
+     file Pb.pbe-dn-kjpaw_psl.0.2.2.UPF: wavefunction(s)  6S renormalized
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation= PBE
+                           (   1   4   3   4   0   0   0)
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum        1003     499    151                20875     7391    1243
+
+     Using Slab Decomposition
+
+     Reading collected, re-writing distributed wavefunctions
+        1 /   1 q-points for this run, from  1 to  1:
+       N       xq(1)         xq(2)         xq(3) 
+       1   0.000000000   0.000000000   0.000000000
+
+
+     Calculation of q =    0.0000000   0.0000000   0.0000000
+
+     Restart in Phonon calculation
+
+     default                                                                    
+
+     bravais-lattice index     =            0
+     lattice parameter (alat)  =       6.7487  a.u.
+     unit-cell volume          =     217.3444 (a.u.)^3
+     number of atoms/cell      =            1
+     number of atomic types    =            1
+     kinetic-energy cut-off    =      40.0000  Ry
+     charge density cut-off    =     320.0000  Ry
+     convergence threshold     =      1.0E-18
+     beta                      =       0.7000
+     number of iterations used =            4
+     Exchange-correlation= PBE
+                           (   1   4   3   4   0   0   0)
+
+
+     celldm(1)=    6.74872  celldm(2)=    0.00000  celldm(3)=    0.00000
+     celldm(4)=    0.00000  celldm(5)=    0.00000  celldm(6)=    0.00000
+
+     crystal axes: (cart. coord. in units of alat)
+               a(1) = (  1.0000  0.0000  0.0000 )  
+               a(2) = (  0.5000  0.8660  0.0000 )  
+               a(3) = (  0.5000  0.2887  0.8165 )  
+
+     reciprocal axes: (cart. coord. in units 2 pi/alat)
+               b(1) = (  1.0000 -0.5774 -0.4082 )  
+               b(2) = (  0.0000  1.1547 -0.4082 )  
+               b(3) = (  0.0000  0.0000  1.2247 )  
+
+
+     Atoms inside the unit cell: 
+
+     Cartesian axes
+
+     site n.  atom      mass           positions (alat units)
+        1     Pb 207.2000   tau(    1) = (    0.00000    0.00000    0.00000  )
+
+     Computing dynamical matrix for 
+                    q = (   0.0000000   0.0000000   0.0000000 )
+
+--- SYMMETRIES REMOVED ---
+
+--- K-POINTS REMOVED ---
+
+     PseudoPot. # 1 for Pb read from file:
+     ./pseudo/Pb.pbe-dn-kjpaw_psl.0.2.2.UPF
+     MD5 check sum: 9d431e6316058b74ade52399a6cf67da
+     Pseudo is Projector augmented-wave + core cor, Zval = 14.0
+     Generated using "atomic" code by A. Dal Corso  v.5.0.99 svn rev. 10869
+     Shape of augmentation charge: PSQ
+     Using radial grid of 1281 points,  6 beta functions with: 
+                l(1) =   0
+                l(2) =   0
+                l(3) =   1
+                l(4) =   1
+                l(5) =   2
+                l(6) =   2
+     Q(r) pseudized with 0 coefficients 
+
+
+     point group D_3d (-3m) 
+     there are  6 classes
+     the character table:
+
+       E     2C3   3C2'  i     2S6   3s_d 
+A_1g   1.00  1.00  1.00  1.00  1.00  1.00
+A_2g   1.00  1.00 -1.00  1.00  1.00 -1.00
+E_g    2.00 -1.00  0.00  2.00 -1.00  0.00
+A_1u   1.00  1.00  1.00 -1.00 -1.00 -1.00
+A_2u   1.00  1.00 -1.00 -1.00 -1.00  1.00
+E_u    2.00 -1.00  0.00 -2.00  1.00  0.00
+
+     the symmetry operations in each class and the name of the first element:
+
+     E        1
+                                                                 
+     2C3      3    4
+                                                                 
+     3C2'     2    5    6
+                                                                 
+     i        7
+                                                                 
+     2S6      9   10
+                                                                 
+     3s_d     8   11   12
+                                                                 
+
+
+     Atomic displacements:
+     There are    2 irreducible representations
+
+     Representation     1      1 modes -  Done
+     Irreps are as follows:
+
+                     mode #   1
+                     (  -0.00000  -0.00000   ) 
+                     (  -0.00000  -0.00000   ) 
+                     (  -1.00000  -0.00000   ) 
+
+     Representation     2      2 modes -  To be done
+     Irreps are as follows:
+
+           mode #   2                           mode #   3
+           (  -1.00000  -0.00000   )            (  -0.00001  -0.00000   ) 
+           (   0.00001  -0.00000   )            (  -1.00000  -0.00000   ) 
+           (   0.00000  -0.00000   )            (   0.00000  -0.00000   ) 
+
+
+     PHONON       :      1.43s CPU      1.51s WALL
+
+
+
+     Representation #   2 modes #   2   3
+
+     Self-consistent Calculation
+
+     Pert. #  1: Fermi energy shift (Ry) =     1.3786E-25     0.0000E+00
+     Pert. #  2: Fermi energy shift (Ry) =     1.7233E-25     0.0000E+00
+
+      iter #   6 total cpu time :     3.5 secs   av.it.:   9.4
+      thresh= 2.196E-08 alpha_mix =  0.700 |ddv_scf|^2 =  8.951E-16
+
+     Pert. #  1: Fermi energy shift (Ry) =     1.3786E-25     0.0000E+00
+     Pert. #  2: Fermi energy shift (Ry) =     1.0340E-25     0.0000E+00
+
+      iter #   7 total cpu time :     5.4 secs   av.it.:   9.0
+      thresh= 2.992E-09 alpha_mix =  0.700 |ddv_scf|^2 =  1.079E-18
+
+     Pert. #  1: Fermi energy shift (Ry) =     2.0680E-25     0.0000E+00
+     Pert. #  2: Fermi energy shift (Ry) =     6.8932E-26     0.0000E+00
+
+      iter #   8 total cpu time :     7.4 secs   av.it.:  10.1
+      thresh= 1.039E-10 alpha_mix =  0.700 |ddv_scf|^2 =  1.093E-19
+
+     End of self-consistent calculation
+
+     Convergence has been achieved 
+
+     Number of q in the star =    1
+     List of q in the star:
+          1   0.000000000   0.000000000   0.000000000
+
+     Diagonalizing the dynamical matrix
+
+     q = (    0.000000000   0.000000000   0.000000000 ) 
+
+ **************************************************************************
+     freq (    1) =      -0.094490 [THz] =      -3.151844 [cm-1]
+     freq (    2) =      -0.094490 [THz] =      -3.151844 [cm-1]
+     freq (    3) =      -0.094112 [THz] =      -3.139229 [cm-1]
+ **************************************************************************
+
+     Mode symmetry, D_3d (-3m)  point group:
+
+     freq (   1-   1) =         -3.2  [cm-1]   --> A_2u L_2'       I  
+     freq (   2-   3) =         -3.2  [cm-1]   --> E_u  L_3'       I  
+
+     PHONON       :      7.30s CPU      7.40s WALL
+
+--- TIMINGS REMOVED ---
+
+     PHONON       :      7.30s CPU      7.40s WALL
+
+
+   This run was terminated on:   0:21:19  24Nov2022            
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=

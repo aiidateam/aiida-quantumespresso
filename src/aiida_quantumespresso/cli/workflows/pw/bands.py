@@ -21,7 +21,6 @@ from ...utils import launch, options, validate
 @options.HUBBARD_FILE()
 @options.STARTING_MAGNETIZATION()
 @options.SMEARING()
-@options.AUTOMATIC_PARALLELIZATION()
 @options.CLEAN_WORKDIR()
 @options.MAX_NUM_MACHINES()
 @options.MAX_WALLCLOCK_SECONDS()
@@ -29,16 +28,15 @@ from ...utils import launch, options, validate
 @options.DAEMON()
 @decorators.with_dbenv()
 def launch_workflow(
-    code, structure, pseudo_family, kpoints_distance, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file_pk,
-    starting_magnetization, smearing, automatic_parallelization, clean_workdir, max_num_machines, max_wallclock_seconds,
-    with_mpi, daemon
+    code, structure, pseudo_family, kpoints_distance, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file,
+    starting_magnetization, smearing, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi, daemon
 ):
     """Run a `PwBandsWorkChain`."""
     # pylint: disable=too-many-statements
     from aiida.orm import Bool, Dict, Float
     from aiida.plugins import WorkflowFactory
 
-    from aiida_quantumespresso.utils.resources import get_automatic_parallelization_options, get_default_options
+    from aiida_quantumespresso.utils.resources import get_default_options
 
     builder = WorkflowFactory('quantumespresso.pw.bands').get_builder()
 
@@ -55,9 +53,7 @@ def launch_workflow(
     }
 
     try:
-        hubbard_file = validate.validate_hubbard_parameters(
-            structure, parameters, hubbard_u, hubbard_v, hubbard_file_pk
-        )
+        validate.validate_hubbard_parameters(structure, parameters, hubbard_u, hubbard_v, hubbard_file)
     except ValueError as exception:
         raise click.BadParameter(str(exception))
 
@@ -93,16 +89,10 @@ def launch_workflow(
         builder.scf.base.pw.hubbard_file = hubbard_file
         builder.bands.base.pw.hubbard_file = hubbard_file
 
-    if automatic_parallelization:
-        auto_para = Dict(get_automatic_parallelization_options(max_num_machines, max_wallclock_seconds))
-        builder.relax.base.automatic_parallelization = auto_para
-        builder.scf.automatic_parallelization = auto_para
-        builder.bands.automatic_parallelization = auto_para
-    else:
-        metadata_options = get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)
-        builder.relax.base.pw.metadata.options = metadata_options
-        builder.scf.pw.metadata.options = metadata_options
-        builder.bands.pw.metadata.options = metadata_options
+    metadata_options = get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)
+    builder.relax.base.pw.metadata.options = metadata_options
+    builder.scf.pw.metadata.options = metadata_options
+    builder.bands.pw.metadata.options = metadata_options
 
     if clean_workdir:
         builder.clean_workdir = Bool(True)
