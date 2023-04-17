@@ -238,7 +238,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         default namelists for the ``parameters`` are set to empty dictionaries if not specified.
         """
         super().setup()
-        self.ctx.diagonalizations = ['david', 'ppcg', 'paro', 'cg']  # ``cg`` as last resort
         self.ctx.inputs = AttributeDict(self.exposed_inputs(PwCalculation, 'pw'))
 
         self.ctx.inputs.parameters = self.ctx.inputs.parameters.get_dict()
@@ -410,14 +409,18 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         If also CG is failing, abort.
         """
-        current = self.ctx.inputs.parameters['ELECTRONS'].get('diagonalization', 'david')
+        if 'diagonalizations' not in self.ctx:
+            # Initialize a diagonalizations list to keep track of inputs that haven't been tried in order or preference
+            self.ctx.diagonalizations = ['david', 'ppcg', 'paro', 'cg']
 
-        if current == 'cg':
-            action = 'found diagonalization issues but already running with conjugate gradient algorithm, aborting...'
+        current = self.ctx.inputs.parameters['ELECTRONS'].get('diagonalization', 'david')
+        self.ctx.diagonalizations.remove(current)
+
+        if not self.ctx.diagonalizations:
+            action = 'found diagonalization issues but already exploited different algorithms, aborting...'
             self.report_error_handled(calculation, action)
             return ProcessHandlerReport(True, self.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE)
 
-        self.ctx.diagonalizations.pop(self.ctx.diagonalizations.index(current))
         new = self.ctx.diagonalizations[0]
         self.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = new
 

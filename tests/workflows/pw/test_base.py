@@ -138,9 +138,6 @@ def test_handle_diagonalization_errors(generate_workchain_pw, exit_code):
     assert process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] == 'cg'
     assert result.do_break
 
-    result = process.handle_diagonalization_errors(process.ctx.children[-1])
-    assert result.do_break
-
     result = process.inspect_process()
     assert result == PwBaseWorkChain.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE
 
@@ -176,9 +173,6 @@ def test_handle_diagonalization_errors_not_from_david(generate_workchain_pw, exi
     result = process.handle_diagonalization_errors(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
     assert process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] == 'cg'
-    assert result.do_break
-
-    result = process.handle_diagonalization_errors(process.ctx.children[-1])
     assert result.do_break
 
     result = process.inspect_process()
