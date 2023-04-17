@@ -143,21 +143,18 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
             base.pw.parameters['CELL']['cell_dofree'] = 'shape'
 
         if relax_type in (RelaxType.CELL, RelaxType.POSITIONS_CELL):
-            x_dim, y_dim, z_dim = structure.pbc
-            if x_dim and not (y_dim or z_dim):
-                base.pw.parameters['CELL']['cell_dofree'] = 'x'
-            elif y_dim and not (x_dim or z_dim):
-                base.pw.parameters['CELL']['cell_dofree'] = 'y'
-            elif z_dim and not (x_dim or y_dim):
-                base.pw.parameters['CELL']['cell_dofree'] = 'z'
-            elif x_dim and y_dim and not z_dim:
-                base.pw.parameters['CELL']['cell_dofree'] = '2Dxy'
-            elif x_dim and y_dim and z_dim:
-                base.pw.parameters['CELL']['cell_dofree'] = 'all'
+
+            pbc_cell_dofree_map = {
+                (True, True, True): 'all',
+                (True, False, False): 'x',
+                (False, True, False): 'y',
+                (False, False, True): 'z',
+                (True, True, False): '2Dxy',
+            }
+            if structure.pbc in pbc_cell_dofree_map:
+                base.pw.parameters['CELL']['cell_dofree'] = pbc_cell_dofree_map[structure.pbc]
             else:
-                raise ValueError(
-                    'Invalid combination of periodic boundary conditions.'
-                )  # what other combinations are possible?
+                raise ValueError(f'Structures with periodic boundary conditions `{structure.pbc}` are not supported.')
 
         builder = cls.get_builder()
         builder.base = base

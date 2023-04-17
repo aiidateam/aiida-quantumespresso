@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=no-member,redefined-outer-name
 """Tests for the ``PwBaseWorkChain.get_builder_from_protocol`` method."""
 from aiida.engine import ProcessBuilder
 import pytest
@@ -65,6 +66,24 @@ def test_spin_type(fixture_code, generate_structure):
 
     assert parameters['SYSTEM']['nspin'] == 2
     assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.1}
+
+
+@pytest.mark.parametrize(
+    'struc_name,assume_isolated', (
+        ('silicon', None),
+        ('2D-xy-arsenic', '2D'),
+        ('1D-x-carbon', None),
+        ('1D-y-carbon', None),
+        ('1D-z-carbon', None),
+    )
+)
+def test_pbc_assume_isolated(fixture_code, generate_structure, struc_name, assume_isolated):
+    """Test structures with various ``pbc`` set the correct ``assume_isolated``."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure(struc_name)
+
+    builder = PwBaseWorkChain.get_builder_from_protocol(code, structure)
+    assert builder.pw.parameters['SYSTEM'].get('assume_isolated', None) == assume_isolated
 
 
 @pytest.mark.parametrize('initial_magnetic_moments', ({}, {'Si1': 1.0, 'Si2': 2.0}))

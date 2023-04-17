@@ -195,8 +195,8 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         parameters['SYSTEM']['ecutwfc'] = cutoff_wfc
         parameters['SYSTEM']['ecutrho'] = cutoff_rho
 
-        #If 2D periodicity set assume_isolate
-        if (True, True, False) == structure.pbc:
+        #If the structure is 2D periodic in the x-y plane, we set assume_isolate to `2D`
+        if structure.pbc == (True, True, False):
             parameters['SYSTEM']['assume_isolated'] = '2D'
 
         if electronic_type is ElectronicType.INSULATOR:
