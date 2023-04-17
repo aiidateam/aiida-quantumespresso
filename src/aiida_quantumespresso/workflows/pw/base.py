@@ -488,6 +488,32 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         return ProcessHandlerReport(True)
 
     @process_handler(
+        priority=559, exit_codes=[
+            PwCalculation.exit_codes.ERROR_RADIAL_FFT_SIGNIFICANT_VOLUME_CONTRACTION,
+        ]
+    )
+    def handle_vcrelax_recoverable_fft_significant_volume_contraction_error(self, calculation):
+        """Handle exit code for recoverable `vc-relax` calculations with significant volume contraction.
+
+        This exit code appears when a cell relaxation produces a significant volume scaling (contraction or expansion).
+        This means the pseudopotentials tables must be recalculated. This parameter is controlled by `CELL.cell_factor`.
+        The solution, as suggested by the QuantumESPRESSO error itself, is to restart with an increased `cell_factor`.
+        We then start from scratch using the last output structure and we double the cell factor.
+        """
+        self.ctx.inputs.structure = calculation.outputs.output_structure
+        self.ctx.inputs.parameters.setdefault('CELL', {})  # as it is not compulsory for ``vc-relax`` calculations
+        cell_factor = 2 * self.ctx.inputs.parameters['CELL'].get('cell_factor', 2)
+        self.ctx.inputs.parameters['CELL']['cell_factor'] = cell_factor
+
+        self.set_restart_type(RestartType.FROM_SCRATCH)
+        action = (
+            'significant volume scaling but clean shutdown: '
+            f'restarting from scratch using output structure and ``cell_factor = {cell_factor}``.'
+        )
+        self.report_error_handled(calculation, action)
+        return ProcessHandlerReport(True)
+
+    @process_handler(
         priority=550,
         exit_codes=[
             PwCalculation.exit_codes.ERROR_IONIC_CYCLE_ELECTRONIC_CONVERGENCE_NOT_REACHED,

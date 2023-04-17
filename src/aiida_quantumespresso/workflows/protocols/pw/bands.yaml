@@ -1,6 +1,6 @@
 default_inputs:
     bands_kpoints_distance: 0.025
-    clean_workdir: True
+    clean_workdir: False
     nbands_factor: 3.0
 default_protocol: moderate
 protocols:

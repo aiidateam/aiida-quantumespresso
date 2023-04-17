@@ -1,24 +1,6 @@
-
-     Program PWSCF v.6.7MaX starts on 23Mar2023 at 10:42: 3 
-
-     This program is part of the open-source Quantum ESPRESSO suite
-     for quantum simulation of materials; please cite
-         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
-         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
-          URL http://www.quantum-espresso.org", 
-     in publications or presentations arising from this work. More details at
-     http://www.quantum-espresso.org/quote
-
-     Parallel version (MPI), running on    40 processors
-
 # NOTE: lines of output removed 
-
-     iteration #117     ecut=    60.00 Ry     beta= 0.32
-     Davidson diagonalization with overlap
-
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      Error in routine cdiaghg (286):
      S matrix not positive definite
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-     stopping ...
+# NOTE: lines of output removed 

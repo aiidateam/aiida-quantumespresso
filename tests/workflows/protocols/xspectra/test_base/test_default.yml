@@ -1,4 +1,4 @@
-clean_workdir: true
+clean_workdir: false
 kpoints:
 - - 2
   - 2

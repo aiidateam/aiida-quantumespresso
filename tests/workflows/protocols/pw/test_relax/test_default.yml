@@ -65,7 +65,7 @@ base_final_scf:
         smearing: cold
     pseudos:
       Si: Si<md5=57fa15d98af99972c7b7aa5c179b0bb8>
-clean_workdir: true
+clean_workdir: false
 max_meta_convergence_iterations: 5
 meta_convergence: true
 structure: Si2
