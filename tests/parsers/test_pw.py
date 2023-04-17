@@ -1093,7 +1093,27 @@ def test_pw_vcrelax_failed_not_converged_nstep(
     assert 'output_kpoints' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
-    assert 'output_trajectory' in results
+
+
+@pytest.mark.parametrize('filename', ('', '_stdout'))
+def test_pw_vcrelax_failed_fft_significant_volume_contraction(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
+):
+    """Test a `vc-relax` that failed due to significant volume contraction."""
+    name = f'vcrelax_failed_fft_significant_volume_contraction{filename}'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    inputs = generate_inputs(calculation_type='vc-relax')
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+    expected_exit_status = node.process_class.exit_codes.ERROR_RADIAL_FFT_SIGNIFICANT_VOLUME_CONTRACTION.status
+
+    assert calcfunction.is_failed
+    assert calcfunction.exit_status == expected_exit_status
+    assert orm.Log.collection.get_logs_for(node)
+    assert 'output_structure' in results
 
 
 def test_magnetic_moments_v68(

@@ -1,5 +1,5 @@
 default_inputs:
-    clean_workdir: True
+    clean_workdir: False
     ph:
         metadata:
             options:

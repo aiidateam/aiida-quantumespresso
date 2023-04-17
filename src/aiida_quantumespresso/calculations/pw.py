@@ -162,6 +162,9 @@ class PwCalculation(BasePwCpInputGenerator):
             message='The electronic minimization cycle did not reach self-consistency.')
         spec.exit_code(541, 'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION',
             message='The variable cell optimization broke the symmetry of the k-points.')
+        spec.exit_code(542, 'ERROR_RADIAL_FFT_SIGNIFICANT_VOLUME_CONTRACTION',
+            message=('The cell relaxation caused a significant volume contraction '
+                     'and there is not enough space allocated for radial FFT.'))
 
         # Strong warnings about calculation results, but something tells us that you're ok with that
         spec.exit_code(710, 'WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED',
@@ -175,21 +178,20 @@ class PwCalculation(BasePwCpInputGenerator):
         parameters = value['parameters'].get_dict()
         calculation_type = parameters.get('CONTROL', {}).get('calculation', 'scf')
 
-        # Check that the restart input parameters are set correctly
-        if calculation_type in ('nscf', 'bands'):
-            if parameters.get('ELECTRONS', {}).get('startingpot', 'file') != 'file':
-                return f'`startingpot` should be set to `file` for a `{calculation_type}` calculation.'
-            if parameters.get('CONTROL', {}).get('restart_mode', 'from_scratch') != 'from_scratch':
-                warnings.warn(f'`restart_mode` should be set to `from_scratch` for a `{calculation_type}` calculation.')
-        elif 'parent_folder' in value:
+        # If a `parent_folder` input is provided, make sure the inputs are set to restart
+        if 'parent_folder' in value and calculation_type not in ('nscf', 'bands'):
             if not any([
                 parameters.get('CONTROL', {}).get('restart_mode', None) == 'restart',
                 parameters.get('ELECTRONS', {}).get('startingpot', None) == 'file',
                 parameters.get('ELECTRONS', {}).get('startingwfc', None) == 'file'
             ]):
                 warnings.warn(
-                    '`parent_folder` input was provided for the `PwCalculation`, but no '
-                    'input parameters are set to restart from these files.'
+                    f'`parent_folder` input was provided for the `{calculation_type}` `PwCalculation`, but no input'
+                    'parameters were provided to restart from this folder.\n\n'
+                    'Please set one of the following in the input parameters:\n'
+                    "    parameters['CONTROL']['restart_mode'] = 'restart'\n"
+                    "    parameters['ELECTRONS']['startingpot'] = 'file'\n"
+                    "    parameters['ELECTRONS']['startingwfc'] = 'file'\n"
                 )
 
     @classmethod
@@ -197,9 +199,8 @@ class PwCalculation(BasePwCpInputGenerator):
         """Validate the top level namespace.
 
         Check that the restart input parameters are set correctly. In case of 'nscf' and 'bands' calculations, this
-        means ``parent_folder`` is provided, ``startingpot`` is set to 'file' and ``restart_mode`` is 'from_scratch'.
-        For other calculations, if the ``parent_folder`` is provided, the restart settings must be set to use some of
-        the outputs.
+        means ``parent_folder`` is provided. For other calculations, if the ``parent_folder`` is provided, the restart
+        settings must be set to use some of the outputs.
 
         Note that the validator is split in two methods: ``validate_inputs`` and ``validate_inputs_base``. This is to
         facilitate work chains that wrap this calculation that will provide the ``parent_folder`` themselves and so do

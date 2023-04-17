@@ -28,7 +28,7 @@ bands:
     pseudos:
       Si: Si<md5=57fa15d98af99972c7b7aa5c179b0bb8>
 bands_kpoints_distance: 0.025
-clean_workdir: true
+clean_workdir: false
 nbands_factor: 3.0
 relax:
   base:
