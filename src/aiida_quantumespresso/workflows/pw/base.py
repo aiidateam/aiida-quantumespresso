@@ -414,7 +414,10 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             self.ctx.diagonalizations = ['david', 'ppcg', 'paro', 'cg']
 
         current = self.ctx.inputs.parameters['ELECTRONS'].get('diagonalization', 'david')
-        self.ctx.diagonalizations.remove(current)
+        try:
+            self.ctx.diagonalizations.remove(current)
+        except ValueError:  # if it is different from the one we support in the handler
+            pass
 
         if not self.ctx.diagonalizations:
             action = 'found diagonalization issues but already exploited different algorithms, aborting...'
