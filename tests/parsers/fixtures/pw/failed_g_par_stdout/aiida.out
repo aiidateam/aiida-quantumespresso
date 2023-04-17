@@ -1,30 +1,3 @@
-
-     Program PWSCF v.7.1 starts on 11Feb2023 at 13:37:22 
-
 # NOTE: many lines of output removed
-
-     Davidson diagonalization with overlap
-
----- Real-time Memory Report at c_bands before calling an iterative solver
-          2495 MiB given to the printing process from OS
-             0 MiB allocation reported by mallinfo(arena+hblkhd)
-        722525 MiB available memory on the node where the printing process lives
-------------------
-     ethr =  2.63E-09,  avg # of iterations =  8.0
- 
-     Expectation value of exp(iGx):
- (-1.526037739195204E-010,-7.799531768050255E-011)   1.00000000000000     
-     Electronic Dipole per cell (Ry a.u.)  -32.4644296106292     
-     Ionic Dipole per cell (Ry a.u.)   66659.8520045742     
- 
-     Expectation value of exp(iGx):
- (1.975451197569155E-005,4.181057215538879E-006)   1.42831277972658     
-     Electronic Dipole per cell (Ry a.u.)   3.62345243735206     
-     Ionic Dipole per cell (Ry a.u.)   95584.4382526383     
-  error: translated G=  0.000000000000000E+000  0.000000000000000E+000
- -0.795109990420963       with crystal coordinates           0           0
-          -1  corresponds to ng=           2  but G(ng)= -3.753196446866376E-005
- -2.906841730317554E-004 -0.795110098058144     
   probably because G_par is NOT a reciprocal lattice vector 
-
 # NOTE: many lines of output removed
