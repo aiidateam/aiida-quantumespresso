@@ -1,5 +1,5 @@
 default_inputs:
-    clean_workdir: True
+    clean_workdir: False
     kpoints_distance: 0.15
     kpoints_force_parity: False
     xspectra:

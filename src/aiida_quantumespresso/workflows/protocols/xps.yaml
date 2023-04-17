@@ -1,5 +1,5 @@
 default_inputs:
-    clean_workdir: True
+    clean_workdir: False
     abs_atom_marker: X
     voight_gamma: 0.3
     voight_sigma: 0.3

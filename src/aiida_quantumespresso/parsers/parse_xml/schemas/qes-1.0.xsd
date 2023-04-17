@@ -170,7 +170,10 @@ Authors: Antonio Zambon, Paolo Giannozzi, Pietro Delugas
   <simpleType name="lowhighType">
   	<restriction base="string">
   	  <enumeration value="low"/>
+  	  <enumeration value="medium"/>
   	  <enumeration value="high"/>
+  	  <enumeration value="nowf"/>
+  	  <enumeration value="none"/>
   	</restriction>
   </simpleType>
   <!-- INPUT TYPE -->

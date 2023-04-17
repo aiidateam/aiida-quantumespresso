@@ -28,7 +28,7 @@ from ...utils import launch, options, validate
 @options.DAEMON()
 @decorators.with_dbenv()
 def launch_workflow(
-    code, structure, pseudo_family, kpoints_distance, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file_pk,
+    code, structure, pseudo_family, kpoints_distance, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file,
     starting_magnetization, smearing, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi, daemon
 ):
     """Run a `PwBandsWorkChain`."""
@@ -53,9 +53,7 @@ def launch_workflow(
     }
 
     try:
-        hubbard_file = validate.validate_hubbard_parameters(
-            structure, parameters, hubbard_u, hubbard_v, hubbard_file_pk
-        )
+        validate.validate_hubbard_parameters(structure, parameters, hubbard_u, hubbard_v, hubbard_file)
     except ValueError as exception:
         raise click.BadParameter(str(exception))
 
