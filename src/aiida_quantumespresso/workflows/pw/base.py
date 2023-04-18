@@ -407,29 +407,24 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         still not used. Conjugate gradient (CG) is kept as last option, as it is the slowest among the
         available ones, but on the contrary it is the most stable as well, thus kept as `last resort`.
 
-        If also CG is failing, abort.
+        Once the error handler has tried all ``diagonalization`` options, abort.
         """
-        if 'diagonalizations' not in self.ctx:
-            # Initialize a diagonalizations list to keep track of inputs that haven't been tried in order or preference
-            self.ctx.diagonalizations = ['david', 'ppcg', 'paro', 'cg']
-
         current = self.ctx.inputs.parameters['ELECTRONS'].get('diagonalization', 'david')
-        try:
-            self.ctx.diagonalizations.remove(current)
-        except ValueError:  # if it is different from the one we support in the handler
-            pass
 
-        if not self.ctx.diagonalizations:
-            action = 'found diagonalization issues but already exploited different algorithms, aborting...'
+        if 'diagonalizations' not in self.ctx:
+            # Initialize a list to track diagonalisations that haven't been tried in reverse order or preference
+            self.ctx.diagonalizations = [value for value in ['cg', 'paro', 'ppcg', 'david'] if value != current.lower()]
+
+        try:
+            new = self.ctx.diagonalizations.pop()
+            self.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = new
+            action = f'found diagonalization issues for ``{current}``, switching to ``{new}`` diagonalization.'
+            self.report_error_handled(calculation, action)
+            return ProcessHandlerReport(True)
+        except IndexError:
+            action = 'found diagonalization issues but already exploited all supported algorithms, aborting...'
             self.report_error_handled(calculation, action)
             return ProcessHandlerReport(True, self.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE)
-
-        new = self.ctx.diagonalizations[0]
-        self.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = new
-
-        action = f'found diagonalization issues for ``{current}``, switching to ``{new}`` diagonalization.'
-        self.report_error_handled(calculation, action)
-        return ProcessHandlerReport(True)
 
     @process_handler(priority=580, exit_codes=[
         PwCalculation.exit_codes.ERROR_OUT_OF_WALLTIME,
