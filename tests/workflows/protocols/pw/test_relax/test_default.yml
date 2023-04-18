@@ -44,8 +44,6 @@ base_final_scf:
           num_machines: 1
         withmpi: true
     parameters:
-      CELL:
-        press_conv_thr: 0.5
       CONTROL:
         calculation: scf
         etot_conv_thr: 2.0e-05

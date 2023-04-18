@@ -87,7 +87,7 @@ def test_options(fixture_code, generate_structure):
 
     for subspace in (
         builder.relax.base.pw.metadata,
-        builder.scf.pw.metadata,
-        builder.bands.pw.metadata,
+        builder.scf.pw.metadata,  # pylint: disable=no-member
+        builder.bands.pw.metadata,  # pylint: disable=no-member
     ):
         assert subspace['options']['queue_name'] == queue_name, subspace

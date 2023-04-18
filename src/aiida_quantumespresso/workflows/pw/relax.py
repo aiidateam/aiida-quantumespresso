@@ -179,12 +179,11 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         self.ctx.relax_inputs.pw.parameters = self.ctx.relax_inputs.pw.parameters.get_dict()
 
         self.ctx.relax_inputs.pw.parameters.setdefault('CONTROL', {})
-        self.ctx.relax_inputs.pw.parameters['CONTROL']['restart_mode'] = 'from_scratch'
 
         # Set the meta_convergence and add it to the context
         self.ctx.meta_convergence = self.inputs.meta_convergence.value
         volume_cannot_change = (
-            self.ctx.relax_inputs.pw.parameters['CONTROL']['calculation'] in ('scf', 'relax') or
+            self.ctx.relax_inputs.pw.parameters['CONTROL'].get('calculation', 'scf') in ('scf', 'relax') or
             self.ctx.relax_inputs.pw.parameters.get('CELL', {}).get('cell_dofree', None) == 'shape'
         )
         if self.ctx.meta_convergence and volume_cannot_change:
@@ -197,7 +196,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         if 'base_final_scf' in self.inputs:
             self.ctx.final_scf_inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='base_final_scf'))
 
-            if self.ctx.relax_inputs.pw.parameters['CONTROL']['calculation'] == 'scf':
+            if self.ctx.relax_inputs.pw.parameters['CONTROL'].get('calculation', 'scf') == 'scf':
                 self.report(
                     'Work chain will not run final SCF when `calculation` is set to `scf` for the relaxation '
                     '`PwBaseWorkChain`.'
@@ -208,9 +207,6 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
                 self.ctx.final_scf_inputs.pw.parameters = self.ctx.final_scf_inputs.pw.parameters.get_dict()
 
                 self.ctx.final_scf_inputs.pw.parameters.setdefault('CONTROL', {})
-                self.ctx.final_scf_inputs.pw.parameters['CONTROL']['calculation'] = 'scf'
-                self.ctx.final_scf_inputs.pw.parameters['CONTROL']['restart_mode'] = 'from_scratch'
-                self.ctx.final_scf_inputs.pw.parameters.pop('CELL', None)
                 self.ctx.final_scf_inputs.metadata.call_link_label = 'final_scf'
 
     def should_run_relax(self):

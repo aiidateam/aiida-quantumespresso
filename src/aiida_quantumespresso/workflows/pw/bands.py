@@ -3,15 +3,14 @@
 from aiida import orm
 from aiida.common import AttributeDict
 from aiida.engine import ToContext, WorkChain, if_
-from aiida.plugins import WorkflowFactory
 
 from aiida_quantumespresso.calculations.functions.seekpath_structure_analysis import seekpath_structure_analysis
+from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
+from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
+from aiida_quantumespresso.workflows.pw.relax import PwRelaxWorkChain
 
 from ..protocols.utils import ProtocolMixin
-
-PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
-PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
 
 
 def validate_inputs(inputs, ctx=None):  # pylint: disable=unused-argument
@@ -72,6 +71,7 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
             help='Explicit kpoints to use for the BANDS calculation. Specify either this or `bands_kpoints_distance`.')
         spec.input('bands_kpoints_distance', valid_type=orm.Float, required=False,
             help='Minimum kpoints distance for the BANDS calculation. Specify either this or `bands_kpoints`.')
+        spec.inputs['bands']['pw'].validator = PwCalculation.validate_inputs_base
         spec.inputs.validator = validate_inputs
         spec.outline(
             cls.setup,
@@ -228,13 +228,12 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='scf'))
         inputs.metadata.call_link_label = 'scf'
         inputs.pw.structure = self.ctx.current_structure
-        inputs.pw.parameters = inputs.pw.parameters.get_dict()
-        inputs.pw.parameters.setdefault('CONTROL', {})['calculation'] = 'scf'
 
         # Make sure to carry the number of bands from the relax workchain if it was run and it wasn't explicitly defined
         # in the inputs. One of the base workchains in the relax workchain may have changed the number automatically in
         #  the sanity checks on band occupations.
         if self.ctx.current_number_of_bands:
+            inputs.pw.parameters = inputs.pw.parameters.get_dict()
             inputs.pw.parameters.setdefault('SYSTEM', {}).setdefault('nbnd', self.ctx.current_number_of_bands)
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
@@ -266,13 +265,6 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         inputs.pw.parameters.setdefault('CONTROL', {})
         inputs.pw.parameters.setdefault('SYSTEM', {})
         inputs.pw.parameters.setdefault('ELECTRONS', {})
-
-        # The following flags always have to be set in the parameters, regardless of what caller specified in the inputs
-        inputs.pw.parameters['CONTROL']['calculation'] = 'bands'
-
-        # Only set the following parameters if not directly explicitly defined in the inputs
-        inputs.pw.parameters['ELECTRONS'].setdefault('diagonalization', 'cg')
-        inputs.pw.parameters['ELECTRONS'].setdefault('diago_full_acc', True)
 
         # If `nbands_factor` is defined in the inputs we set the `nbnd` parameter
         if 'nbands_factor' in self.inputs:
