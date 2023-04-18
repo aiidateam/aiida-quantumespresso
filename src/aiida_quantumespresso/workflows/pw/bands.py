@@ -228,12 +228,12 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='scf'))
         inputs.metadata.call_link_label = 'scf'
         inputs.pw.structure = self.ctx.current_structure
-        inputs.pw.parameters = inputs.pw.parameters.get_dict()
 
         # Make sure to carry the number of bands from the relax workchain if it was run and it wasn't explicitly defined
         # in the inputs. One of the base workchains in the relax workchain may have changed the number automatically in
         #  the sanity checks on band occupations.
         if self.ctx.current_number_of_bands:
+            inputs.pw.parameters = inputs.pw.parameters.get_dict()
             inputs.pw.parameters.setdefault('SYSTEM', {}).setdefault('nbnd', self.ctx.current_number_of_bands)
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
