@@ -393,23 +393,38 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         exit_codes=[
             PwCalculation.exit_codes.ERROR_COMPUTING_CHOLESKY,
             PwCalculation.exit_codes.ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED,
+            PwCalculation.exit_codes.ERROR_S_MATRIX_NOT_POSITIVE_DEFINITE,
+            PwCalculation.exit_codes.ERROR_ZHEGVD_FAILED,
+            PwCalculation.exit_codes.ERROR_QR_FAILED,
+            PwCalculation.exit_codes.ERROR_EIGENVECTOR_CONVERGENCE,
+            PwCalculation.exit_codes.ERROR_BROYDEN_FACTORIZATION,
         ]
     )
     def handle_diagonalization_errors(self, calculation):
         """Handle known issues related to the diagonalization.
 
-        Switch to ``diagonalization = 'cg'`` if not already running with this setting, and restart from the charge
-        density. In case the run already used conjugate gradient diagonalization, abort.
+        We use the following strategy. When a diagonalization algorithm fails, we try using an other one
+        still not used. Conjugate gradient (CG) is kept as last option, as it is the slowest among the
+        available ones, but on the contrary it is the most stable as well, thus kept as `last resort`.
+
+        Once the error handler has tried all ``diagonalization`` options, abort.
         """
-        if self.ctx.inputs.parameters['ELECTRONS'].get('diagonalization', None) == 'cg':
-            action = 'found diagonalization issues but already running with conjugate gradient algorithm, aborting...'
+        current = self.ctx.inputs.parameters['ELECTRONS'].get('diagonalization', 'david')
+
+        if 'diagonalizations' not in self.ctx:
+            # Initialize a list to track diagonalisations that haven't been tried in reverse order or preference
+            self.ctx.diagonalizations = [value for value in ['cg', 'paro', 'ppcg', 'david'] if value != current.lower()]
+
+        try:
+            new = self.ctx.diagonalizations.pop()
+            self.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = new
+            action = f'found diagonalization issues for ``{current}``, switching to ``{new}`` diagonalization.'
+            self.report_error_handled(calculation, action)
+            return ProcessHandlerReport(True)
+        except IndexError:
+            action = 'found diagonalization issues but already exploited all supported algorithms, aborting...'
             self.report_error_handled(calculation, action)
             return ProcessHandlerReport(True, self.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE)
-
-        self.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = 'cg'
-        action = 'found diagonalization issues, switching to conjugate gradient diagonalization.'
-        self.report_error_handled(calculation, action)
-        return ProcessHandlerReport(True)
 
     @process_handler(priority=580, exit_codes=[
         PwCalculation.exit_codes.ERROR_OUT_OF_WALLTIME,

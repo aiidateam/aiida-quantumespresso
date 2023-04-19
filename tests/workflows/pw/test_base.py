@@ -109,6 +109,11 @@ def test_handle_known_unrecoverable_failure(generate_workchain_pw):
     'exit_code', (
         PwCalculation.exit_codes.ERROR_COMPUTING_CHOLESKY,
         PwCalculation.exit_codes.ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED,
+        PwCalculation.exit_codes.ERROR_S_MATRIX_NOT_POSITIVE_DEFINITE,
+        PwCalculation.exit_codes.ERROR_ZHEGVD_FAILED,
+        PwCalculation.exit_codes.ERROR_QR_FAILED,
+        PwCalculation.exit_codes.ERROR_EIGENVECTOR_CONVERGENCE,
+        PwCalculation.exit_codes.ERROR_BROYDEN_FACTORIZATION,
     )
 )
 def test_handle_diagonalization_errors(generate_workchain_pw, exit_code):
@@ -120,10 +125,54 @@ def test_handle_diagonalization_errors(generate_workchain_pw, exit_code):
 
     result = process.handle_diagonalization_errors(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
-    assert process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] == 'cg'
+    assert process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] == 'ppcg'
     assert result.do_break
 
     result = process.handle_diagonalization_errors(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] == 'paro'
+    assert result.do_break
+
+    result = process.handle_diagonalization_errors(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] == 'cg'
+    assert result.do_break
+
+    result = process.inspect_process()
+    assert result == PwBaseWorkChain.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE
+
+
+@pytest.mark.parametrize(
+    'exit_code', (
+        PwCalculation.exit_codes.ERROR_COMPUTING_CHOLESKY,
+        PwCalculation.exit_codes.ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED,
+        PwCalculation.exit_codes.ERROR_S_MATRIX_NOT_POSITIVE_DEFINITE,
+        PwCalculation.exit_codes.ERROR_ZHEGVD_FAILED,
+        PwCalculation.exit_codes.ERROR_QR_FAILED,
+        PwCalculation.exit_codes.ERROR_EIGENVECTOR_CONVERGENCE,
+        PwCalculation.exit_codes.ERROR_BROYDEN_FACTORIZATION,
+    )
+)
+def test_handle_diagonalization_errors_not_from_david(generate_workchain_pw, exit_code):
+    """Test `PwBaseWorkChain.handle_diagonalization_errors` starting from a different diagonalization."""
+    process = generate_workchain_pw(exit_code=exit_code)
+    process.setup()
+
+    process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = 'ppcg'
+
+    result = process.handle_diagonalization_errors(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] == 'david'
+    assert result.do_break
+
+    result = process.handle_diagonalization_errors(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] == 'paro'
+    assert result.do_break
+
+    result = process.handle_diagonalization_errors(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] == 'cg'
     assert result.do_break
 
     result = process.inspect_process()
