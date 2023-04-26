@@ -13,7 +13,7 @@ For `ph.x`, we now also parse the symmetry labels for each q-point, which are pr
 In the case of restarts in the `PhBaseWorkChain`, care has been taken to properly parse these symmetry labels from the separate output files and merge them, so the `output_parameters` are the same with or without restarts.
 
 
-We've added a `XpsWorkChain` to compute the XPS spectra using core-hole pseudopotentials and the `pw.x` code. The workchain can handle both molecules and crystals. The chemical shifts, as well as the cole-level binding energy can be obtained.
+We've added the `XpsWorkChain` to compute the XPS spectra using core-hole pseudo potentials and the `pw.x` code. The work chain can handle both molecules and crystals. The chemical shifts, as well as the cole-level binding energy can be obtained.
 
 
 Finally, we've also added and improved error handling for the `PwBaseWorkChain` for several typical failure modes of the `pw.x` code, and now also retrieve and parse the `CRASH` file which will be the default location of error messages from Quantum ESPRESSO v7.2 onwards.
