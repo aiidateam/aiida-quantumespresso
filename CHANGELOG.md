@@ -1,5 +1,20 @@
 ## v4.3.0
 
+We are excited to release version `4.3.0`, which comes jam-packed with a lot of new features, improvements and bug fixes! 🚀
+
+Although this technically a minor release, this new version does come with some _minor_ breaking changes:
+
+* We switched the default value of `clean_workdir` from `True` to `False`.
+* We have removed the `automatic_parallelization` feature of the `PwBaseWorkChain`, as this was badly broken with no clear path to fixing it. Moreover, [v7.1 of Quantum ESPRESSO](https://gitlab.com/QEF/q-e/-/releases/qe-7.1) has implemented some basic automated parallelization for `pw.x` when no parallelization flags are specified.
+
+We've added support for Quantum ESPRESSO v7.2 `pw.x` parsing, and also have added the `HubbardStructureData` data plugin along with some changes in the `PwCalculation` plugin to support the [new input syntax for using Hubbard corrections](https://gitlab.com/QEF/q-e/-/releases/qe-7.1#incompatible-changes-in-71-version) in the `pw.x` code.
+
+For `ph.x`, we now also parse the symmetry labels for each q-point, which are printed in the `stdout` after the mode frequencies.
+In the case of restarts in the `PhBaseWorkChain`, care has been taken to properly parse these symmetry labels from the separate output files and merge them, so the `output_parameters` are the same with or without restarts.
+
+
+Finally, we've also added and improved error handling for the `PwBaseWorkChain` for several typical failure modes of the `pw.x` code, and now also retrieve and parse the `CRASH` file which will be the default location of error messages from Quantum ESPRESSO v7.2 onwards.
+
 ### ‼️ Breaking changes
 
 * Protocols: Set `clean_workdir` default to `False` [[f8e512f](https://github.com/aiidateam/aiida-quantumespresso/commit/f8e512f9cb5404d702aa1d721e2369c7257f977f)]
