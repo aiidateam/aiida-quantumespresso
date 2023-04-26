@@ -1,3 +1,60 @@
+## v4.3.0
+
+### ‼️ Breaking changes
+
+* Protocols: Set `clean_workdir` default to `False` [[f8e512f](https://github.com/aiidateam/aiida-quantumespresso/commit/f8e512f9cb5404d702aa1d721e2369c7257f977f)]
+* `PwBaseWorkChain`: Remove `automatic_parallelization` input [[5cae75f](https://github.com/aiidateam/aiida-quantumespresso/commit/5cae75ff671268dc1e5684e1c84f801a10839e0b)]
+
+### ✨ New features
+
+* `PwBaseWorkChain`: Add `ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY` handler [[9291f84](https://github.com/aiidateam/aiida-quantumespresso/commit/9291f841445800fa2b38d97b6957e98a2818b624)]
+* `PwCalculation`: Add exit code and handler for `scale_h` error [[d350d7e](https://github.com/aiidateam/aiida-quantumespresso/commit/d350d7eb5b7bfcf4682ee8f635c721708be1d1d7)]
+* `PwParser`: Add retrieval and parsing of `CRASH` file [[7f53c96](https://github.com/aiidateam/aiida-quantumespresso/commit/7f53c96bf744ed622fe7b1d13b0f7e9198ed5656)]
+* Add the `HubbardStructureData` data plugin [[355020c](https://github.com/aiidateam/aiida-quantumespresso/commit/355020ca9ea63db0803ecc5746f93a879f488696)]
+* `PwParser`: Add support for QE v7.2 [[57f5f8f](https://github.com/aiidateam/aiida-quantumespresso/commit/57f5f8ffa359ed5f5d937c43ae1f53cbc55eb314)]
+* `PhParser`: parse symmetry labels from the `stdout` of `ph.x` [[8a9950a](https://github.com/aiidateam/aiida-quantumespresso/commit/8a9950aa870a26badb24b572910f7b8526236f37)]
+* Add Feature: `XpsWorkChain` [[a9d124e](https://github.com/aiidateam/aiida-quantumespresso/commit/a9d124e2cfa5a5a5891affbe40515d38d1dd3913)]
+* Add Feature: `XspectraCrystalWorkChain` [[01e7593](https://github.com/aiidateam/aiida-quantumespresso/commit/01e759319552645072b7a89dd0347225ab14d635)]
+* Add `OpenGridCalculation` [[361ff04](https://github.com/aiidateam/aiida-quantumespresso/commit/361ff0413659b23f895747e04f8448f574811958)]
+* Feature/get xspectra structures [[bc63d56](https://github.com/aiidateam/aiida-quantumespresso/commit/bc63d5661a6e79e3cf599ada3fdfc8eb3cb8193d)]
+
+### 👌 Improvements
+
+* ``PwBaseWorkChain``: improve diagonalization handler [[cc29488](https://github.com/aiidateam/aiida-quantumespresso/commit/cc29488c9e450bac5af7d28ee3f79ab8bcb01b6a)]
+* `PwCalculation`: Add `ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY` code [[92a6c6f](https://github.com/aiidateam/aiida-quantumespresso/commit/92a6c6fb00c02ace0f8afc0d06d8f938a0e2d221)]
+* `PwParser`: Keep scheduler parser error unless more specific available [[b8d6a3a](https://github.com/aiidateam/aiida-quantumespresso/commit/b8d6a3a489c8d24a06cfc58956a97b121ad92316)]
+* Protocols: consider `pbc` of `StructureData` [[ef21642](https://github.com/aiidateam/aiida-quantumespresso/commit/ef21642ba8c715b384e726628f866f7a3df63890)]
+* CLI: Simplify `cli.utils.validate_hubbard_parameters` and add tests [[74d25d1](https://github.com/aiidateam/aiida-quantumespresso/commit/74d25d1782cddb2801781999e6c708191f1cdae7)]
+* `PwCalculation`: Add exit codes, mostly related to diagonalization [[159b83e](https://github.com/aiidateam/aiida-quantumespresso/commit/159b83e5a96db258697fa821b48746adfbacd2ad)]
+* `PwParser`: Include path in exception when XML schema not found [[56fdb57](https://github.com/aiidateam/aiida-quantumespresso/commit/56fdb57643fa44e7bcff82640d9cbcb26f7759b3)]
+
+### 🐛 Bug Fixes
+
+* `PwCalculation`: Fix restart validation for `nscf`/`bands` [[29a0dfa](https://github.com/aiidateam/aiida-quantumespresso/commit/29a0dfa3257863f73de17a0347dfa578da5d292e)]
+* `PwParser`: Correct the `disk_io` type for all XML schemas [[89d39a4](https://github.com/aiidateam/aiida-quantumespresso/commit/89d39a47d4eae0f9b39ef93fe07404a5102c6ee7)]
+* `PwParser`: Fix trajectory verification for `fixed_coords` [[105670f](https://github.com/aiidateam/aiida-quantumespresso/commit/105670fd145c572213bb750069679ef6fca7a80d)]
+* `XspectraCoreWorkChain`: Ensure `overrides` respected in `get_builder_from_protocol()` [[7b2d701](https://github.com/aiidateam/aiida-quantumespresso/commit/7b2d701cb7f61719efa5a14f762b8f85078fb4dd)]
+* `PhCalculation`: Fix exception when `parent_folder` is on different computer [[24b3779](https://github.com/aiidateam/aiida-quantumespresso/commit/24b3779e0df2d30378898f89dd884b69593218e9)]
+
+### 📚 Documentation
+
+* Docs: Fix the intersphinx URL of the AiiDA documentation [[08532d8](https://github.com/aiidateam/aiida-quantumespresso/commit/08532d8f69d87bd1853bb2a9010854efbc6bbaee)]
+* `README.md`: Fix Build Status badge to point to `ci` action [[1e9c345](https://github.com/aiidateam/aiida-quantumespresso/commit/1e9c3454174807e115f48eb7667f928680a11dfc)]
+* Add developer section to README [[146bc57](https://github.com/aiidateam/aiida-quantumespresso/commit/146bc57d74b76a11d7205a0f8449ae39c7675110)]
+
+### 🔧 Maintenance
+
+* DevOps: Symlink `CRASH` and `data-file.xml` files, and reduce fixture file contents [[0a48533](https://github.com/aiidateam/aiida-quantumespresso/commit/0a48533f40e276e5423428e0ca9745bd0b789121)]
+
+### ⬆️ Update dependencies
+
+* Devops: Update `pylint` version [[9f4142d](https://github.com/aiidateam/aiida-quantumespresso/commit/9f4142d4713b0d1c32042b3ca35905d725954bf4)]
+
+### ♻️ Refactor
+
+* Protocols: Move all static work chain inputs to protocol [[01f1470](https://github.com/aiidateam/aiida-quantumespresso/commit/01f14701e6846338f84db25bf7e654fcdfb6f927)]
+
+
 ## v4.2.0
 
 ### Features
