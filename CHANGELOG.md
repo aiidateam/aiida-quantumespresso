@@ -2,7 +2,7 @@
 
 We are excited to release version `4.3.0`, which comes jam-packed with a lot of new features, improvements and bug fixes! 🚀
 
-Although this technically a minor release, this new version does come with some _minor_ breaking changes:
+Although this is technically a minor release, this new version does come with some _minor_ breaking changes:
 
 * We switched the default value of `clean_workdir` from `True` to `False`.
 * We have removed the `automatic_parallelization` feature of the `PwBaseWorkChain`, as this was badly broken with no clear path to fixing it. Moreover, [v7.1 of Quantum ESPRESSO](https://gitlab.com/QEF/q-e/-/releases/qe-7.1) has implemented some basic automated parallelization for `pw.x` when no parallelization flags are specified.
