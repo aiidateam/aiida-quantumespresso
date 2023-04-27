@@ -1,22 +1,19 @@
 ## v4.3.0
 
-We are excited to release version `4.3.0`, which comes jam-packed with a lot of new features, improvements and bug fixes! 🚀
-
+Release version `4.3.0` comes with a lot of new features, improvements and bug fixes.
 Although this is technically a minor release, this new version does come with some _minor_ breaking changes:
 
-* We switched the default value of `clean_workdir` from `True` to `False`.
-* We have removed the `automatic_parallelization` feature of the `PwBaseWorkChain`, as this was badly broken with no clear path to fixing it. Moreover, [v7.1 of Quantum ESPRESSO](https://gitlab.com/QEF/q-e/-/releases/qe-7.1) has implemented some basic automated parallelization for `pw.x` when no parallelization flags are specified.
+* The default value of `clean_workdir` was changed from `True` to `False`.
+* The `automatic_parallelization` feature of the `PwBaseWorkChain` was removed, as this was badly broken with no clear path to fixing it. Moreover, [v7.1 of Quantum ESPRESSO](https://gitlab.com/QEF/q-e/-/releases/qe-7.1) has implemented some basic automated parallelization for `pw.x` when no parallelization flags are specified.
 
-We've added support for Quantum ESPRESSO v7.2 `pw.x` parsing, and also have added the `HubbardStructureData` data plugin along with some changes in the `PwCalculation` plugin to support the [new input syntax for using Hubbard corrections](https://gitlab.com/QEF/q-e/-/releases/qe-7.1#incompatible-changes-in-71-version) in the `pw.x` code.
+Support for Quantum ESPRESSO v7.2 `pw.x` parsing was added, as well as the `HubbardStructureData` data plugin and corresponding implementation in the `PwCalculation` plugin to support the [new input syntax for using Hubbard corrections](https://gitlab.com/QEF/q-e/-/releases/qe-7.1#incompatible-changes-in-71-version) in the `pw.x` code.
 
-For `ph.x`, we now also parse the symmetry labels for each q-point, which are printed in the `stdout` after the mode frequencies.
+For `ph.x`, the symmetry labels printed in the `stdout` after the mode frequencies are now parsed for each q-point.
 In the case of restarts in the `PhBaseWorkChain`, care has been taken to properly parse these symmetry labels from the separate output files and merge them, so the `output_parameters` are the same with or without restarts.
 
+The `XpsWorkChain` has been added to compute the XPS spectra using core-hole pseudo potentials and the `pw.x` code. The work chain can handle both molecules and crystals. The chemical shifts, as well as the cole-level binding energy can be obtained.
 
-We've added the `XpsWorkChain` to compute the XPS spectra using core-hole pseudo potentials and the `pw.x` code. The work chain can handle both molecules and crystals. The chemical shifts, as well as the cole-level binding energy can be obtained.
-
-
-Finally, we've also added and improved error handling for the `PwBaseWorkChain` for several typical failure modes of the `pw.x` code, and now also retrieve and parse the `CRASH` file which will be the default location of error messages from Quantum ESPRESSO v7.2 onwards.
+Finally, improved error handling for the `PwBaseWorkChain` was implemented for several typical failure modes of the `pw.x` code, and the `CRASH` file is now also retrieved, as this will be the default location of error messages from Quantum ESPRESSO v7.2 onwards.
 
 ### ‼️ Breaking changes
 
@@ -56,7 +53,7 @@ Finally, we've also added and improved error handling for the `PwBaseWorkChain` 
 
 ### 📚 Documentation
 
-* Docs: Fix the intersphinx URL of the AiiDA documentation [[08532d8](https://github.com/aiidateam/aiida-quantumespresso/commit/08532d8f69d87bd1853bb2a9010854efbc6bbaee)]
+* Fix the intersphinx URL of the AiiDA documentation [[08532d8](https://github.com/aiidateam/aiida-quantumespresso/commit/08532d8f69d87bd1853bb2a9010854efbc6bbaee)]
 * `README.md`: Fix Build Status badge to point to `ci` action [[1e9c345](https://github.com/aiidateam/aiida-quantumespresso/commit/1e9c3454174807e115f48eb7667f928680a11dfc)]
 * Add developer section to README [[146bc57](https://github.com/aiidateam/aiida-quantumespresso/commit/146bc57d74b76a11d7205a0f8449ae39c7675110)]
 
@@ -65,11 +62,11 @@ Finally, we've also added and improved error handling for the `PwBaseWorkChain` 
 * DevOps: Symlink `CRASH` and `data-file.xml` files, and reduce fixture file contents [[0a48533](https://github.com/aiidateam/aiida-quantumespresso/commit/0a48533f40e276e5423428e0ca9745bd0b789121)]
 
 ### ⬆️ Update dependencies
-
+* Symlink `CRASH` and `data-file.xml` files, and reduce fixture file contents [[0a48533](https://github.com/aiidateam/aiida-quantumespresso/commit/0a48533f40e276e5423428e0ca9745bd0b789121)]
 * Devops: Update `pylint` version [[9f4142d](https://github.com/aiidateam/aiida-quantumespresso/commit/9f4142d4713b0d1c32042b3ca35905d725954bf4)]
 
 ### ♻️ Refactor
-
+* Update `pylint` version [[9f4142d](https://github.com/aiidateam/aiida-quantumespresso/commit/9f4142d4713b0d1c32042b3ca35905d725954bf4)]
 * Protocols: Move all static work chain inputs to protocol [[01f1470](https://github.com/aiidateam/aiida-quantumespresso/commit/01f14701e6846338f84db25bf7e654fcdfb6f927)]
 
 
