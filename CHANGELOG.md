@@ -5,6 +5,7 @@ Although this is technically a minor release, this new version does come with so
 
 * The default value of `clean_workdir` was changed from `True` to `False`.
 * The `automatic_parallelization` feature of the `PwBaseWorkChain` was removed, as this was badly broken with no clear path to fixing it. Moreover, [v7.1 of Quantum ESPRESSO](https://gitlab.com/QEF/q-e/-/releases/qe-7.1) has implemented some basic automated parallelization for `pw.x` when no parallelization flags are specified.
+* Work chains no longer set/override static inputs inside the steps of their outline. All defaults are moved to the protocol files instead, and it is recommended to always use the `get_builder_from_protocol()` method to run a work chain. For more details, [see the corresponding PR](https://github.com/aiidateam/aiida-quantumespresso/pull/902).
 
 Support for Quantum ESPRESSO v7.2 `pw.x` parsing was added, as well as the `HubbardStructureData` data plugin and corresponding implementation in the `PwCalculation` plugin to support the [new input syntax for using Hubbard corrections](https://gitlab.com/QEF/q-e/-/releases/qe-7.1#incompatible-changes-in-71-version) in the `pw.x` code.
 
@@ -19,6 +20,7 @@ Finally, improved error handling for the `PwBaseWorkChain` was implemented for s
 
 * Protocols: Set `clean_workdir` default to `False` [[f8e512f](https://github.com/aiidateam/aiida-quantumespresso/commit/f8e512f9cb5404d702aa1d721e2369c7257f977f)]
 * `PwBaseWorkChain`: Remove `automatic_parallelization` input [[5cae75f](https://github.com/aiidateam/aiida-quantumespresso/commit/5cae75ff671268dc1e5684e1c84f801a10839e0b)]
+* Protocols: Move all static work chain inputs to protocol [[01f1470](https://github.com/aiidateam/aiida-quantumespresso/commit/01f14701e6846338f84db25bf7e654fcdfb6f927)]
 
 ### ✨ New features
 
@@ -67,7 +69,6 @@ Finally, improved error handling for the `PwBaseWorkChain` was implemented for s
 
 ### ♻️ Refactor
 * Update `pylint` version [[9f4142d](https://github.com/aiidateam/aiida-quantumespresso/commit/9f4142d4713b0d1c32042b3ca35905d725954bf4)]
-* Protocols: Move all static work chain inputs to protocol [[01f1470](https://github.com/aiidateam/aiida-quantumespresso/commit/01f14701e6846338f84db25bf7e654fcdfb6f927)]
 
 
 ## v4.2.0
