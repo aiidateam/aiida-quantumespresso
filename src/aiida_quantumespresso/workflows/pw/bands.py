@@ -5,7 +5,6 @@ from aiida.common import AttributeDict
 from aiida.engine import ToContext, WorkChain, if_
 
 from aiida_quantumespresso.calculations.functions.seekpath_structure_analysis import seekpath_structure_analysis
-from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
 from aiida_quantumespresso.workflows.pw.relax import PwRelaxWorkChain
@@ -60,7 +59,7 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
             exclude=('clean_workdir', 'pw.structure'),
             namespace_options={'help': 'Inputs for the `PwBaseWorkChain` for the SCF calculation.'})
         spec.expose_inputs(PwBaseWorkChain, namespace='bands',
-            exclude=('clean_workdir', 'pw.structure', 'pw.kpoints', 'pw.kpoints_distance'),
+            exclude=('clean_workdir', 'pw.structure', 'pw.kpoints', 'pw.kpoints_distance', 'pw.parent_folder'),
             namespace_options={'help': 'Inputs for the `PwBaseWorkChain` for the BANDS calculation.'})
         spec.input('structure', valid_type=orm.StructureData, help='The inputs structure.')
         spec.input('clean_workdir', valid_type=orm.Bool, default=lambda: orm.Bool(False),
@@ -71,7 +70,7 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
             help='Explicit kpoints to use for the BANDS calculation. Specify either this or `bands_kpoints_distance`.')
         spec.input('bands_kpoints_distance', valid_type=orm.Float, required=False,
             help='Minimum kpoints distance for the BANDS calculation. Specify either this or `bands_kpoints`.')
-        spec.inputs['bands']['pw'].validator = PwCalculation.validate_inputs_base
+
         spec.inputs.validator = validate_inputs
         spec.outline(
             cls.setup,
