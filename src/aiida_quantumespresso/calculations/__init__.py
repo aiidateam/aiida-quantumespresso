@@ -530,12 +530,6 @@ class BasePwCpInputGenerator(CalcJob):
         fixed_coords = settings.pop('FIXED_COORDS', None)
 
         if fixed_coords is not None:
-            # Note that this check is also in the validation of the top-level namespace, but this is only checked in
-            # in case the structure is provided
-            if len(fixed_coords) != len(structure.sites):
-                raise exceptions.InputValidationError(
-                    f'Input structure has {len(structure.sites)} sites, but fixed_coords has length {len(fixed_coords)}'
-                )
             fixed_coords_strings = [
                 ' {:d} {:d} {:d}'.format(*row) for row in numpy.int32(numpy.invert(fixed_coords)).tolist()  # pylint: disable=consider-using-f-string
             ]
