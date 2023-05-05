@@ -52,7 +52,6 @@ from aiida.engine import ToContext, WorkChain, if_
 from aiida.orm.nodes.data.base import to_aiida_type
 import jsonschema
 
-from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 
 from .protocols.utils import ProtocolMixin
@@ -242,13 +241,12 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         spec.expose_inputs(
             PwBaseWorkChain,
             namespace='nscf',
-            exclude=('clean_workdir', 'pw.structure'),
+            exclude=('clean_workdir', 'pw.structure', 'pw.parent_folder'),
             namespace_options={
                 'help': 'Inputs for the `PwBaseWorkChain` of the `nscf` calculation.',
                 'validator': validate_nscf
             }
         )
-        spec.inputs['nscf']['pw'].validator = PwCalculation.validate_inputs_base
         spec.expose_inputs(
             DosCalculation,
             namespace='dos',

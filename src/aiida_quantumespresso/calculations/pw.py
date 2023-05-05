@@ -176,11 +176,29 @@ class PwCalculation(BasePwCpInputGenerator):
                     'is `False` and/or `electron_maxstep` is 0.')
         # yapf: enable
 
-    @staticmethod
-    def validate_inputs_base(value, _):
-        """Validate the top level namespace."""
+    @classmethod
+    def validate_inputs(cls, value, port_namespace):
+        """Validate the top level namespace.
+
+        Check that the restart input parameters are set correctly. In case of 'nscf' and 'bands' calculations, this
+        means ``parent_folder`` is provided. For other calculations, if the ``parent_folder`` is provided, the restart
+        settings must be set to use some of the outputs.
+
+        Note that the validator will only check the logic in case the ``parent_folder`` is a port in the
+        ``port_namespace``. This is because the ``PwCalculation`` can be wrapped inside a work chain that only provides
+        the ``parent_folder`` input at a later step in the outline. To avoid raising any warnings, such a work chain
+        must exclude the ``parent_folder`` port when exposing the inputs of the ``PwCalculation``.
+        """
+        result = super().validate_inputs(value, port_namespace)
+
+        if result is not None:
+            return result
+
         parameters = value['parameters'].get_dict()
         calculation_type = parameters.get('CONTROL', {}).get('calculation', 'scf')
+
+        if 'parent_folder' not in port_namespace:
+            return
 
         # If a `parent_folder` input is provided, make sure the inputs are set to restart
         if 'parent_folder' in value and calculation_type not in ('nscf', 'bands'):
@@ -198,38 +216,13 @@ class PwCalculation(BasePwCpInputGenerator):
                     "    parameters['ELECTRONS']['startingwfc'] = 'file'\n"
                 )
 
-    @classmethod
-    def validate_inputs(cls, value, port_namespace):
-        """Validate the top level namespace.
-
-        Check that the restart input parameters are set correctly. In case of 'nscf' and 'bands' calculations, this
-        means ``parent_folder`` is provided. For other calculations, if the ``parent_folder`` is provided, the restart
-        settings must be set to use some of the outputs.
-
-        Note that the validator is split in two methods: ``validate_inputs`` and ``validate_inputs_base``. This is to
-        facilitate work chains that wrap this calculation that will provide the ``parent_folder`` themselves and so do
-        not require the user to provide it at launch of the work chain. This will fail because of the validation in this
-        validator, however, which is why the rest of the logic is moved to ``validate_inputs_base``. The wrapping work
-        chain can change the ``validate_input`` validator for ``validate_inputs_base`` thereby allowing the parent
-        folder to be defined during the work chains runtime, while still keep the rest of the namespace validation.
-        """
-        result = super().validate_inputs(value, port_namespace)
-
-        if result is not None:
-            return result
-
-        parameters = value['parameters'].get_dict()
-        calculation_type = parameters.get('CONTROL', {}).get('calculation', 'scf')
-
         if calculation_type in ('nscf', 'bands'):
             if 'parent_folder' not in value:
                 warnings.warn(
                     f'`parent_folder` not provided for `{calculation_type}` calculation. For work chains wrapping this '
-                    'calculation, you can disable this warning by setting the validator of the `PwCalculation` port to '
-                    '`PwCalculation.validate_inputs_base`.'
+                    'calculation, you can disable this warning by excluding the `parent_folder` when exposing the '
+                    'inputs of the `PwCalculation`.'
                 )
-
-        return cls.validate_inputs_base(value, port_namespace)
 
     @classproperty
     def filename_input_hubbard_parameters(cls):
