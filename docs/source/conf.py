@@ -51,8 +51,9 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
     'sphinx_copybutton',
-    'sphinx_click',
+    'sphinx_click.ext',
     'sphinx_design',
+    'myst_parser',
     'aiida.sphinxext',
     'autoapi.extension',
 ]
@@ -60,8 +61,20 @@ extensions = [
 # Setting the intersphinx mapping to other readthedocs
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3.8', None),
-    'aiida': ('http://aiida.readthedocs.io/en/latest/', None),
+    'aiida': ('https://aiida.readthedocs.io/en/latest/', None),
     'aiida_pseudo': ('http://aiida-pseudo.readthedocs.io/en/latest/', None),
+    'sphinx': ('https://www.sphinx-doc.org/en/master', None),
+}
+
+myst_enable_extensions = [
+    'deflist',
+    'colon_fence',
+    'substitution'
+]
+
+myst_substitutions = {
+    'release': release,
+    'version': version
 }
 
 # Settings for the `autoapi.extenstion` automatically generating API docs
@@ -87,7 +100,7 @@ templates_path = ['_templates']
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+# language = None
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -110,6 +123,7 @@ html_context = {
     'github_repo': 'aiida-quantumespresso',
     'github_version': 'main',
     'doc_path': 'docs/source',
+    'default_mode': 'light',
 }
 
 # The name of an image file (relative to this directory) to place at the top
