@@ -213,16 +213,6 @@ class BasePwCpInputGenerator(CalcJob):
         else:
             settings = {}
 
-        # Check that a pseudo potential was specified for each kind present in the `StructureData`
-        kinds = [kind.name for kind in self.inputs.structure.kinds]
-        if set(kinds) != set(self.inputs.pseudos.keys()):
-            formatted_pseudos = ', '.join(list(self.inputs.pseudos.keys()))
-            formatted_kinds = ', '.join(list(kinds))
-            raise exceptions.InputValidationError(
-                'Mismatch between the defined pseudos and the list of kinds of the structure.\n'
-                f'Pseudos: {formatted_pseudos};\nKinds: {formatted_kinds}'
-            )
-
         local_copy_list = []
         remote_copy_list = []
         remote_symlink_list = []
