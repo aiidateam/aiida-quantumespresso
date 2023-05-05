@@ -12,13 +12,13 @@ DEFAULT_CHANGELOG_SECTIONS = """
 ### ✨ New features
 
 
-### 🗑️ Deprecation
+### 🗑️ Deprecations
 
 
 ### 👌 Improvements
 
 
-### 🐛 Bug Fixes
+### 🐛 Bug fixes
 
 
 ### 📚 Documentation
@@ -39,33 +39,27 @@ def update_changelog():
     """Update the `CHANGELOG.md` for a first draft of the release."""
 
     print('🔍 Checking the current version number')
-    with Path('CHANGELOG.md').open('r', encoding='utf8') as handle:
-        current_changelog = handle.read()
+    current_changelog = Path('CHANGELOG.md').read_text(encoding='utf-8')
 
-    with Path('src/aiida_quantumespresso/__init__.py').open('r', encoding='utf8') as handle:
-        version = re.search(r"__version__ = '(?P<version_number>\d+.+)'", handle.read()).groupdict()['version_number']
+    from aiida_quantumespresso import __version__
 
-    if str(version) in current_changelog:
+    if str(__version__) in current_changelog:
         print('🛑 Current version already in `CHANGELOG.md`. Skipping...')
         return
 
     print('⬆️ Found updated version number, adapting `CHANGELOG.md`.')
-    tags = subprocess.run(['git', 'tag'], capture_output=True, check=False).stdout
-
-    tag_pattern = re.compile(r'(v\d\.\d\.\d)\n')
-    tags = tags.decode()
-
-    latest_tag = tag_pattern.findall(tags)[-1]
+    tags = subprocess.run(['git', 'tag', '--sort=v:refname'], capture_output=True, check=True, encoding='utf-8').stdout
+    latest_tag = re.findall(r'(v\d\.\d\.\d)\n', tags)[-1]
 
     print(f'🔄 Comparing with latest tag `{latest_tag}`.')
-    commits = subprocess.run(['git', 'log', "--pretty=format:'%s %h %H'", f'{latest_tag}..origin/main'],
+    commits = subprocess.run(['git', 'log', "--pretty=format:'%h|%H|%s'", f'{latest_tag}..origin/main'],
                              capture_output=True,
-                             check=False).stdout
-    commits = commits.decode()
+                             check=True,
+                             encoding='utf-8').stdout
 
     pr_pattern = re.compile(r'\(\S(?P<pr_number>\d+)\)')
 
-    changelog_commits = []
+    changelog_message = f'## v{__version__}\n' + DEFAULT_CHANGELOG_SECTIONS
 
     for commit in commits.splitlines():
 
@@ -76,19 +70,11 @@ def update_changelog():
             pr_number = pr_match.groupdict()['pr_number']
             commit = commit.replace(fr'(#{pr_number})', '')
 
-        # Add the commit hash (short) to link to the
-        # 0aba276f7042d51b91d5699530de7336cd62e2c2
-        commit = commit.split()
-        hash_long = commit.pop()
-        hash_short = commit.pop()
-        commit.append(f'[[{hash_short}](https://github.com/aiidateam/aiida-quantumespresso/commit/{hash_long})]')
+        # Add the commit hash (short) to link to the changelog
         commit = commit.strip("'")
-        changelog_commits.append(' '.join(commit))
-
-    changelog_message = f'## v{version}\n' + DEFAULT_CHANGELOG_SECTIONS
-
-    for commit_title in changelog_commits:
-        changelog_message += f'\n* {commit_title}'
+        hash_short, hash_long, message = commit.split('|', maxsplit=2)
+        message += f'[[{hash_short}](https://github.com/aiidateam/aiida-quantumespresso/commit/{hash_long})]'
+        changelog_message += f'\n* {message}'
 
     with Path('CHANGELOG.md').open('w', encoding='utf8') as handle:
         handle.write(changelog_message + '\n\n' + current_changelog)
