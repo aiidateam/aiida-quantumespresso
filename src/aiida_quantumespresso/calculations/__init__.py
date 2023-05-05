@@ -213,16 +213,6 @@ class BasePwCpInputGenerator(CalcJob):
         else:
             settings = {}
 
-        # Check that a pseudo potential was specified for each kind present in the `StructureData`
-        kinds = [kind.name for kind in self.inputs.structure.kinds]
-        if set(kinds) != set(self.inputs.pseudos.keys()):
-            formatted_pseudos = ', '.join(list(self.inputs.pseudos.keys()))
-            formatted_kinds = ', '.join(list(kinds))
-            raise exceptions.InputValidationError(
-                'Mismatch between the defined pseudos and the list of kinds of the structure.\n'
-                f'Pseudos: {formatted_pseudos};\nKinds: {formatted_kinds}'
-            )
-
         local_copy_list = []
         remote_copy_list = []
         remote_symlink_list = []
@@ -540,12 +530,6 @@ class BasePwCpInputGenerator(CalcJob):
         fixed_coords = settings.pop('FIXED_COORDS', None)
 
         if fixed_coords is not None:
-            # Note that this check is also in the validation of the top-level namespace, but this is only checked in
-            # in case the structure is provided
-            if len(fixed_coords) != len(structure.sites):
-                raise exceptions.InputValidationError(
-                    f'Input structure has {len(structure.sites)} sites, but fixed_coords has length {len(fixed_coords)}'
-                )
             fixed_coords_strings = [
                 ' {:d} {:d} {:d}'.format(*row) for row in numpy.int32(numpy.invert(fixed_coords)).tolist()  # pylint: disable=consider-using-f-string
             ]
