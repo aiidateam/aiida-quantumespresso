@@ -11,11 +11,15 @@ import numpy as np
 from aiida_quantumespresso.calculations.pp import PpCalculation
 from aiida_quantumespresso.utils.mapping import get_logging_container
 
-from .base import Parser
+from .base import BaseParser, Parser
 
 
-class PpParser(Parser):
-    """`Parser` implementation for the `PpCalculation` calculation job class."""
+class PpParser(BaseParser):
+    """``Parser`` implementation for the ``PpCalculation`` calculation job class."""
+
+    class_error_map = {
+        'xml data file not found': 'ERROR_PARENT_XML_MISSING',
+    }
 
     # Lookup: plot_num --> units
     units_dict = {
@@ -43,28 +47,27 @@ class PpParser(Parser):
     }
 
     def parse(self, **kwargs):
-        """
-        Parse raw files retrieved from remote dir
-        """
-        retrieved = self.retrieved
+        """Parse the retrieved files of a ``PpCalculation`` into output nodes."""
+        parsed_stdout, logs_stdout = self._parse_stdout_from_retrieved()
+        self._emit_logs(logs_stdout)
+
+        self.out('output_parameters', orm.Dict(parsed_stdout))
+
+        for exit_code in [
+            'ERROR_PARENT_XML_MISSING', 'ERROR_OUTPUT_STDOUT_MISSING', 'ERROR_OUTPUT_STDOUT_READ',
+            'ERROR_OUTPUT_STDOUT_INCOMPLETE'
+        ]:
+            if exit_code in logs_stdout.error:
+                return self._exit(self.exit_codes.get(exit_code))
+
         retrieve_temporary_list = self.node.base.attributes.get('retrieve_temporary_list', None)
-        filename_stdout = self.node.get_option('output_filename')
 
         # If temporary files were specified, check that we have them
         if retrieve_temporary_list:
             try:
                 retrieved_temporary_folder = kwargs['retrieved_temporary_folder']
             except KeyError:
-                return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
-
-        # The stdout is required for parsing
-        if filename_stdout not in retrieved.base.repository.list_object_names():
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_MISSING
-
-        try:
-            stdout_raw = retrieved.base.repository.get_object_content(filename_stdout)
-        except (IOError, OSError):
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
+                return self._exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
 
         # Currently all plot output files should start with the `filplot` as prefix. If only one file was produced the
         # prefix is the entire filename, but in the case of multiple files, there will be pairs of two files where the
@@ -83,22 +86,8 @@ class PpParser(Parser):
             filenames = os.listdir(retrieved_temporary_folder)
             file_opener = lambda filename: open(os.path.join(retrieved_temporary_folder, filename))
         else:
-            filenames = retrieved.base.repository.list_object_names()
-            file_opener = retrieved.base.repository.open
-
-        try:
-            logs, self.output_parameters = self.parse_stdout(stdout_raw)
-        except Exception as exc:
-            self.logger.error(traceback.format_exc())
-            return self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc)
-
-        self.emit_logs(logs)
-
-        # Scan logs for known errors
-        if 'ERROR_PARENT_XML_MISSING' in logs['error']:
-            return self.exit_codes.ERROR_PARENT_XML_MISSING
-        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs['error']:
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
+            filenames = self.retrieved.base.repository.list_object_names()
+            file_opener = self.retrieved.base.repository.open
 
         # The following check should in principle always succeed since the iflag should in principle be set by the
         # `PpCalculation` plugin which only ever sets 0 - 4, but we check in order for the code not to except.
@@ -137,7 +126,7 @@ class PpParser(Parser):
                 # Parse the file
                 try:
                     key = get_key_from_filename(filename)
-                    data_parsed.append((key, parsers[iflag](data_raw)))
+                    data_parsed.append((key, parsers[iflag](data_raw, self.units_dict[parsed_stdout['plot_num']])))
                     del data_raw
                 except Exception:  # pylint: disable=broad-except
                     return self.exit_codes.ERROR_OUTPUT_DATAFILE_PARSE.format(filename=filename)
@@ -154,83 +143,37 @@ class PpParser(Parser):
         else:
             self.out('output_data_multiple', dict(data_parsed))
 
-        self.out('output_parameters', orm.Dict(self.output_parameters))
+    def parse_stdout(self, stdout):
+        """Parse the ``stdout`` content of a Quantum ESPRESSO ``pp.x`` calculation.
 
-    def parse_stdout(self, stdout_str):
+        :param stdout: the stdout content as a string.
         """
-        Parses the output written to StdOut to retrieve basic information about the post processing
-
-        :param stdout_str: the stdout file read in as a single string
-        """
-
-        def detect_important_message(logs, line):
-            """
-            Detect know errors and warnings printed in the stdout
-
-            :param logs:
-            :param line: a line from the stdout as a string
-            """
-            message_map = {
-                'error': {
-                    'xml data file not found': 'ERROR_PARENT_XML_MISSING'
-                },
-                'warning': {
-                    'Warning:': None,
-                    'DEPRECATED:': None,
-                }
-            }
-
-            # Match any known error and warning messages
-            for marker, message in message_map['error'].items():
-                if marker in line:
-                    if message is None:
-                        message = line
-                    logs.error.append(message)
-
-            for marker, message in message_map['warning'].items():
-                if marker in line:
-                    if message is None:
-                        message = line
-                    logs.warning.append(message)
-
-        stdout_lines = stdout_str.splitlines()
-        logs = get_logging_container()
-        output_dict = {}
-
-        # Check for job completion, indicating that pp.x exited without interruption, even if there was an error.
-        for line in stdout_lines:
-            if 'JOB DONE' in line:
-                break
-        else:
-            logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
-
-        # Detect any issues and detect job completion
-        for line in stdout_lines:
-            detect_important_message(logs, line)
+        parsed_data, logs = super().parse_stdout(stdout)
 
         # Parse useful data from stdout
-        for line in stdout_lines:
+        for line in stdout.splitlines():
             if 'Check:' in line:  # QE < 6.5
                 split_line = line.split('=')
                 if 'negative/imaginary' in line:  # QE6.1-6.3
-                    output_dict['negative_core_charge'] = float(split_line[-1].split()[0])
-                    output_dict['imaginary_core_charge'] = float(split_line[-1].split()[-1])
+                    parsed_data['negative_core_charge'] = float(split_line[-1].split()[0])
+                    parsed_data['imaginary_core_charge'] = float(split_line[-1].split()[-1])
                 else:  # QE6.4
-                    output_dict['negative_core_charge'] = float(split_line[1])
+                    parsed_data['negative_core_charge'] = float(split_line[1])
             if 'Min, Max, imaginary charge:' in line:
                 split_line = line.split()
-                output_dict['charge_min'] = float(split_line[-3])
-                output_dict['charge_max'] = float(split_line[-2])
-                output_dict['charge_img'] = float(split_line[-1])
+                parsed_data['charge_min'] = float(split_line[-3])
+                parsed_data['charge_max'] = float(split_line[-2])
+                parsed_data['charge_img'] = float(split_line[-1])
             if 'plot_num = ' in line:
-                output_dict['plot_num'] = int(line.split('=')[1])
+                parsed_data['plot_num'] = int(line.split('=')[1])
             if 'Plot Type:' in line:
-                output_dict['plot_type'] = line.split('Output format')[0].split(':')[-1].strip()
-                output_dict['output_format'] = line.split(':')[-1].strip()
+                parsed_data['plot_type'] = line.split('Output format')[0].split(':')[-1].strip()
+                parsed_data['output_format'] = line.split(':')[-1].strip()
 
-        return logs, output_dict
+        return parsed_data, logs
 
-    def parse_gnuplot1D(self, data_file_str):
+    @staticmethod
+    def parse_gnuplot1D(data_file_str, data_units):
         """Parse 1D GNUPlot formatted output.
 
         :param data_file_str: the data file read in as a single string
@@ -250,7 +193,7 @@ class PpParser(Parser):
                 data.append(float(split_line[1]))
             y_data = [data]
             y_names = ['data']
-            y_units = [self.units_dict[self.output_parameters['plot_num']]]
+            y_units = [data_units]
 
         # 1D case with spherical averaging
         if n_col == 3:
@@ -264,8 +207,7 @@ class PpParser(Parser):
                 data_integral.append(float(split_line[2]))
             y_data = [data, data_integral]
             y_names = ['data', 'integrated_data']
-            unit = self.units_dict[self.output_parameters['plot_num']]
-            y_units = [unit, unit.replace('bohr^3', 'bohr')]
+            y_units = [data_units, data_units.replace('bohr^3', 'bohr')]
 
         x_units = 'bohr'
         arraydata = orm.ArrayData()
@@ -277,7 +219,8 @@ class PpParser(Parser):
 
         return arraydata
 
-    def parse_gnuplot_polar(self, data_file_str):
+    @staticmethod
+    def parse_gnuplot_polar(data_file_str, data_units):
         """Parse 2D Polar GNUPlot formatted, single column output.
 
         :param data_file_str: the data file read in as a single string
@@ -288,15 +231,15 @@ class PpParser(Parser):
         data = []
         for line in data_lines:
             data.append(float(line))
-        data_units = [self.units_dict[self.output_parameters['plot_num']]]
 
         arraydata = orm.ArrayData()
         arraydata.set_array('data', np.array(data))
-        arraydata.set_array('data_units', np.array(data_units))
+        arraydata.set_array('data_units', np.array([data_units]))
 
         return arraydata
 
-    def parse_gnuplot2D(self, data_file_str):
+    @staticmethod
+    def parse_gnuplot2D(data_file_str, data_units):
         """Parse 2D GNUPlot formatted output.
 
         :param data_file_str: the data file read in as a single string
@@ -316,7 +259,6 @@ class PpParser(Parser):
                 data.append(float(split_line[2]))
 
         coords_units = 'bohr'
-        data_units = self.units_dict[self.output_parameters['plot_num']]
         arraydata = orm.ArrayData()
         arraydata.set_array('xy_coordinates', np.array(coords))
         arraydata.set_array('data', np.array(data))
@@ -325,7 +267,8 @@ class PpParser(Parser):
 
         return arraydata
 
-    def parse_gaussian(self, data_file_str):
+    @staticmethod
+    def parse_gaussian(data_file_str, data_units):
         """Parse Gaussian Cube formatted output.
 
         :param data_file_str: the data file read in as a single string
@@ -362,7 +305,6 @@ class PpParser(Parser):
         data_array = data_array.reshape((xdim, ydim, zdim))
 
         coordinates_units = 'bohr'
-        data_units = self.units_dict[self.output_parameters['plot_num']]
 
         arraydata = orm.ArrayData()
         arraydata.set_array('voxel', voxel_array)

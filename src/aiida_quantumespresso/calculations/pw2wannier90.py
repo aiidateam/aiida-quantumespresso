@@ -31,10 +31,6 @@ class Pw2wannier90Calculation(NamelistsCalculation):
                    help='The output folder of a pw.x calculation')
         spec.output('output_parameters', valid_type=Dict)
         spec.default_output_node = 'output_parameters'
-        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
-            message='The stdout output file could not be read.')
-        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
-            message='The stdout output file was incomplete probably because the calculation got interrupted.')
         spec.exit_code(340, 'ERROR_GENERIC_QE_ERROR',
             message='Encountered a generic error message')
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',

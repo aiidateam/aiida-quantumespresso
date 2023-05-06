@@ -25,6 +25,7 @@ parameters:
   ci_scheme: auto
   climbing_image_auto:
   - 1
+  code_version: v.6.4.1
   converged:
   - true
   - 13

@@ -9,66 +9,70 @@ from aiida import orm
 from aiida_quantumespresso.calculations.ph import PhCalculation
 from aiida_quantumespresso.parsers.parse_raw.ph import parse_raw_ph_output
 
-from .base import Parser
+from .base import BaseParser, Parser
 
 
-class PhParser(Parser):
-    """`Parser` implementation for the `PhCalculation` calculation job class."""
+class PhParser(BaseParser):
+    """``Parser`` implementation for the ``PhCalculation`` calculation job class."""
+
+    class_error_map = {
+        'No convergence has been achieved': 'ERROR_CONVERGENCE_NOT_REACHED',
+        'problems computing cholesky': 'ERROR_COMPUTING_CHOLESKY',
+    }
 
     def parse(self, **kwargs):
-        """Parse the retrieved files from a `PhCalculation`."""
-        retrieved = self.retrieved
-
-        # The stdout is required for parsing
-        filename_stdout = self.node.base.attributes.get('output_filename')
-        filename_tensor = PhCalculation._OUTPUT_XML_TENSOR_FILE_NAME
-
-        if filename_stdout not in retrieved.base.repository.list_object_names():
-            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_MISSING)
+        """Parse the retrieved files from a ``PhCalculation`` into output nodes."""
+        filename_tensor = self.node.process_class._OUTPUT_XML_TENSOR_FILE_NAME
 
         try:
-            stdout = retrieved.base.repository.get_object_content(filename_stdout)
-        except (IOError, OSError):
-            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
-
-        try:
-            tensor_file = retrieved.base.repository.get_object_content(filename_tensor)
-        except (IOError, OSError):
+            with self.retrieved.base.repository.open(filename_tensor, 'r') as handle:
+                tensor_file = handle.read()
+        except OSError:
             tensor_file = None
 
         # Look for dynamical matrices
         dynmat_files = []
-        dynmat_folder = PhCalculation._FOLDER_DYNAMICAL_MATRIX  # pylint: disable=protected-access
-        dynmat_prefix = os.path.split(PhCalculation._OUTPUT_DYNAMICAL_MATRIX_PREFIX)[1]  # pylint: disable=protected-access
+        dynmat_folder = self.node.process_class._FOLDER_DYNAMICAL_MATRIX
+        dynmat_prefix = os.path.split(self.node.process_class._OUTPUT_DYNAMICAL_MATRIX_PREFIX)[1]
 
         natural_sort = lambda string: [int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', string)]
-        for filename in sorted(retrieved.base.repository.list_object_names(dynmat_folder), key=natural_sort):
+        for filename in sorted(self.retrieved.base.repository.list_object_names(dynmat_folder), key=natural_sort):
             if not filename.startswith(dynmat_prefix) or filename.endswith('.freq'):
                 continue
 
-            dynmat_files.append(retrieved.base.repository.get_object_content(os.path.join(dynmat_folder, filename)))
+            dynmat_files.append(self.retrieved.base.repository.get_object_content(os.path.join(dynmat_folder, filename)))
 
-        try:
-            parsed_data, logs = parse_raw_ph_output(stdout, tensor_file, dynmat_files)
-        except Exception as exc:
-            self.logger.error(traceback.format_exc())
-            return self.exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc))
+        parsed_stdout, logs_stdout = self._parse_stdout_from_retrieved(
+            tensor_file=tensor_file, dynmat_files=dynmat_files
+        )
+        self._emit_logs(logs_stdout)
+        self.out('output_parameters', orm.Dict(parsed_stdout))
 
-        self.emit_logs(logs)
-        self.out('output_parameters', orm.Dict(parsed_data))
+        for exit_code in [
+            'ERROR_OUTPUT_STDOUT_MISSING', 'ERROR_OUTPUT_STDOUT_READ', 'ERROR_OUT_OF_WALLTIME',
+            'ERROR_CONVERGENCE_NOT_REACHED', 'ERROR_COMPUTING_CHOLESKY', 'ERROR_OUTPUT_STDOUT_INCOMPLETE'
+        ]:
+            if exit_code in logs_stdout.error:
+                return self._exit(self.exit_codes.get(exit_code))
 
         # If the scheduler detected OOW, simply keep that exit code by not returning anything more specific.
         if self.node.exit_status == PhCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME:
             return
 
-        if 'ERROR_OUT_OF_WALLTIME' in logs['error']:
-            return self.exit_codes.ERROR_OUT_OF_WALLTIME
+    @classmethod
+    def parse_stdout(cls, stdout: str, tensor_file: str, dynmat_files: list) -> tuple:
+        """Parse the ``stdout`` content of a Quantum ESPRESSO ``ph.x`` calculation.
 
-        if 'ERROR_CONVERGENCE_NOT_REACHED' in logs['error']:
-            return self.exit_codes.ERROR_CONVERGENCE_NOT_REACHED
+        :param stdout: the stdout content as a string.
+        :returns: tuple of two dictionaries, with the parsed data and log messages, respectively.
+        """
+        from aiida_quantumespresso.parsers.parse_raw.ph import parse_raw_ph_output as parse_stdout
 
-        if 'ERROR_COMPUTING_CHOLESKY' in logs['error']:
-            return self.exit_codes.ERROR_COMPUTING_CHOLESKY
+        parsed_base, logs_base = super().parse_stdout(stdout)
+        parsed_data, logs = parse_stdout(stdout, tensor_file, dynmat_files)
 
-        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs['error']:
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
+        parsed_data.update(parsed_base)
+        for log_level, log_items in logs_base.items():
+            logs[log_level].extend(log_items)
+
+        return parsed_data, logs

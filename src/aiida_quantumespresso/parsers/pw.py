@@ -10,11 +10,11 @@ import numpy
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.utils.mapping import get_logging_container
 
-from .base import Parser
+from .base import BaseParser, Parser
 from .parse_raw.pw import reduce_symmetries
 
 
-class PwParser(Parser):
+class PwParser(BaseParser):
     """`Parser` implementation for the `PwCalculation` calculation job class."""
 
     def parse(self, **kwargs):
@@ -44,7 +44,7 @@ class PwParser(Parser):
             try:
                 dir_with_bands = kwargs['retrieved_temporary_folder']
             except KeyError:
-                return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
+                return self._exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
 
         # We check if the `CRASH` file was retrieved. If so, we parse its output
         crash_file_filename = self.node.process_class._CRASH_FILE
@@ -108,7 +108,7 @@ class PwParser(Parser):
             logs_xml.pop('error')
 
         ignore = ['Error while parsing ethr.', 'DEPRECATED: symmetry with ibrav=0, use correct ibrav instead']
-        self.emit_logs([logs_stdout, logs_xml], ignore=ignore)
+        self._emit_logs([logs_stdout, logs_xml], ignore=ignore)
 
         # If either the stdout or XML were incomplete or corrupt investigate the potential cause
         if self.exit_code_stdout or self.exit_code_xml:
@@ -132,25 +132,25 @@ class PwParser(Parser):
         # Check for specific known problems that can cause a pre-mature termination of the calculation
         exit_code = self.validate_premature_exit(logs_stdout)
         if exit_code:
-            return self.exit(exit_code)
+            return self._exit(exit_code)
 
         # If the both stdout and xml exit codes are set, there was a basic problem with both output files and there
         # is no need to investigate any further.
         if self.exit_code_stdout and self.exit_code_xml:
-            return self.exit(self.exit_codes.ERROR_OUTPUT_FILES)
+            return self._exit(self.exit_codes.ERROR_OUTPUT_FILES)
 
         if self.exit_code_stdout:
-            return self.exit(self.exit_code_stdout)
+            return self._exit(self.exit_code_stdout)
 
         if self.exit_code_xml:
-            return self.exit(self.exit_code_xml)
+            return self._exit(self.exit_code_xml)
 
         # First determine issues that can occurr for all calculation types. Note that the generic errors, that are
         # common to all types are done first. If a problem is found there, we return the exit code and don't continue
         for validator in [self.validate_electronic, self.validate_dynamics, self.validate_ionic]:
             exit_code = validator(trajectory, parsed_parameters, logs_stdout)
             if exit_code:
-                return self.exit(exit_code)
+                return self._exit(exit_code)
 
     def get_calculation_type(self):
         """Return the type of the calculation."""

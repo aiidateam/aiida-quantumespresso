@@ -4,11 +4,11 @@ import numpy
 from packaging.version import Version
 from qe_tools import CONSTANTS
 
-from .base import Parser
+from .base import BaseParser
 from .parse_raw.cp import parse_cp_raw_output, parse_cp_traj_stanzas
 
 
-class CpParser(Parser):
+class CpParser(BaseParser):
     """This class is the implementation of the Parser class for Cp."""
 
     def parse(self, **kwargs):
@@ -25,14 +25,14 @@ class CpParser(Parser):
         stdout_filename = self.node.base.attributes.get('output_filename')
         # at least the stdout should exist
         if stdout_filename not in list_of_files:
-            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
+            return self._exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 
         # This should match 1 file
         xml_files = [xml_file for xml_file in self.node.process_class.xml_filenames if xml_file in list_of_files]
         if not xml_files:
-            return self.exit(self.exit_codes.ERROR_MISSING_XML_FILE)
+            return self._exit(self.exit_codes.ERROR_MISSING_XML_FILE)
         elif len(xml_files) > 1:
-            return self.exit(self.exit_codes.ERROR_OUTPUT_XML_MULTIPLE)
+            return self._exit(self.exit_codes.ERROR_OUTPUT_XML_MULTIPLE)
 
         # cp.x can produce, depending on the particular version of the code, a file called `print_counter.xml` or
         # `print_counter`, which is a plain text file with the number of the last timestep written in the trajectory

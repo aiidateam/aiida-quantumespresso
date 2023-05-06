@@ -27,10 +27,6 @@ class DosCalculation(NamelistsCalculation):
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.output('output_dos', valid_type=orm.XyData)
         spec.default_output_node = 'output_parameters'
-        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
-            message='The stdout output file could not be read.')
-        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
-            message='The stdout output file was incomplete probably because the calculation got interrupted.')
         spec.exit_code(330, 'ERROR_READING_DOS_FILE',
             message='The dos file could not be read from the retrieved folder.')
         # yapf: enable

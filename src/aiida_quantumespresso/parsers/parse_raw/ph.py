@@ -24,13 +24,6 @@ def parse_raw_ph_output(stdout, tensors=None, dynamical_matrices=None):
     logs = get_logging_container()
     data_lines = stdout.split('\n')
 
-    # First check whether the `JOB DONE` message was written, otherwise the job was interrupted
-    for line in data_lines:
-        if 'JOB DONE' in line:
-            break
-    else:
-        logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
-
     # Parse tensors, if present
     tensor_data = {}
     if tensors:
@@ -147,92 +140,16 @@ def parse_xml_matrices(tagname, target_tags):
 
 
 def parse_ph_text_output(lines, logs):
-    """Parses the stdout of Quantum ESPRESSO ph.x.
+    """Parses the stdout of Quantum ESPRESSO ``ph.x``.
 
     :param lines: list of strings, the file as read by readlines()
     :return: dictionary with parsed values
     """
 
-    def detect_important_message(logs, line):
-
-        message_map = {
-            'error': {
-                'Maximum CPU time exceeded': 'ERROR_OUT_OF_WALLTIME',
-                'No convergence has been achieved': 'ERROR_CONVERGENCE_NOT_REACHED',
-                'problems computing cholesky': 'ERROR_COMPUTING_CHOLESKY',
-            },
-            'warning': {
-                'Warning:': None,
-                'DEPRECATED:': None,
-            }
-        }
-
-        # Match any known error and warning messages
-        for marker, message in message_map['error'].items():
-            if marker in line:
-                if message is None:
-                    message = line
-                logs.error.append(message)
-
-        for marker, message in message_map['warning'].items():
-            if marker in line:
-                if message is None:
-                    message = line
-                logs.warning.append(message)
-
-    def parse_qpoints(lines):
-        """Parse the q-points from the corresponding lines in the stdout."""
-
-        return {int(line.split()[0]): [float(coord) for coord in line.split()[1:4]] for line in lines}
-
-    def parse_mode_symmetries(lines, num_atoms):
-        """Parse the mode symmetries from the block after diagonalization of the dynamical matrix."""
-
-        q_data = {}
-        symlabel_q_point = [float(i) for i in lines[2].split('q = (')[-1].split(')')[0].split()]
-
-        q_data['mode_symmetry'] = []
-
-        for line in lines:
-
-            if 'Mode symmetry' in line:
-                q_data['point_group'] = line.split('Mode symmetry,')[1].split('point group:')[0].strip()
-
-            if '-->' in line:
-                freq_start = int(line.split('(')[1].split(')')[0].split('-')[0])
-                freq_end = int(line.split('(')[1].split(')')[0].split('-')[1])
-
-                if line.split()[-1] == 'I':
-                    symm_label = line.split()[-2]
-                else:
-                    symm_label = line.split()[-1]
-
-                q_data['mode_symmetry'].extend([symm_label] * (freq_end - freq_start + 1))
-
-        # If the mode symmetries are not printed, set those for the non-symmetry case
-        if 'point_group' not in q_data:
-            q_data['point_group'] = 'C_1'
-            q_data['mode_symmetry'] = ['A'] * (3 * num_atoms)
-
-        return symlabel_q_point, q_data
-
     parsed_data = {}
 
-    # Parse time, starting from the end because the time is written multiple times
-    for line in reversed(lines):
-        if 'PHONON' in line and 'WALL' in line:
-            try:
-                parsed_data['wall_time_seconds'] = \
-                    convert_qe_time_to_sec(line.split('CPU')[1].split('WALL')[0])
-            except (ValueError, IndexError):
-                raise QEOutputParsingError('Error during parsing of walltime.')
-            break
-
-    parsed_data['num_q_found'] = 0
-
-    for count, line in enumerate(lines):
-
-        detect_important_message(logs, line)
+    # Parse number of q-points and number of atoms
+    for line in lines:
 
         if 'q-points for this run' in line:
             try:
