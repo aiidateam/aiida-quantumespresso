@@ -67,7 +67,13 @@ class PhParser(BaseParser):
         from aiida_quantumespresso.parsers.parse_raw.ph import parse_raw_ph_output as parse_stdout
 
         parsed_base, logs_base = super().parse_stdout(stdout)
+
+        # if logs_base['error']:
+        #     return parsed_base, logs_base
+
         parsed_data, logs = parse_stdout(stdout, tensor_file, dynmat_files)
+
+
 
         parsed_data.update(parsed_base)
         for log_level, log_items in logs_base.items():

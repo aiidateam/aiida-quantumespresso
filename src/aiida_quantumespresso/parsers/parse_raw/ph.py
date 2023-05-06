@@ -146,10 +146,48 @@ def parse_ph_text_output(lines, logs):
     :return: dictionary with parsed values
     """
 
+    def parse_qpoints(lines):
+        """Parse the q-points from the corresponding lines in the stdout."""
+
+        return {int(line.split()[0]): [float(coord) for coord in line.split()[1:4]] for line in lines}
+
+    def parse_mode_symmetries(lines, num_atoms):
+        """Parse the mode symmetries from the block after diagonalization of the dynamical matrix."""
+
+        q_data = {}
+        symlabel_q_point = [float(i) for i in lines[2].split('q = (')[-1].split(')')[0].split()]
+
+        q_data['mode_symmetry'] = []
+
+        for line in lines:
+
+            if 'Mode symmetry' in line:
+                q_data['point_group'] = line.split('Mode symmetry,')[1].split('point group:')[0].strip()
+
+            if '-->' in line:
+                freq_start = int(line.split('(')[1].split(')')[0].split('-')[0])
+                freq_end = int(line.split('(')[1].split(')')[0].split('-')[1])
+
+                if line.split()[-1] == 'I':
+                    symm_label = line.split()[-2]
+                else:
+                    symm_label = line.split()[-1]
+
+                q_data['mode_symmetry'].extend([symm_label] * (freq_end - freq_start + 1))
+
+        # If the mode symmetries are not printed, set those for the non-symmetry case
+        if 'point_group' not in q_data:
+            q_data['point_group'] = 'C_1'
+            q_data['mode_symmetry'] = ['A'] * (3 * num_atoms)
+
+        return symlabel_q_point, q_data
+
     parsed_data = {}
 
+    parsed_data['num_q_found'] = 0
+
     # Parse number of q-points and number of atoms
-    for line in lines:
+    for count, line in enumerate(lines):
 
         if 'q-points for this run' in line:
             try:

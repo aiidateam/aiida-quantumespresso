@@ -1,3 +1,4 @@
+code_version: v.7.0
 dynamical_matrix_1:
   frequencies:
   - -3.205876
@@ -53,4 +54,5 @@ number_of_irr_representations_for_each_q:
 - 3
 - 3
 number_of_qpoints: 4
+wall_time: 55.47s
 wall_time_seconds: 113.61
