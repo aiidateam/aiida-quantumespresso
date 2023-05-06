@@ -3,7 +3,7 @@ from aiida.orm import Dict
 
 from aiida_quantumespresso.data.force_constants import ForceConstantsData
 
-from .base import BaseParser, Parser
+from .base import BaseParser
 
 
 class Q2rParser(BaseParser):

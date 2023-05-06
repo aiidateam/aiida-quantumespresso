@@ -6,7 +6,6 @@ from aiida.orm import ArrayData, Dict, TrajectoryData
 import numpy
 
 from aiida_quantumespresso.calculations.pw import PwCalculation
-from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.parse_raw import convert_qe_to_aiida_structure
 from aiida_quantumespresso.parsers.parse_raw.neb import parse_raw_output_neb
 from aiida_quantumespresso.parsers.parse_raw.pw import parse_stdout as parse_pw_stdout
@@ -15,7 +14,7 @@ from aiida_quantumespresso.parsers.parse_xml.exceptions import XMLParseError, XM
 from aiida_quantumespresso.parsers.parse_xml.pw.parse import parse_xml as parse_pw_xml
 from aiida_quantumespresso.parsers.pw import PwParser
 
-from .base import BaseParser, Parser
+from .base import BaseParser
 
 
 class NebParser(BaseParser):

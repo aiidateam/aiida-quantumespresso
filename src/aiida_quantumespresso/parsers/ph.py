@@ -2,14 +2,12 @@
 """`Parser` implementation for the `PhCalculation` calculation job class."""
 import os
 import re
-import traceback
 
 from aiida import orm
 
 from aiida_quantumespresso.calculations.ph import PhCalculation
-from aiida_quantumespresso.parsers.parse_raw.ph import parse_raw_ph_output
 
-from .base import BaseParser, Parser
+from .base import BaseParser
 
 
 class PhParser(BaseParser):

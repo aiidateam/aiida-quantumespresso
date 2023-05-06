@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 from aiida.orm import Dict
 
-from aiida_quantumespresso.parsers.parse_raw.base import parse_output_base
-
-from .base import BaseParser, Parser
+from .base import BaseParser
 
 
 class Pw2wannier90Parser(BaseParser):

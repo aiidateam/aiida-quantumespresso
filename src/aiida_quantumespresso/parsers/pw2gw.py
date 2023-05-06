@@ -2,13 +2,10 @@
 """`Parser` implementation for the `Pw2gwCalculation` calculation job class."""
 import io
 
-from aiida import orm
 from aiida.orm import ArrayData, Dict
 import numpy as np
 
-from aiida_quantumespresso.calculations.pw2gw import Pw2gwCalculation
-
-from .base import BaseParser, Parser
+from .base import BaseParser
 
 
 class Pw2gwParser(BaseParser):

@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
-from aiida.common import AttributeDict
 from aiida.orm import Dict, XyData
 import numpy as np
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers.parse_raw.base import parse_output_base
 
-from .base import BaseParser, Parser
+from .base import BaseParser
 
 
 class DosParser(BaseParser):

@@ -69,7 +69,7 @@ class BaseParser(Parser, metaclass=abc.ABCMeta):
             parsed_data, stdout_logs = self.parse_stdout(stdout, **kwargs)
         except Exception as exception:
             logs.error.append('ERROR_OUTPUT_STDOUT_PARSE')
-            logs.error.append(exception)
+            logs.error.append(str(exception))
             return {}, logs
 
         for log_level, log_items in stdout_logs.items():
@@ -78,10 +78,11 @@ class BaseParser(Parser, metaclass=abc.ABCMeta):
         return parsed_data, logs
 
     @classmethod
-    def parse_stdout(cls, stdout: str) -> typing.Tuple[dict, AttributeDict]:
+    def parse_stdout(cls, stdout: str, success_str: str = 'JOB DONE') -> typing.Tuple[dict, AttributeDict]:
         """Parse the ``stdout`` content of a Quantum ESPRESSO calculation.
 
-        This function only checks for basic content like JOB DONE, errors with %%%%% etc.
+        This function only checks for basic content like JOB DONE, errors with %%%%% etc, but can be overridden to
+        parse more data from the ``stdout``.
 
         :param stdout: the stdout content as a string.
         :returns: tuple of two dictionaries, with the parsed data and log messages, respectively.
@@ -89,10 +90,10 @@ class BaseParser(Parser, metaclass=abc.ABCMeta):
         logs = get_logging_container()
         parsed_data = {}
 
-        if not re.search(r'JOB DONE', stdout):
+        if not re.search(success_str, stdout):
             logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
 
-        code_match = re.search(r'Program\s(?P<code_name>[A-Z|\_|\d]+)\s(?P<code_version>v\.[\d\.|a-z|A-Z]+)\s', stdout)
+        code_match = re.search(r'Program\s(?P<code_name>[A-Z|a-z|\_|\d]+)\s(?P<code_version>v\.[\d\.|a-z|A-Z]+)\s', stdout)
 
         if code_match:
 

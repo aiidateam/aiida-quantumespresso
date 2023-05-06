@@ -4,7 +4,7 @@ from qe_tools import CONSTANTS
 
 from aiida_quantumespresso.calculations.matdyn import MatdynCalculation
 
-from .base import BaseParser, Parser
+from .base import BaseParser
 
 
 class MatdynParser(BaseParser):

@@ -5,53 +5,57 @@ from aiida.orm import Dict, XyData
 import numpy as np
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers.base import Parser
+from aiida_quantumespresso.parsers.base import BaseParser
 
 
-class XspectraParser(Parser):
+class XspectraParser(BaseParser):
     """ Parser for the XSpectraCalculation calcjob plugin """
+
+    class_error_map = {
+        'Wrong xiabs!!!': 'ERROR_OUTPUT_ABSORBING_SPECIES_WRONG',
+        'xiabs < 1 or xiabs > ntyp': 'ERROR_OUTPUT_ABSORBING_SPECIES_ZERO',
+        'Calculation not finished': 'ERROR_OUT_OF_WALLTIME',
+    }
 
     def parse(self, **kwargs):
         """Parse the contents of the output files stored in the `retrieved` output node."""
-        from aiida.plugins import DataFactory
 
-        retrieved = self.retrieved
-        try:
-            filename_stdout = self.node.get_option('output_filename')
-            with retrieved.base.repository.open(filename_stdout, 'r') as fil:
-                out_file = fil.readlines()
-        except OSError:
-            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
+        parsed_stdout, logs_stdout = self._parse_stdout_from_retrieved()
+        self._emit_logs(logs_stdout)
 
-        # Check the stdout for obvious errors
-        job_done = False
-        for line in out_file:
-            if 'Wrong xiabs!!!' in line:
-                return self.exit(self.exit_codes.ERROR_OUTPUT_ABSORBING_SPECIES_WRONG)
-            if 'xiabs < 1 or xiabs > ntyp' in line:
-                return self.exit(self.exit_codes.ERROR_OUTPUT_ABSORBING_SPECIES_ZERO)
-            if 'Calculation not finished' in line:
-                return self.exit(self.exit_codes.ERROR_OUT_OF_WALLTIME)
-            if 'END JOB' in line:
-                job_done = True
-                break
-        if not job_done:
-            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE)
+        # Parse some additional info which the stdout does not reliably report
+        parameters = self.node.inputs.parameters.base.attributes.get('INPUT_XSPECTRA', {})
+
+        xepsilon_defaults = {
+            '1': 0,
+            '2': 0,
+            '3': 1,
+        }
+        raw_xepsilon = [parameters.get(f'xepsilon({n})', xepsilon_defaults[n]) for n in ['1', '2', '3']]
+        parsed_stdout['xepsilon'] = [float(n) for n in raw_xepsilon]
+        parsed_stdout['xcoordcrys'] = parameters.get('xcoordcrys', True)
+        parsed_stdout['xonly_plot'] = parameters.get('xonly_plot', False)
+
+        self.out('output_parameters', Dict(parsed_stdout))
+
+        error_list = list(self.class_error_map.values())
+        error_list.extend(['ERROR_OUTPUT_STDOUT_MISSING', 'ERROR_OUTPUT_STDOUT_READ', 'ERROR_OUTPUT_STDOUT_INCOMPLETE'])
+        for exit_code in error_list:
+            if exit_code in logs_stdout.error:
+                return self._exit(self.exit_codes.get(exit_code))
 
         # Check that the spectra data file exists and is readable
         try:
-            with retrieved.base.repository.open(self.node.process_class._Spectrum_FILENAME, 'r') as fil:
+            with self.retrieved.base.repository.open(self.node.process_class._Spectrum_FILENAME, 'r') as fil:
                 xspectra_file = fil.readlines()
         except OSError:
             return self.exit(self.exit_codes.ERROR_READING_SPECTRUM_FILE)
 
         # Check that the data in the spectra file can be read by NumPy
         try:
-            xspectra_data = np.genfromtxt(xspectra_file)
+            _ = np.genfromtxt(xspectra_file)
         except ValueError:
             return self.exit(self.exit_codes.ERROR_READING_SPECTRUM_FILE_DATA)
-
-        # end of initial checks
 
         array_names = [[], []]
         array_units = [[], []]
@@ -86,24 +90,27 @@ class XspectraParser(Parser):
 
         xy_data.set_y(y_arrays, y_names, y_units)
 
-        parsed_data, logs = parse_stdout_xspectra(filecontent=out_file, codename='XSpectra')
-
-        # Parse some additional info which the stdout does not reliably report
-        parameters = self.node.inputs.parameters.base.attributes.get('INPUT_XSPECTRA', {})
-
-        xepsilon_defaults = {
-            '1': 0,
-            '2': 0,
-            '3': 1,
-        }
-        raw_xepsilon = [parameters.get(f'xepsilon({n})', xepsilon_defaults[n]) for n in ['1', '2', '3']]
-        parsed_data['xepsilon'] = [float(n) for n in raw_xepsilon]
-        parsed_data['xcoordcrys'] = parameters.get('xcoordcrys', True)
-        parsed_data['xonly_plot'] = parameters.get('xonly_plot', False)
-        self.emit_logs(logs)
-
         self.out('spectra', xy_data)
-        self.out('output_parameters', Dict(dict=parsed_data))
+
+    @classmethod
+    def parse_stdout(cls, stdout: str) -> tuple:
+        """Parse the ``stdout`` content of a Quantum ESPRESSO ``xspectra.x`` calculation.
+
+        Overridden from parent method to include parsing stdout xspectra.
+
+        :param stdout: the stdout content as a string.
+        :returns: tuple of two dictionaries, with the parsed data and log messages, respectively.
+        """
+        parsed_data, logs = super().parse_stdout(stdout, success_str='END JOB')
+        parsed_xspectra, logs_xspectra = parse_stdout_xspectra(filecontent=stdout)
+
+        for log_level in ['warning', 'error']:
+            logs[log_level].extend(logs_xspectra[log_level])
+
+        parsed_data.update(parsed_xspectra)
+
+        return parsed_data, logs
+
 
 def parse_raw_xspectra(xspectra_file, array_names, array_units):
     """Parse the content of the output spectrum.
@@ -149,7 +156,7 @@ def parse_raw_xspectra(xspectra_file, array_names, array_units):
         i += 1
     return array_data, spin
 
-def parse_stdout_xspectra(filecontent, codename=None, message_map=None):
+def parse_stdout_xspectra(filecontent):
     """Parses the output file of an XSpectra calculation, checking for
     basic content like END JOB, errors with %%%%, and the core level energy
     and the energy zero of the spectrum.
@@ -164,11 +171,6 @@ def parse_stdout_xspectra(filecontent, codename=None, message_map=None):
     from aiida_quantumespresso.utils.mapping import get_logging_container
 
     from .parse_raw.base import convert_qe_time_to_sec
-
-    keys = ['error', 'warning']
-
-    if message_map is not None and (not isinstance(message_map, dict) or any(key not in message_map for key in keys)):
-        raise RuntimeError(f'invalid format `message_map`: should be dictionary with two keys {keys}')
 
     logs = get_logging_container()
     parsed_data = {}
@@ -240,30 +242,17 @@ def parse_stdout_xspectra(filecontent, codename=None, message_map=None):
             parsed_data['energy_zero'] = energy_zero_line.split('[')[1].split(':')[1].strip()
             parsed_data['energy_zero_units'] = energy_zero_line.split('[')[1].split(':')[0].replace(']', '')
 
-    if codename is not None:
-
-        codestring = f'Program {codename}'
-
-        for line_number, line in enumerate(lines):
-
-            if codestring in line and 'starts on' in line:
-                parsed_data['code_version'] = line.split(codestring)[1].split('starts on')[0].strip()
-
-            # Parse the walltime
-            # XSpectra does not appear next to the timing data, so we must find 'xanes' instead.
-            if 'xanes' in line and 'WALL' in line:
-                    try:
-                        time = line.split('CPU')[1].split('WALL')[0].strip()
-                        parsed_data['wall_time'] = time
-                    except (ValueError, IndexError):
-                        logs.warnings.append('ERROR_PARSING_WALLTIME')
-                    try:
-                        parsed_data['wall_time_seconds'] = convert_qe_time_to_sec(time)
-                    except ValueError:
-                        logs.warnings.append('ERROR_CONVERTING_WALLTIME_TO_SECONDS')
-
-            # Parse an error message with optional mapping of the message
-            if '%%%%%%%%%%%%%%' in line:
-                parse_output_error(lines, line_number, logs, message_map)
+        # Parse the walltime
+        # XSpectra does not appear next to the timing data, so we must find 'xanes' instead.
+        if 'xanes' in line and 'WALL' in line:
+            try:
+                time = line.split('CPU')[1].split('WALL')[0].strip()
+                parsed_data['wall_time'] = time
+            except (ValueError, IndexError):
+                break
+            try:
+                parsed_data['wall_time_seconds'] = convert_qe_time_to_sec(time)
+            except ValueError:
+                logs.warnings.append('Unable to convert wall time from `stdout` to seconds.')
 
     return parsed_data, logs
