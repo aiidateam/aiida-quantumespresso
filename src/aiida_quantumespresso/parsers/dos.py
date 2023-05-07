@@ -3,6 +3,7 @@ from aiida.orm import Dict, XyData
 import numpy as np
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
+from aiida_quantumespresso.utils.mapping import get_logging_container
 
 from .base import BaseParser
 
@@ -12,21 +13,26 @@ class DosParser(BaseParser):
 
     def parse(self, **kwargs):
         """Parse the retrieved files of a ``DosCalculation`` into output nodes."""
-        parsed_stdout, logs_stdout = self._parse_stdout_from_retrieved()
-        self._emit_logs(logs_stdout)
+        logs = get_logging_container()
+
+        _, parsed_stdout, logs = self.parse_stdout_from_retrieved(logs)
+
+        base_exit_code = self.check_base_errors(logs)
+        if base_exit_code:
+            return self.exit(base_exit_code, logs)
 
         self.out('output_parameters', Dict(parsed_stdout))
 
-        for exit_code in ['ERROR_OUTPUT_STDOUT_MISSING', 'ERROR_OUTPUT_STDOUT_READ', 'ERROR_OUTPUT_STDOUT_INCOMPLETE']:
-            if exit_code in logs_stdout.error:
-                return self._exit(self.exit_codes.get(exit_code))
+        for exit_code in ['ERROR_OUTPUT_STDOUT_INCOMPLETE']:
+            if exit_code in logs.error:
+                return self.exit(self.exit_codes.get(exit_code), logs)
 
         # Parse the DOS
         try:
             with self.retrieved.base.repository.open(self.node.process_class._DOS_FILENAME, 'r') as handle:
                 dos_file = handle.readlines()
         except OSError:
-            return self._exit(self.exit_codes.ERROR_READING_DOS_FILE)
+            return self.exit(self.exit_codes.ERROR_READING_DOS_FILE, logs)
 
         array_names = [[], []]
         array_units = [[], []]
@@ -64,6 +70,8 @@ class DosParser(BaseParser):
         xy_data.set_y(y_arrays, y_names, y_units)
 
         self.out('output_dos', xy_data)
+
+        return self.exit(logs=logs)
 
 
 def parse_raw_dos(dos_file, array_names, array_units):

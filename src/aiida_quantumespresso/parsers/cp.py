@@ -4,6 +4,8 @@ import numpy
 from packaging.version import Version
 from qe_tools import CONSTANTS
 
+from aiida_quantumespresso.utils.mapping import get_logging_container
+
 from .base import BaseParser
 from .parse_raw.cp import parse_cp_raw_output, parse_cp_traj_stanzas
 
@@ -16,23 +18,25 @@ class CpParser(BaseParser):
 
         Does all the logic here.
         """
+        logs = get_logging_container()
+
+        stdout, parsed_data, logs = self.parse_stdout_from_retrieved(logs)
+
+        base_exit_code = self.check_base_errors(logs)
+        if base_exit_code:
+            return self.exit(base_exit_code, logs)
+
         retrieved = self.retrieved
 
         # check what is inside the folder
         list_of_files = retrieved.base.repository.list_object_names()
 
-        # options.metadata become attributes like this:
-        stdout_filename = self.node.base.attributes.get('output_filename')
-        # at least the stdout should exist
-        if stdout_filename not in list_of_files:
-            return self._exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
-
         # This should match 1 file
         xml_files = [xml_file for xml_file in self.node.process_class.xml_filenames if xml_file in list_of_files]
         if not xml_files:
-            return self._exit(self.exit_codes.ERROR_MISSING_XML_FILE)
+            return self.exit(self.exit_codes.ERROR_MISSING_XML_FILE, logs)
         elif len(xml_files) > 1:
-            return self._exit(self.exit_codes.ERROR_OUTPUT_XML_MULTIPLE)
+            return self.exit(self.exit_codes.ERROR_OUTPUT_XML_MULTIPLE, logs)
 
         # cp.x can produce, depending on the particular version of the code, a file called `print_counter.xml` or
         # `print_counter`, which is a plain text file with the number of the last timestep written in the trajectory
@@ -63,11 +67,10 @@ class CpParser(BaseParser):
                 self.logger.info('print counter in xml format')
                 filename_counter = filename_counter_xml
 
-        output_stdout = retrieved.base.repository.get_object_content(stdout_filename)
         output_xml = retrieved.base.repository.get_object_content(xml_files[0])
         output_xml_counter = None if no_trajectory_output else retrieved.base.repository.get_object_content(filename_counter)
         out_dict, _raw_successful = parse_cp_raw_output(
-            output_stdout, output_xml, output_xml_counter, print_counter_xml
+            stdout, output_xml, output_xml_counter, print_counter_xml
         )
 
         if not no_trajectory_output:
@@ -255,8 +258,11 @@ class CpParser(BaseParser):
             out_dict.pop(key, None)
 
         # convert the dictionary into an AiiDA object
+        out_dict.update(parsed_data)
         output_params = Dict(out_dict)
         self.out('output_parameters', output_params)
+
+        return self.exit(logs=logs)
 
     def get_linkname_trajectory(self):
         """Returns the name of the link to the output_structure (None if not present)"""

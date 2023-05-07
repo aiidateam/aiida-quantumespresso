@@ -61,12 +61,6 @@ class XspectraCalculation(NamelistsCalculation):
         spec.output('spectra', valid_type=XyData)
         spec.default_output_node = 'output_parameters'
 
-        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ', message='The stdout output file could not be read.')
-        spec.exit_code(
-            312,
-            'ERROR_OUTPUT_STDOUT_INCOMPLETE',
-            message='The stdout output file was incomplete probably because the calculation got interrupted.'
-        )
         spec.exit_code(
             313,
             'ERROR_OUTPUT_ABSORBING_SPECIES_WRONG',

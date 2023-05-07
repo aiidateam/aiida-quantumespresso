@@ -13,7 +13,7 @@ from aiida_quantumespresso.parsers.parse_xml.pw.legacy import parse_xml_child_bo
 from aiida_quantumespresso.utils.mapping import get_logging_container
 
 
-def parse_raw_ph_output(stdout, tensors=None, dynamical_matrices=None):
+def parse_raw_ph_output(stdout, logs, tensors=None, dynamical_matrices=None):
     """Parses the raw output of a Quantum ESPRESSO `ph.x` calculation.
 
     :param stdout: the content of the stdout file as a string
@@ -21,7 +21,6 @@ def parse_raw_ph_output(stdout, tensors=None, dynamical_matrices=None):
     :param dynamical_matrices: a list of the content of the dynamical matrix files as a string
     :returns: tuple of two dictionaries, with the parsed data and log messages, respectively
     """
-    logs = get_logging_container()
     data_lines = stdout.split('\n')
 
     # Parse tensors, if present

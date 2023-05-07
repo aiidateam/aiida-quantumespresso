@@ -280,26 +280,33 @@ class ProjwfcParser(BaseParser):
         # we create a dictionary the progressively accumulates more info
         out_info_dict = {}
 
-        parsed_stdout, logs_stdout = self._parse_stdout_from_retrieved(out_info_dict=out_info_dict)
-        self._emit_logs(logs_stdout)
-        self.out('output_parameters', Dict(dict=parsed_stdout))
+        logs = get_logging_container()
 
-        for exit_code in ['ERROR_OUTPUT_STDOUT_MISSING', 'ERROR_OUTPUT_STDOUT_READ', 'ERROR_OUTPUT_STDOUT_INCOMPLETE']:
-            if exit_code in logs_stdout.error:
-                return self._exit(self.exit_codes.get(exit_code))
+        stdout, parsed_data, logs = self.parse_stdout_from_retrieved(logs)
+        out_info_dict['out_file'] = stdout.split('\n')
+
+        base_exit_code = self.check_base_errors(logs)
+        if base_exit_code:
+            return self.exit(base_exit_code, logs)
+
+        self.out('output_parameters', Dict(parsed_data))
+
+        for exit_code in ['ERROR_OUTPUT_STDOUT_INCOMPLETE']:
+            if exit_code in logs.error:
+                return self.exit(self.exit_codes.get(exit_code), logs)
 
         try:
             retrieved_temporary_folder = kwargs['retrieved_temporary_folder']
         except KeyError:
-            return self._exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
+            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER, logs)
 
         # Parse the XML to obtain the `structure`, `kpoints` and spin-related settings from the parent calculation
         self.exit_code_xml = None
         parsed_xml, logs_xml = self._parse_xml(retrieved_temporary_folder)
-        self._emit_logs(logs_xml)
+        self.emit_logs(logs_xml)
 
         if self.exit_code_xml:
-            return self._exit(self.exit_code_xml)
+            return self.exit(self.exit_code_xml)
 
         out_info_dict['structure'] = convert_qe_to_aiida_structure(parsed_xml['structure'])
         out_info_dict['kpoints'] = convert_qe_to_kpoints(parsed_xml, out_info_dict['structure'])
@@ -318,7 +325,7 @@ class ProjwfcParser(BaseParser):
                 energy = pdostot_array[:, 0]
                 dos = pdostot_array[:, 1]
         except (OSError, KeyError):
-            return self._exit(self.exit_codes.ERROR_READING_PDOSTOT_FILE)
+            return self.exit(self.exit_codes.ERROR_READING_PDOSTOT_FILE, logs)
 
         # check and read all of the individual pdos_atm files
         pdos_atm_filenames = fnmatch.filter(out_filenames, '*pdos_atm*')
@@ -334,7 +341,7 @@ class ProjwfcParser(BaseParser):
             new_nodes_list = self._parse_bands_and_projections(out_info_dict)
         except QEOutputParsingError as err:
             self.logger.error(f'Error parsing bands and projections: {err}')
-            return self._exit(self.exit_codes.ERROR_PARSING_PROJECTIONS)
+            return self.exit(self.exit_codes.ERROR_PARSING_PROJECTIONS, logs)
         for linkname, node in new_nodes_list:
             self.out(linkname, node)
 
@@ -343,13 +350,7 @@ class ProjwfcParser(BaseParser):
         Dos_out.set_y(dos, 'Dos', 'states/eV')
         self.out('Dos', Dos_out)
 
-    def parse_stdout(self, stdout, out_info_dict):
-        """Parse the ``stdout`` content of a Quantum ESPRESSO ``projwfc.x`` calculation.
-
-        :param stdout: the stdout content as a string.
-        """
-        out_info_dict['out_file'] = stdout.split('\n')
-        return super().parse_stdout(stdout)
+        return self.exit(logs=logs)
 
     def _parse_xml(self, retrieved_temporary_folder):
         """Parse the XML file.

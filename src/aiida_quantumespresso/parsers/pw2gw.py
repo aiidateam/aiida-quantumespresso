@@ -5,6 +5,8 @@ import io
 from aiida.orm import ArrayData, Dict
 import numpy as np
 
+from aiida_quantumespresso.utils.mapping import get_logging_container
+
 from .base import BaseParser
 
 
@@ -18,22 +20,29 @@ class Pw2gwParser(BaseParser):
         permanently in the repository. The second required node is a filepath under the key
         ``retrieved_temporary_files`` which should contain the temporary retrieved files.
         """
-        parsed_stdout, logs_stdout = self._parse_stdout_from_retrieved()
-        self._emit_logs(logs_stdout)
+        logs = get_logging_container()
 
-        self.out('output_parameters', Dict(dict=parsed_stdout))
+        _, parsed_data, logs = self.parse_stdout_from_retrieved(logs)
 
-        for exit_code in ['ERROR_OUTPUT_STDOUT_MISSING', 'ERROR_OUTPUT_STDOUT_READ', 'ERROR_OUTPUT_STDOUT_INCOMPLETE']:
-            if exit_code in logs_stdout.error:
-                return self._exit(self.exit_codes.get(exit_code))
+        base_exit_code = self.check_base_errors(logs)
+        if base_exit_code:
+            return self.exit(base_exit_code, logs)
+
+        self.out('output_parameters', Dict(dict=parsed_data))
+
+        for exit_code in ['ERROR_OUTPUT_STDOUT_INCOMPLETE']:
+            if exit_code in logs.error:
+                return self.exit(self.exit_codes.get(exit_code), logs)
 
         self.exit_code_eps = None
         eps = self.parse_eps_files()
 
         if self.exit_code_eps:
-            return self._exit(self.exit_code_eps)
+            return self.exit(self.exit_code_eps, logs)
 
         self.out('eps', eps)
+
+        return self.exit(logs=logs)
 
     def parse_eps_files(self):
         """Parse the ``eps*.dat`` files produced by ``pw2gw.x``."""

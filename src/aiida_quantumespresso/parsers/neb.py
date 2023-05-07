@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 
-from aiida.common import NotExistent
+from aiida.common import AttributeDict, NotExistent
 from aiida.orm import ArrayData, Dict, TrajectoryData
 import numpy
 
@@ -13,6 +13,7 @@ from aiida_quantumespresso.parsers.parse_raw.pw import reduce_symmetries
 from aiida_quantumespresso.parsers.parse_xml.exceptions import XMLParseError, XMLUnsupportedFormatError
 from aiida_quantumespresso.parsers.parse_xml.pw.parse import parse_xml as parse_pw_xml
 from aiida_quantumespresso.parsers.pw import PwParser
+from aiida_quantumespresso.utils.mapping import get_logging_container
 
 from .base import BaseParser
 
@@ -36,6 +37,8 @@ class NebParser(BaseParser):
         permanently in the repository. The second required node is a filepath under the key `retrieved_temporary_files`
         which should contain the temporary retrieved files.
         """
+        logs = get_logging_container()
+
         prefix = self.node.process_class._PREFIX
 
         # Look for optional settings input node and potential 'parser_options' dictionary within it
@@ -51,16 +54,16 @@ class NebParser(BaseParser):
         # load the pw input parameters dictionary
         pw_input_dict = self.node.inputs.pw.parameters.get_dict()
 
-        # First parse the Neb output
-        parsed_stdout, logs_stdout = self._parse_stdout_from_retrieved()
-        self._emit_logs(logs_stdout)
-        iteration_data = parsed_stdout.pop('iteration_data')
+        stdout, parsed_data, logs = self.parse_stdout_from_retrieved(logs)
 
-        for exit_code in ['ERROR_OUTPUT_STDOUT_MISSING', 'ERROR_OUTPUT_STDOUT_READ', 'ERROR_OUTPUT_STDOUT_INCOMPLETE']:
-            if exit_code in logs_stdout.error:
-                return self._exit(self.exit_codes.get(exit_code))
+        base_exit_code = self.check_base_errors(logs)
+        if base_exit_code:
+            return self.exit(base_exit_code, logs)
 
-        num_images = parsed_stdout['num_of_images']
+        neb_out_dict, iteration_data = parse_raw_output_neb(stdout)
+        parsed_data.update(neb_out_dict)
+
+        num_images = parsed_data['num_of_images']
 
         # Now parse the information from the individual pw calculations for the different images
         image_data = {}
@@ -79,20 +82,20 @@ class NebParser(BaseParser):
                         with self.retrieved.base.repository.open(xml_file_path) as xml_file:
                             parsed_data_xml, logs_xml = parse_pw_xml(xml_file, None)
                     except IOError:
-                        return self._exit(self.exit_codes.ERROR_OUTPUT_XML_READ)
+                        return self.exit(self.exit_codes.ERROR_OUTPUT_XML_READ)
                     except XMLParseError:
-                        return self._exit(self.exit_codes.ERROR_OUTPUT_XML_PARSE)
+                        return self.exit(self.exit_codes.ERROR_OUTPUT_XML_PARSE)
                     except XMLUnsupportedFormatError:
-                        return self._exit(self.exit_codes.ERROR_OUTPUT_XML_FORMAT)
+                        return self.exit(self.exit_codes.ERROR_OUTPUT_XML_FORMAT)
                     except Exception:
                         import traceback
                         traceback.print_exc()
-                        return self._exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION)
+                        return self.exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION)
                     # this image is dealt with, so break the inner loop and go to the next image
                     break
             # otherwise, if none of the filenames we tried exists, exit with an error
             else:
-                return self._exit(self.exit_codes.ERROR_MISSING_XML_FILE)
+                return self.exit(self.exit_codes.ERROR_MISSING_XML_FILE)
 
             # look for pw output and parse it
             pw_out_file = os.path.join(f'{prefix}_{i + 1}', 'PW.out')
@@ -100,14 +103,14 @@ class NebParser(BaseParser):
                 with self.retrieved.base.repository.open(pw_out_file, 'r') as f:
                     pw_out_text = f.read()  # Note: read() and not readlines()
             except IOError:
-                return self._exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
+                return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 
             try:
                 parsed_data_stdout, logs_stdout = parse_pw_stdout(
                     pw_out_text, pw_input_dict, parser_options, parsed_data_xml
                 )
             except Exception as exc:
-                return self._exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc))
+                return self.exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc))
 
             parsed_structure = parsed_data_stdout.pop('structure', {})
             parsed_trajectory = parsed_data_stdout.pop('trajectory', {})
@@ -141,13 +144,13 @@ class NebParser(BaseParser):
             for log_level in ['warning', 'error']:
                 for message in logs_stdout[log_level]:
                     formatted_message = f'{log_level}: {message}'
-                    if formatted_message not in parsed_stdout['warnings']:
-                        parsed_stdout['warnings'].append(formatted_message)
+                    if formatted_message not in parsed_data['warnings']:
+                        parsed_data['warnings'].append(formatted_message)
 
         # Symbols can be obtained simply from the last image
         symbols = [str(site.kind_name) for site in structure_data.sites]
 
-        output_params = Dict(dict(list(parsed_stdout.items()) + list(image_data.items())))
+        output_params = Dict(dict(list(parsed_data.items()) + list(image_data.items())))
         self.out('output_parameters', output_params)
 
         trajectory = TrajectoryData()
@@ -189,20 +192,4 @@ class NebParser(BaseParser):
         mep_arraydata.set_array('interpolated_mep', interp_mep)
         self.out('output_mep', mep_arraydata)
 
-        return
-
-    @classmethod
-    def parse_stdout(cls, stdout: str) -> tuple:
-        """Parse the ``stdout`` content of a Quantum ESPRESSO ``neb.x`` calculation.
-
-        :param stdout: the stdout content as a string.
-        :returns: tuple of two dictionaries, with the parsed data and log messages, respectively.
-        """
-        parsed_data, logs = super().parse_stdout(stdout)
-
-        neb_out_dict, iteration_data = parse_raw_output_neb(stdout)
-
-        parsed_data.update(neb_out_dict)
-        parsed_data['iteration_data'] = iteration_data
-
-        return parsed_data, logs
+        return self.exit(logs=logs)

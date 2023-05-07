@@ -98,6 +98,8 @@ class PpCalculation(CalcJob):
             message='The parent folder did not contain the required XML output file.')
         spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
             message='The stdout output file could not be read.')
+        spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE',
+            message='The stdout output file could not be parsed.')
         spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
             message='The stdout output file was incomplete.')
         spec.exit_code(340, 'ERROR_OUT_OF_WALLTIME_INTERRUPTED',

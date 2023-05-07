@@ -7,9 +7,6 @@ decision doesn't have much structure encoded, [the values are simple ]
 """
 from qe_tools import CONSTANTS
 
-from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers.parse_raw import convert_qe_time_to_sec
-
 
 def parse_raw_output_neb(stdout):
     """Parses the output of a neb calculation Receives in input the paths to the output file.

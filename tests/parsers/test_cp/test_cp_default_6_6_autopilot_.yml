@@ -1,6 +1,7 @@
 parameters:
   beta_real_space: false
   charge_density: ./charge-density.dat
+  code_version: '6.6'
   conjugate_gradient: true
   constraint_mag: 0
   creator_name: cp
@@ -61,7 +62,7 @@ parameters:
   symmetries: []
   symmetries_units: crystal
   time_reversal_flag: true
-  wall_time: '     30.06s '
+  wall_time_seconds: 30.06
   warnings: []
   wfc_cutoff: -27.2113834506
   wfc_cutoff_units: eV

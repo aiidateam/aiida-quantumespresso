@@ -3,6 +3,7 @@ from aiida import orm
 from qe_tools import CONSTANTS
 
 from aiida_quantumespresso.calculations.matdyn import MatdynCalculation
+from aiida_quantumespresso.utils.mapping import get_logging_container
 
 from .base import BaseParser
 
@@ -12,19 +13,21 @@ class MatdynParser(BaseParser):
 
     def parse(self, **kwargs):
         """Parse the retrieved files from a ``MatdynCalculation`` into output nodes."""
-        parsed_stdout, logs_stdout = self._parse_stdout_from_retrieved()
-        self._emit_logs(logs_stdout)
+        logs = get_logging_container()
 
-        self.out('output_parameters', orm.Dict(parsed_stdout))
+        _, parsed_data, logs = self.parse_stdout_from_retrieved(logs)
 
-        for exit_code in ['ERROR_OUTPUT_STDOUT_MISSING', 'ERROR_OUTPUT_STDOUT_READ', 'ERROR_OUTPUT_STDOUT_INCOMPLETE']:
-            if exit_code in logs_stdout.error:
-                return self._exit(self.exit_codes.get(exit_code))
+        base_exit_code = self.check_base_errors(logs)
+        if base_exit_code:
+            return self.exit(base_exit_code, logs)
+
+        self.out('output_parameters', orm.Dict(parsed_data))
+
+        for exit_code in ['ERROR_OUTPUT_STDOUT_INCOMPLETE']:
+            if exit_code in logs.error:
+                return self.exit(self.exit_codes.get(exit_code), logs)
 
         filename_frequencies = MatdynCalculation._PHONON_FREQUENCIES_NAME
-
-        if filename_frequencies not in self.retrieved.base.repository.list_object_names():
-            return self._exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 
         # Extract the kpoints from the input data and create the `KpointsData` for the `BandsData`
         try:
@@ -40,10 +43,10 @@ class MatdynParser(BaseParser):
         try:
             num_kpoints = parsed_data.pop('num_kpoints')
         except KeyError:
-            return self._exit(self.exit_codes.ERROR_OUTPUT_KPOINTS_MISSING)
+            return self.exit(self.exit_codes.ERROR_OUTPUT_KPOINTS_MISSING, logs)
 
         if num_kpoints != kpoints.shape[0]:
-            return self._exit(self.exit_codes.ERROR_OUTPUT_KPOINTS_INCOMMENSURATE)
+            return self.exit(self.exit_codes.ERROR_OUTPUT_KPOINTS_INCOMMENSURATE, logs)
 
         output_bands = orm.BandsData()
         output_bands.set_kpointsdata(kpoints_for_bands)
@@ -53,6 +56,8 @@ class MatdynParser(BaseParser):
             self.logger.error(message)
 
         self.out('output_phonon_bands', output_bands)
+
+        return self.exit(logs=logs)
 
 
 def parse_raw_matdyn_phonon_file(phonon_frequencies):

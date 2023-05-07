@@ -1,7 +1,6 @@
-code_version: v.6.3MaX
+code_version: 6.3MaX
 number_of_atoms: 2
 number_of_irr_representations_for_each_q:
 - 2
 number_of_qpoints: 3
-wall_time: 7.13s
 wall_time_seconds: 7.13

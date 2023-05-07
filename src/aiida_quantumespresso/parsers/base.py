@@ -5,14 +5,13 @@ All `Parser` implementations in `aiida-quantumespresso` must use this base class
 """
 import abc
 import re
-import typing
+from typing import Optional, Tuple
 
 from aiida.common import AttributeDict
 from aiida.engine import ExitCode
 from aiida.parsers import Parser
 
 from aiida_quantumespresso.parsers.parse_raw.base import convert_qe_time_to_sec
-from aiida_quantumespresso.utils.mapping import get_logging_container
 
 __all__ = ('BaseParser',)
 
@@ -30,6 +29,7 @@ class BaseParser(Parser, metaclass=abc.ABCMeta):
         'Warning:': None,
         'DEPRECATED:': None,
     }
+    success_string = 'JOB DONE'
 
     @classmethod
     def get_error_map(cls):
@@ -45,40 +45,124 @@ class BaseParser(Parser, metaclass=abc.ABCMeta):
         warning_map.update(cls.class_warning_map)
         return warning_map
 
-    def _parse_stdout_from_retrieved(self, **kwargs) -> typing.Tuple[str, dict, AttributeDict]:
-        """Retrieve and parse the ``stdout`` content of a Quantum ESPRESSO calculation.
+    def parse_stdout_from_retrieved(self, logs: AttributeDict) -> Tuple[str, dict, AttributeDict]:
+        """Read and parse the ``stdout`` content of a Quantum ESPRESSO calculation.
 
-        :returns: size 3 tuple with the stdout content, parsed data and log messages
+        :param logs: Logging container that will be updated during parsing.
+        :returns: size 3 tuple: (``stdout`` content, parsed data, updated logs).
         """
-        logs = get_logging_container()
-
         filename_stdout = self.node.get_option('output_filename')
 
         if filename_stdout not in self.retrieved.base.repository.list_object_names():
             logs.error.append('ERROR_OUTPUT_STDOUT_MISSING')
-            return {}, logs
+            return '', {}, logs
 
         try:
             with self.retrieved.open(filename_stdout, 'r') as handle:
                 stdout = handle.read()
-        except OSError:
+        except OSError as exception:
             logs.error.append('ERROR_OUTPUT_STDOUT_READ')
-            return {}, logs
+            logs.error.append(exception)
+            return '', {}, logs
 
         try:
-            parsed_data, stdout_logs = self.parse_stdout(stdout, **kwargs)
+            parsed_data, logs = self._parse_stdout_base(stdout, logs)
         except Exception as exception:
             logs.error.append('ERROR_OUTPUT_STDOUT_PARSE')
-            logs.error.append(str(exception))
-            return {}, logs
+            logs.error.append(exception)
+            return stdout, {}, logs
 
-        for log_level, log_items in stdout_logs.items():
-            logs[log_level].extend(log_items)
+        return stdout, parsed_data, logs
 
-        return parsed_data, logs
+    def emit_logs(self, logs: AttributeDict, ignore: list = None) -> None:
+        """Emit the messages in one or multiple "log dictionaries" through the logger of the parser.
+
+        A log dictionary is expected to have the following structure: each key must correspond to a log level of the
+        python logging module, e.g. `error` or `warning` and its values must be a list of string messages. The method
+        will loop over all log dictionaries and emit the messages it contains with the log level indicated by the key.
+
+        Example log dictionary structure::
+
+            logs = {
+                'warning': ['Could not parse the `etot_threshold` variable from the stdout.'],
+                'error': ['Self-consistency was not achieved']
+            }
+
+        :param logs: log dictionaries
+        :param ignore: list of log messages to ignore
+        """
+        ignore = ignore or []
+
+        if not isinstance(logs, (list, tuple)):
+            logs = [logs]
+
+        for logs in logs:
+            for level, messages in logs.items():
+                for message in messages:
+
+                    stripped = message.strip()
+
+                    if stripped in ignore:
+                        continue
+
+                    getattr(self.logger, level)(stripped)
+
+    def check_base_errors(self, logs: AttributeDict) -> Optional[ExitCode]:
+        """Check the ``logs`` for the following "basic" parsing error and return a (formatted) version:
+
+        * ``ERROR_OUTPUT_STDOUT_MISSING``
+        * ``ERROR_OUTPUT_STDOUT_READ``
+        * ``ERROR_OUTPUT_STDOUT_PARSE``
+
+        These errors mean that there is no ``stdout`` to parse.
+
+        The ``ERROR_OUTPUT_STDOUT_INCOMPLETE`` error is not checked here because in this case there might still be
+        useful information in the ``stdout``.
+        """
+
+        for exit_code in [
+            'ERROR_OUTPUT_STDOUT_MISSING',
+        ]:
+            if exit_code in logs.error:
+                return self.exit_codes.get(exit_code)
+
+        # These exit codes have additional information that needs to be formatted in the message.
+        for exit_code in [
+            'ERROR_OUTPUT_STDOUT_READ',
+            'ERROR_OUTPUT_STDOUT_PARSE'
+        ]:
+            if exit_code in logs.error:
+                exception = logs.error[logs.index(exit_code) + 1]
+                return self.exit_codes.get(exit_code).format(exception=exception)
+
+    def exit(self, exit_code: ExitCode = None, logs: AttributeDict = None) -> ExitCode:
+        """Log all messages in the ``logs`` as well as the ``exit_code`` message and return the correct exit code.
+
+        This is a utility function if one wants to return from the parse method and automically add the ``logs`` and
+        exit message associated to and exit code as a log message to the node: e.g.
+        ``return self._exit(self.exit_codes.LABEL))``
+
+        If no ``exit_code`` is provided, the method will check if an ``exit_status`` has already been set on the node
+        and return the corresponding ``ExitCode`` in this case. If not, ``ExitCode(0)`` is returned.
+
+        :param logs: log dictionaries
+        :param exit_code: an ``ExitCode``
+        :return: The correct exit code
+        """
+        if logs:
+            self.emit_logs(logs)
+
+        if exit_code is not None:
+            self.logger.error(exit_code.message)
+        elif self.node.exit_status is not None:
+            exit_code = ExitCode(self.node.exit_status, self.node.exit_message)
+        else:
+            exit_code = ExitCode(0)
+
+        return exit_code
 
     @classmethod
-    def parse_stdout(cls, stdout: str, success_str: str = 'JOB DONE') -> typing.Tuple[dict, AttributeDict]:
+    def _parse_stdout_base(cls, stdout: str, logs: AttributeDict) -> Tuple[dict, AttributeDict]:
         """Parse the ``stdout`` content of a Quantum ESPRESSO calculation.
 
         This function only checks for basic content like JOB DONE, errors with %%%%% etc, but can be overridden to
@@ -87,24 +171,21 @@ class BaseParser(Parser, metaclass=abc.ABCMeta):
         :param stdout: the stdout content as a string.
         :returns: tuple of two dictionaries, with the parsed data and log messages, respectively.
         """
-        logs = get_logging_container()
         parsed_data = {}
 
-        if not re.search(success_str, stdout):
+        if not re.search(cls.success_string, stdout):
             logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
 
-        code_match = re.search(r'Program\s(?P<code_name>[A-Z|a-z|\_|\d]+)\s(?P<code_version>v\.[\d\.|a-z|A-Z]+)\s', stdout)
-
+        code_match = re.search(
+            r'Program\s(?P<code_name>[A-Z|a-z|\_|\d]+)\sv\.(?P<code_version>[\d\.|a-z|A-Z]+)\s', stdout
+        )
         if code_match:
-
             code_name = code_match.groupdict()['code_name']
             parsed_data['code_version'] = code_match.groupdict()['code_version']
 
-            wall_match = re.search(fr'{code_name}\s+:[\s\S]+\s+(?P<wall_time>[.\d|s|m|d|h]+)\sWALL', stdout)
+            wall_match = re.search(fr'{code_name}\s+:[\s\S]+CPU\s+(?P<wall_time>[\s.\d|s|m|d|h]+)\sWALL', stdout)
 
             if wall_match:
-                parsed_data['wall_time'] = wall_match.groupdict()['wall_time']
-
                 try:
                     parsed_data['wall_time_seconds'] = convert_qe_time_to_sec(wall_match.groupdict()['wall_time'])
                 except ValueError:
@@ -131,54 +212,3 @@ class BaseParser(Parser, metaclass=abc.ABCMeta):
                     logs.warning.append(warning_message)
 
         return parsed_data, logs
-
-    def _emit_logs(self, logging_dictionaries: AttributeDict, ignore: list = None) -> None:
-        """Emit the messages in one or multiple "log dictionaries" through the logger of the parser.
-
-        A log dictionary is expected to have the following structure: each key must correspond to a log level of the
-        python logging module, e.g. `error` or `warning` and its values must be a list of string messages. The method
-        will loop over all log dictionaries and emit the messages it contains with the log level indicated by the key.
-
-        Example log dictionary structure::
-
-            logs = {
-                'warning': ['Could not parse the `etot_threshold` variable from the stdout.'],
-                'error': ['Self-consistency was not achieved']
-            }
-
-        :param logging_dictionaries: log dictionaries
-        :param ignore: list of log messages to ignore
-        """
-        ignore = ignore or []
-
-        if not isinstance(logging_dictionaries, (list, tuple)):
-            logging_dictionaries = [logging_dictionaries]
-
-        for logs in logging_dictionaries:
-            for level, messages in logs.items():
-                for message in messages:
-
-                    if message is None:
-                        continue
-
-                    stripped = message.strip()
-
-                    if not stripped or stripped in ignore:
-                        continue
-
-                    try:
-                        getattr(self.logger, level)(stripped)
-                    except AttributeError:
-                        pass
-
-    def _exit(self, exit_code: ExitCode) -> ExitCode:
-        """Log the exit message of the give exit code with level `ERROR` and return the exit code.
-
-        This is a utility function if one wants to return from the parse method and automically add the exit message
-        associated to the exit code as a log message to the node: e.g. `return self.exit(self.exit_codes.LABEL))`
-
-        :param exit_code: an `ExitCode`
-        :return: the exit code
-        """
-        self.logger.error(exit_code.message)
-        return exit_code

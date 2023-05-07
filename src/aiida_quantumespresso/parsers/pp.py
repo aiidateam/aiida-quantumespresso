@@ -2,11 +2,14 @@
 """`Parser` implementation for the `PpCalculation` calculation job class."""
 import os
 import re
+from typing import Tuple
 
 from aiida import orm
+from aiida.common import AttributeDict
 import numpy as np
 
 from aiida_quantumespresso.calculations.pp import PpCalculation
+from aiida_quantumespresso.utils.mapping import get_logging_container
 
 from .base import BaseParser
 
@@ -45,17 +48,22 @@ class PpParser(BaseParser):
 
     def parse(self, **kwargs):
         """Parse the retrieved files of a ``PpCalculation`` into output nodes."""
-        parsed_stdout, logs_stdout = self._parse_stdout_from_retrieved()
-        self._emit_logs(logs_stdout)
+        logs = get_logging_container()
 
-        self.out('output_parameters', orm.Dict(parsed_stdout))
+        stdout, parsed_data, logs = self.parse_stdout_from_retrieved(logs)
 
-        for exit_code in [
-            'ERROR_PARENT_XML_MISSING', 'ERROR_OUTPUT_STDOUT_MISSING', 'ERROR_OUTPUT_STDOUT_READ',
-            'ERROR_OUTPUT_STDOUT_INCOMPLETE'
-        ]:
-            if exit_code in logs_stdout.error:
-                return self._exit(self.exit_codes.get(exit_code))
+        base_exit_code = self.check_base_errors(logs)
+        if base_exit_code:
+            return self.exit(base_exit_code, logs)
+
+        parsed_pp, logs = self.parse_stdout(stdout, logs)
+        parsed_data.update(parsed_pp)
+
+        self.out('output_parameters', orm.Dict(parsed_data))
+
+        for exit_code in ['ERROR_OUTPUT_STDOUT_INCOMPLETE']:
+            if exit_code in logs.error:
+                return self.exit(self.exit_codes.get(exit_code), logs)
 
         retrieve_temporary_list = self.node.base.attributes.get('retrieve_temporary_list', None)
 
@@ -64,7 +72,7 @@ class PpParser(BaseParser):
             try:
                 retrieved_temporary_folder = kwargs['retrieved_temporary_folder']
             except KeyError:
-                return self._exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
+                return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
 
         # Currently all plot output files should start with the `filplot` as prefix. If only one file was produced the
         # prefix is the entire filename, but in the case of multiple files, there will be pairs of two files where the
@@ -123,7 +131,7 @@ class PpParser(BaseParser):
                 # Parse the file
                 try:
                     key = get_key_from_filename(filename)
-                    data_parsed.append((key, parsers[iflag](data_raw, self.units_dict[parsed_stdout['plot_num']])))
+                    data_parsed.append((key, parsers[iflag](data_raw, self.units_dict[parsed_data['plot_num']])))
                     del data_raw
                 except Exception:  # pylint: disable=broad-except
                     return self.exit_codes.ERROR_OUTPUT_DATAFILE_PARSE.format(filename=filename)
@@ -140,12 +148,11 @@ class PpParser(BaseParser):
         else:
             self.out('output_data_multiple', dict(data_parsed))
 
-    def parse_stdout(self, stdout):
-        """Parse the ``stdout`` content of a Quantum ESPRESSO ``pp.x`` calculation.
+        return self.exit(logs=logs)
 
-        :param stdout: the stdout content as a string.
-        """
-        parsed_data, logs = super().parse_stdout(stdout)
+    def parse_stdout(self, stdout: str, logs: AttributeDict) -> Tuple[dict, AttributeDict]:
+        """Parse the ``stdout`` content of a Quantum ESPRESSO ``pp.x`` calculation."""
+        parsed_data = {}
 
         # Parse useful data from stdout
         for line in stdout.splitlines():

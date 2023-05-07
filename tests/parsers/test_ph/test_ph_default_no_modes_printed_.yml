@@ -1,4 +1,4 @@
-code_version: v.6.8
+code_version: '6.8'
 dynamical_matrix_1:
   frequencies:
   - 147.433165
@@ -25,5 +25,4 @@ number_of_atoms: 2
 number_of_irr_representations_for_each_q:
 - 6
 number_of_qpoints: 1
-wall_time: 26.71s
 wall_time_seconds: 26.71

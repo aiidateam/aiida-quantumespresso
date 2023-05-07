@@ -78,12 +78,6 @@ class NebCalculation(CalcJob):
         spec.default_output_node = 'output_parameters'
         spec.exit_code(303, 'ERROR_MISSING_XML_FILE',
             message='The required XML file is not present in the retrieved folder.')
-        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
-            message='The stdout output file could not be read.')
-        spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE',
-            message='The output file contains invalid output.')
-        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
-            message='The stdout output file was incomplete probably because the calculation got interrupted.')
         spec.exit_code(320, 'ERROR_OUTPUT_XML_READ',
             message='The XML output file could not be read.')
         spec.exit_code(321, 'ERROR_OUTPUT_XML_PARSE',

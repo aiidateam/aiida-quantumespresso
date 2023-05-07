@@ -143,6 +143,19 @@ class BasePwCpInputGenerator(CalcJob):
         )
         spec.inputs.validator = cls.validate_inputs
 
+        spec.exit_code(
+            302,
+            'ERROR_OUTPUT_STDOUT_MISSING',
+            message='The retrieved folder did not contain the required stdout output file.'
+        )
+        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ', message='The stdout output file could not be read.')
+        spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE', message='The stdout output file could not be parsed.')
+        spec.exit_code(
+            312,
+            'ERROR_OUTPUT_STDOUT_INCOMPLETE',
+            message='The stdout output file was incomplete probably because the calculation got interrupted.'
+        )
+
     @classmethod
     def validate_inputs(cls, value, port_namespace):
         """Validate the entire inputs namespace."""
