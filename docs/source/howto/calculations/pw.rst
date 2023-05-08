@@ -311,3 +311,38 @@ To retrieve additional output files, specify the list of files in the ``ADDITION
 
 .. |SSSP| replace:: Standard Solid-State Pseudopotentials (SSSP)
 .. _SSSP: https://www.materialscloud.org/discover/sssp/table/efficiency
+
+
+How to analyze the results
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When a ``PwCalculation`` is completed, there are quite a few possible analyses to perform.
+
+How to check the SCF accuracy during the self-consistent cycle
+..............................................................
+
+During the self-consistent field cycle, the difference in energy of the newly computed charge density and the starting one is computed and stored.
+It can easily be retrieved through the :meth:`~aiida_quantumespresso.tools.calculations.pw.PwCalculationTools.get_scf_accuracy` method.
+This method can be accessed directly through the node of a completed ``PwCalculation``:
+
+.. code-block:: python
+
+    In [1]: node = load_node(IDENTIFIER)
+
+    In [2]: node.tools.get_scf_accuracy()
+    Out[2]:
+    array([1.22958881e+00, 7.84853851e-02, 5.10948147e-03, 5.42404506e-03, 2.94427169e-04, 9.25187037e-06])
+
+This returns a ``numpy`` array with the SCF accuracy at each step during the complete cycle.
+If the calculation contained dynamics, i.e. the atomic positions were updated such as in a ``relax`` or ``vc-relax`` calculation, there will be multiple SCF cycles, one for each frame of the dynamics trajectory.
+To get the SCF accuracy progression of a particular frame, specify it using the ``index`` argument:
+
+.. code-block:: python
+
+    In [1]: node = load_node(IDENTIFIER)
+
+    In [2]: node.tools.get_scf_accuracy(index=-1)
+    Out[2]:
+    array([1.38253747e+00, 5.99484465e-02, 1.20151864e-03, 4.69396365e-05, 4.08170752e-06])
+
+The ``index`` supports negative values to start counting from the back, just as with regular ``numpy`` arrays.
