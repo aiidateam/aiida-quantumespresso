@@ -323,7 +323,7 @@ How to check the SCF accuracy during the self-consistent cycle
 
 During the self-consistent field cycle, the difference in energy of the newly computed charge density and the starting one is computed and stored.
 It can easily be retrieved through the :meth:`~aiida_quantumespresso.tools.calculations.pw.PwCalculationTools.get_scf_accuracy` method.
-This method can be accessed directly through the node of a completed ``PwCalculation``:
+This method can be accessed directly through the ``tools`` of a completed ``PwCalculation`` node:
 
 .. code-block:: python
 
