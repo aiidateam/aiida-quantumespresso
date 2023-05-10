@@ -24,7 +24,7 @@ I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) source
 customdefault:
 	$(SPHINXBUILD) -b html -nW --keep-going $(ALLSPHINXOPTS) $(BUILDDIR)/html
 
-all: html
+all: html view
 
 clean:
 	rm -rf $(BUILDDIR)
@@ -36,4 +36,4 @@ html:
 
 
 view:
-	xdg-open $(BUILDDIR)/html/index.html
+	open $(BUILDDIR)/html/index.html
