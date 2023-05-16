@@ -319,7 +319,7 @@ def generate_calc_job_node(fixture_localhost):
 
 @pytest.fixture(scope='session')
 def generate_upf_data():
-    """Return a `UpfData` instance for the given element a file for which should exist in `tests/fixtures/pseudos`."""
+    """Return a `UpfData` instance for the given element."""
 
     def _generate_upf_data(element):
         """Return `UpfData` node."""
