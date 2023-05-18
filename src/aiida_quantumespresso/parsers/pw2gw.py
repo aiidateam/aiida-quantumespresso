@@ -30,9 +30,8 @@ class Pw2gwParser(BaseParser):
 
         self.out('output_parameters', Dict(dict=parsed_data))
 
-        for exit_code in ['ERROR_OUTPUT_STDOUT_INCOMPLETE']:
-            if exit_code in logs.error:
-                return self.exit(self.exit_codes.get(exit_code), logs)
+        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE'in logs.error:
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE, logs)
 
         self.exit_code_eps = None
         eps = self.parse_eps_files()

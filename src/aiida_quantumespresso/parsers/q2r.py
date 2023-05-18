@@ -22,9 +22,8 @@ class Q2rParser(BaseParser):
 
         self.out('output_parameters', Dict(parsed_data))
 
-        for exit_code in ['ERROR_OUTPUT_STDOUT_INCOMPLETE']:
-            if exit_code in logs.error:
-                return self.exit(self.exit_codes.get(exit_code), logs)
+        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE'in logs.error:
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE, logs)
 
         filename_force_constants = self.node.process_class._FORCE_CONSTANTS_NAME
 

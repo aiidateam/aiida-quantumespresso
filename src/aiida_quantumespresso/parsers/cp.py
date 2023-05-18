@@ -262,6 +262,10 @@ class CpParser(BaseParser):
         output_params = Dict(out_dict)
         self.out('output_parameters', output_params)
 
+        for exit_code in list(self.get_error_map().values()) + ['ERROR_OUTPUT_STDOUT_INCOMPLETE']:
+            if exit_code in logs.error:
+                return self.exit(self.exit_codes.get(exit_code), logs)
+
         return self.exit(logs=logs)
 
     def get_linkname_trajectory(self):

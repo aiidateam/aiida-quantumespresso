@@ -192,4 +192,7 @@ class NebParser(BaseParser):
         mep_arraydata.set_array('interpolated_mep', interp_mep)
         self.out('output_mep', mep_arraydata)
 
+        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE'in logs.error:
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE, logs)
+
         return self.exit(logs=logs)

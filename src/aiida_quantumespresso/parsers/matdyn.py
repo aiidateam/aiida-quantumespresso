@@ -23,9 +23,8 @@ class MatdynParser(BaseParser):
 
         self.out('output_parameters', orm.Dict(parsed_data))
 
-        for exit_code in ['ERROR_OUTPUT_STDOUT_INCOMPLETE']:
-            if exit_code in logs.error:
-                return self.exit(self.exit_codes.get(exit_code), logs)
+        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE'in logs.error:
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE, logs)
 
         filename_frequencies = MatdynCalculation._PHONON_FREQUENCIES_NAME
 
