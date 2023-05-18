@@ -23,9 +23,8 @@ class DosParser(BaseParser):
 
         self.out('output_parameters', Dict(parsed_stdout))
 
-        for exit_code in ['ERROR_OUTPUT_STDOUT_INCOMPLETE']:
-            if exit_code in logs.error:
-                return self.exit(self.exit_codes.get(exit_code), logs)
+        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE'in logs.error:
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE, logs)
 
         # Parse the DOS
         try:

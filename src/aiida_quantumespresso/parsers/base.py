@@ -3,6 +3,8 @@
 
 All `Parser` implementations in `aiida-quantumespresso` must use this base class, not `aiida.parsers.Parser`.
 """
+from __future__ import annotations
+
 import abc
 import re
 from typing import Optional, Tuple
@@ -74,7 +76,7 @@ class BaseParser(Parser, metaclass=abc.ABCMeta):
 
         return stdout, parsed_data, logs
 
-    def emit_logs(self, logs: AttributeDict, ignore: list = None) -> None:
+    def emit_logs(self, logs: list[AttributeDict] | tuple[AttributeDict] | AttributeDict, ignore: list = None) -> None:
         """Emit the messages in one or multiple "log dictionaries" through the logger of the parser.
 
         A log dictionary is expected to have the following structure: each key must correspond to a log level of the
@@ -135,7 +137,7 @@ class BaseParser(Parser, metaclass=abc.ABCMeta):
                 exception = logs.error[logs.index(exit_code) + 1]
                 return self.exit_codes.get(exit_code).format(exception=exception)
 
-    def exit(self, exit_code: ExitCode = None, logs: AttributeDict = None) -> ExitCode:
+    def exit(self, exit_code: ExitCode | None = None, logs: AttributeDict | None = None) -> ExitCode:
         """Log all messages in the ``logs`` as well as the ``exit_code`` message and return the correct exit code.
 
         This is a utility function if one wants to return from the parse method and automically add the ``logs`` and
