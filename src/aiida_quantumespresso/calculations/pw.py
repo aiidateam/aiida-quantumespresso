@@ -108,8 +108,6 @@ class PwCalculation(BasePwCpInputGenerator):
             message='The code failed in finding a valid reciprocal lattice vector.')
 
         # Significant errors but calculation can be used to restart
-        spec.exit_code(400, 'ERROR_OUT_OF_WALLTIME',
-            message='The calculation stopped prematurely because it ran out of walltime.')
         spec.exit_code(410, 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED',
             message='The electronic minimization cycle did not reach self-consistency.')
 

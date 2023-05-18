@@ -155,6 +155,9 @@ class BasePwCpInputGenerator(CalcJob):
             'ERROR_OUTPUT_STDOUT_INCOMPLETE',
             message='The stdout output file was incomplete probably because the calculation got interrupted.'
         )
+        spec.exit_code(
+            400, 'ERROR_OUT_OF_WALLTIME', message='The calculation stopped prematurely because it ran out of walltime.'
+        )
 
     @classmethod
     def validate_inputs(cls, value, port_namespace):
