@@ -214,12 +214,13 @@ split_arguments_when_comma_terminated = true
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py37
+envlist =
+    py{38,39,310,311}
+    py38-pre-commit
 
 [testenv]
+description = Run the pytest tests
 usedevelop=True
-
-[testenv:py{36,37,38,39}]
 extras = tests
 commands = pytest {posargs}
 
@@ -229,15 +230,4 @@ extras =
     tests
     pre-commit
 commands = pre-commit run {posargs}
-
-[testenv:py38-docs-{clean,update}]
-description =
-    clean: Build the documentation (remove any existing build)
-    update: Build the documentation (modify any existing build)
-extras = docs
-changedir = docs
-whitelist_externals = make
-commands =
-    clean: make clean
-    make
 """
