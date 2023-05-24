@@ -312,7 +312,13 @@ def test_restart_mode(generate_workchain_pw, generate_calc_job_node, restart_mod
     inputs['pw']['parent_folder'] = node.outputs.remote_folder
     inputs['pw']['parameters'] = Dict({'CONTROL': {'restart_mode': restart_mode}})
 
-    process = generate_workchain_pw(inputs=inputs)
+    if restart_mode == 'restart':
+        process = generate_workchain_pw(inputs=inputs)
+    else:
+        with pytest.warns(UserWarning) as warning:
+            process = generate_workchain_pw(inputs=inputs)
+        assert 'but no input parameters were' in str(warning[0])
+
     process.setup()
 
     assert process.ctx.inputs['parameters']['CONTROL']['restart_mode'] == expected

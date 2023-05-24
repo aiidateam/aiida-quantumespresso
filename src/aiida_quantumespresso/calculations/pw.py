@@ -208,7 +208,7 @@ class PwCalculation(BasePwCpInputGenerator):
                 parameters.get('ELECTRONS', {}).get('startingwfc', None) == 'file'
             ]):
                 warnings.warn(
-                    f'`parent_folder` input was provided for the `{calculation_type}` `PwCalculation`, but no input'
+                    f'`parent_folder` input was provided for the `{calculation_type}` `PwCalculation`, but no input '
                     'parameters were provided to restart from this folder.\n\n'
                     'Please set one of the following in the input parameters:\n'
                     "    parameters['CONTROL']['restart_mode'] = 'restart'\n"
