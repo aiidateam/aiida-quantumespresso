@@ -28,7 +28,7 @@ dependencies = [
     'importlib_resources',
     'jsonschema',
     'numpy',
-    'pydantic',
+    'pydantic~=1.10,>=1.10.8',
     'packaging',
     'qe-tools~=2.0',
     'xmlschema~=1.2,>=1.2.5'
