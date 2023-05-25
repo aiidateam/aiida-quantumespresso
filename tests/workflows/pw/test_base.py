@@ -315,9 +315,8 @@ def test_restart_mode(generate_workchain_pw, generate_calc_job_node, restart_mod
     if restart_mode == 'restart':
         process = generate_workchain_pw(inputs=inputs)
     else:
-        with pytest.warns(UserWarning) as warning:
+        with pytest.warns(UserWarning, match='but no input parameters were'):
             process = generate_workchain_pw(inputs=inputs)
-        assert 'but no input parameters were' in str(warning[0])
 
     process.setup()
 
