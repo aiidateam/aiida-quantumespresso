@@ -1,6 +1,6 @@
 (howto-workflows)=
 
-# How-to run workflows
+# Workflows
 
 ```{toctree}
 :maxdepth: 1
