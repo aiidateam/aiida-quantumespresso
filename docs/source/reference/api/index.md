@@ -1,7 +1,7 @@
 # Python API
 
 ```{toctree}
-:maxdepth: 4
+:maxdepth: 3
 auto/aiida_quantumespresso/calculations/index
 auto/aiida_quantumespresso/common/index
 auto/aiida_quantumespresso/data/index

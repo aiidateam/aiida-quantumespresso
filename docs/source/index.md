@@ -8,7 +8,6 @@ myst:
 
 ```{toctree}
 :hidden: true
-:maxdepth: 2
 
 installation/index
 tutorials/index
@@ -16,7 +15,6 @@ tutorials/index
 
 ```{toctree}
 :hidden: true
-:maxdepth: 2
 :caption: How to
 
 howto/calculations/index
@@ -33,7 +31,6 @@ topics/workflows/index
 ```{toctree}
 :hidden: true
 :caption: Reference
-:maxdepth: 0
 reference/api/index
 reference/cli/index
 ```
