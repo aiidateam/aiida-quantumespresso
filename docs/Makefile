@@ -28,6 +28,7 @@ all: clean html view
 
 clean:
 	rm -rf $(BUILDDIR)
+	rm -rf $(shell find . -type d -wholename "*/reference/api/auto")
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html

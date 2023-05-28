@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """Tools for nodes created by running the `PwCalculation` class."""
-from aiida.common import exceptions
+from aiida.common import AttributeDict, exceptions
 from aiida.tools.calculations.base import CalculationTools
+
+from aiida_quantumespresso.calculations.functions.create_magnetic_configuration import create_magnetic_configuration
 
 
 class PwCalculationTools(CalculationTools):
@@ -51,3 +53,48 @@ class PwCalculationTools(CalculationTools):
             return scf_accuracy[scf_accuracy_index[index - 1]:scf_accuracy_index[index]]
 
         return scf_accuracy[scf_accuracy_index[index]:scf_accuracy_index[index + 1]]
+
+    def get_magnetic_configuration(self, atol: float = 0.5, ztol: float = 0.05) -> AttributeDict:
+        """Get the final magnetic configuration of a ``pw.x`` calculation."""
+
+        calculation = self._node.inputs.parameters.get_dict()['CONTROL'].get('calculation', 'scf')
+
+        if calculation in ['scf', 'nscf', 'bands']:
+            structure = self._node.inputs.structure
+        else:
+            structure = self._node.outputs.output_structure
+
+        try:
+            magnetic_moments = self._node.outputs.output_trajectory.get_array('atomic_magnetic_moments')[-1].tolist()
+        except KeyError as exc:
+            raise KeyError('Could not find the `atomic_magnetic_moments` in the `output_trajectory`.') from exc
+
+        results = create_magnetic_configuration(
+            structure,
+            magnetic_moments,
+            atol=atol,
+            ztol=ztol,
+            metadata={'store_provenance': False},
+        )
+        structure_kindname_position = [(site.kind_name, site.position) for site in structure.sites]
+        allo_kindname_position = [(site.kind_name, site.position) for site in results['structure'].sites]
+        structure_kindnames_sorted = sorted(structure_kindname_position, key=lambda l: l[1])
+        allo_kindnames_sorted = sorted(allo_kindname_position, key=lambda l: l[1])
+
+        requires_new_kinds = not structure_kindnames_sorted == allo_kindnames_sorted
+        non_magnetic = all(abs(magn) < ztol for magn in results['magnetic_moments'].get_dict().values())
+
+        if requires_new_kinds:
+            results = create_magnetic_configuration(
+                structure,
+                magnetic_moments,
+                atol=atol,
+                ztol=ztol,
+                metadata={'store_provenance': False},
+            )
+            structure = results['results']
+
+        return AttributeDict({
+            'structure': structure,
+            'magnetic_moments': None if non_magnetic else results['magnetic_moments']
+        })

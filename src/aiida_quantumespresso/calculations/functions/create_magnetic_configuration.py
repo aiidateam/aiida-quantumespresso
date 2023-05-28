@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
-"""Create a new magnetic allotrope from the given structure based on the desired magnetic moments."""
+"""Create a new magnetic configuration from the given structure based on the desired magnetic moments."""
 from aiida.engine import calcfunction
 from aiida.orm import Float
 import numpy
 
 
 @calcfunction
-def create_magnetic_allotrope(structure, magnetic_moment_per_site, atol=lambda: Float(5E-1), ztol=lambda: Float(5E-2)):
-    """Create a new magnetic allotrope from the given structure based on a list of magnetic moments per site.
+def create_magnetic_configuration(
+    structure, magnetic_moment_per_site, atol=lambda: Float(0.5), ztol=lambda: Float(0.05)
+):
+    """Create a new magnetic configuration from the given structure based on a list of magnetic moments per site.
 
     To create the new list of kinds, the algorithm loops over all the elements in the structure and makes a list of the
     sites with that element and their corresponding magnetic moment. Next, it splits this list in three lists:
@@ -43,8 +45,8 @@ def create_magnetic_allotrope(structure, magnetic_moment_per_site, atol=lambda: 
     rtol = 0  # Relative tolerance used in the ``numpy.is_close()`` calls.
     ztol = ztol.value
 
-    allotrope = StructureData(cell=structure.cell, pbc=structure.pbc)
-    allotrope_magnetic_moments = {}
+    new_structure = StructureData(cell=structure.cell, pbc=structure.pbc)
+    magnetic_configuration = {}
 
     for element in structure.get_symbols_set():
 
@@ -108,14 +110,14 @@ def create_magnetic_allotrope(structure, magnetic_moment_per_site, atol=lambda: 
             kind_names = len(element_magnetic_moments) * [element]
             kind_magnetic_moments = {element: kind_magnetic_moments[current_kind_name]}
 
-        allotrope_magnetic_moments.update(kind_magnetic_moments)
+        magnetic_configuration.update(kind_magnetic_moments)
 
         for name, site in zip(kind_names, kind_sites):
-            allotrope.append_atom(
+            new_structure.append_atom(
                 name=name,
                 symbols=(element,),
                 weights=(1.0,),
                 position=site.position,
             )
 
-    return {'allotrope': allotrope, 'magnetic_moments': Dict(dict=allotrope_magnetic_moments)}
+    return {'structure': new_structure, 'magnetic_moments': Dict(dict=magnetic_configuration)}
