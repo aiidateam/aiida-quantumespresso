@@ -85,7 +85,7 @@ class HubbardParameters(BaseModel):
 
     @staticmethod
     def from_tuple(hubbard_parameters: Tuple[int, str, int, str, float, Tuple[int, int, int], str]):
-        """Return a :meth:`~aiida_quantumespresso.common.hubbard.HubbardParameters`  instance from a list.
+        """Return a ``HubbardParameters``  instance from a list.
 
         The parameters within the list must have the following order:
             * atom_index
@@ -112,7 +112,7 @@ class Hubbard(BaseModel):
     """Class for complete description of Hubbard interactions."""
 
     parameters: List[HubbardParameters]
-    """List of :meth:`~aiida_quantumespress.common.hubbard.HubbardParameters`."""
+    """List of :class:`~aiida_quantumespresso.common.hubbard.HubbardParameters`."""
 
     projectors: Literal['atomic',
                         'ortho-atomic',

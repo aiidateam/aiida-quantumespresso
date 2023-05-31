@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Utility class for handling the :class:`data.hubbard_structure.HubbardStructureData`."""
+"""Utility class for handling the :class:`aiida_quantumespresso.data.hubbard_structure.HubbardStructureData`."""
 # pylint: disable=no-name-in-module
 from itertools import product
 import os

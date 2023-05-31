@@ -11,18 +11,29 @@
     font-size: 140%;
 }
 
-div.navbar-brand-box a.navbar-brand img {
-    display: block;
-    height: auto;
-    width: auto;
-    max-height: 100vh;
-    max-width: 90%;
-    margin: 0 auto;
-    padding-left: 30px
+.navbar-brand {
+    padding: 0;
+    padding-top: 0.5rem;
 }
 
-@media (min-width: 768px) {
-    div.navbar-brand-box a.navbar-brand img {
-        max-height: 100vh !important
-    }
+img.logo__image {
+    max-height: 180px;
+    padding-left: 1.5rem;
+    padding-bottom: 1rem;
+}
+
+.navbar-icon-links i.fa-brands {
+    font-size: 40px!important;
+}
+
+img.aiida-logo {
+    height: 40px!important;
+}
+
+.fa {
+    color: var(--pst-color-primary);
+}
+
+.bd-search {
+    padding: 0 1rem;
 }
