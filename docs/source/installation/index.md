@@ -109,7 +109,7 @@ In this example, we will set up the `localhost`, the computer where AiiDA itself
 To set up a computer, use the ``verdi`` CLI of ``aiida-core``.
 
 ```console
-$ verdi computer setup -n -L localhost -H localhost -T core.local -S core.direct -w ${AIIDA_PATH:-$HOME}/aiida_scratch
+$ verdi computer setup -n -L localhost -H localhost -T core.local -S core.direct -w ~/aiida_work_dir
 ```
 
 After creating the localhost computer, configure the `core.local` transport using:
@@ -138,7 +138,7 @@ computer = Computer(
     hostname='localhost',
     transport_type='core.local',
     scheduler_type='core.direct',
-    workdir=Path('$AIIDA_PATH/workdir').absolute().as_posix()
+    workdir=Path('~/aiida_work_dir').resolve()
 ).store()
 computer.configure()
 ```
