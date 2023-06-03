@@ -109,7 +109,7 @@ In this example, we will set up the `localhost`, the computer where AiiDA itself
 To set up a computer, use the ``verdi`` CLI of ``aiida-core``.
 
 ```console
-$ verdi computer setup -n -L localhost -H localhost -T core.local -S core.direct -w $AIIDA_PATH/workdir
+$ verdi computer setup -n -L localhost -H localhost -T core.local -S core.direct -w ${AIIDA_PATH:-$HOME}/aiida_scratch
 ```
 
 After creating the localhost computer, configure the `core.local` transport using:
@@ -162,7 +162,7 @@ In this example, we will setup the `pw.x` code that is installed on the computer
 To setup a particular Quantum ESPRESSO code, use the ``verdi`` CLI of ``aiida-core``.
 
 ```console
-$ verdi code create core.code.installed -n --computer localhost --label pw --default-calc-job-plugin quantumespresso.pw --filepath-executable /path/to/pw.x
+$ verdi code create core.code.installed -n --computer localhost --label pw --default-calc-job-plugin quantumespresso.pw --filepath-executable pw.x
 ```
 :::
 
@@ -177,7 +177,7 @@ computer = load_computer('localhost')
 code = InstalledCode(
 label='pw',
 computer=computer,
-filepath_executable='/path/to/pw.x',
+filepath_executable='pw.x',
 default_calc_job_plugin='quantumespresso.pw',
 ).store()
 ```
@@ -186,12 +186,14 @@ default_calc_job_plugin='quantumespresso.pw',
 ::::
 
 :::{important}
-Make sure to replace `/path/to/pw.x` with the actual absolute path to the `pw.x` binary.
-If the binary is in your `PATH`, you can find the first `pw.x` binary in your `PATH` directories using the `which` command:
+Using the commands above, you will set up a code that uses the first `pw.x` binary your `PATH`.
+You can find out the absolute path to this binary using the `which` command:
 
 ```console
 which pw.x
 ```
+
+If this is not the Quantum ESPRESSO version you want to run, pass the correct absolute path as the filepath executable.
 :::
 
 For more detailed information, please refer to the documentation [on setting up codes](https://aiida.readthedocs.io/projects/aiida-core/en/latest/howto/run_codes.html#how-to-setup-a-code).
