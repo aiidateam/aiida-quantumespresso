@@ -1,0 +1,119 @@
+
+     Program PWSCF v.6.6 starts on 10Feb2023 at 13:16:21
+.. CONTENT REMOVED
+
+!    total energy              =     -22.66052781 Ry
+     estimated scf accuracy    <       0.00000025 Ry
+
+     The total energy is the sum of the following terms:
+     one-electron contribution =       4.50871095 Ry
+     hartree contribution      =       1.35513554 Ry
+     xc contribution           =     -12.27337690 Ry
+     ewald contribution        =     -16.25099740 Ry
+
+     convergence has been achieved in   5 iterations
+
+     Forces acting on atoms (cartesian axes, Ry/au):
+
+     atom    1 type  1   force =    -0.00000000    0.00000000   -0.00000000
+     atom    2 type  1   force =     0.00000000   -0.00000000    0.00000000
+     The non-local contrib.  to forces
+     atom    1 type  1   force =    -0.00000000   -0.00000000    0.00000000
+     atom    2 type  1   force =     0.00000000   -0.00000000   -0.00000000
+     The ionic contribution  to forces
+     atom    1 type  1   force =     0.00000000    0.00000000    0.00000000
+     atom    2 type  1   force =    -0.00000000   -0.00000000   -0.00000000
+     The local contribution  to forces
+     atom    1 type  1   force =    -0.00000000    0.00000000   -0.00000000
+     atom    2 type  1   force =    -0.00000000   -0.00000000   -0.00000000
+     The core correction contribution to forces
+     atom    1 type  1   force =    -0.00000000   -0.00000000   -0.00000000
+     atom    2 type  1   force =     0.00000000    0.00000000    0.00000000
+     The Hubbard contrib.    to forces
+     atom    1 type  1   force =     0.00000000    0.00000000    0.00000000
+     atom    2 type  1   force =     0.00000000    0.00000000    0.00000000
+     The SCF correction term to forces
+     atom    1 type  1   force =     0.00000000    0.00000000    0.00000000
+     atom    2 type  1   force =    -0.00000000   -0.00000000   -0.00000000
+
+     Total force =     0.000000     Total SCF correction =     0.000000
+
+
+     Computing stress (Cartesian axis) and pressure
+
+          total   stress  (Ry/bohr**3)                   (kbar)     P=        0.71
+   0.00000486   0.00000000  -0.00000000            0.71        0.00       -0.00
+  -0.00000000   0.00000486  -0.00000000           -0.00        0.71       -0.00
+   0.00000000  -0.00000000   0.00000486            0.00       -0.00        0.71
+
+     kinetic stress (kbar)   2058.42     -0.00      0.00
+                               -0.00   2058.42     -0.00
+                                0.00     -0.00   2058.42
+
+     local   stress (kbar)    -83.60      0.00      0.00
+                                0.00    -83.60      0.00
+                                0.00      0.00    -83.60
+
+     nonloc. stress (kbar)   1372.66     -0.00     -0.00
+                               -0.00   1372.66     -0.00
+                               -0.00     -0.00   1372.66
+
+     hartree stress (kbar)    222.71     -0.00      0.00
+                               -0.00    222.71      0.00
+                                0.00      0.00    222.71
+
+     exc-cor stress (kbar)   2668.25     -0.00     -0.00
+                               -0.00   2668.25     -0.00
+                               -0.00     -0.00   2668.25
+
+     corecor stress (kbar)  -3566.92      0.00      0.00
+                                0.00  -3566.92      0.00
+                                0.00      0.00  -3566.92
+
+     ewald   stress (kbar)  -2670.82     -0.00     -0.00
+                               -0.00  -2670.82     -0.00
+                               -0.00     -0.00  -2670.82
+
+     hubbard stress (kbar)      0.00      0.00      0.00
+                                0.00      0.00      0.00
+                                0.00      0.00      0.00
+
+     DFT-D   stress (kbar)      0.00      0.00      0.00
+                                0.00      0.00      0.00
+                                0.00      0.00      0.00
+
+     XDM     stress (kbar)      0.00      0.00      0.00
+                                0.00      0.00      0.00
+                                0.00      0.00      0.00
+
+     dft-nl  stress (kbar)      0.00      0.00      0.00
+                                0.00      0.00      0.00
+                                0.00      0.00      0.00
+
+     TS-vdW  stress (kbar)      0.00      0.00      0.00
+                                0.00      0.00      0.00
+                                0.00      0.00      0.00
+
+
+
+     BFGS Geometry Optimization
+
+     number of scf cycles    =   1
+     number of bfgs steps    =   0
+
+     enthalpy new            =     -22.6605278120 Ry
+
+     new trust radius        =       0.0004193203 bohr
+     new conv_thr            =       0.0000010000 Ry
+
+     new unit-cell volume =    298.46960 a.u.^3 (    44.22863 Ang^3 )
+     density =      2.10887 g/cm^3
+
+CELL_PARAMETERS (angstrom)
+  -0.000000000   2.806884226   2.806884226
+   2.806884226  -0.000000000   2.806884226
+   2.806884226   2.806884226  -0.000000000
+
+ATOMIC_POSITIONS (angstrom)
+Si           -0.0000000000        0.0000000000       -0.0000000000
+Si            1.4034421133        1.4034421133        1.4034421133

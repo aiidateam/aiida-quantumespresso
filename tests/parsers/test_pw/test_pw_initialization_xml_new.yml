@@ -12,6 +12,12 @@ output_parameters:
   dft_exchange_correlation: PBE
   do_magnetization: false
   do_not_use_time_reversal: false
+  energy_accuracy_units: eV
+  energy_ewald_units: eV
+  energy_hartree_units: eV
+  energy_one_electron_units: eV
+  energy_units: eV
+  energy_xc_units: eV
   estimated_ram_per_process: 60.62
   estimated_ram_per_process_units: MB
   exit_status: 0
@@ -25,7 +31,6 @@ output_parameters:
   has_dipole_correction: false
   has_electric_field: false
   inversion_symmetry: true
-  lattice_parameter_initial: 3.8396039900873213
   lattice_symmetries: []
   lda_plus_u_calculation: false
   lkpoint_dir: false
@@ -55,6 +60,7 @@ output_parameters:
   q_real_space: false
   rho_cutoff: 3265.366014072
   rho_cutoff_units: eV
+  scf_iterations: 0
   smooth_fft_grid:
   - 32
   - 32
@@ -162,9 +168,10 @@ output_parameters:
     t_rev: '0'
   symmetries_units: crystal
   time_reversal_flag: true
-  volume: 40.02575697370363
+  total_number_of_scf_iterations: 0
+  volume: 40.02575174999999
   wall_time: '      0.53s '
-  wall_time_seconds: 0.53
+  wall_time_seconds: 0.5325949192047119
   wfc_cutoff: 408.170751759
   wfc_cutoff_units: eV
 output_trajectory:
@@ -178,6 +185,8 @@ output_trajectory:
   - 1
   - 2
   - 3
+  array|scf_iterations:
+  - 1
   array|steps:
   - 1
   symbols:

@@ -8,6 +8,12 @@ parameters:
   dft_exchange_correlation: null
   do_magnetization: false
   do_not_use_time_reversal: null
+  energy_accuracy_units: eV
+  energy_ewald_units: eV
+  energy_hartree_units: eV
+  energy_one_electron_units: eV
+  energy_units: eV
+  energy_xc_units: eV
   exit_status: 0
   fermi_energy_units: eV
   fft_grid:
@@ -39,10 +45,12 @@ parameters:
   no_time_rev_operations: null
   non_colinear_calculation: false
   number_of_atomic_wfc: 6
+  number_of_atoms: 3
   number_of_bands: 4
   number_of_bravais_symmetries: null
   number_of_electrons: 8.0
   number_of_k_points: 1
+  number_of_species: 1
   number_of_spin_components: 1
   number_of_symmetries: null
   q_real_space: false
@@ -60,7 +68,10 @@ parameters:
   symmetries: []
   symmetries_units: crystal
   time_reversal_flag: true
+  total_number_of_scf_iterations: 0
+  volume: 148.1847095290449
   wall_time: '     12.98s '
+  wall_time_seconds: 12.97671413421631
   warnings: []
   wfc_cutoff: -27.2113834506
   wfc_cutoff_units: eV

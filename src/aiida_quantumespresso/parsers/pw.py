@@ -53,12 +53,18 @@ class PwParser(Parser):
 
         parameters = self.node.inputs.parameters.get_dict()
         parsed_xml, logs_xml = self.parse_xml(dir_with_bands, parser_options)
-        parsed_stdout, logs_stdout = self.parse_stdout(parameters, parser_options, parsed_xml, crash_file)
+        parsed_stdout, logs_stdout = self.parse_stdout(parameters, parser_options, crash_file)
 
-        parsed_bands = parsed_stdout.pop('bands', {})
-        parsed_structure = parsed_stdout.pop('structure', {})
-        parsed_trajectory = parsed_stdout.pop('trajectory', {})
+        if not parsed_xml and self.node.get_option('without_xml'):
+            parsed_xml = parsed_stdout
+
+        parsed_bands = parsed_xml.pop('bands', {})
+        parsed_structure = parsed_xml.pop('structure', {})
+        parsed_trajectory = parsed_xml.pop('trajectory', {})
+        self.backwards_compatibility_trajectory(parsed_trajectory, parsed_stdout)
+
         parsed_parameters = self.build_output_parameters(parsed_stdout, parsed_xml)
+        self.backwards_compatibility_parameters(parsed_parameters, parsed_stdout)
 
         # Append the last frame of some of the smaller trajectory arrays to the parameters for easy querying
         self.final_trajectory_frame_to_parameters(parsed_parameters, parsed_trajectory)
@@ -152,6 +158,53 @@ class PwParser(Parser):
             if exit_code:
                 return self.exit(exit_code)
 
+    def backwards_compatibility_trajectory(self, parsed_trajectory, parsed_stdout):
+        """."""
+        # For QE v7.0 and lower, the stress is not reported in the trajectory steps in the XML. The XML parsing will
+        # therefore only add the stress of the last SCF to the trajectory. We need to replace this with the trajectory
+        # parsed from the SCF to have the data of all frames.
+        if 'trajectory' not in parsed_stdout:
+            return
+
+        if self.get_calculation_type() in [
+            'relax', 'vc-relax'
+        ] and ('stress' not in parsed_trajectory or
+               len(parsed_trajectory['stress']) == 1) and 'stress' in parsed_stdout['trajectory']:
+            parsed_trajectory['stress'] = parsed_stdout['trajectory']['stress']
+
+        for key in [
+            'energy_accuracy', 'energy_one_electron', 'energy_threshold', 'energy_smearing', 'energy_one_center_paw',
+            'energy_vdw', 'fermi_energy', 'scf_accuracy', 'steps', 'total_force', 'stress'
+        ]:
+            if key not in parsed_trajectory and key in parsed_stdout['trajectory']:
+                parsed_trajectory[key] = parsed_stdout['trajectory'][key]
+
+    @staticmethod
+    def backwards_compatibility_parameters(parsed_parameters, parsed_stdout):
+        """."""
+        keys = [
+            'energy_smearing_units',
+            'energy_one_center_paw_units',
+            'init_wall_time_seconds',
+            'stress_units',
+            'wall_time',
+            'wall_time_seconds',
+            'number_ionic_steps',
+            'estimated_ram_per_process',
+            'estimated_ram_per_process_units',
+            'estimated_ram_total',
+            'estimated_ram_total_units',
+            'forces_units',
+            'total_force_units',
+            'forces_units',
+            'number_of_bands',
+            'number_of_k_points',
+        ]
+
+        for key in keys:
+            if key not in parsed_parameters and key in parsed_stdout:
+                parsed_parameters[key] = parsed_stdout[key]
+
     def get_calculation_type(self):
         """Return the type of the calculation."""
         return self.node.inputs.parameters.base.attributes.get('CONTROL', {}).get('calculation', 'scf')
@@ -187,8 +240,9 @@ class PwParser(Parser):
 
         if 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED' in logs['error']:
             scf_must_converge = self.node.inputs.parameters.base.attributes.get('ELECTRONS',
-                                                                          {}).get('scf_must_converge', True)
-            electron_maxstep = self.node.inputs.parameters.base.attributes.get('ELECTRONS', {}).get('electron_maxstep', 1)
+                                                                                {}).get('scf_must_converge', True)
+            electron_maxstep = self.node.inputs.parameters.base.attributes.get('ELECTRONS',
+                                                                               {}).get('electron_maxstep', 1)
 
             if electron_maxstep == 0 or not scf_must_converge:
                 return self.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED
@@ -287,10 +341,7 @@ class PwParser(Parser):
 
         if relax_type == 'relax':
             return verify_convergence_trajectory(
-                trajectory=trajectory,
-                index=-1,
-                threshold_forces=threshold_forces,
-                fixed_coords=fixed_coords
+                trajectory=trajectory, index=-1, threshold_forces=threshold_forces, fixed_coords=fixed_coords
             )
 
         if relax_type == 'vc-relax':
@@ -342,12 +393,11 @@ class PwParser(Parser):
 
         return parsed_data, logs
 
-    def parse_stdout(self, parameters, parser_options=None, parsed_xml=None, crash_file=None):
+    def parse_stdout(self, parameters, parser_options=None, crash_file=None):
         """Parse the stdout output file.
 
         :param parameters: the input parameters dictionary
         :param parser_options: optional dictionary with parser options
-        :param parsed_xml: the raw parsed data from the XML output
         :return: tuple of two dictionaries, first with raw parsed data and second with log messages
         """
         from aiida_quantumespresso.parsers.parse_raw.pw import parse_stdout
@@ -368,7 +418,7 @@ class PwParser(Parser):
             return parsed_data, logs
 
         try:
-            parsed_data, logs = parse_stdout(stdout, parameters, parser_options, parsed_xml, crash_file)
+            parsed_data, logs = parse_stdout(stdout, parameters, parser_options, crash_file=crash_file)
         except Exception as exc:
             logs.critical.append(traceback.format_exc())
             self.exit_code_stdout = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc)
@@ -404,18 +454,7 @@ class PwParser(Parser):
         :param parsed_xml: the raw parsed data dictionary from the XML output file
         :return: the union of the two raw parsed data dictionaries
         """
-        for key in list(parsed_stdout.keys()):
-            if key in list(parsed_xml.keys()):
-                if parsed_stdout[key] != parsed_xml[key]:
-                    raise AssertionError(
-                        '{} found in both dictionaries with different values: {} vs. {}'.format(
-                            key, parsed_stdout[key], parsed_xml[key]
-                        )
-                    )
-
-        parameters = dict(list(parsed_xml.items()) + list(parsed_stdout.items()))
-
-        return parameters
+        return parsed_xml
 
     def build_output_structure(self, parsed_structure):
         """Build the output structure from the raw parsed data.
@@ -578,7 +617,7 @@ class PwParser(Parser):
 
         for property_key, property_values in parsed_trajectory.items():
 
-            if property_key not in include_keys:
+            if property_key not in include_keys or not property_values:
                 continue
 
             parameters[property_key] = property_values[-1]

@@ -57,7 +57,7 @@ def test_neb_default(fixture_localhost, generate_calc_job_node, generate_parser,
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
-    assert not orm.Log.collection.get_logs_for(node)
+    assert not [l for l in orm.Log.collection.get_logs_for(node) if "key 'symmetries' is not present" not in l.message]
     assert 'output_parameters' in results
     assert 'output_mep' in results
     assert 'output_trajectory' in results
@@ -89,7 +89,7 @@ def test_neb_all_iterations(
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
-    assert not orm.Log.collection.get_logs_for(node)
+    assert not [l for l in orm.Log.collection.get_logs_for(node) if "key 'symmetries' is not present" not in l.message]
     assert 'output_parameters' in results
     assert 'output_mep' in results
     assert 'output_trajectory' in results

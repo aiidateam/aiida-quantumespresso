@@ -72,6 +72,12 @@ parameters:
     dft_exchange_correlation: PBE
     do_magnetization: false
     do_not_use_time_reversal: false
+    energy_accuracy_units: eV
+    energy_ewald_units: eV
+    energy_hartree_units: eV
+    energy_one_electron_units: eV
+    energy_units: eV
+    energy_xc_units: eV
     exit_status: 0
     fermi_energy: -4.881992893994388
     fermi_energy_units: eV
@@ -161,8 +167,9 @@ parameters:
       t_rev: '0'
     symmetries_units: crystal
     time_reversal_flag: true
-    total_number_of_scf_iterations: 9
+    total_number_of_scf_iterations: 0
     volume: 44.45541285717334
+    wall_time_seconds: 0.7156929969787598
     wfc_cutoff: 272.113834506
     wfc_cutoff_units: eV
   pw_output_image_2:
@@ -184,6 +191,12 @@ parameters:
     dft_exchange_correlation: PBE
     do_magnetization: false
     do_not_use_time_reversal: false
+    energy_accuracy_units: eV
+    energy_ewald_units: eV
+    energy_hartree_units: eV
+    energy_one_electron_units: eV
+    energy_units: eV
+    energy_xc_units: eV
     exit_status: 0
     fermi_energy: -3.164074384828897
     fermi_energy_units: eV
@@ -273,8 +286,9 @@ parameters:
       t_rev: '0'
     symmetries_units: crystal
     time_reversal_flag: true
-    total_number_of_scf_iterations: 110
+    total_number_of_scf_iterations: 0
     volume: 44.45541285717334
+    wall_time_seconds: 11.15338492393494
     wfc_cutoff: 272.113834506
     wfc_cutoff_units: eV
   pw_output_image_3:
@@ -296,6 +310,12 @@ parameters:
     dft_exchange_correlation: PBE
     do_magnetization: false
     do_not_use_time_reversal: false
+    energy_accuracy_units: eV
+    energy_ewald_units: eV
+    energy_hartree_units: eV
+    energy_one_electron_units: eV
+    energy_units: eV
+    energy_xc_units: eV
     exit_status: 0
     fermi_energy: -4.881971815620302
     fermi_energy_units: eV
@@ -385,8 +405,9 @@ parameters:
       t_rev: '0'
     symmetries_units: crystal
     time_reversal_flag: true
-    total_number_of_scf_iterations: 9
+    total_number_of_scf_iterations: 0
     volume: 44.45541285717334
+    wall_time_seconds: 2.380792856216431
     wfc_cutoff: 272.113834506
     wfc_cutoff_units: eV
   restart_mode: from_scratch

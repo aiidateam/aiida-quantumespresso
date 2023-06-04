@@ -130,8 +130,9 @@ class NebParser(Parser):
                 return self.exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc))
 
             parsed_structure = parsed_data_stdout.pop('structure', {})
-            parsed_trajectory = parsed_data_stdout.pop('trajectory', {})
-            parsed_parameters = PwParser.build_output_parameters(parsed_data_xml, parsed_data_stdout)
+            parsed_trajectory = parsed_data_xml.pop('trajectory', {})
+            parsed_parameters = parsed_data_xml
+            PwParser.backwards_compatibility_parameters(parsed_parameters, parsed_data_stdout)
 
             # Explicit information about k-points does not need to be queryable so we remove it from the parameters
             parsed_parameters.pop('k_points', None)
