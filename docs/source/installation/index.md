@@ -3,7 +3,8 @@ myst:
   substitutions:
     SSSP: Standard Solid-State Pseudopotentials (SSSP)
     aiida-pseudo: '`aiida-pseudo`'
-    pip: '`pip`'
+    pip: '[`pip`](https://pip.pypa.io/en/stable/index.html)'
+    PyPI: '[PyPI](https://pypi.org/)'
 ---
 
 # Get started
@@ -23,22 +24,22 @@ Please refer to the [documentation](https://aiida.readthedocs.io/projects/aiida-
 
 ## Installation
 
-The Python package can be installed from the Python Package index [PyPI](https://pypi.org/) or directly from the source:
+The Python package can be installed from the Python Package index {{ PyPI }} or directly from the source:
 
 ::::{tab-set}
 
 :::{tab-item} PyPI
-The recommended method of installation is to use the Python package manager `pip`:
+The recommended method of installation is to use the Python package manager {{ pip }}:
 
 ```console
 $ pip install aiida-quantumespresso
 ```
 
-This will install the latest stable version that was released to PyPI.
+This will install the latest stable version that was released to {{ PyPI }}.
 :::
 
 :::{tab-item} Source
-To install the package from source, first clone the repository and then install using `pip`:
+To install the package from source, first clone the repository and then install using {{ pip }}:
 
 ```console
 $ git clone https://github.com/aiidateam/aiida-quantumespresso
@@ -108,10 +109,10 @@ In this example, we will set up the `localhost`, the computer where AiiDA itself
 To set up a computer, use the ``verdi`` CLI of ``aiida-core``.
 
 ```console
-$ verdi computer setup -n -L localhost -H localhost -T core.local -S core.direct
+$ verdi computer setup -n -L localhost -H localhost -T core.local -S core.direct -w ~/aiida_work_dir
 ```
 
-After creating the localhost computer, configure it using:
+After creating the localhost computer, configure the `core.local` transport using:
 
 ```console
 $ verdi computer configure core.local localhost -n --safe-interval 0
@@ -126,17 +127,18 @@ $ verdi computer test localhost
 
 :::{tab-item} API
 
-To setup a computer using the Python API, run the following code in a Python script or interactive shell:
+To setup a computer using the Python API, run the following code in a Python script with `verdi run` or in the `verdi` shell:
 
 ```python
-
 from aiida.orm import Computer
+from pathlib import Path
 
 computer = Computer(
     label='localhost',
     hostname='localhost',
     transport_type='core.local',
-    scheduler_type='core.direct'
+    scheduler_type='core.direct',
+    workdir=Path('~/aiida_work_dir').resolve()
 ).store()
 computer.configure()
 ```
@@ -160,23 +162,22 @@ In this example, we will setup the `pw.x` code that is installed on the computer
 To setup a particular Quantum ESPRESSO code, use the ``verdi`` CLI of ``aiida-core``.
 
 ```console
-$ verdi code create core.code.installed -n --computer localhost --label pw --default-calc-job-plugin quantumespresso.pw --filepath-executable /path/to/pw.x
+$ verdi code create core.code.installed -n --computer localhost --label pw --default-calc-job-plugin quantumespresso.pw --filepath-executable pw.x
 ```
 :::
 
 :::{tab-item} API
 
-To setup particular Quantum ESPRESSO code using the Python API, run the following code in a Python script or interactive shell:
+To setup particular Quantum ESPRESSO code using the Python API, run the following code in a Python script with `verdi run` or in the `verdi` shell:
 
 ```python
-
 from aiida.orm import InstalledCode
 
 computer = load_computer('localhost')
 code = InstalledCode(
 label='pw',
 computer=computer,
-filepath_executable='/path/to/pw.x',
+filepath_executable='pw.x',
 default_calc_job_plugin='quantumespresso.pw',
 ).store()
 ```
@@ -185,14 +186,21 @@ default_calc_job_plugin='quantumespresso.pw',
 ::::
 
 :::{important}
-Make sure to replace `/path/to/pw.x` with the actual absolute path to the `pw.x` binary.
+Using the commands above, you will set up a code that uses the first `pw.x` binary your `PATH`.
+You can find out the absolute path to this binary using the `which` command:
+
+```console
+which pw.x
+```
+
+If this is not the Quantum ESPRESSO version you want to run, pass the correct absolute path as the filepath executable.
 :::
 
 For more detailed information, please refer to the documentation [on setting up codes](https://aiida.readthedocs.io/projects/aiida-core/en/latest/howto/run_codes.html#how-to-setup-a-code).
 
 (installation-setup-pseudopotentials)=
 
-### Pseudopotentials
+### Pseudo potentials
 
 Many Quantum ESPRESSO codes require pseudo potentials.
 The simplest way of installing these is through the `aiida-pseudo` plugin package.
