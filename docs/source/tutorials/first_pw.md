@@ -1,17 +1,13 @@
 
-(tutorials-first-pw)=
+(tutorials-running-pw)=
 
-# Your first `pw.x` calculation
+# Running a `pw.x` calculation
 
 (tutorials-pw-through-cli)=
 
 ## Running a `pw.x` calculation through the CLI
 
 The simplest way to run a first `pw.x` calculation with `aiida-quantumespresso` is through the [command line interface (CLI)](#reference-cli) that ships with the package.
-
-:::{margin} ❗️Important
-This is a margin note.
-:::
 
 ```console
 aiida-quantumespresso calculation launch pw -X pw@locahost -F SSSP/1.1/PBE/efficiency

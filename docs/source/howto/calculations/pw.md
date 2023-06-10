@@ -296,7 +296,7 @@ When a {{ PwCalculation }} is completed, there are quite a few possible analyses
 
 During the self-consistent field cycle, the difference in energy of the newly computed charge density and the starting one is computed and stored.
 It can easily be retrieved through the {meth}`~aiida_quantumespresso.tools.calculations.pw.PwCalculationTools.get_scf_accuracy` method.
-This method can be accessed directly through the ``tools`` of a completed `{{ PwCalculation }}` node:
+This method can be accessed directly through the `tools` of a completed {{ PwCalculation }} node:
 
 ```python
 In [1]: node = load_node(IDENTIFIER)

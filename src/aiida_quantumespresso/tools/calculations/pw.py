@@ -56,13 +56,10 @@ class PwCalculationTools(CalculationTools):
 
     def get_magnetic_configuration(self, atol: float = 0.5, ztol: float = 0.05) -> AttributeDict:
         """Get the final magnetic configuration of a ``pw.x`` calculation."""
-
-        calculation = self._node.inputs.parameters.get_dict()['CONTROL'].get('calculation', 'scf')
-
-        if calculation in ['scf', 'nscf', 'bands']:
-            structure = self._node.inputs.structure
-        else:
+        try:
             structure = self._node.outputs.output_structure
+        except AttributeError:
+            structure = self._node.inputs.structure
 
         try:
             magnetic_moments = self._node.outputs.output_trajectory.get_array('atomic_magnetic_moments')[-1].tolist()
