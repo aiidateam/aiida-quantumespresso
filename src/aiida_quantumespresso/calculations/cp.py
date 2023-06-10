@@ -131,12 +131,6 @@ class CpCalculation(BasePwCpInputGenerator):
             message='The required XML file is not present in the retrieved folder.')
         spec.exit_code(304, 'ERROR_OUTPUT_XML_MULTIPLE',
             message='The retrieved folder contains multiple XML files.')
-        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
-            message='The stdout output file could not be read.')
-        spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE',
-            message='The output file contains invalid output.')
-        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
-            message='The stdout output file was incomplete probably because the calculation got interrupted.')
         spec.exit_code(320, 'ERROR_OUTPUT_XML_READ',
             message='The required XML file could not be read.')
         spec.exit_code(330, 'ERROR_READING_POS_FILE',

@@ -58,6 +58,14 @@ class NamelistsCalculation(CalcJob):
             help='Use an additional node for special settings')
         spec.input('parent_folder', valid_type=(RemoteData, FolderData, SinglefileData), required=False,
             help='Use a local or remote folder as parent folder (for restarts and similar)')
+        spec.exit_code(302, 'ERROR_OUTPUT_STDOUT_MISSING',
+            message='The retrieved folder did not contain the required stdout output file.')
+        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
+            message='An exception was raised while reading the `stdout` file: {exception}')
+        spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE',
+            message='An exception was raised while parsing the `stdout` file: {exception}')
+        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
+            message='The stdout output file was incomplete probably because the calculation got interrupted.')
         # yapf: enable
 
     @classmethod

@@ -10,6 +10,5 @@ dos:
   - states/eV
   - states/eV
 parameters:
-  code_version: v.6.4.1
-  wall_time: 0.41s
+  code_version: 6.4.1
   wall_time_seconds: 0.41

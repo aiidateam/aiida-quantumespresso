@@ -1,5 +1,6 @@
 output_parameters:
-  warnings: []
+  code_version: '6.1'
+  wall_time_seconds: 0.0
 output_phonon_bands:
   array|bands:
   - 1

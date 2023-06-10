@@ -82,12 +82,7 @@ def parse_cp_text_output(data, xml_data):
             parsed_data['warnings'].append(line)
         elif 'bananas' in line:
             parsed_data['warnings'].append('Bananas from the ortho.')
-        elif 'CP' in line and 'WALL' in line:
-            try:
-                time = line.split('CPU')[1].split('WALL')[0]
-                parsed_data['wall_time'] = time
-            except:
-                raise QEOutputParsingError('Error while parsing wall time.')
+
     #when the cp does a cg, the output is different and the parser below does not work
     #TODO: understand what the cg prints out and parse it (it is undocumented)
     if not conjugate_gradient:

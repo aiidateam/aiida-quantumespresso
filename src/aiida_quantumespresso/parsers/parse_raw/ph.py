@@ -10,10 +10,9 @@ from qe_tools import CONSTANTS
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.parse_raw.base import convert_qe_time_to_sec
 from aiida_quantumespresso.parsers.parse_xml.pw.legacy import parse_xml_child_bool, read_xml_card
-from aiida_quantumespresso.utils.mapping import get_logging_container
 
 
-def parse_raw_ph_output(stdout, tensors=None, dynamical_matrices=None):
+def parse_raw_ph_output(stdout, logs, tensors=None, dynamical_matrices=None):
     """Parses the raw output of a Quantum ESPRESSO `ph.x` calculation.
 
     :param stdout: the content of the stdout file as a string
@@ -21,15 +20,7 @@ def parse_raw_ph_output(stdout, tensors=None, dynamical_matrices=None):
     :param dynamical_matrices: a list of the content of the dynamical matrix files as a string
     :returns: tuple of two dictionaries, with the parsed data and log messages, respectively
     """
-    logs = get_logging_container()
     data_lines = stdout.split('\n')
-
-    # First check whether the `JOB DONE` message was written, otherwise the job was interrupted
-    for line in data_lines:
-        if 'JOB DONE' in line:
-            break
-    else:
-        logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
 
     # Parse tensors, if present
     tensor_data = {}
@@ -147,38 +138,11 @@ def parse_xml_matrices(tagname, target_tags):
 
 
 def parse_ph_text_output(lines, logs):
-    """Parses the stdout of Quantum ESPRESSO ph.x.
+    """Parses the stdout of Quantum ESPRESSO ``ph.x``.
 
     :param lines: list of strings, the file as read by readlines()
     :return: dictionary with parsed values
     """
-
-    def detect_important_message(logs, line):
-
-        message_map = {
-            'error': {
-                'Maximum CPU time exceeded': 'ERROR_OUT_OF_WALLTIME',
-                'No convergence has been achieved': 'ERROR_CONVERGENCE_NOT_REACHED',
-                'problems computing cholesky': 'ERROR_COMPUTING_CHOLESKY',
-            },
-            'warning': {
-                'Warning:': None,
-                'DEPRECATED:': None,
-            }
-        }
-
-        # Match any known error and warning messages
-        for marker, message in message_map['error'].items():
-            if marker in line:
-                if message is None:
-                    message = line
-                logs.error.append(message)
-
-        for marker, message in message_map['warning'].items():
-            if marker in line:
-                if message is None:
-                    message = line
-                logs.warning.append(message)
 
     def parse_qpoints(lines):
         """Parse the q-points from the corresponding lines in the stdout."""
@@ -218,21 +182,10 @@ def parse_ph_text_output(lines, logs):
 
     parsed_data = {}
 
-    # Parse time, starting from the end because the time is written multiple times
-    for line in reversed(lines):
-        if 'PHONON' in line and 'WALL' in line:
-            try:
-                parsed_data['wall_time_seconds'] = \
-                    convert_qe_time_to_sec(line.split('CPU')[1].split('WALL')[0])
-            except (ValueError, IndexError):
-                raise QEOutputParsingError('Error during parsing of walltime.')
-            break
-
     parsed_data['num_q_found'] = 0
 
+    # Parse number of q-points and number of atoms
     for count, line in enumerate(lines):
-
-        detect_important_message(logs, line)
 
         if 'q-points for this run' in line:
             try:

@@ -25,6 +25,7 @@ parameters:
   ci_scheme: auto
   climbing_image_auto:
   - 1
+  code_version: 6.4.1
   converged:
   - true
   - 13
@@ -394,7 +395,6 @@ parameters:
   suggested_k_max_au: 0.1542
   suggested_k_min_au: 0.1028
   use_freezing: false
-  wall_time: 11.44s
   wall_time_seconds: 11.44
   warnings:
   - 'error: ERROR_OUTPUT_STDOUT_INCOMPLETE'

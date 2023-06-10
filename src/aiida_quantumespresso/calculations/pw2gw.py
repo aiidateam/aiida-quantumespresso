@@ -38,16 +38,8 @@ class Pw2gwCalculation(NamelistsCalculation):
         spec.output('eps', valid_type=orm.ArrayData,
             help='The `eps` output node containing 5 arrays `energy`, `epsX`, `epsY`, `epsZ`, `epsTOT`')
 
-        spec.exit_code(302, 'ERROR_OUTPUT_STDOUT_MISSING',
-            message='The retrieved folder did not contain the required stdout output file.')
         spec.exit_code(305, 'ERROR_OUTPUT_FILES',
             message='The eps*.dat output files could not be read or parsed.')
-        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
-            message='The stdout output file could not be read.')
-        spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE',
-            message='The stdout output file could not be parsed.')
-        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
-            message='The stdout output file was incomplete probably because the calculation got interrupted.')
         spec.exit_code(330, 'ERROR_OUTPUT_FILES_INVALID_FORMAT',
             message='The eps*.dat output files do not have the expected shape (N, 2).')
         spec.exit_code(331, 'ERROR_OUTPUT_FILES_ENERGY_MISMATCH',

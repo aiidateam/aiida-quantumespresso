@@ -10,11 +10,11 @@ import numpy
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.utils.mapping import get_logging_container
 
-from .base import Parser
+from .base import BaseParser
 from .parse_raw.pw import reduce_symmetries
 
 
-class PwParser(Parser):
+class PwParser(BaseParser):
     """`Parser` implementation for the `PwCalculation` calculation job class."""
 
     def parse(self, **kwargs):

@@ -1,6 +1,7 @@
 parameters:
   beta_real_space: false
   charge_density: ./charge-density.dat
+  code_version: '6.6'
   constraint_mag: 0
   creator_name: cp
   creator_version: '6.6'
@@ -78,7 +79,7 @@ parameters:
   - 0.0
   vnhp:
   - 0.0
-  wall_time: '      5.84s '
+  wall_time_seconds: 5.84
   warnings: []
   wfc_cutoff: -27.2113834506
   wfc_cutoff_units: eV

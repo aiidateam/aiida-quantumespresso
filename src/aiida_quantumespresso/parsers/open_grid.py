@@ -1,55 +1,51 @@
 # -*- coding: utf-8 -*-
-from aiida.common import NotExistent
+from typing import Tuple
+
+from aiida.common import AttributeDict
 from aiida.orm import Dict, KpointsData
 
-from aiida_quantumespresso.parsers.base import Parser
-from aiida_quantumespresso.parsers.parse_raw.base import parse_output_base
+from aiida_quantumespresso.parsers.base import BaseParser
+from aiida_quantumespresso.utils.mapping import get_logging_container
 
 
-class OpenGridParser(Parser):
+class OpenGridParser(BaseParser):
     """``Parser`` implementation for the ``OpenGridCalculation`` calculation job class."""
+
+    class_error_map = {
+        'incompatible FFT grid': 'ERROR_INCOMPATIBLE_FFT_GRID'
+    }
 
     def parse(self, **kwargs):
         """Parse the retrieved files of a completed ``OpenGridCalculation`` into output nodes."""
-        try:
-            out_folder = self.retrieved
-        except NotExistent:
-            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
+        logs = get_logging_container()
 
-        try:
-            filename_stdout = self.node.get_option('output_filename')
-            with out_folder.open(filename_stdout, 'r') as handle:
-                out_file = handle.read()
-        except OSError:
-            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
+        stdout, parsed_data, logs = self.parse_stdout_from_retrieved(logs)
 
-        parsed_data, logs = parse_output_base(out_file, codename='OPEN_GRID')
-        self.emit_logs(logs)
+        base_exit_code = self.check_base_errors(logs)
+        if base_exit_code:
+            return self.exit(base_exit_code, logs)
+
         self.out('output_parameters', Dict(parsed_data))
 
-        lines = out_file.split('\n')
-        for line in lines:
-            if 'incompatible FFT grid' in line:
-                return self.exit(self.exit_codes.ERROR_INCOMPATIBLE_FFT_GRID)
+        for exit_code in self.get_error_map().values():
+            if exit_code in logs.error:
+                return self.exit(self.exit_codes.get(exit_code), logs)
 
-        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs.error:
-            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE)
-        elif logs.error:
-            return self.exit(self.exit_codes.ERROR_GENERIC_QE_ERROR)
+        kpoints_mesh, kpoints, logs = self.parse_kpoints(stdout, logs)
 
-        try:
-            kpoints_mesh, kpoints = self.parse_kpoints(out_file)
-        except ValueError:
-            return self.exit(self.exit_codes.ERROR_OUTPUT_KPOINTS_MISMATCH)
-
-        # Output both the dimensions and the explict list of kpoints
         self.out('kpoints_mesh', kpoints_mesh)
         self.out('kpoints', kpoints)
 
+        for exit_code in ['ERROR_OUTPUT_KPOINTS_MISMATCH', 'ERROR_OUTPUT_STDOUT_INCOMPLETE']:
+            if exit_code in logs.error:
+                return self.exit(self.exit_codes.get(exit_code), logs)
+
+        return self.exit(logs=logs)
+
     @staticmethod
-    def parse_kpoints(out_file):
-        """Parse and output the dimensions and the explicit list of kpoints."""
-        lines = out_file.split('\n')
+    def parse_kpoints(stdout: str, logs: AttributeDict) -> Tuple[KpointsData, KpointsData, AttributeDict]:
+        """Parse the ``stdout`` for the mesh and explicit list of kpoints."""
+        lines = stdout.split('\n')
 
         kpoints = []
         weights = []
@@ -76,6 +72,6 @@ class OpenGridParser(Parser):
         kpoints_list.set_kpoints(kpoints, cartesian=False, weights=weights)
 
         if kmesh[0] * kmesh[1] * kmesh[2] != len(kpoints):
-            raise ValueError('Mismatch between kmesh dimensions and number of kpoints')
+            logs.error.append('ERROR_OUTPUT_KPOINTS_MISMATCH')
 
-        return kpoints_mesh, kpoints_list
+        return kpoints_mesh, kpoints_list, logs

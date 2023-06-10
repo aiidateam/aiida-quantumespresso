@@ -84,7 +84,7 @@ templates_path = ['_templates']
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-# language = None
+language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -151,6 +151,10 @@ nitpick_ignore_regex = [
     (r'.*', r'Tuple.*'),
 ]
 nitpick_ignore = [
+    ('py:class', 'AttributeDict'),
+    ('py:class', 'ExitCode'),
+    ('py:class', 'StructureData'),
+    ('py:class', 'PseudoPotentialFamily'),
     ('py:exc', 'ArithmeticError'),
     ('py:exc', 'AssertionError'),
     ('py:exc', 'AttributeError'),
@@ -209,6 +213,4 @@ nitpick_ignore = [
     ('py:obj', 'Mapping'),
     ('py:obj', 'qe_tools.parsers.CpInputFile'),
     ('py:obj', 'qe_tools.parsers.PwInputFile'),
-    ('py:class', 'StructureData'),
-    ('py:class', 'PseudoPotentialFamily'),
 ]

@@ -3,27 +3,30 @@ from aiida import orm
 from qe_tools import CONSTANTS
 
 from aiida_quantumespresso.calculations.matdyn import MatdynCalculation
+from aiida_quantumespresso.utils.mapping import get_logging_container
 
-from .base import Parser
+from .base import BaseParser
 
 
-class MatdynParser(Parser):
-    """Parser implementation for the MatdynCalculation."""
+class MatdynParser(BaseParser):
+    """``Parser`` implementation for the ``MatDynCalculation`` calculation job class."""
 
     def parse(self, **kwargs):
-        """Parse the retrieved files from a `MatdynCalculation`."""
-        retrieved = self.retrieved
-        filename_stdout = self.node.get_option('output_filename')
+        """Parse the retrieved files from a ``MatdynCalculation`` into output nodes."""
+        logs = get_logging_container()
+
+        _, parsed_data, logs = self.parse_stdout_from_retrieved(logs)
+
+        base_exit_code = self.check_base_errors(logs)
+        if base_exit_code:
+            return self.exit(base_exit_code, logs)
+
+        self.out('output_parameters', orm.Dict(parsed_data))
+
+        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE'in logs.error:
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE, logs)
+
         filename_frequencies = MatdynCalculation._PHONON_FREQUENCIES_NAME
-
-        if filename_stdout not in retrieved.base.repository.list_object_names():
-            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
-
-        if 'JOB DONE' not in retrieved.base.repository.get_object_content(filename_stdout):
-            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE)
-
-        if filename_frequencies not in retrieved.base.repository.list_object_names():
-            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
 
         # Extract the kpoints from the input data and create the `KpointsData` for the `BandsData`
         try:
@@ -34,15 +37,15 @@ class MatdynParser(Parser):
             kpoints_for_bands = orm.KpointsData()
             kpoints_for_bands.set_kpoints(kpoints)
 
-        parsed_data = parse_raw_matdyn_phonon_file(retrieved.base.repository.get_object_content(filename_frequencies))
+        parsed_data = parse_raw_matdyn_phonon_file(self.retrieved.base.repository.get_object_content(filename_frequencies))
 
         try:
             num_kpoints = parsed_data.pop('num_kpoints')
         except KeyError:
-            return self.exit(self.exit_codes.ERROR_OUTPUT_KPOINTS_MISSING)
+            return self.exit(self.exit_codes.ERROR_OUTPUT_KPOINTS_MISSING, logs)
 
         if num_kpoints != kpoints.shape[0]:
-            return self.exit(self.exit_codes.ERROR_OUTPUT_KPOINTS_INCOMMENSURATE)
+            return self.exit(self.exit_codes.ERROR_OUTPUT_KPOINTS_INCOMMENSURATE, logs)
 
         output_bands = orm.BandsData()
         output_bands.set_kpointsdata(kpoints_for_bands)
@@ -51,10 +54,9 @@ class MatdynParser(Parser):
         for message in parsed_data['warnings']:
             self.logger.error(message)
 
-        self.out('output_parameters', orm.Dict(parsed_data))
         self.out('output_phonon_bands', output_bands)
 
-        return
+        return self.exit(logs=logs)
 
 
 def parse_raw_matdyn_phonon_file(phonon_frequencies):
