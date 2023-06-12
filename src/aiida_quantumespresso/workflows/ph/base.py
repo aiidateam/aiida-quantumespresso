@@ -8,6 +8,7 @@ from aiida.common.lang import type_check
 from aiida.engine import BaseRestartWorkChain, ProcessHandlerReport, process_handler, while_
 from aiida.plugins import CalculationFactory
 
+from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import create_kpoints_from_distance
 from aiida_quantumespresso.calculations.functions.merge_ph_outputs import merge_ph_outputs
 from aiida_quantumespresso.workflows.protocols.utils import ProtocolMixin
 
@@ -64,7 +65,9 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         return files(ph_protocols) / 'base.yaml'
 
     @classmethod
-    def get_builder_from_protocol(cls, code, parent_folder=None, protocol=None, overrides=None, options=None, **_):
+    def get_builder_from_protocol(
+        cls, code, structure, parent_folder=None, protocol=None, overrides=None, options=None, **_
+    ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
         :param code: the ``Code`` instance configured for the ``quantumespresso.ph`` plugin.
@@ -103,7 +106,23 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if 'settings' in inputs['ph']:
             builder.ph['settings'] = orm.Dict(inputs['ph']['settings'])
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
-        builder.ph['qpoints'] = qpoints
+
+        if 'qpoints' in inputs['ph']:
+            qpoints_mesh = inputs['ph'].pop('qpoints')
+            qpoints = orm.KpointsData()
+            qpoints.set_kpoints_mesh(qpoints_mesh)
+            builder.ph['qpoints'] = qpoints
+        else:
+            inputs = {
+                'structure': structure,
+                'distance': orm.Float(inputs['qpoints_distance']),
+                'force_parity': orm.Bool(False),
+                'metadata': {
+                    'call_link_label': 'create_qpoints_from_distance'
+                }
+            }
+            builder.ph['qpoints'] = create_kpoints_from_distance(**inputs)
+
         # pylint: enable=no-member
 
         return builder
