@@ -87,10 +87,6 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         inputs = cls.get_protocol_inputs(protocol, overrides)
 
-        qpoints_mesh = inputs['ph'].pop('qpoints')
-        qpoints = orm.KpointsData()
-        qpoints.set_kpoints_mesh(qpoints_mesh)
-
         metadata = inputs['ph']['metadata']
 
         if options:
