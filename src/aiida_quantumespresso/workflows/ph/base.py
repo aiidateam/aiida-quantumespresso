@@ -34,9 +34,19 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         super().define(spec)
         spec.expose_inputs(PhCalculation, namespace='ph')
         spec.input('only_initialization', valid_type=orm.Bool, default=lambda: orm.Bool(False))
+        spec.input('qpoints', valid_type=orm.KpointsData, required=False,
+            help='An explicit qpoints list or mesh. Either this or `qpoints_distance` has to be provided.')
+        spec.input('qpoints_distance', valid_type=orm.Float, required=False,
+            help='The minimum desired distance in 1/Å between qpoints in reciprocal space. The explicit qpoints will '
+                 'be generated automatically by a calculation function based on the input structure.')
+        spec.input('qpoints_force_parity', valid_type=orm.Bool, required=False,
+            help='Optional input when constructing the qpoints based on a desired `qpoints_distance`. Setting this to '
+                 '`True` will force the qpoint mesh to have an even number of points along each lattice vector except '
+                 'for any non-periodic directions.')
         spec.outline(
             cls.setup,
             cls.validate_parameters,
+            cls.validate_qpoints,
             while_(cls.should_run_process)(
                 cls.prepare_process,
                 cls.run_process,
@@ -46,6 +56,8 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             cls.results,
         )
         spec.expose_outputs(PhCalculation, exclude=('retrieved_folder',))
+        spec.exit_code(400, 'ERROR_INVALID_INPUT_QPOINTS',
+                       message='Neither `qpoints` nor `qpoints_distance` was specified.')
         spec.exit_code(204, 'ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED',
             message='The `metadata.options` did not specify both `resources.num_machines` and `max_wallclock_seconds`. '
                     'This exit status has been deprecated as the check it corresponded to was incorrect.')
@@ -65,13 +77,10 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         return files(ph_protocols) / 'base.yaml'
 
     @classmethod
-    def get_builder_from_protocol(
-        cls, code, structure, parent_folder=None, protocol=None, overrides=None, options=None, **_
-    ):
+    def get_builder_from_protocol(cls, code, parent_folder=None, protocol=None, overrides=None, options=None, **_):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
         :param code: the ``Code`` instance configured for the ``quantumespresso.ph`` plugin.
-        :param structure: the ``StructureData`` instance to use.
         :param protocol: protocol to use, if not specified, the default will be used.
         :param overrides: optional dictionary of inputs to override the defaults of the protocol.
         :param options: A dictionary of options that will be recursively set for the ``metadata.options`` input of all
@@ -103,21 +112,14 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             builder.ph['settings'] = orm.Dict(inputs['ph']['settings'])
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
 
-        if 'qpoints' in inputs['ph']:
-            qpoints_mesh = inputs['ph'].pop('qpoints')
+        if 'qpoints' in inputs:
+            qpoints_mesh = inputs['qpoints']
             qpoints = orm.KpointsData()
             qpoints.set_kpoints_mesh(qpoints_mesh)
-            builder.ph['qpoints'] = qpoints
+            builder.qpoints = qpoints
         else:
-            inputs = {
-                'structure': structure,
-                'distance': orm.Float(inputs['qpoints_distance']),
-                'force_parity': orm.Bool(False),
-                'metadata': {
-                    'call_link_label': 'create_qpoints_from_distance'
-                }
-            }
-            builder.ph['qpoints'] = create_kpoints_from_distance(**inputs)
+            builder.qpoints_distance = orm.Float(inputs['qpoints_distance'])
+            builder.qpoints_force_parity = orm.Bool(inputs['qpoints_force_parity'])
 
         # pylint: enable=no-member
 
@@ -143,6 +145,38 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         if self.inputs.only_initialization.value:
             self.ctx.inputs.settings['ONLY_INITIALIZATION'] = True
+
+    def validate_qpoints(self):
+        """Validate the inputs related to qpoints.
+
+        Either an explicit `KpointsData` with given mesh/path, or a desired qpoints distance should be specified. In
+        the case of the latter, the `KpointsData` will be constructed for the input `StructureData`
+        from the parent_folder using the `create_kpoints_from_distance` calculation function.
+        """
+
+        if all(key not in self.inputs for key in ['qpoints', 'qpoints_distance']):
+            return self.exit_codes.ERROR_INVALID_INPUT_QPOINTS
+
+        try:
+            qpoints = self.inputs.qpoints
+        except AttributeError:
+
+            try:
+                structure = self.ctx.inputs.ph.parent_folder.creator.output.output_structure
+            except AttributeError:
+                structure = self.ctx.inputs.ph.parent_folder.creator.inputs.structure
+
+            inputs = {
+                'structure': structure,
+                'distance': self.inputs.qpoints_distance,
+                'force_parity': self.inputs.qpoints_force_parity,
+                'metadata': {
+                    'call_link_label': 'create_qpoints_from_distance'
+                }
+            }
+            qpoints = create_kpoints_from_distance(**inputs)
+
+        self.ctx.inputs.ph['qpoints'] = qpoints
 
     def set_max_seconds(self, max_wallclock_seconds: None):
         """Set the `max_seconds` to a fraction of `max_wallclock_seconds` option to prevent out-of-walltime problems.
