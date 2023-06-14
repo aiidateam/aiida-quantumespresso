@@ -1,5 +1,5 @@
 default_inputs:
-    qpoinsts: [2, 2, 2]
+    qpoinsts_distance: 0.3
     clean_workdir: False
     ph:
         metadata:
@@ -17,15 +17,15 @@ protocols:
     moderate:
         description: 'Protocol to perform the computation at normal precision at moderate computational cost.'
     precise:
-        qpoints: [4, 4, 4]
         description: 'Protocol to perform the computation at high precision at higher computational cost.'
+        qpoinsts_distance: 0.2
         ph:
             parameters:
                 INPUTPH:
                     tr2_ph: 1.0e-20
     fast:
         description: 'Protocol to perform the computation at low precision at minimal computational cost for testing purposes.'
-        qpoints: [2, 2, 2]
+        qpoinsts_distance: 0.6
         ph:
             parameters:
                 INPUTPH:
