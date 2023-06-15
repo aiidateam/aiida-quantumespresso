@@ -26,8 +26,13 @@ img.logo__image {
     font-size: 40px!important;
 }
 
-img.aiida-logo {
+img.aiida-sidebar-logo {
     height: 40px!important;
+}
+
+img.aiida-logo {
+    width: 20px;
+    padding-bottom: 3px;
 }
 
 .fa {
@@ -36,4 +41,18 @@ img.aiida-logo {
 
 .bd-search {
     padding: 0 1rem;
+}
+
+.tutor-footer {
+    padding-top: 0rem;
+    border-top: none!important;
+}
+
+.footer-table {
+    margin-bottom: 0rem;
+    border-color: transparent;
+}
+
+.footer-table td:last-child {
+    text-align: right;
 }

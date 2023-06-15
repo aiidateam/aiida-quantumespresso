@@ -30,9 +30,6 @@ Switzerland. All rights reserved"""
 
 # -- General configuration ------------------------------------------------
 
-# If your documentation needs a minimal Sphinx version, state it here.
-#needs_sphinx = '1.0'
-
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
@@ -54,12 +51,6 @@ intersphinx_mapping = {
     'aiida': ('https://aiida.readthedocs.io/projects/aiida-core/en/latest/', None),
     'aiida_pseudo': ('http://aiida-pseudo.readthedocs.io/en/latest/', None),
 }
-
-myst_enable_extensions = [
-    'deflist',
-    'colon_fence',
-    'substitution'
-]
 
 # Settings for the `autoapi.extenstion` automatically generating API docs
 filepath_docs = pathlib.Path(__file__).parent.parent
@@ -89,6 +80,32 @@ language = 'en'
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 exclude_patterns = ['**.ipynb_checkpoints', 'reference/api/auto/aiida_quantumespresso/index.rst']
+
+# -- MyST options
+
+myst_enable_extensions = [
+    'deflist',
+    'colon_fence',
+    'substitution',
+    'attrs_inline',
+    'substitution'
+]
+
+myst_substitutions = {
+    'aiida_logo': '<img src="../_static/logo_aiida.svg" alt="aiida" class="aiida-logo">',
+    'create_magnetic_configuration': \
+        '{func}`~aiida_quantumespresso.calculations.functions.create_magnetic_configuration.create_magnetic_configuration`',
+    'get_builder_from_protocol': \
+        '{meth}`~aiida_quantumespresso.workflows.pw.base.PwBaseWorkChain.get_builder_from_protocol`',
+    'get_magnetic_configuration': \
+        '{meth}`~aiida_quantumespresso.tools.calculations.pw.PwCalculationTools.get_magnetic_configuration`',
+    'nspin': '[`nspin`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#idm412)',
+    'PwBaseWorkChain': '{class}`~aiida_quantumespresso.workflows.pw.base.PwBaseWorkChain`',
+    'PwCalculation': '{class}`~aiida_quantumespresso.calculations.pw.PwCalculation`',
+    'SpinType': '{class}`~aiida_quantumespresso.common.types.SpinType`',
+    'starting_magnetization': '[`starting_magnetization`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#idm299)',
+    'StructureData': '{class}`~aiida.orm.StructureData',
+}
 
 # -- Options for HTML output ----------------------------------------------
 
