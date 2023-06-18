@@ -274,8 +274,9 @@ class PwParser(BaseParser):
 
         if 'settings' in self.node.inputs:
             settings = _uppercase_dict(self.node.inputs.settings.get_dict(), dict_name='settings')
-
-        fixed_coords = settings.get('FIXED_COORDS', None)
+            fixed_coords = settings.get('FIXED_COORDS', None)
+        else:
+            fixed_coords = None
 
         # Through the `cell_dofree` the degrees of freedom of the cell can be constrained, which makes the threshold on
         # the stress hard to interpret. Therefore, unless the `cell_dofree` is set to the default `all` where the cell
