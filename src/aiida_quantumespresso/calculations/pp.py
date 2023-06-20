@@ -116,7 +116,7 @@ class PpCalculation(CalcJob):
         spec.exit_code(332, 'ERROR_UNSUPPORTED_DATAFILE_FORMAT',
             message='The data file format is not supported by the parser')
         spec.exit_code(333, 'ERROR_OUTPUT_DATAFILE_PARSE',
-            message='The formatted data output file `{filename}` could not be parsed.\n{context}')
+            message='The formatted data output file `{filename}` could not be parsed: {exception}')
         # yapf: enable
 
     def prepare_for_submission(self, folder):  # pylint: disable=too-many-branches,too-many-statements
