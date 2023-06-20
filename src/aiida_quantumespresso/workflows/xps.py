@@ -582,6 +582,7 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
             self.ctx.supercell = input_structure
             self.ctx.equivalent_sites_data = result.pop('output_parameters').get_dict()
         structures_to_process = {f'{Key.split("_")[0]}_{Key.split("_")[1]}' : Value for Key, Value in result.items()}
+        self.report(f'structures_to_process: {structures_to_process}')
         self.ctx.structures_to_process = structures_to_process
 
     def should_run_gs_scf(self):
@@ -596,10 +597,9 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         inputs.metadata.call_link_label = 'supercell_xps'
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
-        equivalent_sites_data = self.ctx.equivalent_sites_data
-        self.report(f'equivalent_sites_data: {equivalent_sites_data}')
-        for site in equivalent_sites_data:
-            abs_element = equivalent_sites_data[site]['symbol']
+        # pseudos for all elements to be calculated should be replaced
+        for site in self.ctx.equivalent_sites_data:
+            abs_element = self.ctx.equivalent_sites_data[site]['symbol']
             inputs.pw.pseudos[abs_element] = self.inputs.gipaw_pseudos[abs_element]
         running = self.submit(PwBaseWorkChain, **inputs)
 
@@ -631,7 +631,6 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         equivalent_sites_data = self.ctx.equivalent_sites_data
         abs_atom_marker = self.inputs.abs_atom_marker.value
 
-
         for site in structures_to_process:
             inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='ch_scf'))
             structure = structures_to_process[site]
@@ -661,9 +660,10 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
 
             core_hole_pseudo = self.inputs.core_hole_pseudos[abs_element]
             inputs.pw.pseudos[abs_atom_marker] = core_hole_pseudo
-            # all element in the elements_list should be replaced
-            for element in self.inputs.elements_list:
-                inputs.pw.pseudos[element] = self.inputs.gipaw_pseudos[element]
+            # pseudos for all elements to be calculated should be replaced
+            for key in self.ctx.equivalent_sites_data:
+                abs_element = self.ctx.equivalent_sites_data[key]['symbol']
+                inputs.pw.pseudos[abs_element] = self.inputs.gipaw_pseudos[abs_element]
             # remove pseudo if the only element is replaced by the marker
             inputs.pw.pseudos = {kind.name: inputs.pw.pseudos[kind.name] for kind in structure.kinds}
 
@@ -705,11 +705,15 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
             kwargs['correction_energies'] = self.inputs.correction_energies
         kwargs['metadata'] = {'call_link_label' : 'compile_final_spectra'}
 
-        equivalent_sites_data = orm.Dict(dict=self.ctx.equivalent_sites_data)
-        elements_list = orm.List(list=self.ctx.elements_list)
+        if self.ctx.elements_list:
+            elements_list = orm.List(list=self.ctx.elements_list)
+        else:
+            symbols = {value['symbol'] for value in self.ctx.equivalent_sites_data.values()}
+            elements_list = orm.List(list(symbols))
         voight_gamma = self.inputs.voight_gamma
         voight_sigma = self.inputs.voight_sigma
 
+        equivalent_sites_data = orm.Dict(dict=self.ctx.equivalent_sites_data)
         result = get_spectra_by_element(
             elements_list,
             equivalent_sites_data,
