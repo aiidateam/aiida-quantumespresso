@@ -274,6 +274,8 @@ class PwParser(BaseParser):
 
         if 'settings' in self.node.inputs:
             settings = _uppercase_dict(self.node.inputs.settings.get_dict(), dict_name='settings')
+        else:
+            settings = {}
 
         fixed_coords = settings.get('FIXED_COORDS', None)
 
