@@ -241,12 +241,14 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         spec.output(
             'supercell_structure',
             valid_type=orm.StructureData,
+            required=False,
             help=('The supercell of ``outputs.standardized_structure`` used to generate structures for'
             ' XPS sub-processes.')
         )
         spec.output(
             'symmetry_analysis_data',
             valid_type=orm.Dict,
+            required=False,
             help='The output parameters from ``get_xspectra_structures()``.'
         )
         spec.output(
@@ -394,7 +396,7 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         """
 
         inputs = cls.get_protocol_inputs(protocol, overrides)
-        calc_binding_energy = kwargs.pop('calc_binding_energy', False)
+        calc_binding_energy = kwargs.pop('calc_binding_energy', orm.Bool(False))
         correction_energies = kwargs.pop('correction_energies', orm.Dict())
 
         pw_args = (code, structure, protocol)
