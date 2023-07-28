@@ -377,7 +377,7 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
     def get_builder_from_protocol(
         cls, code, structure, pseudos, core_hole_treatments=None, protocol=None,
         overrides=None, elements_list=None, atoms_list=None, options=None,
-        structure_preparation_settings=None, **kwargs
+        structure_preparation_settings=None, correction_energies=None, **kwargs
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
@@ -396,9 +396,6 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         """
 
         inputs = cls.get_protocol_inputs(protocol, overrides)
-        calc_binding_energy = kwargs.pop('calc_binding_energy', orm.Bool(False))
-        correction_energies = kwargs.pop('correction_energies', orm.Dict())
-
         pw_args = (code, structure, protocol)
         # xspectra_args = (pw_code, xs_code, structure, protocol, upf2plotcore_code)
 
@@ -422,8 +419,11 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         builder.ch_scf = ch_scf
         builder.structure = structure
         builder.abs_atom_marker = abs_atom_marker
-        builder.calc_binding_energy = calc_binding_energy
-        builder.correction_energies = correction_energies
+        if correction_energies:
+            builder.correction_energies = orm.Dict(correction_energies)
+            builder.calc_binding_energy = orm.Bool(True)
+        else:
+            builder.calc_binding_energy = orm.Bool(False)
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
         core_hole_pseudos = {}
         gipaw_pseudos = {}
