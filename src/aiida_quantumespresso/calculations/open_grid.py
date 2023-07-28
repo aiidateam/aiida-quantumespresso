@@ -28,13 +28,7 @@ class OpenGridCalculation(NamelistsCalculation):
 
         spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
             message='The retrieved folder data node could not be accessed.')
-        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
-            message='The stdout output file could not be read.')
-        spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
-            message='The stdout output file was incomplete probably because the calculation got interrupted.')
         spec.exit_code(312, 'ERROR_INCOMPATIBLE_FFT_GRID',
             message='Found rotation or fractional translation not compatible with FFT grid.')
-        spec.exit_code(340, 'ERROR_GENERIC_QE_ERROR',
-            message='Encountered a generic error message.')
         spec.exit_code(350, 'ERROR_OUTPUT_KPOINTS_MISMATCH',
             message='Mismatch between kmesh dimensions and number of kpoints.')

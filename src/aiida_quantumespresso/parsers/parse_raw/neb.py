@@ -7,57 +7,21 @@ decision doesn't have much structure encoded, [the values are simple ]
 """
 from qe_tools import CONSTANTS
 
-from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers.parse_raw import convert_qe_time_to_sec
 
-
-def parse_raw_output_neb(stdout, input_dict, parser_opts=None):
+def parse_raw_output_neb(stdout):
     """Parses the output of a neb calculation Receives in input the paths to the output file.
 
     :param stdout: the stdout content as a string
-    :param input_dict: dictionary with the neb input parameters
-    :param parser_opts: not used
 
     :return parameter_data: a dictionary with parsed parameters
     :return iteration_data: a dictionary with arrays (for relax & md calcs.)
-    :return job_successful: a boolean that is False in case of failed calculations
-
-    :raises QEOutputParsingError: for errors in the parsing,
-
-    2 different keys to check in output: parser_warnings and warnings.
-    On an upper level, these flags MUST be checked.
-    The first is expected to be empty unless QE failures or unfinished jobs.
     """
     import copy
 
-    job_successful = True
     parser_warnings = []
 
-    if not stdout:  # there is an output file, but it's empty -> crash
-        job_successful = False
-
-    # check if the job has finished (that doesn't mean without errors)
-    finished_run = False
-    for line in stdout.split('\n')[::-1]:
-        if 'JOB DONE' in line:
-            finished_run = True
-            break
-    if not finished_run:  # error if the job has not finished
-        warning = 'QE neb run did not reach the end of the execution.'
-        parser_warnings.append(warning)
-        job_successful = False
-
     # parse the text output of the neb calculation
-    try:
-        out_data, iteration_data, critical_messages = parse_neb_text_output(stdout, input_dict)
-    except QEOutputParsingError as exc:
-        if not finished_run:  # I try to parse it as much as possible
-            parser_warnings.append('Error while parsing the output file')
-            out_data = {'warnings': []}
-            iteration_data = {}
-            critical_messages = []
-        else:  # if it was finished and I got an error, it's a mistake of the parser
-            raise QEOutputParsingError(f'Error while parsing NEB text output: {exc}')
+    out_data, iteration_data = parse_neb_text_output(stdout)
 
     # I add in the out_data all the last elements of iteration_data values.
     # I leave the possibility to skip some large arrays (None for the time being).
@@ -68,19 +32,12 @@ def parse_raw_output_neb(stdout, input_dict, parser_opts=None):
             continue
         out_data[k] = v[-1]
 
-    # if there is a severe error, the calculation is FAILED
-    if any([x in out_data['warnings'] for x in critical_messages]):
-        job_successful = False
-
     parameter_data = dict(list(out_data.items()) + [('parser_warnings', parser_warnings)])
 
-    # return various data.
-    # parameter data will be mapped in Dict
-    # iteration_data in ArrayData
-    return parameter_data, iteration_data, job_successful
+    return parameter_data, iteration_data
 
 
-def parse_neb_text_output(data, input_dict={}):
+def parse_neb_text_output(data):
     """Parses the text output of QE Neb.
 
     :param data: a string, the file as read by read()
@@ -95,50 +52,14 @@ def parse_neb_text_output(data, input_dict={}):
     """
     from collections import defaultdict
 
-    from aiida_quantumespresso.parsers.parse_raw import parse_output_error
-    from aiida_quantumespresso.utils.mapping import get_logging_container
-
-    # TODO: find a more exhaustive list of the common errors of neb
-    # critical warnings: if any is found, the calculation status is FAILED
-    critical_warnings = {
-        'scf convergence NOT achieved on image': 'SCF did not converge for a given image',
-        'Maximum CPU time exceeded': 'Maximum CPU time exceeded',
-        'reached the maximum number of steps': 'Maximum number of iterations reached in the image optimization',
-    }
-
-    minor_warnings = {
-        'Warning:': None,
-    }
-
-    all_warnings = dict(list(critical_warnings.items()) + list(minor_warnings.items()))
-
     parsed_data = {}
     parsed_data['warnings'] = []
     iteration_data = defaultdict(list)
 
-    # parse time, starting from the end
-    # apparently, the time is written multiple times
-    for line in reversed(data.split('\n')):
-        if 'NEB' in line and 'WALL' in line:
-            try:
-                time = line.split('CPU')[1].split('WALL')[0].strip()
-                parsed_data['wall_time'] = time
-            except Exception:
-                parsed_data['warnings'].append('Error while parsing wall time.')
-
-            try:
-                parsed_data['wall_time_seconds'] = \
-                    convert_qe_time_to_sec(parsed_data['wall_time'])
-            except ValueError:
-                raise QEOutputParsingError('Unable to convert wall_time in seconds.')
-            break
-
     # set by default the calculation as not converged.
     parsed_data['converged'] = [False, 0]
-    logs = get_logging_container()
-    lines = data.split('\n')
 
-    for count, line in enumerate(lines):
+    for count, line in enumerate(data.split('\n')):
         if 'initial path length' in line:
             initial_path_length = float(line.split('=')[1].split('bohr')[0])
             parsed_data['initial_path_length'] = initial_path_length * CONSTANTS.bohr_to_ang
@@ -177,26 +98,8 @@ def parse_neb_text_output(data, input_dict={}):
             parsed_data['climbing_images_manual'] = [int(_) for _ in line.split(':')[1].split(',')[:-1]]
         elif 'neb: convergence achieved in' in line:
             parsed_data['converged'] = [True, int(line.split('iteration')[0].split()[-1])]
-        elif '%%%%%%%%%%%%%%' in line:
-            parse_output_error(lines, count, logs)
-        elif any(i in line for i in all_warnings):
-            message = [all_warnings[i] for i in all_warnings.keys() if i in line][0]
 
-            if message is not None:
-                parsed_data['warnings'].append(message)
-
-    parsed_data['warnings'].extend(logs.error)
-
-    try:
-        num_images = parsed_data['num_of_images']
-    except KeyError:
-        try:
-            num_images = input_dict['PATH']['num_of_images']
-        except KeyError:
-            raise QEOutputParsingError(
-                'No information on the number '
-                'of images available (neither in input nor in output'
-            )
+    num_images = parsed_data['num_of_images']
 
     iteration_lines = data.split('-- iteration')[1:]
     iteration_lines = [i.split('\n') for i in iteration_lines]
@@ -233,4 +136,4 @@ def parse_neb_text_output(data, input_dict={}):
                 image_dist = float(line.split('=')[1].split('bohr')[0])
                 iteration_data['image_dist'].append(image_dist * CONSTANTS.bohr_to_ang)
 
-    return parsed_data, dict(iteration_data), list(critical_warnings.values())
+    return parsed_data, dict(iteration_data)

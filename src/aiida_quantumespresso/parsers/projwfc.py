@@ -8,14 +8,10 @@ from aiida.plugins import OrbitalFactory
 import numpy as np
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers.parse_raw.base import (
-    convert_qe_to_aiida_structure,
-    convert_qe_to_kpoints,
-    parse_output_base,
-)
+from aiida_quantumespresso.parsers.parse_raw.base import convert_qe_to_aiida_structure, convert_qe_to_kpoints
 from aiida_quantumespresso.utils.mapping import get_logging_container
 
-from .base import Parser
+from .base import BaseParser
 
 
 def find_orbitals_from_statelines(out_info_dict):
@@ -272,46 +268,36 @@ def spin_dependent_pdos_subparser(out_info_dict):
     return out_arrays
 
 
-class ProjwfcParser(Parser):
-    """This class is the implementation of the Parser class for projwfc.x in Quantum Espresso.
+class ProjwfcParser(BaseParser):
+    """``Parser`` implementation for the ``ProjwfcCalculation`` calculation job class.
 
     Parses projection arrays that map the projection onto each point in the bands structure, as well as pdos arrays,
     which map the projected density of states onto an energy axis.
     """
 
     def parse(self, **kwargs):
-        """Parses the datafolder, stores results.
+        """Parse the retrieved files from a ``ProjwfcCalculation`` into output nodes."""
+        # we create a dictionary the progressively accumulates more info
+        out_info_dict = {}
 
-        Retrieves projwfc output, and some basic information from the out_file, such as warnings and wall_time
-        """
-        retrieved = self.retrieved
-        # Get the temporary retrieved folder
+        logs = get_logging_container()
+
+        stdout, parsed_data, logs = self.parse_stdout_from_retrieved(logs)
+        out_info_dict['out_file'] = stdout.split('\n')
+
+        base_exit_code = self.check_base_errors(logs)
+        if base_exit_code:
+            return self.exit(base_exit_code, logs)
+
+        self.out('output_parameters', Dict(parsed_data))
+
+        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE'in logs.error:
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE, logs)
+
         try:
             retrieved_temporary_folder = kwargs['retrieved_temporary_folder']
         except KeyError:
-            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
-
-        # Read standard out
-        try:
-            filename_stdout = self.node.get_option('output_filename')  # or get_attribute(), but this is clearer
-            with retrieved.base.repository.open(filename_stdout, 'r') as fil:
-                out_file = fil.readlines()
-        except OSError:
-            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
-
-        job_done = False
-        for i in range(len(out_file)):
-            line = out_file[-i]
-            if 'JOB DONE' in line:
-                job_done = True
-                break
-        if not job_done:
-            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE)
-
-        # Parse basic info and warnings, and output them as output_parmeters
-        parsed_data, logs = parse_output_base(out_file, 'PROJWFC')
-        self.emit_logs(logs)
-        self.out('output_parameters', Dict(parsed_data))
+            return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER, logs)
 
         # Parse the XML to obtain the `structure`, `kpoints` and spin-related settings from the parent calculation
         self.exit_code_xml = None
@@ -321,9 +307,6 @@ class ProjwfcParser(Parser):
         if self.exit_code_xml:
             return self.exit(self.exit_code_xml)
 
-        # we create a dictionary the progressively accumulates more info
-        out_info_dict = {}
-
         out_info_dict['structure'] = convert_qe_to_aiida_structure(parsed_xml['structure'])
         out_info_dict['kpoints'] = convert_qe_to_kpoints(parsed_xml, out_info_dict['structure'])
         out_info_dict['nspin'] = parsed_xml.get('number_of_spin_components')
@@ -332,33 +315,32 @@ class ProjwfcParser(Parser):
         out_info_dict['spin'] = out_info_dict['nspin'] == 2
 
         # check and read pdos_tot file
-        out_filenames = retrieved.base.repository.list_object_names()
+        out_filenames = self.retrieved.base.repository.list_object_names()
         try:
             pdostot_filename = fnmatch.filter(out_filenames, '*pdos_tot*')[0]
-            with retrieved.base.repository.open(pdostot_filename, 'r') as pdostot_file:
+            with self.retrieved.base.repository.open(pdostot_filename, 'r') as pdostot_file:
                 # Columns: Energy(eV), Ldos, Pdos
                 pdostot_array = np.atleast_2d(np.genfromtxt(pdostot_file))
                 energy = pdostot_array[:, 0]
                 dos = pdostot_array[:, 1]
         except (OSError, KeyError):
-            return self.exit(self.exit_codes.ERROR_READING_PDOSTOT_FILE)
+            return self.exit(self.exit_codes.ERROR_READING_PDOSTOT_FILE, logs)
 
         # check and read all of the individual pdos_atm files
         pdos_atm_filenames = fnmatch.filter(out_filenames, '*pdos_atm*')
         pdos_atm_array_dict = {}
         for name in pdos_atm_filenames:
-            with retrieved.base.repository.open(name, 'r') as pdosatm_file:
+            with self.retrieved.base.repository.open(name, 'r') as pdosatm_file:
                 pdos_atm_array_dict[name] = np.atleast_2d(np.genfromtxt(pdosatm_file))
 
         # finding the bands and projections
-        out_info_dict['out_file'] = out_file
         out_info_dict['energy'] = energy
         out_info_dict['pdos_atm_array_dict'] = pdos_atm_array_dict
         try:
             new_nodes_list = self._parse_bands_and_projections(out_info_dict)
         except QEOutputParsingError as err:
             self.logger.error(f'Error parsing bands and projections: {err}')
-            return self.exit(self.exit_codes.ERROR_PARSING_PROJECTIONS)
+            return self.exit(self.exit_codes.ERROR_PARSING_PROJECTIONS, logs)
         for linkname, node in new_nodes_list:
             self.out(linkname, node)
 
@@ -366,6 +348,8 @@ class ProjwfcParser(Parser):
         Dos_out.set_x(energy, 'Energy', 'eV')
         Dos_out.set_y(dos, 'Dos', 'states/eV')
         self.out('Dos', Dos_out)
+
+        return self.exit(logs=logs)
 
     def _parse_xml(self, retrieved_temporary_folder):
         """Parse the XML file.

@@ -1,5 +1,5 @@
 parameters:
-  code_version: v.6.5
+  code_version: '6.5'
   core_level_energy: '-1839.'
   core_level_energy_units: eV
   energy_zero: '4.1718'

@@ -62,10 +62,6 @@ class ProjwfcCalculation(NamelistsCalculation):
             message='The retrieved temporary folder could not be accessed.')
         spec.exit_code(303, 'ERROR_OUTPUT_XML_MISSING',
             message='The retrieved folder did not contain the required XML file.')
-        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
-            message='The stdout output file could not be read.')
-        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
-            message='The stdout output file was incomplete probably because the calculation got interrupted.')
         spec.exit_code(320, 'ERROR_OUTPUT_XML_READ',
             message='The XML output file could not be read.')
         spec.exit_code(321, 'ERROR_OUTPUT_XML_PARSE',

@@ -37,10 +37,6 @@ class MatdynCalculation(NamelistsCalculation):
         spec.output('output_phonon_bands', valid_type=orm.BandsData)
         spec.default_output_node = 'output_parameters'
 
-        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
-            message='The stdout output file could not be read.')
-        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
-            message='The stdout output file was incomplete probably because the calculation got interrupted.')
         spec.exit_code(330, 'ERROR_OUTPUT_FREQUENCIES',
             message='The output frequencies file could not be read from the retrieved folder.')
         spec.exit_code(410, 'ERROR_OUTPUT_KPOINTS_MISSING',

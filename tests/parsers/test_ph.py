@@ -22,7 +22,7 @@ def test_ph_default(test_name, fixture_localhost, generate_calc_job_node, genera
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
-    assert not orm.Log.collection.get_logs_for(node)
+    assert not [log for log in orm.Log.objects.get_logs_for(node) if log.levelname == 'ERROR']
     assert 'output_parameters' in results
     data_regression.check(results['output_parameters'].get_dict())
 

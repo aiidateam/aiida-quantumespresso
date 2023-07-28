@@ -28,7 +28,7 @@ dependencies = [
     'importlib_resources',
     'jsonschema',
     'numpy',
-    'pydantic',
+    'pydantic~=1.10,>=1.10.8',
     'packaging',
     'qe-tools~=2.0',
     'xmlschema~=1.2,>=1.2.5'
@@ -68,6 +68,7 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 [project.entry-points.'aiida.calculations']
 'quantumespresso.cp' = 'aiida_quantumespresso.calculations.cp:CpCalculation'
 'quantumespresso.create_kpoints_from_distance' = 'aiida_quantumespresso.calculations.functions.create_kpoints_from_distance:create_kpoints_from_distance'
+'quantumespresso.create_magnetic_configuration' = 'aiida_quantumespresso.calculations.functions.create_magnetic_configuration:create_magnetic_configuration'
 'quantumespresso.merge_ph_outputs' = 'aiida_quantumespresso.calculations.functions.merge_ph_outputs:merge_ph_outputs'
 'quantumespresso.dos' = 'aiida_quantumespresso.calculations.dos:DosCalculation'
 'quantumespresso.epw' = 'aiida_quantumespresso.calculations.epw:EpwCalculation'
@@ -214,12 +215,13 @@ split_arguments_when_comma_terminated = true
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py37
+envlist =
+    py{38,39,310,311}
+    py38-pre-commit
 
 [testenv]
+description = Run the pytest tests
 usedevelop=True
-
-[testenv:py{36,37,38,39}]
 extras = tests
 commands = pytest {posargs}
 
@@ -229,15 +231,4 @@ extras =
     tests
     pre-commit
 commands = pre-commit run {posargs}
-
-[testenv:py38-docs-{clean,update}]
-description =
-    clean: Build the documentation (remove any existing build)
-    update: Build the documentation (modify any existing build)
-extras = docs
-changedir = docs
-whitelist_externals = make
-commands =
-    clean: make clean
-    make
 """

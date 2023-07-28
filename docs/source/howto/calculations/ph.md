@@ -16,18 +16,18 @@ In order to run a `ph.x` calculation, you first need to have completed a `pw.x` 
 See the [tutorial](#tutorials-pw-through-api) or [how-to guide](#howto-calculations-pw) for more information.
 :::
 
-Once you have successfully run a `PwCalculation` you can run a `ph.x` calculation through the `PhCalculation` plugin as follows:
+Once you have successfully run a {{ PwCalculation }} you can run a `ph.x` calculation through the `PhCalculation` plugin as follows:
 
 ```{literalinclude} ../../tutorials/include/scripts/run_ph_basic.py
 :language: python
 ```
 
-Note that you will have to replace `IDENTIFIER_PW_CALCULATION` with the identifier (pk or UUID) of the completed `PwCalculation`.
+Note that you will have to replace `IDENTIFIER_PW_CALCULATION` with the identifier (pk or UUID) of the completed {{ PwCalculation }}.
 
 ## How to define input file parameters
 
 The `ph.x` code supports many parameters that can be defined through the input file, as shown on the [official documentation](https://www.quantum-espresso.org/Doc/INPUT_PH.html).
-Parameters that are part of the `INPUTPH` card should be specified through the `parameters` input of the `PwCalculation` plugin.
+Parameters that are part of the `INPUTPH` card should be specified through the `parameters` input of the {{ PwCalculation }} plugin.
 The parameters are specified using a Python dictionary, for example:
 
 ```python

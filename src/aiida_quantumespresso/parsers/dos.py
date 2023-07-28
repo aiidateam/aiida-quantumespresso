@@ -3,46 +3,35 @@ from aiida.orm import Dict, XyData
 import numpy as np
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers.parse_raw.base import parse_output_base
+from aiida_quantumespresso.utils.mapping import get_logging_container
 
-from .base import Parser
+from .base import BaseParser
 
 
-class DosParser(Parser):
-    """This class is the implementation of the Parser class for Dos."""
+class DosParser(BaseParser):
+    """``Parser`` implementation for the ``DosCalculation`` calculation job class."""
 
     def parse(self, **kwargs):
-        """Parses the datafolder, stores results.
+        """Parse the retrieved files of a ``DosCalculation`` into output nodes."""
+        logs = get_logging_container()
 
-        Retrieves dos output, and some basic information from the out_file, such as warnings and wall_time
-        """
-        retrieved = self.retrieved
+        _, parsed_stdout, logs = self.parse_stdout_from_retrieved(logs)
 
-        # Read standard out
+        base_exit_code = self.check_base_errors(logs)
+        if base_exit_code:
+            return self.exit(base_exit_code, logs)
+
+        self.out('output_parameters', Dict(parsed_stdout))
+
+        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE'in logs.error:
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE, logs)
+
+        # Parse the DOS
         try:
-            filename_stdout = self.node.get_option('output_filename')  # or get_attribute(), but this is clearer
-            with retrieved.base.repository.open(filename_stdout, 'r') as fil:
-                out_file = fil.readlines()
+            with self.retrieved.base.repository.open(self.node.process_class._DOS_FILENAME, 'r') as handle:
+                dos_file = handle.readlines()
         except OSError:
-            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
-
-        job_done = False
-        for i in range(len(out_file)):
-            line = out_file[-i]
-            if 'JOB DONE' in line:
-                job_done = True
-                break
-        if not job_done:
-            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE)
-
-        # check that the dos file is present, if it is, read it
-        try:
-            with retrieved.base.repository.open(self.node.process_class._DOS_FILENAME, 'r') as fil:
-                dos_file = fil.readlines()
-        except OSError:
-            return self.exit(self.exit_codes.ERROR_READING_DOS_FILE)
-
-        # end of initial checks
+            return self.exit(self.exit_codes.ERROR_READING_DOS_FILE, logs)
 
         array_names = [[], []]
         array_units = [[], []]
@@ -79,11 +68,9 @@ class DosParser(Parser):
             y_units += ['states/eV']
         xy_data.set_y(y_arrays, y_names, y_units)
 
-        parsed_data, logs = parse_output_base(out_file, 'DOS')
-        self.emit_logs(logs)
-
         self.out('output_dos', xy_data)
-        self.out('output_parameters', Dict(parsed_data))
+
+        return self.exit(logs=logs)
 
 
 def parse_raw_dos(dos_file, array_names, array_units):

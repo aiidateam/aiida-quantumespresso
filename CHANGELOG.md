@@ -1,3 +1,105 @@
+## v4.4.0
+
+This minor release mainly includes documentation changes, but also a small breaking change in [[a389629](https://github.com/aiidateam/aiida-quantumespresso/commit/a389629387b74805ffe2f4d6515ac05b8f62b4d5)].
+Work chains that wrap the `PwBaseWorkChain` for an `nscf` or `bands` calculation and add the `parent_folder` during runtime would have to adapt the `validator` for the `pw` name space as follows to avoid warnings:
+
+```python
+    spec.inputs['nscf']['pw'].validator = PwCalculation.validate_inputs_base
+```
+
+Now, the validator that checks for the presence of the `parent_folder` in the inputs is adapted so it checks if the  `parent_folder` port is in the name space.
+If not, the validation is skipped.
+So work chains that wrap the `PwBaseWorkChain` to run an `nscf` or `bands` calculation can simply exclude the `parent_folder` port in the `pw` name space:
+
+```python
+    spec.expose_inputs(
+        PwBaseWorkChain,
+        namespace='nscf',
+        exclude=('clean_workdir', 'pw.structure', 'pw.parent_folder'),
+        namespace_options={
+            'help': 'Inputs for the `PwBaseWorkChain` of the `nscf` calculation.',
+            'validator': validate_nscf
+        }
+    )
+```
+
+A new calculation function `create_magnetic_configuration` is added, which can be used to create a new `StructureData` with the required kinds for a specific magnetic configuration.
+For example, for an HCP structure with two Co sites:
+
+```python
+In [1]: from aiida import orm
+
+In [2]: from ase.build import bulk
+   ...: structure = orm.StructureData(ase=bulk('Co', 'hcp', 2.5, 4.06))
+```
+
+The `create_magnetic_configuration` can be used to quickly create a new `StructureData` with two different kinds:
+
+```python
+In [3]: from aiida_quantumespresso.calculations.functions.create_magnetic_configuration import create_magnetic_configuration
+   ...:
+   ...: results = create_magnetic_configuration(structure, [-2, 2])
+
+In [4]: results['structure'].sites
+Out[4]:
+[<Site: kind name 'Co0' @ -2.7755575615629e-17,1.4433756729741,2.03>,
+ <Site: kind name 'Co1' @ 0.0,0.0,0.0>]
+
+In [5]: results['magnetic_moments'].get_dict()
+Out[5]: {'Co0': 2, 'Co1': -2}
+```
+
+For more information, see the tutorial on how to work with magnetic systems:
+
+https://aiida-quantumespresso.readthedocs.io/en/latest/tutorials/magnetism.html
+
+The release also makes an important change in the dependencies related to a bug introduced in `pydantic`, see:
+
+https://github.com/pydantic/pydantic/issues/5821
+
+Hence the version of `pydantic` is adapted to `1.10.8`, where this bug is fixed.
+
+### ‼️ Breaking changes
+
+* `PwCalculation`: refactor `parent_folder` validation [[a389629](https://github.com/aiidateam/aiida-quantumespresso/commit/a389629387b74805ffe2f4d6515ac05b8f62b4d5)]
+
+### ✨ New features
+
+* Add the `create_magnetic_configuration` function [[d9b18a7](https://github.com/aiidateam/aiida-quantumespresso/commit/d9b18a7c20ce023018755c202f8d06cbf8bd27c5)]
+
+### 👌 Improvements
+
+* `PpParser`: Include exception in `ERROR_OUTPUT_DATAFILE_PARSE` message [[72f114e](https://github.com/aiidateam/aiida-quantumespresso/commit/72f114e4b05b45297abf0954b6334f5a461ed17e)]
+
+### 🐛 Bug Fixes
+
+* `PwParser`: Fix case when `settings` are not provided [[5d4a7d9](https://github.com/aiidateam/aiida-quantumespresso/commit/5d4a7d9405b757e2ecf65a72c1ee92aa2fb36a39)]
+
+### 📚 Documentation
+
+* Small improvements to "Installation" page [[90ad1d6](https://github.com/aiidateam/aiida-quantumespresso/commit/90ad1d6026d3c4b557970d6cc7626e85195ca4dc)]
+* Switch to `sphinx-book-theme` from `pydata_sphinx_theme` [[3578a9d](https://github.com/aiidateam/aiida-quantumespresso/commit/3578a9d08af5e8cdd0851f852185bce2f2c7bd51)]
+* Switch to using MyST Markdown [[37d2a14](https://github.com/aiidateam/aiida-quantumespresso/commit/37d2a14256480785491429c4ca424ebdc258ae34)]
+* Add how-to for `PwCalculationTools.get_scf_accuracy` [[29b4db9](https://github.com/aiidateam/aiida-quantumespresso/commit/29b4db9e5c0d225331aba58981663ad4af641640)]
+* Bump Python version for RTD build [[483d99b](https://github.com/aiidateam/aiida-quantumespresso/commit/483d99b77ca26ce4c607440922b432e39c16d1cf)]
+* Fix breaking changes `CHANGELOG.md` [[7f4c4a1](https://github.com/aiidateam/aiida-quantumespresso/commit/7f4c4a108b09c31cfc9ee252d7e8fbe574ea477f)]
+
+### 🔧 Maintenance
+
+* Catch warning in `restart_mode` test for `PwBaseWorkChain` [[45e1907](https://github.com/aiidateam/aiida-quantumespresso/commit/45e19072f28d30fb4d6df1bbc489f38ce94cd1be)]
+* Update `tox` configuration [[0702152](https://github.com/aiidateam/aiida-quantumespresso/commit/0702152c1dc18fd8d04cbf44f99a15761be955fe)]
+* Add script to update `CHANGELOG.md` [[b21076c](https://github.com/aiidateam/aiida-quantumespresso/commit/b21076cdd1773fe3b7de18bc83e89ec7b367d837)]
+* Remove Python 3.8 from the nightly workflow matrix [[0859d0a](https://github.com/aiidateam/aiida-quantumespresso/commit/0859d0a05c495c8a92208d118da6066f385600a7)]
+
+### ⬆️ Update dependencies
+
+* Restrict `pydantic` to at least `1.10.8` [[f430139](https://github.com/aiidateam/aiida-quantumespresso/commit/f430139e36723f73253efa66a6444018123760d2)]
+
+### ♻️ Refactor
+
+* `BasePwCpInputGenerator`: Remove superfluous validation [[0b6476c](https://github.com/aiidateam/aiida-quantumespresso/commit/0b6476c6c8379a0ea6575f4323979d136f7220aa)]
+*  Move basic parsing into `BaseParser` class [[1c223c7](https://github.com/aiidateam/aiida-quantumespresso/commit/1c223c78f0a2eda38089a08d9f21626f49d2fd6b)]
+
 ## v4.3.0
 
 Release version `4.3.0` comes with a lot of new features, improvements and bug fixes.
