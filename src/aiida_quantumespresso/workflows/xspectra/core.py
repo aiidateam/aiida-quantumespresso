@@ -10,7 +10,7 @@ from aiida import orm
 from aiida.common import AttributeDict
 from aiida.engine import ToContext, WorkChain, append_, if_
 from aiida.orm.nodes.data.base import to_aiida_type
-from aiida.plugins import CalculationFactory, WorkflowFactory
+from aiida.plugins import CalculationFactory, DataFactory, WorkflowFactory
 import yaml
 
 from aiida_quantumespresso.calculations.functions.xspectra.get_powder_spectrum import get_powder_spectrum
@@ -21,6 +21,7 @@ from aiida_quantumespresso.workflows.protocols.utils import ProtocolMixin, recur
 PwCalculation = CalculationFactory('quantumespresso.pw')
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 XspectraBaseWorkChain = WorkflowFactory('quantumespresso.xspectra.base')
+HubbardStructureData = DataFactory('quantumespresso.hubbard_structure')
 
 
 class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
@@ -101,7 +102,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         spec.inputs.validator = cls.validate_inputs
         spec.input(
             'structure',
-            valid_type=orm.StructureData,
+            valid_type=(orm.StructureData, HubbardStructureData),
             help=(
                 'Structure to be used for calculation, with at least one site containing the `abs_atom_marker` '
                 'as the kind label.'
@@ -294,6 +295,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         pw_code,
         xs_code,
         structure,
+        initial_magnetic_moments=None,
         upf2plotcore_code=None,
         core_wfc_data=None,
         core_hole_pseudos=None,
@@ -334,6 +336,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         :return: a process builder instance with all inputs defined ready for launch.
         """
 
+        from aiida_quantumespresso.common.types import SpinType
         inputs = cls.get_protocol_inputs(protocol, overrides)
         pw_inputs = PwBaseWorkChain.get_protocol_inputs(protocol=protocol, overrides=inputs.get('scf', {}))
         pw_params = pw_inputs['pw']['parameters']
@@ -348,9 +351,15 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         )
 
         pw_inputs['pw']['parameters'] = pw_params
-
         pw_args = (pw_code, structure, protocol)
-        scf = PwBaseWorkChain.get_builder_from_protocol(*pw_args, overrides=pw_inputs, options=options, **kwargs)
+
+        if initial_magnetic_moments:
+            spin_type = SpinType.COLLINEAR
+            pw_kwargs = {'initial_magnetic_moments': initial_magnetic_moments, 'spin_type': spin_type}
+
+        scf = PwBaseWorkChain.get_builder_from_protocol(
+            *pw_args, overrides=pw_inputs, options=options, **pw_kwargs, **kwargs
+        )
 
         scf.pop('clean_workdir', None)
         scf['pw'].pop('structure', None)
@@ -368,12 +377,16 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         abs_atom_marker = inputs['abs_atom_marker']
         xs_prod_parameters['INPUT_XSPECTRA']['xiabs'] = kinds_present.index(abs_atom_marker) + 1
         if core_hole_pseudos:
+            abs_element_kinds = []
             for kind in structure.kinds:
                 if kind.name == abs_atom_marker:
                     abs_element = kind.symbol
-
+            for kind in structure.kinds:  # run a second pass to check for multiple kinds of the same absorbing element
+                if kind.symbol == abs_element and kind.name != abs_atom_marker:
+                    abs_element_kinds.append(kind.name)
             builder.scf.pw.pseudos[abs_atom_marker] = core_hole_pseudos[abs_atom_marker]
-            builder.scf.pw.pseudos[abs_element] = core_hole_pseudos[abs_element]
+            for kind_name in abs_element_kinds:
+                builder.scf.pw.pseudos[kind_name] = core_hole_pseudos[abs_element]
 
         builder.xs_prod.xspectra.code = xs_code
         builder.xs_prod.xspectra.parameters = orm.Dict(xs_prod_parameters)
