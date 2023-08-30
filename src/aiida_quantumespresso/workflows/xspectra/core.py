@@ -356,6 +356,8 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         if initial_magnetic_moments:
             spin_type = SpinType.COLLINEAR
             pw_kwargs = {'initial_magnetic_moments': initial_magnetic_moments, 'spin_type': spin_type}
+        else:
+            pw_kwargs = {}
 
         scf = PwBaseWorkChain.get_builder_from_protocol(
             *pw_args, overrides=pw_inputs, options=options, **pw_kwargs, **kwargs

@@ -272,7 +272,7 @@ def get_xspectra_structures(structure, initial_magnetic_moments=None, **kwargs):
             if elements_defined:  # only process the elements given in the list
                 if f'site_{symmetry_value}' in equivalency_dict:
                     equivalency_dict[f'site_{symmetry_value}']['equivalent_sites_list'].append(index_counter)
-                elif type_mapping_dict[str(element_type)]['symbol'] not in abs_elements_list:
+                elif type_mapping_dict[str(element_type)].symbol not in abs_elements_list:
                     pass
                 else:
                     equivalency_dict[f'site_{symmetry_value}'] = {
