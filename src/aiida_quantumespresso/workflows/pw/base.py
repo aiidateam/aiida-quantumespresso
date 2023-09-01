@@ -41,7 +41,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         # yapf: disable
         super().define(spec)
         spec.expose_inputs(PwCalculation, namespace='pw', exclude=('kpoints',))
-        spec.input('pw.metadata.options.resources', valid_type=dict, required=False)
         spec.input('kpoints', valid_type=orm.KpointsData, required=False,
             help='An explicit k-points list or mesh. Either this or `kpoints_distance` has to be provided.')
         spec.input('kpoints_distance', valid_type=orm.Float, required=False,
