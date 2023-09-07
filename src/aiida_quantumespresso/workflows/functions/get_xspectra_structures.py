@@ -264,7 +264,20 @@ def get_xspectra_structures(structure, initial_magnetic_moments=None, **kwargs):
             structure_is_standardized = True
 
         equivalent_atoms_array = symmetry_dataset['equivalent_atoms']
-        element_types = symmetry_dataset['std_types']
+        if structure_is_standardized:
+            element_types = symmetry_dataset['std_types']
+        else:  # convert the 'std_types' from standardized to primitive cell
+            spglib_std_types = symmetry_dataset['std_types']
+            spglib_std_map_to_prim = symmetry_dataset['std_mapping_to_primitive']
+
+            map_std_pos_to_type = {}
+            for position, atom_type in zip(spglib_std_map_to_prim, spglib_std_types):
+                map_std_pos_to_type[str(position)] = atom_type
+            primitive_types = []
+            for position in symmetry_dataset['mapping_to_primitive']:
+                atom_type = map_std_pos_to_type[str(position)]
+                primitive_types.append(atom_type)
+            element_types = primitive_types
 
         equivalency_dict = {}
         index_counter = 0
@@ -341,10 +354,16 @@ def get_xspectra_structures(structure, initial_magnetic_moments=None, **kwargs):
             new_supercell = StructureData(ase=ase_supercell)
 
         if is_hubbard_structure:  # Scale up the hubbard parameters to match and return the HubbardStructureData
-            hubbard_manip = HubbardUtils(structure)
-            new_hubbard_supercell = hubbard_manip.get_hubbard_for_supercell(new_supercell)
-            new_supercell = new_hubbard_supercell
-            supercell_hubbard_params = new_supercell.hubbard
+            if multiples == [1, 1, 1]:  # If no new supercell was made, just re-apply the incoming parameters
+                new_hubbard_supercell = HubbardStructureData.from_structure(new_supercell)
+                new_hubbard_supercell.hubbard = structure.hubbard
+                new_supercell = new_hubbard_supercell
+                supercell_hubbard_params = new_supercell.hubbard
+            else:
+                hubbard_manip = HubbardUtils(structure)
+                new_hubbard_supercell = hubbard_manip.get_hubbard_for_supercell(new_supercell)
+                new_supercell = new_hubbard_supercell
+                supercell_hubbard_params = new_supercell.hubbard
             result['supercell'] = new_supercell
         else:
             result['supercell'] = new_supercell
