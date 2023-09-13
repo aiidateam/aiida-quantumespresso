@@ -179,7 +179,14 @@ class PwCalculation(BasePwCpInputGenerator):
         the ``parent_folder`` input at a later step in the outline. To avoid raising any warnings, such a work chain
         must exclude the ``parent_folder`` port when exposing the inputs of the ``PwCalculation``.
         """
+        from aiida.engine.processes.calcjobs.calcjob import validate_calc_job
+
         result = super().validate_inputs(value, port_namespace)
+
+        if result is not None:
+            return result
+
+        result = validate_calc_job(value, port_namespace)
 
         if result is not None:
             return result
