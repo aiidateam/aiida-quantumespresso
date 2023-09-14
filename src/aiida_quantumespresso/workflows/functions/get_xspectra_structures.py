@@ -16,7 +16,7 @@ from aiida_quantumespresso.utils.hubbard import HubbardStructureData, HubbardUti
 
 
 @calcfunction
-def get_xspectra_structures(structure, initial_magnetic_moments=None, **kwargs):  # pylint: disable=too-many-statements
+def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-statements
     """Read a StructureData object using spglib for its symmetry data and return structures for XSpectra calculations.
 
     Takes an incoming StructureData node and prepares structures suitable for calculation with
@@ -54,8 +54,6 @@ def get_xspectra_structures(structure, initial_magnetic_moments=None, **kwargs):
                              systems (tolerance, eigen_tolerance, matrix_tolerance).
 
     :param structure: the StructureData object to be analysed
-    :param initial_magnetic_moments: an optional Dict node containing the magnetic moment for
-                                     each Kind in the structure
     :returns: StructureData objects for the standardized crystal structure, the supercell, and
               all generated structure and associated symmetry data
     """
@@ -135,12 +133,6 @@ def get_xspectra_structures(structure, initial_magnetic_moments=None, **kwargs):
             )
     else:
         is_hubbard_structure = False
-
-    if initial_magnetic_moments and standardize_structure:
-        raise ValidationError(
-            'Incoming structure set to be standardized, but magnetic moments data has been found. '
-            'Please set ``standardize_structure`` to false in ``**kwargs`` to preserve the magnetic structure.'
-        )
 
     output_params = {}
     result = {}
@@ -332,14 +324,17 @@ def get_xspectra_structures(structure, initial_magnetic_moments=None, **kwargs):
         ase_structure = standardized_structure_node.get_ase()
         ase_supercell = ase_structure * multiples
 
-        # if there is magnetic domain or hubbard data to apply, we re-construct
-        # the supercell to keep the correct ordering
-        if is_hubbard_structure or initial_magnetic_moments is not None:
+        # if there are hubbard data to apply, we re-construct
+        # the supercell site-by-site to keep the correct ordering
+        if is_hubbard_structure:
             blank_supercell = StructureData(ase=ase_supercell)
             new_supercell = StructureData()
             new_supercell.set_cell(blank_supercell.cell)
             num_extensions = np.product(multiples)
             supercell_types_order = []
+            # For each supercell extension, loop over each site.
+            # This way, the original pattern-ordering of sites is
+            # preserved.
             for i in range(0, num_extensions):  # pylint: disable=unused-variable
                 for type_number in types_order:
                     supercell_types_order.append(type_number)
@@ -350,7 +345,7 @@ def get_xspectra_structures(structure, initial_magnetic_moments=None, **kwargs):
                     new_supercell.append_kind(kind_present)
                 new_site = Site(kind_name=kind_present.name, position=site.position)
                 new_supercell.append_site(new_site)
-        else:  # If there is no special information, we simply re-construct the supercell
+        else:  # otherwise, simply re-construct the supercell with ASE
             new_supercell = StructureData(ase=ase_supercell)
 
         if is_hubbard_structure:  # Scale up the hubbard parameters to match and return the HubbardStructureData
