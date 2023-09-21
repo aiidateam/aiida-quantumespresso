@@ -47,6 +47,11 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
                     a molecule and not a periodic solid system. Required in order to instruct
                     the CF to use Pymatgen rather than spglib to determine the symmetry. The
                     CF will assume the structure to be a periodic solid if no input is given.
+        - use_element_types: a Bool object to indicate that symmetry analysis should consider all
+                             sites of the same element to be equal and ignore any special Kind names
+                             from the parent structure. For instance, use_element_types = True would
+                             consider sites for Kinds 'Si' and 'Si1' to be equivalent if both are sites
+                             containing silicon. Defaults to False otherwise.
         - spglib_settings: an optional Dict object containing overrides for the symmetry
                             tolerance parameters used by spglib (symmprec, angle_tolerance).
         - pymatgen_settings: an optional Dict object containing overrides for the symmetry
@@ -123,6 +128,11 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
         spglib_kwargs = {key: value for key, value in spglib_settings_dict.items() if key in valid_keys}
     else:
         spglib_kwargs = {}
+
+    if 'use_element_types' in unwrapped_kwargs.keys():
+        use_element_types = unwrapped_kwargs['use_element_types'].value
+    else:
+        use_element_types = False
 
     if structure.node_type == 'data.quantumespresso.hubbard_structure.HubbardStructureData.':
         is_hubbard_structure = True
@@ -236,7 +246,20 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
                 if value == kind.name:
                     type_mapping_dict[key] = kind
 
-        symmetry_dataset = spglib.get_symmetry_dataset(spglib_tuple, **spglib_kwargs)
+        # if we want to treat all sites of the same element as equal,
+        # then we must briefly operate on a "cleaned" version of the
+        # structure tuple.
+        if use_element_types:
+            clean_structure_tuple = (spglib_tuple[0], spglib_tuple[1], [])
+            for i in spglib_tuple[2]:
+                if i >= 1000:
+                    new_i = int(i / 1000)
+                else:
+                    new_i = i
+                clean_structure_tuple[2].append(new_i)
+            symmetry_dataset = spglib.get_symmetry_dataset(clean_structure_tuple, **spglib_kwargs)
+        else:  # Otherwise, proceed as usual.
+            symmetry_dataset = spglib.get_symmetry_dataset(spglib_tuple, **spglib_kwargs)
 
         # if there is no symmetry to exploit, or no standardization is desired, then we just use
         # the input structure in the following steps. This is done to account for the case where

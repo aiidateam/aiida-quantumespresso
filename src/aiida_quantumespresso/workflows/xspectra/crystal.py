@@ -11,6 +11,7 @@ from aiida.plugins import CalculationFactory, DataFactory, WorkflowFactory
 from aiida_pseudo.data.pseudo import UpfData as aiida_pseudo_upf
 
 from aiida_quantumespresso.calculations.functions.xspectra.get_spectra_by_element import get_spectra_by_element
+from aiida_quantumespresso.utils.hubbard import HubbardStructureData
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 from aiida_quantumespresso.workflows.protocols.utils import ProtocolMixin, recursive_merge
 
@@ -481,6 +482,10 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             for key, node in optional_cell_prep.items():
                 inputs[key] = node
 
+        if isinstance(self.inputs.structure, HubbardStructureData):
+            # This must be False in the case of HubbardStructureData, otherwise get_xspectra_structures will except
+            inputs['standardize_structure'] = orm.Bool(False)
+
         if 'spglib_settings' in self.inputs:
             inputs['spglib_settings'] = self.inputs.spglib_settings
 
@@ -527,8 +532,10 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
 
             shell_inputs['code'] = self.inputs.upf2plotcore_code
             shell_inputs['nodes'] = {'upf': upf}
-            shell_inputs['arguments'] = ['upf']
-            shell_inputs['metadata'] = {'call_link_label': f'upf2plotcore_{element}'}
+            shell_inputs['metadata'] = {
+                'call_link_label': f'upf2plotcore_{element}',
+                'options' : {'filename_stdin' : upf.filename}
+                }
 
             future_shelljob = self.submit(ShellJob, **shell_inputs)
             self.report(f'Launching upf2plotcore.sh for {element}<{future_shelljob.pk}>')
@@ -566,6 +573,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             structure = structures_to_process[site]
             inputs.structure = structure
             abs_element = equivalent_sites_data[site]['symbol']
+            abs_atom_kind = equivalent_sites_data[site]['kind_name']
 
             if 'core_hole_treatments' in self.inputs:
                 ch_treatments = self.inputs.core_hole_treatments.get_dict()
@@ -599,6 +607,9 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             # to avoid the need for fudges like these.
             if ch_treatment == 'xch_smear':
                 new_scf_params['SYSTEM'][f'starting_magnetization({abs_species_index})'] = 1
+            elif 'starting_magnetization' in new_scf_params['SYSTEM']:
+                inherited_mag =  new_scf_params['SYSTEM']['starting_magnetization'][abs_atom_kind]
+                new_scf_params['SYSTEM']['starting_magnetization'][abs_atom_marker] = inherited_mag
 
             core_hole_pseudo = self.inputs.core_hole_pseudos[abs_element]
             inputs.scf.pw.pseudos[abs_atom_marker] = core_hole_pseudo
