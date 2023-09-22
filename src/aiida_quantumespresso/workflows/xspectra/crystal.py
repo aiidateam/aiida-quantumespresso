@@ -560,7 +560,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             if num_core_states == 0:
                 return self.exit_codes.ERROR_NO_GIPAW_INFO_FOUND
 
-    def run_all_xspectra_core(self):
+    def run_all_xspectra_core(self): # pylint: disable=too-many-statements
         """Call all XspectraCoreWorkChains required to compute all requested spectra."""
 
         structures_to_process = self.ctx.structures_to_process
@@ -612,13 +612,18 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
                 new_scf_params['SYSTEM']['starting_magnetization'][abs_atom_marker] = inherited_mag
 
             core_hole_pseudo = self.inputs.core_hole_pseudos[abs_element]
+            gipaw_pseudo = self.inputs.gipaw_pseudos[abs_element]
             inputs.scf.pw.pseudos[abs_atom_marker] = core_hole_pseudo
-            # In the case where the absorbing atom is the only one of its element in the
-            # structure, we avoid setting the GIPAW pseudo for it and remove the one .
-            if abs_element in kinds_present:
-                gipaw_pseudo = self.inputs.gipaw_pseudos[abs_element]
-                inputs.scf.pw.pseudos[abs_element] = gipaw_pseudo
-            else:
+            # Check how many instances of the absorbing element are present and assign each the GIPAW
+            # pseudo if they are not the absorbing atom itself.
+            abs_element_kinds = []
+            for kind in structure.kinds:
+                if kind.symbol == abs_element and kind.name != abs_atom_marker:
+                    abs_element_kinds.append(kind.name)
+            if len(abs_element_kinds) > 0:
+                for kind_name in abs_element_kinds:
+                    scf_inputs['pseudos'][kind_name] = gipaw_pseudo
+            else: # if there is only one atom of the absorbing element, pop the GIPAW pseudo to avoid a crash
                 scf_inputs['pseudos'].pop(abs_element, None)
 
             scf_inputs.parameters = orm.Dict(new_scf_params)
@@ -631,7 +636,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             xspectra_core_workchains[site] = future
             self.report(f'launched XspectraCoreWorkChain for {site}<{future.pk}>')
 
-        return ToContext(**xspectra_core_workchains)
+        return ToContext(**xspectra_core_workchains) # pylint: enable=too-many-statements
 
     def inspect_all_xspectra_core(self):
         """Check that all the XspectraCoreWorkChain sub-processes finished sucessfully."""
