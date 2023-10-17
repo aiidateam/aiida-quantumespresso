@@ -19,13 +19,16 @@ def generate_inputs(generate_structure):
         kpoints.set_cell_from_structure(structure)
         kpoints.set_kpoints_mesh_from_density(0.15)
 
-        return AttributeDict({
+        inputs = {
             'structure': generate_structure(),
             'kpoints': kpoints,
             'parameters': orm.Dict(parameters),
-            'settings': orm.Dict(settings),
             'metadata': metadata or {}
-        })
+        }
+        if settings:
+            inputs['settings'] = orm.Dict(settings)
+
+        return AttributeDict(inputs)
 
     return _generate_inputs
 

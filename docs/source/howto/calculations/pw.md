@@ -18,7 +18,7 @@ Examples of these properties include ground-state energy and one-electron (Kohn-
 
 ## How to launch a `pw.x` calculation
 
-Below is a script with a basic example of how to run a `pw.x` calculation through the `PwCalculation` plugin that computes the electronic ground state of an fcc silicon crystal:
+Below is a script with a basic example of how to run a `pw.x` calculation through the {{ PwCalculation }} plugin that computes the electronic ground state of an fcc silicon crystal:
 
 ```{literalinclude} ../../tutorials/include/scripts/run_pw_basic.py
 :language: python
@@ -30,7 +30,7 @@ Note that you may have to change the name of the code that is loaded using `load
 
 The `pw.x` code supports many parameters that can be defined through the input file, as shown on the [official documentation](https://www.quantum-espresso.org/Doc/INPUT_PW.html).
 The parameters are divided into section or "cards".
-Parameters that are part of cards that start with an ampersand (`&`) should be specified through the `parameters` input of the `PwCalculation` plugin.
+Parameters that are part of cards that start with an ampersand (`&`) should be specified through the `parameters` input of the {{ PwCalculation }} plugin.
 The parameters are specified using a Python dictionary, where each card is its own sub-dictionary, for example:
 
 ```python
@@ -78,13 +78,15 @@ These include:
 Defining them anyway will result in an exception when launching the calculation.
 :::
 
+(howto-calculations-pw-multidimensional-parameters)=
+
 ### Multidimensional parameters
 
 The input format of `pw.x` contains various keywords that do not simply take the format of a key value pair, but rather there will some indices in the key itself.
 Take for example the [`starting_magnetization`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#idm287) keyword of the `SYSTEM` card.
 The starting magnetization value needs to be applied to a specific species and therefore the index `i` is required to be able to make this distinction.
 
-The `PwCalculation` plugin makes this easy as it will do the conversion from kind name to species index automatically.
+The {{ PwCalculation }} plugin makes this easy as it will do the conversion from kind name to species index automatically.
 This allows you to specify a starting magnetization value by using a dictionary notation, where the key is the kind name to which it should be applied.
 For example, if you have a structure with the kind `Co` and want it to have a given starting magnetization, one can add the following in the parameter data dictionary:
 
@@ -171,7 +173,7 @@ Assuming the input structure contained the kinds `Ni` and `Fe`, which would have
 ## How to define pseudopotentials
 
 Each `pw.x` calculation requires a pseudopotential to be specified for each kind in the structure.
-These pseudopotentials can be specified in the `PwCalculation` plugin through the `pseudos` input namespace.
+These pseudopotentials can be specified in the {{ PwCalculation }} plugin through the `pseudos` input namespace.
 This input takes a dictionary, where the keys are the kind names and the values are instances of the {class}`~aiida_pseudo.data.pseudo.upf.UpfData` data plugin of the {{ aiida_pseudo }} plugin package.
 For example, if the input structure is a `GaAs` crystal, the pseudopotentials could be specified as follows:
 
@@ -263,7 +265,7 @@ builder.settings = Dict({'GAMMA_ONLY': True})
 ## How to fix the coordinates of atoms
 
 Quantum ESPRESSO pw.x allows to optionally fix the coordinates of atoms during relaxation and molecular-dynamics simulations.
-This functionality is enabled in `PwCalculation` through the `FIXED_COORDS` setting which is a list of length equal to the number of sites in the input structure.
+This functionality is enabled in {{ PwCalculation }} through the `FIXED_COORDS` setting which is a list of length equal to the number of sites in the input structure.
 Each element is a list of length three containing booleans, where `True` means that the position of the site in that direction should be fixed.
 For example:
 
@@ -277,7 +279,7 @@ All other coordinates are allowed to change.
 
 ## How to retrieve additional files
 
-The `PwCalculation` plugin will retrieve the most important and common output files by default.
+The {{ PwCalculation }} plugin will retrieve the most important and common output files by default.
 To retrieve additional output files, specify the list of files in the `ADDITIONAL_RETRIEVE_LIST` key in the `settings` input:
 
 ```python
@@ -288,13 +290,13 @@ builder.settings = Dict({'ADDITIONAL_RETRIEVE_LIST': ['custom-file.txt', 'some-o
 
 ## How to analyze the results
 
-When a `PwCalculation` is completed, there are quite a few possible analyses to perform.
+When a {{ PwCalculation }} is completed, there are quite a few possible analyses to perform.
 
 ### How to check the SCF accuracy during the self-consistent cycle
 
 During the self-consistent field cycle, the difference in energy of the newly computed charge density and the starting one is computed and stored.
 It can easily be retrieved through the {meth}`~aiida_quantumespresso.tools.calculations.pw.PwCalculationTools.get_scf_accuracy` method.
-This method can be accessed directly through the ``tools`` of a completed ``PwCalculation`` node:
+This method can be accessed directly through the `tools` of a completed {{ PwCalculation }} node:
 
 ```python
 In [1]: node = load_node(IDENTIFIER)

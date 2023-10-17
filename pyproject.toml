@@ -68,6 +68,7 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 [project.entry-points.'aiida.calculations']
 'quantumespresso.cp' = 'aiida_quantumespresso.calculations.cp:CpCalculation'
 'quantumespresso.create_kpoints_from_distance' = 'aiida_quantumespresso.calculations.functions.create_kpoints_from_distance:create_kpoints_from_distance'
+'quantumespresso.create_magnetic_configuration' = 'aiida_quantumespresso.calculations.functions.create_magnetic_configuration:create_magnetic_configuration'
 'quantumespresso.merge_ph_outputs' = 'aiida_quantumespresso.calculations.functions.merge_ph_outputs:merge_ph_outputs'
 'quantumespresso.dos' = 'aiida_quantumespresso.calculations.dos:DosCalculation'
 'quantumespresso.epw' = 'aiida_quantumespresso.calculations.epw:EpwCalculation'

@@ -132,8 +132,8 @@ class PpParser(BaseParser):
                     key = get_key_from_filename(filename)
                     data_parsed.append((key, parsers[iflag](data_raw, self.units_dict[parsed_data['plot_num']])))
                     del data_raw
-                except Exception:  # pylint: disable=broad-except
-                    return self.exit_codes.ERROR_OUTPUT_DATAFILE_PARSE.format(filename=filename)
+                except Exception as exception:  # pylint: disable=broad-except
+                    return self.exit_codes.ERROR_OUTPUT_DATAFILE_PARSE.format(filename=filename, exception=exception)
 
         # If we don't have any parsed files, we exit. Note that this will not catch the case where there should be more
         # than one file, but the engine did not retrieve all of them. Since often we anyway don't know how many files
