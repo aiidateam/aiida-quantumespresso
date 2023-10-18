@@ -199,8 +199,8 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             parameters = recursive_merge(parameters, parameter_overrides)
 
             # if tot_magnetization in overrides , remove starting_magnetization from parameters
-            if overrides['pw']['parameters']['SYSTEM'].get('tot_magnetization') is not None:
-                parameters['SYSTEM'].pop('starting_magnetization', None)
+            if parameters.get('SYSTEM', {}).get('tot_magnetization') is not None:
+                parameters.setdefault('SYSTEM', {}).pop('starting_magnetization', None)
 
             pseudos_overrides = overrides.get('pw', {}).get('pseudos', {})
             pseudos = recursive_merge(pseudos, pseudos_overrides)
