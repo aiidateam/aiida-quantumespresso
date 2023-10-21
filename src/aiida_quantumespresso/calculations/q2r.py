@@ -32,6 +32,7 @@ class Q2rCalculation(NamelistsCalculation):
         super().define(spec)
         spec.input('parent_folder', valid_type=(orm.RemoteData, orm.FolderData), required=True)
         spec.output('force_constants', valid_type=ForceConstantsData)
+        spec.output('output_parameters', valid_type=orm.Dict)
         spec.exit_code(330, 'ERROR_READING_FORCE_CONSTANTS_FILE',
             message='The force constants file could not be read.')
         # yapf: enable
