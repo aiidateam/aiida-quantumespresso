@@ -118,6 +118,7 @@ html_theme_options = {
     'github_url': 'https://github.com/aiidateam/aiida-quantumespresso',
     'twitter_url': 'https://twitter.com/aiidateam',
     'use_edit_page_button': True,
+    'navigation_with_keys': False,
     'logo': {
         'text': 'AiiDA Quantum ESPRESSO',
         'image_light': '_static/logo_aiida_quantumespresso-light.png',
