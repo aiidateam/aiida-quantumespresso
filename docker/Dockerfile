@@ -1,0 +1,27 @@
+#FROM aiidateam/aiida-core-with-services:edge
+FROM aiidateam/aiida-core-with-services:newly-baked
+
+USER root
+
+ARG QE_VERSION
+ENV QE_VERSION ${QE_VERSION}
+
+# Install aiida-quantumespresso from source code
+COPY --from=src . /tmp/aiida-quantumespresso
+RUN pip install /tmp/aiida-quantumespresso --no-cache-dir && \
+    rm -rf /tmp/aiida-quantumespresso
+
+# Install quantum espresso from conda (the latest version)
+RUN mamba install -y -c conda-forge qe=${QE_VERSION} && \
+    mamba clean --all -f -y && \
+    fix-permissions "${CONDA_DIR}" && \
+    fix-permissions "/home/${SYSTEM_USER}"
+
+COPY s6-assets/s6-rc.d /etc/s6-overlay/s6-rc.d
+COPY s6-assets/init /etc/init
+
+# Static example files
+RUN mkdir -p /opt/examples
+COPY _static/ /opt/examples
+
+USER ${SYSTEM_UID}
