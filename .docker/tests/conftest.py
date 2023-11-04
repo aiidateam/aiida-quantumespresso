@@ -23,7 +23,7 @@ def docker_compose(docker_services):
     return docker_services._docker_compose
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture
 def timeout():
     """Container and service startup timeout"""
     return 60
@@ -56,6 +56,6 @@ def qe_version(aiida_exec):
     return info['version']
 
 @pytest.fixture
-def sssp_version(aiida_exec, container_user):
-    output = aiida_exec("aiida-pseudo list", user=container_user).decode().strip()
+def sssp_version(aiida_exec):
+    output = aiida_exec("aiida-pseudo list").decode().strip()
     return re.search(r"SSSP/(\d+\.\d+)/PBE/efficiency", output).group(1)
