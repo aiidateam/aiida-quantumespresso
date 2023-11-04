@@ -7,10 +7,10 @@ on:
             - "docs/**"
             - "tests/**"
     push:
-        branches:
-            - main
-        tags:
-            - "v*"
+        #branches:
+        #    - main
+        #tags:
+        #    - "v*"
         paths-ignore:
             - "docs/**"
             - "tests/**"
@@ -41,10 +41,10 @@ jobs:
             - name: Install Dev Dependencies 📦
               run: |
                   pip install --upgrade pip
-                  pip install --upgrade -r .docker/requirements.txt
+                  pip install --upgrade -r requirements.txt
 
             - name: Build image 
-              run: docker buildx bake -f docker-bake.hcl -f --set *.platform=linux/amd64 --load
+              run: docker buildx bake -f docker-bake.hcl --set *.platform=linux/amd64 --load
               env:
                   # Full logs for CI build
                   BUILDKIT_PROGRESS: plain
