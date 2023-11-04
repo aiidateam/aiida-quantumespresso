@@ -1,5 +1,5 @@
-#FROM aiidateam/aiida-core-with-services:edge
-FROM aiidateam/aiida-core-with-services:newly-baked
+#FROM ghcr.io/aiidateam/aiida-core-with-services:edge
+FROM ghcr.io/aiidateam/aiida-core-with-services:pr-6170
 
 USER root
 
