@@ -2,19 +2,13 @@
 # pylint: disable=missing-docstring, redefined-outer-name
 import json
 import re
-from pathlib import Path
 
 import pytest
 
 
-@pytest.fixture(scope='session', params=['aiida-quantumespresso'])
-def variant(request):
-    return request.param
-
-
 @pytest.fixture(scope='session')
-def docker_compose_file(pytestconfig, variant):  # pylint: disable=unused-argument
-    return f'docker-compose.{variant}.yml'
+def docker_compose_file(pytestconfig):  # pylint: disable=unused-argument
+    return f'docker-compose.aiida-quantumespresso.yml'
 
 
 @pytest.fixture(scope='session')
@@ -22,12 +16,23 @@ def docker_compose(docker_services):
     # pylint: disable=protected-access
     return docker_services._docker_compose
 
+def is_container_ready(dodkec_compose):
+    output = dodkec_compose.execute('exec -T aiida verdi status').decode().strip()
+    return 'Connected to RabbitMQ' in output and 'Daemon is running' in output
 
-@pytest.fixture
-def timeout():
-    """Container and service startup timeout"""
-    return 60
+@pytest.fixture(scope='session', autouse=True)
+def _docker_service_wait(docker_services):
+    """Container startup wait."""
+    # XXX: Temporary fail the real run test because daemon start is should depened on
+    # run-before-daemon-start but it does not.
 
+    #docker_compose = docker_services._docker_compose
+    
+    #docker_services.wait_until_responsive(
+    #    timeout=120.0, pause=0.1, check=lambda: is_container_ready(docker_compose)
+    #)
+    import time
+    time.sleep(60)
 
 @pytest.fixture
 def container_user():
