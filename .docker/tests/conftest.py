@@ -23,7 +23,7 @@ def docker_compose(docker_services):
     return docker_services._docker_compose
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def timeout():
     """Container and service startup timeout"""
     return 60
