@@ -1,5 +1,5 @@
-#FROM aiidateam/aiida-core-with-services:edge
-FROM aiidateam/aiida-core-with-services:newly-baked
+FROM aiidateam/aiida-core-with-services:edge
+#FROM aiidateam/aiida-core-with-services:newly-baked
 
 USER root
 
