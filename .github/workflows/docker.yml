@@ -49,9 +49,8 @@ jobs:
                   # Full logs for CI build
                   BUILDKIT_PROGRESS: plain
 
-            #- name: Run tests ✅
-            #  run: TAG=newly-baked python -m pytest -s tests
-
+            - name: Run tests ✅
+              run: TAG=newly-baked python -m pytest -s tests
 
             #- name: Docker meta 📝
             #  id: meta
