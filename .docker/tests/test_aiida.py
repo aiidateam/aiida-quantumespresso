@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=missing-docstring
-import time
 
 def test_verdi_status(aiida_exec, container_user):
     output = aiida_exec('verdi status', user=container_user).decode().strip()

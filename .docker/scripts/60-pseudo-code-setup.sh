@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # If lock file exists, then we have already run this script
-if [ -f ${HOME}/.run-before-daemon-start-done ]; then
+if [ -f ${HOME}/.lock_pseudo_code_setup ]; then
     exit 0
 else
-    touch ${HOME}/.run-before-daemon-start-done
+    touch ${HOME}/.lock_pseudo_code_setup
 fi
 
 # Install pseudopotential libraries

@@ -17,8 +17,7 @@ RUN mamba install -y -c conda-forge qe=${QE_VERSION} && \
     fix-permissions "${CONDA_DIR}" && \
     fix-permissions "/home/${SYSTEM_USER}"
 
-COPY s6-assets/s6-rc.d /etc/s6-overlay/s6-rc.d
-COPY s6-assets/init /etc/init
+COPY scripts/60-pseudo-code-setup.sh /etc/init/run-before-daemon-start/
 
 # Static example files
 RUN mkdir -p /opt/examples

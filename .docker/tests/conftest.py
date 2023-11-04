@@ -23,16 +23,11 @@ def is_container_ready(dodkec_compose):
 @pytest.fixture(scope='session', autouse=True)
 def _docker_service_wait(docker_services):
     """Container startup wait."""
-    # XXX: Temporary fail the real run test because daemon start is should depened on
-    # run-before-daemon-start but it does not.
-
-    #docker_compose = docker_services._docker_compose
+    docker_compose = docker_services._docker_compose
     
-    #docker_services.wait_until_responsive(
-    #    timeout=120.0, pause=0.1, check=lambda: is_container_ready(docker_compose)
-    #)
-    import time
-    time.sleep(60)
+    docker_services.wait_until_responsive(
+        timeout=120.0, pause=0.1, check=lambda: is_container_ready(docker_compose)
+    )
 
 @pytest.fixture
 def container_user():
