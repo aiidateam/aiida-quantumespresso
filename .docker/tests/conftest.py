@@ -17,8 +17,8 @@ def docker_compose(docker_services):
     return docker_services._docker_compose
 
 
-def is_container_ready(dodkec_compose):
-    output = dodkec_compose.execute('exec -T aiida verdi status').decode().strip()
+def is_container_ready(docker_compose):
+    output = docker_compose.execute('exec -T aiida verdi status').decode().strip()
     return 'Connected to RabbitMQ' in output and 'Daemon is running' in output
 
 
