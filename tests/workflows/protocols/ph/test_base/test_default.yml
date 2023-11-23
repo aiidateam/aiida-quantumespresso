@@ -10,6 +10,8 @@ ph:
       withmpi: true
   parameters:
     INPUTPH:
+      alpha_mix: 0.4
+      nmix_ph: 8
       tr2_ph: 1.0e-18
 qpoints_distance: 0.3
 qpoints_force_parity: false
