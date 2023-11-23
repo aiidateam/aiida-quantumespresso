@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """``CalcJob`` implementation for the ``open_grid.x`` code of Quantum ESPRESSO."""
-from aiida.orm import FolderData, KpointsData, RemoteData
+from aiida.orm import Dict, FolderData, KpointsData, RemoteData
 
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 
@@ -25,6 +25,7 @@ class OpenGridCalculation(NamelistsCalculation):
             help='The output folder of a completed `PwCalculation` on an irreducible Brillouin zone')
         spec.output('kpoints_mesh', valid_type=KpointsData, help='The dimensions of the unfolded kmesh')
         spec.output('kpoints', valid_type=KpointsData, help='The explicit list of kpoints of the unfolded kmesh')
+        spec.output('output_parameters', valid_type=Dict)
 
         spec.exit_code(300, 'ERROR_NO_RETRIEVED_FOLDER',
             message='The retrieved folder data node could not be accessed.')

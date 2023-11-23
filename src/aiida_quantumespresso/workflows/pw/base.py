@@ -41,7 +41,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         # yapf: disable
         super().define(spec)
         spec.expose_inputs(PwCalculation, namespace='pw', exclude=('kpoints',))
-        spec.input('pw.metadata.options.resources', valid_type=dict, required=False)
         spec.input('kpoints', valid_type=orm.KpointsData, required=False,
             help='An explicit k-points list or mesh. Either this or `kpoints_distance` has to be provided.')
         spec.input('kpoints_distance', valid_type=orm.Float, required=False,
@@ -198,6 +197,10 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if overrides:
             parameter_overrides = overrides.get('pw', {}).get('parameters', {})
             parameters = recursive_merge(parameters, parameter_overrides)
+
+            # if tot_magnetization in overrides , remove starting_magnetization from parameters
+            if parameters.get('SYSTEM', {}).get('tot_magnetization') is not None:
+                parameters.setdefault('SYSTEM', {}).pop('starting_magnetization', None)
 
             pseudos_overrides = overrides.get('pw', {}).get('pseudos', {})
             pseudos = recursive_merge(pseudos, pseudos_overrides)

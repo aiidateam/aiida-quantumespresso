@@ -3,11 +3,9 @@
 import pathlib
 from typing import Optional, Union
 
-from aiida.plugins import DataFactory, GroupFactory
+from aiida.orm import StructureData
+from aiida_pseudo.groups.family import PseudoPotentialFamily
 import yaml
-
-StructureData = DataFactory('core.structure')
-PseudoPotentialFamily = GroupFactory('pseudo.family')
 
 
 class ProtocolMixin:
