@@ -470,7 +470,7 @@ def generate_remote_data():
     """Return a `RemoteData` node."""
 
     def _generate_remote_data(computer, remote_path, entry_point_name=None):
-        """Return a `KpointsData` with a mesh of npoints in each direction."""
+        """Return a `RemoteData` node."""
         from aiida.common.links import LinkType
         from aiida.orm import CalcJobNode, RemoteData
         from aiida.plugins.entry_point import format_entry_point_string
