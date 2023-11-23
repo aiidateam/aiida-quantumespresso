@@ -122,15 +122,28 @@ def test_handle_convergence_not_reached(generate_workchain_ph):
     process.setup()
     process.validate_parameters()
 
+    result = process.handle_convergence_not_reached(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert result.do_break
+    assert process.ctx.inputs.parameters['INPUTPH']['nmix_ph'] == 8
+
     alpha_new = PhBaseWorkChain.defaults.alpha_mix * PhBaseWorkChain.defaults.delta_factor_alpha_mix
+
+    for _ in range(2):  # this is dependent on PhBaseWorkChain.defaults.delta_factor_alpha_mix
+        result = process.handle_convergence_not_reached(process.ctx.children[-1])
+        assert isinstance(result, ProcessHandlerReport)
+        assert result.do_break
+        assert process.ctx.inputs.parameters['INPUTPH']['alpha_mix(1)'] == alpha_new
+        alpha_new = alpha_new * PhBaseWorkChain.defaults.delta_factor_alpha_mix
 
     result = process.handle_convergence_not_reached(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
     assert result.do_break
-    assert process.ctx.inputs.parameters['INPUTPH']['alpha_mix(1)'] == alpha_new
+    assert process.ctx.inputs.parameters['INPUTPH']['alpha_mix(20)'] == 0.4
 
-    result = process.inspect_process()
-    assert result.status == 0
+    result = process.handle_convergence_not_reached(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert not result.do_break
 
 
 def test_handle_diagonalization_errors(generate_workchain_ph):
