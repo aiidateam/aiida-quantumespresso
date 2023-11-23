@@ -227,6 +227,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         else:
             builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
         builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
+        builder.max_iterations = orm.Int(inputs['max_iterations'])
         # pylint: enable=no-member
 
         return builder
