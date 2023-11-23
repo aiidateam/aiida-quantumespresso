@@ -505,8 +505,41 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         self.report_error_handled(calculation, action)
         return ProcessHandlerReport(True)
 
+    @process_handler(priority=559, exit_codes=[
+        PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE,
+    ])
+    def handle_relax_recoverable_ionic_convergence_bfgs_history_error(self, calculation):
+        """Handle failure of the ionic minimization algorithm (BFGS).
+
+        When BFGS history fails, this can mean two things: the structure is close to the global minimum,
+        but the moves the algorithm wants to do are smaller than `trust_radius_min`, or the structure is
+        close to a local minimum (hard to detect). For the first, we restart with lowered trust_radius_min.
+        For the first case, one can lower the trust radius; for the second one, one can exploit a different
+        algorithm, e.g. `damp` (and `damp-w` for vc-relax).
+        """
+        trust_radius_min = self.ctx.inputs.parameters.setdefault('IONS', {}).setdefault('trust_radius_min', 1.0e-3)
+        if trust_radius_min > 1.0e-4:
+            self.ctx.inputs.parameters.setdefault('IONS', {})['trust_radius_ini'] = trust_radius_min  # start close
+            new_trust_radius_min = trust_radius_min / 10.0
+            self.ctx.inputs.parameters.setdefault('IONS', {})['trust_radius_min'] = new_trust_radius_min
+            action = f'bfgs history failure: restarting with trust_radius_min={new_trust_radius_min:.5f}.'
+        else:
+            self.ctx.inputs.parameters.setdefault('IONS', {})['ion_dynamics'] = 'damp'
+            action = (
+                f'bfgs history failure and `trust_radius_min < {trust_radius_min:.5f}`: '
+                'restarting with damp dynamics.'
+            )
+            if self.ctx.inputs.parameters['CONTROL']['calculation'] == 'vc-relax':
+                self.ctx.inputs.parameters.setdefault('CELL', {})['cell_dynamics'] = 'damp-w'
+
+        self.ctx.inputs.structure = calculation.outputs.output_structure
+
+        self.set_restart_type(RestartType.FROM_SCRATCH)
+        self.report_error_handled(calculation, action)
+        return ProcessHandlerReport(True)
+
     @process_handler(
-        priority=559, exit_codes=[
+        priority=555, exit_codes=[
             PwCalculation.exit_codes.ERROR_RADIAL_FFT_SIGNIFICANT_VOLUME_CONTRACTION,
         ]
     )

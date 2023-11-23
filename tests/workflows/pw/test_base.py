@@ -221,6 +221,34 @@ def test_handle_relax_recoverable_ionic_convergence_error(generate_workchain_pw,
     assert result.status == 0
 
 
+def test_handle_relax_recoverable_ionic_convergence_bfgs_history_error(generate_workchain_pw, generate_structure):
+    """Test `PwBaseWorkChain.handle_relax_recoverable_ionic_convergence_bfgs_history_error`."""
+    exit_code = PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE
+    structure = generate_structure()
+    process = generate_workchain_pw(pw_outputs={'output_structure': structure}, exit_code=exit_code)
+    process.setup()
+
+    result = process.handle_relax_recoverable_ionic_convergence_bfgs_history_error(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert result.do_break
+    assert result.exit_code.status == 0
+    assert process.ctx.inputs.parameters['CONTROL']['restart_mode'] == 'from_scratch'
+    assert process.ctx.inputs.parameters['IONS']['trust_radius_ini'] == 1.0e-3
+    assert process.ctx.inputs.parameters['IONS']['trust_radius_min'] == 1.0e-4
+
+    process.ctx.inputs.parameters['CONTROL']['calculation'] = 'vc-relax'
+    result = process.handle_relax_recoverable_ionic_convergence_bfgs_history_error(process.ctx.children[-1])
+    print(result)
+    assert isinstance(result, ProcessHandlerReport)
+    assert result.do_break
+    assert result.exit_code.status == 0
+    assert process.ctx.inputs.parameters['IONS']['ion_dynamics'] == 'damp'
+    assert process.ctx.inputs.parameters['CELL']['cell_dynamics'] == 'damp-w'
+
+    result = process.inspect_process()
+    assert result.status == 0
+
+
 def test_handle_vcrelax_recoverable_fft_significant_volume_contraction_error(generate_workchain_pw, generate_structure):
     """Test `PwBaseWorkChain.handle_vcrelax_recoverable_fft_significant_volume_contraction_error`."""
     exit_code = PwCalculation.exit_codes.ERROR_RADIAL_FFT_SIGNIFICANT_VOLUME_CONTRACTION
