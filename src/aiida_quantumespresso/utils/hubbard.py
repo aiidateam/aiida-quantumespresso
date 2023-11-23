@@ -3,9 +3,10 @@
 # pylint: disable=no-name-in-module
 from itertools import product
 import os
-from typing import List, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 from aiida.orm import StructureData
+import numpy as np
 
 from aiida_quantumespresso.common.hubbard import Hubbard
 from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
@@ -251,8 +252,6 @@ class HubbardUtils:
 
         :returns: a new ``HubbbardStructureData`` with all the mapped Hubbard parameters
         """
-        import numpy as np
-
         uc_pymat = self.hubbard_structure.get_pymatgen_structure()
         sc_pymat = supercell.get_pymatgen_structure()
         uc_positions = uc_pymat.cart_coords  # positions in Cartesian coordinates
@@ -312,6 +311,129 @@ class HubbardUtils:
         new_hubbard = Hubbard.from_list(*args)
 
         return HubbardStructureData.from_structure(structure=supercell, hubbard=new_hubbard)
+
+    def get_interacting_pairs(self) -> Dict[str, List[str]]:
+        """Return tuple of kind name interaction pairs.
+
+        :returns: dictionary of onsite kinds with a list of V kinds
+        """
+        pairs_dict = dict()
+        sites = self.hubbard_structure.sites
+        parameters = self.hubbard_structure.hubbard.parameters
+
+        onsite_indices = [p.atom_index for p in parameters if p.atom_index == p.neighbour_index]
+
+        for index in onsite_indices:
+            name = sites[index].kind_name
+            if name not in pairs_dict:
+                pairs_dict[name] = []
+
+        for parameter in parameters:
+            onsite_name = sites[parameter.atom_index].kind_name
+            neigh_name = sites[parameter.neighbour_index].kind_name
+
+            if onsite_name in pairs_dict and onsite_name != neigh_name:
+                if not neigh_name in pairs_dict[onsite_name]:
+                    pairs_dict[onsite_name].append(neigh_name)
+
+        return pairs_dict
+
+    def get_pairs_radius(
+        self,
+        onsite_index: int,
+        neighbours_names: List[str],
+        number_of_neighbours: int,
+        radius_max: float = 5.0,
+        thr: float = 1.0e-2,
+    ) -> Tuple[float, float]:
+        """Return the minimum and maximum radius of the first neighbours of the onsite site.
+
+        :param onsite_index: index in the structure of the onsite Hubbard atom
+        :param neighbours_names: kind names of the neighbours
+        :param number_of_neighbours: number of neighbours coming to select
+        :param radius_max: maximum radius (in Angstrom) to use for looking for neighbours
+        :param thr: threshold (in Angstrom) for defining the shells
+        :return: (radium min +thr, radius max -thr) defining the shells containing only the first neighbours
+        """
+        rmin = 0
+        pymat = self.hubbard_structure.get_pymatgen_structure()
+        _, neigh_indices, _, distances = pymat.get_neighbor_list(sites=[pymat[onsite_index]], r=radius_max)
+
+        sort = np.argsort(distances)
+        neigh_indices = neigh_indices[sort]
+        distances = distances[sort]
+
+        count = 0
+        for i in range(len(neigh_indices)):  # pylint: disable=consider-using-enumerate
+            index = i
+            if self.hubbard_structure.sites[neigh_indices[i]].kind_name in neighbours_names:
+                rmin = max(rmin, distances[i])
+                count += 1
+            if count == number_of_neighbours:
+                break
+
+        return rmin + thr, distances[index + 1] - thr
+
+    def get_intersites_radius(
+        self,
+        radius_max: float = 10.0,
+        thr: float = 1.0e-2,
+        nn_finder: str = 'crystal',
+        **kwargs,
+    ) -> float:
+        """Return the radius (in Angstrom) for intersites from nearest neighbour finders.
+
+        It peforms a nearest neighbour analysis (via pymatgen modules) to find the first inersite
+        neighbours for all the onsite atoms. A radius is returned which can be used to
+        run an ``hp.x`` calculation. Such radius defines a shell including only the first
+        neighbours of each onsite Hubbard atom.
+
+        :param radius_max: maximum radius (in Angstrom) to use for looking for neighbours
+        :param thr: threshold (in Angstrom) for defining the shells
+        :param nn_finder: string defining the nearest neighbour finder; options are:
+            * `crystal`: use :class:`pymatgen.analysis.local_env.CrystalNN`
+            * `voronoi`: use :class:`pymatgen.analysis.local_env.VoronoiNN`
+        :param kwargs: kwargs for the nearest neighbour analysis
+        :return: radius defining the shell containing only the first neighbours
+        """
+        import warnings
+
+        from pymatgen.analysis.local_env import CrystalNN, VoronoiNN
+
+        kwargs_ = {'tol': 0.1, 'cutoff': radius_max} if kwargs is None else kwargs
+
+        rmin, rmax = 0.0, radius_max
+
+        if nn_finder not in ['crystal', 'voronoi']:
+            raise ValueError('`nn_finder` must be either `cyrstal` or `voronoi`')
+        voronoi = CrystalNN(**kwargs_) if nn_finder == 'crystal' else VoronoiNN(**kwargs_)  # pylint: disable=unexpected-keyword-arg
+
+        sites = self.hubbard_structure.sites
+        name_to_specie = {kind.name: kind.symbol for kind in self.hubbard_structure.kinds}
+        pymat = self.hubbard_structure.get_pymatgen_structure()
+        pairs = self.get_interacting_pairs()
+
+        for i, site in enumerate(sites):
+            if site.kind_name in pairs:
+                neigh_species = voronoi.get_cn_dict(pymat, i)  # e.g. {'O': 4, 'S': 2, ...}
+                number_of_neighs = 0
+
+                for neigh_name in pairs[site.kind_name]:
+                    specie = name_to_specie[neigh_name]
+
+                    if specie in neigh_species:
+                        number_of_neighs += neigh_species[specie]
+                        neigh_species.pop(specie)  # avoid 'duplicating' same specie but different (kind) name
+
+                rmin_, rmax_ = self.get_pairs_radius(i, pairs[site.kind_name], number_of_neighs, radius_max, thr)
+
+                rmin = max(rmin_, rmin)  # we want the largest to include them all
+                rmax = min(rmax_, rmax)  # we want the smallest to check whether such radius exist
+
+        if rmin > rmax:
+            warnings.warn('A common radius seems to not exist! Try lowering `thr`.')
+
+        return min(rmin, rmax)
 
 
 def get_supercell_atomic_index(index: int, num_sites: int, translation: List[Tuple[int, int, int]]) -> int:
