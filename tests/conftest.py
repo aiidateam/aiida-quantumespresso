@@ -245,6 +245,7 @@ def generate_calc_job_node(fixture_localhost):
             filename = os.path.join(entry_point_name[len('quantumespresso.'):], test_name)
             filepath_folder = os.path.join(basepath, 'parsers', 'fixtures', filename)
             filepath_input = os.path.join(filepath_folder, 'aiida.in')
+            print(basepath)
 
         entry_point = format_entry_point_string('aiida.calculations', entry_point_name)
 
@@ -748,7 +749,7 @@ def generate_inputs_pw(fixture_code, generate_structure, generate_kpoints_mesh, 
         structure = generate_structure()
         inputs = {
             'code': fixture_code('quantumespresso.pw'),
-            'structure': generate_structure(),
+            'structure': structure,
             'kpoints': generate_kpoints_mesh(2),
             'parameters': parameters,
             'pseudos': {kind: generate_upf_data(kind) for kind in structure.get_kind_names()},
