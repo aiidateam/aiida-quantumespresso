@@ -16,6 +16,12 @@ PhCalculation = CalculationFactory('quantumespresso.ph')
 PwCalculation = CalculationFactory('quantumespresso.pw')
 
 
+
+def validate_inputs(inputs, ctx=None):
+    """Validate the top level namespace."""
+    if 'qpoints_distance' not in inputs and 'qpoints' not in inputs:
+        return PhBaseWorkChain.exit_codes.ERROR_INVALID_INPUT_QPOINTS
+        
 class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     """Workchain to run a Quantum ESPRESSO ph.x calculation with automated error handling and restarts."""
 
@@ -43,6 +49,7 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             help='Optional input when constructing the qpoints based on a desired `qpoints_distance`. Setting this to '
                  '`True` will force the qpoint mesh to have an even number of points along each lattice vector except '
                  'for any non-periodic directions.')
+        spec.inputs.validator = validate_inputs
         spec.outline(
             cls.setup,
             cls.validate_parameters,
@@ -67,7 +74,9 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             message='The work chain failed to merge the q-points data from multiple `PhCalculation`s because not all '
                     'q-points were parsed.')
         # yapf: enable
+        
 
+        
     @classmethod
     def get_protocol_filepath(cls):
         """Return ``pathlib.Path`` to the ``.yaml`` file that defines the protocols."""
