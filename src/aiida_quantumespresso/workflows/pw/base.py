@@ -29,10 +29,11 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         'qe': qe_defaults,
         'delta_threshold_degauss': 30,
         'delta_factor_degauss': 0.1,
-        'delta_factor_mixing_beta': 0.8,
+        'delta_factor_mixing_beta': 0.5,
         'delta_factor_max_seconds': 0.95,
         'delta_factor_nbnd': 0.05,
         'delta_minimum_nbnd': 4,
+        'conv_slope_threshold': -0.1,
     })
 
     @classmethod
@@ -568,16 +569,36 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         Decrease the mixing beta and fully restart from the previous calculation.
         """
-        factor = self.defaults.delta_factor_mixing_beta
+        import numpy
+
+        scf_accuracy = calculation.tools.get_scf_accuracy(0)
+        scf_accuracy_slope = numpy.polyfit(numpy.arange(0, len(scf_accuracy)), numpy.log(scf_accuracy), 1)[0]
+
+        if scf_accuracy_slope < self.defaults.conv_slope_threshold:
+
+            action = (
+                'electronic convergence not reached but the scf accuracy is decreasing: restart from the last '
+                'calculation.'
+            )
+            self.set_restart_type(RestartType.FULL, calculation.outputs.remote_folder)
+            self.report_error_handled(calculation, action)
+            return ProcessHandlerReport(True)
+
         mixing_beta = self.ctx.inputs.parameters.get('ELECTRONS', {}).get('mixing_beta', self.defaults.qe.mixing_beta)
-        mixing_beta_new = mixing_beta * factor
 
-        self.ctx.inputs.parameters['ELECTRONS']['mixing_beta'] = mixing_beta_new
-        action = f'reduced beta mixing from {mixing_beta} to {mixing_beta_new} and restarting from the last calculation'
+        if mixing_beta > 0.1:
 
-        self.set_restart_type(RestartType.FULL, calculation.outputs.remote_folder)
-        self.report_error_handled(calculation, action)
-        return ProcessHandlerReport(True)
+            mixing_beta_new = mixing_beta * self.defaults.delta_factor_mixing_beta
+
+            self.ctx.inputs.parameters['ELECTRONS']['mixing_beta'] = mixing_beta_new
+            action = (
+                f'reduced beta mixing from {mixing_beta} to {mixing_beta_new} and restarting from the last '
+                'calculation'
+            )
+
+            self.set_restart_type(RestartType.FULL, calculation.outputs.remote_folder)
+            self.report_error_handled(calculation, action)
+            return ProcessHandlerReport(True)
 
     @process_handler(priority=420, exit_codes=[
         PwCalculation.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED,

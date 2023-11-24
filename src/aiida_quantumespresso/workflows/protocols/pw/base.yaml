@@ -26,7 +26,7 @@ default_inputs:
                 smearing: cold
                 degauss: 0.01
             ELECTRONS:
-                electron_maxstep: 80
+                electron_maxstep: 50
                 mixing_beta: 0.4
 default_protocol: moderate
 protocols:
