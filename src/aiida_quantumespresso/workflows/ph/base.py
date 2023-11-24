@@ -20,7 +20,7 @@ PwCalculation = CalculationFactory('quantumespresso.pw')
 def validate_inputs(inputs, ctx=None):
     """Validate the top level namespace."""
     if 'qpoints_distance' not in inputs and 'qpoints' not in inputs:
-        return PhBaseWorkChain.exit_codes.ERROR_INVALID_INPUT_QPOINTS
+        return PhBaseWorkChain.exit_codes.ERROR_INVALID_INPUT_QPOINTS.message
         
 class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     """Workchain to run a Quantum ESPRESSO ph.x calculation with automated error handling and restarts."""
