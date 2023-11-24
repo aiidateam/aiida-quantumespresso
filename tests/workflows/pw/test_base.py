@@ -221,13 +221,37 @@ def test_handle_relax_recoverable_ionic_convergence_error(generate_workchain_pw,
     assert result.status == 0
 
 
-def test_handle_relax_recoverable_ionic_convergence_bfgs_history_error(generate_workchain_pw, generate_structure):
+@pytest.mark.parametrize(
+    'exit_code', (
+        PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE,
+        PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE,
+    )
+)
+def test_handle_relax_recoverable_ionic_convergence_bfgs_history_error(
+    generate_workchain_pw, generate_structure, exit_code
+):
     """Test `PwBaseWorkChain.handle_relax_recoverable_ionic_convergence_bfgs_history_error`."""
-    exit_code = PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE
     structure = generate_structure()
     process = generate_workchain_pw(pw_outputs={'output_structure': structure}, exit_code=exit_code)
     process.setup()
 
+    # For `relax`, switch to `damp` immediately and then to `fire`
+    process.ctx.inputs.parameters['CONTROL']['calculation'] = 'relax'
+    result = process.handle_relax_recoverable_ionic_convergence_bfgs_history_error(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert result.do_break
+    assert result.exit_code.status == 0
+    assert process.ctx.inputs.parameters['IONS']['ion_dynamics'] == 'damp'
+
+    result = process.handle_relax_recoverable_ionic_convergence_bfgs_history_error(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert result.do_break
+    assert result.exit_code.status == 0
+    assert process.ctx.inputs.parameters['IONS']['ion_dynamics'] == 'fire'
+
+    # For `vc-relax`, try changing first the `trust_min_radius`
+    process.ctx.inputs.parameters['CONTROL']['calculation'] = 'vc-relax'
+    process.ctx.inputs.parameters['IONS']['ion_dynamics'] = 'bfgs'
     result = process.handle_relax_recoverable_ionic_convergence_bfgs_history_error(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
     assert result.do_break
@@ -236,14 +260,18 @@ def test_handle_relax_recoverable_ionic_convergence_bfgs_history_error(generate_
     assert process.ctx.inputs.parameters['IONS']['trust_radius_ini'] == 1.0e-3
     assert process.ctx.inputs.parameters['IONS']['trust_radius_min'] == 1.0e-4
 
-    process.ctx.inputs.parameters['CONTROL']['calculation'] = 'vc-relax'
+    # Then, try `damp` dynamics as a last resort
     result = process.handle_relax_recoverable_ionic_convergence_bfgs_history_error(process.ctx.children[-1])
-    print(result)
     assert isinstance(result, ProcessHandlerReport)
     assert result.do_break
     assert result.exit_code.status == 0
     assert process.ctx.inputs.parameters['IONS']['ion_dynamics'] == 'damp'
     assert process.ctx.inputs.parameters['CELL']['cell_dynamics'] == 'damp-w'
+
+    result = process.handle_relax_recoverable_ionic_convergence_bfgs_history_error(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert not result.do_break
+    assert result.exit_code.status == 0
 
     result = process.inspect_process()
     assert result.status == 0
