@@ -484,29 +484,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         return ProcessHandlerReport(True, self.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF)
 
     @process_handler(
-        priority=560,
-        exit_codes=[
-            PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_NOT_REACHED,
-            PwCalculation.exit_codes.ERROR_IONIC_CYCLE_EXCEEDED_NSTEP,
-            PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE,
-            PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE,
-        ]
-    )
-    def handle_relax_recoverable_ionic_convergence_error(self, calculation):
-        """Handle various exit codes for recoverable `relax` calculations with failed ionic convergence.
-
-        These exit codes signify that the ionic convergence thresholds were not met, but the output structure is usable,
-        so the solution is to simply restart from scratch but from the output structure.
-        """
-        self.ctx.inputs.structure = calculation.outputs.output_structure
-        action = 'no ionic convergence but clean shutdown: restarting from scratch but using output structure.'
-
-        self.set_restart_type(RestartType.FROM_SCRATCH)
-        self.report_error_handled(calculation, action)
-        return ProcessHandlerReport(True)
-
-    @process_handler(
-        priority=559,
+        priority=561,
         exit_codes=[
             PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE,
             PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE,
@@ -546,6 +524,28 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             return ProcessHandlerReport(False)
 
         self.ctx.inputs.structure = calculation.outputs.output_structure
+
+        self.set_restart_type(RestartType.FROM_SCRATCH)
+        self.report_error_handled(calculation, action)
+        return ProcessHandlerReport(True)
+
+    @process_handler(
+        priority=560,
+        exit_codes=[
+            PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_NOT_REACHED,
+            PwCalculation.exit_codes.ERROR_IONIC_CYCLE_EXCEEDED_NSTEP,
+            PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE,
+            PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE,
+        ]
+    )
+    def handle_relax_recoverable_ionic_convergence_error(self, calculation):
+        """Handle various exit codes for recoverable `relax` calculations with failed ionic convergence.
+
+        These exit codes signify that the ionic convergence thresholds were not met, but the output structure is usable,
+        so the solution is to simply restart from scratch but from the output structure.
+        """
+        self.ctx.inputs.structure = calculation.outputs.output_structure
+        action = 'no ionic convergence but clean shutdown: restarting from scratch but using output structure.'
 
         self.set_restart_type(RestartType.FROM_SCRATCH)
         self.report_error_handled(calculation, action)
