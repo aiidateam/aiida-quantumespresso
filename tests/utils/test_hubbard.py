@@ -350,3 +350,35 @@ def test_get_intersites_radius_five_nn(filepath_tests):
 
     pymat = hubbard_structure.get_pymatgen_structure()
     assert len(pymat.get_neighbors(pymat[0], r=radius)) == 5
+
+
+def test_initialize_hubbard_parameters(get_non_trivial_hubbard_structure):
+    """Test the `HubbardUtils.initialize_hubbard_parameters` method."""
+    from aiida_quantumespresso.utils.hubbard import initialize_hubbard_parameters
+
+    structure = get_non_trivial_hubbard_structure()
+
+    hubbard_structure = initialize_hubbard_parameters(structure=structure, pairs={'Fe': ['3d', 5.0, 1e-8, {'O': '2p'}]})
+
+    # print(HubbardUtils(hubbard_structure).get_hubbard_card())
+    assert len(hubbard_structure.hubbard.parameters) == 8 * (4 + 1) + 16 * (6 + 1)
+
+
+def test_initialize_hubbard_parameters_five_nn(filepath_tests):
+    """Test the `HubbardUtils.initialize_hubbard_parameters` method against LiMnTe (5 neighbours)."""
+    from ase.io import read
+
+    from aiida_quantumespresso.utils.hubbard import initialize_hubbard_parameters
+
+    path = os.path.join(filepath_tests, 'fixtures', 'structures', 'LMT.cif')
+    atoms = read(path)
+
+    structure = StructureData(ase=atoms)
+
+    hubbard_structure = initialize_hubbard_parameters(
+        structure=structure, pairs={'Mn': ['3d', 5.0, 1e-8, {
+            'Te': '4p'
+        }]}
+    )
+
+    assert len(hubbard_structure.hubbard.parameters) == 6

@@ -436,6 +436,90 @@ class HubbardUtils:
         return min(rmin, rmax)
 
 
+def initialize_hubbard_parameters(
+    structure: StructureData,
+    pairs: Dict[str, Tuple[str, float, float, Dict[str, str]]],
+    radius_max: float = 6.0,
+    nn_finder: str = 'crystal',
+    standardize: bool = True,
+    **kwargs,
+) -> HubbardStructureData:
+    """Initialize the on-site and intersite parameters using nearest neighbour finders.
+
+    It peforms a nearest neighbour analysis (via pymatgen modules) to find the first inersite
+    neighbours for all the onsite atoms. Only the atoms in the `pair`, and that are nearest
+    neighbours from the analysis, are initialized.
+
+    :param structure: a StructureData instance
+    :param pairs: dictionary of the kind
+        {onsite name: [onsite manifold, onsite value, intersites value, {neighbour name: neighbour manifold}], ...}
+        For example: {'Fe': ['3d', 5.0, 1.0, {'O':'2p', 'O1':'1s', 'Se':'4p'}]}
+    :param radius_max: maximum radius (in Angstrom) to use for looking for neighbours
+    :param nn_finder: string defining the nearest neighbour finder; options are:
+        * `crystal`: use :class:`pymatgen.analysis.local_env.CrystalNN`
+        * `voronoi`: use :class:`pymatgen.analysis.local_env.VoronoiNN`
+    :param standardize: whether to standardize the atoms and the cell via spglib (symmetry analysis)
+    :param kwargs: kwargs for the nearest neighbour analysis
+    :return: HubbardStructureData with initialized Hubbard parameters
+    """
+    from pymatgen.analysis.local_env import CrystalNN, VoronoiNN
+
+    kwargs_ = {'tol': 0.1, 'cutoff': radius_max} if kwargs is None else kwargs
+
+    if nn_finder not in ['crystal', 'voronoi']:
+        raise ValueError('`nn_finder` must be either `cyrstal` or `voronoi`')
+    voronoi = CrystalNN(**kwargs_) if nn_finder == 'crystal' else VoronoiNN(**kwargs_)  # pylint: disable=unexpected-keyword-arg
+
+    if not standardize:
+        hubbard_structure = HubbardStructureData.from_structure(structure=structure)
+    else:
+        from aiida.tools.data import spglib_tuple_to_structure, structure_to_spglib_tuple
+        from spglib import standardize_cell
+
+        cell, kind_info, kinds = structure_to_spglib_tuple(structure)
+        new_cell = standardize_cell(cell)
+        new_structure = spglib_tuple_to_structure(new_cell, kind_info, kinds)
+        hubbard_structure = HubbardStructureData.from_structure(structure=new_structure)
+
+    sites = hubbard_structure.sites
+    name_to_specie = {kind.name: kind.symbol for kind in hubbard_structure.kinds}
+    pymat = hubbard_structure.get_pymatgen_structure()
+
+    for i, site in enumerate(sites):  # pylint: disable=too-many-nested-blocks
+        if site.kind_name in pairs:
+            neigh_species = voronoi.get_cn_dict(pymat, i)  # e.g. {'O': 4, 'S': 2, ...}
+            onsite = pairs[site.kind_name]
+            hubbard_structure.append_hubbard_parameter(i, onsite[0], i, onsite[0], onsite[1])
+
+            for neigh_name in onsite[3]:
+                try:  # we want an API that allows for specifying neighbour that are not present
+                    specie = name_to_specie[neigh_name]
+
+                    count = 0
+                    if specie in neigh_species:
+                        neigh_sites = pymat.get_neighbors(pymat[i], r=radius_max)
+
+                        for neigh_site in neigh_sites:
+                            if neigh_site.specie.name == specie:
+                                hubbard_structure.append_hubbard_parameter(
+                                    atom_index=i,
+                                    atom_manifold=onsite[0],
+                                    neighbour_index=int(neigh_site.index), # otherwise the validator complains
+                                    neighbour_manifold=onsite[3][neigh_name],
+                                    value=onsite[2],
+                                    translation=np.array(neigh_site.image, dtype=np.int64).tolist(),
+                                    hubbard_type='V',
+                                )
+                                count += 1
+
+                            if count >= neigh_species[specie]:
+                                break
+                except KeyError:
+                    pass
+
+    return hubbard_structure
+
+
 def get_supercell_atomic_index(index: int, num_sites: int, translation: List[Tuple[int, int, int]]) -> int:
     """Return the atomic index in 3x3x3 supercell.
 
