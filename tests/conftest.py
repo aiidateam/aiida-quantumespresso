@@ -800,18 +800,21 @@ def generate_workchain_ph(generate_workchain, generate_inputs_ph, generate_calc_
     """Generate an instance of a `PhBaseWorkChain`."""
 
     def _generate_workchain_ph(exit_code=None, inputs=None, return_inputs=False):
+        from aiida.orm import Dict
         from plumpy import ProcessState
 
         entry_point = 'quantumespresso.ph.base'
 
         if inputs is None:
-            inputs = {'ph': generate_inputs_ph()}
-
+            ph_inputs = generate_inputs_ph()
+            qpoints = ph_inputs.get('qpoints')
+            inputs = {'ph': ph_inputs, 'qpoints': qpoints}
+          
         if return_inputs:
             return inputs
 
         process = generate_workchain(entry_point, inputs)
-
+    
         if exit_code is not None:
             node = generate_calc_job_node()
             node.set_process_state(ProcessState.FINISHED)
@@ -819,6 +822,7 @@ def generate_workchain_ph(generate_workchain, generate_inputs_ph, generate_calc_
 
             process.ctx.iteration = 1
             process.ctx.children = [node]
+
 
         return process
 
