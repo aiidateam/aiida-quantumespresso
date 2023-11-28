@@ -809,12 +809,12 @@ def generate_workchain_ph(generate_workchain, generate_inputs_ph, generate_calc_
             ph_inputs = generate_inputs_ph()
             qpoints = ph_inputs.get('qpoints')
             inputs = {'ph': ph_inputs, 'qpoints': qpoints}
-          
+
         if return_inputs:
             return inputs
 
         process = generate_workchain(entry_point, inputs)
-    
+
         if exit_code is not None:
             node = generate_calc_job_node()
             node.set_process_state(ProcessState.FINISHED)
@@ -822,7 +822,6 @@ def generate_workchain_ph(generate_workchain, generate_inputs_ph, generate_calc_
 
             process.ctx.iteration = 1
             process.ctx.children = [node]
-
 
         return process
 
