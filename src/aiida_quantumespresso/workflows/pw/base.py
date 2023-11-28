@@ -525,7 +525,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         self.ctx.inputs.structure = calculation.outputs.output_structure
 
-        self.set_restart_type(RestartType.FROM_SCRATCH)
+        self.set_restart_type(RestartType.FROM_CHARGE_DENSITY, calculation.outputs.remote_folder)
         self.report_error_handled(calculation, action)
         return ProcessHandlerReport(True)
 
@@ -547,7 +547,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         self.ctx.inputs.structure = calculation.outputs.output_structure
         action = 'no ionic convergence but clean shutdown: restarting from scratch but using output structure.'
 
-        self.set_restart_type(RestartType.FROM_SCRATCH)
+        self.set_restart_type(RestartType.FROM_CHARGE_DENSITY, calculation.outputs.remote_folder)
         self.report_error_handled(calculation, action)
         return ProcessHandlerReport(True)
 

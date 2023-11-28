@@ -205,10 +205,18 @@ def test_handle_vcrelax_converged_except_final_scf(generate_workchain_pw):
         PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE,
     )
 )
-def test_handle_relax_recoverable_ionic_convergence_error(generate_workchain_pw, generate_structure, exit_code):
+def test_handle_relax_recoverable_ionic_convergence_error(
+    generate_workchain_pw, generate_structure, generate_remote_data, fixture_localhost, exit_code
+):
     """Test `PwBaseWorkChain.handle_relax_recoverable_ionic_convergence_error`."""
     structure = generate_structure()
-    process = generate_workchain_pw(pw_outputs={'output_structure': structure}, exit_code=exit_code)
+    remote_data = generate_remote_data(computer=fixture_localhost, remote_path='/path/to/remote')
+    process = generate_workchain_pw(
+        pw_outputs={
+            'output_structure': structure,
+            'remote_folder': remote_data
+        }, exit_code=exit_code
+    )
     process.setup()
 
     result = process.handle_relax_recoverable_ionic_convergence_error(process.ctx.children[-1])
@@ -228,11 +236,17 @@ def test_handle_relax_recoverable_ionic_convergence_error(generate_workchain_pw,
     )
 )
 def test_handle_relax_recoverable_ionic_convergence_bfgs_history_error(
-    generate_workchain_pw, generate_structure, exit_code
+    generate_workchain_pw, generate_structure, generate_remote_data, fixture_localhost, exit_code
 ):
     """Test `PwBaseWorkChain.handle_relax_recoverable_ionic_convergence_bfgs_history_error`."""
     structure = generate_structure()
-    process = generate_workchain_pw(pw_outputs={'output_structure': structure}, exit_code=exit_code)
+    remote_data = generate_remote_data(computer=fixture_localhost, remote_path='/path/to/remote')
+    process = generate_workchain_pw(
+        pw_outputs={
+            'output_structure': structure,
+            'remote_folder': remote_data
+        }, exit_code=exit_code
+    )
     process.setup()
 
     # For `relax`, switch to `damp` immediately and then to `fire`
