@@ -13,7 +13,7 @@ from aiida_quantumespresso.workflows.ph.base import PhBaseWorkChain
 def test_invalid_inputs(generate_workchain_ph, generate_inputs_ph):
     """Test `PhBaseWorkChain` validation methods."""
     inputs ={'ph': generate_inputs_ph()}
-    message = r'Neither `qpoints` nor `qpoints_distance` was specified.'
+    message = r'Neither `qpoints` nor `qpoints_distance` were specified.'
     with pytest.raises(ValueError, match=message):
         generate_workchain_ph(inputs=inputs)
 
@@ -41,8 +41,6 @@ def generate_ph_calc_job_node(generate_calc_job_node, fixture_localhost):
 
     return _generate_ph_calc_job_node
 
-
-@pytest.mark.usefixtures('aiida_profile')
 def test_setup(generate_workchain_ph):
     """Test `PhBaseWorkChain.setup`."""
     process = generate_workchain_ph()

@@ -42,7 +42,7 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         spec.expose_inputs(PhCalculation, namespace='ph')
         spec.input('only_initialization', valid_type=orm.Bool, default=lambda: orm.Bool(False))
         spec.input('qpoints', valid_type=orm.KpointsData, required=False,
-            help='An explicit qpoints list or mesh. Either this or `qpoints_distance` has to be provided.')
+            help='An explicit qpoints list or mesh. Either this or `qpoints_distance` should to be provided.')
         spec.input('qpoints_distance', valid_type=orm.Float, required=False,
             help='The minimum desired distance in 1/Å between qpoints in reciprocal space. The explicit qpoints will '
                  'be generated automatically by a calculation function based on the input structure.')
@@ -65,7 +65,7 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         )
         spec.expose_outputs(PhCalculation, exclude=('retrieved_folder',))
         spec.exit_code(400, 'ERROR_INVALID_INPUT_QPOINTS',
-                       message='Neither `qpoints` nor `qpoints_distance` was specified.')
+                       message='Neither `qpoints` nor `qpoints_distance` were specified.')
         spec.exit_code(204, 'ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED',
             message='The `metadata.options` did not specify both `resources.num_machines` and `max_wallclock_seconds`. '
                     'This exit status has been deprecated as the check it corresponded to was incorrect.')
@@ -122,10 +122,6 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         if electronic_type is ElectronicType.INSULATOR:
             inputs['ph']['parameters']['INPUTPH']['epsil'] = True
-
-        qpoints_mesh = inputs['ph'].pop('qpoints')
-        qpoints = orm.KpointsData()
-        qpoints.set_kpoints_mesh(qpoints_mesh)
 
         metadata = inputs['ph']['metadata']
 
