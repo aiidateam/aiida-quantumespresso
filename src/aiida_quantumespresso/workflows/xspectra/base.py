@@ -137,6 +137,7 @@ class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if 'settings' in inputs['xspectra']:
             builder.xspectra['settings'] = orm.Dict(inputs['xspectra']['settings'])
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
+        builder.max_iterations = orm.Int(inputs['max_iterations'])
         # pylint: enable=no-member
 
         return builder

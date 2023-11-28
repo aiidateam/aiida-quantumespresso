@@ -1,6 +1,7 @@
 default_inputs:
     qpoinsts_distance: 0.3
     clean_workdir: False
+    max_iterations: 5
     ph:
         metadata:
             options:

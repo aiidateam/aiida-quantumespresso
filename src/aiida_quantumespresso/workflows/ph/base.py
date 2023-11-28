@@ -10,6 +10,7 @@ from aiida.plugins import CalculationFactory
 
 from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import create_kpoints_from_distance
 from aiida_quantumespresso.calculations.functions.merge_ph_outputs import merge_ph_outputs
+from aiida_quantumespresso.common.types import ElectronicType
 from aiida_quantumespresso.workflows.protocols.utils import ProtocolMixin
 
 PhCalculation = CalculationFactory('quantumespresso.ph')
@@ -86,7 +87,16 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         return files(ph_protocols) / 'base.yaml'
 
     @classmethod
-    def get_builder_from_protocol(cls, code, parent_folder=None, protocol=None, overrides=None, options=None, **_):
+    def get_builder_from_protocol(
+        cls,
+        code,
+        parent_folder=None,
+        protocol=None,
+        overrides=None,
+        electronic_type=ElectronicType.METAL,
+        options=None,
+        **_
+    ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
         :param code: the ``Code`` instance configured for the ``quantumespresso.ph`` plugin.
@@ -94,6 +104,7 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         :param overrides: optional dictionary of inputs to override the defaults of the protocol.
         :param options: A dictionary of options that will be recursively set for the ``metadata.options`` input of all
             the ``CalcJobs`` that are nested in this work chain.
+        :param electronic_type: indicate the electronic character of the system through ``ElectronicType`` instance.
         :return: a process builder instance with all inputs defined ready for launch.
         """
         from aiida_quantumespresso.workflows.protocols.utils import recursive_merge
@@ -102,8 +113,19 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             code = orm.load_code(code)
 
         type_check(code, orm.AbstractCode)
+        type_check(electronic_type, ElectronicType)
+
+        if electronic_type not in [ElectronicType.METAL, ElectronicType.INSULATOR]:
+            raise NotImplementedError(f'electronic type `{electronic_type}` is not supported.')
 
         inputs = cls.get_protocol_inputs(protocol, overrides)
+
+        if electronic_type is ElectronicType.INSULATOR:
+            inputs['ph']['parameters']['INPUTPH']['epsil'] = True
+
+        qpoints_mesh = inputs['ph'].pop('qpoints')
+        qpoints = orm.KpointsData()
+        qpoints.set_kpoints_mesh(qpoints_mesh)
 
         metadata = inputs['ph']['metadata']
 
@@ -130,6 +152,7 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             builder.qpoints_distance = orm.Float(inputs['qpoints_distance'])
             builder.qpoints_force_parity = orm.Bool(inputs['qpoints_force_parity'])
 
+        builder.max_iterations = orm.Int(inputs['max_iterations'])
         # pylint: enable=no-member
 
         return builder
