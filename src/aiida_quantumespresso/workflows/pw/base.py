@@ -30,10 +30,13 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         'delta_threshold_degauss': 30,
         'delta_factor_degauss': 0.1,
         'delta_factor_mixing_beta': 0.5,
+        'delta_addition_mixing_ndim': 4,
         'delta_factor_max_seconds': 0.95,
         'delta_factor_nbnd': 0.05,
         'delta_minimum_nbnd': 4,
         'conv_slope_threshold': -0.1,
+        'conv_slope_range': 30,
+        'low_symmetry_threshold': 6
     })
 
     @classmethod
@@ -571,31 +574,56 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         """
         import numpy
 
-        scf_accuracy = calculation.tools.get_scf_accuracy(0)
+        scf_accuracy = calculation.tools.get_scf_accuracy(-1)[-self.defaults.conv_slope_range:]
         scf_accuracy_slope = numpy.polyfit(numpy.arange(0, len(scf_accuracy)), numpy.log(scf_accuracy), 1)[0]
 
-        if scf_accuracy_slope < self.defaults.conv_slope_threshold:
+        mixing_beta = self.ctx.inputs.parameters['ELECTRONS'].get('mixing_beta', self.defaults.qe.mixing_beta)
+        mixing_ndim = self.ctx.inputs.parameters['ELECTRONS'].get('mixing_ndim', self.defaults.qe.mixing_ndim)
+        mixing_mode = self.ctx.inputs.parameters['ELECTRONS'].get('mixing_mode', self.defaults.qe.mixing_mode)
+        low_symmetry_structure = (
+            len(calculation.outputs.output_parameters.get_dict()['symmetries']) < self.defaults.low_symmetry_threshold
+        )
+        low_dim_structure = calculation.inputs.structure.pbc != (True, True, True)
 
+        self.report(f'scf accuracy slope: {scf_accuracy_slope:.2f}')
+        self.report(f'mixing beta: {mixing_beta:.2f}')
+        self.report(f'mixing ndim: {mixing_ndim}')
+        self.report(f'mixing mode: {mixing_mode}')
+        self.report(f"structure symmetries: {len(calculation.outputs.output_parameters.get_dict()['symmetries'])}")
+        self.report(f'low symmetry structure: {low_symmetry_structure}')
+        self.report(f'low dimension structure: {low_dim_structure}')
+
+        if scf_accuracy_slope < self.defaults.conv_slope_threshold:
             action = (
-                'electronic convergence not reached but the scf accuracy is decreasing: restart from the last '
-                'calculation.'
+                f'electronic convergence not reached but the scf accuracy slope ({scf_accuracy_slope:.2f}) is smaller '
+                f'than the threshold ({self.defaults.conv_slope_threshold:.2f}): restart from the last calculation.'
             )
             self.set_restart_type(RestartType.FULL, calculation.outputs.remote_folder)
             self.report_error_handled(calculation, action)
             return ProcessHandlerReport(True)
 
-        mixing_beta = self.ctx.inputs.parameters.get('ELECTRONS', {}).get('mixing_beta', self.defaults.qe.mixing_beta)
+        if mixing_mode == 'plain' and (low_symmetry_structure or low_dim_structure):
+
+            self.ctx.inputs.parameters['ELECTRONS'].setdefault('mixing_mode', 'local-TF')
+            action = (
+                'electronic convergence not reached and structure is inhomogeneous: switch to local-TF mixing and '
+                'restart from the last calculation.'
+            )
+            self.set_restart_type(RestartType.FULL, calculation.outputs.remote_folder)
+            self.report_error_handled(calculation, action)
+            return ProcessHandlerReport(True)
 
         if mixing_beta > 0.1:
 
             mixing_beta_new = mixing_beta * self.defaults.delta_factor_mixing_beta
+            mixing_ndim_new = mixing_ndim + self.defaults.delta_addition_mixing_ndim
 
             self.ctx.inputs.parameters['ELECTRONS']['mixing_beta'] = mixing_beta_new
+            self.ctx.inputs.parameters['ELECTRONS']['mixing_ndim'] = mixing_ndim_new
             action = (
-                f'reduced beta mixing from {mixing_beta} to {mixing_beta_new} and restarting from the last '
-                'calculation'
+                f'reduced beta mixing from {mixing_beta} to {mixing_beta_new}, increased `mixing_ndim` from '
+                f'{mixing_ndim} to {mixing_ndim_new} and restarting from the last calculation.'
             )
-
             self.set_restart_type(RestartType.FULL, calculation.outputs.remote_folder)
             self.report_error_handled(calculation, action)
             return ProcessHandlerReport(True)
