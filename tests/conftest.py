@@ -800,7 +800,6 @@ def generate_workchain_ph(generate_workchain, generate_inputs_ph, generate_calc_
     """Generate an instance of a `PhBaseWorkChain`."""
 
     def _generate_workchain_ph(exit_code=None, inputs=None, return_inputs=False):
-        from aiida.orm import Dict
         from plumpy import ProcessState
 
         entry_point = 'quantumespresso.ph.base'
