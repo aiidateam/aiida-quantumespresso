@@ -584,7 +584,9 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             len(calculation.outputs.output_parameters.get_dict()['symmetries']) < self.defaults.low_symmetry_threshold
         )
         low_dim_structure = calculation.inputs.structure.pbc != (True, True, True)
+        nbnd_cur = calculation.outputs.output_parameters.get_dict()['number_of_bands']
 
+        self.report(f'number of bands: {nbnd_cur}')
         self.report(f'scf accuracy slope: {scf_accuracy_slope:.2f}')
         self.report(f'mixing beta: {mixing_beta:.2f}')
         self.report(f'mixing ndim: {mixing_ndim}')
@@ -593,12 +595,16 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         self.report(f'low symmetry structure: {low_symmetry_structure}')
         self.report(f'low dimension structure: {low_dim_structure}')
 
+        nbnd_new = nbnd_cur + max(int(nbnd_cur * self.defaults.delta_factor_nbnd), self.defaults.delta_minimum_nbnd)
+        self.ctx.inputs.parameters['SYSTEM']['nbnd'] = nbnd_new
+        self.report(f'increased number of bands to {nbnd_new}')
+
         if scf_accuracy_slope < self.defaults.conv_slope_threshold:
             action = (
                 f'electronic convergence not reached but the scf accuracy slope ({scf_accuracy_slope:.2f}) is smaller '
                 f'than the threshold ({self.defaults.conv_slope_threshold:.2f}): restart from the last calculation.'
             )
-            self.set_restart_type(RestartType.FULL, calculation.outputs.remote_folder)
+            self.set_restart_type(RestartType.FROM_CHARGE_DENSITY, calculation.outputs.remote_folder)
             self.report_error_handled(calculation, action)
             return ProcessHandlerReport(True)
 
@@ -609,7 +615,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 'electronic convergence not reached and structure is inhomogeneous: switch to local-TF mixing and '
                 'restart from the last calculation.'
             )
-            self.set_restart_type(RestartType.FULL, calculation.outputs.remote_folder)
+            self.set_restart_type(RestartType.FROM_CHARGE_DENSITY, calculation.outputs.remote_folder)
             self.report_error_handled(calculation, action)
             return ProcessHandlerReport(True)
 
@@ -624,7 +630,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 f'reduced beta mixing from {mixing_beta} to {mixing_beta_new}, increased `mixing_ndim` from '
                 f'{mixing_ndim} to {mixing_ndim_new} and restarting from the last calculation.'
             )
-            self.set_restart_type(RestartType.FULL, calculation.outputs.remote_folder)
+            self.set_restart_type(RestartType.FROM_CHARGE_DENSITY, calculation.outputs.remote_folder)
             self.report_error_handled(calculation, action)
             return ProcessHandlerReport(True)
 
