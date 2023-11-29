@@ -585,6 +585,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         )
         low_dim_structure = calculation.inputs.structure.pbc != (True, True, True)
         nbnd_cur = calculation.outputs.output_parameters.get_dict()['number_of_bands']
+        diagonalization = self.ctx.inputs.parameters['ELECTRONS'].get('diagonalization', 'david')
 
         self.report(f'number of bands: {nbnd_cur}')
         self.report(f'scf accuracy slope: {scf_accuracy_slope:.2f}')
@@ -595,9 +596,14 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         self.report(f'low symmetry structure: {low_symmetry_structure}')
         self.report(f'low dimension structure: {low_dim_structure}')
 
-        nbnd_new = nbnd_cur + max(int(nbnd_cur * self.defaults.delta_factor_nbnd), self.defaults.delta_minimum_nbnd)
-        self.ctx.inputs.parameters['SYSTEM']['nbnd'] = nbnd_new
-        self.report(f'increased number of bands to {nbnd_new}')
+        if 'scf_failed_once' not in self.ctx:
+            nbnd_new = nbnd_cur + max(int(nbnd_cur * self.defaults.delta_factor_nbnd), self.defaults.delta_minimum_nbnd)
+            self.ctx.inputs.parameters['SYSTEM']['nbnd'] = nbnd_new
+            self.ctx.inputs.parameters['ELECTRONS']['electron_maxstep'] = 200
+            self.report(
+                f'First SCF failure encountered: increasing number of bands to {nbnd_new} and `electron_maxstep` to 200'
+            )
+            self.ctx.scf_failed_once = True
 
         if scf_accuracy_slope < self.defaults.conv_slope_threshold:
             action = (
@@ -608,16 +614,30 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             self.report_error_handled(calculation, action)
             return ProcessHandlerReport(True)
 
-        if mixing_mode == 'plain' and (low_symmetry_structure or low_dim_structure):
+        if mixing_mode == 'plain' and low_dim_structure:
 
             self.ctx.inputs.parameters['ELECTRONS'].setdefault('mixing_mode', 'local-TF')
             action = (
-                'electronic convergence not reached and structure is inhomogeneous: switch to local-TF mixing and '
+                'electronic convergence not reached and structure is low dimensional: switch to local-TF mixing and '
                 'restart from the last calculation.'
             )
             self.set_restart_type(RestartType.FROM_CHARGE_DENSITY, calculation.outputs.remote_folder)
             self.report_error_handled(calculation, action)
             return ProcessHandlerReport(True)
+
+        if 'diagonalizations' not in self.ctx:
+            # Initialize a list to track diagonalisations that haven't been tried in reverse order or preference
+            self.ctx.diagonalizations = [value for value in ['cg', 'paro', 'ppcg', 'david'] if value != diagonalization.lower()]
+
+        try:
+            new = self.ctx.diagonalizations.pop()
+            self.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = new
+            action = f'electronic convergence not reached: switching to `{new}` diagonalization.'
+            self.set_restart_type(RestartType.FROM_CHARGE_DENSITY, calculation.outputs.remote_folder)
+            self.report_error_handled(calculation, action)
+            return ProcessHandlerReport(True)
+        except IndexError:
+            pass
 
         if mixing_beta > 0.1:
 
