@@ -534,8 +534,14 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             shell_inputs['nodes'] = {'upf': upf}
             shell_inputs['metadata'] = {
                 'call_link_label': f'upf2plotcore_{element}',
-                'options' : {'filename_stdin' : upf.filename}
+                'options' : {
+                    'filename_stdin' : upf.filename,
+                    'resources' : {
+                        'num_machines' : 1,
+                        'num_mpiprocs_per_machine' : 1
+                    }
                 }
+            }
 
             future_shelljob = self.submit(ShellJob, **shell_inputs)
             self.report(f'Launching upf2plotcore.sh for {element}<{future_shelljob.pk}>')
@@ -593,7 +599,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             scf_inputs = inputs.scf.pw
             scf_params = scf_inputs.parameters.get_dict()
             ch_inputs = XspectraCoreWorkChain.get_treatment_inputs(treatment=ch_treatment)
-            new_scf_params = recursive_merge(left=scf_params, right=ch_inputs)
+            new_scf_params = recursive_merge(left=ch_inputs, right=scf_params)
 
             # Set the absorbing species index (`xiabs`) for the xspectra.x input.
             new_xs_params = inputs.xs_prod.xspectra.parameters.get_dict()
@@ -601,21 +607,37 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             abs_species_index = kinds_present.index(abs_atom_marker) + 1
             new_xs_params['INPUT_XSPECTRA']['xiabs'] = abs_species_index
 
-            # Set `starting_magnetization` if we are using an XCH approximation, using the
-            # absorbing species as a reasonable place for the unpaired electron.
-            # As a future note, we need to re-visit the core-hole treatment settings, in order
-            # to avoid the need for fudges like these.
-            if ch_treatment == 'xch_smear':
-                new_scf_params['SYSTEM'][f'starting_magnetization({abs_species_index})'] = 1
-            elif 'starting_magnetization' in new_scf_params['SYSTEM']:
+            # Set `starting_magnetization` if we are using an XCH approximation, using
+            # the absorbing species as a reasonable place for the unpaired electron.
+            # Alternatively, ensure the starting magnetic moment is a reasonable guess
+            # given the input parameters. (e.g. it conforms to an existing magnetic
+            # structure already defined for the system)
+
+            # TODO: we need to re-visit the core-hole treatment settings,
+            # in order to avoid the need for fudges like these and set these at
+            # submission rather than inside the WorkChain itself.
+            if 'starting_magnetization' in new_scf_params['SYSTEM']:
                 inherited_mag =  new_scf_params['SYSTEM']['starting_magnetization'][abs_atom_kind]
-                new_scf_params['SYSTEM']['starting_magnetization'][abs_atom_marker] = inherited_mag
+                if ch_treatment not in ['xch_smear', 'xch_fixed']:
+                    new_scf_params['SYSTEM']['starting_magnetization'][abs_atom_marker] = inherited_mag
+                else: # if there is meant to be an unpaired electron, give it to the absorbing atom.
+                    if inherited_mag == 0: # set it to 1, if it would be neutral in the ground-state.
+                        new_scf_params['SYSTEM']['starting_magnetization'][abs_atom_marker] =  1
+                    else: # assume that it takes the same magnetic configuration as the kind that it replaces.
+                        new_scf_params['SYSTEM']['starting_magnetization'][abs_atom_marker] =  inherited_mag
+            elif ch_treatment in ['xch_smear', 'xch_fixed']:
+                new_scf_params['SYSTEM']['starting_magnetization'] = {abs_atom_marker : 1}
+
+            # remove any duplicates created from the "core_hole_treatments.yaml" defaults
+            for key in new_scf_params['SYSTEM'].keys():
+                if 'starting_magnetization(' in key:
+                    new_scf_params['SYSTEM'].pop(key, None)
 
             core_hole_pseudo = self.inputs.core_hole_pseudos[abs_element]
             gipaw_pseudo = self.inputs.gipaw_pseudos[abs_element]
             inputs.scf.pw.pseudos[abs_atom_marker] = core_hole_pseudo
-            # Check how many instances of the absorbing element are present and assign each the GIPAW
-            # pseudo if they are not the absorbing atom itself.
+            # Check how many instances of the absorbing element are present and assign
+            # each the GIPAW pseudo if they are not the absorbing atom itself.
             abs_element_kinds = []
             for kind in structure.kinds:
                 if kind.symbol == abs_element and kind.name != abs_atom_marker:

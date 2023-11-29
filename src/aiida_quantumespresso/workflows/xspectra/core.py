@@ -295,7 +295,6 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         pw_code,
         xs_code,
         structure,
-        initial_magnetic_moments=None,
         upf2plotcore_code=None,
         core_wfc_data=None,
         core_hole_pseudos=None,
@@ -336,7 +335,6 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         :return: a process builder instance with all inputs defined ready for launch.
         """
 
-        from aiida_quantumespresso.common.types import SpinType
         inputs = cls.get_protocol_inputs(protocol, overrides)
         pw_inputs = PwBaseWorkChain.get_protocol_inputs(protocol=protocol, overrides=inputs.get('scf', {}))
         pw_params = pw_inputs['pw']['parameters']
@@ -353,15 +351,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         pw_inputs['pw']['parameters'] = pw_params
         pw_args = (pw_code, structure, protocol)
 
-        if initial_magnetic_moments:
-            spin_type = SpinType.COLLINEAR
-            pw_kwargs = {'initial_magnetic_moments': initial_magnetic_moments, 'spin_type': spin_type}
-        else:
-            pw_kwargs = {}
-
-        scf = PwBaseWorkChain.get_builder_from_protocol(
-            *pw_args, overrides=pw_inputs, options=options, **pw_kwargs, **kwargs
-        )
+        scf = PwBaseWorkChain.get_builder_from_protocol(*pw_args, overrides=pw_inputs, options=options, **kwargs)
 
         scf.pop('clean_workdir', None)
         scf['pw'].pop('structure', None)

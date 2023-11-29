@@ -51,7 +51,8 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
                              sites of the same element to be equal and ignore any special Kind names
                              from the parent structure. For instance, use_element_types = True would
                              consider sites for Kinds 'Si' and 'Si1' to be equivalent if both are sites
-                             containing silicon. Defaults to False otherwise.
+                             containing silicon. Defaults to False otherwise. Only meaningful in
+                             conjunction with ``standardize_structure = False``.
         - spglib_settings: an optional Dict object containing overrides for the symmetry
                             tolerance parameters used by spglib (symmprec, angle_tolerance).
         - pymatgen_settings: an optional Dict object containing overrides for the symmetry
@@ -134,7 +135,7 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
     else:
         use_element_types = False
 
-    if structure.node_type == 'data.quantumespresso.hubbard_structure.HubbardStructureData.':
+    if isinstance(structure, HubbardStructureData):
         is_hubbard_structure = True
         if standardize_structure:
             raise ValidationError(
@@ -246,9 +247,15 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
                 if value == kind.name:
                     type_mapping_dict[key] = kind
 
-        # if we want to treat all sites of the same element as equal,
-        # then we must briefly operate on a "cleaned" version of the
-        # structure tuple.
+        # By default, `structure_to_spglib_tuple` gives different
+        # ``Kinds`` of the same element a distinct atomic number by
+        # multiplying the normal atomic number by 1000, then adding
+        # 100 for each distinct duplicate. if we want to treat all sites
+        # of the same element as equal, then we must therefore briefly
+        # operate on a "cleaned" version of the structure tuple where this
+        # new label is reduced to its normal element number. This relies on
+        # the fact that int(i) will essentially ignore the value of the decimal
+        # when converting floats to integers.
         if use_element_types:
             clean_structure_tuple = (spglib_tuple[0], spglib_tuple[1], [])
             for i in spglib_tuple[2]:
