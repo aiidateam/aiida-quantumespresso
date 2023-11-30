@@ -599,9 +599,8 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if 'scf_failed_once' not in self.ctx:
             nbnd_new = nbnd_cur + max(int(nbnd_cur * self.defaults.delta_factor_nbnd), self.defaults.delta_minimum_nbnd)
             self.ctx.inputs.parameters['SYSTEM']['nbnd'] = nbnd_new
-            self.ctx.inputs.parameters['ELECTRONS']['electron_maxstep'] = 200
             self.report(
-                f'First SCF failure encountered: increasing number of bands to {nbnd_new} and `electron_maxstep` to 200'
+                f'First SCF failure encountered: increasing number of bands to {nbnd_new}'
             )
             self.ctx.scf_failed_once = True
 
@@ -627,7 +626,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         if 'diagonalizations' not in self.ctx:
             # Initialize a list to track diagonalisations that haven't been tried in reverse order or preference
-            self.ctx.diagonalizations = [value for value in ['cg', 'paro', 'ppcg', 'david'] if value != diagonalization.lower()]
+            self.ctx.diagonalizations = [value for value in ['cg', 'paro', 'ppcg', 'rmm-paro', 'david'] if value != diagonalization.lower()]
 
         try:
             new = self.ctx.diagonalizations.pop()
@@ -653,6 +652,8 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             self.set_restart_type(RestartType.FROM_CHARGE_DENSITY, calculation.outputs.remote_folder)
             self.report_error_handled(calculation, action)
             return ProcessHandlerReport(True)
+
+        return ProcessHandlerReport(True)
 
     @process_handler(priority=420, exit_codes=[
         PwCalculation.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED,
