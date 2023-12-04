@@ -20,7 +20,7 @@ PwCalculation = CalculationFactory('quantumespresso.pw')
 def validate_inputs(inputs):
     """Validate the top level namespace."""
     if 'qpoints_distance' not in inputs and 'qpoints' not in inputs:
-        return PhBaseWorkChain.exit_codes.ERROR_INVALID_INPUT_QPOINTS.message
+        return 'Neither `qpoints` nor `qpoints_distance` were specified.'
 
 
 class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
@@ -54,7 +54,7 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         spec.outline(
             cls.setup,
             cls.validate_parameters,
-            cls.validate_qpoints,
+            cls.set_qpoints,
             while_(cls.should_run_process)(
                 cls.prepare_process,
                 cls.run_process,
@@ -64,8 +64,6 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             cls.results,
         )
         spec.expose_outputs(PhCalculation, exclude=('retrieved_folder',))
-        spec.exit_code(400, 'ERROR_INVALID_INPUT_QPOINTS',
-                       message='Neither `qpoints` nor `qpoints_distance` were specified.')
         spec.exit_code(204, 'ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED',
             message='The `metadata.options` did not specify both `resources.num_machines` and `max_wallclock_seconds`. '
                     'This exit status has been deprecated as the check it corresponded to was incorrect.')
@@ -172,16 +170,13 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if self.inputs.only_initialization.value:
             self.ctx.inputs.settings['ONLY_INITIALIZATION'] = True
 
-    def validate_qpoints(self):
-        """Validate the inputs related to qpoints.
+    def set_qpoints(self):
+        """Set the inputs related to qpoints.
 
         Either an explicit `KpointsData` with given mesh/path, or a desired qpoints distance should be specified. In
         the case of the latter, the `KpointsData` will be constructed for the input `StructureData`
         from the parent_folder using the `create_kpoints_from_distance` calculation function.
         """
-
-        if all(key not in self.inputs for key in ['qpoints', 'qpoints_distance']):
-            return self.exit_codes.ERROR_INVALID_INPUT_QPOINTS
 
         try:
             qpoints = self.inputs.qpoints
