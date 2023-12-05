@@ -39,7 +39,7 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         """Define the process specification."""
         # yapf: disable
         super().define(spec)
-        spec.expose_inputs(PhCalculation, namespace='ph')
+        spec.expose_inputs(PhCalculation, namespace='ph', exclude=('qpoints', ))
         spec.input('only_initialization', valid_type=orm.Bool, default=lambda: orm.Bool(False))
         spec.input('qpoints', valid_type=orm.KpointsData, required=False,
             help='An explicit qpoints list or mesh. Either this or `qpoints_distance` should to be provided.')
