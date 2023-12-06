@@ -15,6 +15,8 @@ from aiida_quantumespresso.workflows.protocols.utils import ProtocolMixin
 
 PhCalculation = CalculationFactory('quantumespresso.ph')
 PwCalculation = CalculationFactory('quantumespresso.pw')
+
+
 class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     """Workchain to run a Quantum ESPRESSO ph.x calculation with automated error handling and restarts."""
 
@@ -67,7 +69,7 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         # yapf: enable
 
     @classmethod
-    def validate_inputs(cls, inputs, ctx=None):
+    def validate_inputs(cls, inputs):
         """Validate the top level namespace."""
         if 'qpoints_distance' not in inputs and 'qpoints' not in inputs:
             return 'Neither `qpoints` nor `qpoints_distance` were specified.'
