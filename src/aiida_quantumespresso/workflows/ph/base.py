@@ -69,7 +69,7 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         # yapf: enable
 
     @classmethod
-    def validate_inputs(cls, inputs):
+    def validate_inputs(cls, inputs, ctx=None):  # pylint: disable=unused-argument
         """Validate the top level namespace."""
         if 'qpoints_distance' not in inputs and 'qpoints' not in inputs:
             return 'Neither `qpoints` nor `qpoints_distance` were specified.'
