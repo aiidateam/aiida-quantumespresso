@@ -441,7 +441,8 @@ def initialize_hubbard_parameters(
     pairs: Dict[str, Tuple[str, float, float, Dict[str, str]]],
     radius_max: float = 6.0,
     nn_finder: str = 'crystal',
-    standardize: bool = True,
+    fold: bool = True,
+    standardize: bool = False,
     **kwargs,
 ) -> HubbardStructureData:
     """Initialize the on-site and intersite parameters using nearest neighbour finders.
@@ -458,6 +459,7 @@ def initialize_hubbard_parameters(
     :param nn_finder: string defining the nearest neighbour finder; options are:
         * `crystal`: use :class:`pymatgen.analysis.local_env.CrystalNN`
         * `voronoi`: use :class:`pymatgen.analysis.local_env.VoronoiNN`
+    :param fold: whether to fold in within the cell the atoms
     :param standardize: whether to standardize the atoms and the cell via spglib (symmetry analysis)
     :param kwargs: kwargs for the nearest neighbour analysis
     :return: HubbardStructureData with initialized Hubbard parameters
@@ -470,9 +472,20 @@ def initialize_hubbard_parameters(
         raise ValueError('`nn_finder` must be either `cyrstal` or `voronoi`')
     voronoi = CrystalNN(**kwargs_) if nn_finder == 'crystal' else VoronoiNN(**kwargs_)  # pylint: disable=unexpected-keyword-arg
 
-    if not standardize:
+    if not standardize and not fold:
         hubbard_structure = HubbardStructureData.from_structure(structure=structure)
-    else:
+
+    if fold:
+        from aiida.tools.data import spglib_tuple_to_structure, structure_to_spglib_tuple
+
+        cell, kind_info, kinds = structure_to_spglib_tuple(structure)
+        cell = list(cell)
+        cell[1] = cell[1] % 1
+
+        folded_struccture = spglib_tuple_to_structure(cell, kind_info, kinds)
+        hubbard_structure = HubbardStructureData.from_structure(structure=folded_struccture)
+
+    if standardize:
         from aiida.tools.data import spglib_tuple_to_structure, structure_to_spglib_tuple
         from spglib import standardize_cell
 
@@ -497,17 +510,21 @@ def initialize_hubbard_parameters(
 
                     count = 0
                     if specie in neigh_species:
-                        neigh_sites = pymat.get_neighbors(pymat[i], r=radius_max)
+                        _, neigh_indices, images, distances = pymat.get_neighbor_list(sites=[pymat[i]], r=radius_max)
 
-                        for neigh_site in neigh_sites:
-                            if neigh_site.specie.name == specie:
+                        sort = np.argsort(distances)
+                        neigh_indices = neigh_indices[sort]
+                        images = images[sort]
+
+                        for index, image in zip(neigh_indices, images):
+                            if pymat[index].specie.name == specie:
                                 hubbard_structure.append_hubbard_parameter(
                                     atom_index=i,
                                     atom_manifold=onsite[0],
-                                    neighbour_index=int(neigh_site.index), # otherwise the validator complains
+                                    neighbour_index=int(index), # otherwise the validator complains
                                     neighbour_manifold=onsite[3][neigh_name],
                                     value=onsite[2],
-                                    translation=np.array(neigh_site.image, dtype=np.int64).tolist(),
+                                    translation=np.array(image, dtype=np.int64).tolist(),
                                     hubbard_type='V',
                                 )
                                 count += 1
