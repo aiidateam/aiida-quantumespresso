@@ -458,7 +458,13 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         self.ctx.nscf_emin = workchain.outputs.output_band.get_array('bands').min()
         self.ctx.nscf_emax = workchain.outputs.output_band.get_array('bands').max()
         self.ctx.nscf_parent_folder = workchain.outputs.remote_folder
-        self.ctx.nscf_fermi = workchain.outputs.output_parameters.dict.fermi_energy
+        if 'fermi_energy' in workchain.outputs.output_parameters.dict:
+            self.ctx.nscf_fermi = workchain.outputs.output_parameters.dict.fermi_energy
+        else:
+            self.ctx.nscf_fermi_energy_up = workchain.outputs.output_parameters.dict.fermi_energy_up
+            self.ctx.nscf_fermi_energy_down = workchain.outputs.output_parameters.dict.fermi_energy_down
+            self.ctx.nscf_fermi = max(self.nscf_fermi_energy_down, self.nscf_fermi_energy_up)
+
 
     def _generate_dos_inputs(self):
         """Run DOS calculation, to generate total Densities of State."""
