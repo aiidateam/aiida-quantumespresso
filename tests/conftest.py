@@ -805,7 +805,9 @@ def generate_workchain_ph(generate_workchain, generate_inputs_ph, generate_calc_
         entry_point = 'quantumespresso.ph.base'
 
         if inputs is None:
-            inputs = {'ph': generate_inputs_ph()}
+            ph_inputs = generate_inputs_ph()
+            qpoints = ph_inputs.get('qpoints')
+            inputs = {'ph': ph_inputs, 'qpoints': qpoints}
 
         if return_inputs:
             return inputs

@@ -29,6 +29,15 @@ def test_default(fixture_code, data_regression, serialize_builder):
     data_regression.check(serialize_builder(builder))
 
 
+def test_qpoints_list(fixture_code, data_regression, serialize_builder):
+    """Test ``PhBaseWorkChain.get_builder_from_protocol`` qpoints in overrides for the default protocol."""
+    code = fixture_code('quantumespresso.ph')
+    overrides = {'qpoints': [2, 2, 2]}
+    builder = PhBaseWorkChain.get_builder_from_protocol(code, overrides=overrides)
+    assert isinstance(builder, ProcessBuilder)
+    data_regression.check(serialize_builder(builder))
+
+
 def test_electronic_type(fixture_code):
     """Test ``PhBaseWorkChain.get_builder_from_protocol`` with ``electronic_type`` keyword."""
     code = fixture_code('quantumespresso.ph')
