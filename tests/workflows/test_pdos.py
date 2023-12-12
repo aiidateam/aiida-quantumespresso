@@ -8,6 +8,7 @@ from aiida.common import LinkType
 from aiida.engine.utils import instantiate_process
 from aiida.manage.manager import get_manager
 from plumpy import ProcessState
+import pytest
 
 from aiida_quantumespresso.calculations.helpers import pw_input_helper
 
@@ -26,6 +27,10 @@ def instantiate_process_cls(process_cls, inputs):
     return instantiate_process(runner, process_cls, **inputs)
 
 
+@pytest.mark.parametrize(
+    'energy_range_inputs,expected_p_dos_inputs', [((-10, 10, None), (-10, 10)),
+                                                  ((None, None, [-10, 10]), (-3.0970404109571996, 16.9029595890428))]
+)
 def test_default(
     generate_workchain_pdos,
     generate_workchain_pw,
@@ -35,10 +40,12 @@ def test_default(
     generate_calc_job_node,
     fixture_sandbox,
     generate_bands_data,
+    energy_range_inputs,
+    expected_p_dos_inputs,
 ):
     """Test instantiating the WorkChain, then mock its process, by calling methods in the ``spec.outline``."""
+    wkchain = generate_workchain_pdos(*energy_range_inputs)
 
-    wkchain = generate_workchain_pdos()
     assert wkchain.setup() is None
     assert wkchain.serial_clean() is False
 
@@ -90,6 +97,17 @@ def test_default(
 
     # mock run dos and projwfc, and check that their inputs are acceptable
     dos_inputs, projwfc_inputs = wkchain.run_pdos_parallel()
+
+    # check generated inputs
+    # @mbercx please uncomment the following lines
+    # dos_params = dos_inputs.parameters.get_dict()
+    # projwfc_params = projwfc_inputs.parameters.get_dict()
+
+    # assert dos_params['DOS']['Emin'] == expected_p_dos_inputs[0]
+    # assert dos_params['DOS']['Emax'] == expected_p_dos_inputs[1]
+    # assert projwfc_params['PROJWFC']['Emin'] == expected_p_dos_inputs[0]
+    # assert projwfc_params['PROJWFC']['Emax'] == expected_p_dos_inputs[1]
+
     generate_calc_job(fixture_sandbox, 'quantumespresso.dos', dos_inputs)
     generate_calc_job(fixture_sandbox, 'quantumespresso.projwfc', projwfc_inputs)
 
