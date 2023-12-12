@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from xml.dom.minidom import parseString
-
-from xmlschema.etree import ElementTree
+from xml.etree import ElementTree
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.parse_xml.cp.legacy import parse_cp_xml_output
