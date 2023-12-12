@@ -8,6 +8,7 @@ from aiida.common.lang import type_check
 from aiida.engine import BaseRestartWorkChain, ProcessHandlerReport, process_handler, while_
 from aiida.plugins import CalculationFactory
 
+from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import create_kpoints_from_distance
 from aiida_quantumespresso.calculations.functions.merge_ph_outputs import merge_ph_outputs
 from aiida_quantumespresso.common.types import ElectronicType
 from aiida_quantumespresso.workflows.protocols.utils import ProtocolMixin
@@ -32,11 +33,22 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         """Define the process specification."""
         # yapf: disable
         super().define(spec)
-        spec.expose_inputs(PhCalculation, namespace='ph')
+        spec.expose_inputs(PhCalculation, namespace='ph', exclude=('qpoints', ))
         spec.input('only_initialization', valid_type=orm.Bool, default=lambda: orm.Bool(False))
+        spec.input('qpoints', valid_type=orm.KpointsData, required=False,
+            help='An explicit qpoints list or mesh. Either this or `qpoints_distance` should to be provided.')
+        spec.input('qpoints_distance', valid_type=orm.Float, required=False,
+            help='The minimum desired distance in 1/Å between qpoints in reciprocal space. The explicit qpoints will '
+                 'be generated automatically by a calculation function based on the input structure.')
+        spec.input('qpoints_force_parity', valid_type=orm.Bool, required=False,
+            help='Optional input when constructing the qpoints based on a desired `qpoints_distance`. Setting this to '
+                 '`True` will force the qpoint mesh to have an even number of points along each lattice vector except '
+                 'for any non-periodic directions.')
+        spec.inputs.validator = cls.validate_inputs
         spec.outline(
             cls.setup,
             cls.validate_parameters,
+            cls.set_qpoints,
             while_(cls.should_run_process)(
                 cls.prepare_process,
                 cls.run_process,
@@ -55,6 +67,12 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             message='The work chain failed to merge the q-points data from multiple `PhCalculation`s because not all '
                     'q-points were parsed.')
         # yapf: enable
+
+    @classmethod
+    def validate_inputs(cls, inputs, ctx=None):  # pylint: disable=unused-argument
+        """Validate the top level namespace."""
+        if 'qpoints_distance' not in inputs and 'qpoints' not in inputs:
+            return 'Neither `qpoints` nor `qpoints_distance` were specified.'
 
     @classmethod
     def get_protocol_filepath(cls):
@@ -78,7 +96,6 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
         :param code: the ``Code`` instance configured for the ``quantumespresso.ph`` plugin.
-        :param structure: the ``StructureData`` instance to use.
         :param protocol: protocol to use, if not specified, the default will be used.
         :param overrides: optional dictionary of inputs to override the defaults of the protocol.
         :param options: A dictionary of options that will be recursively set for the ``metadata.options`` input of all
@@ -102,10 +119,6 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if electronic_type is ElectronicType.INSULATOR:
             inputs['ph']['parameters']['INPUTPH']['epsil'] = True
 
-        qpoints_mesh = inputs['ph'].pop('qpoints')
-        qpoints = orm.KpointsData()
-        qpoints.set_kpoints_mesh(qpoints_mesh)
-
         metadata = inputs['ph']['metadata']
 
         if options:
@@ -121,7 +134,16 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if 'settings' in inputs['ph']:
             builder.ph['settings'] = orm.Dict(inputs['ph']['settings'])
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
-        builder.ph['qpoints'] = qpoints
+
+        if 'qpoints' in inputs:
+            qpoints_mesh = inputs['qpoints']
+            qpoints = orm.KpointsData()
+            qpoints.set_kpoints_mesh(qpoints_mesh)
+            builder.qpoints = qpoints
+        else:
+            builder.qpoints_distance = orm.Float(inputs['qpoints_distance'])
+            builder.qpoints_force_parity = orm.Bool(inputs['qpoints_force_parity'])
+
         builder.max_iterations = orm.Int(inputs['max_iterations'])
         # pylint: enable=no-member
 
@@ -147,6 +169,35 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         if self.inputs.only_initialization.value:
             self.ctx.inputs.settings['ONLY_INITIALIZATION'] = True
+
+    def set_qpoints(self):
+        """Set the inputs related to qpoints.
+
+        Either an explicit `KpointsData` with given mesh/path, or a desired qpoints distance should be specified. In
+        the case of the latter, the `KpointsData` will be constructed for the input `StructureData`
+        from the parent_folder using the `create_kpoints_from_distance` calculation function.
+        """
+
+        try:
+            qpoints = self.inputs.qpoints
+        except AttributeError:
+
+            try:
+                structure = self.ctx.inputs.ph.parent_folder.creator.output.output_structure
+            except AttributeError:
+                structure = self.ctx.inputs.ph.parent_folder.creator.inputs.structure
+
+            inputs = {
+                'structure': structure,
+                'distance': self.inputs.qpoints_distance,
+                'force_parity': self.inputs.qpoints_force_parity,
+                'metadata': {
+                    'call_link_label': 'create_qpoints_from_distance'
+                }
+            }
+            qpoints = create_kpoints_from_distance(**inputs)
+
+        self.ctx.inputs.ph['qpoints'] = qpoints
 
     def set_max_seconds(self, max_wallclock_seconds: None):
         """Set the `max_seconds` to a fraction of `max_wallclock_seconds` option to prevent out-of-walltime problems.

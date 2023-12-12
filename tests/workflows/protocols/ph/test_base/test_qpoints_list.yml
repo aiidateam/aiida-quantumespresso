@@ -11,5 +11,10 @@ ph:
   parameters:
     INPUTPH:
       tr2_ph: 1.0e-18
-qpoints_distance: 0.3
-qpoints_force_parity: false
+qpoints:
+- - 2
+  - 2
+  - 2
+- - 0.0
+  - 0.0
+  - 0.0
