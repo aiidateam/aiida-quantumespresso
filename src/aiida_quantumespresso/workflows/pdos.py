@@ -465,7 +465,6 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
             fermi_energy_down = workchain.outputs.output_parameters.dict.fermi_energy_down
             self.ctx.nscf_fermi = max(fermi_energy_down, fermi_energy_up)
 
-
     def _generate_dos_inputs(self):
         """Run DOS calculation, to generate total Densities of State."""
         dos_inputs = AttributeDict(self.exposed_inputs(DosCalculation, 'dos'))
