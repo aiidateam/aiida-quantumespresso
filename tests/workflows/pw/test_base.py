@@ -219,6 +219,8 @@ def test_handle_relax_recoverable_ionic_convergence_error(
     )
     process.setup()
 
+    process.ctx.inputs.parameters['CONTROL']['calculation'] = 'relax'
+    process.ctx.inputs.parameters.setdefault('IONS', {})['ion_dynamics'] = 'bfgs'
     result = process.handle_relax_recoverable_ionic_convergence_error(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
     assert result.do_break
@@ -249,23 +251,19 @@ def test_handle_relax_recoverable_ionic_convergence_bfgs_history_error(
     )
     process.setup()
 
-    # For `relax`, switch to `damp` immediately and then to `fire`
+    # For `relax`, switch to `damp`
     process.ctx.inputs.parameters['CONTROL']['calculation'] = 'relax'
+    process.ctx.inputs.parameters.setdefault('IONS', {})['ion_dynamics'] = 'bfgs'
     result = process.handle_relax_recoverable_ionic_convergence_bfgs_history_error(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
     assert result.do_break
     assert result.exit_code.status == 0
     assert process.ctx.inputs.parameters['IONS']['ion_dynamics'] == 'damp'
 
-    result = process.handle_relax_recoverable_ionic_convergence_bfgs_history_error(process.ctx.children[-1])
-    assert isinstance(result, ProcessHandlerReport)
-    assert result.do_break
-    assert result.exit_code.status == 0
-    assert process.ctx.inputs.parameters['IONS']['ion_dynamics'] == 'fire'
-
     # For `vc-relax`, try changing first the `trust_min_radius`
     process.ctx.inputs.parameters['CONTROL']['calculation'] = 'vc-relax'
-    process.ctx.inputs.parameters['IONS']['ion_dynamics'] = 'bfgs'
+    process.ctx.inputs.parameters.setdefault('IONS', {})['ion_dynamics'] = 'bfgs'
+    process.ctx.inputs.parameters.setdefault('CELL', {})['cell_dynamics'] = 'bfgs'
     result = process.handle_relax_recoverable_ionic_convergence_bfgs_history_error(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
     assert result.do_break

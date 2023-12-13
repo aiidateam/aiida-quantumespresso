@@ -33,6 +33,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         'delta_factor_max_seconds': 0.95,
         'delta_factor_nbnd': 0.05,
         'delta_minimum_nbnd': 4,
+        'delta_factor_trast_radius_min': 0.1,
     })
 
     @classmethod
@@ -499,27 +500,28 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         For the first case, one can lower the trust radius; for the second one, one can exploit a different
         algorithm, e.g. `damp` (and `damp-w` for vc-relax).
         """
-        trust_radius_min = self.ctx.inputs.parameters.setdefault('IONS', {}).setdefault('trust_radius_min', 1.0e-3)
-        calculation_type = self.ctx.inputs.parameters.setdefault('CONTROL', {}).setdefault('calculation', 'relax')
-        ion_dynamics = self.ctx.inputs.parameters.setdefault('IONS', {}).setdefault('ion_dynamics', 'bfgs')
+        trust_radius_min = self.ctx.inputs.parameters['IONS'].get('trust_radius_min', qe_defaults.trust_radius_min)
+        calculation_type = self.ctx.inputs.parameters['CONTROL'].get('calculation', 'relax')
+        ion_dynamics = self.ctx.inputs.parameters['IONS'].get('ion_dynamics', qe_defaults.ion_dynamics)
+
         if calculation_type == 'vc-relax':
-            cell_dynamics = self.ctx.inputs.parameters.setdefault('CELL', {}).setdefault('cell_dynamics', 'bfgs')
+            cell_dynamics = self.ctx.inputs.parameters['CELL'].get('cell_dynamics', qe_defaults.cell_dynamics)
 
         if calculation_type == 'relax' and ion_dynamics == 'bfgs':
-            self.ctx.inputs.parameters.setdefault('IONS', {})['ion_dynamics'] = 'damp'
+            self.ctx.inputs.parameters['IONS']['ion_dynamics'] = 'damp'
             action = 'bfgs history (ionic only) failure: restarting with `damp` dynamics.'
-        elif calculation_type == 'relax' and ion_dynamics == 'damp':
-            self.ctx.inputs.parameters.setdefault('IONS', {})['ion_dynamics'] = 'fire'
-            action = 'bfgs history (ionic only) failure: restarting with `fire` dynamics.'
-        elif trust_radius_min > 1.0e-4 and ion_dynamics == 'bfgs' and calculation_type == 'vc-relax':
-            self.ctx.inputs.parameters.setdefault('IONS', {})['trust_radius_ini'] = trust_radius_min  # start close
-            new_trust_radius_min = trust_radius_min / 10.0
-            self.ctx.inputs.parameters.setdefault('IONS', {})['trust_radius_min'] = new_trust_radius_min
+
+        elif calculation_type == 'vc-relax' and ion_dynamics == 'bfgs' and trust_radius_min > 1.0e-4:
+            self.ctx.inputs.parameters['IONS']['trust_radius_ini'] = trust_radius_min  # start close
+            new_trust_radius_min = trust_radius_min * self.defaults.delta_factor_trast_radius_min
+            self.ctx.inputs.parameters['IONS']['trust_radius_min'] = new_trust_radius_min
             action = f'bfgs history (vc-relax) failure: restarting with `trust_radius_min={new_trust_radius_min:.5f}`.'
+
         elif calculation_type == 'vc-relax' and cell_dynamics == 'bfgs':
-            self.ctx.inputs.parameters.setdefault('IONS', {})['ion_dynamics'] = 'damp'
-            self.ctx.inputs.parameters.setdefault('CELL', {})['cell_dynamics'] = 'damp-w'
+            self.ctx.inputs.parameters['IONS']['ion_dynamics'] = 'damp'
+            self.ctx.inputs.parameters['CELL']['cell_dynamics'] = 'damp-w'
             action = 'bfgs history (vc-relax) failure: restarting with `damp(-w)` dynamics.'
+
         else:
             return ProcessHandlerReport(False)
 
