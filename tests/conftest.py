@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=redefined-outer-name,too-many-statements,unsubscriptable-object
+# pylint: disable=redefined-outer-name,too-many-statements
 """Initialise a text database and profile for pytest."""
 from collections.abc import Mapping
 import io
@@ -51,17 +51,14 @@ def fixture_code(fixture_localhost):
     """Return an ``InstalledCode`` instance configured to run calculations of given entry point on localhost."""
 
     def _fixture_code(entry_point_name):
-        from aiida.orm import InstalledCode, QueryBuilder
+        from aiida.common import exceptions
+        from aiida.orm import InstalledCode, load_code
 
         label = f'test.{entry_point_name}'
 
-        query = QueryBuilder().append(
-            InstalledCode,
-            filters={'label': label},
-        )
         try:
-            return query.first()[0]
-        except TypeError:
+            return load_code(label=label)
+        except exceptions.NotExistent:
             return InstalledCode(
                 label=label,
                 computer=fixture_localhost,
