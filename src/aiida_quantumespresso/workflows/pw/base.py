@@ -33,7 +33,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         'delta_factor_max_seconds': 0.95,
         'delta_factor_nbnd': 0.05,
         'delta_minimum_nbnd': 4,
-        'delta_factor_trast_radius_min': 0.1,
+        'delta_factor_trust_radius_min': 0.1,
     })
 
     @classmethod
