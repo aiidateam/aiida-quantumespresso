@@ -280,14 +280,6 @@ def test_handle_relax_recoverable_ionic_convergence_bfgs_history_error(
     assert process.ctx.inputs.parameters['IONS']['ion_dynamics'] == 'damp'
     assert process.ctx.inputs.parameters['CELL']['cell_dynamics'] == 'damp-w'
 
-    result = process.handle_relax_recoverable_ionic_convergence_bfgs_history_error(process.ctx.children[-1])
-    assert isinstance(result, ProcessHandlerReport)
-    assert not result.do_break
-    assert result.exit_code.status == 0
-
-    result = process.inspect_process()
-    assert result.status == 0
-
 
 def test_handle_vcrelax_recoverable_fft_significant_volume_contraction_error(generate_workchain_pw, generate_structure):
     """Test `PwBaseWorkChain.handle_vcrelax_recoverable_fft_significant_volume_contraction_error`."""

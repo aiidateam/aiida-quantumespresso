@@ -250,6 +250,13 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         self.ctx.inputs.parameters.setdefault('ELECTRONS', {})
         self.ctx.inputs.parameters.setdefault('SYSTEM', {})
 
+        calculation_type = self.ctx.inputs.parameters['CONTROL'].get('calculation', None)
+        if calculation_type in ['relax', 'md']:
+            self.ctx.inputs.parameters.setdefault('IONS', {})
+        if calculation_type in ['vc-relax', 'vc-md']:
+            self.ctx.inputs.parameters.setdefault('IONS', {})
+            self.ctx.inputs.parameters.setdefault('CELL', {})
+
         self.ctx.inputs.settings = self.ctx.inputs.settings.get_dict() if 'settings' in self.ctx.inputs else {}
 
     def validate_kpoints(self):
@@ -502,22 +509,18 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         """
         trust_radius_min = self.ctx.inputs.parameters['IONS'].get('trust_radius_min', qe_defaults.trust_radius_min)
         calculation_type = self.ctx.inputs.parameters['CONTROL'].get('calculation', 'relax')
-        ion_dynamics = self.ctx.inputs.parameters['IONS'].get('ion_dynamics', qe_defaults.ion_dynamics)
 
-        if calculation_type == 'vc-relax':
-            cell_dynamics = self.ctx.inputs.parameters['CELL'].get('cell_dynamics', qe_defaults.cell_dynamics)
-
-        if calculation_type == 'relax' and ion_dynamics == 'bfgs':
+        if calculation_type == 'relax':
             self.ctx.inputs.parameters['IONS']['ion_dynamics'] = 'damp'
             action = 'bfgs history (ionic only) failure: restarting with `damp` dynamics.'
 
-        elif calculation_type == 'vc-relax' and ion_dynamics == 'bfgs' and trust_radius_min > 1.0e-4:
+        elif calculation_type == 'vc-relax' and trust_radius_min > 1.0e-4:
             self.ctx.inputs.parameters['IONS']['trust_radius_ini'] = trust_radius_min  # start close
-            new_trust_radius_min = trust_radius_min * self.defaults.delta_factor_trast_radius_min
+            new_trust_radius_min = trust_radius_min * self.defaults.delta_factor_trust_radius_min
             self.ctx.inputs.parameters['IONS']['trust_radius_min'] = new_trust_radius_min
             action = f'bfgs history (vc-relax) failure: restarting with `trust_radius_min={new_trust_radius_min:.5f}`.'
 
-        elif calculation_type == 'vc-relax' and cell_dynamics == 'bfgs':
+        elif calculation_type == 'vc-relax':
             self.ctx.inputs.parameters['IONS']['ion_dynamics'] = 'damp'
             self.ctx.inputs.parameters['CELL']['cell_dynamics'] = 'damp-w'
             action = 'bfgs history (vc-relax) failure: restarting with `damp(-w)` dynamics.'
