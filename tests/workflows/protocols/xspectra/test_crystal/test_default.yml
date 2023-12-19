@@ -26,10 +26,10 @@ core:
           tstress: true
         ELECTRONS:
           conv_thr: 4.0e-10
-          electron_maxstep: 80
+          electron_maxstep: 50
           mixing_beta: 0.4
         SYSTEM:
-          degauss: 0.01
+          degauss: 0.02
           ecutrho: 240.0
           ecutwfc: 30.0
           nosym: false
@@ -102,10 +102,10 @@ relax:
           tstress: true
         ELECTRONS:
           conv_thr: 4.0e-10
-          electron_maxstep: 80
+          electron_maxstep: 50
           mixing_beta: 0.4
         SYSTEM:
-          degauss: 0.01
+          degauss: 0.02
           ecutrho: 240.0
           ecutwfc: 30.0
           nosym: false
