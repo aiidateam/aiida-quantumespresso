@@ -183,7 +183,7 @@ class HubbardUtils:
         reordered = structure.clone()  # to be set at the end
         reordered.clear_kinds()
 
-        hubbard = structure.hubbard.copy()
+        hubbard = structure.hubbard.model_copy()
         parameters = hubbard.to_list()
 
         sites = structure.sites

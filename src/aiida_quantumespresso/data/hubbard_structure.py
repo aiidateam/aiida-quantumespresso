@@ -59,7 +59,7 @@ class HubbardStructureData(StructureData):
         :returns: a :class:`~aiida_quantumespresso.common.hubbard.Hubbard` instance.
         """
         with self.base.repository.open(self._hubbard_filename, mode='rb') as handle:
-            return Hubbard.parse_raw(json.load(handle))
+            return Hubbard.model_validate_json(json.load(handle))
 
     @hubbard.setter
     def hubbard(self, hubbard: Hubbard):
@@ -67,7 +67,7 @@ class HubbardStructureData(StructureData):
         if not isinstance(hubbard, Hubbard):
             raise ValueError('the input is not of type `Hubbard`')
 
-        serialized = json.dumps(hubbard.json())
+        serialized = json.dumps(hubbard.model_dump_json())
         self.base.repository.put_object_from_bytes(serialized.encode('utf-8'), self._hubbard_filename)
 
     @staticmethod
