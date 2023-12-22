@@ -19,7 +19,7 @@ PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
 XspectraBaseWorkChain = WorkflowFactory('quantumespresso.xspectra.base')
 XspectraCoreWorkChain = WorkflowFactory('quantumespresso.xspectra.core')
-XyData = DataFactory('array.xy')
+XyData = DataFactory('core.array.xy')
 
 
 class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
@@ -128,7 +128,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
         )
         spec.input(
             'upf2plotcore_code',
-            valid_type=orm.Code,
+            valid_type=orm.AbstractCode,
             required=False,
             help=(
                 'Code node for the upf2plotcore.sh ShellJob code.'
