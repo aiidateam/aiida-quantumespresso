@@ -343,7 +343,7 @@ class HubbardUtils:
         onsite_index: int,
         neighbours_names: List[str],
         number_of_neighbours: int,
-        radius_max: float = 5.0,
+        radius_max: float = 7.0,
         thr: float = 1.0e-2,
     ) -> Tuple[float, float]:
         """Return the minimum and maximum radius of the first neighbours of the onsite site.
@@ -353,7 +353,7 @@ class HubbardUtils:
         :param number_of_neighbours: number of neighbours coming to select
         :param radius_max: maximum radius (in Angstrom) to use for looking for neighbours
         :param thr: threshold (in Angstrom) for defining the shells
-        :return: (radium min +thr, radius max -thr) defining the shells containing only the first neighbours
+        :return: (radius min +thr, radius max -thr) defining the shells containing only the first neighbours
         """
         rmin = 0
         pymat = self.hubbard_structure.get_pymatgen_structure()
