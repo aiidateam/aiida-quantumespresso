@@ -14,9 +14,10 @@
 import pathlib
 import time
 
-from aiida.manage.configuration import load_documentation_profile
+from aiida.manage.configuration import Profile, load_profile
 
-load_documentation_profile()
+load_profile(Profile('docs', {'process_control': {}, 'storage': {}}))
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
