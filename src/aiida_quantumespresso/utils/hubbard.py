@@ -376,10 +376,11 @@ class HubbardUtils:
 
     def get_intersites_radius(
         self,
-        radius_max: float = 10.0,
-        thr: float = 1.0e-2,
         nn_finder: str = 'crystal',
-        **kwargs,
+        nn_inputs: Union[Dict, None] = None,
+        radius_max: float = 7.0,
+        thr: float = 1.0e-2,
+        **_,
     ) -> float:
         """Return the radius (in Angstrom) for intersites from nearest neighbour finders.
 
@@ -388,25 +389,30 @@ class HubbardUtils:
         run an ``hp.x`` calculation. Such radius defines a shell including only the first
         neighbours of each onsite Hubbard atom.
 
-        :param radius_max: maximum radius (in Angstrom) to use for looking for neighbours
-        :param thr: threshold (in Angstrom) for defining the shells
         :param nn_finder: string defining the nearest neighbour finder; options are:
             * `crystal`: use :class:`pymatgen.analysis.local_env.CrystalNN`
             * `voronoi`: use :class:`pymatgen.analysis.local_env.VoronoiNN`
-        :param kwargs: kwargs for the nearest neighbour analysis
+        :param nn_inputs: inputs for the nearest neighbours finder; when None, standard inputs
+            are used to find geometric first neighbours (recommended)
+        :param radius_max: max radius where to look for neighbouring atoms, in Angstrom
+        :param thr: threshold (in Angstrom) for defining the shells
         :return: radius defining the shell containing only the first neighbours
         """
         import warnings
 
         from pymatgen.analysis.local_env import CrystalNN, VoronoiNN
 
-        kwargs_ = {'tol': 0.1, 'cutoff': radius_max} if kwargs is None else kwargs
-
         rmin, rmax = 0.0, radius_max
 
         if nn_finder not in ['crystal', 'voronoi']:
             raise ValueError('`nn_finder` must be either `cyrstal` or `voronoi`')
-        voronoi = CrystalNN(**kwargs_) if nn_finder == 'crystal' else VoronoiNN(**kwargs_)  # pylint: disable=unexpected-keyword-arg
+        if nn_inputs is None:
+            if nn_finder == 'crystal':
+                nn_inputs = {'distance_cutoffs': None, 'x_diff_weight': 0, 'porous_adjustment': False}
+            if nn_finder == 'voronoi':
+                nn_inputs = {'tol': 0.1, 'cutoff': radius_max}
+
+        voronoi = CrystalNN(**nn_inputs) if nn_finder == 'crystal' else VoronoiNN(**nn_inputs)  # pylint: disable=unexpected-keyword-arg
 
         sites = self.hubbard_structure.sites
         name_to_specie = {kind.name: kind.symbol for kind in self.hubbard_structure.kinds}
@@ -439,11 +445,13 @@ class HubbardUtils:
 def initialize_hubbard_parameters(
     structure: StructureData,
     pairs: Dict[str, Tuple[str, float, float, Dict[str, str]]],
-    radius_max: float = 6.0,
     nn_finder: str = 'crystal',
+    nn_inputs: Union[Dict, None] = None,
     fold: bool = True,
     standardize: bool = False,
-    **kwargs,
+    radius_max: float = 7.0,
+    thr: float = 1e-5,
+    **_,
 ) -> HubbardStructureData:
     """Initialize the on-site and intersite parameters using nearest neighbour finders.
 
@@ -455,40 +463,45 @@ def initialize_hubbard_parameters(
     :param pairs: dictionary of the kind
         {onsite name: [onsite manifold, onsite value, intersites value, {neighbour name: neighbour manifold}], ...}
         For example: {'Fe': ['3d', 5.0, 1.0, {'O':'2p', 'O1':'1s', 'Se':'4p'}]}
-    :param radius_max: maximum radius (in Angstrom) to use for looking for neighbours
     :param nn_finder: string defining the nearest neighbour finder; options are:
         * `crystal`: use :class:`pymatgen.analysis.local_env.CrystalNN`
         * `voronoi`: use :class:`pymatgen.analysis.local_env.VoronoiNN`
+    :param nn_inputs: inputs for the nearest neighbours finder; when None, standard inputs
+        are used to find geometric first neighbours (recommended)
     :param fold: whether to fold in within the cell the atoms
     :param standardize: whether to standardize the atoms and the cell via spglib (symmetry analysis)
-    :param kwargs: kwargs for the nearest neighbour analysis
+    :param radius_max: max radius where to look for neighbouring atoms, in Angstrom
+    :param thr: threshold to refold the atoms with crystal coordinates close to 1.0
     :return: HubbardStructureData with initialized Hubbard parameters
     """
+    from aiida.tools.data import spglib_tuple_to_structure, structure_to_spglib_tuple
     from pymatgen.analysis.local_env import CrystalNN, VoronoiNN
-
-    kwargs_ = {'tol': 0.1, 'cutoff': radius_max} if kwargs is None else kwargs
+    from spglib import standardize_cell
 
     if nn_finder not in ['crystal', 'voronoi']:
         raise ValueError('`nn_finder` must be either `cyrstal` or `voronoi`')
-    voronoi = CrystalNN(**kwargs_) if nn_finder == 'crystal' else VoronoiNN(**kwargs_)  # pylint: disable=unexpected-keyword-arg
+
+    if nn_inputs is None:
+        if nn_finder == 'crystal':
+            nn_inputs = {'distance_cutoffs': None, 'x_diff_weight': 0, 'porous_adjustment': False}
+        if nn_finder == 'voronoi':
+            nn_inputs = {'tol': 0.1, 'cutoff': radius_max}
+
+    voronoi = CrystalNN(**nn_inputs) if nn_finder == 'crystal' else VoronoiNN(**nn_inputs)  # pylint: disable=unexpected-keyword-arg
 
     if not standardize and not fold:
         hubbard_structure = HubbardStructureData.from_structure(structure=structure)
 
     if fold:
-        from aiida.tools.data import spglib_tuple_to_structure, structure_to_spglib_tuple
-
         cell, kind_info, kinds = structure_to_spglib_tuple(structure)
         cell = list(cell)
-        cell[1] = cell[1] % 1
+        cell[1] = cell[1] % 1.0
+        cell[1] = np.where(np.abs(cell[1] - 1.0) < thr, 0.0, cell[1])
 
         folded_struccture = spglib_tuple_to_structure(cell, kind_info, kinds)
         hubbard_structure = HubbardStructureData.from_structure(structure=folded_struccture)
 
     if standardize:
-        from aiida.tools.data import spglib_tuple_to_structure, structure_to_spglib_tuple
-        from spglib import standardize_cell
-
         cell, kind_info, kinds = structure_to_spglib_tuple(structure)
         new_cell = standardize_cell(cell)
         new_structure = spglib_tuple_to_structure(new_cell, kind_info, kinds)
