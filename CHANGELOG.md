@@ -1,3 +1,36 @@
+## v4.5.0
+
+### Features
+- `PwBaseWorkChain`: new handler for BFGS history failure [[0224f8a]](https://github.com//commit/0224f8a4cf8122a916e2b2c5be11f3a8a811f740)
+- `PhBaseWorkChain`: allow generation of q-point mesh via `qpoints_distance` [[b9c7517]](https://github.com//commit/b9c7517744e645a93d4afc9b1999881fc39a0e46)
+- Support calculating the XPS spectra of the atoms specific by indices [[fc1a940]](https://github.com//commit/fc1a940d4a60f22b42ec0a069a06436c0c9ae0f5)
+
+### Fixes
+- `PdosWorkChain`: Fix constrained magnetization case [[a68e1e1]](https://github.com//commit/a68e1e15c11f6ad4461921145c648d75c49ff26c)
+- Fix missing `max_iterations` in overrides [[9061ea5]](https://github.com//commit/9061ea5df65e4fe95f77309d9abb5a3c7f64bb9f)
+- Improve `PhBaseWorkChain` overrides/protocol [[39287e0]](https://github.com//commit/39287e03cb6bbf1915662685a5c441e9c7c36030)
+- `OpenGridCalculation`: Add the `output_parameters` output to the spec [[5f0e095]](https://github.com//commit/5f0e095647d6529c295002aa15e48ff647111ab7)
+- `Q2rCalculation`: Add the `output_parameters` output to the spec [[7a303f9]](https://github.com//commit/7a303f9e10ff6dd9eae652b4f2d8ad2c482022d6)
+- `PwBaseWorkChain`: Pop `starting_magnetization if `tot_magnetization` is defined [[2adf033]](https://github.com//commit/2adf0335291b452d41ee9282ef13ed21f47cebc8)
+- `PwCalculation`: Fix calling input validation of base class [[17e173f]](https://github.com//commit/17e173f11c75142755bc9f3c9a71160d5aba778c)
+
+### Changes
+- `PwBaseWorkChain`: Remove disabling of resource validation [[d4e6681]](https://github.com//commit/d4e668195d369e360bfb1f06611049a940640843)
+- Protocols: Bump default SSSP version to 1.3 [[49d503d]](https://github.com//commit/49d503d8b2a0c09dd2b38fecb73b28c82e930822)
+
+### Dependencies
+- Dependencies: Update `pydantic~=2.4` [[740e0be]](https://github.com//commit/740e0bec0e68b3229367b9f10b181a925616c08b)
+- Dependencies: Update `xmlschema~=2.0` [[bec6dd6]](https://github.com//commit/bec6dd6b56b4cd3bbed3f3ab8fb97c7f7bdc0214)
+
+### Devops
+- Devops: Address various deprecation warnings from `aiida-core` [[f133b9a]](https://github.com//commit/f133b9ab8c87c122e0edff2d27bad54d5d834681)
+- Docs: Remove `aiida.manage.configuration.load_documentation_profile` [[f1d547c]](https://github.com//commit/f1d547c28b35241a53703b0790cf5dac70455060)
+- Docs: Address warning from `pydata-sphinx-theme` [[74bbaa2]](https://github.com//commit/74bbaa22b383b3323fcc3d41ad5b82fa89895c92)
+- Docs: Fix broken build by updating `sphinx-autoapi~=3.0` [[80e550e]](https://github.com//commit/80e550e9e4d831b620f61fb93c88fcc0778a467d)
+- Docs: Update QE compatibility matrix in README.md [[5db3b28]](https://github.com//commit/5db3b28ca5e067e63e59fdfdf6be8362efc7d223)
+- Tests: Revert change to `fixture_code` [[e9ce7a0]](https://github.com//commit/e9ce7a069cf1011f829143563730750a9b9fc637)
+
+
 ## v4.4.0
 
 This minor release mainly includes documentation changes, but also a small breaking change in [[a389629](https://github.com/aiidateam/aiida-quantumespresso/commit/a389629387b74805ffe2f4d6515ac05b8f62b4d5)].
