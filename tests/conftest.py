@@ -603,7 +603,12 @@ def generate_inputs_ph(
 
         from aiida_quantumespresso.utils.resources import get_default_options
 
-        pw_node = generate_calc_job_node(inputs={'parameters': Dict(), 'structure': generate_structure()})
+        pw_node = generate_calc_job_node(
+            entry_point_name='quantumespresso.pw', inputs={
+                'parameters': Dict(),
+                'structure': generate_structure()
+            }
+        )
         remote_folder = RemoteData(computer=fixture_localhost, remote_path='/tmp')
         remote_folder.base.links.add_incoming(pw_node, link_type=LinkType.CREATE, link_label='remote_folder')
         remote_folder.store()
