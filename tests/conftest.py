@@ -597,7 +597,11 @@ def generate_inputs_ph(
     """Generate default inputs for a `PhCalculation."""
 
     def _generate_inputs_ph(with_output_structure=False):
-        """Generate default inputs for a `PhCalculation."""
+        """Generate default inputs for a `PhCalculation.
+
+        :param with_output_structure: whether the PwCalculation has a StructureData in its outputs.
+            This is needed to test some PhBaseWorkChain logics.
+        """
         from aiida.common import LinkType
         from aiida.orm import Dict, RemoteData
 
