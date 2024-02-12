@@ -3,7 +3,7 @@
 """Tests for the `PhBaseWorkChain` class."""
 from aiida import orm
 from aiida.common import AttributeDict, LinkType
-from aiida.engine import ProcessHandlerReport
+from aiida.engine import ProcessHandlerReport, WorkChain
 import pytest
 
 from aiida_quantumespresso.calculations.ph import PhCalculation
@@ -257,3 +257,22 @@ def test_merge_outputs(
     outputs = ph_base.get_outputs(node_2)
 
     data_regression.check(outputs['output_parameters'].get_dict())
+
+
+def test_validate_inputs_excluded_qpoints_distance(generate_inputs_ph):
+    """Test that q-points validation passes in case the ports are excluded in a parent work chain."""
+    from aiida.engine.utils import instantiate_process
+    from aiida.manage.manager import get_manager
+
+    class WrapPhBaseWorkChain(WorkChain):
+        """Minimal work chain that wraps a ``PhBaseWorkChain`` for testing excluding q-points inputs."""
+
+        @classmethod
+        def define(cls, spec):
+            super().define(spec)
+            spec.expose_inputs(PhBaseWorkChain, exclude=('qpoints', 'qpoints_distance'))
+
+    inputs = {'ph': generate_inputs_ph()}
+    inputs['ph'].pop('qpoints', None)
+    runner = get_manager().get_runner()
+    instantiate_process(runner, WrapPhBaseWorkChain, **inputs)
