@@ -177,27 +177,26 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         the case of the latter, the `KpointsData` will be constructed for the input `StructureData`
         from the parent_folder using the `create_kpoints_from_distance` calculation function.
         """
-
         try:
             qpoints = self.inputs.qpoints
         except AttributeError:
 
             try:
-                structure = self.ctx.inputs.ph.parent_folder.creator.output.output_structure
+                structure = self.ctx.inputs.parent_folder.creator.output.output_structure
             except AttributeError:
-                structure = self.ctx.inputs.ph.parent_folder.creator.inputs.structure
+                structure = self.ctx.inputs.parent_folder.creator.inputs.structure
 
             inputs = {
                 'structure': structure,
                 'distance': self.inputs.qpoints_distance,
-                'force_parity': self.inputs.qpoints_force_parity,
+                'force_parity': self.inputs.get('qpoints_force_parity', orm.Bool(False)),
                 'metadata': {
                     'call_link_label': 'create_qpoints_from_distance'
                 }
             }
             qpoints = create_kpoints_from_distance(**inputs)
 
-        self.ctx.inputs.ph['qpoints'] = qpoints
+        self.ctx.inputs['qpoints'] = qpoints
 
     def set_max_seconds(self, max_wallclock_seconds: None):
         """Set the `max_seconds` to a fraction of `max_wallclock_seconds` option to prevent out-of-walltime problems.
