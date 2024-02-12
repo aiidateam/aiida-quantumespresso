@@ -375,6 +375,10 @@ def generate_structure():
             structure = StructureData(cell=cell)
             structure.append_atom(position=(0., 0., 0.), symbols='Si', name=name1)
             structure.append_atom(position=(param / 4., param / 4., param / 4.), symbols='Si', name=name2)
+        elif structure_id == 'cobalt-prim':
+            cell = [[0.0, 2.715, 2.715], [2.715, 0.0, 2.715], [2.715, 2.715, 0.0]]
+            structure = StructureData(cell=cell)
+            structure.append_atom(position=(0.0, 0.0, 0.0), symbols='Co', name='Co')
         elif structure_id == 'water':
             structure = StructureData(cell=[[5.29177209, 0., 0.], [0., 5.29177209, 0.], [0., 0., 5.29177209]])
             structure.append_atom(position=[12.73464656, 16.7741411, 24.35076238], symbols='H', name='H')
