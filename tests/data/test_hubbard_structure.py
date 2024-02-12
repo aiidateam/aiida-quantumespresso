@@ -62,7 +62,7 @@ def test_from_structure(generate_structure, generate_hubbard):
 
 
 @pytest.mark.usefixtures('aiida_profile')
-@pytest.mark.parametrize('structure_name', ('silicon',))
+@pytest.mark.parametrize('structure_name', ('silicon', '2D-xy-arsenic'))
 @pytest.mark.parametrize(
     'parameters', (
         ((0, '1s', 0, '1s', 5.0, (0, 0, 0), 'Ueff'),),
@@ -88,13 +88,14 @@ def test_append_hubbard_parameters(data_regression, generate_structure, structur
     assert len(hubbard_structure.hubbard.parameters) == len(set(parameters))
 
 
+@pytest.mark.parametrize('structure_name', ('cobalt-prim', '1D-x-carbon'))
 @pytest.mark.parametrize('parameter', (
     (0, '1s', 1, '1s', 5.0, None, 'V'),
     (0, '1s', 1, '1s', 5.0, (0, 0, 0), 'V'),
 ))
-def test_append_hubbard_parameters_invalid_index(generate_structure, parameter):
+def test_append_hubbard_parameters_invalid_index(generate_structure, structure_name, parameter):
     """Test the `append_hubbard_parameters` method with invalid index."""
-    hubbard_structure = HubbardStructureData.from_structure(generate_structure('cobalt-prim'))
+    hubbard_structure = HubbardStructureData.from_structure(generate_structure(structure_name))
 
     with pytest.raises(ValueError, match='atom_index and neighbour_index must be within the range'):
         hubbard_structure.append_hubbard_parameter(*parameter)

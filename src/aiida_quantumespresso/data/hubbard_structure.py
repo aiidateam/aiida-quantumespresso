@@ -5,6 +5,7 @@ from typing import List, Tuple, Union
 
 from aiida.orm import StructureData
 import numpy as np
+from pymatgen.core import Lattice, PeriodicSite
 
 from aiida_quantumespresso.common.hubbard import Hubbard, HubbardParameters
 
@@ -110,8 +111,14 @@ class HubbardStructureData(StructureData):
         :param hubbard_type: hubbard type (U, V, J, ...), defaults to 'Ueff'
             (see :class:`~aiida_quantumespresso.common.hubbard.Hubbard` for full allowed values)
         """
-        pymat = self.get_pymatgen_structure()
-        sites = pymat.sites
+        sites = [
+            PeriodicSite(
+                species=site.species,
+                coords=site.coords,
+                lattice=Lattice(self.cell, pbc=self.pbc),
+                coords_are_cartesian=True
+            ) for site in self.get_pymatgen().sites
+        ]
 
         if any((atom_index > len(sites) - 1, neighbour_index > len(sites) - 1)):
             raise ValueError(
