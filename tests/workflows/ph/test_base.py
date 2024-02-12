@@ -10,15 +10,6 @@ from aiida_quantumespresso.calculations.ph import PhCalculation
 from aiida_quantumespresso.workflows.ph.base import PhBaseWorkChain
 
 
-@pytest.mark.usefixtures('aiida_profile')
-def test_invalid_inputs(generate_workchain_ph, generate_inputs_ph):
-    """Test `PhBaseWorkChain` validation methods."""
-    inputs = {'ph': generate_inputs_ph()}
-    message = r'Neither `qpoints` nor `qpoints_distance` were specified.'
-    with pytest.raises(ValueError, match=message):
-        generate_workchain_ph(inputs=inputs)
-
-
 @pytest.fixture
 def generate_ph_calc_job_node(generate_calc_job_node, fixture_localhost):
     """Generate a ``CalcJobNode`` that would have been created by a ``PhCalculation``."""
@@ -43,6 +34,15 @@ def generate_ph_calc_job_node(generate_calc_job_node, fixture_localhost):
     return _generate_ph_calc_job_node
 
 
+@pytest.mark.usefixtures('aiida_profile')
+def test_invalid_inputs(generate_workchain_ph, generate_inputs_ph):
+    """Test `PhBaseWorkChain` validation methods."""
+    inputs = {'ph': generate_inputs_ph()}
+    message = r'Neither `qpoints` nor `qpoints_distance` were specified.'
+    with pytest.raises(ValueError, match=message):
+        generate_workchain_ph(inputs=inputs)
+
+
 def test_setup(generate_workchain_ph):
     """Test `PhBaseWorkChain.setup`."""
     process = generate_workchain_ph()
@@ -50,6 +50,30 @@ def test_setup(generate_workchain_ph):
 
     assert process.ctx.restart_calc is None
     assert isinstance(process.ctx.inputs, AttributeDict)
+
+
+@pytest.mark.parametrize(
+    ('with_output_structure', 'with_qpoints_distance'),
+    ((False, False), (False, True), (True, True)),
+)
+def test_set_qpoints(generate_workchain_ph, generate_inputs_ph, with_output_structure, with_qpoints_distance):
+    """Test `PhBaseWorkChain.set_qpoints`."""
+    inputs = {'ph': generate_inputs_ph(with_output_structure=with_output_structure)}
+    inputs['qpoints'] = inputs['ph'].pop('qpoints')
+
+    if with_qpoints_distance:
+        inputs.pop('qpoints')
+        inputs['qpoints_distance'] = orm.Float(0.5)
+
+    process = generate_workchain_ph(inputs=inputs)
+    process.setup()
+    process.set_qpoints()
+
+    assert 'qpoints' in process.ctx.inputs
+    assert isinstance(process.ctx.inputs['qpoints'], orm.KpointsData)
+
+    if not with_qpoints_distance:
+        assert process.ctx.inputs['qpoints'] == inputs['qpoints']
 
 
 def test_handle_unrecoverable_failure(generate_workchain_ph):
