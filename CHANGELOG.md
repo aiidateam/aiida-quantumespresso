@@ -1,34 +1,94 @@
 ## v4.5.0
 
-### ✨ New features
-- `PwBaseWorkChain`: new handler for BFGS history failure [[0224f8a]](https://github.com/aiidateam/aiida-quantumespresso/commit/0224f8a4cf8122a916e2b2c5be11f3a8a811f740)
+Besides several bug fixes and documentation improvements, this minor release introduces some changes to the `PhBaseWorkChain` and how it is used.
+Most importantly, q-points are no longer defined directly on the `PhCalculation` in the `ph` namespace, but as a top-level input on the `PhBaseWorkChain`, either as a `KpointsData` node (see [b9c7517](https://github.com/aiidateam/aiida-quantumespresso/commit/b9c7517744e645a93d4afc9b1999881fc39a0e46)):
+
+```python
+ph_base_builder = PhBaseWorkChain.get_builder()
+
+qpoints = orm.KpointsData()
+qpoints.set_kpoints_mesh([2, 2, 2])
+
+ph_base_builder.qpoints = qpoints
+```
+
+Or a `qpoints_distance`, which defines a linear density that can be used in combination with the structure to generate a mesh on the fly:
+
+```python
+ph_base_builder = PhBaseWorkChain.get_builder()
+
+ph_base_builder.qpoints_distance = orm.Float(0.3)
+```
+
+The protocols are also updated to use the new `qpoints_distance` input, with some reasonable default for the various options.
+
+| ⚠️ **Important**: While the current defaults are reasonable, they by no means represent a rigorously tested protocol that guarantees a certain level of convergence. Be sure to run your own tests! |
+|---|
+
+The `get_builder_from_protocol()` method of the `PhBaseWorkChain` now also recognises the `electronic_type` input argument.
+For example, when running an insulator, one can obtain a fully populated builder via:
+
+```python
+from aiida_quantumespresso.common.types import ElectronicType
+
+builder = PhBaseWorkChain.get_builder_from_protocol(
+    code=ph_code,
+    parent_folder=pw_remote_folder,
+    electronic_type=ElectronicType.INSULATOR
+)
+```
+
+which will set `INPUTPH.epsil` to `True` in the `ph.x` input file.
+
+This release also bumps the default SSSP version in the protocols up to v1.3 (still using the PBEsol functional).
+In case you have not installed this newer version, you can do so with `aiida-pseudo` (version `>=1.1.0`):
+
+```console
+aiida-pseudo install sssp -v 1.3 -x PBEsol
+```
+
+### ‼️ Breaking changes
+
 - `PhBaseWorkChain`: allow generation of q-point mesh via `qpoints_distance` [[b9c7517]](https://github.com/aiidateam/aiida-quantumespresso/commit/b9c7517744e645a93d4afc9b1999881fc39a0e46)
+
+### ✨ New features
+
+- `PwBaseWorkChain`: new handler for BFGS history failure [[0224f8a]](https://github.com/aiidateam/aiida-quantumespresso/commit/0224f8a4cf8122a916e2b2c5be11f3a8a811f740)
 - Support calculating the XPS spectra of the atoms specific by indices [[fc1a940]](https://github.com/aiidateam/aiida-quantumespresso/commit/fc1a940d4a60f22b42ec0a069a06436c0c9ae0f5)
 
+### 👌 Improvements
+
+- Improve `PhBaseWorkChain` overrides/protocol [[39287e0]](https://github.com/aiidateam/aiida-quantumespresso/commit/39287e03cb6bbf1915662685a5c441e9c7c36030)
+- `PwBaseWorkChain`: Remove disabling of resource validation [[d4e6681]](https://github.com/aiidateam/aiida-quantumespresso/commit/d4e668195d369e360bfb1f06611049a940640843)
+- Protocols: Bump default SSSP version to 1.3 [[49d503d]](https://github.com/aiidateam/aiida-quantumespresso/commit/49d503d8b2a0c09dd2b38fecb73b28c82e930822)
+
 ### 🐛 Bug fixes
+
 - `PdosWorkChain`: Fix constrained magnetization case [[a68e1e1]](https://github.com/aiidateam/aiida-quantumespresso/commit/a68e1e15c11f6ad4461921145c648d75c49ff26c)
 - Fix missing `max_iterations` in overrides [[9061ea5]](https://github.com/aiidateam/aiida-quantumespresso/commit/9061ea5df65e4fe95f77309d9abb5a3c7f64bb9f)
 - `OpenGridCalculation`: Add the `output_parameters` output to the spec [[5f0e095]](https://github.com/aiidateam/aiida-quantumespresso/commit/5f0e095647d6529c295002aa15e48ff647111ab7)
 - `Q2rCalculation`: Add the `output_parameters` output to the spec [[7a303f9]](https://github.com/aiidateam/aiida-quantumespresso/commit/7a303f9e10ff6dd9eae652b4f2d8ad2c482022d6)
-- `PwBaseWorkChain`: Pop `starting_magnetization if `tot_magnetization` is defined [[2adf033]](https://github.com/aiidateam/aiida-quantumespresso/commit/2adf0335291b452d41ee9282ef13ed21f47cebc8)
+- `PwBaseWorkChain`: Pop `starting_magnetization` if `tot_magnetization` is defined [[2adf033]](https://github.com/aiidateam/aiida-quantumespresso/commit/2adf0335291b452d41ee9282ef13ed21f47cebc8)
 - `PwCalculation`: Fix calling input validation of base class [[17e173f]](https://github.com/aiidateam/aiida-quantumespresso/commit/17e173f11c75142755bc9f3c9a71160d5aba778c)
 
-### 👌 Improvements
-- Improve `PhBaseWorkChain` overrides/protocol [[39287e0]](https://github.com/aiidateam/aiida-quantumespresso/commit/39287e03cb6bbf1915662685a5c441e9c7c36030)
-- `PwBaseWorkChain`: Remove disabling of resource validation [[d4e6681]](https://github.com/aiidateam/aiida-quantumespresso/commit/d4e668195d369e360bfb1f06611049a940640843)
-- Protocols: Bump default SSSP version to 1.3 [[49d503d]](https://github.com/aiidateam/aiida-quantumespresso/commit/49d503d8b2a0c09dd2b38fecb73b28c82e930822)
+### 📚 Documentation
+
+- Remove `aiida.manage.configuration.load_documentation_profile` [[f1d547c]](https://github.com/aiidateam/aiida-quantumespresso/commit/f1d547c28b35241a53703b0790cf5dac70455060)
+- Address warning from `pydata-sphinx-theme` [[74bbaa2]](https://github.com/aiidateam/aiida-quantumespresso/commit/74bbaa22b383b3323fcc3d41ad5b82fa89895c92)
+- Docs: Fix broken build by updating `sphinx-autoapi~=3.0` [[80e550e]](https://github.com/aiidateam/aiida-quantumespresso/commit/80e550e9e4d831b620f61fb93c88fcc0778a467d)
+- Docs: Update QE compatibility matrix in README.md [[5db3b28]](https://github.com/aiidateam/aiida-quantumespresso/commit/5db3b28ca5e067e63e59fdfdf6be8362efc7d223)
+
+### 🔧 Maintenance
+
+- Address various deprecation warnings from `aiida-core` [[f133b9a]](https://github.com/aiidateam/aiida-quantumespresso/commit/f133b9ab8c87c122e0edff2d27bad54d5d834681)
 
 ### ⬆️ Update dependencies
 - Dependencies: Update `pydantic~=2.4` [[740e0be]](https://github.com/aiidateam/aiida-quantumespresso/commit/740e0bec0e68b3229367b9f10b181a925616c08b)
 - Dependencies: Update `xmlschema~=2.0` [[bec6dd6]](https://github.com/aiidateam/aiida-quantumespresso/commit/bec6dd6b56b4cd3bbed3f3ab8fb97c7f7bdc0214)
 
-### 📚 Documentation
-- Devops: Address various deprecation warnings from `aiida-core` [[f133b9a]](https://github.com/aiidateam/aiida-quantumespresso/commit/f133b9ab8c87c122e0edff2d27bad54d5d834681)
-- Docs: Remove `aiida.manage.configuration.load_documentation_profile` [[f1d547c]](https://github.com/aiidateam/aiida-quantumespresso/commit/f1d547c28b35241a53703b0790cf5dac70455060)
-- Docs: Address warning from `pydata-sphinx-theme` [[74bbaa2]](https://github.com/aiidateam/aiida-quantumespresso/commit/74bbaa22b383b3323fcc3d41ad5b82fa89895c92)
-- Docs: Fix broken build by updating `sphinx-autoapi~=3.0` [[80e550e]](https://github.com/aiidateam/aiida-quantumespresso/commit/80e550e9e4d831b620f61fb93c88fcc0778a467d)
-- Docs: Update QE compatibility matrix in README.md [[5db3b28]](https://github.com/aiidateam/aiida-quantumespresso/commit/5db3b28ca5e067e63e59fdfdf6be8362efc7d223)
-- Tests: Revert change to `fixture_code` [[e9ce7a0]](https://github.com/aiidateam/aiida-quantumespresso/commit/e9ce7a069cf1011f829143563730750a9b9fc637)
+### 🧪 Tests
+
+- Revert change to `fixture_code` [[e9ce7a0]](https://github.com/aiidateam/aiida-quantumespresso/commit/e9ce7a069cf1011f829143563730750a9b9fc637)
 
 
 ## v4.4.0
