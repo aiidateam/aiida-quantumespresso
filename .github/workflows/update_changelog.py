@@ -30,6 +30,9 @@ DEFAULT_CHANGELOG_SECTIONS = """
 ### ⬆️ Update dependencies
 
 
+### 🧪 Tests
+
+
 ### ♻️ Refactor
 
 """
