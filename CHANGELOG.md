@@ -1,3 +1,36 @@
+## v4.5.1
+
+This patch release fixes some issues with the changes introduced in [b9c7517](https://github.com/aiidateam/aiida-quantumespresso/commit/b9c7517744e645a93d4afc9b1999881fc39a0e46) and released in v4.5.0.
+The new approach for setting the q-points was unfortunately broken, which is now fixed in [c353cc2](https://github.com/aiidateam/aiida-quantumespresso/commit/c353cc2e4104352ef9b5490adb53a60da47f293d).
+Moreover, the validation that was added to the top-level inputs of the `PhBaseWorkChain` requires the user to specify either the `qpoints` or `qpoints_distance` input.
+This means that work chains which wrap the `PhBaseWorkChain` but provide the q-points on the fly will have to disable this validation by setting the corresponding validator to `None` in the input spec.
+To avoid this, we have the validator check if one of the `qpoints` or `qpoints_distance` ports are still present in the port namespace.
+If not, the validation is skipped.
+
+Higher-level work chains that wrap the `PhBaseWorkChain` can then simply exclude these ports when exposing the inputs:
+
+```python
+    class WrapPhBaseWorkChain(WorkChain):
+        """Example work chain that wraps a ``PhBaseWorkChain`` excluding q-points inputs."""
+
+        @classmethod
+        def define(cls, spec):
+            super().define(spec)
+            spec.expose_inputs(PhBaseWorkChain, exclude=('qpoints', 'qpoints_distance'))
+```
+
+### 👌 Improvements
+
+* `PhBaseWorkChain`: skip q-points validation if ports are excluded [[32536e8](https://github.com/aiidateam/aiida-quantumespresso/commit/32536e85abd6de30cd8f9a07124996ce8cd0760a)]
+
+### 🐛 Bug fixes
+
+* `PhBaseWorkChain`: fix `set_qpoints` step [[c353cc2](https://github.com/aiidateam/aiida-quantumespresso/commit/c353cc2e4104352ef9b5490adb53a60da47f293d)]
+
+### 📚 Documentation
+
+* `CHANGELOG.md`: improve release notes for `v4.5.0` [[b659625](https://github.com/aiidateam/aiida-quantumespresso/commit/b65962565f300fbda643ea43d18d01329c4a85ff)]
+
 ## v4.5.0
 
 Besides several bug fixes and documentation improvements, this minor release introduces some changes to the `PhBaseWorkChain` and how it is used.

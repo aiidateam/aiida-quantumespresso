@@ -76,7 +76,7 @@ def update_changelog():
         # Add the commit hash (short) to link to the changelog
         commit = commit.strip("'")
         hash_short, hash_long, message = commit.split('|', maxsplit=2)
-        message += f'[[{hash_short}](https://github.com/aiidateam/aiida-quantumespresso/commit/{hash_long})]'
+        message += f' [[{hash_short}](https://github.com/aiidateam/aiida-quantumespresso/commit/{hash_long})]'
         changelog_message += f'\n* {message}'
 
     with Path('CHANGELOG.md').open('w', encoding='utf8') as handle:
