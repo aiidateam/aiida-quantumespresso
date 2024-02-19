@@ -56,3 +56,14 @@ def test_seekpath_analysis(data_regression):
             'hubbard': conv_structure.hubbard.to_list(),
         }
     })
+
+
+# pylint: disable=W0621
+@pytest.mark.usefixtures('aiida_profile')
+def test_seekpath_analysis_intersite(generate_structure):
+    """Test that the `seekpath_structure_analysis` with intersite hubbard corrections fails."""
+    orig_structure = HubbardStructureData.from_structure(generate_structure('silicon-kinds'))
+    orig_structure.initialize_intersites_hubbard('Si0', '2p', 'Si1', '2p', 4.0, 'V', True)
+
+    with pytest.raises(NotImplementedError, match='Intersite Hubbard parameters are not yet supported.'):
+        seekpath_structure_analysis(orig_structure)

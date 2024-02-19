@@ -41,9 +41,11 @@ def seekpath_structure_analysis(structure, **kwargs):
 
 def update_structure_with_hubbard(structure, orig_structure):
     """Update the structure based on Hubbard parameters if the input structure is a HubbardStructureData."""
+    from aiida_quantumespresso.utils.hubbard import is_intersite_hubbard
+
     hubbard_structure = HubbardStructureData.from_structure(structure)
 
-    if any(parameter.hubbard_type == 'V' for parameter in orig_structure.hubbard.parameters):
+    if is_intersite_hubbard(orig_structure.hubbard):
         raise NotImplementedError('Intersite Hubbard parameters are not yet supported.')
 
     for parameter in orig_structure.hubbard.parameters:
