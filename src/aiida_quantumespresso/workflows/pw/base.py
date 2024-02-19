@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts."""
+import warnings
+
 from aiida import orm
 from aiida.common import AttributeDict, exceptions
 from aiida.common.lang import type_check
@@ -117,6 +119,9 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
+        The current protocols rely on the `Slurm` scheduler. To use them nonetheless with a different scheduler, the
+        protocols might need to be adjusted and explicit resources need to be provided in `options`.
+
         :param code: the ``Code`` instance configured for the ``quantumespresso.pw`` plugin.
         :param structure: the ``StructureData`` instance to use.
         :param protocol: protocol to use, if not specified, the default will be used.
@@ -207,6 +212,12 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             pseudos = recursive_merge(pseudos, pseudos_overrides)
 
         metadata = inputs['pw']['metadata']
+
+        if not options or options.get('resources', None) is None:
+            warnings.warn(
+                'No explicit resources were provided for `metadata.options.resources`. This approach is '
+                'deprecated and will cause an error in future versions.', UserWarning
+            )
 
         if options:
             metadata['options'] = recursive_merge(inputs['pw']['metadata']['options'], options)
