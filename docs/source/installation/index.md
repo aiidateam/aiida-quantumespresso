@@ -212,10 +212,10 @@ $ pip install aiida-pseudo
 ```
 
 At a minimum, at least one pseudo potential family should be installed.
-We recommend using the [SSSP] with the PBEsol functional:
+We recommend using the [SSSP] v1.3 with the PBEsol functional:
 
 ```console
-$ aiida-pseudo install sssp -x PBEsol
+$ aiida-pseudo install sssp -v 1.3 -x PBEsol
 ```
 
 For more detailed information on installing other pseudo potential families, please refer to the documentation of [aiida-pseudo].

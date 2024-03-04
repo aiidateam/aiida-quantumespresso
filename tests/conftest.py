@@ -168,7 +168,7 @@ def sssp(aiida_profile, generate_upf_data):
                 'cutoff_rho': 240.0,
             }
 
-        label = 'SSSP/1.2/PBEsol/efficiency'
+        label = 'SSSP/1.3/PBEsol/efficiency'
         family = SsspFamily.create_from_folder(dirpath, label)
 
     family.set_cutoffs(cutoffs, stringency, unit='Ry')
@@ -375,6 +375,10 @@ def generate_structure():
             structure = StructureData(cell=cell)
             structure.append_atom(position=(0., 0., 0.), symbols='Si', name=name1)
             structure.append_atom(position=(param / 4., param / 4., param / 4.), symbols='Si', name=name2)
+        elif structure_id == 'cobalt-prim':
+            cell = [[0.0, 2.715, 2.715], [2.715, 0.0, 2.715], [2.715, 2.715, 0.0]]
+            structure = StructureData(cell=cell)
+            structure.append_atom(position=(0.0, 0.0, 0.0), symbols='Co', name='Co')
         elif structure_id == 'water':
             structure = StructureData(cell=[[5.29177209, 0., 0.], [0., 5.29177209, 0.], [0., 0., 5.29177209]])
             structure.append_atom(position=[12.73464656, 16.7741411, 24.35076238], symbols='H', name='H')
@@ -591,18 +595,41 @@ def generate_inputs_q2r(fixture_sandbox, fixture_localhost, fixture_code, genera
 
 
 @pytest.fixture
-def generate_inputs_ph(fixture_sandbox, fixture_localhost, fixture_code, generate_remote_data, generate_kpoints_mesh):
+def generate_inputs_ph(
+    generate_calc_job_node, generate_structure, fixture_localhost, fixture_code, generate_kpoints_mesh
+):
     """Generate default inputs for a `PhCalculation."""
 
-    def _generate_inputs_ph():
-        """Generate default inputs for a `PhCalculation."""
-        from aiida.orm import Dict
+    def _generate_inputs_ph(with_output_structure=False):
+        """Generate default inputs for a `PhCalculation.
+
+        :param with_output_structure: whether the PwCalculation has a StructureData in its outputs.
+            This is needed to test some PhBaseWorkChain logics.
+        """
+        from aiida.common import LinkType
+        from aiida.orm import Dict, RemoteData
 
         from aiida_quantumespresso.utils.resources import get_default_options
 
+        pw_node = generate_calc_job_node(
+            entry_point_name='quantumespresso.pw', inputs={
+                'parameters': Dict(),
+                'structure': generate_structure()
+            }
+        )
+        remote_folder = RemoteData(computer=fixture_localhost, remote_path='/tmp')
+        remote_folder.base.links.add_incoming(pw_node, link_type=LinkType.CREATE, link_label='remote_folder')
+        remote_folder.store()
+        parent_folder = pw_node.outputs.remote_folder
+
+        if with_output_structure:
+            structure = generate_structure()
+            structure.base.links.add_incoming(pw_node, link_type=LinkType.CREATE, link_label='output_structure')
+            structure.store()
+
         inputs = {
             'code': fixture_code('quantumespresso.ph'),
-            'parent_folder': generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.pw'),
+            'parent_folder': parent_folder,
             'qpoints': generate_kpoints_mesh(2),
             'parameters': Dict({'INPUTPH': {}}),
             'metadata': {
@@ -805,7 +832,9 @@ def generate_workchain_ph(generate_workchain, generate_inputs_ph, generate_calc_
         entry_point = 'quantumespresso.ph.base'
 
         if inputs is None:
-            inputs = {'ph': generate_inputs_ph()}
+            ph_inputs = generate_inputs_ph()
+            qpoints = ph_inputs.pop('qpoints')
+            inputs = {'ph': ph_inputs, 'qpoints': qpoints}
 
         if return_inputs:
             return inputs

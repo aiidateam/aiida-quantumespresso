@@ -21,7 +21,7 @@ from aiida_quantumespresso.workflows.protocols.utils import ProtocolMixin, recur
 PwCalculation = CalculationFactory('quantumespresso.pw')
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
-XyData = DataFactory('array.xy')
+XyData = DataFactory('core.array.xy')
 
 
 def validate_inputs(inputs, _):

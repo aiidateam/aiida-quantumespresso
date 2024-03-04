@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from xmlschema.etree import ElementTree
+from xml.etree import ElementTree
 
 from aiida_quantumespresso.parsers.parse_xml.exceptions import XMLParseError
 from aiida_quantumespresso.parsers.parse_xml.parse import parse_xml_post_6_2

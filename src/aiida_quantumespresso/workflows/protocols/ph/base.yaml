@@ -1,4 +1,6 @@
 default_inputs:
+    qpoints_force_parity: false
+    qpoints_distance: 0.3
     clean_workdir: False
     max_iterations: 5
     ph:
@@ -11,27 +13,22 @@ default_inputs:
         parameters:
             INPUTPH:
                 tr2_ph: 1.0e-18
-        qpoints:
-          - 3
-          - 3
-          - 3
+
 default_protocol: moderate
 protocols:
     moderate:
         description: 'Protocol to perform the computation at normal precision at moderate computational cost.'
     precise:
         description: 'Protocol to perform the computation at high precision at higher computational cost.'
+        qpoints_distance: 0.2
         ph:
             parameters:
                 INPUTPH:
                     tr2_ph: 1.0e-20
     fast:
         description: 'Protocol to perform the computation at low precision at minimal computational cost for testing purposes.'
+        qpoints_distance: 0.6
         ph:
             parameters:
                 INPUTPH:
                     tr2_ph: 1.0e-16
-            qpoints:
-              - 2
-              - 2
-              - 2
