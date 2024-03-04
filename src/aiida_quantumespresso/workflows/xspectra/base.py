@@ -99,7 +99,7 @@ class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if isinstance(code, str):
             code = orm.load_code(code)
 
-        type_check(code, orm.Code)
+        type_check(code, orm.AbstractCode)
 
         inputs = cls.get_protocol_inputs(protocol, overrides)
 
@@ -137,6 +137,7 @@ class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if 'settings' in inputs['xspectra']:
             builder.xspectra['settings'] = orm.Dict(inputs['xspectra']['settings'])
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
+        builder.max_iterations = orm.Int(inputs['max_iterations'])
         # pylint: enable=no-member
 
         return builder

@@ -207,7 +207,7 @@ from ase.build import bulk
 from aiida.orm import StructureData, load_code, load_group
 
 # Load the pseudopotential family whose pseudos to use
-family = load_group('SSSP/1.1/PBE/effiency')
+family = load_group('SSSP/1.3/PBEsol/effiency')
 structure = StructureData(ase=bulk('GaAs', 'fcc', 5.4))
 
 builder = load_code('pw').get_builder()
@@ -226,7 +226,7 @@ from ase.build import bulk
 from aiida.orm import StructureData, load_code, load_group
 
 # Load the pseudopotential family whose pseudos to use
-family = load_group('SSSP/1.1/PBE/effiency')
+family = load_group('SSSP/1.3/PBEsol/effiency')
 structure = StructureData(ase=bulk('GaAs', 'fcc', 5.4))
 
 builder = load_code('pw').get_builder()

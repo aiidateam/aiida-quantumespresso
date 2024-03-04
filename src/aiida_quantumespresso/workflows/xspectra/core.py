@@ -148,7 +148,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         )
         spec.input(
             'upf2plotcore_code',
-            valid_type=orm.Code,
+            valid_type=orm.AbstractCode,
             required=False,
             help='The code node required for upf2plotcore.sh configured for ``aiida-shell``. '
             'Must be provided if `core_wfc_data` is not provided.'

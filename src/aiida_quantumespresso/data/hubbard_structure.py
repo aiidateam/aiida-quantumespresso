@@ -5,6 +5,7 @@ from typing import List, Tuple, Union
 
 from aiida.orm import StructureData
 import numpy as np
+from pymatgen.core import Lattice, PeriodicSite
 
 from aiida_quantumespresso.common.hubbard import Hubbard, HubbardParameters
 
@@ -58,8 +59,9 @@ class HubbardStructureData(StructureData):
 
         :returns: a :class:`~aiida_quantumespresso.common.hubbard.Hubbard` instance.
         """
+        # pylint: disable=not-context-manager
         with self.base.repository.open(self._hubbard_filename, mode='rb') as handle:
-            return Hubbard.parse_raw(json.load(handle))
+            return Hubbard.model_validate_json(json.load(handle))
 
     @hubbard.setter
     def hubbard(self, hubbard: Hubbard):
@@ -67,7 +69,7 @@ class HubbardStructureData(StructureData):
         if not isinstance(hubbard, Hubbard):
             raise ValueError('the input is not of type `Hubbard`')
 
-        serialized = json.dumps(hubbard.json())
+        serialized = json.dumps(hubbard.model_dump_json())
         self.base.repository.put_object_from_bytes(serialized.encode('utf-8'), self._hubbard_filename)
 
     @staticmethod
@@ -109,8 +111,19 @@ class HubbardStructureData(StructureData):
         :param hubbard_type: hubbard type (U, V, J, ...), defaults to 'Ueff'
             (see :class:`~aiida_quantumespresso.common.hubbard.Hubbard` for full allowed values)
         """
-        pymat = self.get_pymatgen_structure()
-        sites = pymat.sites
+        sites = [
+            PeriodicSite(
+                species=site.species,
+                coords=site.coords,
+                lattice=Lattice(self.cell, pbc=self.pbc),
+                coords_are_cartesian=True
+            ) for site in self.get_pymatgen().sites
+        ]
+
+        if any((atom_index > len(sites) - 1, neighbour_index > len(sites) - 1)):
+            raise ValueError(
+                'atom_index and neighbour_index must be within the range of the number of sites in the structure'
+            )
 
         if translation is None:
             _, translation = sites[atom_index].distance_and_image(sites[neighbour_index])

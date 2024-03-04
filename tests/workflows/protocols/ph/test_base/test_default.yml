@@ -1,0 +1,15 @@
+clean_workdir: false
+max_iterations: 5
+ph:
+  code: test.quantumespresso.ph@localhost
+  metadata:
+    options:
+      max_wallclock_seconds: 43200
+      resources:
+        num_machines: 1
+      withmpi: true
+  parameters:
+    INPUTPH:
+      tr2_ph: 1.0e-18
+qpoints_distance: 0.3
+qpoints_force_parity: false

@@ -23,15 +23,15 @@ keywords = ['aiida', 'workflows']
 requires-python = '>=3.8'
 dependencies = [
     'aiida_core[atomic_tools]~=2.3',
-    'aiida-pseudo~=1.0',
+    'aiida-pseudo~=1.1',
     'click~=8.0',
     'importlib_resources',
     'jsonschema',
     'numpy',
-    'pydantic~=1.10,>=1.10.8',
+    'pydantic~=2.0',
     'packaging',
     'qe-tools~=2.0',
-    'xmlschema~=1.2,>=1.2.5'
+    'xmlschema~=2.0'
 ]
 
 [project.urls]
@@ -197,6 +197,7 @@ testpaths = [
     'tests',
 ]
 filterwarnings = [
+    'ignore:Object of type .* not in session, .* operation along .* will not proceed:sqlalchemy.exc.SAWarning',
     'ignore:Creating AiiDA configuration folder.*:UserWarning',
     'ignore::DeprecationWarning:frozendict:',
     'ignore::DeprecationWarning:pkg_resources:',

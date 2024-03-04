@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=unused-argument
+# pylint: disable=unused-argument,too-many-statements
 """Tests for the `PdosWorkChain` class."""
 from __future__ import absolute_import
 
@@ -8,6 +8,7 @@ from aiida.common import LinkType
 from aiida.engine.utils import instantiate_process
 from aiida.manage.manager import get_manager
 from plumpy import ProcessState
+import pytest
 
 from aiida_quantumespresso.calculations.helpers import pw_input_helper
 
@@ -26,6 +27,17 @@ def instantiate_process_cls(process_cls, inputs):
     return instantiate_process(runner, process_cls, **inputs)
 
 
+@pytest.mark.parametrize(
+    'nscf_output_parameters', [
+        {
+            'fermi_energy': 6.9
+        },
+        {
+            'fermi_energy_down': 5.9,
+            'fermi_energy_up': 6.9
+        },
+    ]
+)
 def test_default(
     generate_workchain_pdos,
     generate_workchain_pw,
@@ -35,6 +47,7 @@ def test_default(
     generate_calc_job_node,
     fixture_sandbox,
     generate_bands_data,
+    nscf_output_parameters,
 ):
     """Test instantiating the WorkChain, then mock its process, by calling methods in the ``spec.outline``."""
 
@@ -76,7 +89,7 @@ def test_default(
     remote.store()
     remote.base.links.add_incoming(mock_wknode, link_type=LinkType.RETURN, link_label='remote_folder')
 
-    result = orm.Dict({'fermi_energy': 6.9029595890428})
+    result = orm.Dict(nscf_output_parameters)
     result.store()
     result.base.links.add_incoming(mock_wknode, link_type=LinkType.RETURN, link_label='output_parameters')
 
@@ -87,6 +100,7 @@ def test_default(
     wkchain.ctx.workchain_nscf = mock_wknode
 
     assert wkchain.inspect_nscf() is None
+    assert 'nscf_fermi' in wkchain.ctx
 
     # mock run dos and projwfc, and check that their inputs are acceptable
     dos_inputs, projwfc_inputs = wkchain.run_pdos_parallel()

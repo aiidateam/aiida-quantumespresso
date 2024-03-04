@@ -21,5 +21,7 @@ pw = AttributeDict({
     'press_conv_thr': 0.5,
     'smearing': '',
     'startmag': 0.,
-    'wf_collect': False,
+    'wf_collect': True,
+    'trust_radius_min': 1.0e-3,
+    'ion_dynamics': 'bfgs',
 })

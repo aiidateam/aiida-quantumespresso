@@ -33,6 +33,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         'delta_factor_max_seconds': 0.95,
         'delta_factor_nbnd': 0.05,
         'delta_minimum_nbnd': 4,
+        'delta_factor_trust_radius_min': 0.1,
     })
 
     @classmethod
@@ -227,6 +228,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         else:
             builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
         builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
+        builder.max_iterations = orm.Int(inputs['max_iterations'])
         # pylint: enable=no-member
 
         return builder
@@ -247,6 +249,13 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         self.ctx.inputs.parameters.setdefault('CONTROL', {})
         self.ctx.inputs.parameters.setdefault('ELECTRONS', {})
         self.ctx.inputs.parameters.setdefault('SYSTEM', {})
+
+        calculation_type = self.ctx.inputs.parameters['CONTROL'].get('calculation', None)
+        if calculation_type in ['relax', 'md']:
+            self.ctx.inputs.parameters.setdefault('IONS', {})
+        if calculation_type in ['vc-relax', 'vc-md']:
+            self.ctx.inputs.parameters.setdefault('IONS', {})
+            self.ctx.inputs.parameters.setdefault('CELL', {})
 
         self.ctx.inputs.settings = self.ctx.inputs.settings.get_dict() if 'settings' in self.ctx.inputs else {}
 
@@ -483,6 +492,49 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         return ProcessHandlerReport(True, self.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF)
 
     @process_handler(
+        priority=561,
+        exit_codes=[
+            PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE,
+            PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE,
+        ]
+    )
+    def handle_relax_recoverable_ionic_convergence_bfgs_history_error(self, calculation):
+        """Handle failure of the ionic minimization algorithm (BFGS).
+
+        When BFGS history fails, this can mean two things: the structure is close to the global minimum,
+        but the moves the algorithm wants to do are smaller than `trust_radius_min`, or the structure is
+        close to a local minimum (hard to detect). For the first, we restart with lowered trust_radius_min.
+        For the first case, one can lower the trust radius; for the second one, one can exploit a different
+        algorithm, e.g. `damp` (and `damp-w` for vc-relax).
+        """
+        trust_radius_min = self.ctx.inputs.parameters['IONS'].get('trust_radius_min', qe_defaults.trust_radius_min)
+        calculation_type = self.ctx.inputs.parameters['CONTROL'].get('calculation', 'relax')
+
+        if calculation_type == 'relax':
+            self.ctx.inputs.parameters['IONS']['ion_dynamics'] = 'damp'
+            action = 'bfgs history (ionic only) failure: restarting with `damp` dynamics.'
+
+        elif calculation_type == 'vc-relax' and trust_radius_min > 1.0e-4:
+            self.ctx.inputs.parameters['IONS']['trust_radius_ini'] = trust_radius_min  # start close
+            new_trust_radius_min = trust_radius_min * self.defaults.delta_factor_trust_radius_min
+            self.ctx.inputs.parameters['IONS']['trust_radius_min'] = new_trust_radius_min
+            action = f'bfgs history (vc-relax) failure: restarting with `trust_radius_min={new_trust_radius_min:.5f}`.'
+
+        elif calculation_type == 'vc-relax':
+            self.ctx.inputs.parameters['IONS']['ion_dynamics'] = 'damp'
+            self.ctx.inputs.parameters['CELL']['cell_dynamics'] = 'damp-w'
+            action = 'bfgs history (vc-relax) failure: restarting with `damp(-w)` dynamics.'
+
+        else:
+            return ProcessHandlerReport(False)
+
+        self.ctx.inputs.structure = calculation.outputs.output_structure
+
+        self.set_restart_type(RestartType.FROM_CHARGE_DENSITY, calculation.outputs.remote_folder)
+        self.report_error_handled(calculation, action)
+        return ProcessHandlerReport(True)
+
+    @process_handler(
         priority=560,
         exit_codes=[
             PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_NOT_REACHED,
@@ -500,12 +552,12 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         self.ctx.inputs.structure = calculation.outputs.output_structure
         action = 'no ionic convergence but clean shutdown: restarting from scratch but using output structure.'
 
-        self.set_restart_type(RestartType.FROM_SCRATCH)
+        self.set_restart_type(RestartType.FROM_CHARGE_DENSITY, calculation.outputs.remote_folder)
         self.report_error_handled(calculation, action)
         return ProcessHandlerReport(True)
 
     @process_handler(
-        priority=559, exit_codes=[
+        priority=555, exit_codes=[
             PwCalculation.exit_codes.ERROR_RADIAL_FFT_SIGNIFICANT_VOLUME_CONTRACTION,
         ]
     )
