@@ -51,8 +51,7 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
                              sites of the same element to be equal and ignore any special Kind names
                              from the parent structure. For instance, use_element_types = True would
                              consider sites for Kinds 'Si' and 'Si1' to be equivalent if both are sites
-                             containing silicon. Defaults to False otherwise. Only meaningful in
-                             conjunction with ``standardize_structure = False``.
+                             containing silicon. Defaults to True.
         - spglib_settings: an optional Dict object containing overrides for the symmetry
                             tolerance parameters used by spglib (symmprec, angle_tolerance).
         - pymatgen_settings: an optional Dict object containing overrides for the symmetry
@@ -133,7 +132,7 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
     if 'use_element_types' in unwrapped_kwargs.keys():
         use_element_types = unwrapped_kwargs['use_element_types'].value
     else:
-        use_element_types = False
+        use_element_types = True
 
     if isinstance(structure, HubbardStructureData):
         is_hubbard_structure = True
@@ -253,20 +252,18 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
         # 100 for each distinct duplicate. if we want to treat all sites
         # of the same element as equal, then we must therefore briefly
         # operate on a "cleaned" version of the structure tuple where this
-        # new label is reduced to its normal element number. This relies on
-        # the fact that int(i) will essentially ignore the value of the decimal
-        # when converting floats to integers.
+        # new label is reduced to its normal element number.
         if use_element_types:
-            clean_structure_tuple = (spglib_tuple[0], spglib_tuple[1], [])
+            cleaned_structure_tuple = (spglib_tuple[0], spglib_tuple[1], [])
             for i in spglib_tuple[2]:
                 if i >= 1000:
-                    new_i = int(i / 1000)
+                    new_i = int(np.trunc(i / 1000))
                 else:
                     new_i = i
-                clean_structure_tuple[2].append(new_i)
-            symmetry_dataset = spglib.get_symmetry_dataset(clean_structure_tuple, **spglib_kwargs)
-        else:  # Otherwise, proceed as usual.
-            symmetry_dataset = spglib.get_symmetry_dataset(spglib_tuple, **spglib_kwargs)
+                cleaned_structure_tuple[2].append(new_i)
+            cleaned_symmetry_dataset = spglib.get_symmetry_dataset(cleaned_structure_tuple, **spglib_kwargs)
+
+        symmetry_dataset = spglib.get_symmetry_dataset(spglib_tuple, **spglib_kwargs)
 
         # if there is no symmetry to exploit, or no standardization is desired, then we just use
         # the input structure in the following steps. This is done to account for the case where
@@ -285,7 +282,11 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
             symmetry_dataset = spglib.get_symmetry_dataset(standardized_structure_tuple, **spglib_kwargs)
             structure_is_standardized = True
 
-        equivalent_atoms_array = symmetry_dataset['equivalent_atoms']
+        if use_element_types:
+            equivalent_atoms_array = cleaned_symmetry_dataset['equivalent_atoms']
+        else:
+            equivalent_atoms_array = symmetry_dataset['equivalent_atoms']
+
         if structure_is_standardized:
             element_types = symmetry_dataset['std_types']
         else:  # convert the 'std_types' from standardized to primitive cell
@@ -302,11 +303,11 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
             element_types = primitive_types
 
         equivalency_dict = {}
-        index_counter = 0
-        for symmetry_value, element_type in zip(equivalent_atoms_array, element_types):
+        for index, symmetry_types in enumerate(zip(equivalent_atoms_array, element_types)):
+            symmetry_value, element_type = symmetry_types
             if elements_defined:  # only process the elements given in the list
                 if f'site_{symmetry_value}' in equivalency_dict:
-                    equivalency_dict[f'site_{symmetry_value}']['equivalent_sites_list'].append(index_counter)
+                    equivalency_dict[f'site_{symmetry_value}']['equivalent_sites_list'].append(index)
                 elif type_mapping_dict[str(element_type)].symbol not in abs_elements_list:
                     pass
                 else:
@@ -318,7 +319,7 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
                     }
             else:  # process everything in the system
                 if f'site_{symmetry_value}' in equivalency_dict:
-                    equivalency_dict[f'site_{symmetry_value}']['equivalent_sites_list'].append(index_counter)
+                    equivalency_dict[f'site_{symmetry_value}']['equivalent_sites_list'].append(index)
                 else:
                     equivalency_dict[f'site_{symmetry_value}'] = {
                         'kind_name': type_mapping_dict[str(element_type)].name,
@@ -326,14 +327,18 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
                         'site_index': symmetry_value,
                         'equivalent_sites_list': [symmetry_value]
                     }
-            index_counter += 1
 
         for value in equivalency_dict.values():
             value['multiplicity'] = len(value['equivalent_sites_list'])
 
         output_params['equivalent_sites_data'] = equivalency_dict
-        output_params['spacegroup_number'] = symmetry_dataset['number']
-        output_params['international_symbol'] = symmetry_dataset['international']
+
+        if use_element_types:
+            output_params['spacegroup_number'] = cleaned_symmetry_dataset['number']
+            output_params['international_symbol'] = cleaned_symmetry_dataset['international']
+        else:
+            output_params['spacegroup_number'] = symmetry_dataset['number']
+            output_params['international_symbol'] = symmetry_dataset['international']
 
         output_params['structure_is_standardized'] = structure_is_standardized
         if structure_is_standardized:
