@@ -53,7 +53,12 @@ def test_use_element_types(generate_structure):
     c_si_kinds = generate_structure('silicon-kinds')
     spglib_options = Dict({'symprec': 1.0e-3})
     inputs_bare = {'structure': c_si, 'spglib_options': spglib_options}
-    inputs_kinds = {'structure': c_si_kinds, 'spglib_options': spglib_options, 'standardize_structure': Bool(False)}
+    inputs_kinds = {
+        'structure': c_si_kinds,
+        'use_element_types': Bool(False),
+        'spglib_options': spglib_options,
+        'standardize_structure': Bool(False)
+    }
 
     result_bare = get_xspectra_structures(**inputs_bare)
     result_kinds = get_xspectra_structures(**inputs_kinds)
@@ -62,7 +67,6 @@ def test_use_element_types(generate_structure):
         'structure': c_si_kinds,
         'spglib_options': spglib_options,
         'standardize_structure': Bool(False),
-        'use_element_types': Bool(True),
     }
     result_element_types = get_xspectra_structures(**inputs_element_types)
 
