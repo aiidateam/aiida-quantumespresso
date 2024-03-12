@@ -374,11 +374,11 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         return files(protocols) / 'core_hole_treatments.yaml'
 
     @classmethod
-    def get_builder_from_protocol( # pylint: disable=too-many-statements
+    def get_builder_from_protocol(
         cls, code, structure, pseudos, core_hole_treatments=None, protocol=None,
         overrides=None, elements_list=None, atoms_list=None, options=None,
         structure_preparation_settings=None, correction_energies=None, **kwargs
-    ): # pylint: enable=too-many-statements
+    ): # pylint: disable=too-many-statements
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
         :param code: the ``Code`` instance configured for the ``quantumespresso.pw`` plugin.
@@ -584,8 +584,8 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
                     'call_link_label' : 'get_marked_structures'
                 }
             }
-            result = get_marked_structures(input_structure, **inputs) # pylint: disable=unexpected-keyword-arg
-            self.ctx.supercell = input_structure # pylint: enable=unexpected-keyword-arg
+            result = get_marked_structures(input_structure, **inputs)
+            self.ctx.supercell = input_structure
             self.ctx.equivalent_sites_data = result.pop('output_parameters').get_dict()
         structures_to_process = {f'{Key.split("_")[0]}_{Key.split("_")[1]}' : Value for Key, Value in result.items()}
         self.report(f'structures_to_process: {structures_to_process}')
