@@ -57,7 +57,11 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
             'help': 'Inputs for the `PwRelaxWorkChain`, if not specified at all, the relaxation step is skipped.'})
         spec.expose_inputs(PwBaseWorkChain, namespace='scf',
             exclude=('clean_workdir', 'pw.structure'),
-            namespace_options={'help': 'Inputs for the `PwBaseWorkChain` for the SCF calculation.'})
+            namespace_options={
+                'help': 'Inputs for the `PwBaseWorkChain` for the SCF calculation.',
+                'required': False,
+                'populate_defaults': False,
+        })
         spec.expose_inputs(PwBaseWorkChain, namespace='bands',
             exclude=('clean_workdir', 'pw.structure', 'pw.kpoints', 'pw.kpoints_distance', 'pw.parent_folder'),
             namespace_options={'help': 'Inputs for the `PwBaseWorkChain` for the BANDS calculation.'})
@@ -81,8 +85,10 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
             if_(cls.should_run_seekpath)(
                 cls.run_seekpath,
             ),
-            cls.run_scf,
-            cls.inspect_scf,
+            if_(cls.should_run_scf)(
+                cls.run_scf,
+                cls.inspect_scf,
+            ),
             cls.run_bands,
             cls.inspect_bands,
             cls.results,
@@ -104,7 +110,9 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
             required=False,
             help='The parameters used in the SeeKpath call to normalize the input or relaxed structure.')
         spec.output('scf_parameters', valid_type=orm.Dict,
-            help='The output parameters of the SCF `PwBaseWorkChain`.')
+            required=False,
+            help='The output parameters of the SCF `PwBaseWorkChain`.'
+            )
         spec.output('band_parameters', valid_type=orm.Dict,
             help='The output parameters of the BANDS `PwBaseWorkChain`.')
         spec.output('band_structure', valid_type=orm.BandsData,
@@ -222,6 +230,10 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         self.out('primitive_structure', result['primitive_structure'])
         self.out('seekpath_parameters', result['parameters'])
 
+    def should_run_scf(self):
+        """Return whether the work chain should run an SCF calculation."""
+        return 'scf' in self.inputs
+
     def run_scf(self):
         """Run the PwBaseWorkChain in scf mode on the primitive cell of (optionally relaxed) input structure."""
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='scf'))
@@ -259,7 +271,9 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         inputs.metadata.call_link_label = 'bands'
         inputs.kpoints = self.ctx.bands_kpoints
         inputs.pw.structure = self.ctx.current_structure
-        inputs.pw.parent_folder = self.ctx.current_folder
+        # override the parent_folder if the scf was run
+        if 'scf' in self.inputs:
+            inputs.pw.parent_folder = self.ctx.current_folder
         inputs.pw.parameters = inputs.pw.parameters.get_dict()
         inputs.pw.parameters.setdefault('CONTROL', {})
         inputs.pw.parameters.setdefault('SYSTEM', {})
@@ -275,7 +289,7 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
             inputs.pw.parameters['SYSTEM']['nbnd'] = nbnd
 
         # Otherwise set the current number of bands, unless explicitly set in the inputs
-        else:
+        elif "scf" in self.inputs:
             inputs.pw.parameters['SYSTEM'].setdefault('nbnd', self.ctx.current_number_of_bands)
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
@@ -296,7 +310,8 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
     def results(self):
         """Attach the desired output nodes directly as outputs of the workchain."""
         self.report('workchain succesfully completed')
-        self.out('scf_parameters', self.ctx.workchain_scf.outputs.output_parameters)
+        if 'scf' in self.inputs:
+            self.out('scf_parameters', self.ctx.workchain_scf.outputs.output_parameters)
         self.out('band_parameters', self.ctx.workchain_bands.outputs.output_parameters)
         self.out('band_structure', self.ctx.workchain_bands.outputs.output_band)
 
