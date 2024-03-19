@@ -378,7 +378,7 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         cls, code, structure, pseudos, core_hole_treatments=None, protocol=None,
         overrides=None, elements_list=None, atoms_list=None, options=None,
         structure_preparation_settings=None, correction_energies=None, **kwargs
-    ):
+    ): # pylint: disable=too-many-statements
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
         :param code: the ``Code`` instance configured for the ``quantumespresso.pw`` plugin.
@@ -463,6 +463,14 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         # for get_xspectra_structures
         if structure_preparation_settings:
             builder.structure_preparation_settings = structure_preparation_settings
+            if structure_preparation_settings.get('is_molecule_input').value:
+                builder.ch_scf.pw.parameters.base.attributes.all['SYSTEM']['assume_isolated']='mt'
+                builder.ch_scf.pw.settings=orm.Dict(dict={'gamma_only':True})
+                # To ensure compatibility with the gamma_only setting, the k-points must be configured to [1, 1, 1].
+                kpoints_mesh = DataFactory('core.array.kpoints')()
+                kpoints_mesh.set_kpoints_mesh([1, 1, 1])
+                builder.ch_scf.kpoints = kpoints_mesh
+                builder.relax.base.pw.settings=orm.Dict(dict={'gamma_only':True})
         # pylint: enable=no-member
         return builder
 
