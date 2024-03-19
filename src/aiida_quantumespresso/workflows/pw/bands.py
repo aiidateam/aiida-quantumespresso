@@ -289,7 +289,7 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
             inputs.pw.parameters['SYSTEM']['nbnd'] = nbnd
 
         # Otherwise set the current number of bands, unless explicitly set in the inputs
-        elif "scf" in self.inputs:
+        elif 'scf' in self.inputs:
             inputs.pw.parameters['SYSTEM'].setdefault('nbnd', self.ctx.current_number_of_bands)
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
