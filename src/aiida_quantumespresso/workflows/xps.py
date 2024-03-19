@@ -466,6 +466,10 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
             if structure_preparation_settings.get('is_molecule_input').value:
                 builder.ch_scf.pw.parameters.base.attributes.all['SYSTEM']['assume_isolated']='mt'
                 builder.ch_scf.pw.settings=orm.Dict(dict={'gamma_only':True})
+                # To ensure compatibility with the gamma_only setting, the k-points must be configured to [1, 1, 1].
+                kpoints_mesh = DataFactory('core.array.kpoints')()
+                kpoints_mesh.set_kpoints_mesh([1, 1, 1])
+                builder.ch_scf.kpoints = kpoints_mesh
                 builder.relax.base.pw.settings=orm.Dict(dict={'gamma_only':True})
         # pylint: enable=no-member
         return builder
