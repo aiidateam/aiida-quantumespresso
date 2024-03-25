@@ -262,7 +262,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         spec.expose_inputs(
             PwBaseWorkChain,
             namespace='nscf',
-            exclude=('clean_workdir', 'pw.structure', 'pw.parent_folder'),
+            exclude=('clean_workdir', 'pw.structure'),
             namespace_options={
                 'help': 'Inputs for the `PwBaseWorkChain` of the `nscf` calculation.',
                 'validator': validate_nscf
