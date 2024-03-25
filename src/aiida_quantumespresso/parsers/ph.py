@@ -18,6 +18,8 @@ class PhParser(BaseParser):
     class_error_map = {
         'No convergence has been achieved': 'ERROR_CONVERGENCE_NOT_REACHED',
         'problems computing cholesky': 'ERROR_COMPUTING_CHOLESKY',
+        'FFT grid incompatible with symmetry': 'ERROR_INCOMPATIBLE_FFT_GRID',
+        'wrong representation': 'ERROR_WRONG_REPRESENTATION',
     }
 
     def parse(self, **kwargs):

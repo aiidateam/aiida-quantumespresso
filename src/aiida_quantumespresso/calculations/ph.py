@@ -72,6 +72,11 @@ class PhCalculation(CalcJob):
             message='The stdout output file was incomplete probably because the calculation got interrupted.')
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
             message='The parser raised an unexpected exception: {exception}')
+        spec.exit_code(360, 'ERROR_INCOMPATIBLE_FFT_GRID',
+            message='The FFT grid is incompatible with the detected symmetries. Try using the correct ibrav.')
+        spec.exit_code(361, 'ERROR_WRONG_REPRESENTATION',
+            message=('The representation found seems to be wrong according to the detected symmetries. '
+                     'Try using the correct ibrav.'))
 
         # Significant errors but calculation can be used to restart
         spec.exit_code(400, 'ERROR_OUT_OF_WALLTIME',
