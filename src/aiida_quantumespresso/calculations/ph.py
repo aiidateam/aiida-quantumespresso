@@ -77,7 +77,7 @@ class PhCalculation(CalcJob):
                     '`ibrav` != 0 in the parent `pw.x` calculation.')
         spec.exit_code(361, 'ERROR_WRONG_REPRESENTATION',
             message=('The representation found seems to be wrong according to the detected symmetries. '
-                     'Try using the lattice-specific ibrav` != 0 in the parent `pw.x` calculation.'))
+                     'Try using the lattice-specific `ibrav` != 0 in the parent `pw.x` calculation.'))
 
         # Significant errors but calculation can be used to restart
         spec.exit_code(400, 'ERROR_OUT_OF_WALLTIME',
