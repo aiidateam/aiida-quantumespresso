@@ -73,7 +73,7 @@ class PhCalculation(CalcJob):
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
             message='The parser raised an unexpected exception: {exception}')
         spec.exit_code(360, 'ERROR_INCOMPATIBLE_FFT_GRID',
-            message='The FFT grid is incompatible with the detected symmetries. Try using the correct ibrav.')
+            message='The FFT grid is incompatible with the detected symmetries. Try using the lattice-specific `ibrav` != 0 in the parent `pw.x` calculation.')
         spec.exit_code(361, 'ERROR_WRONG_REPRESENTATION',
             message=('The representation found seems to be wrong according to the detected symmetries. '
                      'Try using the correct ibrav.'))
