@@ -288,10 +288,10 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
             # we generate the type-specific data on-the-fly since we need to
             # know which type (and thus kind) *should* be at each site
             # even if we "cleaned" the structure previously
-            spglib_std_types = spglib.get_symmetry_dataset(spglib_tuple, **spglib_kwargs)['std_types']
-            spglib_map_to_prim = spglib.get_symmetry_dataset(spglib_tuple, **spglib_kwargs)['mapping_to_primitive']
-            spglib_std_map_to_prim = spglib.get_symmetry_dataset(spglib_tuple,
-                                                                 **spglib_kwargs)['std_mapping_to_primitive']
+            non_cleaned_dataset = spglib.get_symmetry_dataset(spglib_tuple, **spglib_kwargs)
+            spglib_std_types = non_cleaned_dataset['std_types']
+            spglib_map_to_prim = non_cleaned_dataset['mapping_to_primitive']
+            spglib_std_map_to_prim = non_cleaned_dataset['std_mapping_to_primitive']
 
             map_std_pos_to_type = {}
             for position, atom_type in zip(spglib_std_map_to_prim, spglib_std_types):
