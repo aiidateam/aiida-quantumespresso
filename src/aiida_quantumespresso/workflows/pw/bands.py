@@ -163,7 +163,10 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         builder.bands = bands
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
         builder.nbands_factor = orm.Float(inputs['nbands_factor'])
-        builder.bands_kpoints_distance = orm.Float(inputs['bands_kpoints_distance'])
+        if 'bands_kpoints' in inputs:
+            builder.bands_kpoints = inputs['bands_kpoints']
+        else:
+            builder.bands_kpoints_distance = orm.Float(inputs['bands_kpoints_distance'])
 
         return builder
 
