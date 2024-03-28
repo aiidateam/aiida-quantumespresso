@@ -12,6 +12,8 @@ from aiida.tools import spglib_tuple_to_structure, structure_to_spglib_tuple
 import numpy as np
 import spglib
 
+from aiida_quantumespresso.utils.hubbard import HubbardStructureData, HubbardUtils
+
 
 @calcfunction
 def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-statements
@@ -45,6 +47,11 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
                     a molecule and not a periodic solid system. Required in order to instruct
                     the CF to use Pymatgen rather than spglib to determine the symmetry. The
                     CF will assume the structure to be a periodic solid if no input is given.
+        - use_element_types: a Bool object to indicate that symmetry analysis should consider all
+                             sites of the same element to be equal and ignore any special Kind names
+                             from the parent structure. For instance, use_element_types = True would
+                             consider sites for Kinds 'Si' and 'Si1' to be equivalent if both are sites
+                             containing silicon. Defaults to True.
         - spglib_settings: an optional Dict object containing overrides for the symmetry
                             tolerance parameters used by spglib (symmprec, angle_tolerance).
         - pymatgen_settings: an optional Dict object containing overrides for the symmetry
@@ -89,7 +96,6 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
     else:
         standardize_structure = True
     if 'absorbing_elements_list' in unwrapped_kwargs.keys():
-        elements_defined = True
         abs_elements_list = unwrapped_kwargs['absorbing_elements_list'].get_list()
         # confirm that the elements requested are actually in the input structure
         for req_element in abs_elements_list:
@@ -99,8 +105,11 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
                     f' {elements_present}'
                 )
     else:
-        elements_defined = False
-        abs_elements_list = [Kind.symbol for Kind in structure.kinds]
+        abs_elements_list = []
+        for kind in structure.kinds:
+            if kind.symbol not in abs_elements_list:
+                abs_elements_list.append(kind.symbol)
+
     if 'is_molecule_input' in unwrapped_kwargs.keys():
         is_molecule_input = unwrapped_kwargs['is_molecule_input'].value
         # If we are working with a molecule, check for pymatgen_settings
@@ -117,6 +126,21 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
         spglib_kwargs = {key: value for key, value in spglib_settings_dict.items() if key in valid_keys}
     else:
         spglib_kwargs = {}
+
+    if 'use_element_types' in unwrapped_kwargs.keys():
+        use_element_types = unwrapped_kwargs['use_element_types'].value
+    else:
+        use_element_types = True
+
+    if isinstance(structure, HubbardStructureData):
+        is_hubbard_structure = True
+        if standardize_structure:
+            raise ValidationError(
+                'Incoming structure set to be standardized, but hubbard data has been found. '
+                'Please set ``standardize_structure`` to false in ``**kwargs`` to preserve the hubbard data.'
+            )
+    else:
+        is_hubbard_structure = False
 
     output_params = {}
     result = {}
@@ -203,56 +227,100 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
     # Process a periodic system
     else:
         incoming_structure_tuple = structure_to_spglib_tuple(structure)
+        spglib_tuple = incoming_structure_tuple[0]
+        types_order = spglib_tuple[-1]
+        kinds_information = incoming_structure_tuple[1]
+        kinds_list = incoming_structure_tuple[2]
 
-        symmetry_dataset = spglib.get_symmetry_dataset(incoming_structure_tuple[0], **spglib_kwargs)
+        # We need a way to reliably convert type number into element, so we
+        # first create a mapping of assigned number to kind name then a mapping
+        # of assigned number to ``Kind``
+
+        type_name_mapping = {str(value): key for key, value in kinds_information.items()}
+        type_mapping_dict = {}
+
+        for key, value in type_name_mapping.items():
+            for kind in kinds_list:
+                if value == kind.name:
+                    type_mapping_dict[key] = kind
+
+        # By default, `structure_to_spglib_tuple` gives different
+        # ``Kinds`` of the same element a distinct atomic number by
+        # multiplying the normal atomic number by 1000, then adding
+        # 100 for each distinct duplicate. if we want to treat all sites
+        # of the same element as equal, then we must therefore briefly
+        # operate on a "cleaned" version of the structure tuple where this
+        # new label is reduced to its normal element number.
+        if use_element_types:
+            cleaned_structure_tuple = (spglib_tuple[0], spglib_tuple[1], [])
+            for i in spglib_tuple[2]:
+                if i >= 1000:
+                    new_i = int(np.trunc(i / 1000))
+                else:
+                    new_i = i
+                cleaned_structure_tuple[2].append(new_i)
+            symmetry_dataset = spglib.get_symmetry_dataset(cleaned_structure_tuple, **spglib_kwargs)
+        else:
+            symmetry_dataset = spglib.get_symmetry_dataset(spglib_tuple, **spglib_kwargs)
 
         # if there is no symmetry to exploit, or no standardization is desired, then we just use
         # the input structure in the following steps. This is done to account for the case where
         # the user has submitted an improper crystal for calculation work and doesn't want it to
         # be changed.
         if symmetry_dataset['number'] in [1, 2] or not standardize_structure:
-            standardized_structure_node = spglib_tuple_to_structure(incoming_structure_tuple[0])
+            standardized_structure_node = spglib_tuple_to_structure(spglib_tuple, kinds_information, kinds_list)
             structure_is_standardized = False
         else:  # otherwise, we proceed with the standardized structure.
-            standardized_structure_tuple = spglib.standardize_cell(incoming_structure_tuple[0], **spglib_kwargs)
-            standardized_structure_node = spglib_tuple_to_structure(standardized_structure_tuple)
+            standardized_structure_tuple = spglib.standardize_cell(spglib_tuple, **spglib_kwargs)
+            standardized_structure_node = spglib_tuple_to_structure(
+                standardized_structure_tuple, kinds_information, kinds_list
+            )
             # if we are standardizing the structure, then we need to update the symmetry
             # information for the standardized structure
             symmetry_dataset = spglib.get_symmetry_dataset(standardized_structure_tuple, **spglib_kwargs)
             structure_is_standardized = True
 
         equivalent_atoms_array = symmetry_dataset['equivalent_atoms']
-        element_types = symmetry_dataset['std_types']
+
+        if structure_is_standardized:
+            element_types = symmetry_dataset['std_types']
+        else:  # convert the 'std_types' from standardized to primitive cell
+            # we generate the type-specific data on-the-fly since we need to
+            # know which type (and thus kind) *should* be at each site
+            # even if we "cleaned" the structure previously
+            non_cleaned_dataset = spglib.get_symmetry_dataset(spglib_tuple, **spglib_kwargs)
+            spglib_std_types = non_cleaned_dataset['std_types']
+            spglib_map_to_prim = non_cleaned_dataset['mapping_to_primitive']
+            spglib_std_map_to_prim = non_cleaned_dataset['std_mapping_to_primitive']
+
+            map_std_pos_to_type = {}
+            for position, atom_type in zip(spglib_std_map_to_prim, spglib_std_types):
+                map_std_pos_to_type[str(position)] = atom_type
+            primitive_types = []
+            for position in spglib_map_to_prim:
+                atom_type = map_std_pos_to_type[str(position)]
+                primitive_types.append(atom_type)
+            element_types = primitive_types
 
         equivalency_dict = {}
-        index_counter = 0
-        for symmetry_value, element_type in zip(equivalent_atoms_array, element_types):
-            if elements_defined:  # only process the elements given in the list
+        for index, symmetry_types in enumerate(zip(equivalent_atoms_array, element_types)):
+            symmetry_value, element_type = symmetry_types
+            if type_mapping_dict[str(element_type)].symbol in abs_elements_list:
                 if f'site_{symmetry_value}' in equivalency_dict:
-                    equivalency_dict[f'site_{symmetry_value}']['equivalent_sites_list'].append(index_counter)
-                elif elements[element_type]['symbol'] not in abs_elements_list:
-                    pass
+                    equivalency_dict[f'site_{symmetry_value}']['equivalent_sites_list'].append(index)
                 else:
                     equivalency_dict[f'site_{symmetry_value}'] = {
-                        'symbol': elements[element_type]['symbol'],
+                        'kind_name': type_mapping_dict[str(element_type)].name,
+                        'symbol': type_mapping_dict[str(element_type)].symbol,
                         'site_index': symmetry_value,
                         'equivalent_sites_list': [symmetry_value]
                     }
-            else:  # process everything in the system
-                if f'site_{symmetry_value}' in equivalency_dict:
-                    equivalency_dict[f'site_{symmetry_value}']['equivalent_sites_list'].append(index_counter)
-                else:
-                    equivalency_dict[f'site_{symmetry_value}'] = {
-                        'symbol': elements[element_type]['symbol'],
-                        'site_index': symmetry_value,
-                        'equivalent_sites_list': [symmetry_value]
-                    }
-            index_counter += 1
 
         for value in equivalency_dict.values():
             value['multiplicity'] = len(value['equivalent_sites_list'])
 
         output_params['equivalent_sites_data'] = equivalency_dict
+
         output_params['spacegroup_number'] = symmetry_dataset['number']
         output_params['international_symbol'] = symmetry_dataset['international']
 
@@ -274,9 +342,42 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
 
         ase_structure = standardized_structure_node.get_ase()
         ase_supercell = ase_structure * multiples
-        new_supercell = StructureData(ase=ase_supercell)
 
-        result['supercell'] = new_supercell
+        # if there are hubbard data to apply, we re-construct
+        # the supercell site-by-site to keep the correct ordering
+        if is_hubbard_structure:
+            blank_supercell = StructureData(ase=ase_supercell)
+            new_supercell = StructureData()
+            new_supercell.set_cell(blank_supercell.cell)
+            num_extensions = np.product(multiples)
+            supercell_types_order = []
+            # For each supercell extension, loop over each site.
+            # This way, the original pattern-ordering of sites is
+            # preserved.
+            for i in range(0, num_extensions):  # pylint: disable=unused-variable
+                for type_number in types_order:
+                    supercell_types_order.append(type_number)
+
+            for site, type_number in zip(blank_supercell.sites, supercell_types_order):
+                kind_present = type_mapping_dict[str(type_number)]
+                if kind_present.name not in [kind.name for kind in new_supercell.kinds]:
+                    new_supercell.append_kind(kind_present)
+                new_site = Site(kind_name=kind_present.name, position=site.position)
+                new_supercell.append_site(new_site)
+        else:  # otherwise, simply re-construct the supercell with ASE
+            new_supercell = StructureData(ase=ase_supercell)
+
+        if is_hubbard_structure:  # Scale up the hubbard parameters to match and return the HubbardStructureData
+            # we can exploit the fact that `get_hubbard_for_supercell` will return a HubbardStructureData node
+            # with the same hubbard parameters in the case where the input structure and the supercell are the
+            # same (i.e. multiples == [1, 1, 1])
+            hubbard_manip = HubbardUtils(structure)
+            new_hubbard_supercell = hubbard_manip.get_hubbard_for_supercell(new_supercell)
+            new_supercell = new_hubbard_supercell
+            supercell_hubbard_params = new_supercell.hubbard
+            result['supercell'] = new_supercell
+        else:
+            result['supercell'] = new_supercell
         output_params['supercell_factors'] = multiples
         output_params['supercell_num_sites'] = len(new_supercell.sites)
         output_params['supercell_cell_matrix'] = new_supercell.cell
@@ -285,22 +386,28 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
     for value in equivalency_dict.values():
         target_site = value['site_index']
         marked_structure = StructureData()
-        supercell_kinds = {kind.name: kind for kind in new_supercell.kinds}
         marked_structure.set_cell(new_supercell.cell)
+        new_kind_names = [kind.name for kind in new_supercell.kinds]
 
         for index, site in enumerate(new_supercell.sites):
+            kind_at_position = new_supercell.kinds[new_kind_names.index(site.kind_name)]
             if index == target_site:
-                absorbing_kind = Kind(name=abs_atom_marker, symbols=site.kind_name)
+                absorbing_kind = Kind(name=abs_atom_marker, symbols=kind_at_position.symbol)
                 absorbing_site = Site(kind_name=absorbing_kind.name, position=site.position)
                 marked_structure.append_kind(absorbing_kind)
                 marked_structure.append_site(absorbing_site)
             else:
-                if site.kind_name not in [kind.name for kind in marked_structure.kinds]:
-                    marked_structure.append_kind(supercell_kinds[site.kind_name])
+                if kind_at_position.name not in [kind.name for kind in marked_structure.kinds]:
+                    marked_structure.append_kind(kind_at_position)
                 new_site = Site(kind_name=site.kind_name, position=site.position)
                 marked_structure.append_site(new_site)
 
-        result[f'site_{target_site}_{value["symbol"]}'] = marked_structure
+        if is_hubbard_structure:
+            marked_hubbard_structure = HubbardStructureData.from_structure(marked_structure)
+            marked_hubbard_structure.hubbard = supercell_hubbard_params
+            result[f'site_{target_site}_{value["symbol"]}'] = marked_hubbard_structure
+        else:
+            result[f'site_{target_site}_{value["symbol"]}'] = marked_structure
 
     output_params['is_molecule_input'] = is_molecule_input
     result['output_parameters'] = orm.Dict(dict=output_params)
