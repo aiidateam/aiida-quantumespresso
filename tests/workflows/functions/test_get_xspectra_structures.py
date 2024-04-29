@@ -36,8 +36,8 @@ def test_base(generate_structure):
     """Test the basic operation of get_xspectra_structures."""
 
     c_si = generate_structure('silicon')
-    spglib_options = Dict({'symprec': 1.0e-3})
-    inputs = {'structure': c_si, 'spglib_options': spglib_options}
+    spglib_settings = Dict({'symprec': 1.0e-3})
+    inputs = {'structure': c_si, 'spglib_settings': spglib_settings}
     result = get_xspectra_structures(**inputs)
     assert len(result) == 4
     out_params = result['output_parameters'].get_dict()
@@ -51,12 +51,12 @@ def test_use_element_types(generate_structure):
 
     c_si = generate_structure('silicon')
     c_si_kinds = generate_structure('silicon-kinds')
-    spglib_options = Dict({'symprec': 1.0e-3})
-    inputs_bare = {'structure': c_si, 'spglib_options': spglib_options}
+    spglib_settings = Dict({'symprec': 1.0e-3})
+    inputs_bare = {'structure': c_si, 'spglib_settings': spglib_settings}
     inputs_kinds = {
         'structure': c_si_kinds,
         'use_element_types': Bool(False),
-        'spglib_options': spglib_options,
+        'spglib_options': spglib_settings,
         'standardize_structure': Bool(False)
     }
 
@@ -65,7 +65,7 @@ def test_use_element_types(generate_structure):
 
     inputs_element_types = {
         'structure': c_si_kinds,
-        'spglib_options': spglib_options,
+        'spglib_options': spglib_settings,
         'standardize_structure': Bool(False),
     }
     result_element_types = get_xspectra_structures(**inputs_element_types)
