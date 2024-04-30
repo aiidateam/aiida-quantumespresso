@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tests for the `get_marked_structure` class."""
-from aiida.orm import Bool, Dict
+from aiida.orm import Bool, Dict, Int
 import pytest
 
 from aiida_quantumespresso.utils.hubbard import HubbardStructureData, HubbardUtils
@@ -98,3 +98,37 @@ def test_hubbard(generate_structure):
     assert out_params['supercell_num_sites'] == 54
     assert 'U\tX-1s\t0.0' in hub_card_lines
     assert 'U\tSi-1s\t0.0' in hub_card_lines
+
+
+def test_symmetry_input(generate_structure):
+    """Test the basic operation of get_xspectra_structures."""
+
+    c_si = generate_structure('silicon')
+    sites_data = {'site_0': {'symbol': 'Si', 'site_index': 1, 'multiplicity': 8}}
+    inputs = {
+        'structure': c_si,
+        'equivalent_sites_data': Dict(sites_data),
+        'spacegroup_number': Int(220),
+        'parse_symmetry': Bool(False),
+    }
+
+    # Test also to confirm at leaving out `parse_symmetry` should cause
+    # the CF to ignore the provided symmetry data.
+    inputs_no_parse_symmetry = {
+        'structure': c_si,
+        'equivalent_sites_data': Dict(sites_data),
+        'spacegroup_number': Int(220),
+    }
+
+    result = get_xspectra_structures(**inputs)
+    result_no_parse_symmetry = get_xspectra_structures(**inputs_no_parse_symmetry)
+
+    out_params = result['output_parameters'].get_dict()
+    out_params_no_parse_symmetry = result_no_parse_symmetry['output_parameters'].get_dict()
+
+    assert out_params['spacegroup_number'] == 220
+    assert out_params['symmetry_parsed'] is False
+    assert out_params['equivalent_sites_data'] == sites_data
+    assert out_params_no_parse_symmetry['spacegroup_number'] == 227
+    assert out_params_no_parse_symmetry['symmetry_parsed'] is True
+    assert out_params_no_parse_symmetry['equivalent_sites_data'] != sites_data
