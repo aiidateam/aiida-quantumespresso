@@ -20,7 +20,6 @@ def process_molecule_input(structure, **kwargs):  # pylint: disable=too-many-sta
     from pymatgen.symmetry.analyzer import PointGroupAnalyzer
 
     result = {'output_params': {}}
-    # If we are working with a molecule, check for pymatgen_settings
     if 'pymatgen_settings' in kwargs:
         pymatgen_settings_dict = kwargs['pymatgen_settings'].get_dict()
         valid_keys = ['tolerance', 'eigen_tolerance', 'matrix_tolerance']
