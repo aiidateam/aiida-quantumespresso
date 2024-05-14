@@ -51,6 +51,7 @@ intersphinx_mapping = {
     'python': ('https://docs.python.org/3.8', None),
     'aiida': ('https://aiida.readthedocs.io/projects/aiida-core/en/latest/', None),
     'aiida_pseudo': ('http://aiida-pseudo.readthedocs.io/en/latest/', None),
+    'pymatgen': ('https://pymatgen.org/', None),
 }
 
 # Settings for the `autoapi.extenstion` automatically generating API docs
