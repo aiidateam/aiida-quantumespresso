@@ -87,6 +87,9 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 'quantumespresso.xspectra' = 'aiida_quantumespresso.calculations.xspectra:XspectraCalculation'
 'quantumespresso.open_grid' = 'aiida_quantumespresso.calculations.open_grid:OpenGridCalculation'
 
+[project.entry-points.'aiida.calculations.importers']
+'quantumespresso.pw' = 'aiida_quantumespresso.calculations.importers.pw:PwCalculationImporter'
+
 [project.entry-points.'aiida.data']
 'quantumespresso.force_constants' = 'aiida_quantumespresso.data.force_constants:ForceConstantsData'
 'quantumespresso.hubbard_structure' = 'aiida_quantumespresso.data.hubbard_structure:HubbardStructureData'
@@ -171,6 +174,7 @@ disable = [
     'locally-disabled',
     'logging-format-interpolation',
     'no-else-raise',
+    'too-few-public-methods',
     'too-many-arguments',
     'too-many-ancestors',
     'too-many-branches',
