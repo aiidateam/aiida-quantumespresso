@@ -306,6 +306,9 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
+        The current protocols rely on the `Slurm` scheduler. To use them nonetheless with a different scheduler, the
+        protocols might need to be adjusted and explicit resources need to be provided in `options`.
+
         :param pw_code: the ``Code`` instance configured for the ``quantumespresso.pw``
                         plugin.
         :param xs_code: the ``Code`` instance configured for the
