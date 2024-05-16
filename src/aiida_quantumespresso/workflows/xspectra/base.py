@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO xspectra.x calculation with automated error handling and restarts."""
+import warnings
+
 from aiida import orm
 from aiida.common import AttributeDict
 from aiida.common.lang import type_check
@@ -79,6 +81,9 @@ class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
+        The current protocols rely on the `Slurm` scheduler. To use them nonetheless with a different scheduler, the
+        protocols might need to be adjusted and explicit resources need to be provided in `options`.
+
         :param code: the ``Code`` instance configured for the ``quantumespresso.xspectra`` plugin.
         :param core_wfc_data: a ``SinglefileData`` object for the initial-state core
                               wavefunction, normally derived from upf2plotcore.sh, required
@@ -105,6 +110,12 @@ class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         metadata = inputs['xspectra']['metadata']
         parameters = inputs['xspectra']['parameters']
+
+        if not options or options.get('resources', None) is None:
+            warnings.warn(
+                'No explicit resources were provided for `metadata.options.resources`. This approach is '
+                'deprecated and will cause an error in future versions.', UserWarning
+            )
 
         if options:
             metadata['options'] = recursive_merge(inputs['xspectra']['metadata']['options'], options)
