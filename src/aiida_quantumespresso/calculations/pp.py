@@ -83,6 +83,7 @@ class PpCalculation(CalcJob):
         spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.pp')
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)
         spec.input('metadata.options.keep_plot_file', valid_type=bool, default=False)
+        spec.input('metadata.options.parse_retrieved_files', valid_type=bool, default=True)
 
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.output('output_data', valid_type=orm.ArrayData)
@@ -218,10 +219,10 @@ class PpCalculation(CalcJob):
         # distinguish them from one another. The `fileout` filename will be the full data filename with the `fileout`
         # value as a suffix.
         retrieve_tuples = [self._FILEOUT, (f'{self._FILPLOT}_*{self._FILEOUT}', '.', 0)]
-
         if self.inputs.metadata.options.keep_plot_file:
             calcinfo.retrieve_list.extend(retrieve_tuples)
-        else:
+        # If we do not want to parse the retrieved files, temporary retrieval is meaningless
+        elif self.inputs.metadata.options.parse_retrieved_files:
             calcinfo.retrieve_temporary_list.extend(retrieve_tuples)
 
-        return calcinfo
+            return calcinfo
