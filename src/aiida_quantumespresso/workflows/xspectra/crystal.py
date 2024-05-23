@@ -461,25 +461,20 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             # We assume otherwise that the user knows what they're doing and has set everything else
             # to their preferences correctly.
             for site_label, value in equivalent_sites_data.items():
-                required_keys_found = []
+                entry_invalid = False
 
-                if value['site_index'] < 0:
-                    raise ValidationError(
-                        f'The site index for {site_label} ({value["site_index"]}) is below the range of '
-                        + f'sites within the structure (0-{len(structure.sites) -1}).'
-                    )
-                if value['site_index'] >= len(structure.sites):
-                    raise ValidationError(
-                        f'The site index for {site_label} ({value["site_index"]}) is above the range of '
-                        + f'sites within the structure (0-{len(structure.sites) -1}).'
-                    )
-                for key in value:
-                    if key in required_keys:
-                        required_keys_found.append(key)
-                if sorted(required_keys_found) != required_keys:
+                if not set(required_keys).issubset(set(value.keys())) :
                     invalid_entries.append(site_label)
+                    entry_invalid = True
                 elif value['symbol'] not in input_elements:
                     input_elements.append(value['symbol'])
+
+                if not entry_invalid:
+                    if value['site_index'] < 0 or value['site_index'] >= len(structure.sites):
+                        raise ValidationError(
+                            f'The site index for {site_label} ({value["site_index"]}) is outside the range of '
+                            + f'sites within the structure (0-{len(structure.sites) -1}).'
+                        )
 
             if len(invalid_entries) != 0:
                 raise ValidationError(
@@ -490,7 +485,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             if sorted_input_elements != absorbing_elements_list:
                 raise ValidationError(
                     f'Elements defined for sites in `equivalent_sites_data` ({sorted_input_elements}) do not match the'
-                    + f'list of absorbing elements ({absorbing_elements_list})'
+                    + f' list of absorbing elements ({absorbing_elements_list})'
                 )
 
 
