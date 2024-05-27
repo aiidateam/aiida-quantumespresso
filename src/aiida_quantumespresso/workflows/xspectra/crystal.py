@@ -461,15 +461,10 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             # We assume otherwise that the user knows what they're doing and has set everything else
             # to their preferences correctly.
             for site_label, value in equivalent_sites_data.items():
-                entry_invalid = False
-
                 if not set(required_keys).issubset(set(value.keys())) :
                     invalid_entries.append(site_label)
-                    entry_invalid = True
                 elif value['symbol'] not in input_elements:
                     input_elements.append(value['symbol'])
-
-                if not entry_invalid:
                     if value['site_index'] < 0 or value['site_index'] >= len(structure.sites):
                         raise ValidationError(
                             f'The site index for {site_label} ({value["site_index"]}) is outside the range of '
