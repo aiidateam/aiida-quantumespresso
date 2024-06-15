@@ -1,0 +1,6 @@
+&BANDS
+  filband = 'bands.dat'
+  filp = 'momentum_operator.dat'
+  outdir = './out/'
+  prefix = 'aiida'
+/
