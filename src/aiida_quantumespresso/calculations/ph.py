@@ -56,6 +56,8 @@ class PhCalculation(CalcJob):
         spec.input('settings', valid_type=orm.Dict, required=False, help='')
         spec.input('parent_folder', valid_type=orm.RemoteData,
             help='the folder of a completed `PwCalculation`')
+        spec.input_namespace('parent_folder_ph', valid_type=orm.RemoteData,
+            help='the folder of one or more completed `PhCalculation`')
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.default_output_node = 'output_parameters'
 
@@ -297,6 +299,14 @@ class PhCalculation(CalcJob):
                 remote_copy_list.append((
                     parent_folder.computer.uuid,
                     os.path.join(parent_folder.get_remote_path(), self._FOLDER_DYNAMICAL_MATRIX), '.'
+                ))
+
+        if 'parent_folder_ph' in self.inputs:
+            for ph_folder in self.inputs.parent_folder_ph.values():
+                remote_copy_list.append((
+                    ph_folder.computer.uuid,
+                    os.path.join(ph_folder.get_remote_path(), self._OUTPUT_SUBFOLDER, '_ph0', f'{self._PREFIX}.phsave'),
+                    os.path.join(self._OUTPUT_SUBFOLDER, '_ph0', f'{self._PREFIX}.phsave'),
                 ))
 
         # Create an `.EXIT` file if `only_initialization` flag in `settings` is set to `True`
