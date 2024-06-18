@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""`CalcJob` implementation for the q2r.x code of Quantum ESPRESSO."""
+"""`CalcJob` implementation for the bands.x code of Quantum ESPRESSO."""
 
 from aiida import orm
 
@@ -22,7 +22,7 @@ class BandsCalculation(NamelistsCalculation):
     _blocked_keywords = [
         ('BANDS', 'outdir', NamelistsCalculation._OUTPUT_SUBFOLDER),  # pylint: disable=protected-access
         ('BANDS', 'prefix', NamelistsCalculation._PREFIX),  # pylint: disable=protected-access
-        ('BANDS', 'filband', _BANDS_NAME),  # pylint: disable=protected-access
+        ('BANDS', 'filband', _BANDS_NAME),
         ('BANDS', 'filp', _MOMENTUM_OPERATOR_NAME),  # Momentum operator
     ]
 
