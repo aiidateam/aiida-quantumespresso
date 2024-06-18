@@ -438,3 +438,37 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
         parsed_data['eigenvectors'] = eigenvectors
 
     return parsed_data
+
+
+def parse_initialization_qpoints(stdout: str) -> dict:
+    """Return the number of q-points from an initialization run.
+
+    Here, the initialization run refers to the one performed by specifying
+    `start_irr` and `last_irr` to 0 in the inputs.
+    """
+    import re
+
+    parameters = {}
+
+    # Regular expression to match `N` in `(  N q-points)`
+    pattern = r'\(\s*(\d+)\s*q-points\)'
+    match = re.search(pattern, stdout)
+    if match:
+        parameters.update({'number_of_qpoints': int(match.group(1))})
+
+    # Regular expression pattern to match the q-points section
+    pattern = r'\(\s*\d+\s*q-points\):\s*\n\s*N\s*xq\(1\)\s*xq\(2\)\s*xq\(3\)\s*\n((?:\s*\d+\s*[\d\.\-\s]+\n?)*)'
+    match = re.search(pattern, stdout)
+
+    if match:
+        q_points_block = match.group(1)
+
+        # Regular expression to match each line of coordinates
+        coord_pattern = r'\s*\d+\s*([\d\.\-]+)\s*([\d\.\-]+)\s*([\d\.\-]+)'
+
+        coords = re.findall(coord_pattern, q_points_block) # Find all coordinates in the block
+        q_points = [list(map(float, coord)) for coord in coords]
+
+        parameters.update({'q_points': q_points})
+
+    return parameters
