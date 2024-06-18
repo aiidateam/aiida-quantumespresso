@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=redefined-outer-name,too-many-statements
+# pylint: disable=redefined-outer-name,too-many-statements,too-many-lines
 """Initialise a text database and profile for pytest."""
 from collections.abc import Mapping
 import io
@@ -592,6 +592,27 @@ def generate_inputs_q2r(fixture_sandbox, fixture_localhost, fixture_code, genera
         return inputs
 
     return _generate_inputs_q2r
+
+
+@pytest.fixture
+def generate_inputs_bands(fixture_sandbox, fixture_localhost, fixture_code, generate_remote_data):
+    """Generate default inputs for a `BandsCalculation."""
+
+    def _generate_inputs_bands():
+        """Generate default inputs for a `BandsCalculation."""
+        from aiida_quantumespresso.utils.resources import get_default_options
+
+        inputs = {
+            'code': fixture_code('quantumespresso.bands'),
+            'parent_folder': generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.pw'),
+            'metadata': {
+                'options': get_default_options()
+            }
+        }
+
+        return inputs
+
+    return _generate_inputs_bands
 
 
 @pytest.fixture
