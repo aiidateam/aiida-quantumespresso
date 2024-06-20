@@ -4,6 +4,8 @@
 The function that needs to be called from outside is parse_raw_ph_output(). Ideally, the functions should work even
 without aiida and will return a dictionary with parsed keys.
 """
+from __future__ import annotations
+
 import numpy
 from qe_tools import CONSTANTS
 
@@ -440,11 +442,16 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
     return parsed_data
 
 
-def parse_initialization_qpoints(stdout: str) -> dict:
+def parse_initialization_qpoints(stdout: str) -> tuple[dict, bool]:
     """Return the number of q-points from an initialization run.
 
     Here, the initialization run refers to the one performed by specifying
     `start_irr` and `last_irr` to 0 in the inputs.
+
+    :return: (parsed dictionary, error found), the last is a boolean
+        regarding whether an expected quantity has not been properly
+        parse; it also checks that the number of q-points parsed within
+        parenthesis  and the amount of q-points parsed from coordinaes coincide.
     """
     import re
 
@@ -471,4 +478,10 @@ def parse_initialization_qpoints(stdout: str) -> dict:
 
         parameters.update({'q_points': q_points})
 
-    return parameters
+    if 'number_of_qpoints' not in parameters and 'q_points' not in parameters:
+        return parameters, False
+
+    if parameters['number_of_qpoints'] != len(parameters['q_points']):
+        return parameters, False
+
+    return parameters, True

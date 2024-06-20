@@ -79,6 +79,23 @@ def test_ph_initialization(fixture_localhost, generate_calc_job_node, generate_p
     data_regression.check(results['output_parameters'].get_dict())
 
 
+def test_ph_initialization_failed(fixture_localhost, generate_calc_job_node, generate_parser):
+    """Test a failed `ph.x` calculation performed with `start_irr` and `last_irr` set to 0."""
+    name = 'initialization_failed'
+    entry_point_calc_job = 'quantumespresso.ph'
+    entry_point_parser = 'quantumespresso.ph'
+
+    inputs = {'parameters': orm.Dict({'INPUTPH': {'start_irr': 0, 'last_irr': 0}})}
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE.status
+
+
 def test_ph_failed_computing_cholesky(fixture_localhost, generate_calc_job_node, generate_parser):
     """Test the parsing of a calculation that failed during cholesky factorization.
 
