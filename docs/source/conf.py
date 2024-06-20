@@ -54,12 +54,12 @@ intersphinx_mapping = {
 }
 
 # Settings for the `autoapi.extenstion` automatically generating API docs
-filepath_docs = pathlib.Path(__file__).parent.parent
+filepath_docs = pathlib.Path(__file__).parent.parent.resolve()
 filepath_src = filepath_docs.parent / 'src'
 autoapi_type = 'python'
 autoapi_dirs = [filepath_src]
 autoapi_ignore = [filepath_src / 'aiida_quantumespresso' / '*cli*']
-autoapi_root = str(filepath_docs / 'source' / 'reference' / 'api' / 'auto')
+autoapi_root = (filepath_docs / 'source' / 'reference' / 'api' / 'auto').as_posix()
 autoapi_keep_files = True
 autoapi_add_toctree_entry = False
 
