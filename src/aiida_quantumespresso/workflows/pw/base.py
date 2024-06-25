@@ -131,7 +131,11 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             the ``CalcJobs`` that are nested in this work chain.
         :return: a process builder instance with all inputs defined ready for launch.
         """
-        from aiida_quantumespresso.workflows.protocols.utils import get_starting_magnetization, recursive_merge
+        from aiida_quantumespresso.workflows.protocols.utils import (
+            get_starting_magnetization,
+            get_starting_magnetization_noncolin,
+            recursive_merge,
+        )
 
         if isinstance(code, str):
             code = orm.load_code(code)
@@ -143,7 +147,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if electronic_type not in [ElectronicType.METAL, ElectronicType.INSULATOR]:
             raise NotImplementedError(f'electronic type `{electronic_type}` is not supported.')
 
-        if spin_type not in [SpinType.NONE, SpinType.COLLINEAR]:
+        if spin_type not in [SpinType.NONE, SpinType.COLLINEAR, SpinType.NON_COLLINEAR]:
             raise NotImplementedError(f'spin type `{spin_type}` is not supported.')
 
         if initial_magnetic_moments is not None and spin_type is not SpinType.COLLINEAR:
@@ -193,6 +197,16 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             starting_magnetization = get_starting_magnetization(structure, pseudo_family, initial_magnetic_moments)
             parameters['SYSTEM']['starting_magnetization'] = starting_magnetization
             parameters['SYSTEM']['nspin'] = 2
+
+        if spin_type is SpinType.NON_COLLINEAR:
+            starting_magnetization_noncolin, angle1, angle2 = get_starting_magnetization_noncolin(
+                structure=structure, pseudo_family=pseudo_family, initial_magnetic_moments=initial_magnetic_moments
+            )
+            parameters['SYSTEM']['starting_magnetization'] = starting_magnetization_noncolin
+            parameters['SYSTEM']['angle1'] = angle1
+            parameters['SYSTEM']['angle2'] = angle2
+            parameters['SYSTEM']['noncolin'] = True
+            parameters['SYSTEM']['nspin'] = 4
 
         # If overrides are provided, they are considered absolute
         if overrides:
