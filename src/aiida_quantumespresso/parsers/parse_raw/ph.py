@@ -442,16 +442,16 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
     return parsed_data
 
 
-def parse_initialization_qpoints(stdout: str) -> tuple[dict, bool]:
+def parse_initialization_qpoints(stdout: str) -> dict:
     """Return the number of q-points from an initialization run.
 
     Here, the initialization run refers to the one performed by specifying
     `start_irr` and `last_irr` to 0 in the inputs.
 
-    :return: (parsed dictionary, error found), the last is a boolean
-        regarding whether an expected quantity has not been properly
-        parse; it also checks that the number of q-points parsed within
-        parenthesis  and the amount of q-points parsed from coordinaes coincide.
+    :return: parsed dictionary
+
+    :raise: `RuntimeError` if the number of q-points cannot be parsed or it
+        differs from the number of q-points in the stdout list.
     """
     import re
 
@@ -462,6 +462,8 @@ def parse_initialization_qpoints(stdout: str) -> tuple[dict, bool]:
     match = re.search(pattern, stdout)
     if match:
         parameters.update({'number_of_qpoints': int(match.group(1))})
+    else:
+        raise RuntimeError('the number of q-points cannot be parsed')
 
     # Regular expression pattern to match the q-points section
     pattern = r'\(\s*\d+\s*q-points\):\s*\n\s*N\s*xq\(1\)\s*xq\(2\)\s*xq\(3\)\s*\n((?:\s*\d+\s*[\d\.\-\s]+\n?)*)'
@@ -475,13 +477,10 @@ def parse_initialization_qpoints(stdout: str) -> tuple[dict, bool]:
 
         coords = re.findall(coord_pattern, q_points_block) # Find all coordinates in the block
         q_points = [list(map(float, coord)) for coord in coords]
+    else:
+        raise RuntimeError('the list of q-points cannot be parsed')
 
-        parameters.update({'q_points': q_points})
+    if parameters['number_of_qpoints'] != len(q_points):
+        raise RuntimeError('the number of q-points do not coincde with the number of listed q-points')
 
-    if 'number_of_qpoints' not in parameters and 'q_points' not in parameters:
-        return parameters, False
-
-    if parameters['number_of_qpoints'] != len(parameters['q_points']):
-        return parameters, False
-
-    return parameters, True
+    return parameters

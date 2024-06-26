@@ -44,11 +44,12 @@ class PhParser(BaseParser):
         # When `start_irr` and `last_irr` are set to 0, `JOB DONE` is not in stdout (expected behaviour).
         # Though, we at least expect that `stdout` is not empty, otherwise something went wrong.
         if stdout and _is_initialization(self.node.inputs.parameters.get_dict()):
-            parameters, parsed_ok = parse_initialization_qpoints(stdout)
-            if parsed_ok:
+            try:
+                parameters = parse_initialization_qpoints(stdout)
                 self.out('output_parameters', orm.Dict(parameters))
                 return
-            # we let it go, as it should exit with STDOUT_INCOMPLETE or similar
+            except RuntimeError as exc:
+                logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
 
         # If the scheduler detected OOW, simply keep that exit code by not returning anything more specific.
         if self.node.exit_status == PhCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME:
