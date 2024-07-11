@@ -360,6 +360,7 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
             new_supercell = get_supercell_result['new_supercell']
             output_params['supercell_factors'] = multiples
 
+        result['supercell'] = new_supercell
         output_params['supercell_num_sites'] = len(new_supercell.sites)
         output_params['supercell_cell_matrix'] = new_supercell.cell
         output_params['supercell_cell_lengths'] = new_supercell.cell_lengths
