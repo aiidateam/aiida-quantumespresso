@@ -335,7 +335,8 @@ class BasePwCpInputGenerator(CalcJob):
         codeinfo = datastructures.CodeInfo()
         codeinfo.cmdline_params = (list(cmdline_params) + ['-in', self.metadata.options.input_filename])
         codeinfo.stdout_name = self.metadata.options.output_filename
-        codeinfo.code_uuid = self.inputs.code.uuid
+        if 'code' in self.inputs:
+            codeinfo.code_uuid = self.inputs.code.uuid
         calcinfo.codes_info = [codeinfo]
 
         calcinfo.local_copy_list = local_copy_list
