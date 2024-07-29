@@ -1,15 +1,15 @@
 output_band:
   array|bands:
-  - 288
+  - 13
   - 8
   array|kpoints:
-  - 288
+  - 13
   - 3
   array|occupations:
-  - 288
+  - 13
   - 8
   array|weights:
-  - 288
+  - 13
   cell:
   - - 2.715
     - 2.715
@@ -33,38 +33,34 @@ output_parameters:
   convergence_info:
     opt_conv:
       convergence_achieved: true
-      grad_norm: 1.442619088892511e-07
-      n_opt_steps: 3
+      grad_norm: 3.231667310330838e-07
+      n_opt_steps: 2
     scf_conv:
       convergence_achieved: true
       n_scf_steps: 9
-      scf_error: 1.165124013036786e-12
+      scf_error: 4.077374347958867e-13
   creator_name: pwscf
   creator_version: 7.3.1
   degauss: 0.136056917253
   dft_exchange_correlation: PBESOL
   do_magnetization: false
   do_not_use_time_reversal: false
-  energy: -308.5446183465016
-  energy_accuracy: 3.129309096819e-11
+  energy: -308.34298852586466
+  energy_accuracy: 1.1156667214746e-11
   energy_accuracy_units: eV
-  energy_ewald: -228.4339075014522
+  energy_ewald: -227.91470151586452
   energy_ewald_units: eV
-  energy_hartree: 14.702660960978024
+  energy_hartree: 15.114997095258722
   energy_hartree_units: eV
-  energy_one_electron: 70.3151801601783
+  energy_one_electron: 69.62646194984048
   energy_one_electron_units: eV
-  energy_smearing: 1.768739924289e-05
+  energy_smearing: 0.000100001834180955
   energy_smearing_units: eV
-  energy_threshold: 1.87e-12
+  energy_threshold: 3.22e-13
   energy_units: eV
-  energy_xc: -165.12856978966187
+  energy_xc: -165.16984592087658
   energy_xc_units: eV
-  estimated_ram_per_process: 11.71
-  estimated_ram_per_process_units: MB
-  estimated_ram_total: 132.32
-  estimated_ram_total_units: MB
-  fermi_energy: 6.4493
+  fermi_energy: 6.4826
   fermi_energy_units: eV
   fft_grid:
   - 36
@@ -86,22 +82,22 @@ output_parameters:
   magnetization_angle2:
   - 0.0
   monkhorst_pack_grid:
-  - 14
-  - 14
-  - 14
+  - 4
+  - 4
+  - 4
   monkhorst_pack_offset:
   - 0
   - 0
   - 0
   no_time_rev_operations: false
   non_colinear_calculation: false
-  number_ionic_steps: 3
+  number_ionic_steps: 2
   number_of_atomic_wfc: 8
   number_of_atoms: 2
   number_of_bands: 8
   number_of_bravais_symmetries: 12
   number_of_electrons: 8.0
-  number_of_k_points: 288
+  number_of_k_points: 13
   number_of_species: 1
   number_of_spin_components: 1
   number_of_symmetries: 12
@@ -149,57 +145,55 @@ output_parameters:
   time_reversal_flag: true
   total_force: 0.0
   total_force_units: ev / angstrom
-  total_number_of_scf_iterations: 31
-  volume: 40.09272658754534
-  wall_time: '     18.05s '
-  wall_time_seconds: 18.05
+  total_number_of_scf_iterations: 28
+  volume: 40.36735351405804
   wfc_cutoff: 408.170751759
   wfc_cutoff_units: eV
 output_trajectory:
   array|atomic_species_name:
   - 2
   array|cells:
-  - 4
+  - 3
   - 3
   - 3
   array|energy:
-  - 5
+  - 4
   array|energy_accuracy:
-  - 5
+  - 4
   array|energy_ewald:
-  - 5
+  - 4
   array|energy_hartree:
-  - 5
+  - 4
   array|energy_one_electron:
-  - 5
+  - 4
   array|energy_smearing:
-  - 5
+  - 4
   array|energy_threshold:
-  - 5
+  - 4
   array|energy_xc:
-  - 5
+  - 4
   array|fermi_energy:
-  - 5
+  - 4
   array|forces:
-  - 5
+  - 4
   - 2
   - 3
   array|positions:
-  - 4
+  - 3
   - 2
   - 3
   array|scf_accuracy:
-  - 31
+  - 28
   array|scf_iterations:
-  - 5
-  array|steps:
   - 4
+  array|steps:
+  - 3
   array|stress:
-  - 5
+  - 4
   - 3
   - 3
   array|total_force:
-  - 5
+  - 4
   symbols:
   - Si
   - Si
