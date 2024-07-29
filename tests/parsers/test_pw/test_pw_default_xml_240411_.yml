@@ -1,0 +1,205 @@
+output_band:
+  array|bands:
+  - 288
+  - 8
+  array|kpoints:
+  - 288
+  - 3
+  array|occupations:
+  - 288
+  - 8
+  array|weights:
+  - 288
+  cell:
+  - - 2.715
+    - 2.715
+    - 0.0
+  - - 2.715
+    - 0.0
+    - 2.715
+  - - 0.0
+    - 2.715
+    - 2.715
+  label_numbers: []
+  labels: []
+  pbc1: true
+  pbc2: true
+  pbc3: true
+  units: eV
+output_parameters:
+  beta_real_space: false
+  charge_density: ./charge-density.dat
+  constraint_mag: 0
+  convergence_info:
+    opt_conv:
+      convergence_achieved: true
+      grad_norm: 1.442619088892511e-07
+      n_opt_steps: 3
+    scf_conv:
+      convergence_achieved: true
+      n_scf_steps: 9
+      scf_error: 1.165124013036786e-12
+  creator_name: pwscf
+  creator_version: 7.3.1
+  degauss: 0.136056917253
+  dft_exchange_correlation: PBESOL
+  do_magnetization: false
+  do_not_use_time_reversal: false
+  energy: -308.5446183465016
+  energy_accuracy: 3.129309096819e-11
+  energy_accuracy_units: eV
+  energy_ewald: -228.4339075014522
+  energy_ewald_units: eV
+  energy_hartree: 14.702660960978024
+  energy_hartree_units: eV
+  energy_one_electron: 70.3151801601783
+  energy_one_electron_units: eV
+  energy_smearing: 1.768739924289e-05
+  energy_smearing_units: eV
+  energy_threshold: 1.87e-12
+  energy_units: eV
+  energy_xc: -165.12856978966187
+  energy_xc_units: eV
+  estimated_ram_per_process: 11.71
+  estimated_ram_per_process_units: MB
+  estimated_ram_total: 132.32
+  estimated_ram_total_units: MB
+  fermi_energy: 6.4493
+  fermi_energy_units: eV
+  fft_grid:
+  - 36
+  - 36
+  - 36
+  forces_units: ev / angstrom
+  format_name: QEXSD
+  format_version: 24.04.11
+  has_dipole_correction: false
+  has_electric_field: false
+  init_wall_time_seconds: 0.4
+  inversion_symmetry: true
+  lattice_symmetries: []
+  lda_plus_u_calculation: false
+  lkpoint_dir: false
+  lsda: false
+  magnetization_angle1:
+  - 0.0
+  magnetization_angle2:
+  - 0.0
+  monkhorst_pack_grid:
+  - 14
+  - 14
+  - 14
+  monkhorst_pack_offset:
+  - 0
+  - 0
+  - 0
+  no_time_rev_operations: false
+  non_colinear_calculation: false
+  number_ionic_steps: 3
+  number_of_atomic_wfc: 8
+  number_of_atoms: 2
+  number_of_bands: 8
+  number_of_bravais_symmetries: 12
+  number_of_electrons: 8.0
+  number_of_k_points: 288
+  number_of_species: 1
+  number_of_spin_components: 1
+  number_of_symmetries: 12
+  occupations: smearing
+  q_real_space: false
+  rho_cutoff: 3265.366014072
+  rho_cutoff_units: eV
+  scf_iterations: 9
+  smearing_type: mv
+  smooth_fft_grid:
+  - 32
+  - 32
+  - 32
+  spin_orbit_calculation: false
+  spin_orbit_domag: false
+  starting_magnetization:
+  - 0.0
+  stress_units: GPascal
+  symmetries:
+  - symmetry_number: 0
+    t_rev: '0'
+  - symmetry_number: 3
+    t_rev: '0'
+  - symmetry_number: 26
+    t_rev: '0'
+  - symmetry_number: 27
+    t_rev: '0'
+  - symmetry_number: 30
+    t_rev: '0'
+  - symmetry_number: 31
+    t_rev: '0'
+  - symmetry_number: 32
+    t_rev: '0'
+  - symmetry_number: 35
+    t_rev: '0'
+  - symmetry_number: 58
+    t_rev: '0'
+  - symmetry_number: 59
+    t_rev: '0'
+  - symmetry_number: 62
+    t_rev: '0'
+  - symmetry_number: 63
+    t_rev: '0'
+  symmetries_units: crystal
+  time_reversal_flag: true
+  total_force: 0.0
+  total_force_units: ev / angstrom
+  total_number_of_scf_iterations: 31
+  volume: 40.09272658754534
+  wall_time: '     18.05s '
+  wall_time_seconds: 18.05
+  wfc_cutoff: 408.170751759
+  wfc_cutoff_units: eV
+output_trajectory:
+  array|atomic_species_name:
+  - 2
+  array|cells:
+  - 4
+  - 3
+  - 3
+  array|energy:
+  - 5
+  array|energy_accuracy:
+  - 5
+  array|energy_ewald:
+  - 5
+  array|energy_hartree:
+  - 5
+  array|energy_one_electron:
+  - 5
+  array|energy_smearing:
+  - 5
+  array|energy_threshold:
+  - 5
+  array|energy_xc:
+  - 5
+  array|fermi_energy:
+  - 5
+  array|forces:
+  - 5
+  - 2
+  - 3
+  array|positions:
+  - 4
+  - 2
+  - 3
+  array|scf_accuracy:
+  - 31
+  array|scf_iterations:
+  - 5
+  array|steps:
+  - 4
+  array|stress:
+  - 5
+  - 3
+  - 3
+  array|total_force:
+  - 5
+  symbols:
+  - Si
+  - Si
