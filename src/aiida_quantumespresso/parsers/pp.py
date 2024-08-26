@@ -117,7 +117,7 @@ class PpParser(BaseParser):
             matches = re.search(pattern, filename)
             return matches.group(1)
 
-        if self.node.inputs.metadata.options.parse_retrieved_files:
+        if self.node.base.attributes.get('parse_retrieved_files', True):
             for filename in filenames:
                 # Directly parse the retrieved files after reading them to memory (`data_raw`). The raw data
                 # of each file is released from memory after parsing, to improve memory usage.
