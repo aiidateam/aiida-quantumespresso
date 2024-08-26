@@ -225,4 +225,4 @@ class PpCalculation(CalcJob):
         elif self.inputs.metadata.options.parse_retrieved_files:
             calcinfo.retrieve_temporary_list.extend(retrieve_tuples)
 
-            return calcinfo
+        return calcinfo
