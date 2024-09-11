@@ -42,6 +42,9 @@ def launch_workflow(
     cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
 
     parameters = {
+        'CONTROL': {
+            'calculation': 'scf',
+        },
         'SYSTEM': {
             'ecutwfc': ecutwfc or cutoff_wfc,
             'ecutrho': ecutrho or cutoff_rho,
