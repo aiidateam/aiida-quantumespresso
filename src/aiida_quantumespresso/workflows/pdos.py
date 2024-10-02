@@ -227,6 +227,9 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
                 'provided by in the `dos` and `projwfc` inputs, since otherwise the '
             )
         )
+        spec.input('nbands_factor', valid_type=orm.Float, required=False,
+            help='The number of bands for the NSCF calculation is that used for the SCF multiplied by this factor.')
+
         spec.expose_inputs(
             PwBaseWorkChain,
             namespace='scf',
@@ -431,6 +434,18 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         inputs.pw.structure = self.inputs.structure
 
         inputs.metadata.call_link_label = 'nscf'
+
+        if 'nbands_factor' in self.inputs:
+            factor = self.inputs.nbands_factor.value
+            parameters = self.ctx.workchain_scf.outputs.output_parameters.get_dict()
+            nbands = int(parameters['number_of_bands'])
+            nelectron = int(parameters['number_of_electrons'])
+            nbnd = max(int(0.5 * nelectron * factor), int(0.5 * nelectron) + 4, nbands)
+            inputs.pw.parameters['SYSTEM']['nbnd'] = nbnd
+
+        else:
+            inputs.pw.parameters['SYSTEM']['nbnd'] = self.ctx.workchain_scf.outputs.output_parameters['number_of_bands']
+
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
 
         if self.ctx.dry_run:
