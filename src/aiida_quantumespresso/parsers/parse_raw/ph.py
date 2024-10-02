@@ -4,6 +4,8 @@
 The function that needs to be called from outside is parse_raw_ph_output(). Ideally, the functions should work even
 without aiida and will return a dictionary with parsed keys.
 """
+from __future__ import annotations
+
 import numpy
 from qe_tools import CONSTANTS
 
@@ -438,3 +440,47 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
         parsed_data['eigenvectors'] = eigenvectors
 
     return parsed_data
+
+
+def parse_initialization_qpoints(stdout: str) -> dict:
+    """Return the number of q-points from an initialization run.
+
+    Here, the initialization run refers to the one performed by specifying
+    `start_irr` and `last_irr` to 0 in the inputs.
+
+    :return: parsed dictionary
+
+    :raise: `RuntimeError` if the number of q-points cannot be parsed or it
+        differs from the number of q-points in the stdout list.
+    """
+    import re
+
+    parameters = {}
+
+    # Regular expression to match `N` in `(  N q-points)`
+    pattern = r'\(\s*(\d+)\s*q-points\)'
+    match = re.search(pattern, stdout)
+    if match:
+        parameters.update({'number_of_qpoints': int(match.group(1))})
+    else:
+        raise RuntimeError('the number of q-points cannot be parsed')
+
+    # Regular expression pattern to match the q-points section
+    pattern = r'\(\s*\d+\s*q-points\):\s*\n\s*N\s*xq\(1\)\s*xq\(2\)\s*xq\(3\)\s*\n((?:\s*\d+\s*[\d\.\-\s]+\n?)*)'
+    match = re.search(pattern, stdout)
+
+    if match:
+        q_points_block = match.group(1)
+
+        # Regular expression to match each line of coordinates
+        coord_pattern = r'\s*\d+\s*([\d\.\-]+)\s*([\d\.\-]+)\s*([\d\.\-]+)'
+
+        coords = re.findall(coord_pattern, q_points_block) # Find all coordinates in the block
+        q_points = [list(map(float, coord)) for coord in coords]
+    else:
+        raise RuntimeError('the list of q-points cannot be parsed')
+
+    if parameters['number_of_qpoints'] != len(q_points):
+        raise RuntimeError('the number of q-points do not coincde with the number of listed q-points')
+
+    return parameters
