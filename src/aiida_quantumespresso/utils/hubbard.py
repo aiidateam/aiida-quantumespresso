@@ -17,6 +17,7 @@ __all__ = (
     'get_index_and_translation',
     'get_hubbard_indices',
     'is_intersite_hubbard',
+    'max_number_of_neighbours',
 )
 
 QE_TRANSLATIONS = list(list(item) for item in product((-1, 0, 1), repeat=3))
@@ -372,7 +373,11 @@ class HubbardUtils:
             if count == number_of_neighbours:
                 break
 
-        return rmin + thr, distances[index + 1] - thr
+        rmax = distances[index + 1]
+        if np.abs(rmax - rmin) < thr:
+            rmax = rmin + 2 * rmin
+
+        return rmin + thr, rmax - thr
 
     def get_intersites_radius(
         self,
@@ -441,6 +446,131 @@ class HubbardUtils:
 
         return min(rmin, rmax)
 
+    def get_intersites_list(
+        self,
+        nn_finder: str = 'crystal',
+        nn_inputs: Union[Dict, None] = None,
+        radius_max: float = 7.0,
+        **_,
+    ) -> List[Tuple[int, int, Tuple[int, int, int]]]:
+        """Return the list of intersites from nearest neighbour finders.
+
+        It peforms a nearest neighbour analysis (via pymatgen modules) to find the first inersite
+        neighbours for all the onsite atoms. A list is returned with all the nearest neighbours
+        providing all the information about the couples indices and the associated trasnaltion vector.
+        Also on-site information is included.
+
+        :param nn_finder: string defining the nearest neighbour finder; options are:
+            * `crystal`: use :class:`pymatgen.analysis.local_env.CrystalNN`
+            * `voronoi`: use :class:`pymatgen.analysis.local_env.VoronoiNN`
+        :param nn_inputs: inputs for the nearest neighbours finder; when None, standard inputs
+            are used to find geometric first neighbours (recommended)
+        :param radius_max: max radius where to look for neighbouring atoms, in Angstrom
+        :param thr: threshold (in Angstrom) for defining the shells
+        :return: list of lists, each having (atom index, neighbouring index, translation vector)
+        """
+        from pymatgen.analysis.local_env import CrystalNN, VoronoiNN
+
+        if nn_finder not in ['crystal', 'voronoi']:
+            raise ValueError('`nn_finder` must be either `cyrstal` or `voronoi`')
+
+        if nn_inputs is None:
+            if nn_finder == 'crystal':
+                nn_inputs = {'distance_cutoffs': None, 'x_diff_weight': 0, 'porous_adjustment': False}
+            if nn_finder == 'voronoi':
+                nn_inputs = {'tol': 0.1, 'cutoff': radius_max}
+
+        voronoi = CrystalNN(**nn_inputs) if nn_finder == 'crystal' else VoronoiNN(**nn_inputs)  # pylint: disable=unexpected-keyword-arg
+
+        sites = self.hubbard_structure.sites
+        name_to_specie = {kind.name: kind.symbol for kind in self.hubbard_structure.kinds}
+        pymat = self.hubbard_structure.get_pymatgen_structure()
+        pairs = self.get_interacting_pairs()
+        neigh_list = []
+
+        for i, site in enumerate(sites):  # pylint: disable=too-many-nested-blocks
+            if site.kind_name in pairs:
+                neigh_species = voronoi.get_cn_dict(pymat, i)  # e.g. {'O': 4, 'S': 2, ...}
+                neigh_list.append([i, i, (0, 0, 0)])
+
+                for neigh_name in pairs[site.kind_name]:
+                    try:  # we want an API that allows for specifying neighbours that are not present
+                        specie = name_to_specie[neigh_name]
+
+                        count = 0
+                        if specie in neigh_species:
+                            _, neigh_indices, images, distances = pymat.get_neighbor_list(
+                                sites=[pymat[i]], r=radius_max
+                            )
+
+                            sort = np.argsort(distances)
+                            neigh_indices = neigh_indices[sort]
+                            images = images[sort]
+
+                            for index, image in zip(neigh_indices, images):
+                                if pymat[index].specie.name == specie:
+                                    neigh_list.append([
+                                        i,
+                                        int(index),
+                                        tuple(np.array(image, dtype=np.int64).tolist()),
+                                    ])
+                                    count += 1
+
+                                if count >= neigh_species[specie]:
+                                    break
+                    except KeyError:
+                        pass
+
+        return neigh_list
+
+    def get_max_number_of_neighbours(
+        self,
+        nn_finder: str = 'crystal',
+        nn_inputs: Union[Dict, None] = None,
+        radius_max: float = 7.0,
+        **_,
+    ) -> list:
+        """Return the maximum number of nearest neighbours, aslo counting the non-interacting ones.
+
+        It peforms a nearest neighbour analysis (via pymatgen modules) to find the first inersite
+        neighbours for all the onsite atoms. A list is returned with all the nearest neighbours
+        providing all the information about the couples indices and the associated trasnaltion vector.
+        Also on-site information is included.
+
+        :param nn_finder: string defining the nearest neighbour finder; options are:
+            * `crystal`: use :class:`pymatgen.analysis.local_env.CrystalNN`
+            * `voronoi`: use :class:`pymatgen.analysis.local_env.VoronoiNN`
+        :param nn_inputs: inputs for the nearest neighbours finder; when None, standard inputs
+            are used to find geometric first neighbours (recommended)
+        :param radius_max: max radius where to look for neighbouring atoms, in Angstrom
+        :param thr: threshold (in Angstrom) for defining the shells
+        :return: list of lists, each having (atom index, neighbouring index, translation vector)
+        """
+        from pymatgen.analysis.local_env import CrystalNN, VoronoiNN
+
+        if nn_finder not in ['crystal', 'voronoi']:
+            raise ValueError('`nn_finder` must be either `cyrstal` or `voronoi`')
+
+        if nn_inputs is None:
+            if nn_finder == 'crystal':
+                nn_inputs = {'distance_cutoffs': None, 'x_diff_weight': 0, 'porous_adjustment': False}
+            if nn_finder == 'voronoi':
+                nn_inputs = {'tol': 0.1, 'cutoff': radius_max}
+
+        voronoi = CrystalNN(**nn_inputs) if nn_finder == 'crystal' else VoronoiNN(**nn_inputs)  # pylint: disable=unexpected-keyword-arg
+
+        sites = self.hubbard_structure.sites
+        pymat = self.hubbard_structure.get_pymatgen_structure()
+        pairs = self.get_interacting_pairs()
+        max_num_of_neighs = 0
+
+        for i, site in enumerate(sites):  # pylint: disable=too-many-nested-blocks
+            if site.kind_name in pairs:
+                neigh_species = voronoi.get_cn_dict(pymat, i)  # e.g. {'O': 4, 'S': 2, ...}
+                max_num_of_neighs = max(max_num_of_neighs, np.sum(list(neigh_species.values())))
+
+        return max_num_of_neighs
+
 
 def initialize_hubbard_parameters(
     structure: StructureData,
@@ -451,6 +581,7 @@ def initialize_hubbard_parameters(
     standardize: bool = False,
     radius_max: float = 7.0,
     thr: float = 1e-5,
+    use_kinds: bool = True,
     **_,
 ) -> HubbardStructureData:
     """Initialize the on-site and intersite parameters using nearest neighbour finders.
@@ -472,6 +603,8 @@ def initialize_hubbard_parameters(
     :param standardize: whether to standardize the atoms and the cell via spglib (symmetry analysis)
     :param radius_max: max radius where to look for neighbouring atoms, in Angstrom
     :param thr: threshold to refold the atoms with crystal coordinates close to 1.0
+    :param use_kinds: whether to use kinds for initializing the parameters; when False, it
+        initializes all the ``Kinds`` matching the given specie
     :return: HubbardStructureData with initialized Hubbard parameters
     """
     from aiida.tools.data import spglib_tuple_to_structure, structure_to_spglib_tuple
@@ -512,13 +645,14 @@ def initialize_hubbard_parameters(
     pymat = hubbard_structure.get_pymatgen_structure()
 
     for i, site in enumerate(sites):  # pylint: disable=too-many-nested-blocks
-        if site.kind_name in pairs:
+        site_name = site.kind_name if use_kinds else name_to_specie[site.kind_name]
+        if site_name in pairs:
             neigh_species = voronoi.get_cn_dict(pymat, i)  # e.g. {'O': 4, 'S': 2, ...}
             onsite = pairs[site.kind_name]
             hubbard_structure.append_hubbard_parameter(i, onsite[0], i, onsite[0], onsite[1])
 
             for neigh_name in onsite[3]:
-                try:  # we want an API that allows for specifying neighbour that are not present
+                try:  # we want an API that allows for specifying neighbours that are not present
                     specie = name_to_specie[neigh_name]
 
                     count = 0
@@ -587,3 +721,18 @@ def is_intersite_hubbard(hubbard: Hubbard) -> bool:
     """Return whether `Hubbard` contains intersite interactions (+V)."""
     couples = [(param.atom_index != param.neighbour_index) for param in hubbard.parameters]
     return any(couples)
+
+
+def max_number_of_neighbours(intersites_list: List[Tuple[int, int]]) -> int:
+    """Return the maximum number of neighbours found.
+
+    .. note:: it assumes only one onsite parameter is defined per atom index,
+        that means `intra` Hubbard interactions are not defined, such as `V Fe 3d Fe 2p 1 1 1.0`
+
+    :param intersites list: list of lists of shape (atom index, neigbours index)
+    """
+    from collections import Counter
+
+    first_indices = np.array(intersites_list, dtype='object')[:, 0]
+    counts = Counter(first_indices)
+    return max(counts.values()) - 1  # assuming there is always 1 and only 1 onsite parameter

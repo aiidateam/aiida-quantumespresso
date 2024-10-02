@@ -4,11 +4,13 @@
 import os
 
 from aiida.orm import StructureData
+from ase.io import read
+import numpy as np
 import pytest
 
 from aiida_quantumespresso.common.hubbard import Hubbard
 from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
-from aiida_quantumespresso.utils.hubbard import HubbardUtils
+from aiida_quantumespresso.utils.hubbard import HubbardUtils, initialize_hubbard_parameters
 
 
 @pytest.fixture
@@ -240,9 +242,6 @@ def get_non_trivial_hubbard_structure(filepath_tests):
 
     def _get_non_trivial_hubbard_structure(name=None, use_kinds=False):
         """Return a multi-coordination number `HubbardStructureData`."""
-        from ase.io import read
-        import numpy as np
-
         path = os.path.join(filepath_tests, 'fixtures', 'structures')
 
         if name is None:
@@ -336,8 +335,6 @@ def test_get_intersites_radius(get_non_trivial_hubbard_structure):
 
 def test_get_intersites_radius_five_nn(filepath_tests):
     """Test the `HubbardUtils.get_intersites_radius` method against LiMnTe (5 neighbours)."""
-    from ase.io import read
-
     path = os.path.join(filepath_tests, 'fixtures', 'structures', 'LMT.cif')
     atoms = read(path)
 
@@ -354,22 +351,14 @@ def test_get_intersites_radius_five_nn(filepath_tests):
 
 def test_initialize_hubbard_parameters(get_non_trivial_hubbard_structure):
     """Test the `HubbardUtils.initialize_hubbard_parameters` method."""
-    from aiida_quantumespresso.utils.hubbard import initialize_hubbard_parameters
-
     structure = get_non_trivial_hubbard_structure()
-
     hubbard_structure = initialize_hubbard_parameters(structure=structure, pairs={'Fe': ['3d', 5.0, 1e-8, {'O': '2p'}]})
 
-    # print(HubbardUtils(hubbard_structure).get_hubbard_card())
     assert len(hubbard_structure.hubbard.parameters) == 8 * (4 + 1) + 16 * (6 + 1)
 
 
 def test_initialize_hubbard_parameters_five_nn(filepath_tests):
     """Test the `HubbardUtils.initialize_hubbard_parameters` method against LiMnTe (5 neighbours)."""
-    from ase.io import read
-
-    from aiida_quantumespresso.utils.hubbard import initialize_hubbard_parameters
-
     path = os.path.join(filepath_tests, 'fixtures', 'structures', 'LMT.cif')
     atoms = read(path)
 
@@ -382,3 +371,103 @@ def test_initialize_hubbard_parameters_five_nn(filepath_tests):
     )
 
     assert len(hubbard_structure.hubbard.parameters) == 6
+
+
+@pytest.mark.parametrize(
+    ('pairs', 'number_of_parameters'),
+    (
+        (
+            {
+                'Mn': ['3d', 5.0, 1e-8, {
+                    'S': '3p'
+                }],
+                'Co': ['3d', 5.0, 1e-8, {
+                    'S': '3p'
+                }],
+            },
+            (1 + 6) + (1 + 4)  # 2 onsites, 6 + 4 intersites
+        ),
+        (
+            {
+                'Mn': ['3d', 5.0, 1e-8, {
+                    'S': '3p',
+                    'Co': '3d'
+                }],
+                'Co': ['3d', 5.0, 1e-8, {
+                    'S': '3p',
+                    'Mn': '3d'
+                }],
+            },
+            (1 + 6 + 4) + (1 + 4 + 4)  # 2 onsites, 6 + 4 TM-S, 4 + 4 TM-TM
+        ),
+    )
+)
+def test_get_intersites_list(filepath_tests, pairs, number_of_parameters):
+    """Test the `HubbardUtils.get_intersites_list` method against MnCoS."""
+    path = os.path.join(filepath_tests, 'fixtures', 'structures', 'MnCoS.cif')
+    atoms = read(path)
+
+    structure = StructureData(ase=atoms)
+    hubbard_structure = initialize_hubbard_parameters(structure=structure, pairs=pairs)
+
+    assert len(hubbard_structure.hubbard.parameters) == number_of_parameters
+
+    hubbard_utils = HubbardUtils(hubbard_structure=hubbard_structure)
+    intersites = hubbard_utils.get_intersites_list()
+
+    init_intersites = np.array(hubbard_structure.hubbard.to_list(), dtype='object')[:, [0, 2, 5]].tolist()
+
+    assert len(intersites) == len(init_intersites)
+
+    for intersite in intersites:
+        assert intersite in init_intersites
+
+
+def test_get_max_number_of_neighbours(filepath_tests):
+    """Test the `HubbardUtiles.get_max_number_of_neighbours` method."""
+    path = os.path.join(filepath_tests, 'fixtures', 'structures', 'MnCoS.cif')
+    atoms = read(path)
+
+    pairs = {
+        'Mn': ['3d', 5.0, 1e-8, {
+            'S': '3p',
+        }],
+        'Co': ['3d', 5.0, 1e-8, {
+            'S': '3p',
+        }],
+    }
+    structure = StructureData(ase=atoms)
+    hubbard_structure = initialize_hubbard_parameters(structure=structure, pairs=pairs)
+    hubbard_utils = HubbardUtils(hubbard_structure=hubbard_structure)
+
+    assert hubbard_utils.get_max_number_of_neighbours() == 10
+
+
+def test_max_number_of_neighbours(filepath_tests):
+    """Test the `max_number_of_neighbours` method."""
+    from aiida_quantumespresso.utils.hubbard import max_number_of_neighbours
+
+    array = [[0, 1], [0, 1], [0, 0], [0, 1], [0, 2], [0, 2]]
+
+    assert max_number_of_neighbours(array) == 5
+
+    path = os.path.join(filepath_tests, 'fixtures', 'structures', 'MnCoS.cif')
+    atoms = read(path)
+
+    pairs = {
+        'Mn': ['3d', 5.0, 1e-8, {
+            'S': '3p',
+            'Co': '3d'
+        }],
+        'Co': ['3d', 5.0, 1e-8, {
+            'S': '3p',
+            'Mn': '3d'
+        }],
+    }
+    structure = StructureData(ase=atoms)
+    hubbard_structure = initialize_hubbard_parameters(structure=structure, pairs=pairs)
+
+    hubbard_utils = HubbardUtils(hubbard_structure=hubbard_structure)
+    intersites = np.array(hubbard_utils.get_intersites_list(), dtype='object')[:, [0, 1]]
+
+    assert max_number_of_neighbours(intersites) == 10

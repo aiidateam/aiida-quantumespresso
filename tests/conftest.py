@@ -168,7 +168,7 @@ def sssp(aiida_profile, generate_upf_data):
                 'cutoff_rho': 240.0,
             }
 
-        label = 'SSSP/1.2/PBEsol/efficiency'
+        label = 'SSSP/1.3/PBEsol/efficiency'
         family = SsspFamily.create_from_folder(dirpath, label)
 
     family.set_cutoffs(cutoffs, stringency, unit='Ry')
