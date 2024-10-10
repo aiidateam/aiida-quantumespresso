@@ -60,11 +60,11 @@ def test_pp_default(fixture_sandbox, generate_calc_job, generate_inputs, file_re
     file_regression.check(input_written, encoding='utf-8', extension='.in')
 
 
-def test_pp_keep_plot_file(fixture_sandbox, generate_calc_job, generate_inputs):
+def test_pp_keep_data_files(fixture_sandbox, generate_calc_job, generate_inputs):
     """Test a `PpCalculation` where we want to retrieve the plot file."""
     entry_point_name = 'quantumespresso.pp'
     inputs = generate_inputs()
-    inputs.metadata.options.keep_plot_file = True
+    inputs.metadata.options.keep_data_files = True
 
     calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
     retrieve_list = ['aiida.out', 'aiida.fileout', ('aiida.filplot_*aiida.fileout', '.', 0)]
