@@ -297,12 +297,12 @@ def test_pp_default_3d(
     })
 
 
-def test_pp_default_3d_keep_plot_file(generate_calc_job_node, generate_parser, generate_inputs_3d, tmpdir):
-    """Test a `pp.x` calculation where `keep_plot_file=False` meaning files will be parsed from temporary directory."""
+def test_pp_default_3d_keep_data_files(generate_calc_job_node, generate_parser, generate_inputs_3d, tmpdir):
+    """Test a `pp.x` calculation where `keep_data_files=False` meaning files will be parsed from temporary directory."""
     entry_point_calc_job = 'quantumespresso.pp'
     entry_point_parser = 'quantumespresso.pp'
 
-    attributes = {'options': {'keep_plot_file': False}, 'retrieve_temporary_list': ['aiida.fileout']}
+    attributes = {'options': {'keep_data_files': False}, 'retrieve_temporary_list': ['aiida.fileout']}
     node = generate_calc_job_node(
         entry_point_calc_job,
         test_name='default_3d',
