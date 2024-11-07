@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Plugin to create a Quantum Espresso epw.x input file."""
 import os
+import warnings
 
 from aiida import orm
 from aiida.common import datastructures, exceptions
@@ -84,6 +85,12 @@ class EpwCalculation(CalcJob):
 
         if 'settings' in self.inputs:
             settings = _uppercase_dict(self.inputs.settings.get_dict(), dict_name='settings')
+            if 'ADDITIONAL_RETRIEVE_LIST' in settings:
+                warnings.warn(
+                    'The key `ADDITIONAL_RETRIEVE_LIST` in the settings input is deprecated and will be removed in '
+                    'the future. Use the `CalcJob.metadata.options.additional_retrieve_list` input instead.',
+                    FutureWarning
+                )
         else:
             settings = {}
 
