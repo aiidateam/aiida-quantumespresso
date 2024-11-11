@@ -686,7 +686,6 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
                 new_scf_params['SYSTEM']['starting_magnetization'] = {abs_atom_marker : 1}
 
             # remove any duplicates created from the "core_hole_treatments.yaml" defaults
-            # new_scf_params_keys = [k for k in new_scf_params['SYSTEM'].keys()]
             new_scf_params_keys = list(new_scf_params['SYSTEM'].keys())
             for key in new_scf_params_keys:
                 if 'starting_magnetization(' in key:
