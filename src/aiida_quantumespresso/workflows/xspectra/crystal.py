@@ -523,7 +523,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
 
         inputs = {
             'absorbing_elements_list' : elements_list,
-            'absorbing_atom_marker' : self.inputs.abs_atom_marker,
+            'abs_atom_marker' : self.inputs.abs_atom_marker,
             'metadata' : {
                 'call_link_label' : 'get_xspectra_structures'
             }
@@ -686,7 +686,9 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
                 new_scf_params['SYSTEM']['starting_magnetization'] = {abs_atom_marker : 1}
 
             # remove any duplicates created from the "core_hole_treatments.yaml" defaults
-            for key in new_scf_params['SYSTEM'].keys():
+            # new_scf_params_keys = [k for k in new_scf_params['SYSTEM'].keys()]
+            new_scf_params_keys = list(new_scf_params['SYSTEM'].keys())
+            for key in new_scf_params_keys:
                 if 'starting_magnetization(' in key:
                     new_scf_params['SYSTEM'].pop(key, None)
 
