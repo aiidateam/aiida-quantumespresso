@@ -80,6 +80,26 @@ def test_pp_keep_data_files(fixture_sandbox, generate_calc_job, generate_inputs)
         assert element in calc_info.retrieve_list
 
 
+def test_pp_parse_data_files(fixture_sandbox, generate_calc_job, generate_inputs):
+    """Test a `PpCalculation` where we want to retrieve the plot file."""
+    entry_point_name = 'quantumespresso.pp'
+    inputs = generate_inputs()
+    inputs.metadata.options.parse_data_files = False
+
+    calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
+    retrieve_list = ['aiida.out']
+    retrieve_temporary_list = []
+    local_copy_list = []
+
+    # When both `keep_data_files` (default) and `parse_data_files` are set to False, the data files won't be pulled.
+    assert isinstance(calc_info, datastructures.CalcInfo)
+    assert sorted(calc_info.local_copy_list) == sorted(local_copy_list)
+    assert sorted(calc_info.retrieve_temporary_list) == sorted(retrieve_temporary_list)
+    assert len(calc_info.retrieve_list) == 1
+    for element in retrieve_list:
+        assert element in calc_info.retrieve_list
+
+
 def test_pp_cmdline_setting(fixture_sandbox, generate_calc_job, generate_inputs):
     """Test a `PpCalculation` with user-defined cmdline settings."""
     entry_point_name = 'quantumespresso.pp'
