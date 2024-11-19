@@ -85,7 +85,7 @@ class PpCalculation(CalcJob):
         spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.pp')
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)
         spec.input('metadata.options.keep_plot_file', valid_type=bool, required=False)
-        spec.input('metadata.options.keep_data_files', valid_type=bool, default=True)
+        spec.input('metadata.options.keep_data_files', valid_type=bool, default=False)
         spec.input('metadata.options.parse_data_files', valid_type=bool, default=True)
 
         spec.output('output_parameters', valid_type=orm.Dict)
