@@ -434,7 +434,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
 
             if 'nbands_factor' in self.inputs:
                 factor = self.inputs.nbands_factor.value
-                parameters = self.ctx.workchain_scf.outputs.output_parameters.base.attributes.get('number_of_bands')
+                parameters = self.ctx.workchain_scf.outputs.output_parameters.get_dict()
                 nbands = int(parameters['number_of_bands'])
                 nelectron = int(parameters['number_of_electrons'])
                 nbnd = max(int(0.5 * nelectron * factor), int(0.5 * nelectron) + 4, nbands)
@@ -442,7 +442,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
 
             else:
                 inputs.pw.parameters['SYSTEM']['nbnd'] = (
-                    self.ctx.workchain_scf.outputs.output_parameters['number_of_bands']
+                    self.ctx.workchain_scf.outputs.output_parameters.base.attributes.get('number_of_bands')
                 )
         inputs.pw.structure = self.inputs.structure
 
