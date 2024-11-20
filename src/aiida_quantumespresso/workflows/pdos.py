@@ -440,10 +440,6 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
                 nbnd = max(int(0.5 * nelectron * factor), int(0.5 * nelectron) + 4, nbands)
                 inputs.pw.parameters['SYSTEM']['nbnd'] = nbnd
 
-            else:
-                inputs.pw.parameters['SYSTEM']['nbnd'] = (
-                    self.ctx.workchain_scf.outputs.output_parameters.base.attributes.get('number_of_bands')
-                )
         inputs.pw.structure = self.inputs.structure
 
         inputs.metadata.call_link_label = 'nscf'
