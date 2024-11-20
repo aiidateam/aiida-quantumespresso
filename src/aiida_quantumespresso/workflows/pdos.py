@@ -118,6 +118,9 @@ def validate_inputs(value, _):
             if value['dos']['parameters']['DOS'].get(par, None) is None:
                 return f'The `{par}`` parameter must be set in case `align_to_fermi` is set to `True`.'
 
+    if 'nbands_factor' in value and 'nbnd' in value['nscf']['pw']['parameters'].base.attributes.get('SYSTEM', {}):
+        return PdosWorkChain.exit_codes.ERROR_INVALID_INPUT_NUMBER_OF_BANDS.message
+
 
 def validate_scf(value, _):
     """Validate the scf parameters."""
@@ -304,6 +307,8 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
             message='the PROJWFC sub process failed')
         spec.exit_code(404, 'ERROR_SUB_PROCESS_FAILED_BOTH',
             message='both the DOS and PROJWFC sub process failed')
+        spec.exit_code(405, 'ERROR_INVALID_INPUT_NUMBER_OF_BANDS',
+            message='Cannot specify both `nbands_factor` and `nscf.pw.parameters.SYSTEM.nbnd`.')
 
         spec.expose_outputs(PwBaseWorkChain, namespace='nscf')
         spec.expose_outputs(DosCalculation, namespace='dos')
