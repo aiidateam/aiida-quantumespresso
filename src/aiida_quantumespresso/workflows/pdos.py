@@ -441,7 +441,9 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
                 inputs.pw.parameters['SYSTEM']['nbnd'] = nbnd
 
             else:
-                inputs.pw.parameters['SYSTEM']['nbnd'] = self.ctx.workchain_scf.outputs.output_parameters['number_of_bands']
+                inputs.pw.parameters['SYSTEM']['nbnd'] = (
+                    self.ctx.workchain_scf.outputs.output_parameters['number_of_bands']
+                )
         inputs.pw.structure = self.inputs.structure
 
         inputs.metadata.call_link_label = 'nscf'
