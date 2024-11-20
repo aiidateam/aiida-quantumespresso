@@ -320,6 +320,27 @@ def test_pp_default_3d_keep_data_files(generate_calc_job_node, generate_parser, 
     assert len(results['output_data'].get_arraynames()) == 4
 
 
+def test_pp_default_3d_parse_data_files(generate_calc_job_node, generate_parser, generate_inputs_3d, tmpdir):
+    """Test a `pp.x` calculation where `parse_data_files=False`, so data files won't be parsed."""
+    entry_point_calc_job = 'quantumespresso.pp'
+    entry_point_parser = 'quantumespresso.pp'
+
+    attributes = {'parse_data_files': False}
+    node = generate_calc_job_node(
+        entry_point_calc_job,
+        test_name='default_3d',
+        inputs=generate_inputs_3d,
+        attributes=attributes,
+    )
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False, retrieved_temporary_folder=tmpdir)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_parameters' in results
+    assert 'output_data' not in results
+
+
 def test_pp_default_3d_multiple(generate_calc_job_node, generate_parser, generate_inputs_3d):
     """Test a default `pp.x` calculation producing multiple files in 3D format."""
     entry_point_calc_job = 'quantumespresso.pp'
