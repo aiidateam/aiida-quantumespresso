@@ -62,6 +62,8 @@ class NebCalculation(CalcJob):
         spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.neb')
         spec.input('first_structure', valid_type=orm.StructureData, help='Initial structure')
         spec.input('last_structure', valid_type=orm.StructureData, help='Final structure')
+        spec.input('intermediate_structures', valid_type=orm.TrajectoryData, required=False, 
+            help='intermediate structure(s) only')
         spec.input('parameters', valid_type=orm.Dict, help='NEB-specific input parameters')
         spec.input('settings', valid_type=orm.Dict, required=False,
             help='Optional parameters to affect the way the calculation job and the parsing are performed.')
@@ -156,7 +158,7 @@ class NebCalculation(CalcJob):
                 f'type of calculation: {",".join(list(input_params.keys()))}'
             )
 
-        return input_data
+        return input_data, namelist
 
     def prepare_for_submission(self, folder):
         """Prepare the calculation job for submission by transforming input nodes into input files.
@@ -220,13 +222,48 @@ class NebCalculation(CalcJob):
         folder.get_subfolder(self._OUTPUT_SUBFOLDER, create=True)
 
         # We first prepare the NEB-specific input file.
-        neb_input_filecontent = self._generate_input_files(self.inputs.parameters, settings_dict)
+        neb_input_filecontent, neb_inputparams = self._generate_input_files(self.inputs.parameters, settings_dict)
         with folder.open(self.inputs.metadata.options.input_filename, 'w') as handle:
             handle.write(neb_input_filecontent)
+        
+        #Here we validate and add intermediate images to the list of structures
+        if 'intermediate_structures' in self.inputs:
+            intermediate_structures = self.inputs.intermediate_structures
+            num_intstructures = len(intermediate_structures.get_stepids())
+            
+            #check that the no. of input structures (+intermediates) = no. of images in parameter dict
+            nimag_param = neb_inputparams.get('num_of_images', 2)
+            if  nimag_param < num_intstructures+2:
+                raise InputValidationError(
+                    f'No of input structures={num_intstructures+2} is > ' 
+                    f'than num_of_images={nimag_param} in the input parameters'
+                )
+                
+            structure_list = [first_structure,last_structure]
+            for i in range(0, num_intstructures):
+                intm_structure = intermediate_structures.get_step_structure(i)
+                
+                # Check that the first and last image have the same cell
+                if abs(np.array(first_structure.cell) - np.array(intm_structure.cell)).max() > 1.e-4:
+                    raise InputValidationError(f'Different cell in the fist and intermediate image{i+1}')
+                    
+                # Check that the first and last image have the same number of sites
+                if len(first_structure.sites) != len(intm_structure.sites):
+                    raise InputValidationError(f'Different no. of sites in the fist and intermediate image{i+1}')
+                    
+                # Check that sites in the initial and final structure have the same kinds
+                if first_structure.get_site_kindnames() != intm_structure.get_site_kindnames():
+                    raise InputValidationError(
+                        f'Mismatch btw the kind names and/or order between the first and intermediate image{i+1}'
+                    )
+                
+                structure_list.insert(1+i,intm_structure)
+        else:
+            structure_list = [first_structure,last_structure]
 
         # We now generate the PW input files for each input structure
         local_copy_pseudo_list = []
-        for i, structure in enumerate([first_structure, last_structure]):
+        for i, structure in enumerate(structure_list):
             # We need to a pass a copy of the settings_dict for each structure
             this_settings_dict = copy.deepcopy(settings_dict)
             pw_input_filecontent, this_local_copy_pseudo_list = PwCalculation._generate_PWCPinputdata(  # pylint: disable=protected-access
@@ -305,7 +342,11 @@ class NebCalculation(CalcJob):
         calcinfo.remote_copy_list = remote_copy_list
         calcinfo.remote_symlink_list = remote_symlink_list
         # In neb calculations there is no input read from standard input!!
-        codeinfo.cmdline_params = (['-input_images', '2'] + list(cmdline_params))
+        if 'intermediate_structures' in self.inputs:
+            ninput_images = 2 + num_intstructures
+            codeinfo.cmdline_params = (['-input_images', str(ninput_images)] + list(cmdline_params))
+        else:
+            codeinfo.cmdline_params = (['-input_images', '2'] + list(cmdline_params))
         codeinfo.stdout_name = self.inputs.metadata.options.output_filename
         codeinfo.code_uuid = self.inputs.code.uuid
         calcinfo.codes_info = [codeinfo]
