@@ -27,10 +27,24 @@ def instantiate_process_cls(process_cls, inputs):
     return instantiate_process(runner, process_cls, **inputs)
 
 
+def check_pdos_energy_range(dos_inputs, projwfc_inputs, expected_p_dos_inputs):
+    """Check the energy range of the pdos calculation."""
+    # check generated inputs
+    dos_params = dos_inputs.parameters.get_dict()
+    projwfc_params = projwfc_inputs.parameters.get_dict()
+
+    assert dos_params['DOS']['Emin'] == expected_p_dos_inputs[0]
+    assert dos_params['DOS']['Emax'] == expected_p_dos_inputs[1]
+    assert projwfc_params['PROJWFC']['Emin'] == expected_p_dos_inputs[0]
+    assert projwfc_params['PROJWFC']['Emax'] == expected_p_dos_inputs[1]
+
+
 @pytest.mark.parametrize(
     'energy_range_inputs,expected_p_dos_inputs', [((-10, 10, None), (-10, 10)),
-                                                  ((None, None, [-10, 10]), (-3.0970404109571996, 16.9029595890428))]
+                                                  ((None, None, [-10, 10]), (-3.0970404109571996, 16.9029595890428)),
+                                                  ((None, None, None), (-5.64024889, 8.91047649))]
 )
+@pytest.mark.usefixtures('aiida_profile_clean')
 def test_default(
     generate_workchain_pdos,
     generate_workchain_pw,
@@ -83,12 +97,10 @@ def test_default(
     remote.store()
     remote.base.links.add_incoming(mock_wknode, link_type=LinkType.RETURN, link_label='remote_folder')
 
-    result = orm.Dict({'fermi_energy': 6.9029595890428})
-    result.store()
+    result = orm.Dict({'fermi_energy': 6.9029595890428}).store()
     result.base.links.add_incoming(mock_wknode, link_type=LinkType.RETURN, link_label='output_parameters')
 
-    bands_data = generate_bands_data()
-    bands_data.store()
+    bands_data = generate_bands_data().store()
     bands_data.base.links.add_incoming(mock_wknode, link_type=LinkType.RETURN, link_label='output_band')
 
     wkchain.ctx.workchain_nscf = mock_wknode
@@ -98,15 +110,7 @@ def test_default(
     # mock run dos and projwfc, and check that their inputs are acceptable
     dos_inputs, projwfc_inputs = wkchain.run_pdos_parallel()
 
-    # check generated inputs
-    # @mbercx please uncomment the following lines
-    # dos_params = dos_inputs.parameters.get_dict()
-    # projwfc_params = projwfc_inputs.parameters.get_dict()
-
-    # assert dos_params['DOS']['Emin'] == expected_p_dos_inputs[0]
-    # assert dos_params['DOS']['Emax'] == expected_p_dos_inputs[1]
-    # assert projwfc_params['PROJWFC']['Emin'] == expected_p_dos_inputs[0]
-    # assert projwfc_params['PROJWFC']['Emax'] == expected_p_dos_inputs[1]
+    check_pdos_energy_range(dos_inputs, projwfc_inputs, expected_p_dos_inputs)
 
     generate_calc_job(fixture_sandbox, 'quantumespresso.dos', dos_inputs)
     generate_calc_job(fixture_sandbox, 'quantumespresso.projwfc', projwfc_inputs)
