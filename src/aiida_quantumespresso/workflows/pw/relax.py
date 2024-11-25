@@ -4,6 +4,8 @@ from aiida import orm
 from aiida.common import AttributeDict, exceptions
 from aiida.common.lang import type_check
 from aiida.engine import ToContext, WorkChain, append_, if_, while_
+from aiida.orm import StructureData as LegacyStructureData
+from aiida.plugins import DataFactory
 
 from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import create_kpoints_from_distance
 from aiida_quantumespresso.calculations.pw import PwCalculation
@@ -12,6 +14,21 @@ from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
 
 from ..protocols.utils import ProtocolMixin
+
+try:
+    StructureData = DataFactory('atomistic.structure')
+except exceptions.MissingEntryPointError:
+    structures_classes = (LegacyStructureData,)
+else:
+    structures_classes = (LegacyStructureData, StructureData)
+
+
+def validate_inputs(inputs, _):
+    """Validate the top level namespace."""
+    parameters = inputs['base']['pw']['parameters'].get_dict()
+
+    if 'calculation' not in parameters.get('CONTROL', {}):
+        return 'The parameters in `base.pw.parameters` do not specify the required key `CONTROL.calculation`.'
 
 
 class PwRelaxWorkChain(ProtocolMixin, WorkChain):
@@ -38,33 +55,16 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
             PwBaseWorkChain,
             namespace='base_relax',
             exclude=('clean_workdir', 'pw.structure', 'pw.parent_folder'),
-            namespace_options={'help': 'Inputs for the `PwBaseWorkChain` for the main relax loop.'},
-        )
-        spec.input('structure', valid_type=orm.StructureData, help='The inputs structure.')
-        spec.input(
-            'meta_convergence',
-            valid_type=orm.Bool,
-            default=lambda: orm.Bool(True),
-            help='If `True` the workchain will perform a meta-convergence on the cell volume.',
-        )
-        spec.input(
-            'max_meta_convergence_iterations',
-            valid_type=orm.Int,
-            default=lambda: orm.Int(5),
-            help='The maximum number of variable cell relax iterations in the meta convergence cycle.',
-        )
-        spec.input(
-            'volume_convergence',
-            valid_type=orm.Float,
-            default=lambda: orm.Float(0.01),
-            help='The volume difference threshold between two consecutive meta convergence iterations.',
-        )
-        spec.input(
-            'clean_workdir',
-            valid_type=orm.Bool,
-            default=lambda: orm.Bool(False),
-            help='If `True`, work directories of all called calculation will be cleaned at the end of execution.',
-        )
+            namespace_options={'help': 'Inputs for the `PwBaseWorkChain` for the main relax loop.'})
+        spec.input('structure', valid_type=structures_classes, help='The inputs structure.')
+        spec.input('meta_convergence', valid_type=orm.Bool, default=lambda: orm.Bool(True),
+            help='If `True` the workchain will perform a meta-convergence on the cell volume.')
+        spec.input('max_meta_convergence_iterations', valid_type=orm.Int, default=lambda: orm.Int(5),
+            help='The maximum number of variable cell relax iterations in the meta convergence cycle.')
+        spec.input('volume_convergence', valid_type=orm.Float, default=lambda: orm.Float(0.01),
+            help='The volume difference threshold between two consecutive meta convergence iterations.')
+        spec.input('clean_workdir', valid_type=orm.Bool, default=lambda: orm.Bool(False),
+            help='If `True`, work directories of all called calculation will be cleaned at the end of execution.')
         spec.inputs.validator = cls.validate_inputs
         spec.outline(
             cls.setup,
@@ -96,9 +96,15 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
             message='the initial relaxation `PwBaseWorkChain` sub process failed',
         )
         spec.expose_outputs(PwBaseWorkChain, exclude=('output_structure',))
+<<<<<<< HEAD
         spec.output(
             'output_structure', valid_type=orm.StructureData, required=False, help='The successfully relaxed structure.'
         )
+=======
+        spec.output('output_structure', valid_type=structures_classes, required=False,
+            help='The successfully relaxed structure.')
+        # yapf: enable
+>>>>>>> 76cb491 (Optional support for aiida-atomistic)
 
     @staticmethod
     def validate_inputs(inputs, _):

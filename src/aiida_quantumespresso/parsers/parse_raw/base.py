@@ -2,7 +2,16 @@
 
 import re
 
-from aiida.orm import StructureData
+from aiida.orm import StructureData as LegacyStructureData
+from aiida.plugins import DataFactory
+from aiida.common import exceptions
+
+try:
+    StructureData = DataFactory('atomistic.structure')
+    HAS_ATOMISTIC = True
+except exceptions.MissingEntryPointError:
+    HAS_ATOMISTIC = False
+
 
 __all__ = (
     'convert_qe_time_to_sec',
@@ -42,23 +51,56 @@ def convert_qe_time_to_sec(timestr):
 
 
 def convert_qe_to_aiida_structure(output_dict, input_structure=None):
-    """Convert the dictionary parsed from the Quantum ESPRESSO output into ``StructureData``."""
+    """Convert the dictionary parsed from the Quantum ESPRESSO output into ``StructureData``.
+    If we have an ``orm.StructureData`` as input, we return an ``orm.StructureData`` instance,
+    otherwise we always return an aiida-atomistic ``StructureData``.
+    """
 
     cell_dict = output_dict['cell']
 
     # Without an input structure, try to recreate the structure from the output
     if not input_structure:
-        structure = StructureData(cell=cell_dict['lattice_vectors'])
 
-        for kind_name, position in output_dict['atoms']:
-            symbol = re.sub(r'\d+', '', kind_name)
-            structure.append_atom(position=position, symbols=symbol, name=kind_name)
+        if not HAS_ATOMISTIC:
+            structure = LegacyStructureData()
+            structure.set_cell(cell_dict['lattice_vectors'])
+
+            for kind_name, position in output_dict['atoms']:
+                symbol = re.sub(r'\d+', '', kind_name)
+                structure.append_atom(position=position, symbols=symbol, name=kind_name)
+
+        else:
+            from aiida_atomistic import StructureDataMutable
+            structure = StructureDataMutable()
+            structure.set_cell(cell_dict['lattice_vectors'])
+
+            for kind_name, position in output_dict['atoms']:
+                symbol = re.sub(r'\d+', '', kind_name)
+                structure.append_atom(positions=position, symbols=symbol, kinds=kind_name)
+
+            structure = StructureData.from_mutable(structure)
 
     else:
-        structure = input_structure.clone()
-        structure.reset_cell(cell_dict['lattice_vectors'])
-        new_pos = [i[1] for i in cell_dict['atoms']]
-        structure.reset_sites_positions(new_pos)
+
+        if isinstance(input_structure, LegacyStructureData):
+            structure = input_structure.clone()
+            structure.reset_cell(cell_dict['lattice_vectors'])
+            new_pos = [i[1] for i in cell_dict['atoms']]
+            structure.reset_sites_positions(new_pos)
+        elif HAS_ATOMISTIC:
+            if isinstance(input_structure, StructureData):
+                structure = input_structure.get_value() # gives the StructureDataMutable instance
+                structure.set_cell(cell_dict['lattice_vectors'])
+                for site,position in zip(structure.sites,[i[1] for i in cell_dict['atoms']]):
+                    site.position = position
+            elif isinstance(input_structure, LegacyStructureData):
+                structure = input_structure.clone()
+                structure.reset_cell(cell_dict['lattice_vectors'])
+                new_pos = [i[1] for i in cell_dict['atoms']]
+                structure.reset_sites_positions(new_pos)
+        else:
+            raise ValueError('input_structure is not a valid StructureData or LegacyStructureData instance')
+                
 
     return structure
 

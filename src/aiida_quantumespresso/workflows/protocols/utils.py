@@ -219,6 +219,7 @@ def get_magnetization(
         'angle1': {} if spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT] else None,
         'angle2': {} if spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT] else None,
     }
+
     if sorted(z_valences.keys()) != sorted(structure.get_kind_names()):
         raise ValueError(f'`z_valences` needs one value for each of the {len(structure.kinds)} kinds.')
 
@@ -351,3 +352,70 @@ def get_starting_magnetization(
             starting_magnetization[kind.name] = magmom / pseudo_family.get_pseudo(element=kind.symbol).z_valence
 
     return starting_magnetization
+
+
+def get_starting_magnetization_noncolin(
+    structure: StructureData,
+    pseudo_family: PseudoPotentialFamily,
+    initial_magnetic_moments: Optional[dict] = None
+) -> tuple:
+    """Return the dictionary with starting magnetization for each kind in the structure.
+
+    :param structure: the structure.
+    :param pseudo_family: pseudopotential family.
+    :param initial_magnetic_moments: dictionary mapping each kind in the structure to its magnetic moment.
+    :returns: dictionary of starting magnetizations.
+    """
+    # try:
+    #     structure.mykinds
+    # except AttributeError:
+    #     raise TypeError(f"structure<{structure.pk}> do not have magmom")
+    starting_magnetization = {}
+    angle1 = {}
+    angle2 = {}
+
+    if initial_magnetic_moments is not None:
+
+        nkinds = len(structure.kinds)
+
+        if sorted(initial_magnetic_moments.keys()) != sorted(structure.get_kind_names()):
+            raise ValueError(f'`initial_magnetic_moments` needs one value for each of the {nkinds} kinds.')
+
+        for kind in structure.kinds:
+            magmom = initial_magnetic_moments[kind.name]
+            if isinstance(magmom, Union[int, float]):
+                starting_magnetization[kind.name] = magmom / pseudo_family.get_pseudo(element=kind.symbol).z_valence
+                angle1[kind.name] = 0.0
+                angle2[kind.name] = 0.0
+            else:  # tuple of 3 float (r, theta, phi)
+                starting_magnetization[kind.name
+                                       ] = 2 * magmom[0] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
+                angle1[kind.name] = magmom[1]
+                angle2[kind.name] = magmom[2]
+    try:
+        structure.mykinds
+    except AttributeError:
+        # Normal StructureData, no magmom in structure
+        magnetic_parameters = get_magnetization_parameters()
+
+        for kind in structure.kinds:
+            magnetic_moment = magnetic_parameters[kind.symbol]['magmom']
+
+            if magnetic_moment == 0:
+                magnetization = magnetic_parameters['default_magnetization']
+            else:
+                z_valence = pseudo_family.get_pseudo(element=kind.symbol).z_valence
+                magnetization = magnetic_moment / float(z_valence)
+
+            starting_magnetization[kind.name] = magnetization
+            angle1[kind.name] = 0.0
+            angle2[kind.name] = 0.0
+    else:
+        # Self defined myStructureData, read magmom from structure
+        for kind in structure.mykinds:
+            magmom = kind.get_magmom_coord()
+            starting_magnetization[kind.name] = 2 * magmom[0] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
+            angle1[kind.name] = magmom[1]
+            angle2[kind.name] = magmom[2]
+
+    return starting_magnetization, angle1, angle2
