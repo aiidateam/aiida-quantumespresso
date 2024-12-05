@@ -84,7 +84,7 @@ class PwCalculation(BasePwCpInputGenerator):
 
         spec.output('output_parameters', valid_type=orm.Dict,
             help='The `output_parameters` output node of the successful calculation.')
-        spec.output('output_structure', valid_type=(StructureData, LegacyStructureData), required=False,
+        spec.output('output_structure', valid_type=structures_classes, required=False,
             help='The `output_structure` output node of the successful calculation if present.')
         spec.output('output_trajectory', valid_type=orm.TrajectoryData, required=False)
         spec.output('output_band', valid_type=orm.BandsData, required=False,
