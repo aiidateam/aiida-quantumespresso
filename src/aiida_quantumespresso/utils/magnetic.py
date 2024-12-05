@@ -1,27 +1,31 @@
 # -*- coding: utf-8 -*-
 """Utility class for handling the :class:`aiida_quantumespresso.data.hubbard_structure.HubbardStructureData`."""
 # pylint: disable=no-name-in-module
-from itertools import product
-import os
-from typing import Tuple, Union
 
 from aiida import orm
+from aiida.common.exceptions import MissingEntryPointError
 from aiida.engine import calcfunction
 from aiida.orm import StructureData as LegacyStructureData
 from aiida.plugins import DataFactory
-import numpy as np
 
-StructureData = DataFactory('atomistic.structure')
+try:
+    StructureData = DataFactory('atomistic.structure')
+except MissingEntryPointError:
+    structures_classes = (LegacyStructureData,)
+else:
+    structures_classes = (LegacyStructureData, StructureData)
 
 
-class MagneticUtils:
+class MagneticUtils:  # pylint: disable=too-few-public-methods
     """Class to manage the magnetic structure of the atomistic `LegacyStructureData`.
-    It contains methods to manipulate the magnetic structure in such a way to produce the correct input for QuantumESPRESSO calculations.
+
+    It contains methods to manipulate the magne tic structure in such a way to produce
+    the correct input for QuantumESPRESSO calculations.
     """
 
     def __init__(
         self,
-        structure: StructureData,
+        structure: structures_classes,
     ):
         """Set a the `StructureData` to manipulate."""
         if isinstance(structure, StructureData):
@@ -33,6 +37,7 @@ class MagneticUtils:
 
     def generate_magnetic_namelist(self, parameters):
         """Generate the magnetic namelist for Quantum ESPRESSO.
+
         :param parameters: dictionary of inputs for the Quantum ESPRESSO calculation.
         """
         if 'nspin' not in parameters['SYSTEM'] and 'noncolin' not in parameters['SYSTEM']:
@@ -54,15 +59,16 @@ class MagneticUtils:
                 )
         elif parameters['SYSTEM']['noncolin']:
             for site in self.structure.sites:
-                for variable in namelist.keys():
-                    namelist[variable][site.kinds] = site.get_magmom_coord(coord='spherical')[variable]
+                for variable, value in namelist.items():
+                    value[site.kinds] = site.get_magmom_coord(coord='spherical')[variable]
 
         return namelist
 
 
 @calcfunction
-def generate_structure_with_magmoms(input_structure=StructureData, input_magnetic_moments=orm.List):
+def generate_structure_with_magmoms(input_structure: structures_classes, input_magnetic_moments: orm.List):
     """Generate a new structure with the magnetic moments for each site.
+
     :param input_structure: the input structure to add the magnetic moments.
     :param input_magnetic_moments: the magnetic moments for each site, represented as a float (see below).
 

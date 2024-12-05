@@ -128,7 +128,7 @@ class BasePwCpInputGenerator(CalcJob):
         spec.input('metadata.options.input_filename', valid_type=str, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=str, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)  # Override default withmpi=False
-        spec.input('structure', valid_type=(structures_classes),
+        spec.input('structure', valid_type=structures_classes,
             help='The input structure.')
         spec.input('parameters', valid_type=orm.Dict,
             help='The input parameters that are to be used to construct the input file.')

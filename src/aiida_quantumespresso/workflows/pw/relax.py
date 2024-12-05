@@ -4,7 +4,8 @@ from aiida import orm
 from aiida.common import AttributeDict, exceptions
 from aiida.common.lang import type_check
 from aiida.engine import ToContext, WorkChain, append_, if_, while_
-from aiida.plugins import CalculationFactory, WorkflowFactory
+from aiida.orm import StructureData as LegacyStructureData
+from aiida.plugins import CalculationFactory, DataFactory, WorkflowFactory
 
 from aiida_quantumespresso.common.types import RelaxType
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
@@ -13,6 +14,13 @@ from ..protocols.utils import ProtocolMixin
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
+
+try:
+    StructureData = DataFactory('atomistic.structure')
+except exceptions.MissingEntryPointError:
+    structures_classes = (LegacyStructureData,)
+else:
+    structures_classes = (LegacyStructureData, StructureData)
 
 
 def validate_inputs(inputs, _):
@@ -38,7 +46,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
             exclude=('clean_workdir', 'pw.structure', 'pw.parent_folder'),
             namespace_options={'required': False, 'populate_defaults': False,
                 'help': 'Inputs for the `PwBaseWorkChain` for the final scf.'})
-        spec.input('structure', valid_type=orm.StructureData, help='The inputs structure.')
+        spec.input('structure', valid_type=structures_classes, help='The inputs structure.')
         spec.input('meta_convergence', valid_type=orm.Bool, default=lambda: orm.Bool(True),
             help='If `True` the workchain will perform a meta-convergence on the cell volume.')
         spec.input('max_meta_convergence_iterations', valid_type=orm.Int, default=lambda: orm.Int(5),
@@ -65,7 +73,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_FINAL_SCF',
             message='the final scf PwBaseWorkChain sub process failed')
         spec.expose_outputs(PwBaseWorkChain, exclude=('output_structure',))
-        spec.output('output_structure', valid_type=orm.StructureData, required=False,
+        spec.output('output_structure', valid_type=structures_classes, required=False,
             help='The successfully relaxed structure.')
         # yapf: enable
 

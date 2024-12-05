@@ -2,10 +2,15 @@
 """A basic parser for the common format of QE."""
 import re
 
-from aiida.plugins import DataFactory
 from aiida.orm import StructureData as LegacyStructureData
+from aiida.plugins import DataFactory
 
-from aiida_atomistic import StructureDataMutable, StructureData
+try:
+    StructureData = DataFactory('atomistic.structure')
+except exceptions.MissingEntryPointError:
+    structures_classes = (LegacyStructureData,)
+else:
+    structures_classes = (LegacyStructureData, StructureData)
 
 __all__ = ('convert_qe_time_to_sec', 'convert_qe_to_aiida_structure', 'convert_qe_to_kpoints')
 
@@ -53,14 +58,23 @@ def convert_qe_to_aiida_structure(output_dict, input_structure=None):
     # Without an input structure, try to recreate the structure from the output
     if not input_structure:
 
-        structure = StructureDataMutable()
-        structure.set_cell=cell_dict['lattice_vectors']
+        if isinstance(input_structure, LegacyStructureData):
+            structure = LegacyStructureData()
+            structure.set_cell=cell_dict['lattice_vectors']
 
-        for kind_name, position in output_dict['atoms']:
-            symbol = re.sub(r'\d+', '', kind_name)
-            structure.add_atom(position=position, symbols=symbol, name=kind_name)
-            
-        return StructureData.from_mutable(structure)
+            for kind_name, position in output_dict['atoms']:
+                symbol = re.sub(r'\d+', '', kind_name)
+                structure.append_atom(position=position, symbols=symbol, name=kind_name)
+
+        else:
+            structure = StructureDataMutable()
+            structure.set_cell=cell_dict['lattice_vectors']
+
+            for kind_name, position in output_dict['atoms']:
+                symbol = re.sub(r'\d+', '', kind_name)
+                structure.append_atom(positions=position, symbols=symbol, kinds=kind_name)
+
+            structure = StructureData.from_mutable(structure)
 
     else:
 
