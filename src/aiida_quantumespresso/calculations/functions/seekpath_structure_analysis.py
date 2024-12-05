@@ -1,9 +1,17 @@
 # -*- coding: utf-8 -*-
 """Calcfunction to primitivize a structure and return high symmetry k-point path through its Brillouin zone."""
+from aiida.common import exceptions
 from aiida.engine import calcfunction
 from aiida.orm import Data
+from aiida.plugins import DataFactory
 
 from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
+
+try:
+    StructureData = DataFactory('atomistic.structure')
+    HAS_ATOMISTIC = True
+except exceptions.MissingEntryPointError:
+    HAS_ATOMISTIC = False
 
 
 @calcfunction
@@ -32,7 +40,10 @@ def seekpath_structure_analysis(structure, **kwargs):
 
     result = get_explicit_kpoints_path(structure, **unwrapped_kwargs)
 
-    if isinstance(structure, HubbardStructureData):
+    if HAS_ATOMISTIC:
+        if isinstance(structure, StructureData):
+            raise NotImplementedError('This function does not yet support the conversion into atomistic instances.')
+    elif isinstance(structure, HubbardStructureData):
         result['primitive_structure'] = update_structure_with_hubbard(result['primitive_structure'], structure)
         result['conv_structure'] = update_structure_with_hubbard(result['conv_structure'], structure)
 
