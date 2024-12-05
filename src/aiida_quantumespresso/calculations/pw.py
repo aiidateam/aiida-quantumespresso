@@ -5,9 +5,12 @@ import warnings
 
 from aiida import orm
 from aiida.common.lang import classproperty
+from aiida.orm import StructureData as LegacyStructureData
 from aiida.plugins import factories
 
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
+
+StructureData = factories.DataFactory('atomistic.structure')
 
 
 class PwCalculation(BasePwCpInputGenerator):
@@ -69,13 +72,13 @@ class PwCalculation(BasePwCpInputGenerator):
             'will not fail if the XML file is missing in the retrieved folder.')
         spec.input('kpoints', valid_type=orm.KpointsData,
             help='kpoint mesh or kpoint path')
-        spec.input('hubbard_file', valid_type=orm.SinglefileData, required=False,
+        spec.input('hubbard_file', valid_type=(StructureData, LegacyStructureData), required=False,
             help='SinglefileData node containing the output Hubbard parameters from a HpCalculation')
         spec.inputs.validator = cls.validate_inputs
 
         spec.output('output_parameters', valid_type=orm.Dict,
             help='The `output_parameters` output node of the successful calculation.')
-        spec.output('output_structure', valid_type=orm.StructureData, required=False,
+        spec.output('output_structure', valid_type=(StructureData, LegacyStructureData), required=False,
             help='The `output_structure` output node of the successful calculation if present.')
         spec.output('output_trajectory', valid_type=orm.TrajectoryData, required=False)
         spec.output('output_band', valid_type=orm.BandsData, required=False,

@@ -4,7 +4,7 @@ from aiida import orm
 from aiida.common import AttributeDict, exceptions
 from aiida.common.lang import type_check
 from aiida.engine import BaseRestartWorkChain, ExitCode, ProcessHandlerReport, process_handler, while_
-from aiida.plugins import CalculationFactory, GroupFactory
+from aiida.plugins import CalculationFactory, DataFactory, GroupFactory
 
 from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import create_kpoints_from_distance
 from aiida_quantumespresso.common.types import ElectronicType, RestartType, SpinType
@@ -16,6 +16,12 @@ PwCalculation = CalculationFactory('quantumespresso.pw')
 SsspFamily = GroupFactory('pseudo.family.sssp')
 PseudoDojoFamily = GroupFactory('pseudo.family.pseudo_dojo')
 CutoffsPseudoPotentialFamily = GroupFactory('pseudo.family.cutoffs')
+
+try:
+    StructureData = DataFactory('atomistic.structure')
+    HAS_ATOMISTIC = True
+except ImportError:
+    HAS_ATOMISTIC = False
 
 
 class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
@@ -131,7 +137,11 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             the ``CalcJobs`` that are nested in this work chain.
         :return: a process builder instance with all inputs defined ready for launch.
         """
-        from aiida_quantumespresso.workflows.protocols.utils import get_starting_magnetization, recursive_merge
+        from aiida_quantumespresso.workflows.protocols.utils import (
+            get_starting_magnetization,
+            get_starting_magnetization_noncolin,
+            recursive_merge,
+        )
 
         if isinstance(code, str):
             code = orm.load_code(code)
@@ -143,7 +153,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if electronic_type not in [ElectronicType.METAL, ElectronicType.INSULATOR]:
             raise NotImplementedError(f'electronic type `{electronic_type}` is not supported.')
 
-        if spin_type not in [SpinType.NONE, SpinType.COLLINEAR]:
+        if spin_type not in [SpinType.NONE, SpinType.COLLINEAR, SpinType.NON_COLLINEAR]:
             raise NotImplementedError(f'spin type `{spin_type}` is not supported.')
 
         if initial_magnetic_moments is not None and spin_type is not SpinType.COLLINEAR:
@@ -189,10 +199,21 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             parameters['SYSTEM'].pop('degauss')
             parameters['SYSTEM'].pop('smearing')
 
-        if spin_type is SpinType.COLLINEAR:
-            starting_magnetization = get_starting_magnetization(structure, pseudo_family, initial_magnetic_moments)
-            parameters['SYSTEM']['starting_magnetization'] = starting_magnetization
-            parameters['SYSTEM']['nspin'] = 2
+        if isinstance(structure, orm.StructureData):
+            if spin_type is SpinType.COLLINEAR:
+                starting_magnetization = get_starting_magnetization(structure, pseudo_family, initial_magnetic_moments)
+                parameters['SYSTEM']['starting_magnetization'] = starting_magnetization
+                parameters['SYSTEM']['nspin'] = 2
+
+            if spin_type is SpinType.NON_COLLINEAR:
+                starting_magnetization_noncolin, angle1, angle2 = get_starting_magnetization_noncolin(
+                    structure=structure, pseudo_family=pseudo_family, initial_magnetic_moments=initial_magnetic_moments
+                )
+                parameters['SYSTEM']['starting_magnetization'] = starting_magnetization_noncolin
+                parameters['SYSTEM']['angle1'] = angle1
+                parameters['SYSTEM']['angle2'] = angle2
+                parameters['SYSTEM']['noncolin'] = True
+                parameters['SYSTEM']['nspin'] = 4
 
         # If overrides are provided, they are considered absolute
         if overrides:
@@ -283,6 +304,25 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             kpoints = create_kpoints_from_distance(**inputs)  # pylint: disable=unexpected-keyword-arg
 
         self.ctx.inputs.kpoints = kpoints
+
+    def validate_structure(self,):
+        """Validate the structure input for the workflow.
+
+        This method checks if the structure has atomistic properties and if it is supported by the PwCalculation plugin.
+        If the structure contains unsupported properties, a new structure is generated without those properties.
+
+        Modifies:
+            self.inputs.pw.structure: Updates the structure to a new one without unsupported properties if necessary.
+        """
+        if HAS_ATOMISTIC:
+            # do we want to do this, or return a warning, or except?
+            from aiida_atomistic.data.structure.utils import generate_striped_structure  # pylint: disable=import-error
+            plugin_check = self.inputs.pw.structure.check_plugin_support(PwCalculation.supported_properties)
+            if len(plugin_check) > 0:
+                # Generate a new StructureData without the unsupported properties.
+                self.inputs.pw.structure = generate_striped_structure(
+                    self.inputs.pw.structure, orm.List(list(plugin_check))
+                )
 
     def set_restart_type(self, restart_type, parent_folder=None):
         """Set the restart type for the next iteration."""
