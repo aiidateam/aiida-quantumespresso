@@ -134,8 +134,8 @@ def validate_nscf(value, _):
     parameters = value['pw']['parameters'].get_dict()
     if parameters.get('CONTROL', {}).get('calculation', 'scf') != 'nscf':
         return '`CONTOL.calculation` in `nscf.pw.parameters` is not set to `nscf`.'
-    if parameters.get('SYSTEM', {}).get('occupations', None) != 'tetrahedra':
-        return '`SYSTEM.occupations` in `nscf.pw.parameters` is not set to `tetrahedra`.'
+    if not parameters.get('SYSTEM', {}).get('occupations', '').startswith('tetrahedra'):
+        return '`SYSTEM.occupations` in `nscf.pw.parameters` is not set to one of the `tetrahedra` options.'
 
 
 def validate_dos(value, _):
