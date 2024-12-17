@@ -13,12 +13,12 @@ default_inputs:
                     calculation: nscf
                     restart_mode: from_scratch
                 SYSTEM:
-                    occupations: tetrahedra
+                    occupations: tetrahedra_opt
                     nosym: True
     dos:
         parameters:
             DOS:
-                DeltaE: 0.02
+                DeltaE: 0.01
         metadata:
             options:
                 resources:
@@ -28,7 +28,7 @@ default_inputs:
     projwfc:
         parameters:
             PROJWFC:
-                DeltaE: 0.02
+                DeltaE: 0.01
         metadata:
             options:
                 resources:
