@@ -13,6 +13,7 @@ from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
 
 __all__ = (
     'HubbardUtils',
+    'initialize_hubbard_parameters',
     'get_supercell_atomic_index',
     'get_index_and_translation',
     'get_hubbard_indices',
