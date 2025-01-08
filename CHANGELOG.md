@@ -1,3 +1,28 @@
+## v4.7.0
+
+### ✨ New features
+
+* Add `nbands_factor` logic into PdosWorkChain  [[1020b02](https://github.com/aiidateam/aiida-quantumespresso/commit/1020b02c76bd3ae9783087bdf5f796380a7fdf3b)]
+* ✨ `PwParser`: Add the XML schema for Quantum ESPRESSO v7.3.1 [[57e7463](https://github.com/aiidateam/aiida-quantumespresso/commit/57e7463c5727775d6a0470a41d1aca0ec4083b9a)]
+* `XspectraCrystalWorkChain`: Enable Symmetry Data Inputs  [[b79189d](https://github.com/aiidateam/aiida-quantumespresso/commit/b79189d7ce4756e846ab39c567ba4681474741ed)]
+* Add calcjob, parser and base workchain plugin for `bands.x`  [[651fd01](https://github.com/aiidateam/aiida-quantumespresso/commit/651fd0142a965ca1b03cc52f0f2f8d960936a1cd)]
+
+### 👌 Improvements
+
+* `PpCalculation`: Make parsing of output files optional  [[bc0d815](https://github.com/aiidateam/aiida-quantumespresso/commit/bc0d8156f3f206b76e15f0f0c0742d8b579b4722)]
+
+### 🐛 Bug fixes
+
+* CLI: Fix bug in `aiida-quantumespresso workflow launc pw-base`  [[ea76d9b](https://github.com/aiidateam/aiida-quantumespresso/commit/ea76d9b37f78315bbf93f93fa56460c7dfe0652a)]
+
+### 📚 Documentation
+
+* Docs: Fix build by pinning `sphinx-autoapi~=3.0.0`  [[91c3e1d](https://github.com/aiidateam/aiida-quantumespresso/commit/91c3e1d35939491663a697d201dcccdf90c076c6)]
+
+### ♻️ Refactor
+
+* `get_xspectra_structures`: Refactor and Improve Code  [[210c40b](https://github.com/aiidateam/aiida-quantumespresso/commit/210c40bbc3445f55155bbb855d320afa00fa347e)]
+
 ## v4.6.0
 
 This minor release provides several improvements and bug fixes, mostly related to the `HubbardStructureData` and XPS/XAS calculations.
