@@ -730,7 +730,7 @@ def max_number_of_neighbours(intersites_list: List[Tuple[int, int]]) -> int:
     .. note:: it assumes only one onsite parameter is defined per atom index,
         that means `intra` Hubbard interactions are not defined, such as `V Fe 3d Fe 2p 1 1 1.0`
 
-    :param intersites list: list of lists of shape (atom index, neigbours index)
+    :param intersites_list: list of lists of shape (atom index, neigbours index)
     """
     from collections import Counter
 
