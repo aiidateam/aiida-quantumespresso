@@ -48,7 +48,7 @@ extensions = [
 
 # Setting the intersphinx mapping to other readthedocs
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3.8', None),
+    'python': ('https://docs.python.org/3.9', None),
     'aiida': ('https://aiida.readthedocs.io/projects/aiida-core/en/latest/', None),
     'aiida_pseudo': ('http://aiida-pseudo.readthedocs.io/en/latest/', None),
     'pymatgen': ('https://pymatgen.org/', None),
