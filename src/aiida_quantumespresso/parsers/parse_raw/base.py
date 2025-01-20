@@ -4,13 +4,14 @@ import re
 
 from aiida.orm import StructureData as LegacyStructureData
 from aiida.plugins import DataFactory
+from aiida.common import exceptions
 
 try:
     StructureData = DataFactory('atomistic.structure')
+    HAS_ATOMISTIC = True
 except exceptions.MissingEntryPointError:
-    structures_classes = (LegacyStructureData,)
-else:
-    structures_classes = (LegacyStructureData, StructureData)
+    HAS_ATOMISTIC = False
+
 
 __all__ = ('convert_qe_time_to_sec', 'convert_qe_to_aiida_structure', 'convert_qe_to_kpoints')
 
@@ -58,9 +59,9 @@ def convert_qe_to_aiida_structure(output_dict, input_structure=None):
     # Without an input structure, try to recreate the structure from the output
     if not input_structure:
 
-        if isinstance(input_structure, LegacyStructureData):
+        if not HAS_ATOMISTIC:
             structure = LegacyStructureData()
-            structure.set_cell=cell_dict['lattice_vectors']
+            structure.set_cell(cell_dict['lattice_vectors'])
 
             for kind_name, position in output_dict['atoms']:
                 symbol = re.sub(r'\d+', '', kind_name)
@@ -69,7 +70,7 @@ def convert_qe_to_aiida_structure(output_dict, input_structure=None):
         else:
             from aiida_atomistic import StructureDataMutable
             structure = StructureDataMutable()
-            structure.set_cell=cell_dict['lattice_vectors']
+            structure.set_cell(cell_dict['lattice_vectors'])
 
             for kind_name, position in output_dict['atoms']:
                 symbol = re.sub(r'\d+', '', kind_name)
@@ -84,11 +85,20 @@ def convert_qe_to_aiida_structure(output_dict, input_structure=None):
             structure.reset_cell(cell_dict['lattice_vectors'])
             new_pos = [i[1] for i in cell_dict['atoms']]
             structure.reset_sites_positions(new_pos)
-        elif isinstance(input_structure, StructureData):
-            structure = input_structure.get_value()
-            structure.set_cell(cell_dict['lattice_vectors'])
-            for site,position in zip(structure.sites,[i[1] for i in cell_dict['atoms']]):
-                site.position = position
+        elif HAS_ATOMISTIC:
+            if isinstance(input_structure, StructureData):
+                structure = input_structure.get_value() # gives the StructureDataMutable instance
+                structure.set_cell(cell_dict['lattice_vectors'])
+                for site,position in zip(structure.sites,[i[1] for i in cell_dict['atoms']]):
+                    site.position = position
+            elif isinstance(input_structure, LegacyStructureData):
+                structure = input_structure.clone()
+                structure.reset_cell(cell_dict['lattice_vectors'])
+                new_pos = [i[1] for i in cell_dict['atoms']]
+                structure.reset_sites_positions(new_pos)
+        else:
+            raise ValueError('input_structure is not a valid StructureData or LegacyStructureData instance')
+                
 
     return structure
 
