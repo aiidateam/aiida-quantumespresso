@@ -20,7 +20,7 @@ CutoffsPseudoPotentialFamily = GroupFactory('pseudo.family.cutoffs')
 try:
     StructureData = DataFactory('atomistic.structure')
     HAS_ATOMISTIC = True
-except ImportError:
+except exceptions.MissingEntryPointError:
     HAS_ATOMISTIC = False
 
 
