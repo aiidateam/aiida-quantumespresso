@@ -151,20 +151,29 @@ def get_starting_magnetization(
             kind.name: initial_magnetic_moments[kind.name] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
             for kind in structure.kinds
         }
-
-    magnetic_parameters = get_magnetization_parameters()
+    
     starting_magnetization = {}
+    try:
+        structure.mykinds
+    except AttributeError:
+        # Normal StructureData, no magmom in structure
+        magnetic_parameters = get_magnetization_parameters()
 
-    for kind in structure.kinds:
-        magnetic_moment = magnetic_parameters[kind.symbol]['magmom']
+        for kind in structure.kinds:
+            magnetic_moment = magnetic_parameters[kind.symbol]['magmom']
 
-        if magnetic_moment == 0:
-            magnetization = magnetic_parameters['default_magnetization']
-        else:
-            z_valence = pseudo_family.get_pseudo(element=kind.symbol).z_valence
-            magnetization = magnetic_moment / float(z_valence)
+            if magnetic_moment == 0:
+                magnetization = magnetic_parameters['default_magnetization']
+            else:
+                z_valence = pseudo_family.get_pseudo(element=kind.symbol).z_valence
+                magnetization = magnetic_moment / float(z_valence)
 
-        starting_magnetization[kind.name] = magnetization
+            starting_magnetization[kind.name] = magnetization
+    else:
+        # Self defined myStructureData, read magmom from structure
+        for kind in structure.mykinds:
+            magmom = kind.get_magmom_coord(coord="cartesian")
+            starting_magnetization[kind.name] = 2 * magmom[2] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
 
     return starting_magnetization
 
