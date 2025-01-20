@@ -43,7 +43,8 @@ def seekpath_structure_analysis(structure, **kwargs):
     if HAS_ATOMISTIC:
         if isinstance(structure, StructureData):
             raise NotImplementedError('This function does not yet support the conversion into atomistic instances.')
-    elif isinstance(structure, HubbardStructureData):
+    
+    if isinstance(structure, HubbardStructureData):
         result['primitive_structure'] = update_structure_with_hubbard(result['primitive_structure'], structure)
         result['conv_structure'] = update_structure_with_hubbard(result['conv_structure'], structure)
 
