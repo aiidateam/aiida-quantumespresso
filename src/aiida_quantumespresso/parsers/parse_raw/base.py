@@ -67,6 +67,7 @@ def convert_qe_to_aiida_structure(output_dict, input_structure=None):
                 structure.append_atom(position=position, symbols=symbol, name=kind_name)
 
         else:
+            from aiida_atomistic import StructureDataMutable
             structure = StructureDataMutable()
             structure.set_cell=cell_dict['lattice_vectors']
 
