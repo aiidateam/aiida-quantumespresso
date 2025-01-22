@@ -1,3 +1,24 @@
+## v4.8.0
+
+### ✨ New features
+
+* `Hubbard`: add useful utility functions  [[41f196b](https://github.com/aiidateam/aiida-quantumespresso/commit/41f196b2b46022c179bdce0dcd44ab338d956551)]
+* `PwParser`: Add XML schema for Quantum ESPRESSO v7.4 [[75808a9](https://github.com/aiidateam/aiida-quantumespresso/commit/75808a918075b7ef0ac3b82557b5325330ba0fdc)]
+
+### 👌 Improvements
+
+* `PhParser`: allow for pattern initialization  [[74a18bc](https://github.com/aiidateam/aiida-quantumespresso/commit/74a18bc59beafd62082b24f809bfba29a402489d)]
+* `PwBaseWorkChain`: Always do full restart for `ERROR_OUT_OF_WALLTIME` [[fcb8da9](https://github.com/aiidateam/aiida-quantumespresso/commit/fcb8da9a165fc4f6e94c29a6e4f1d29305da4548)]
+
+### 📚 Documentation
+
+* `README.md`: Correct `aiida-core` compatibility [[1c8a804](https://github.com/aiidateam/aiida-quantumespresso/commit/1c8a8049c005e791300b7d2ca7c4beae32257dc9)]
+
+### 🔧 Maintenance
+
+* Devops: Add explicit sphinx.configuration key to RTD conf  [[733c43f](https://github.com/aiidateam/aiida-quantumespresso/commit/733c43ff6b690c19eacb108154038ca93082d145)]
+* Update Python support: drop v3.8 and add v3.12 [[172540b](https://github.com/aiidateam/aiida-quantumespresso/commit/172540be5078e77d58b6a8cc1b28cbae2c6e70b9)]
+
 ## v4.7.0
 
 ### ✨ New features
