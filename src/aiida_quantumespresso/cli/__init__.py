@@ -5,12 +5,21 @@ from aiida.cmdline.groups import VerdiCommandGroup
 from aiida.cmdline.params import options, types
 import click
 
+from .setup.setup_cmd import create_code
+
 
 @click.group('aiida-quantumespresso', cls=VerdiCommandGroup, context_settings={'help_option_names': ['-h', '--help']})
 @options.PROFILE(type=types.ProfileParamType(load_profile=True), expose_value=False)
 def cmd_root():
     """CLI for the `aiida-quantumespresso` plugin."""
 
+
+@cmd_root.group('setup')
+def cmd_setup():
+    """Commands to easily setup `code`s for Quantum ESPRESSO executables."""
+
+
+cmd_setup.command('code')(create_code)
 
 from .calculations import cmd_calculation
 from .data import cmd_structure
