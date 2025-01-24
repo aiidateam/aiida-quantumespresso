@@ -5,6 +5,7 @@ from collections.abc import Mapping
 import io
 import os
 import pathlib
+from pathlib import Path
 import shutil
 import tempfile
 
@@ -287,11 +288,13 @@ def generate_calc_job_node(fixture_localhost):
 
         if retrieve_temporary:
             dirpath, filenames = retrieve_temporary
+            dirpath = Path(dirpath)
+            filepaths = []
             for filename in filenames:
-                try:
-                    shutil.copy(os.path.join(filepath_folder, filename), os.path.join(dirpath, filename))
-                except FileNotFoundError:
-                    pass  # To test the absence of files in the retrieve_temporary folder
+                filepaths.extend(Path(filepath_folder).glob(filename))
+
+            for filepath in filepaths:
+                shutil.copy(filepath, dirpath / filepath.name)
 
         if filepath_folder:
             retrieved = orm.FolderData()
@@ -299,11 +302,8 @@ def generate_calc_job_node(fixture_localhost):
 
             # Remove files that are supposed to be only present in the retrieved temporary folder
             if retrieve_temporary:
-                for filename in filenames:
-                    try:
-                        retrieved.base.repository.delete_object(filename)
-                    except OSError:
-                        pass  # To test the absence of files in the retrieve_temporary folder
+                for filepath in filepaths:
+                    retrieved.delete_object(filepath.name)
 
             retrieved.base.links.add_incoming(node, link_type=LinkType.CREATE, link_label='retrieved')
             retrieved.store()
