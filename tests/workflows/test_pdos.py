@@ -7,6 +7,7 @@ from aiida import engine, orm, plugins
 from aiida.common import LinkType
 from aiida.engine.utils import instantiate_process
 from aiida.manage.manager import get_manager
+import numpy as np
 from plumpy import ProcessState
 import pytest
 
@@ -27,31 +28,38 @@ def instantiate_process_cls(process_cls, inputs):
     return instantiate_process(runner, process_cls, **inputs)
 
 
+def check_pdos_energy_range(dos_inputs, projwfc_inputs, expected_p_dos_inputs):
+    """Check the energy range of the pdos calculation."""
+    # check generated inputs
+    dos_params = dos_inputs.parameters.get_dict()
+    projwfc_params = projwfc_inputs.parameters.get_dict()
+
+    assert np.isclose(dos_params['DOS']['Emin'], expected_p_dos_inputs[0])
+    assert np.isclose(dos_params['DOS']['Emax'], expected_p_dos_inputs[1])
+    assert np.isclose(projwfc_params['PROJWFC']['Emin'], expected_p_dos_inputs[0])
+    assert np.isclose(projwfc_params['PROJWFC']['Emax'], expected_p_dos_inputs[1])
+
+
 @pytest.mark.parametrize(
-    'nscf_output_parameters', [
-        {
-            'fermi_energy': 6.9
-        },
-        {
-            'fermi_energy_down': 5.9,
-            'fermi_energy_up': 6.9
-        },
-    ]
+    'nscf_output_parameters,energy_range_inputs,expected_p_dos_inputs',
+    [({
+        'fermi_energy': 6.9
+    }, (-10, 10, None), (-10, 10)),
+     ({
+         'fermi_energy_down': 5.9,
+         'fermi_energy_up': 6.9
+     }, (None, None, [-10, 10]), (-3.1, 16.9)), ({
+         'fermi_energy': 6.9
+     }, (None, None, None), (-5.64024889, 8.91047649))]
 )
 def test_default(
-    generate_workchain_pdos,
-    generate_workchain_pw,
-    fixture_localhost,
-    generate_remote_data,
-    generate_calc_job,
-    generate_calc_job_node,
-    fixture_sandbox,
-    generate_bands_data,
-    nscf_output_parameters,
+    generate_workchain_pdos, generate_workchain_pw, fixture_localhost, generate_remote_data, generate_calc_job,
+    generate_calc_job_node, fixture_sandbox, generate_bands_data, nscf_output_parameters, energy_range_inputs,
+    expected_p_dos_inputs
 ):
     """Test instantiating the WorkChain, then mock its process, by calling methods in the ``spec.outline``."""
 
-    wkchain = generate_workchain_pdos()
+    wkchain = generate_workchain_pdos(*energy_range_inputs)
     assert wkchain.setup() is None
     assert wkchain.serial_clean() is False
 
@@ -93,8 +101,7 @@ def test_default(
     result.store()
     result.base.links.add_incoming(mock_wknode, link_type=LinkType.RETURN, link_label='output_parameters')
 
-    bands_data = generate_bands_data()
-    bands_data.store()
+    bands_data = generate_bands_data().store()
     bands_data.base.links.add_incoming(mock_wknode, link_type=LinkType.RETURN, link_label='output_band')
 
     wkchain.ctx.workchain_nscf = mock_wknode
@@ -104,6 +111,9 @@ def test_default(
 
     # mock run dos and projwfc, and check that their inputs are acceptable
     dos_inputs, projwfc_inputs = wkchain.run_pdos_parallel()
+
+    check_pdos_energy_range(dos_inputs, projwfc_inputs, expected_p_dos_inputs)
+
     generate_calc_job(fixture_sandbox, 'quantumespresso.dos', dos_inputs)
     generate_calc_job(fixture_sandbox, 'quantumespresso.projwfc', projwfc_inputs)
 
