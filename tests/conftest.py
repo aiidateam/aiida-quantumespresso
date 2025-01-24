@@ -879,8 +879,8 @@ def generate_workchain_ph(generate_workchain, generate_inputs_ph, generate_calc_
 def generate_workchain_pdos(generate_workchain, generate_inputs_pw, fixture_code):
     """Generate an instance of a `PdosWorkChain`."""
 
-    def _generate_workchain_pdos():
-        from aiida.orm import Bool, Dict
+    def _generate_workchain_pdos(emin=None, emax=None, energy_range_vs_fermi=None):
+        from aiida.orm import Bool, Dict, List
 
         from aiida_quantumespresso.utils.resources import get_default_options
 
@@ -902,12 +902,15 @@ def generate_workchain_pdos(generate_workchain, generate_inputs_pw, fixture_code
 
         dos_params = {
             'DOS': {
-                'Emin': -10,
-                'Emax': 10,
                 'DeltaE': 0.01,
             }
         }
-        projwfc_params = {'PROJWFC': {'Emin': -10, 'Emax': 10, 'DeltaE': 0.01, 'ngauss': 0, 'degauss': 0.01}}
+        projwfc_params = {'PROJWFC': {'DeltaE': 0.01, 'ngauss': 0, 'degauss': 0.01}}
+
+        if emin and emax:
+            dos_params['DOS'].update({'Emin': emin, 'Emax': emax})
+            projwfc_params['PROJWFC'].update({'Emin': emin, 'Emax': emax})
+
         dos = {
             'code': fixture_code('quantumespresso.dos'),
             'parameters': Dict(dos_params),
@@ -928,9 +931,10 @@ def generate_workchain_pdos(generate_workchain, generate_inputs_pw, fixture_code
             'nscf': nscf,
             'dos': dos,
             'projwfc': projwfc,
-            'align_to_fermi': Bool(True),
             'dry_run': Bool(True)
         }
+        if energy_range_vs_fermi:
+            inputs.update({'energy_range_vs_fermi': List(energy_range_vs_fermi)})
 
         return generate_workchain(entry_point, inputs)
 
