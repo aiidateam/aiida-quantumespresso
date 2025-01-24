@@ -16,7 +16,7 @@ def generate_projwfc_node(generate_calc_job_node, fixture_localhost, tmpdir):
         """
         entry_point_calc_job = 'quantumespresso.projwfc'
 
-        retrieve_temporary_list = ['data-file-schema.xml']
+        retrieve_temporary_list = ['data-file-schema.xml', '*.pdos*']
         attributes = {'retrieve_temporary_list': retrieve_temporary_list}
 
         node = generate_calc_job_node(

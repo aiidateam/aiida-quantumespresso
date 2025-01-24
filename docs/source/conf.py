@@ -171,6 +171,7 @@ nitpick_ignore_regex = [
     (r'.*', r'Tuple.*'),
 ]
 nitpick_ignore = [
+    ('py:class', 'numpy.typing.ArrayLike'),
     ('py:class', 'AttributeDict'),
     ('py:class', 'ExitCode'),
     ('py:class', 'StructureData'),
