@@ -63,18 +63,15 @@ class ProjwfcParser(BaseParser):
 
         orbitals = self._parse_orbitals(header, structure, non_collinear, spinorbit)
         bands, projections = self._parse_bands_and_projections(kpoint_blocks, len(orbitals))
-        energy, dos, pdos_array = self._parse_pdos_files(retrieved_temporary_folder, nspin, spinorbit, logs)
+        energy, dos_node, pdos_array = self._parse_pdos_files(retrieved_temporary_folder, nspin, spinorbit, logs)
+
+        self.out('Dos', dos_node)
 
         output_node_dict = self._build_bands_and_projections(
             kpoints, bands, energy, orbitals, projections, pdos_array, nspin
         )
         for linkname, node in output_node_dict.items():
             self.out(linkname, node)
-
-        dos_out = XyData()
-        dos_out.set_x(energy, 'Energy', 'eV')
-        dos_out.set_y(dos, 'Dos', 'states/eV')
-        self.out('Dos', dos_out)
 
         for exit_code in [
             'ERROR_OUTPUT_STDOUT_MISSING',
@@ -261,7 +258,7 @@ class ProjwfcParser(BaseParser):
         return bands, projections
 
     def _parse_pdos_files(self, retrieved_temporary_folder: Path, nspin: int,
-                          spinorbit: bool, logs: AttributeDict) -> Tuple[ArrayLike, ArrayLike, ArrayLike]:
+                          spinorbit: bool, logs: AttributeDict) -> Tuple[ArrayLike, XyData, ArrayLike]:
         """Parse the PDOS files and convert them into arrays.
 
         Reads in all of the ``*.pdos*`` files and converts the data into arrays. The PDOS arrays are then concatenated
@@ -276,7 +273,7 @@ class ProjwfcParser(BaseParser):
         :param nspin: nspin value of the parent calculation.
         :param spinorbit: True if the calculation used spin-orbit coupling.
 
-        :return: tuple of three arrays containing the energy grid, the total DOS and the PDOS
+        :return: tuple of three containing the energy grid, the total DOS as a node and the PDOS
         """
 
         def natural_sort_key(sort_key, _nsre=re.compile('([0-9]+)')):
@@ -300,11 +297,24 @@ class ProjwfcParser(BaseParser):
             with pdostot_filepath.open('r') as pdostot_file:
                 # Columns: Energy(eV), Ldos, Pdos
                 pdostot_array = np.atleast_2d(np.genfromtxt(pdostot_file))
-                energy = pdostot_array[:, 0]
-                dos = pdostot_array[:, 1]
         except (OSError, KeyError):
             logs.error.append('ERROR_READING_PDOSTOT_FILE')
-            return np.array([]), np.array([]), np.array([])
+            return np.array([]), XyData(), np.array([])
+
+        energy = pdostot_array[:, 0]
+
+        dos_node = XyData()
+        dos_node.set_x(energy, 'Energy', 'eV')
+
+        # For spin-polarised calculations the total DOS is split up in spin up and down
+        if nspin == 2:
+            dos_node.set_y(
+                (pdostot_array[:, 1], pdostot_array[:, 2]),
+                ('dos_up', 'dos_down'),
+                ('states/eV', 'states/eV')
+            )
+        else:
+            dos_node.set_y(pdostot_array[:, 1], 'Dos', 'states/eV')
 
         # We're only interested in the PDOS, so we skip the first columns corresponding to the energy and LDOS
         if nspin == 1 or spinorbit:
@@ -340,7 +350,7 @@ class ProjwfcParser(BaseParser):
                 pdos_list.append(np.concatenate([wfc_pdos_array[:, 0::2], wfc_pdos_array[:, 1::2]], axis=1))
             pdos_array = np.concatenate(pdos_list, axis=1)
 
-        return energy, dos, pdos_array
+        return energy, dos_node, pdos_array
 
     @classmethod
     def _build_bands_and_projections(
