@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO ph.x calculation with automated error handling and restarts."""
 from typing import Mapping
+import warnings
 
 from aiida import orm
 from aiida.common import AttributeDict
@@ -97,6 +98,9 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
+        The current protocols rely on the `Slurm` scheduler. To use them nonetheless with a different scheduler, the
+        protocols might need to be adjusted and explicit resources need to be provided in `options`.
+
         :param code: the ``Code`` instance configured for the ``quantumespresso.ph`` plugin.
         :param protocol: protocol to use, if not specified, the default will be used.
         :param overrides: optional dictionary of inputs to override the defaults of the protocol.
@@ -122,6 +126,12 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             inputs['ph']['parameters']['INPUTPH']['epsil'] = True
 
         metadata = inputs['ph']['metadata']
+
+        if not options or options.get('resources', None) is None:
+            warnings.warn(
+                'No explicit resources were provided for `metadata.options.resources`. This approach is '
+                'deprecated and will cause an error in future versions.', UserWarning
+            )
 
         if options:
             metadata['options'] = recursive_merge(inputs['ph']['metadata']['options'], options)
