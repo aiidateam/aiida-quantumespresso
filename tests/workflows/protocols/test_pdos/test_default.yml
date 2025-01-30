@@ -9,7 +9,7 @@ dos:
       withmpi: true
   parameters:
     DOS:
-      DeltaE: 0.02
+      DeltaE: 0.01
 nscf:
   kpoints_distance: 0.1
   kpoints_force_parity: false
@@ -52,7 +52,7 @@ projwfc:
       withmpi: true
   parameters:
     PROJWFC:
-      DeltaE: 0.02
+      DeltaE: 0.01
 scf:
   kpoints_distance: 0.15
   kpoints_force_parity: false
