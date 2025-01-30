@@ -16,7 +16,7 @@ def generate_projwfc_node(generate_calc_job_node, fixture_localhost, tmpdir):
         """
         entry_point_calc_job = 'quantumespresso.projwfc'
 
-        retrieve_temporary_list = ['data-file-schema.xml']
+        retrieve_temporary_list = ['data-file-schema.xml', '*.pdos*']
         attributes = {'retrieve_temporary_list': retrieve_temporary_list}
 
         node = generate_calc_job_node(
@@ -65,7 +65,8 @@ def test_projwfc_spinpolarised(generate_projwfc_node, generate_parser, data_regr
         assert link_name in results, list(results.keys())
 
     data_regression.check({
-        'Dos': results['Dos'].base.attributes.all,
+        'Dos':
+        {array_name: results['Dos'].get_array(array_name).tolist() for array_name in results['Dos'].get_arraynames()},
         'bands_up': results['bands_up'].base.attributes.all,
         'bands_down': results['bands_down'].base.attributes.all,
         'projections_up': {

@@ -48,9 +48,10 @@ extensions = [
 
 # Setting the intersphinx mapping to other readthedocs
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3.8', None),
+    'python': ('https://docs.python.org/3.9', None),
     'aiida': ('https://aiida.readthedocs.io/projects/aiida-core/en/latest/', None),
     'aiida_pseudo': ('http://aiida-pseudo.readthedocs.io/en/latest/', None),
+    'pymatgen': ('https://pymatgen.org/', None),
 }
 
 # Settings for the `autoapi.extenstion` automatically generating API docs
@@ -170,6 +171,7 @@ nitpick_ignore_regex = [
     (r'.*', r'Tuple.*'),
 ]
 nitpick_ignore = [
+    ('py:class', 'numpy.typing.ArrayLike'),
     ('py:class', 'AttributeDict'),
     ('py:class', 'ExitCode'),
     ('py:class', 'StructureData'),
