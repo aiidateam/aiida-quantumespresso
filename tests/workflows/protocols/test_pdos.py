@@ -51,7 +51,7 @@ def test_electronic_type(get_pdos_generator_inputs):
     builder = PdosWorkChain.get_builder_from_protocol(
         **get_pdos_generator_inputs, electronic_type=ElectronicType.INSULATOR
     )
-    for namespace, occupations in zip((builder.scf, builder.nscf), ('fixed', 'tetrahedra')):
+    for namespace, occupations in zip((builder.scf, builder.nscf), ('fixed', 'tetrahedra_opt')):
         parameters = namespace['pw']['parameters'].get_dict()
         assert parameters['SYSTEM']['occupations'] == occupations
         assert 'degauss' not in parameters['SYSTEM']
