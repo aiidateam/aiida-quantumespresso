@@ -133,9 +133,11 @@ class HubbardStructureData(StructureData):
         parameters = HubbardParameters.from_tuple(hp_tuple)
         hubbard = self.hubbard
 
-        if parameters not in hubbard.parameters:
-            hubbard.parameters.append(parameters)
-            self.hubbard = hubbard
+        if parameters in hubbard.parameters:
+            hubbard.parameters.remove(parameters)
+
+        hubbard.parameters.append(parameters)
+        self.hubbard = hubbard
 
     def pop_hubbard_parameters(self, index: int):
         """Pop Hubbard parameters in the list.

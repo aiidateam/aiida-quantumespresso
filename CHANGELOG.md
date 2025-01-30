@@ -1,3 +1,49 @@
+## v4.8.0
+
+### ✨ New features
+
+* `Hubbard`: add useful utility functions  [[41f196b](https://github.com/aiidateam/aiida-quantumespresso/commit/41f196b2b46022c179bdce0dcd44ab338d956551)]
+* `PwParser`: Add XML schema for Quantum ESPRESSO v7.4 [[75808a9](https://github.com/aiidateam/aiida-quantumespresso/commit/75808a918075b7ef0ac3b82557b5325330ba0fdc)]
+
+### 👌 Improvements
+
+* `PhParser`: allow for pattern initialization  [[74a18bc](https://github.com/aiidateam/aiida-quantumespresso/commit/74a18bc59beafd62082b24f809bfba29a402489d)]
+* `PwBaseWorkChain`: Always do full restart for `ERROR_OUT_OF_WALLTIME` [[fcb8da9](https://github.com/aiidateam/aiida-quantumespresso/commit/fcb8da9a165fc4f6e94c29a6e4f1d29305da4548)]
+
+### 📚 Documentation
+
+* `README.md`: Correct `aiida-core` compatibility [[1c8a804](https://github.com/aiidateam/aiida-quantumespresso/commit/1c8a8049c005e791300b7d2ca7c4beae32257dc9)]
+
+### 🔧 Maintenance
+
+* Devops: Add explicit sphinx.configuration key to RTD conf  [[733c43f](https://github.com/aiidateam/aiida-quantumespresso/commit/733c43ff6b690c19eacb108154038ca93082d145)]
+* Update Python support: drop v3.8 and add v3.12 [[172540b](https://github.com/aiidateam/aiida-quantumespresso/commit/172540be5078e77d58b6a8cc1b28cbae2c6e70b9)]
+
+## v4.7.0
+
+### ✨ New features
+
+* Add `nbands_factor` logic into PdosWorkChain  [[1020b02](https://github.com/aiidateam/aiida-quantumespresso/commit/1020b02c76bd3ae9783087bdf5f796380a7fdf3b)]
+* ✨ `PwParser`: Add the XML schema for Quantum ESPRESSO v7.3.1 [[57e7463](https://github.com/aiidateam/aiida-quantumespresso/commit/57e7463c5727775d6a0470a41d1aca0ec4083b9a)]
+* `XspectraCrystalWorkChain`: Enable Symmetry Data Inputs  [[b79189d](https://github.com/aiidateam/aiida-quantumespresso/commit/b79189d7ce4756e846ab39c567ba4681474741ed)]
+* Add calcjob, parser and base workchain plugin for `bands.x`  [[651fd01](https://github.com/aiidateam/aiida-quantumespresso/commit/651fd0142a965ca1b03cc52f0f2f8d960936a1cd)]
+
+### 👌 Improvements
+
+* `PpCalculation`: Make parsing of output files optional  [[bc0d815](https://github.com/aiidateam/aiida-quantumespresso/commit/bc0d8156f3f206b76e15f0f0c0742d8b579b4722)]
+
+### 🐛 Bug fixes
+
+* CLI: Fix bug in `aiida-quantumespresso workflow launc pw-base`  [[ea76d9b](https://github.com/aiidateam/aiida-quantumespresso/commit/ea76d9b37f78315bbf93f93fa56460c7dfe0652a)]
+
+### 📚 Documentation
+
+* Docs: Fix build by pinning `sphinx-autoapi~=3.0.0`  [[91c3e1d](https://github.com/aiidateam/aiida-quantumespresso/commit/91c3e1d35939491663a697d201dcccdf90c076c6)]
+
+### ♻️ Refactor
+
+* `get_xspectra_structures`: Refactor and Improve Code  [[210c40b](https://github.com/aiidateam/aiida-quantumespresso/commit/210c40bbc3445f55155bbb855d320afa00fa347e)]
+
 ## v4.6.0
 
 This minor release provides several improvements and bug fixes, mostly related to the `HubbardStructureData` and XPS/XAS calculations.
