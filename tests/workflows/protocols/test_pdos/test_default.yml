@@ -39,7 +39,7 @@ nscf:
         ecutrho: 240.0
         ecutwfc: 30.0
         nosym: true
-        occupations: tetrahedra
+        occupations: tetrahedra_opt
     pseudos:
       Si: Si<md5=57fa15d98af99972c7b7aa5c179b0bb8>
 projwfc:
