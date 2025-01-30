@@ -5,7 +5,7 @@ import pytest
 
 
 def mock_launch_process(*_, **__):
-    """Mock the :meth:`~aiida_quantumespresso.cli.utilslaunch.launch_process` to be a no-op."""
+    """Mock the :meth:`~aiida_quantumespresso.cli.utils.launch.launch_process` to be a no-op."""
     return
 
 

@@ -50,7 +50,7 @@ def get_hubbard():
 
 def test_safe_hubbard_parameters(get_hubbard_parameters):
     """Test valid inputs are stored correctly for py:meth:`HubbardParameters`."""
-    params = get_hubbard_parameters().dict()
+    params = get_hubbard_parameters().model_dump()
     assert params == VALID_PARAMETERS
 
 
@@ -60,7 +60,7 @@ def test_from_to_list_parameters(get_hubbard_parameters):
     hp_tuple = (0, '3d', 1, '2p', 5.0, (0, 0, 0), 'U')
     assert param.to_tuple() == hp_tuple
     param = HubbardParameters.from_tuple(hp_tuple)
-    assert param.dict() == VALID_PARAMETERS
+    assert param.model_dump() == VALID_PARAMETERS
 
 
 @pytest.mark.parametrize(
@@ -76,7 +76,7 @@ def test_from_to_list_parameters(get_hubbard_parameters):
 )
 def test_valid_hubbard_parameters(get_hubbard_parameters, overrides):
     """Test valid inputs for py:meth:`HubbardParameters`."""
-    hp_dict = get_hubbard_parameters(overrides=overrides).dict()
+    hp_dict = get_hubbard_parameters(overrides=overrides).model_dump()
     new_dict = deepcopy(VALID_PARAMETERS)
     new_dict.update(overrides)
     assert hp_dict == new_dict
@@ -85,12 +85,12 @@ def test_valid_hubbard_parameters(get_hubbard_parameters, overrides):
 @pytest.mark.parametrize(('overrides', 'match'), (
     ({
         'atom_index': -1
-    }, r'ensure this value is greater than or equal to 0'),
+    }, r'Input should be greater than or equal to 0'),
     (
         {
             'atom_index': 0.5
         },
-        r'value is not a valid integer',
+        r'Input should be a valid integer',
     ),
     (
         {
@@ -108,31 +108,31 @@ def test_valid_hubbard_parameters(get_hubbard_parameters, overrides):
         {
             'atom_manifold': '3d-3p-2s'
         },
-        r'ensure this value has at most 5 characters',
+        r'String should have at most 5 characters',
     ),
     (
         {
             'translation': (0, 0)
         },
-        r'wrong tuple length 2, expected 3',
+        r'translation\.2\n\s+Field required',
     ),
     (
         {
             'translation': (0, 0, 0, 0)
         },
-        r'wrong tuple length 4, expected 3',
+        r'Tuple should have at most 3 items after validation, not 4',
     ),
     (
         {
             'translation': (0, 0, -1.5)
         },
-        r'value is not a valid integer',
+        r'Input should be a valid integer',
     ),
     (
         {
             'hubbard_type': 'L'
         },
-        r"permitted: 'Ueff', 'U', 'V', 'J', 'B', 'E2', 'E3'",
+        r"Input should be 'Ueff', 'U', 'V', 'J', 'B', 'E2' or 'E3'",
     ),
 ))
 def test_invalid_hubbard_parameters(get_hubbard_parameters, overrides, match):
@@ -150,7 +150,7 @@ def test_from_to_list_hubbard(get_hubbard):
     assert hubbard.to_list() == hubbard_list
 
     hubbard = Hubbard.from_list(hubbard_list)
-    assert hubbard.dict() == {
+    assert hubbard.model_dump() == {
         'parameters': [VALID_PARAMETERS, VALID_PARAMETERS],
         'projectors': 'ortho-atomic',
         'formulation': 'dudarev',

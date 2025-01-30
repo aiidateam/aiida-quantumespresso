@@ -210,7 +210,7 @@ class PwCalculation(BasePwCpInputGenerator):
                     'Please set one of the following in the input parameters:\n'
                     "    parameters['CONTROL']['restart_mode'] = 'restart'\n"
                     "    parameters['ELECTRONS']['startingpot'] = 'file'\n"
-                    "    parameters['ELECTRONS']['startingwfc'] = 'file'\n"
+                    "    parameters['ELECTRONS']['startingwfc'] = 'file'\n", UserWarning
                 )
 
         if calculation_type in ('nscf', 'bands'):
@@ -218,7 +218,7 @@ class PwCalculation(BasePwCpInputGenerator):
                 warnings.warn(
                     f'`parent_folder` not provided for `{calculation_type}` calculation. For work chains wrapping this '
                     'calculation, you can disable this warning by excluding the `parent_folder` when exposing the '
-                    'inputs of the `PwCalculation`.'
+                    'inputs of the `PwCalculation`.', UserWarning
                 )
 
     @classproperty

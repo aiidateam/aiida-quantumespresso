@@ -1,0 +1,95 @@
+
+     Program PHONON v.6.3MaX starts on  9Aug2019 at 12:13:51
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+          URL http://www.quantum-espresso.org",
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+ *** WARNING: using old-style file format, will disappear from next version ***
+
+     Serial version
+      Title line not specified: using 'default'.
+     Message from routine phq_readin:
+     iverbosity is obsolete, use "verbosity" instead
+
+     Reading data from directory:
+     ./out/aiida.save
+     Message from routine volume:
+     axis vectors are left-handed
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation      = PBE ( 1  4  3  4 0 0)
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum         859     433    127                16889     5985     965
+
+        3 /   3 q-points for this run, from  1 to  3:
+       N       xq(1)         xq(2)         xq(3)
+       1   0.000000000   0.000000000   0.000000000
+       2   0.353553391  -0.353553391  -0.353553391
+       3   0.000000000   0.000000000  -0.707106781
+
+
+     Calculation of q =    0.0000000   0.0000000   0.0000000
+
+     Restart in Phonon calculation
+
+
+
+     bravais-lattice index     =            0
+     lattice parameter (alat)  =       7.2558  a.u.
+     unit-cell volume          =     270.1072 (a.u.)^3
+     number of atoms/cell      =            2
+     number of atomic types    =            1
+     kinetic-energy cut-off    =      30.0000  Ry
+     charge density cut-off    =     240.0000  Ry
+     convergence threshold     =      1.0E-12
+     beta                      =       0.7000
+     number of iterations used =            4
+     Exchange-correlation      = PBE ( 1  4  3  4 0 0)
+
+
+     celldm(1)=    7.25577  celldm(2)=    0.00000  celldm(3)=    0.00000
+     celldm(4)=    0.00000  celldm(5)=    0.00000  celldm(6)=    0.00000
+
+     crystal axes: (cart. coord. in units of alat)
+               a(1) = (  0.7071  0.7071  0.0000 )
+               a(2) = (  0.7071  0.0000  0.7071 )
+               a(3) = (  0.0000  0.7071  0.7071 )
+
+     reciprocal axes: (cart. coord. in units 2 pi/alat)
+               b(1) = (  0.7071  0.7071 -0.7071 )
+               b(2) = (  0.7071 -0.7071  0.7071 )
+               b(3) = ( -0.7071  0.7071  0.7071 )
+
+
+     Atoms inside the unit cell:
+
+     Cartesian axes
+
+     site n.  atom      mass           positions (alat units)
+        1     Si  28.0855   tau(    1) = (    0.00000    0.00000    0.00000  )
+        2     Si  28.0855   tau(    2) = (    0.35355    0.35355    0.35355  )
+
+     Computing dynamical matrix for
+                    q = (   0.0000000   0.0000000   0.0000000 )
+
+     49 Sym.Ops. (with q -> -q+G )
+
+                                    s                        frac. trans.
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      Error in routine set_irr_sym_new (311):
+      wrong representation
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...

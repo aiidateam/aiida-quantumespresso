@@ -31,12 +31,11 @@ class ProjwfcCalculation(NamelistsCalculation):
 
     xml_path = Path(NamelistsCalculation._default_parent_output_folder
                     ).joinpath(f'{NamelistsCalculation._PREFIX}.save', 'data-file-schema.xml')
-    _internal_retrieve_list = [
-        NamelistsCalculation._PREFIX + '.pdos*',
-    ]
+
     # The XML file is added to the temporary retrieve list since it is required for parsing, but already in the
     # repository of a an ancestor calculation.
     _retrieve_temporary_list = [
+        NamelistsCalculation._PREFIX + '.pdos*',
         xml_path.as_posix(),
     ]
 
@@ -60,8 +59,16 @@ class ProjwfcCalculation(NamelistsCalculation):
         spec.default_output_node = 'output_parameters'
         spec.exit_code(301, 'ERROR_NO_RETRIEVED_TEMPORARY_FOLDER',
             message='The retrieved temporary folder could not be accessed.')
+        spec.exit_code(302, 'ERROR_OUTPUT_STDOUT_MISSING',
+            message='The retrieved folder did not contain the required stdout output file.')
         spec.exit_code(303, 'ERROR_OUTPUT_XML_MISSING',
             message='The retrieved folder did not contain the required XML file.')
+        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
+            message='The stdout output file could not be read.')
+        spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE',
+            message='The stdout output file could not be parsed.')
+        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
+            message='The stdout output file was incomplete probably because the calculation got interrupted.')
         spec.exit_code(320, 'ERROR_OUTPUT_XML_READ',
             message='The XML output file could not be read.')
         spec.exit_code(321, 'ERROR_OUTPUT_XML_PARSE',
@@ -72,4 +79,6 @@ class ProjwfcCalculation(NamelistsCalculation):
             message='The pdos_tot file could not be read from the retrieved folder.')
         spec.exit_code(340, 'ERROR_PARSING_PROJECTIONS',
             message='An exception was raised parsing bands and projections.')
+        spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
+            message='The parser raised an unexpected exception: {exception}')
         # yapf: enable

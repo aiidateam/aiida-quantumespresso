@@ -3,20 +3,16 @@
 """Tests for the `PhBaseWorkChain` class."""
 from aiida import orm
 from aiida.common import AttributeDict, LinkType
-from aiida.engine import ProcessHandlerReport
+from aiida.engine import ProcessHandlerReport, WorkChain
 import pytest
 
 from aiida_quantumespresso.calculations.ph import PhCalculation
 from aiida_quantumespresso.workflows.ph.base import PhBaseWorkChain
 
 
-@pytest.mark.usefixtures('aiida_profile')
-def test_invalid_inputs(generate_workchain_ph, generate_inputs_ph):
-    """Test `PhBaseWorkChain` validation methods."""
-    inputs = {'ph': generate_inputs_ph()}
-    message = r'Neither `qpoints` nor `qpoints_distance` were specified.'
-    with pytest.raises(ValueError, match=message):
-        generate_workchain_ph(inputs=inputs)
+def generate_inputs():
+    """Return only those inputs that the parser will expect to be there."""
+    return {'parameters': orm.Dict({'INPUTPH': {}})}
 
 
 @pytest.fixture
@@ -43,6 +39,15 @@ def generate_ph_calc_job_node(generate_calc_job_node, fixture_localhost):
     return _generate_ph_calc_job_node
 
 
+@pytest.mark.usefixtures('aiida_profile')
+def test_invalid_inputs(generate_workchain_ph, generate_inputs_ph):
+    """Test `PhBaseWorkChain` validation methods."""
+    inputs = {'ph': generate_inputs_ph()}
+    message = r'Neither `qpoints` nor `qpoints_distance` were specified.'
+    with pytest.raises(ValueError, match=message):
+        generate_workchain_ph(inputs=inputs)
+
+
 def test_setup(generate_workchain_ph):
     """Test `PhBaseWorkChain.setup`."""
     process = generate_workchain_ph()
@@ -50,6 +55,30 @@ def test_setup(generate_workchain_ph):
 
     assert process.ctx.restart_calc is None
     assert isinstance(process.ctx.inputs, AttributeDict)
+
+
+@pytest.mark.parametrize(
+    ('with_output_structure', 'with_qpoints_distance'),
+    ((False, False), (False, True), (True, True)),
+)
+def test_set_qpoints(generate_workchain_ph, generate_inputs_ph, with_output_structure, with_qpoints_distance):
+    """Test `PhBaseWorkChain.set_qpoints`."""
+    inputs = {'ph': generate_inputs_ph(with_output_structure=with_output_structure)}
+    inputs['qpoints'] = inputs['ph'].pop('qpoints')
+
+    if with_qpoints_distance:
+        inputs.pop('qpoints')
+        inputs['qpoints_distance'] = orm.Float(0.5)
+
+    process = generate_workchain_ph(inputs=inputs)
+    process.setup()
+    process.set_qpoints()
+
+    assert 'qpoints' in process.ctx.inputs
+    assert isinstance(process.ctx.inputs['qpoints'], orm.KpointsData)
+
+    if not with_qpoints_distance:
+        assert process.ctx.inputs['qpoints'] == inputs['qpoints']
 
 
 def test_handle_unrecoverable_failure(generate_workchain_ph):
@@ -197,9 +226,10 @@ def test_merge_outputs(
 
     entry_point_calc_job = 'quantumespresso.ph'
     parser = generate_parser('quantumespresso.ph')
+    inputs = generate_inputs()
 
     node_1 = generate_calc_job_node(
-        entry_point_name=entry_point_calc_job, computer=fixture_localhost, test_name=f'{name}_1'
+        entry_point_name=entry_point_calc_job, computer=fixture_localhost, test_name=f'{name}_1', inputs=inputs
     )
     results_1, calcjob_1 = parser.parse_from_node(node_1, store_provenance=False)
 
@@ -212,7 +242,7 @@ def test_merge_outputs(
     assert calcjob_1.exit_status == PhCalculation.exit_codes.ERROR_OUT_OF_WALLTIME.status
 
     node_2 = generate_calc_job_node(
-        entry_point_name=entry_point_calc_job, computer=fixture_localhost, test_name=f'{name}_2'
+        entry_point_name=entry_point_calc_job, computer=fixture_localhost, test_name=f'{name}_2', inputs=inputs
     )
     results_2, calcjob_2 = parser.parse_from_node(node_2, store_provenance=False)
 
@@ -233,3 +263,22 @@ def test_merge_outputs(
     outputs = ph_base.get_outputs(node_2)
 
     data_regression.check(outputs['output_parameters'].get_dict())
+
+
+def test_validate_inputs_excluded_qpoints_distance(generate_inputs_ph):
+    """Test that q-points validation passes in case the ports are excluded in a parent work chain."""
+    from aiida.engine.utils import instantiate_process
+    from aiida.manage.manager import get_manager
+
+    class WrapPhBaseWorkChain(WorkChain):
+        """Minimal work chain that wraps a ``PhBaseWorkChain`` for testing excluding q-points inputs."""
+
+        @classmethod
+        def define(cls, spec):
+            super().define(spec)
+            spec.expose_inputs(PhBaseWorkChain, exclude=('qpoints', 'qpoints_distance'))
+
+    inputs = {'ph': generate_inputs_ph()}
+    inputs['ph'].pop('qpoints', None)
+    runner = get_manager().get_runner()
+    instantiate_process(runner, WrapPhBaseWorkChain, **inputs)

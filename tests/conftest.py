@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=redefined-outer-name,too-many-statements
+# pylint: disable=redefined-outer-name,too-many-statements,too-many-lines
 """Initialise a text database and profile for pytest."""
 from collections.abc import Mapping
 import io
 import os
 import pathlib
+from pathlib import Path
 import shutil
 import tempfile
 
@@ -287,11 +288,13 @@ def generate_calc_job_node(fixture_localhost):
 
         if retrieve_temporary:
             dirpath, filenames = retrieve_temporary
+            dirpath = Path(dirpath)
+            filepaths = []
             for filename in filenames:
-                try:
-                    shutil.copy(os.path.join(filepath_folder, filename), os.path.join(dirpath, filename))
-                except FileNotFoundError:
-                    pass  # To test the absence of files in the retrieve_temporary folder
+                filepaths.extend(Path(filepath_folder).glob(filename))
+
+            for filepath in filepaths:
+                shutil.copy(filepath, dirpath / filepath.name)
 
         if filepath_folder:
             retrieved = orm.FolderData()
@@ -299,11 +302,8 @@ def generate_calc_job_node(fixture_localhost):
 
             # Remove files that are supposed to be only present in the retrieved temporary folder
             if retrieve_temporary:
-                for filename in filenames:
-                    try:
-                        retrieved.base.repository.delete_object(filename)
-                    except OSError:
-                        pass  # To test the absence of files in the retrieve_temporary folder
+                for filepath in filepaths:
+                    retrieved.delete_object(filepath.name)
 
             retrieved.base.links.add_incoming(node, link_type=LinkType.CREATE, link_label='retrieved')
             retrieved.store()
@@ -375,6 +375,10 @@ def generate_structure():
             structure = StructureData(cell=cell)
             structure.append_atom(position=(0., 0., 0.), symbols='Si', name=name1)
             structure.append_atom(position=(param / 4., param / 4., param / 4.), symbols='Si', name=name2)
+        elif structure_id == 'cobalt-prim':
+            cell = [[0.0, 2.715, 2.715], [2.715, 0.0, 2.715], [2.715, 2.715, 0.0]]
+            structure = StructureData(cell=cell)
+            structure.append_atom(position=(0.0, 0.0, 0.0), symbols='Co', name='Co')
         elif structure_id == 'water':
             structure = StructureData(cell=[[5.29177209, 0., 0.], [0., 5.29177209, 0.], [0., 0., 5.29177209]])
             structure.append_atom(position=[12.73464656, 16.7741411, 24.35076238], symbols='H', name='H')
@@ -591,18 +595,62 @@ def generate_inputs_q2r(fixture_sandbox, fixture_localhost, fixture_code, genera
 
 
 @pytest.fixture
-def generate_inputs_ph(fixture_sandbox, fixture_localhost, fixture_code, generate_remote_data, generate_kpoints_mesh):
-    """Generate default inputs for a `PhCalculation."""
+def generate_inputs_bands(fixture_sandbox, fixture_localhost, fixture_code, generate_remote_data):
+    """Generate default inputs for a `BandsCalculation."""
 
-    def _generate_inputs_ph():
-        """Generate default inputs for a `PhCalculation."""
-        from aiida.orm import Dict
-
+    def _generate_inputs_bands():
+        """Generate default inputs for a `BandsCalculation."""
         from aiida_quantumespresso.utils.resources import get_default_options
 
         inputs = {
-            'code': fixture_code('quantumespresso.ph'),
+            'code': fixture_code('quantumespresso.bands'),
             'parent_folder': generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.pw'),
+            'metadata': {
+                'options': get_default_options()
+            }
+        }
+
+        return inputs
+
+    return _generate_inputs_bands
+
+
+@pytest.fixture
+def generate_inputs_ph(
+    generate_calc_job_node, generate_structure, fixture_localhost, fixture_code, generate_kpoints_mesh
+):
+    """Generate default inputs for a `PhCalculation."""
+
+    def _generate_inputs_ph(with_output_structure=False):
+        """Generate default inputs for a `PhCalculation.
+
+        :param with_output_structure: whether the PwCalculation has a StructureData in its outputs.
+            This is needed to test some PhBaseWorkChain logics.
+        """
+        from aiida.common import LinkType
+        from aiida.orm import Dict, RemoteData
+
+        from aiida_quantumespresso.utils.resources import get_default_options
+
+        pw_node = generate_calc_job_node(
+            entry_point_name='quantumespresso.pw', inputs={
+                'parameters': Dict(),
+                'structure': generate_structure()
+            }
+        )
+        remote_folder = RemoteData(computer=fixture_localhost, remote_path='/tmp')
+        remote_folder.base.links.add_incoming(pw_node, link_type=LinkType.CREATE, link_label='remote_folder')
+        remote_folder.store()
+        parent_folder = pw_node.outputs.remote_folder
+
+        if with_output_structure:
+            structure = generate_structure()
+            structure.base.links.add_incoming(pw_node, link_type=LinkType.CREATE, link_label='output_structure')
+            structure.store()
+
+        inputs = {
+            'code': fixture_code('quantumespresso.ph'),
+            'parent_folder': parent_folder,
             'qpoints': generate_kpoints_mesh(2),
             'parameters': Dict({'INPUTPH': {}}),
             'metadata': {
@@ -806,7 +854,7 @@ def generate_workchain_ph(generate_workchain, generate_inputs_ph, generate_calc_
 
         if inputs is None:
             ph_inputs = generate_inputs_ph()
-            qpoints = ph_inputs.get('qpoints')
+            qpoints = ph_inputs.pop('qpoints')
             inputs = {'ph': ph_inputs, 'qpoints': qpoints}
 
         if return_inputs:

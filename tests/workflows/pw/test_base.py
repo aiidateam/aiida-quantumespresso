@@ -32,12 +32,25 @@ def test_handle_unrecoverable_failure(generate_workchain_pw):
     assert result == PwBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE
 
 
-def test_handle_out_of_walltime(generate_workchain_pw, fixture_localhost, generate_remote_data):
+@pytest.mark.parametrize('structure_changed', (
+    True,
+    False,
+))
+def test_handle_out_of_walltime(
+    generate_workchain_pw, fixture_localhost, generate_remote_data, generate_structure, structure_changed
+):
     """Test `PwBaseWorkChain.handle_out_of_walltime`."""
-    remote_data = generate_remote_data(computer=fixture_localhost, remote_path='/path/to/remote')
-    process = generate_workchain_pw(
-        exit_code=PwCalculation.exit_codes.ERROR_OUT_OF_WALLTIME, pw_outputs={'remote_folder': remote_data}
-    )
+    generate_inputs = {
+        'exit_code': PwCalculation.exit_codes.ERROR_OUT_OF_WALLTIME,
+        'pw_outputs': {
+            'remote_folder': generate_remote_data(computer=fixture_localhost, remote_path='/path/to/remote')
+        }
+    }
+    if structure_changed:
+        output_structure = generate_structure()
+        generate_inputs['pw_outputs']['output_structure'] = output_structure
+
+    process = generate_workchain_pw(**generate_inputs)
     process.setup()
 
     result = process.handle_electronic_convergence_not_reached(process.ctx.children[-1])
@@ -49,22 +62,8 @@ def test_handle_out_of_walltime(generate_workchain_pw, fixture_localhost, genera
     result = process.inspect_process()
     assert result.status == 0
 
-
-def test_handle_out_of_walltime_structure_changed(generate_workchain_pw, generate_structure):
-    """Test `PwBaseWorkChain.handle_out_of_walltime`."""
-    structure = generate_structure()
-    process = generate_workchain_pw(
-        exit_code=PwCalculation.exit_codes.ERROR_OUT_OF_WALLTIME, pw_outputs={'output_structure': structure}
-    )
-    process.setup()
-
-    result = process.handle_out_of_walltime(process.ctx.children[-1])
-    assert isinstance(result, ProcessHandlerReport)
-    assert process.ctx.inputs.parameters['CONTROL']['restart_mode'] == 'from_scratch'
-    assert result.do_break
-
-    result = process.inspect_process()
-    assert result.status == 0
+    if structure_changed:
+        assert process.ctx.inputs.structure == output_structure
 
 
 def test_handle_electronic_convergence_not_reached(generate_workchain_pw, fixture_localhost, generate_remote_data):
@@ -205,12 +204,22 @@ def test_handle_vcrelax_converged_except_final_scf(generate_workchain_pw):
         PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE,
     )
 )
-def test_handle_relax_recoverable_ionic_convergence_error(generate_workchain_pw, generate_structure, exit_code):
+def test_handle_relax_recoverable_ionic_convergence_error(
+    generate_workchain_pw, generate_structure, generate_remote_data, fixture_localhost, exit_code
+):
     """Test `PwBaseWorkChain.handle_relax_recoverable_ionic_convergence_error`."""
     structure = generate_structure()
-    process = generate_workchain_pw(pw_outputs={'output_structure': structure}, exit_code=exit_code)
+    remote_data = generate_remote_data(computer=fixture_localhost, remote_path='/path/to/remote')
+    process = generate_workchain_pw(
+        pw_outputs={
+            'output_structure': structure,
+            'remote_folder': remote_data
+        }, exit_code=exit_code
+    )
     process.setup()
 
+    process.ctx.inputs.parameters['CONTROL']['calculation'] = 'relax'
+    process.ctx.inputs.parameters.setdefault('IONS', {})['ion_dynamics'] = 'bfgs'
     result = process.handle_relax_recoverable_ionic_convergence_error(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
     assert result.do_break
@@ -219,6 +228,56 @@ def test_handle_relax_recoverable_ionic_convergence_error(generate_workchain_pw,
 
     result = process.inspect_process()
     assert result.status == 0
+
+
+@pytest.mark.parametrize(
+    'exit_code', (
+        PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE,
+        PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE,
+    )
+)
+def test_handle_relax_recoverable_ionic_convergence_bfgs_history_error(
+    generate_workchain_pw, generate_structure, generate_remote_data, fixture_localhost, exit_code
+):
+    """Test `PwBaseWorkChain.handle_relax_recoverable_ionic_convergence_bfgs_history_error`."""
+    structure = generate_structure()
+    remote_data = generate_remote_data(computer=fixture_localhost, remote_path='/path/to/remote')
+    process = generate_workchain_pw(
+        pw_outputs={
+            'output_structure': structure,
+            'remote_folder': remote_data
+        }, exit_code=exit_code
+    )
+    process.setup()
+
+    # For `relax`, switch to `damp`
+    process.ctx.inputs.parameters['CONTROL']['calculation'] = 'relax'
+    process.ctx.inputs.parameters.setdefault('IONS', {})['ion_dynamics'] = 'bfgs'
+    result = process.handle_relax_recoverable_ionic_convergence_bfgs_history_error(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert result.do_break
+    assert result.exit_code.status == 0
+    assert process.ctx.inputs.parameters['IONS']['ion_dynamics'] == 'damp'
+
+    # For `vc-relax`, try changing first the `trust_min_radius`
+    process.ctx.inputs.parameters['CONTROL']['calculation'] = 'vc-relax'
+    process.ctx.inputs.parameters.setdefault('IONS', {})['ion_dynamics'] = 'bfgs'
+    process.ctx.inputs.parameters.setdefault('CELL', {})['cell_dynamics'] = 'bfgs'
+    result = process.handle_relax_recoverable_ionic_convergence_bfgs_history_error(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert result.do_break
+    assert result.exit_code.status == 0
+    assert process.ctx.inputs.parameters['CONTROL']['restart_mode'] == 'from_scratch'
+    assert process.ctx.inputs.parameters['IONS']['trust_radius_ini'] == 1.0e-3
+    assert process.ctx.inputs.parameters['IONS']['trust_radius_min'] == 1.0e-4
+
+    # Then, try `damp` dynamics as a last resort
+    result = process.handle_relax_recoverable_ionic_convergence_bfgs_history_error(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert result.do_break
+    assert result.exit_code.status == 0
+    assert process.ctx.inputs.parameters['IONS']['ion_dynamics'] == 'damp'
+    assert process.ctx.inputs.parameters['CELL']['cell_dynamics'] == 'damp-w'
 
 
 def test_handle_vcrelax_recoverable_fft_significant_volume_contraction_error(generate_workchain_pw, generate_structure):

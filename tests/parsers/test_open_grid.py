@@ -20,8 +20,8 @@ def test_open_grid_default(fixture_localhost, generate_calc_job_node, generate_p
 
     data_regression.check({
         'output_parameters': results['output_parameters'].get_dict(),
-        'kpoints_mesh': results['kpoints_mesh'].attributes,
-        'kpoints': results['kpoints'].attributes,
+        'kpoints_mesh': results['kpoints_mesh'].base.attributes.all,
+        'kpoints': results['kpoints'].base.attributes.all,
     })
 
     num_regression.check({

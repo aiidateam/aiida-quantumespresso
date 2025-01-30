@@ -3,7 +3,7 @@
 # pylint: disable=no-name-in-module, invalid-name
 from typing import List, Literal, Tuple
 
-from pydantic import BaseModel, conint, constr, validator
+from pydantic import BaseModel, conint, constr, field_validator
 
 __all__ = ('HubbardParameters', 'Hubbard')
 
@@ -39,7 +39,7 @@ class HubbardParameters(BaseModel):
     hubbard_type: Literal['Ueff', 'U', 'V', 'J', 'B', 'E2', 'E3']
     """Type of the Hubbard parameters used (`Ueff`, `U`, `V`, `J`, `B`, `E2`, `E3`)."""
 
-    @validator('atom_manifold', 'neighbour_manifold')  # cls is mandatory to use
+    @field_validator('atom_manifold', 'neighbour_manifold')  # cls is mandatory to use
     def check_manifolds(cls, value):  # pylint: disable=no-self-argument, no-self-use
         """Check the validity of the manifold input.
 

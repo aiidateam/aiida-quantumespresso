@@ -288,7 +288,7 @@ def test_pw_validate_inputs_restart_base(
 
     # Add `parent_folder` but no restart tags -> warning
     inputs['parent_folder'] = remote_data
-    with pytest.warns(Warning, match='`parent_folder` input was provided for the'):
+    with pytest.warns(UserWarning, match='`parent_folder` input was provided for the'):
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
     # Set `restart_mode` to `'restart'` -> no warning
@@ -296,7 +296,7 @@ def test_pw_validate_inputs_restart_base(
     inputs['parameters'] = orm.Dict(parameters)
     with pytest.warns(None) as warnings:
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)
-    assert len(warnings.list) == 0
+    assert len([w for w in warnings.list if w.category is UserWarning]) == 0, [w.message for w in warnings.list]
     parameters['CONTROL'].pop('restart_mode')
 
     # Set `startingwfc` or `startingpot` to `'file'` -> no warning
@@ -305,7 +305,7 @@ def test_pw_validate_inputs_restart_base(
         inputs['parameters'] = orm.Dict(parameters)
         with pytest.warns(None) as warnings:
             generate_calc_job(fixture_sandbox, entry_point_name, inputs)
-        assert len(warnings.list) == 0
+        assert len([w for w in warnings.list if w.category is UserWarning]) == 0
         parameters['ELECTRONS'].pop(restart_setting)
 
 

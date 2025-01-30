@@ -1,0 +1,266 @@
+output_band:
+  array|bands:
+  - 10
+  - 8
+  array|kpoints:
+  - 10
+  - 3
+  array|occupations:
+  - 10
+  - 8
+  array|weights:
+  - 10
+  cell:
+  - - 2.715
+    - 2.715
+    - 0.0
+  - - 2.715
+    - 0.0
+    - 2.715
+  - - 0.0
+    - 2.715
+    - 2.715
+  label_numbers: []
+  labels: []
+  pbc1: true
+  pbc2: true
+  pbc3: true
+  units: eV
+output_parameters:
+  beta_real_space: false
+  charge_density: ./charge-density.dat
+  constraint_mag: 0
+  convergence_info:
+    scf_conv:
+      convergence_achieved: true
+      n_scf_steps: 7
+      scf_error: 3.481122522281673e-10
+  creator_name: pwscf
+  creator_version: '7.4'
+  degauss: 0.136056917253
+  dft_exchange_correlation: PBESOL
+  do_magnetization: false
+  do_not_use_time_reversal: false
+  energy: -308.4608813004367
+  energy_accuracy: 9.52398420771e-09
+  energy_accuracy_units: eV
+  energy_ewald: -228.56124983709822
+  energy_ewald_units: eV
+  energy_hartree: 14.830190102771441
+  energy_hartree_units: eV
+  energy_one_electron: 70.51633242103567
+  energy_one_electron_units: eV
+  energy_smearing: 0.000330074081255778
+  energy_smearing_units: eV
+  energy_threshold: 5.33e-10
+  energy_units: eV
+  energy_xc: -165.24648392516994
+  energy_xc_units: eV
+  fermi_energy: 6.4656
+  fermi_energy_units: eV
+  fft_grid:
+  - 36
+  - 36
+  - 36
+  forces_units: ev / angstrom
+  format_name: QEXSD
+  format_version: 24.10.15
+  has_dipole_correction: false
+  has_electric_field: false
+  init_wall_time_seconds: 1.1
+  inversion_symmetry: true
+  lattice_symmetries: []
+  lda_plus_u_calculation: false
+  lkpoint_dir: false
+  lsda: false
+  magnetization_angle1:
+  - 0.0
+  magnetization_angle2:
+  - 0.0
+  monkhorst_pack_grid:
+  - 5
+  - 5
+  - 5
+  monkhorst_pack_offset:
+  - 0
+  - 0
+  - 0
+  no_time_rev_operations: false
+  non_colinear_calculation: false
+  number_of_atomic_wfc: 8
+  number_of_atoms: 2
+  number_of_bands: 8
+  number_of_bravais_symmetries: 48
+  number_of_electrons: 8.0
+  number_of_k_points: 10
+  number_of_species: 1
+  number_of_spin_components: 1
+  number_of_symmetries: 48
+  occupations: smearing
+  q_real_space: false
+  rho_cutoff: 3265.366014072
+  rho_cutoff_units: eV
+  scf_iterations: 7
+  smearing_type: mv
+  smooth_fft_grid:
+  - 32
+  - 32
+  - 32
+  spin_orbit_calculation: false
+  spin_orbit_domag: false
+  starting_magnetization:
+  - 0.0
+  stress_units: GPascal
+  symmetries:
+  - symmetry_number: 0
+    t_rev: '0'
+  - symmetry_number: 1
+    t_rev: '0'
+  - symmetry_number: 2
+    t_rev: '0'
+  - symmetry_number: 3
+    t_rev: '0'
+  - symmetry_number: 4
+    t_rev: '0'
+  - symmetry_number: 5
+    t_rev: '0'
+  - symmetry_number: 6
+    t_rev: '0'
+  - symmetry_number: 7
+    t_rev: '0'
+  - symmetry_number: 8
+    t_rev: '0'
+  - symmetry_number: 9
+    t_rev: '0'
+  - symmetry_number: 10
+    t_rev: '0'
+  - symmetry_number: 11
+    t_rev: '0'
+  - symmetry_number: 12
+    t_rev: '0'
+  - symmetry_number: 13
+    t_rev: '0'
+  - symmetry_number: 14
+    t_rev: '0'
+  - symmetry_number: 15
+    t_rev: '0'
+  - symmetry_number: 16
+    t_rev: '0'
+  - symmetry_number: 17
+    t_rev: '0'
+  - symmetry_number: 18
+    t_rev: '0'
+  - symmetry_number: 19
+    t_rev: '0'
+  - symmetry_number: 20
+    t_rev: '0'
+  - symmetry_number: 21
+    t_rev: '0'
+  - symmetry_number: 22
+    t_rev: '0'
+  - symmetry_number: 23
+    t_rev: '0'
+  - symmetry_number: 32
+    t_rev: '0'
+  - symmetry_number: 33
+    t_rev: '0'
+  - symmetry_number: 34
+    t_rev: '0'
+  - symmetry_number: 35
+    t_rev: '0'
+  - symmetry_number: 36
+    t_rev: '0'
+  - symmetry_number: 37
+    t_rev: '0'
+  - symmetry_number: 38
+    t_rev: '0'
+  - symmetry_number: 39
+    t_rev: '0'
+  - symmetry_number: 40
+    t_rev: '0'
+  - symmetry_number: 41
+    t_rev: '0'
+  - symmetry_number: 42
+    t_rev: '0'
+  - symmetry_number: 43
+    t_rev: '0'
+  - symmetry_number: 44
+    t_rev: '0'
+  - symmetry_number: 45
+    t_rev: '0'
+  - symmetry_number: 46
+    t_rev: '0'
+  - symmetry_number: 47
+    t_rev: '0'
+  - symmetry_number: 48
+    t_rev: '0'
+  - symmetry_number: 49
+    t_rev: '0'
+  - symmetry_number: 50
+    t_rev: '0'
+  - symmetry_number: 51
+    t_rev: '0'
+  - symmetry_number: 52
+    t_rev: '0'
+  - symmetry_number: 53
+    t_rev: '0'
+  - symmetry_number: 54
+    t_rev: '0'
+  - symmetry_number: 55
+    t_rev: '0'
+  symmetries_units: crystal
+  time_reversal_flag: true
+  total_force: 0.0
+  total_force_units: ev / angstrom
+  total_number_of_scf_iterations: 7
+  volume: 40.02575122514992
+  wall_time: '      2.72s '
+  wall_time_seconds: 2.72
+  wfc_cutoff: 408.170751759
+  wfc_cutoff_units: eV
+output_trajectory:
+  array|cells:
+  - 1
+  - 3
+  - 3
+  array|energy:
+  - 1
+  array|energy_accuracy:
+  - 1
+  array|energy_ewald:
+  - 1
+  array|energy_hartree:
+  - 1
+  array|energy_one_electron:
+  - 1
+  array|energy_smearing:
+  - 1
+  array|energy_threshold:
+  - 1
+  array|energy_xc:
+  - 1
+  array|fermi_energy:
+  - 1
+  array|forces:
+  - 1
+  - 2
+  - 3
+  array|positions:
+  - 1
+  - 2
+  - 3
+  array|scf_accuracy:
+  - 7
+  array|scf_iterations:
+  - 1
+  array|steps:
+  - 1
+  array|stress:
+  - 1
+  - 3
+  - 3
+  array|total_force:
+  - 1
+  symbols:
+  - Si
+  - Si

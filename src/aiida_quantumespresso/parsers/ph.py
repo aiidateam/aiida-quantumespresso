@@ -6,10 +6,23 @@ import re
 from aiida import orm
 
 from aiida_quantumespresso.calculations.ph import PhCalculation
-from aiida_quantumespresso.parsers.parse_raw.ph import parse_raw_ph_output
+from aiida_quantumespresso.parsers.parse_raw.ph import parse_initialization_qpoints, parse_raw_ph_output
 from aiida_quantumespresso.utils.mapping import get_logging_container
 
 from .base import BaseParser
+
+
+def _is_initialization(parameters: dict) -> bool:
+    """Return whether the `ph.x` was run with (patterns) initialization options.
+
+    When `ph.x` is used with `start_irr` and `last_irr` set to 0, the binary doesn't
+    produce the usual `JOB DONE` statement, and immediately exits the job. This is
+    used to quickly generate the displacement patterns needed for a correct parallelization
+    of the code over both q-points and irreducible representations (irreps).
+    """
+    if 'start_irr' in parameters['INPUTPH'] and 'last_irr' in parameters['INPUTPH']:
+        return parameters['INPUTPH']['start_irr'] == parameters['INPUTPH']['last_irr'] == 0
+    return False
 
 
 class PhParser(BaseParser):
@@ -18,6 +31,8 @@ class PhParser(BaseParser):
     class_error_map = {
         'No convergence has been achieved': 'ERROR_CONVERGENCE_NOT_REACHED',
         'problems computing cholesky': 'ERROR_COMPUTING_CHOLESKY',
+        'FFT grid incompatible with symmetry': 'ERROR_INCOMPATIBLE_FFT_GRID',
+        'wrong representation': 'ERROR_WRONG_REPRESENTATION',
     }
 
     def parse(self, **kwargs):
@@ -25,6 +40,16 @@ class PhParser(BaseParser):
         logs = get_logging_container()
 
         stdout, parsed_data, logs = self.parse_stdout_from_retrieved(logs)
+
+        # When `start_irr` and `last_irr` are set to 0, `JOB DONE` is not in stdout (expected behaviour).
+        # Though, we at least expect that `stdout` is not empty, otherwise something went wrong.
+        if stdout and _is_initialization(self.node.inputs.parameters.get_dict()):
+            try:
+                parameters = parse_initialization_qpoints(stdout)
+                self.out('output_parameters', orm.Dict(parameters))
+                return
+            except RuntimeError as exc:
+                logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
 
         # If the scheduler detected OOW, simply keep that exit code by not returning anything more specific.
         if self.node.exit_status == PhCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME:

@@ -14,9 +14,10 @@
 import pathlib
 import time
 
-from aiida.manage.configuration import load_documentation_profile
+from aiida.manage.configuration import Profile, load_profile
 
-load_documentation_profile()
+load_profile(Profile('docs', {'process_control': {}, 'storage': {}}))
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -47,9 +48,10 @@ extensions = [
 
 # Setting the intersphinx mapping to other readthedocs
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3.8', None),
+    'python': ('https://docs.python.org/3.9', None),
     'aiida': ('https://aiida.readthedocs.io/projects/aiida-core/en/latest/', None),
     'aiida_pseudo': ('http://aiida-pseudo.readthedocs.io/en/latest/', None),
+    'pymatgen': ('https://pymatgen.org/', None),
 }
 
 # Settings for the `autoapi.extenstion` automatically generating API docs
@@ -169,6 +171,7 @@ nitpick_ignore_regex = [
     (r'.*', r'Tuple.*'),
 ]
 nitpick_ignore = [
+    ('py:class', 'numpy.typing.ArrayLike'),
     ('py:class', 'AttributeDict'),
     ('py:class', 'ExitCode'),
     ('py:class', 'StructureData'),
