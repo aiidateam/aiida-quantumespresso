@@ -1,3 +1,21 @@
+## v4.9.0
+
+### 👌 Improvements
+
+* `PdosWorkChain`: Update protocols for improved accuracy [[8a13266](https://github.com/aiidateam/aiida-quantumespresso/commit/8a13266be795e31b6ce6c255612596f1377d4478)]
+
+### 🐛 Bug fixes
+
+* `ProjwfcParser`: Fix DOS parsing for spin-polarised case [[bcd5508](https://github.com/aiidateam/aiida-quantumespresso/commit/bcd550847b0bf8142bb43425a1480edfd4db2965)]
+
+### 🧪 Tests
+
+* Allow glob patterns in `retrieve_temporary` input [[af3739c](https://github.com/aiidateam/aiida-quantumespresso/commit/af3739c908e59ae3f11dd78f232703502ef1f0df)]
+
+### ♻️ Refactor
+
+* Refactor `projwfc.x` parser [[29f9c98](https://github.com/aiidateam/aiida-quantumespresso/commit/29f9c9846b9ee63e25f7e28664974228c45ec97c)]
+
 ## v4.8.0
 
 ### ✨ New features
