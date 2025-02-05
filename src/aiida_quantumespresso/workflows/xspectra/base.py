@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO xspectra.x calculation with automated error handling and restarts."""
+import warnings
+
 from aiida import orm
 from aiida.common import AttributeDict
 from aiida.common.lang import type_check
@@ -10,6 +12,11 @@ from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance i
 from aiida_quantumespresso.workflows.protocols.utils import ProtocolMixin
 
 XspectraCalculation = CalculationFactory('quantumespresso.xspectra')
+
+warnings.warn(
+    'This module is deprecated and will be removed soon as part of migrating XAS and XPS workflows to a new repository.'
+    'The new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.', FutureWarning
+)
 
 
 class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):

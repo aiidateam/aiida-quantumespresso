@@ -5,6 +5,7 @@ Uses QuantumESPRESSO pw.x.
 """
 import pathlib
 from typing import Optional, Union
+import warnings
 
 from aiida import orm
 from aiida.common import AttributeDict, ValidationError
@@ -22,6 +23,11 @@ PwCalculation = CalculationFactory('quantumespresso.pw')
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
 XyData = DataFactory('core.array.xy')
+
+warnings.warn(
+    'This module is deprecated and will be removed soon as part of migrating XAS and XPS workflows to a new repository.'
+    'The new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.', FutureWarning
+)
 
 
 def validate_inputs(inputs, _):

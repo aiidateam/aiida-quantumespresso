@@ -3,6 +3,8 @@
 
 Uses QuantumESPRESSO pw.x and xspectra.x.
 """
+import warnings
+
 from aiida import orm
 from aiida.common import AttributeDict
 from aiida.engine import ToContext, WorkChain, if_
@@ -21,6 +23,11 @@ PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
 XspectraBaseWorkChain = WorkflowFactory('quantumespresso.xspectra.base')
 XspectraCoreWorkChain = WorkflowFactory('quantumespresso.xspectra.core')
 XyData = DataFactory('core.array.xy')
+
+warnings.warn(
+    'This module is deprecated and will be removed soon as part of migrating XAS and XPS workflows to a new repository.'
+    'The new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.', FutureWarning
+)
 
 
 class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
