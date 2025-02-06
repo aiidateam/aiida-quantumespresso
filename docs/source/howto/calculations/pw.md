@@ -280,11 +280,11 @@ All other coordinates are allowed to change.
 ## How to retrieve additional files
 
 The {{ PwCalculation }} plugin will retrieve the most important and common output files by default.
-To retrieve additional output files, specify the list of files in the `ADDITIONAL_RETRIEVE_LIST` key in the `settings` input:
+To retrieve additional output files, specify the list of files in the `CalcJob.metadata.options.additional_retrieve_list` key in the input (**NOTE**: The usage of `ADDITIONAL_RETRIEVE_LIST` in the `settings` input is deprecated and will be removed in a future release):
 
 ```python
 builder = load_code('pw').get_builder()
-builder.settings = Dict({'ADDITIONAL_RETRIEVE_LIST': ['custom-file.txt', 'some-other.xml']})
+builder.metadata.options.additional_retrieve_list = ['custom-file.txt', 'some-other.xml']
 ```
 
 
