@@ -171,9 +171,13 @@ def get_starting_magnetization(
             starting_magnetization[kind.name] = magnetization
     else:
         # Self defined myStructureData, read magmom from structure
+        collinear = structure.is_collin_mag()
         for kind in structure.mykinds:
-            magmom = kind.get_magmom_coord(coord="cartesian")
-            starting_magnetization[kind.name] = 2 * magmom[2] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
+            if collinear:
+                magmom = kind.get_magmom_coord()[0]
+            else:
+                magmom = kind.get_magmom_coord(coord="cartesian")[2]
+            starting_magnetization[kind.name] = magmom / pseudo_family.get_pseudo(element=kind.symbol).z_valence
 
     return starting_magnetization
 
