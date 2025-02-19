@@ -84,7 +84,9 @@ def create_builder_from_file(input_folder, input_file_name, code, metadata, pseu
 
     if isinstance(code, str):
         code = load_code(code)
-    builder.code = code
+
+    if code is not None:
+        builder.code = code
 
     # read input_file
     if isinstance(input_folder, str):
