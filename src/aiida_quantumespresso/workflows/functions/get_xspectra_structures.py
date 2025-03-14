@@ -3,6 +3,8 @@
 
 Returns a supercell with a marked absorbing atom for each symmetrically non-equivalent site in the system.
 """
+import warnings
+
 from aiida import orm
 from aiida.common import ValidationError
 from aiida.common.constants import elements
@@ -13,6 +15,11 @@ import numpy as np
 import spglib
 
 from aiida_quantumespresso.utils.hubbard import HubbardStructureData, HubbardUtils
+
+warnings.warn(
+    'This module is deprecated and will be removed soon as part of migrating XAS and XPS workflows to a new repository.'
+    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.', FutureWarning
+)
 
 
 def process_molecule_input(structure, **kwargs):  # pylint: disable=too-many-statements

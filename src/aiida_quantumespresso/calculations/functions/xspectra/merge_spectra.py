@@ -1,7 +1,14 @@
 # -*- coding: utf-8 -*-
 """CalcFunction to merge multiple ``XyData`` nodes of calculated XANES spectra into a new ``XyData`` node."""
+import warnings
+
 from aiida.engine import calcfunction
 from aiida.orm import XyData
+
+warnings.warn(
+    'This module is deprecated and will be removed soon as part of migrating XAS and XPS workflows to a new repository.'
+    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.', FutureWarning
+)
 
 
 @calcfunction

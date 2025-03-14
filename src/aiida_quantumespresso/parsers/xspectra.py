@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 from typing import Tuple
+import warnings
 
 from aiida.common import AttributeDict
 from aiida.orm import Dict, XyData
@@ -10,6 +11,10 @@ from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.base import BaseParser
 from aiida_quantumespresso.utils.mapping import get_logging_container
 
+warnings.warn(
+    'This module is deprecated and will be removed soon as part of migrating XAS and XPS workflows to a new repository.'
+    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.', FutureWarning
+)
 
 class XspectraParser(BaseParser):
     """Parser for the ``XSpectraCalculation`` calcjob plugin."""
