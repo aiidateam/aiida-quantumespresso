@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts."""
-import warnings
-
 from aiida import orm
 from aiida.common import AttributeDict, exceptions
 from aiida.common.lang import type_check
@@ -212,12 +210,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             pseudos = recursive_merge(pseudos, pseudos_overrides)
 
         metadata = inputs['pw']['metadata']
-
-        if not options or options.get('resources', None) is None:
-            warnings.warn(
-                'No explicit resources were provided for `metadata.options.resources`. This approach is '
-                'deprecated and will cause an error in future versions.', UserWarning
-            )
 
         if options:
             metadata['options'] = recursive_merge(inputs['pw']['metadata']['options'], options)

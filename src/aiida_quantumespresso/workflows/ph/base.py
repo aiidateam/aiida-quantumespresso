@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO ph.x calculation with automated error handling and restarts."""
 from typing import Mapping
-import warnings
 
 from aiida import orm
 from aiida.common import AttributeDict
@@ -126,12 +125,6 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             inputs['ph']['parameters']['INPUTPH']['epsil'] = True
 
         metadata = inputs['ph']['metadata']
-
-        if not options or options.get('resources', None) is None:
-            warnings.warn(
-                'No explicit resources were provided for `metadata.options.resources`. This approach is '
-                'deprecated and will cause an error in future versions.', UserWarning
-            )
 
         if options:
             metadata['options'] = recursive_merge(inputs['ph']['metadata']['options'], options)
