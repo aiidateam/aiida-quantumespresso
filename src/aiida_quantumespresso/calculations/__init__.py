@@ -183,6 +183,13 @@ class BasePwCpInputGenerator(CalcJob):
         if 'settings' in value:
             settings = _uppercase_dict(value['settings'].get_dict(), dict_name='settings')
 
+            if 'ADDITIONAL_RETRIEVE_LIST' in settings:
+                warnings.warn(
+                    'The key `ADDITIONAL_RETRIEVE_LIST` in the settings input is deprecated and will be removed in '
+                    'the future. Use the `CalcJob.metadata.options.additional_retrieve_list` input instead.',
+                    AiidaDeprecationWarning
+                )
+
             # Validate the FIXED_COORDS setting
             fixed_coords = settings.get('FIXED_COORDS', None)
 

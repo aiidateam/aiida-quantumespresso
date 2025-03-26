@@ -2,10 +2,12 @@
 """Plugin to create a Quantum Espresso neb.x input file."""
 import copy
 import os
+import warnings
 
 from aiida import orm
 from aiida.common import CalcInfo, CodeInfo, InputValidationError
 from aiida.common.lang import classproperty
+from aiida.common.warnings import AiidaDeprecationWarning
 
 from aiida_quantumespresso.calculations import _lowercase_dict, _pop_parser_options, _uppercase_dict
 from aiida_quantumespresso.calculations.pw import PwCalculation
@@ -178,6 +180,12 @@ class NebCalculation(CalcJob):
         # Convert settings dictionary to have uppercase keys, or create an empty one if none was given.
         if 'settings' in self.inputs:
             settings_dict = _uppercase_dict(self.inputs.settings.get_dict(), dict_name='settings')
+            if 'ADDITIONAL_RETRIEVE_LIST' in settings_dict:
+                warnings.warn(
+                    'The key `ADDITIONAL_RETRIEVE_LIST` in the settings input is deprecated and will be removed in '
+                    'the future. Use the `CalcJob.metadata.options.additional_retrieve_list` input instead.',
+                    AiidaDeprecationWarning
+                )
         else:
             settings_dict = {}
 
