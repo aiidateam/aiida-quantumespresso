@@ -1,8 +1,15 @@
 # -*- coding: utf-8 -*-
 """Calcfunction to compile a complete spectrum for each element from multiple powder sample spectra."""
+import warnings
+
 from aiida import orm
 from aiida.engine import calcfunction
 import numpy as np
+
+warnings.warn(
+    'This module is deprecated and will be removed soon as part of migrating XAS and XPS workflows to a new repository.'
+    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.', FutureWarning
+)
 
 
 @calcfunction

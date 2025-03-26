@@ -1,8 +1,15 @@
 # -*- coding: utf-8 -*-
 """CalcFunction to compute the spectrum from ``XpsWorkchain``."""
+import warnings
+
 from aiida import orm
 from aiida.engine import calcfunction
 import numpy as np
+
+warnings.warn(
+    'This module is deprecated and will be removed soon as part of migrating XAS and XPS workflows to a new repository.'
+    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.', FutureWarning
+)
 
 
 @calcfunction
