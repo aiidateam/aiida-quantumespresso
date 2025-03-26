@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO xspectra.x calculation with automated error handling and restarts."""
+import warnings
+
 from aiida import orm
 from aiida.common import AttributeDict
 from aiida.common.lang import type_check
