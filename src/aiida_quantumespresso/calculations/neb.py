@@ -7,6 +7,7 @@ import warnings
 from aiida import orm
 from aiida.common import CalcInfo, CodeInfo, InputValidationError
 from aiida.common.lang import classproperty
+from aiida.common.warnings import AiidaDeprecationWarning
 
 from aiida_quantumespresso.calculations import _lowercase_dict, _pop_parser_options, _uppercase_dict
 from aiida_quantumespresso.calculations.pw import PwCalculation
@@ -183,7 +184,7 @@ class NebCalculation(CalcJob):
                 warnings.warn(
                     'The key `ADDITIONAL_RETRIEVE_LIST` in the settings input is deprecated and will be removed in '
                     'the future. Use the `CalcJob.metadata.options.additional_retrieve_list` input instead.',
-                    FutureWarning
+                    AiidaDeprecationWarning
                 )
         else:
             settings_dict = {}

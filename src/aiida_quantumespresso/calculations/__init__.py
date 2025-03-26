@@ -187,7 +187,7 @@ class BasePwCpInputGenerator(CalcJob):
                 warnings.warn(
                     'The key `ADDITIONAL_RETRIEVE_LIST` in the settings input is deprecated and will be removed in '
                     'the future. Use the `CalcJob.metadata.options.additional_retrieve_list` input instead.',
-                    FutureWarning
+                    AiidaDeprecationWarning
                 )
 
             # Validate the FIXED_COORDS setting

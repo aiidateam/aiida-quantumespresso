@@ -7,6 +7,7 @@ import pathlib
 import warnings
 
 from aiida.common import datastructures, exceptions
+from aiida.common.warnings import AiidaDeprecationWarning
 from aiida.orm import Dict, FolderData, RemoteData, SinglefileData
 
 from aiida_quantumespresso.calculations import _lowercase_dict, _pop_parser_options, _uppercase_dict
@@ -148,7 +149,7 @@ class NamelistsCalculation(CalcJob):
                 warnings.warn(
                     'The key `ADDITIONAL_RETRIEVE_LIST` in the settings input is deprecated and will be removed in '
                     'the future. Use the `CalcJob.metadata.options.additional_retrieve_list` input instead.',
-                    FutureWarning
+                    AiidaDeprecationWarning
                 )
         else:
             settings = {}
