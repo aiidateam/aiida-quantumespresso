@@ -11,13 +11,13 @@ from aiida_quantumespresso.workflows.xspectra.core import XspectraCoreWorkChain
 def test_get_available_protocols():
     """Test ``XspectraCoreWorkChain.get_available_protocols``."""
     protocols = XspectraCoreWorkChain.get_available_protocols()
-    assert sorted(protocols.keys()) == ['fast', 'moderate', 'precise']
+    assert sorted(protocols.keys()) == ['balanced', 'fast', 'stringent']
     assert all('description' in protocol for protocol in protocols.values())
 
 
 def test_get_default_protocol():
     """Test ``XspectraCoreWorkChain.get_default_protocol``."""
-    assert XspectraCoreWorkChain.get_default_protocol() == 'moderate'
+    assert XspectraCoreWorkChain.get_default_protocol() == 'balanced'
 
 
 def test_get_available_treatments():
@@ -37,7 +37,7 @@ def test_overrides(fixture_code, generate_structure):
     pw_code = fixture_code('quantumespresso.pw')
     xs_code = fixture_code('quantumespresso.xspectra')
     structure = generate_structure('silicon')
-    protocol = 'moderate'
+    protocol = 'balanced'
     treatment_type = 'full'  # default treatment, sets `tot_charge` = 1
     overrides = {
         'scf': {

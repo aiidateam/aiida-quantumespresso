@@ -11,13 +11,13 @@ from aiida_quantumespresso.workflows.ph.base import PhBaseWorkChain
 def test_get_available_protocols():
     """Test ``PhBaseWorkChain.get_available_protocols``."""
     protocols = PhBaseWorkChain.get_available_protocols()
-    assert sorted(protocols.keys()) == ['fast', 'moderate', 'precise']
+    assert sorted(protocols.keys()) == ['balanced', 'fast', 'stringent']
     assert all('description' in protocol for protocol in protocols.values())
 
 
 def test_get_default_protocol():
     """Test ``PhBaseWorkChain.get_default_protocol``."""
-    assert PhBaseWorkChain.get_default_protocol() == 'moderate'
+    assert PhBaseWorkChain.get_default_protocol() == 'balanced'
 
 
 def test_default(fixture_code, data_regression, serialize_builder):

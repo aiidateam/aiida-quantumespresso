@@ -14,11 +14,11 @@ default_inputs:
             INPUTPH:
                 tr2_ph: 1.0e-18
 
-default_protocol: moderate
+default_protocol: balanced
 protocols:
-    moderate:
+    balanced:
         description: 'Protocol to perform the computation at normal precision at moderate computational cost.'
-    precise:
+    stringent:
         description: 'Protocol to perform the computation at high precision at higher computational cost.'
         qpoints_distance: 0.2
         ph:
