@@ -134,7 +134,7 @@ def serialize_builder():
 
 @pytest.fixture(scope='session', autouse=True)
 def sssp(aiida_profile, generate_upf_data):
-    """Create an SSSP pseudo potential family from scratch."""
+    """Create the SSSP pseudo potential families from scratch."""
     from aiida.common.constants import elements
     from aiida.plugins import GroupFactory
 
@@ -145,34 +145,35 @@ def sssp(aiida_profile, generate_upf_data):
     cutoffs = {}
     stringency = 'standard'
 
-    with tempfile.TemporaryDirectory() as dirpath:
-        for values in elements.values():
+    for label, cutoff_values in zip(('SSSP/1.3/PBEsol/precision', 'SSSP/1.3/PBEsol/efficiency'),
+                                    ((40.0, 320.0), (30.0, 240.0))):
+        with tempfile.TemporaryDirectory() as dirpath:
+            for values in elements.values():
 
-            element = values['symbol']
+                element = values['symbol']
 
-            actinides = ('Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr')
+                actinides = ('Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr')
 
-            if element in actinides:
-                continue
+                if element in actinides:
+                    continue
 
-            upf = generate_upf_data(element)
-            dirpath = pathlib.Path(dirpath)
-            filename = dirpath / f'{element}.upf'
+                upf = generate_upf_data(element)
+                dirpath = pathlib.Path(dirpath)
+                filename = dirpath / f'{element}.upf'
 
-            with open(filename, 'w+b') as handle:
-                with upf.open(mode='rb') as source:
-                    handle.write(source.read())
-                    handle.flush()
+                with open(filename, 'w+b') as handle:
+                    with upf.open(mode='rb') as source:
+                        handle.write(source.read())
+                        handle.flush()
 
-            cutoffs[element] = {
-                'cutoff_wfc': 30.0,
-                'cutoff_rho': 240.0,
-            }
+                cutoffs[element] = {
+                    'cutoff_wfc': cutoff_values[0],
+                    'cutoff_rho': cutoff_values[1],
+                }
 
-        label = 'SSSP/1.3/PBEsol/efficiency'
-        family = SsspFamily.create_from_folder(dirpath, label)
+            family = SsspFamily.create_from_folder(dirpath, label)
 
-    family.set_cutoffs(cutoffs, stringency, unit='Ry')
+        family.set_cutoffs(cutoffs, stringency, unit='Ry')
 
     return family
 
