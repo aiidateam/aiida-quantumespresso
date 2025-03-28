@@ -7,11 +7,11 @@ default_inputs:
         - [1., 0., 0.]
         - [0., 1., 0.]
         - [0., 0., 1.]
-default_protocol: moderate
+default_protocol: balanced
 protocols:
-    moderate:
+    balanced:
         description: 'Protocol to perform XANES dipole calculations at normal precision and moderate computational cost.'
-    precise:
+    stringent:
         description: 'Protocol to perform XANES dipole calculations at high precision and higher computational cost.'
     fast:
         description: 'Protocol to perform XANES dipole calculations at low precision and minimal computational cost for testing purposes.'

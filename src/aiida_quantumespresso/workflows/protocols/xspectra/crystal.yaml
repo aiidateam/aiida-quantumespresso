@@ -4,11 +4,11 @@ default_inputs:
     return_all_powder_spectra: False
     core:
         get_powder_spectrum: True
-default_protocol: moderate
+default_protocol: balanced
 protocols:
-    moderate:
+    balanced:
         description: 'Protocol to perform XANES dipole calculations at normal precision and moderate computational cost.'
-    precise:
+    stringent:
         description: 'Protocol to perform XANES dipole calculations at high precision and higher computational cost.'
     fast:
         description: 'Protocol to perform XANES dipole calculations at low precision and minimal computational cost for testing purposes.'

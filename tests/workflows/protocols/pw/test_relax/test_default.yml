@@ -26,7 +26,7 @@ base:
         electron_maxstep: 80
         mixing_beta: 0.4
       SYSTEM:
-        degauss: 0.01
+        degauss: 0.02
         ecutrho: 240.0
         ecutwfc: 30.0
         nosym: false
@@ -59,7 +59,7 @@ base_final_scf:
         electron_maxstep: 80
         mixing_beta: 0.4
       SYSTEM:
-        degauss: 0.01
+        degauss: 0.02
         ecutrho: 240.0
         ecutwfc: 30.0
         nosym: false

@@ -24,15 +24,15 @@ default_inputs:
                 nosym: False
                 occupations: smearing
                 smearing: cold
-                degauss: 0.01
+                degauss: 0.02
             ELECTRONS:
                 electron_maxstep: 80
                 mixing_beta: 0.4
-default_protocol: moderate
+default_protocol: balanced
 protocols:
-    moderate:
+    balanced:
         description: 'Protocol to perform the computation at normal precision at moderate computational cost.'
-    precise:
+    stringent:
         description: 'Protocol to perform the computation at high precision at higher computational cost.'
         kpoints_distance: 0.10
         meta_parameters:
@@ -43,9 +43,11 @@ protocols:
             parameters:
                 CONTROL:
                     forc_conv_thr: 0.5e-4
+                SYSTEM:
+                    degauss: 0.0125
     fast:
         description: 'Protocol to perform the computation at low precision at minimal computational cost for testing purposes.'
-        kpoints_distance: 0.50
+        kpoints_distance: 0.30
         meta_parameters:
             conv_thr_per_atom: 0.4e-9
             etot_conv_thr_per_atom: 1.e-4
@@ -53,3 +55,5 @@ protocols:
             parameters:
                 CONTROL:
                     forc_conv_thr: 1.e-3
+                SYSTEM:
+                    degauss: 0.0275

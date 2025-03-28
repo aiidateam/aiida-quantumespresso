@@ -14,10 +14,10 @@ jobs:
 
         steps:
         -   name: Checkout source
-            uses: actions/checkout@v2
+            uses: actions/checkout@v4
 
         -   name: Set up Python 3.9
-            uses: actions/setup-python@v2
+            uses: actions/setup-python@v5
             with:
                 python-version: '3.9'
 
@@ -30,10 +30,10 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-        -   uses: actions/checkout@v2
+        -   uses: actions/checkout@v4
 
         -   name: Cache Python dependencies
-            uses: actions/cache@v1
+            uses: actions/cache@v4
             with:
                 path: ~/.cache/pip
                 key: pip-pre-commit-${{ hashFiles('**/setup.json') }}
@@ -41,7 +41,7 @@ jobs:
                     pip-pre-commit-
 
         -   name: Set up Python
-            uses: actions/setup-python@v2
+            uses: actions/setup-python@v5
             with:
                 python-version: '3.9'
 
@@ -69,10 +69,10 @@ jobs:
                 -   5672:5672
 
         steps:
-        -   uses: actions/checkout@v2
+        -   uses: actions/checkout@v4
 
         -   name: Cache Python dependencies
-            uses: actions/cache@v1
+            uses: actions/cache@v4
             with:
                 path: ~/.cache/pip
                 key: pip-${{ matrix.python-version }}-tests-${{ hashFiles('**/setup.json') }}
@@ -80,7 +80,7 @@ jobs:
                     pip-${{ matrix.python-version }}-tests
 
         -   name: Set up Python ${{ matrix.python-version }}
-            uses: actions/setup-python@v2
+            uses: actions/setup-python@v5
             with:
                 python-version: ${{ matrix.python-version }}
 
@@ -98,10 +98,10 @@ jobs:
 
         steps:
         -   name: Checkout source
-            uses: actions/checkout@v2
+            uses: actions/checkout@v4
 
         -   name: Set up Python 3.9
-            uses: actions/setup-python@v2
+            uses: actions/setup-python@v5
             with:
                 python-version: '3.9'
 

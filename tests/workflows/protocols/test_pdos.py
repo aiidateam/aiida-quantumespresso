@@ -24,13 +24,13 @@ def get_pdos_generator_inputs(fixture_code, generate_structure):
 def test_get_available_protocols():
     """Test ``PdosWorkChain.get_available_protocols``."""
     protocols = PdosWorkChain.get_available_protocols()
-    assert sorted(protocols.keys()) == ['fast', 'moderate', 'precise']
+    assert sorted(protocols.keys()) == ['balanced', 'fast', 'stringent']
     assert all('description' in protocol for protocol in protocols.values())
 
 
 def test_get_default_protocol():
     """Test ``PdosWorkChain.get_default_protocol``."""
-    assert PdosWorkChain.get_default_protocol() == 'moderate'
+    assert PdosWorkChain.get_default_protocol() == 'balanced'
 
 
 def test_default(get_pdos_generator_inputs, data_regression, serialize_builder):

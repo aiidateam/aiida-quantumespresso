@@ -11,13 +11,13 @@ from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
 def test_get_available_protocols():
     """Test ``PwBaseWorkChain.get_available_protocols``."""
     protocols = PwBaseWorkChain.get_available_protocols()
-    assert sorted(protocols.keys()) == ['fast', 'moderate', 'precise']
+    assert sorted(protocols.keys()) == ['balanced', 'fast', 'stringent']
     assert all('description' in protocol for protocol in protocols.values())
 
 
 def test_get_default_protocol():
     """Test ``PwBaseWorkChain.get_default_protocol``."""
-    assert PwBaseWorkChain.get_default_protocol() == 'moderate'
+    assert PwBaseWorkChain.get_default_protocol() == 'balanced'
 
 
 def test_default(fixture_code, generate_structure, data_regression, serialize_builder):
@@ -28,6 +28,21 @@ def test_default(fixture_code, generate_structure, data_regression, serialize_bu
 
     assert isinstance(builder, ProcessBuilder)
     data_regression.check(serialize_builder(builder))
+
+
+@pytest.mark.parametrize('old_protocol,new_protocol', (
+    ('moderate', 'balanced'),
+    ('precise', 'stringent'),
+))
+def test_old_protocol_names(fixture_code, generate_structure, serialize_builder, old_protocol, new_protocol):
+    """Test that the old protocol names still work and produce the same builder contents."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure('silicon')
+
+    old_builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, protocol=old_protocol)
+    new_builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, protocol=new_protocol)
+
+    assert serialize_builder(old_builder) == serialize_builder(new_builder)
 
 
 def test_electronic_type(fixture_code, generate_structure):

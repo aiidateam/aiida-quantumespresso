@@ -13,11 +13,11 @@ default_inputs:
             parameters:
                 CONTROL:
                     calculation: scf
-default_protocol: moderate
+default_protocol: balanced
 protocols:
-    moderate:
+    balanced:
         description: 'Protocol to perform a relaxation at normal precision at moderate computational cost.'
-    precise:
+    stringent:
         description: 'Protocol to perform a relaxation at high precision at higher computational cost.'
         volume_convergence: 0.01
     fast:

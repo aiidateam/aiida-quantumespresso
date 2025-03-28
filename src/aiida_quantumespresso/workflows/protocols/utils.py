@@ -56,9 +56,15 @@ class ProtocolMixin:
         try:
             protocol_inputs = data['protocols'][protocol]
         except KeyError as exception:
-            raise ValueError(
-                f'`{protocol}` is not a valid protocol. Call ``get_available_protocols`` to show available protocols.'
-            ) from exception
+
+            alias_protocol = cls._check_if_alias(protocol)
+            if alias_protocol is not None:
+                protocol_inputs = data['protocols'][alias_protocol]
+            else:
+                raise ValueError(
+                    f'`{protocol}` is not a valid protocol. Call ``get_available_protocols`` to show available '
+                    'protocols.'
+                ) from exception
         inputs = recursive_merge(data['default_inputs'], protocol_inputs)
         inputs.pop('description')
 
@@ -76,6 +82,15 @@ class ProtocolMixin:
         """Return the contents of the protocol file for workflow class."""
         with cls.get_protocol_filepath().open() as file:
             return yaml.safe_load(file)
+
+    @staticmethod
+    def _check_if_alias(alias: str):
+        """Check if a given alias corresponds to a valid protocol."""
+        aliases_dict = {
+            'moderate': 'balanced',
+            'precise': 'stringent',
+        }
+        return aliases_dict.get(alias, None)
 
 
 def recursive_merge(left: dict, right: dict) -> dict:
