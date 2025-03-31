@@ -1,3 +1,24 @@
+## v4.10.0
+
+### 👌 Improvements
+
+* Protocols: Update k-point sampling protocols [[17f0fd8](https://github.com/aiidateam/aiida-quantumespresso/commit/17f0fd893470abebf5d84015be4586d6345252fd)]
+* XSpectra & XPS: Issue Depreciation Warnings [[c4d7c19](https://github.com/aiidateam/aiida-quantumespresso/commit/c4d7c190456deca0c26e4fc36304e973fe14a2c2)]
+
+### 🐛 Bug fixes
+
+* `PdosWorkChain`: Enable energy range around the Fermi level [[435fc90](https://github.com/aiidateam/aiida-quantumespresso/commit/435fc9008d012c9a0d81d8fad95624dde7b670cb)]
+
+### 🔧 Maintenance
+
+* CD & nightly: update Github actions versions [[f356d3a](https://github.com/aiidateam/aiida-quantumespresso/commit/f356d3a0c347ade636e75ce063ac0b9c69e5cda6)]
+* Update GitHub actions versions [[91c7c30](https://github.com/aiidateam/aiida-quantumespresso/commit/91c7c30bc5b05a5ee85cf0cea9fbed784305ff59)]
+
+### 🧪 Tests
+
+* Create two pseudo families in `sssp` fixture [[043664e](https://github.com/aiidateam/aiida-quantumespresso/commit/043664e2ab607fe922a1eba2b0ee104f50a9616a)]
+
+
 ## v4.9.0
 
 ### 👌 Improvements
