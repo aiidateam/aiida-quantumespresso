@@ -113,9 +113,13 @@ class PpParser(BaseParser):
             if filename == filename_suffix:
                 return filename
 
-            pattern = r'{}_(.*){}'.format(filename_prefix, filename_suffix)
+            # Pattern to match both "aiida.filplot_XXXaiida.fileout" and "aiida.filplotXXXaiida.fileout"
+            pattern = rf'{re.escape(filename_prefix)}_?(.*?){re.escape(filename_suffix)}'
             matches = re.search(pattern, filename)
-            return matches.group(1)
+
+            if matches:
+                return matches.group(1).rstrip('_')
+
 
         if self.node.base.attributes.get('parse_data_files'):
             for filename in filenames:

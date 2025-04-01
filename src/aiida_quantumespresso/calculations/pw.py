@@ -153,7 +153,9 @@ class PwCalculation(BasePwCpInputGenerator):
                     'BFGS algorithm and electronic convergence failed in the final SCF.')
 
         spec.exit_code(531, 'ERROR_CHARGE_IS_WRONG',
-            message='The electronic minimization cycle did not reach self-consistency.')
+            message='The difference between the total charge and the number of electrons exceeds the threshold. '
+                    'Smearing might be required, check the output file for details.'
+            )
         spec.exit_code(541, 'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION',
             message='The variable cell optimization broke the symmetry of the k-points.')
         spec.exit_code(542, 'ERROR_RADIAL_FFT_SIGNIFICANT_VOLUME_CONTRACTION',
