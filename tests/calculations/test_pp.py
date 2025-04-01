@@ -41,7 +41,7 @@ def test_pp_default(fixture_sandbox, generate_calc_job, generate_inputs, file_re
     calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
     retrieve_list = ['aiida.out']
-    retrieve_temporary_list = ['aiida.fileout', ('aiida.filplot_*aiida.fileout', '.', 0)]
+    retrieve_temporary_list = ['aiida.fileout', ('aiida.filplot*aiida.fileout', '.', 0)]
     local_copy_list = []
 
     # Check the attributes of the returned `CalcInfo`
@@ -67,7 +67,7 @@ def test_pp_keep_data_files(fixture_sandbox, generate_calc_job, generate_inputs)
     inputs.metadata.options.keep_data_files = True
 
     calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
-    retrieve_list = ['aiida.out', 'aiida.fileout', ('aiida.filplot_*aiida.fileout', '.', 0)]
+    retrieve_list = ['aiida.out', 'aiida.fileout', ('aiida.filplot*aiida.fileout', '.', 0)]
     retrieve_temporary_list = []
     local_copy_list = []
 
