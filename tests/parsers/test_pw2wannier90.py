@@ -21,15 +21,17 @@ def generate_inputs():
         }
     }
 
-    settings = {'ADDITIONAL_RETRIEVE_LIST': ['*.amn', '*.mmn', '*.eig']}
-
     # Since we don't actually run pw2wannier.x, we only pretend to have the output folder
     # of a parent pw.x calculation. The nnkp file, instead, is real.
     inputs = {
         'parent_folder': orm.FolderData().store(),
         'nnkp_file': orm.SinglefileData(file=nnkp_filepath).store(),
         'parameters': orm.Dict(parameters),
-        'settings': orm.Dict(settings),
+        'metadata': {
+            'options': {
+                'additional_retrieve_list': ['*.amn', '*.mmn', '*.eig']
+            }
+        }
     }
 
     return AttributeDict(inputs)
