@@ -386,6 +386,47 @@ def test_pp_default_3d_multiple(generate_calc_job_node, generate_parser, generat
         assert len(node.get_arraynames()) == 4
 
 
+def test_pp_default_3d_ldos(
+    generate_calc_job_node,
+    generate_parser,
+):
+    """Test a default `pp.x` calculation producing a 3D data set."""
+
+    node = generate_calc_job_node(
+        entry_point_name='quantumespresso.pp',
+        test_name='default_3d_ldos',
+        inputs={
+            'parent_folder': orm.FolderData().store(),
+            'parameters': orm.Dict({
+                'INPUTPP': {
+                    'plot_num': 3
+                },
+                'PLOT': {
+                    'iflag': 3,
+                }
+            })
+        },
+        attributes={
+            'keep_data_files': False,
+            'parse_data_files': True
+        }
+    )
+    parser = generate_parser('quantumespresso.pp')
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_parameters' in results
+    assert 'output_data_multiple' in results
+
+    # raise ValueError(results)
+    # Since the actual parsing of the file content itself is done in `test_pp_default_3d` we will not do it here again
+    for key in ['001', '002']:
+        assert key in results['output_data_multiple']
+        node = results['output_data_multiple'][key]
+        assert len(node.get_arraynames()) == 4
+
+
 @pytest.mark.parametrize(
     'test_name,exit_code', (
         ('default_3d_failed_missing', 'ERROR_OUTPUT_STDOUT_MISSING'),
