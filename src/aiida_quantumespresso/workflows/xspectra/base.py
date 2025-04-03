@@ -88,6 +88,9 @@ class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
+        The current protocols rely on the `Slurm` scheduler. To use them nonetheless with a different scheduler, the
+        protocols might need to be adjusted and explicit resources need to be provided in `options`.
+
         :param code: the ``Code`` instance configured for the ``quantumespresso.xspectra`` plugin.
         :param core_wfc_data: a ``SinglefileData`` object for the initial-state core
                               wavefunction, normally derived from upf2plotcore.sh, required
