@@ -323,12 +323,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             protocol,
             overrides=inputs.get('core', {}).get('xs_prod')
         )
-
-        if options:
-            core_xspectra['xspectra']['metadata']['options'] = recursive_merge(
-                core_xspectra['xspectra']['metadata']['options'],
-                options
-            )
+        cls.add_options(core_xspectra['xspectra']['metadata'], options=options, code=xs_code)
 
         relax.pop('clean_workdir', None)
         relax.pop('structure', None)

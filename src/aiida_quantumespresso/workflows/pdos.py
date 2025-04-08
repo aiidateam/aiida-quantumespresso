@@ -354,8 +354,6 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
             sub processes that are called by this workchain.
         :return: a process builder instance with all inputs defined ready for launch.
         """
-        from aiida_quantumespresso.workflows.protocols.utils import recursive_merge
-
         inputs = cls.get_protocol_inputs(protocol, overrides)
 
         args = (pw_code, structure, protocol)
@@ -375,9 +373,8 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         metadata_dos = inputs.get('dos', {}).get('metadata', {'options': {}})
         metadata_projwfc = inputs.get('projwfc', {}).get('metadata', {'options': {}})
 
-        if options:
-            metadata_dos['options'] = recursive_merge(metadata_dos['options'], options)
-            metadata_projwfc['options'] = recursive_merge(metadata_projwfc['options'], options)
+        cls.add_options(metadata_dos, options, dos_code)
+        cls.add_options(metadata_projwfc, options, projwfc_code)
 
         builder = cls.get_builder()
         builder.structure = structure

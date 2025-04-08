@@ -3,7 +3,7 @@
 import pathlib
 from typing import Optional, Union
 
-from aiida.orm import StructureData
+from aiida.orm import AbstractCode, StructureData
 from aiida_pseudo.groups.family import PseudoPotentialFamily
 import yaml
 
@@ -76,6 +76,27 @@ class ProtocolMixin:
             return recursive_merge(inputs, overrides)
 
         return inputs
+
+    @staticmethod
+    def add_options(metadata: dict, options: dict = None, code: AbstractCode = None) -> None:
+        """Add options to the metadata dictionary.
+
+        Also adds default resources based on the scheduler of the computer.
+
+        :param metadata: the metadata dictionary.
+        :param options: the options dictionary.
+        :param code: the code of the calculation.
+        """
+        if options is not None:
+            metadata['options'] = recursive_merge(metadata['options'], options)
+
+        # Temporary workaround to keep the default resources for the direct and Slurm schedulers until defaults can be
+        # properly configured on computers, see https://github.com/aiidateam/aiida-quantumespresso/pull/1011
+        if code.computer.scheduler_type in ('core.direct', 'core.slurm', 'core.pbspro', 'core.torque'):
+            metadata['options']['resources'].setdefault('num_machines', 1)
+        if code.computer.scheduler_type in ('core.sge',):
+            metadata['options']['resources'].setdefault('parallel_env', 'mpi')
+            metadata['options']['resources'].setdefault('tot_num_mpiprocs', 1)
 
     @classmethod
     def _load_protocol_file(cls) -> dict:

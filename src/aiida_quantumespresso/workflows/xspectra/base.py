@@ -103,8 +103,6 @@ class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             the ``CalcJobs`` that are nested in this work chain.
         :return: a process builder instance with all inputs defined ready for launch.
         """
-        from aiida_quantumespresso.workflows.protocols.utils import recursive_merge
-
         if isinstance(code, str):
             code = orm.load_code(code)
 
@@ -115,8 +113,7 @@ class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         metadata = inputs['xspectra']['metadata']
         parameters = inputs['xspectra']['parameters']
 
-        if options:
-            metadata['options'] = recursive_merge(inputs['xspectra']['metadata']['options'], options)
+        cls.add_options(metadata, options, code)
 
         # pylint: disable=no-member
         builder = cls.get_builder()
