@@ -46,12 +46,11 @@ Related Resources:
     (see `this post <https://lists.quantum-espresso.org/pipermail/users/2017-November/039656.html>`_).
 
 """
+import jsonschema
 from aiida import orm, plugins
 from aiida.common import AttributeDict
 from aiida.engine import ToContext, WorkChain, if_
 from aiida.orm.nodes.data.base import to_aiida_type
-import jsonschema
-
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 
 from .protocols.utils import ProtocolMixin
@@ -451,6 +450,9 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
 
         if 'scf' in self.inputs:
             inputs.pw.parent_folder = self.ctx.scf_parent_folder
+        else:
+            # to get the SCF workchain from the remote given in input when no SCF is to be run
+            self.ctx.workchain_scf = inputs.pw.parent_folder.creator.caller
 
         if 'nbands_factor' in self.inputs:
             inputs.pw.parameters = inputs.pw.parameters.get_dict()
