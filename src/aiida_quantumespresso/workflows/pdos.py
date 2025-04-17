@@ -96,6 +96,9 @@ def validate_inputs(value, _):
 
     - Check that either the `scf` or `nscf.pw.parent_folder` inputs is provided.
     - Check that the `Emin`, `Emax` and `DeltaE` inputs are the same for the `dos` and `projwfc` namespaces.
+    - Warn the user when both `energy_range_vs_fermi` and `Emin` and `Emax` are specified.
+    - Raise error when `nbands_factor` is specified and `nscf.pw.parameters.SYSTEM.nbnd` is also specified.
+    - Check that when `serial_clean` is set to `True`, the `scf` inputs are provided.
     """
     # Check that either the `scf` input or `nscf.pw.parent_folder` is provided.
     import warnings
@@ -121,6 +124,9 @@ def validate_inputs(value, _):
 
     if 'nbands_factor' in value and 'nbnd' in value['nscf']['pw']['parameters'].base.attributes.get('SYSTEM', {}):
         return PdosWorkChain.exit_codes.ERROR_INVALID_INPUT_NUMBER_OF_BANDS.message
+
+    if value.get('serial_clean', False) and not 'scf' in value:
+        return 'When `serial_clean` is set to `True`, the `scf` inputs are required.'
 
 
 def validate_scf(value, _):
@@ -451,13 +457,14 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         if 'scf' in self.inputs:
             inputs.pw.parent_folder = self.ctx.scf_parent_folder
         else:
-            # to get the SCF workchain from the remote given in input when no SCF is to be run
-            self.ctx.workchain_scf = inputs.pw.parent_folder.creator.caller
+            # No SCF calculation has been launched, `workchain_scf` is not in ctx
+            # but `nscf.pw.parent_folder` is given if inputs are valid
+            self.ctx.scf_parent_folder = inputs.pw.parent_folder
 
         if 'nbands_factor' in self.inputs:
             inputs.pw.parameters = inputs.pw.parameters.get_dict()
             factor = self.inputs.nbands_factor.value
-            parameters = self.ctx.workchain_scf.outputs.output_parameters.get_dict()
+            parameters = self.ctx.scf_parent_folder.creator.outputs.output_parameters.get_dict()
             nbands = int(parameters['number_of_bands'])
             nelectron = int(parameters['number_of_electrons'])
             nbnd = max(int(0.5 * nelectron * factor), int(0.5 * nelectron) + 4, nbands)
