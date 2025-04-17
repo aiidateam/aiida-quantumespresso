@@ -53,14 +53,21 @@ def test_spin_type(fixture_code, generate_structure):
     structure = generate_structure()
 
     with pytest.raises(NotImplementedError):
-        for spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT]:
-            PwBandsWorkChain.get_builder_from_protocol(code, structure, spin_type=spin_type)
+        PwBandsWorkChain.get_builder_from_protocol(code, structure, spin_type=SpinType.NON_COLLINEAR)
 
     builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, spin_type=SpinType.COLLINEAR)
 
     for namespace in [builder.relax['base'], builder.scf, builder.bands]:
         parameters = namespace['pw']['parameters'].get_dict()
         assert parameters['SYSTEM']['nspin'] == 2
+        assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.1}
+
+    builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, spin_type=SpinType.SPIN_ORBIT)
+    
+    for namespace in [builder.relax['base'], builder.scf, builder.bands]:
+        parameters = namespace['pw']['parameters'].get_dict()  # pylint: disable=no-member
+        assert parameters['SYSTEM']['noncolin'] == True
+        assert parameters['SYSTEM']['lspinorb'] == True
         assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.1}
 
 
