@@ -217,7 +217,7 @@ def get_starting_magnetization_noncolin(
                 angle2[kind.name] = 0.0
             else:  # tuple of 3 float (r, theta, phi)
                 starting_magnetization[kind.name
-                                       ] = 2 * magmom[0] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
+                                       ] = magmom[0] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
                 angle1[kind.name] = magmom[1]
                 angle2[kind.name] = magmom[2]
     try:
@@ -242,7 +242,7 @@ def get_starting_magnetization_noncolin(
         # Self defined myStructureData, read magmom from structure
         for kind in structure.mykinds:
             magmom = kind.get_magmom_coord()
-            starting_magnetization[kind.name] = 2 * magmom[0] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
+            starting_magnetization[kind.name] = magmom[0] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
             angle1[kind.name] = magmom[1]
             angle2[kind.name] = magmom[2]
 
