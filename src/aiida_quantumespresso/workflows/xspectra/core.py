@@ -372,8 +372,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         xs_prod_inputs = XspectraBaseWorkChain.get_protocol_inputs(protocol, inputs.get('xs_prod'))
         xs_prod_parameters = xs_prod_inputs['xspectra']['parameters']
         xs_prod_metadata = xs_prod_inputs['xspectra']['metadata']
-        if options:
-            xs_prod_metadata['options'] = recursive_merge(xs_prod_metadata['options'], options)
+        cls.add_options(xs_prod_metadata, options, xs_code)
 
         abs_atom_marker = inputs['abs_atom_marker']
         xs_prod_parameters['INPUT_XSPECTRA']['xiabs'] = kinds_present.index(abs_atom_marker) + 1
