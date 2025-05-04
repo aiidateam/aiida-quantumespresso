@@ -170,7 +170,8 @@ def get_starting_magnetization(
 
             starting_magnetization[kind.name] = magnetization
     else:
-        # Self defined myStructureData, read magmom from structure
+        # MagneticStructureData, currently implemented in aiida_wannier90_workflows.
+        # Read magmom from structure<MagneticStructureData>
         collinear = structure.is_collin_mag()
         for kind in structure.kinds:
             if collinear:
@@ -239,7 +240,8 @@ def get_starting_magnetization_noncolin(
             angle1[kind.name] = 0.0
             angle2[kind.name] = 0.0
     else:
-        # Self defined myStructureData, read magmom from structure
+        # MagneticStructureData, currently implemented in aiida_wannier90_workflows.
+        # Read magmom from structure<MagneticStructureData>
         for kind in structure.kinds:
             magmom = kind.get_magmom_coord()
             starting_magnetization[kind.name] = magmom[0] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
