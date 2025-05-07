@@ -72,8 +72,7 @@ class Pw2wannier90Calculation(NamelistsCalculation):
             folder.get_subfolder(self._EXTERNAL_PROJECTORS_SUBFOLDER, create=True)
             for key, val in self.inputs['external_projectors_list'].items():
                 calcinfo.remote_copy_list.append((
-                    ext_proj_path.computer.uuid,
-                    os.path.join(ext_proj_path.get_remote_path(), val + '.dat'),
+                    ext_proj_path.computer.uuid, os.path.join(ext_proj_path.get_remote_path(), val + '.dat'),
                     os.path.join(self._EXTERNAL_PROJECTORS_SUBFOLDER, key + '.dat')
                 ))
 

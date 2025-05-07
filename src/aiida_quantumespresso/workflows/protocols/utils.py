@@ -151,10 +151,10 @@ def get_starting_magnetization(
             kind.name: initial_magnetic_moments[kind.name] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
             for kind in structure.kinds
         }
-    
+
     starting_magnetization = {}
     try:
-        has_magmom = structure.has_magmom()
+        structure.has_magmom()
     except AttributeError:
         # Normal StructureData, no magmom in structure
         magnetic_parameters = get_magnetization_parameters()
@@ -177,7 +177,7 @@ def get_starting_magnetization(
             if collinear:
                 magmom = kind.get_magmom_coord()[0]
             else:
-                magmom = kind.get_magmom_coord(coord="cartesian")[2]
+                magmom = kind.get_magmom_coord(coord='cartesian')[2]
             starting_magnetization[kind.name] = magmom / pseudo_family.get_pseudo(element=kind.symbol).z_valence
 
     return starting_magnetization
@@ -217,12 +217,11 @@ def get_starting_magnetization_noncolin(
                 angle1[kind.name] = 0.0
                 angle2[kind.name] = 0.0
             else:  # tuple of 3 float (r, theta, phi)
-                starting_magnetization[kind.name
-                                       ] = magmom[0] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
+                starting_magnetization[kind.name] = magmom[0] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
                 angle1[kind.name] = magmom[1]
                 angle2[kind.name] = magmom[2]
     try:
-        has_magmom = structure.has_magmom()
+        structure.has_magmom()
     except AttributeError:
         # Normal StructureData, no magmom in structure
         magnetic_parameters = get_magnetization_parameters()
