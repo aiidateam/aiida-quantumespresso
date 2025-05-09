@@ -91,7 +91,9 @@ myst_enable_extensions = [
     'colon_fence',
     'substitution',
     'attrs_inline',
-    'substitution'
+    'substitution',
+    'amsmath',
+    'dollarmath',
 ]
 
 myst_substitutions = {
