@@ -109,7 +109,7 @@ myst_substitutions = {
     'PwCalculation': '{class}`~aiida_quantumespresso.calculations.pw.PwCalculation`',
     'SpinType': '{class}`~aiida_quantumespresso.common.types.SpinType`',
     'starting_magnetization': '[`starting_magnetization`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#idm299)',
-    'StructureData': '{class}`~aiida.orm.StructureData',
+    'StructureData': '{class}`~aiida.orm.StructureData`',
     'aiida_hubbard': '[`aiida-hubbard`](https://aiida-hubbard.readthedocs.io/en/latest/)',
     'HubbardStructureData': '{class}`~aiida_quantumespresso.data.hubbard_structure.HubbardStructureData`',
 }
