@@ -51,6 +51,7 @@ intersphinx_mapping = {
     'python': ('https://docs.python.org/3.9', None),
     'aiida': ('https://aiida.readthedocs.io/projects/aiida-core/en/latest/', None),
     'aiida_pseudo': ('http://aiida-pseudo.readthedocs.io/en/latest/', None),
+    'aiida_hubbard': ('http://aiida-hubbard.readthedocs.io/en/latest/', None),
     'pymatgen': ('https://pymatgen.org/', None),
 }
 
@@ -90,7 +91,9 @@ myst_enable_extensions = [
     'colon_fence',
     'substitution',
     'attrs_inline',
-    'substitution'
+    'substitution',
+    'amsmath',
+    'dollarmath',
 ]
 
 myst_substitutions = {
@@ -106,7 +109,9 @@ myst_substitutions = {
     'PwCalculation': '{class}`~aiida_quantumespresso.calculations.pw.PwCalculation`',
     'SpinType': '{class}`~aiida_quantumespresso.common.types.SpinType`',
     'starting_magnetization': '[`starting_magnetization`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#idm299)',
-    'StructureData': '{class}`~aiida.orm.StructureData',
+    'StructureData': '{class}`~aiida.orm.StructureData`',
+    'aiida_hubbard': '[`aiida-hubbard`](https://aiida-hubbard.readthedocs.io/en/latest/)',
+    'HubbardStructureData': '{class}`~aiida_quantumespresso.data.hubbard_structure.HubbardStructureData`',
 }
 
 # -- Options for HTML output ----------------------------------------------
