@@ -15,7 +15,7 @@ jobs:
 
     tests:
 
-        if: github.repository == 'aiidateam/aiida-quantumespresso'  # Prevent running the builds on forks as well
+        if: github.repository == 'aiidateam/aiida-quantumespresso' || github.event != 'schedule' # Prevent running the builds on forks as well
         runs-on: ubuntu-latest
 
         strategy:
@@ -56,7 +56,7 @@ jobs:
             run: pytest tests
 
         -   name: Slack notification
-            if: always() && (steps.install.outcome == 'Failure' || steps.tests.outcome == 'Failure')
+            if: always() && (steps.install.outcome == 'failure' || steps.tests.outcome == 'failure') && env.SLACK_WEBHOOK != null
             uses: rtCamp/action-slack-notify@master
             env:
                 SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
