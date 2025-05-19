@@ -15,12 +15,14 @@ jobs:
 
     tests:
 
-        if: github.repository == 'aiidateam/aiida-quantumespresso' || github.event != 'schedule' # Prevent running the builds on forks as well
+        # Don't run scheduled tests on forks, but allow them on PRs
+        if: github.repository == 'aiidateam/aiida-quantumespresso' || github.event_name != 'schedule'
         runs-on: ubuntu-latest
 
         strategy:
+            fail-fast: true
             matrix:
-                python-version: ['3.9', '3.13']
+                python-version: ['3.9', '3.12']
 
         services:
             postgres:
@@ -53,7 +55,7 @@ jobs:
             id: tests
             env:
                 AIIDA_WARN_v3: 1
-            run: pytest tests
+            run: pytest tests/
 
         -   name: Slack notification
             if: always() && (steps.install.outcome == 'failure' || steps.tests.outcome == 'failure') && env.SLACK_WEBHOOK != null
