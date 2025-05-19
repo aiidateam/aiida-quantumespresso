@@ -10,6 +10,8 @@ on:
         paths:
         - '.github/workflows/nightly.yml'
 
+env:
+    FORCE_COLOR: 1
 
 jobs:
 
