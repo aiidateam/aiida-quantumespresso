@@ -1,11 +1,13 @@
+# -*- coding: utf-8 -*-
 """Tests for CLI commands."""
 from __future__ import annotations
 
 import subprocess
 
-from aiida_quantumespresso.cli import cmd_root
 import click
 import pytest
+
+from aiida_quantumespresso.cli import cmd_root
 
 
 def recurse_commands(command: click.Command, parents: list[str] = None):
