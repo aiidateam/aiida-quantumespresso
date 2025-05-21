@@ -57,7 +57,7 @@ jobs:
             id: tests
             env:
                 AIIDA_WARN_v3: 1
-            run: pytest tests/
+            run: pytest -v tests/
 
         -   name: Slack notification
             if: always() && (steps.install.outcome == 'failure' || steps.tests.outcome == 'failure') && env.SLACK_WEBHOOK != null
