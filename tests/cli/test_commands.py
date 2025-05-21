@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 """Tests for CLI commands."""
 from __future__ import annotations
 
 import subprocess
 
-from aiida_pseudo.cli import cmd_root
+from aiida_quantumespresso.cli import cmd_root
 import click
 import pytest
 
