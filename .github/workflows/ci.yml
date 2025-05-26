@@ -67,7 +67,7 @@ jobs:
         -   name: Run pytest
             env:
                 AIIDA_WARN_v3: 1
-            run: pytest tests
+            run: pytest -sv tests
 
     integration:
 
