@@ -208,8 +208,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         metadata = inputs['pw']['metadata']
 
-        if options:
-            metadata['options'] = recursive_merge(inputs['pw']['metadata']['options'], options)
+        cls.add_options(metadata, options, code)
 
         # pylint: disable=no-member
         builder = cls.get_builder()
