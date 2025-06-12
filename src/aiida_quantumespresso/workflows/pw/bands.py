@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """Workchain to compute a band structure for a given structure using Quantum ESPRESSO pw.x."""
 from aiida import orm
-from aiida.common import AttributeDict
+from aiida.common import AttributeDict, exceptions
 from aiida.engine import ToContext, WorkChain, if_
+from aiida.orm import StructureData as LegacyStructureData
+from aiida.plugins import DataFactory
 
 from aiida_quantumespresso.calculations.functions.seekpath_structure_analysis import seekpath_structure_analysis
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
@@ -10,6 +12,13 @@ from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
 from aiida_quantumespresso.workflows.pw.relax import PwRelaxWorkChain
 
 from ..protocols.utils import ProtocolMixin
+
+try:
+    StructureData = DataFactory('atomistic.structure')
+except exceptions.MissingEntryPointError:
+    structures_classes = (LegacyStructureData,)
+else:
+    structures_classes = (LegacyStructureData, StructureData)
 
 
 def validate_inputs(inputs, ctx=None):  # pylint: disable=unused-argument
@@ -61,7 +70,7 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         spec.expose_inputs(PwBaseWorkChain, namespace='bands',
             exclude=('clean_workdir', 'pw.structure', 'pw.kpoints', 'pw.kpoints_distance', 'pw.parent_folder'),
             namespace_options={'help': 'Inputs for the `PwBaseWorkChain` for the BANDS calculation.'})
-        spec.input('structure', valid_type=orm.StructureData, help='The inputs structure.')
+        spec.input('structure', valid_type=structures_classes, help='The inputs structure.')
         spec.input('clean_workdir', valid_type=orm.Bool, default=lambda: orm.Bool(False),
             help='If `True`, work directories of all called calculation will be cleaned at the end of execution.')
         spec.input('nbands_factor', valid_type=orm.Float, required=False,
@@ -97,7 +106,7 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
             message='The scf PwBasexWorkChain sub process failed')
         spec.exit_code(403, 'ERROR_SUB_PROCESS_FAILED_BANDS',
             message='The bands PwBasexWorkChain sub process failed')
-        spec.output('primitive_structure', valid_type=orm.StructureData,
+        spec.output('primitive_structure', valid_type=structures_classes,
             required=False,
             help='The normalized and primitivized structure for which the bands are computed.')
         spec.output('seekpath_parameters', valid_type=orm.Dict,
