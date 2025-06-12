@@ -103,3 +103,29 @@ def test_options(fixture_code, generate_structure):
         builder.bands.pw.metadata,  # pylint: disable=no-member
     ):
         assert subspace['options']['queue_name'] == queue_name, subspace
+
+
+def test_pop_none_overrides(fixture_code, generate_structure):
+    """Test popping `None` input overrides specified in ``get_builder_from_protocol()`` method."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure()
+
+    overrides = {'relax': {'base_final_scf': None}}
+    builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)
+
+    assert 'base_final_scf' not in builder['relax']  # pylint: disable=no-member
+
+    overrides = {'relax': None}
+    builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)
+
+    assert 'relax' not in builder  # pylint: disable=no-member
+
+    overrides = {'relax': {'base': {'pw': {'parameters': {'SYSTEM': {'ecutwfc': None}}}}}}
+    builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)
+
+    assert 'ecutwfc' in builder['relax']['base']['pw']['parameters']['SYSTEM']  # pylint: disable=no-member
+
+    overrides = {'relax': {'base': {'pw': {'parameters': None}}}}
+    builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)
+
+    assert 'parameters' not in builder['relax']['base']['pw']  # pylint: disable=no-member
