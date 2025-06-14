@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """Utility class and functions for HubbardStructureData."""
 # pylint: disable=no-name-in-module, invalid-name
-from typing import List, Literal, Tuple
+from typing import Annotated, List, Literal, Tuple
 
-from pydantic import BaseModel, conint, constr, field_validator
+from pydantic import BaseModel, Field, StringConstraints, field_validator
 
 __all__ = ('HubbardParameters', 'Hubbard')
 
@@ -18,19 +18,36 @@ class HubbardParameters(BaseModel):
         N = quantum number (1,2,3,...); L = orbital letter (s,p,d,f,g,h)
     """
 
-    atom_index: conint(strict=True, ge=0)
+    atom_index: Annotated[int, Field(strict=True, ge=0)]
     """Atom index in the abstract structure."""
 
-    atom_manifold: constr(strip_whitespace=True, to_lower=True, min_length=2, max_length=5)
+    atom_manifold: Annotated[str,
+                             StringConstraints(
+                                 strip_whitespace=True,
+                                 to_lower=True,
+                                 min_length=2,
+                                 max_length=5,
+                             ),
+                             ]
     """Atom manifold (syntax is `3d`, `3d-2p`)."""
 
-    neighbour_index: conint(strict=True, ge=0)
+    neighbour_index: Annotated[int, Field(strict=True, ge=0)]
     """Neighbour index in the abstract structure."""
 
-    neighbour_manifold: constr(strip_whitespace=True, to_lower=True, min_length=2, max_length=5)
+    neighbour_manifold: Annotated[str,
+                                  StringConstraints(
+                                      strip_whitespace=True,
+                                      to_lower=True,
+                                      min_length=2,
+                                      max_length=5,
+                                  ),
+                                  ]
     """Atom manifold (syntax is `3d`, `3d-2p`)."""
 
-    translation: Tuple[conint(strict=True), conint(strict=True), conint(strict=True)]
+    translation: Tuple[Annotated[int, Field(strict=True)],
+                       Annotated[int, Field(strict=True)],
+                       Annotated[int, Field(strict=True)],
+                       ]
     """Translation vector referring to the neighbour atom, (3,) shape list of ints."""
 
     value: float
