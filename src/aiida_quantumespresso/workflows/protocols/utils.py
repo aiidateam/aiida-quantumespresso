@@ -195,10 +195,6 @@ def get_starting_magnetization_noncolin(
     :param initial_magnetic_moments: dictionary mapping each kind in the structure to its magnetic moment.
     :returns: dictionary of starting magnetizations.
     """
-    # try:
-    #     structure.mykinds
-    # except AttributeError:
-    #     raise TypeError(f"structure<{structure.pk}> do not have magmom")
     starting_magnetization = {}
     angle1 = {}
     angle2 = {}
