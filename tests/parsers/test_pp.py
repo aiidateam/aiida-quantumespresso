@@ -125,7 +125,11 @@ def test_pp_default_1d(
     entry_point_calc_job = 'quantumespresso.pp'
     entry_point_parser = 'quantumespresso.pp'
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'default_1d', generate_inputs_1d)
+    attributes = {'keep_data_files': False, 'parse_data_files': True}
+
+    node = generate_calc_job_node(
+        entry_point_calc_job, fixture_localhost, 'default_1d', generate_inputs_1d, attributes=attributes
+    )
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -157,9 +161,13 @@ def test_pp_default_1d_spherical(
     """Test a default `pp.x` calculation producing a 1D data set with spherical averaging."""
     entry_point_calc_job = 'quantumespresso.pp'
     entry_point_parser = 'quantumespresso.pp'
-
+    attributes = {'keep_data_files': False, 'parse_data_files': True}
     node = generate_calc_job_node(
-        entry_point_calc_job, fixture_localhost, 'default_1d_spherical', generate_inputs_1d_spherical
+        entry_point_calc_job,
+        fixture_localhost,
+        'default_1d_spherical',
+        generate_inputs_1d_spherical,
+        attributes=attributes
     )
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
@@ -200,8 +208,11 @@ def test_pp_default_2d(
     """Test a default `pp.x` calculation producing a 2D data set."""
     entry_point_calc_job = 'quantumespresso.pp'
     entry_point_parser = 'quantumespresso.pp'
+    attributes = {'keep_data_files': False, 'parse_data_files': True}
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'default_2d', generate_inputs_2d)
+    node = generate_calc_job_node(
+        entry_point_calc_job, fixture_localhost, 'default_2d', generate_inputs_2d, attributes=attributes
+    )
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -237,8 +248,11 @@ def test_pp_default_polar(
     """Test a default `pp.x` calculation producing a polar coordinates data set."""
     entry_point_calc_job = 'quantumespresso.pp'
     entry_point_parser = 'quantumespresso.pp'
+    attributes = {'keep_data_files': False, 'parse_data_files': True}
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'default_polar', generate_inputs_polar)
+    node = generate_calc_job_node(
+        entry_point_calc_job, fixture_localhost, 'default_polar', generate_inputs_polar, attributes=attributes
+    )
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -267,8 +281,11 @@ def test_pp_default_3d(
     """Test a default `pp.x` calculation producing a 3D data set."""
     entry_point_calc_job = 'quantumespresso.pp'
     entry_point_parser = 'quantumespresso.pp'
+    attributes = {'keep_data_files': False, 'parse_data_files': True}
 
-    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, 'default_3d', generate_inputs_3d)
+    node = generate_calc_job_node(
+        entry_point_calc_job, fixture_localhost, 'default_3d', generate_inputs_3d, attributes=attributes
+    )
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -297,12 +314,16 @@ def test_pp_default_3d(
     })
 
 
-def test_pp_default_3d_keep_plot_file(generate_calc_job_node, generate_parser, generate_inputs_3d, tmpdir):
-    """Test a `pp.x` calculation where `keep_plot_file=False` meaning files will be parsed from temporary directory."""
+def test_pp_default_3d_keep_data_files(generate_calc_job_node, generate_parser, generate_inputs_3d, tmpdir):
+    """Test a `pp.x` calculation where `keep_data_files=False` meaning files will be parsed from temporary directory."""
     entry_point_calc_job = 'quantumespresso.pp'
     entry_point_parser = 'quantumespresso.pp'
 
-    attributes = {'options': {'keep_plot_file': False}, 'retrieve_temporary_list': ['aiida.fileout']}
+    attributes = {
+        'keep_data_files': False,
+        'parse_data_files': True,
+        'retrieve_temporary_list': ['aiida.fileout'],
+    }
     node = generate_calc_job_node(
         entry_point_calc_job,
         test_name='default_3d',
@@ -320,12 +341,36 @@ def test_pp_default_3d_keep_plot_file(generate_calc_job_node, generate_parser, g
     assert len(results['output_data'].get_arraynames()) == 4
 
 
+def test_pp_default_3d_parse_data_files(generate_calc_job_node, generate_parser, generate_inputs_3d, tmpdir):
+    """Test a `pp.x` calculation where `parse_data_files=False`, so data files won't be parsed."""
+    entry_point_calc_job = 'quantumespresso.pp'
+    entry_point_parser = 'quantumespresso.pp'
+
+    attributes = {'keep_data_files': False, 'parse_data_files': False}
+    node = generate_calc_job_node(
+        entry_point_calc_job,
+        test_name='default_3d',
+        inputs=generate_inputs_3d,
+        attributes=attributes,
+    )
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False, retrieved_temporary_folder=tmpdir)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_parameters' in results
+    assert 'output_data' not in results
+
+
 def test_pp_default_3d_multiple(generate_calc_job_node, generate_parser, generate_inputs_3d):
     """Test a default `pp.x` calculation producing multiple files in 3D format."""
     entry_point_calc_job = 'quantumespresso.pp'
     entry_point_parser = 'quantumespresso.pp'
+    attributes = {'keep_data_files': False, 'parse_data_files': True}
 
-    node = generate_calc_job_node(entry_point_calc_job, test_name='default_3d_multiple', inputs=generate_inputs_3d)
+    node = generate_calc_job_node(
+        entry_point_calc_job, test_name='default_3d_multiple', inputs=generate_inputs_3d, attributes=attributes
+    )
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
@@ -341,70 +386,70 @@ def test_pp_default_3d_multiple(generate_calc_job_node, generate_parser, generat
         assert len(node.get_arraynames()) == 4
 
 
-def test_pp_default_3d_failed_missing(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_3d):
-    """Test a default `pp.x` calculation where no files are retrieved, or StdOut is missing."""
-    entry_point_calc_job = 'quantumespresso.pp'
-    entry_point_parser = 'quantumespresso.pp'
-
-    node = generate_calc_job_node(
-        entry_point_calc_job, fixture_localhost, 'default_3d_failed_missing', generate_inputs_3d
-    )
-    parser = generate_parser(entry_point_parser)
-    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
-
-    assert calcfunction.is_finished, calcfunction.exception
-    assert calcfunction.is_failed, calcfunction.exit_status
-    # This exception always fires first, although specifically it is for a missing StdOut file
-    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_STDOUT_MISSING.status
-
-
-def test_pp_default_3d_failed_missing_data(
-    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_3d
+def test_pp_default_3d_ldos(
+    generate_calc_job_node,
+    generate_parser,
 ):
-    """Test a default `pp.x` calculation where the aiida.fileout file is missing."""
-    entry_point_calc_job = 'quantumespresso.pp'
-    entry_point_parser = 'quantumespresso.pp'
+    """Test a default `pp.x` calculation producing a 3D data set."""
 
     node = generate_calc_job_node(
-        entry_point_calc_job, fixture_localhost, 'default_3d_failed_missing_data', generate_inputs_3d
+        entry_point_name='quantumespresso.pp',
+        test_name='default_3d_ldos',
+        inputs={
+            'parent_folder': orm.FolderData().store(),
+            'parameters': orm.Dict({
+                'INPUTPP': {
+                    'plot_num': 3
+                },
+                'PLOT': {
+                    'iflag': 3,
+                }
+            })
+        },
+        attributes={
+            'keep_data_files': False,
+            'parse_data_files': True
+        }
     )
-    parser = generate_parser(entry_point_parser)
+    parser = generate_parser('quantumespresso.pp')
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_parameters' in results
+    assert 'output_data_multiple' in results
+
+    # raise ValueError(results)
+    # Since the actual parsing of the file content itself is done in `test_pp_default_3d` we will not do it here again
+    for key in ['001', '002']:
+        assert key in results['output_data_multiple']
+        node = results['output_data_multiple'][key]
+        assert len(node.get_arraynames()) == 4
+
+
+@pytest.mark.parametrize(
+    'test_name,exit_code', (
+        ('default_3d_failed_missing', 'ERROR_OUTPUT_STDOUT_MISSING'),
+        ('default_3d_failed_missing_data', 'ERROR_OUTPUT_DATAFILE_MISSING'),
+        ('default_3d_failed_interrupted', 'ERROR_OUTPUT_STDOUT_INCOMPLETE'),
+        ('default_3d_failed_format', 'ERROR_OUTPUT_DATAFILE_PARSE'),
+    )
+)
+def test_pp_default_3d_failed(generate_calc_job_node, generate_parser, generate_inputs_3d, test_name, exit_code):
+    """Test the default `pp.x` calculation failures."""
+
+    node = generate_calc_job_node(
+        entry_point_name='quantumespresso.pp',
+        test_name=test_name,
+        inputs=generate_inputs_3d,
+        attributes={
+            'keep_data_files': False,
+            'parse_data_files': True
+        }
+    )
+    parser = generate_parser('quantumespresso.pp')
     _, calcfunction = parser.parse_from_node(node, store_provenance=False)
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_failed, calcfunction.exit_status
-    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_DATAFILE_MISSING.status
-
-
-def test_pp_default_3d_failed_interrupted(
-    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_3d
-):
-    """Test a default `pp.x` calculation where the StdOut file is present but incomplete."""
-    entry_point_calc_job = 'quantumespresso.pp'
-    entry_point_parser = 'quantumespresso.pp'
-
-    node = generate_calc_job_node(
-        entry_point_calc_job, fixture_localhost, 'default_3d_failed_interrupted', generate_inputs_3d
-    )
-    parser = generate_parser(entry_point_parser)
-    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
-
-    assert calcfunction.is_finished, calcfunction.exception
-    assert calcfunction.is_failed, calcfunction.exit_status
-    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE.status
-
-
-def test_pp_default_3d_failed_format(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs_3d):
-    """Test a default `pp.x` calculation where an unsupported output file format is used."""
-    entry_point_calc_job = 'quantumespresso.pp'
-    entry_point_parser = 'quantumespresso.pp'
-
-    node = generate_calc_job_node(
-        entry_point_calc_job, fixture_localhost, 'default_3d_failed_format', generate_inputs_3d
-    )
-    parser = generate_parser(entry_point_parser)
-    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
-
-    assert calcfunction.is_finished, calcfunction.exception
-    assert calcfunction.is_failed, calcfunction.exit_status
-    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_DATAFILE_PARSE.status
+    assert calcfunction.exit_status == node.process_class.exit_codes[exit_code].status

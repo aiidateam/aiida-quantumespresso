@@ -72,19 +72,17 @@ def launch_calculation(
         parameters['INPUTPP']['scdm_proj'] = True
         parameters['INPUTPP']['scdm_entanglement'] = scdm_mode
 
-    # In this command-line example, we always retrieve .amn, .mmn and .eig,
-    # but we never retrieve the UNK files that are big
-    settings = {'ADDITIONAL_RETRIEVE_LIST': ['*.amn', '*.mmn', '*.eig']}
-
     inputs = {
         'code': code,
         'parent_folder': parent_folder,
         'nnkp_file': nnkp_file,
         'parameters': Dict(parameters),
-        'settings': Dict(settings),
         'metadata': {
             'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
         }
     }
+    # In this command-line example, we always retrieve .amn, .mmn and .eig,
+    # but we never retrieve the UNK files that are big
+    inputs['metadata'].update({'additional_retrieve_list': ['*.amn', '*.mmn', '*.eig']})
 
     launch.launch_process(CalculationFactory('quantumespresso.pw2wannier90'), daemon, **inputs)

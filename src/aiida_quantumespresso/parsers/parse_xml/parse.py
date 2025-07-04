@@ -295,7 +295,9 @@ def parse_xml_post_6_2(xml):
 
         num_k_points = band_structure['nks']
         num_electrons = band_structure['nelec']
-        num_atomic_wfc = band_structure['num_of_atomic_wfc']
+
+        # In schema v240411 (QE v7.3.1), the `number_of_atomic_wfc` is moved to the `atomic_structure` tag as an attribute
+        num_atomic_wfc = band_structure.get('num_of_atomic_wfc', None) or outputs['atomic_structure']['@num_of_atomic_wfc']
         num_bands = band_structure.get('nbnd', None)
         num_bands_up = band_structure.get('nbnd_up', None)
         num_bands_down = band_structure.get('nbnd_dw', None)

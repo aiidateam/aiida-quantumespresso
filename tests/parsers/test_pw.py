@@ -97,15 +97,19 @@ def test_pw_default_no_xml(
     })
 
 
-@pytest.mark.parametrize('xml_format', [
-    '190304',
-    '191206',
-    '200420',
-    '210716',
-    '211101',
-    '220603',
-    '230310',
-])
+@pytest.mark.parametrize(
+    'xml_format', [
+        '190304',
+        '191206',
+        '200420',
+        '210716',
+        '211101',
+        '220603',
+        '230310',
+        '240411',
+        '241015',
+    ]
+)
 def test_pw_default_xml(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression, xml_format
 ):

@@ -41,10 +41,10 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
 
     Kpoints:
         There are three options; specify either an existing `KpointsData` through `bands_kpoints`, or specify the
-        `bands_kpoint_distance`, or specify neither. For the former those exact kpoints will be used for the BANDS step.
-        In the two other cases, the structure will first be normalized using SeekPath and the path along high-symmetry
-        k-points will be generated on that structure. The distance between kpoints for the path will be equal to that
-        of `bands_kpoints_distance` or the SeekPath default if not specified.
+        `bands_kpoints_distance`, or specify neither. For the former those exact kpoints will be used for the BANDS
+        step. In the two other cases, the structure will first be normalized using SeekPath and the path along
+        high-symmetry k-points will be generated on that structure. The distance between kpoints for the path will be
+        equal to that of `bands_kpoints_distance` or the SeekPath default if not specified.
     """
 
     @classmethod

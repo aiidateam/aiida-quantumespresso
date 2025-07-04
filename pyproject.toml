@@ -14,16 +14,16 @@ classifiers = [
     'Framework :: AiiDA',
     'License :: OSI Approved :: MIT License',
     'Programming Language :: Python',
-    'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
 ]
 keywords = ['aiida', 'workflows']
-requires-python = '>=3.8'
+requires-python = '>=3.9'
 dependencies = [
     'aiida_core[atomic_tools]~=2.3',
-    'aiida-pseudo~=1.1',
+    'aiida-pseudo>=1.7.2',
     'click~=8.0',
     'importlib_resources',
     'jsonschema',
@@ -47,8 +47,8 @@ docs = [
     'sphinx-click~=4.4.0',
     'sphinx-design~=0.4.1',
     'sphinxcontrib-details-directive~=0.1.0',
-    'sphinx-autoapi~=3.0',
-    'myst_parser~=1.0.0',
+    'sphinx-autoapi~=3.0.0',
+    'myst-parser~=3.0.0',
 ]
 pre-commit = [
     'pre-commit~=2.17',
@@ -86,6 +86,7 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 'quantumespresso.seekpath_structure_analysis' = 'aiida_quantumespresso.calculations.functions.seekpath_structure_analysis:seekpath_structure_analysis'
 'quantumespresso.xspectra' = 'aiida_quantumespresso.calculations.xspectra:XspectraCalculation'
 'quantumespresso.open_grid' = 'aiida_quantumespresso.calculations.open_grid:OpenGridCalculation'
+'quantumespresso.bands' = 'aiida_quantumespresso.calculations.bands:BandsCalculation'
 
 [project.entry-points.'aiida.data']
 'quantumespresso.force_constants' = 'aiida_quantumespresso.data.force_constants:ForceConstantsData'
@@ -105,6 +106,7 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 'quantumespresso.pw2wannier90' = 'aiida_quantumespresso.parsers.pw2wannier90:Pw2wannier90Parser'
 'quantumespresso.xspectra' = 'aiida_quantumespresso.parsers.xspectra:XspectraParser'
 'quantumespresso.open_grid' = 'aiida_quantumespresso.parsers.open_grid:OpenGridParser'
+'quantumespresso.bands' = 'aiida_quantumespresso.parsers.bands:BandsParser'
 
 [project.entry-points.'aiida.tools.calculations']
 'quantumespresso.pw' = 'aiida_quantumespresso.tools.calculations.pw:PwCalculationTools'
@@ -125,6 +127,7 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 'quantumespresso.xps' = 'aiida_quantumespresso.workflows.xps:XpsWorkChain'
 'quantumespresso.xspectra.core' = 'aiida_quantumespresso.workflows.xspectra.core:XspectraCoreWorkChain'
 'quantumespresso.xspectra.crystal' = 'aiida_quantumespresso.workflows.xspectra.crystal:XspectraCrystalWorkChain'
+'quantumespresso.bands.base' = 'aiida_quantumespresso.workflows.bands.base:BandsBaseWorkChain'
 
 [tool.flit.module]
 name = 'aiida_quantumespresso'

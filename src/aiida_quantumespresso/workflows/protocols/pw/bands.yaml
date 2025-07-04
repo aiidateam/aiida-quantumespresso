@@ -17,11 +17,11 @@ default_inputs:
                     diagonalization: paro
                     diago_full_acc: True
                     startingpot: file
-default_protocol: moderate
+default_protocol: balanced
 protocols:
-    moderate:
+    balanced:
         description: 'Protocol to perform a band structure calculation at normal precision at moderate computational cost.'
-    precise:
+    stringent:
         description: 'Protocol to perform a band structure calculation at high precision at higher computational cost.'
         bands_kpoints_distance: 0.015
     fast:

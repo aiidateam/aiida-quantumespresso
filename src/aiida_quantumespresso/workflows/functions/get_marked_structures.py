@@ -1,9 +1,16 @@
 # -*- coding: utf-8 -*-
 """CalcFunction to create structures with a marked atom for each site in a list."""
+import warnings
+
 from aiida import orm
 from aiida.common import ValidationError
 from aiida.engine import calcfunction
 from aiida.orm.nodes.data.structure import Kind, Site, StructureData
+
+warnings.warn(
+    'This module is deprecated and will be removed soon as part of migrating XAS and XPS workflows to a new repository.'
+    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.', FutureWarning
+)
 
 
 @calcfunction

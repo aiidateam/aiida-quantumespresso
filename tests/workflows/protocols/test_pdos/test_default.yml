@@ -9,7 +9,7 @@ dos:
       withmpi: true
   parameters:
     DOS:
-      DeltaE: 0.02
+      DeltaE: 0.01
 nscf:
   kpoints_distance: 0.1
   kpoints_force_parity: false
@@ -39,7 +39,7 @@ nscf:
         ecutrho: 240.0
         ecutwfc: 30.0
         nosym: true
-        occupations: tetrahedra
+        occupations: tetrahedra_opt
     pseudos:
       Si: Si<md5=57fa15d98af99972c7b7aa5c179b0bb8>
 projwfc:
@@ -52,7 +52,7 @@ projwfc:
       withmpi: true
   parameters:
     PROJWFC:
-      DeltaE: 0.02
+      DeltaE: 0.01
 scf:
   kpoints_distance: 0.15
   kpoints_force_parity: false
@@ -79,7 +79,7 @@ scf:
         electron_maxstep: 80
         mixing_beta: 0.4
       SYSTEM:
-        degauss: 0.01
+        degauss: 0.02
         ecutrho: 240.0
         ecutwfc: 30.0
         nosym: false

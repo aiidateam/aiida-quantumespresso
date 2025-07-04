@@ -5,22 +5,32 @@ Uses QuantumESPRESSO pw.x and xspectra.x, requires ``aiida-shell`` to run ``upf2
 """
 import pathlib
 from typing import Optional, Union
+import warnings
 
 from aiida import orm
 from aiida.common import AttributeDict
 from aiida.engine import ToContext, WorkChain, append_, if_
 from aiida.orm.nodes.data.base import to_aiida_type
-from aiida.plugins import CalculationFactory, WorkflowFactory
+from aiida.plugins import CalculationFactory, DataFactory, WorkflowFactory
 import yaml
 
-from aiida_quantumespresso.calculations.functions.xspectra.get_powder_spectrum import get_powder_spectrum
-from aiida_quantumespresso.calculations.functions.xspectra.merge_spectra import merge_spectra
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 from aiida_quantumespresso.workflows.protocols.utils import ProtocolMixin, recursive_merge
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
-XspectraBaseWorkChain = WorkflowFactory('quantumespresso.xspectra.base')
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore')
+    from aiida_quantumespresso.calculations.functions.xspectra.get_powder_spectrum import get_powder_spectrum
+    from aiida_quantumespresso.calculations.functions.xspectra.merge_spectra import merge_spectra
+    XspectraBaseWorkChain = WorkflowFactory('quantumespresso.xspectra.base')
+
+HubbardStructureData = DataFactory('quantumespresso.hubbard_structure')
+
+warnings.warn(
+    'This module is deprecated and will be removed soon as part of migrating XAS and XPS workflows to a new repository.'
+    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.', FutureWarning
+)
 
 
 class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
@@ -101,7 +111,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         spec.inputs.validator = cls.validate_inputs
         spec.input(
             'structure',
-            valid_type=orm.StructureData,
+            valid_type=(orm.StructureData, HubbardStructureData),
             help=(
                 'Structure to be used for calculation, with at least one site containing the `abs_atom_marker` '
                 'as the kind label.'
@@ -348,8 +358,8 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         )
 
         pw_inputs['pw']['parameters'] = pw_params
-
         pw_args = (pw_code, structure, protocol)
+
         scf = PwBaseWorkChain.get_builder_from_protocol(*pw_args, overrides=pw_inputs, options=options, **kwargs)
 
         scf.pop('clean_workdir', None)
@@ -368,12 +378,16 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         abs_atom_marker = inputs['abs_atom_marker']
         xs_prod_parameters['INPUT_XSPECTRA']['xiabs'] = kinds_present.index(abs_atom_marker) + 1
         if core_hole_pseudos:
+            abs_element_kinds = []
             for kind in structure.kinds:
                 if kind.name == abs_atom_marker:
                     abs_element = kind.symbol
-
+            for kind in structure.kinds:  # run a second pass to check for multiple kinds of the same absorbing element
+                if kind.symbol == abs_element and kind.name != abs_atom_marker:
+                    abs_element_kinds.append(kind.name)
             builder.scf.pw.pseudos[abs_atom_marker] = core_hole_pseudos[abs_atom_marker]
-            builder.scf.pw.pseudos[abs_element] = core_hole_pseudos[abs_element]
+            for kind_name in abs_element_kinds:
+                builder.scf.pw.pseudos[kind_name] = core_hole_pseudos[abs_element]
 
         builder.xs_prod.xspectra.code = xs_code
         builder.xs_prod.xspectra.parameters = orm.Dict(xs_prod_parameters)

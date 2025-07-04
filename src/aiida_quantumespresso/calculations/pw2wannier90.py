@@ -16,7 +16,7 @@ class Pw2wannier90Calculation(NamelistsCalculation):
     _blocked_keywords = [('INPUTPP', 'outdir', NamelistsCalculation._OUTPUT_SUBFOLDER),
                          ('INPUTPP', 'prefix', NamelistsCalculation._PREFIX), ('INPUTPP', 'seedname', _SEEDNAME)]
     # By default we do not download anything else than aiida.out. One can add the files
-    # _SEEDNAME.amn/.nnm/.eig to inputs.settings['ADDITIONAL_RETRIEVE_LIST'] to retrieve them.
+    # _SEEDNAME.amn/.nnm/.eig to `CalcJob.metadata.options.additional_retrieve_list` to retrieve them.
     _internal_retrieve_list = []
     _default_parser = 'quantumespresso.pw2wannier90'
 

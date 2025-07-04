@@ -3,23 +3,33 @@
 
 Uses QuantumESPRESSO pw.x and xspectra.x.
 """
+import warnings
+
 from aiida import orm
-from aiida.common import AttributeDict, ValidationError
+from aiida.common import AttributeDict
 from aiida.engine import ToContext, WorkChain, if_
 from aiida.orm import UpfData as aiida_core_upf
 from aiida.plugins import CalculationFactory, DataFactory, WorkflowFactory
 from aiida_pseudo.data.pseudo import UpfData as aiida_pseudo_upf
 
-from aiida_quantumespresso.calculations.functions.xspectra.get_spectra_by_element import get_spectra_by_element
+from aiida_quantumespresso.utils.hubbard import HubbardStructureData
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 from aiida_quantumespresso.workflows.protocols.utils import ProtocolMixin, recursive_merge
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
 PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 PwRelaxWorkChain = WorkflowFactory('quantumespresso.pw.relax')
-XspectraBaseWorkChain = WorkflowFactory('quantumespresso.xspectra.base')
-XspectraCoreWorkChain = WorkflowFactory('quantumespresso.xspectra.core')
 XyData = DataFactory('core.array.xy')
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore')
+    from aiida_quantumespresso.calculations.functions.xspectra.get_spectra_by_element import get_spectra_by_element
+    XspectraBaseWorkChain = WorkflowFactory('quantumespresso.xspectra.base')
+    XspectraCoreWorkChain = WorkflowFactory('quantumespresso.xspectra.core')
+
+warnings.warn(
+    'This module is deprecated and will be removed soon as part of migrating XAS and XPS workflows to a new repository.'
+    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.', FutureWarning
+)
 
 
 class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
@@ -171,6 +181,19 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             required=False,
             help=('Input namespace to provide core wavefunction inputs for each element. Must follow the format: '
                    '``core_wfc_data__{symbol} = {node}``')
+        )
+        spec.input_namespace(
+            'symmetry_data',
+            valid_type=(orm.Dict, orm.Int),
+            dynamic=True,
+            required=False,
+            help=(
+                'Input namespace to define equivalent sites and spacegroup number for the system. If defined, will '
+                'skip symmetry analysis and structure standardization. Use *only* if symmetry data are known '
+                'for certain. Requires ``spacegroup_number`` (Int) and ``equivalent_sites_data`` (Dict) to be '
+                'defined separately. All keys in `equivalent_sites_data` must be formatted as "site_<site_index>". '
+                'See docstring of `get_xspectra_structures` for more information about inputs.'
+            )
         )
         spec.inputs.validator = cls.validate_inputs
         spec.outline(
@@ -369,7 +392,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
 
 
     @staticmethod
-    def validate_inputs(inputs, _):
+    def validate_inputs(inputs, _): # pylint: disable=too-many-return-statements
         """Validate the inputs before launching the WorkChain."""
         structure = inputs['structure']
         kinds_present = [kind.name for kind in structure.kinds]
@@ -381,54 +404,92 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             if element not in elements_present:
                 extra_elements.append(element)
         if len(extra_elements) > 0:
-            raise ValidationError(
+            return (
                 f'Some elements in ``elements_list`` {extra_elements} do not exist in the'
                 f' structure provided {elements_present}.'
             )
 
         abs_atom_marker = inputs['abs_atom_marker'].value
         if abs_atom_marker in kinds_present:
-            raise ValidationError(
+            return (
                 f'The marker given for the absorbing atom ("{abs_atom_marker}") matches an existing Kind in the '
                 f'input structure ({kinds_present}).'
             )
 
         if not inputs['core']['get_powder_spectrum'].value:
-            raise ValidationError(
+            return (
                 'The ``get_powder_spectrum`` input for the XspectraCoreWorkChain namespace must be ``True``.'
             )
 
         if 'upf2plotcore_code' not in inputs and 'core_wfc_data' not in inputs:
-            raise ValidationError(
+            return (
                 'Neither a ``Code`` node for upf2plotcore.sh or a set of ``core_wfc_data`` were provided.'
             )
 
         if 'core_wfc_data' in inputs:
             core_wfc_data_list = sorted(inputs['core_wfc_data'].keys())
             if core_wfc_data_list != absorbing_elements_list:
-                raise ValidationError(
+                return (
                     f'The ``core_wfc_data`` provided ({core_wfc_data_list}) does not match the list of'
                     f' absorbing elements ({absorbing_elements_list})'
                 )
-            else:
-                empty_core_wfc_data = []
-                for key, value in inputs['core_wfc_data'].items():
-                    header_line = value.get_content()[:40]
-                    try:
-                        num_core_states = int(header_line.split(' ')[5])
-                    except Exception as exc:
-                        raise ValidationError(
-                            'The core wavefunction data file is not of the correct format'
-                        ) from exc
-                    if num_core_states == 0:
-                        empty_core_wfc_data.append(key)
-                if len(empty_core_wfc_data) > 0:
-                    raise ValidationError(
-                        f'The ``core_wfc_data`` provided for elements {empty_core_wfc_data} do not contain '
-                        'any wavefunction data.'
-                    )
+            empty_core_wfc_data = []
+            for key, value in inputs['core_wfc_data'].items():
+                header_line = value.get_content()[:40]
+                try:
+                    num_core_states = int(header_line.split(' ')[5])
+                except: # pylint: disable=bare-except
+                    return (
+                        'The core wavefunction data file is not of the correct format'
+                    ) # pylint: enable=bare-except
+                if num_core_states == 0:
+                    empty_core_wfc_data.append(key)
+            if len(empty_core_wfc_data) > 0:
+                return (
+                    f'The ``core_wfc_data`` provided for elements {empty_core_wfc_data} do not contain '
+                    'any wavefunction data.'
+                )
+
+        if 'symmetry_data' in inputs:
+            spacegroup_number = inputs['symmetry_data']['spacegroup_number'].value
+            equivalent_sites_data = inputs['symmetry_data']['equivalent_sites_data'].get_dict()
+            if spacegroup_number <= 0 or spacegroup_number >= 231:
+                return (
+                    f'Input spacegroup number ({spacegroup_number}) outside of valid range (1-230).'
+                )
+
+            input_elements = []
+            required_keys = sorted(['symbol', 'multiplicity', 'kind_name', 'site_index'])
+            invalid_entries = []
+            # We check three things here: (1) are there any site indices which are outside of the possible
+            # range of site indices (2) do we have all the required keys for each entry,
+            # and (3) is there a mismatch between `absorbing_elements_list` and the elements specified
+            # in the entries of `equivalent_sites_data`. These checks are intended only to avoid a crash.
+            # We assume otherwise that the user knows what they're doing and has set everything else
+            # to their preferences correctly.
+            for site_label, value in equivalent_sites_data.items():
+                if not set(required_keys).issubset(set(value.keys())) :
+                    invalid_entries.append(site_label)
+                elif value['symbol'] not in input_elements:
+                    input_elements.append(value['symbol'])
+                    if value['site_index'] < 0 or value['site_index'] >= len(structure.sites):
+                        return (
+                            f'The site index for {site_label} ({value["site_index"]}) is outside the range of '
+                            + f'sites within the structure (0-{len(structure.sites) -1}).'
+                        )
+
+            if len(invalid_entries) != 0:
+                return (
+                    f'The required keys ({required_keys}) were not found in the following entries: {invalid_entries}'
+                )
+
+            sorted_input_elements = sorted(input_elements)
+            if sorted_input_elements != absorbing_elements_list:
+                return (f'Elements defined for sites in `equivalent_sites_data` ({sorted_input_elements}) '
+                 f'do not match the list of absorbing elements ({absorbing_elements_list})')
 
 
+    # pylint: enable=too-many-return-statements
     def setup(self):
         """Set required context variables."""
         if 'core_wfc_data' in self.inputs.keys():
@@ -481,8 +542,18 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             for key, node in optional_cell_prep.items():
                 inputs[key] = node
 
+        if isinstance(self.inputs.structure, HubbardStructureData):
+            # This must be False in the case of HubbardStructureData, otherwise get_xspectra_structures will except
+            inputs['standardize_structure'] = orm.Bool(False)
+
         if 'spglib_settings' in self.inputs:
             inputs['spglib_settings'] = self.inputs.spglib_settings
+
+        if 'symmetry_data' in self.inputs:
+            inputs['parse_symmetry'] = orm.Bool(False)
+            input_sym_data = self.inputs.symmetry_data
+            inputs['equivalent_sites_data'] = input_sym_data['equivalent_sites_data']
+            inputs['spacegroup_number'] = input_sym_data['spacegroup_number']
 
         if 'relax' in self.inputs:
             result = get_xspectra_structures(self.ctx.optimized_structure, **inputs)
@@ -527,8 +598,16 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
 
             shell_inputs['code'] = self.inputs.upf2plotcore_code
             shell_inputs['nodes'] = {'upf': upf}
-            shell_inputs['arguments'] = ['upf']
-            shell_inputs['metadata'] = {'call_link_label': f'upf2plotcore_{element}'}
+            shell_inputs['metadata'] = {
+                'call_link_label': f'upf2plotcore_{element}',
+                'options' : {
+                    'filename_stdin' : upf.filename,
+                    'resources' : {
+                        'num_machines' : 1,
+                        'num_mpiprocs_per_machine' : 1
+                    }
+                }
+            }
 
             future_shelljob = self.submit(ShellJob, **shell_inputs)
             self.report(f'Launching upf2plotcore.sh for {element}<{future_shelljob.pk}>')
@@ -553,7 +632,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             if num_core_states == 0:
                 return self.exit_codes.ERROR_NO_GIPAW_INFO_FOUND
 
-    def run_all_xspectra_core(self):
+    def run_all_xspectra_core(self): # pylint: disable=too-many-statements
         """Call all XspectraCoreWorkChains required to compute all requested spectra."""
 
         structures_to_process = self.ctx.structures_to_process
@@ -566,6 +645,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             structure = structures_to_process[site]
             inputs.structure = structure
             abs_element = equivalent_sites_data[site]['symbol']
+            abs_atom_kind = equivalent_sites_data[site]['kind_name']
 
             if 'core_hole_treatments' in self.inputs:
                 ch_treatments = self.inputs.core_hole_treatments.get_dict()
@@ -585,7 +665,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             scf_inputs = inputs.scf.pw
             scf_params = scf_inputs.parameters.get_dict()
             ch_inputs = XspectraCoreWorkChain.get_treatment_inputs(treatment=ch_treatment)
-            new_scf_params = recursive_merge(left=scf_params, right=ch_inputs)
+            new_scf_params = recursive_merge(left=ch_inputs, right=scf_params)
 
             # Set the absorbing species index (`xiabs`) for the xspectra.x input.
             new_xs_params = inputs.xs_prod.xspectra.parameters.get_dict()
@@ -593,21 +673,45 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             abs_species_index = kinds_present.index(abs_atom_marker) + 1
             new_xs_params['INPUT_XSPECTRA']['xiabs'] = abs_species_index
 
-            # Set `starting_magnetization` if we are using an XCH approximation, using the
-            # absorbing species as a reasonable place for the unpaired electron.
-            # As a future note, we need to re-visit the core-hole treatment settings, in order
-            # to avoid the need for fudges like these.
-            if ch_treatment == 'xch_smear':
-                new_scf_params['SYSTEM'][f'starting_magnetization({abs_species_index})'] = 1
+            # Set `starting_magnetization` if we are using an XCH approximation, using
+            # the absorbing species as a reasonable place for the unpaired electron.
+            # Alternatively, ensure the starting magnetic moment is a reasonable guess
+            # given the input parameters. (e.g. it conforms to an existing magnetic
+            # structure already defined for the system)
+
+            # TODO: we need to re-visit the core-hole treatment settings,
+            # in order to avoid the need for fudges like these and set these at
+            # submission rather than inside the WorkChain itself.
+            if 'starting_magnetization' in new_scf_params['SYSTEM']:
+                inherited_mag =  new_scf_params['SYSTEM']['starting_magnetization'][abs_atom_kind]
+                if ch_treatment not in ['xch_smear', 'xch_fixed']:
+                    new_scf_params['SYSTEM']['starting_magnetization'][abs_atom_marker] = inherited_mag
+                else: # if there is meant to be an unpaired electron, give it to the absorbing atom.
+                    if inherited_mag == 0: # set it to 1, if it would be neutral in the ground-state.
+                        new_scf_params['SYSTEM']['starting_magnetization'][abs_atom_marker] =  1
+                    else: # assume that it takes the same magnetic configuration as the kind that it replaces.
+                        new_scf_params['SYSTEM']['starting_magnetization'][abs_atom_marker] =  inherited_mag
+            elif ch_treatment in ['xch_smear', 'xch_fixed']:
+                new_scf_params['SYSTEM']['starting_magnetization'] = {abs_atom_marker : 1}
+
+            # remove any duplicates created from the "core_hole_treatments.yaml" defaults
+            for key in new_scf_params['SYSTEM'].keys():
+                if 'starting_magnetization(' in key:
+                    new_scf_params['SYSTEM'].pop(key, None)
 
             core_hole_pseudo = self.inputs.core_hole_pseudos[abs_element]
+            gipaw_pseudo = self.inputs.gipaw_pseudos[abs_element]
             inputs.scf.pw.pseudos[abs_atom_marker] = core_hole_pseudo
-            # In the case where the absorbing atom is the only one of its element in the
-            # structure, we avoid setting the GIPAW pseudo for it and remove the one .
-            if abs_element in kinds_present:
-                gipaw_pseudo = self.inputs.gipaw_pseudos[abs_element]
-                inputs.scf.pw.pseudos[abs_element] = gipaw_pseudo
-            else:
+            # Check how many instances of the absorbing element are present and assign
+            # each the GIPAW pseudo if they are not the absorbing atom itself.
+            abs_element_kinds = []
+            for kind in structure.kinds:
+                if kind.symbol == abs_element and kind.name != abs_atom_marker:
+                    abs_element_kinds.append(kind.name)
+            if len(abs_element_kinds) > 0:
+                for kind_name in abs_element_kinds:
+                    scf_inputs['pseudos'][kind_name] = gipaw_pseudo
+            else: # if there is only one atom of the absorbing element, pop the GIPAW pseudo to avoid a crash
                 scf_inputs['pseudos'].pop(abs_element, None)
 
             scf_inputs.parameters = orm.Dict(new_scf_params)
@@ -620,7 +724,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             xspectra_core_workchains[site] = future
             self.report(f'launched XspectraCoreWorkChain for {site}<{future.pk}>')
 
-        return ToContext(**xspectra_core_workchains)
+        return ToContext(**xspectra_core_workchains) # pylint: enable=too-many-statements
 
     def inspect_all_xspectra_core(self):
         """Check that all the XspectraCoreWorkChain sub-processes finished sucessfully."""

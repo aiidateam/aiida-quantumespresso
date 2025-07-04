@@ -16,6 +16,7 @@ Before you get started, make sure that you have:
 
 first_pw
 magnetism
+hubbard
 ```
 
 :::{card}
@@ -53,6 +54,26 @@ Learn how to assign magnetic configurations to your structure, and retrieve the 
 :class: footer-table
 :widths: 50 50
 * - {fa}`fa-sharp fa-regular fa-clock` 20 min
+  - {{ aiida_logo }} [Beginner]{.aiida-green}
+::::
+:::
+
+
+:::{card}
+:class-header: panel-header-text
+:class-footer: tutor-footer
+:link: tutorials-hubbard
+:link-type: ref
+:margin: 4
+
+{fa}`fa-solid fa-fire` Hubbard corrections
+^^^
+Learn how to define the Hubbard parameters along with your structure, and run a DFT+_U_+_V_ calculation using the `pw.x` binary.
++++
+::::{list-table}
+:class: footer-table
+:widths: 50 50
+* - {fa}`fa-sharp fa-regular fa-clock` 30 min
   - {{ aiida_logo }} [Beginner]{.aiida-green}
 ::::
 :::

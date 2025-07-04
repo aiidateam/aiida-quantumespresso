@@ -2,6 +2,7 @@
 """Classes and methods for running xspectra.x with AiiDA."""
 
 import os
+import warnings
 
 from aiida import orm
 from aiida.common import exceptions
@@ -11,6 +12,11 @@ from aiida.plugins import DataFactory
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 
 KpointsData = DataFactory('core.array.kpoints')
+
+warnings.warn(
+    'This module is deprecated and will be removed soon as part of migrating XAS and XPS workflows to a new repository.'
+    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.', FutureWarning
+)
 
 
 class XspectraCalculation(NamelistsCalculation):

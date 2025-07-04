@@ -1,3 +1,113 @@
+## v4.10.0
+
+### 👌 Improvements
+
+* Protocols: Update k-point sampling protocols [[17f0fd8](https://github.com/aiidateam/aiida-quantumespresso/commit/17f0fd893470abebf5d84015be4586d6345252fd)]
+* XSpectra & XPS: Issue Depreciation Warnings [[c4d7c19](https://github.com/aiidateam/aiida-quantumespresso/commit/c4d7c190456deca0c26e4fc36304e973fe14a2c2)]
+
+### 🐛 Bug fixes
+
+* `PdosWorkChain`: Enable energy range around the Fermi level [[435fc90](https://github.com/aiidateam/aiida-quantumespresso/commit/435fc9008d012c9a0d81d8fad95624dde7b670cb)]
+
+### 🔧 Maintenance
+
+* CD & nightly: update Github actions versions [[f356d3a](https://github.com/aiidateam/aiida-quantumespresso/commit/f356d3a0c347ade636e75ce063ac0b9c69e5cda6)]
+* Update GitHub actions versions [[91c7c30](https://github.com/aiidateam/aiida-quantumespresso/commit/91c7c30bc5b05a5ee85cf0cea9fbed784305ff59)]
+
+### 🧪 Tests
+
+* Create two pseudo families in `sssp` fixture [[043664e](https://github.com/aiidateam/aiida-quantumespresso/commit/043664e2ab607fe922a1eba2b0ee104f50a9616a)]
+
+
+## v4.9.0
+
+### 👌 Improvements
+
+* `PdosWorkChain`: Update protocols for improved accuracy [[8a13266](https://github.com/aiidateam/aiida-quantumespresso/commit/8a13266be795e31b6ce6c255612596f1377d4478)]
+
+### 🐛 Bug fixes
+
+* `ProjwfcParser`: Fix DOS parsing for spin-polarised case [[bcd5508](https://github.com/aiidateam/aiida-quantumespresso/commit/bcd550847b0bf8142bb43425a1480edfd4db2965)]
+
+### 🧪 Tests
+
+* Allow glob patterns in `retrieve_temporary` input [[af3739c](https://github.com/aiidateam/aiida-quantumespresso/commit/af3739c908e59ae3f11dd78f232703502ef1f0df)]
+
+### ♻️ Refactor
+
+* Refactor `projwfc.x` parser [[29f9c98](https://github.com/aiidateam/aiida-quantumespresso/commit/29f9c9846b9ee63e25f7e28664974228c45ec97c)]
+
+## v4.8.0
+
+### ✨ New features
+
+* `Hubbard`: add useful utility functions  [[41f196b](https://github.com/aiidateam/aiida-quantumespresso/commit/41f196b2b46022c179bdce0dcd44ab338d956551)]
+* `PwParser`: Add XML schema for Quantum ESPRESSO v7.4 [[75808a9](https://github.com/aiidateam/aiida-quantumespresso/commit/75808a918075b7ef0ac3b82557b5325330ba0fdc)]
+
+### 👌 Improvements
+
+* `PhParser`: allow for pattern initialization  [[74a18bc](https://github.com/aiidateam/aiida-quantumespresso/commit/74a18bc59beafd62082b24f809bfba29a402489d)]
+* `PwBaseWorkChain`: Always do full restart for `ERROR_OUT_OF_WALLTIME` [[fcb8da9](https://github.com/aiidateam/aiida-quantumespresso/commit/fcb8da9a165fc4f6e94c29a6e4f1d29305da4548)]
+
+### 📚 Documentation
+
+* `README.md`: Correct `aiida-core` compatibility [[1c8a804](https://github.com/aiidateam/aiida-quantumespresso/commit/1c8a8049c005e791300b7d2ca7c4beae32257dc9)]
+
+### 🔧 Maintenance
+
+* Devops: Add explicit sphinx.configuration key to RTD conf  [[733c43f](https://github.com/aiidateam/aiida-quantumespresso/commit/733c43ff6b690c19eacb108154038ca93082d145)]
+* Update Python support: drop v3.8 and add v3.12 [[172540b](https://github.com/aiidateam/aiida-quantumespresso/commit/172540be5078e77d58b6a8cc1b28cbae2c6e70b9)]
+
+## v4.7.0
+
+### ✨ New features
+
+* Add `nbands_factor` logic into PdosWorkChain  [[1020b02](https://github.com/aiidateam/aiida-quantumespresso/commit/1020b02c76bd3ae9783087bdf5f796380a7fdf3b)]
+* ✨ `PwParser`: Add the XML schema for Quantum ESPRESSO v7.3.1 [[57e7463](https://github.com/aiidateam/aiida-quantumespresso/commit/57e7463c5727775d6a0470a41d1aca0ec4083b9a)]
+* `XspectraCrystalWorkChain`: Enable Symmetry Data Inputs  [[b79189d](https://github.com/aiidateam/aiida-quantumespresso/commit/b79189d7ce4756e846ab39c567ba4681474741ed)]
+* Add calcjob, parser and base workchain plugin for `bands.x`  [[651fd01](https://github.com/aiidateam/aiida-quantumespresso/commit/651fd0142a965ca1b03cc52f0f2f8d960936a1cd)]
+
+### 👌 Improvements
+
+* `PpCalculation`: Make parsing of output files optional  [[bc0d815](https://github.com/aiidateam/aiida-quantumespresso/commit/bc0d8156f3f206b76e15f0f0c0742d8b579b4722)]
+
+### 🐛 Bug fixes
+
+* CLI: Fix bug in `aiida-quantumespresso workflow launc pw-base`  [[ea76d9b](https://github.com/aiidateam/aiida-quantumespresso/commit/ea76d9b37f78315bbf93f93fa56460c7dfe0652a)]
+
+### 📚 Documentation
+
+* Docs: Fix build by pinning `sphinx-autoapi~=3.0.0`  [[91c3e1d](https://github.com/aiidateam/aiida-quantumespresso/commit/91c3e1d35939491663a697d201dcccdf90c076c6)]
+
+### ♻️ Refactor
+
+* `get_xspectra_structures`: Refactor and Improve Code  [[210c40b](https://github.com/aiidateam/aiida-quantumespresso/commit/210c40bbc3445f55155bbb855d320afa00fa347e)]
+
+## v4.6.0
+
+This minor release provides several improvements and bug fixes, mostly related to the `HubbardStructureData` and XPS/XAS calculations.
+
+Since there were no changes in the schema for Quantum ESPRESSO v7.3, versions 4.3 and above of the plugin package should now also fully support the new Quantum ESPRESSO release.
+
+### 👌 Improvements
+
+* XAS: Enable Correct Parsing of Hubbard and Magnetic Data [[f439504](https://github.com/aiidateam/aiida-quantumespresso/commit/f4395048dfb9c74b97a5d38eff99029449816dc0)]
+* `PhCalculation`: add symmetry related exit codes [[5a6529f](https://github.com/aiidateam/aiida-quantumespresso/commit/5a6529f46fa3519f006527c02db3a065f6e5ebaa)]
+* `seekpath_structure_analysis`: `HubbardStructureData` compatibility [[9cb1cfa](https://github.com/aiidateam/aiida-quantumespresso/commit/9cb1cfa8a70d19af7aaa1b624cf17c8babe93f41)]
+* `HubbardStructureData`: add compatibility for <3D structures [[d645069](https://github.com/aiidateam/aiida-quantumespresso/commit/d645069d1d6ac40d6a23e4bbf49b01b51f5bb33c)]
+* `HubbardStructureData`: Add validation on site indices [[960a371](https://github.com/aiidateam/aiida-quantumespresso/commit/960a371d2e7f327a3f5bedb86e21dcb5100c03d1)]
+
+### 🐛 Bug fixes
+
+* `PwBandsWorkChain`: Respect `bands_kpoints` in overrides  [[ae7d248](https://github.com/aiidateam/aiida-quantumespresso/commit/ae7d2484a084ca55dcef4c1ca332b2fb0b478fad)]
+* CLI: Fix import of `StructureData` from QE input file  [[3440623](https://github.com/aiidateam/aiida-quantumespresso/commit/34406230023c3c3715264a7de180a576fd7def48)]
+* Fix inputs for molecules in the XPS calculation  [[b7f17cf](https://github.com/aiidateam/aiida-quantumespresso/commit/b7f17cfaf71e5b07089426a4fbe7ae2ca5317523)]
+
+### 🧪 Tests
+
+* CLI: Add test for data structure import [[5c3c301](https://github.com/aiidateam/aiida-quantumespresso/commit/5c3c3012c36577cc0ca6a4374fd97f2ce3177ebe)]
+
+
 ## v4.5.1
 
 This patch release fixes some issues with the changes introduced in [b9c7517](https://github.com/aiidateam/aiida-quantumespresso/commit/b9c7517744e645a93d4afc9b1999881fc39a0e46) and released in v4.5.0.

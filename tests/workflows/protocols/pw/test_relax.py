@@ -10,13 +10,13 @@ from aiida_quantumespresso.workflows.pw.relax import PwRelaxWorkChain
 def test_get_available_protocols():
     """Test ``PwRelaxWorkChain.get_available_protocols``."""
     protocols = PwRelaxWorkChain.get_available_protocols()
-    assert sorted(protocols.keys()) == ['fast', 'moderate', 'precise']
+    assert sorted(protocols.keys()) == ['balanced', 'fast', 'stringent']
     assert all('description' in protocol for protocol in protocols.values())
 
 
 def test_get_default_protocol():
     """Test ``PwRelaxWorkChain.get_default_protocol``."""
-    assert PwRelaxWorkChain.get_default_protocol() == 'moderate'
+    assert PwRelaxWorkChain.get_default_protocol() == 'balanced'
 
 
 def test_default(fixture_code, generate_structure, data_regression, serialize_builder):

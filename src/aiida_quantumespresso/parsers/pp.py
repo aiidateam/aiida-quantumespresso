@@ -113,39 +113,43 @@ class PpParser(BaseParser):
             if filename == filename_suffix:
                 return filename
 
-            pattern = r'{}_(.*){}'.format(filename_prefix, filename_suffix)
+            # Pattern to match both "aiida.filplot_XXXaiida.fileout" and "aiida.filplotXXXaiida.fileout"
+            pattern = rf'{re.escape(filename_prefix)}_?(.*?){re.escape(filename_suffix)}'
             matches = re.search(pattern, filename)
-            return matches.group(1)
 
-        for filename in filenames:
-            # Directly parse the retrieved files after reading them to memory (`data_raw`). The raw data
-            # of each file is released from memory after parsing, to improve memory usage.
-            if filename.endswith(filename_suffix):
-                # Read the file to memory
-                try:
-                    with file_opener(filename) as handle:
-                        data_raw = handle.read()
-                except OSError:
-                    return self.exit_codes.ERROR_OUTPUT_DATAFILE_READ.format(filename=filename)
-                # Parse the file
-                try:
-                    key = get_key_from_filename(filename)
-                    data_parsed.append((key, parsers[iflag](data_raw, self.units_dict[parsed_data['plot_num']])))
-                    del data_raw
-                except Exception as exception:  # pylint: disable=broad-except
-                    return self.exit_codes.ERROR_OUTPUT_DATAFILE_PARSE.format(filename=filename, exception=exception)
+            if matches:
+                return matches.group(1).rstrip('_')
 
-        # If we don't have any parsed files, we exit. Note that this will not catch the case where there should be more
-        # than one file, but the engine did not retrieve all of them. Since often we anyway don't know how many files
-        # should be retrieved there really is no way to check this explicitly.
-        if not data_parsed:
-            return self.exit_codes.ERROR_OUTPUT_DATAFILE_MISSING.format(filename=filename_prefix)
 
-        # Create output nodes
-        if len(data_parsed) == 1:
-            self.out('output_data', data_parsed[0][1])
-        else:
-            self.out('output_data_multiple', dict(data_parsed))
+        if self.node.base.attributes.get('parse_data_files'):
+            for filename in filenames:
+                # Directly parse the retrieved files after reading them to memory (`data_raw`). The raw data
+                # of each file is released from memory after parsing, to improve memory usage.
+                if filename.endswith(filename_suffix):
+                    # Read the file to memory
+                    try:
+                        with file_opener(filename) as handle:
+                            data_raw = handle.read()
+                    except OSError:
+                        return self.exit_codes.ERROR_OUTPUT_DATAFILE_READ.format(filename=filename)
+                    # Parse the file
+                    try:
+                        key = get_key_from_filename(filename)
+                        data_parsed.append((key, parsers[iflag](data_raw, self.units_dict[parsed_data['plot_num']])))
+                        del data_raw
+                    except Exception as exception:  # pylint: disable=broad-except
+                        return self.exit_codes.ERROR_OUTPUT_DATAFILE_PARSE.format(filename=filename, exception=exception)
+
+            # If we don't have any parsed files, we exit. Note that this will not catch the case where there should be more
+            # than one file, but the engine did not retrieve all of them. Since often we anyway don't know how many files
+            # should be retrieved there really is no way to check this explicitly.
+            if not data_parsed:
+                return self.exit_codes.ERROR_OUTPUT_DATAFILE_MISSING.format(filename=filename_prefix)
+
+            if len(data_parsed) == 1:
+                self.out('output_data', data_parsed[0][1])
+            else:
+                self.out('output_data_multiple', dict(data_parsed))
 
         return self.exit(logs=logs)
 

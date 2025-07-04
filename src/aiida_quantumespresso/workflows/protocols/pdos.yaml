@@ -13,12 +13,12 @@ default_inputs:
                     calculation: nscf
                     restart_mode: from_scratch
                 SYSTEM:
-                    occupations: tetrahedra
+                    occupations: tetrahedra_opt
                     nosym: True
     dos:
         parameters:
             DOS:
-                DeltaE: 0.02
+                DeltaE: 0.01
         metadata:
             options:
                 resources:
@@ -28,18 +28,18 @@ default_inputs:
     projwfc:
         parameters:
             PROJWFC:
-                DeltaE: 0.02
+                DeltaE: 0.01
         metadata:
             options:
                 resources:
                     num_machines: 1
                 max_wallclock_seconds: 43200  # Twelve hours
                 withmpi: True
-default_protocol: moderate
+default_protocol: balanced
 protocols:
-    moderate:
+    balanced:
         description: 'Protocol to perform a projected density of states calculation at normal precision at moderate computational cost.'
-    precise:
+    stringent:
         description: 'Protocol to perform a projected density of states structure calculation at high precision at higher computational cost.'
         dos:
             parameters:
