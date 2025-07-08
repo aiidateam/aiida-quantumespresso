@@ -5,6 +5,7 @@ from aiida.common import AttributeDict
 from aiida.engine import ToContext, WorkChain, if_
 
 from aiida_quantumespresso.calculations.functions.seekpath_structure_analysis import seekpath_structure_analysis
+from aiida_quantumespresso.utils.decorators import remove_none_overrides
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
 from aiida_quantumespresso.workflows.pw.relax import PwRelaxWorkChain
@@ -120,6 +121,7 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         return files(pw_protocols) / 'bands.yaml'
 
     @classmethod
+    @remove_none_overrides
     def get_builder_from_protocol(cls, code, structure, protocol=None, overrides=None, options=None, **kwargs):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
