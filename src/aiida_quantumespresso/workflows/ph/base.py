@@ -105,8 +105,6 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         :param electronic_type: indicate the electronic character of the system through ``ElectronicType`` instance.
         :return: a process builder instance with all inputs defined ready for launch.
         """
-        from aiida_quantumespresso.workflows.protocols.utils import recursive_merge
-
         if isinstance(code, str):
             code = orm.load_code(code)
 
@@ -123,8 +121,7 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         metadata = inputs['ph']['metadata']
 
-        if options:
-            metadata['options'] = recursive_merge(inputs['ph']['metadata']['options'], options)
+        cls.add_options(metadata, options, code)
 
         # pylint: disable=no-member
         builder = cls.get_builder()
