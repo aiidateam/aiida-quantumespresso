@@ -1,3 +1,11 @@
+## v4.11.1
+
+This patch release reintroduces an upper limit to `aiida-pseudo` that was erroneously removed in 4a6cdc22ec7f868a497abfd384bfeed39dfee3dc.
+
+### ⬆️ Update dependencies
+
+* ⬆️ Reintroduce upper limit to `aiida-pseudo` dependency [[b9a93e6](https://github.com/aiidateam/aiida-quantumespresso/commit/b9a93e6cbea2dbd6af6e17be4b928f3419461e70)]
+
 ## v4.11.0
 
 Minor release to add support for Quantum ESPRESSO v7.4.1 and set a lower limit for `aiida-pseudo`, due to a change in the SSSP download URL on the Materials Cloud.
