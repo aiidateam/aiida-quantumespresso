@@ -7,6 +7,8 @@ from aiida.orm import StructureData
 from aiida_pseudo.groups.family import PseudoPotentialFamily
 import yaml
 
+from aiida_quantumespresso.common.types import SpinType
+
 
 class ProtocolMixin:
     """Utility class for processes to build input mappings for a given protocol based on a YAML configuration file."""
@@ -126,6 +128,112 @@ def get_magnetization_parameters() -> dict:
     """
     with (pathlib.Path(__file__).resolve().parent / 'magnetization.yaml').open() as handle:
         return yaml.safe_load(handle)
+
+
+def get_magnetization(
+    structure: StructureData,
+    pseudo_family: PseudoPotentialFamily,
+    initial_magnetic_moments: Optional[dict] = None,
+    spin_type: SpinType = SpinType.COLLINEAR
+) -> dict:
+    """Return a magnetization dictionary with for each kind in the structure.
+
+    The returned dictionary always has three keys, corresponding to the Quantum ESPRESSO inputs:
+
+    * `starting_magnetization`
+    * `angle1`
+    * `angle2`
+
+    In case the `spin_type` is set to `SpinType.COLLINEAR`, the values for `angle1` and `angle2` will be set to `None`.
+
+    :param structure: the structure.
+    :param pseudo_family: pseudopotential family.
+    :param initial_magnetic_moments: dictionary mapping each kind in the structure to its magnetic moment.
+    :param spin_type: the `SpinType` of the calculation.
+    :returns: dictionary of the magnetization.
+    """
+    magnetization = {
+        'starting_magnetization': {},
+        'angle1': {} if spin_type == SpinType.NON_COLLINEAR else None,
+        'angle2': {} if spin_type == SpinType.NON_COLLINEAR else None,
+    }
+
+    if initial_magnetic_moments is not None:
+
+        if sorted(initial_magnetic_moments.keys()) != sorted(structure.get_kind_names()):
+            raise ValueError(
+                f'`initial_magnetic_moments` needs one value for each of the {len(structure.kinds)} kinds.'
+            )
+
+        for kind in structure.kinds:
+
+            magmom = initial_magnetic_moments[kind.name]
+
+            if isinstance(magmom, Union[int, float]):
+                magnetization['starting_magnetization'][
+                    kind.name] = magmom / pseudo_family.get_pseudo(element=kind.symbol).z_valence
+
+                if spin_type == SpinType.NON_COLLINEAR:
+                    magnetization['angle1'][kind.name] = 0.0
+                    magnetization['angle2'][kind.name] = 0.0
+
+            elif isinstance(magmom, Union[list, tuple]):
+
+                if spin_type != SpinType.NON_COLLINEAR:
+                    raise TypeError(
+                        f'Spin type is set to `{spin_type}` but a `{type(magmom)}` is provided for the magnetic '
+                        f'moment of kind `{kind.name}`.'
+                    )
+
+                magnetization['starting_magnetization'][
+                    kind.name] = magmom[0] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
+                magnetization['angle1'][kind.name] = magmom[1]
+                magnetization['angle2'][kind.name] = magmom[2]
+            else:
+                raise TypeError(f'Unrecognised type for magnetic moment of kind `{kind.name}`: {type(magmom)}.')
+
+        return magnetization
+
+    # The following block deals with the case where the input `structure` is a `MagneticStructureData`, which is
+    # implemented in aiida_wannier90_workflows. Here we can read the magnetic moment from the structure.
+    # TODO: Deprecate/Remove this block when we provide support for the new `StructureData` instead.
+    if hasattr(structure, 'has_magmom'):
+
+        collinear = structure.is_collin_mag()
+
+        if not collinear and spin_type == SpinType.COLLINEAR:
+            raise ValueError(
+                'Input `MagneticStructureData` has non-collinear magnetism defined but `spin_type` is set to COLLINEAR.'
+            )
+
+        for kind in structure.kinds:
+
+            magmom = kind.get_magmom_coord()
+
+            magnetization['starting_magnetization'][
+                kind.name] = magmom[0] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
+
+            if spin_type == SpinType.NON_COLLINEAR:
+                magnetization['angle1'][kind.name] = magmom[1]
+                magnetization['angle2'][kind.name] = magmom[2]
+
+    # End of `MagneticStructureData` block
+
+    magnetic_parameters = get_magnetization_parameters()
+
+    for kind in structure.kinds:
+
+        magnetic_moment = magnetic_parameters[kind.symbol]['magmom']
+
+        magnetization['starting_magnetization'][kind.name] = (
+            magnetic_parameters['default_magnetization'] if magnetic_moment == 0 else magnetic_moment /
+            pseudo_family.get_pseudo(element=kind.symbol).z_valence
+        )
+        if spin_type == SpinType.NON_COLLINEAR:
+            magnetization['angle1'][kind.name] = 0.0
+            magnetization['angle2'][kind.name] = 0.0
+
+    return magnetization
 
 
 def get_starting_magnetization(
