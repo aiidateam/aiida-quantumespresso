@@ -65,7 +65,6 @@ class PwCalculation(BasePwCpInputGenerator):
         # yapf: disable
         super().define(spec)
         spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.pw')
-        # NEW HERE SET PARSER TO RAW
         spec.input('metadata.options.without_xml', valid_type=bool, required=False, help='If set to `True` the parser '
             'will not fail if the XML file is missing in the retrieved folder.')
         spec.input('kpoints', valid_type=orm.KpointsData,
@@ -99,7 +98,7 @@ class PwCalculation(BasePwCpInputGenerator):
         spec.exit_code(321, 'ERROR_OUTPUT_XML_PARSE',
             message='The XML output file could not be parsed.')
         spec.exit_code(322, 'ERROR_OUTPUT_XML_FORMAT',
-            message='The XML output file has an unsupported format. This line has been modified')
+            message='The XML output file has an unsupported format.')
         spec.exit_code(340, 'ERROR_OUT_OF_WALLTIME_INTERRUPTED',
             message='The calculation stopped prematurely because it ran out of walltime but the job was killed by the '
                     'scheduler before the files were safely written to disk for a potential restart.')

@@ -890,9 +890,6 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
     # If specified in the parser options, parse the atomic occupations
     parse_atomic_occupations = parser_options.get('parse_atomic_occupations', False)
 
-    #parsed_data['ZZZ'] = parser_options.get('parse_atomic_occupations', False)
-
-
 
     legacy_U = parser_options.get('legacy_U', False)
 
