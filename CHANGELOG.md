@@ -1,3 +1,54 @@
+## v4.11.1
+
+This patch release reintroduces an upper limit to `aiida-pseudo` that was erroneously removed in 4a6cdc22ec7f868a497abfd384bfeed39dfee3dc.
+
+### ⬆️ Update dependencies
+
+* ⬆️ Reintroduce upper limit to `aiida-pseudo` dependency [[b9a93e6](https://github.com/aiidateam/aiida-quantumespresso/commit/b9a93e6cbea2dbd6af6e17be4b928f3419461e70)]
+
+## v4.11.0
+
+Minor release to add support for Quantum ESPRESSO v7.4.1 and set a lower limit for `aiida-pseudo`, due to a change in the SSSP download URL on the Materials Cloud.
+A little bug was also fixed for the `pp.x` parser.
+The `ADDITIONAL_RETRIEVE_LIST` setting was also deprecated in favor of using the `additional_retrieve_list` option that is now available for any `CalcJob`, for example:
+
+```python
+from aiida_quantumespresso.calculations.pw import PwCalculation
+
+builder = PwCalculation.get_builder()
+builder.metadata.options['additional_retrieve_list'] = ['filename']
+```
+
+### ✨ New features
+
+* `PwParser`: Add XML schema for Quantum ESPRESSO v7.4.1 [[4a6cdc2](https://github.com/aiidateam/aiida-quantumespresso/commit/4a6cdc22ec7f868a497abfd384bfeed39dfee3dc)]
+
+### 🗑️ Deprecations
+
+* Deprecate `ADDITIONAL_RETRIEVE_LIST` in `settings` [[5d51932](https://github.com/aiidateam/aiida-quantumespresso/commit/5d51932b6fb1e964e0753ccce32d40a35fb8ba89)]
+
+### 👌 Improvements
+
+* Fix error message for `ERROR_CHARGE_IS_WRONG` [[ab3318b](https://github.com/aiidateam/aiida-quantumespresso/commit/ab3318bf96aba84a453283406e32f3dc7ba7ac85)]
+
+### 🐛 Bug fixes
+
+* `PpParser`: Fix logic for LDOS Files [[1385c49](https://github.com/aiidateam/aiida-quantumespresso/commit/1385c49e91d3c3c4f7d1dd48d72ce30c044b25bd)]
+
+### 📚 Documentation
+
+* Add tutorial for Hubbard corrections  [[f18961a](https://github.com/aiidateam/aiida-quantumespresso/commit/f18961a02757ff093e41ebe800d55e766b303680)]
+* `PwBandsWorkChain`: Fix typo in docstring [[833631c](https://github.com/aiidateam/aiida-quantumespresso/commit/833631c369544be61afb6f76a33997c48b99cd51)]
+
+### ⬆️ Update dependencies
+
+* Bump aiida-pseudo to v1.7  [[bd98428](https://github.com/aiidateam/aiida-quantumespresso/commit/bd984289297e8d353c498976434b980a9d853ab6)]
+* Add upper limit to `aiida-pseudo` dependency [[904cbee](https://github.com/aiidateam/aiida-quantumespresso/commit/904cbee313397812b6e7eb7fdb4d0634e483366e)]
+
+### 🧪 Tests
+
+* Clean up `pp.x` 3D parsing failure tests [[dbf9651](https://github.com/aiidateam/aiida-quantumespresso/commit/dbf9651d969e7b90c6e8041197a443e38f39056a)]
+
 ## v4.10.0
 
 ### 👌 Improvements
