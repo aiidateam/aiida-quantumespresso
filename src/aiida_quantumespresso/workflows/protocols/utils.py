@@ -2,7 +2,9 @@
 """Utilities to manipulate the workflow input protocols."""
 import pathlib
 from typing import Optional, Union
+import warnings
 
+from aiida.common.warnings import AiidaDeprecationWarning
 from aiida.orm import StructureData
 from aiida_pseudo.groups.family import PseudoPotentialFamily
 import yaml
@@ -216,7 +218,7 @@ def get_magnetization(
             if spin_type == SpinType.NON_COLLINEAR:
                 magnetization['angle1'][kind.name] = magmom[1]
                 magnetization['angle2'][kind.name] = magmom[2]
-        
+
         return magnetization
 
     # End of `MagneticStructureData` block
@@ -237,6 +239,7 @@ def get_magnetization(
 
     return magnetization
 
+
 def get_starting_magnetization(
     structure: StructureData,
     pseudo_family: PseudoPotentialFamily,
@@ -249,6 +252,11 @@ def get_starting_magnetization(
     :param initial_magnetic_moments: dictionary mapping each kind in the structure to its magnetic moment.
     :returns: dictionary of starting magnetizations.
     """
+    warnings.warn(
+        '`get_starting_magnetization` is deprecated, '
+        'use `get_magnetization` instead.', AiidaDeprecationWarning
+    )
+
     if initial_magnetic_moments is not None:
 
         nkinds = len(structure.kinds)
@@ -290,66 +298,3 @@ def get_starting_magnetization(
             starting_magnetization[kind.name] = magmom / pseudo_family.get_pseudo(element=kind.symbol).z_valence
 
     return starting_magnetization
-
-
-def get_starting_magnetization_noncolin(
-    structure: StructureData,
-    pseudo_family: PseudoPotentialFamily,
-    initial_magnetic_moments: Optional[dict] = None
-) -> tuple:
-    """Return the dictionary with starting magnetization for each kind in the structure.
-
-    :param structure: the structure.
-    :param pseudo_family: pseudopotential family.
-    :param initial_magnetic_moments: dictionary mapping each kind in the structure to its magnetic moment.
-    :returns: dictionary of starting magnetizations.
-    """
-    starting_magnetization = {}
-    angle1 = {}
-    angle2 = {}
-
-    if initial_magnetic_moments is not None:
-
-        nkinds = len(structure.kinds)
-
-        if sorted(initial_magnetic_moments.keys()) != sorted(structure.get_kind_names()):
-            raise ValueError(f'`initial_magnetic_moments` needs one value for each of the {nkinds} kinds.')
-
-        for kind in structure.kinds:
-            magmom = initial_magnetic_moments[kind.name]
-            if isinstance(magmom, Union[int, float]):
-                starting_magnetization[kind.name] = magmom / pseudo_family.get_pseudo(element=kind.symbol).z_valence
-                angle1[kind.name] = 0.0
-                angle2[kind.name] = 0.0
-            else:  # tuple of 3 float (r, theta, phi)
-                starting_magnetization[kind.name] = magmom[0] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
-                angle1[kind.name] = magmom[1]
-                angle2[kind.name] = magmom[2]
-    try:
-        structure.has_magmom()
-    except AttributeError:
-        # Normal StructureData, no magmom in structure
-        magnetic_parameters = get_magnetization_parameters()
-
-        for kind in structure.kinds:
-            magnetic_moment = magnetic_parameters[kind.symbol]['magmom']
-
-            if magnetic_moment == 0:
-                magnetization = magnetic_parameters['default_magnetization']
-            else:
-                z_valence = pseudo_family.get_pseudo(element=kind.symbol).z_valence
-                magnetization = magnetic_moment / float(z_valence)
-
-            starting_magnetization[kind.name] = magnetization
-            angle1[kind.name] = 0.0
-            angle2[kind.name] = 0.0
-    else:
-        # MagneticStructureData, currently implemented in aiida_wannier90_workflows.
-        # Read magmom from structure<MagneticStructureData>
-        for kind in structure.kinds:
-            magmom = kind.get_magmom_coord()
-            starting_magnetization[kind.name] = magmom[0] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
-            angle1[kind.name] = magmom[1]
-            angle2[kind.name] = magmom[2]
-
-    return starting_magnetization, angle1, angle2
