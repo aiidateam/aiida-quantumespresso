@@ -216,6 +216,8 @@ def get_magnetization(
             if spin_type == SpinType.NON_COLLINEAR:
                 magnetization['angle1'][kind.name] = magmom[1]
                 magnetization['angle2'][kind.name] = magmom[2]
+        
+        return magnetization
 
     # End of `MagneticStructureData` block
 
@@ -234,7 +236,6 @@ def get_magnetization(
             magnetization['angle2'][kind.name] = 0.0
 
     return magnetization
-
 
 def get_starting_magnetization(
     structure: StructureData,
