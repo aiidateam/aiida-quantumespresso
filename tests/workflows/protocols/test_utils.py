@@ -19,7 +19,7 @@ def test_recursive_merge():
     assert merged == {'a': {'b': 1, 'c': {'d': 'D'}}, 'e': {'f': 'F'}, 'g': 3}
 
 
-# Note: for the `sssp` text fixture, the z_valence is 4 for every element.
+# Note: for the `pseudo_family` text fixture, the z_valence is 4 for every element.
 # This can lead to some nonsensical magnetizations, but that is fine for testing
 # purposes.
 @pytest.mark.parametrize(
@@ -100,7 +100,7 @@ def test_recursive_merge():
     ),
 )
 def test_get_magnetization(
-    sssp,
+    pseudo_family,
     generate_structure,
     structure_id,
     initial_magnetic_moments,
@@ -110,7 +110,9 @@ def test_get_magnetization(
     """Test the `get_magnetization` function."""
     from aiida_quantumespresso.workflows.protocols.utils import get_magnetization
 
-    magnetization = get_magnetization(generate_structure(structure_id), sssp, initial_magnetic_moments, spin_type)
+    magnetization = get_magnetization(
+        generate_structure(structure_id), pseudo_family, initial_magnetic_moments, spin_type
+    )
 
     assert magnetization == expected_magnetization
 
@@ -128,10 +130,10 @@ def test_get_magnetization(
     ),
 )
 def test_get_magnetization_failure(
-    sssp, generate_structure, structure_id, initial_magnetic_moments, spin_type, expected_error, error_message
+    pseudo_family, generate_structure, structure_id, initial_magnetic_moments, spin_type, expected_error, error_message
 ):
     """Test the `get_magnetization` function."""
     from aiida_quantumespresso.workflows.protocols.utils import get_magnetization
 
     with pytest.raises(expected_error, match=error_message):
-        get_magnetization(generate_structure(structure_id), sssp, initial_magnetic_moments, spin_type)
+        get_magnetization(generate_structure(structure_id), pseudo_family, initial_magnetic_moments, spin_type)
