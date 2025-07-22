@@ -67,6 +67,22 @@ def test_recursive_merge():
         ),
         (
             'cobalt-prim',
+            None,
+            SpinType.SPIN_ORBIT,
+            {
+                'starting_magnetization': {
+                    'Co': 1.25
+                },
+                'angle1': {
+                    'Co': 0
+                },
+                'angle2': {
+                    'Co': 0
+                }
+            },
+        ),
+        (
+            'cobalt-prim',
             {
                 'Co': 3
             },

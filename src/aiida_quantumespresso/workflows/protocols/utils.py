@@ -156,8 +156,8 @@ def get_magnetization(
     """
     magnetization = {
         'starting_magnetization': {},
-        'angle1': {} if spin_type == SpinType.NON_COLLINEAR else None,
-        'angle2': {} if spin_type == SpinType.NON_COLLINEAR else None,
+        'angle1': {} if spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT] else None,
+        'angle2': {} if spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT] else None,
     }
 
     if initial_magnetic_moments is not None:
@@ -175,13 +175,13 @@ def get_magnetization(
                 magnetization['starting_magnetization'][
                     kind.name] = magmom / pseudo_family.get_pseudo(element=kind.symbol).z_valence
 
-                if spin_type == SpinType.NON_COLLINEAR:
+                if spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT]:
                     magnetization['angle1'][kind.name] = 0.0
                     magnetization['angle2'][kind.name] = 0.0
 
             elif isinstance(magmom, (list, tuple)):
 
-                if spin_type != SpinType.NON_COLLINEAR:
+                if spin_type not in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT]:
                     raise TypeError(
                         f'Spin type is set to `{spin_type}` but a `{type(magmom)}` is provided for the magnetic '
                         f'moment of kind `{kind.name}`.'
@@ -215,7 +215,7 @@ def get_magnetization(
             magnetization['starting_magnetization'][
                 kind.name] = magmom[0] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
 
-            if spin_type == SpinType.NON_COLLINEAR:
+            if spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT]:
                 magnetization['angle1'][kind.name] = magmom[1]
                 magnetization['angle2'][kind.name] = magmom[2]
 
@@ -233,7 +233,7 @@ def get_magnetization(
             magnetic_parameters['default_magnetization'] if magnetic_moment == 0 else magnetic_moment /
             pseudo_family.get_pseudo(element=kind.symbol).z_valence
         )
-        if spin_type == SpinType.NON_COLLINEAR:
+        if spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT]:
             magnetization['angle1'][kind.name] = 0.0
             magnetization['angle2'][kind.name] = 0.0
 
