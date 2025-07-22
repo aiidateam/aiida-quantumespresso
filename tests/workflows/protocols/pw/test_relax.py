@@ -52,15 +52,19 @@ def test_spin_type(fixture_code, generate_structure):
     code = fixture_code('quantumespresso.pw')
     structure = generate_structure()
 
-    with pytest.raises(NotImplementedError):
-        for spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT]:
-            PwRelaxWorkChain.get_builder_from_protocol(code, structure, spin_type=spin_type)
-
     builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, spin_type=SpinType.COLLINEAR)
 
     for namespace in [builder.base, builder.base_final_scf]:
         parameters = namespace['pw']['parameters'].get_dict()
         assert parameters['SYSTEM']['nspin'] == 2
+        assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.1}
+
+    builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, spin_type=SpinType.SPIN_ORBIT)
+
+    for namespace in [builder.base, builder.base_final_scf]:
+        parameters = namespace['pw']['parameters'].get_dict()
+        assert parameters['SYSTEM']['noncolin'] is True
+        assert parameters['SYSTEM']['lspinorb'] is True
         assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.1}
 
 
