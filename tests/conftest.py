@@ -133,20 +133,21 @@ def serialize_builder():
 
 
 @pytest.fixture(scope='session', autouse=True)
-def sssp(aiida_profile, generate_upf_data):
-    """Create the SSSP pseudo potential families from scratch."""
+def pseudo_family(aiida_profile, generate_upf_data):
+    """Create a set of pseudo potential families from scratch."""
     from aiida.common.constants import elements
-    from aiida.plugins import GroupFactory
+    from aiida_pseudo.data.pseudo.upf import UpfData
+    from aiida_pseudo.groups.family import PseudoDojoFamily, SsspFamily
 
     aiida_profile.clear_profile()
-
-    SsspFamily = GroupFactory('pseudo.family.sssp')
 
     cutoffs = {}
     stringency = 'standard'
 
-    for label, cutoff_values in zip(('SSSP/1.3/PBEsol/precision', 'SSSP/1.3/PBEsol/efficiency'),
-                                    ((40.0, 320.0), (30.0, 240.0))):
+    for label, cutoff_values in zip(
+        ('SSSP/1.3/PBEsol/precision', 'SSSP/1.3/PBEsol/efficiency', 'PseudoDojo/0.4/PBEsol/FR/standard/upf'),
+        ((40.0, 320.0), (30.0, 240.0), (60.0, 400.0))
+    ):
         with tempfile.TemporaryDirectory() as dirpath:
             for values in elements.values():
 
@@ -171,7 +172,10 @@ def sssp(aiida_profile, generate_upf_data):
                     'cutoff_rho': cutoff_values[1],
                 }
 
-            family = SsspFamily.create_from_folder(dirpath, label)
+            if label.startswith('SSSP'):
+                family = SsspFamily.create_from_folder(dirpath, label)
+            elif label.startswith('PseudoDojo'):
+                family = PseudoDojoFamily.create_from_folder(dirpath, label, pseudo_type=UpfData)
 
         family.set_cutoffs(cutoffs, stringency, unit='Ry')
 
