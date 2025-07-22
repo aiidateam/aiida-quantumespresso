@@ -143,16 +143,16 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if electronic_type not in [ElectronicType.METAL, ElectronicType.INSULATOR]:
             raise NotImplementedError(f'electronic type `{electronic_type}` is not supported.')
 
-        if spin_type not in [SpinType.NONE, SpinType.COLLINEAR, SpinType.NON_COLLINEAR]:
-            raise NotImplementedError(f'spin type `{spin_type}` is not supported.')
-
-        if initial_magnetic_moments is not None and spin_type not in [SpinType.COLLINEAR, SpinType.NON_COLLINEAR]:
+        if initial_magnetic_moments is not None and spin_type == SpinType.NONE:
             raise ValueError(f'`initial_magnetic_moments` is specified but spin type `{spin_type}` is incompatible.')
 
         inputs = cls.get_protocol_inputs(protocol, overrides)
 
         meta_parameters = inputs.pop('meta_parameters')
         pseudo_family = inputs.pop('pseudo_family')
+
+        if spin_type is SpinType.SPIN_ORBIT and overrides is not None and 'pseudo_family' not in overrides:
+            pseudo_family = 'PseudoDojo/0.4/PBEsol/FR/standard/upf'
 
         natoms = len(structure.sites)
 
@@ -199,12 +199,14 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             parameters['SYSTEM']['starting_magnetization'] = magnetization['starting_magnetization']
             parameters['SYSTEM']['nspin'] = 2
 
-        if spin_type is SpinType.NON_COLLINEAR:
+        if spin_type in [SpinType.SPIN_ORBIT, SpinType.NON_COLLINEAR]:
             parameters['SYSTEM']['starting_magnetization'] = magnetization['starting_magnetization']
             parameters['SYSTEM']['angle1'] = magnetization['angle1']
             parameters['SYSTEM']['angle2'] = magnetization['angle2']
             parameters['SYSTEM']['noncolin'] = True
             parameters['SYSTEM']['nspin'] = 4
+            if spin_type == SpinType.SPIN_ORBIT:
+                parameters['SYSTEM']['lspinorb'] = True
 
         # If overrides are provided, they are considered absolute
         if overrides:
