@@ -11,7 +11,7 @@ import tempfile
 
 import pytest
 
-pytest_plugins = ['aiida.manage.tests.pytest_fixtures']  # pylint: disable=invalid-name
+pytest_plugins = ['aiida.tools.pytest_fixtures']  # pylint: disable=invalid-name
 
 
 @pytest.fixture(scope='session')
@@ -48,24 +48,11 @@ def fixture_localhost(aiida_localhost):
 
 
 @pytest.fixture
-def fixture_code(fixture_localhost):
+def fixture_code(aiida_code_installed):
     """Return an ``InstalledCode`` instance configured to run calculations of given entry point on localhost."""
 
     def _fixture_code(entry_point_name):
-        from aiida.common import exceptions
-        from aiida.orm import InstalledCode, load_code
-
-        label = f'test.{entry_point_name}'
-
-        try:
-            return load_code(label=label)
-        except exceptions.NotExistent:
-            return InstalledCode(
-                label=label,
-                computer=fixture_localhost,
-                filepath_executable='/bin/true',
-                default_calc_job_plugin=entry_point_name,
-            )
+        return aiida_code_installed(label=f'test.{entry_point_name}', default_calc_job_plugin=entry_point_name)
 
     return _fixture_code
 
@@ -133,12 +120,10 @@ def serialize_builder():
 
 
 @pytest.fixture(scope='session', autouse=True)
-def sssp(aiida_profile, generate_upf_data):
+def sssp(generate_upf_data):
     """Create the SSSP pseudo potential families from scratch."""
     from aiida.common.constants import elements
     from aiida.plugins import GroupFactory
-
-    aiida_profile.clear_profile()
 
     SsspFamily = GroupFactory('pseudo.family.sssp')
 
