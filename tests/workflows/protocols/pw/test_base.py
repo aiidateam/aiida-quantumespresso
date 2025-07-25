@@ -72,14 +72,17 @@ def test_spin_type(fixture_code, generate_structure):
     assert 'starting_magnetization' not in builder.pw.parameters['SYSTEM']  # pylint: disable=no-member
     assert 'nspin' not in builder.pw.parameters['SYSTEM']  # pylint: disable=no-member
 
-    with pytest.raises(NotImplementedError):
-        for spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT]:
-            PwBaseWorkChain.get_builder_from_protocol(code, structure, spin_type=spin_type)
-
     builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, spin_type=SpinType.COLLINEAR)
     parameters = builder.pw.parameters.get_dict()  # pylint: disable=no-member
 
     assert parameters['SYSTEM']['nspin'] == 2
+    assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.1}
+
+    builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, spin_type=SpinType.SPIN_ORBIT)
+    parameters = builder.pw.parameters.get_dict()  # pylint: disable=no-member
+
+    assert parameters['SYSTEM']['noncolin'] is True
+    assert parameters['SYSTEM']['lspinorb'] is True
     assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.1}
 
 

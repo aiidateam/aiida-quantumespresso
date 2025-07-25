@@ -60,9 +60,6 @@ def test_electronic_type(get_pdos_generator_inputs):
 
 def test_spin_type(get_pdos_generator_inputs):
     """Test ``PdosWorkChain.get_builder_from_protocol`` with ``spin_type`` keyword."""
-    with pytest.raises(NotImplementedError):
-        for spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT]:
-            builder = PdosWorkChain.get_builder_from_protocol(**get_pdos_generator_inputs, spin_type=spin_type)
     builder = PdosWorkChain.get_builder_from_protocol(**get_pdos_generator_inputs, spin_type=SpinType.COLLINEAR)
     for namespace in [builder.scf, builder.nscf]:
         parameters = namespace['pw']['parameters'].get_dict()
