@@ -42,7 +42,7 @@ def test_pw_default(fixture_sandbox, generate_calc_job, generate_inputs_pw, file
 
 
 def test_pw_ibrav(
-    fixture_sandbox, generate_calc_job, fixture_code, generate_kpoints_mesh, generate_upf_data, file_regression
+    fixture_sandbox, generate_calc_job, aiida_code_installed, generate_kpoints_mesh, generate_upf_data, file_regression
 ):
     """Test a `PwCalculation` where `ibrav` is explicitly specified."""
     entry_point_name = 'quantumespresso.pw'
@@ -58,7 +58,7 @@ def test_pw_ibrav(
 
     upf = generate_upf_data('Si')
     inputs = {
-        'code': fixture_code(entry_point_name),
+        'code': aiida_code_installed(default_calc_job_plugin=entry_point_name),
         'structure': structure,
         'kpoints': generate_kpoints_mesh(2),
         'parameters': orm.Dict(parameters),
@@ -94,7 +94,7 @@ def test_pw_ibrav(
     file_regression.check(input_written, encoding='utf-8', extension='.in')
 
 
-def test_pw_wrong_ibrav(fixture_sandbox, generate_calc_job, fixture_code, generate_kpoints_mesh, generate_upf_data):
+def test_pw_wrong_ibrav(fixture_sandbox, generate_calc_job, aiida_code_installed, generate_kpoints_mesh, generate_upf_data):
     """Test that a `PwCalculation` with an incorrect `ibrav` raises."""
     entry_point_name = 'quantumespresso.pw'
 
@@ -109,7 +109,7 @@ def test_pw_wrong_ibrav(fixture_sandbox, generate_calc_job, fixture_code, genera
 
     upf = generate_upf_data('Si')
     inputs = {
-        'code': fixture_code(entry_point_name),
+        'code': aiida_code_installed(default_calc_job_plugin=entry_point_name),
         'structure': structure,
         'kpoints': generate_kpoints_mesh(2),
         'parameters': orm.Dict(parameters),
@@ -125,7 +125,7 @@ def test_pw_wrong_ibrav(fixture_sandbox, generate_calc_job, fixture_code, genera
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
 
-def test_pw_ibrav_tol(fixture_sandbox, generate_calc_job, fixture_code, generate_kpoints_mesh, generate_upf_data):
+def test_pw_ibrav_tol(fixture_sandbox, generate_calc_job, aiida_code_installed, generate_kpoints_mesh, generate_upf_data):
     """Test that `IBRAV_TOLERANCE` controls the tolerance when checking cell consistency."""
     entry_point_name = 'quantumespresso.pw'
 
@@ -141,7 +141,7 @@ def test_pw_ibrav_tol(fixture_sandbox, generate_calc_job, fixture_code, generate
 
     upf = generate_upf_data('Si')
     inputs = {
-        'code': fixture_code(entry_point_name),
+        'code': aiida_code_installed(default_calc_job_plugin=entry_point_name),
         'structure': structure,
         'kpoints': generate_kpoints_mesh(2),
         'parameters': orm.Dict(parameters),

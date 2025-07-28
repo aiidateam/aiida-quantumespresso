@@ -8,7 +8,7 @@ import pytest
 
 
 @pytest.fixture
-def generate_inputs(fixture_localhost, fixture_sandbox, fixture_code, generate_remote_data):
+def generate_inputs(fixture_localhost, fixture_sandbox, aiida_code_installed, generate_remote_data):
     """Return only those inputs that the parser will expect to be there."""
 
     def _generate_inputs(parameters=None, settings=None):
@@ -19,7 +19,7 @@ def generate_inputs(fixture_localhost, fixture_sandbox, fixture_code, generate_r
 
         return AttributeDict({
             'code':
-            fixture_code('quantumespresso.open_grid'),
+            aiida_code_installed(default_calc_job_plugin='quantumespresso.open_grid'),
             'parent_folder':
             generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.open_grid'),
             'parameters':
