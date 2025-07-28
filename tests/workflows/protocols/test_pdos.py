@@ -11,12 +11,12 @@ PdosWorkChain = WorkflowFactory('quantumespresso.pdos')
 
 
 @pytest.fixture
-def get_pdos_generator_inputs(fixture_code, generate_structure):
+def get_pdos_generator_inputs(aiida_code_installed, generate_structure):
     """Generate a set of default inputs for the ``PdosWorkChain.get_builder_from_protocol()`` method."""
     return {
-        'pw_code': fixture_code('quantumespresso.pw'),
-        'dos_code': fixture_code('quantumespresso.dos'),
-        'projwfc_code': fixture_code('quantumespresso.projwfc'),
+        'pw_code': aiida_code_installed(default_calc_job_plugin='quantumespresso.pw'),
+        'dos_code': aiida_code_installed(default_calc_job_plugin='quantumespresso.dos'),
+        'projwfc_code': aiida_code_installed(default_calc_job_plugin='quantumespresso.projwfc'),
         'structure': generate_structure('silicon')
     }
 

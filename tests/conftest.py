@@ -538,7 +538,7 @@ def generate_force_constants_data(filepath_tests):
 
 
 @pytest.fixture
-def generate_inputs_matdyn(fixture_code, generate_kpoints_mesh, generate_force_constants_data):
+def generate_inputs_matdyn(aiida_code_installed, generate_kpoints_mesh, generate_force_constants_data):
     """Generate default inputs for a `MatdynCalculation."""
 
     def _generate_inputs_matdyn():
@@ -546,7 +546,7 @@ def generate_inputs_matdyn(fixture_code, generate_kpoints_mesh, generate_force_c
         from aiida_quantumespresso.utils.resources import get_default_options
 
         inputs = {
-            'code': fixture_code('quantumespresso.matdyn'),
+            'code': aiida_code_installed(default_calc_job_plugin='quantumespresso.matdyn'),
             'force_constants': generate_force_constants_data,
             'kpoints': generate_kpoints_mesh(2),
             'metadata': {
@@ -560,7 +560,7 @@ def generate_inputs_matdyn(fixture_code, generate_kpoints_mesh, generate_force_c
 
 
 @pytest.fixture
-def generate_inputs_q2r(fixture_sandbox, fixture_localhost, fixture_code, generate_remote_data):
+def generate_inputs_q2r(fixture_sandbox, fixture_localhost, aiida_code_installed, generate_remote_data):
     """Generate default inputs for a `Q2rCalculation."""
 
     def _generate_inputs_q2r():
@@ -568,7 +568,7 @@ def generate_inputs_q2r(fixture_sandbox, fixture_localhost, fixture_code, genera
         from aiida_quantumespresso.utils.resources import get_default_options
 
         inputs = {
-            'code': fixture_code('quantumespresso.q2r'),
+            'code': aiida_code_installed(default_calc_job_plugin='quantumespresso.q2r'),
             'parent_folder': generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.ph'),
             'metadata': {
                 'options': get_default_options()
@@ -581,7 +581,7 @@ def generate_inputs_q2r(fixture_sandbox, fixture_localhost, fixture_code, genera
 
 
 @pytest.fixture
-def generate_inputs_bands(fixture_sandbox, fixture_localhost, fixture_code, generate_remote_data):
+def generate_inputs_bands(fixture_sandbox, fixture_localhost, aiida_code_installed, generate_remote_data):
     """Generate default inputs for a `BandsCalculation."""
 
     def _generate_inputs_bands():
@@ -589,7 +589,7 @@ def generate_inputs_bands(fixture_sandbox, fixture_localhost, fixture_code, gene
         from aiida_quantumespresso.utils.resources import get_default_options
 
         inputs = {
-            'code': fixture_code('quantumespresso.bands'),
+            'code': aiida_code_installed(default_calc_job_plugin='quantumespresso.bands'),
             'parent_folder': generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.pw'),
             'metadata': {
                 'options': get_default_options()
@@ -603,7 +603,7 @@ def generate_inputs_bands(fixture_sandbox, fixture_localhost, fixture_code, gene
 
 @pytest.fixture
 def generate_inputs_ph(
-    generate_calc_job_node, generate_structure, fixture_localhost, fixture_code, generate_kpoints_mesh
+    generate_calc_job_node, generate_structure, fixture_localhost, aiida_code_installed, generate_kpoints_mesh
 ):
     """Generate default inputs for a `PhCalculation."""
 
@@ -635,7 +635,7 @@ def generate_inputs_ph(
             structure.store()
 
         inputs = {
-            'code': fixture_code('quantumespresso.ph'),
+            'code': aiida_code_installed(default_calc_job_plugin='quantumespresso.ph'),
             'parent_folder': parent_folder,
             'qpoints': generate_kpoints_mesh(2),
             'parameters': Dict({'INPUTPH': {}}),
@@ -650,7 +650,7 @@ def generate_inputs_ph(
 
 
 @pytest.fixture
-def generate_inputs_pw(fixture_code, generate_structure, generate_kpoints_mesh, generate_upf_data):
+def generate_inputs_pw(aiida_code_installed, generate_structure, generate_kpoints_mesh, generate_upf_data):
     """Generate default inputs for a `PwCalculation."""
 
     def _generate_inputs_pw():
@@ -673,7 +673,7 @@ def generate_inputs_pw(fixture_code, generate_structure, generate_kpoints_mesh, 
         })
         structure = generate_structure()
         inputs = {
-            'code': fixture_code('quantumespresso.pw'),
+            'code': aiida_code_installed(default_calc_job_plugin='quantumespresso.pw'),
             'structure': generate_structure(),
             'kpoints': generate_kpoints_mesh(2),
             'parameters': parameters,
@@ -688,7 +688,7 @@ def generate_inputs_pw(fixture_code, generate_structure, generate_kpoints_mesh, 
 
 
 @pytest.fixture
-def generate_inputs_cp(fixture_code, generate_structure, generate_upf_data):
+def generate_inputs_cp(aiida_code_installed, generate_structure, generate_upf_data):
     """Generate default inputs for a CpCalculation."""
 
     def _generate_inputs_cp(autopilot=False):
@@ -698,7 +698,7 @@ def generate_inputs_cp(fixture_code, generate_structure, generate_upf_data):
         from aiida_quantumespresso.utils.resources import get_default_options
 
         inputs = {
-            'code': fixture_code('quantumespresso.cp'),
+            'code': aiida_code_installed(default_calc_job_plugin='quantumespresso.cp'),
             'structure': generate_structure(),
             'parameters': Dict({
                 'CONTROL': {
@@ -738,7 +738,7 @@ def generate_inputs_cp(fixture_code, generate_structure, generate_upf_data):
 def generate_inputs_xspectra(
     fixture_sandbox,
     fixture_localhost,
-    fixture_code,
+    aiida_code_installed,
     generate_remote_data,
     generate_kpoints_mesh,
 ):
@@ -757,7 +757,7 @@ def generate_inputs_xspectra(
 
         inputs = {
             'code':
-            fixture_code('quantumespresso.xspectra'),
+            aiida_code_installed(default_calc_job_plugin='quantumespresso.xspectra'),
             'parameters':
             Dict(parameters),
             'parent_folder':
@@ -862,7 +862,7 @@ def generate_workchain_ph(generate_workchain, generate_inputs_ph, generate_calc_
 
 
 @pytest.fixture
-def generate_workchain_pdos(generate_workchain, generate_inputs_pw, fixture_code):
+def generate_workchain_pdos(generate_workchain, generate_inputs_pw, aiida_code_installed):
     """Generate an instance of a `PdosWorkChain`."""
 
     def _generate_workchain_pdos(emin=None, emax=None, energy_range_vs_fermi=None):
@@ -898,14 +898,14 @@ def generate_workchain_pdos(generate_workchain, generate_inputs_pw, fixture_code
             projwfc_params['PROJWFC'].update({'Emin': emin, 'Emax': emax})
 
         dos = {
-            'code': fixture_code('quantumespresso.dos'),
+            'code': aiida_code_installed(default_calc_job_plugin='quantumespresso.dos'),
             'parameters': Dict(dos_params),
             'metadata': {
                 'options': get_default_options()
             }
         }
         projwfc = {
-            'code': fixture_code('quantumespresso.projwfc'),
+            'code': aiida_code_installed(default_calc_job_plugin='quantumespresso.projwfc'),
             'parameters': Dict(projwfc_params),
             'metadata': {
                 'options': get_default_options()

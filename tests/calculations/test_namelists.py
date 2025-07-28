@@ -11,14 +11,14 @@ from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 
 
 @pytest.fixture
-def generate_inputs(fixture_localhost, fixture_code, generate_remote_data):
+def generate_inputs(fixture_localhost, aiida_code_installed, generate_remote_data):
     """Return only those inputs that the parser will expect to be there."""
 
     def _factory(parameters=None, settings=None, filepath_parent_folder=None):
         from aiida_quantumespresso.utils.resources import get_default_options
 
         inputs = {
-            'code': fixture_code('quantumespresso.namelists'),
+            'code': aiida_code_installed(default_calc_job_plugin='quantumespresso.namelists'),
             'parameters': orm.Dict(dict=parameters or {}),
             'settings': orm.Dict(dict=settings or {}),
             'metadata': {

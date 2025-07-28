@@ -11,7 +11,7 @@ from aiida_quantumespresso.utils.resources import get_default_options
 
 
 @pytest.fixture
-def generate_inputs(tmp_path, fixture_localhost, fixture_code, generate_remote_data):
+def generate_inputs(tmp_path, fixture_localhost, aiida_code_installed, generate_remote_data):
     """Fixture: inputs for `Pw2gwCalculation`."""
 
     def _factory(with_symlink=False, parameters=None):
@@ -29,7 +29,7 @@ def generate_inputs(tmp_path, fixture_localhost, fixture_code, generate_remote_d
             }
 
         inputs = {
-            'code': fixture_code('quantumespresso.pw2gw'),
+            'code': aiida_code_installed(default_calc_job_plugin='quantumespresso.pw2gw'),
             'parent_folder': generate_remote_data(fixture_localhost, str(tmp_path), 'quantumespresso.pw'),
             'parameters': orm.Dict(parameters),
             'settings': orm.Dict({'PARENT_FOLDER_SYMLINK': with_symlink}),
