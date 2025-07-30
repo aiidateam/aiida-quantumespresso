@@ -1,3 +1,29 @@
+## v4.12.0
+
+Minor release which adds support for non-collinear calculations to the protocol methods, including spin-orbit interactions.
+The behaviour of the `get_builder_from_protocol()` method is also corrected when the `pseudos` are overridden.
+Here, the magnetization was still determined using the number of valence electrons in the `pseudo_family`, instead of the actual provided pseudo potentials.
+Now it is also checked and enforced that the user has provided pseudo potentials for _all_ the kinds in the input structure, and also overrides the energy cutoffs.
+
+### ✨ New features
+
+* Protocols: Add support for non-collinear calculations [[5586c3f](https://github.com/aiidateam/aiida-quantumespresso/commit/5586c3fee9bd4118c7a61b52b913540db356832e)]
+* Protocols: Add support for spin-orbit [[0c81dad](https://github.com/aiidateam/aiida-quantumespresso/commit/0c81dad7f5f3a1b0ef83db8b1549f99cf25aeb4b)]
+
+### 👌 Improvements
+
+* `get_magnetization`: Replace `pseudo_family` input by `z_valences` [[16fbada](https://github.com/aiidateam/aiida-quantumespresso/commit/16fbadafe5bd240004f173c506941e4866d08320)]
+
+### 🐛 Bug fixes
+
+* `PwParser`: set `num_of_atomic_wfc` to `None` when absent from XML [[7ee08f2](https://github.com/aiidateam/aiida-quantumespresso/commit/7ee08f2ee8171858b308b487368fbbcd560c64af)]
+* Protocols: Fix behaviour for `pseudos` overrides [[a94fbe4](https://github.com/aiidateam/aiida-quantumespresso/commit/a94fbe41bbe81bf628a6bce490ae141c41150b31)]
+
+### 🧪 Tests
+
+* Allow setting `z_valence` in `generate_upf_data` fixture [[ec90bfc](https://github.com/aiidateam/aiida-quantumespresso/commit/ec90bfca97d9835623f0229f9446b0b19c56d126)]
+* Extend `sssp` fixture to PseudoDojo [[68974fc](https://github.com/aiidateam/aiida-quantumespresso/commit/68974fcd11716323fb092b8eac8329d59df48abd)]
+
 ## v4.11.1
 
 This patch release reintroduces an upper limit to `aiida-pseudo` that was erroneously removed in 4a6cdc22ec7f868a497abfd384bfeed39dfee3dc.
