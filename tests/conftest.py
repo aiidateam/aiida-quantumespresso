@@ -326,10 +326,11 @@ def generate_calc_job_node(fixture_localhost):
 def generate_upf_data():
     """Return a `UpfData` instance for the given element a file for which should exist in `tests/fixtures/pseudos`."""
 
-    def _generate_upf_data(element):
-        """Return `UpfData` node."""
-        from aiida_pseudo.data.pseudo import UpfData
-        content = f'<UPF version="2.0.1"><PP_HEADER\nelement="{element}"\nz_valence="4.0"\n/></UPF>\n'
+    from aiida_pseudo.data.pseudo import UpfData
+
+    def _generate_upf_data(element: str, z_valence: float = 4.0) -> UpfData:
+        """Return a `UpfData` node."""
+        content = f'<UPF version="2.0.1"><PP_HEADER\nelement="{element}"\nz_valence="{z_valence}"\n/></UPF>\n'
         stream = io.BytesIO(content.encode('utf-8'))
         return UpfData(stream, filename=f'{element}.upf')
 
