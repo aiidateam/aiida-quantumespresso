@@ -191,7 +191,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         magnetization = get_magnetization(
             structure=structure,
-            pseudo_family=pseudo_family,
+            z_valences={kind.name: pseudo_family.get_pseudo(element=kind.symbol).z_valence for kind in structure.kinds},
             initial_magnetic_moments=initial_magnetic_moments,
             spin_type=spin_type
         )
