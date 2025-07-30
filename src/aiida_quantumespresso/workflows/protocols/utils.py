@@ -134,7 +134,7 @@ def get_magnetization_parameters() -> dict:
 
 def get_magnetization(
     structure: StructureData,
-    pseudo_family: PseudoPotentialFamily,
+    z_valences: dict,
     initial_magnetic_moments: Optional[dict] = None,
     spin_type: SpinType = SpinType.COLLINEAR
 ) -> dict:
@@ -149,7 +149,8 @@ def get_magnetization(
     In case the `spin_type` is set to `SpinType.COLLINEAR`, the values for `angle1` and `angle2` will be set to `None`.
 
     :param structure: the structure.
-    :param pseudo_family: pseudopotential family.
+    :param z_valences: dictionary mapping each kind in the structure to the number of valence electrons in the pseudo
+        potential.
     :param initial_magnetic_moments: dictionary mapping each kind in the structure to its magnetic moment.
     :param spin_type: the `SpinType` of the calculation.
     :returns: dictionary of the magnetization.
@@ -159,6 +160,8 @@ def get_magnetization(
         'angle1': {} if spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT] else None,
         'angle2': {} if spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT] else None,
     }
+    if sorted(z_valences.keys()) != sorted(structure.get_kind_names()):
+        raise ValueError(f'`z_valences` needs one value for each of the {len(structure.kinds)} kinds.')
 
     if initial_magnetic_moments is not None:
 
@@ -172,8 +175,8 @@ def get_magnetization(
             magmom = initial_magnetic_moments[kind.name]
 
             if isinstance(magmom, (int, float)):
-                magnetization['starting_magnetization'][
-                    kind.name] = magmom / pseudo_family.get_pseudo(element=kind.symbol).z_valence
+                scaled_magmom = magmom / z_valences[kind.name]
+                magnetization['starting_magnetization'][kind.name] = scaled_magmom
 
                 if spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT]:
                     magnetization['angle1'][kind.name] = 0.0
@@ -187,8 +190,8 @@ def get_magnetization(
                         f'moment of kind `{kind.name}`.'
                     )
 
-                magnetization['starting_magnetization'][
-                    kind.name] = magmom[0] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
+                scaled_magmom = magmom[0] / z_valences[kind.name]
+                magnetization['starting_magnetization'][kind.name] = scaled_magmom
                 magnetization['angle1'][kind.name] = magmom[1]
                 magnetization['angle2'][kind.name] = magmom[2]
             else:
@@ -212,8 +215,8 @@ def get_magnetization(
 
             magmom = kind.get_magmom_coord()
 
-            magnetization['starting_magnetization'][
-                kind.name] = magmom[0] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
+            scaled_magmom = magmom[0] / z_valences[kind.name]
+            magnetization['starting_magnetization'][kind.name] = scaled_magmom
 
             if spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT]:
                 magnetization['angle1'][kind.name] = magmom[1]
@@ -231,7 +234,7 @@ def get_magnetization(
 
         magnetization['starting_magnetization'][kind.name] = (
             magnetic_parameters['default_magnetization'] if magnetic_moment == 0 else magnetic_moment /
-            pseudo_family.get_pseudo(element=kind.symbol).z_valence
+            z_valences[kind.name]
         )
         if spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT]:
             magnetization['angle1'][kind.name] = 0.0

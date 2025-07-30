@@ -116,7 +116,6 @@ def test_recursive_merge():
     ),
 )
 def test_get_magnetization(
-    pseudo_family,
     generate_structure,
     structure_id,
     initial_magnetic_moments,
@@ -125,31 +124,43 @@ def test_get_magnetization(
 ):
     """Test the `get_magnetization` function."""
     from aiida_quantumespresso.workflows.protocols.utils import get_magnetization
+    structure = generate_structure(structure_id)
+    z_valences = {kind: 4.0 for kind in structure.get_kind_names()}
 
-    magnetization = get_magnetization(
-        generate_structure(structure_id), pseudo_family, initial_magnetic_moments, spin_type
-    )
+    magnetization = get_magnetization(structure, z_valences, initial_magnetic_moments, spin_type)
 
     assert magnetization == expected_magnetization
 
 
 @pytest.mark.parametrize(
-    'structure_id,initial_magnetic_moments,spin_type,expected_error,error_message',
+    'structure_id,z_valences,initial_magnetic_moments,spin_type,expected_error,error_message',
     (
-        ('silicon', {}, SpinType.COLLINEAR, ValueError, '`initial_magnetic_moments` needs one value for each of'),
+        ('silicon', {}, {
+            'Si': 1.0
+        }, SpinType.COLLINEAR, ValueError, '`z_valences` needs one value for each of'),
+        (
+            'silicon', {
+                'Si': 4.0
+            }, {}, SpinType.COLLINEAR, ValueError, '`initial_magnetic_moments` needs one value for each of'
+        ),
         ('silicon', {
+            'Si': 4.0
+        }, {
             'Si': (1, 2, 3)
         }, SpinType.COLLINEAR, TypeError, 'Spin type is set to '),
-        ('silicon', {
-            'Si': 'zero'
-        }, SpinType.COLLINEAR, TypeError, 'Unrecognised type for magnetic moment'),
+        (
+            'silicon', {
+                'Si': 4.0
+            }, {
+                'Si': 'zero'
+            }, SpinType.COLLINEAR, TypeError, 'Unrecognised type for magnetic moment'
+        ),
     ),
 )
 def test_get_magnetization_failure(
-    pseudo_family, generate_structure, structure_id, initial_magnetic_moments, spin_type, expected_error, error_message
+    generate_structure, structure_id, z_valences, initial_magnetic_moments, spin_type, expected_error, error_message
 ):
     """Test the `get_magnetization` function."""
     from aiida_quantumespresso.workflows.protocols.utils import get_magnetization
-
     with pytest.raises(expected_error, match=error_message):
-        get_magnetization(generate_structure(structure_id), pseudo_family, initial_magnetic_moments, spin_type)
+        get_magnetization(generate_structure(structure_id), z_valences, initial_magnetic_moments, spin_type)
