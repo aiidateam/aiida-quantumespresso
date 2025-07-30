@@ -218,19 +218,100 @@ def test_parallelization_overrides(fixture_code, generate_structure):
 
 def test_pseudos_overrides(fixture_code, generate_structure, generate_upf_data):
     """Test specifying ``pw.pseudos`` ``overrides`` for the ``get_builder_from_protocol()`` method."""
-    code = fixture_code('quantumespresso.pw')
-    structure = generate_structure('silicon')
-    silicon_pseudo = generate_upf_data('Si')
+    structure = generate_structure('cobalt-prim')
+    upf_data = generate_upf_data('Co', z_valence=5.0)
 
-    overrides = {'pw': {'pseudos': {'Si': silicon_pseudo}}}
-    builder = PwBaseWorkChain.get_builder_from_protocol(
-        code,
-        structure,
-        overrides=overrides,
-    )
-    pseudos = builder.pw.pseudos  # pylint: disable=no-member
+    for overrides in (
+        {
+            'pw': {
+                'pseudos': {
+                    'Co': upf_data,
+                },
+                'parameters': {
+                    'SYSTEM': {
+                        'ecutrho': 123,
+                        'ecutwfc': 456,
+                    }
+                }
+            }
+        },
+        {
+            'pseudo_family': None,
+            'pw': {
+                'pseudos': {
+                    'Co': upf_data,
+                },
+                'parameters': {
+                    'SYSTEM': {
+                        'ecutrho': 123,
+                        'ecutwfc': 456,
+                    }
+                }
+            }
+        },
+    ):
+        builder = PwBaseWorkChain.get_builder_from_protocol(
+            code=fixture_code('quantumespresso.pw'),
+            structure=structure,
+            overrides=overrides,
+            spin_type=SpinType.COLLINEAR
+        )
+        pseudos = builder.pw.pseudos  # pylint: disable=no-member
+        parameters = builder.pw.parameters.get_dict()
 
-    assert pseudos['Si'] == silicon_pseudo
+        assert pseudos['Co'] == upf_data
+        assert parameters['SYSTEM']['ecutrho'] == 123
+        assert parameters['SYSTEM']['ecutwfc'] == 456
+        assert parameters['SYSTEM']['starting_magnetization']['Co'] == 1.0
+
+
+def test_pseudos_overrides_raises(fixture_code, generate_structure, generate_upf_data):
+    """Test specifying ``pw.pseudos`` ``overrides`` for the ``get_builder_from_protocol()`` method.
+
+    This test checks that the `get_builder_from_protocol` raises when the user overrides the `pseudos` but does not
+    override the cutoffs.
+    """
+    structure = generate_structure('cobalt-prim')
+    upf_data = generate_upf_data('Co')
+
+    for params in (
+        ({
+            'pw': {
+                'pseudos': {
+                    'Co': upf_data
+                }
+            }
+        }, ValueError, 'both `ecutwfc` and `ecutrho` cutoffs should be'),
+        ({
+            'pw': {
+                'pseudos': {
+                    'Si': upf_data
+                }
+            }
+        }, ValueError, '`pseudos` override needs one value'),
+        ({
+            'pseudo_family': None,
+            'pw': {
+                'pseudos': {
+                    'Co': upf_data
+                }
+            }
+        }, ValueError, 'both `ecutwfc` and `ecutrho` cutoffs should be'),
+        ({
+            'pseudo_family': None,
+            'pw': {
+                'pseudos': {
+                    'Si': upf_data
+                }
+            }
+        }, ValueError, '`pseudos` override needs one value'),
+    ):
+        overrides, error_type, error_msg = params
+
+        with pytest.raises(error_type, match=error_msg):
+            PwBaseWorkChain.get_builder_from_protocol(
+                code=fixture_code('quantumespresso.pw'), structure=structure, overrides=overrides
+            )
 
 
 def test_pseudos_family_structure_fail(fixture_code, generate_structure):

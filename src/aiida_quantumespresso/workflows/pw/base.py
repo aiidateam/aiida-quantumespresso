@@ -156,31 +156,47 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         natoms = len(structure.sites)
 
-        try:
-            pseudo_set = (PseudoDojoFamily, SsspFamily, CutoffsPseudoPotentialFamily)
-            pseudo_family = orm.QueryBuilder().append(pseudo_set, filters={'label': pseudo_family}).one()[0]
-        except exceptions.NotExistent as exception:
-            raise ValueError(
-                f'required pseudo family `{pseudo_family}` is not installed. Please use `aiida-pseudo install` to'
-                'install it.'
-            ) from exception
-
-        try:
-            cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
-            pseudos = pseudo_family.get_pseudos(structure=structure)
-        except ValueError as exception:
-            raise ValueError(
-                f'failed to obtain recommended cutoffs for pseudo family `{pseudo_family}`: {exception}'
-            ) from exception
-
         # Update the parameters based on the protocol inputs
         parameters = inputs['pw']['parameters']
+
+        if overrides and 'pseudos' in overrides['pw']:
+
+            pseudos = overrides['pw']['pseudos']
+
+            if sorted(pseudos.keys()) != sorted(structure.get_kind_names()):
+                raise ValueError(f'`pseudos` override needs one value for each of the {len(structure.kinds)} kinds.')
+
+            system_overrides = overrides['pw'].get('parameters', {}).get('SYSTEM', {})
+
+            if not all(key in system_overrides for key in ('ecutwfc', 'ecutrho')):
+                raise ValueError(
+                    'When overriding the pseudo potentials, both `ecutwfc` and `ecutrho` cutoffs should be '
+                    f'provided in the `overrides`: {overrides}'
+                )
+
+        else:
+            try:
+                pseudo_set = (PseudoDojoFamily, SsspFamily, CutoffsPseudoPotentialFamily)
+                pseudo_family = orm.QueryBuilder().append(pseudo_set, filters={'label': pseudo_family}).one()[0]
+            except exceptions.NotExistent as exception:
+                raise ValueError(
+                    f'required pseudo family `{pseudo_family}` is not installed. Please use `aiida-pseudo install` to'
+                    'install it.'
+                ) from exception
+
+            try:
+                parameters['SYSTEM']['ecutwfc'], parameters['SYSTEM'][
+                    'ecutrho'] = pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
+                pseudos = pseudo_family.get_pseudos(structure=structure)
+            except ValueError as exception:
+                raise ValueError(
+                    f'failed to obtain recommended cutoffs for pseudo family `{pseudo_family}`: {exception}'
+                ) from exception
+
         parameters['CONTROL']['etot_conv_thr'] = natoms * meta_parameters['etot_conv_thr_per_atom']
         parameters['ELECTRONS']['conv_thr'] = natoms * meta_parameters['conv_thr_per_atom']
-        parameters['SYSTEM']['ecutwfc'] = cutoff_wfc
-        parameters['SYSTEM']['ecutrho'] = cutoff_rho
 
-        #If the structure is 2D periodic in the x-y plane, we set assume_isolate to `2D`
+        # If the structure is 2D periodic in the x-y plane, we set assume_isolate to `2D`
         if structure.pbc == (True, True, False):
             parameters['SYSTEM']['assume_isolated'] = '2D'
 
@@ -191,9 +207,9 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         magnetization = get_magnetization(
             structure=structure,
-            z_valences={kind.name: pseudo_family.get_pseudo(element=kind.symbol).z_valence for kind in structure.kinds},
+            z_valences={kind.name: pseudos[kind.name].z_valence for kind in structure.kinds},
             initial_magnetic_moments=initial_magnetic_moments,
-            spin_type=spin_type
+            spin_type=spin_type,
         )
         if spin_type is SpinType.COLLINEAR:
             parameters['SYSTEM']['starting_magnetization'] = magnetization['starting_magnetization']
@@ -216,9 +232,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             # if tot_magnetization in overrides , remove starting_magnetization from parameters
             if parameters.get('SYSTEM', {}).get('tot_magnetization') is not None:
                 parameters.setdefault('SYSTEM', {}).pop('starting_magnetization', None)
-
-            pseudos_overrides = overrides.get('pw', {}).get('pseudos', {})
-            pseudos = recursive_merge(pseudos, pseudos_overrides)
 
         metadata = inputs['pw']['metadata']
 
