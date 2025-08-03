@@ -1,3 +1,9 @@
+## v4.12.1
+
+### 🐛 Bug fixes
+
+* 🐛 Protocols: Fix `overrides` that do not have `pw` key [[46192bf](https://github.com/aiidateam/aiida-quantumespresso/commit/46192bf872367b682f135642706c4f4c4261f0d9)]
+
 ## v4.12.0
 
 Minor release which adds support for non-collinear calculations to the protocol methods, including spin-orbit interactions.
