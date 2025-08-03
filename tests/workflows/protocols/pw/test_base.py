@@ -135,6 +135,19 @@ def test_initial_magnetic_moments(fixture_code, generate_structure):
     assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.25}
 
 
+def test_overrides_pseudo_family(fixture_code, generate_structure):
+    """Test specifying ``pseudo_family`` ``overrides`` for the ``get_builder_from_protocol()`` method."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure('silicon')
+
+    overrides = {'pseudo_family': 'PseudoDojo/0.4/PBEsol/FR/standard/upf'}
+
+    builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)
+    parameters = builder.pw.parameters.get_dict()
+    assert parameters['SYSTEM']['ecutwfc'] == 60.0
+    assert parameters['SYSTEM']['ecutrho'] == 400.0
+
+
 def test_magnetization_overrides(fixture_code, generate_structure):
     """Test magnetization ``overrides`` for the ``PwBaseWorkChain.get_builder_from_protocol`` method."""
     code = fixture_code('quantumespresso.pw')

@@ -159,7 +159,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         # Update the parameters based on the protocol inputs
         parameters = inputs['pw']['parameters']
 
-        if overrides and 'pseudos' in overrides['pw']:
+        if overrides and 'pseudos' in overrides.get('pw', {}):
 
             pseudos = overrides['pw']['pseudos']
 
