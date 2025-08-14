@@ -8,7 +8,6 @@ from aiida import orm
 from aiida.common import CalcInfo, CodeInfo, InputValidationError
 from aiida.common.lang import classproperty
 from aiida.common.warnings import AiidaDeprecationWarning
-from traitlets import Bool
 
 from aiida_quantumespresso.calculations import _lowercase_dict, _pop_parser_options, _uppercase_dict
 from aiida_quantumespresso.calculations.pw import PwCalculation
@@ -66,7 +65,8 @@ class NebCalculation(CalcJob):
         spec.input('first_structure', valid_type=orm.StructureData, help='Initial structure', required=False)
         spec.input('last_structure', valid_type=orm.StructureData, help='Final structure', required=False)
         spec.input('images', valid_type=orm.TrajectoryData, required=False,
-            help='Ordered trajectory of all NEB images along the reaction path, including initial, intermediate, and final configurations.')
+            help='Ordered trajectory of all NEB images along the reaction path, including'
+            'initial, intermediate, and final configurations.')
         spec.input('parameters', valid_type=orm.Dict, help='NEB-specific input parameters')
         spec.input('settings', valid_type=orm.Dict, required=False,
             help='Optional parameters to affect the way the calculation job and the parsing are performed.')
@@ -247,24 +247,25 @@ class NebCalculation(CalcJob):
             structure_list = [self.inputs.images.get_step_structure(i) for i in range(num_images)]
         else:
             warnings.warn(
-                'The `first_structure` and `last_structure` inputs input are deprecated and will be removed in a future release. '
+                'The `first_structure` and `last_structure` inputs input are deprecated'
+                'and will be removed in a future release. '
                 'Use `images` instead.', AiidaDeprecationWarning
             )
             structure_list = [self.inputs.first_structure, self.inputs.first_structure]
 
-        for ii, structure in enumerate(structure_list[1:]):
+        for image_idx, structure in enumerate(structure_list[1:]):
             # Check that all images have the same cell
             if abs(np.array(structure_list[0].cell) - np.array(structure.cell)).max() > 1.e-4:
-                raise InputValidationError(f'Different cell in the fist and image {ii+1}')
+                raise InputValidationError(f'Different cell in the fist and image {image_idx+1}')
 
             # Check that all images have the same number of sites
             if len(structure_list[0].sites) != len(structure.sites):
-                raise InputValidationError(f'Different number of sites in the fist and image {ii+1}')
+                raise InputValidationError(f'Different number of sites in the fist and image {image_idx+1}')
 
             # Check that all images have the same kinds
             if structure_list[0].get_site_kindnames() != structure.get_site_kindnames():
                 raise InputValidationError(
-                    f'Mismatch between the kind names and/or order between the first and image {ii+1}'
+                    f'Mismatch between the kind names and/or order between the first and image {image_idx+1}'
                 )
 
             # Check that a pseudo potential was specified for each kind present in the `StructureData`
@@ -288,7 +289,7 @@ class NebCalculation(CalcJob):
         folder.get_subfolder(self._OUTPUT_SUBFOLDER, create=True)
 
         # We first prepare the NEB-specific input file.
-        neb_input_filecontent, neb_inputparams = self._generate_input_files(self.inputs.parameters, settings_dict)
+        neb_input_filecontent, _ = self._generate_input_files(self.inputs.parameters, settings_dict)
         with folder.open(self.inputs.metadata.options.input_filename, 'w') as handle:
             handle.write(neb_input_filecontent)
 
@@ -373,11 +374,7 @@ class NebCalculation(CalcJob):
         calcinfo.remote_copy_list = remote_copy_list
         calcinfo.remote_symlink_list = remote_symlink_list
         # In neb calculations there is no input read from standard input!!
-        if 'intermediate_structures' in self.inputs:
-            ninput_images = 2 + num_intstructures
-            codeinfo.cmdline_params = (['-input_images', str(ninput_images)] + list(cmdline_params))
-        else:
-            codeinfo.cmdline_params = (['-input_images', '2'] + list(cmdline_params))
+        codeinfo.cmdline_params = (['-input_images', str(len(structure_list))] + list(cmdline_params))
         codeinfo.stdout_name = self.inputs.metadata.options.output_filename
         codeinfo.code_uuid = self.inputs.code.uuid
         calcinfo.codes_info = [codeinfo]
