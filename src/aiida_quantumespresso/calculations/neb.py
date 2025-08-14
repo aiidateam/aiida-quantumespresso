@@ -8,6 +8,7 @@ from aiida import orm
 from aiida.common import CalcInfo, CodeInfo, InputValidationError
 from aiida.common.lang import classproperty
 from aiida.common.warnings import AiidaDeprecationWarning
+from traitlets import Bool
 
 from aiida_quantumespresso.calculations import _lowercase_dict, _pop_parser_options, _uppercase_dict
 from aiida_quantumespresso.calculations.pw import PwCalculation
@@ -62,10 +63,10 @@ class NebCalculation(CalcJob):
         spec.input('metadata.options.input_filename', valid_type=str, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=str, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.neb')
-        spec.input('first_structure', valid_type=orm.StructureData, help='Initial structure')
-        spec.input('last_structure', valid_type=orm.StructureData, help='Final structure')
-        spec.input('intermediate_structures', valid_type=orm.TrajectoryData, required=False,
-            help='intermediate structure(s) only')
+        spec.input('first_structure', valid_type=orm.StructureData, help='Initial structure', required=False)
+        spec.input('last_structure', valid_type=orm.StructureData, help='Final structure', required=False)
+        spec.input('images', valid_type=orm.TrajectoryData, required=False,
+            help='Ordered trajectory of all NEB images along the reaction path, including initial, intermediate, and final configurations.')
         spec.input('parameters', valid_type=orm.Dict, help='NEB-specific input parameters')
         spec.input('settings', valid_type=orm.Dict, required=False,
             help='Optional parameters to affect the way the calculation job and the parsing are performed.')
@@ -73,6 +74,9 @@ class NebCalculation(CalcJob):
             help='An optional working directory of a previously completed calculation to restart from.')
         # We reuse some inputs from PwCalculation to construct the PW-specific parts of the input files
         spec.expose_inputs(PwCalculation, namespace='pw', include=('parameters', 'pseudos', 'kpoints', 'vdw_table'))
+
+        spec.inputs.validator = cls.validate_inputs
+
         spec.output('output_parameters', valid_type=orm.Dict,
             help='The output parameters dictionary of the NEB calculation')
         spec.output('output_trajectory', valid_type=orm.TrajectoryData)
@@ -80,6 +84,7 @@ class NebCalculation(CalcJob):
         spec.output('output_mep', valid_type=orm.ArrayData,
             help='The original and interpolated energy profiles along the minimum-energy path (mep)')
         spec.default_output_node = 'output_parameters'
+
         spec.exit_code(303, 'ERROR_OUTPUT_XML_MISSING',
             message='The required XML file is not present in the retrieved folder.')
         spec.exit_code(304, 'ERROR_OUTPUT_XML_MULTIPLE',
@@ -124,6 +129,19 @@ class NebCalculation(CalcJob):
                     'trajectory and output structure was successfully parsed which can be used for a restart.'
         )
         # yapf: enable
+
+    @classmethod
+    def validate_inputs(cls, inputs, _):
+        """Validate the top-level inputs."""
+        if 'images' not in inputs:
+            if 'first_structure' not in inputs or 'last_structure' not in inputs:
+                raise InputValidationError(
+                    'Either the `images` input or both `first_structure` and `last_structure` must be provided.'
+                )
+        elif 'first_structure' in inputs or 'last_structure' in inputs:
+            raise InputValidationError(
+                'Specify either `images` or both `first_structure` and `last_structure`, but not both.'
+            )
 
     @classmethod
     def _generate_input_files(cls, neb_parameters, settings_dict):
@@ -224,34 +242,41 @@ class NebCalculation(CalcJob):
         else:
             settings_dict = {}
 
-        first_structure = self.inputs.first_structure
-        last_structure = self.inputs.last_structure
-
-        # Check that the first and last image have the same cell
-        if abs(np.array(first_structure.cell) - np.array(last_structure.cell)).max() > 1.e-4:
-            raise InputValidationError('Different cell in the fist and last image')
-
-        # Check that the first and last image have the same number of sites
-        if len(first_structure.sites) != len(last_structure.sites):
-            raise InputValidationError('Different number of sites in the fist and last image')
-
-        # Check that sites in the initial and final structure have the same kinds
-        if first_structure.get_site_kindnames() != last_structure.get_site_kindnames():
-            raise InputValidationError(
-                'Mismatch between the kind names and/or order between '
-                'the first and final image'
+        if 'images' in self.inputs:
+            num_images = len(self.inputs.images.get_stepids())
+            structure_list = [self.inputs.images.get_step_structure(i) for i in range(num_images)]
+        else:
+            warnings.warn(
+                'The `first_structure` and `last_structure` inputs input are deprecated and will be removed in a future release. '
+                'Use `images` instead.', AiidaDeprecationWarning
             )
+            structure_list = [self.inputs.first_structure, self.inputs.first_structure]
 
-        # Check that a pseudo potential was specified for each kind present in the `StructureData`
-        # self.inputs.pw.pseudos is a plumpy.utils.AttributesFrozendict
-        kindnames = [kind.name for kind in first_structure.kinds]
-        if set(kindnames) != set(self.inputs.pw.pseudos.keys()):
-            formatted_pseudos = ', '.join(list(self.inputs.pw.pseudos.keys()))
-            formatted_kinds = ', '.join(list(kindnames))
-            raise InputValidationError(
-                'Mismatch between the defined pseudos and the list of kinds of the structure.\n'
-                f'Pseudos: {formatted_pseudos};\nKinds: {formatted_kinds}'
-            )
+        for ii, structure in enumerate(structure_list[1:]):
+            # Check that all images have the same cell
+            if abs(np.array(structure_list[0].cell) - np.array(structure.cell)).max() > 1.e-4:
+                raise InputValidationError(f'Different cell in the fist and image {ii+1}')
+
+            # Check that all images have the same number of sites
+            if len(structure_list[0].sites) != len(structure.sites):
+                raise InputValidationError(f'Different number of sites in the fist and image {ii+1}')
+
+            # Check that all images have the same kinds
+            if structure_list[0].get_site_kindnames() != structure.get_site_kindnames():
+                raise InputValidationError(
+                    f'Mismatch between the kind names and/or order between the first and image {ii+1}'
+                )
+
+            # Check that a pseudo potential was specified for each kind present in the `StructureData`
+            # self.inputs.pw.pseudos is a plumpy.utils.AttributesFrozendict
+            kindnames = [kind.name for kind in structure_list[0].kinds]
+            if set(kindnames) != set(self.inputs.pw.pseudos.keys()):
+                formatted_pseudos = ', '.join(list(self.inputs.pw.pseudos.keys()))
+                formatted_kinds = ', '.join(list(kindnames))
+                raise InputValidationError(
+                    'Mismatch between the defined pseudos and the list of kinds of the structure.\n'
+                    f'Pseudos: {formatted_pseudos};\nKinds: {formatted_kinds}'
+                )
 
         ##############################
         # END OF INITIAL INPUT CHECK #
@@ -266,41 +291,6 @@ class NebCalculation(CalcJob):
         neb_input_filecontent, neb_inputparams = self._generate_input_files(self.inputs.parameters, settings_dict)
         with folder.open(self.inputs.metadata.options.input_filename, 'w') as handle:
             handle.write(neb_input_filecontent)
-
-        #Here we validate and add intermediate images to the list of structures
-        if 'intermediate_structures' in self.inputs:
-            intermediate_structures = self.inputs.intermediate_structures
-            num_intstructures = len(intermediate_structures.get_stepids())
-
-            #check that the no. of input structures (+intermediates) = no. of images in parameter dict
-            nimag_param = neb_inputparams.get('num_of_images', 2)
-            if nimag_param < num_intstructures + 2:
-                raise InputValidationError(
-                    f'No of input structures={num_intstructures+2} is > '
-                    f'than num_of_images={nimag_param} in the input parameters'
-                )
-
-            structure_list = [first_structure, last_structure]
-            for i in range(0, num_intstructures):
-                intm_structure = intermediate_structures.get_step_structure(i)
-
-                # Check that the first and last image have the same cell
-                if abs(np.array(first_structure.cell) - np.array(intm_structure.cell)).max() > 1.e-4:
-                    raise InputValidationError(f'Different cell in the fist and intermediate image{i+1}')
-
-                # Check that the first and last image have the same number of sites
-                if len(first_structure.sites) != len(intm_structure.sites):
-                    raise InputValidationError(f'Different no. of sites in the fist and intermediate image{i+1}')
-
-                # Check that sites in the initial and final structure have the same kinds
-                if first_structure.get_site_kindnames() != intm_structure.get_site_kindnames():
-                    raise InputValidationError(
-                        f'Mismatch btw the kind names and/or order between the first and intermediate image{i+1}'
-                    )
-
-                structure_list.insert(1 + i, intm_structure)
-        else:
-            structure_list = [first_structure, last_structure]
 
         # We now generate the PW input files for each input structure
         local_copy_pseudo_list = []
