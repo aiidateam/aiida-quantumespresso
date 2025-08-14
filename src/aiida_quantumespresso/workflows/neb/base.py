@@ -212,7 +212,6 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             if parameters.get('SYSTEM', {}).get('tot_magnetization') is not None:
                 parameters.setdefault('SYSTEM', {}).pop('starting_magnetization', None)
 
-
         # pylint: disable=no-member
         builder = cls.get_builder()
         builder.neb['code'] = code
@@ -289,7 +288,6 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             self.ctx.inputs.parameters['PATH']['restart_mode'] = 'restart'
             self.ctx.inputs.parent_folder = parent_folder
 
-
     def report_error_handled(self, calculation, action):
         """Report an action taken for a calculation that has failed.
 
@@ -301,7 +299,6 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         arguments = [calculation.process_label, calculation.pk, calculation.exit_status, calculation.exit_message]
         self.report('{}<{}> failed with exit status {}: {}'.format(*arguments))
         self.report(f'Action taken: {action}')
-
 
     @process_handler(
         priority=585,
@@ -354,7 +351,7 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         self.report_error_handled(calculation, "restarting in full with `CONTROL.restart_mode` = 'restart'")
 
         return ProcessHandlerReport(True)
-    
+
     @process_handler(priority=575, exit_codes=[
         NebCalculation.exit_codes.ERROR_NEB_CYCLE_EXCEEDED_NSTEP,
     ])
@@ -364,14 +361,15 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         In this case the calculation shut down cleanly and we can do a full restart.
         """
         self.ctx.inputs.parameters['PATH'].setdefault('nstep_path', 1)
-        input_nsteps = self.inputs.neb.parameters['PATH']['nstep_path'] if 'nstep_path' in self.inputs.neb.parameters['PATH'] else 1
+        input_nsteps = self.inputs.neb.parameters['PATH']['nstep_path'] if 'nstep_path' in self.inputs.neb.parameters[
+            'PATH'] else 1
         self.ctx.inputs.parameters['PATH']['nstep_path'] += input_nsteps
 
         self.set_restart_type(RestartType.FULL, calculation.outputs.remote_folder)
         self.report_error_handled(calculation, "restarting in full with `CONTROL.restart_mode` = 'restart'")
 
         return ProcessHandlerReport(True)
-    
+
     @process_handler(priority=410, exit_codes=[
         NebCalculation.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED,
     ])
@@ -381,7 +379,8 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         Decrease the mixing beta and fully restart from the previous calculation.
         """
         factor = self.defaults.delta_factor_mixing_beta
-        mixing_beta = self.ctx.inputs.pw.parameters.get('ELECTRONS', {}).get('mixing_beta', self.defaults.qe.mixing_beta)
+        mixing_beta = self.ctx.inputs.pw.parameters.get('ELECTRONS',
+                                                        {}).get('mixing_beta', self.defaults.qe.mixing_beta)
         mixing_beta_new = mixing_beta * factor
 
         self.ctx.inputs.pw.parameters['ELECTRONS']['mixing_beta'] = mixing_beta_new

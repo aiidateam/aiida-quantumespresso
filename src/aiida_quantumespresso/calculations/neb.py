@@ -64,7 +64,7 @@ class NebCalculation(CalcJob):
         spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.neb')
         spec.input('first_structure', valid_type=orm.StructureData, help='Initial structure')
         spec.input('last_structure', valid_type=orm.StructureData, help='Final structure')
-        spec.input('intermediate_structures', valid_type=orm.TrajectoryData, required=False, 
+        spec.input('intermediate_structures', valid_type=orm.TrajectoryData, required=False,
             help='intermediate structure(s) only')
         spec.input('parameters', valid_type=orm.Dict, help='NEB-specific input parameters')
         spec.input('settings', valid_type=orm.Dict, required=False,
@@ -96,10 +96,10 @@ class NebCalculation(CalcJob):
             message='The XML output file has an unsupported format.')
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
             message='The parser raised an unexpected exception: {exception}')
-        
+
         spec.exit_code(410, 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED',
             message='The electronic minimization cycle did not reach self-consistency.')
-        
+
         spec.exit_code(461, 'ERROR_DEXX_IS_NEGATIVE',
             message='The code failed with negative dexx in the exchange calculation.')
         spec.exit_code(462, 'ERROR_COMPUTING_CHOLESKY',
@@ -116,7 +116,7 @@ class NebCalculation(CalcJob):
             message='The eigenvector failed to converge.')
         spec.exit_code(468, 'ERROR_BROYDEN_FACTORIZATION',
             message='The factorization in the Broyden routine failed.')
-        
+
         spec.exit_code(502, 'ERROR_NEB_CYCLE_EXCEEDED_NSTEP',
             message='The NEB minimization cycle did not converge after the maximum number of steps.')
         spec.exit_code(503, 'ERROR_NEB_INTERRUPTED_PARTIAL_TRAJECTORY',
@@ -266,41 +266,41 @@ class NebCalculation(CalcJob):
         neb_input_filecontent, neb_inputparams = self._generate_input_files(self.inputs.parameters, settings_dict)
         with folder.open(self.inputs.metadata.options.input_filename, 'w') as handle:
             handle.write(neb_input_filecontent)
-        
+
         #Here we validate and add intermediate images to the list of structures
         if 'intermediate_structures' in self.inputs:
             intermediate_structures = self.inputs.intermediate_structures
             num_intstructures = len(intermediate_structures.get_stepids())
-            
+
             #check that the no. of input structures (+intermediates) = no. of images in parameter dict
             nimag_param = neb_inputparams.get('num_of_images', 2)
-            if  nimag_param < num_intstructures+2:
+            if nimag_param < num_intstructures + 2:
                 raise InputValidationError(
-                    f'No of input structures={num_intstructures+2} is > ' 
+                    f'No of input structures={num_intstructures+2} is > '
                     f'than num_of_images={nimag_param} in the input parameters'
                 )
-                
-            structure_list = [first_structure,last_structure]
+
+            structure_list = [first_structure, last_structure]
             for i in range(0, num_intstructures):
                 intm_structure = intermediate_structures.get_step_structure(i)
-                
+
                 # Check that the first and last image have the same cell
                 if abs(np.array(first_structure.cell) - np.array(intm_structure.cell)).max() > 1.e-4:
                     raise InputValidationError(f'Different cell in the fist and intermediate image{i+1}')
-                    
+
                 # Check that the first and last image have the same number of sites
                 if len(first_structure.sites) != len(intm_structure.sites):
                     raise InputValidationError(f'Different no. of sites in the fist and intermediate image{i+1}')
-                    
+
                 # Check that sites in the initial and final structure have the same kinds
                 if first_structure.get_site_kindnames() != intm_structure.get_site_kindnames():
                     raise InputValidationError(
                         f'Mismatch btw the kind names and/or order between the first and intermediate image{i+1}'
                     )
-                
-                structure_list.insert(1+i,intm_structure)
+
+                structure_list.insert(1 + i, intm_structure)
         else:
-            structure_list = [first_structure,last_structure]
+            structure_list = [first_structure, last_structure]
 
         # We now generate the PW input files for each input structure
         local_copy_pseudo_list = []
