@@ -2,12 +2,12 @@
 import os
 
 from aiida.common import AttributeDict, NotExistent
-from aiida.orm import ArrayData, Dict, TrajectoryData
 from aiida.engine import ExitCode
+from aiida.orm import ArrayData, Dict, TrajectoryData
 import numpy
 
-from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.calculations.neb import NebCalculation
+from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.parsers.parse_raw import convert_qe_to_aiida_structure
 from aiida_quantumespresso.parsers.parse_raw.neb import parse_raw_output_neb
 from aiida_quantumespresso.parsers.parse_raw.pw import parse_stdout as parse_pw_stdout
@@ -39,7 +39,7 @@ class NebParser(BaseParser):
         which should contain the temporary retrieved files.
         """
         logs = get_logging_container()
-        
+
         prefix = self.node.process_class._PREFIX
 
         self.exit_code_xml = None
@@ -84,7 +84,7 @@ class NebParser(BaseParser):
                 with self.retrieved.base.repository.open(pw_out_file, 'r') as f:
                     pw_out_text = f.read()  # Note: read() and not readlines()
                 # Output file can contain the output of many scf iterations, analyse only the last one
-                pw_out_text = "     coordinates at iteration" + pw_out_text.split("coordinates at iteration")[-1]
+                pw_out_text = '     coordinates at iteration' + pw_out_text.split('coordinates at iteration')[-1]
             except IOError:
                 logs_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
@@ -101,14 +101,14 @@ class NebParser(BaseParser):
             exit_code = self.validate_electronic(logs_stdout)
             if exit_code:
                 return self.exit(exit_code)
-            
+
             exit_code = self.validate_premature_exit(logs_stdout)
             if exit_code:
                 return self.exit(exit_code)
-            
+
             if logs_stdout and self.exit_code_xml:
                 return self.exit(self.exit_codes.ERROR_OUTPUT_FILES)
-                
+
             parsed_structure = parsed_data_stdout.pop('structure', {})
             parsed_trajectory = parsed_data_stdout.pop('trajectory', {})
             parsed_parameters = PwParser.build_output_parameters(parsed_data_xml, parsed_data_stdout)
@@ -188,7 +188,7 @@ class NebParser(BaseParser):
         mep_arraydata.set_array('mep', mep)
         mep_arraydata.set_array('interpolated_mep', interp_mep)
         self.out('output_mep', mep_arraydata)
-        
+
         if logs.error:
             # First check whether the scheduler already reported an exit code.
             if self.node.exit_status is not None:
@@ -204,7 +204,7 @@ class NebParser(BaseParser):
             if 'Maximum number of iterations reached in the image optimization' in logs.warning:
                 return NebCalculation.exit_codes.ERROR_NEB_CYCLE_EXCEEDED_NSTEP
         else:
-            # Calculation completed successfully shortly after exceeding walltime but before being terminated by the 
+            # Calculation completed successfully shortly after exceeding walltime but before being terminated by the
             # scheduler. In that case 'exit_status' can be reset.
             return ExitCode(0)
 
@@ -221,13 +221,13 @@ class NebParser(BaseParser):
 
         logs = get_logging_container()
         parsed_data = {}
-        
+
         try:
             retrieved_files = self.retrieved.base.repository.list_object_names(relative_output_folder)
         except:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_MISSING
             return parsed_data, logs
-        
+
         xml_filenames = [os.path.join(relative_output_folder, xml_file) for xml_file in PwCalculation.xml_filenames if xml_file in retrieved_files]
         if not xml_filenames:
             if not self.node.get_option('without_xml'):
