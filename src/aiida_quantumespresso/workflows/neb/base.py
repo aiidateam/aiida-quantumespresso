@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO neb.x calculation with automated error handling and restarts."""
 from aiida import orm
-from aiida.common import AttributeDict, exceptions
+from aiida.common import AttributeDict, InputValidationError, exceptions
 from aiida.common.lang import type_check
-from aiida.engine import BaseRestartWorkChain, ExitCode, ProcessHandlerReport, process_handler, while_
+from aiida.engine import BaseRestartWorkChain, ProcessHandlerReport, process_handler, while_
 from aiida.plugins import CalculationFactory, GroupFactory
 
 from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import create_kpoints_from_distance
@@ -27,13 +27,7 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
     defaults = AttributeDict({
         'qe': qe_defaults,
-        'delta_threshold_degauss': 30,
-        'delta_factor_degauss': 0.1,
         'delta_factor_mixing_beta': 0.8,
-        'delta_factor_max_seconds': 0.95,
-        'delta_factor_nbnd': 0.05,
-        'delta_minimum_nbnd': 4,
-        'delta_factor_trust_radius_min': 0.1,
     })
 
     @classmethod
@@ -41,7 +35,7 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         """Define the process specification."""
         # yapf: disable
         super().define(spec)
-        spec.expose_inputs(NebCalculation, namespace='neb', exclude=('pw.kpoints',))
+        spec.expose_inputs(NebCalculation, namespace='neb', exclude=('pw.kpoints', 'first_structure', 'last_structure'))
         spec.input('kpoints', valid_type=orm.KpointsData, required=False,
             help='An explicit k-points list or mesh. Either this or `kpoints_distance` has to be provided.')
         spec.input('kpoints_distance', valid_type=orm.Float, required=False,
@@ -85,19 +79,18 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     def get_builder_from_protocol(
         cls,
         code,
-        structure,
+        images,
         protocol=None,
         overrides=None,
         electronic_type=ElectronicType.METAL,
         spin_type=SpinType.NONE,
         initial_magnetic_moments=None,
-        options=None,
         **_
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
         :param code: the ``Code`` instance configured for the ``quantumespresso.pw`` plugin.
-        :param structure: the ``StructureData`` instance to use.
+        :param images: the ``TrajectoryData`` instance to use for initial guess of NEB images.
         :param protocol: protocol to use, if not specified, the default will be used.
         :param overrides: optional dictionary of inputs to override the defaults of the protocol.
         :param electronic_type: indicate the electronic character of the system through ``ElectronicType`` instance.
@@ -133,6 +126,7 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if spin_type is SpinType.SPIN_ORBIT and overrides is not None and 'pseudo_family' not in overrides:
             pseudo_family = 'PseudoDojo/0.4/PBEsol/FR/standard/upf'
 
+        structure = images.get_step_structure(-1)
         natoms = len(structure.sites)
 
         # Update the parameters based on the protocol inputs
@@ -216,7 +210,7 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         builder = cls.get_builder()
         builder.neb['code'] = code
         builder.neb.pw['pseudos'] = pseudos
-        # builder.pw['structure'] = structure
+        builder.neb['images'] = images
         builder.neb.pw['parameters'] = orm.Dict(parameters)
 
         if 'kpoints' in inputs:
@@ -239,6 +233,10 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         default namelists for the ``parameters`` are set to empty dictionaries if not specified.
         """
         super().setup()
+
+        if 'images' not in self.inputs.neb:
+            raise InputValidationError('Input `images` are required.')
+
         self.ctx.inputs = AttributeDict(self.exposed_inputs(NebCalculation, 'neb'))
 
         self.ctx.inputs.parameters = self.ctx.inputs.parameters.get_dict()
@@ -263,7 +261,7 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             kpoints = self.inputs.kpoints
         except AttributeError:
             inputs = {
-                'structure': self.inputs.neb.last_structure,
+                'structure': self.inputs.neb.images.get_step_structure(-1),
                 'distance': self.inputs.kpoints_distance,
                 'force_parity': self.inputs.get('kpoints_force_parity', orm.Bool(False)),
                 'metadata': {
