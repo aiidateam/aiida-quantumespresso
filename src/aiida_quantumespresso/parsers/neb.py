@@ -106,7 +106,7 @@ class NebParser(BaseParser):
             if exit_code:
                 return self.exit(exit_code)
 
-            if logs_stdout and self.exit_code_xml:
+            if logs_stdout.error and self.exit_code_xml:
                 return self.exit(self.exit_codes.ERROR_OUTPUT_FILES)
 
             parsed_structure = parsed_data_stdout.pop('structure', {})
@@ -201,13 +201,12 @@ class NebParser(BaseParser):
                 ]
                 if recoverable_scheduler_error:
                     return NebCalculation.exit_codes.ERROR_NEB_INTERRUPTED_PARTIAL_TRAJECTORY
-        elif logs.warning:
-            if 'Maximum number of iterations reached in the image optimization' in logs.warning:
+        elif 'Maximum number of iterations reached in the image optimization' in logs.warning:
                 return NebCalculation.exit_codes.ERROR_NEB_CYCLE_EXCEEDED_NSTEP
         else:
             # Calculation completed successfully shortly after exceeding walltime but before being terminated by the
             # scheduler. In that case 'exit_status' can be reset.
-            return ExitCode(0)
+            self.node.set_exit_status(None)
 
         return self.exit(logs=logs)
 
@@ -257,24 +256,17 @@ class NebParser(BaseParser):
 
     def validate_premature_exit(self, logs):
         """Analyze problems that will cause a pre-mature termination of the calculation, controlled or not."""
-        # if 'ERROR_OUT_OF_WALLTIME' in logs['error'] and 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs['error']:
-        #     return self.exit_codes.ERROR_OUT_OF_WALLTIME_INTERRUPTED
 
         for error_label in [
             'ERROR_OUT_OF_WALLTIME',
-            'ERROR_CHARGE_IS_WRONG',
-            'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION',
             'ERROR_DEXX_IS_NEGATIVE',
             'ERROR_COMPUTING_CHOLESKY',
-            'ERROR_NPOOLS_TOO_HIGH',
             'ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED',
             'ERROR_S_MATRIX_NOT_POSITIVE_DEFINITE',
             'ERROR_ZHEGVD_FAILED',
             'ERROR_QR_FAILED',
-            'ERROR_G_PAR',
             'ERROR_EIGENVECTOR_CONVERGENCE',
             'ERROR_BROYDEN_FACTORIZATION',
-            'ERROR_RADIAL_FFT_SIGNIFICANT_VOLUME_CONTRACTION',
         ]:
             if error_label in logs['error']:
                 return self.exit_codes.get(error_label)
