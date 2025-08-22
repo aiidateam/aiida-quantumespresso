@@ -36,12 +36,12 @@ def test_handle_num_unrecoverable_restart(generate_workchain_pw):
     """Test that `PwBaseWorkChain.handle_unrecoverable_failure` respects the `num_unrecoverable_restart` input."""
     process = generate_workchain_pw(exit_code=PwCalculation.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
     process.setup()
-    assert (process.ctx.num_unrecoverable_restart == 0)
+    assert process.ctx.num_unrecoverable_restart == 0
 
     #Set to 1
     process.ctx.num_unrecoverable_restart += 1
     result = process.handle_unrecoverable_failure(process.ctx.children[-1])
-    assert (process.ctx.num_unrecoverable_restart == 0)
+    assert process.ctx.num_unrecoverable_restart == 0
     assert isinstance(result, ProcessHandlerReport)
     result = process.handle_unrecoverable_failure(process.ctx.children[-1])
     assert result.do_break
