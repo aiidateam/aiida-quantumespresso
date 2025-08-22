@@ -3,7 +3,7 @@
 """Tests for the `PwBaseWorkChain` class."""
 from aiida.common import AttributeDict
 from aiida.engine import ExitCode, ProcessHandlerReport
-from aiida.orm import Dict, Int
+from aiida.orm import Dict
 import pytest
 
 from aiida_quantumespresso.calculations.pw import PwCalculation
