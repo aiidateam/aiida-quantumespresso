@@ -423,9 +423,9 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 )
                 self.ctx.num_unrecoverable_restart -= 1
                 return ProcessHandlerReport(True)
-            else:
-                self.report_error_handled(calculation, 'unrecoverable error, aborting...')
-                return ProcessHandlerReport(True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
+            
+            self.report_error_handled(calculation, 'unrecoverable error, aborting...')
+            return ProcessHandlerReport(True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
 
     @process_handler(priority=590, exit_codes=[])
     def handle_known_unrecoverable_failure(self, calculation):
