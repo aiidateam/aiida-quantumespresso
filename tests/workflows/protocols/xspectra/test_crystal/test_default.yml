@@ -8,6 +8,7 @@ core:
     kpoints_distance: 0.15
     kpoints_force_parity: false
     max_iterations: 5
+    num_unrecoverable_restart: 0
     pw:
       code: test.quantumespresso.pw@localhost
       metadata:
@@ -81,6 +82,7 @@ relax:
     kpoints_distance: 0.15
     kpoints_force_parity: false
     max_iterations: 5
+    num_unrecoverable_restart: 0
     pw:
       code: test.quantumespresso.pw@localhost
       metadata:

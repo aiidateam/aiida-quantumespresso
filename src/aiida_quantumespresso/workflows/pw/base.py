@@ -51,6 +51,9 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             help='Optional input when constructing the k-points based on a desired `kpoints_distance`. Setting this to '
                  '`True` will force the k-point mesh to have an even number of points along each lattice vector except '
                  'for any non-periodic directions.')
+        spec.input('num_unrecoverable_restart', valid_type=orm.Int, required=False, default=lambda: orm.Int(0),
+            help='The number of restarts allowed due to an unrecoverable error. Default is 0, meaning the work chain will stop at the first such error.'
+        )
 
         spec.outline(
             cls.setup,
@@ -286,7 +289,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             self.ctx.inputs.parameters.setdefault('CELL', {})
 
         self.ctx.inputs.settings = self.ctx.inputs.settings.get_dict() if 'settings' in self.ctx.inputs else {}
-        self.ctx.num_unrecoverable_restart = self.ctx.inputs.get('num_unrecoverable_restart', 0)
+        self.ctx.num_unrecoverable_restart = self.inputs.get('num_unrecoverable_restart', orm.Int(0)).value
 
     def validate_kpoints(self):
         """Validate the inputs related to k-points.
@@ -423,7 +426,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 )
                 self.ctx.num_unrecoverable_restart -= 1
                 return ProcessHandlerReport(True)
-            
+
             self.report_error_handled(calculation, 'unrecoverable error, aborting...')
             return ProcessHandlerReport(True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
 

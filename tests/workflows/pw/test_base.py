@@ -31,6 +31,7 @@ def test_handle_unrecoverable_failure(generate_workchain_pw):
     result = process.inspect_process()
     assert result == PwBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE
 
+
 @pytest.mark.parametrize('structure_changed', (
     True,
     False,

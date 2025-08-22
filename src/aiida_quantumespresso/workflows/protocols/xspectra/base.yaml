@@ -3,6 +3,7 @@ default_inputs:
     kpoints_distance: 0.15
     kpoints_force_parity: False
     max_iterations: 5
+    num_unrecoverable_restart: 0
     xspectra:
         parameters:
             INPUT_XSPECTRA:
