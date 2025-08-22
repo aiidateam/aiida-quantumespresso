@@ -52,7 +52,8 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                  '`True` will force the k-point mesh to have an even number of points along each lattice vector except '
                  'for any non-periodic directions.')
         spec.input('num_unrecoverable_restart', valid_type=orm.Int, required=False, default=lambda: orm.Int(0),
-            help='The number of restarts allowed due to an unrecoverable error. Default is 0, meaning the work chain will stop at the first such error.'
+            help='The number of restarts allowed due to an unrecoverable error. '
+                 'Default is 0, meaning the work chain will stop at the first such error.'
         )
 
         spec.outline(
