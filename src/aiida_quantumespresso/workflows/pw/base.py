@@ -256,6 +256,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
         builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
         builder.max_iterations = orm.Int(inputs['max_iterations'])
+        builder.num_unrecoverable_restart = orm.Int(inputs.get('num_unrecoverable_restart', 0))
         # pylint: enable=no-member
 
         return builder
@@ -285,6 +286,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             self.ctx.inputs.parameters.setdefault('CELL', {})
 
         self.ctx.inputs.settings = self.ctx.inputs.settings.get_dict() if 'settings' in self.ctx.inputs else {}
+        self.ctx.num_unrecoverable_restart = self.ctx.inputs.get('num_unrecoverable_restart', 0)
 
     def validate_kpoints(self):
         """Validate the inputs related to k-points.
@@ -415,8 +417,15 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     def handle_unrecoverable_failure(self, calculation):
         """Handle calculations with an exit status below 400 which are unrecoverable, so abort the work chain."""
         if calculation.is_failed and calculation.exit_status < 400:
-            self.report_error_handled(calculation, 'unrecoverable error, aborting...')
-            return ProcessHandlerReport(True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
+            if self.ctx.num_unrecoverable_restart > 0:
+                self.report_error_handled(
+                    calculation, f'unrecoverable error, attempt {self.ctx.num_unrecoverable_restart}...'
+                )
+                self.ctx.num_unrecoverable_restart -= 1
+                return ProcessHandlerReport(True)
+            else:
+                self.report_error_handled(calculation, 'unrecoverable error, aborting...')
+                return ProcessHandlerReport(True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
 
     @process_handler(priority=590, exit_codes=[])
     def handle_known_unrecoverable_failure(self, calculation):

@@ -7,6 +7,7 @@ default_inputs:
         conv_thr_per_atom: 0.2e-9
         etot_conv_thr_per_atom: 1.e-5
     pseudo_family: 'SSSP/1.3/PBEsol/efficiency'
+    num_unrecoverable_restart: 0
     pw:
         metadata:
             options:
