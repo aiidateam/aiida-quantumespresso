@@ -3,7 +3,7 @@
 """Tests for the `PwBaseWorkChain` class."""
 from aiida.common import AttributeDict
 from aiida.engine import ExitCode, ProcessHandlerReport
-from aiida.orm import Dict
+from aiida.orm import Dict, Int
 import pytest
 
 from aiida_quantumespresso.calculations.pw import PwCalculation
@@ -30,6 +30,22 @@ def test_handle_unrecoverable_failure(generate_workchain_pw):
 
     result = process.inspect_process()
     assert result == PwBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE
+
+
+def test_handle_num_unrecoverable_restart(generate_workchain_pw):
+    """Test that `PwBaseWorkChain.handle_unrecoverable_failure` respects the `num_unrecoverable_restart` input."""
+    process = generate_workchain_pw(exit_code=PwCalculation.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
+    process.setup()
+    assert (process.ctx.num_unrecoverable_restart == 0)
+
+    #Set to 1
+    process.ctx.num_unrecoverable_restart += 1
+    result = process.handle_unrecoverable_failure(process.ctx.children[-1])
+    assert (process.ctx.num_unrecoverable_restart == 0)
+    assert isinstance(result, ProcessHandlerReport)
+    result = process.handle_unrecoverable_failure(process.ctx.children[-1])
+    assert result.do_break
+    assert result.exit_code == PwBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE
 
 
 @pytest.mark.parametrize('structure_changed', (
