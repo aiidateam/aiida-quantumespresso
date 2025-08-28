@@ -62,7 +62,7 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             message='The `metadata.options` did not specify both `resources.num_machines` and `max_wallclock_seconds`. '
                     'This exit status has been deprecated as the check it corresponded to was incorrect.')
         spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
-            message='The calculation failed with an unrecoverable error.')
+            message='The calculation failed with an unrecoverable error.[deprecated]')
         spec.exit_code(401, 'ERROR_MERGING_QPOINTS',
             message='The work chain failed to merge the q-points data from multiple `PhCalculation`s because not all '
                     'q-points were parsed.')
@@ -271,13 +271,6 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         arguments = [calculation.process_label, calculation.pk, calculation.exit_status, calculation.exit_message]
         self.report('{}<{}> failed with exit status {}: {}'.format(*arguments))
         self.report(f'Action taken: {action}')
-
-    @process_handler(priority=600)
-    def handle_unrecoverable_failure(self, node):
-        """Handle calculations with an exit status below 400 which are unrecoverable, so abort the work chain."""
-        if node.is_failed and node.exit_status < 400:
-            self.report_error_handled(node, 'unrecoverable error, aborting...')
-            return ProcessHandlerReport(True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
 
     @process_handler(priority=610, exit_codes=PhCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME)
     def handle_scheduler_out_of_walltime(self, node):

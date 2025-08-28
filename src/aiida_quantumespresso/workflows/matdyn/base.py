@@ -28,7 +28,7 @@ class MatdynBaseWorkChain(BaseRestartWorkChain):
             cls.results,
         )
         spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
-            message='The calculation failed with an unrecoverable error.')
+            message='The calculation failed with an unrecoverable error.[deprecated]')
         # yapf: enable
 
     def setup(self):
@@ -52,10 +52,3 @@ class MatdynBaseWorkChain(BaseRestartWorkChain):
         arguments = [calculation.process_label, calculation.pk, calculation.exit_status, calculation.exit_message]
         self.report('{}<{}> failed with exit status {}: {}'.format(*arguments))
         self.report(f'Action taken: {action}')
-
-    @process_handler(priority=600)
-    def handle_unrecoverable_failure(self, node):
-        """Handle calculations with an exit status below 400 which are unrecoverable, so abort the work chain."""
-        if node.is_failed and node.exit_status < 400:
-            self.report_error_handled(node, 'unrecoverable error, aborting...')
-            return ProcessHandlerReport(True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)

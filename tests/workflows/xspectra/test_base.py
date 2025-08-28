@@ -16,20 +16,6 @@ def test_setup(generate_workchain_xspectra):
     assert isinstance(process.ctx.inputs, AttributeDict)
 
 
-def test_handle_unrecoverable_failure(generate_workchain_xspectra):
-    """Test `XspectraBaseWorkChain.handle_unrecoverable_failure`."""
-    process = generate_workchain_xspectra(exit_code=XspectraCalculation.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
-    process.setup()
-
-    result = process.handle_unrecoverable_failure(process.ctx.children[-1])
-    assert isinstance(result, ProcessHandlerReport)
-    assert result.do_break
-    assert result.exit_code == XspectraBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE
-
-    result = process.inspect_process()
-    assert result == XspectraBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE
-
-
 def test_handle_out_of_walltime(generate_workchain_xspectra, fixture_localhost, generate_remote_data):
     """Test `XspectraBaseWorkChain.handle_out_of_walltime`."""
     remote_data = generate_remote_data(computer=fixture_localhost, remote_path='/path/to/remote')
