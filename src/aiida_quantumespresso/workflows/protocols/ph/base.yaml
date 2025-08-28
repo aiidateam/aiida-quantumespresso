@@ -12,6 +12,8 @@ default_inputs:
                 withmpi: True
         parameters:
             INPUTPH:
+                alpha_mix: 0.4
+                nmix_ph: 8
                 tr2_ph: 1.0e-18
 
 default_protocol: balanced
