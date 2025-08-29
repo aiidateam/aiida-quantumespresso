@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=redefined-outer-name,too-many-statements,too-many-lines,raise-missing-from
 """Initialise a text database and profile for pytest."""
+import asyncio
 from collections.abc import Mapping
 import io
 import os
@@ -12,6 +13,13 @@ import tempfile
 import pytest
 
 pytest_plugins = ['aiida.tools.pytest_fixtures']  # pylint: disable=invalid-name
+
+
+@pytest.fixture(scope='session', autouse=True)
+def clean_asyncio_tasks():
+    """Ensure clean shutdown of asyncio tasks at the end of the test session."""
+    yield
+    asyncio.run(asyncio.sleep(0))
 
 
 @pytest.fixture(scope='session')
