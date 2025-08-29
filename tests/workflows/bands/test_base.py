@@ -2,12 +2,8 @@
 # pylint: disable=no-member,redefined-outer-name
 """Tests for the `BandsBaseWorkChain` class."""
 from aiida.common import AttributeDict
-from aiida.engine import ProcessHandlerReport
 from plumpy import ProcessState
 import pytest
-
-from aiida_quantumespresso.calculations.bands import BandsCalculation
-from aiida_quantumespresso.workflows.bands.base import BandsBaseWorkChain
 
 
 @pytest.fixture

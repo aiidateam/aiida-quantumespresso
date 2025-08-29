@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO matdyn.x calculation with automated error handling and restarts."""
 from aiida.common import AttributeDict
-from aiida.engine import BaseRestartWorkChain, ProcessHandlerReport, process_handler, while_
+from aiida.engine import BaseRestartWorkChain, while_
 from aiida.plugins import CalculationFactory
 
 MatdynCalculation = CalculationFactory('quantumespresso.matdyn')

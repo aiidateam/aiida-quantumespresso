@@ -5,7 +5,6 @@ from aiida.common import AttributeDict
 from aiida.engine import ProcessHandlerReport
 
 from aiida_quantumespresso.calculations.xspectra import XspectraCalculation
-from aiida_quantumespresso.workflows.xspectra.base import XspectraBaseWorkChain
 
 
 def test_setup(generate_workchain_xspectra):
