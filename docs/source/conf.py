@@ -174,6 +174,7 @@ nitpick_ignore_regex = [
     (r'py:.*', r'con.*'),
     (r'.*', r'Literal.*'),
     (r'.*', r'Tuple.*'),
+    (r'.*', r'Annotated\[.*'),
 ]
 nitpick_ignore = [
     ('py:class', 'numpy.typing.ArrayLike'),

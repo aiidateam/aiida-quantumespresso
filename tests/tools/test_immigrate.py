@@ -35,8 +35,9 @@ def test_create_builder(fixture_sandbox, fixture_code, generate_upf_data, genera
 
     builder = create_builder_from_file(in_folderpath, 'test_pw_default.in', code, metadata, upf_folderpath)
 
-    # In certain versions of `aiida-core` the builder comes with the `stash` namespace by default.
+    # In more recent versions of `aiida-core` the builder comes with the `stash` and `unstash` namespace by default.
     builder['metadata']['options'].pop('stash', None)
+    builder['metadata']['options'].pop('unstash', None)
 
     assert builder['code'] == code
     assert builder['metadata'] == metadata
@@ -95,8 +96,9 @@ def test_create_builder_nonzero_ibrav(
 
     builder = create_builder_from_file(in_folderpath, 'test_pw_ibrav.in', code, metadata, upf_folderpath)
 
-    # In certain versions of `aiida-core` the builder comes with the `stash` namespace by default.
+    # In more recent versions of `aiida-core` the builder comes with the `stash` and `unstash` namespace by default.
     builder['metadata']['options'].pop('stash', None)
+    builder['metadata']['options'].pop('unstash', None)
 
     assert builder['code'] == code
     assert builder['metadata'] == metadata
