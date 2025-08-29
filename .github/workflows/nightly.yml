@@ -10,17 +10,20 @@ on:
         paths:
         - '.github/workflows/nightly.yml'
 
+env:
+    FORCE_COLOR: 1
 
 jobs:
 
     tests:
 
-        if: github.repository == 'aiidateam/aiida-quantumespresso'  # Prevent running the builds on forks as well
+        # Don't run scheduled tests on forks, but allow them on PRs
+        if: github.repository == 'aiidateam/aiida-quantumespresso' || github.event_name != 'schedule'
         runs-on: ubuntu-latest
 
         strategy:
             matrix:
-                python-version: ['3.9', '3.10', '3.11', '3.12']
+                python-version: ['3.9', '3.12']
 
         services:
             postgres:
@@ -33,24 +36,21 @@ jobs:
         steps:
         -   uses: actions/checkout@v4
 
-        -   name: Cache Python dependencies
-            uses: actions/cache@v4
-            with:
-                path: ~/.cache/pip
-                key: pip-${{ matrix.python-version }}-tests-${{ hashFiles('**/setup.json') }}
-                restore-keys:
-                    pip-${{ matrix.python-version }}-tests
-
         -   name: Set up Python ${{ matrix.python-version }}
             uses: actions/setup-python@v5
             with:
                 python-version: ${{ matrix.python-version }}
 
+        - name: Setup uv
+          uses: astral-sh/setup-uv@v6
+          with:
+              activate-environment: true
+              python-version: ${{ matrix.python-version }}
+
         -   name: Install Python dependencies
             id: install
             run: |
-                pip install -e .[tests]
-                pip install git+https://github.com/aiidateam/aiida-core@main#egg=aiida-core[atomic_tools]
+                uv pip install -e .[tests] aiida-core[atomic_tools]@git+https://github.com/aiidateam/aiida-core@main
 
         -   name: Run pytest
             id: tests
@@ -59,8 +59,8 @@ jobs:
             run: pytest -sv tests
 
         -   name: Slack notification
-            if: always() && (steps.install.outcome == 'Failure' || steps.tests.outcome == 'Failure')
-            uses: rtCamp/action-slack-notify@master
+            if: always() && (steps.install.outcome == 'failure' || steps.tests.outcome == 'failure') && env.SLACK_WEBHOOK != null
+            uses: rtCamp/action-slack-notify@v2
             env:
                 SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
                 SLACK_ICON: https://www.materialscloud.org/discover/images/0ba0a17d.aiida-logo-128.png
