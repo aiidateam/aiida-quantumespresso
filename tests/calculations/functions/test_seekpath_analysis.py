@@ -7,7 +7,6 @@ from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
 
 
 # pylint: disable=W0621
-@pytest.mark.usefixtures('aiida_profile')
 def test_seekpath_analysis(data_regression):
     """Test the `seekpath_structure_analysis` calculation function for HubbardStructureData."""
     cell = [[5.43, 0.0, 0.0], [0.0, 5.43, 0.0], [0.0, 0.0, 5.43]]
@@ -59,7 +58,6 @@ def test_seekpath_analysis(data_regression):
 
 
 # pylint: disable=W0621
-@pytest.mark.usefixtures('aiida_profile')
 def test_seekpath_analysis_intersite(generate_structure):
     """Test that the `seekpath_structure_analysis` with intersite hubbard corrections fails."""
     orig_structure = HubbardStructureData.from_structure(generate_structure('silicon-kinds'))

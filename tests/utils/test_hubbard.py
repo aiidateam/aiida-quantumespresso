@@ -57,14 +57,12 @@ def filepath_hubbard(filepath_tests):
     return os.path.join(filepath_tests, 'utils', 'fixtures', 'hubbard')
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_valid_init(generate_hubbard_utils, generate_hubbard_structure):
     """Test the constructor."""
     hubbard_utils = generate_hubbard_utils()
     assert hubbard_utils.hubbard_structure.hubbard == generate_hubbard_structure().hubbard
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_is_intersite(generate_hubbard_structure):
     """Test the `is_intersite_hubbard` method."""
     from aiida_quantumespresso.utils.hubbard import is_intersite_hubbard
@@ -76,7 +74,6 @@ def test_is_intersite(generate_hubbard_structure):
     ('HUBBARD_2.dat', 'atomic'),
     ('HUBBARD_3.dat', 'atomic'),
 ))
-@pytest.mark.usefixtures('aiida_profile')
 def test_invertibility(generate_hubbard_utils, filepath_hubbard, filename, projectors):
     """Test the invertibility of the `get_hubbard_card` and `parse_hubbard_card` method.
 
@@ -143,7 +140,6 @@ def test_invertibility(generate_hubbard_utils, filepath_hubbard, filename, proje
         [['O', 'O', 'Li', 'Co'], [[0, '1s', 2, '2p', 0.0, [0, 0, 0], 'U']]],
     ),
 ))
-@pytest.mark.usefixtures('aiida_profile')
 def test_reorder_atoms(generate_hubbard_structure, parameters, values):
     """Test the `reorder_atoms` method.
 
@@ -170,7 +166,6 @@ def test_reorder_atoms(generate_hubbard_structure, parameters, values):
         assert param in expected
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_is_to_reorder(generate_hubbard_structure):
     """Test the `is_to_reorder` method."""
     parameters = [[1, '1s', 3, '2p', 0.0, [0, 0, 0], 'U']]
@@ -184,7 +179,6 @@ def test_is_to_reorder(generate_hubbard_structure):
     assert not hubbard_utils.is_to_reorder()
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_reorder_supercell_atoms(generate_hubbard_structure):
     """Test the `reorder_atoms` method with a supercell."""
     parameters = [
@@ -207,7 +201,6 @@ def test_reorder_supercell_atoms(generate_hubbard_structure):
             assert hubbard_supercell.sites[parameters[0]].kind_name == 'Co'
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_hubbard_for_supercell(generate_hubbard_structure):
     """Test the `get_hubbard_for_supercell` method.
 
