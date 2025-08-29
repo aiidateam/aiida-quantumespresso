@@ -272,13 +272,6 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         self.report('{}<{}> failed with exit status {}: {}'.format(*arguments))
         self.report(f'Action taken: {action}')
 
-    @process_handler(priority=600)
-    def handle_unrecoverable_failure(self, node):
-        """Handle calculations with an exit status below 400 which are unrecoverable, so abort the work chain."""
-        if node.is_failed and node.exit_status < 400:
-            self.report_error_handled(node, 'unrecoverable error, aborting...')
-            return ProcessHandlerReport(True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
-
     @process_handler(priority=610, exit_codes=PhCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME)
     def handle_scheduler_out_of_walltime(self, node):
         """Handle `ERROR_SCHEDULER_OUT_OF_WALLTIME` exit code: decrease the max_secondes and restart from scratch."""

@@ -2,12 +2,8 @@
 # pylint: disable=no-member,redefined-outer-name
 """Tests for the `Q2rBaseWorkChain` class."""
 from aiida.common import AttributeDict
-from aiida.engine import ProcessHandlerReport
 from plumpy import ProcessState
 import pytest
-
-from aiida_quantumespresso.calculations.q2r import Q2rCalculation
-from aiida_quantumespresso.workflows.q2r.base import Q2rBaseWorkChain
 
 
 @pytest.fixture
@@ -38,17 +34,3 @@ def test_setup(generate_workchain_q2r):
 
     assert process.ctx.restart_calc is None
     assert isinstance(process.ctx.inputs, AttributeDict)
-
-
-def test_handle_unrecoverable_failure(generate_workchain_q2r):
-    """Test `Q2rBaseWorkChain.handle_unrecoverable_failure`."""
-    process = generate_workchain_q2r(exit_code=Q2rCalculation.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
-    process.setup()
-
-    result = process.handle_unrecoverable_failure(process.ctx.children[-1])
-    assert isinstance(result, ProcessHandlerReport)
-    assert result.do_break
-    assert result.exit_code == Q2rBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE
-
-    result = process.inspect_process()
-    assert result == Q2rBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE

@@ -81,20 +81,6 @@ def test_set_qpoints(generate_workchain_ph, generate_inputs_ph, with_output_stru
         assert process.ctx.inputs['qpoints'] == inputs['qpoints']
 
 
-def test_handle_unrecoverable_failure(generate_workchain_ph):
-    """Test `PhBaseWorkChain.handle_unrecoverable_failure`."""
-    process = generate_workchain_ph(exit_code=PhCalculation.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
-    process.setup()
-
-    result = process.handle_unrecoverable_failure(process.ctx.children[-1])
-    assert isinstance(result, ProcessHandlerReport)
-    assert result.do_break
-    assert result.exit_code == PhBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE
-
-    result = process.inspect_process()
-    assert result == PhBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE
-
-
 def test_handle_out_of_walltime(generate_workchain_ph):
     """Test `PhBaseWorkChain.handle_out_of_walltime`."""
     process = generate_workchain_ph(exit_code=PhCalculation.exit_codes.ERROR_OUT_OF_WALLTIME)
