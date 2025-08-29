@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=redefined-outer-name,too-many-statements,too-many-lines
+# pylint: disable=redefined-outer-name,too-many-statements,too-many-lines,raise-missing-from
 """Initialise a text database and profile for pytest."""
 from collections.abc import Mapping
 import io
@@ -555,6 +555,36 @@ def generate_force_constants_data(filepath_tests):
     from aiida_quantumespresso.data.force_constants import ForceConstantsData
     filepath = os.path.join(filepath_tests, 'calculations', 'fixtures', 'matdyn', 'default', 'force_constants.dat')
     return ForceConstantsData(filepath)
+
+
+@pytest.fixture
+def generate_inputs(
+    generate_inputs_bands, generate_inputs_cp, generate_inputs_matdyn, generate_inputs_ph, generate_inputs_pw,
+    generate_inputs_q2r, generate_inputs_xspectra
+):
+    """Generate the inputs for a process."""
+
+    entry_point_to_fixture = {
+        'quantumespresso.bands': generate_inputs_bands,
+        'quantumespresso.cp': generate_inputs_cp,
+        'quantumespresso.pw': generate_inputs_pw,
+        'quantumespresso.ph': generate_inputs_ph,
+        'quantumespresso.matdyn': generate_inputs_matdyn,
+        'quantumespresso.q2r': generate_inputs_q2r,
+        'quantumespresso.xspectra': generate_inputs_xspectra
+    }
+
+    def _generate_inputs(entry_point: str):
+        try:
+            return entry_point_to_fixture[entry_point]()
+        except KeyError:
+            available_entry_points = '\n\t'.join(entry_point_to_fixture.keys())
+            raise ValueError(
+                f'Unsupported entry point: {entry_point!r}\n\n'
+                f'List of supported entry points: \n\n\t{available_entry_points}'
+            )
+
+    return _generate_inputs
 
 
 @pytest.fixture
