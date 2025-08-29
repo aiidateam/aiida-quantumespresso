@@ -62,7 +62,7 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             message='The `metadata.options` did not specify both `resources.num_machines` and `max_wallclock_seconds`. '
                     'This exit status has been deprecated as the check it corresponded to was incorrect.')
         spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
-            message='[deprecated] The calculation failed with an unrecoverable error.')
+            message='The calculation failed with an unrecoverable error.')
         spec.exit_code(401, 'ERROR_MERGING_QPOINTS',
             message='The work chain failed to merge the q-points data from multiple `PhCalculation`s because not all '
                     'q-points were parsed.')
