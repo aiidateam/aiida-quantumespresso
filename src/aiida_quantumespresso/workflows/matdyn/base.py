@@ -28,7 +28,7 @@ class MatdynBaseWorkChain(BaseRestartWorkChain):
             cls.results,
         )
         spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
-            message='The calculation failed with an unrecoverable error.[deprecated]')
+            message='[deprecated] The calculation failed with an unrecoverable error.')
         # yapf: enable
 
     def setup(self):

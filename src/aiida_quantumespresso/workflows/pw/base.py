@@ -81,10 +81,10 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         spec.exit_code(211, 'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY',
             message='Unrecognized keys were specified for `automatic_parallelization`.'
                     'This exit status has been deprecated as the automatic parallellization feature was removed.')
-        spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE [deprecated]',
-            message='The calculation failed with an unidentified unrecoverable error.')
+        spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
+            message='[deprecated] The calculation failed with an unidentified unrecoverable error.')
         spec.exit_code(310, 'ERROR_KNOWN_UNRECOVERABLE_FAILURE',
-            message='The calculation failed with a known unrecoverable error. [deprecated]')
+            message='The calculation failed with a known unrecoverable error.')
         spec.exit_code(320, 'ERROR_INITIALIZATION_CALCULATION_FAILED',
             message='The initialization calculation failed.')
         spec.exit_code(501, 'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
