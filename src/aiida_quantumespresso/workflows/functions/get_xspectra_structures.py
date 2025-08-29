@@ -144,7 +144,7 @@ def get_supercell(structure, supercell_min_parameter, is_hubbard_structure, **kw
     blank_supercell = StructureData(ase=ase_supercell)
     new_supercell = StructureData()
     new_supercell.set_cell(blank_supercell.cell)
-    num_extensions = np.prod(multiples)
+    num_extensions = np.product(multiples)
     types_order = kwargs['types_order']
     type_mapping_dict = kwargs['type_mapping_dict']
     supercell_types_order = []
