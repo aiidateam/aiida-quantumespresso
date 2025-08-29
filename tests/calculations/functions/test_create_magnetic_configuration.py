@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 """Tests for the `create_magnetic_configuration` calculation function."""
 from aiida.orm import Float, List
-import pytest
 
 from aiida_quantumespresso.calculations.functions.create_magnetic_configuration import create_magnetic_configuration
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_configuration_00(generate_structure_from_kinds):
     """Test `create_magnetic_configuration` calculation function.
 
@@ -23,7 +21,6 @@ def test_configuration_00(generate_structure_from_kinds):
     assert allotrope_magnetic_moments.get_dict() == {'Fe': 0.2}
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_configuration_01(generate_structure_from_kinds):
     """Test `create_magnetic_configuration` calculation function.
 
@@ -40,7 +37,6 @@ def test_configuration_01(generate_structure_from_kinds):
     assert allotrope_magnetic_moments.get_dict() == {'Fe': 0.2, 'Ni': 0.5}
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_configuration_02(generate_structure_from_kinds):
     """Test `create_magnetic_configuration` calculation function.
 
@@ -57,7 +53,6 @@ def test_configuration_02(generate_structure_from_kinds):
     assert allotrope_magnetic_moments.get_dict() == {'Fe0': 1.0, 'Fe1': 0.2}
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_configuration_03(generate_structure_from_kinds):
     """Test `create_magnetic_configuration` calculation function.
 
@@ -74,7 +69,6 @@ def test_configuration_03(generate_structure_from_kinds):
     assert allotrope_magnetic_moments.get_dict() == {'Fe0': 1.5, 'Fe1': 0.8, 'Fe2': 0.2}
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_configuration_04(generate_structure_from_kinds):
     """Test `create_magnetic_configuration` calculation function.
 
@@ -116,7 +110,6 @@ def test_configuration_04(generate_structure_from_kinds):
     assert allotrope_magnetic_moments.get_dict() == {'Fe0': 0.0, 'Fe1': 0.5, 'Fe2': 0.45, 'Fe3': 0.4}
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_configuration_05(generate_structure_from_kinds):
     """Test `create_magnetic_configuration` calculation function.
 
@@ -151,7 +144,6 @@ def test_configuration_05(generate_structure_from_kinds):
     assert allotrope_magnetic_moments.get_dict() == {'Fe0': -1.5, 'Fe1': -0.6, 'Fe2': -0.5, 'Fe3': -0.01}
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_configuration_06(generate_structure_from_kinds):
     """Test `create_magnetic_configuration` calculation function.
 
@@ -183,7 +175,6 @@ def test_configuration_06(generate_structure_from_kinds):
     }
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_configuration_07(generate_structure_from_kinds):
     """Test `create_magnetic_configuration` calculation function.
 
