@@ -1,38 +1,43 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=line-too-long
 """Tests for CLI commands."""
+
 from __future__ import annotations
 
 import subprocess
 
-import click
 import pytest
 
-from aiida_quantumespresso.cli import cmd_root
 
-
-def recurse_commands(command: click.Command, parents: list[str] = None):
-    """Recursively return all subcommands that are part of ``command``.
-
-    :param command: The click command to start with.
-    :param parents: A list of strings that represent the parent commands leading up to the current command.
-    :returns: A list of strings denoting the full path to the current command.
-    """
-    if isinstance(command, click.Group):
-        for command_name in command.commands:
-            subcommand = command.get_command(None, command_name)
-            if parents is not None:
-                subparents = parents + [command.name]
-            else:
-                subparents = [command.name]
-            yield from recurse_commands(subcommand, subparents)
-
-    if parents is not None:
-        yield parents + [command.name]
-    else:
-        yield [command.name]
-
-
-@pytest.mark.parametrize('command', recurse_commands(cmd_root))
+@pytest.mark.parametrize(
+    'command', (
+        ['aiida-quantumespresso'],
+        ['aiida-quantumespresso', 'calculation', 'launch', 'cp'],
+        ['aiida-quantumespresso', 'calculation', 'launch', 'dos'],
+        ['aiida-quantumespresso', 'calculation', 'launch', 'epw'],
+        ['aiida-quantumespresso', 'calculation', 'launch', 'matdyn'],
+        ['aiida-quantumespresso', 'calculation', 'launch', 'neb'],
+        ['aiida-quantumespresso', 'calculation', 'launch', 'ph'],
+        ['aiida-quantumespresso', 'calculation', 'launch', 'pp'],
+        ['aiida-quantumespresso', 'calculation', 'launch', 'projwfc'],
+        ['aiida-quantumespresso', 'calculation', 'launch', 'pw2wannier90'],
+        ['aiida-quantumespresso', 'calculation', 'launch', 'pw'],
+        ['aiida-quantumespresso', 'calculation', 'launch', 'q2r'],
+        ['aiida-quantumespresso', 'calculation', 'launch'],
+        ['aiida-quantumespresso', 'calculation'],
+        ['aiida-quantumespresso', 'data', 'structure', 'import'],
+        ['aiida-quantumespresso', 'data', 'structure'],
+        ['aiida-quantumespresso', 'data'],
+        ['aiida-quantumespresso', 'workflow', 'launch', 'matdyn-base'],
+        ['aiida-quantumespresso', 'workflow', 'launch', 'ph-base'],
+        ['aiida-quantumespresso', 'workflow', 'launch', 'pw-bands'],
+        ['aiida-quantumespresso', 'workflow', 'launch', 'pw-base'],
+        ['aiida-quantumespresso', 'workflow', 'launch', 'pw-relax'],
+        ['aiida-quantumespresso', 'workflow', 'launch', 'q2r-base'],
+        ['aiida-quantumespresso', 'workflow', 'launch'],
+        ['aiida-quantumespresso', 'workflow'],
+    )
+)
 @pytest.mark.parametrize('help_option', ('--help', '-h'))
 def test_commands_help_option(command, help_option):
     """Test the help options for all subcommands of the CLI.
@@ -45,3 +50,20 @@ def test_commands_help_option(command, help_option):
     result = subprocess.run(command + [help_option], check=False, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
     assert 'Usage:' in result.stdout
+
+
+@pytest.mark.skip()
+def test_breaking():
+    """Easter egg challenge for future developers.
+
+    If you comment out the `skip` mark and run:
+
+    pytest tests/cli/test_commands.py::test_breaking tests/cli/workflows/test_q2r.py tests/parsers/test_pw.py::test_pw_failed_missing
+
+    You may notice the parser test fails because the logs are empty.
+
+    Running the tests separately or in any other order is fine. The question is: _Why_?
+    Good luck, and have fun!
+    """
+    from aiida_quantumespresso.cli import cmd_root
+    cmd_root.get_command(None, 'workflow').get_command(None, 'launch').get_command(None, 'q2r-base')
