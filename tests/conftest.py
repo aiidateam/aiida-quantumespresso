@@ -127,7 +127,7 @@ def serialize_builder():
     return _serialize_builder
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope='session')
 def pseudo_family(generate_upf_data):
     """Create the SSSP pseudo potential families from scratch."""
     from aiida.common.constants import elements
