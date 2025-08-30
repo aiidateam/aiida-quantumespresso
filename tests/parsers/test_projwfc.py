@@ -81,6 +81,22 @@ def test_projwfc_spinpolarised(generate_projwfc_node, generate_parser, data_regr
         }
     })
 
+def test_projwfc_tdosinboxes(generate_projwfc_node, generate_parser, data_regression, tmpdir):
+    """Test ``ProjwfcParser`` on the results of a ``projwfc.x`` calculation with tdosinboxes for LDOS calculation."""
+    node = generate_projwfc_node('tdosinboxes')
+    parser = generate_parser('quantumespresso.projwfc')
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False, retrieved_temporary_folder=tmpdir)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+
+    for link_name in ['output_parameters']:
+        assert link_name in results, list(results.keys())
+
+    data_regression.check({
+
+    })
+
 
 def test_projwfc_no_retrieved_temporary(generate_calc_job_node, fixture_localhost, generate_parser):
     """Test ``ProjwfcParser`` fails when the retrieved temporary folder is missing."""
