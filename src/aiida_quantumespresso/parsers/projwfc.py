@@ -84,7 +84,7 @@ class ProjwfcParser(BaseParser):
             for linkname, node in output_node_dict.items():
                 self.out(linkname, node)
         elif projection_boxes:
-            energy, dos_node, ldos_node = self._parse_ldos_boxes_file(retrieved_temporary_folder, logs)
+            energy, dos_node, ldos_node = self._parse_ldos_boxes_file(retrieved_temporary_folder, nspin, logs)
 
             self.out('Dos', dos_node)
             self.out('Ldos', ldos_node)
@@ -377,12 +377,13 @@ class ProjwfcParser(BaseParser):
 
         return energy, dos_node, pdos_array
 
-    def _parse_ldos_boxes_file(self, retrieved_temporary_folder: Path, logs: AttributeDict) -> Tuple[ArrayLike, XyData, XyData]:
+    def _parse_ldos_boxes_file(self, retrieved_temporary_folder: Path, nspin: int, logs: AttributeDict) -> Tuple[ArrayLike, XyData, XyData]:
         """Parse the LDOS file and convert it into arrays.
 
-        Reads in the ``*ldos_boxes*`` file and converts the data into arrays.
+        Reads in the ``*ldos_boxes*`` file and converts the data into arrays. Only works and tested for nspin = 1 or 2.
 
         :param retrieved_temporary_folder: temporary folder of retrieved files that is deleted after parsing.
+        :param nspin: number of spin components, nspin value of the parent calculation.
 
         :return: tuple of three containing the energy grid, the total DOS as a node and the LDOS as a node
         """
@@ -403,16 +404,33 @@ class ProjwfcParser(BaseParser):
 
         dos_node = XyData()
         dos_node.set_x(energy, 'Energy', 'eV')
-        dos_node.set_y(ldosboxes_array[:, 1], 'Dos', 'states/eV')
+
+        if nspin == 2:
+            dos_node.set_y(
+                (ldosboxes_array[:, 1], ldosboxes_array[:, 2]),
+                ('dos_up', 'dos_down'),
+                ('states/eV', 'states/eV')
+            )
+        else:
+            dos_node.set_y(ldosboxes_array[:, 1], 'Dos', 'states/eV')
 
         ldos_node = XyData()
         ldos_node.set_x(energy, 'Energy', 'eV')
-        num_boxes = ldosboxes_array.shape[1] - 3
-        ldos_node.set_y(
-            [ldosboxes_array[:, i + 3] for i in range(num_boxes)],
-            [f'ldos_box{i + 1}' for i in range(num_boxes)],
-            ['states/eV'] * num_boxes
-        )
+
+        num_boxes = (ldosboxes_array.shape[1] - (1+nspin*2)) // nspin   # for nspin = 1 or 2
+
+        if nspin == 1:
+            ldos_node.set_y(
+                [ldosboxes_array[:, i + 3] for i in range(num_boxes)],
+                [f'ldos_box{i + 1}' for i in range(num_boxes)],
+                ['states/eV'] * num_boxes
+            )
+        elif nspin == 2:
+            ldos_node.set_y(
+                [ldosboxes_array[:, i*2 + 5] for i in range(num_boxes)] + [ldosboxes_array[:, i*2 + 6] for i in range(num_boxes)],
+                [f'ldos_up_box{i + 1}' for i in range(num_boxes)] + [f'ldos_down_box{i + 1}' for i in range(num_boxes)],
+                ['states/eV'] * (num_boxes * 2)
+            )
 
         return energy, dos_node, ldos_node
 

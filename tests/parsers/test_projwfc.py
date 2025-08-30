@@ -81,9 +81,10 @@ def test_projwfc_spinpolarised(generate_projwfc_node, generate_parser, data_regr
         }
     })
 
-def test_projwfc_tdosinboxes(generate_projwfc_node, generate_parser, data_regression, tmpdir):
+@pytest.mark.parametrize('test_name', ('tdosinboxes', 'tdosinboxes_polarized'))
+def test_projwfc_tdosinboxes(generate_projwfc_node, generate_parser, data_regression, tmpdir, test_name):
     """Test ``ProjwfcParser`` on the results of a ``projwfc.x`` calculation with tdosinboxes for LDOS calculation."""
-    node = generate_projwfc_node('tdosinboxes')
+    node = generate_projwfc_node(test_name)
     parser = generate_parser('quantumespresso.projwfc')
     results, calcfunction = parser.parse_from_node(node, store_provenance=False, retrieved_temporary_folder=tmpdir)
 
