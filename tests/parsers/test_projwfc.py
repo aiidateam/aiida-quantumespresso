@@ -16,7 +16,7 @@ def generate_projwfc_node(generate_calc_job_node, fixture_localhost, tmpdir):
         """
         entry_point_calc_job = 'quantumespresso.projwfc'
 
-        retrieve_temporary_list = ['data-file-schema.xml', '*.pdos*']
+        retrieve_temporary_list = ['data-file-schema.xml', '*.pdos*', '*.ldos_boxes']
         attributes = {'retrieve_temporary_list': retrieve_temporary_list}
 
         node = generate_calc_job_node(
@@ -90,11 +90,12 @@ def test_projwfc_tdosinboxes(generate_projwfc_node, generate_parser, data_regres
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
 
-    for link_name in ['output_parameters']:
+    for link_name in ['output_parameters', 'Dos', 'Ldos']:
         assert link_name in results, list(results.keys())
 
     data_regression.check({
-
+        'Dos': results['Dos'].base.attributes.all,
+        'Ldos': results['Ldos'].base.attributes.all,
     })
 
 

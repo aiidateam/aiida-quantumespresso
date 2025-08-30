@@ -84,8 +84,10 @@ class ProjwfcParser(BaseParser):
             for linkname, node in output_node_dict.items():
                 self.out(linkname, node)
         elif projection_boxes:
-            # TODO: Logic for projection into boxes
-            pass
+            energy, dos_node, ldos_node = self._parse_ldos_boxes_file(retrieved_temporary_folder, logs)
+
+            self.out('Dos', dos_node)
+            self.out('Ldos', ldos_node)
         else:
             logs.error.append('ERROR_OUTPUT_STDOUT_UNKNOWN_PROJECTION_TYPE')
 
@@ -374,6 +376,45 @@ class ProjwfcParser(BaseParser):
             pdos_array = np.concatenate(pdos_list, axis=1)
 
         return energy, dos_node, pdos_array
+
+    def _parse_ldos_boxes_file(self, retrieved_temporary_folder: Path, logs: AttributeDict) -> Tuple[ArrayLike, XyData, XyData]:
+        """Parse the LDOS file and convert it into arrays.
+
+        Reads in the ``*ldos_boxes*`` file and converts the data into arrays.
+
+        :param retrieved_temporary_folder: temporary folder of retrieved files that is deleted after parsing.
+
+        :return: tuple of three containing the energy grid, the total DOS as a node and the LDOS as a node
+        """
+
+        try:
+            ldosboxes_filepath = next(retrieved_temporary_folder.glob('*ldos_boxes*'))
+            with ldosboxes_filepath.open('r') as ldosboxes_file:
+                # Columns: Energy(eV), Dos, Ldos_total, Ldos_box1, Ldos_box2, ...
+                ldosboxes_array = np.atleast_2d(np.genfromtxt(ldosboxes_file))
+        except (OSError, KeyError):
+            logs.error.append('ERROR_READING_LDOSBOXES_FILE')
+            return np.array([]), XyData(), XyData()
+        except StopIteration:
+            logs.error.append('ERROR_MISSING_LDOSBOXES_FILE')
+            return np.array([]), XyData(), XyData()
+
+        energy = ldosboxes_array[:, 0]
+
+        dos_node = XyData()
+        dos_node.set_x(energy, 'Energy', 'eV')
+        dos_node.set_y(ldosboxes_array[:, 1], 'Dos', 'states/eV')
+
+        ldos_node = XyData()
+        ldos_node.set_x(energy, 'Energy', 'eV')
+        num_boxes = ldosboxes_array.shape[1] - 3
+        ldos_node.set_y(
+            [ldosboxes_array[:, i + 3] for i in range(num_boxes)],
+            [f'ldos_box{i + 1}' for i in range(num_boxes)],
+            ['states/eV'] * num_boxes
+        )
+
+        return energy, dos_node, ldos_node
 
     @classmethod
     def _build_bands_and_projections(
