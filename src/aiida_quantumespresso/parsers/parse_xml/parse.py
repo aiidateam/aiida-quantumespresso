@@ -233,7 +233,7 @@ def parse_xml_post_6_2(xml):
         'starting_magnetization': starting_magnetization,
         'has_electric_field': has_electric_field,
         'has_dipole_correction': has_dipole_correction,
-        'lda_plus_u_calculation': 'dftU' in outputs,
+        'lda_plus_u_calculation': 'dftU' in outputs['dft'],
         'format_name': xml_dictionary['general_info']['xml_format']['@NAME'],
         'format_version': xml_dictionary['general_info']['xml_format']['@VERSION'],
         # TODO: check that format version: a) matches the XSD schema version; b) is updated as well
