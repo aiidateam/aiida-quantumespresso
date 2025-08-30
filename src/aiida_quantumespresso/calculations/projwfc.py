@@ -77,6 +77,8 @@ class ProjwfcCalculation(NamelistsCalculation):
             message='The stdout output file could not be parsed.')
         spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
             message='The stdout output file was incomplete probably because the calculation got interrupted.')
+        spec.exit_code(313, 'ERROR_OUTPUT_STDOUT_UNKNOWN_PROJECTION_TYPE',
+            message='The stdout output file contains an unknown projection type.')
         spec.exit_code(320, 'ERROR_OUTPUT_XML_READ',
             message='The XML output file could not be read.')
         spec.exit_code(321, 'ERROR_OUTPUT_XML_PARSE',

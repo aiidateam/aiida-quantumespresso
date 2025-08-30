@@ -33,15 +33,6 @@ class ProjwfcParser(BaseParser):
         """Parses the retrieved files of the ``ProjwfcCalculation`` and converts them into output nodes."""
         logs = get_logging_container()
 
-        stdout, parsed_data, logs = self.parse_stdout_from_retrieved(logs)
-
-        self.out('output_parameters', Dict(dict=parsed_data))
-
-        # Split the stdout into header and k-point blocks - TODO: Lowdin
-        stdout_blocks = stdout.split('Lowdin Charges:')[0].split('k = ')
-        header = stdout_blocks[0]
-        kpoint_blocks = stdout_blocks[1:]
-
         # Check that the temporary retrieved folder is there
         try:
             retrieved_temporary_folder = Path(kwargs['retrieved_temporary_folder'])
@@ -61,24 +52,53 @@ class ProjwfcParser(BaseParser):
         spinorbit = parsed_xml.get('spin_orbit_calculation')
         non_collinear = parsed_xml.get('non_colinear_calculation')
 
-        orbitals = self._parse_orbitals(header, structure, non_collinear, spinorbit)
-        bands, projections = self._parse_bands_and_projections(kpoint_blocks, len(orbitals))
-        energy, dos_node, pdos_array = self._parse_pdos_files(retrieved_temporary_folder, nspin, spinorbit, logs)
+        # Parse the standard output
+        stdout, parsed_data, logs = self.parse_stdout_from_retrieved(logs)
 
-        self.out('Dos', dos_node)
+        self.out('output_parameters', Dict(dict=parsed_data))
 
-        output_node_dict = self._build_bands_and_projections(
-            kpoints, bands, energy, orbitals, projections, pdos_array, nspin
-        )
-        for linkname, node in output_node_dict.items():
-            self.out(linkname, node)
+        # 2 possible types of projection:
+        # 1. onto atomic orbitals -> read *pdos_tot* and *pdos_atm* files to extract DOS, PDOS and projections
+        # 2. into boxes -> read *ldos_boxes* file to extract DOS and LDOS
+
+        projection_orbitals = "Lowdin Charges" in stdout
+        projection_boxes = "projwave_boxes" in stdout
+
+        if projection_orbitals:
+            # Split the stdout into header and k-point blocks - TODO: Lowdin
+            stdout_blocks = stdout.split('Lowdin Charges:')[0].split('k = ')
+            header = stdout_blocks[0]
+            kpoint_blocks = stdout_blocks[1:]
+
+            orbitals = self._parse_orbitals(header, structure, non_collinear, spinorbit)
+
+            bands, projections = self._parse_bands_and_projections(kpoint_blocks, len(orbitals))
+            energy, dos_node, pdos_array = self._parse_pdos_files(retrieved_temporary_folder, nspin, spinorbit, logs)
+
+            self.out('Dos', dos_node)
+
+            output_node_dict = self._build_bands_and_projections(
+                kpoints, bands, energy, orbitals, projections, pdos_array, nspin
+            )
+
+            for linkname, node in output_node_dict.items():
+                self.out(linkname, node)
+        elif projection_boxes:
+            # TODO: Logic for projection into boxes
+            pass
+        else:
+            logs.error.append('ERROR_OUTPUT_STDOUT_UNKNOWN_PROJECTION_TYPE')
 
         for exit_code in [
             'ERROR_OUTPUT_STDOUT_MISSING',
             'ERROR_OUTPUT_STDOUT_READ',
             'ERROR_OUTPUT_STDOUT_PARSE',
             'ERROR_OUTPUT_STDOUT_INCOMPLETE',
-            'ERROR_READING_PDOSTOT_FILE'
+            'ERROR_OUTPUT_STDOUT_UNKNOWN_PROJECTION_TYPE',
+            'ERROR_READING_PDOSTOT_FILE',
+            'ERROR_READING_LDOSBOXES_FILE',
+            'ERROR_MISSING_PDOSTOT_FILE',
+            'ERROR_MISSING_LDOSBOXES_FILE'
         ]:
             if exit_code in logs.error:
                 return self.exit(self.exit_codes.get(exit_code), logs)
@@ -299,6 +319,9 @@ class ProjwfcParser(BaseParser):
                 pdostot_array = np.atleast_2d(np.genfromtxt(pdostot_file))
         except (OSError, KeyError):
             logs.error.append('ERROR_READING_PDOSTOT_FILE')
+            return np.array([]), XyData(), np.array([])
+        except StopIteration:
+            logs.error.append('ERROR_MISSING_PDOSTOT_FILE')
             return np.array([]), XyData(), np.array([])
 
         energy = pdostot_array[:, 0]
