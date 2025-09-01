@@ -9,6 +9,17 @@ Dos:
   - Dos
   y_units:
   - states/eV
+Pdos:
+  array|x_array:
+  - 11
+  array|y_array_0:
+  - 11
+  x_name: Energy
+  x_units: eV
+  y_names:
+  - Pdos
+  y_units:
+  - states/eV
 bands:
   array|bands:
   - 2

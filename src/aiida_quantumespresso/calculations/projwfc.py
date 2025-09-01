@@ -16,26 +16,28 @@ class ProjwfcCalculation(NamelistsCalculation):
     <Psi(n,k) | Y(theta,phi)R(r) >. For more information, refer to http://www.quantum-espresso.org/
     """
 
-    _default_namelists = ['PROJWFC']
+    _default_namelists = ["PROJWFC"]
     _blocked_keywords = [
-        ('PROJWFC', 'outdir', NamelistsCalculation._OUTPUT_SUBFOLDER),
-        ('PROJWFC', 'prefix', NamelistsCalculation._PREFIX),
-        ('PROJWFC', 'lsym', True),
-        ('PROJWFC', 'lwrite_overlaps', False),
-        ('PROJWFC', 'lbinary_data', False),
-        ('PROJWFC', 'kresolveddos', False),
-        ('PROJWFC', 'tdosinboxes', False),
-        ('PROJWFC', 'plotboxes', False),
+        ("PROJWFC", "outdir", NamelistsCalculation._OUTPUT_SUBFOLDER),
+        ("PROJWFC", "prefix", NamelistsCalculation._PREFIX),
+        ("PROJWFC", "lsym", True),
+        ("PROJWFC", "lwrite_overlaps", False),
+        ("PROJWFC", "lbinary_data", False),
+        ("PROJWFC", "kresolveddos", False),
+        # ('PROJWFC', 'tdosinboxes', False),
+        # ('PROJWFC', 'plotboxes', False),
     ]
-    _default_parser = 'quantumespresso.projwfc'
+    _default_parser = "quantumespresso.projwfc"
 
-    xml_path = Path(NamelistsCalculation._default_parent_output_folder
-                    ).joinpath(f'{NamelistsCalculation._PREFIX}.save', 'data-file-schema.xml')
+    xml_path = Path(NamelistsCalculation._default_parent_output_folder).joinpath(
+        f"{NamelistsCalculation._PREFIX}.save", "data-file-schema.xml"
+    )
 
     # The XML file is added to the temporary retrieve list since it is required for parsing, but already in the
     # repository of a an ancestor calculation.
     _retrieve_temporary_list = [
-        NamelistsCalculation._PREFIX + '.pdos*',
+        NamelistsCalculation._PREFIX + ".pdos*",
+        NamelistsCalculation._PREFIX + ".ldos_boxes",
         xml_path.as_posix(),
     ]
 
@@ -47,8 +49,12 @@ class ProjwfcCalculation(NamelistsCalculation):
         super().define(spec)
         spec.input('parent_folder', valid_type=(RemoteData, FolderData), help='The output folder of a pw.x calculation')
         spec.output('output_parameters', valid_type=Dict)
-        spec.output('Dos', valid_type=XyData)
-        # if spin
+        spec.output('Dos', valid_type=XyData, help='Total DOS')
+        # if tdosinboxes: an ldos_boxes file is generated
+        spec.output('Ldos', valid_type=XyData, required=False, help='LDOS for each box in same XyData node')
+        # if not tdosinboxes: no pdos_tot file is generated
+        spec.output('Pdos', valid_type=XyData, required=False, help='Total Projected DOS (on all orbitals or on all boxes if LDOS)')
+        # if spin: Dos and Pdos have a second y-array for the spin down
         spec.output('projections_up', valid_type=ProjectionData, required=False)
         spec.output('projections_down', valid_type=ProjectionData, required=False)
         spec.output('bands_up', valid_type=BandsData, required=False)
@@ -56,7 +62,10 @@ class ProjwfcCalculation(NamelistsCalculation):
         # if non-spin
         spec.output('projections', valid_type=ProjectionData, required=False)
         spec.output('bands', valid_type=BandsData, required=False)
+
         spec.default_output_node = 'output_parameters'
+
+        # Exit codes
         spec.exit_code(301, 'ERROR_NO_RETRIEVED_TEMPORARY_FOLDER',
             message='The retrieved temporary folder could not be accessed.')
         spec.exit_code(302, 'ERROR_OUTPUT_STDOUT_MISSING',
@@ -69,6 +78,8 @@ class ProjwfcCalculation(NamelistsCalculation):
             message='The stdout output file could not be parsed.')
         spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
             message='The stdout output file was incomplete probably because the calculation got interrupted.')
+        spec.exit_code(313, 'ERROR_OUTPUT_STDOUT_UNKNOWN_PROJECTION_TYPE',
+            message='The stdout output file contains an unknown projection type.')
         spec.exit_code(320, 'ERROR_OUTPUT_XML_READ',
             message='The XML output file could not be read.')
         spec.exit_code(321, 'ERROR_OUTPUT_XML_PARSE',
@@ -77,6 +88,12 @@ class ProjwfcCalculation(NamelistsCalculation):
             message='The XML output file has an unsupported format.')
         spec.exit_code(330, 'ERROR_READING_PDOSTOT_FILE',
             message='The pdos_tot file could not be read from the retrieved folder.')
+        spec.exit_code(331, 'ERROR_READING_LDOSBOXES_FILE',
+            message='The ldos_boxes file could not be read from the retrieved folder.')
+        spec.exit_code(332, 'ERROR_MISSING_PDOSTOT_FILE',
+            message='The pdos_tot file is missing from the retrieved folder.')
+        spec.exit_code(333, 'ERROR_MISSING_LDOSBOXES_FILE',
+            message='The ldos_boxes file is missing from the retrieved folder.')
         spec.exit_code(340, 'ERROR_PARSING_PROJECTIONS',
             message='An exception was raised parsing bands and projections.')
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
