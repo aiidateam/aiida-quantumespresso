@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO neb.x calculation with automated error handling and restarts."""
 from aiida import orm
-from aiida.common import AttributeDict, InputValidationError, exceptions
-from aiida.common.lang import type_check
+from aiida.common import AttributeDict, InputValidationError
 from aiida.engine import BaseRestartWorkChain, ProcessHandlerReport, process_handler, while_
-from aiida.plugins import CalculationFactory, GroupFactory
+from aiida.plugins import CalculationFactory, GroupFactory, WorkflowFactory
 
 from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import create_kpoints_from_distance
 from aiida_quantumespresso.common.types import ElectronicType, RestartType, SpinType
@@ -13,6 +12,7 @@ from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 from ..protocols.utils import ProtocolMixin
 
 NebCalculation = CalculationFactory('quantumespresso.neb')
+PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 SsspFamily = GroupFactory('pseudo.family.sssp')
 PseudoDojoFamily = GroupFactory('pseudo.family.pseudo_dojo')
 CutoffsPseudoPotentialFamily = GroupFactory('pseudo.family.cutoffs')
@@ -85,7 +85,8 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         electronic_type=ElectronicType.METAL,
         spin_type=SpinType.NONE,
         initial_magnetic_moments=None,
-        **_
+        options=None,
+        **kargs
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
@@ -103,124 +104,33 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             the ``CalcJobs`` that are nested in this work chain.
         :return: a process builder instance with all inputs defined ready for launch.
         """
-        from aiida_quantumespresso.workflows.protocols.utils import get_magnetization, recursive_merge
 
-        if isinstance(code, str):
-            code = orm.load_code(code)
-
-        type_check(code, orm.AbstractCode)
-        type_check(electronic_type, ElectronicType)
-        type_check(spin_type, SpinType)
-
-        if electronic_type not in [ElectronicType.METAL, ElectronicType.INSULATOR]:
-            raise NotImplementedError(f'electronic type `{electronic_type}` is not supported.')
-
-        if initial_magnetic_moments is not None and spin_type == SpinType.NONE:
-            raise ValueError(f'`initial_magnetic_moments` is specified but spin type `{spin_type}` is incompatible.')
-
-        inputs = cls.get_protocol_inputs(protocol, overrides)
-
-        meta_parameters = inputs.pop('meta_parameters')
-        pseudo_family = inputs.pop('pseudo_family')
-
-        if spin_type is SpinType.SPIN_ORBIT and overrides is not None and 'pseudo_family' not in overrides:
-            pseudo_family = 'PseudoDojo/0.4/PBEsol/FR/standard/upf'
-
-        structure = images.get_step_structure(-1)
-        natoms = len(structure.sites)
-
-        # Update the parameters based on the protocol inputs
-        parameters = inputs['pw']['parameters']
-
-        if overrides and 'pseudos' in overrides.get('pw', {}):
-
-            pseudos = overrides['pw']['pseudos']
-
-            if sorted(pseudos.keys()) != sorted(structure.get_kind_names()):
-                raise ValueError(f'`pseudos` override needs one value for each of the {len(structure.kinds)} kinds.')
-
-            system_overrides = overrides['pw'].get('parameters', {}).get('SYSTEM', {})
-
-            if not all(key in system_overrides for key in ('ecutwfc', 'ecutrho')):
-                raise ValueError(
-                    'When overriding the pseudo potentials, both `ecutwfc` and `ecutrho` cutoffs should be '
-                    f'provided in the `overrides`: {overrides}'
-                )
-
-        else:
-            try:
-                pseudo_set = (PseudoDojoFamily, SsspFamily, CutoffsPseudoPotentialFamily)
-                pseudo_family = orm.QueryBuilder().append(pseudo_set, filters={'label': pseudo_family}).one()[0]
-            except exceptions.NotExistent as exception:
-                raise ValueError(
-                    f'required pseudo family `{pseudo_family}` is not installed. Please use `aiida-pseudo install` to'
-                    'install it.'
-                ) from exception
-
-            try:
-                parameters['SYSTEM']['ecutwfc'], parameters['SYSTEM'][
-                    'ecutrho'] = pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
-                pseudos = pseudo_family.get_pseudos(structure=structure)
-            except ValueError as exception:
-                raise ValueError(
-                    f'failed to obtain recommended cutoffs for pseudo family `{pseudo_family}`: {exception}'
-                ) from exception
-
-        parameters['CONTROL']['etot_conv_thr'] = natoms * meta_parameters['etot_conv_thr_per_atom']
-        parameters['ELECTRONS']['conv_thr'] = natoms * meta_parameters['conv_thr_per_atom']
-
-        # If the structure is 2D periodic in the x-y plane, we set assume_isolate to `2D`
-        if structure.pbc == (True, True, False):
-            parameters['SYSTEM']['assume_isolated'] = '2D'
-
-        if electronic_type is ElectronicType.INSULATOR:
-            parameters['SYSTEM']['occupations'] = 'fixed'
-            parameters['SYSTEM'].pop('degauss')
-            parameters['SYSTEM'].pop('smearing')
-
-        magnetization = get_magnetization(
-            structure=structure,
-            z_valences={kind.name: pseudos[kind.name].z_valence for kind in structure.kinds},
-            initial_magnetic_moments=initial_magnetic_moments,
+        pw_base = PwBaseWorkChain.get_builder_from_protocol(
+            code,
+            images.get_step_structure(-1),
+            protocol=protocol,
+            overrides=overrides,
+            electronic_type=electronic_type,
             spin_type=spin_type,
+            initial_magnetic_moments=initial_magnetic_moments,
+            options=options,
+            **kargs
         )
-        if spin_type is SpinType.COLLINEAR:
-            parameters['SYSTEM']['starting_magnetization'] = magnetization['starting_magnetization']
-            parameters['SYSTEM']['nspin'] = 2
-
-        if spin_type in [SpinType.SPIN_ORBIT, SpinType.NON_COLLINEAR]:
-            parameters['SYSTEM']['starting_magnetization'] = magnetization['starting_magnetization']
-            parameters['SYSTEM']['angle1'] = magnetization['angle1']
-            parameters['SYSTEM']['angle2'] = magnetization['angle2']
-            parameters['SYSTEM']['noncolin'] = True
-            parameters['SYSTEM']['nspin'] = 4
-            if spin_type == SpinType.SPIN_ORBIT:
-                parameters['SYSTEM']['lspinorb'] = True
-
-        # If overrides are provided, they are considered absolute
-        if overrides:
-            parameter_overrides = overrides.get('pw', {}).get('parameters', {})
-            parameters = recursive_merge(parameters, parameter_overrides)
-
-            # if tot_magnetization in overrides , remove starting_magnetization from parameters
-            if parameters.get('SYSTEM', {}).get('tot_magnetization') is not None:
-                parameters.setdefault('SYSTEM', {}).pop('starting_magnetization', None)
-
-        # pylint: disable=no-member
+        #pylint: disable=no-member
         builder = cls.get_builder()
-        builder.neb['code'] = code
-        builder.neb.pw['pseudos'] = pseudos
-        builder.neb['images'] = images
-        builder.neb.pw['parameters'] = orm.Dict(parameters)
+        builder.neb.code = code
+        builder.neb.images = images
+        builder.neb.pw.pseudos = pw_base.pw.pseudos
+        builder.neb.pw.parameters = pw_base.pw.parameters
+        builder.neb.metadata.options = pw_base.pw.metadata.options
 
-        if 'kpoints' in inputs:
-            builder.kpoints = inputs['kpoints']
+        if 'kpoints' in pw_base:
+            builder.kpoints = pw_base['kpoints']
         else:
-            builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
-        builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
-        builder.max_iterations = orm.Int(inputs['max_iterations'])
+            builder.kpoints_distance = orm.Float(pw_base['kpoints_distance'])
+        builder.kpoints_force_parity = orm.Bool(pw_base['kpoints_force_parity'])
+        builder.max_iterations = orm.Int(pw_base['max_iterations'])
         # pylint: enable=no-member
-
         return builder
 
     def setup(self):
