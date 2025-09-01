@@ -47,12 +47,13 @@ def test_projwfc(
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
 
-    for link_name in ["output_parameters", "Dos", "bands", "projections"]:
+    for link_name in ["output_parameters", "Dos", "Pdos", "bands", "projections"]:
         assert link_name in results, list(results.keys())
 
     data_regression.check(
         {
             "Dos": results["Dos"].base.attributes.all,
+            "Pdos": results["Pdos"].base.attributes.all,
             "bands": results["bands"].base.attributes.all,
             "projections": {
                 k: v
@@ -79,6 +80,7 @@ def test_projwfc_spinpolarised(
     for link_name in [
         "output_parameters",
         "Dos",
+        "Pdos",
         "bands_up",
         "bands_down",
         "projections_up",
@@ -91,6 +93,10 @@ def test_projwfc_spinpolarised(
             "Dos": {
                 array_name: results["Dos"].get_array(array_name).tolist()
                 for array_name in results["Dos"].get_arraynames()
+            },
+            "Pdos": {
+                array_name: results["Pdos"].get_array(array_name).tolist()
+                for array_name in results["Pdos"].get_arraynames()
             },
             "bands_up": results["bands_up"].base.attributes.all,
             "bands_down": results["bands_down"].base.attributes.all,
@@ -124,12 +130,13 @@ def test_projwfc_tdosinboxes(
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
 
-    for link_name in ["output_parameters", "Dos", "Ldos"]:
+    for link_name in ["output_parameters", "Dos", "Pdos", "Ldos"]:
         assert link_name in results, list(results.keys())
 
     data_regression.check(
         {
             "Dos": results["Dos"].base.attributes.all,
+            "Pdos": results["Pdos"].base.attributes.all,
             "Ldos": results["Ldos"].base.attributes.all,
         }
     )

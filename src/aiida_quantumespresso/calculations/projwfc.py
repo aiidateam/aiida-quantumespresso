@@ -16,27 +16,28 @@ class ProjwfcCalculation(NamelistsCalculation):
     <Psi(n,k) | Y(theta,phi)R(r) >. For more information, refer to http://www.quantum-espresso.org/
     """
 
-    _default_namelists = ['PROJWFC']
+    _default_namelists = ["PROJWFC"]
     _blocked_keywords = [
-        ('PROJWFC', 'outdir', NamelistsCalculation._OUTPUT_SUBFOLDER),
-        ('PROJWFC', 'prefix', NamelistsCalculation._PREFIX),
-        ('PROJWFC', 'lsym', True),
-        ('PROJWFC', 'lwrite_overlaps', False),
-        ('PROJWFC', 'lbinary_data', False),
-        # ('PROJWFC', 'kresolveddos', False),
+        ("PROJWFC", "outdir", NamelistsCalculation._OUTPUT_SUBFOLDER),
+        ("PROJWFC", "prefix", NamelistsCalculation._PREFIX),
+        ("PROJWFC", "lsym", True),
+        ("PROJWFC", "lwrite_overlaps", False),
+        ("PROJWFC", "lbinary_data", False),
+        ("PROJWFC", "kresolveddos", False),
         # ('PROJWFC', 'tdosinboxes', False),
         # ('PROJWFC', 'plotboxes', False),
     ]
-    _default_parser = 'quantumespresso.projwfc'
+    _default_parser = "quantumespresso.projwfc"
 
-    xml_path = Path(NamelistsCalculation._default_parent_output_folder
-                    ).joinpath(f'{NamelistsCalculation._PREFIX}.save', 'data-file-schema.xml')
+    xml_path = Path(NamelistsCalculation._default_parent_output_folder).joinpath(
+        f"{NamelistsCalculation._PREFIX}.save", "data-file-schema.xml"
+    )
 
     # The XML file is added to the temporary retrieve list since it is required for parsing, but already in the
     # repository of a an ancestor calculation.
     _retrieve_temporary_list = [
-        NamelistsCalculation._PREFIX + '.pdos*',
-        NamelistsCalculation._PREFIX + '.ldos_boxes',
+        NamelistsCalculation._PREFIX + ".pdos*",
+        NamelistsCalculation._PREFIX + ".ldos_boxes",
         xml_path.as_posix(),
     ]
 
@@ -52,7 +53,7 @@ class ProjwfcCalculation(NamelistsCalculation):
         # if tdosinboxes: an ldos_boxes file is generated
         spec.output('Ldos', valid_type=XyData, required=False, help='LDOS for each box in same XyData node')
         # if not tdosinboxes: no pdos_tot file is generated
-        spec.output('Pdos', valid_type=XyData, required=False, help='Total Projected DOS')
+        spec.output('Pdos', valid_type=XyData, required=False, help='Total Projected DOS (on all orbitals or on all boxes if LDOS)')
         # if spin: Dos and Pdos have a second y-array for the spin down
         spec.output('projections_up', valid_type=ProjectionData, required=False)
         spec.output('projections_down', valid_type=ProjectionData, required=False)

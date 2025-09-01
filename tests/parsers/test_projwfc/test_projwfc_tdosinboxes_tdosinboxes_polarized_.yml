@@ -60,3 +60,18 @@ Ldos:
   - states/eV
   - states/eV
   - states/eV
+Pdos:
+  array|x_array:
+  - 2002
+  array|y_array_0:
+  - 2002
+  array|y_array_1:
+  - 2002
+  x_name: Energy
+  x_units: eV
+  y_names:
+  - pdos_up
+  - pdos_down
+  y_units:
+  - states/eV
+  - states/eV

@@ -84,11 +84,12 @@ class ProjwfcParser(BaseParser):
             bands, projections = self._parse_bands_and_projections(
                 kpoint_blocks, len(orbitals)
             )
-            energy, dos_node, pdos_array = self._parse_pdos_files(
+            energy, dos_node, pdos_node, pdos_array = self._parse_pdos_files(
                 retrieved_temporary_folder, nspin, spinorbit, logs
             )
 
             self.out("Dos", dos_node)
+            self.out("Pdos", pdos_node)
 
             output_node_dict = self._build_bands_and_projections(
                 kpoints, bands, energy, orbitals, projections, pdos_array, nspin
@@ -97,11 +98,12 @@ class ProjwfcParser(BaseParser):
             for linkname, node in output_node_dict.items():
                 self.out(linkname, node)
         elif projection_boxes:
-            energy, dos_node, ldos_node = self._parse_ldos_boxes_file(
+            energy, dos_node, pdos_node, ldos_node = self._parse_ldos_boxes_file(
                 retrieved_temporary_folder, nspin, logs
             )
 
             self.out("Dos", dos_node)
+            self.out("Pdos", pdos_node)
             self.out("Ldos", ldos_node)
         else:
             logs.error.append("ERROR_OUTPUT_STDOUT_UNKNOWN_PROJECTION_TYPE")
@@ -351,7 +353,7 @@ class ProjwfcParser(BaseParser):
         :param nspin: nspin value of the parent calculation.
         :param spinorbit: True if the calculation used spin-orbit coupling.
 
-        :return: tuple of three containing the energy grid, the total DOS as a node and the PDOS
+        :return: tuple of three containing the energy grid, the total DOS as a node, the total PDOS as a node and the PDOS array of projections on orbitals
         """
 
         def natural_sort_key(sort_key, _nsre=re.compile("([0-9]+)")):
@@ -384,18 +386,27 @@ class ProjwfcParser(BaseParser):
 
         energy = pdostot_array[:, 0]
 
-        dos_node = XyData()
+        dos_node = XyData()  # Total DOS
         dos_node.set_x(energy, "Energy", "eV")
 
-        # For spin-polarised calculations the total DOS is split up in spin up and down
+        pdos_node = XyData()  # Total PDOS (on all orbitals)
+        pdos_node.set_x(energy, "Energy", "eV")
+
+        # For spin-polarised calculations the total DOS and the total PDOS are split up in spin up and down
         if nspin == 2:
             dos_node.set_y(
                 (pdostot_array[:, 1], pdostot_array[:, 2]),
                 ("dos_up", "dos_down"),
                 ("states/eV", "states/eV"),
             )
+            pdos_node.set_y(
+                (pdostot_array[:, 3], pdostot_array[:, 4]),
+                ("pdos_up", "pdos_down"),
+                ("states/eV", "states/eV"),
+            )
         else:
             dos_node.set_y(pdostot_array[:, 1], "Dos", "states/eV")
+            pdos_node.set_y(pdostot_array[:, 2], "Pdos", "states/eV")
 
         # We're only interested in the PDOS, so we skip the first columns corresponding to the energy and LDOS
         if nspin == 1 or spinorbit:
@@ -445,7 +456,7 @@ class ProjwfcParser(BaseParser):
                 )
             pdos_array = np.concatenate(pdos_list, axis=1)
 
-        return energy, dos_node, pdos_array
+        return energy, dos_node, pdos_node, pdos_array
 
     def _parse_ldos_boxes_file(
         self, retrieved_temporary_folder: Path, nspin: int, logs: AttributeDict
@@ -474,19 +485,28 @@ class ProjwfcParser(BaseParser):
 
         energy = ldosboxes_array[:, 0]
 
-        dos_node = XyData()
+        dos_node = XyData()  # Total DOS
         dos_node.set_x(energy, "Energy", "eV")
 
-        # For spin-polarized calculations the total DOS is split up in spin up and down and so are the LDOS for each box
+        pdos_node = XyData()  # Total PDOS (on all boxes)
+        pdos_node.set_x(energy, "Energy", "eV")
+
+        # For spin-polarized calculations the total DOS and the total PDOS are split up in spin up and down and so are the LDOS for each box
         if nspin == 2:
             dos_node.set_y(
                 (ldosboxes_array[:, 1], ldosboxes_array[:, 2]),
                 ("dos_up", "dos_down"),
                 ("states/eV", "states/eV"),
             )
+            pdos_node.set_y(
+                (ldosboxes_array[:, 3], ldosboxes_array[:, 4]),
+                ("pdos_up", "pdos_down"),
+                ("states/eV", "states/eV"),
+            )
         else:
-            # For unpolarized or non-collinear (with or without SOC) calculations, the total DOS is not split, and neither are the LDOS
+            # For unpolarized or non-collinear (with or without SOC) calculations, the total DOS and the total PDOS are not split, and neither are the LDOS
             dos_node.set_y(ldosboxes_array[:, 1], "Dos", "states/eV")
+            pdos_node.set_y(ldosboxes_array[:, 2], "Pdos", "states/eV")
 
         ldos_node = XyData()
         ldos_node.set_x(energy, "Energy", "eV")
@@ -512,7 +532,7 @@ class ProjwfcParser(BaseParser):
                 ["states/eV"] * num_boxes,
             )
 
-        return energy, dos_node, ldos_node
+        return energy, dos_node, pdos_node, ldos_node
 
     @classmethod
     def _build_bands_and_projections(
