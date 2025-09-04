@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """`CalcJob` implementation for the average.x code of Quantum ESPRESSO."""
 
+from os import path
 from aiida import orm
 from aiida.common import datastructures
 from aiida.engine import CalcJob
@@ -188,8 +189,16 @@ z in Ang, p(z) in eV, m(z) in eV. Code outputs are in Bohr and Rydberg. Conversi
         :param folder: a sandbox folder to temporarily write files on disk.
         :return: :class:`~aiida.common.datastructures.CalcInfo` instance.
         """
+        parent_folder = self.inputs.parent_folder
 
-        remote_copy_list = [self._DEFAULT_INPUT_DATA_FILE]
+        remote_copy_list = [
+            parent_folder.computer.uuid,
+            path.join(
+                parent_folder.get_remote_path(),
+                self._DEFAULT_INPUT_DATA_FILE,
+            ),
+            self._DEFAULT_INPUT_DATA_FILE,
+        ]
         local_copy_list = []
 
         # Code information
