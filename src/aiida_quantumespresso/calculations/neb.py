@@ -163,8 +163,8 @@ class NebCalculation(CalcJob):
             # Check that a pseudo potential was specified for each kind present in the `StructureData`
             # self.inputs.pw.pseudos is a plumpy.utils.AttributesFrozendict
             kindnames = [kind.name for kind in structure_list[0].kinds]
-            if set(kindnames) != set(inputs['pw'].pseudos.keys()):
-                formatted_pseudos = ', '.join(list(inputs['pw'].pseudos.keys()))
+            if set(kindnames) != set(inputs['pw']['pseudos'].keys()):
+                formatted_pseudos = ', '.join(list(inputs['pw']['pseudos'].keys()))
                 formatted_kinds = ', '.join(list(kindnames))
                 return 'Mismatch between the defined pseudos and the list of kinds of the structure.\n' \
                        f'Pseudos: {formatted_pseudos};\nKinds: {formatted_kinds}'
