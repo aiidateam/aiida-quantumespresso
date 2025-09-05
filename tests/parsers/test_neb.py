@@ -58,6 +58,10 @@ def test_neb_default(fixture_localhost, generate_calc_job_node, generate_parser,
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
     assert not [log for log in orm.Log.collection.get_logs_for(node) if log.levelname == 'ERROR']
+    assert not [
+        log for log in orm.Log.collection.get_logs_for(node)
+        if 'DEPRECATED: symmetry with ibrav=0, use correct ibrav instead' not in log.message
+    ]
     assert 'output_parameters' in results
     assert 'output_mep' in results
     assert 'output_trajectory' in results
