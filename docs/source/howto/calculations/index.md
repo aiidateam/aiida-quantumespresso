@@ -21,5 +21,4 @@ projwfc
 pw
 pw2wannier90
 q2r
-xspectra
 ```

@@ -11,7 +11,6 @@ import pytest
         'quantumespresso.matdyn.base',
         'quantumespresso.pw.base',
         'quantumespresso.q2r.base',
-        'quantumespresso.xspectra.base',
     )
 )
 def test_base_unrecoverable_failure(generate_workchain, generate_calc_job_node, generate_inputs, entry_point):
