@@ -553,7 +553,7 @@ def generate_force_constants_data(filepath_tests):
 @pytest.fixture
 def generate_inputs(
     generate_inputs_bands, generate_inputs_cp, generate_inputs_matdyn, generate_inputs_ph, generate_inputs_pw,
-    generate_inputs_q2r, generate_inputs_xspectra
+    generate_inputs_q2r
 ):
     """Generate the inputs for a process."""
 
@@ -564,7 +564,6 @@ def generate_inputs(
         'quantumespresso.ph': generate_inputs_ph,
         'quantumespresso.matdyn': generate_inputs_matdyn,
         'quantumespresso.q2r': generate_inputs_q2r,
-        'quantumespresso.xspectra': generate_inputs_xspectra
     }
 
     def _generate_inputs(entry_point: str):
@@ -778,54 +777,6 @@ def generate_inputs_cp(fixture_code, generate_structure, generate_upf_data):
 
 
 @pytest.fixture
-def generate_inputs_xspectra(
-    fixture_sandbox,
-    fixture_localhost,
-    fixture_code,
-    generate_remote_data,
-    generate_kpoints_mesh,
-):
-    """Generate inputs for an ``XspectraCalculation``."""
-
-    def _generate_inputs_xspectra():
-        from aiida.orm import Dict, SinglefileData
-
-        from aiida_quantumespresso.utils.resources import get_default_options
-
-        parameters = {
-            'INPUT_XSPECTRA': {
-                'calculation': 'xanes_dipole',
-            },
-        }
-
-        inputs = {
-            'code':
-            fixture_code('quantumespresso.xspectra'),
-            'parameters':
-            Dict(parameters),
-            'parent_folder':
-            generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.pw'),
-            'core_wfc_data':
-            SinglefileData(
-                io.StringIO(
-                    '# number of core states 3 =  1 0;  2 0;'
-                    '\n6.51344e-05 6.615743462459999e-3'
-                    '\n6.59537e-05 6.698882211449999e-3'
-                )
-            ),
-            'kpoints':
-            generate_kpoints_mesh(2),
-            'metadata': {
-                'options': get_default_options()
-            }
-        }
-
-        return inputs
-
-    return _generate_inputs_xspectra
-
-
-@pytest.fixture
 def generate_workchain_pw(generate_workchain, generate_inputs_pw, generate_calc_job_node):
     """Generate an instance of a ``PwBaseWorkChain``."""
 
@@ -968,73 +919,3 @@ def generate_workchain_pdos(generate_workchain, generate_inputs_pw, fixture_code
         return generate_workchain(entry_point, inputs)
 
     return _generate_workchain_pdos
-
-
-@pytest.fixture
-def generate_workchain_xspectra(generate_workchain, generate_inputs_xspectra, generate_calc_job_node):
-    """Generate an instance of a `XspectraBaseWorkChain`."""
-
-    def _generate_workchain_xspectra(exit_code=None, inputs=None, return_inputs=False, xspectra_outputs=None):
-        from aiida.common import LinkType
-        from plumpy import ProcessState
-
-        entry_point = 'quantumespresso.xspectra.base'
-
-        if inputs is None:
-            inputs_xspectra = generate_inputs_xspectra()
-            kpoints = inputs_xspectra.pop('kpoints')
-            inputs = {'xspectra': inputs_xspectra, 'kpoints': kpoints}
-
-        if return_inputs:
-            return inputs
-
-        process = generate_workchain(entry_point, inputs)
-        xspectra_node = generate_calc_job_node()
-        process.ctx.iteration = 1
-        process.ctx.children = [xspectra_node]
-
-        if xspectra_outputs is not None:
-            for link_label, output_node in xspectra_outputs.items():
-                output_node.base.links.add_incoming(xspectra_node, link_type=LinkType.CREATE, link_label=link_label)
-                output_node.store()
-
-        if exit_code is not None:
-            xspectra_node.set_process_state(ProcessState.FINISHED)
-            xspectra_node.set_exit_status(exit_code.status)
-
-        return process
-
-    return _generate_workchain_xspectra
-
-
-@pytest.fixture
-def generate_workchain_xps(generate_inputs_pw, generate_workchain, generate_upf_data):
-    """Generate an instance of a `XpsWorkChain`."""
-
-    def _generate_workchain_xps():
-        from aiida.orm import Bool, List, Str
-
-        entry_point = 'quantumespresso.xps'
-
-        scf_pw_inputs = generate_inputs_pw()
-        kpoints = scf_pw_inputs.pop('kpoints')
-        structure = scf_pw_inputs.pop('structure')
-        ch_scf = {'pw': scf_pw_inputs, 'kpoints': kpoints}
-
-        inputs = {
-            'structure': structure,
-            'ch_scf': ch_scf,
-            'dry_run': Bool(True),
-            'elements_list': List(['Si']),
-            'abs_atom_marker': Str('X'),
-            'core_hole_pseudos': {
-                'Si': generate_upf_data('Si')
-            },
-            'gipaw_pseudos': {
-                'Si': generate_upf_data('Si')
-            },
-        }
-
-        return generate_workchain(entry_point, inputs)
-
-    return _generate_workchain_xps
