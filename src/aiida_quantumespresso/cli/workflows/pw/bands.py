@@ -5,6 +5,8 @@ from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
 import click
 
+from aiida_quantumespresso.workflows.pw.bands import PwBandsWorkChain
+
 from .. import cmd_launch
 from ...utils import launch, options, validate
 
@@ -33,19 +35,11 @@ def launch_workflow(
 ):
     """Run a `PwBandsWorkChain`."""
     # pylint: disable=too-many-statements
-    from aiida.orm import Bool, Dict, Float
-    from aiida.plugins import WorkflowFactory
-
     from aiida_quantumespresso.utils.resources import get_default_options
-
-    builder = WorkflowFactory('quantumespresso.pw.bands').get_builder()
 
     cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
 
     parameters = {
-        'CONTROL': {
-            'calculation': 'relax',
-        },
         'SYSTEM': {
             'ecutwfc': ecutwfc or cutoff_wfc,
             'ecutrho': ecutrho or cutoff_rho,
@@ -67,34 +61,19 @@ def launch_workflow(
     except ValueError as exception:
         raise click.BadParameter(str(exception))
 
-    pseudos = pseudo_family.get_pseudos(structure=structure)
-    parameters = Dict(parameters)
-
-    builder.structure = structure
-    builder.relax.base.pw.code = code
-    builder.relax.base.pw.parameters = parameters
-    builder.relax.base.pw.pseudos = pseudos
-    builder.relax.base.kpoints_distance = Float(kpoints_distance)
-    builder.relax.meta_convergence = Bool(False)
-    builder.scf.pw.code = code
-    builder.scf.pw.parameters = parameters
-    builder.scf.pw.pseudos = pseudos
-    builder.scf.kpoints_distance = Float(kpoints_distance)
-    builder.bands.pw.code = code
-    builder.bands.pw.parameters = parameters
-    builder.bands.pw.pseudos = pseudos
-
-    if hubbard_file:
-        builder.relax.base.pw.hubbard_file = hubbard_file
-        builder.scf.base.pw.hubbard_file = hubbard_file
-        builder.bands.base.pw.hubbard_file = hubbard_file
-
-    metadata_options = get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)
-    builder.relax.base.pw.metadata.options = metadata_options
-    builder.scf.pw.metadata.options = metadata_options
-    builder.bands.pw.metadata.options = metadata_options
-
-    if clean_workdir:
-        builder.clean_workdir = Bool(True)
+    base_overrides = {
+        'clean_workdir': clean_workdir,
+        'pseudo_family': pseudo_family.label,
+        'kpoints_distance': kpoints_distance,
+        'pw': {
+            'parameters': parameters,
+            'metadata': {
+                'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)
+            },
+            'hubbard_file': hubbard_file
+        }
+    }
+    overrides = {'relax': base_overrides, 'scf': base_overrides, 'bands': base_overrides}
+    builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)
 
     launch.launch_process(builder, daemon)
