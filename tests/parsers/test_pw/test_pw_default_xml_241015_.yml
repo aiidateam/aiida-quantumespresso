@@ -41,12 +41,12 @@ output_parameters:
   dft_exchange_correlation: PBESOL
   do_magnetization: false
   do_not_use_time_reversal: false
-  energy: -308.4608813004367
+  energy: -308.4608812566321
   energy_accuracy: 9.52398420771e-09
   energy_accuracy_units: eV
-  energy_ewald: -228.56124983709822
+  energy_ewald: -228.56124979086937
   energy_ewald_units: eV
-  energy_hartree: 14.830190102771441
+  energy_hartree: 14.830190068679673
   energy_hartree_units: eV
   energy_one_electron: 70.51633242103567
   energy_one_electron_units: eV
@@ -54,7 +54,7 @@ output_parameters:
   energy_smearing_units: eV
   energy_threshold: 5.33e-10
   energy_units: eV
-  energy_xc: -165.24648392516994
+  energy_xc: -165.24648394698661
   energy_xc_units: eV
   fermi_energy: 6.4656
   fermi_energy_units: eV
@@ -215,10 +215,12 @@ output_parameters:
   total_number_of_scf_iterations: 7
   volume: 40.02575122514992
   wall_time: '      2.72s '
-  wall_time_seconds: 2.72
+  wall_time_seconds: 2.711428880691528
   wfc_cutoff: 408.170751759
   wfc_cutoff_units: eV
 output_trajectory:
+  array|atomic_species_name:
+  - 2
   array|cells:
   - 1
   - 3

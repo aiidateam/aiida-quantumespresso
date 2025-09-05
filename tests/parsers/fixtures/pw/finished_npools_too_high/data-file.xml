@@ -210,8 +210,6 @@
     </band_structure>
   </output>
   <status>0</status>
-  <timing_info>
   <!-- TIMING_INFO REMOVED -->
-  </timing_info>
   <closed DATE="18 Jan 2022" TIME="18:22:17"></closed>
 </qes:espresso>

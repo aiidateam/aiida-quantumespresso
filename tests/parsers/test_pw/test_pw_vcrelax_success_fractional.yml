@@ -44,18 +44,18 @@ output_parameters:
   dft_exchange_correlation: PBE
   do_magnetization: false
   do_not_use_time_reversal: false
-  energy: -213.9987242355248
+  energy: -308.31217947507594
   energy_accuracy: 7.211016614409e-10
   energy_accuracy_units: eV
-  energy_ewald: -226.2226146981867
+  energy_ewald: -221.10606884994306
   energy_ewald_units: eV
-  energy_hartree: 15.568584734452113
+  energy_hartree: 18.432087423614103
   energy_hartree_units: eV
   energy_one_electron: 61.84476629690864
   energy_one_electron_units: eV
   energy_threshold: 7.7e-12
   energy_units: eV
-  energy_xc: -65.18946056869883
+  energy_xc: -166.98467674723068
   energy_xc_units: eV
   estimated_ram_per_process: 12.05
   estimated_ram_per_process_units: MB
@@ -103,12 +103,10 @@ output_parameters:
   number_of_spin_components: 1
   number_of_symmetries: 48
   occupations: fixed
-  pointgroup_international: m-3m
-  pointgroup_schoenflies: O_h
   q_real_space: false
   rho_cutoff: 3265.366014072
   rho_cutoff_units: eV
-  scf_iterations: 8
+  scf_iterations: 5
   smooth_fft_grid:
   - 32
   - 32
@@ -219,10 +217,10 @@ output_parameters:
   time_reversal_flag: true
   total_force: 0.0
   total_force_units: ev / angstrom
-  total_number_of_scf_iterations: 33
+  total_number_of_scf_iterations: 11
   volume: 44.212524019831406
   wall_time: '        10.50s '
-  wall_time_seconds: 10.5
+  wall_time_seconds: 13.89560699462891
   wfc_cutoff: 408.170751759
   wfc_cutoff_units: eV
 output_structure:
@@ -261,37 +259,37 @@ output_trajectory:
   array|atomic_species_name:
   - 2
   array|cells:
-  - 4
+  - 2
   - 3
   - 3
   array|energy:
-  - 5
+  - 3
   array|energy_accuracy:
   - 5
   array|energy_ewald:
-  - 5
+  - 3
   array|energy_hartree:
-  - 5
+  - 3
   array|energy_one_electron:
   - 5
   array|energy_threshold:
   - 5
   array|energy_xc:
-  - 5
+  - 3
   array|forces:
-  - 5
+  - 3
   - 2
   - 3
   array|positions:
-  - 4
+  - 2
   - 2
   - 3
   array|scf_accuracy:
   - 33
   array|scf_iterations:
-  - 5
+  - 3
   array|steps:
-  - 4
+  - 2
   array|stress:
   - 5
   - 3
