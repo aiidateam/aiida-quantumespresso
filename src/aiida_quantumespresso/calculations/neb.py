@@ -5,9 +5,10 @@ import os
 import warnings
 
 from aiida import orm
-from aiida.common import CalcInfo, CodeInfo, InputValidationError
+from aiida.common import AttributeDict, CalcInfo, CodeInfo, InputValidationError
 from aiida.common.lang import classproperty
 from aiida.common.warnings import AiidaDeprecationWarning
+import numpy as np
 
 from aiida_quantumespresso.calculations import _lowercase_dict, _pop_parser_options, _uppercase_dict
 from aiida_quantumespresso.calculations.pw import PwCalculation
@@ -135,13 +136,40 @@ class NebCalculation(CalcJob):
         """Validate the top-level inputs."""
         if 'images' not in inputs:
             if 'first_structure' not in inputs or 'last_structure' not in inputs:
-                raise InputValidationError(
-                    'Either the `images` input or both `first_structure` and `last_structure` must be provided.'
-                )
-        elif 'first_structure' in inputs or 'last_structure' in inputs:
-            raise InputValidationError(
-                'Specify either `images` or both `first_structure` and `last_structure`, but not both.'
+                return 'Either the `images` input or both `first_structure` and `last_structure` must be provided.'
+            warnings.warn(
+                'The `first_structure` and `last_structure` inputs input are deprecated'
+                'and will be removed in a future release. Use `images` instead.', AiidaDeprecationWarning
             )
+            inputs['images'] = orm.TrajectoryData([inputs['first_structure'], inputs['last_structure']])
+        elif 'first_structure' in inputs or 'last_structure' in inputs:
+            return 'Specify either `images` or both `first_structure` and `last_structure`, but not both.'
+
+        num_images = len(inputs['images'].get_stepids())
+        structure_list = [inputs['images'].get_step_structure(i) for i in range(num_images)]
+        for image_idx, structure in enumerate(structure_list[1:]):
+            # Check that all images have the same cell
+            if abs(np.array(structure_list[0].cell) - np.array(structure.cell)).max() > 1.e-4:
+                return f'Different cell in the first and image {image_idx+1}'
+
+            # Check that all images have the same number of sites
+            if len(structure_list[0].sites) != len(structure.sites):
+                return f'Different number of sites in the first and image {image_idx+1}'
+
+            # Check that all images have the same kinds
+            if structure_list[0].get_site_kindnames() != structure.get_site_kindnames():
+                return f'Mismatch between the kind names and/or order between the first and image {image_idx+1}'
+
+            # Check that a pseudo potential was specified for each kind present in the `StructureData`
+            # self.inputs.pw.pseudos is a plumpy.utils.AttributesFrozendict
+            kindnames = [kind.name for kind in structure_list[0].kinds]
+            if set(kindnames) != set(inputs['pw'].pseudos.keys()):
+                formatted_pseudos = ', '.join(list(inputs['pw'].pseudos.keys()))
+                formatted_kinds = ', '.join(list(kindnames))
+                return 'Mismatch between the defined pseudos and the list of kinds of the structure.\n' \
+                       f'Pseudos: {formatted_pseudos};\nKinds: {formatted_kinds}'
+
+        cls.inputs = AttributeDict(inputs)
 
     @classmethod
     def _generate_input_files(cls, neb_parameters, settings_dict):
@@ -224,7 +252,6 @@ class NebCalculation(CalcJob):
         :return: :class:`~aiida.common.datastructures.CalcInfo` instance.
         """
         # pylint: disable=too-many-branches,too-many-statements
-        import numpy as np
 
         local_copy_list = []
         remote_copy_list = []
@@ -242,46 +269,8 @@ class NebCalculation(CalcJob):
         else:
             settings_dict = {}
 
-        if 'images' in self.inputs:
-            num_images = len(self.inputs.images.get_stepids())
-            structure_list = [self.inputs.images.get_step_structure(i) for i in range(num_images)]
-        else:
-            warnings.warn(
-                'The `first_structure` and `last_structure` inputs input are deprecated'
-                'and will be removed in a future release. '
-                'Use `images` instead.', AiidaDeprecationWarning
-            )
-            structure_list = [self.inputs.first_structure, self.inputs.first_structure]
-
-        for image_idx, structure in enumerate(structure_list[1:]):
-            # Check that all images have the same cell
-            if abs(np.array(structure_list[0].cell) - np.array(structure.cell)).max() > 1.e-4:
-                raise InputValidationError(f'Different cell in the fist and image {image_idx+1}')
-
-            # Check that all images have the same number of sites
-            if len(structure_list[0].sites) != len(structure.sites):
-                raise InputValidationError(f'Different number of sites in the fist and image {image_idx+1}')
-
-            # Check that all images have the same kinds
-            if structure_list[0].get_site_kindnames() != structure.get_site_kindnames():
-                raise InputValidationError(
-                    f'Mismatch between the kind names and/or order between the first and image {image_idx+1}'
-                )
-
-            # Check that a pseudo potential was specified for each kind present in the `StructureData`
-            # self.inputs.pw.pseudos is a plumpy.utils.AttributesFrozendict
-            kindnames = [kind.name for kind in structure_list[0].kinds]
-            if set(kindnames) != set(self.inputs.pw.pseudos.keys()):
-                formatted_pseudos = ', '.join(list(self.inputs.pw.pseudos.keys()))
-                formatted_kinds = ', '.join(list(kindnames))
-                raise InputValidationError(
-                    'Mismatch between the defined pseudos and the list of kinds of the structure.\n'
-                    f'Pseudos: {formatted_pseudos};\nKinds: {formatted_kinds}'
-                )
-
-        ##############################
-        # END OF INITIAL INPUT CHECK #
-        ##############################
+        num_images = len(self.inputs.images.get_stepids())
+        structure_list = [self.inputs.images.get_step_structure(i) for i in range(num_images)]
 
         # Create the subfolder that will contain the pseudopotentials
         folder.get_subfolder(self._PSEUDO_SUBFOLDER, create=True)
