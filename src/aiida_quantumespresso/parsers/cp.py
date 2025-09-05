@@ -72,6 +72,7 @@ class CpParser(BaseParser):
         out_dict, _raw_successful = parse_cp_raw_output(
             stdout, output_xml, output_xml_counter, print_counter_xml
         )
+        out_dict.pop('trajectory', None)
 
         if not no_trajectory_output:
             # parse the trajectory. Units in Angstrom, picoseconds and eV.
