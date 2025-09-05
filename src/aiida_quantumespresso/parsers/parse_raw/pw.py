@@ -27,6 +27,9 @@ default_polarization_units = 'C / m^2'
 default_stress_units = 'GPascal'
 
 
+
+
+
 def reduce_symmetries(parsed_parameters, parsed_structure, logger):
     """Reduce the symmetry information parsed from the output to save space.
 
@@ -887,31 +890,38 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
     # If specified in the parser options, parse the atomic occupations
     parse_atomic_occupations = parser_options.get('parse_atomic_occupations', False)
 
+
+    legacy_U = parser_options.get('legacy_U', False)
+
     if parse_atomic_occupations:
 
-        atomic_occupations = {}
-        hubbard_blocks = stdout.split('LDA+U parameters')
+        if legacy_U:
 
-        for line in hubbard_blocks[-1].split('\n'):
+            atomic_occupations = {}
+            hubbard_blocks = stdout.split('LDA+U parameters')
 
-            if 'Tr[ns(na)]' in line:
+            for line in hubbard_blocks[-1].split('\n'):
 
-                values = line.split('=')
-                atomic_index = values[0].split()[1]
-                occupations = values[1].split()
+                if 'Tr[ns(na)]' in line:
 
-                if len(occupations) == 1:
-                    atomic_occupations[atomic_index] = {'total': occupations[0]}
-                elif len(occupations) == 3:
-                    atomic_occupations[atomic_index] = {
-                        'up': occupations[0],
-                        'down': occupations[1],
-                        'total': occupations[2]
-                    }
-                else:
-                    continue
+                    values = line.split('=')
+                    atomic_index = values[0].split()[1]
+                    occupations = values[1].split()
 
-        parsed_data['atomic_occupations'] = atomic_occupations
+                    if len(occupations) == 1:
+                        atomic_occupations[atomic_index] = {'total': occupations[0]}
+                    elif len(occupations) == 3:
+                        atomic_occupations[atomic_index] = {
+                            'up': occupations[0],
+                            'down': occupations[1],
+                            'total': occupations[2]
+                        }
+                    else:
+                        continue
+
+            parsed_data['atomic_occupations'] = atomic_occupations
+        else:
+            parsed_data['atomic_occupations'] = parse_hubbard_new_scf(stdout)
 
     # Ionic calculations and BFGS algorithm did not print that calculation is converged
     if 'atomic_positions_relax' in trajectory_data and not marker_bfgs_converged:
@@ -947,3 +957,219 @@ def grep_energy_from_line(line):
         return float(line.split('=')[1].split('Ry')[0]) * CONSTANTS.ry_to_ev
     except Exception:
         raise QEOutputParsingError('Error while parsing energy')
+
+## new hubbard U parser, for the moment works only with collinear, supports atoms with different manifolds but it will break if you have for example an f or d on the same atom
+
+def parse_hubbard_new_scf(stdout):
+    atomic_data = {}
+
+    hubbard_sections = stdout.split('=========== HUBBARD OCCUPATIONS ==========')
+    if len(hubbard_sections) < 2:
+        print("hi")
+        return {}
+
+    hubbard_block_text = hubbard_sections[-1]
+    atom_blocks = hubbard_block_text.split('------------------------ ATOM')
+
+    for atom_block in atom_blocks[1:]:
+        lines = atom_block.strip().split('\n')
+
+        atomic_index = None
+        first_line_parts = lines[0].split()
+        if len(first_line_parts) > 0 and first_line_parts[0].isdigit():
+            atomic_index = first_line_parts[0]
+            atomic_data[atomic_index] = {
+                'occupations': {},
+                'magnetic_moment': None,
+                'spin_data': {
+                    'up': {'eigenvalues': [], 'eigenvectors': [], 'occupation_matrix': []},
+                    'down': {'eigenvalues': [], 'eigenvectors': [], 'occupation_matrix': []}
+                }
+            }
+        else:
+            continue
+
+        current_spin_label = None
+
+        is_parsing_eigenvalues = False
+        is_parsing_eigenvectors = False
+        is_parsing_occupation_matrix = False
+
+        eigenvalues_line_buffer = []
+        eigenvectors_line_buffer = []
+        occupation_matrix_line_buffer = []
+
+        for line in lines:
+            stripped_line = line.strip()
+
+            # Process state transitions and store collected data
+            if 'SPIN  1' in stripped_line:
+                # Store any pending data from previous spin block (e.g., from prior atom or iteration)
+                if current_spin_label:
+                    if is_parsing_eigenvalues:
+                        atomic_data[atomic_index]['spin_data'][current_spin_label]['eigenvalues'] = [float(x) for x in ' '.join(eigenvalues_line_buffer).split() if x]
+                    if is_parsing_eigenvectors:
+                        atomic_data[atomic_index]['spin_data'][current_spin_label]['eigenvectors'] = [[float(x) for x in r.split() if x] for r in eigenvectors_line_buffer]
+                    if is_parsing_occupation_matrix:
+                        atomic_data[atomic_index]['spin_data'][current_spin_label]['occupation_matrix'] = [[float(x) for x in r.split() if x] for r in occupation_matrix_line_buffer]
+
+                current_spin_label = 'up'
+                # Reset all flags and buffers for the new SPIN block
+                is_parsing_eigenvalues = False
+                is_parsing_eigenvectors = False
+                is_parsing_occupation_matrix = False
+                eigenvalues_line_buffer = []
+                eigenvectors_line_buffer = []
+                occupation_matrix_line_buffer = []
+                continue
+
+            elif 'SPIN  2' in stripped_line:
+                # Store any pending data from previous spin block (SPIN 1 for the current atom)
+                if current_spin_label:
+                    if is_parsing_eigenvalues:
+                        atomic_data[atomic_index]['spin_data'][current_spin_label]['eigenvalues'] = [float(x) for x in ' '.join(eigenvalues_line_buffer).split() if x]
+                    if is_parsing_eigenvectors:
+                        atomic_data[atomic_index]['spin_data'][current_spin_label]['eigenvectors'] = [[float(x) for x in r.split() if x] for r in eigenvectors_line_buffer]
+                    if is_parsing_occupation_matrix:
+                        atomic_data[atomic_index]['spin_data'][current_spin_label]['occupation_matrix'] = [[float(x) for x in r.split() if x] for r in occupation_matrix_line_buffer]
+
+                current_spin_label = 'down'
+                # Reset all flags and buffers for the new SPIN block
+                is_parsing_eigenvalues = False
+                is_parsing_eigenvectors = False
+                is_parsing_occupation_matrix = False
+                eigenvalues_line_buffer = []
+                eigenvectors_line_buffer = []
+                occupation_matrix_line_buffer = []
+                continue
+
+            # Detect the start of eigenvalues
+            elif 'eigenvalues:' in stripped_line:
+                # If we were previously parsing another section, finalize it
+                if current_spin_label:
+                    if is_parsing_eigenvectors:
+                        atomic_data[atomic_index]['spin_data'][current_spin_label]['eigenvectors'] = [[float(x) for x in r.split() if x] for r in eigenvectors_line_buffer]
+                    if is_parsing_occupation_matrix:
+                        atomic_data[atomic_index]['spin_data'][current_spin_label]['occupation_matrix'] = [[float(x) for x in r.split() if x] for r in occupation_matrix_line_buffer]
+
+                is_parsing_eigenvalues = True
+                is_parsing_eigenvectors = False
+                is_parsing_occupation_matrix = False
+                eigenvalues_line_buffer = []
+                continue
+
+            # Detect the start of eigenvectors
+            elif 'eigenvectors (columns):' in stripped_line:
+                # If we were previously parsing another section, finalize it
+                if current_spin_label:
+                    if is_parsing_eigenvalues:
+                        atomic_data[atomic_index]['spin_data'][current_spin_label]['eigenvalues'] = [float(x) for x in ' '.join(eigenvalues_line_buffer).split() if x]
+                    if is_parsing_occupation_matrix:
+                        atomic_data[atomic_index]['spin_data'][current_spin_label]['occupation_matrix'] = [[float(x) for x in r.split() if x] for r in occupation_matrix_line_buffer]
+
+                is_parsing_eigenvectors = True
+                is_parsing_eigenvalues = False
+                is_parsing_occupation_matrix = False
+                eigenvectors_line_buffer = []
+                continue
+
+            # Detect the start of the occupation matrix
+            elif 'occupation matrix ns (before diag.):' in stripped_line:
+                # If we were previously parsing another section, finalize it
+                if current_spin_label:
+                    if is_parsing_eigenvalues:
+                        atomic_data[atomic_index]['spin_data'][current_spin_label]['eigenvalues'] = [float(x) for x in ' '.join(eigenvalues_line_buffer).split() if x]
+                    if is_parsing_eigenvectors:
+                        atomic_data[atomic_index]['spin_data'][current_spin_label]['eigenvectors'] = [[float(x) for x in r.split() if x] for r in eigenvectors_line_buffer]
+
+                is_parsing_occupation_matrix = True
+                is_parsing_eigenvalues = False
+                is_parsing_eigenvectors = False
+                occupation_matrix_line_buffer = []
+                continue
+
+            # --- General parsing for non-block-specific data (outside of active parsing blocks) ---
+
+            # Parse Tr[ns(na)] for up, down, total occupations
+            if 'Tr[ns(' in stripped_line and 'total)' in stripped_line:
+                parts = stripped_line.split('=')
+                if len(parts) > 1:
+                    occupations_str = parts[1].strip()
+                    occupations = occupations_str.split()
+                    if len(occupations) == 3:
+                        atomic_data[atomic_index]['occupations'].update({
+                            'up': float(occupations[0]),
+                            'down': float(occupations[1]),
+                            'total': float(occupations[2])
+                        })
+                    elif len(occupations) == 1:
+                        atomic_data[atomic_index]['occupations'].update({'total': float(occupations[0])})
+
+            # Parse Atomic magnetic moment
+            elif 'Atomic magnetic moment for atom' in stripped_line:
+                parts = stripped_line.split('=')
+                if len(parts) > 1:
+                    try:
+                        atomic_data[atomic_index]['magnetic_moment'] = float(parts[1].strip())
+                    except ValueError:
+                        pass # Ignore if conversion fails
+
+            # --- Add lines to active buffers ---
+            # IMPORTANT: Check current_spin_label to ensure we are in a valid spin context
+            if current_spin_label:
+                if is_parsing_eigenvalues:
+                    # Eigenvalues are a single line of space-separated numbers, so just extend
+                    if stripped_line and all_float_convertible(stripped_line.split()):
+                        eigenvalues_line_buffer.extend(stripped_line.split())
+                    else: # End of eigenvalues block (e.g., blank line or next header)
+                        # Process and store the buffered eigenvalues
+                        if eigenvalues_line_buffer:
+                            atomic_data[atomic_index]['spin_data'][current_spin_label]['eigenvalues'] = [float(x) for x in eigenvalues_line_buffer if x]
+                        is_parsing_eigenvalues = False
+                        eigenvalues_line_buffer = [] # Clear buffer
+                        # Do NOT continue here, as the line might be a new header
+
+                elif is_parsing_eigenvectors:
+                    # Eigenvectors are multi-line. Continue collecting as long as lines are numerical.
+                    if stripped_line and all_float_convertible(stripped_line.split()):
+                        eigenvectors_line_buffer.append(stripped_line)
+                    else: # End of eigenvectors block
+                        if eigenvectors_line_buffer:
+                            atomic_data[atomic_index]['spin_data'][current_spin_label]['eigenvectors'] = [[float(x) for x in r.split() if x] for r in eigenvectors_line_buffer]
+                        is_parsing_eigenvectors = False
+                        eigenvectors_line_buffer = []
+                        # Do NOT continue here, as the line might be a new header
+
+                elif is_parsing_occupation_matrix:
+                    # Occupation matrix is multi-line. Continue collecting as long as lines are numerical.
+                    if stripped_line and all_float_convertible(stripped_line.split()):
+                        occupation_matrix_line_buffer.append(stripped_line)
+                    else: # End of matrix block
+                        if occupation_matrix_line_buffer:
+                            atomic_data[atomic_index]['spin_data'][current_spin_label]['occupation_matrix'] = [[float(x) for x in r.split() if x] for r in occupation_matrix_line_buffer]
+                        is_parsing_occupation_matrix = False
+                        occupation_matrix_line_buffer = []
+                        # Do NOT continue here, as the line might be a new header
+
+        # After iterating through all lines of an atom block, ensure any remaining data is captured
+        # This handles the very last section within the very last atom block.
+        if current_spin_label:
+            if is_parsing_eigenvalues and eigenvalues_line_buffer:
+                atomic_data[atomic_index]['spin_data'][current_spin_label]['eigenvalues'] = [float(x) for x in ' '.join(eigenvalues_line_buffer).split() if x]
+            if is_parsing_eigenvectors and eigenvectors_line_buffer:
+                atomic_data[atomic_index]['spin_data'][current_spin_label]['eigenvectors'] = [[float(x) for x in r.split() if x] for r in eigenvectors_line_buffer]
+            if is_parsing_occupation_matrix and occupation_matrix_line_buffer:
+                atomic_data[atomic_index]['spin_data'][current_spin_label]['occupation_matrix'] = [[float(x) for x in r.split() if x] for r in occupation_matrix_line_buffer]
+
+    return atomic_data
+
+def all_float_convertible(parts):
+    """Helper function to check if all parts in a list (from a split line) can be converted to float."""
+    if not parts:
+        return False
+    for p in parts:
+        try:
+            float(p)
+        except ValueError:
+            return False
+    return True
