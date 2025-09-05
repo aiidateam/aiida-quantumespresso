@@ -8,6 +8,7 @@ from aiida.plugins import CalculationFactory, GroupFactory
 
 from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import create_kpoints_from_distance
 from aiida_quantumespresso.common.types import ElectronicType, RestartType, SpinType
+from aiida_quantumespresso.utils.decorators import remove_none_overrides
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 
 from ..protocols.utils import ProtocolMixin
@@ -103,6 +104,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         return files(pw_protocols) / 'base.yaml'
 
     @classmethod
+    @remove_none_overrides
     def get_builder_from_protocol(
         cls,
         code,
