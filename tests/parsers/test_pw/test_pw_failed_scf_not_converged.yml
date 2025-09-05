@@ -12,7 +12,17 @@ output_parameters:
   dft_exchange_correlation: PBE
   do_magnetization: false
   do_not_use_time_reversal: false
+  energy: -308.1663003242467
+  energy_accuracy_units: eV
+  energy_ewald: -228.56124979086937
+  energy_ewald_units: eV
+  energy_hartree: 17.584863569907426
+  energy_hartree_units: eV
+  energy_one_electron_units: eV
   energy_threshold: 0.00122
+  energy_units: eV
+  energy_xc: -168.81401165062877
+  energy_xc_units: eV
   estimated_ram_per_process: 60.43
   estimated_ram_per_process_units: MB
   exit_status: 0
@@ -74,15 +84,25 @@ output_parameters:
   total_number_of_scf_iterations: 2
   volume: 40.02575122514992
   wall_time: '      0.77s '
-  wall_time_seconds: 0.77
+  wall_time_seconds: 0.7707970142364502
   wfc_cutoff: 408.170751759
   wfc_cutoff_units: eV
 output_trajectory:
+  array|atomic_species_name:
+  - 2
   array|cells:
   - 1
   - 3
   - 3
+  array|energy:
+  - 1
+  array|energy_ewald:
+  - 1
+  array|energy_hartree:
+  - 1
   array|energy_threshold:
+  - 1
+  array|energy_xc:
   - 1
   array|positions:
   - 1

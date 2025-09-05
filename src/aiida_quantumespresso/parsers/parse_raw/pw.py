@@ -309,7 +309,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
 
     parsed_data = {}
     vdw_correction = False
-    bands_data = parsed_xml.pop('bands', {})
+    bands_data = parsed_xml.get('bands', {})
     structure_data = parsed_xml.pop('structure', {})
     trajectory_data = {}
 

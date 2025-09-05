@@ -16,6 +16,16 @@ output_parameters:
   dft_exchange_correlation: PBE
   do_magnetization: false
   do_not_use_time_reversal: false
+  energy: -308.2279513772115
+  energy_accuracy_units: eV
+  energy_ewald: -221.151657942158
+  energy_ewald_units: eV
+  energy_hartree: 17.146885304770123
+  energy_hartree_units: eV
+  energy_one_electron_units: eV
+  energy_units: eV
+  energy_xc: -166.4568154219947
+  energy_xc_units: eV
   estimated_ram_per_process: 72.79
   estimated_ram_per_process_units: MB
   exit_status: 0
@@ -170,10 +180,10 @@ output_parameters:
     t_rev: '0'
   symmetries_units: crystal
   time_reversal_flag: true
-  total_number_of_scf_iterations: 2
+  total_number_of_scf_iterations: 1
   volume: 44.18518721311423
   wall_time: '      1.32s '
-  wall_time_seconds: 1.32
+  wall_time_seconds: 1.32125997543335
   wfc_cutoff: 408.170751759
   wfc_cutoff_units: eV
 output_trajectory:
@@ -183,6 +193,14 @@ output_trajectory:
   - 1
   - 3
   - 3
+  array|energy:
+  - 1
+  array|energy_ewald:
+  - 1
+  array|energy_hartree:
+  - 1
+  array|energy_xc:
+  - 1
   array|positions:
   - 1
   - 2
