@@ -40,7 +40,7 @@ def test_electronic_type(fixture_code, generate_structure):
 
     builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, electronic_type=ElectronicType.INSULATOR)
 
-    for namespace in [builder.relax['base'], builder.scf, builder.bands]:
+    for namespace in [builder.relax['base_relax'], builder.scf, builder.bands]:
         parameters = namespace['pw']['parameters'].get_dict()
         assert parameters['SYSTEM']['occupations'] == 'fixed'
         assert 'degauss' not in parameters['SYSTEM']
@@ -54,14 +54,14 @@ def test_spin_type(fixture_code, generate_structure):
 
     builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, spin_type=SpinType.COLLINEAR)
 
-    for namespace in [builder.relax['base'], builder.scf, builder.bands]:
+    for namespace in [builder.relax['base_relax'], builder.scf, builder.bands]:
         parameters = namespace['pw']['parameters'].get_dict()
         assert parameters['SYSTEM']['nspin'] == 2
         assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.1}
 
     builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, spin_type=SpinType.SPIN_ORBIT)
 
-    for namespace in [builder.relax['base'], builder.scf, builder.bands]:
+    for namespace in [builder.relax['base_relax'], builder.scf, builder.bands]:
         parameters = namespace['pw']['parameters'].get_dict()  # pylint: disable=no-member
         assert parameters['SYSTEM']['noncolin'] is True
         assert parameters['SYSTEM']['lspinorb'] is True
@@ -74,8 +74,8 @@ def test_relax_type(fixture_code, generate_structure):
     structure = generate_structure()
 
     builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, relax_type=RelaxType.NONE)
-    assert builder.relax['base']['pw']['parameters']['CONTROL']['calculation'] == 'scf'
-    assert 'CELL' not in builder.relax['base']['pw']['parameters'].get_dict()
+    assert builder.relax['base_relax']['pw']['parameters']['CONTROL']['calculation'] == 'scf'
+    assert 'CELL' not in builder.relax['base_relax']['pw']['parameters'].get_dict()
 
 
 def test_bands_kpoints_overrides(fixture_code, generate_structure, generate_kpoints_mesh):
@@ -102,7 +102,7 @@ def test_options(fixture_code, generate_structure):
     builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, options=options)
 
     for subspace in (
-        builder.relax.base.pw.metadata,
+        builder.relax.base_relax.pw.metadata,
         builder.scf.pw.metadata,  # pylint: disable=no-member
         builder.bands.pw.metadata,  # pylint: disable=no-member
     ):
