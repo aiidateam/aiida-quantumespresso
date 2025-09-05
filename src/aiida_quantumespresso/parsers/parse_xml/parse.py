@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import collections
 from urllib.error import URLError
 
 import numpy as np
@@ -75,20 +76,6 @@ def parse_xml_post_6_2(xml):
     #  xml_dictionary['key']['@attr'] returns its attribute 'attr'
     #  xml_dictionary['key']['nested_key'] goes one level deeper.
 
-    # Fix a bug of QE 6.8: the output XML is not consistent with schema, see
-    # https://github.com/aiidateam/aiida-quantumespresso/pull/717
-    xml_creator = xml.find('./general_info/creator')
-    if xml_creator is not None and 'VERSION' in xml_creator.attrib:
-        creator_version = xml_creator.attrib['VERSION']
-        if creator_version == '6.8':
-            root = xml.getroot()
-            timing_info = root.find('./timing_info')
-            partial_pwscf = timing_info.find("partial[@label='PWSCF'][@calls='0']")
-            try:
-                timing_info.remove(partial_pwscf)
-            except (TypeError, ValueError):
-                pass
-
     xml_dictionary, errors = xsd.to_dict(xml, validation='lax')
     if errors:
         logs.error.append(f'{len(errors)} XML schema validation error(s) schema: {schema_filepath}:')
@@ -98,6 +85,17 @@ def parse_xml_post_6_2(xml):
     xml_version = Version(xml_dictionary['general_info']['xml_format']['@VERSION'])
     inputs = xml_dictionary.get('input', {})
     outputs = xml_dictionary['output']
+
+    # Fix a bug of QE 6.8: the output XML is not consistent with schema, see
+    # https://github.com/aiidateam/aiida-quantumespresso/pull/717
+    if xml_version == '6.8':
+        if 'timing_info' in xml_dictionary:
+            timing_info = xml_dictionary['timing_info']
+            partial_pwscf = timing_info.find("partial[@label='PWSCF'][@calls='0']")
+            try:
+                timing_info.remove(partial_pwscf)
+            except (TypeError, ValueError):
+                pass
 
     lattice_vectors = [
         [x * CONSTANTS.bohr_to_ang for x in outputs['atomic_structure']['cell']['a1']],
@@ -263,7 +261,21 @@ def parse_xml_post_6_2(xml):
         # WARNING: this is different between old XML and new XML
         'spin_orbit_calculation': spin_orbit_calculation,
         'q_real_space': outputs['algorithmic_info']['real_space_q'],
+
+        'energy_units': 'eV',
+        'energy_accuracy_units': 'eV',
+        'energy_ewald_units': 'eV',
+        'energy_hartree_units': 'eV',
+        'energy_one_electron_units': 'eV',
+        'energy_xc_units': 'eV',
+
+        'number_of_atoms': inputs['atomic_structure']['@nat'],
+        'number_of_species': inputs['atomic_species']['@ntyp'],
+
     }
+
+    if 'timing_info' in xml_dictionary:
+        xml_data['wall_time_seconds'] = xml_dictionary['timing_info']['total']['wall']
 
     # alat is technically an optional attribute according to the schema,
     # but I don't know what to do if it's missing. atomic_structure is mandatory.
@@ -302,6 +314,18 @@ def parse_xml_post_6_2(xml):
         num_bands_up = band_structure.get('nbnd_up', None)
         num_bands_down = band_structure.get('nbnd_dw', None)
 
+        if 'fermi_energy' in band_structure:
+            xml_data['fermi_energy'] = band_structure['fermi_energy'] * CONSTANTS.hartree_to_ev
+
+        if 'two_fermi_energies' in band_structure:
+            xml_data['fermi_energy_up'], xml_data['fermi_energy_down'] = [
+                energy * CONSTANTS.hartree_to_ev for energy in band_structure['two_fermi_energies']
+            ]
+
+        xml_data['number_of_atomic_wfc'] = num_atomic_wfc
+        xml_data['number_of_k_points'] = num_k_points
+        xml_data['number_of_electrons'] = num_electrons
+
         if num_bands is None and num_bands_up is None and num_bands_down is None:
             raise XMLParseError('None of `nbnd`, `nbnd_up` or `nbdn_dw` could be parsed.')
 
@@ -329,77 +353,69 @@ def parse_xml_post_6_2(xml):
             if num_bands is None:
                 num_bands = num_bands_up + num_bands_down  # backwards compatibility;
 
-        k_points = []
-        k_points_weights = []
-        ks_states = band_structure['ks_energies']
-        for ks_state in ks_states:
-            k_points.append([kp * 2 * np.pi / output_alat_angstrom for kp in ks_state['k_point']['$']])
-            k_points_weights.append(ks_state['k_point']['@weight'])
+        if 'ks_energies' in band_structure:
 
-        if not spins:
-            band_eigenvalues = [[]]
-            band_occupations = [[]]
+            k_points = []
+            k_points_weights = []
+
+            ks_states = band_structure['ks_energies']
+
             for ks_state in ks_states:
-                band_eigenvalues[0].append(ks_state['eigenvalues']['$'])
-                band_occupations[0].append(ks_state['occupations']['$'])
-        else:
-            band_eigenvalues = [[], []]
-            band_occupations = [[], []]
-            for ks_state in ks_states:
-                band_eigenvalues[0].append(ks_state['eigenvalues']['$'][0:num_bands_up])
-                band_eigenvalues[1].append(ks_state['eigenvalues']['$'][num_bands_up:num_bands])
-                band_occupations[0].append(ks_state['occupations']['$'][0:num_bands_up])
-                band_occupations[1].append(ks_state['occupations']['$'][num_bands_up:num_bands])
+                k_points.append([kp * 2 * np.pi / output_alat_angstrom for kp in ks_state['k_point']['$']])
+                k_points_weights.append(ks_state['k_point']['@weight'])
 
-        band_eigenvalues = np.array(band_eigenvalues) * CONSTANTS.hartree_to_ev
-        band_occupations = np.array(band_occupations)
+            if not spins:
+                band_eigenvalues = [[]]
+                band_occupations = [[]]
+                for ks_state in ks_states:
+                    band_eigenvalues[0].append(ks_state['eigenvalues']['$'])
+                    band_occupations[0].append(ks_state['occupations']['$'])
+            else:
+                band_eigenvalues = [[], []]
+                band_occupations = [[], []]
+                for ks_state in ks_states:
+                    band_eigenvalues[0].append(ks_state['eigenvalues']['$'][0:num_bands_up])
+                    band_eigenvalues[1].append(ks_state['eigenvalues']['$'][num_bands_up:num_bands])
+                    band_occupations[0].append(ks_state['occupations']['$'][0:num_bands_up])
+                    band_occupations[1].append(ks_state['occupations']['$'][num_bands_up:num_bands])
 
-        if not spins:
-            parser_assert_equal(
-                band_eigenvalues.shape, (1, num_k_points, num_bands), 'Unexpected shape of band_eigenvalues'
-            )
-            parser_assert_equal(
-                band_occupations.shape, (1, num_k_points, num_bands), 'Unexpected shape of band_occupations'
-            )
-        else:
-            parser_assert_equal(
-                band_eigenvalues.shape, (2, num_k_points, num_bands_up), 'Unexpected shape of band_eigenvalues'
-            )
-            parser_assert_equal(
-                band_occupations.shape, (2, num_k_points, num_bands_up), 'Unexpected shape of band_occupations'
-            )
+            band_eigenvalues = np.array(band_eigenvalues) * CONSTANTS.hartree_to_ev
+            band_occupations = np.array(band_occupations)
 
-        if not spins:
-            xml_data['number_of_bands'] = num_bands
-        else:
-            # For collinear spin-polarized calculations `spins=True` and `num_bands` is sum of both channels. To get the
-            # actual number of bands, we divide by two using integer division
-            xml_data['number_of_bands'] = num_bands // 2
+            if not spins:
+                parser_assert_equal(
+                    band_eigenvalues.shape, (1, num_k_points, num_bands), 'Unexpected shape of band_eigenvalues'
+                )
+                parser_assert_equal(
+                    band_occupations.shape, (1, num_k_points, num_bands), 'Unexpected shape of band_occupations'
+                )
+            else:
+                parser_assert_equal(
+                    band_eigenvalues.shape, (2, num_k_points, num_bands_up), 'Unexpected shape of band_eigenvalues'
+                )
+                parser_assert_equal(
+                    band_occupations.shape, (2, num_k_points, num_bands_up), 'Unexpected shape of band_occupations'
+                )
 
-        for key, value in [('number_of_bands_up', num_bands_up), ('number_of_bands_down', num_bands_down)]:
-            if value is not None:
-                xml_data[key] = value
+            bands_dict = {
+                'occupations': band_occupations,
+                'bands': band_eigenvalues,
+                'bands_units': 'eV',
+            }
+            xml_data['bands'] = bands_dict
+            xml_data['k_points'] = k_points
+            xml_data['k_points_weights'] = k_points_weights
 
-        if 'fermi_energy' in band_structure:
-            xml_data['fermi_energy'] = band_structure['fermi_energy'] * CONSTANTS.hartree_to_ev
+            if not spins:
+                xml_data['number_of_bands'] = num_bands
+            else:
+                # For collinear spin-polarized calculations `spins=True` and `num_bands` is sum of both channels. To get the
+                # actual number of bands, we divide by two using integer division
+                xml_data['number_of_bands'] = num_bands // 2
 
-        if 'two_fermi_energies' in band_structure:
-            xml_data['fermi_energy_up'], xml_data['fermi_energy_down'] = [
-                energy * CONSTANTS.hartree_to_ev for energy in band_structure['two_fermi_energies']
-            ]
-
-        bands_dict = {
-            'occupations': band_occupations,
-            'bands': band_eigenvalues,
-            'bands_units': 'eV',
-        }
-
-        xml_data['number_of_atomic_wfc'] = num_atomic_wfc
-        xml_data['number_of_k_points'] = num_k_points
-        xml_data['number_of_electrons'] = num_electrons
-        xml_data['k_points'] = k_points
-        xml_data['k_points_weights'] = k_points_weights
-        xml_data['bands'] = bands_dict
+            for key, value in [('number_of_bands_up', num_bands_up), ('number_of_bands_down', num_bands_down)]:
+                if value is not None:
+                    xml_data[key] = value
 
     try:
         monkhorst_pack = inputs['k_points_IBZ']['monkhorst_pack']
@@ -496,35 +512,33 @@ def parse_xml_post_6_2(xml):
         # - individual electronic phases and weights
 
     # TODO: We should put the `non_periodic_cell_correction` string in (?)
-    atoms = [[atom['@name'], [coord * CONSTANTS.bohr_to_ang
-                              for coord in atom['$']]]
-             for atom in outputs['atomic_structure']['atomic_positions']['atom']]
+    atomic_species_name = []
+    atoms = []
+
+    for atom in outputs['atomic_structure']['atomic_positions']['atom']:
+        atomic_species_name.append(atom['@name'])
+        atoms.append([atom['@name'], [coord * CONSTANTS.bohr_to_ang for coord in atom['$']]])
+
     species = outputs['atomic_species']['species']
     structure_data = {
-        'atomic_positions_units':
-        'Angstrom',
-        'direct_lattice_vectors_units':
-        'Angstrom',
+        'atomic_positions_units': 'Angstrom',
+        'direct_lattice_vectors_units': 'Angstrom',
         # ??? 'atoms_if_pos_list': [[1, 1, 1], [1, 1, 1]],
-        'number_of_atoms':
-        outputs['atomic_structure']['@nat'],
-        'lattice_parameter':
-        output_alat_angstrom,
+        'number_of_atoms': outputs['atomic_structure']['@nat'],
+        'lattice_parameter': output_alat_angstrom,
         'reciprocal_lattice_vectors': [
-            outputs['basis_set']['reciprocal_lattice']['b1'], outputs['basis_set']['reciprocal_lattice']['b2'],
+            outputs['basis_set']['reciprocal_lattice']['b1'],
+            outputs['basis_set']['reciprocal_lattice']['b2'],
             outputs['basis_set']['reciprocal_lattice']['b3']
         ],
-        'atoms':
-        atoms,
+        'atoms': atoms,
         'cell': {
             'lattice_vectors': lattice_vectors,
             'volume': cell_volume(*lattice_vectors),
             'atoms': atoms,
         },
-        'lattice_parameter_xml':
-        output_alat_bohr,
-        'number_of_species':
-        outputs['atomic_species']['@ntyp'],
+        'lattice_parameter_xml': output_alat_bohr,
+        'number_of_species': outputs['atomic_species']['@ntyp'],
         'species': {
             'index': [i + 1 for i, specie in enumerate(species)],
             'pseudo': [specie['pseudo_file'] for specie in species],
@@ -533,6 +547,68 @@ def parse_xml_post_6_2(xml):
         },
     }
 
+    xml_data['volume'] = structure_data['cell']['volume']
     xml_data['structure'] = structure_data
+    xml_data['trajectory'] = collections.defaultdict(list)
+    xml_data['trajectory']['atomic_species_name'] = atomic_species_name
+
+    for frame in xml_dictionary.get('step', []):
+        parse_step_to_trajectory(xml_data['trajectory'], frame)
+
+    calculation_type = inputs.get('control_variables', {}).get('calculation', 'scf')
+
+    # In case of an SCF calculation, there are no trajectory steps so parse from the final outputs. For a vc-relax, the
+    # code performs a final SCF, the results of which are not added as a step but are part of the final outputs.
+    if calculation_type in ['scf', 'vc-relax']:
+        parse_step_to_trajectory(xml_data['trajectory'], outputs, skip_structure=True)
+
+    # For some reason, the legacy trajectory structure contained a key `steps` which was a list of integers from 0 to
+    # N - 1 where N is the number steps in the trajectory.
+    if 'step' in xml_dictionary:
+        xml_data['trajectory']['steps'] = list(range(len(xml_dictionary['step'])))
+
+    xml_data['total_number_of_scf_iterations'] = sum(xml_data['trajectory']['scf_iterations'])
 
     return xml_data, logs
+
+
+def parse_step_to_trajectory(trajectory, data, skip_structure=False):
+    """Parse the information of a single step to the dictionary in `trajectory`."""
+    if 'scf_conv' in data and 'n_scf_steps' in data['scf_conv']:
+        scf_iterations = data['scf_conv']['n_scf_steps']  # Can be zero in case of initialization-only calculation
+        if scf_iterations:
+            trajectory['scf_iterations'].append(scf_iterations)
+
+    if 'convergence_info' in data:
+        convergence_info = data['convergence_info']
+        if 'scf_conv' in convergence_info and 'n_scf_steps' in convergence_info['scf_conv']:
+            trajectory['scf_iterations'].append(convergence_info['scf_conv']['n_scf_steps'])
+
+    if 'atomic_structure' in data and not skip_structure:
+        atomic_structure = data['atomic_structure']
+
+        if 'atomic_positions' in atomic_structure:
+            positions = np.array([a['$'] for a in atomic_structure['atomic_positions']['atom']])
+            trajectory['positions'].append(positions * CONSTANTS.bohr_to_ang)
+
+        if 'cell' in atomic_structure:
+            cell = atomic_structure['cell']
+            cell = np.array([cell['a1'], cell['a2'], cell['a3']])
+            trajectory['cells'].append(cell * CONSTANTS.bohr_to_ang)
+
+    if 'total_energy' in data:
+        total_energy = data['total_energy']
+
+        for key, key_alt in [('etot', 'energy'), ('ehart', 'energy_hartree'), ('ewald', 'energy_ewald'), ('etxc', 'energy_xc')]:
+            if key in total_energy:
+                trajectory[key_alt].append(total_energy[key] * CONSTANTS.hartree_to_ev)
+
+    if 'forces' in data and '$' in data['forces']:
+        forces = np.array(data['forces']['$'])
+        dimensions = data['forces']['@dims']  # Like [3, 2], should be reversed to reshape the forces array
+        trajectory['forces'].append(forces.reshape(dimensions[::-1]))
+
+    if 'stress' in data and '$' in data['stress']:
+        stress = np.array(data['stress']['$'])
+        dimensions = data['stress']['@dims']  # Like [3, 3], should be reversed to reshape the stress array
+        trajectory['stress'].append(stress.reshape(dimensions[::-1]))

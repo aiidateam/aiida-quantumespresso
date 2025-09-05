@@ -11,18 +11,18 @@ creator_version: '6.6'
 dft_exchange_correlation: PBE
 do_magnetization: false
 do_not_use_time_reversal: false
-energy: -308.19187541409156
+energy: -308.1921164161265
 energy_accuracy: 7.3470735316620004e-06
 energy_accuracy_units: eV
-energy_ewald: -228.56124874864287
+energy_ewald: -228.56124979086937
 energy_ewald_units: eV
-energy_hartree: 17.268075769566853
+energy_hartree: 17.261456154012986
 energy_hartree_units: eV
 energy_one_electron: 71.73308779934625
 energy_one_electron_units: eV
 energy_threshold: 3.84e-06
 energy_units: eV
-energy_xc: -168.63179023436172
+energy_xc: -168.6286785890933
 energy_xc_units: eV
 estimated_ram_per_process: 10.86
 estimated_ram_per_process_units: MB
@@ -70,7 +70,7 @@ occupations: fixed
 q_real_space: false
 rho_cutoff: 3265.366014072
 rho_cutoff_units: eV
-scf_iterations: 5
+scf_iterations: 6
 smooth_fft_grid:
 - 32
 - 32
@@ -82,7 +82,8 @@ starting_magnetization:
 symmetries: []
 symmetries_units: crystal
 time_reversal_flag: true
-total_number_of_scf_iterations: 5
+total_number_of_scf_iterations: 6
 volume: 40.02575122514992
+wall_time_seconds: 1.460242033004761
 wfc_cutoff: 408.170751759
 wfc_cutoff_units: eV
