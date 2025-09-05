@@ -3,16 +3,16 @@
 from aiida import orm
 from aiida.common import AttributeDict, InputValidationError
 from aiida.engine import BaseRestartWorkChain, ProcessHandlerReport, process_handler, while_
-from aiida.plugins import CalculationFactory, GroupFactory, WorkflowFactory
+from aiida.plugins import GroupFactory
 
 from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import create_kpoints_from_distance
 from aiida_quantumespresso.common.types import ElectronicType, RestartType, SpinType
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 
+from ...calculations.neb import NebCalculation
+from ...workflows.pw.base import PwBaseWorkChain
 from ..protocols.utils import ProtocolMixin
 
-NebCalculation = CalculationFactory('quantumespresso.neb')
-PwBaseWorkChain = WorkflowFactory('quantumespresso.pw.base')
 SsspFamily = GroupFactory('pseudo.family.sssp')
 PseudoDojoFamily = GroupFactory('pseudo.family.pseudo_dojo')
 CutoffsPseudoPotentialFamily = GroupFactory('pseudo.family.cutoffs')
