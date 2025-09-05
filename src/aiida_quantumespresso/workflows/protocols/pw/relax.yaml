@@ -2,24 +2,28 @@ default_inputs:
     clean_workdir: False
     max_meta_convergence_iterations: 5
     meta_convergence: True
-    volume_convergence: 0.02
-    base:
+    base_relax:
         pw:
             parameters:
                 CELL:
                     press_conv_thr: 0.5
-    base_final_scf:
+    base_init_relax:
+        kpoints_distance: 0.3
+        meta_parameters:
+            conv_thr_per_atom: 1.e-6
+            etot_conv_thr_per_atom: 1.e-3
         pw:
             parameters:
                 CONTROL:
                     calculation: scf
+                    forc_conv_thr: 0.5e-2
+                CELL:
+                    press_conv_thr: 2
 default_protocol: balanced
 protocols:
     balanced:
         description: 'Protocol to perform a relaxation at normal precision at moderate computational cost.'
     stringent:
         description: 'Protocol to perform a relaxation at high precision at higher computational cost.'
-        volume_convergence: 0.01
     fast:
         description: 'Protocol to perform a relaxation at low precision at minimal computational cost for testing purposes.'
-        volume_convergence: 0.05
