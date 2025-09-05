@@ -10,6 +10,7 @@ ph
 pw/base
 pw/relax
 pw/bands
+neb
 q2r
 pdos
 ```
