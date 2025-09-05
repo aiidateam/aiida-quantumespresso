@@ -2,7 +2,7 @@
 
 ### 🐛 Bug fixes
 
-* 🐛 Protocols: Fix `overrides` that do not have `pw` key [[46192bf](https://github.com/aiidateam/aiida-quantumespresso/commit/46192bf872367b682f135642706c4f4c4261f0d9)]
+* Protocols: Fix `overrides` that do not have `pw` key [[46192bf](https://github.com/aiidateam/aiida-quantumespresso/commit/46192bf872367b682f135642706c4f4c4261f0d9)]
 
 ## v4.12.0
 
@@ -32,7 +32,7 @@ Now it is also checked and enforced that the user has provided pseudo potentials
 
 ## v4.11.1
 
-This patch release reintroduces an upper limit to `aiida-pseudo` that was erroneously removed in 4a6cdc22ec7f868a497abfd384bfeed39dfee3dc.
+This patch release reintroduces an upper limit to `aiida-pseudo` that was erroneously removed in [[4a6cdc2](https://github.com/aiidateam/aiida-quantumespresso/commit/4a6cdc22ec7f868a497abfd384bfeed39dfee3dc)].
 
 ### ⬆️ Update dependencies
 
