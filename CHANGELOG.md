@@ -1,3 +1,22 @@
+## v5.0.0a1
+
+> ⚠️ This is an alpha release with several breaking changes in the API and removal of deprecated code.
+  A full changelog with a migration guide will be provided once we're ready with the stable release.
+
+### ‼️ Breaking changes
+
+* ‼️ `PwRelaxWorkChain`: Revisit work chain logic [[830aef3](https://github.com/aiidateam/aiida-quantumespresso/commit/830aef35445e8c6d596e54651c9a891ce6b4b77e)]
+* ‼️ Remove all code related to XSpectra & XPS [[1e3ea1e](https://github.com/aiidateam/aiida-quantumespresso/commit/1e3ea1e1ea67dff5d781e86a1afea41e4ec7ac3d)]
+
+### 🧪 Tests
+
+* 🧪 Update `PwParser` fixtures to QE 6.6 XML output [[a5637b3](https://github.com/aiidateam/aiida-quantumespresso/commit/a5637b3abafd88a770ec01687adff05f9ca07505)]
+
+### ♻️ Refactor
+
+* ♻️ `PwParser`: primarily parse from XML instead of `stdout` [[fdb03d1](https://github.com/aiidateam/aiida-quantumespresso/commit/fdb03d1cd9618a59da545c4e2eb85e3e09f18361)]
+
+
 ## v4.13.0
 
 Minor release with mostly changes to the test framework.
