@@ -460,6 +460,8 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
             inputs.pw.parameters = inputs.pw.parameters.get_dict()
             factor = self.inputs.nbands_factor.value
             parameters = inputs.pw.parent_folder.creator.outputs.output_parameters.get_dict()
+            # TODO: Parse the relevant output_parameters directly from the parent folder
+            # instead of going through the creator node for more robustness
             nbands = int(parameters['number_of_bands'])
             nelectron = int(parameters['number_of_electrons'])
             nbnd = max(int(0.5 * nelectron * factor), int(0.5 * nelectron) + 4, nbands)
@@ -487,15 +489,14 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
             self.report(f'NSCF PwBaseWorkChain failed with exit status {workchain.exit_status}')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_NSCF
 
-        if self.ctx.serial_clean:
+        if self.ctx.serial_clean and 'scf' in self.inputs:
             # if scf was run in this workchain,
             # we no longer require the scf remote folder, so can clean it
             # otherwise, we assume the user wants to keep scf remote folder
             # as it was not generated in this workchain and might be used for other calculations
-            if self.should_run_scf():
-                cleaned_calcs = clean_workchain_calcs(self.ctx.workchain_scf)
-                if cleaned_calcs:
-                    self.report(f"cleaned remote folders of SCF calculations: {' '.join(map(str, cleaned_calcs))}")
+            cleaned_calcs = clean_workchain_calcs(self.ctx.workchain_scf)
+            if cleaned_calcs:
+                self.report(f"cleaned remote folders of SCF calculations: {' '.join(map(str, cleaned_calcs))}")
 
         self.ctx.nscf_emin = workchain.outputs.output_band.get_array('bands').min()
         self.ctx.nscf_emax = workchain.outputs.output_band.get_array('bands').max()
