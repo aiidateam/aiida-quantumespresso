@@ -451,12 +451,10 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         """
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, 'nscf'))
 
+        # If no SCF calculation launched, `workchain_scf` is not in ctx
+        # but `nscf.pw.parent_folder` is given if inputs are valid
         if 'scf' in self.inputs:
             inputs.pw.parent_folder = self.ctx.scf_parent_folder
-        else:
-            # No SCF calculation has been launched, `workchain_scf` is not in ctx
-            # but `nscf.pw.parent_folder` is given if inputs are valid
-            self.ctx.scf_parent_folder = inputs.pw.parent_folder
 
         if 'nbands_factor' in self.inputs:
             inputs.pw.parameters = inputs.pw.parameters.get_dict()
