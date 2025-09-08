@@ -6,7 +6,14 @@ from typing import List, Optional, Tuple
 
 from aiida.common.extendeddicts import AttributeDict
 from aiida.engine import ExitCode
-from aiida.orm import BandsData, Dict, KpointsData, ProjectionData, StructureData, XyData
+from aiida.orm import (
+    BandsData,
+    Dict,
+    KpointsData,
+    ProjectionData,
+    StructureData,
+    XyData,
+)
 from aiida.plugins import DataFactory, OrbitalFactory
 from aiida.tools.data.orbital.orbital import Orbital
 import numpy as np
@@ -33,59 +40,93 @@ class ProjwfcParser(BaseParser):
         """Parses the retrieved files of the ``ProjwfcCalculation`` and converts them into output nodes."""
         logs = get_logging_container()
 
-        stdout, parsed_data, logs = self.parse_stdout_from_retrieved(logs)
-
-        self.out('output_parameters', Dict(dict=parsed_data))
-
-        # Split the stdout into header and k-point blocks - TODO: Lowdin
-        stdout_blocks = stdout.split('Lowdin Charges:')[0].split('k = ')
-        header = stdout_blocks[0]
-        kpoint_blocks = stdout_blocks[1:]
-
         # Check that the temporary retrieved folder is there
         try:
-            retrieved_temporary_folder = Path(kwargs['retrieved_temporary_folder'])
+            retrieved_temporary_folder = Path(kwargs["retrieved_temporary_folder"])
         except KeyError:
             return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
 
         # Parse the XML to obtain the `structure`, `kpoints` and spin-related settings from the parent calculation
-        parsed_xml, logs_xml, xml_exit_code = self._parse_xml(retrieved_temporary_folder)
+        parsed_xml, logs_xml, xml_exit_code = self._parse_xml(
+            retrieved_temporary_folder
+        )
         self.emit_logs(logs_xml)
         if xml_exit_code is not None:
             return xml_exit_code
 
-        structure = convert_qe_to_aiida_structure(parsed_xml['structure'])
+        structure = convert_qe_to_aiida_structure(parsed_xml["structure"])
         kpoints = convert_qe_to_kpoints(parsed_xml, structure)
 
-        nspin = parsed_xml.get('number_of_spin_components')
-        spinorbit = parsed_xml.get('spin_orbit_calculation')
-        non_collinear = parsed_xml.get('non_colinear_calculation')
+        nspin = parsed_xml.get("number_of_spin_components")
+        spinorbit = parsed_xml.get("spin_orbit_calculation")
+        non_collinear = parsed_xml.get("non_colinear_calculation")
 
-        orbitals = self._parse_orbitals(header, structure, non_collinear, spinorbit)
-        bands, projections = self._parse_bands_and_projections(kpoint_blocks, len(orbitals))
-        energy, dos_node, pdos_array = self._parse_pdos_files(retrieved_temporary_folder, nspin, spinorbit, logs)
+        # Parse the standard output
+        stdout, parsed_data, logs = self.parse_stdout_from_retrieved(logs)
 
-        self.out('Dos', dos_node)
+        self.out("output_parameters", Dict(dict=parsed_data))
 
-        output_node_dict = self._build_bands_and_projections(
-            kpoints, bands, energy, orbitals, projections, pdos_array, nspin
-        )
-        for linkname, node in output_node_dict.items():
-            self.out(linkname, node)
+        # 2 possible types of projection:
+        # 1. onto atomic orbitals -> read *pdos_tot* and *pdos_atm* files to extract DOS, PDOS and projections
+        # 2. into boxes -> read *ldos_boxes* file to extract DOS and LDOS
+
+        projection_orbitals = "Lowdin Charges" in stdout
+        projection_boxes = "projwave_boxes" in stdout
+
+        if projection_orbitals:
+            # Split the stdout into header and k-point blocks - TODO: Lowdin
+            stdout_blocks = stdout.split("Lowdin Charges:")[0].split("k = ")
+            header = stdout_blocks[0]
+            kpoint_blocks = stdout_blocks[1:]
+
+            orbitals = self._parse_orbitals(header, structure, non_collinear, spinorbit)
+
+            bands, projections = self._parse_bands_and_projections(
+                kpoint_blocks, len(orbitals)
+            )
+            energy, dos_node, pdos_node, pdos_array = self._parse_pdos_files(
+                retrieved_temporary_folder, nspin, spinorbit, logs
+            )
+
+            self.out("Dos", dos_node)
+            self.out("Pdos", pdos_node)
+
+            output_node_dict = self._build_bands_and_projections(
+                kpoints, bands, energy, orbitals, projections, pdos_array, nspin
+            )
+
+            for linkname, node in output_node_dict.items():
+                self.out(linkname, node)
+        elif projection_boxes:
+            energy, dos_node, pdos_node, ldos_node = self._parse_ldos_boxes_file(
+                retrieved_temporary_folder, nspin, logs
+            )
+
+            self.out("Dos", dos_node)
+            self.out("Pdos", pdos_node)
+            self.out("Ldos", ldos_node)
+        else:
+            logs.error.append("ERROR_OUTPUT_STDOUT_UNKNOWN_PROJECTION_TYPE")
 
         for exit_code in [
-            'ERROR_OUTPUT_STDOUT_MISSING',
-            'ERROR_OUTPUT_STDOUT_READ',
-            'ERROR_OUTPUT_STDOUT_PARSE',
-            'ERROR_OUTPUT_STDOUT_INCOMPLETE',
-            'ERROR_READING_PDOSTOT_FILE'
+            "ERROR_OUTPUT_STDOUT_MISSING",
+            "ERROR_OUTPUT_STDOUT_READ",
+            "ERROR_OUTPUT_STDOUT_PARSE",
+            "ERROR_OUTPUT_STDOUT_INCOMPLETE",
+            "ERROR_OUTPUT_STDOUT_UNKNOWN_PROJECTION_TYPE",
+            "ERROR_READING_PDOSTOT_FILE",
+            "ERROR_READING_LDOSBOXES_FILE",
+            "ERROR_MISSING_PDOSTOT_FILE",
+            "ERROR_MISSING_LDOSBOXES_FILE",
         ]:
             if exit_code in logs.error:
                 return self.exit(self.exit_codes.get(exit_code), logs)
 
         return self.exit(logs=logs)
 
-    def _parse_xml(self, retrieved_temporary_folder: Path) -> Tuple[dict, AttributeDict, Optional[ExitCode]]:
+    def _parse_xml(
+        self, retrieved_temporary_folder: Path
+    ) -> Tuple[dict, AttributeDict, Optional[ExitCode]]:
         """Parse the XML file.
 
         The XML must be parsed in order to obtain the required information for the other parser methods.
@@ -99,13 +140,15 @@ class ProjwfcParser(BaseParser):
 
         logs = get_logging_container()
 
-        xml_filepath = retrieved_temporary_folder / self.node.process_class.xml_path.name
+        xml_filepath = (
+            retrieved_temporary_folder / self.node.process_class.xml_path.name
+        )
 
         if not xml_filepath.exists():
             return {}, logs, self.exit(self.exit_codes.ERROR_OUTPUT_XML_MISSING)
 
         try:
-            with xml_filepath.open('r') as handle:
+            with xml_filepath.open("r") as handle:
                 parsed_xml, logs = parse_xml(handle, None)
             return parsed_xml, logs, None
         except IOError:
@@ -115,10 +158,16 @@ class ProjwfcParser(BaseParser):
         except XMLUnsupportedFormatError:
             return {}, logs, self.exit(self.exit_codes.ERROR_OUTPUT_XML_FORMAT)
         except Exception:
-            return {}, logs, self.exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION)
+            return (
+                {},
+                logs,
+                self.exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION),
+            )
 
     @staticmethod
-    def _parse_orbitals(header: str, structure: StructureData, non_collinear: bool, spinorbit: bool) -> list:
+    def _parse_orbitals(
+        header: str, structure: StructureData, non_collinear: bool, spinorbit: bool
+    ) -> list:
         """Parse the orbitals from the stdout header.
 
         This method reads in all the state lines - that is, the lines describing which atomic states taken from the
@@ -158,34 +207,56 @@ class ProjwfcParser(BaseParser):
         if spinorbit:
             # FORMAT (5x,"state #",i4,": atom ",i3," (",a3,"), wfc ",i2," (l=",i1," j=",f3.1," m_j=",f4.1,")")
             orbital_pattern = re.compile(
-                r'state\s#\s*\d+:\satom\s+(\d+)\s\((\S+)\s*\),\swfc\s+\d+\s\(l=(\d)\sj=\s*(.*)\sm_j=(.*)\)'
+                r"state\s#\s*\d+:\satom\s+(\d+)\s\((\S+)\s*\),\swfc\s+\d+\s\(l=(\d)\sj=\s*(.*)\sm_j=(.*)\)"
             )
-            orbital_keys = ('atomnum', 'kind_name', 'angular_momentum', 'total_angular_momentum', 'magnetic_number')
+            orbital_keys = (
+                "atomnum",
+                "kind_name",
+                "angular_momentum",
+                "total_angular_momentum",
+                "magnetic_number",
+            )
             orbital_types = (int, str, int, float, float)
         elif non_collinear:
             # FORMAT (5x,"state #",i4,": atom ",i3," (",a3,"), wfc ",i2," (l=",i1," m=",i2," s_z=",f4.1,")")
             orbital_pattern = re.compile(
-                r'state\s#\s*\d+:\satom\s+(\d+)\s\((\S+)\s*\),\swfc\s+\d+\s\(l=(\d)\sm=\s?(\d+)\ss_z=(.*)\)'
+                r"state\s#\s*\d+:\satom\s+(\d+)\s\((\S+)\s*\),\swfc\s+\d+\s\(l=(\d)\sm=\s?(\d+)\ss_z=(.*)\)"
             )
-            orbital_keys = ('atomnum', 'kind_name', 'angular_momentum', 'magnetic_number', 'spin')
+            orbital_keys = (
+                "atomnum",
+                "kind_name",
+                "angular_momentum",
+                "magnetic_number",
+                "spin",
+            )
             orbital_types = (int, str, int, int, float)
         else:
             # This works for both collinear / no spin
             # FORMAT (5x,"state #",i4,": atom ",i3," (",a3,"), wfc ",i2," (l=",i1," m=",i2,")")
             orbital_pattern = re.compile(
-                r'state\s#\s*\d+:\satom\s+(\d+)\s\((\S+)\s*\),\swfc\s+\d+\s\(l=(\d)\sm=\s?(\d+)\)'
+                r"state\s#\s*\d+:\satom\s+(\d+)\s\((\S+)\s*\),\swfc\s+\d+\s\(l=(\d)\sm=\s?(\d+)\)"
             )
-            orbital_keys = ('atomnum', 'kind_name', 'angular_momentum', 'magnetic_number')
+            orbital_keys = (
+                "atomnum",
+                "kind_name",
+                "angular_momentum",
+                "magnetic_number",
+            )
             orbital_types = (int, str, int, int)
 
         orbital_dicts = []
 
         for orbital_data in orbital_pattern.findall(header):
             orbital_dict = {
-                key: data_type(data) for key, data_type, data in zip(orbital_keys, orbital_types, orbital_data)
+                key: data_type(data)
+                for key, data_type, data in zip(
+                    orbital_keys, orbital_types, orbital_data
+                )
             }
-            orbital_dict['atomnum'] -= 1  # convert to zero indexing
-            orbital_dict['magnetic_number'] -= int(not spinorbit)  # convert to zero indexing, except for spinorbit
+            orbital_dict["atomnum"] -= 1  # convert to zero indexing
+            orbital_dict["magnetic_number"] -= int(
+                not spinorbit
+            )  # convert to zero indexing, except for spinorbit
             orbital_dicts.append(orbital_dict)
 
         # Figure out the value of radial_nodes
@@ -196,30 +267,32 @@ class ProjwfcParser(BaseParser):
             for j in range(i - 1, -1, -1):
                 if new_orbital_dict == orbital_dicts[j]:
                     radial_nodes += 1
-            new_orbital_dict['radial_nodes'] = radial_nodes
+            new_orbital_dict["radial_nodes"] = radial_nodes
             new_orbital_dicts.append(new_orbital_dict)
         orbital_dicts = new_orbital_dicts
 
         # Assign positions based on the atom_index
         for new_orbital_dict in orbital_dicts:
-            site_index = new_orbital_dict.pop('atomnum')
-            new_orbital_dict['position'] = structure.sites[site_index].position
+            site_index = new_orbital_dict.pop("atomnum")
+            new_orbital_dict["position"] = structure.sites[site_index].position
 
         # Convert the resulting orbital_dicts into the list of orbitals
         orbitals = []
         if spinorbit:
-            orbital_class = OrbitalFactory('spinorbithydrogen')
+            orbital_class = OrbitalFactory("spinorbithydrogen")
         elif non_collinear:
-            orbital_class = OrbitalFactory('noncollinearhydrogen')
+            orbital_class = OrbitalFactory("noncollinearhydrogen")
         else:
-            orbital_class = OrbitalFactory('realhydrogen')
+            orbital_class = OrbitalFactory("realhydrogen")
         for new_orbital_dict in orbital_dicts:
             orbitals.append(orbital_class(**new_orbital_dict))
 
         return orbitals
 
     @staticmethod
-    def _parse_bands_and_projections(kpoint_blocks: list, num_orbitals: int) -> Tuple[ArrayLike, ArrayLike]:
+    def _parse_bands_and_projections(
+        kpoint_blocks: list, num_orbitals: int
+    ) -> Tuple[ArrayLike, ArrayLike]:
         """Parse the bands energies and orbital projections from the kpoint blocks in the stdout.
 
         :param kpoint_blocks: list of blocks for each k-point that contain the energies and projections in the stdout.
@@ -229,12 +302,12 @@ class ProjwfcParser(BaseParser):
         """
 
         # Parse the bands energies
-        energy_pattern = re.compile(r'====\se\(\s*\d+\)\s=\s*(\S+)\seV\s====')
+        energy_pattern = re.compile(r"====\se\(\s*\d+\)\s=\s*(\S+)\seV\s====")
         bands = np.array([energy_pattern.findall(block) for block in kpoint_blocks])
 
         # Parse the projection arrays
-        energy_pattern = re.compile(r'\n====.+==== \n')
-        psi_pattern = re.compile(r'([.\d]+)\*\[#\s*(\d+)\]')
+        energy_pattern = re.compile(r"\n====.+==== \n")
+        psi_pattern = re.compile(r"([.\d]+)\*\[#\s*(\d+)\]")
 
         projections = []
 
@@ -246,7 +319,9 @@ class ProjwfcParser(BaseParser):
 
                 proj_array = np.zeros(num_orbitals)
 
-                for [projection_value, orbital_index] in psi_pattern.findall(band_projections):
+                for [projection_value, orbital_index] in psi_pattern.findall(
+                    band_projections
+                ):
                     proj_array[int(orbital_index) - 1] = projection_value
 
                 kpoint_projections.append(proj_array)
@@ -257,8 +332,13 @@ class ProjwfcParser(BaseParser):
 
         return bands, projections
 
-    def _parse_pdos_files(self, retrieved_temporary_folder: Path, nspin: int,
-                          spinorbit: bool, logs: AttributeDict) -> Tuple[ArrayLike, XyData, ArrayLike]:
+    def _parse_pdos_files(
+        self,
+        retrieved_temporary_folder: Path,
+        nspin: int,
+        spinorbit: bool,
+        logs: AttributeDict,
+    ) -> Tuple[ArrayLike, XyData, ArrayLike]:
         """Parse the PDOS files and convert them into arrays.
 
         Reads in all of the ``*.pdos*`` files and converts the data into arrays. The PDOS arrays are then concatenated
@@ -273,10 +353,10 @@ class ProjwfcParser(BaseParser):
         :param nspin: nspin value of the parent calculation.
         :param spinorbit: True if the calculation used spin-orbit coupling.
 
-        :return: tuple of three containing the energy grid, the total DOS as a node and the PDOS
+        :return: tuple of three containing the energy grid, the total DOS as a node, the total PDOS as a node and the PDOS array of projections on orbitals
         """
 
-        def natural_sort_key(sort_key, _nsre=re.compile('([0-9]+)')):
+        def natural_sort_key(sort_key, _nsre=re.compile("([0-9]+)")):
             """Pass to ``key`` for ``str.sort`` to achieve natural sorting. For example, ``["2", "11", "1"]`` will be sorted to
             ``["1", "2", "11"]`` instead of ``["1", "11", "2"]``
 
@@ -293,28 +373,40 @@ class ProjwfcParser(BaseParser):
 
         # Read the `pdos_tot` file
         try:
-            pdostot_filepath = next(retrieved_temporary_folder.glob('*pdos_tot*'))
-            with pdostot_filepath.open('r') as pdostot_file:
+            pdostot_filepath = next(retrieved_temporary_folder.glob("*pdos_tot*"))
+            with pdostot_filepath.open("r") as pdostot_file:
                 # Columns: Energy(eV), Ldos, Pdos
                 pdostot_array = np.atleast_2d(np.genfromtxt(pdostot_file))
         except (OSError, KeyError):
-            logs.error.append('ERROR_READING_PDOSTOT_FILE')
+            logs.error.append("ERROR_READING_PDOSTOT_FILE")
+            return np.array([]), XyData(), np.array([])
+        except StopIteration:
+            logs.error.append("ERROR_MISSING_PDOSTOT_FILE")
             return np.array([]), XyData(), np.array([])
 
         energy = pdostot_array[:, 0]
 
-        dos_node = XyData()
-        dos_node.set_x(energy, 'Energy', 'eV')
+        dos_node = XyData()  # Total DOS
+        dos_node.set_x(energy, "Energy", "eV")
 
-        # For spin-polarised calculations the total DOS is split up in spin up and down
+        pdos_node = XyData()  # Total PDOS (on all orbitals)
+        pdos_node.set_x(energy, "Energy", "eV")
+
+        # For spin-polarised calculations the total DOS and the total PDOS are split up in spin up and down
         if nspin == 2:
             dos_node.set_y(
                 (pdostot_array[:, 1], pdostot_array[:, 2]),
-                ('dos_up', 'dos_down'),
-                ('states/eV', 'states/eV')
+                ("dos_up", "dos_down"),
+                ("states/eV", "states/eV"),
+            )
+            pdos_node.set_y(
+                (pdostot_array[:, 3], pdostot_array[:, 4]),
+                ("pdos_up", "pdos_down"),
+                ("states/eV", "states/eV"),
             )
         else:
-            dos_node.set_y(pdostot_array[:, 1], 'Dos', 'states/eV')
+            dos_node.set_y(pdostot_array[:, 1], "Dos", "states/eV")
+            pdos_node.set_y(pdostot_array[:, 2], "Pdos", "states/eV")
 
         # We're only interested in the PDOS, so we skip the first columns corresponding to the energy and LDOS
         if nspin == 1 or spinorbit:
@@ -324,9 +416,11 @@ class ProjwfcParser(BaseParser):
 
         # Read the `pdos_atm` files
         pdos_atm_array_dict = {}
-        for path in retrieved_temporary_folder.glob('*pdos_atm*'):
-            with path.open('r') as pdosatm_file:
-                pdos_atm_array_dict[path.name] = np.atleast_2d(np.genfromtxt(pdosatm_file))[:, first_pdos_column:]
+        for path in retrieved_temporary_folder.glob("*pdos_atm*"):
+            with path.open("r") as pdosatm_file:
+                pdos_atm_array_dict[path.name] = np.atleast_2d(
+                    np.genfromtxt(pdosatm_file)
+                )[:, first_pdos_column:]
 
         # Keep the pdos in sync with the orbitals by properly sorting the filenames
         pdos_file_names = [k for k in pdos_atm_array_dict]
@@ -335,27 +429,121 @@ class ProjwfcParser(BaseParser):
         # Make sure the order of the PDOS columns matches with the orbitals
         if nspin != 4 or spinorbit:
             # Simply concatenate the PDOS columns as they are ordered by the filenames
-            pdos_array = np.concatenate([pdos_atm_array_dict[name] for name in pdos_file_names], axis=1)
+            pdos_array = np.concatenate(
+                [pdos_atm_array_dict[name] for name in pdos_file_names], axis=1
+            )
             if nspin == 2:
                 # Reorder the columns so the 'up' spin columns are first
-                pdos_array = np.concatenate([pdos_array[:, 0::2], pdos_array[:, 1::2]], axis=1)
+                pdos_array = np.concatenate(
+                    [pdos_array[:, 0::2], pdos_array[:, 1::2]], axis=1
+                )
             if nspin == 4:
                 # Reorder the columns like the order of orbitals for spin-orbit
-                pdos_array = np.concatenate([pdos_array[:, 1::2], pdos_array[:, 0::2]], axis=1)
+                pdos_array = np.concatenate(
+                    [pdos_array[:, 1::2], pdos_array[:, 0::2]], axis=1
+                )
         else:
             # Here all the 'up' orbitals for each l number come first, so the PDOS columns must be sorted accordingly
             pdos_list = []
-            for wfc_pdos_array in [pdos_atm_array_dict[name] for name in pdos_file_names]:
+            for wfc_pdos_array in [
+                pdos_atm_array_dict[name] for name in pdos_file_names
+            ]:
                 # Reorder the columns so the 'up' spin columns _for this l number_ come first
-                pdos_list.append(np.concatenate([wfc_pdos_array[:, 0::2], wfc_pdos_array[:, 1::2]], axis=1))
+                pdos_list.append(
+                    np.concatenate(
+                        [wfc_pdos_array[:, 0::2], wfc_pdos_array[:, 1::2]], axis=1
+                    )
+                )
             pdos_array = np.concatenate(pdos_list, axis=1)
 
-        return energy, dos_node, pdos_array
+        return energy, dos_node, pdos_node, pdos_array
+
+    def _parse_ldos_boxes_file(
+        self, retrieved_temporary_folder: Path, nspin: int, logs: AttributeDict
+    ) -> Tuple[ArrayLike, XyData, XyData]:
+        """Parse the LDOS file and convert it into arrays.
+
+        Reads in the ``*ldos_boxes*`` file and converts the data into arrays. Only works and tested for nspin = 1 or 2.
+
+        :param retrieved_temporary_folder: temporary folder of retrieved files that is deleted after parsing.
+        :param nspin: number of spin components, nspin value of the parent calculation.
+
+        :return: tuple of three containing the energy grid, the total DOS as a node and the LDOS as a node
+        """
+
+        try:
+            ldosboxes_filepath = next(retrieved_temporary_folder.glob("*ldos_boxes*"))
+            with ldosboxes_filepath.open("r") as ldosboxes_file:
+                # Columns: Energy(eV), Dos, Ldos_total, Ldos_box1, Ldos_box2, ...
+                ldosboxes_array = np.atleast_2d(np.genfromtxt(ldosboxes_file))
+        except (OSError, KeyError):
+            logs.error.append("ERROR_READING_LDOSBOXES_FILE")
+            return np.array([]), XyData(), XyData()
+        except StopIteration:
+            logs.error.append("ERROR_MISSING_LDOSBOXES_FILE")
+            return np.array([]), XyData(), XyData()
+
+        energy = ldosboxes_array[:, 0]
+
+        dos_node = XyData()  # Total DOS
+        dos_node.set_x(energy, "Energy", "eV")
+
+        pdos_node = XyData()  # Total PDOS (on all boxes)
+        pdos_node.set_x(energy, "Energy", "eV")
+
+        # For spin-polarized calculations the total DOS and the total PDOS are split up in spin up and down and so are the LDOS for each box
+        if nspin == 2:
+            dos_node.set_y(
+                (ldosboxes_array[:, 1], ldosboxes_array[:, 2]),
+                ("dos_up", "dos_down"),
+                ("states/eV", "states/eV"),
+            )
+            pdos_node.set_y(
+                (ldosboxes_array[:, 3], ldosboxes_array[:, 4]),
+                ("pdos_up", "pdos_down"),
+                ("states/eV", "states/eV"),
+            )
+        else:
+            # For unpolarized or non-collinear (with or without SOC) calculations, the total DOS and the total PDOS are not split, and neither are the LDOS
+            dos_node.set_y(ldosboxes_array[:, 1], "Dos", "states/eV")
+            pdos_node.set_y(ldosboxes_array[:, 2], "Pdos", "states/eV")
+
+        ldos_node = XyData()
+        ldos_node.set_x(energy, "Energy", "eV")
+
+        num_boxes = (
+            ldosboxes_array.shape[1] - (1 + nspin * 2)
+        ) // nspin  # for nspin = 1 or 2
+
+        if nspin == 2:
+            num_boxes = (ldosboxes_array.shape[1] - 5) // 2
+            ldos_node.set_y(
+                [ldosboxes_array[:, i * 2 + 5] for i in range(num_boxes)]
+                + [ldosboxes_array[:, i * 2 + 6] for i in range(num_boxes)],
+                [f"ldos_up_box{i + 1}" for i in range(num_boxes)]
+                + [f"ldos_down_box{i + 1}" for i in range(num_boxes)],
+                ["states/eV"] * (num_boxes * 2),
+            )
+        else:
+            num_boxes = ldosboxes_array.shape[1] - 3
+            ldos_node.set_y(
+                [ldosboxes_array[:, i + 3] for i in range(num_boxes)],
+                [f"ldos_box{i + 1}" for i in range(num_boxes)],
+                ["states/eV"] * num_boxes,
+            )
+
+        return energy, dos_node, pdos_node, ldos_node
 
     @classmethod
     def _build_bands_and_projections(
-        cls, kpoints: KpointsData, bands: ArrayLike, energy: ArrayLike, orbitals: List[Orbital], projections: ArrayLike,
-        pdos_array: ArrayLike, nspin: int
+        cls,
+        kpoints: KpointsData,
+        bands: ArrayLike,
+        energy: ArrayLike,
+        orbitals: List[Orbital],
+        projections: ArrayLike,
+        pdos_array: ArrayLike,
+        nspin: int,
     ) -> dict:
         """Build the ``BandsData`` and ``ProjectionData`` output nodes.
 
@@ -372,8 +560,12 @@ class ProjwfcParser(BaseParser):
         num_orbitals = len(orbitals)
 
         bands_data, projection_data = cls._intialize_bands_projection_data(
-            kpoints, bands[:num_kpoints, :], energy, orbitals, projections[:num_kpoints, :, :],
-            pdos_array[:, :num_orbitals]
+            kpoints,
+            bands[:num_kpoints, :],
+            energy,
+            orbitals,
+            projections[:num_kpoints, :, :],
+            pdos_array[:, :num_orbitals],
         )
         if nspin == 2:
             # For collinear spin-polarised calculations, each orbital has an 'up' and 'down' projection.
@@ -388,23 +580,33 @@ class ProjwfcParser(BaseParser):
             # So the first/second half of the `bands` and `projections` correspond to spin up/down.
             # The `pdos_arrays` are constructed to match this order, i.e. the first len(orbitals) correspond to 'up'.
             # The 'up' bands and projections have already been initialized above, the 'down' we do now.
-            bands_data_down, projection_data_down = cls._intialize_bands_projection_data(
-                kpoints, bands[num_kpoints:, :], energy, orbitals, projections[num_kpoints:, :, :],
-                pdos_array[:, num_orbitals:]
+            bands_data_down, projection_data_down = (
+                cls._intialize_bands_projection_data(
+                    kpoints,
+                    bands[num_kpoints:, :],
+                    energy,
+                    orbitals,
+                    projections[num_kpoints:, :, :],
+                    pdos_array[:, num_orbitals:],
+                )
             )
             return {
-                'bands_up': bands_data,
-                'bands_down': bands_data_down,
-                'projections_up': projection_data,
-                'projections_down': projection_data_down,
+                "bands_up": bands_data,
+                "bands_down": bands_data_down,
+                "projections_up": projection_data,
+                "projections_down": projection_data_down,
             }
 
-        return {'bands': bands_data, 'projections': projection_data}
+        return {"bands": bands_data, "projections": projection_data}
 
     @staticmethod
     def _intialize_bands_projection_data(
-        kpoints: KpointsData, bands: ArrayLike, energy: ArrayLike, orbitals: List[Orbital], projections: ArrayLike,
-        pdos_array: ArrayLike
+        kpoints: KpointsData,
+        bands: ArrayLike,
+        energy: ArrayLike,
+        orbitals: List[Orbital],
+        projections: ArrayLike,
+        pdos_array: ArrayLike,
     ) -> Tuple[BandsData, ProjectionData]:
         """Initialize an instance of ``BandsData`` and corresponding ``ProjectionData``.
 
@@ -418,7 +620,7 @@ class ProjwfcParser(BaseParser):
         """
         bands_data = BandsData()
         bands_data.set_kpointsdata(kpoints)
-        bands_data.set_bands(bands, units='eV')
+        bands_data.set_bands(bands, units="eV")
 
         projection_data = ProjectionData()
         projection_data.set_reference_bandsdata(bands_data)
@@ -429,6 +631,6 @@ class ProjwfcParser(BaseParser):
             list_of_projections=[projections[:, :, i] for i in range(len(orbitals))],
             list_of_energy=energy_arrays,
             list_of_pdos=[pdos_array[:, i] for i in range(len(orbitals))],
-            bands_check=False
+            bands_check=False,
         )
         return bands_data, projection_data
