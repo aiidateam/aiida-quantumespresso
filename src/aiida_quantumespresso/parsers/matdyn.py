@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 from aiida import orm
+import numpy
 from qe_tools import CONSTANTS
 
+from aiida_quantumespresso.calculations import _uppercase_dict
 from aiida_quantumespresso.calculations.matdyn import MatdynCalculation
 from aiida_quantumespresso.utils.mapping import get_logging_container
 
@@ -27,6 +29,16 @@ class MatdynParser(BaseParser):
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE, logs)
 
         filename_frequencies = MatdynCalculation._PHONON_FREQUENCIES_NAME
+        filename_dos = MatdynCalculation._PHONON_DOS_NAME
+
+        if filename_stdout not in retrieved.base.repository.list_object_names():
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
+
+        if 'JOB DONE' not in retrieved.base.repository.get_object_content(filename_stdout):
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE)
+
+        if filename_frequencies not in retrieved.base.repository.list_object_names():
+            return self.exit(self.exit_codes.ERROR_OUTPUT_FREQUENCIES)
 
         # Extract the kpoints from the input data and create the `KpointsData` for the `BandsData`
         try:
@@ -44,17 +56,17 @@ class MatdynParser(BaseParser):
         except KeyError:
             return self.exit(self.exit_codes.ERROR_OUTPUT_KPOINTS_MISSING, logs)
 
-        if num_kpoints != kpoints.shape[0]:
-            return self.exit(self.exit_codes.ERROR_OUTPUT_KPOINTS_INCOMMENSURATE, logs)
+            if num_kpoints != kpoints.shape[0]:
+                return self.exit(self.exit_codes.ERROR_OUTPUT_KPOINTS_INCOMMENSURATE, logs)
 
-        output_bands = orm.BandsData()
-        output_bands.set_kpointsdata(kpoints_for_bands)
-        output_bands.set_bands(parsed_data.pop('phonon_bands'), units='THz')
+            output_bands = orm.BandsData()
+            output_bands.set_kpointsdata(kpoints_for_bands)
+            output_bands.set_bands(parsed_data.pop('phonon_bands'), units='THz')
+
+            self.out('output_phonon_bands', output_bands)
 
         for message in parsed_data['warnings']:
             self.logger.error(message)
-
-        self.out('output_phonon_bands', output_bands)
 
         return self.exit(logs=logs)
 
