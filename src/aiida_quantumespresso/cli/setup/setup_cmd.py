@@ -73,8 +73,7 @@ def create_code(computer, executables, directory, label_template, **kwargs):
 
 def _get_code_label(label_template: str, executable: str, computer: orm.Computer) -> tuple[str | None, str]:
     existing_label = None
-    label = label_template.replace('{}', executable.replace('.x',
-                                                            '')) if label_template else executable.replace('.x', '')
+    label = label_template.replace('{}', executable.replace('.x', '')) if label_template else executable.replace('.x', '')
 
     # Check if code already exists
     existing_labels = orm.QueryBuilder().append(orm.Computer, filters={
