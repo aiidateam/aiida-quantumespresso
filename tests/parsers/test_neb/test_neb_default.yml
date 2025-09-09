@@ -287,7 +287,7 @@ parameters:
       t_rev: '0'
     symmetries_units: crystal
     time_reversal_flag: true
-    total_number_of_scf_iterations: 6
+    total_number_of_scf_iterations: 0
     volume: 44.45541285717334
     wall_time_seconds: 11.15338492393494
     wfc_cutoff: 272.113834506
