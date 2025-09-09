@@ -18,7 +18,7 @@ import click
     nargs=-1,
     required=True,
 )
-@click.option('--directory', '-d', help='Absolute path to directory where the executbale(s) is (are) located.')
+@click.option('--directory', '-d', help='Absolute path to directory where the executable(s) is (are) located.')
 @click.option(
     '--label-template',
     '-l',
