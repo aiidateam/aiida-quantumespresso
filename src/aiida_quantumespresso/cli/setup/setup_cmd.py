@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Command line interface commands for setting up `code`s for Quantum ESPRESSO executables."""
-# -*- coding: utf-8 -*-
 import pathlib
 import re
 
