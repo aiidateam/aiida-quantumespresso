@@ -12,7 +12,6 @@ At the very least, make sure you have followed and understand the tutorial on [r
 
 cp
 dos
-epw
 matdyn
 neb
 ph

@@ -14,7 +14,6 @@ import pytest
         ['aiida-quantumespresso'],
         ['aiida-quantumespresso', 'calculation', 'launch', 'cp'],
         ['aiida-quantumespresso', 'calculation', 'launch', 'dos'],
-        ['aiida-quantumespresso', 'calculation', 'launch', 'epw'],
         ['aiida-quantumespresso', 'calculation', 'launch', 'matdyn'],
         ['aiida-quantumespresso', 'calculation', 'launch', 'neb'],
         ['aiida-quantumespresso', 'calculation', 'launch', 'ph'],
