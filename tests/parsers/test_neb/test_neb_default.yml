@@ -417,5 +417,4 @@ parameters:
   suggested_k_min_au: 0.1028
   use_freezing: false
   wall_time_seconds: 11.44
-  warnings:
-  - 'error: ERROR_OUTPUT_STDOUT_INCOMPLETE'
+  warnings: []
