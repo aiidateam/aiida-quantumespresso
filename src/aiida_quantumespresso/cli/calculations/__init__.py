@@ -17,7 +17,6 @@ def cmd_launch():
 # Import the sub commands to register them with the CLI
 from .cp import launch_calculation
 from .dos import launch_calculation
-from .epw import launch_calculation
 from .matdyn import launch_calculation
 from .neb import launch_calculation
 from .ph import launch_calculation

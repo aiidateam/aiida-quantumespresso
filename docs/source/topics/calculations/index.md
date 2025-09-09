@@ -7,7 +7,6 @@
 
 cp
 dos
-epw
 matdyn
 neb
 ph
