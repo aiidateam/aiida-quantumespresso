@@ -28,17 +28,13 @@ builder = PwRelaxWorkChain.get_builder_from_protocol(
     structure=structure,
     protocol="fast",   # choose from: fast, moderate, precise
     relax_type=RelaxType.POSITIONS_CELL,  # relax both positions and cell
+    options={"resources": {"num_machines": 2},
+             "max_wallclock_seconds": 7200}
 )
 
 # Optionally adjust calculation parameters
 builder.base_relax.pw.parameters['SYSTEM']['ecutwfc'] = 60.0
 builder.base_relax.pw.parameters['SYSTEM']['ecutrho'] = 300.0
-
-# Optionally adjust resources
-builder.base_relax.pw.metadata.options = {
-    "resources": {"num_machines": 2},
-    "max_wallclock_seconds": 7200,
-}
 
 # Submit the work chain
 node = submit(builder)
