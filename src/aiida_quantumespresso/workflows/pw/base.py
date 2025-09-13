@@ -49,17 +49,14 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         """Define the process specification."""
 
         super().define(spec)
-        spec.expose_inputs(PwCalculation, namespace='pw', exclude=('kpoints',))
-        spec.input(
-            'kpoints',
-            valid_type=orm.KpointsData,
-            required=False,
-            help='An explicit k-points list or mesh. Either this or `kpoints_distance` has to be provided.',
+
+        spec.expose_inputs(PwCalculation, exclude=('kpoints', 'metadata'))
+        spec.inputs.create_port_namespace('options').absorb(
+            PwCalculation.spec().inputs.get_port('metadata.options')
         )
-        spec.input(
-            'kpoints_distance',
-            valid_type=orm.Float,
-            required=False,
+        spec.input('kpoints', valid_type=orm.KpointsData, required=False,
+            help='An explicit k-points list or mesh. Either this or `kpoints_distance` has to be provided.')
+        spec.input('kpoints_distance', valid_type=orm.Float, required=False,
             help='The minimum desired distance in 1/Å between k-points in reciprocal space. The explicit k-points will '
             'be generated automatically by a calculation function based on the input structure.',
         )
@@ -207,15 +204,16 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         natoms = len(structure.sites)
 
         # Update the parameters based on the protocol inputs
-        parameters = inputs['pw']['parameters']
+        parameters = inputs['parameters']
 
-        if overrides and 'pseudos' in overrides.get('pw', {}):
-            pseudos = overrides['pw']['pseudos']
+        if overrides and 'pseudos' in overrides:
+
+            pseudos = overrides['pseudos']
 
             if sorted(pseudos.keys()) != sorted(structure.get_kind_names()):
                 raise ValueError(f'`pseudos` override needs one value for each of the {len(structure.kinds)} kinds.')
 
-            system_overrides = overrides['pw'].get('parameters', {}).get('SYSTEM', {})
+            system_overrides = overrides.get('parameters', {}).get('SYSTEM', {})
 
             if not all(key in system_overrides for key in ('ecutwfc', 'ecutrho')):
                 raise ValueError(
@@ -280,30 +278,29 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         # If overrides are provided, they are considered absolute
         if overrides:
-            parameter_overrides = overrides.get('pw', {}).get('parameters', {})
+            parameter_overrides = overrides.get('parameters', {})
             parameters = recursive_merge(parameters, parameter_overrides)
 
             # if tot_magnetization in overrides , remove starting_magnetization from parameters
             if parameters.get('SYSTEM', {}).get('tot_magnetization') is not None:
                 parameters.setdefault('SYSTEM', {}).pop('starting_magnetization', None)
 
-        metadata = inputs['pw']['metadata']
+        inputs_options = inputs['options']
+        inputs_options = cls.set_default_resources(inputs_options, code.computer.scheduler_type)
 
         if options:
-            metadata['options'] = recursive_merge(metadata['options'], options)
-
-        metadata['options'] = cls.set_default_resources(metadata['options'], code.computer.scheduler_type)
+            inputs_options = recursive_merge(inputs['options'], options)
 
         builder = cls.get_builder()
-        builder.pw['code'] = code
-        builder.pw['pseudos'] = pseudos
-        builder.pw['structure'] = structure
-        builder.pw['parameters'] = orm.Dict(parameters)
-        builder.pw['metadata'] = metadata
-        if 'settings' in inputs['pw']:
-            builder.pw['settings'] = orm.Dict(inputs['pw']['settings'])
-        if 'parallelization' in inputs['pw']:
-            builder.pw['parallelization'] = orm.Dict(inputs['pw']['parallelization'])
+        builder['code'] = code
+        builder['pseudos'] = pseudos
+        builder['structure'] = structure
+        builder['parameters'] = orm.Dict(parameters)
+        builder['options'] = inputs_options
+        if 'settings' in inputs:
+            builder['settings'] = orm.Dict(inputs['settings'])
+        if 'parallelization' in inputs:
+            builder['parallelization'] = orm.Dict(inputs['parallelization'])
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
         if 'kpoints' in inputs:
             builder.kpoints = inputs['kpoints']
@@ -324,7 +321,10 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         default namelists for the ``parameters`` are set to empty dictionaries if not specified.
         """
         super().setup()
-        self.ctx.inputs = AttributeDict(self.exposed_inputs(PwCalculation, 'pw'))
+        self.ctx.inputs = AttributeDict(self.exposed_inputs(PwCalculation))
+        self.ctx.inputs.metadata = AttributeDict({'options': self.inputs.options})
+        if 'disable_cache' in self.inputs.metadata:
+            self.ctx.inputs.metadata.disable_cache = self.inputs.metadata.disable_cache
 
         self.ctx.inputs.parameters = self.ctx.inputs.parameters.get_dict()
         self.ctx.inputs.parameters.setdefault('CONTROL', {})
@@ -354,7 +354,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             kpoints = self.inputs.kpoints
         except AttributeError:
             inputs = {
-                'structure': self.inputs.pw.structure,
+                'structure': self.inputs.structure,
                 'distance': self.inputs.kpoints_distance,
                 'force_parity': self.inputs.get('kpoints_force_parity', orm.Bool(False)),
                 'metadata': {'call_link_label': 'create_kpoints_from_distance'},
