@@ -141,6 +141,8 @@ def _get_executable_paths(
                         f'computer<{computer.label}>:\n\t{which_stderr}'
                     )
                     continue
+
+                exec_path = exec_path.strip()
             else:
                 directory = pathlib.PurePosixPath(directory)
                 if not directory.is_absolute():
