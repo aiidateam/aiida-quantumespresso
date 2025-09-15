@@ -125,7 +125,9 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         metadata = inputs['ph']['metadata']
 
         if options:
-            metadata['options'] = recursive_merge(inputs['ph']['metadata']['options'], options)
+            metadata['options'] = recursive_merge(metadata['options'], options)
+
+        metadata['options'] = cls.set_default_resources(metadata['options'], code.computer.scheduler_type)
 
         # pylint: disable=no-member
         builder = cls.get_builder()

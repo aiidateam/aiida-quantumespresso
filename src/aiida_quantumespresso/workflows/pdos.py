@@ -381,6 +381,11 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
             metadata_dos['options'] = recursive_merge(metadata_dos['options'], options)
             metadata_projwfc['options'] = recursive_merge(metadata_projwfc['options'], options)
 
+        metadata_dos['options'] = cls.set_default_resources(metadata_dos['options'], dos_code.computer.scheduler_type)
+        metadata_projwfc['options'] = cls.set_default_resources(
+            metadata_projwfc['options'], projwfc_code.computer.scheduler_type
+        )
+
         builder = cls.get_builder()
         builder.structure = structure
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
