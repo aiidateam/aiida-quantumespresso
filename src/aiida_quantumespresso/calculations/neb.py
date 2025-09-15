@@ -78,8 +78,15 @@ class NebCalculation(CalcJob):
         spec.output('output_mep', valid_type=orm.ArrayData,
             help='The original and interpolated energy profiles along the minimum-energy path (mep)')
         spec.default_output_node = 'output_parameters'
-        spec.exit_code(303, 'ERROR_MISSING_XML_FILE',
+
+        spec.exit_code(303, 'ERROR_OUTPUT_XML_MISSING',
             message='The required XML file is not present in the retrieved folder.')
+        spec.exit_code(304, 'ERROR_OUTPUT_XML_MULTIPLE',
+            message='The retrieved folder contained multiple XML files.')
+        spec.exit_code(305, 'ERROR_OUTPUT_FILES',
+            message='Both the stdout and XML output files could not be read or parsed.')
+        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
+            message='The stdout output file could not be read.')
         spec.exit_code(320, 'ERROR_OUTPUT_XML_READ',
             message='The XML output file could not be read.')
         spec.exit_code(321, 'ERROR_OUTPUT_XML_PARSE',
@@ -88,6 +95,35 @@ class NebCalculation(CalcJob):
             message='The XML output file has an unsupported format.')
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
             message='The parser raised an unexpected exception: {exception}')
+
+        spec.exit_code(400, 'ERROR_OUT_OF_WALLTIME',
+            message='The calculation stopped prematurely because it ran out of walltime.')
+        spec.exit_code(410, 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED',
+            message='The electronic minimization cycle did not reach self-consistency.')
+
+        spec.exit_code(461, 'ERROR_DEXX_IS_NEGATIVE',
+            message='The code failed with negative dexx in the exchange calculation.')
+        spec.exit_code(462, 'ERROR_COMPUTING_CHOLESKY',
+            message='The code failed during the cholesky factorization.')
+        spec.exit_code(463, 'ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED',
+            message='Too many bands failed to converge during the diagonalization.')
+        spec.exit_code(464, 'ERROR_S_MATRIX_NOT_POSITIVE_DEFINITE',
+            message='The S matrix was found to be not positive definite.')
+        spec.exit_code(465, 'ERROR_ZHEGVD_FAILED',
+            message='The `zhegvd` failed in the PPCG diagonalization.')
+        spec.exit_code(466, 'ERROR_QR_FAILED',
+            message='The `[Q, R] = qr(X, 0)` failed in the PPCG diagonalization.')
+        spec.exit_code(467, 'ERROR_EIGENVECTOR_CONVERGENCE',
+            message='The eigenvector failed to converge.')
+        spec.exit_code(468, 'ERROR_BROYDEN_FACTORIZATION',
+            message='The factorization in the Broyden routine failed.')
+
+        spec.exit_code(502, 'ERROR_NEB_CYCLE_EXCEEDED_NSTEP',
+            message='The NEB minimization cycle did not converge after the maximum number of steps.')
+        spec.exit_code(503, 'ERROR_NEB_INTERRUPTED_PARTIAL_TRAJECTORY',
+            message='The NEB minimization cycle did not finish because the calculation was interrupted but a partial '
+                    'trajectory and output structure was successfully parsed which can be used for a restart.'
+        )
         # yapf: enable
 
     @classmethod
