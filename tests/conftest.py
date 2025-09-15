@@ -761,6 +761,44 @@ def generate_inputs_pw(fixture_code, generate_structure, generate_kpoints_mesh, 
 
 
 @pytest.fixture
+def generate_inputs_neb(fixture_code, generate_trajectory, generate_kpoints_mesh, generate_upf_data):
+    """Generate default inputs for a `NebCalculation."""
+
+    def _generate_inputs_neb():
+        """Generate default inputs for a `NebCalculation."""
+        from aiida.orm import Dict
+
+        pw_parameters = Dict({
+            'CONTROL': {
+                'calculation': 'scf'
+            },
+            'SYSTEM': {
+                'ecutrho': 240.0,
+                'ecutwfc': 30.0
+            },
+            'ELECTRONS': {
+                'electron_maxstep': 60,
+            }
+        })
+        neb_parameters = Dict({'PATH': {'nstep_path': 50, 'num_of_images': 7}})
+        trajectory = generate_trajectory()
+        inputs = {
+            'code': fixture_code('quantumespresso.neb'),
+            'images': trajectory,
+            'parameters': neb_parameters,
+            'kpoints': generate_kpoints_mesh(1),
+            'pw': {
+                'parameters': pw_parameters,
+                'pseudos':
+                {kind: generate_upf_data(kind) for kind in trajectory.get_step_structure(-1).get_kind_names()},
+            }
+        }
+        return inputs
+
+    return _generate_inputs_neb
+
+
+@pytest.fixture
 def generate_inputs_cp(fixture_code, generate_structure, generate_upf_data):
     """Generate default inputs for a CpCalculation."""
 
@@ -852,6 +890,53 @@ def generate_workchain_pw(generate_workchain, generate_inputs_pw, generate_calc_
         return process
 
     return _generate_workchain_pw
+
+
+@pytest.fixture
+def generate_workchain_neb(generate_workchain, generate_inputs_neb, generate_calc_job_node):
+    """Generate an instance of a ``NebBaseWorkChain``."""
+
+    def _generate_workchain_neb(exit_code=None, inputs=None, return_inputs=False, neb_outputs=None):
+        """Generate an instance of a ``NebBaseWorkChain``.
+
+        :param exit_code: exit code for the ``NebCalculation``.
+        :param inputs: inputs for the ``NebBaseWorkChain``.
+        :param return_inputs: return the inputs of the ``NebBaseWorkChain``.
+        :param neb_outputs: ``dict`` of outputs for the ``NebCalculation``. The keys must correspond to the link labels
+            and the values to the output nodes.
+        """
+        from aiida.common import LinkType
+        from aiida.orm import Dict
+        from plumpy import ProcessState
+
+        entry_point = 'quantumespresso.neb.base'
+
+        if inputs is None:
+            neb_inputs = generate_inputs_neb()
+            kpoints = neb_inputs.pop('kpoints')
+            inputs = {'neb': neb_inputs, 'kpoints': kpoints}
+
+        if return_inputs:
+            return inputs
+
+        process = generate_workchain(entry_point, inputs)
+
+        neb_node = generate_calc_job_node(inputs={'parameters': Dict()})
+        process.ctx.iteration = 1
+        process.ctx.children = [neb_node]
+
+        if neb_outputs is not None:
+            for link_label, output_node in neb_outputs.items():
+                output_node.base.links.add_incoming(neb_node, link_type=LinkType.CREATE, link_label=link_label)
+                output_node.store()
+
+        if exit_code is not None:
+            neb_node.set_process_state(ProcessState.FINISHED)
+            neb_node.set_exit_status(exit_code.status)
+
+        return process
+
+    return _generate_workchain_neb
 
 
 @pytest.fixture
