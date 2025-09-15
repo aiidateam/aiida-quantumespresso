@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Utilities to manipulate the workflow input protocols."""
+import copy
 import pathlib
 from typing import Optional, Union
 import warnings
@@ -80,6 +81,26 @@ class ProtocolMixin:
             return recursive_merge(inputs, overrides)
 
         return inputs
+
+    @staticmethod
+    def set_default_resources(options: dict, scheduler_type: str) -> dict:
+        """Set default resources based on the scheduler type of a computer.
+
+        Temporary workaround to keep the default resources for the direct and Slurm schedulers until defaults can be
+        properly configured on computers, see https://github.com/aiidateam/aiida-quantumespresso/pull/1011
+
+        :param options: the options dictionary.
+        :param scheduler_type: the scheduler type, e.g. `core.slurm`.
+        """
+        new_options = copy.deepcopy(options)
+
+        if scheduler_type in ('core.direct', 'core.slurm', 'core.pbspro', 'core.torque'):
+            new_options.setdefault('resources', {}).setdefault('num_machines', 1)
+        if scheduler_type in ('core.sge',):
+            new_options.setdefault('resources', {}).setdefault('parallel_env', 'mpi')
+            new_options.setdefault('resources', {}).setdefault('tot_num_mpiprocs', 1)
+
+        return new_options
 
     @classmethod
     def _load_protocol_file(cls) -> dict:
