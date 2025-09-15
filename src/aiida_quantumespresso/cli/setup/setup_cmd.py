@@ -2,6 +2,7 @@
 """Command line interface commands for setting up `code`s for Quantum ESPRESSO executables."""
 import pathlib
 import re
+from typing import List, Tuple, Union
 
 from aiida import orm
 from aiida.cmdline.params import arguments
@@ -53,7 +54,8 @@ def create_code(computer, executables, directory, label_template, **kwargs):
         existing_label, label = _get_code_label(label_template=label_template, executable=executable, computer=computer)
 
         if existing_label:
-            echo.echo_warning(f'Code with label<{existing_label}> already exists on Computer<{computer.label}>.')
+            echo.echo_warning(f'Code with label<{existing_label}> already '
+                              f'exists on Computer<{computer.label}>.')
             if not click.confirm(f'Do you want to add another instance with label {label}?'):
                 continue
 
@@ -67,13 +69,17 @@ def create_code(computer, executables, directory, label_template, **kwargs):
         )
         code.store()
         echo.echo_success(
-            f'Code<{code.label}> for {executable} created with pk<{code.pk}> on Computer<{computer.label}>'
+            f'Code<{code.label}> for {executable} created with pk<{code.pk}> '
+            f'on Computer<{computer.label}>'
         )
 
 
-def _get_code_label(label_template: str, executable: str, computer: orm.Computer) -> tuple[str | None, str]:
+def _get_code_label(label_template: str, executable: str,
+                    computer: orm.Computer) -> Union[Tuple[str, str], Tuple[None, str]]:
     existing_label = None
-    label = label_template.replace('{}', executable.replace('.x', '')) if label_template else executable.replace('.x', '')
+    label = (
+        label_template.replace('{}', executable.replace('.x', '')) if label_template else executable.replace('.x', '')
+    )
 
     # Check if code already exists
     existing_labels = orm.QueryBuilder().append(orm.Computer, filters={
@@ -101,10 +107,10 @@ def _get_code_label(label_template: str, executable: str, computer: orm.Computer
 
 def _get_executable_paths(
     prepend_text: str,
-    executables: str | list[str],
+    executables: Union[str, List[str]],
     computer: orm.Computer,
     directory: str,
-) -> list[tuple[str, str]]:
+) -> List[Tuple[str, str]]:
     """Return the absolute paths of the executables on the given computer."""
     user = orm.User.collection.get_default()
 
