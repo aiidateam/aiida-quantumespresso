@@ -7,27 +7,25 @@ default_inputs:
         conv_thr_per_atom: 0.2e-9
         etot_conv_thr_per_atom: 1.e-5
     pseudo_family: 'SSSP/1.3/PBEsol/efficiency'
-    pw:
-        metadata:
-            options:
-                resources:
-                    num_machines: 1
-                max_wallclock_seconds: 43200  # Twelve hours
-                withmpi: True
-        parameters:
-            CONTROL:
-                calculation: scf
-                forc_conv_thr: 1.e-4
-                tprnfor: True
-                tstress: True
-            SYSTEM:
-                nosym: False
-                occupations: smearing
-                smearing: cold
-                degauss: 0.02
-            ELECTRONS:
-                electron_maxstep: 80
-                mixing_beta: 0.4
+    options:
+        resources:
+            num_machines: 1
+        max_wallclock_seconds: 43200  # Twelve hours
+        withmpi: True
+    parameters:
+        CONTROL:
+            calculation: scf
+            forc_conv_thr: 1.e-4
+            tprnfor: True
+            tstress: True
+        SYSTEM:
+            nosym: False
+            occupations: smearing
+            smearing: cold
+            degauss: 0.02
+        ELECTRONS:
+            electron_maxstep: 80
+            mixing_beta: 0.4
 default_protocol: balanced
 protocols:
     balanced:
