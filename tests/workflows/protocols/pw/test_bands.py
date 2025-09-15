@@ -6,6 +6,8 @@ import pytest
 from aiida_quantumespresso.common.types import ElectronicType, RelaxType, SpinType
 from aiida_quantumespresso.workflows.pw.bands import PwBandsWorkChain
 
+pytestmark = pytest.mark.usefixtures('pseudo_family')
+
 
 def test_get_available_protocols():
     """Test ``PwBandsWorkChain.get_available_protocols``."""
