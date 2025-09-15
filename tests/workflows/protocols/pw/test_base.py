@@ -353,3 +353,14 @@ def test_options(fixture_code, generate_structure):
 
     assert metadata['options']['queue_name'] == queue_name
     assert metadata['options']['withmpi'] == withmpi
+
+
+def test_pop_none_overrides(fixture_code, generate_structure):
+    """Test popping `None` input overrides specified in ``get_builder_from_protocol()`` method."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure()
+
+    overrides = {'kpoints_distance': None}
+    builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)
+
+    assert 'kpoints_distance' not in builder  # pylint: disable=no-member
