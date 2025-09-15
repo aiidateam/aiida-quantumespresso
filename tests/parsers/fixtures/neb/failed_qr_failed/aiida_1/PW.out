@@ -1,0 +1,3 @@
+# NOTE: lines of output removed
+ [Q, R] = qr(X, 0) failed
+# NOTE: lines of output removed
