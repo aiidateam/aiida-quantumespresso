@@ -414,6 +414,37 @@ def generate_structure():
 
 
 @pytest.fixture
+def generate_trajectory():
+    """Return a ``TrajectoryData`` representing H2-H."""
+
+    def _generate_trajectory(trajectory_id='hydrogen'):
+        """Return a ``TrajectoryData`` representing H2-H.
+
+        :param trajectory_id: identifies the ``TrajectoryData`` you want to generate. Accepted values are 'hydrogen'.
+        """
+        from aiida.orm import StructureData, TrajectoryData
+
+        if trajectory_id.startswith('hydrogen'):
+            cell = [[6, 0, 0], [0, 2.5, 0], [0, 0, 2.5]]
+            structure_1 = StructureData(cell=cell)
+            structure_1.append_atom(position=(-2.4166, 0., 0.), symbols='H', name='H')
+            structure_1.append_atom(position=(0, 0, 0), symbols='H', name='H')
+            structure_1.append_atom(position=(0.8243, 0, 0), symbols='H', name='H')
+
+            structure_2 = StructureData(cell=cell)
+            structure_2.append_atom(position=(-0.8243, 0., 0.), symbols='H', name='H')
+            structure_2.append_atom(position=(0, 0, 0), symbols='H', name='H')
+            structure_2.append_atom(position=(2.4166, 0, 0), symbols='H', name='H')
+
+            trajectory = TrajectoryData([structure_1, structure_2])
+        else:
+            raise KeyError(f'Unknown trajectory_id="{trajectory_id}"')
+        return trajectory
+
+    return _generate_trajectory
+
+
+@pytest.fixture
 def generate_structure_from_kinds():
     """Return a dummy `StructureData` instance with the specified kind names."""
 

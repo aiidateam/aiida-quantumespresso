@@ -2,16 +2,16 @@
 import os
 
 from aiida.common import AttributeDict, NotExistent
+from aiida.engine import ExitCode
 from aiida.orm import ArrayData, Dict, TrajectoryData
 import numpy
 
+from aiida_quantumespresso.calculations.neb import NebCalculation
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.parsers.parse_raw import convert_qe_to_aiida_structure
 from aiida_quantumespresso.parsers.parse_raw.neb import parse_raw_output_neb
 from aiida_quantumespresso.parsers.parse_raw.pw import parse_stdout as parse_pw_stdout
 from aiida_quantumespresso.parsers.parse_raw.pw import reduce_symmetries
-from aiida_quantumespresso.parsers.parse_xml.exceptions import XMLParseError, XMLUnsupportedFormatError
-from aiida_quantumespresso.parsers.parse_xml.pw.parse import parse_xml as parse_pw_xml
 from aiida_quantumespresso.parsers.pw import PwParser
 from aiida_quantumespresso.utils.mapping import get_logging_container
 
@@ -27,7 +27,8 @@ class NebParser(BaseParser):
     class_warning_map = {
         'scf convergence NOT achieved on image': 'SCF did not converge for a given image',
         'Maximum CPU time exceeded': 'Maximum CPU time exceeded',
-        'reached the maximum number of steps': 'Maximum number of iterations reached in the image optimization',
+        # !! 'step' and not 'steps' is needed in order to be found by regex
+        'reached the maximum number of step': 'Maximum number of iterations reached in the image optimization',
     }
 
     def parse(self, **kwargs):
@@ -40,6 +41,8 @@ class NebParser(BaseParser):
         logs = get_logging_container()
 
         prefix = self.node.process_class._PREFIX
+
+        self.exit_code_xml = None
 
         # Look for optional settings input node and potential 'parser_options' dictionary within it
         # Note that we look for both NEB and PW parser options under "inputs.settings.parser_options";
@@ -71,39 +74,19 @@ class NebParser(BaseParser):
         cells = []
 
         for i in range(num_images):
-            # check if any of the known XML output file names are present, and parse the first that we find
+            # check if any of the known XML output file names are present, and parse it
             relative_output_folder = os.path.join(f'{prefix}_{i + 1}', f'{prefix}.save')
-            retrieved_files = self.retrieved.base.repository.list_object_names(relative_output_folder)
-
-            for xml_filename in PwCalculation.xml_filenames:
-                if xml_filename in retrieved_files:
-                    xml_file_path = os.path.join(relative_output_folder, xml_filename)
-                    try:
-                        with self.retrieved.base.repository.open(xml_file_path) as xml_file:
-                            parsed_data_xml, logs_xml = parse_pw_xml(xml_file, None)
-                    except IOError:
-                        return self.exit(self.exit_codes.ERROR_OUTPUT_XML_READ)
-                    except XMLParseError:
-                        return self.exit(self.exit_codes.ERROR_OUTPUT_XML_PARSE)
-                    except XMLUnsupportedFormatError:
-                        return self.exit(self.exit_codes.ERROR_OUTPUT_XML_FORMAT)
-                    except Exception:
-                        import traceback
-                        traceback.print_exc()
-                        return self.exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION)
-                    # this image is dealt with, so break the inner loop and go to the next image
-                    break
-            # otherwise, if none of the filenames we tried exists, exit with an error
-            else:
-                return self.exit(self.exit_codes.ERROR_MISSING_XML_FILE)
+            parsed_data_xml, logs_xml = self.parse_xml(relative_output_folder)
 
             # look for pw output and parse it
             pw_out_file = os.path.join(f'{prefix}_{i + 1}', 'PW.out')
             try:
                 with self.retrieved.base.repository.open(pw_out_file, 'r') as f:
                     pw_out_text = f.read()  # Note: read() and not readlines()
+                # Output file can contain the output of many scf iterations, analyse only the last one
+                pw_out_text = '     coordinates at iteration' + pw_out_text.split('coordinates at iteration')[-1]
             except IOError:
-                return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
+                logs_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
             try:
                 parsed_data_stdout, logs_stdout = parse_pw_stdout(
@@ -111,6 +94,20 @@ class NebParser(BaseParser):
                 )
             except Exception as exc:
                 return self.exit(self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc))
+
+            logs_stdout['error'].remove('ERROR_OUTPUT_STDOUT_INCOMPLETE')
+
+            # Determine issues coming from electronic structure calculations
+            exit_code = self.validate_electronic(logs_stdout)
+            if exit_code:
+                return self.exit(exit_code)
+
+            exit_code = self.validate_premature_exit(logs_stdout)
+            if exit_code:
+                return self.exit(exit_code)
+
+            if logs_stdout.error and self.exit_code_xml:
+                return self.exit(self.exit_codes.ERROR_OUTPUT_FILES)
 
             parsed_structure = parsed_data_stdout.pop('structure', {})
             parsed_trajectory = parsed_data_xml.pop('trajectory', {})
@@ -193,7 +190,96 @@ class NebParser(BaseParser):
         mep_arraydata.set_array('interpolated_mep', interp_mep)
         self.out('output_mep', mep_arraydata)
 
-        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE'in logs.error:
-            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE, logs)
+        if logs.error:
+            # First check whether the scheduler already reported an exit code.
+            if self.node.exit_status is not None:
+                # The following scheduler errors should correspond to cases where we can simply restart the calculation
+                # and have a chance that the calculation will succeed as the error can be transient.
+                recoverable_scheduler_error = self.node.exit_status in [
+                    NebCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME.status,
+                    NebCalculation.exit_codes.ERROR_SCHEDULER_NODE_FAILURE.status,
+                ]
+                if recoverable_scheduler_error:
+                    return NebCalculation.exit_codes.ERROR_NEB_INTERRUPTED_PARTIAL_TRAJECTORY
+        elif 'Maximum number of iterations reached in the image optimization' in logs.warning:
+                return NebCalculation.exit_codes.ERROR_NEB_CYCLE_EXCEEDED_NSTEP
+        else:
+            # Calculation completed successfully shortly after exceeding walltime but before being terminated by the
+            # scheduler. In that case 'exit_status' can be reset.
+            self.node.set_exit_status(None)
 
         return self.exit(logs=logs)
+
+    def parse_xml(self, relative_output_folder):
+        """Parse the XML output file for the specific image.
+
+        :param relative_output_folder: relative path to the output folder of the image.
+        :return: tuple of two dictionaries, first with raw parsed data and second with log messages
+        """
+        from aiida_quantumespresso.parsers.parse_xml.exceptions import XMLParseError, XMLUnsupportedFormatError
+        from aiida_quantumespresso.parsers.parse_xml.pw.parse import parse_xml as parse_pw_xml
+
+        logs = get_logging_container()
+        parsed_data = {}
+
+        try:
+            retrieved_files = self.retrieved.base.repository.list_object_names(relative_output_folder)
+        except:
+            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_MISSING
+            return parsed_data, logs
+
+        xml_filenames = [os.path.join(relative_output_folder, xml_file) for xml_file in PwCalculation.xml_filenames if xml_file in retrieved_files]
+        if not xml_filenames:
+            if not self.node.get_option('without_xml'):
+                self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_MISSING
+            return parsed_data, logs
+
+        if len(xml_filenames) > 1:
+            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_MULTIPLE
+            return parsed_data, logs
+
+        try:
+            with self.retrieved.base.repository.open(xml_filenames[0]) as xml_file:
+                parsed_data, logs = parse_pw_xml(xml_file, None)
+        except IOError:
+            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_READ
+        except XMLParseError:
+            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_PARSE
+        except XMLUnsupportedFormatError:
+            self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_FORMAT
+        except Exception:
+            import traceback
+            logs.critical.append(traceback.format_exc())
+            self.exit_code_xml = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
+
+        return parsed_data, logs
+
+    def validate_premature_exit(self, logs):
+        """Analyze problems that will cause a pre-mature termination of the calculation, controlled or not."""
+
+        for error_label in [
+            'ERROR_OUT_OF_WALLTIME',
+            'ERROR_DEXX_IS_NEGATIVE',
+            'ERROR_COMPUTING_CHOLESKY',
+            'ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED',
+            'ERROR_S_MATRIX_NOT_POSITIVE_DEFINITE',
+            'ERROR_ZHEGVD_FAILED',
+            'ERROR_QR_FAILED',
+            'ERROR_EIGENVECTOR_CONVERGENCE',
+            'ERROR_BROYDEN_FACTORIZATION',
+        ]:
+            if error_label in logs['error']:
+                return self.exit_codes.get(error_label)
+
+    def validate_electronic(self, logs):
+        """Analyze problems that are specific to `electronic` scf calculations."""
+
+        if 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED' in logs['error']:
+            scf_must_converge = self.node.inputs.pw.parameters.base.attributes.get('ELECTRONS',
+                                                                          {}).get('scf_must_converge', True)
+            electron_maxstep = self.node.inputs.pw.parameters.base.attributes.get('ELECTRONS', {}).get('electron_maxstep', 1)
+
+            if electron_maxstep == 0 or not scf_must_converge:
+                return self.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED
+            else:
+                return self.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED
