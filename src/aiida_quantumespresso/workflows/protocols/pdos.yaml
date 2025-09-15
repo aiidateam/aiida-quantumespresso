@@ -21,8 +21,6 @@ default_inputs:
                 DeltaE: 0.01
         metadata:
             options:
-                resources:
-                    num_machines: 1
                 max_wallclock_seconds: 43200  # Twelve hours
                 withmpi: True
     projwfc:
@@ -31,8 +29,6 @@ default_inputs:
                 DeltaE: 0.01
         metadata:
             options:
-                resources:
-                    num_machines: 1
                 max_wallclock_seconds: 43200  # Twelve hours
                 withmpi: True
 default_protocol: balanced

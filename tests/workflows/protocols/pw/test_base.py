@@ -355,3 +355,30 @@ def test_options(fixture_code, generate_structure):
 
     assert metadata['options']['queue_name'] == queue_name
     assert metadata['options']['withmpi'] == withmpi
+
+
+@pytest.mark.parametrize(
+    'scheduler,expected_resources', (
+        ('core.direct', {
+            'num_machines': 1
+        }),
+        ('core.slurm', {
+            'num_machines': 1
+        }),
+        ('core.sge', {
+            'parallel_env': 'mpi',
+            'tot_num_mpiprocs': 1
+        }),
+    )
+)
+def test_default_resources(aiida_computer, aiida_code_installed, generate_structure, scheduler, expected_resources):
+    """Test that the default resources are correctly specified."""
+    computer = aiida_computer(label=f'local-{scheduler}', scheduler_type=scheduler)
+    code = aiida_code_installed(
+        label=f'test.pw-{scheduler}', computer=computer, default_calc_job_plugin='quantumespresso.pw'
+    )
+
+    structure = generate_structure()
+
+    builder = PwBaseWorkChain.get_builder_from_protocol(code, structure)
+    assert builder.pw.metadata.options['resources'] == expected_resources
