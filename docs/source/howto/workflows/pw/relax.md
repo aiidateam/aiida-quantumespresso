@@ -38,7 +38,7 @@ builder.base_relax.pw.parameters['SYSTEM']['ecutrho'] = 300.0
 
 # Submit the work chain
 node = submit(builder)
-print(f"Launched {node.process_label}<{node.pk}>")
+print(f"Launched {workchain_node.process_label} with PK = {workchain_node.pk}")
 ```
 
 ---
