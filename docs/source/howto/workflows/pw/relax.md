@@ -40,6 +40,14 @@ builder.base_relax.pw.parameters['SYSTEM']['ecutrho'] = 300.0
 workchain_node = submit(builder)
 print(f"Launched {workchain_node.process_label} with PK = {workchain_node.pk}")
 ```
+The available options for `RelaxType`:
+
+* `POSITIONS_CELL`: (default) Optimise both the atomic positions and unit cell.
+* `POSITIONS`: Only the atomic positions are relaxed, cell is fixed.
+* `SHAPE`: Only the cell shape is optimized at a fixed volume and fixed atomic positions.
+* `CELL`: Only the cell is optimized, both shape and volume, while atomic positions are fixed.
+* `POSITIONS_SHAPE`: Same as `SHAPE`  but atomic positions are relaxed as well.
+
 
 ---
 
@@ -51,18 +59,15 @@ After the work chain finishes, the main outputs are:
 * `output_parameters`: a dictionary with key results from Quantum ESPRESSO (total energy, Fermi energy, etc.)
 
 ```python
-from aiida.orm import load_node
 
-wc = load_node(node.pk)
-print("Work chain finished ok:", wc.is_finished_ok)
+print("Work chain finished ok:", workchain_node.is_finished_ok)
 
 # Get the relaxed structure
-if "output_structure" in wc.outputs:
-    relaxed_structure = wc.outputs.output_structure
-    print("Final cell:", relaxed_structure.cell)
+relaxed_structure = workchain_node.outputs.output_structure
+print("Final cell:", relaxed_structure.cell)
 
 # Inspect parsed parameters
-params = wc.outputs.output_parameters.get_dict()
+params = workchain_node.outputs.output_parameters.get_dict()
 print("Total energy:", params.get("energy"))
 print("Fermi energy:", params.get("fermi_energy"))
 ```
