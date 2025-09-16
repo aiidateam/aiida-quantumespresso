@@ -54,8 +54,7 @@ def create_code(computer, executables, directory, label_template, **kwargs):
         existing_label, label = _get_code_label(label_template=label_template, executable=executable, computer=computer)
 
         if existing_label:
-            echo.echo_warning(f'Code with label<{existing_label}> already '
-                              f'exists on Computer<{computer.label}>.')
+            echo.echo_warning(f'Code with label<{existing_label}> already exists on Computer<{computer.label}>.')
             if not click.confirm(f'Do you want to add another instance with label {label}?'):
                 continue
 
@@ -68,6 +67,7 @@ def create_code(computer, executables, directory, label_template, **kwargs):
             append_text=append_text
         )
         code.store()
+
         echo.echo_success(
             f'Code<{code.label}> for {executable} created with pk<{code.pk}> '
             f'on Computer<{computer.label}>'
@@ -76,10 +76,15 @@ def create_code(computer, executables, directory, label_template, **kwargs):
 
 def _get_code_label(label_template: str, executable: str,
                     computer: orm.Computer) -> Union[Tuple[str, str], Tuple[None, str]]:
+    """Return a unique label for the code based on the executable and computer.
+
+    If a code with the same label already exists on the computer, append an incremental number to the label.
+    """
     existing_label = None
-    label = (
-        label_template.replace('{}', executable.replace('.x', '')) if label_template else executable.replace('.x', '')
-    )
+    if label_template:
+        label = label_template.replace('{}', executable.replace('.x', ''))
+    else:
+        label = executable.replace('.x', '')
 
     # Check if code already exists
     existing_labels = orm.QueryBuilder().append(orm.Computer, filters={
@@ -95,6 +100,7 @@ def _get_code_label(label_template: str, executable: str,
         tag='code',
         project='label'
     ).all(flat=True)
+
     pattern = re.compile(rf'^{re.escape(label)}(-\d+)?$')
     n_existing_codes = len([l for l in existing_labels if pattern.match(l)])
 
@@ -111,7 +117,11 @@ def _get_executable_paths(
     computer: orm.Computer,
     directory: str,
 ) -> List[Tuple[str, str]]:
-    """Return the absolute paths of the executables on the given computer."""
+    """Return the absolute paths of the executables on the given computer.
+
+    If `directory` is provided, the path is constructed as `directory`/`executable`.
+    If not, the `which` command is used to find the executable in the `PATH`.
+    """
     user = orm.User.collection.get_default()
 
     try:
@@ -132,7 +142,6 @@ def _get_executable_paths(
                 if prepend_text:
                     transport.exec_command_wait(prepend_text)
 
-                # Add prepend text to the command? Sometimes one might need to use modules before finding the executable
                 which_ret_val, exec_path, which_stderr = transport.exec_command_wait(f'which {executable}')
 
                 if which_ret_val != 0:
@@ -152,50 +161,7 @@ def _get_executable_paths(
                     echo.echo_error(f'Directory<{directory}> does not exist on computer<{computer.label}>')
                     continue
                 exec_path = directory / executable
-            # also check that executable is executable and exists
+
             executable_paths.append((executable, str(exec_path)))
 
     return executable_paths
-
-
-# This is just an example of how a test command to test a
-# PW code could look like. One should rethink the submission, e.g., which queue
-# and resources to be used
-
-
-@click.argument('codes', nargs=-1, required=True)
-def test_code(codes):
-    """Test a `code` instance for a Quantum ESPRESSO executable."""
-    from aiida.engine import submit
-    from aiida.orm import load_code
-    from ase.build import bulk
-
-    from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
-
-    # Create a silicon crystal structure
-    structure = bulk('Si')
-    structure = orm.StructureData(ase=structure)
-    assert isinstance(codes, (list, tuple))
-    for code_label in codes:
-        code = load_code(code_label)
-        plugin = code.default_calc_job_plugin.split('.')[-1]
-        if plugin != 'pw':
-            echo.echo_warning(f'Code<{code.label}> is not a pw.x code, skipping test.')
-            continue
-        # Create a Quantum ESPRESSO calculation
-        builder = PwBaseWorkChain.get_builder_from_protocol(
-            code=code,
-            structure=structure,
-            protocol='fast',
-            overrides={'pw': {
-                'parameters': {
-                    'ELECTRONS': {
-                        'electron_maxstep': 2,
-                        'scf_must_converge': False
-                    }
-                }
-            }}
-        )
-        echo.echo_report(f'Submitting PwBaseWorkChain with code<{code.label}>')
-        process = submit(builder)
-        echo.echo_report(f'PwBaseWorkChain<{process.pk}> submitted')
