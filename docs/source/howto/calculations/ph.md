@@ -13,7 +13,7 @@ The `ph.x` code of Quantum ESPRESSO is used to compute phonons using density-fun
 
 :::{note}
 In order to run a `ph.x` calculation, you first need to have completed a `pw.x` calculation.
-See the [tutorial](#tutorials-pw-through-api) or [how-to guide](#howto-calculations-pw) for more information.
+See the [quick start tutorial](#quick-start) or `pw.x` [how-to guide](#howto-calculations-pw) for more information.
 :::
 
 Once you have successfully run a {{ PwCalculation }} you can run a `ph.x` calculation through the `PhCalculation` plugin as follows:

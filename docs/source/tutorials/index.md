@@ -5,7 +5,7 @@
 :::{important}
 Before you get started, make sure that you have:
 
-- installed the `aiida-quantumespresso` package ([see instructions](#installation-installation))
+- installed the `aiida-quantumespresso` package ([see instructions](#installation))
 - configured the `pw.x` code ([see instructions](#installation-setup-code))
 - installed the SSSP pseudopotential family ([see instructions](#installation-setup-pseudopotentials))
 :::
@@ -14,7 +14,6 @@ Before you get started, make sure that you have:
 :hidden: true
 :maxdepth: 1
 
-first_pw
 magnetism
 hubbard
 ```
@@ -22,13 +21,14 @@ hubbard
 :::{card}
 :class-header: panel-header-text
 :class-footer: tutor-footer
-:link: tutorials-pw-through-cli
+:link: quick-start
 :link-type: ref
 :margin: 4
 
-{fa}`fa-regular fa-rocket` Running your first `pw.x` calculation
+{fa}`fa-regular fa-rocket` Quick start: Running your first `pw.x` calculation
 ^^^
-Learn how to run the Quantum ESPRESSO `pw.x` with AiiDA, both from the command line and using the Python API.
+If you haven't already, go through the quick start tutorial.
+Here you'll learn the basics on how to run the Quantum ESPRESSO `pw.x` code with AiiDA.
 +++
 ::::{list-table}
 :class: footer-table
