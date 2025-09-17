@@ -3,7 +3,7 @@
 
 import pathlib
 import re
-from typing import Tuple, Union
+from typing import Union
 
 from aiida import orm
 from aiida.cmdline.utils import echo
@@ -158,7 +158,7 @@ def _get_executable_paths(
     executables: Union[str, list[str]],
     computer: orm.Computer,
     directory: str,
-) -> list[Tuple[str, str]]:
+) -> list[tuple[str, str]]:
     """Return the absolute paths of the executables on the given computer.
 
     If `directory` is provided, the path is constructed as `directory`/`executable`.
