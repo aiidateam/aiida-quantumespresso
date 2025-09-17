@@ -212,7 +212,7 @@ class ProjwfcParser(BaseParser):
         elif non_collinear:
             orbital_class = OrbitalFactory('noncollinearhydrogen')
         else:
-            orbital_class = OrbitalFactory('realhydrogen')
+            orbital_class = OrbitalFactory('core.realhydrogen')
         for new_orbital_dict in orbital_dicts:
             orbitals.append(orbital_class(**new_orbital_dict))
 
