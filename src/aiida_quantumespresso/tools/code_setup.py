@@ -14,10 +14,10 @@ import click
 def create_codes(
     computer: orm.Computer,
     executables: Union[str, list[str], tuple[str]],
-    directory: str | None = None,
+    directory: Union[str, None] = None,
     label_template: str = '',
-    prepend_text: str | None = None,
-    append_text: str | None = None,
+    prepend_text: Union[str, None] = None,
+    append_text: Union[str, None] = None,
     on_conflict: str = 'increment',
 ):
     """Automatically create `orm.Code` instances for Quantum ESPRESSO executables.
@@ -99,10 +99,10 @@ def _create_codes(
     *,
     computer: orm.Computer,
     executables: list[str],
-    directory: str | None = None,
+    directory: Union[str, None] = None,
     label_template: str = '',
-    prepend_text: str | None = None,
-    append_text: str | None = None,
+    prepend_text: Union[str, None] = None,
+    append_text: Union[str, None] = None,
     on_conflict: str = 'increment',
 ):
     """Automatically create `orm.Code` instances for Quantum ESPRESSO executables."""
