@@ -3,7 +3,7 @@
 
 import pathlib
 import re
-from typing import List, Tuple, Union
+from typing import Tuple, Union
 
 from aiida import orm
 from aiida.cmdline.utils import echo
@@ -155,7 +155,7 @@ def _create_codes(
 
 def _get_executable_paths(
     prepend_text: str,
-    executables: Union[str, List[str]],
+    executables: Union[str, list[str]],
     computer: orm.Computer,
     directory: str,
 ) -> list[Tuple[str, str]]:
