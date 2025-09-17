@@ -8,6 +8,7 @@ import warnings
 from aiida.common.warnings import AiidaDeprecationWarning
 from aiida.orm import StructureData
 from aiida_pseudo.groups.family import PseudoPotentialFamily
+from plumpy import PortNamespace
 import yaml
 
 from aiida_quantumespresso.common.types import SpinType
@@ -15,6 +16,10 @@ from aiida_quantumespresso.common.types import SpinType
 
 class ProtocolMixin:
     """Utility class for processes to build input mappings for a given protocol based on a YAML configuration file."""
+
+    # Mapping of "protocol inputs": keys allowed in `overrides` that are not part of the process spec.
+    # Used during validation to catch typos or misplaced override keys.
+    _protocol_input_mapping = {}
 
     @classmethod
     def get_protocol_filepath(cls) -> pathlib.Path:
@@ -78,6 +83,7 @@ class ProtocolMixin:
                 overrides = yaml.safe_load(file)
 
         if overrides:
+            cls._validate_override_keys(overrides)
             return recursive_merge(inputs, overrides)
 
         return inputs
@@ -116,6 +122,35 @@ class ProtocolMixin:
             'precise': 'stringent',
         }
         return aliases_dict.get(alias, None)
+
+    @classmethod
+    def _validate_override_keys(cls, overrides):
+        """Validate that override keys match either the process spec or protocol inputs.
+
+        Recursively checks the `overrides` dictionary against the input port namespace of the work chain, extended
+        with protocol inputs, and emits warnings for any unrecognised keys.
+        """
+
+        def port_namespace_to_dict(namespace: PortNamespace):
+            """Recursively convert a PortNamespace into a nested dict structure."""
+            return {
+                key: port_namespace_to_dict(port) if isinstance(port, PortNamespace) else None
+                for key, port in namespace.items()
+            }
+
+        def recursive_key_check(inputs_mapping: dict, overrides: dict, path=''):
+            """Recursively check that all the provided keys in the `overrides` are in the `inputs_mapping`."""
+
+            for key, value in overrides.items():
+                full_key = f'{path}.{key}' if path else key
+                if key not in inputs_mapping:
+                    warnings.warn(f'Found unrecognised key in overrides: {full_key}')
+                    continue
+                if isinstance(value, dict) and isinstance(inputs_mapping.get(key), dict):
+                    recursive_key_check(inputs_mapping[key], value, full_key)
+
+        inputs_mapping = recursive_merge(port_namespace_to_dict(cls.spec().inputs), cls._protocol_input_mapping)
+        recursive_key_check(inputs_mapping, overrides)
 
 
 def recursive_merge(left: dict, right: dict) -> dict:
