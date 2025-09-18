@@ -122,6 +122,7 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 'quantumespresso.pdos' = 'aiida_quantumespresso.workflows.pdos:PdosWorkChain'
 'quantumespresso.bands.base' = 'aiida_quantumespresso.workflows.bands.base:BandsBaseWorkChain'
 'quantumespresso.neb.base' = 'aiida_quantumespresso.workflows.neb.base:NebBaseWorkChain'
+'quantumespresso.neb.ci' = 'aiida_quantumespresso.workflows.neb.ci:NebCiWorkChain'
 
 [tool.flit.module]
 name = 'aiida_quantumespresso'
