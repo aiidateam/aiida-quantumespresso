@@ -53,48 +53,6 @@ def create_codes(
     )
 
 
-def _get_code_label(
-    label_template: str,
-    executable: str,
-    computer: orm.Computer,
-) -> Union[tuple[str, str], tuple[None, str]]:
-    """Return a label for the code based on the executable and computer.
-
-    If ``increment_if_exists`` is True and a code with the same base label exists on the computer,
-    append an incremental suffix ``-N`` to the label and return the original conflicting label as ``existing_label``.
-    If False, return the base label and set ``existing_label`` when a conflict is detected without incrementing.
-    """
-    existing_label = None
-    if label_template:
-        label = label_template.replace('{}', executable.replace('.x', ''))
-    else:
-        label = executable.replace('.x', '')
-
-    # Check if code already exists
-    existing_labels = orm.QueryBuilder().append(orm.Computer, filters={
-        'label': computer.label
-    }, tag='computer').append(
-        orm.InstalledCode,
-        with_computer='computer',
-        filters={
-            'label': {
-                'like': f'{label}%'
-            }
-        },
-        tag='code',
-        project='label'
-    ).all(flat=True)
-
-    pattern = re.compile(rf'^{re.escape(label)}(-\d+)?$')
-    n_existing_codes = len([l for l in existing_labels if pattern.match(l)])
-
-    if n_existing_codes > 0:
-        existing_label = label
-        label = f'{label}-{n_existing_codes+1}'
-
-    return existing_label, label
-
-
 def _create_codes(
     *,
     computer: orm.Computer,
@@ -207,3 +165,45 @@ def _get_executable_paths(
             executable_paths.append((executable, str(exec_path)))
 
     return executable_paths
+
+
+def _get_code_label(
+    label_template: str,
+    executable: str,
+    computer: orm.Computer,
+) -> Union[tuple[str, str], tuple[None, str]]:
+    """Return a label for the code based on the executable and computer.
+
+    If ``increment_if_exists`` is True and a code with the same base label exists on the computer,
+    append an incremental suffix ``-N`` to the label and return the original conflicting label as ``existing_label``.
+    If False, return the base label and set ``existing_label`` when a conflict is detected without incrementing.
+    """
+    existing_label = None
+    if label_template:
+        label = label_template.replace('{}', executable.replace('.x', ''))
+    else:
+        label = executable.replace('.x', '')
+
+    # Check if code already exists
+    existing_labels = orm.QueryBuilder().append(orm.Computer, filters={
+        'label': computer.label
+    }, tag='computer').append(
+        orm.InstalledCode,
+        with_computer='computer',
+        filters={
+            'label': {
+                'like': f'{label}%'
+            }
+        },
+        tag='code',
+        project='label'
+    ).all(flat=True)
+
+    pattern = re.compile(rf'^{re.escape(label)}(-\d+)?$')
+    n_existing_codes = len([l for l in list(existing_labels) if pattern.match(l)])
+
+    if n_existing_codes > 0:
+        existing_label = label
+        label = f'{label}-{n_existing_codes+1}'
+
+    return existing_label, label
