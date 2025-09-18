@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Command line interface commands for setting up `code`s for Quantum ESPRESSO executables."""
+"""Command line interface commands for setting up codes for Quantum ESPRESSO executables."""
 
 from aiida import orm
 from aiida.cmdline.params import arguments

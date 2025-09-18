@@ -16,7 +16,7 @@ def cmd_root():
 
 @cmd_root.group('setup')
 def cmd_setup():
-    """Commands to easily setup `code`s for Quantum ESPRESSO executables."""
+    """Commands to easily setup codes for Quantum ESPRESSO executables."""
 
 
 cmd_setup.command('code')(create_codes_cmd)
