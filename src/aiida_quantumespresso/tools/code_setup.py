@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 """Module for setting up `Code` instances for Quantum ESPRESSO executables."""
 
-import pathlib
+from pathlib import PurePosixPath
 import re
 from typing import Union
+import warnings
 
 from aiida import orm
-from aiida.cmdline.utils import echo
-from aiida.common.exceptions import NotExistent
-import click
 
 
 def create_codes(
@@ -16,11 +14,18 @@ def create_codes(
     executables: Union[str, list[str], tuple[str]],
     directory: Union[str, None] = None,
     label_template: str = '',
-    prepend_text: Union[str, None] = None,
-    append_text: Union[str, None] = None,
-    on_conflict: str = 'increment',
+    prepend_text: str = '',
+    append_text: str = '',
+    increment_label: bool = False,
 ):
     """Automatically create `orm.Code` instances for Quantum ESPRESSO executables.
+
+    Specify the target `computer` and a single executable or a list of Quantum ESPRESSO `executables` to create codes
+    for. You can provide multiple executables as a list or tuple.
+
+    Use `directory` to point to the directory containing the executables. If not provided, the command will try to find
+    the executables in the `PATH` on the (remote) computer. Consider adding a `prepend_text` if modules need to be
+    loaded to find the executables.
 
     :param computer: the `orm.Computer` on which the executables are located
     :param executables: Quantum ESPRESSO executable(s) to create code(s) for, e.g. `pw.x` or `['pw.x', 'projwfc.x']`
@@ -33,63 +38,27 @@ def create_codes(
                            e.g. `pw` for `pw.x`.
     :param prepend_text: text to prepend to the execution command, e.g. to load modules
     :param append_text: text to append to the execution command
-    :param on_conflict: action to take if a code with the same label already exists on the computer. Can be one of:
-                        - 'increment': append an incremental suffix to the label, e.g. `pw-2` if `pw` already exists
-                        - 'skip': skip creating the code for that executable
-                        - 'prompt': prompt the user to confirm whether to create another code with an incremented
-                          label or skip creating the code for that executable
+    :param increment_label: if a code with the same label already exists on the computer, append an incremental suffix
+        to the label, e.g. `pw-2` if `pw` already exists. Else a warning will be raised but no code is created.
     """
-    if isinstance(executables, str):
-        executables = [executables]
-
-    return _create_codes(
-        computer=computer,
-        executables=executables,
-        directory=directory,
-        label_template=label_template,
-        prepend_text=prepend_text,
-        append_text=append_text,
-        on_conflict=on_conflict,
-    )
-
-
-def _create_codes(
-    *,
-    computer: orm.Computer,
-    executables: list[str],
-    directory: Union[str, None] = None,
-    label_template: str = '',
-    prepend_text: Union[str, None] = None,
-    append_text: Union[str, None] = None,
-    on_conflict: str = 'increment',
-):
-    """Automatically create `orm.Code` instances for Quantum ESPRESSO executables."""
-    if on_conflict not in {'increment', 'skip', 'prompt'}:
-        raise ValueError("on_conflict must be one of 'increment', 'skip', or 'prompt'")
-
-    exec_paths = _get_executable_paths(
-        prepend_text=prepend_text, executables=executables, computer=computer, directory=directory
-    )
+    executable_tuple = (executables,) if isinstance(executables, str) else tuple(executables)
 
     created = []
-    for executable, exec_path in exec_paths:
-        existing_label, label = _get_code_label(label_template=label_template, executable=executable, computer=computer)
+
+    for executable, exec_path in get_executable_paths(executable_tuple, computer, prepend_text, directory).items():
+        existing_label, label = get_code_label(label_template=label_template, executable=executable, computer=computer)
+
         if existing_label:
-            if on_conflict == 'prompt':
-                echo.echo_warning(f'Code with label<{existing_label}> already exists on Computer<{computer.label}>.')
-                if not click.confirm(f'Do you want to add another instance with label {label}?'):
-                    continue
-            elif on_conflict == 'increment':
-                echo.echo_info(
-                    f'Code with label<{existing_label}> already exists on Computer<{computer.label}>; '
-                    f'creating another one with label<{label}>.'
+            if increment_label:
+                warnings.warn(
+                    f'Code with label "{existing_label}" already exists on computer "{computer.label}". '
+                    f'`increment_label` is True: creating another one with label "{label}".'
                 )
             else:
-                echo.echo_warning(f'Skipping executable<{executable}>.')
-                echo.echo_report(
-                    f'Code with label<{existing_label}> already exists on Computer<{computer.label}>.'
-                    "\nSet `on_conflict='increment'` to automatically increment the label to "
-                    f'<{label}> or manually change the `label_template`.\n'
+                warnings.warn(
+                    f'Code with label "{existing_label}" already exists on computer "{computer.label}". '
+                    f'Skipping executable "{executable}". Consider setting `increment_label=True` or '
+                    'specifying a new `label_template`.'
                 )
                 continue
 
@@ -102,72 +71,58 @@ def _create_codes(
             append_text=append_text,
         )
         code.store()
-        echo.echo_success(
-            f'Code<{code.label}> for {executable} created with pk<{code.pk}> '
-            f'on Computer<{computer.label}>'
-        )
         created.append(code)
 
     return created
 
 
-def _get_executable_paths(
-    prepend_text: str,
-    executables: Union[str, list[str]],
+def get_executable_paths(
+    executable_tuple: tuple[str],
     computer: orm.Computer,
-    directory: str,
-) -> list[tuple[str, str]]:
-    """Return the absolute paths of the executables on the given computer.
+    prepend_text: str = '',
+    directory: Union[str, None] = None,
+) -> dict:
+    """Return a mapping from executable names to absolute paths on the given computer.
 
-    If `directory` is provided, the path is constructed as `directory`/`executable`.
-    If not, the `which` command is used to find the executable in the `PATH`.
+    If `directory` is provided, each path is constructed as `directory`/`executable`.
+    Otherwise, the `prepend_text` is combined with `which` to locate executables in the PATH.
     """
-    user = orm.User.collection.get_default()
+    executable_paths = {}
 
-    try:
-        authinfo = computer.get_authinfo(user)
-    except NotExistent:
-        echo.echo_critical(f'Computer<{computer.label}> is not yet configured for user<{user.email}>')
-
-    if not authinfo.enabled:
-        echo.echo_warning(f'Computer<{computer.label}> is disabled for user<{user.email}>')
-        click.confirm('Do you really want to test it?', abort=True)
-
-    transport = authinfo.get_transport()
-
-    executable_paths = []
-    with transport:
-        for executable in executables:
-            if not directory:
-                if prepend_text:
-                    transport.exec_command_wait(prepend_text)
-
-                which_ret_val, exec_path, which_stderr = transport.exec_command_wait(f'which {executable}')
+    with computer.get_transport() as transport:
+        for executable in executable_tuple:
+            if directory is None:
+                which_command = ' && '.join([line.strip() for line in prepend_text.splitlines() if line.strip()] +
+                                            [f'which {executable}'])
+                which_ret_val, exec_path, which_stderr = transport.exec_command_wait(which_command)
 
                 if which_ret_val != 0:
-                    echo.echo_error(
-                        f'Failed to determine the path of the executable<{executable}> on '
-                        f'computer<{computer.label}>:\n\t{which_stderr}'
+                    msg = f'Failed to determine the path of the executable<{executable}> on computer<{computer.label}>'
+                    if which_stderr:
+                        msg += f': {which_stderr}'
+                    msg += (
+                        '\nDouble-check the `prepend_text` and executables and/or specify the full path with the '
+                        '`directory` input.'
                     )
-                    continue
+                    raise FileNotFoundError(msg)
 
-                exec_path = exec_path.strip()
+                executable_paths[executable] = PurePosixPath(exec_path.strip()).as_posix()
             else:
-                directory = pathlib.PurePosixPath(directory)
-                if not directory.is_absolute():
-                    echo.echo_error(f'Directory<{directory}> is not an absolute path.')
-                    continue
-                if not transport.path_exists(directory):
-                    echo.echo_error(f'Directory<{directory}> does not exist on computer<{computer.label}>')
-                    continue
-                exec_path = directory / executable
+                directory = PurePosixPath(directory)
 
-            executable_paths.append((executable, str(exec_path)))
+                if not directory.is_absolute():
+                    raise ValueError(f'Directory<{directory}> is not an absolute path.')
+
+                exec_path = (directory / executable).as_posix()
+
+                if not transport.path_exists(exec_path):
+                    raise FileNotFoundError(f'Executable<{exec_path}> does not exist on computer<{computer.label}>')
+                executable_paths[executable] = exec_path
 
     return executable_paths
 
 
-def _get_code_label(
+def get_code_label(
     label_template: str,
     executable: str,
     computer: orm.Computer,
