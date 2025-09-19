@@ -24,13 +24,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     # pylint: disable=too-many-public-methods, too-many-statements
 
     _process_class = PwCalculation
-    _protocol_input_mapping = {
-        'pseudo_family': None,
-        'meta_parameters': {
-            'conv_thr_per_atom': None,
-            'etot_conv_thr_per_atom': None,
-        }
-    }
 
     defaults = AttributeDict({
         'qe': qe_defaults,

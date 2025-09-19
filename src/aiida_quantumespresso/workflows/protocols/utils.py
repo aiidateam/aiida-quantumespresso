@@ -17,10 +17,6 @@ from aiida_quantumespresso.common.types import SpinType
 class ProtocolMixin:
     """Utility class for processes to build input mappings for a given protocol based on a YAML configuration file."""
 
-    # Mapping of "protocol inputs": keys allowed in `overrides` that are not part of the process spec.
-    # Used during validation to catch typos or misplaced override keys.
-    _protocol_input_mapping = {}
-
     @classmethod
     def get_protocol_filepath(cls) -> pathlib.Path:
         """Return the ``pathlib.Path`` to the ``.yaml`` file that defines the protocols."""
@@ -149,7 +145,7 @@ class ProtocolMixin:
                 if isinstance(value, dict) and isinstance(inputs_mapping.get(key), dict):
                     recursive_key_check(inputs_mapping[key], value, full_key)
 
-        inputs_mapping = recursive_merge(port_namespace_to_dict(cls.spec().inputs), cls._protocol_input_mapping)
+        inputs_mapping = recursive_merge(cls.get_protocol_inputs(), port_namespace_to_dict(cls.spec().inputs))
         recursive_key_check(inputs_mapping, overrides)
 
 
