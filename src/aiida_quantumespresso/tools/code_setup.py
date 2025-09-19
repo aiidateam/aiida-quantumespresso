@@ -92,8 +92,12 @@ def get_executable_paths(
     with computer.get_transport() as transport:
         for executable in executable_tuple:
             if directory is None:
-                which_command = ' && '.join([line.strip() for line in prepend_text.splitlines() if line.strip()] +
-                                            [f'which {executable}'])
+                which_command = ' && '.join([
+                    line.strip()
+                    for line in prepend_text.splitlines()
+                    if line.strip() and not line.strip().startswith('#')
+                ] + [f'which {executable}'])
+
                 which_ret_val, exec_path, which_stderr = transport.exec_command_wait(which_command)
 
                 if which_ret_val != 0:
@@ -105,6 +109,12 @@ def get_executable_paths(
                         '`directory` input.'
                     )
                     raise FileNotFoundError(msg)
+                elif not exec_path.strip():
+                    raise FileNotFoundError(
+                        f'Executable<{executable}> could not be found on computer<{computer.label}>. '
+                        'The `which` command returned an empty path.\nDouble-check the `prepend_text` and executables '
+                        'and/or specify the full path with the `directory` input.'
+                    )
 
                 executable_paths[executable] = PurePosixPath(exec_path.strip()).as_posix()
             else:
