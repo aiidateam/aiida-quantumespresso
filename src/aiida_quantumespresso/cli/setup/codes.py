@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Command line interface commands for setting up codes for Quantum ESPRESSO executables."""
+"""Command for setting up codes for Quantum ESPRESSO executables."""
 
 from aiida import orm
 from aiida.cmdline.params import arguments
@@ -53,8 +53,8 @@ from aiida_quantumespresso.tools.code_setup import get_code_label, get_executabl
     is_flag=True,
     help='Open an editor to edit the prepend and append text.',
 )
-def create_codes_cmd(computer, executables, directory, label_template, prepend_text, append_text, interactive):
-    """Automatically create an `orm.Code` instance for Quantum ESPRESSO executables.
+def setup_codes_cmd(computer, executables, directory, label_template, prepend_text, append_text, interactive):
+    """Set up codes for Quantum ESPRESSO executables.
 
     Specify the target `orm.Computer` and a single executable or a list of Quantum ESPRESSO executables to
     create codes for. You can provide multiple executables separated by a

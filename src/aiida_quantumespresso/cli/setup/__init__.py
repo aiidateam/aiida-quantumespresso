@@ -1,2 +1,2 @@
 # -*- coding: utf-8 -*-
-"""Module with CLI commands to setup codes for Quantum ESPRESSO executables."""
+"""Easy setup of codes, computers, and other essentials."""
