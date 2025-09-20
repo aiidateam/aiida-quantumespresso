@@ -3,6 +3,7 @@
 
 from pathlib import PurePosixPath
 import re
+import shlex
 from typing import Union
 import warnings
 
@@ -92,29 +93,25 @@ def get_executable_paths(
     with computer.get_transport() as transport:
         for executable in executable_tuple:
             if directory is None:
-                which_command = ' && '.join([
-                    line.strip()
+                commands = [
+                    ' '.join(cleaned_line) + ' > /dev/null'
                     for line in prepend_text.splitlines()
-                    if line.strip() and not line.strip().startswith('#')
-                ] + [f'which {executable}'])
+                    if (cleaned_line := shlex.split(line, posix=True, comments=True))
+                ] + [f'which {executable}']
+                which_command = ' && '.join(commands)
 
                 which_ret_val, exec_path, which_stderr = transport.exec_command_wait(which_command)
 
-                if which_ret_val != 0:
-                    msg = f'Failed to determine the path of the executable<{executable}> on computer<{computer.label}>'
+                if which_ret_val != 0 or not exec_path.strip():
+                    msg = f'Failed to determine the path of executable<{executable}> on computer<{computer.label}>.\n'
+                    msg += f'Command executed: {which_command}\n'
                     if which_stderr:
-                        msg += f': {which_stderr}'
+                        msg += f'Error: {which_stderr}'
                     msg += (
                         '\nDouble-check the `prepend_text` and executables and/or specify the full path with the '
                         '`directory` input.'
                     )
                     raise FileNotFoundError(msg)
-                elif not exec_path.strip():
-                    raise FileNotFoundError(
-                        f'Executable<{executable}> could not be found on computer<{computer.label}>. '
-                        'The `which` command returned an empty path.\nDouble-check the `prepend_text` and executables '
-                        'and/or specify the full path with the `directory` input.'
-                    )
 
                 executable_paths[executable] = PurePosixPath(exec_path.strip()).as_posix()
             else:

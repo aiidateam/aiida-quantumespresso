@@ -10,14 +10,9 @@ import click
 from aiida_quantumespresso.tools.code_setup import get_code_label, get_executable_paths
 
 PREPEND_APPEND_TEMPLATE = (
-    '#====================================================================================\n'
-    '#= All lines starting with "#" will be ignored when executing the `which command`\n'
-    '#= to automatically locate the files.\n'
-    '#= Standard comments using "#" will be kept in the actual {}_text of the code,\n'
-    '#= only the instructions here starting with "#=" will be ignored.\n'
-    '#= \n'
-    '#= Enter your {} text below:\n'
-    '#===================================================================================='
+    '#==========================================================================\n'
+    '#= Enter your {} text below. Lines starting with "#=" will be ignored.\n'
+    '#=========================================================================='
 )
 
 
@@ -60,7 +55,7 @@ PREPEND_APPEND_TEMPLATE = (
 )
 @click.option(
     '--interactive',
-    '-I',
+    '-i',
     is_flag=True,
     help='Open an editor to edit the prepend and append text.',
 )
@@ -78,8 +73,10 @@ def setup_codes_cmd(computer, executables, directory, label_template, prepend_te
     the `--interactive` option.
     """
     if interactive:
-        prepend_text = click.edit(prepend_text or PREPEND_APPEND_TEMPLATE.format('prepend', 'PREPEND')) or prepend_text
-        append_text = click.edit(append_text or PREPEND_APPEND_TEMPLATE.format('append', 'APPEND')) or append_text
+        prepend_text = click.edit(prepend_text or PREPEND_APPEND_TEMPLATE.format('PREPEND')) or prepend_text
+        prepend_text = '\n'.join([line for line in prepend_text.splitlines() if not line.strip().startswith('#=')])
+        append_text = click.edit(append_text or PREPEND_APPEND_TEMPLATE.format('APPEND')) or append_text
+        append_text = '\n'.join([line for line in append_text.splitlines() if not line.strip().startswith('#=')])
 
     user = orm.User.collection.get_default()
 
@@ -92,9 +89,6 @@ def setup_codes_cmd(computer, executables, directory, label_template, prepend_te
         executable_path_mapping = get_executable_paths(executables, computer, prepend_text, directory)
     except (FileNotFoundError, ValueError) as exc:
         echo.echo_critical(exc)
-
-    prepend_text = '\n'.join([line for line in prepend_text.splitlines() if not line.strip().startswith('#=')])
-    append_text = '\n'.join([line for line in append_text.splitlines() if not line.strip().startswith('#=')])
 
     for executable, exec_path in executable_path_mapping.items():
         existing_label, label = get_code_label(label_template=label_template, executable=executable, computer=computer)
