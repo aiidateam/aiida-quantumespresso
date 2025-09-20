@@ -200,6 +200,8 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
                 'No change in volume possible for the provided base input parameters. Meta convergence is turned off.'
             )
             self.ctx.meta_convergence = False
+        # Already converged if volume can not change
+        self.ctx.converged = volume_cannot_change
 
     def should_run_init_relax(self):
         """Return whether an initial relaxation should be run."""
@@ -256,8 +258,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
 
         # Stop if the maximum number of meta iterations has been reached
         if self.ctx.iteration == self.inputs.max_meta_convergence_iterations.value:
-            self.report('Maximum number of meta convergence iterations reached.')
-            return self.exit_codes.ERROR_MAX_ITERATIONS_EXCEEDED
+            return False
 
         base_relax_workchain = self.ctx.base_relax_workchains[-1]
 
@@ -290,6 +291,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
                 return True
 
         self.report(f'Work chain completed after {self.ctx.iteration} iterations.')
+        self.ctx.converged = True
         return False
 
     def run_relax(self):
@@ -346,6 +348,10 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
 
     def results(self):
         """Attach the output parameters and structure of the last workchain to the outputs."""
+        if self.ctx.iteration == self.inputs.max_meta_convergence_iterations.value and not self.ctx.converged:
+            self.report('Maximum number of meta convergence iterations reached.')
+            return self.exit_codes.ERROR_MAX_ITERATIONS_EXCEEDED
+
         # Get the latest relax workchain and pass the outputs
         final_relax_workchain = self.ctx.base_relax_workchains[-1]
 
