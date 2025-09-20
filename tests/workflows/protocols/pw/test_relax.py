@@ -150,3 +150,49 @@ def test_pbc_cell(fixture_code, generate_structure, struc_name, cell_dofree):
 
     builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure)
     assert builder.base.pw.parameters['CELL'].get('cell_dofree', None) == cell_dofree
+
+
+@pytest.mark.parametrize(
+    'overrides,warning',
+    (
+        # CORRECT overrides for top-level process input
+        ({
+            'clean_workdir': True
+        }, None),
+        # CORRECT overrides for nested process input
+        ({
+            'base': {
+                'kpoints_force_parity': True
+            }
+        }, None),
+        # CORRECT overrides for nested protocol input
+        ({
+            'base': {
+                'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'
+            }
+        }, None),
+        # WRONG overrides with typo
+        ({
+            'clean_wokdir': True
+        }, UserWarning),
+        # WRONG overrides with process input at incorrect level
+        ({
+            'base': {
+                'clean_workdir': True
+            }
+        }, UserWarning),
+        # WRONG overrides with protocol input at incorrect level
+        ({
+            'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'
+        }, UserWarning),
+    )
+)
+def test_overrides_key_check(fixture_code, generate_structure, overrides, warning):
+    """Test that the `get_builder_from_protocol()` method warns for erroneous keys in the `overrides`."""
+
+    with pytest.warns(warning):
+        PwRelaxWorkChain.get_builder_from_protocol(
+            fixture_code('quantumespresso.pw'),
+            generate_structure('silicon'),
+            overrides=overrides,
+        )
