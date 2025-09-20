@@ -584,7 +584,7 @@ def generate_force_constants_data(filepath_tests):
 @pytest.fixture
 def generate_inputs(
     generate_inputs_bands, generate_inputs_cp, generate_inputs_matdyn, generate_inputs_ph, generate_inputs_pw,
-    generate_inputs_q2r, generate_inputs_xspectra
+    generate_inputs_q2r, generate_inputs_xspectra, generate_inputs_neb
 ):
     """Generate the inputs for a process."""
 
@@ -595,7 +595,8 @@ def generate_inputs(
         'quantumespresso.ph': generate_inputs_ph,
         'quantumespresso.matdyn': generate_inputs_matdyn,
         'quantumespresso.q2r': generate_inputs_q2r,
-        'quantumespresso.xspectra': generate_inputs_xspectra
+        'quantumespresso.xspectra': generate_inputs_xspectra,
+        'quantumespresso.neb': generate_inputs_neb
     }
 
     def _generate_inputs(entry_point: str):
@@ -787,8 +788,8 @@ def generate_inputs_neb(fixture_code, generate_trajectory, generate_kpoints_mesh
             'code': fixture_code('quantumespresso.neb'),
             'images': trajectory,
             'parameters': neb_parameters,
-            'kpoints': generate_kpoints_mesh(1),
             'pw': {
+                'kpoints': generate_kpoints_mesh(1),
                 'parameters': pw_parameters,
                 'pseudos':
                 {kind: generate_upf_data(kind) for kind in trajectory.get_step_structure(-1).get_kind_names()},
@@ -962,7 +963,7 @@ def generate_workchain_neb(generate_workchain, generate_inputs_neb, generate_cal
 
         if inputs is None:
             neb_inputs = generate_inputs_neb()
-            kpoints = neb_inputs.pop('kpoints')
+            kpoints = neb_inputs['pw'].pop('kpoints')
             inputs = {'neb': neb_inputs, 'kpoints': kpoints}
 
         if return_inputs:
