@@ -267,13 +267,15 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         inputs.pw.parameters.setdefault('SYSTEM', {})
         inputs.pw.parameters.setdefault('ELECTRONS', {})
 
+        is_soc = inputs.pw.parameters['SYSTEM'].get('lspinorb', False)
+        electrons_per_band = 1 if is_soc else 2
         # If `nbands_factor` is defined in the inputs we set the `nbnd` parameter
         if 'nbands_factor' in self.inputs:
             factor = self.inputs.nbands_factor.value
             parameters = self.ctx.workchain_scf.outputs.output_parameters.get_dict()
             nbands = int(parameters['number_of_bands'])
             nelectron = int(parameters['number_of_electrons'])
-            nbnd = max(int(0.5 * nelectron * factor), int(0.5 * nelectron) + 4, nbands)
+            nbnd = max(int(nelectron / electrons_per_band * factor), int(nelectron / electrons_per_band) + 4, nbands)
             inputs.pw.parameters['SYSTEM']['nbnd'] = nbnd
 
         # Otherwise set the current number of bands, unless explicitly set in the inputs
