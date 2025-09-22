@@ -3,7 +3,6 @@
 
 from pathlib import PurePosixPath
 import re
-import shlex
 from typing import Union
 import warnings
 
@@ -93,18 +92,12 @@ def get_executable_paths(
     with computer.get_transport() as transport:
         for executable in executable_tuple:
             if directory is None:
-                commands = [
-                    ' '.join(cleaned_line) + ' > /dev/null'
-                    for line in prepend_text.splitlines()
-                    if (cleaned_line := shlex.split(line, posix=True, comments=True))
-                ] + [f'which {executable}']
-                which_command = ' && '.join(commands)
-
-                which_ret_val, exec_path, which_stderr = transport.exec_command_wait(which_command)
+                which_ret_val, exec_path, which_stderr = transport.exec_command_wait(
+                    command=f'. /dev/stdin && which {executable}', stdin=prepend_text
+                )
 
                 if which_ret_val != 0 or not exec_path.strip():
                     msg = f'Failed to determine the path of executable<{executable}> on computer<{computer.label}>.\n'
-                    msg += f'Command executed: {which_command}\n'
                     if which_stderr:
                         msg += f'Error: {which_stderr}'
                     msg += (
