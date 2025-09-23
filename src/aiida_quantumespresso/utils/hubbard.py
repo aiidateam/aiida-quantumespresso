@@ -390,10 +390,13 @@ class HubbardUtils:
     ) -> float:
         """Return the radius (in Angstrom) for intersites from nearest neighbour finders.
 
-        It peforms a nearest neighbour analysis (via pymatgen modules) to find the first inersite
+        It peforms a nearest neighbour analysis (via pymatgen modules) to find the first intersite
         neighbours for all the onsite atoms. A radius is returned which can be used to
-        run an ``hp.x`` calculation. Such radius defines a shell including only the first
-        neighbours of each onsite Hubbard atom.
+        run an ``hp.x`` calculation.
+
+        .. note:: the radius defines a sphreical shell that includes the ligands of each
+            onsite Hubbard atom. Such sphere may contain also other neighbours,
+            not indicated by the nearest neighbours analysis.
 
         :param nn_finder: string defining the nearest neighbour finder; options are:
             * `crystal`: use :class:`pymatgen.analysis.local_env.CrystalNN`
@@ -443,9 +446,9 @@ class HubbardUtils:
                 rmax = min(rmax_, rmax)  # we want the smallest to check whether such radius exist
 
         if rmin > rmax:
-            warnings.warn('A common radius seems to not exist! Try lowering `thr`.')
+            warnings.warn('The returned radius defines spheres containing non-ligand (i.e., extra) atoms!')
 
-        return min(rmin, rmax)
+        return max(rmin, rmax)
 
     def get_intersites_list(
         self,
