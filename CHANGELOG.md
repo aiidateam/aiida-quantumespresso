@@ -1,3 +1,48 @@
+## v4.14.0
+
+This support release for v4.X provides several new features, critical bug fixes for the `PdosWorkChain` and a large number of improvments that are currently on the `main` branch.
+
+The changes are listed below, but a full description will be provided for the stable v5.0.0 release.
+
+### ✨ New features
+
+* Add the `NebBaseWorkChain` [[31f1ebb](https://github.com/aiidateam/aiida-quantumespresso/commit/31f1ebb4abaa1cbcd7a1a7cdc298677de22ab24c)]
+* CLI: Add command for setting up multiple codes [[9beff7b](https://github.com/aiidateam/aiida-quantumespresso/commit/9beff7b56fd9db8a818b855c9afac5cda203c1e3)]
+
+### 👌 Improvements
+
+* `NebParser`: refactor and improve exit code parsing [[c6d16c9](https://github.com/aiidateam/aiida-quantumespresso/commit/c6d16c93e3312494c41b37ab0e8a8d2d7f0fda54)]
+* `NebCalculation`: Use `images` instead of `first/last_structure` [[a8435b3](https://github.com/aiidateam/aiida-quantumespresso/commit/a8435b3991201ec5ff41557ea905800a490d589c)]
+* `PhBaseWorkChain`: better handler for convergence [[079d800](https://github.com/aiidateam/aiida-quantumespresso/commit/079d8003cb646b948ce70f1b257d2ad094bc830f)]
+* Protocols: set `resources` based on scheduler [[9d7d55b](https://github.com/aiidateam/aiida-quantumespresso/commit/9d7d55bb61ac940589a241ee9acc932c7fda061f)]
+* Fix entry point of `realhydrogen` to `core.realhydrogen` [[ebe0702](https://github.com/aiidateam/aiida-quantumespresso/commit/ebe070232c482c8a40d5ce83a8aad9b873d32f9a)]
+* Protocols: Add validation on `overrides` keys [[3d4ebcd](https://github.com/aiidateam/aiida-quantumespresso/commit/3d4ebcd47b24908d2c992879858adc9136718a29)]
+* `HubbardUtils`: improve behaviour of `get_intersites_radius` [[268aa3a](https://github.com/aiidateam/aiida-quantumespresso/commit/268aa3a37f1dab90658378bdcbbbd6862fa4c319)]
+
+### 🐛 Bug fixes
+
+* `PdosWorkChain`: Fix `nscf` `parent_folder` usage [[172d0d7](https://github.com/aiidateam/aiida-quantumespresso/commit/172d0d72ce32fd9009c2cb21f9a69f9e562cf1f7)]
+* `NebCalculation`: Fix top-level inputs validation [[23ee13c](https://github.com/aiidateam/aiida-quantumespresso/commit/23ee13c2e8f253e71ee54de157386fcf0ff781bf)]
+
+### 📚 Documentation
+
+* Fix typo in `ph.x` how-to [[433d697](https://github.com/aiidateam/aiida-quantumespresso/commit/433d697adfd49cd9bf672f7a2dfa9abbe7e20be9)]
+* Update "getting started" path [[902b78d](https://github.com/aiidateam/aiida-quantumespresso/commit/902b78dbdceb45d88a3f88f78bc47367d1f1bb63)]
+
+### 🔧 Maintenance
+
+* `.gitignore`: Add `.jupytext-sync-ipynb` [[b5b7383](https://github.com/aiidateam/aiida-quantumespresso/commit/b5b73832763062b6f90ca6cb43d74f62148d65b5)]
+
+### 🧪 Tests
+
+* Update `PwParser` fixtures to QE 6.6 XML output [[bdc1045](https://github.com/aiidateam/aiida-quantumespresso/commit/bdc1045f7a0efae1cd1c808ccb1f4f95e882e249)]
+* Use `pseudo_family` fixture in `pw.x` protocol tests [[d5246e6](https://github.com/aiidateam/aiida-quantumespresso/commit/d5246e6f18193a2bac00f0d0cccf84b073e3338d)]
+
+### ♻️ Refactor
+
+* `PwParser`: primarily parse from XML instead of `stdout` [[bdfa61e](https://github.com/aiidateam/aiida-quantumespresso/commit/bdfa61e7d98064c1df50032218f55fa147be5a6c)]
+
+
 ## v4.13.0
 
 Minor release with mostly changes to the test framework.
