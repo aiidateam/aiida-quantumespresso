@@ -36,7 +36,6 @@ def test_invalid_hubbard_parameters(run_cli_process_launch_command, fixture_code
     assert re.match(match, ' '.join(result.output_lines))
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_valid_hubbard_parameters(run_cli_process_launch_command, fixture_code, pseudo_family):
     """Test invoking the calculation launch command with valid Hubbard inputs."""
     import io

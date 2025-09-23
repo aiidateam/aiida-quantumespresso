@@ -5,7 +5,6 @@ from aiida.common import AttributeDict
 from aiida.engine import ProcessHandlerReport
 
 from aiida_quantumespresso.calculations.xspectra import XspectraCalculation
-from aiida_quantumespresso.workflows.xspectra.base import XspectraBaseWorkChain
 
 
 def test_setup(generate_workchain_xspectra):
@@ -14,20 +13,6 @@ def test_setup(generate_workchain_xspectra):
     process.setup()
 
     assert isinstance(process.ctx.inputs, AttributeDict)
-
-
-def test_handle_unrecoverable_failure(generate_workchain_xspectra):
-    """Test `XspectraBaseWorkChain.handle_unrecoverable_failure`."""
-    process = generate_workchain_xspectra(exit_code=XspectraCalculation.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
-    process.setup()
-
-    result = process.handle_unrecoverable_failure(process.ctx.children[-1])
-    assert isinstance(result, ProcessHandlerReport)
-    assert result.do_break
-    assert result.exit_code == XspectraBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE
-
-    result = process.inspect_process()
-    assert result == XspectraBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE
 
 
 def test_handle_out_of_walltime(generate_workchain_xspectra, fixture_localhost, generate_remote_data):

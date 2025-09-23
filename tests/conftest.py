@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=redefined-outer-name,too-many-statements,too-many-lines
+# pylint: disable=redefined-outer-name,too-many-statements,too-many-lines,raise-missing-from
 """Initialise a text database and profile for pytest."""
+import asyncio
 from collections.abc import Mapping
 import io
 import os
@@ -11,7 +12,14 @@ import tempfile
 
 import pytest
 
-pytest_plugins = ['aiida.manage.tests.pytest_fixtures']  # pylint: disable=invalid-name
+pytest_plugins = ['aiida.tools.pytest_fixtures']  # pylint: disable=invalid-name
+
+
+@pytest.fixture(scope='session', autouse=True)
+def clean_asyncio_tasks():
+    """Ensure clean shutdown of asyncio tasks at the end of the test session."""
+    yield
+    asyncio.run(asyncio.sleep(0))
 
 
 @pytest.fixture(scope='session')
@@ -48,24 +56,11 @@ def fixture_localhost(aiida_localhost):
 
 
 @pytest.fixture
-def fixture_code(fixture_localhost):
+def fixture_code(aiida_code_installed):
     """Return an ``InstalledCode`` instance configured to run calculations of given entry point on localhost."""
 
     def _fixture_code(entry_point_name):
-        from aiida.common import exceptions
-        from aiida.orm import InstalledCode, load_code
-
-        label = f'test.{entry_point_name}'
-
-        try:
-            return load_code(label=label)
-        except exceptions.NotExistent:
-            return InstalledCode(
-                label=label,
-                computer=fixture_localhost,
-                filepath_executable='/bin/true',
-                default_calc_job_plugin=entry_point_name,
-            )
+        return aiida_code_installed(label=f'test.{entry_point_name}', default_calc_job_plugin=entry_point_name)
 
     return _fixture_code
 
@@ -132,14 +127,12 @@ def serialize_builder():
     return _serialize_builder
 
 
-@pytest.fixture(scope='session', autouse=True)
-def pseudo_family(aiida_profile, generate_upf_data):
-    """Create a set of pseudo potential families from scratch."""
+@pytest.fixture(scope='session')
+def pseudo_family(generate_upf_data):
+    """Create the SSSP pseudo potential families from scratch."""
     from aiida.common.constants import elements
     from aiida_pseudo.data.pseudo.upf import UpfData
     from aiida_pseudo.groups.family import PseudoDojoFamily, SsspFamily
-
-    aiida_profile.clear_profile()
 
     cutoffs = {}
     stringency = 'standard'
@@ -555,6 +548,36 @@ def generate_force_constants_data(filepath_tests):
     from aiida_quantumespresso.data.force_constants import ForceConstantsData
     filepath = os.path.join(filepath_tests, 'calculations', 'fixtures', 'matdyn', 'default', 'force_constants.dat')
     return ForceConstantsData(filepath)
+
+
+@pytest.fixture
+def generate_inputs(
+    generate_inputs_bands, generate_inputs_cp, generate_inputs_matdyn, generate_inputs_ph, generate_inputs_pw,
+    generate_inputs_q2r, generate_inputs_xspectra
+):
+    """Generate the inputs for a process."""
+
+    entry_point_to_fixture = {
+        'quantumespresso.bands': generate_inputs_bands,
+        'quantumespresso.cp': generate_inputs_cp,
+        'quantumespresso.pw': generate_inputs_pw,
+        'quantumespresso.ph': generate_inputs_ph,
+        'quantumespresso.matdyn': generate_inputs_matdyn,
+        'quantumespresso.q2r': generate_inputs_q2r,
+        'quantumespresso.xspectra': generate_inputs_xspectra
+    }
+
+    def _generate_inputs(entry_point: str):
+        try:
+            return entry_point_to_fixture[entry_point]()
+        except KeyError:
+            available_entry_points = '\n\t'.join(entry_point_to_fixture.keys())
+            raise ValueError(
+                f'Unsupported entry point: {entry_point!r}\n\n'
+                f'List of supported entry points: \n\n\t{available_entry_points}'
+            )
+
+    return _generate_inputs
 
 
 @pytest.fixture

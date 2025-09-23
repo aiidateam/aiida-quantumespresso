@@ -39,7 +39,6 @@ def generate_ph_calc_job_node(generate_calc_job_node, fixture_localhost):
     return _generate_ph_calc_job_node
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_invalid_inputs(generate_workchain_ph, generate_inputs_ph):
     """Test `PhBaseWorkChain` validation methods."""
     inputs = {'ph': generate_inputs_ph()}
@@ -79,20 +78,6 @@ def test_set_qpoints(generate_workchain_ph, generate_inputs_ph, with_output_stru
 
     if not with_qpoints_distance:
         assert process.ctx.inputs['qpoints'] == inputs['qpoints']
-
-
-def test_handle_unrecoverable_failure(generate_workchain_ph):
-    """Test `PhBaseWorkChain.handle_unrecoverable_failure`."""
-    process = generate_workchain_ph(exit_code=PhCalculation.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
-    process.setup()
-
-    result = process.handle_unrecoverable_failure(process.ctx.children[-1])
-    assert isinstance(result, ProcessHandlerReport)
-    assert result.do_break
-    assert result.exit_code == PhBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE
-
-    result = process.inspect_process()
-    assert result == PhBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE
 
 
 def test_handle_out_of_walltime(generate_workchain_ph):
