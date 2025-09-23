@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Module for setting up `Code` instances for Quantum ESPRESSO executables."""
+"""Module for setting up AiiDA components for Quantum ESPRESSO."""
 
 from pathlib import PurePosixPath
 import re
@@ -101,7 +101,7 @@ def get_executable_paths(
                     if stderr:
                         msg += f'Error: {stderr}'
                     elif not stdout.strip():
-                        msg += 'Error: the `which` command returned an empty output.'
+                        msg += 'Error: the `which` command returned an empty output.\n'
                     msg += (
                         '\nDouble-check the `prepend_text` and executables and/or specify the full path with the '
                         '`directory` input.'

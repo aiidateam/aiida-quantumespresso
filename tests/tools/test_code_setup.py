@@ -5,7 +5,7 @@ from contextlib import nullcontext
 
 import pytest
 
-from aiida_quantumespresso.tools.code_setup import get_executable_paths
+from aiida_quantumespresso.tools.setup import get_executable_paths
 
 
 @pytest.fixture

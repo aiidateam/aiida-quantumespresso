@@ -7,7 +7,7 @@ from aiida.cmdline.utils import echo
 from aiida.common.exceptions import NotExistent
 import click
 
-from aiida_quantumespresso.tools.code_setup import get_code_label, get_executable_paths
+from aiida_quantumespresso.tools.setup import get_code_label, get_executable_paths
 
 PREPEND_APPEND_TEMPLATE = (
     '#==========================================================================\n'
