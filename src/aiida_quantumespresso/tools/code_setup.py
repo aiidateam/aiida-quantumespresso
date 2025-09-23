@@ -9,7 +9,7 @@ import warnings
 from aiida import orm
 
 
-def create_codes(
+def setup_codes(
     computer: orm.Computer,
     executables: Union[str, list[str], tuple[str]],
     directory: Union[str, None] = None,
@@ -92,21 +92,23 @@ def get_executable_paths(
     with computer.get_transport() as transport:
         for executable in executable_tuple:
             if directory is None:
-                which_ret_val, exec_path, which_stderr = transport.exec_command_wait(
-                    command=f'. /dev/stdin && which {executable}', stdin=prepend_text
+                return_value, stdout, stderr = transport.exec_command_wait(
+                    command=f'. /dev/stdin > /dev/null && which {executable}', stdin=prepend_text
                 )
 
-                if which_ret_val != 0 or not exec_path.strip():
+                if return_value != 0 or not stdout.strip():
                     msg = f'Failed to determine the path of executable<{executable}> on computer<{computer.label}>.\n'
-                    if which_stderr:
-                        msg += f'Error: {which_stderr}'
+                    if stderr:
+                        msg += f'Error: {stderr}'
+                    elif not stdout.strip():
+                        msg += 'Error: the `which` command returned an empty output.'
                     msg += (
                         '\nDouble-check the `prepend_text` and executables and/or specify the full path with the '
                         '`directory` input.'
                     )
                     raise FileNotFoundError(msg)
 
-                executable_paths[executable] = PurePosixPath(exec_path.strip()).as_posix()
+                executable_paths[executable] = PurePosixPath(stdout.strip()).as_posix()
             else:
                 directory = PurePosixPath(directory)
 
