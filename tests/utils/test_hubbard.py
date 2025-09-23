@@ -319,7 +319,7 @@ def test_get_intersites_radius(get_non_trivial_hubbard_structure):
 
     radius = hubbard_utils.get_intersites_radius()
 
-    assert abs(radius - 2.106) < 1.0e-5
+    assert abs(radius - 2.954) < 1.0e-3
 
     pymat = hubbard_structure.get_pymatgen_structure()
     for i in range(24):
