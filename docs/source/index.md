@@ -40,6 +40,12 @@ reference/api/index
 reference/cli/index
 ```
 
+```{toctree}
+:hidden: true
+
+developer
+```
+
 # AiiDA Quantum ESPRESSO
 
 An AiiDA plugin package to integrate the [Quantum ESPRESSO](http://www.quantumespresso.org) software suite.
