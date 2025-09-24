@@ -5,9 +5,10 @@ import os
 import warnings
 
 from aiida import orm
-from aiida.common import CalcInfo, CodeInfo, InputValidationError
+from aiida.common import AttributeDict, CalcInfo, CodeInfo, InputValidationError
 from aiida.common.lang import classproperty
 from aiida.common.warnings import AiidaDeprecationWarning
+import numpy as np
 
 from aiida_quantumespresso.calculations import _lowercase_dict, _pop_parser_options, _uppercase_dict
 from aiida_quantumespresso.calculations.pw import PwCalculation
@@ -62,8 +63,11 @@ class NebCalculation(CalcJob):
         spec.input('metadata.options.input_filename', valid_type=str, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=str, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.neb')
-        spec.input('first_structure', valid_type=orm.StructureData, help='Initial structure')
-        spec.input('last_structure', valid_type=orm.StructureData, help='Final structure')
+        spec.input('first_structure', valid_type=orm.StructureData, help='Initial structure', required=False)
+        spec.input('last_structure', valid_type=orm.StructureData, help='Final structure', required=False)
+        spec.input('images', valid_type=orm.TrajectoryData, required=False,
+            help='Ordered trajectory of all NEB images along the reaction path, including'
+            'initial, intermediate, and final configurations.')
         spec.input('parameters', valid_type=orm.Dict, help='NEB-specific input parameters')
         spec.input('settings', valid_type=orm.Dict, required=False,
             help='Optional parameters to affect the way the calculation job and the parsing are performed.')
@@ -71,6 +75,9 @@ class NebCalculation(CalcJob):
             help='An optional working directory of a previously completed calculation to restart from.')
         # We reuse some inputs from PwCalculation to construct the PW-specific parts of the input files
         spec.expose_inputs(PwCalculation, namespace='pw', include=('parameters', 'pseudos', 'kpoints', 'vdw_table'))
+
+        spec.inputs.validator = cls.validate_inputs
+
         spec.output('output_parameters', valid_type=orm.Dict,
             help='The output parameters dictionary of the NEB calculation')
         spec.output('output_trajectory', valid_type=orm.TrajectoryData)
@@ -78,8 +85,15 @@ class NebCalculation(CalcJob):
         spec.output('output_mep', valid_type=orm.ArrayData,
             help='The original and interpolated energy profiles along the minimum-energy path (mep)')
         spec.default_output_node = 'output_parameters'
-        spec.exit_code(303, 'ERROR_MISSING_XML_FILE',
+
+        spec.exit_code(303, 'ERROR_OUTPUT_XML_MISSING',
             message='The required XML file is not present in the retrieved folder.')
+        spec.exit_code(304, 'ERROR_OUTPUT_XML_MULTIPLE',
+            message='The retrieved folder contained multiple XML files.')
+        spec.exit_code(305, 'ERROR_OUTPUT_FILES',
+            message='Both the stdout and XML output files could not be read or parsed.')
+        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
+            message='The stdout output file could not be read.')
         spec.exit_code(320, 'ERROR_OUTPUT_XML_READ',
             message='The XML output file could not be read.')
         spec.exit_code(321, 'ERROR_OUTPUT_XML_PARSE',
@@ -88,7 +102,84 @@ class NebCalculation(CalcJob):
             message='The XML output file has an unsupported format.')
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
             message='The parser raised an unexpected exception: {exception}')
+
+        spec.exit_code(400, 'ERROR_OUT_OF_WALLTIME',
+            message='The calculation stopped prematurely because it ran out of walltime.')
+        spec.exit_code(410, 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED',
+            message='The electronic minimization cycle did not reach self-consistency.')
+
+        spec.exit_code(461, 'ERROR_DEXX_IS_NEGATIVE',
+            message='The code failed with negative dexx in the exchange calculation.')
+        spec.exit_code(462, 'ERROR_COMPUTING_CHOLESKY',
+            message='The code failed during the cholesky factorization.')
+        spec.exit_code(463, 'ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED',
+            message='Too many bands failed to converge during the diagonalization.')
+        spec.exit_code(464, 'ERROR_S_MATRIX_NOT_POSITIVE_DEFINITE',
+            message='The S matrix was found to be not positive definite.')
+        spec.exit_code(465, 'ERROR_ZHEGVD_FAILED',
+            message='The `zhegvd` failed in the PPCG diagonalization.')
+        spec.exit_code(466, 'ERROR_QR_FAILED',
+            message='The `[Q, R] = qr(X, 0)` failed in the PPCG diagonalization.')
+        spec.exit_code(467, 'ERROR_EIGENVECTOR_CONVERGENCE',
+            message='The eigenvector failed to converge.')
+        spec.exit_code(468, 'ERROR_BROYDEN_FACTORIZATION',
+            message='The factorization in the Broyden routine failed.')
+
+        spec.exit_code(502, 'ERROR_NEB_CYCLE_EXCEEDED_NSTEP',
+            message='The NEB minimization cycle did not converge after the maximum number of steps.')
+        spec.exit_code(503, 'ERROR_NEB_INTERRUPTED_PARTIAL_TRAJECTORY',
+            message='The NEB minimization cycle did not finish because the calculation was interrupted but a partial '
+                    'trajectory and output structure was successfully parsed which can be used for a restart.'
+        )
         # yapf: enable
+
+    @classmethod
+    def validate_inputs(cls, value, port_namespace):
+        """Validate the top-level inputs."""
+        from aiida.engine.processes.calcjobs.calcjob import validate_calc_job
+
+        result = validate_calc_job(value, port_namespace)
+
+        if result is not None:
+            return result
+
+        if 'images' not in value:
+            if 'first_structure' not in value or 'last_structure' not in value:
+                return 'Either the `images` input or both `first_structure` and `last_structure` must be provided.'
+            warnings.warn(
+                'The `first_structure` and `last_structure` inputs input are deprecated'
+                'and will be removed in a future release. Use `images` instead.', AiidaDeprecationWarning
+            )
+            value['images'] = orm.TrajectoryData([value['first_structure'], value['last_structure']])
+
+        elif 'first_structure' in value or 'last_structure' in value:
+            return 'Specify either `images` or both `first_structure` and `last_structure`, but not both.'
+
+        num_images = len(value['images'].get_stepids())
+        structure_list = [value['images'].get_step_structure(i) for i in range(num_images)]
+        for image_idx, structure in enumerate(structure_list[1:]):
+            # Check that all images have the same cell
+            if abs(np.array(structure_list[0].cell) - np.array(structure.cell)).max() > 1.e-4:
+                return f'Different cell in the first and image {image_idx+1}'
+
+            # Check that all images have the same number of sites
+            if len(structure_list[0].sites) != len(structure.sites):
+                return f'Different number of sites in the first and image {image_idx+1}'
+
+            # Check that all images have the same kinds
+            if structure_list[0].get_site_kindnames() != structure.get_site_kindnames():
+                return f'Mismatch between the kind names and/or order between the first and image {image_idx+1}'
+
+            # Check that a pseudo potential was specified for each kind present in the `StructureData`
+            # self.inputs.pw.pseudos is a plumpy.utils.AttributesFrozendict
+            kindnames = [kind.name for kind in structure_list[0].kinds]
+            if set(kindnames) != set(value['pw']['pseudos'].keys()):
+                formatted_pseudos = ', '.join(list(value['pw']['pseudos'].keys()))
+                formatted_kinds = ', '.join(list(kindnames))
+                return 'Mismatch between the defined pseudos and the list of kinds of the structure.\n' \
+                       f'Pseudos: {formatted_pseudos};\nKinds: {formatted_kinds}'
+
+        cls.inputs = AttributeDict(value)
 
     @classmethod
     def _generate_input_files(cls, neb_parameters, settings_dict):
@@ -158,7 +249,7 @@ class NebCalculation(CalcJob):
                 f'type of calculation: {",".join(list(input_params.keys()))}'
             )
 
-        return input_data
+        return input_data, namelist
 
     def prepare_for_submission(self, folder):
         """Prepare the calculation job for submission by transforming input nodes into input files.
@@ -171,7 +262,6 @@ class NebCalculation(CalcJob):
         :return: :class:`~aiida.common.datastructures.CalcInfo` instance.
         """
         # pylint: disable=too-many-branches,too-many-statements
-        import numpy as np
 
         local_copy_list = []
         remote_copy_list = []
@@ -189,38 +279,8 @@ class NebCalculation(CalcJob):
         else:
             settings_dict = {}
 
-        first_structure = self.inputs.first_structure
-        last_structure = self.inputs.last_structure
-
-        # Check that the first and last image have the same cell
-        if abs(np.array(first_structure.cell) - np.array(last_structure.cell)).max() > 1.e-4:
-            raise InputValidationError('Different cell in the fist and last image')
-
-        # Check that the first and last image have the same number of sites
-        if len(first_structure.sites) != len(last_structure.sites):
-            raise InputValidationError('Different number of sites in the fist and last image')
-
-        # Check that sites in the initial and final structure have the same kinds
-        if first_structure.get_site_kindnames() != last_structure.get_site_kindnames():
-            raise InputValidationError(
-                'Mismatch between the kind names and/or order between '
-                'the first and final image'
-            )
-
-        # Check that a pseudo potential was specified for each kind present in the `StructureData`
-        # self.inputs.pw.pseudos is a plumpy.utils.AttributesFrozendict
-        kindnames = [kind.name for kind in first_structure.kinds]
-        if set(kindnames) != set(self.inputs.pw.pseudos.keys()):
-            formatted_pseudos = ', '.join(list(self.inputs.pw.pseudos.keys()))
-            formatted_kinds = ', '.join(list(kindnames))
-            raise InputValidationError(
-                'Mismatch between the defined pseudos and the list of kinds of the structure.\n'
-                f'Pseudos: {formatted_pseudos};\nKinds: {formatted_kinds}'
-            )
-
-        ##############################
-        # END OF INITIAL INPUT CHECK #
-        ##############################
+        num_images = len(self.inputs.images.get_stepids())
+        structure_list = [self.inputs.images.get_step_structure(i) for i in range(num_images)]
 
         # Create the subfolder that will contain the pseudopotentials
         folder.get_subfolder(self._PSEUDO_SUBFOLDER, create=True)
@@ -228,13 +288,13 @@ class NebCalculation(CalcJob):
         folder.get_subfolder(self._OUTPUT_SUBFOLDER, create=True)
 
         # We first prepare the NEB-specific input file.
-        neb_input_filecontent = self._generate_input_files(self.inputs.parameters, settings_dict)
+        neb_input_filecontent, _ = self._generate_input_files(self.inputs.parameters, settings_dict)
         with folder.open(self.inputs.metadata.options.input_filename, 'w') as handle:
             handle.write(neb_input_filecontent)
 
         # We now generate the PW input files for each input structure
         local_copy_pseudo_list = []
-        for i, structure in enumerate([first_structure, last_structure]):
+        for i, structure in enumerate(structure_list):
             # We need to a pass a copy of the settings_dict for each structure
             this_settings_dict = copy.deepcopy(settings_dict)
             pw_input_filecontent, this_local_copy_pseudo_list = PwCalculation._generate_PWCPinputdata(  # pylint: disable=protected-access
@@ -313,7 +373,7 @@ class NebCalculation(CalcJob):
         calcinfo.remote_copy_list = remote_copy_list
         calcinfo.remote_symlink_list = remote_symlink_list
         # In neb calculations there is no input read from standard input!!
-        codeinfo.cmdline_params = (['-input_images', '2'] + list(cmdline_params))
+        codeinfo.cmdline_params = (['-input_images', str(len(structure_list))] + list(cmdline_params))
         codeinfo.stdout_name = self.inputs.metadata.options.output_filename
         codeinfo.code_uuid = self.inputs.code.uuid
         calcinfo.codes_info = [codeinfo]

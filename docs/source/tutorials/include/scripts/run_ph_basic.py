@@ -9,7 +9,7 @@ code = load_code('ph@localhost')
 builder = code.get_builder()
 
 # Replace ``IDENTIFIER_PW_CALCULATION`` with the pk of the completed ``PwCalculation``
-builder.parent_folder = load_code(IDENTIFIER_PW_CALCULATION).outputs.remote_folder
+builder.parent_folder = load_node(IDENTIFIER_PW_CALCULATION).outputs.remote_folder
 builder.parameters = Dict({'INPUTPH': {}})
 
 # Generate a 1x1x1 q-point mesh

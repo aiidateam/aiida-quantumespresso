@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Tests for the ``calculation launch matdyn`` command."""
-from aiida_quantumespresso.cli.calculations.matdyn import launch_calculation
+"""Tests for the ``workflow launch matdyn-base`` command."""
+from aiida_quantumespresso.cli.workflows.matdyn.base import launch_workflow
 
 
 def test_command_base(run_cli_process_launch_command, fixture_code, generate_force_constants_data):
@@ -8,4 +8,4 @@ def test_command_base(run_cli_process_launch_command, fixture_code, generate_for
     code = fixture_code('quantumespresso.matdyn').store()
     force_constants = generate_force_constants_data.store()
     options = ['-X', code.full_label, '-D', force_constants.pk]
-    run_cli_process_launch_command(launch_calculation, options=options)
+    run_cli_process_launch_command(launch_workflow, options=options)

@@ -66,9 +66,8 @@ def test_ph_initialization_only(fixture_sandbox, generate_inputs_ph, generate_ca
     assert (Path(fixture_sandbox.abspath) / f'{PhCalculation._PREFIX}.EXIT').exists()  # pylint: disable=protected-access
 
 
-def test_serialize_builder(fixture_code, generate_inputs_ph, data_regression, serialize_builder):
+def test_serialize_builder(generate_inputs_ph, data_regression, serialize_builder):
     """Test the ``serialize_builder`` fixture using a process builder for the ``PhCalculation``."""
-    code = fixture_code('quantumespresso.ph')
-    builder = code.get_builder()
+    builder = PhCalculation.get_builder()
     builder._update(**generate_inputs_ph())  # pylint: disable=protected-access
     data_regression.check(serialize_builder(builder))

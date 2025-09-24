@@ -148,7 +148,6 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
 
         relax.pop('structure', None)
         relax.pop('clean_workdir', None)
-        relax.pop('base_final_scf', None)
         scf['pw'].pop('structure', None)
         scf.pop('clean_workdir', None)
         bands['pw'].pop('structure', None)

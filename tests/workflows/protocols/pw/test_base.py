@@ -7,6 +7,8 @@ import pytest
 from aiida_quantumespresso.common.types import ElectronicType, SpinType
 from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
 
+pytestmark = pytest.mark.usefixtures('pseudo_family')
+
 
 def test_get_available_protocols():
     """Test ``PwBaseWorkChain.get_available_protocols``."""
@@ -229,6 +231,81 @@ def test_parallelization_overrides(fixture_code, generate_structure):
     assert parallelization['ndiag'] == 12
 
 
+@pytest.mark.parametrize(
+    'overrides,warning',
+    (
+        # CORRECT overrides for top-level process input
+        ({
+            'clean_workdir': True
+        }, None),
+        # CORRECT overrides for top-level protocol input
+        ({
+            'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'
+        }, None),
+        # CORRECT overrides for nested process input
+        ({
+            'pw': {
+                'metadata': {
+                    'options': {
+                        'withmpi': False
+                    }
+                }
+            }
+        }, None),
+        # CORRECT overrides for nested protocol input
+        ({
+            'meta_parameters': {
+                'conv_thr_per_atom': 0.2
+            }
+        }, None),
+        # CORRECT overrides for `Dict` node with correct keys
+        ({
+            'pw': {
+                'parameters': {
+                    'CONTROL': {
+                        'calculation': 'relax'
+                    }
+                }
+            }
+        }, None),
+        # CORRECT overrides for `Dict` node with incorrect keys
+        # The key check should _not_ validate the inputs, that is the job of the port validator
+        ({
+            'pw': {
+                'parameters': {
+                    'NON-EXISTENT': 1
+                }
+            }
+        }, None),
+        # WRONG overrides with typo
+        ({
+            'clean_wokdir': True
+        }, UserWarning),
+        # WRONG overrides with process input at incorrect level
+        ({
+            'pw': {
+                'options': {}
+            }
+        }, UserWarning),
+        # WRONG overrides with protocol input at incorrect level
+        ({
+            'pw': {
+                'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'
+            }
+        }, UserWarning),
+    )
+)
+def test_overrides_key_check(fixture_code, generate_structure, overrides, warning):
+    """Test that the `get_builder_from_protocol()` method warns for erroneous keys in the `overrides`."""
+
+    with pytest.warns(warning):
+        PwBaseWorkChain.get_builder_from_protocol(
+            fixture_code('quantumespresso.pw'),
+            generate_structure('silicon'),
+            overrides=overrides,
+        )
+
+
 def test_pseudos_overrides(fixture_code, generate_structure, generate_upf_data):
     """Test specifying ``pw.pseudos`` ``overrides`` for the ``get_builder_from_protocol()`` method."""
     structure = generate_structure('cobalt-prim')
@@ -353,3 +430,30 @@ def test_options(fixture_code, generate_structure):
 
     assert metadata['options']['queue_name'] == queue_name
     assert metadata['options']['withmpi'] == withmpi
+
+
+@pytest.mark.parametrize(
+    'scheduler,expected_resources', (
+        ('core.direct', {
+            'num_machines': 1
+        }),
+        ('core.slurm', {
+            'num_machines': 1
+        }),
+        ('core.sge', {
+            'parallel_env': 'mpi',
+            'tot_num_mpiprocs': 1
+        }),
+    )
+)
+def test_default_resources(aiida_computer, aiida_code_installed, generate_structure, scheduler, expected_resources):
+    """Test that the default resources are correctly specified."""
+    computer = aiida_computer(label=f'local-{scheduler}', scheduler_type=scheduler)
+    code = aiida_code_installed(
+        label=f'test.pw-{scheduler}', computer=computer, default_calc_job_plugin='quantumespresso.pw'
+    )
+
+    structure = generate_structure()
+
+    builder = PwBaseWorkChain.get_builder_from_protocol(code, structure)
+    assert builder.pw.metadata.options['resources'] == expected_resources

@@ -38,18 +38,18 @@ output_parameters:
   dft_exchange_correlation: PBE
   do_magnetization: false
   do_not_use_time_reversal: false
-  energy: -308.19209487389907
+  energy: -308.19209489350624
   energy_accuracy: 7.3470735316620004e-06
   energy_accuracy_units: eV
-  energy_ewald: -228.56124874864287
+  energy_ewald: -228.5612487918352
   energy_ewald_units: eV
-  energy_hartree: 17.268104885747146
+  energy_hartree: 17.268104860594963
   energy_hartree_units: eV
   energy_one_electron: 71.73307378548377
   energy_one_electron_units: eV
   energy_threshold: 3.84e-06
   energy_units: eV
-  energy_xc: -168.63202466043015
+  energy_xc: -168.63202468460497
   energy_xc_units: eV
   estimated_ram_per_process: 60.62
   estimated_ram_per_process_units: MB

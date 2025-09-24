@@ -2,12 +2,8 @@
 # pylint: disable=no-member,redefined-outer-name
 """Tests for the `MatdynBaseWorkChain` class."""
 from aiida.common import AttributeDict
-from aiida.engine import ProcessHandlerReport
 from plumpy import ProcessState
 import pytest
-
-from aiida_quantumespresso.calculations.matdyn import MatdynCalculation
-from aiida_quantumespresso.workflows.matdyn.base import MatdynBaseWorkChain
 
 
 @pytest.fixture
@@ -38,17 +34,3 @@ def test_setup(generate_workchain_matdyn):
 
     assert process.ctx.restart_calc is None
     assert isinstance(process.ctx.inputs, AttributeDict)
-
-
-def test_handle_unrecoverable_failure(generate_workchain_matdyn):
-    """Test `MatdynBaseWorkChain.handle_unrecoverable_failure`."""
-    process = generate_workchain_matdyn(exit_code=MatdynCalculation.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
-    process.setup()
-
-    result = process.handle_unrecoverable_failure(process.ctx.children[-1])
-    assert isinstance(result, ProcessHandlerReport)
-    assert result.do_break
-    assert result.exit_code == MatdynBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE
-
-    result = process.inspect_process()
-    assert result == MatdynBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE

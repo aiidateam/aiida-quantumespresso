@@ -243,7 +243,7 @@ def detect_important_message(logs, line):
         'error': {
             'Maximum CPU time exceeded': 'ERROR_OUT_OF_WALLTIME',
             'convergence NOT achieved after': 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED',
-            'history already reset at previous step: stopping': 'ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE',
+            'history already reset at previous step: ': 'ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE',
             'problems computing cholesky': 'ERROR_DIAGONALIZATION_CHOLESKY_DECOMPOSITION',
             'charge is wrong': 'ERROR_CHARGE_IS_WRONG',
             'not orthogonal operation': 'ERROR_SYMMETRY_NON_ORTHOGONAL_OPERATION',
@@ -309,7 +309,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
 
     parsed_data = {}
     vdw_correction = False
-    bands_data = parsed_xml.pop('bands', {})
+    bands_data = parsed_xml.get('bands', {})
     structure_data = parsed_xml.pop('structure', {})
     trajectory_data = {}
 

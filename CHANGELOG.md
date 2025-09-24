@@ -1,8 +1,62 @@
+## v5.0.0a1
+
+> ⚠️ This is an alpha release with several breaking changes in the API and removal of deprecated code.
+  A full changelog with a migration guide will be provided once we're ready with the stable release.
+
+### ‼️ Breaking changes
+
+* ‼️ `PwRelaxWorkChain`: Revisit work chain logic [[830aef3](https://github.com/aiidateam/aiida-quantumespresso/commit/830aef35445e8c6d596e54651c9a891ce6b4b77e)]
+* ‼️ Remove all code related to XSpectra & XPS [[1e3ea1e](https://github.com/aiidateam/aiida-quantumespresso/commit/1e3ea1e1ea67dff5d781e86a1afea41e4ec7ac3d)]
+
+### 🧪 Tests
+
+* 🧪 Update `PwParser` fixtures to QE 6.6 XML output [[a5637b3](https://github.com/aiidateam/aiida-quantumespresso/commit/a5637b3abafd88a770ec01687adff05f9ca07505)]
+
+### ♻️ Refactor
+
+* ♻️ `PwParser`: primarily parse from XML instead of `stdout` [[fdb03d1](https://github.com/aiidateam/aiida-quantumespresso/commit/fdb03d1cd9618a59da545c4e2eb85e3e09f18361)]
+
+
+## v4.13.0
+
+Minor release with mostly changes to the test framework.
+The main user-oriented change is the removal of the `handle_unrecoverable_failure` error handler.
+This means that the `BaseRestartWorkChain` classes will now restart at least once in case of e.g. a node failure.
+
+### 🗑️ Deprecations
+
+* 🗑️ Remove `handle_unrecoverable_failure` error handler [[9ccb778](https://github.com/aiidateam/aiida-quantumespresso/commit/9ccb77846a734ab272185336ab8b0f4aa253764d)]
+
+### 👌 Improvements
+
+* `HubbardParameters`: clarify `pydantic` model attribute types [[ec49f6a](https://github.com/aiidateam/aiida-quantumespresso/commit/ec49f6aa9dc81c6b3d4104bc107a694b2d0bde87)]
+
+### 🐛 Bug fixes
+
+* Use `numpy.prod` instead of deprecated `numpy.product` [[1177ace](https://github.com/aiidateam/aiida-quantumespresso/commit/1177acedd27b772104e62594dbcac675a44df185)]
+
+### 🔧 Maintenance
+
+* Update CI/nightly actions to use `uv` [[0bf0718](https://github.com/aiidateam/aiida-quantumespresso/commit/0bf071894c99c7cefe8e9421a15eb1502e5d1eca)]
+
+### 🧪 Tests
+
+* Remove `autouse=True` from `pseudo_family` fixture [[25796b4](https://github.com/aiidateam/aiida-quantumespresso/commit/25796b4f2f5ca627fe869e31eb4c717decf6f3b1)]
+* CLI: Use explicit list instead of `recurse_commands` [[0e1ae24](https://github.com/aiidateam/aiida-quantumespresso/commit/0e1ae244fcdb092db29e8b762b9d958d85b165a4)]
+* CLI: Correctly test `aiida_quantumespresso.cli [[4f17da3](https://github.com/aiidateam/aiida-quantumespresso/commit/4f17da3fc34e68c0778efce7a40e73bbee33e83d)]
+* CLI: Fix non-`pw` `workflow` tests [[0eaa7b4](https://github.com/aiidateam/aiida-quantumespresso/commit/0eaa7b4cd596679e70ceb09466e8b96cd60cfcb3)]
+* Add `clean_asyncio_tasks` fixture [[1f32b83](https://github.com/aiidateam/aiida-quantumespresso/commit/1f32b83059525ca1cccbd45dbaca721d9dbea56c)]
+* Switch to using `aiida.tools.pytest_fixtures` [[80db682](https://github.com/aiidateam/aiida-quantumespresso/commit/80db68207fa177907cecae2fa8cf62ef64a8e6a5)]
+* Test unrecoverable failures for `BaseRestartWorkChain`s [[1c7aabc](https://github.com/aiidateam/aiida-quantumespresso/commit/1c7aabc408ccc23daf9cd7b937409789e3a12380)]
+* Add `generate_inputs` fixture [[a0825ce](https://github.com/aiidateam/aiida-quantumespresso/commit/a0825cec375074b47e9c33f700532538bcbd66de)]
+* Fix `test_immigrate` tests [[c2ba375](https://github.com/aiidateam/aiida-quantumespresso/commit/c2ba3750dfd387f2cf3334080e04ca0d031450bc)]
+
+
 ## v4.12.1
 
 ### 🐛 Bug fixes
 
-* 🐛 Protocols: Fix `overrides` that do not have `pw` key [[46192bf](https://github.com/aiidateam/aiida-quantumespresso/commit/46192bf872367b682f135642706c4f4c4261f0d9)]
+* Protocols: Fix `overrides` that do not have `pw` key [[46192bf](https://github.com/aiidateam/aiida-quantumespresso/commit/46192bf872367b682f135642706c4f4c4261f0d9)]
 
 ## v4.12.0
 
@@ -32,7 +86,7 @@ Now it is also checked and enforced that the user has provided pseudo potentials
 
 ## v4.11.1
 
-This patch release reintroduces an upper limit to `aiida-pseudo` that was erroneously removed in 4a6cdc22ec7f868a497abfd384bfeed39dfee3dc.
+This patch release reintroduces an upper limit to `aiida-pseudo` that was erroneously removed in [[4a6cdc2](https://github.com/aiidateam/aiida-quantumespresso/commit/4a6cdc22ec7f868a497abfd384bfeed39dfee3dc)].
 
 ### ⬆️ Update dependencies
 

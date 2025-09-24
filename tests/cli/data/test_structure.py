@@ -3,12 +3,9 @@
 from pathlib import Path
 import re
 
-import pytest
-
 from aiida_quantumespresso.cli.data.structure import cmd_import
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_command_import(run_cli_command, filepath_tests):
     """Test invoking the calculation launch command with only required inputs."""
     filepath = str(Path(filepath_tests, 'cli', 'fixtures', 'pw.in').absolute())

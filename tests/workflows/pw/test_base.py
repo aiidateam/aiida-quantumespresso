@@ -18,20 +18,6 @@ def test_setup(generate_workchain_pw):
     assert isinstance(process.ctx.inputs, AttributeDict)
 
 
-def test_handle_unrecoverable_failure(generate_workchain_pw):
-    """Test `PwBaseWorkChain.handle_unrecoverable_failure`."""
-    process = generate_workchain_pw(exit_code=PwCalculation.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
-    process.setup()
-
-    result = process.handle_unrecoverable_failure(process.ctx.children[-1])
-    assert isinstance(result, ProcessHandlerReport)
-    assert result.do_break
-    assert result.exit_code == PwBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE
-
-    result = process.inspect_process()
-    assert result == PwBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE
-
-
 @pytest.mark.parametrize('structure_changed', (
     True,
     False,

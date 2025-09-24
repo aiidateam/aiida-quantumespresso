@@ -5,6 +5,8 @@ from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
 import click
 
+from aiida_quantumespresso.workflows.pw.relax import PwRelaxWorkChain
+
 from .. import cmd_launch
 from ...utils import launch, options, validate
 
@@ -27,33 +29,24 @@ from ...utils import launch, options, validate
 @options.WITH_MPI()
 @options.DAEMON()
 @click.option(
-    '-f',
-    '--final-scf',
+    '--initial-relax',
     is_flag=True,
-    default=False,
+    default=True,
     show_default=True,
-    help='Run a final scf calculation for the final relaxed structure.'
+    help='Run a initial relaxation with looser thresholds.'
 )
 @decorators.with_dbenv()
 def launch_workflow(
     code, structure, pseudo_family, kpoints_distance, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file,
     starting_magnetization, smearing, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi, daemon,
-    final_scf
+    initial_relax
 ):
     """Run a `PwRelaxWorkChain`."""
-    from aiida.orm import Bool, Dict, Float, Str
-    from aiida.plugins import WorkflowFactory
-
     from aiida_quantumespresso.utils.resources import get_default_options
-
-    builder = WorkflowFactory('quantumespresso.pw.relax').get_builder()
 
     cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
 
     parameters = {
-        'CONTROL': {
-            'calculation': 'relax',
-        },
         'SYSTEM': {
             'ecutwfc': ecutwfc or cutoff_wfc,
             'ecutrho': ecutrho or cutoff_rho,
@@ -75,27 +68,24 @@ def launch_workflow(
     except ValueError as exception:
         raise click.BadParameter(str(exception))
 
-    builder.structure = structure
-    builder.base.kpoints_distance = Float(kpoints_distance)
-    builder.base.pw.code = code
-    builder.base.pw.pseudos = pseudo_family.get_pseudos(structure=structure)
-    builder.base.pw.parameters = Dict(parameters)
-
-    if hubbard_file:
-        builder.base.pw.hubbard_file = hubbard_file
-
-    builder.base.pw.metadata.options = get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)
-
-    if clean_workdir:
-        builder.clean_workdir = Bool(True)
-
-    if final_scf:
-        builder.base_final_scf.pseudo_family = Str(pseudo_family)
-        builder.base_final_scf.kpoints_distance = Float(kpoints_distance)
-        builder.base_final_scf.pw.code = code
-        builder.base_final_scf.pw.parameters = Dict(parameters)
-        builder.base_final_scf.pw.metadata.options = get_default_options(
-            max_num_machines, max_wallclock_seconds, with_mpi
-        )
+    base_overrides = {
+        'clean_workdir': clean_workdir,
+        'pseudo_family': pseudo_family.label,
+        'pw': {
+            'parameters': parameters,
+            'metadata': {
+                'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)
+            },
+            'hubbard_file': hubbard_file
+        }
+    }
+    overrides = {
+        'base_init_relax': base_overrides,
+        'base_relax': base_overrides,
+    }
+    builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)
+    builder.base_relax.kpoints_distance = kpoints_distance
+    if not initial_relax:
+        builder.pop('base_init_relax')
 
     launch.launch_process(builder, daemon)

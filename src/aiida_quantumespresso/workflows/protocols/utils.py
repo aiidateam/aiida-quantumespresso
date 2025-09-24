@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Utilities to manipulate the workflow input protocols."""
+import copy
 import pathlib
 from typing import Optional, Union
 import warnings
@@ -7,6 +8,7 @@ import warnings
 from aiida.common.warnings import AiidaDeprecationWarning
 from aiida.orm import StructureData
 from aiida_pseudo.groups.family import PseudoPotentialFamily
+from plumpy import PortNamespace
 import yaml
 
 from aiida_quantumespresso.common.types import SpinType
@@ -77,9 +79,30 @@ class ProtocolMixin:
                 overrides = yaml.safe_load(file)
 
         if overrides:
+            cls._validate_override_keys(overrides)
             return recursive_merge(inputs, overrides)
 
         return inputs
+
+    @staticmethod
+    def set_default_resources(options: dict, scheduler_type: str) -> dict:
+        """Set default resources based on the scheduler type of a computer.
+
+        Temporary workaround to keep the default resources for the direct and Slurm schedulers until defaults can be
+        properly configured on computers, see https://github.com/aiidateam/aiida-quantumespresso/pull/1011
+
+        :param options: the options dictionary.
+        :param scheduler_type: the scheduler type, e.g. `core.slurm`.
+        """
+        new_options = copy.deepcopy(options)
+
+        if scheduler_type in ('core.direct', 'core.slurm', 'core.pbspro', 'core.torque'):
+            new_options.setdefault('resources', {}).setdefault('num_machines', 1)
+        if scheduler_type in ('core.sge',):
+            new_options.setdefault('resources', {}).setdefault('parallel_env', 'mpi')
+            new_options.setdefault('resources', {}).setdefault('tot_num_mpiprocs', 1)
+
+        return new_options
 
     @classmethod
     def _load_protocol_file(cls) -> dict:
@@ -95,6 +118,35 @@ class ProtocolMixin:
             'precise': 'stringent',
         }
         return aliases_dict.get(alias, None)
+
+    @classmethod
+    def _validate_override_keys(cls, overrides):
+        """Validate that override keys match either the process spec or protocol inputs.
+
+        Recursively checks the `overrides` dictionary against the input port namespace of the work chain, extended
+        with protocol inputs, and emits warnings for any unrecognised keys.
+        """
+
+        def port_namespace_to_dict(namespace: PortNamespace):
+            """Recursively convert a PortNamespace into a nested dict structure."""
+            return {
+                key: port_namespace_to_dict(port) if isinstance(port, PortNamespace) else None
+                for key, port in namespace.items()
+            }
+
+        def recursive_key_check(inputs_mapping: dict, overrides: dict, path=''):
+            """Recursively check that all the provided keys in the `overrides` are in the `inputs_mapping`."""
+
+            for key, value in overrides.items():
+                full_key = f'{path}.{key}' if path else key
+                if key not in inputs_mapping:
+                    warnings.warn(f'Found unrecognised key in overrides: {full_key}')
+                    continue
+                if isinstance(value, dict) and isinstance(inputs_mapping.get(key), dict):
+                    recursive_key_check(inputs_mapping[key], value, full_key)
+
+        inputs_mapping = recursive_merge(cls.get_protocol_inputs(), port_namespace_to_dict(cls.spec().inputs))
+        recursive_key_check(inputs_mapping, overrides)
 
 
 def recursive_merge(left: dict, right: dict) -> dict:

@@ -31,7 +31,6 @@ def generate_hubbard_structure(generate_structure):
     return _generate_hubbard_structure
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_valid_init(generate_hubbard):
     """Test the constructor."""
     cell = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
@@ -45,7 +44,6 @@ def test_valid_init(generate_hubbard):
     assert hubbard_structure.hubbard == hubbard
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_from_structure(generate_structure, generate_hubbard):
     """Test the `from_structure` method."""
     structure = generate_structure()
@@ -61,7 +59,6 @@ def test_from_structure(generate_structure, generate_hubbard):
     assert len(hubbard_structure.kinds) == 2
 
 
-@pytest.mark.usefixtures('aiida_profile')
 @pytest.mark.parametrize('structure_name', ('silicon', '2D-xy-arsenic'))
 @pytest.mark.parametrize(
     'parameters', (
@@ -101,7 +98,6 @@ def test_append_hubbard_parameters_invalid_index(generate_structure, structure_n
         hubbard_structure.append_hubbard_parameter(*parameter)
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_pop_hubbard_parameters(generate_hubbard_structure):
     """Test the `pop_hubbard_parameters` method."""
     hubbard_structure = generate_hubbard_structure()
@@ -109,7 +105,6 @@ def test_pop_hubbard_parameters(generate_hubbard_structure):
     assert len(hubbard_structure.hubbard.parameters) == 0
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_clear_hubbard_parameters(generate_hubbard_structure):
     """Test the `clear_hubbard_parameters` method."""
     hubbard_structure = generate_hubbard_structure()
@@ -117,7 +112,6 @@ def test_clear_hubbard_parameters(generate_hubbard_structure):
     assert len(hubbard_structure.hubbard.parameters) == 0
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_is_storable(generate_hubbard_structure):
     """Test the storing does not throw errors."""
     hubbard_structure = generate_hubbard_structure()
@@ -125,7 +119,6 @@ def test_is_storable(generate_hubbard_structure):
     assert hubbard_structure.is_stored
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_initialize_intersites_hubbard(generate_hubbard_structure):
     """Test the `initialize_intersites_hubbard` method."""
     hubbard_structure = generate_hubbard_structure()
@@ -146,7 +139,6 @@ def test_initialize_intersites_hubbard(generate_hubbard_structure):
         hubbard_structure.initialize_intersites_hubbard('Mg', '1s', 'Si1', '2s', 0, 'Ueff')
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_initialize_onsites_hubbard(generate_hubbard_structure):
     """Test the `initialize_onsites_hubbard` method."""
     hubbard_structure = generate_hubbard_structure()
@@ -163,7 +155,6 @@ def test_initialize_onsites_hubbard(generate_hubbard_structure):
     assert len(hubbard_structure.hubbard.parameters) == 1
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_get_one_kind_index(generate_hubbard_structure):
     """Test the `_get_one_kind_index` method."""
     hubbard_structure = generate_hubbard_structure()
@@ -171,7 +162,6 @@ def test_get_one_kind_index(generate_hubbard_structure):
     assert hubbard_structure._get_one_kind_index('Si1') == [1]
 
 
-@pytest.mark.usefixtures('aiida_profile')
 def test_get_symbol_indices(generate_hubbard_structure):
     """Test the `_get_symbol_indices` method."""
     hubbard_structure = generate_hubbard_structure()

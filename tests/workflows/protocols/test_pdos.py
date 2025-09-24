@@ -9,6 +9,8 @@ from aiida_quantumespresso.common.types import ElectronicType, SpinType
 
 PdosWorkChain = WorkflowFactory('quantumespresso.pdos')
 
+pytestmark = pytest.mark.usefixtures('pseudo_family')
+
 
 @pytest.fixture
 def get_pdos_generator_inputs(fixture_code, generate_structure):

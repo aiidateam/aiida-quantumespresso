@@ -8,8 +8,10 @@ myst:
 
 ```{toctree}
 :hidden: true
+:caption: Getting Started
 
-installation/index
+get_started/installation
+get_started/quick_start
 tutorials/index
 ```
 
@@ -17,6 +19,7 @@ tutorials/index
 :hidden: true
 :caption: How to
 
+howto/customize_inputs
 howto/calculations/index
 howto/workflows/index
 ```
@@ -52,7 +55,7 @@ ______________________________________________________________________
 ::::{grid} 1 2 2 2
 :gutter: 3
 
-:::{grid-item-card} {fa}`rocket;mr-1` Get started
+:::{grid-item-card} {fa}`info-circle;mr-1` Installation
 :text-align: center
 :shadow: md
 
@@ -60,7 +63,7 @@ Instructions to install, configure and setup the plugin package.
 
 +++
 
-```{button-ref} installation/index
+```{button-ref} get_started/installation
 :ref-type: doc
 :click-parent:
 :expand:
@@ -71,7 +74,7 @@ To the installation guides
 ```
 :::
 
-:::{grid-item-card} {fa}`info-circle;mr-1` Tutorials
+:::{grid-item-card} {fa}`rocket;mr-1` Get started
 :text-align: center
 :shadow: md
 
@@ -79,14 +82,14 @@ Easy examples to take the first steps with the plugin package.
 
 +++
 
-```{button-ref} tutorials/index
+```{button-ref} get_started/quick_start
 :ref-type: doc
 :click-parent:
 :expand:
 :color: primary
 :outline:
 
-To the tutorials
+To the tutorial
 ```
 :::
 ::::

@@ -10,8 +10,6 @@ default_inputs:
     pw:
         metadata:
             options:
-                resources:
-                    num_machines: 1
                 max_wallclock_seconds: 43200  # Twelve hours
                 withmpi: True
         parameters:

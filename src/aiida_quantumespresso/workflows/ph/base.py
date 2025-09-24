@@ -24,8 +24,9 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
     defaults = AttributeDict({
         'delta_factor_max_seconds': 0.95,
-        'delta_factor_alpha_mix': 0.90,
-        'alpha_mix': 0.70,
+        'delta_factor_alpha_mix': 0.5,
+        'nmix_ph': 4,
+        'alpha_mix': 0.7,
     })
 
     @classmethod
@@ -124,7 +125,9 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         metadata = inputs['ph']['metadata']
 
         if options:
-            metadata['options'] = recursive_merge(inputs['ph']['metadata']['options'], options)
+            metadata['options'] = recursive_merge(metadata['options'], options)
+
+        metadata['options'] = cls.set_default_resources(metadata['options'], code.computer.scheduler_type)
 
         # pylint: disable=no-member
         builder = cls.get_builder()
@@ -272,13 +275,6 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         self.report('{}<{}> failed with exit status {}: {}'.format(*arguments))
         self.report(f'Action taken: {action}')
 
-    @process_handler(priority=600)
-    def handle_unrecoverable_failure(self, node):
-        """Handle calculations with an exit status below 400 which are unrecoverable, so abort the work chain."""
-        if node.is_failed and node.exit_status < 400:
-            self.report_error_handled(node, 'unrecoverable error, aborting...')
-            return ProcessHandlerReport(True, self.exit_codes.ERROR_UNRECOVERABLE_FAILURE)
-
     @process_handler(priority=610, exit_codes=PhCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME)
     def handle_scheduler_out_of_walltime(self, node):
         """Handle `ERROR_SCHEDULER_OUT_OF_WALLTIME` exit code: decrease the max_secondes and restart from scratch."""
@@ -328,13 +324,33 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     @process_handler(priority=410, exit_codes=PhCalculation.exit_codes.ERROR_CONVERGENCE_NOT_REACHED)
     def handle_convergence_not_reached(self, node):
         """Handle `ERROR_CONVERGENCE_NOT_REACHED` exit code: decrease the mixing beta and restart."""
+        self.ctx.restart_calc = node
         factor = self.defaults.delta_factor_alpha_mix
+
+        nmix_ph = self.ctx.inputs.parameters.get('INPUTPH', {}).get('nmix_ph', self.defaults.nmix_ph)
+
+        if nmix_ph < 8:  # 8~20 is the recommended range on the Quantum ESPRESSO documentation
+            self.ctx.inputs.parameters.setdefault('INPUTPH', {})['nmix_ph'] = 8
+            action = f'increased number of mixing iteration from {nmix_ph} to 8 and restarting'
+            self.report_error_handled(node, action)
+
+            return ProcessHandlerReport(True)
+
+        # now try playing with the mixing parameters
         alpha_mix = self.ctx.inputs.parameters.get('INPUTPH', {}).get('alpha_mix(1)', self.defaults.alpha_mix)
         alpha_mix_new = alpha_mix * factor
 
-        self.ctx.restart_calc = node
-        self.ctx.inputs.parameters.setdefault('INPUTPH', {})['alpha_mix(1)'] = alpha_mix_new
+        if self.ctx.inputs.parameters.get('INPUTPH', {}).get('alpha_mix(20)', None) is not None:
+            action = 'no more efficient strategies for convergence.'
+            self.report_error_handled(node, action)
+            return ProcessHandlerReport(False)
 
-        action = f'reduced alpha_mix from {alpha_mix} to {alpha_mix_new} and restarting'
+        if alpha_mix_new >= 0.1:
+            self.ctx.inputs.parameters.setdefault('INPUTPH', {})['alpha_mix(1)'] = alpha_mix_new
+            action = f'reduced alpha_mix from {alpha_mix} to {alpha_mix_new} and restarting'
+        else:
+            self.ctx.inputs.parameters.setdefault('INPUTPH', {})['alpha_mix(20)'] = 0.4
+            action = f'introduing alpha_mix(20)={alpha_mix_new} and restarting'
+
         self.report_error_handled(node, action)
         return ProcessHandlerReport(True)
