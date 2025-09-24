@@ -19,9 +19,11 @@ tutorials/index
 :hidden: true
 :caption: How to
 
+howto/run_pw
+howto/error_handling
+howto/relax_structure
+howto/run_ph
 howto/customize_inputs
-howto/calculations/index
-howto/workflows/index
 ```
 
 ```{toctree}

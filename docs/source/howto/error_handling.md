@@ -1,6 +1,6 @@
 (howto-workflows-pw-base)=
 
-# `PwBaseWorkChain`
+# Run with error handling
 
 The `PwBaseWorkChain` is a simple wrapper workflow that runs the `pw.x` code of Quantum ESPRESSO and automatically deals with known errors.
 
