@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """`CalcJob` implementation for the matdyn.x code of Quantum ESPRESSO."""
+import warnings
+
 from aiida import orm
 
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
@@ -18,7 +20,6 @@ class MatdynCalculation(NamelistsCalculation):
         ('INPUT', 'flfrq', _PHONON_FREQUENCIES_NAME),  # output frequencies
         ('INPUT', 'flvec', _PHONON_MODES_NAME),  # output displacements
         ('INPUT', 'fldos', _PHONON_DOS_NAME),  # output density of states
-        ('INPUT', 'q_in_cryst_coord', True),  # kpoints always in crystal coordinates
     ]
 
     _internal_retrieve_list = [_PHONON_FREQUENCIES_NAME, _PHONON_DOS_NAME]
@@ -51,10 +52,21 @@ class MatdynCalculation(NamelistsCalculation):
         if 'parameters' in value:
             parameters = value['parameters'].get_dict()
         else:
-            parameters = {}
+            parameters = {'INPUT': {}}
 
-        if parameters.get('INPUT', {}).get('flfrc', None) is not None:
-            return '`INPUT.flfrc` is set automatically from the `force_constants` input.'
+        if 'INPUT' not in parameters:
+            return 'Required namelist `INPUT` not in `parameters` input.'
+
+        if parameters['INPUT'].get('flfrc', None) is not None:
+            warnings.warn(
+                '`INPUT.flfrc` is set automatically when the `force_constants` input is specified.'
+                'There is no need to specify this input, and its value will be overridden.'
+            )
+        if parameters['INPUT'].get('q_in_cryst_coord', None) is not None:
+            warnings.warn(
+                '`INPUT.q_in_cryst_coords` is always set to `.true.` if `kpoints` input corresponds to list.'
+                'There is no need to specify this input, and its value will be overridden.'
+            )
 
     def generate_input_file(self, parameters):  # pylint: disable=arguments-differ
         """Generate namelist input_file content given a dict of parameters.
