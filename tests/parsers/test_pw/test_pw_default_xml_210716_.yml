@@ -27,6 +27,7 @@ output_band:
   pbc3: true
   units: eV
 output_parameters:
+  absolute_magnetization: 0.0
   beta_real_space: false
   charge_density: ./charge-density.dat
   constraint_mag: 0
@@ -207,6 +208,7 @@ output_parameters:
     t_rev: '0'
   symmetries_units: crystal
   time_reversal_flag: true
+  total_magnetization: 0.0
   total_number_of_scf_iterations: 5
   volume: 40.02575122514992
   wall_time: '      1.73s '

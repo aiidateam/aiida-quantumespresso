@@ -1167,3 +1167,27 @@ def test_magnetic_moments_v68(
         'atomic_magnetic_moments':
         results['output_trajectory'].get_array('atomic_magnetic_moments').tolist(),
     })
+
+
+def test_diff_total_abs_mag(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+):
+    """Test that the parsing of total and absolute magnetic moments is from the XML and is distinct."""
+    name = 'diff_total_abs_mag'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    inputs = generate_inputs()
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_parameters' in results
+    output_parameters = results['output_parameters']
+    assert output_parameters['total_magnetization'] != output_parameters['absolute_magnetization']
+
+    data_regression.check({
+        'total_magnetization': output_parameters['total_magnetization'],
+        'absolute_magnetization': output_parameters['absolute_magnetization'],
+    })

@@ -615,8 +615,6 @@ class PwParser(BaseParser):
             'scf_iterations',
             'fermi_energy',
             'total_force',
-            'total_magnetization',
-            'absolute_magnetization',
         ]
 
         for property_key, property_values in parsed_trajectory.items():
