@@ -27,6 +27,7 @@ output_band:
   pbc3: true
   units: eV
 output_parameters:
+  absolute_magnetization: 0.0
   beta_real_space: false
   charge_density: ./charge-density.dat
   constraint_mag: 0
@@ -134,6 +135,7 @@ output_parameters:
   time_reversal_flag: true
   total_force: 0.24250644636597954
   total_force_units: ev / angstrom
+  total_magnetization: 0.0
   total_number_of_scf_iterations: 9
   volume: 40.888292209588194
   wall_time: '      1.96s '
