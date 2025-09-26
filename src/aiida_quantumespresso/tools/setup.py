@@ -92,8 +92,9 @@ def get_executable_paths(
     with computer.get_transport() as transport:
         for executable in executable_tuple:
             if directory is None:
+                combined_prepend_text = '\n'.join((computer.get_prepend_text(), prepend_text))
                 return_value, stdout, stderr = transport.exec_command_wait(
-                    command=f'. /dev/stdin > /dev/null && which {executable}', stdin=prepend_text
+                    command=f'. /dev/stdin > /dev/null && which {executable}', stdin=combined_prepend_text
                 )
 
                 if return_value != 0 or not stdout.strip():

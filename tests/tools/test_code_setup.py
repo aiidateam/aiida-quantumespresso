@@ -80,3 +80,15 @@ def test_get_executable_paths_directory_nonexist(create_pw_executable, fixture_l
         get_executable_paths(
             executable_tuple=(pw_executable.name,), computer=fixture_localhost, directory='/wrong/path/to/executable'
         )
+
+
+def test_get_executable_paths_computer_prepend(create_pw_executable, fixture_localhost):
+    """Tests the `get_executable_paths` function for quotes path that has a space."""
+    pw_executable = create_pw_executable()
+    fixture_localhost.set_prepend_text(f'export PATH={pw_executable.parent.as_posix()}:$PATH')
+
+    result = get_executable_paths(
+        executable_tuple=(pw_executable.name,),
+        computer=fixture_localhost,
+    )
+    assert result == {pw_executable.name: pw_executable.as_posix()}
