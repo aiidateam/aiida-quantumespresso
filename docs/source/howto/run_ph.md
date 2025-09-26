@@ -1,6 +1,6 @@
 (howto-calculations-ph)=
 
-# `ph.x`
+# Run a `ph.x` calculation
 
 The `ph.x` code of Quantum ESPRESSO is used to compute phonons using density-functional perturbation theory.
 
@@ -18,7 +18,7 @@ See the [quick start tutorial](#quick-start) or `pw.x` [how-to guide](#howto-cal
 
 Once you have successfully run a {{ PwCalculation }} you can run a `ph.x` calculation through the `PhCalculation` plugin as follows:
 
-```{literalinclude} ../../tutorials/include/scripts/run_ph_basic.py
+```{literalinclude} ../tutorials/include/scripts/run_ph_basic.py
 :language: python
 ```
 

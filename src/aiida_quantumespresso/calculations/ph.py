@@ -38,6 +38,7 @@ class PhCalculation(CalcJob):
     _DVSCF_PREFIX = 'dvscf'
     _DRHO_STAR_EXT = 'drho_rot'
     _FOLDER_DYNAMICAL_MATRIX = 'DYN_MAT'
+    _FOLDER_ELECTRON_PHONON = 'elph_dir'
     _VERBOSITY = 'high'
     _OUTPUT_DYNAMICAL_MATRIX_PREFIX = os.path.join(_FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-')
 
@@ -298,7 +299,12 @@ class PhCalculation(CalcJob):
                     os.path.join(parent_folder.get_remote_path(),
                                  self._FOLDER_DYNAMICAL_MATRIX), self._FOLDER_DYNAMICAL_MATRIX
                 ))
-
+                if parameters['INPUTPH'].get('electron_phonon', None) is not None:
+                    remote_symlink_list.append((
+                        parent_folder.computer.uuid,
+                        os.path.join(parent_folder.get_remote_path(),
+                                     self._FOLDER_ELECTRON_PHONON), self._FOLDER_ELECTRON_PHONON
+                    ))
             else:
                 # copy the dynamical matrices
                 # no need to copy the _ph0, since I copied already the whole ./out folder
@@ -306,6 +312,12 @@ class PhCalculation(CalcJob):
                     parent_folder.computer.uuid,
                     os.path.join(parent_folder.get_remote_path(), self._FOLDER_DYNAMICAL_MATRIX), '.'
                 ))
+                if parameters['INPUTPH'].get('electron_phonon', None) is not None:
+                    remote_copy_list.append((
+                        parent_folder.computer.uuid,
+                        os.path.join(parent_folder.get_remote_path(),
+                                     self._FOLDER_ELECTRON_PHONON), self._FOLDER_ELECTRON_PHONON
+                    ))
 
         # Create an `.EXIT` file if `only_initialization` flag in `settings` is set to `True`
         if settings.pop('ONLY_INITIALIZATION', False):

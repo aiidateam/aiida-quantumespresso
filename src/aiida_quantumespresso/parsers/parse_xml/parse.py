@@ -271,8 +271,9 @@ def parse_xml_post_6_2(xml):
 
         'number_of_atoms': inputs['atomic_structure']['@nat'],
         'number_of_species': inputs['atomic_species']['@ntyp'],
-
     }
+    xml_data['absolute_magnetization'] = outputs.get('magnetization', {}).get('absolute', 0.0)
+    xml_data['total_magnetization'] = outputs.get('magnetization', {}).get('total', 0.0)
 
     if 'timing_info' in xml_dictionary:
         xml_data['wall_time_seconds'] = xml_dictionary['timing_info']['total']['wall']

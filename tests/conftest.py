@@ -612,10 +612,13 @@ def generate_inputs(
 
 
 @pytest.fixture
-def generate_inputs_matdyn(fixture_code, generate_kpoints_mesh, generate_force_constants_data):
+def generate_inputs_matdyn(
+    fixture_code, generate_kpoints_mesh, generate_force_constants_data, fixture_sandbox, fixture_localhost,
+    generate_remote_data
+):
     """Generate default inputs for a `MatdynCalculation."""
 
-    def _generate_inputs_matdyn():
+    def _generate_inputs_matdyn(parent_folder=False):
         """Generate default inputs for a `MatdynCalculation."""
         from aiida_quantumespresso.utils.resources import get_default_options
 
@@ -627,6 +630,10 @@ def generate_inputs_matdyn(fixture_code, generate_kpoints_mesh, generate_force_c
                 'options': get_default_options()
             }
         }
+        if parent_folder:
+            inputs['parent_folder'] = generate_remote_data(
+                fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.q2r'
+            )
 
         return inputs
 

@@ -55,6 +55,7 @@ parameters:
   path_length: 2.95757141880951
   path_thr: 0.05
   pw_output_image_1:
+    absolute_magnetization: 0.5057831966102975
     beta_real_space: false
     charge_density: ./charge-density.dat
     constraint_mag: 0
@@ -168,12 +169,14 @@ parameters:
       t_rev: '0'
     symmetries_units: crystal
     time_reversal_flag: true
+    total_magnetization: 0.5000000000000021
     total_number_of_scf_iterations: 0
     volume: 44.45541285717334
     wall_time_seconds: 0.7156929969787598
     wfc_cutoff: 272.113834506
     wfc_cutoff_units: eV
   pw_output_image_2:
+    absolute_magnetization: 0.5423121387882865
     beta_real_space: false
     charge_density: ./charge-density.dat
     constraint_mag: 0
@@ -287,12 +290,14 @@ parameters:
       t_rev: '0'
     symmetries_units: crystal
     time_reversal_flag: true
+    total_magnetization: 0.4999999999999995
     total_number_of_scf_iterations: 0
     volume: 44.45541285717334
     wall_time_seconds: 11.15338492393494
     wfc_cutoff: 272.113834506
     wfc_cutoff_units: eV
   pw_output_image_3:
+    absolute_magnetization: 0.5057831998906718
     beta_real_space: false
     charge_density: ./charge-density.dat
     constraint_mag: 0
@@ -406,6 +411,7 @@ parameters:
       t_rev: '0'
     symmetries_units: crystal
     time_reversal_flag: true
+    total_magnetization: 0.5000000000000001
     total_number_of_scf_iterations: 0
     volume: 44.45541285717334
     wall_time_seconds: 2.380792856216431

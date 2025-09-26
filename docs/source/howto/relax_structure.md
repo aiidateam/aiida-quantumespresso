@@ -1,6 +1,6 @@
 (howto-workflows-pw-relax)=
 
-# `PwRelaxWorkChain`
+# Relax a structure
 
 
 The `PwRelaxWorkChain` is designed to perform robust geometry relaxations of atomic structures with Quantum ESPRESSO’s `pw.x`. It combines automated restarts with built‑in error handling.

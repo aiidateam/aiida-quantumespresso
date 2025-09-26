@@ -1,3 +1,4 @@
+absolute_magnetization: 0.0
 beta_real_space: false
 charge_density: ./charge-density.dat
 constraint_mag: 0
@@ -82,6 +83,7 @@ starting_magnetization:
 symmetries: []
 symmetries_units: crystal
 time_reversal_flag: true
+total_magnetization: 0.0
 total_number_of_scf_iterations: 6
 volume: 40.02575122514992
 wall_time_seconds: 1.460242033004761

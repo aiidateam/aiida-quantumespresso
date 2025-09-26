@@ -6,7 +6,7 @@ myst:
 
 (howto-calculations-pw)=
 
-# `pw.x`
+# Run a `pw.x` calculation
 
 The `pw.x` code of Quantum ESPRESSO performs many different kinds of self-consistent calculations of electronic-structure properties within Density-Functional Theory (DFT),  using a plane-wave basis set and pseudopotentials.
 Examples of these properties include ground-state energy and one-electron (Kohn-Sham) orbitals, atomic forces, stresses, and structural optimization, also with variable cell.
@@ -20,7 +20,7 @@ Examples of these properties include ground-state energy and one-electron (Kohn-
 
 Below is a script with a basic example of how to run a `pw.x` calculation through the {{ PwCalculation }} plugin that computes the electronic ground state of an fcc silicon crystal:
 
-```{literalinclude} ../../tutorials/include/scripts/run_pw_basic.py
+```{literalinclude} ../tutorials/include/scripts/run_pw_basic.py
 :language: python
 ```
 

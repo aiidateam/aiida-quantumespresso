@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 from aiida import orm
+import numpy
 from qe_tools import CONSTANTS
 
+from aiida_quantumespresso.calculations import _uppercase_dict
 from aiida_quantumespresso.calculations.matdyn import MatdynCalculation
 from aiida_quantumespresso.utils.mapping import get_logging_container
 
@@ -27,6 +29,10 @@ class MatdynParser(BaseParser):
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE, logs)
 
         filename_frequencies = MatdynCalculation._PHONON_FREQUENCIES_NAME
+        filename_dos = MatdynCalculation._PHONON_DOS_NAME
+
+        if filename_frequencies not in self.retrieved.base.repository.list_object_names():
+            return self.exit(self.exit_codes.ERROR_OUTPUT_FREQUENCIES)
 
         # Extract the kpoints from the input data and create the `KpointsData` for the `BandsData`
         try:
@@ -39,22 +45,44 @@ class MatdynParser(BaseParser):
 
         parsed_data = parse_raw_matdyn_phonon_file(self.retrieved.base.repository.get_object_content(filename_frequencies))
 
-        try:
-            num_kpoints = parsed_data.pop('num_kpoints')
-        except KeyError:
-            return self.exit(self.exit_codes.ERROR_OUTPUT_KPOINTS_MISSING, logs)
+        if 'parameters' in self.node.inputs:
+            parameters = _uppercase_dict(self.node.inputs.parameters.get_dict(), dict_name='parameters')
+        else:
+            parameters = {'INPUT': {}}
 
-        if num_kpoints != kpoints.shape[0]:
-            return self.exit(self.exit_codes.ERROR_OUTPUT_KPOINTS_INCOMMENSURATE, logs)
+        if parameters['INPUT'].get('dos', False):
 
-        output_bands = orm.BandsData()
-        output_bands.set_kpointsdata(kpoints_for_bands)
-        output_bands.set_bands(parsed_data.pop('phonon_bands'), units='THz')
+            if filename_dos not in self.retrieved.base.repository.list_object_names():
+                return self.exit(self.exit_codes.ERROR_OUTPUT_DOS)
+
+            parsed_data.pop('phonon_bands', None)
+
+            with self.retrieved.open(filename_dos) as handle:
+                dos_array = numpy.genfromtxt(handle)
+
+            output_dos = orm.XyData()
+            output_dos.set_x(dos_array[:, 0], 'frequency', 'cm^(-1)')
+            output_dos.set_y(dos_array[:, 1], 'dos', 'states * cm')
+
+            self.out('output_phonon_dos', output_dos)
+
+        else:
+            try:
+                num_kpoints = parsed_data.pop('num_kpoints')
+            except KeyError:
+                return self.exit(self.exit_codes.ERROR_OUTPUT_KPOINTS_MISSING)
+
+            if num_kpoints != kpoints.shape[0]:
+                return self.exit(self.exit_codes.ERROR_OUTPUT_KPOINTS_INCOMMENSURATE)
+
+            output_bands = orm.BandsData()
+            output_bands.set_kpointsdata(kpoints_for_bands)
+            output_bands.set_bands(parsed_data.pop('phonon_bands'), units='THz')
+
+            self.out('output_phonon_bands', output_bands)
 
         for message in parsed_data['warnings']:
             self.logger.error(message)
-
-        self.out('output_phonon_bands', output_bands)
 
         return self.exit(logs=logs)
 
