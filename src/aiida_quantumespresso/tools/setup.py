@@ -118,7 +118,7 @@ def get_executable_paths(
                 exec_path = (directory / executable).as_posix()
 
                 if not transport.path_exists(exec_path):
-                    raise FileNotFoundError(f'Executable<{exec_path}> does not exist on computer<{computer.label}>')
+                    warnings.warn(f'Could not find executable<{exec_path}> on computer<{computer.label}>')
                 executable_paths[executable] = exec_path
 
     return executable_paths
