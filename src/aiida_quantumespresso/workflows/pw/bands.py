@@ -268,7 +268,7 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         inputs.pw.parameters.setdefault('ELECTRONS', {})
 
         is_soc = inputs.pw.parameters['SYSTEM'].get('lspinorb', False)
-        electrons_per_band = 1 if is_soc else 2
+        electrons_per_band = 1 if inputs.pw.parameters['SYSTEM'].get('noncolin', False) else 2
         # If `nbands_factor` is defined in the inputs we set the `nbnd` parameter
         if 'nbands_factor' in self.inputs:
             factor = self.inputs.nbands_factor.value
