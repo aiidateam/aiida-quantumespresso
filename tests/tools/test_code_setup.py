@@ -61,3 +61,22 @@ def test_get_executable_paths_with_quoted_path(create_pw_executable, fixture_loc
         prepend_text=prepend_text,
     )
     assert result == {pw_executable.name: pw_executable.as_posix()}
+
+
+def test_get_executable_paths_directory(create_pw_executable, fixture_localhost):
+    """Tests the `get_executable_paths` function when the correct path is specified."""
+    pw_executable = create_pw_executable()
+    result = get_executable_paths(
+        executable_tuple=(pw_executable.name,), computer=fixture_localhost, directory=pw_executable.parent.as_posix()
+    )
+    assert result == {pw_executable.name: pw_executable.as_posix()}
+
+
+def test_get_executable_paths_directory_nonexist(create_pw_executable, fixture_localhost):
+    """Tests that the `get_executable_paths` function warns when the executable path does not exist."""
+    pw_executable = create_pw_executable()
+
+    with pytest.warns(UserWarning, match='Could not find executable'):
+        get_executable_paths(
+            executable_tuple=(pw_executable.name,), computer=fixture_localhost, directory='/wrong/path/to/executable'
+        )
