@@ -35,11 +35,14 @@ class MatdynCalculation(NamelistsCalculation):
         spec.inputs.validator = cls._validate_inputs
 
         spec.output('output_parameters', valid_type=orm.Dict)
-        spec.output('output_phonon_bands', valid_type=orm.BandsData)
+        spec.output('output_phonon_bands', valid_type=orm.BandsData, required=False)
+        spec.output('output_phonon_dos', valid_type=orm.XyData, required=False)
         spec.default_output_node = 'output_parameters'
 
         spec.exit_code(330, 'ERROR_OUTPUT_FREQUENCIES',
             message='The output frequencies file could not be read from the retrieved folder.')
+        spec.exit_code(334, 'ERROR_OUTPUT_DOS',
+            message='The output DOS file could not be read from the retrieved folder.')
         spec.exit_code(410, 'ERROR_OUTPUT_KPOINTS_MISSING',
             message='Number of kpoints not found in the output data')
         spec.exit_code(411, 'ERROR_OUTPUT_KPOINTS_INCOMMENSURATE',
@@ -76,21 +79,32 @@ class MatdynCalculation(NamelistsCalculation):
         :return: 'str' containing the input_file content a plain text.
         """
         kpoints = self.inputs.kpoints
+        append_string = ''
+
         parameters.setdefault('INPUT', {})['flfrc'] = self.inputs.force_constants.filename
+
+        # Calculating DOS requires (nk1,nk2,nk3), see
+        # https://gitlab.com/QEF/q-e/-/blob/b231a0d0174ad1853f191160389029aa14fba6e9/PHonon/PH/matdyn.f90#L82
+        if parameters['INPUT'].get('dos', False):
+            kpoints_mesh = kpoints.get_kpoints_mesh()[0]
+            parameters['INPUT']['nk1'] = kpoints_mesh[0]
+            parameters['INPUT']['nk2'] = kpoints_mesh[1]
+            parameters['INPUT']['nk3'] = kpoints_mesh[2]
+        else:
+            parameters['INPUT']['q_in_cryst_coord'] = True
+            try:
+                kpoints_list = kpoints.get_kpoints()
+            except AttributeError:
+                kpoints_list = kpoints.get_kpoints_mesh(print_list=True)
+
+            kpoints_string = [f'{len(kpoints_list)}']
+            for kpoint in kpoints_list:
+                kpoints_string.append('{:18.10f} {:18.10f} {:18.10f}'.format(*kpoint))  # pylint: disable=consider-using-f-string
+            append_string = '\n'.join(kpoints_string) + '\n'
+
         file_content = super().generate_input_file(parameters)
 
-        try:
-            kpoints_list = kpoints.get_kpoints()
-        except AttributeError:
-            kpoints_list = kpoints.get_kpoints_mesh(print_list=True)
-
-        kpoints_string = [f'{len(kpoints_list)}']
-        for kpoint in kpoints_list:
-            kpoints_string.append('{:18.10f} {:18.10f} {:18.10f}'.format(*kpoint))  # pylint: disable=consider-using-f-string
-
-        file_content += '\n'.join(kpoints_string) + '\n'
-
-        return file_content
+        return file_content + append_string
 
     def prepare_for_submission(self, folder):
         """Prepare the calculation job for submission by transforming input nodes into input files.
