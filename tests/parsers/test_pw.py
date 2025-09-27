@@ -123,11 +123,16 @@ def test_pw_default_xml(
     assert 'output_parameters' in results
     assert 'output_trajectory' in results
 
-    data_regression.check({
+    data_to_check = {
         'output_band': results['output_band'].base.attributes.all,
         'output_parameters': results['output_parameters'].get_dict(),
         'output_trajectory': results['output_trajectory'].base.attributes.all,
-    })
+    }
+    if 'forces' in results['output_trajectory'].get_arraynames():
+        data_to_check['forces'] = results['output_trajectory'].get_array('forces').tolist()
+        data_to_check['stress'] = results['output_trajectory'].get_array('stress').tolist()
+
+    data_regression.check(data_to_check)
 
 
 def test_pw_initialization_xml_new(
@@ -1166,4 +1171,28 @@ def test_magnetic_moments_v68(
         results['output_trajectory'].get_array('atomic_charges').tolist(),
         'atomic_magnetic_moments':
         results['output_trajectory'].get_array('atomic_magnetic_moments').tolist(),
+    })
+
+
+def test_diff_total_abs_mag(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+):
+    """Test that the parsing of total and absolute magnetic moments is from the XML and is distinct."""
+    name = 'diff_total_abs_mag'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    inputs = generate_inputs()
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_parameters' in results
+    output_parameters = results['output_parameters']
+    assert output_parameters['total_magnetization'] != output_parameters['absolute_magnetization']
+
+    data_regression.check({
+        'total_magnetization': output_parameters['total_magnetization'],
+        'absolute_magnetization': output_parameters['absolute_magnetization'],
     })

@@ -1,3 +1,16 @@
+forces:
+- - - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 5.35218353163836e-16
+    - -0.6955670660871802
+  - - 0.0
+    - 0.0
+    - 0.6955670660871802
+  - - 0.0
+    - 9.008856055736822e-25
+    - -3.12669022280311e-25
 output_band:
   array|bands:
   - 13
@@ -27,6 +40,7 @@ output_band:
   pbc3: true
   units: eV
 output_parameters:
+  absolute_magnetization: 0.0
   beta_real_space: false
   charge_density: ./charge-density.dat
   constraint_mag: 0
@@ -148,6 +162,7 @@ output_parameters:
   time_reversal_flag: true
   total_force: 0.9836783430360488
   total_force_units: ev / angstrom
+  total_magnetization: 0.0
   total_number_of_scf_iterations: 25
   volume: 32.172251504341325
   wall_time: '   1m40.44s '
@@ -200,3 +215,13 @@ output_trajectory:
   symbols:
   - Si
   - Si
+stress:
+- - - -62.88281405555692
+    - -2.551866364254089e-14
+    - 9.569498865952834e-15
+  - - -2.232883068722328e-14
+    - -62.88281405798721
+    - -4.474386661006401e-10
+  - - 2.551866364254089e-14
+    - -4.474059703128484e-10
+    - -64.86202242723162

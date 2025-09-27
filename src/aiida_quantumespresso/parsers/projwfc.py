@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-import fnmatch
 from pathlib import Path
 import re
 from typing import List, Optional, Tuple
+import warnings
 
 from aiida.common.extendeddicts import AttributeDict
 from aiida.engine import ExitCode
@@ -37,11 +37,6 @@ class ProjwfcParser(BaseParser):
 
         self.out('output_parameters', Dict(dict=parsed_data))
 
-        # Split the stdout into header and k-point blocks - TODO: Lowdin
-        stdout_blocks = stdout.split('Lowdin Charges:')[0].split('k = ')
-        header = stdout_blocks[0]
-        kpoint_blocks = stdout_blocks[1:]
-
         # Check that the temporary retrieved folder is there
         try:
             retrieved_temporary_folder = Path(kwargs['retrieved_temporary_folder'])
@@ -61,24 +56,57 @@ class ProjwfcParser(BaseParser):
         spinorbit = parsed_xml.get('spin_orbit_calculation')
         non_collinear = parsed_xml.get('non_colinear_calculation')
 
-        orbitals = self._parse_orbitals(header, structure, non_collinear, spinorbit)
-        bands, projections = self._parse_bands_and_projections(kpoint_blocks, len(orbitals))
-        energy, dos_node, pdos_array = self._parse_pdos_files(retrieved_temporary_folder, nspin, spinorbit, logs)
+        # There are two possible types of projection:
+        # 1. onto atomic orbitals -> read *pdos_tot* and *pdos_atm* files to extract DOS, PDOS and projections
+        # 2. into boxes -> read *ldos_boxes* file to extract DOS and LDOS
+        projection_orbitals = 'Lowdin Charges' in stdout
+        projection_boxes = 'projwave_boxes' in stdout
 
-        self.out('Dos', dos_node)
+        if projection_orbitals:
+            # Split the stdout into header and k-point blocks - TODO: Lowdin
+            stdout_blocks = stdout.split('Lowdin Charges:')[0].split('k = ')
+            header = stdout_blocks[0]
+            kpoint_blocks = stdout_blocks[1:]
 
-        output_node_dict = self._build_bands_and_projections(
-            kpoints, bands, energy, orbitals, projections, pdos_array, nspin
-        )
-        for linkname, node in output_node_dict.items():
-            self.out(linkname, node)
+            orbitals = self._parse_orbitals(header, structure, non_collinear, spinorbit)
+
+            bands, projections = self._parse_bands_and_projections(kpoint_blocks, len(orbitals))
+            energy, dos_node, pdos_node, pdos_array = self._parse_pdos_files(
+                retrieved_temporary_folder, nspin, spinorbit, logs
+            )
+
+            self.out('Dos', dos_node)
+            self.out('Pdos', pdos_node)
+
+            output_node_dict = self._build_bands_and_projections(
+                kpoints, bands, energy, orbitals, projections, pdos_array, nspin
+            )
+
+            for linkname, node in output_node_dict.items():
+                self.out(linkname, node)
+        elif projection_boxes:
+            energy, dos_node, pdos_node, ldos_node = self._parse_ldos_boxes_file(
+                retrieved_temporary_folder, nspin, logs
+            )
+            self.out('Dos', dos_node)
+            self.out('Pdos', pdos_node)
+            self.out('Ldos', ldos_node)
+        else:
+            msg = (
+                'ProjwfcParser: Could not detect projection type! The calculation may have been interrupted or did not'
+                'complete successfully.'
+            )
+            warnings.warn(msg)
 
         for exit_code in [
             'ERROR_OUTPUT_STDOUT_MISSING',
             'ERROR_OUTPUT_STDOUT_READ',
             'ERROR_OUTPUT_STDOUT_PARSE',
             'ERROR_OUTPUT_STDOUT_INCOMPLETE',
-            'ERROR_READING_PDOSTOT_FILE'
+            'ERROR_READING_PDOSTOT_FILE',
+            'ERROR_READING_LDOSBOXES_FILE',
+            'ERROR_MISSING_PDOSTOT_FILE',
+            'ERROR_MISSING_LDOSBOXES_FILE',
         ]:
             if exit_code in logs.error:
                 return self.exit(self.exit_codes.get(exit_code), logs)
@@ -257,8 +285,12 @@ class ProjwfcParser(BaseParser):
 
         return bands, projections
 
-    def _parse_pdos_files(self, retrieved_temporary_folder: Path, nspin: int,
-                          spinorbit: bool, logs: AttributeDict) -> Tuple[ArrayLike, XyData, ArrayLike]:
+    def _parse_pdos_files(self,
+        retrieved_temporary_folder: Path,
+        nspin: int,
+        spinorbit: bool,
+        logs: AttributeDict,
+    ) -> Tuple[ArrayLike, XyData, XyData, ArrayLike]:
         """Parse the PDOS files and convert them into arrays.
 
         Reads in all of the ``*.pdos*`` files and converts the data into arrays. The PDOS arrays are then concatenated
@@ -273,7 +305,8 @@ class ProjwfcParser(BaseParser):
         :param nspin: nspin value of the parent calculation.
         :param spinorbit: True if the calculation used spin-orbit coupling.
 
-        :return: tuple of three containing the energy grid, the total DOS as a node and the PDOS
+        :return: tuple of four containing the energy grid, the total DOS as a node, the total PDOS as a node and the
+            PDOS array of projections on orbitals
         """
 
         def natural_sort_key(sort_key, _nsre=re.compile('([0-9]+)')):
@@ -300,21 +333,33 @@ class ProjwfcParser(BaseParser):
         except (OSError, KeyError):
             logs.error.append('ERROR_READING_PDOSTOT_FILE')
             return np.array([]), XyData(), np.array([])
+        except StopIteration:
+            logs.error.append('ERROR_MISSING_PDOSTOT_FILE')
+            return np.array([]), XyData(), np.array([])
 
         energy = pdostot_array[:, 0]
 
-        dos_node = XyData()
+        dos_node = XyData()  # Total DOS
         dos_node.set_x(energy, 'Energy', 'eV')
 
-        # For spin-polarised calculations the total DOS is split up in spin up and down
+        pdos_node = XyData()  # Total PDOS (on all orbitals)
+        pdos_node.set_x(energy, 'Energy', 'eV')
+
+        # For spin-polarised calculations the total DOS and the total PDOS are split up in spin up and down
         if nspin == 2:
             dos_node.set_y(
                 (pdostot_array[:, 1], pdostot_array[:, 2]),
                 ('dos_up', 'dos_down'),
-                ('states/eV', 'states/eV')
+                ('states/eV', 'states/eV'),
+            )
+            pdos_node.set_y(
+                (pdostot_array[:, 3], pdostot_array[:, 4]),
+                ('pdos_up', 'pdos_down'),
+                ('states/eV', 'states/eV'),
             )
         else:
             dos_node.set_y(pdostot_array[:, 1], 'Dos', 'states/eV')
+            pdos_node.set_y(pdostot_array[:, 2], 'Pdos', 'states/eV')
 
         # We're only interested in the PDOS, so we skip the first columns corresponding to the energy and LDOS
         if nspin == 1 or spinorbit:
@@ -350,7 +395,83 @@ class ProjwfcParser(BaseParser):
                 pdos_list.append(np.concatenate([wfc_pdos_array[:, 0::2], wfc_pdos_array[:, 1::2]], axis=1))
             pdos_array = np.concatenate(pdos_list, axis=1)
 
-        return energy, dos_node, pdos_array
+        return energy, dos_node, pdos_node, pdos_array
+
+    def _parse_ldos_boxes_file(
+        self, retrieved_temporary_folder: Path, nspin: int, logs: AttributeDict
+    ) -> Tuple[ArrayLike, XyData, XyData, XyData]:
+        """Parse the LDOS file and convert it into arrays.
+
+        Reads in the ``*ldos_boxes*`` file and converts the data into arrays. Only works and tested for nspin = 1 or 2.
+
+        :param retrieved_temporary_folder: temporary folder of retrieved files that is deleted after parsing.
+        :param nspin: number of spin components, nspin value of the parent calculation.
+
+        :return: tuple of four containing the energy grid, the total DOS as a node and the LDOS as a node
+        """
+
+        try:
+            ldosboxes_filepath = next(retrieved_temporary_folder.glob('*ldos_boxes*'))
+            with ldosboxes_filepath.open('r') as ldosboxes_file:
+                # Columns: Energy(eV), Dos, Ldos_total, Ldos_box1, Ldos_box2, ...
+                ldosboxes_array = np.atleast_2d(np.genfromtxt(ldosboxes_file))
+        except (OSError, KeyError):
+            logs.error.append('ERROR_READING_LDOSBOXES_FILE')
+            return np.array([]), XyData(), XyData()
+        except StopIteration:
+            logs.error.append('ERROR_MISSING_LDOSBOXES_FILE')
+            return np.array([]), XyData(), XyData()
+
+        energy = ldosboxes_array[:, 0]
+
+        dos_node = XyData()  # Total DOS
+        dos_node.set_x(energy, 'Energy', 'eV')
+
+        pdos_node = XyData()  # Total PDOS (on all boxes)
+        pdos_node.set_x(energy, 'Energy', 'eV')
+
+        # For spin-polarized calculations the total DOS and the total PDOS are split up in spin up and down and so are the LDOS for each box
+        if nspin == 2:
+            dos_node.set_y(
+                (ldosboxes_array[:, 1], ldosboxes_array[:, 2]),
+                ('dos_up', 'dos_down'),
+                ('states/eV', 'states/eV'),
+            )
+            pdos_node.set_y(
+                (ldosboxes_array[:, 3], ldosboxes_array[:, 4]),
+                ('pdos_up', 'pdos_down'),
+                ('states/eV', 'states/eV'),
+            )
+        else:
+            # For unpolarized or non-collinear (with or without SOC) calculations, the total DOS and the total PDOS are not split, and neither are the LDOS
+            dos_node.set_y(ldosboxes_array[:, 1], 'Dos', 'states/eV')
+            pdos_node.set_y(ldosboxes_array[:, 2], 'Pdos', 'states/eV')
+
+        ldos_node = XyData()
+        ldos_node.set_x(energy, 'Energy', 'eV')
+
+        num_boxes = (
+            ldosboxes_array.shape[1] - (1 + nspin * 2)
+        ) // nspin  # for nspin = 1 or 2
+
+        if nspin == 2:
+            num_boxes = (ldosboxes_array.shape[1] - 5) // 2
+            ldos_node.set_y(
+                [ldosboxes_array[:, i * 2 + 5] for i in range(num_boxes)]
+                + [ldosboxes_array[:, i * 2 + 6] for i in range(num_boxes)],
+                [f'ldos_up_box{i + 1}' for i in range(num_boxes)]
+                + [f'ldos_down_box{i + 1}' for i in range(num_boxes)],
+                ['states/eV'] * (num_boxes * 2),
+            )
+        else:
+            num_boxes = ldosboxes_array.shape[1] - 3
+            ldos_node.set_y(
+                [ldosboxes_array[:, i + 3] for i in range(num_boxes)],
+                [f'ldos_box{i + 1}' for i in range(num_boxes)],
+                ['states/eV'] * num_boxes,
+            )
+
+        return energy, dos_node, pdos_node, ldos_node
 
     @classmethod
     def _build_bands_and_projections(
