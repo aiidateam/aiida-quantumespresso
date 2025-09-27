@@ -607,9 +607,11 @@ def parse_step_to_trajectory(trajectory, data, skip_structure=False):
     if 'forces' in data and '$' in data['forces']:
         forces = np.array(data['forces']['$'])
         dimensions = data['forces']['@dims']  # Like [3, 2], should be reversed to reshape the forces array
+        forces = forces * (CONSTANTS.ry_to_ev*2 ) / CONSTANTS.bohr_to_ang
         trajectory['forces'].append(forces.reshape(dimensions[::-1]))
 
     if 'stress' in data and '$' in data['stress']:
         stress = np.array(data['stress']['$'])
         dimensions = data['stress']['@dims']  # Like [3, 3], should be reversed to reshape the stress array
+        stress = stress * CONSTANTS.au_gpa
         trajectory['stress'].append(stress.reshape(dimensions[::-1]))
