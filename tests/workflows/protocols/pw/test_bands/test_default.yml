@@ -21,7 +21,7 @@ bands:
         conv_thr: 4.0e-10
         diago_full_acc: true
         diagonalization: paro
-        electron_maxstep: 80
+        electron_maxstep: 50
         mixing_beta: 0.4
         startingpot: file
       SYSTEM:
@@ -98,7 +98,7 @@ relax:
           tstress: true
         ELECTRONS:
           conv_thr: 4.0e-10
-          electron_maxstep: 80
+          electron_maxstep: 50
           mixing_beta: 0.4
         SYSTEM:
           degauss: 0.02
@@ -133,7 +133,7 @@ scf:
         tstress: true
       ELECTRONS:
         conv_thr: 4.0e-10
-        electron_maxstep: 80
+        electron_maxstep: 50
         mixing_beta: 0.4
       SYSTEM:
         degauss: 0.02

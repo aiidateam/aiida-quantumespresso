@@ -52,19 +52,29 @@ def test_handle_out_of_walltime(
         assert process.ctx.inputs.structure == output_structure
 
 
-def test_handle_electronic_convergence_not_reached(generate_workchain_pw, fixture_localhost, generate_remote_data):
+def test_handle_electronic_convergence_not_reached(
+        generate_workchain_pw, fixture_localhost, generate_remote_data, generate_structure,
+        generate_calc_job_node
+    ):
     """Test `PwBaseWorkChain.handle_electronic_convergence_not_reached`."""
     remote_data = generate_remote_data(computer=fixture_localhost, remote_path='/path/to/remote')
 
     process = generate_workchain_pw(
         exit_code=PwCalculation.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED,
-        pw_outputs={'remote_folder': remote_data}
+        pw_outputs={'remote_folder': remote_data},
     )
     process.setup()
+
+    cj_node = generate_calc_job_node('quantumespresso.pw', fixture_localhost, 'test')
+
+    print(cj_node.outputs.output_parameters.get_dict()) 
+
+    process.ctx.structure = generate_structure('2D-xy-arsenic')
 
     process.ctx.inputs.parameters['ELECTRONS']['mixing_beta'] = 0.5
 
     result = process.handle_electronic_convergence_not_reached(process.ctx.children[-1])
+
     assert isinstance(result, ProcessHandlerReport)
     assert process.ctx.inputs.parameters['ELECTRONS']['mixing_beta'] == \
         process.defaults.delta_factor_mixing_beta * 0.5

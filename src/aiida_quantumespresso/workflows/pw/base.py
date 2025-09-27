@@ -29,11 +29,15 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         'qe': qe_defaults,
         'delta_threshold_degauss': 30,
         'delta_factor_degauss': 0.1,
-        'delta_factor_mixing_beta': 0.8,
+        'delta_factor_mixing_beta': 0.5,
+        'delta_addition_mixing_ndim': 4,
         'delta_factor_max_seconds': 0.95,
         'delta_factor_nbnd': 0.05,
         'delta_minimum_nbnd': 4,
         'delta_factor_trust_radius_min': 0.1,
+        'conv_slope_threshold': -0.1,
+        'conv_slope_range': 30,
+        'low_symmetry_threshold': 6
     })
 
     @classmethod
@@ -635,15 +639,87 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         Decrease the mixing beta and fully restart from the previous calculation.
         """
-        factor = self.defaults.delta_factor_mixing_beta
-        mixing_beta = self.ctx.inputs.parameters.get('ELECTRONS', {}).get('mixing_beta', self.defaults.qe.mixing_beta)
-        mixing_beta_new = mixing_beta * factor
+        import numpy
 
-        self.ctx.inputs.parameters['ELECTRONS']['mixing_beta'] = mixing_beta_new
-        action = f'reduced beta mixing from {mixing_beta} to {mixing_beta_new} and restarting from the last calculation'
+        scf_accuracy = calculation.tools.get_scf_accuracy(-1)[-self.defaults.conv_slope_range:]
+        scf_accuracy_slope = numpy.polyfit(numpy.arange(0, len(scf_accuracy)), numpy.log(scf_accuracy), 1)[0]
 
-        self.set_restart_type(RestartType.FULL, calculation.outputs.remote_folder)
-        self.report_error_handled(calculation, action)
+        mixing_beta = self.ctx.inputs.parameters['ELECTRONS'].get('mixing_beta', self.defaults.qe.mixing_beta)
+        mixing_ndim = self.ctx.inputs.parameters['ELECTRONS'].get('mixing_ndim', self.defaults.qe.mixing_ndim)
+        mixing_mode = self.ctx.inputs.parameters['ELECTRONS'].get('mixing_mode', self.defaults.qe.mixing_mode)
+        low_symmetry_structure = (
+            len(calculation.outputs.output_parameters.get_dict()['symmetries']) < self.defaults.low_symmetry_threshold
+        )
+        low_dim_structure = calculation.inputs.structure.pbc != (True, True, True)
+        nbnd_cur = calculation.outputs.output_parameters.get_dict()['number_of_bands']
+        diagonalization = self.ctx.inputs.parameters['ELECTRONS'].get('diagonalization', 'david')
+
+        self.report(f'number of bands: {nbnd_cur}')
+        self.report(f'scf accuracy slope: {scf_accuracy_slope:.2f}')
+        self.report(f'mixing beta: {mixing_beta:.2f}')
+        self.report(f'mixing ndim: {mixing_ndim}')
+        self.report(f'mixing mode: {mixing_mode}')
+        self.report(f"structure symmetries: {len(calculation.outputs.output_parameters.get_dict()['symmetries'])}")
+        self.report(f'low symmetry structure: {low_symmetry_structure}')
+        self.report(f'low dimension structure: {low_dim_structure}')
+
+        if 'scf_failed_once' not in self.ctx:
+            nbnd_new = nbnd_cur + max(int(nbnd_cur * self.defaults.delta_factor_nbnd), self.defaults.delta_minimum_nbnd)
+            self.ctx.inputs.parameters['SYSTEM']['nbnd'] = nbnd_new
+            self.report(
+                f'First SCF failure encountered: increasing number of bands to {nbnd_new}'
+            )
+            self.ctx.scf_failed_once = True
+
+        if scf_accuracy_slope < self.defaults.conv_slope_threshold:
+            action = (
+                f'electronic convergence not reached but the scf accuracy slope ({scf_accuracy_slope:.2f}) is smaller '
+                f'than the threshold ({self.defaults.conv_slope_threshold:.2f}): restart from the last calculation.'
+            )
+            self.set_restart_type(RestartType.FROM_CHARGE_DENSITY, calculation.outputs.remote_folder)
+            self.report_error_handled(calculation, action)
+            return ProcessHandlerReport(True)
+
+        if mixing_mode == 'plain' and low_dim_structure:
+
+            self.ctx.inputs.parameters['ELECTRONS'].setdefault('mixing_mode', 'local-TF')
+            action = (
+                'electronic convergence not reached and structure is low dimensional: switch to local-TF mixing and '
+                'restart from the last calculation.'
+            )
+            self.set_restart_type(RestartType.FROM_CHARGE_DENSITY, calculation.outputs.remote_folder)
+            self.report_error_handled(calculation, action)
+            return ProcessHandlerReport(True)
+
+        if 'diagonalizations' not in self.ctx:
+            # Initialize a list to track diagonalisations that haven't been tried in reverse order or preference
+            self.ctx.diagonalizations = [value for value in ['cg', 'paro', 'ppcg', 'rmm-paro', 'david'] if value != diagonalization.lower()]
+
+        try:
+            new = self.ctx.diagonalizations.pop()
+            self.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = new
+            action = f'electronic convergence not reached: switching to `{new}` diagonalization.'
+            self.set_restart_type(RestartType.FROM_CHARGE_DENSITY, calculation.outputs.remote_folder)
+            self.report_error_handled(calculation, action)
+            return ProcessHandlerReport(True)
+        except IndexError:
+            pass
+
+        if mixing_beta > 0.1:
+
+            mixing_beta_new = mixing_beta * self.defaults.delta_factor_mixing_beta
+            mixing_ndim_new = mixing_ndim + self.defaults.delta_addition_mixing_ndim
+
+            self.ctx.inputs.parameters['ELECTRONS']['mixing_beta'] = mixing_beta_new
+            self.ctx.inputs.parameters['ELECTRONS']['mixing_ndim'] = mixing_ndim_new
+            action = (
+                f'reduced beta mixing from {mixing_beta} to {mixing_beta_new}, increased `mixing_ndim` from '
+                f'{mixing_ndim} to {mixing_ndim_new} and restarting from the last calculation.'
+            )
+            self.set_restart_type(RestartType.FROM_CHARGE_DENSITY, calculation.outputs.remote_folder)
+            self.report_error_handled(calculation, action)
+            return ProcessHandlerReport(True)
+
         return ProcessHandlerReport(True)
 
     @process_handler(priority=420, exit_codes=[

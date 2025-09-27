@@ -19,7 +19,7 @@ pw:
       tstress: true
     ELECTRONS:
       conv_thr: 4.0e-10
-      electron_maxstep: 80
+      electron_maxstep: 50
       mixing_beta: 0.4
     SYSTEM:
       degauss: 0.02
