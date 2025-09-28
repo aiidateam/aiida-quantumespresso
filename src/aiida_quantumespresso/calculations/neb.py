@@ -246,7 +246,7 @@ class NebCalculation(CalcJob):
         if input_params:
             raise InputValidationError(
                 'The following namelists are specified in input_params, but are not valid namelists for the current '
-                f'type of calculation: {",".join(list(input_params.keys()))}'
+                f"type of calculation: {', '.join(list(input_params.keys()))}"
             )
 
         return input_data, namelist

@@ -216,7 +216,7 @@ class ProtocolManager:
             res = builder.all()
             if len(res) >= 1:
                 this_mismatch_elements = []
-                for this_uuid, this_element in res:
+                for this_uuid, this_element in res:  # pylint: disable=not-an-iterable
                     if element == this_element:
                         found[element] = this_uuid
                         break

@@ -38,15 +38,7 @@ repos:
                 tests/.*(?<!\.py)$
             )$
         additional_dependencies: ['toml']
-
--   repo: local
-    hooks:
-    -   id: pylint
-        name: pylint
-        entry: pylint
-        language: system
-        types: [python]
-        exclude: *exclude_files
+        language_version: python3.9
 
 -   repo: https://github.com/PyCQA/pydocstyle
     rev: '6.1.1'
