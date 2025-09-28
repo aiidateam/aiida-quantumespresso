@@ -259,7 +259,7 @@ class PhCalculation(CalcJob):
         if parameters:
             raise exceptions.InputValidationError(
                 'The following namelists are specified in parameters, but are not valid namelists for the current type '
-                f'of calculation: {",".join(list(parameters.keys()))}'
+                f"of calculation: {', '.join(list(parameters.keys()))}"
             )
 
         # copy the parent scratch

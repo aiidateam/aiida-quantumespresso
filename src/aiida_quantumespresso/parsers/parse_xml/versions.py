@@ -27,7 +27,11 @@ def get_xml_file_version(xml):
     elif is_valid_pre_6_2_version(xml):
         return QeXmlVersion.PRE_6_2
     else:
-        raise XMLUnsupportedFormatError(f'unrecognized XML file version: cannot find schema {get_schema_filename(xml)} in {os.path.join(os.path.dirname(os.path.abspath(__file__)), "schemas")}. You can look for it in https://github.com/QEF/qeschemas')
+        raise XMLUnsupportedFormatError(
+            f'unrecognized XML file version: cannot find schema {get_schema_filename(xml)} in '
+            f"{os.path.join(os.path.dirname(os.path.abspath(__file__)), 'schemas')}. "
+            'You can look for it in https://github.com/QEF/qeschemas'
+        )
 
 
 def get_schema_filepath(xml):
