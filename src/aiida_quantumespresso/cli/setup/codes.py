@@ -101,7 +101,7 @@ def setup_codes_cmd(computer, executables, directory, label_template, prepend_te
             label=label,
             computer=computer,
             filepath_executable=exec_path,
-            default_calc_job_plugin=f'quantumespresso.{executable.split(".")[0]}',
+            default_calc_job_plugin=f"quantumespresso.{executable.split('.')[0]}",
             prepend_text=prepend_text,
             append_text=append_text
         )

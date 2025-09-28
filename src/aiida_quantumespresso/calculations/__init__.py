@@ -766,7 +766,7 @@ class BasePwCpInputGenerator(CalcJob):
         if input_params:
             raise exceptions.InputValidationError(
                 'The following namelists are specified in input_params, but are not valid namelists for the current '
-                f'type of calculation: {",".join(list(input_params.keys()))}'
+                f"type of calculation: {', '.join(list(input_params.keys()))}"
             )
 
         return inputfile, local_copy_list_to_append
