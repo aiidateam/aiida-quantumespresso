@@ -334,7 +334,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
     except KeyError as exception:
         raise QEInputValidationError(
             'Error, you need to specify at least the calculation type (among '
-            f'{", ".join(list(valid_calculations_and_opt_namelists.keys()))})'
+            f"{', '.join(list(valid_calculations_and_opt_namelists.keys()))})"
         ) from exception
 
     try:
@@ -342,7 +342,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
     except KeyError as exception:
         raise QEInputValidationError(
             f'Error, {calculation_type} is not a valid value for '
-            f'the calculation type (valid values: {", ".join(list(valid_calculations_and_opt_namelists.keys()))}'
+            f"the calculation type (valid values: {', '.join(list(valid_calculations_and_opt_namelists.keys()))}"
         ) from exception
 
     internal_dict = {i: {} for i in compulsory_namelists + opt_namelists}

@@ -1,6 +1,6 @@
 [build-system]
-requires = ['flit_core >=3.4,<4']
-build-backend = 'flit_core.buildapi'
+requires = ['hatchling']
+build-backend = 'hatchling.build'
 
 [project]
 name = 'aiida-quantumespresso'
@@ -38,29 +38,6 @@ dependencies = [
 Home = 'https://github.com/aiidateam/aiida-quantumespresso'
 Source = 'https://github.com/aiidateam/aiida-quantumespresso'
 Documentation = 'https://aiida-quantumespresso.readthedocs.io'
-
-[project.optional-dependencies]
-docs = [
-    'sphinx~=6.2.1',
-    'sphinx-copybutton~=0.5.2',
-    'sphinx-book-theme~=1.0.1',
-    'sphinx-click~=4.4.0',
-    'sphinx-design~=0.4.1',
-    'sphinxcontrib-details-directive~=0.1.0',
-    'sphinx-autoapi~=3.0.0',
-    'myst-parser~=3.0.0',
-]
-pre-commit = [
-    'pre-commit~=2.17',
-    'pylint~=2.17.2',
-    'pylint-aiida~=0.1.1',
-    'toml',
-]
-tests = [
-    'pgtest~=1.3',
-    'pytest~=6.0',
-    'pytest-regressions~=2.3'
-]
 
 [project.scripts]
 aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
@@ -130,14 +107,52 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 'quantumespresso.bands.base' = 'aiida_quantumespresso.workflows.bands.base:BandsBaseWorkChain'
 'quantumespresso.neb.base' = 'aiida_quantumespresso.workflows.neb.base:NebBaseWorkChain'
 
-[tool.flit.module]
-name = 'aiida_quantumespresso'
-
-[tool.flit.sdist]
-exclude = [
-    'docs/',
-    'tests/',
+[project.optional-dependencies]
+docs = [
+    'sphinx~=6.2.1',
+    'sphinx-copybutton~=0.5.2',
+    'sphinx-book-theme~=1.0.1',
+    'sphinx-click~=4.4.0',
+    'sphinx-design~=0.4.1',
+    'sphinxcontrib-details-directive~=0.1.0',
+    'sphinx-autoapi~=3.0.0',
+    'myst-parser~=3.0.0',
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = ['src/aiida_quantumespresso']
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  'docs/',
+  'tests/',
+]
+
+[tool.hatch.version]
+path = 'src/aiida_quantumespresso/__init__.py'
+
+[tool.hatch.envs.default]
+installer = 'uv'
+dependencies = [
+    'pgtest~=1.3',
+    'pytest~=6.0',
+    'pytest-regressions~=2.3'
+]
+
+[tool.hatch.envs.docs]
+features = ["docs"]
+scripts.clean = 'make -C docs clean'
+scripts.build = 'make -C docs html'
+scripts.view = 'make -C docs view'
+
+[tool.hatch.envs.pre-commit]
+dependencies = [
+    'pre-commit',
+    'pylint==2.15.10',
+    'pylint-aiida==0.1.1'
+]
+scripts.install = 'pre-commit install'
+scripts.run = 'pre-commit run {args}'
 
 [tool.flynt]
 line-length = 120
@@ -196,19 +211,6 @@ good-names = [
     'PwCalculation',
 ]
 
-[tool.pytest.ini_options]
-minversion = '6.0'
-testpaths = [
-    'tests',
-]
-filterwarnings = [
-    'ignore:Object of type .* not in session, .* operation along .* will not proceed:sqlalchemy.exc.SAWarning',
-    'ignore:Creating AiiDA configuration folder.*:UserWarning',
-    'ignore::DeprecationWarning:frozendict:',
-    'ignore::DeprecationWarning:pkg_resources:',
-    'ignore::DeprecationWarning:sqlalchemy_utils:',
-]
-
 [tool.yapf]
 align_closing_bracket_with_visual_indent = true
 based_on_style = 'google'
@@ -217,24 +219,3 @@ column_limit = 120
 dedent_closing_brackets = true
 indent_dictionary_value = false
 split_arguments_when_comma_terminated = true
-
-[tool.tox]
-legacy_tox_ini = """
-[tox]
-envlist =
-    py{38,39,310,311}
-    py38-pre-commit
-
-[testenv]
-description = Run the pytest tests
-usedevelop=True
-extras = tests
-commands = pytest {posargs}
-
-[testenv:py38-pre-commit]
-description = Run the pre-commit checks
-extras =
-    tests
-    pre-commit
-commands = pre-commit run {posargs}
-"""

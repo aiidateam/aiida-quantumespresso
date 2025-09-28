@@ -32,24 +32,16 @@ jobs:
         steps:
         -   uses: actions/checkout@v4
 
-        -   name: Cache Python dependencies
-            uses: actions/cache@v4
-            with:
-                path: ~/.cache/pip
-                key: pip-pre-commit-${{ hashFiles('**/setup.json') }}
-                restore-keys:
-                    pip-pre-commit-
-
         -   name: Set up Python
             uses: actions/setup-python@v5
             with:
                 python-version: '3.9'
 
-        -   name: Install Python dependencies
-            run: pip install -e .[pre-commit,tests]
+        -   name: Install Hatch
+            run: python -m pip install hatch
 
         -   name: Run pre-commit
-            run: pre-commit run --all-files || ( git status --short ; git diff ; exit 1 )
+            run: hatch run pre-commit:run
 
     tests:
 
@@ -71,24 +63,19 @@ jobs:
         steps:
         -   uses: actions/checkout@v4
 
-        -   name: Cache Python dependencies
-            uses: actions/cache@v4
-            with:
-                path: ~/.cache/pip
-                key: pip-${{ matrix.python-version }}-tests-${{ hashFiles('**/setup.json') }}
-                restore-keys:
-                    pip-${{ matrix.python-version }}-tests
-
         -   name: Set up Python ${{ matrix.python-version }}
             uses: actions/setup-python@v5
             with:
                 python-version: ${{ matrix.python-version }}
 
-        -   name: Install Python dependencies
-            run: pip install -e .[tests]
+        -   name: Install Hatch
+            run: python -m pip install hatch
 
         -   name: Run pytest
-            run: pytest -sv tests
+            env:
+                AIIDA_WARN_v3: 1
+            run: hatch run pytest -sv tests
+
 
     publish:
 
