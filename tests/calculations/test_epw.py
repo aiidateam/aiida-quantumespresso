@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the `EpwCalculation` class."""
+
 from aiida import orm
 from aiida.common.links import LinkType
 from aiida.plugins import CalculationFactory
@@ -10,8 +10,14 @@ EPWCALC = CalculationFactory('quantumespresso.epw')
 
 
 def test_epw_default(
-    fixture_localhost, fixture_sandbox, generate_calc_job, generate_remote_data, fixture_code, generate_kpoints_mesh,
-    file_regression, tmpdir
+    fixture_localhost,
+    fixture_sandbox,
+    generate_calc_job,
+    generate_remote_data,
+    fixture_code,
+    generate_kpoints_mesh,
+    file_regression,
+    tmpdir,
 ):
     """Test a default `EpwCalculation`."""
     entry_point_name = 'quantumespresso.epw'
@@ -27,7 +33,7 @@ def test_epw_default(
             'wannierize': True,
             'dvscf_dir': './save/',
             'dis_win_max': 18,
-            'dis_froz_max': 8.5
+            'dis_froz_max': 8.5,
         }
     }
 
@@ -55,7 +61,7 @@ def test_epw_default(
         },
         'dynamical_matrix_3': {
             'q_point': [0.5, 0.5, 0.5],
-        }
+        },
     }
 
     parameters2 = orm.Dict(qibz)
@@ -71,9 +77,7 @@ def test_epw_default(
         'parent_folder_nscf': parent_pw,
         'parent_folder_ph': parent_ph,
         'parameters': orm.Dict(parameters),
-        'metadata': {
-            'options': get_default_options()
-        }
+        'metadata': {'options': get_default_options()},
     }
 
     generate_calc_job(fixture_sandbox, entry_point_name, inputs)

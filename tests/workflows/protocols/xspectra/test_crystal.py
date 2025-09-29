@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the ``XspectraCrystalWorkChain.get_builder_from_protocol`` method."""
+
 import io
 
 from aiida.engine import ProcessBuilder
@@ -27,8 +27,7 @@ def test_default(fixture_code, generate_structure, data_regression, serialize_bu
     structure = generate_structure('silicon')
     pseudos = {'Si': {'core_hole': generate_upf_data('Si'), 'gipaw': generate_upf_data('Si')}}
     core_wfc_data = {
-        'Si':
-        SinglefileData(
+        'Si': SinglefileData(
             io.StringIO(
                 '# number of core states 3 =  1 0;  2 0;'
                 '\n6.51344e-05 6.615743462459999e-3'
@@ -43,7 +42,7 @@ def test_default(fixture_code, generate_structure, data_regression, serialize_bu
         core_wfc_data=core_wfc_data,
         structure=structure,
         overrides=overrides,
-        pseudos=pseudos
+        pseudos=pseudos,
     )
 
     assert isinstance(builder, ProcessBuilder)

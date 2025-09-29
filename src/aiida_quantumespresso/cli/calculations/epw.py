@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Command line scripts to launch a `EpwCalculation` for testing and demonstration purposes."""
+
 from aiida.cmdline.params import options as options_core
 from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
@@ -23,8 +24,17 @@ from ..utils import launch, options
 @options.DAEMON()
 @decorators.with_dbenv()
 def launch_calculation(
-    code, kpoints_mesh, qpoints_mesh, kfpoints_mesh, qfpoints_mesh, pw_nscf_parent, ph_parent, max_num_machines,
-    max_wallclock_seconds, with_mpi, daemon
+    code,
+    kpoints_mesh,
+    qpoints_mesh,
+    kfpoints_mesh,
+    qfpoints_mesh,
+    pw_nscf_parent,
+    ph_parent,
+    max_num_machines,
+    max_wallclock_seconds,
+    with_mpi,
+    daemon,
 ):
     """Run a EpwCalculation."""
     from aiida import orm
@@ -41,9 +51,9 @@ def launch_calculation(
             f'--pw-nscf-parent node has process_type: {pw_nscf_parent.process_type}; should be {expected_process_type}'
         )
 
-    pw_nscf_parent_folder = pw_nscf_parent.base.links.get_outgoing(
-        node_class=orm.RemoteData, link_label_filter='remote_folder'
-    ).one().node
+    pw_nscf_parent_folder = (
+        pw_nscf_parent.base.links.get_outgoing(node_class=orm.RemoteData, link_label_filter='remote_folder').one().node
+    )
 
     expected_process_type = 'aiida.calculations:quantumespresso.ph'
     if ph_parent.process_type != expected_process_type:
@@ -51,8 +61,9 @@ def launch_calculation(
             f'--ph-parent has process_type: {ph_parent.process_type}; should be {expected_process_type}'
         )
 
-    ph_parent_folder = ph_parent.base.links.get_outgoing(node_class=orm.RemoteData,
-                                                         link_label_filter='remote_folder').one().node
+    ph_parent_folder = (
+        ph_parent.base.links.get_outgoing(node_class=orm.RemoteData, link_label_filter='remote_folder').one().node
+    )
 
     parameters = {
         'INPUTEPW': {
@@ -65,7 +76,7 @@ def launch_calculation(
             'wannierize': True,
             'dvscf_dir': './save/',
             'dis_win_max': 18,
-            'dis_froz_max': 8.5
+            'dis_froz_max': 8.5,
         }
     }
 
@@ -80,7 +91,7 @@ def launch_calculation(
         'parent_folder_ph': ph_parent_folder,
         'metadata': {
             'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
-        }
+        },
     }
 
     launch.launch_process(CalculationFactory('quantumespresso.epw'), daemon, **inputs)

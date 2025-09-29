@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Tests for the `XspectraParser`."""
 
+# ruff: noqa
+
 from aiida import orm
 from aiida.common import AttributeDict
 
@@ -35,15 +37,18 @@ def test_xspectra_default(fixture_localhost, generate_calc_job_node, generate_pa
     assert not orm.Log.collection.get_logs_for(node)
     assert 'output_parameters' in results
     assert 'spectra' in results
-    data_regression.check({
-        'parameters': out_params,
-        'xspectra': {
-            'labels': spectra_labels,
-            'units': spectra_units,
+    data_regression.check(
+        {
+            'parameters': out_params,
+            'xspectra': {
+                'labels': spectra_labels,
+                'units': spectra_units,
+            },
         }
-    })
-    num_regression.check({f'spectra_val_{i}': val for i, val in enumerate(spectra_values)},
-                         default_tolerance=dict(atol=0, rtol=1e-10))
+    )
+    num_regression.check(
+        {f'spectra_val_{i}': val for i, val in enumerate(spectra_values)}, default_tolerance=dict(atol=0, rtol=1e-10)
+    )
 
 
 def test_xspectra_spin(fixture_localhost, generate_calc_job_node, generate_parser, data_regression, num_regression):
@@ -67,15 +72,18 @@ def test_xspectra_spin(fixture_localhost, generate_calc_job_node, generate_parse
     assert not orm.Log.collection.get_logs_for(node)
     assert 'output_parameters' in results
     assert 'spectra' in results
-    data_regression.check({
-        'parameters': out_params,
-        'xspectra': {
-            'labels': spectra_labels,
-            'units': spectra_units,
+    data_regression.check(
+        {
+            'parameters': out_params,
+            'xspectra': {
+                'labels': spectra_labels,
+                'units': spectra_units,
+            },
         }
-    })
-    num_regression.check({f'spectra_val_{i}': val for i, val in enumerate(spectra_values)},
-                         default_tolerance=dict(atol=0, rtol=1e-10))
+    )
+    num_regression.check(
+        {f'spectra_val_{i}': val for i, val in enumerate(spectra_values)}, default_tolerance=dict(atol=0, rtol=1e-10)
+    )
 
 
 def test_xspectra_failed_interrupted(fixture_localhost, generate_calc_job_node, generate_parser):

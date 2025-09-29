@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO xspectra.x calculation with automated error handling and restarts."""
+
+# ruff: noqa
+
 import warnings
 
 from aiida import orm
@@ -17,7 +20,8 @@ with warnings.catch_warnings():
 
 warnings.warn(
     'This module is deprecated and will be removed soon as part of migrating XAS and XPS workflows to a new repository.'
-    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.', FutureWarning
+    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.',
+    FutureWarning,
 )
 
 
@@ -37,14 +41,14 @@ class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             'kpoints',
             valid_type=orm.KpointsData,
             required=False,
-            help='An explicit k-points mesh. Either this or `kpoints_distance` has to be provided.'
+            help='An explicit k-points mesh. Either this or `kpoints_distance` has to be provided.',
         )
         spec.input(
             'kpoints_distance',
             valid_type=orm.Float,
             required=False,
             help='The minimum desired distance in 1/Å between k-points in reciprocal space. The explicit k-points will '
-            'be generated automatically by a calculation function based on the input structure.'
+            'be generated automatically by a calculation function based on the input structure.',
         )
         spec.input(
             'kpoints_force_parity',
@@ -52,7 +56,7 @@ class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             required=False,
             help='Optional input when constructing the k-points based on a desired `kpoints_distance`. Setting this to '
             '`True` will force the k-point mesh to have an even number of points along each lattice vector except '
-            'for any non-periodic directions.'
+            'for any non-periodic directions.',
         )
         spec.expose_outputs(XspectraCalculation)
         spec.outline(
@@ -68,12 +72,12 @@ class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         spec.exit_code(
             202,
             'ERROR_INVALID_INPUT_KPOINTS',
-            message='Neither the `kpoints` nor the `kpoints_distance` input was specified.'
+            message='Neither the `kpoints` nor the `kpoints_distance` input was specified.',
         )
         spec.exit_code(
             300,
             'ERROR_UNRECOVERABLE_FAILURE',
-            message='[deprecated] The calculation failed with an unrecoverable error.'
+            message='[deprecated] The calculation failed with an unrecoverable error.',
         )
 
     @classmethod
@@ -82,6 +86,7 @@ class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         from importlib_resources import files
 
         from ..protocols import xspectra as xs_protocols
+
         return files(xs_protocols) / 'base.yaml'
 
     @classmethod
@@ -190,9 +195,7 @@ class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 'structure': self.inputs.xspectra.parent_folder.creator.inputs.structure,
                 'distance': self.inputs.kpoints_distance,
                 'force_parity': self.inputs.get('kpoints_force_parity', orm.Bool(False)),
-                'metadata': {
-                    'call_link_label': 'create_kpoints_from_distance'
-                }
+                'metadata': {'call_link_label': 'create_kpoints_from_distance'},
             }
             kpoints = create_kpoints_from_distance(**inputs)  # pylint: disable=unexpected-keyword-arg
 
@@ -243,9 +246,10 @@ class XspectraBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         factor = 0.5
         max_seconds = self.ctx.inputs.parameters.get('INPUT_XSPECTRA', {}).get('time_limit', None)
         if max_seconds is None:
-            max_seconds = self.ctx.inputs.metadata.options.get(
-                'max_wallclock_seconds', None
-            ) * self.defaults.delta_factor_time_limit
+            max_seconds = (
+                self.ctx.inputs.metadata.options.get('max_wallclock_seconds', None)
+                * self.defaults.delta_factor_time_limit
+            )
         max_seconds_new = max_seconds * factor
 
         self.ctx.restart_calc = node

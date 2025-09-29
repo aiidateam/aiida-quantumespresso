@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the ``calculation launch epw`` command."""
+
 from aiida_quantumespresso.cli.calculations.epw import launch_calculation
 
 

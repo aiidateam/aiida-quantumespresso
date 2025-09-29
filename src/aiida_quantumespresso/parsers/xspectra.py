@@ -1,11 +1,12 @@
-# -*- coding: utf-8 -*-
-import re
-from typing import Tuple
-import warnings
+# ruff: noqa
 
+import re
+import warnings
+from typing import Tuple
+
+import numpy as np
 from aiida.common import AttributeDict
 from aiida.orm import Dict, XyData
-import numpy as np
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.base import BaseParser
@@ -13,8 +14,10 @@ from aiida_quantumespresso.utils.mapping import get_logging_container
 
 warnings.warn(
     'This module is deprecated and will be removed soon as part of migrating XAS and XPS workflows to a new repository.'
-    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.', FutureWarning
+    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.',
+    FutureWarning,
 )
+
 
 class XspectraParser(BaseParser):
     """Parser for the ``XSpectraCalculation`` calcjob plugin."""
@@ -24,7 +27,7 @@ class XspectraParser(BaseParser):
         'xiabs < 1 or xiabs > ntyp': 'ERROR_OUTPUT_ABSORBING_SPECIES_ZERO',
         'Calculation not finished': 'ERROR_OUT_OF_WALLTIME',
     }
-    success_string='END JOB'
+    success_string = 'END JOB'
 
     def parse(self, **kwargs):
         """Parse the contents of the output files stored in the `retrieved` output node."""
@@ -74,10 +77,10 @@ class XspectraParser(BaseParser):
         array_names = [[], []]
         array_units = [[], []]
 
-        array_names[0] = ['energy', 'sigma'] # for non-spin-polarised calculations
+        array_names[0] = ['energy', 'sigma']  # for non-spin-polarised calculations
         array_units[0] = ['eV', 'n/a']
 
-        array_names[1] = ['energy', 'sigma_tot', 'sigma_up', 'sigma_down'] # for spin-polarised calculations
+        array_names[1] = ['energy', 'sigma_tot', 'sigma_up', 'sigma_down']  # for spin-polarised calculations
         array_units[1] = ['eV', 'n/a', 'n/a', 'n/a']
 
         array_data, spin = self.parse_raw_xspectra(xspectra_file, array_names, array_units)

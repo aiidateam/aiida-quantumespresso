@@ -1,17 +1,18 @@
-# -*- coding: utf-8 -*-
 """Tests for the `XspectraCoreWorkChain` class."""
+
 import io
 
+import pytest
 from aiida import engine, orm
 from aiida.common import LinkType
 from aiida.manage.manager import get_manager
 from plumpy import ProcessState
-import pytest
 
 
 def instantiate_process(cls_or_builder, inputs=None):
     """Instantiate a process, from a ``Process`` class or ``ProcessBuilder`` instance."""
     from aiida.engine.utils import instantiate_process as _instantiate_process
+
     manager = get_manager()
     runner = manager.get_runner()
     return _instantiate_process(runner, cls_or_builder, **(inputs or {}))
@@ -38,30 +39,21 @@ def generate_workchain_xspectra_core(generate_inputs_pw, generate_workchain, gen
         scf = {'pw': scf_pw_inputs, 'kpoints': kpoints}
 
         inputs = {
-            'structure':
-            structure,
-            'scf':
-            scf,
-            'xs_prod':
-            xs_prod,
-            'xs_plot':
-            xs_prod,
-            'run_replot':
-            Bool(False),
-            'dry_run':
-            Bool(True),
-            'abs_atom_marker':
-            Str('Si'),
-            'core_wfc_data':
-            SinglefileData(
+            'structure': structure,
+            'scf': scf,
+            'xs_prod': xs_prod,
+            'xs_plot': xs_prod,
+            'run_replot': Bool(False),
+            'dry_run': Bool(True),
+            'abs_atom_marker': Str('Si'),
+            'core_wfc_data': SinglefileData(
                 io.StringIO(
                     '# number of core states 3 =  1 0;  2 0;'
                     '\n6.51344e-05 6.615743462459999e-3'
                     '\n6.59537e-05 6.698882211449999e-3'
                 )
             ),
-            'eps_vectors':
-            List(list=[[1., 0., 0.]])
+            'eps_vectors': List(list=[[1.0, 0.0, 0.0]]),
         }
 
         return generate_workchain(entry_point, inputs)
@@ -73,7 +65,7 @@ def test_default(
     generate_inputs_xspectra,
     generate_workchain_pw,
     generate_workchain_xspectra,
-    generate_workchain_xspectra_core, #pylint: disable=redefined-outer-name
+    generate_workchain_xspectra_core,  # pylint: disable=redefined-outer-name
     fixture_localhost,
     generate_remote_data,
     generate_calc_job_node,
@@ -124,7 +116,7 @@ def test_default(
     )
     xspectra_node.store()
 
-    result = orm.Dict(dict={'xepsilon': [1., 0., 0.], 'xcoordcrys': False})
+    result = orm.Dict(dict={'xepsilon': [1.0, 0.0, 0.0], 'xcoordcrys': False})
     result.store()
     result.base.links.add_incoming(xs_prod_node, link_type=LinkType.RETURN, link_label='output_parameters')
     result.base.links.add_incoming(xspectra_node, link_type=LinkType.CREATE, link_label='output_parameters')
@@ -146,5 +138,8 @@ def test_default(
 
     wkchain.update_outputs()
 
-    assert set(wkchain.node.base.links.get_outgoing().all_link_labels()
-               ) == {'parameters_scf', 'parameters_xspectra__xas_0', 'spectra'}
+    assert set(wkchain.node.base.links.get_outgoing().all_link_labels()) == {
+        'parameters_scf',
+        'parameters_xspectra__xas_0',
+        'spectra',
+    }

@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """CalcFunction to create structures with a marked atom for each site in a list."""
+
 import warnings
 
 from aiida import orm
@@ -9,7 +9,8 @@ from aiida.orm.nodes.data.structure import Kind, Site, StructureData
 
 warnings.warn(
     'This module is deprecated and will be removed soon as part of migrating XAS and XPS workflows to a new repository.'
-    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.', FutureWarning
+    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.',
+    FutureWarning,
 )
 
 
@@ -25,8 +26,7 @@ def get_marked_structures(structure, atoms_list, marker='X'):
     elements_present = [kind.symbol for kind in structure.kinds]
     if marker in elements_present:
         raise ValidationError(
-            f'The marker ("{marker}") should not match an existing Kind in '
-            f'the input structure ({elements_present}.'
+            f'The marker ("{marker}") should not match an existing Kind in ' f'the input structure ({elements_present}.'
         )
 
     output_params = {}
