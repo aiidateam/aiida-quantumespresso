@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from aiida.orm import Dict
 
 from aiida_quantumespresso.data.force_constants import ForceConstantsData
@@ -22,10 +21,10 @@ class Q2rParser(BaseParser):
 
         self.out('output_parameters', Dict(parsed_data))
 
-        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE'in logs.error:
+        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs.error:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE, logs)
 
-        filename_force_constants = self.node.process_class._FORCE_CONSTANTS_NAME
+        filename_force_constants = self.node.process_class._FORCE_CONSTANTS_NAME  # noqa: SLF001
 
         if filename_force_constants not in self.retrieved.base.repository.list_object_names():
             return self.exit(self.exit_codes.ERROR_READING_FORCE_CONSTANTS_FILE, logs)

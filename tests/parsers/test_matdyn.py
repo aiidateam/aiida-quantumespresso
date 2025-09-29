@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the `MatdynParser`."""
+
 from aiida import orm
 from aiida.common import AttributeDict
 
@@ -9,9 +9,11 @@ def generate_inputs():
     kpoints = orm.KpointsData()
     kpoints.set_kpoints_mesh([1, 1, 1])
 
-    return AttributeDict({
-        'kpoints': kpoints,
-    })
+    return AttributeDict(
+        {
+            'kpoints': kpoints,
+        }
+    )
 
 
 def test_matdyn_default(fixture_localhost, generate_calc_job_node, generate_parser, data_regression):
@@ -28,10 +30,12 @@ def test_matdyn_default(fixture_localhost, generate_calc_job_node, generate_pars
     assert not orm.Log.collection.get_logs_for(node)
     assert 'output_parameters' in results
     assert 'output_phonon_bands' in results
-    data_regression.check({
-        'output_parameters': results['output_parameters'].get_dict(),
-        'output_phonon_bands': results['output_phonon_bands'].base.attributes.all
-    })
+    data_regression.check(
+        {
+            'output_parameters': results['output_parameters'].get_dict(),
+            'output_phonon_bands': results['output_phonon_bands'].base.attributes.all,
+        }
+    )
 
 
 def test_matdyn_dos(fixture_localhost, generate_calc_job_node, generate_parser, data_regression):
@@ -43,9 +47,7 @@ def test_matdyn_dos(fixture_localhost, generate_calc_job_node, generate_parser, 
     kpoints.set_kpoints_mesh([2, 2, 2])
 
     inputs = {
-        'parameters': orm.Dict({'INPUT': {
-            'dos': True
-        }}),
+        'parameters': orm.Dict({'INPUT': {'dos': True}}),
         'kpoints': kpoints,
     }
 
@@ -58,7 +60,9 @@ def test_matdyn_dos(fixture_localhost, generate_calc_job_node, generate_parser, 
     assert not orm.Log.collection.get_logs_for(node)
     assert 'output_parameters' in results
     assert 'output_phonon_dos' in results
-    data_regression.check({
-        'output_parameters': results['output_parameters'].get_dict(),
-        'output_phonon_dos': results['output_phonon_dos'].base.attributes.all
-    })
+    data_regression.check(
+        {
+            'output_parameters': results['output_parameters'].get_dict(),
+            'output_phonon_dos': results['output_phonon_dos'].base.attributes.all,
+        }
+    )

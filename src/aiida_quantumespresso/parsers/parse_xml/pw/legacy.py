@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Code that was written to parse the legacy XML format of Quantum ESPRESSO, which was deprecated in version 6.4."""
+
 import os
 from xml.dom.minidom import parse, parseString
 
@@ -60,7 +60,7 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands):
     # CARD IONS
     structure_dict = copy.deepcopy(xml_card_ions(structure_dict, dom, lattice_vectors, volume))
 
-    #CARD HEADER
+    # CARD HEADER
     parsed_data = copy.deepcopy(xml_card_header(parsed_data, dom))
 
     # CARD CONTROL
@@ -70,17 +70,17 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands):
         parsed_data[tagname.lower()] = parse_xml_child_bool(tagname, target_tags)
 
     # TODO: why this one isn't working? What is it actually?
-#    # CARD MOVING_CELL
-#
-#    try:
-#        target_tags = dom.getElementsByTagName('MOVING_CELL')[0]
-#    except:
-#        raise IOError
-#
-#    tagname='CELL_FACTOR'
-#    parsed_data[tagname.lower()]=parse_xml_child_float(tagname,target_tags)
+    #    # CARD MOVING_CELL
+    #
+    #    try:
+    #        target_tags = dom.getElementsByTagName('MOVING_CELL')[0]
+    #    except:
+    #        raise IOError
+    #
+    #    tagname='CELL_FACTOR'
+    #    parsed_data[tagname.lower()]=parse_xml_child_float(tagname,target_tags)
 
-# CARD ELECTRIC_FIELD
+    # CARD ELECTRIC_FIELD
     cardname = 'ELECTRIC_FIELD'
     target_tags = read_xml_card(dom, cardname)
     for tagname in ['HAS_ELECTRIC_FIELD', 'HAS_DIPOLE_CORRECTION']:
@@ -110,14 +110,18 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands):
     attrname = 'UNITS'
     metric = parse_xml_child_attribute_str(tagname, attrname, target_tags)
     if metric not in ['2 pi / a']:
-        raise QEOutputParsingError(f'Error parsing attribute {attrname},' + \
-                f' tag {tagname} inside {target_tags.tagName}, units unknown' )
+        raise QEOutputParsingError(
+            f'Error parsing attribute {attrname},' + f' tag {tagname} inside {target_tags.tagName}, units unknown'
+        )
     k_points_units = metric
 
-    for tagname, param in [['MONKHORST_PACK_GRID', 'nk'], ['MONKHORST_PACK_OFFSET', 'k']]:
+    for tagname, param in [
+        ['MONKHORST_PACK_GRID', 'nk'],
+        ['MONKHORST_PACK_OFFSET', 'k'],
+    ]:
         try:
-            #a = target_tags.getElementsByTagName(tagname)[0]
-            a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
+            # a = target_tags.getElementsByTagName(tagname)[0]
+            a = next(_ for _ in target_tags.childNodes if _.nodeName == tagname)
             value = [int(a.getAttribute(param + str(i + 1))) for i in range(3)]
             parsed_data[tagname.replace('-', '_').lower()] = value
         except Exception:  # I might not use the monkhorst pack grid
@@ -130,16 +134,17 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands):
     a_dict = {_.nodeName: _ for _ in target_tags.childNodes if _.nodeName.startswith(tagname_prefix)}
 
     try:
-        import numpy
+        import numpy as np
+
         for i in range(parsed_data['number_of_k_points']):
             tagname = f'{tagname_prefix}{i + 1}'
-            #a = target_tags.getElementsByTagName(tagname)[0]
+            # a = target_tags.getElementsByTagName(tagname)[0]
             a = a_dict[tagname]
             b = a.getAttribute('XYZ').replace('\n', '').rsplit()
             value = [float(s) for s in b]
             metric = k_points_units
             if metric == '2 pi / a':
-                value = [2. * numpy.pi * float(s) / structure_dict['lattice_parameter'] for s in value]
+                value = [2.0 * np.pi * float(s) / structure_dict['lattice_parameter'] for s in value]
                 weight = float(a.getAttribute('WEIGHT'))
                 kpoints.append(value)
                 kpoints_weights.append(weight)
@@ -150,57 +155,58 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands):
         raise QEOutputParsingError(f'Error parsing tag K-POINT.{i + 1} inside {target_tags.tagName}.')
 
     # I skip this card until someone will have a need for this.
-#     try:
-#         tagname='STARTING_K-POINTS'
-#         num_starting_k_points=parse_xml_child_integer(tagname,target_tags)
-#         # raise exception if there is no such a key
-#         parsed_data[tagname.replace('-','_').lower()]=num_starting_k_points
-#
-#         if parsed_data.get('starting_k_points'):
-#             try:
-#                 kpoints=[]
-#                 for i in range(parsed_data['starting_k_points']):
-#                     tagname='K-POINT_START.'+str(i+1)
-#                     a=target_tags.getElementsByTagName(tagname)[0]
-#                     b=a.getAttribute('XYZ').replace('\n','').rsplit()
-#                     value=[ float(s) for s in b ]
-#                     metric=parsed_data['k_points_units']
-#                     if metric=='2 pi / a':
-#                         value=[ float(s)/parsed_data['lattice_parameter'] for s in value ]
-#
-#                         weight=float(a.getAttribute('WEIGHT'))
-#
-#                         kpoints.append([value,weight])
-#
-#                 parsed_data['k_point_start']=kpoints
-#             except Exception:
-#                 raise QEOutputParsingError('Error parsing tag {}'.format(tagname)+\
-#                                            ' inside {}.'.format(target_tags.tagName ) )
-#     except Exception:
-#         if not parsed_data.get('starting_k_points'):
-#             pass
-#         else:
-#             parsed_data['xml_warnings'].append("Warning: could not parse {}".format(tagname))
+    #     try:
+    #         tagname='STARTING_K-POINTS'
+    #         num_starting_k_points=parse_xml_child_integer(tagname,target_tags)
+    #         # raise exception if there is no such a key
+    #         parsed_data[tagname.replace('-','_').lower()]=num_starting_k_points
+    #
+    #         if parsed_data.get('starting_k_points'):
+    #             try:
+    #                 kpoints=[]
+    #                 for i in range(parsed_data['starting_k_points']):
+    #                     tagname='K-POINT_START.'+str(i+1)
+    #                     a=target_tags.getElementsByTagName(tagname)[0]
+    #                     b=a.getAttribute('XYZ').replace('\n','').rsplit()
+    #                     value=[ float(s) for s in b ]
+    #                     metric=parsed_data['k_points_units']
+    #                     if metric=='2 pi / a':
+    #                         value=[ float(s)/parsed_data['lattice_parameter'] for s in value ]
+    #
+    #                         weight=float(a.getAttribute('WEIGHT'))
+    #
+    #                         kpoints.append([value,weight])
+    #
+    #                 parsed_data['k_point_start']=kpoints
+    #             except Exception:
+    #                 raise QEOutputParsingError('Error parsing tag {}'.format(tagname)+\
+    #                                            ' inside {}.'.format(target_tags.tagName ) )
+    #     except Exception:
+    #         if not parsed_data.get('starting_k_points'):
+    #             pass
+    #         else:
+    #             parsed_data['xml_warnings'].append("Warning: could not parse {}".format(tagname))
 
-# tagname='NORM-OF-Q'
-# TODO: decide if save this parameter
-# parsed_data[tagname.replace('-','_').lower()]=parse_xml_child_float(tagname,target_tags)
+    # tagname='NORM-OF-Q'
+    # TODO: decide if save this parameter
+    # parsed_data[tagname.replace('-','_').lower()]=parse_xml_child_float(tagname,target_tags)
 
-# CARD BAND STRUCTURE INFO
+    # CARD BAND STRUCTURE INFO
     cardname = 'BAND_STRUCTURE_INFO'
     target_tags = read_xml_card(dom, cardname)
 
-    for tagname in ['NUMBER_OF_SPIN_COMPONENTS', 'NUMBER_OF_ATOMIC_WFC', 'NUMBER_OF_BANDS']:
-        parsed_data[tagname.replace('-','_').lower()] = \
-            parse_xml_child_integer(tagname,target_tags)
+    for tagname in [
+        'NUMBER_OF_SPIN_COMPONENTS',
+        'NUMBER_OF_ATOMIC_WFC',
+        'NUMBER_OF_BANDS',
+    ]:
+        parsed_data[tagname.replace('-', '_').lower()] = parse_xml_child_integer(tagname, target_tags)
 
     tagname = 'NON-COLINEAR_CALCULATION'
-    parsed_data[tagname.replace('-','_').lower()] = \
-        parse_xml_child_bool(tagname,target_tags)
+    parsed_data[tagname.replace('-', '_').lower()] = parse_xml_child_bool(tagname, target_tags)
 
     tagname = 'NUMBER_OF_ELECTRONS'
-    parsed_data[tagname.replace('-','_').lower()] = \
-        parse_xml_child_float(tagname,target_tags)
+    parsed_data[tagname.replace('-', '_').lower()] = parse_xml_child_float(tagname, target_tags)
 
     tagname = 'UNITS_FOR_ENERGIES'
     attrname = 'UNITS'
@@ -216,20 +222,23 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands):
 
     if parsed_data.get('two_fermi_energies', False):
         tagname = 'FERMI_ENERGY_UP'
-        parsed_data[tagname.replace('-','_').lower()] = \
-            parse_xml_child_float(tagname,target_tags) * CONSTANTS.hartree_to_ev
+        parsed_data[tagname.replace('-', '_').lower()] = (
+            parse_xml_child_float(tagname, target_tags) * CONSTANTS.hartree_to_ev
+        )
         parsed_data[tagname.lower() + units_suffix] = default_energy_units
         tagname = 'FERMI_ENERGY_DOWN'
-        parsed_data[tagname.replace('-','_').lower()] = \
-            parse_xml_child_float(tagname,target_tags) * CONSTANTS.hartree_to_ev
+        parsed_data[tagname.replace('-', '_').lower()] = (
+            parse_xml_child_float(tagname, target_tags) * CONSTANTS.hartree_to_ev
+        )
         parsed_data[tagname.lower() + units_suffix] = default_energy_units
     else:
         tagname = 'FERMI_ENERGY'
-        parsed_data[tagname.replace('-','_').lower()] = \
-            parse_xml_child_float(tagname,target_tags) * CONSTANTS.hartree_to_ev
+        parsed_data[tagname.replace('-', '_').lower()] = (
+            parse_xml_child_float(tagname, target_tags) * CONSTANTS.hartree_to_ev
+        )
         parsed_data[tagname.lower() + units_suffix] = default_energy_units
 
-    #CARD MAGNETIZATION_INIT
+    # CARD MAGNETIZATION_INIT
     cardname = 'MAGNETIZATION_INIT'
     target_tags = read_xml_card(dom, cardname)
 
@@ -242,8 +251,8 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands):
     vec3 = []
     for i in range(structure_dict['number_of_species']):
         tagname = 'SPECIE.' + str(i + 1)
-        #a=target_tags.getElementsByTagName(tagname)[0]
-        a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
+        # a=target_tags.getElementsByTagName(tagname)[0]
+        a = next(_ for _ in target_tags.childNodes if _.nodeName == tagname)
         tagname2 = 'STARTING_MAGNETIZATION'
         vec1.append(parse_xml_child_float(tagname2, a))
         tagname2 = 'ANGLE1'
@@ -254,7 +263,7 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands):
     parsed_data['magnetization_angle1'] = vec2
     parsed_data['magnetization_angle2'] = vec3
 
-    #CARD OCCUPATIONS
+    # CARD OCCUPATIONS
     cardname = 'OCCUPATIONS'
     target_tags = read_xml_card(dom, cardname)
     for tagname in ['SMEARING_METHOD', 'TETRAHEDRON_METHOD', 'FIXED_OCCUPATIONS']:
@@ -270,7 +279,7 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands):
     for tagname in ['SMEARING_METHOD', 'TETRAHEDRON_METHOD', 'FIXED_OCCUPATIONS']:
         parsed_data.pop(tagname.lower())
 
-    #CARD CHARGE-DENSITY
+    # CARD CHARGE-DENSITY
     cardname = 'CHARGE-DENSITY'
     target_tags = read_xml_card(dom, cardname)
     try:
@@ -278,10 +287,9 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands):
         value = str(target_tags.getAttribute(attrname)).rstrip().replace('\n', '').lower()
         parsed_data[cardname.lower().rstrip().replace('-', '_')] = value
     except Exception:
-        raise QEOutputParsingError(f'Error parsing attribute {attrname},' + \
-                                   f' card {cardname}.')
+        raise QEOutputParsingError(f'Error parsing attribute {attrname},' + f' card {cardname}.')
 
-    #CARD EIGENVALUES
+    # CARD EIGENVALUES
     # Note: if this card is parsed, the dimension of the database grows very much!
     cardname = 'EIGENVALUES'
     target_tags = read_xml_card(dom, cardname)
@@ -294,12 +302,12 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands):
             bands2 = []
             for i in range(parsed_data['number_of_k_points']):
                 tagname = 'K-POINT.' + str(i + 1)
-                #a=target_tags.getElementsByTagName(tagname)[0]
-                a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
+                # a=target_tags.getElementsByTagName(tagname)[0]
+                a = next(_ for _ in target_tags.childNodes if _.nodeName == tagname)
 
                 def read_bands_and_occupations(eigenval_n):
                     # load the eigenval.xml file
-                    with open(eigenval_n, 'r') as eigenval_f:
+                    with open(eigenval_n) as eigenval_f:
                         f = eigenval_f.read()
 
                     eig_dom = parseString(f)
@@ -309,8 +317,9 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands):
                     attrname = 'UNITS'
                     metric = str(a.getAttribute(attrname))
                     if metric not in ['Hartree']:
-                        raise QEOutputParsingError('Error parsing eigenvalues xml file, ' + \
-                                                   f'units {metric} not implemented.')
+                        raise QEOutputParsingError(
+                            'Error parsing eigenvalues xml file, ' + f'units {metric} not implemented.'
+                        )
 
                     tagname = 'EIGENVALUES'
                     a = eig_dom.getElementsByTagName(tagname)[0]
@@ -367,27 +376,26 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands):
         except Exception as exception:
             raise QEOutputParsingError(f'Error parsing card {tagname}: {exception.__class__.__name__} {exception}')
 
+    #     if dir_with_bands:
+    #         # if there is at least an empty band:
+    #         if parsed_data['smearing_method'] or  \
+    #            parsed_data['number_of_electrons']/2. < parsed_data['number_of_bands']:
+    #
+    #             #TODO: currently I do it only for non magnetic systems
+    #             if len(bands_dict['occupations'])==1:
+    #             # initialize lumo
+    #                 lumo = parsed_data['homo']+10000.0
+    #                 for list_bands in bands_dict['bands']:
+    #                     for value in list_bands:
+    #                         if (value > parsed_data['fermi_energy']) and (value<lumo):
+    #                             lumo=value
+    #                 if (lumo==parsed_data['homo']+10000.0) or lumo<=parsed_data['fermi_energy']:
+    #                     #might be an error for bandgap larger than 10000 eV...
+    #                     raise QEOutputParsingError('Error while searching for LUMO.')
+    #                 parsed_data['lumo']=lumo
+    #                 parsed_data['lumo'+units_suffix] = default_energy_units
 
-#     if dir_with_bands:
-#         # if there is at least an empty band:
-#         if parsed_data['smearing_method'] or  \
-#            parsed_data['number_of_electrons']/2. < parsed_data['number_of_bands']:
-#
-#             #TODO: currently I do it only for non magnetic systems
-#             if len(bands_dict['occupations'])==1:
-#             # initialize lumo
-#                 lumo = parsed_data['homo']+10000.0
-#                 for list_bands in bands_dict['bands']:
-#                     for value in list_bands:
-#                         if (value > parsed_data['fermi_energy']) and (value<lumo):
-#                             lumo=value
-#                 if (lumo==parsed_data['homo']+10000.0) or lumo<=parsed_data['fermi_energy']:
-#                     #might be an error for bandgap larger than 10000 eV...
-#                     raise QEOutputParsingError('Error while searching for LUMO.')
-#                 parsed_data['lumo']=lumo
-#                 parsed_data['lumo'+units_suffix] = default_energy_units
-
-# CARD symmetries
+    # CARD symmetries
     parsed_data = copy.deepcopy(xml_card_symmetries(parsed_data, dom))
 
     # CARD EXCHANGE_CORRELATION

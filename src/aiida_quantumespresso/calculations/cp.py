@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Plugin to create a Quantum Espresso cp.x file."""
+
 import os
 
 from aiida import orm
@@ -18,13 +18,13 @@ class CpCalculation(BasePwCpInputGenerator):
     _FILE_XML_PRINT_COUNTER_BASENAME = 'print_counter.xml'
     _FILE_PRINT_COUNTER_BASENAME = 'print_counter'
     _FILE_XML_PRINT_COUNTER = os.path.join(
-        BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-        f'{BasePwCpInputGenerator._PREFIX}_{_CP_WRITE_UNIT_NUMBER}.save',
+        BasePwCpInputGenerator._OUTPUT_SUBFOLDER,  # noqa: SLF001
+        f'{BasePwCpInputGenerator._PREFIX}_{_CP_WRITE_UNIT_NUMBER}.save',  # noqa: SLF001
         _FILE_XML_PRINT_COUNTER_BASENAME,
     )
     _FILE_PRINT_COUNTER = os.path.join(
-        BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-        f'{BasePwCpInputGenerator._PREFIX}_{_CP_WRITE_UNIT_NUMBER}.save',
+        BasePwCpInputGenerator._OUTPUT_SUBFOLDER,  # noqa: SLF001
+        f'{BasePwCpInputGenerator._PREFIX}_{_CP_WRITE_UNIT_NUMBER}.save',  # noqa: SLF001
         _FILE_PRINT_COUNTER_BASENAME,
     )
 
@@ -82,27 +82,27 @@ class CpCalculation(BasePwCpInputGenerator):
 
     _internal_retrieve_list = [
         os.path.join(
-            BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-            f'{BasePwCpInputGenerator._PREFIX}.{ext}',
-        ) for ext in _cp_ext_list
+            BasePwCpInputGenerator._OUTPUT_SUBFOLDER,  # noqa: SLF001
+            f'{BasePwCpInputGenerator._PREFIX}.{ext}',  # noqa: SLF001
+        )
+        for ext in _cp_ext_list
     ] + [_FILE_XML_PRINT_COUNTER, _FILE_PRINT_COUNTER]
 
     # in restarts, it will copy from the parent the following
     _restart_copy_from = os.path.join(
-        BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-        f'{BasePwCpInputGenerator._PREFIX}_{_CP_WRITE_UNIT_NUMBER}.save',
+        BasePwCpInputGenerator._OUTPUT_SUBFOLDER,  # noqa: SLF001
+        f'{BasePwCpInputGenerator._PREFIX}_{_CP_WRITE_UNIT_NUMBER}.save',  # noqa: SLF001
     )
 
     # in restarts, it will copy the previous folder in the following one
     _restart_copy_to = os.path.join(
-        BasePwCpInputGenerator._OUTPUT_SUBFOLDER,
-        f'{BasePwCpInputGenerator._PREFIX}_{_CP_READ_UNIT_NUMBER}.save',
+        BasePwCpInputGenerator._OUTPUT_SUBFOLDER,  # noqa: SLF001
+        f'{BasePwCpInputGenerator._PREFIX}_{_CP_READ_UNIT_NUMBER}.save',  # noqa: SLF001
     )
 
     @classproperty
     def xml_filepaths(cls):
         """Return a list of relative filepaths of XML files."""
-        # pylint: disable=no-self-argument,not-an-iterable
         filepaths = []
 
         for filename in cls.xml_filenames:
@@ -118,29 +118,26 @@ class CpCalculation(BasePwCpInputGenerator):
     @classmethod
     def define(cls, spec):
         """Define the process specification."""
-        # yapf: disable
+
         super().define(spec)
         spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.cp')
         spec.output('output_trajectory', valid_type=orm.TrajectoryData)
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.default_output_node = 'output_parameters'
 
-        spec.exit_code(301, 'ERROR_NO_RETRIEVED_TEMPORARY_FOLDER',
-            message='The retrieved temporary folder could not be accessed.')
-        spec.exit_code(303, 'ERROR_MISSING_XML_FILE',
-            message='The required XML file is not present in the retrieved folder.')
-        spec.exit_code(304, 'ERROR_OUTPUT_XML_MULTIPLE',
-            message='The retrieved folder contains multiple XML files.')
-        spec.exit_code(320, 'ERROR_OUTPUT_XML_READ',
-            message='The required XML file could not be read.')
-        spec.exit_code(330, 'ERROR_READING_POS_FILE',
-            message='The required POS file could not be read.')
-        spec.exit_code(340, 'ERROR_READING_TRAJECTORY_DATA',
-            message='The required trajectory data could not be read.')
-        # yapf: enable
+        spec.exit_code(
+            301, 'ERROR_NO_RETRIEVED_TEMPORARY_FOLDER', message='The retrieved temporary folder could not be accessed.'
+        )
+        spec.exit_code(
+            303, 'ERROR_MISSING_XML_FILE', message='The required XML file is not present in the retrieved folder.'
+        )
+        spec.exit_code(304, 'ERROR_OUTPUT_XML_MULTIPLE', message='The retrieved folder contains multiple XML files.')
+        spec.exit_code(320, 'ERROR_OUTPUT_XML_READ', message='The required XML file could not be read.')
+        spec.exit_code(330, 'ERROR_READING_POS_FILE', message='The required POS file could not be read.')
+        spec.exit_code(340, 'ERROR_READING_TRAJECTORY_DATA', message='The required trajectory data could not be read.')
 
     @staticmethod
-    def _generate_PWCP_input_tail(*args, **kwargs):
+    def _generate_pwcp_input_tail(*args, **kwargs):
         """Parse CP specific input parameters."""
         settings = kwargs['settings']
 

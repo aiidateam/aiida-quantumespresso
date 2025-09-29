@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
 import os
 
-from aiida.common import AttributeDict, NotExistent
-from aiida.engine import ExitCode
+import numpy as np
+from aiida.common import NotExistent
 from aiida.orm import ArrayData, Dict, TrajectoryData
-import numpy
 
 from aiida_quantumespresso.calculations.neb import NebCalculation
 from aiida_quantumespresso.calculations.pw import PwCalculation
@@ -40,7 +38,7 @@ class NebParser(BaseParser):
         """
         logs = get_logging_container()
 
-        prefix = self.node.process_class._PREFIX
+        prefix = self.node.process_class._PREFIX  # noqa: SLF001
 
         self.exit_code_xml = None
 
@@ -85,7 +83,7 @@ class NebParser(BaseParser):
                     pw_out_text = f.read()  # Note: read() and not readlines()
                 # Output file can contain the output of many scf iterations, analyse only the last one
                 pw_out_text = '     coordinates at iteration' + pw_out_text.split('coordinates at iteration')[-1]
-            except IOError:
+            except OSError:
                 logs_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_READ
 
             try:
@@ -153,36 +151,35 @@ class NebParser(BaseParser):
 
         trajectory = TrajectoryData()
         trajectory.set_trajectory(
-            stepids=numpy.arange(1, num_images + 1),
-            cells=numpy.array(cells),
+            stepids=np.arange(1, num_images + 1),
+            cells=np.array(cells),
             symbols=symbols,
-            positions=numpy.array(positions),
+            positions=np.array(positions),
         )
         self.out('output_trajectory', trajectory)
 
-        if parser_options is not None and parser_options.get('all_iterations', False):
-            if iteration_data:
-                arraydata = ArrayData()
-                for k, v in iteration_data.items():
-                    arraydata.set_array(k, numpy.array(v))
-                self.out('iteration_array', arraydata)
+        if parser_options is not None and parser_options.get('all_iterations', False) and iteration_data:
+            arraydata = ArrayData()
+            for k, v in iteration_data.items():
+                arraydata.set_array(k, np.array(v))
+            self.out('iteration_array', arraydata)
 
         # Load the original and interpolated energy profile along the minimum-energy path (mep)
         try:
             filename = prefix + '.dat'
             with self.retrieved.base.repository.open(filename, 'r') as handle:
-                mep = numpy.loadtxt(handle)
+                mep = np.loadtxt(handle)
         except Exception:
             self.logger.warning(f'could not open expected output file `{filename}`.')
-            mep = numpy.array([[]])
+            mep = np.array([[]])
 
         try:
             filename = prefix + '.int'
             with self.retrieved.base.repository.open(filename, 'r') as handle:
-                interp_mep = numpy.loadtxt(handle)
+                interp_mep = np.loadtxt(handle)
         except Exception:
             self.logger.warning(f'could not open expected output file `{filename}`.')
-            interp_mep = numpy.array([[]])
+            interp_mep = np.array([[]])
 
         # Create an ArrayData with the energy profiles
         mep_arraydata = ArrayData()
@@ -202,7 +199,7 @@ class NebParser(BaseParser):
                 if recoverable_scheduler_error:
                     return NebCalculation.exit_codes.ERROR_NEB_INTERRUPTED_PARTIAL_TRAJECTORY
         elif 'Maximum number of iterations reached in the image optimization' in logs.warning:
-                return NebCalculation.exit_codes.ERROR_NEB_CYCLE_EXCEEDED_NSTEP
+            return NebCalculation.exit_codes.ERROR_NEB_CYCLE_EXCEEDED_NSTEP
         else:
             # Calculation completed successfully shortly after exceeding walltime but before being terminated by the
             # scheduler. In that case 'exit_status' can be reset.
@@ -216,19 +213,28 @@ class NebParser(BaseParser):
         :param relative_output_folder: relative path to the output folder of the image.
         :return: tuple of two dictionaries, first with raw parsed data and second with log messages
         """
-        from aiida_quantumespresso.parsers.parse_xml.exceptions import XMLParseError, XMLUnsupportedFormatError
-        from aiida_quantumespresso.parsers.parse_xml.pw.parse import parse_xml as parse_pw_xml
+        from aiida_quantumespresso.parsers.parse_xml.exceptions import (
+            XMLParseError,
+            XMLUnsupportedFormatError,
+        )
+        from aiida_quantumespresso.parsers.parse_xml.pw.parse import (
+            parse_xml as parse_pw_xml,
+        )
 
         logs = get_logging_container()
         parsed_data = {}
 
         try:
             retrieved_files = self.retrieved.base.repository.list_object_names(relative_output_folder)
-        except:
+        except Exception:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_MISSING
             return parsed_data, logs
 
-        xml_filenames = [os.path.join(relative_output_folder, xml_file) for xml_file in PwCalculation.xml_filenames if xml_file in retrieved_files]
+        xml_filenames = [
+            os.path.join(relative_output_folder, xml_file)
+            for xml_file in PwCalculation.xml_filenames
+            if xml_file in retrieved_files
+        ]
         if not xml_filenames:
             if not self.node.get_option('without_xml'):
                 self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_MISSING
@@ -241,7 +247,7 @@ class NebParser(BaseParser):
         try:
             with self.retrieved.base.repository.open(xml_filenames[0]) as xml_file:
                 parsed_data, logs = parse_pw_xml(xml_file, None)
-        except IOError:
+        except OSError:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_READ
         except XMLParseError:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_PARSE
@@ -249,6 +255,7 @@ class NebParser(BaseParser):
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_FORMAT
         except Exception:
             import traceback
+
             logs.critical.append(traceback.format_exc())
             self.exit_code_xml = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION
 
@@ -275,11 +282,14 @@ class NebParser(BaseParser):
         """Analyze problems that are specific to `electronic` scf calculations."""
 
         if 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED' in logs['error']:
-            scf_must_converge = self.node.inputs.pw.parameters.base.attributes.get('ELECTRONS',
-                                                                          {}).get('scf_must_converge', True)
-            electron_maxstep = self.node.inputs.pw.parameters.base.attributes.get('ELECTRONS', {}).get('electron_maxstep', 1)
+            scf_must_converge = self.node.inputs.pw.parameters.base.attributes.get('ELECTRONS', {}).get(
+                'scf_must_converge', True
+            )
+            electron_maxstep = self.node.inputs.pw.parameters.base.attributes.get('ELECTRONS', {}).get(
+                'electron_maxstep', 1
+            )
 
             if electron_maxstep == 0 or not scf_must_converge:
                 return self.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED
-            else:
-                return self.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED
+
+            return self.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED

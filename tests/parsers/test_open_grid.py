@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=redefined-outer-name
 """Tests for the ``OpenGridParser``."""
 
 
@@ -18,17 +16,21 @@ def test_open_grid_default(fixture_localhost, generate_calc_job_node, generate_p
     for link_name in ['output_parameters', 'kpoints_mesh', 'kpoints']:
         assert link_name in results, list(results.keys())
 
-    data_regression.check({
-        'output_parameters': results['output_parameters'].get_dict(),
-        'kpoints_mesh': results['kpoints_mesh'].base.attributes.all,
-        'kpoints': results['kpoints'].base.attributes.all,
-    })
+    data_regression.check(
+        {
+            'output_parameters': results['output_parameters'].get_dict(),
+            'kpoints_mesh': results['kpoints_mesh'].base.attributes.all,
+            'kpoints': results['kpoints'].base.attributes.all,
+        }
+    )
 
-    num_regression.check({
-        'kpoints_array0': results['kpoints'].get_array('kpoints')[:, 0],
-        'kpoints_array1': results['kpoints'].get_array('kpoints')[:, 1],
-        'kpoints_array2': results['kpoints'].get_array('kpoints')[:, 2],
-    })
+    num_regression.check(
+        {
+            'kpoints_array0': results['kpoints'].get_array('kpoints')[:, 0],
+            'kpoints_array1': results['kpoints'].get_array('kpoints')[:, 1],
+            'kpoints_array2': results['kpoints'].get_array('kpoints')[:, 2],
+        }
+    )
 
 
 def test_open_grid_fftgrid(fixture_localhost, generate_calc_job_node, generate_parser):

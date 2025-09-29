@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO bands.x calculation with automated error handling and restarts."""
+
 from aiida.common import AttributeDict
 from aiida.engine import BaseRestartWorkChain, while_
 from aiida.plugins import CalculationFactory
@@ -15,7 +15,7 @@ class BandsBaseWorkChain(BaseRestartWorkChain):
     @classmethod
     def define(cls, spec):
         """Define the process specification."""
-        # yapf: disable
+
         super().define(spec)
         spec.expose_inputs(BandsCalculation, namespace='bands')
         spec.expose_outputs(BandsCalculation)
@@ -27,9 +27,11 @@ class BandsBaseWorkChain(BaseRestartWorkChain):
             ),
             cls.results,
         )
-        spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
-            message='[deprecated] The calculation failed with an unrecoverable error.')
-        # yapf: enable
+        spec.exit_code(
+            300,
+            'ERROR_UNRECOVERABLE_FAILURE',
+            message='[deprecated] The calculation failed with an unrecoverable error.',
+        )
 
     def setup(self):
         """Call the `setup` of the `BaseRestartWorkChain` and then create the inputs dictionary in `self.ctx.inputs`.

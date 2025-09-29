@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from xml.etree import ElementTree
 
 from aiida_quantumespresso.parsers.parse_xml.exceptions import XMLParseError
@@ -11,8 +10,8 @@ from .legacy import parse_pw_xml_pre_6_2
 def parse_xml(xml_file, dir_with_bands=None):
     try:
         xml_parsed = ElementTree.parse(xml_file)
-    except ElementTree.ParseError:
-        raise XMLParseError('error while parsing XML file')
+    except ElementTree.ParseError as exception:
+        raise XMLParseError('error while parsing XML file') from exception
 
     xml_file_version = get_xml_file_version(xml_parsed)
 

@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the `BandsCalculation` class."""
-# pylint: disable=protected-access
+
 from aiida.common import datastructures
 
 from aiida_quantumespresso.calculations.bands import BandsCalculation

@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Workchain to compute a band structure for a given structure using Quantum ESPRESSO pw.x."""
+
 from aiida import orm
 from aiida.common import AttributeDict
 from aiida.engine import ToContext, WorkChain, if_
@@ -12,10 +12,8 @@ from aiida_quantumespresso.workflows.pw.relax import PwRelaxWorkChain
 from ..protocols.utils import ProtocolMixin
 
 
-def validate_inputs(inputs, ctx=None):  # pylint: disable=unused-argument
+def validate_inputs(inputs, _):
     """Validate the inputs of the entire input namespace."""
-    # pylint: disable=no-member
-
     if 'nbands_factor' in inputs and 'nbnd' in inputs['bands']['pw']['parameters'].base.attributes.get('SYSTEM', {}):
         return PwBandsWorkChain.exit_codes.ERROR_INVALID_INPUT_NUMBER_OF_BANDS.message
 
@@ -50,26 +48,55 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
     @classmethod
     def define(cls, spec):
         """Define the process specification."""
-        # yapf: disable
+
         super().define(spec)
-        spec.expose_inputs(PwRelaxWorkChain, namespace='relax', exclude=('clean_workdir', 'structure'),
-            namespace_options={'required': False, 'populate_defaults': False,
-            'help': 'Inputs for the `PwRelaxWorkChain`, if not specified at all, the relaxation step is skipped.'})
-        spec.expose_inputs(PwBaseWorkChain, namespace='scf',
+        spec.expose_inputs(
+            PwRelaxWorkChain,
+            namespace='relax',
+            exclude=('clean_workdir', 'structure'),
+            namespace_options={
+                'required': False,
+                'populate_defaults': False,
+                'help': 'Inputs for the `PwRelaxWorkChain`, if not specified at all, the relaxation step is skipped.',
+            },
+        )
+        spec.expose_inputs(
+            PwBaseWorkChain,
+            namespace='scf',
             exclude=('clean_workdir', 'pw.structure'),
-            namespace_options={'help': 'Inputs for the `PwBaseWorkChain` for the SCF calculation.'})
-        spec.expose_inputs(PwBaseWorkChain, namespace='bands',
+            namespace_options={'help': 'Inputs for the `PwBaseWorkChain` for the SCF calculation.'},
+        )
+        spec.expose_inputs(
+            PwBaseWorkChain,
+            namespace='bands',
             exclude=('clean_workdir', 'pw.structure', 'pw.kpoints', 'pw.kpoints_distance', 'pw.parent_folder'),
-            namespace_options={'help': 'Inputs for the `PwBaseWorkChain` for the BANDS calculation.'})
+            namespace_options={'help': 'Inputs for the `PwBaseWorkChain` for the BANDS calculation.'},
+        )
         spec.input('structure', valid_type=orm.StructureData, help='The inputs structure.')
-        spec.input('clean_workdir', valid_type=orm.Bool, default=lambda: orm.Bool(False),
-            help='If `True`, work directories of all called calculation will be cleaned at the end of execution.')
-        spec.input('nbands_factor', valid_type=orm.Float, required=False,
-            help='The number of bands for the BANDS calculation is that used for the SCF multiplied by this factor.')
-        spec.input('bands_kpoints', valid_type=orm.KpointsData, required=False,
-            help='Explicit kpoints to use for the BANDS calculation. Specify either this or `bands_kpoints_distance`.')
-        spec.input('bands_kpoints_distance', valid_type=orm.Float, required=False,
-            help='Minimum kpoints distance for the BANDS calculation. Specify either this or `bands_kpoints`.')
+        spec.input(
+            'clean_workdir',
+            valid_type=orm.Bool,
+            default=lambda: orm.Bool(False),
+            help='If `True`, work directories of all called calculation will be cleaned at the end of execution.',
+        )
+        spec.input(
+            'nbands_factor',
+            valid_type=orm.Float,
+            required=False,
+            help='The number of bands for the BANDS calculation is that used for the SCF multiplied by this factor.',
+        )
+        spec.input(
+            'bands_kpoints',
+            valid_type=orm.KpointsData,
+            required=False,
+            help='Explicit kpoints to use for the BANDS calculation. Specify either this or `bands_kpoints_distance`.',
+        )
+        spec.input(
+            'bands_kpoints_distance',
+            valid_type=orm.Float,
+            required=False,
+            help='Minimum kpoints distance for the BANDS calculation. Specify either this or `bands_kpoints`.',
+        )
 
         spec.inputs.validator = validate_inputs
         spec.outline(
@@ -87,29 +114,36 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
             cls.inspect_bands,
             cls.results,
         )
-        spec.exit_code(201, 'ERROR_INVALID_INPUT_NUMBER_OF_BANDS',
-            message='Cannot specify both `nbands_factor` and `bands.pw.parameters.SYSTEM.nbnd`.')
-        spec.exit_code(202, 'ERROR_INVALID_INPUT_KPOINTS',
-            message='Cannot specify both `bands_kpoints` and `bands_kpoints_distance`.')
-        spec.exit_code(401, 'ERROR_SUB_PROCESS_FAILED_RELAX',
-            message='The PwRelaxWorkChain sub process failed')
-        spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_SCF',
-            message='The scf PwBasexWorkChain sub process failed')
-        spec.exit_code(403, 'ERROR_SUB_PROCESS_FAILED_BANDS',
-            message='The bands PwBasexWorkChain sub process failed')
-        spec.output('primitive_structure', valid_type=orm.StructureData,
+        spec.exit_code(
+            201,
+            'ERROR_INVALID_INPUT_NUMBER_OF_BANDS',
+            message='Cannot specify both `nbands_factor` and `bands.pw.parameters.SYSTEM.nbnd`.',
+        )
+        spec.exit_code(
+            202,
+            'ERROR_INVALID_INPUT_KPOINTS',
+            message='Cannot specify both `bands_kpoints` and `bands_kpoints_distance`.',
+        )
+        spec.exit_code(401, 'ERROR_SUB_PROCESS_FAILED_RELAX', message='The PwRelaxWorkChain sub process failed')
+        spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_SCF', message='The scf PwBasexWorkChain sub process failed')
+        spec.exit_code(403, 'ERROR_SUB_PROCESS_FAILED_BANDS', message='The bands PwBasexWorkChain sub process failed')
+        spec.output(
+            'primitive_structure',
+            valid_type=orm.StructureData,
             required=False,
-            help='The normalized and primitivized structure for which the bands are computed.')
-        spec.output('seekpath_parameters', valid_type=orm.Dict,
+            help='The normalized and primitivized structure for which the bands are computed.',
+        )
+        spec.output(
+            'seekpath_parameters',
+            valid_type=orm.Dict,
             required=False,
-            help='The parameters used in the SeeKpath call to normalize the input or relaxed structure.')
-        spec.output('scf_parameters', valid_type=orm.Dict,
-            help='The output parameters of the SCF `PwBaseWorkChain`.')
-        spec.output('band_parameters', valid_type=orm.Dict,
-            help='The output parameters of the BANDS `PwBaseWorkChain`.')
-        spec.output('band_structure', valid_type=orm.BandsData,
-            help='The computed band structure.')
-        # yapf: enable
+            help='The parameters used in the SeeKpath call to normalize the input or relaxed structure.',
+        )
+        spec.output('scf_parameters', valid_type=orm.Dict, help='The output parameters of the SCF `PwBaseWorkChain`.')
+        spec.output(
+            'band_parameters', valid_type=orm.Dict, help='The output parameters of the BANDS `PwBaseWorkChain`.'
+        )
+        spec.output('band_structure', valid_type=orm.BandsData, help='The computed band structure.')
 
     @classmethod
     def get_protocol_filepath(cls):
@@ -117,6 +151,7 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         from importlib_resources import files
 
         from ..protocols import pw as pw_protocols
+
         return files(pw_protocols) / 'bands.yaml'
 
     @classmethod
@@ -213,9 +248,7 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         """
         inputs = {
             'reference_distance': self.inputs.get('bands_kpoints_distance', None),
-            'metadata': {
-                'call_link_label': 'seekpath'
-            }
+            'metadata': {'call_link_label': 'seekpath'},
         }
         result = seekpath_structure_analysis(self.ctx.current_structure, **inputs)
         self.ctx.current_structure = result['primitive_structure']
@@ -316,9 +349,9 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         for called_descendant in self.node.called_descendants:
             if isinstance(called_descendant, orm.CalcJobNode):
                 try:
-                    called_descendant.outputs.remote_folder._clean()  # pylint: disable=protected-access
+                    called_descendant.outputs.remote_folder._clean()  # noqa: SLF001
                     cleaned_calcs.append(called_descendant.pk)
-                except (IOError, OSError, KeyError):
+                except (OSError, KeyError):
                     pass
 
         if cleaned_calcs:

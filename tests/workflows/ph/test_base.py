@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=no-member,redefined-outer-name
 """Tests for the `PhBaseWorkChain` class."""
+
+import pytest
 from aiida import orm
 from aiida.common import AttributeDict, LinkType
 from aiida.engine import ProcessHandlerReport, WorkChain
-import pytest
 
 from aiida_quantumespresso.calculations.ph import PhCalculation
 from aiida_quantumespresso.workflows.ph.base import PhBaseWorkChain
@@ -16,13 +15,15 @@ def generate_inputs():
 
 
 @pytest.fixture
-def generate_ph_calc_job_node(generate_calc_job_node, fixture_localhost):
+def generate_ph_calc_job_node(generate_calc_job_node, fixture_localhost, tmp_path_factory):
     """Generate a ``CalcJobNode`` that would have been created by a ``PhCalculation``."""
 
     def _generate_ph_calc_job_node():
         node = generate_calc_job_node()
 
-        remote_folder = orm.RemoteData(computer=fixture_localhost, remote_path='/tmp')
+        remote_folder = orm.RemoteData(
+            computer=fixture_localhost, remote_path=tmp_path_factory.mktemp('ph-remote').as_posix()
+        )
         remote_folder.base.links.add_incoming(node, link_type=LinkType.CREATE, link_label='remote_folder')
         remote_folder.store()
 
@@ -58,7 +59,7 @@ def test_setup(generate_workchain_ph):
 
 @pytest.mark.parametrize(
     ('with_output_structure', 'with_qpoints_distance'),
-    ((False, False), (False, True), (True, True)),
+    [(False, False), (False, True), (True, True)],
 )
 def test_set_qpoints(generate_workchain_ph, generate_inputs_ph, with_output_structure, with_qpoints_distance):
     """Test `PhBaseWorkChain.set_qpoints`."""
@@ -207,11 +208,14 @@ def test_results(generate_workchain_ph, generate_ph_calc_job_node):
     process.results()
     process.update_outputs()
 
-    assert sorted(process.node.base.links.get_outgoing().all_link_labels()
-                  ) == ['output_parameters', 'remote_folder', 'retrieved']
+    assert sorted(process.node.base.links.get_outgoing().all_link_labels()) == [
+        'output_parameters',
+        'remote_folder',
+        'retrieved',
+    ]
 
 
-@pytest.mark.parametrize('name', ('merge_outputs', 'merge_outputs_singleq'))
+@pytest.mark.parametrize('name', ['merge_outputs', 'merge_outputs_singleq'])
 def test_merge_outputs(
     generate_calc_job_node,
     fixture_localhost,

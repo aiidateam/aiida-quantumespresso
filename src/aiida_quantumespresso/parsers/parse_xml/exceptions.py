@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Exceptions for the XML parsing module of Quantum ESPRESSO."""
 
 

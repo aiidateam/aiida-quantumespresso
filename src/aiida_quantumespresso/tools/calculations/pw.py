@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tools for nodes created by running the `PwCalculation` class."""
+
 from aiida.common import AttributeDict, exceptions
 from aiida.tools.calculations.base import CalculationTools
 
@@ -12,8 +12,6 @@ class PwCalculationTools(CalculationTools):
     Methods implemented here are available on any `CalcJobNode` produced by the `PwCalculation class through the `tools`
     attribute.
     """
-
-    # pylint: disable=too-few-public-methods
 
     def get_scf_accuracy(self, index=0):
         """Return the array of SCF accuracy values for a given SCF cycle.
@@ -50,9 +48,9 @@ class PwCalculationTools(CalculationTools):
             scf_accuracy_index.append(scf_accuracy_index[-1] + i)
 
         if index < 0:
-            return scf_accuracy[scf_accuracy_index[index - 1]:scf_accuracy_index[index]]
+            return scf_accuracy[scf_accuracy_index[index - 1] : scf_accuracy_index[index]]
 
-        return scf_accuracy[scf_accuracy_index[index]:scf_accuracy_index[index + 1]]
+        return scf_accuracy[scf_accuracy_index[index] : scf_accuracy_index[index + 1]]
 
     def get_magnetic_configuration(self, atol: float = 0.5, ztol: float = 0.05) -> AttributeDict:
         """Get the final magnetic configuration of a ``pw.x`` calculation."""
@@ -75,10 +73,10 @@ class PwCalculationTools(CalculationTools):
         )
         structure_kindname_position = [(site.kind_name, site.position) for site in structure.sites]
         allo_kindname_position = [(site.kind_name, site.position) for site in results['structure'].sites]
-        structure_kindnames_sorted = sorted(structure_kindname_position, key=lambda l: l[1])
-        allo_kindnames_sorted = sorted(allo_kindname_position, key=lambda l: l[1])
+        structure_kindnames_sorted = sorted(structure_kindname_position, key=lambda el: el[1])
+        allo_kindnames_sorted = sorted(allo_kindname_position, key=lambda el: el[1])
 
-        requires_new_kinds = not structure_kindnames_sorted == allo_kindnames_sorted
+        requires_new_kinds = structure_kindnames_sorted != allo_kindnames_sorted
         non_magnetic = all(abs(magn) < ztol for magn in results['magnetic_moments'].get_dict().values())
 
         if requires_new_kinds:
@@ -91,7 +89,6 @@ class PwCalculationTools(CalculationTools):
             )
             structure = results['results']
 
-        return AttributeDict({
-            'structure': structure,
-            'magnetic_moments': None if non_magnetic else results['magnetic_moments']
-        })
+        return AttributeDict(
+            {'structure': structure, 'magnetic_moments': None if non_magnetic else results['magnetic_moments']}
+        )

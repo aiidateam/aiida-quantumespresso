@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Utilities to automatically format, convert and validate data structures from python to fortran."""
+
 import copy
 import difflib
 import os
@@ -70,9 +70,9 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
        Example::
 
              {
-             'calculation': 'vc-relax',
-             'ecutwfc': 30.,
-             'hubbard_u': {'O': 1},
+                 'calculation': 'vc-relax',
+                 'ecutwfc': 30.0,
+                 'hubbard_u': {'O': 1},
              }
 
        If instead flat_mode is False, pass a dictionary in the format
@@ -81,15 +81,15 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
        given namelist).
        Example::
 
-             {
-                 'CONTROL': {
-                     'calculation': 'vc-relax'
+             (
+                 {
+                     'CONTROL': {'calculation': 'vc-relax'},
+                     'SYSTEM': {
+                         'hubbard_u': {'O': 1.0},
+                         'ecutwfc': 30.0,
                      },
-                 'SYSTEM': {
-                     'hubbard_u': {'O': 1.0},
-                     'ecutwfc': 30.,
-                     },
-             },
+                 },
+             )
 
 
     :param structure: the StructureData object used as input for QE pw.x
@@ -109,13 +109,12 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
     :raise QEInputValidationError:
         if the input is not considered valid.
     """
-    # pylint: disable=too-many-branches,too-many-statements
     errors_list = []
 
     # =========== LIST OF KNOWN NAMELISTS, CARDS, VARIABLES, ... ===============
     compulsory_namelists = ['CONTROL', 'SYSTEM', 'ELECTRONS']
 
-    valid_calculations_and_opt_namelists = {  # pylint: disable=invalid-name
+    valid_calculations_and_opt_namelists = {
         'scf': [],
         'nscf': [],
         'bands': [],
@@ -153,7 +152,8 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
     # List of the keywords that must not appear in the input
     # (e.g. because they are automatically filled in by the plugin)
     blocked_kws = [
-        i.lower() for i in [
+        i.lower()
+        for i in [
             'pseudo_dir',
             'outdir',
             'celldm',
@@ -170,10 +170,13 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
     ]
 
     # List of the keywords that must ALWAYS appear in the input
-    compulsory_kws = {i.lower() for i in [
-        'calculation',
-        'ecutwfc',
-    ]}
+    compulsory_kws = {
+        i.lower()
+        for i in [
+            'calculation',
+            'ecutwfc',
+        ]
+    }
 
     # ===================== PARSING OF THE XML DEFINITION FILE ===============
     module_dir = os.path.dirname(__file__)
@@ -181,13 +184,13 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
         module_dir = os.curdir
     xml_path = os.path.join(module_dir, f'INPUT_PW-{version}.xml')
     try:
-        with open(xml_path, 'r', encoding='utf-8') as handle:
+        with open(xml_path, encoding='utf-8') as handle:
             dom = xml.dom.minidom.parse(handle)
-    except IOError as exception:
+    except OSError as exception:
         prefix = 'INPUT_PW-'
         suffix = '.xml'
         versions = [
-            fname[len(prefix):-len(suffix)]
+            fname[len(prefix) : -len(suffix)]
             for fname in os.listdir(module_dir)
             if fname.startswith(prefix) and fname.endswith(suffix)
         ]
@@ -307,8 +310,8 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
 
     # Used to suggest valid keywords if an unknown one is found
     valid_invars_list = list(
-        set([i.lower() for i in valid_dims] + [i.lower() for i in valid_multidims] + [i.lower() for i in valid_kws]) -
-        set(blocked_kws)
+        set([i.lower() for i in valid_dims] + [i.lower() for i in valid_multidims] + [i.lower() for i in valid_kws])
+        - set(blocked_kws)
     )
 
     # =================== Check for blocked keywords ===========================
@@ -324,7 +327,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
     if Version(version) < Version('5.0.2'):
         # To be sure that things are read in angstrom - not possible in recent
         # versions
-        input_params_internal['a'] = 1.
+        input_params_internal['a'] = 1.0
 
     # Get info on atomic species from the StructureData object
     atomic_species_list = [k.name for k in structure.kinds]
@@ -517,7 +520,6 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
                     continue
 
             for array in value:
-
                 # Append empty list for this array of values
                 internal_dict[namelist_name][keyword].append([])
 
@@ -533,7 +535,6 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
                 actual_value = array[-1]
 
                 for i, index in enumerate(indexes):
-
                     index_value = array[i]
 
                     try:
@@ -549,7 +550,6 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
                     end_value = variable['end'][i]
 
                     if end_value == 'ntyp':
-
                         kindname = index_value
 
                         if kindname not in atomic_species_list:
@@ -569,9 +569,9 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
                             err_str = f'Error, only integer types are supported for index {index}, got {index_value}'
                             if stop_at_first_error:
                                 raise QEInputValidationError(err_str) from exception
-                            else:
-                                errors_list.append(err_str)
-                                continue
+
+                            errors_list.append(err_str)
+                            continue
 
                         internal_dict[namelist_name][keyword][-1].append(index_value)
 
@@ -591,8 +591,8 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
                 err_str += '(No similar keywords found...)'
             if stop_at_first_error:
                 raise QEInputValidationError(err_str)
-            else:
-                errors_list.append(err_str)
+
+            errors_list.append(err_str)
 
         # Used to check if all compulsory variables are set
         inserted_kws += [keyword]
@@ -603,8 +603,8 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
         err_str = f"Missing compulsory variables: {', '.join(missing_kws)}."
         if stop_at_first_error:
             raise QEInputValidationError(err_str)
-        else:
-            errors_list.append(err_str)
+
+        errors_list.append(err_str)
 
     if errors_list:
         raise QEInputValidationError(f'Errors! {len(errors_list)} issues found:\n* ' + '\n* '.join(errors_list))

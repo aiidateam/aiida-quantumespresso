@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 """Module for setting up AiiDA components for Quantum ESPRESSO."""
 
-from pathlib import PurePosixPath
 import re
-from typing import Union
 import warnings
+from pathlib import PurePosixPath
+from typing import Union
 
 from aiida import orm
 
@@ -92,7 +91,7 @@ def get_executable_paths(
     with computer.get_transport() as transport:
         for executable in executable_tuple:
             if directory is None:
-                combined_prepend_text = '\n'.join((computer.get_prepend_text(), prepend_text))
+                combined_prepend_text = f'{computer.get_prepend_text()}\n{prepend_text}'
                 return_value, stdout, stderr = transport.exec_command_wait(
                     command=f'. /dev/stdin > /dev/null && which {executable}', stdin=combined_prepend_text
                 )
@@ -143,22 +142,21 @@ def get_code_label(
         label = executable.replace('.x', '')
 
     # Check if code already exists
-    existing_labels = orm.QueryBuilder().append(orm.Computer, filters={
-        'label': computer.label
-    }, tag='computer').append(
-        orm.InstalledCode,
-        with_computer='computer',
-        filters={
-            'label': {
-                'like': f'{label}%'
-            }
-        },
-        tag='code',
-        project='label'
-    ).all(flat=True)
+    existing_labels = (
+        orm.QueryBuilder()
+        .append(orm.Computer, filters={'label': computer.label}, tag='computer')
+        .append(
+            orm.InstalledCode,
+            with_computer='computer',
+            filters={'label': {'like': f'{label}%'}},
+            tag='code',
+            project='label',
+        )
+        .all(flat=True)
+    )
 
     pattern = re.compile(rf'^{re.escape(label)}(-\d+)?$')
-    n_existing_codes = len([l for l in list(existing_labels) if pattern.match(l)])
+    n_existing_codes = len([label for label in list(existing_labels) if pattern.match(label)])
 
     if n_existing_codes > 0:
         existing_label = label

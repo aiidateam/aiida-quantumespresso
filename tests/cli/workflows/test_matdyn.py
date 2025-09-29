@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the ``workflow launch matdyn-base`` command."""
+
 from aiida_quantumespresso.cli.workflows.matdyn.base import launch_workflow
 
 

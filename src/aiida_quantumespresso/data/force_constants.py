@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
 """Sub class of `Data` to handle interatomic force constants produced by the Quantum ESPRESSO q2r.x code."""
+
+import numpy as np
 from aiida.orm import SinglefileData
-import numpy
 from qe_tools import CONSTANTS
 
 
@@ -14,7 +14,6 @@ class ForceConstantsData(SinglefileData):
         :param file: absolute path to the file or a filelike object
         :param filename: specify filename to use (defaults to name of provided file).
         """
-        # pylint: disable=redefined-builtin
         super().set_file(file, filename, **kwargs)
 
         # Parse the force constants file
@@ -44,9 +43,9 @@ class ForceConstantsData(SinglefileData):
     def cell(self):
         """Return the crystal unit cell where rows are the crystal vectors.
 
-        :return: a 3x3 numpy.array
+        :return: a 3x3 np.array
         """
-        return numpy.array(self.base.attributes.get('cell'))
+        return np.array(self.base.attributes.get('cell'))
 
     @property
     def atom_list(self):
@@ -121,8 +120,6 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
         * (ji1, ji2): axis of the displacement of the two atoms (from 1 to 3)
         * (na1, na2): atom numbers in the cell.
     """
-    # pylint: disable=too-many-statements,too-many-branches,too-many-nested-blocks
-
     parsed_data = {}
     warnings = []
 
@@ -147,9 +144,8 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
 
         # read cell data
         cell = tuple(
-            tuple(float(c) * celldm[0] * CONSTANTS.bohr_to_ang
-                  for c in l.split())
-            for l in lines[current_line:current_line + 3]
+            tuple(float(c) * celldm[0] * CONSTANTS.bohr_to_ang for c in line.split())
+            for line in lines[current_line : current_line + 3]
         )
         parsed_data['cell'] = cell
         current_line += 3
@@ -159,7 +155,7 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
         for ityp in range(ntyp):
             line = lines[current_line].split("'")
             if int(line[0]) == ityp + 1:
-                atom_type_list.append(tuple((line[1].strip(), float(line[2]))))
+                atom_type_list.append((line[1].strip(), float(line[2])))
             current_line += 1
 
         # read each atom coordinates
@@ -184,13 +180,15 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
 
         if has_done_electric_field:
             # read dielectric tensor
-            dielectric_tensor = tuple(tuple(float(c) for c in l.split()) for l in lines[current_line:current_line + 3])
+            dielectric_tensor = tuple(
+                tuple(float(c) for c in line.split()) for line in lines[current_line : current_line + 3]
+            )
             current_line += 3
             effective_charges_eu = []
             for _ in range(nat):
                 current_line += 1
                 effective_charges_eu.append(
-                    tuple(tuple(float(c) for c in l.split()) for l in lines[current_line:current_line + 3])
+                    tuple(tuple(float(c) for c in line.split()) for line in lines[current_line : current_line + 3])
                 )
                 current_line += 3
 
@@ -205,12 +203,11 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
         force_constants = ()
         if also_force_constants:
             # read force_constants
-            force_constants = numpy.zeros(qpoints_mesh + (3, 3, nat, nat), dtype=float)
+            force_constants = np.zeros(qpoints_mesh + (3, 3, nat, nat), dtype=float)
             for ji1 in range(3):
                 for ji2 in range(3):
                     for na1 in range(nat):
                         for na2 in range(nat):
-
                             indices = tuple(int(c) for c in lines[current_line].split())
                             current_line += 1
                             if (ji1 + 1, ji2 + 1, na1 + 1, na2 + 1) != indices:
@@ -219,7 +216,6 @@ def parse_q2r_force_constants_file(lines, also_force_constants=False):
                             for mi3 in range(qpoints_mesh[2]):
                                 for mi2 in range(qpoints_mesh[1]):
                                     for mi1 in range(qpoints_mesh[0]):
-
                                         line = lines[current_line].split()
                                         indices = tuple(int(c) for c in line[:3])
 

@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
 """Tests for the ``PwBandsWorkChain.get_builder_from_protocol`` method."""
-from aiida.engine import ProcessBuilder
+
 import pytest
+from aiida.engine import ProcessBuilder
 
 from aiida_quantumespresso.common.types import ElectronicType, RelaxType, SpinType
 from aiida_quantumespresso.workflows.pw.bands import PwBandsWorkChain
@@ -37,8 +37,7 @@ def test_electronic_type(fixture_code, generate_structure):
     structure = generate_structure()
 
     with pytest.raises(NotImplementedError):
-        for electronic_type in [ElectronicType.AUTOMATIC]:
-            PwBandsWorkChain.get_builder_from_protocol(code, structure, electronic_type=electronic_type)
+        PwBandsWorkChain.get_builder_from_protocol(code, structure, electronic_type=ElectronicType.AUTOMATIC)
 
     builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, electronic_type=ElectronicType.INSULATOR)
 
@@ -64,7 +63,7 @@ def test_spin_type(fixture_code, generate_structure):
     builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, spin_type=SpinType.SPIN_ORBIT)
 
     for namespace in [builder.relax['base_relax'], builder.scf, builder.bands]:
-        parameters = namespace['pw']['parameters'].get_dict()  # pylint: disable=no-member
+        parameters = namespace['pw']['parameters'].get_dict()
         assert parameters['SYSTEM']['noncolin'] is True
         assert parameters['SYSTEM']['lspinorb'] is True
         assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.1}
@@ -88,7 +87,7 @@ def test_bands_kpoints_overrides(fixture_code, generate_structure, generate_kpoi
     bands_kpoints = generate_kpoints_mesh(3)
     overrides = {'bands_kpoints': bands_kpoints}
     builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)
-    assert builder.bands_kpoints == bands_kpoints  # pylint: disable=no-member
+    assert builder.bands_kpoints == bands_kpoints
     assert 'bands_kpoints_distance' not in builder
 
 
@@ -105,7 +104,7 @@ def test_options(fixture_code, generate_structure):
 
     for subspace in (
         builder.relax.base_relax.pw.metadata,
-        builder.scf.pw.metadata,  # pylint: disable=no-member
-        builder.bands.pw.metadata,  # pylint: disable=no-member
+        builder.scf.pw.metadata,
+        builder.bands.pw.metadata,
     ):
         assert subspace['options']['queue_name'] == queue_name, subspace

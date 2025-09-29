@@ -1,15 +1,12 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=unused-argument,too-many-statements
 """Tests for the `PdosWorkChain` class."""
-from __future__ import absolute_import
 
+import numpy as np
+import pytest
 from aiida import engine, orm, plugins
 from aiida.common import LinkType
 from aiida.engine.utils import instantiate_process
 from aiida.manage.manager import get_manager
-import numpy as np
 from plumpy import ProcessState
-import pytest
 
 from aiida_quantumespresso.calculations.helpers import pw_input_helper
 
@@ -41,21 +38,29 @@ def check_pdos_energy_range(dos_inputs, projwfc_inputs, expected_p_dos_inputs):
 
 
 @pytest.mark.parametrize(
-    'nscf_output_parameters,energy_range_inputs,expected_p_dos_inputs',
-    [({
-        'fermi_energy': 6.9
-    }, (-10, 10, None), (-10, 10)),
-     ({
-         'fermi_energy_down': 5.9,
-         'fermi_energy_up': 6.9
-     }, (None, None, [-10, 10]), (-3.1, 16.9)), ({
-         'fermi_energy': 6.9
-     }, (None, None, None), (-5.64024889, 8.91047649))]
+    ('nscf_output_parameters', 'energy_range_inputs', 'expected_p_dos_inputs'),
+    [
+        ({'fermi_energy': 6.9}, (-10, 10, None), (-10, 10)),
+        (
+            {'fermi_energy_down': 5.9, 'fermi_energy_up': 6.9},
+            (None, None, [-10, 10]),
+            (-3.1, 16.9),
+        ),
+        ({'fermi_energy': 6.9}, (None, None, None), (-5.64024889, 8.91047649)),
+    ],
 )
 def test_default(
-    generate_workchain_pdos, generate_workchain_pw, fixture_localhost, generate_remote_data, generate_calc_job,
-    generate_calc_job_node, fixture_sandbox, generate_bands_data, nscf_output_parameters, energy_range_inputs,
-    expected_p_dos_inputs
+    generate_workchain_pdos,
+    generate_workchain_pw,
+    fixture_localhost,
+    generate_remote_data,
+    generate_calc_job,
+    generate_calc_job_node,
+    fixture_sandbox,
+    generate_bands_data,
+    nscf_output_parameters,
+    energy_range_inputs,
+    expected_p_dos_inputs,
 ):
     """Test instantiating the WorkChain, then mock its process, by calling methods in the ``spec.outline``."""
 
@@ -84,9 +89,12 @@ def test_default(
     nscf_inputs = wkchain.run_nscf()
 
     # mock nscf outputs
-    # TODO ensure this test fails if the output link from PwCalculation changes from `output_parameters` # pylint: disable=fixme
+    # TODO: ensure this test fails if the output link from PwCalculation changes from `output_parameters`
     mock_workchain = instantiate_process_cls(plugins.WorkflowFactory('quantumespresso.pw.base'), nscf_inputs)
-    pw_input_helper(mock_workchain.inputs.pw.parameters.get_dict(), mock_workchain.inputs.pw.structure)
+    pw_input_helper(
+        mock_workchain.inputs.pw.parameters.get_dict(),
+        mock_workchain.inputs.pw.structure,
+    )
 
     mock_wknode = mock_workchain.node
     mock_wknode.set_exit_status(0)
@@ -140,6 +148,9 @@ def test_default(
     wkchain.update_outputs()
 
     assert set(wkchain.node.base.links.get_outgoing().all_link_labels()) == {
-        'projwfc__output_parameters', 'dos__output_parameters', 'nscf__remote_folder', 'nscf__output_parameters',
-        'nscf__output_band'
+        'projwfc__output_parameters',
+        'dos__output_parameters',
+        'nscf__remote_folder',
+        'nscf__output_parameters',
+        'nscf__output_band',
     }

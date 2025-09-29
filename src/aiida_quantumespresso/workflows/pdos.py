@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Workchain to run Quantum ESPRESSO calculations that generate DoS and PDoS for a structure.
 
 This requires four computations:
@@ -46,11 +45,12 @@ Related Resources:
     (see `this post <https://lists.quantum-espresso.org/pipermail/users/2017-November/039656.html>`_).
 
 """
+
+import jsonschema
 from aiida import orm, plugins
 from aiida.common import AttributeDict
 from aiida.engine import ToContext, WorkChain, if_
 from aiida.orm.nodes.data.base import to_aiida_type
-import jsonschema
 
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 
@@ -65,30 +65,12 @@ def get_parameter_schema():
         'required': ['DeltaE'],
         'additionalProperties': False,
         'properties': {
-            'Emin': {
-                'description': 'min energy (eV) for DOS plot',
-                'type': 'number'
-            },
-            'Emax': {
-                'description': 'max energy (eV) for DOS plot',
-                'type': 'number'
-            },
-            'DeltaE': {
-                'description': 'energy grid step (eV)',
-                'type': 'number',
-                'minimum': 0
-            },
-            'ngauss': {
-                'description': 'Type of gaussian broadening.',
-                'type': 'integer',
-                'enum': [0, 1, -1, -99]
-            },
-            'degauss': {
-                'description': 'gaussian broadening, Ry (not eV!)',
-                'type': 'number',
-                'minimum': 0
-            },
-        }
+            'Emin': {'description': 'min energy (eV) for DOS plot', 'type': 'number'},
+            'Emax': {'description': 'max energy (eV) for DOS plot', 'type': 'number'},
+            'DeltaE': {'description': 'energy grid step (eV)', 'type': 'number', 'minimum': 0},
+            'ngauss': {'description': 'Type of gaussian broadening.', 'type': 'integer', 'enum': [0, 1, -1, -99]},
+            'degauss': {'description': 'gaussian broadening, Ry (not eV!)', 'type': 'number', 'minimum': 0},
+        },
     }
 
 
@@ -102,12 +84,13 @@ def validate_inputs(value, _):
     """
     # Check that either the `scf` input or `nscf.pw.parent_folder` is provided.
     import warnings
+
     if 'scf' in value and 'parent_folder' in value['nscf']['pw']:
         warnings.warn(
             'Both the `scf` and `nscf.pw.parent_folder` inputs were provided. The SCF calculation will '
             'be run with the inputs provided in `scf` and the `nscf.pw.parent_folder` will be ignored.'
         )
-    elif not 'scf' in value and not 'parent_folder' in value['nscf']['pw']:
+    elif 'scf' not in value and 'parent_folder' not in value['nscf']['pw']:
         return 'Specifying either the `scf` or `nscf.pw.parent_folder` input is required.'
 
     for par in ['Emin', 'Emax', 'DeltaE']:
@@ -121,7 +104,6 @@ def validate_inputs(value, _):
                     f'The `{par}` parameter and `energy_range_vs_fermi` were specified.'
                     'The value in `energy_range_vs_fermi` will be used.'
                 )
-    # pylint: disable=no-member
     if 'nbands_factor' in value and 'nbnd' in value['nscf']['pw']['parameters'].base.attributes.get('SYSTEM', {}):
         return PdosWorkChain.exit_codes.ERROR_INVALID_INPUT_NUMBER_OF_BANDS.message
 
@@ -179,9 +161,9 @@ def clean_calcjob_remote(node):
     """Clean the remote directory of a ``CalcJobNode``."""
     cleaned = False
     try:
-        node.outputs.remote_folder._clean()  # pylint: disable=protected-access
+        node.outputs.remote_folder._clean()  # noqa: SLF001
         cleaned = True
-    except (IOError, OSError, KeyError):
+    except (OSError, KeyError):
         pass
     return cleaned
 
@@ -191,9 +173,8 @@ def clean_workchain_calcs(workchain):
     cleaned_calcs = []
 
     for called_descendant in workchain.called_descendants:
-        if isinstance(called_descendant, orm.CalcJobNode):
-            if clean_calcjob_remote(called_descendant):
-                cleaned_calcs.append(called_descendant.pk)
+        if isinstance(called_descendant, orm.CalcJobNode) and clean_calcjob_remote(called_descendant):
+            cleaned_calcs.append(called_descendant.pk)
 
     return cleaned_calcs
 
@@ -208,7 +189,6 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
 
     @classmethod
     def define(cls, spec):
-        # yapf: disable
         """Define the process specification."""
         super().define(spec)
         spec.input('structure', valid_type=orm.StructureData, help='The input structure.')
@@ -217,22 +197,24 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
             valid_type=orm.Bool,
             serializer=to_aiida_type,
             required=False,
-            help=('If ``True``, calculations will be run in serial, '
-                  'and work directories will be cleaned before the next step.')
+            help=(
+                'If ``True``, calculations will be run in serial, '
+                'and work directories will be cleaned before the next step.'
+            ),
         )
         spec.input(
             'clean_workdir',
             valid_type=orm.Bool,
             serializer=to_aiida_type,
             default=lambda: orm.Bool(False),
-            help='If ``True``, work directories of all called calculation will be cleaned at the end of execution.'
+            help='If ``True``, work directories of all called calculation will be cleaned at the end of execution.',
         )
         spec.input(
             'dry_run',
             valid_type=orm.Bool,
             serializer=to_aiida_type,
             required=False,
-            help='Terminate workchain steps before submitting calculations (test purposes only).'
+            help='Terminate workchain steps before submitting calculations (test purposes only).',
         )
         spec.input(
             'energy_range_vs_fermi',
@@ -244,10 +226,14 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
                 'Energy range with respect to the Fermi level that should be covered in DOS and PROJWFC calculation.'
                 'If not specified but Emin and Emax are specified in the input parameters, these values will be used.'
                 'Otherwise, the default values are extracted from the NSCF calculation.'
-            )
+            ),
         )
-        spec.input('nbands_factor', valid_type=orm.Float, required=False,
-            help='The number of bands for the NSCF calculation is that used for the SCF multiplied by this factor.')
+        spec.input(
+            'nbands_factor',
+            valid_type=orm.Float,
+            required=False,
+            help='The number of bands for the NSCF calculation is that used for the SCF multiplied by this factor.',
+        )
 
         spec.expose_inputs(
             PwBaseWorkChain,
@@ -258,7 +244,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
                 'validator': validate_scf,
                 'required': False,
                 'populate_defaults': False,
-            }
+            },
         )
         spec.expose_inputs(
             PwBaseWorkChain,
@@ -266,28 +252,32 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
             exclude=('clean_workdir', 'pw.structure'),
             namespace_options={
                 'help': 'Inputs for the `PwBaseWorkChain` of the `nscf` calculation.',
-                'validator': validate_nscf
-            }
+                'validator': validate_nscf,
+            },
         )
         spec.expose_inputs(
             DosCalculation,
             namespace='dos',
             exclude=('parent_folder',),
             namespace_options={
-                'help': ('Input parameters for the `dos.x` calculation. Note that the `Emin`, `Emax` and `DeltaE` '
-                         'values have to match with those in the `projwfc` inputs.'),
-                'validator': validate_dos
-            }
+                'help': (
+                    'Input parameters for the `dos.x` calculation. Note that the `Emin`, `Emax` and `DeltaE` '
+                    'values have to match with those in the `projwfc` inputs.'
+                ),
+                'validator': validate_dos,
+            },
         )
         spec.expose_inputs(
             ProjwfcCalculation,
             namespace='projwfc',
             exclude=('parent_folder',),
             namespace_options={
-                'help': ('Input parameters for the `projwfc.x` calculation. Note that the `Emin`, `Emax` and `DeltaE` '
-                         'values have to match with those in the `dos` inputs.'),
-                'validator': validate_projwfc
-            }
+                'help': (
+                    'Input parameters for the `projwfc.x` calculation. Note that the `Emin`, `Emax` and `DeltaE` '
+                    'values have to match with those in the `dos` inputs.'
+                ),
+                'validator': validate_projwfc,
+            },
         )
         spec.inputs.validator = validate_inputs
 
@@ -300,10 +290,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
             cls.run_nscf,
             cls.inspect_nscf,
             if_(cls.serial_clean)(
-                cls.run_dos_serial,
-                cls.inspect_dos_serial,
-                cls.run_projwfc_serial,
-                cls.inspect_projwfc_serial
+                cls.run_dos_serial, cls.inspect_dos_serial, cls.run_projwfc_serial, cls.inspect_projwfc_serial
             ).else_(
                 cls.run_pdos_parallel,
                 cls.inspect_pdos_parallel,
@@ -311,20 +298,21 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
             cls.results,
         )
 
-        spec.exit_code(202, 'ERROR_INVALID_INPUT_KPOINTS',
-            message='Neither the `kpoints` nor the `kpoints_distance` input was specified for base or nscf namespaces.')
-        spec.exit_code(401, 'ERROR_SUB_PROCESS_FAILED_SCF',
-            message='the SCF sub process failed')
-        spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_NSCF',
-            message='the NSCF sub process failed')
-        spec.exit_code(403, 'ERROR_SUB_PROCESS_FAILED_DOS',
-            message='the DOS sub process failed')
-        spec.exit_code(404, 'ERROR_SUB_PROCESS_FAILED_PROJWFC',
-            message='the PROJWFC sub process failed')
-        spec.exit_code(404, 'ERROR_SUB_PROCESS_FAILED_BOTH',
-            message='both the DOS and PROJWFC sub process failed')
-        spec.exit_code(405, 'ERROR_INVALID_INPUT_NUMBER_OF_BANDS',
-            message='Cannot specify both `nbands_factor` and `nscf.pw.parameters.SYSTEM.nbnd`.')
+        spec.exit_code(
+            202,
+            'ERROR_INVALID_INPUT_KPOINTS',
+            message='Neither the `kpoints` nor the `kpoints_distance` input was specified for base or nscf namespaces.',
+        )
+        spec.exit_code(401, 'ERROR_SUB_PROCESS_FAILED_SCF', message='the SCF sub process failed')
+        spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_NSCF', message='the NSCF sub process failed')
+        spec.exit_code(403, 'ERROR_SUB_PROCESS_FAILED_DOS', message='the DOS sub process failed')
+        spec.exit_code(404, 'ERROR_SUB_PROCESS_FAILED_PROJWFC', message='the PROJWFC sub process failed')
+        spec.exit_code(404, 'ERROR_SUB_PROCESS_FAILED_BOTH', message='both the DOS and PROJWFC sub process failed')
+        spec.exit_code(
+            405,
+            'ERROR_INVALID_INPUT_NUMBER_OF_BANDS',
+            message='Cannot specify both `nbands_factor` and `nscf.pw.parameters.SYSTEM.nbnd`.',
+        )
 
         spec.expose_outputs(PwBaseWorkChain, namespace='nscf')
         spec.expose_outputs(DosCalculation, namespace='dos')
@@ -336,6 +324,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         from importlib_resources import files
 
         from . import protocols
+
         return files(protocols) / 'pdos.yaml'
 
     @classmethod
@@ -391,12 +380,12 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
         builder.scf = scf
         builder.nscf = nscf
-        builder.dos.code = dos_code  # pylint: disable=no-member
-        builder.dos.parameters = orm.Dict(inputs.get('dos', {}).get('parameters')) # pylint: disable=no-member
-        builder.dos.metadata = metadata_dos  # pylint: disable=no-member
-        builder.projwfc.code = projwfc_code  # pylint: disable=no-member
-        builder.projwfc.parameters = orm.Dict(inputs.get('projwfc', {}).get('parameters')) # pylint: disable=no-member
-        builder.projwfc.metadata = metadata_projwfc  # pylint: disable=no-member
+        builder.dos.code = dos_code
+        builder.dos.parameters = orm.Dict(inputs.get('dos', {}).get('parameters'))
+        builder.dos.metadata = metadata_dos
+        builder.projwfc.code = projwfc_code
+        builder.projwfc.parameters = orm.Dict(inputs.get('projwfc', {}).get('parameters'))
+        builder.projwfc.metadata = metadata_projwfc
 
         return builder
 
@@ -568,10 +557,9 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
             self.report(f'DosCalculation failed with exit status {calculation.exit_status}')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_DOS
 
-        if self.ctx.serial_clean:
+        if self.ctx.serial_clean and clean_calcjob_remote(calculation):
             # we no longer require the dos remote folder, so can clean it
-            if clean_calcjob_remote(calculation):
-                self.report(f'cleaned remote folder of DosCalculation<{calculation.pk}>')
+            self.report(f'cleaned remote folder of DosCalculation<{calculation.pk}>')
 
     def run_projwfc_serial(self):
         """Run Projwfc calculation."""
@@ -591,10 +579,9 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
             self.report(f'ProjwfcCalculation failed with exit status {calculation.exit_status}')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_PROJWFC
 
-        if self.ctx.serial_clean:
+        if self.ctx.serial_clean and clean_calcjob_remote(calculation):
             # we no longer require the projwfc remote folder, so can clean it
-            if clean_calcjob_remote(calculation):
-                self.report(f'cleaned remote folder of ProjwfcCalculation<{calculation.pk}>')
+            self.report(f'cleaned remote folder of ProjwfcCalculation<{calculation.pk}>')
 
     def run_pdos_parallel(self):
         """Run DOS and Projwfc calculations in parallel."""
@@ -606,11 +593,11 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
 
         future_dos = self.submit(DosCalculation, **dos_inputs)
         self.report(f'launching DosCalculation<{future_dos.pk}>')
-        self.to_context(**{'calc_dos': future_dos})
+        self.to_context(calc_dos=future_dos)
 
         future_projwfc = self.submit(ProjwfcCalculation, **projwfc_inputs)
         self.report(f'launching ProjwfcCalculation<{future_projwfc.pk}>')
-        self.to_context(**{'calc_projwfc': future_projwfc})
+        self.to_context(calc_projwfc=future_projwfc)
 
     def inspect_pdos_parallel(self):
         """Verify that the DOS and Projwfc calculations finished successfully."""

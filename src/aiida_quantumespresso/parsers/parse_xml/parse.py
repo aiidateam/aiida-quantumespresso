@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 import collections
+import contextlib
 from urllib.error import URLError
 
 import numpy as np
@@ -23,7 +23,7 @@ def parser_assert(condition, message, log_func=raise_parsing_error):
 
 
 def parser_assert_equal(val1, val2, message, log_func=raise_parsing_error):
-    if not (val1 == val2):
+    if val1 != val2:
         msg = f'Violated assertion: {val1} == {val2}'
         if message:
             msg += ' - '
@@ -55,7 +55,6 @@ def parse_xml_post_6_2(xml):
     try:
         xsd = XMLSchema(schema_filepath)
     except URLError:
-
         # If loading the XSD file specified in the XML file fails, we try the default
         schema_filepath_default = get_default_schema_filepath()
 
@@ -88,14 +87,11 @@ def parse_xml_post_6_2(xml):
 
     # Fix a bug of QE 6.8: the output XML is not consistent with schema, see
     # https://github.com/aiidateam/aiida-quantumespresso/pull/717
-    if xml_version == '6.8':
-        if 'timing_info' in xml_dictionary:
-            timing_info = xml_dictionary['timing_info']
-            partial_pwscf = timing_info.find("partial[@label='PWSCF'][@calls='0']")
-            try:
-                timing_info.remove(partial_pwscf)
-            except (TypeError, ValueError):
-                pass
+    if xml_version == '6.8' and 'timing_info' in xml_dictionary:
+        timing_info = xml_dictionary['timing_info']
+        partial_pwscf = timing_info.find("partial[@label='PWSCF'][@calls='0']")
+        with contextlib.suppress(TypeError, ValueError):
+            timing_info.remove(partial_pwscf)
 
     lattice_vectors = [
         [x * CONSTANTS.bohr_to_ang for x in outputs['atomic_structure']['cell']['a1']],
@@ -108,7 +104,7 @@ def parse_xml_post_6_2(xml):
 
     if 'occupations' in inputs.get('bands', {}):
         try:
-            occupations = inputs['bands']['occupations']['$']  # yapf: disable
+            occupations = inputs['bands']['occupations']['$']
         except TypeError:  # "string indices must be integers" -- might have attribute 'nspin'
             occupations = inputs['bands']['occupations']
     else:
@@ -140,10 +136,7 @@ def parse_xml_post_6_2(xml):
     do_magnetization = outputs.get('magnetization', {}).get('do_magnetization', False)
 
     # Time reversal symmetry of the system
-    if non_colinear_calculation and do_magnetization:
-        time_reversal = False
-    else:
-        time_reversal = True
+    time_reversal = not (non_colinear_calculation and do_magnetization)
 
     # If no specific tags are present, the default is 1
     if non_colinear_calculation or spin_orbit_calculation:
@@ -162,7 +155,6 @@ def parse_xml_post_6_2(xml):
     nrot = outputs.get('symmetries', {}).get('nrot', None)  # lattice symmetries
 
     for symmetry in outputs.get('symmetries', {}).get('symmetry', []):
-
         # There are two types of symmetries, lattice and crystal. The pure inversion (-I) is always a lattice symmetry,
         # so we don't care. But if the pure inversion is also a crystal symmetry, then then the system as a whole
         # has (by definition) inversion symmetry; so we set the global property inversion_symmetry = True.
@@ -185,15 +177,11 @@ def parse_xml_post_6_2(xml):
         except KeyError:
             sym['t_rev'] = '0'
 
-        try:
+        with contextlib.suppress(KeyError):
             sym['equivalent_atoms'] = symmetry['equivalent_atoms']['$']
-        except KeyError:
-            pass
 
-        try:
+        with contextlib.suppress(KeyError):
             sym['fractional_translation'] = symmetry['fractional_translation']
-        except KeyError:
-            pass
 
         if symmetry_type == 'crystal_symmetry':
             symmetries.append(sym)
@@ -204,8 +192,7 @@ def parse_xml_post_6_2(xml):
 
     if (nsym != len(symmetries)) or (nrot != len(symmetries) + len(lattice_symmetries)):
         logs.warning.append(
-            'Inconsistent number of symmetries: nsym={}, nrot={}, len(symmetries)={}, len(lattice_symmetries)={}'.
-            format(nsym, nrot, len(symmetries), len(lattice_symmetries))
+            f'Inconsistent number of symmetries: nsym={nsym}, nrot={nrot}, len(symmetries)={len(symmetries)}, len(lattice_symmetries)={len(lattice_symmetries)}'
         )
 
     xml_data = {
@@ -249,26 +236,24 @@ def parse_xml_post_6_2(xml):
         'lsda': lsda,
         'number_of_spin_components': nspin,
         'no_time_rev_operations': inputs.get('symmetry_flags', {}).get('no_t_rev', None),
-        'inversion_symmetry':
-        inversion_symmetry,  # the old tag was INVERSION_SYMMETRY and was set to (from the code): "invsym    if true the system has inversion symmetry"
+        'inversion_symmetry': inversion_symmetry,  # the old tag was INVERSION_SYMMETRY and was set to (from the code): "invsym    if true the system has inversion symmetry"
         'number_of_bravais_symmetries': nrot,  # lattice symmetries
         'number_of_symmetries': nsym,  # crystal symmetries
         'wfc_cutoff': inputs.get('basis', {}).get('ecutwfc', -1.0) * CONSTANTS.hartree_to_ev,
         'rho_cutoff': outputs['basis_set']['ecutrho'] * CONSTANTS.hartree_to_ev,  # not always printed in input->basis
         'smooth_fft_grid': [value for _, value in sorted(outputs['basis_set']['fft_smooth'].items())],
-        'dft_exchange_correlation': inputs.get('dft', {}).get('functional',
-                                                              None),  # TODO: also parse optional elements of 'dft' tag
+        'dft_exchange_correlation': inputs.get('dft', {}).get(
+            'functional', None
+        ),  # TODO: also parse optional elements of 'dft' tag
         # WARNING: this is different between old XML and new XML
         'spin_orbit_calculation': spin_orbit_calculation,
         'q_real_space': outputs['algorithmic_info']['real_space_q'],
-
         'energy_units': 'eV',
         'energy_accuracy_units': 'eV',
         'energy_ewald_units': 'eV',
         'energy_hartree_units': 'eV',
         'energy_one_electron_units': 'eV',
         'energy_xc_units': 'eV',
-
         'number_of_atoms': inputs['atomic_structure']['@nat'],
         'number_of_species': inputs['atomic_species']['@ntyp'],
     }
@@ -310,7 +295,9 @@ def parse_xml_post_6_2(xml):
         num_electrons = band_structure['nelec']
 
         # In schema v240411 (QE v7.3.1), the `number_of_atomic_wfc` is moved to the `atomic_structure` tag as an attribute
-        num_atomic_wfc = band_structure.get('num_of_atomic_wfc', None) or outputs['atomic_structure'].get('@num_of_atomic_wfc', None)
+        num_atomic_wfc = band_structure.get('num_of_atomic_wfc', None) or outputs['atomic_structure'].get(
+            '@num_of_atomic_wfc', None
+        )
         num_bands = band_structure.get('nbnd', None)
         num_bands_up = band_structure.get('nbnd_up', None)
         num_bands_down = band_structure.get('nbnd_dw', None)
@@ -319,9 +306,9 @@ def parse_xml_post_6_2(xml):
             xml_data['fermi_energy'] = band_structure['fermi_energy'] * CONSTANTS.hartree_to_ev
 
         if 'two_fermi_energies' in band_structure:
-            xml_data['fermi_energy_up'], xml_data['fermi_energy_down'] = [
+            xml_data['fermi_energy_up'], xml_data['fermi_energy_down'] = (
                 energy * CONSTANTS.hartree_to_ev for energy in band_structure['two_fermi_energies']
-            ]
+            )
 
         xml_data['number_of_atomic_wfc'] = num_atomic_wfc
         xml_data['number_of_k_points'] = num_k_points
@@ -331,7 +318,7 @@ def parse_xml_post_6_2(xml):
             raise XMLParseError('None of `nbnd`, `nbnd_up` or `nbdn_dw` could be parsed.')
 
         # If both channels are `None` we are dealing with a non spin-polarized or non-collinear calculation
-        elif num_bands_up is None and num_bands_down is None:
+        if num_bands_up is None and num_bands_down is None:
             spins = False
 
         # If only one of the channels is `None` we raise, because that is an inconsistent result
@@ -346,16 +333,13 @@ def parse_xml_post_6_2(xml):
 
             if num_bands is not None and num_bands != num_bands_up + num_bands_down:
                 raise XMLParseError(
-                    'Inconsistent number of bands: nbnd={}, nbnd_up={}, nbnd_down={}'.format(
-                        num_bands, num_bands_up, num_bands_down
-                    )
+                    f'Inconsistent number of bands: nbnd={num_bands}, nbnd_up={num_bands_up}, nbnd_down={num_bands_down}'
                 )
 
             if num_bands is None:
                 num_bands = num_bands_up + num_bands_down  # backwards compatibility;
 
         if 'ks_energies' in band_structure:
-
             k_points = []
             k_points_weights = []
 
@@ -385,17 +369,25 @@ def parse_xml_post_6_2(xml):
 
             if not spins:
                 parser_assert_equal(
-                    band_eigenvalues.shape, (1, num_k_points, num_bands), 'Unexpected shape of band_eigenvalues'
+                    band_eigenvalues.shape,
+                    (1, num_k_points, num_bands),
+                    'Unexpected shape of band_eigenvalues',
                 )
                 parser_assert_equal(
-                    band_occupations.shape, (1, num_k_points, num_bands), 'Unexpected shape of band_occupations'
+                    band_occupations.shape,
+                    (1, num_k_points, num_bands),
+                    'Unexpected shape of band_occupations',
                 )
             else:
                 parser_assert_equal(
-                    band_eigenvalues.shape, (2, num_k_points, num_bands_up), 'Unexpected shape of band_eigenvalues'
+                    band_eigenvalues.shape,
+                    (2, num_k_points, num_bands_up),
+                    'Unexpected shape of band_eigenvalues',
                 )
                 parser_assert_equal(
-                    band_occupations.shape, (2, num_k_points, num_bands_up), 'Unexpected shape of band_occupations'
+                    band_occupations.shape,
+                    (2, num_k_points, num_bands_up),
+                    'Unexpected shape of band_occupations',
                 )
 
             bands_dict = {
@@ -414,7 +406,10 @@ def parse_xml_post_6_2(xml):
                 # actual number of bands, we divide by two using integer division
                 xml_data['number_of_bands'] = num_bands // 2
 
-            for key, value in [('number_of_bands_up', num_bands_up), ('number_of_bands_down', num_bands_down)]:
+            for key, value in [
+                ('number_of_bands_up', num_bands_up),
+                ('number_of_bands_down', num_bands_down),
+            ]:
                 if value is not None:
                     xml_data[key] = value
 
@@ -443,15 +438,11 @@ def parse_xml_post_6_2(xml):
     # To get the total number of SCF steps in the run you should sum up the individual steps.
     # TODO: should we parse 'steps' too? Are they already added in the output trajectory?
     for key in ['convergence_achieved', 'n_scf_steps', 'scf_error']:
-        try:
+        with contextlib.suppress(KeyError):
             conv_info_scf[key] = outputs['convergence_info']['scf_conv'][key]
-        except KeyError:
-            pass
     for key in ['convergence_achieved', 'n_opt_steps', 'grad_norm']:
-        try:
+        with contextlib.suppress(KeyError):
             conv_info_opt[key] = outputs['convergence_info']['opt_conv'][key]
-        except KeyError:
-            pass
     if conv_info_scf:
         conv_info['scf_conv'] = conv_info_scf
     if conv_info_opt:
@@ -491,7 +482,7 @@ def parse_xml_post_6_2(xml):
         polarization_modulus = berry_phase['totalPolarization']['modulus']
         parser_assert(
             polarization_units in ['e/bohr^2', 'C/m^2'],
-            f"Unsupported units '{polarization_units}' of total polarization"
+            f"Unsupported units '{polarization_units}' of total polarization",
         )
         if polarization_units == 'e/bohr^2':
             polarization *= e_bohr2_to_coulomb_m2
@@ -530,7 +521,7 @@ def parse_xml_post_6_2(xml):
         'reciprocal_lattice_vectors': [
             outputs['basis_set']['reciprocal_lattice']['b1'],
             outputs['basis_set']['reciprocal_lattice']['b2'],
-            outputs['basis_set']['reciprocal_lattice']['b3']
+            outputs['basis_set']['reciprocal_lattice']['b3'],
         ],
         'atoms': atoms,
         'cell': {
@@ -544,7 +535,7 @@ def parse_xml_post_6_2(xml):
             'index': [i + 1 for i, specie in enumerate(species)],
             'pseudo': [specie['pseudo_file'] for specie in species],
             'mass': [specie['mass'] for specie in species],
-            'type': [specie['@name'] for specie in species]
+            'type': [specie['@name'] for specie in species],
         },
     }
 
@@ -600,14 +591,19 @@ def parse_step_to_trajectory(trajectory, data, skip_structure=False):
     if 'total_energy' in data:
         total_energy = data['total_energy']
 
-        for key, key_alt in [('etot', 'energy'), ('ehart', 'energy_hartree'), ('ewald', 'energy_ewald'), ('etxc', 'energy_xc')]:
+        for key, key_alt in [
+            ('etot', 'energy'),
+            ('ehart', 'energy_hartree'),
+            ('ewald', 'energy_ewald'),
+            ('etxc', 'energy_xc'),
+        ]:
             if key in total_energy:
                 trajectory[key_alt].append(total_energy[key] * CONSTANTS.hartree_to_ev)
 
     if 'forces' in data and '$' in data['forces']:
         forces = np.array(data['forces']['$'])
         dimensions = data['forces']['@dims']  # Like [3, 2], should be reversed to reshape the forces array
-        forces = forces * (CONSTANTS.ry_to_ev*2 ) / CONSTANTS.bohr_to_ang
+        forces = forces * (CONSTANTS.ry_to_ev * 2) / CONSTANTS.bohr_to_ang
         trajectory['forces'].append(forces.reshape(dimensions[::-1]))
 
     if 'stress' in data and '$' in data['stress']:

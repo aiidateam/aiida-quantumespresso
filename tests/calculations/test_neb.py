@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the `NebCalculation` class."""
+
 import pytest
 
 

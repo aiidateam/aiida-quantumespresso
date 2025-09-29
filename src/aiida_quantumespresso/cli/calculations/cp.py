@@ -1,11 +1,11 @@
-# -*- coding: utf-8 -*-
 """Command line scripts to launch a `CpCalculation` for testing and demonstration purposes."""
+
 from aiida.cmdline.params import options as options_core
 from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
 
-from . import cmd_launch
 from ..utils import defaults, launch, options
+from . import cmd_launch
 
 
 @cmd_launch.command('cp')
@@ -49,9 +49,7 @@ def launch_calculation(code, structure, pseudo_family, max_num_machines, max_wal
             'emass': 400.0,
             'emass_cutoff': 3.0,
         },
-        'IONS': {
-            'ion_dynamics': 'none'
-        },
+        'IONS': {'ion_dynamics': 'none'},
     }
 
     inputs = {
@@ -61,7 +59,7 @@ def launch_calculation(code, structure, pseudo_family, max_num_machines, max_wal
         'parameters': Dict(parameters),
         'metadata': {
             'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
-        }
+        },
     }
 
     launch.launch_process(CalculationFactory('quantumespresso.cp'), daemon, **inputs)
