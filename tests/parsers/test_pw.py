@@ -1223,3 +1223,31 @@ def test_diff_total_abs_mag(
             'absolute_magnetization': output_parameters['absolute_magnetization'],
         }
     )
+
+
+def test_scf_electric_field(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+):
+    """Test that the parsing of total and absolute magnetic moments is from the XML and is distinct."""
+    name = 'scf_electric_field'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    inputs = generate_inputs()
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_trajectory' in results
+
+    output_trajectory = results['output_trajectory']
+
+    data_regression.check(
+        {
+            'electronic_dipole_cartesian_axes': output_trajectory.get_array(
+                'electronic_dipole_cartesian_axes'
+            ).tolist(),
+            'ionic_dipole_cartesian_axes': output_trajectory.get_array('ionic_dipole_cartesian_axes').tolist(),
+        }
+    )
