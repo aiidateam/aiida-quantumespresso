@@ -99,7 +99,7 @@ def parse_xml_post_6_2(xml):
         [x * CONSTANTS.bohr_to_ang for x in outputs['atomic_structure']['cell']['a3']],
     ]
 
-    has_electric_field = inputs.get('electric_field', {}).get('electric_potential', None) == 'sawtooth_potential'
+    has_electric_field = outputs.get('electric_field', None) is not None
     has_dipole_correction = inputs.get('electric_field', {}).get('dipole_correction', False)
 
     if 'occupations' in inputs.get('bands', {}):
@@ -457,11 +457,8 @@ def parse_xml_post_6_2(xml):
         # 3 = ionic convergence failed
         # These might be changed in the future. Also see PW/src/run_pwscf.f90
 
-    try:
+    if has_electric_field and 'BerryPhase' in outputs['electric_field']:
         berry_phase = outputs['electric_field']['BerryPhase']
-    except KeyError:
-        pass
-    else:
         # This is what I would like to do, but it's not retro-compatible
         # xml_data['berry_phase'] = {}
         # xml_data['berry_phase']['total_phase']         = berry_phase['totalPhase']['$']
@@ -611,3 +608,11 @@ def parse_step_to_trajectory(trajectory, data, skip_structure=False):
         dimensions = data['stress']['@dims']  # Like [3, 3], should be reversed to reshape the stress array
         stress = stress * CONSTANTS.au_gpa
         trajectory['stress'].append(stress.reshape(dimensions[::-1]))
+
+    if 'electric_field' in data and 'finiteElectricFieldInfo' in data['electric_field']:
+        trajectory['electronic_dipole_cartesian_axes'].append(
+            np.array(data['electric_field']['finiteElectricFieldInfo']['electronicDipole'])
+        )
+        trajectory['ionic_dipole_cartesian_axes'].append(
+            np.array(data['electric_field']['finiteElectricFieldInfo']['ionicDipole'])
+        )
