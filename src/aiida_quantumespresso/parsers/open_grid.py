@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from typing import Tuple
-
 from aiida.common import AttributeDict
 from aiida.orm import Dict, KpointsData
 
@@ -11,9 +8,7 @@ from aiida_quantumespresso.utils.mapping import get_logging_container
 class OpenGridParser(BaseParser):
     """``Parser`` implementation for the ``OpenGridCalculation`` calculation job class."""
 
-    class_error_map = {
-        'incompatible FFT grid': 'ERROR_INCOMPATIBLE_FFT_GRID'
-    }
+    class_error_map = {'incompatible FFT grid': 'ERROR_INCOMPATIBLE_FFT_GRID'}
 
     def parse(self, **kwargs):
         """Parse the retrieved files of a completed ``OpenGridCalculation`` into output nodes."""
@@ -36,14 +31,17 @@ class OpenGridParser(BaseParser):
         self.out('kpoints_mesh', kpoints_mesh)
         self.out('kpoints', kpoints)
 
-        for exit_code in ['ERROR_OUTPUT_KPOINTS_MISMATCH', 'ERROR_OUTPUT_STDOUT_INCOMPLETE']:
+        for exit_code in [
+            'ERROR_OUTPUT_KPOINTS_MISMATCH',
+            'ERROR_OUTPUT_STDOUT_INCOMPLETE',
+        ]:
             if exit_code in logs.error:
                 return self.exit(self.exit_codes.get(exit_code), logs)
 
         return self.exit(logs=logs)
 
     @staticmethod
-    def parse_kpoints(stdout: str, logs: AttributeDict) -> Tuple[KpointsData, KpointsData, AttributeDict]:
+    def parse_kpoints(stdout: str, logs: AttributeDict) -> tuple[KpointsData, KpointsData, AttributeDict]:
         """Parse the ``stdout`` for the mesh and explicit list of kpoints."""
         lines = stdout.split('\n')
 
@@ -58,11 +56,11 @@ class OpenGridParser(BaseParser):
                 found_kpoints = True
                 continue
             if found_kpoints:
-                line = line.strip()
-                if line != '':
-                    line = [float(i) for i in line.split()]
-                    kpoints.append(line[:-1])
-                    weights.append(line[-1])
+                stripped_line = line.strip()
+                if stripped_line != '':
+                    kpoint_lines = [float(i) for i in stripped_line.split()]
+                    kpoints.append(kpoint_lines[:-1])
+                    weights.append(kpoint_lines[-1])
                 else:
                     found_kpoints = False
 

@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO neb.x calculation with automated error handling and restarts."""
+
 from aiida import orm
 from aiida.common import AttributeDict, InputValidationError
 from aiida.engine import BaseRestartWorkChain, ProcessHandlerReport, process_handler, while_
@@ -16,30 +16,42 @@ from ..protocols.utils import ProtocolMixin
 class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     """Workchain to run a Quantum ESPRESSO neb.x calculation with automated error handling and restarts."""
 
-    # pylint: disable=too-many-public-methods, too-many-statements
-
     _process_class = NebCalculation
 
-    defaults = AttributeDict({
-        'qe': qe_defaults,
-        'delta_factor_mixing_beta': 0.8,
-    })
+    defaults = AttributeDict(
+        {
+            'qe': qe_defaults,
+            'delta_factor_mixing_beta': 0.8,
+        }
+    )
 
     @classmethod
     def define(cls, spec):
         """Define the process specification."""
-        # yapf: disable
+
         super().define(spec)
         spec.expose_inputs(NebCalculation, namespace='neb', exclude=('pw.kpoints', 'first_structure', 'last_structure'))
-        spec.input('kpoints', valid_type=orm.KpointsData, required=False,
-            help='An explicit k-points list or mesh. Either this or `kpoints_distance` has to be provided.')
-        spec.input('kpoints_distance', valid_type=orm.Float, required=False,
+        spec.input(
+            'kpoints',
+            valid_type=orm.KpointsData,
+            required=False,
+            help='An explicit k-points list or mesh. Either this or `kpoints_distance` has to be provided.',
+        )
+        spec.input(
+            'kpoints_distance',
+            valid_type=orm.Float,
+            required=False,
             help='The minimum desired distance in 1/Å between k-points in reciprocal space. The explicit k-points will '
-                 'be generated automatically by a calculation function based on the input structure.')
-        spec.input('kpoints_force_parity', valid_type=orm.Bool, required=False,
+            'be generated automatically by a calculation function based on the input structure.',
+        )
+        spec.input(
+            'kpoints_force_parity',
+            valid_type=orm.Bool,
+            required=False,
             help='Optional input when constructing the k-points based on a desired `kpoints_distance`. Setting this to '
-                 '`True` will force the k-point mesh to have an even number of points along each lattice vector except '
-                 'for any non-periodic directions.')
+            '`True` will force the k-point mesh to have an even number of points along each lattice vector except '
+            'for any non-periodic directions.',
+        )
 
         spec.outline(
             cls.setup,
@@ -53,14 +65,20 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         spec.expose_outputs(NebCalculation)
 
-        spec.exit_code(202, 'ERROR_INVALID_INPUT_KPOINTS',
-            message='Neither the `kpoints` nor the `kpoints_distance` input was specified.')
+        spec.exit_code(
+            202,
+            'ERROR_INVALID_INPUT_KPOINTS',
+            message='Neither the `kpoints` nor the `kpoints_distance` input was specified.',
+        )
 
-        spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
-            message='The calculation failed with an unidentified unrecoverable error.')
-        spec.exit_code(310, 'ERROR_KNOWN_UNRECOVERABLE_FAILURE',
-            message='The calculation failed with a known unrecoverable error.')
-        # yapf: enable
+        spec.exit_code(
+            300,
+            'ERROR_UNRECOVERABLE_FAILURE',
+            message='The calculation failed with an unidentified unrecoverable error.',
+        )
+        spec.exit_code(
+            310, 'ERROR_KNOWN_UNRECOVERABLE_FAILURE', message='The calculation failed with a known unrecoverable error.'
+        )
 
     @classmethod
     def get_protocol_filepath(cls):
@@ -68,6 +86,7 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         from importlib_resources import files
 
         from ..protocols import pw as pw_protocols
+
         return files(pw_protocols) / 'base.yaml'
 
     @classmethod
@@ -81,7 +100,7 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         spin_type=SpinType.NONE,
         initial_magnetic_moments=None,
         options=None,
-        **kargs
+        **kargs,
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
@@ -109,9 +128,8 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             spin_type=spin_type,
             initial_magnetic_moments=initial_magnetic_moments,
             options=options,
-            **kargs
+            **kargs,
         )
-        #pylint: disable=no-member
         builder = cls.get_builder()
         builder.neb.code = code
         builder.neb.images = images
@@ -125,7 +143,6 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             builder.kpoints_distance = orm.Float(pw_base['kpoints_distance'])
         builder.kpoints_force_parity = orm.Bool(pw_base['kpoints_force_parity'])
         builder.max_iterations = orm.Int(pw_base['max_iterations'])
-        # pylint: enable=no-member
         return builder
 
     def setup(self):
@@ -169,11 +186,9 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 'structure': self.inputs.neb.images.get_step_structure(-1),
                 'distance': self.inputs.kpoints_distance,
                 'force_parity': self.inputs.get('kpoints_force_parity', orm.Bool(False)),
-                'metadata': {
-                    'call_link_label': 'create_kpoints_from_distance'
-                }
+                'metadata': {'call_link_label': 'create_kpoints_from_distance'},
             }
-            kpoints = create_kpoints_from_distance(**inputs)  # pylint: disable=unexpected-keyword-arg
+            kpoints = create_kpoints_from_distance(**inputs)
 
         self.ctx.inputs.pw.kpoints = kpoints
 
@@ -213,7 +228,7 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             NebCalculation.exit_codes.ERROR_QR_FAILED,
             NebCalculation.exit_codes.ERROR_EIGENVECTOR_CONVERGENCE,
             NebCalculation.exit_codes.ERROR_BROYDEN_FACTORIZATION,
-        ]
+        ],
     )
     def handle_diagonalization_errors(self, calculation):
         """Handle known issues related to the diagonalization.
@@ -241,9 +256,12 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             self.report_error_handled(calculation, action)
             return ProcessHandlerReport(True, self.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE)
 
-    @process_handler(priority=575, exit_codes=[
-        NebCalculation.exit_codes.ERROR_NEB_INTERRUPTED_PARTIAL_TRAJECTORY,
-    ])
+    @process_handler(
+        priority=575,
+        exit_codes=[
+            NebCalculation.exit_codes.ERROR_NEB_INTERRUPTED_PARTIAL_TRAJECTORY,
+        ],
+    )
     def handle_neb_interrupted_partial_trajectory(self, calculation):
         """Handle `ERROR_NEB_INTERRUPTED_PARTIAL_TRAJECTORY` and exit code.
 
@@ -255,17 +273,23 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         return ProcessHandlerReport(True)
 
-    @process_handler(priority=575, exit_codes=[
-        NebCalculation.exit_codes.ERROR_NEB_CYCLE_EXCEEDED_NSTEP,
-    ])
+    @process_handler(
+        priority=575,
+        exit_codes=[
+            NebCalculation.exit_codes.ERROR_NEB_CYCLE_EXCEEDED_NSTEP,
+        ],
+    )
     def handle_neb_cycle_exceeded_nstep(self, calculation):
         """Handle `ERROR_NEB_CYCLE_EXCEEDED_NSTEP` and exit code.
 
         In this case the calculation shut down cleanly and we can do a full restart.
         """
         self.ctx.inputs.parameters['PATH'].setdefault('nstep_path', 1)
-        input_nsteps = self.inputs.neb.parameters['PATH']['nstep_path'] if 'nstep_path' in self.inputs.neb.parameters[
-            'PATH'] else 1
+        input_nsteps = (
+            self.inputs.neb.parameters['PATH']['nstep_path']
+            if 'nstep_path' in self.inputs.neb.parameters['PATH']
+            else 1
+        )
         self.ctx.inputs.parameters['PATH']['nstep_path'] += input_nsteps
 
         self.set_restart_type(RestartType.FULL, calculation.outputs.remote_folder)
@@ -273,17 +297,21 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         return ProcessHandlerReport(True)
 
-    @process_handler(priority=410, exit_codes=[
-        NebCalculation.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED,
-    ])
+    @process_handler(
+        priority=410,
+        exit_codes=[
+            NebCalculation.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED,
+        ],
+    )
     def handle_electronic_convergence_not_reached(self, calculation):
         """Handle `ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED` error.
 
         Decrease the mixing beta and fully restart from the previous calculation.
         """
         factor = self.defaults.delta_factor_mixing_beta
-        mixing_beta = self.ctx.inputs.pw.parameters.get('ELECTRONS',
-                                                        {}).get('mixing_beta', self.defaults.qe.mixing_beta)
+        mixing_beta = self.ctx.inputs.pw.parameters.get('ELECTRONS', {}).get(
+            'mixing_beta', self.defaults.qe.mixing_beta
+        )
         mixing_beta_new = mixing_beta * factor
 
         self.ctx.inputs.pw.parameters['ELECTRONS']['mixing_beta'] = mixing_beta_new

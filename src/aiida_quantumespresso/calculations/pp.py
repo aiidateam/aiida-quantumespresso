@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """`CalcJob` implementation for the pp.x code of Quantum ESPRESSO."""
+
 import os
 import warnings
 
@@ -13,7 +13,7 @@ from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 from .base import CalcJob
 
 
-def validate_parameters(value, ctx=None):  # pylint: disable=unused-argument
+def validate_parameters(value, _):
     """Validate 'parameters' dict."""
     parameters = value.get_dict()
 
@@ -23,7 +23,11 @@ def validate_parameters(value, ctx=None):  # pylint: disable=unused-argument
         return 'parameter `INPUTPP.plot_num` must be explicitly set'
 
     # Check that a valid plot type is requested
-    if plot_num in range(23) and plot_num not in [14, 15, 16]:  # Must be integer in range 0-22, but not 14-16:
+    if plot_num in range(23) and plot_num not in [
+        14,
+        15,
+        16,
+    ]:  # Must be integer in range 0-22, but not 14-16:
         parameters['INPUTPP']['plot_num'] = int(plot_num)  # If this test passes, we can safely cast to int
     else:
         return '`INTPUTPP.plot_num` must be an integer in the range 0-23 excluding [14, 15, 16]'
@@ -48,14 +52,13 @@ class PpCalculation(CalcJob):
     _INPUT_SUBFOLDER = './out/'
 
     # In the PW Calculation plugin, these folder names and prefixes are fixed, so import them to reduce maintenance
-    # pylint: disable=protected-access
     from aiida_quantumespresso.calculations import BasePwCpInputGenerator
-    _OUTPUT_SUBFOLDER = BasePwCpInputGenerator._OUTPUT_SUBFOLDER
-    _PREFIX = BasePwCpInputGenerator._PREFIX
-    _PSEUDO_SUBFOLDER = BasePwCpInputGenerator._PSEUDO_SUBFOLDER
-    _DEFAULT_INPUT_FILE = BasePwCpInputGenerator._DEFAULT_INPUT_FILE
-    _DEFAULT_OUTPUT_FILE = BasePwCpInputGenerator._DEFAULT_OUTPUT_FILE
-    # pylint: enable=protected-access
+
+    _OUTPUT_SUBFOLDER = BasePwCpInputGenerator._OUTPUT_SUBFOLDER  # noqa: SLF001
+    _PREFIX = BasePwCpInputGenerator._PREFIX  # noqa: SLF001
+    _PSEUDO_SUBFOLDER = BasePwCpInputGenerator._PSEUDO_SUBFOLDER  # noqa: SLF001
+    _DEFAULT_INPUT_FILE = BasePwCpInputGenerator._DEFAULT_INPUT_FILE  # noqa: SLF001
+    _DEFAULT_OUTPUT_FILE = BasePwCpInputGenerator._DEFAULT_OUTPUT_FILE  # noqa: SLF001
 
     # Grid data output file from first stage of pp calculation
     _FILPLOT = 'aiida.filplot'
@@ -65,21 +68,38 @@ class PpCalculation(CalcJob):
     _default_namelists = ['INPUTPP', 'PLOT']
 
     # Keywords that cannot be set by the user but will be set by the plugin
-    _blocked_keywords = [('INPUTPP', 'outdir', _OUTPUT_SUBFOLDER), ('INPUTPP', 'prefix', _PREFIX),
-                         ('INPUTPP', 'filplot', _FILPLOT), ('PLOT', 'fileout', _FILEOUT),
-                         ('PLOT', 'output_format', None)]
+    _blocked_keywords = [
+        ('INPUTPP', 'outdir', _OUTPUT_SUBFOLDER),
+        ('INPUTPP', 'prefix', _PREFIX),
+        ('INPUTPP', 'filplot', _FILPLOT),
+        ('PLOT', 'fileout', _FILEOUT),
+        ('PLOT', 'output_format', None),
+    ]
 
     @classmethod
     def define(cls, spec):
         """Define the process specification."""
-        # yapf: disable
+
         super().define(spec)
-        spec.input('parent_folder', valid_type=(orm.RemoteData, orm.FolderData), required=True,
-            help='Output folder of a completed `PwCalculation`')
-        spec.input('parameters', valid_type=orm.Dict, required=True, validator=validate_parameters,
-            help='Use a node that specifies the input parameters for the namelists')
-        spec.input('settings', valid_type=orm.Dict, required=False,
-            help='Optional parameters to affect the way the calculation job is performed.')
+        spec.input(
+            'parent_folder',
+            valid_type=(orm.RemoteData, orm.FolderData),
+            required=True,
+            help='Output folder of a completed `PwCalculation`',
+        )
+        spec.input(
+            'parameters',
+            valid_type=orm.Dict,
+            required=True,
+            validator=validate_parameters,
+            help='Use a node that specifies the input parameters for the namelists',
+        )
+        spec.input(
+            'settings',
+            valid_type=orm.Dict,
+            required=False,
+            help='Optional parameters to affect the way the calculation job is performed.',
+        )
         spec.input('metadata.options.input_filename', valid_type=str, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=str, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.pp')
@@ -94,36 +114,49 @@ class PpCalculation(CalcJob):
         spec.default_output_node = 'output_parameters'
 
         # Standard exceptions
-        spec.exit_code(301, 'ERROR_NO_RETRIEVED_TEMPORARY_FOLDER',
-            message='The retrieved temporary folder could not be accessed.')
-        spec.exit_code(302, 'ERROR_OUTPUT_STDOUT_MISSING',
-            message='The retrieved folder did not contain the required stdout output file.')
-        spec.exit_code(303, 'ERROR_OUTPUT_XML_MISSING',
-            message='The parent folder did not contain the required XML output file.')
-        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
-            message='The stdout output file could not be read.')
-        spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE',
-            message='The stdout output file could not be parsed.')
-        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
-            message='The stdout output file was incomplete.')
-        spec.exit_code(340, 'ERROR_OUT_OF_WALLTIME_INTERRUPTED',
+        spec.exit_code(
+            301, 'ERROR_NO_RETRIEVED_TEMPORARY_FOLDER', message='The retrieved temporary folder could not be accessed.'
+        )
+        spec.exit_code(
+            302,
+            'ERROR_OUTPUT_STDOUT_MISSING',
+            message='The retrieved folder did not contain the required stdout output file.',
+        )
+        spec.exit_code(
+            303, 'ERROR_OUTPUT_XML_MISSING', message='The parent folder did not contain the required XML output file.'
+        )
+        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ', message='The stdout output file could not be read.')
+        spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE', message='The stdout output file could not be parsed.')
+        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE', message='The stdout output file was incomplete.')
+        spec.exit_code(
+            340,
+            'ERROR_OUT_OF_WALLTIME_INTERRUPTED',
             message='The calculation stopped prematurely because it ran out of walltime but the job was killed by the '
-                    'scheduler before the files were safely written to disk for a potential restart.')
-        spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
-            message='The parser raised an unexpected exception: {exception}')
+            'scheduler before the files were safely written to disk for a potential restart.',
+        )
+        spec.exit_code(
+            350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION', message='The parser raised an unexpected exception: {exception}'
+        )
 
         # Output datafile related exceptions
-        spec.exit_code(330, 'ERROR_OUTPUT_DATAFILE_MISSING',
-            message='The formatted data output file `{filename}` was not present in the retrieved (temporary) folder.')
-        spec.exit_code(331, 'ERROR_OUTPUT_DATAFILE_READ',
-            message='The formatted data output file `{filename}` could not be read.')
-        spec.exit_code(332, 'ERROR_UNSUPPORTED_DATAFILE_FORMAT',
-            message='The data file format is not supported by the parser')
-        spec.exit_code(333, 'ERROR_OUTPUT_DATAFILE_PARSE',
-            message='The formatted data output file `{filename}` could not be parsed: {exception}')
-        # yapf: enable
+        spec.exit_code(
+            330,
+            'ERROR_OUTPUT_DATAFILE_MISSING',
+            message='The formatted data output file `{filename}` was not present in the retrieved (temporary) folder.',
+        )
+        spec.exit_code(
+            331, 'ERROR_OUTPUT_DATAFILE_READ', message='The formatted data output file `{filename}` could not be read.'
+        )
+        spec.exit_code(
+            332, 'ERROR_UNSUPPORTED_DATAFILE_FORMAT', message='The data file format is not supported by the parser'
+        )
+        spec.exit_code(
+            333,
+            'ERROR_OUTPUT_DATAFILE_PARSE',
+            message='The formatted data output file `{filename}` could not be parsed: {exception}',
+        )
 
-    def prepare_for_submission(self, folder):  # pylint: disable=too-many-branches,too-many-statements
+    def prepare_for_submission(self, folder):
         """Prepare the calculation job for submission by transforming input nodes into input files.
 
         In addition to the input files being written to the sandbox folder, a `CalcInfo` instance will be returned that
@@ -226,7 +259,8 @@ class PpCalculation(CalcJob):
             self.inputs.metadata.options.keep_data_files = self.inputs.metadata.options.keep_plot_file
             warnings.warn(
                 "The input parameter 'keep_plot_file' is deprecated and will be removed in version 5.0.0. "
-                "Please use 'keep_data_files' instead.", AiidaDeprecationWarning
+                "Please use 'keep_data_files' instead.",
+                AiidaDeprecationWarning,
             )
         if self.inputs.metadata.options.keep_data_files:
             calcinfo.retrieve_list.extend(retrieve_tuples)

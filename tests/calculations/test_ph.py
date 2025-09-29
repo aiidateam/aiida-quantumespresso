@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the `PhCalculation` class."""
+
 from pathlib import Path
 
 from aiida import orm
@@ -36,7 +36,12 @@ def test_ph_default(fixture_sandbox, generate_inputs_ph, generate_calc_job, file
 
 
 def test_ph_qpoint_list(
-    fixture_sandbox, generate_inputs_ph, generate_calc_job, generate_structure, generate_kpoints_mesh, file_regression
+    fixture_sandbox,
+    generate_inputs_ph,
+    generate_calc_job,
+    generate_structure,
+    generate_kpoints_mesh,
+    file_regression,
 ):
     """Test a `PhCalculation` with a qpoint list instead of a mesh."""
     entry_point_name = 'quantumespresso.ph'
@@ -63,11 +68,11 @@ def test_ph_initialization_only(fixture_sandbox, generate_inputs_ph, generate_ca
     inputs = generate_inputs_ph()
     inputs['settings'] = orm.Dict({'only_initialization': True})
     generate_calc_job(fixture_sandbox, entry_point_name, inputs)
-    assert (Path(fixture_sandbox.abspath) / f'{PhCalculation._PREFIX}.EXIT').exists()  # pylint: disable=protected-access
+    assert (Path(fixture_sandbox.abspath) / f'{PhCalculation._PREFIX}.EXIT').exists()
 
 
 def test_serialize_builder(generate_inputs_ph, data_regression, serialize_builder):
     """Test the ``serialize_builder`` fixture using a process builder for the ``PhCalculation``."""
     builder = PhCalculation.get_builder()
-    builder._update(**generate_inputs_ph())  # pylint: disable=protected-access
+    builder._update(**generate_inputs_ph())
     data_regression.check(serialize_builder(builder))

@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
-from aiida.orm import Dict, XyData
 import numpy as np
+from aiida.orm import Dict, XyData
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.utils.mapping import get_logging_container
@@ -23,22 +22,36 @@ class DosParser(BaseParser):
 
         self.out('output_parameters', Dict(parsed_stdout))
 
-        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE'in logs.error:
+        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs.error:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE, logs)
 
         # Parse the DOS
         try:
-            with self.retrieved.base.repository.open(self.node.process_class._DOS_FILENAME, 'r') as handle:
+            with self.retrieved.base.repository.open(self.node.process_class._DOS_FILENAME, 'r') as handle:  # noqa: SLF001
                 dos_file = handle.readlines()
         except OSError:
             return self.exit(self.exit_codes.ERROR_READING_DOS_FILE, logs)
 
         array_names = [[], []]
         array_units = [[], []]
-        array_names[0] = ['dos_energy', 'dos', 'integrated_dos']  # When spin is not displayed
-        array_names[1] = ['dos_energy', 'dos_spin_up', 'dos_spin_down', 'integrated_dos']  # When spin is displayed
+        array_names[0] = [
+            'dos_energy',
+            'dos',
+            'integrated_dos',
+        ]  # When spin is not displayed
+        array_names[1] = [
+            'dos_energy',
+            'dos_spin_up',
+            'dos_spin_down',
+            'integrated_dos',
+        ]  # When spin is displayed
         array_units[0] = ['eV', 'states/eV', 'states']  # When spin is not displayed
-        array_units[1] = ['eV', 'states/eV', 'states/eV', 'states']  # When spin is displayed
+        array_units[1] = [
+            'eV',
+            'states/eV',
+            'states/eV',
+            'states',
+        ]  # When spin is displayed
 
         # grabs parsed data from aiida.dos
         # TODO: should I catch any QEOutputParsingError from parse_raw_dos,
@@ -46,8 +59,8 @@ class DosParser(BaseParser):
         array_data, spin = parse_raw_dos(dos_file, array_names, array_units)
 
         energy_units = 'eV'
-        dos_units = 'states/eV'
-        int_dos_units = 'states'
+        dos_units = 'states/eV'  # noqa: F841
+        int_dos_units = 'states'  # noqa: F841
         xy_data = XyData()
         xy_data.set_x(array_data['dos_energy'], 'dos_energy', energy_units)
         y_arrays = []
@@ -99,8 +112,8 @@ def parse_raw_dos(dos_file, array_names, array_units):
     dos_header = dos_file[0]
     try:
         dos_data = np.genfromtxt(dos_file)
-    except ValueError:
-        raise QEOutputParsingError('dosfile could not be loaded using genfromtxt')
+    except ValueError as exc:
+        raise QEOutputParsingError('dosfile could not be loaded using genfromtxt') from exc
     if len(dos_data) == 0:
         raise QEOutputParsingError('Dos file is empty.')
     if np.isnan(dos_data).any():

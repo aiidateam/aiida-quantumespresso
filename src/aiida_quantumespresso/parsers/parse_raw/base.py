@@ -1,10 +1,14 @@
-# -*- coding: utf-8 -*-
 """A basic parser for the common format of QE."""
+
 import re
 
 from aiida.orm import StructureData
 
-__all__ = ('convert_qe_time_to_sec', 'convert_qe_to_aiida_structure', 'convert_qe_to_kpoints')
+__all__ = (
+    'convert_qe_time_to_sec',
+    'convert_qe_to_aiida_structure',
+    'convert_qe_to_kpoints',
+)
 
 
 def convert_qe_time_to_sec(timestr):
@@ -34,9 +38,7 @@ def convert_qe_time_to_sec(timestr):
     if rest.strip():
         raise ValueError(f"Something remained at the end of the string '{timestr}': '{rest}'")
 
-    num_seconds = (float(seconds) + float(minutes) * 60. + float(hours) * 3600. + float(days) * 86400.)
-
-    return num_seconds
+    return float(seconds) + float(minutes) * 60.0 + float(hours) * 3600.0 + float(days) * 86400.0
 
 
 def convert_qe_to_aiida_structure(output_dict, input_structure=None):
@@ -46,7 +48,6 @@ def convert_qe_to_aiida_structure(output_dict, input_structure=None):
 
     # Without an input structure, try to recreate the structure from the output
     if not input_structure:
-
         structure = StructureData(cell=cell_dict['lattice_vectors'])
 
         for kind_name, position in output_dict['atoms']:
@@ -54,7 +55,6 @@ def convert_qe_to_aiida_structure(output_dict, input_structure=None):
             structure.append_atom(position=position, symbols=symbol, name=kind_name)
 
     else:
-
         structure = input_structure.clone()
         structure.reset_cell(cell_dict['lattice_vectors'])
         new_pos = [i[1] for i in cell_dict['atoms']]
@@ -71,7 +71,7 @@ def convert_qe_to_kpoints(xml_dict, structure):
     """
     from aiida.plugins import DataFactory
 
-    KpointsData = DataFactory('core.array.kpoints')
+    KpointsData = DataFactory('core.array.kpoints')  # noqa: N806
 
     k_points_list = xml_dict.get('k_points', None)
     k_points_units = xml_dict.get('k_points_units', None)

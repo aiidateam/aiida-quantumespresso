@@ -1,16 +1,18 @@
-# -*- coding: utf-8 -*-
 """Tests for the :mod:`utils.hubbard` module."""
-# pylint: disable=redefined-outer-name
+
 import os
 
-from aiida.orm import StructureData
-from ase.io import read
 import numpy as np
 import pytest
+from aiida.orm import StructureData
+from ase.io import read
 
 from aiida_quantumespresso.common.hubbard import Hubbard
 from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
-from aiida_quantumespresso.utils.hubbard import HubbardUtils, initialize_hubbard_parameters
+from aiida_quantumespresso.utils.hubbard import (
+    HubbardUtils,
+    initialize_hubbard_parameters,
+)
 
 
 @pytest.fixture
@@ -19,8 +21,8 @@ def generate_hubbard_structure():
 
     def _generate_hubbard_structure(parameters=None, projectors=None, formulation=None):
         """Return a `HubbardStructureData` instance."""
-        a, b, c, d = 1.40803, 0.81293, 4.68453, 1.62585  # pylint: disable=invalid-name
-        cell = [[a, -b, c], [0.0, d, c], [-a, -b, c]]  # pylint: disable=invalid-name
+        a, b, c, d = 1.40803, 0.81293, 4.68453, 1.62585
+        cell = [[a, -b, c], [0.0, d, c], [-a, -b, c]]
         positions = [[0, 0, 0], [0, 0, 3.6608], [0, 0, 10.392], [0, 0, 7.0268]]
         symbols = ['Co', 'O', 'O', 'Li']
         structure = StructureData(cell=cell)
@@ -28,7 +30,10 @@ def generate_hubbard_structure():
             structure.append_atom(position=position, symbols=symbol)
 
         if parameters is None:
-            parameters = [(0, '3d', 0, '3d', 5.0, (0, 0, 0), 'U'), (0, '3d', 1, '2p', 1.0, (0, 0, 0), 'V')]
+            parameters = [
+                (0, '3d', 0, '3d', 5.0, (0, 0, 0), 'U'),
+                (0, '3d', 1, '2p', 1.0, (0, 0, 0), 'V'),
+            ]
         if projectors is None:
             projectors = 'ortho-atomic'
         if formulation is None:
@@ -66,14 +71,18 @@ def test_valid_init(generate_hubbard_utils, generate_hubbard_structure):
 def test_is_intersite(generate_hubbard_structure):
     """Test the `is_intersite_hubbard` method."""
     from aiida_quantumespresso.utils.hubbard import is_intersite_hubbard
+
     assert is_intersite_hubbard(generate_hubbard_structure().hubbard)
 
 
-@pytest.mark.parametrize(('filename', 'projectors'), (
-    ('HUBBARD.dat', 'ortho-atomic'),
-    ('HUBBARD_2.dat', 'atomic'),
-    ('HUBBARD_3.dat', 'atomic'),
-))
+@pytest.mark.parametrize(
+    ('filename', 'projectors'),
+    [
+        ('HUBBARD.dat', 'ortho-atomic'),
+        ('HUBBARD_2.dat', 'atomic'),
+        ('HUBBARD_3.dat', 'atomic'),
+    ],
+)
 def test_invertibility(generate_hubbard_utils, filepath_hubbard, filename, projectors):
     """Test the invertibility of the `get_hubbard_card` and `parse_hubbard_card` method.
 
@@ -99,12 +108,9 @@ def test_invertibility(generate_hubbard_utils, filepath_hubbard, filename, proje
 
     hubbard_data.pop(0)  # removing header
 
-    parsed_data = []
     card = hubbard_utils.get_hubbard_card()
     card = card.splitlines()
-    for line in card:
-        parsed_data.append(tuple(line.strip().split()))
-
+    parsed_data = [tuple(line.strip().split()) for line in card]
     parsed_data.pop(0)  # removing header
 
     assert len(hubbard_data) == len(parsed_data)
@@ -113,33 +119,48 @@ def test_invertibility(generate_hubbard_utils, filepath_hubbard, filename, proje
         assert array == parsed_array
 
 
-@pytest.mark.parametrize(('parameters', 'values'), (
-    (
-        [[3, '1s', 3, '1s', 0.0, [0, 0, 0], 'U']],
-        [
-            ['Li', 'Co', 'O', 'O'],
-            [[0, '1s', 0, '1s', 0.0, [0, 0, 0], 'U']],
-        ],
-    ),
-    (
-        [[1, '1s', 1, '1s', 0.0, [0, 0, 0], 'U'], [2, '2p', 2, '2p', 0.0, [0, 0, 0], 'U']],
-        [
-            ['O', 'O', 'Co', 'Li'],
-            [[0, '1s', 0, '1s', 0.0, [0, 0, 0], 'U'], [1, '2p', 1, '2p', 0.0, [0, 0, 0], 'U']],
-        ],
-    ),
-    (
-        [[0, '3d', 0, '3d', 5.0, [0, 0, 0], 'U'], [3, '1s', 3, '1s', 0.0, [0, 0, 0], 'U']],
-        [
-            ['Li', 'Co', 'O', 'O'],
-            [[0, '1s', 0, '1s', 0.0, [0, 0, 0], 'U'], [1, '3d', 1, '3d', 5.0, [0, 0, 0], 'U']],
-        ],
-    ),
-    (
-        [[1, '1s', 3, '2p', 0.0, [0, 0, 0], 'U']],
-        [['O', 'O', 'Li', 'Co'], [[0, '1s', 2, '2p', 0.0, [0, 0, 0], 'U']]],
-    ),
-))
+@pytest.mark.parametrize(
+    ('parameters', 'values'),
+    [
+        (
+            [[3, '1s', 3, '1s', 0.0, [0, 0, 0], 'U']],
+            [
+                ['Li', 'Co', 'O', 'O'],
+                [[0, '1s', 0, '1s', 0.0, [0, 0, 0], 'U']],
+            ],
+        ),
+        (
+            [
+                [1, '1s', 1, '1s', 0.0, [0, 0, 0], 'U'],
+                [2, '2p', 2, '2p', 0.0, [0, 0, 0], 'U'],
+            ],
+            [
+                ['O', 'O', 'Co', 'Li'],
+                [
+                    [0, '1s', 0, '1s', 0.0, [0, 0, 0], 'U'],
+                    [1, '2p', 1, '2p', 0.0, [0, 0, 0], 'U'],
+                ],
+            ],
+        ),
+        (
+            [
+                [0, '3d', 0, '3d', 5.0, [0, 0, 0], 'U'],
+                [3, '1s', 3, '1s', 0.0, [0, 0, 0], 'U'],
+            ],
+            [
+                ['Li', 'Co', 'O', 'O'],
+                [
+                    [0, '1s', 0, '1s', 0.0, [0, 0, 0], 'U'],
+                    [1, '3d', 1, '3d', 5.0, [0, 0, 0], 'U'],
+                ],
+            ],
+        ),
+        (
+            [[1, '1s', 3, '2p', 0.0, [0, 0, 0], 'U']],
+            [['O', 'O', 'Li', 'Co'], [[0, '1s', 2, '2p', 0.0, [0, 0, 0], 'U']]],
+        ),
+    ],
+)
 def test_reorder_atoms(generate_hubbard_structure, parameters, values):
     """Test the `reorder_atoms` method.
 
@@ -265,7 +286,14 @@ def get_non_trivial_hubbard_structure(filepath_tests):
                         if pymat_site.position_atol != site.position:
                             # if pymat_site.specie.name != 'Fe':
                             translation = np.array(pymat_site.image, dtype=np.int64).tolist()
-                            args = (i, '3d', int(pymat_site.index), '2p', 1.0, translation)
+                            args = (
+                                i,
+                                '3d',
+                                int(pymat_site.index),
+                                '2p',
+                                1.0,
+                                translation,
+                            )
                             hubbard_structure.append_hubbard_parameter(*args)
 
         return hubbard_structure
@@ -358,9 +386,7 @@ def test_initialize_hubbard_parameters_five_nn(filepath_tests):
     structure = StructureData(ase=atoms)
 
     hubbard_structure = initialize_hubbard_parameters(
-        structure=structure, pairs={'Mn': ['3d', 5.0, 1e-8, {
-            'Te': '4p'
-        }]}
+        structure=structure, pairs={'Mn': ['3d', 5.0, 1e-8, {'Te': '4p'}]}
     )
 
     assert len(hubbard_structure.hubbard.parameters) == 6
@@ -368,32 +394,22 @@ def test_initialize_hubbard_parameters_five_nn(filepath_tests):
 
 @pytest.mark.parametrize(
     ('pairs', 'number_of_parameters'),
-    (
+    [
         (
             {
-                'Mn': ['3d', 5.0, 1e-8, {
-                    'S': '3p'
-                }],
-                'Co': ['3d', 5.0, 1e-8, {
-                    'S': '3p'
-                }],
+                'Mn': ['3d', 5.0, 1e-8, {'S': '3p'}],
+                'Co': ['3d', 5.0, 1e-8, {'S': '3p'}],
             },
-            (1 + 6) + (1 + 4)  # 2 onsites, 6 + 4 intersites
+            (1 + 6) + (1 + 4),  # 2 onsites, 6 + 4 intersites
         ),
         (
             {
-                'Mn': ['3d', 5.0, 1e-8, {
-                    'S': '3p',
-                    'Co': '3d'
-                }],
-                'Co': ['3d', 5.0, 1e-8, {
-                    'S': '3p',
-                    'Mn': '3d'
-                }],
+                'Mn': ['3d', 5.0, 1e-8, {'S': '3p', 'Co': '3d'}],
+                'Co': ['3d', 5.0, 1e-8, {'S': '3p', 'Mn': '3d'}],
             },
-            (1 + 6 + 4) + (1 + 4 + 4)  # 2 onsites, 6 + 4 TM-S, 4 + 4 TM-TM
+            (1 + 6 + 4) + (1 + 4 + 4),  # 2 onsites, 6 + 4 TM-S, 4 + 4 TM-TM
         ),
-    )
+    ],
 )
 def test_get_intersites_list(filepath_tests, pairs, number_of_parameters):
     """Test the `HubbardUtils.get_intersites_list` method against MnCoS."""
@@ -422,12 +438,22 @@ def test_get_max_number_of_neighbours(filepath_tests):
     atoms = read(path)
 
     pairs = {
-        'Mn': ['3d', 5.0, 1e-8, {
-            'S': '3p',
-        }],
-        'Co': ['3d', 5.0, 1e-8, {
-            'S': '3p',
-        }],
+        'Mn': [
+            '3d',
+            5.0,
+            1e-8,
+            {
+                'S': '3p',
+            },
+        ],
+        'Co': [
+            '3d',
+            5.0,
+            1e-8,
+            {
+                'S': '3p',
+            },
+        ],
     }
     structure = StructureData(ase=atoms)
     hubbard_structure = initialize_hubbard_parameters(structure=structure, pairs=pairs)
@@ -448,14 +474,8 @@ def test_max_number_of_neighbours(filepath_tests):
     atoms = read(path)
 
     pairs = {
-        'Mn': ['3d', 5.0, 1e-8, {
-            'S': '3p',
-            'Co': '3d'
-        }],
-        'Co': ['3d', 5.0, 1e-8, {
-            'S': '3p',
-            'Mn': '3d'
-        }],
+        'Mn': ['3d', 5.0, 1e-8, {'S': '3p', 'Co': '3d'}],
+        'Co': ['3d', 5.0, 1e-8, {'S': '3p', 'Mn': '3d'}],
     }
     structure = StructureData(ase=atoms)
     hubbard_structure = initialize_hubbard_parameters(structure=structure, pairs=pairs)

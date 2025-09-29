@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # aiida-wannier90 documentation build configuration file, created by
 # sphinx-quickstart on Fri Oct 10 02:14:52 2014.
@@ -82,7 +81,10 @@ language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['**.ipynb_checkpoints', 'reference/api/auto/aiida_quantumespresso/index.rst']
+exclude_patterns = [
+    '**.ipynb_checkpoints',
+    'reference/api/auto/aiida_quantumespresso/index.rst',
+]
 
 # -- MyST options
 
@@ -98,12 +100,9 @@ myst_enable_extensions = [
 
 myst_substitutions = {
     'aiida_logo': '<img src="../_static/logo_aiida.svg" alt="aiida" class="aiida-logo">',
-    'create_magnetic_configuration': \
-        '{func}`~aiida_quantumespresso.calculations.functions.create_magnetic_configuration.create_magnetic_configuration`',
-    'get_builder_from_protocol': \
-        '{meth}`~aiida_quantumespresso.workflows.pw.base.PwBaseWorkChain.get_builder_from_protocol`',
-    'get_magnetic_configuration': \
-        '{meth}`~aiida_quantumespresso.tools.calculations.pw.PwCalculationTools.get_magnetic_configuration`',
+    'create_magnetic_configuration': '{func}`~aiida_quantumespresso.calculations.functions.create_magnetic_configuration.create_magnetic_configuration`',
+    'get_builder_from_protocol': '{meth}`~aiida_quantumespresso.workflows.pw.base.PwBaseWorkChain.get_builder_from_protocol`',
+    'get_magnetic_configuration': '{meth}`~aiida_quantumespresso.tools.calculations.pw.PwCalculationTools.get_magnetic_configuration`',
     'nspin': '[`nspin`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#idm412)',
     'PwBaseWorkChain': '{class}`~aiida_quantumespresso.workflows.pw.base.PwBaseWorkChain`',
     'PwCalculation': '{class}`~aiida_quantumespresso.calculations.pw.PwCalculation`',
@@ -130,7 +129,7 @@ html_theme_options = {
         'text': 'AiiDA Quantum ESPRESSO',
         'image_light': '_static/logo_aiida_quantumespresso-light.png',
         'image_dark': '_static/logo_aiida_quantumespresso-dark.png',
-    }
+    },
 }
 html_static_path = ['_static']
 html_context = {
@@ -141,7 +140,12 @@ html_context = {
     'default_mode': 'light',
 }
 html_sidebars = {
-    '**': ['navbar-logo.html', 'navbar-icon-links.html', 'search-field.html', 'sbt-sidebar-nav.html']
+    '**': [
+        'navbar-logo.html',
+        'navbar-icon-links.html',
+        'search-field.html',
+        'sbt-sidebar-nav.html',
+    ]
 }
 
 # The name of an image file (relative to this directory) to place at the top
@@ -175,6 +179,9 @@ nitpick_ignore_regex = [
     (r'.*', r'Literal.*'),
     (r'.*', r'Tuple.*'),
     (r'.*', r'Annotated\[.*'),
+    (r'py:class', r'tuple\[.*\]'),
+    (r'py:class', r'Annotated(\[.*\])?'),
+    (r'py:class', r'Field(\[.*\])?'),
 ]
 nitpick_ignore = [
     ('py:class', 'numpy.typing.ArrayLike'),

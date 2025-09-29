@@ -1,12 +1,12 @@
-# -*- coding: utf-8 -*-
 """Plugin to create a Quantum Espresso ph.x input file."""
+
 import os
 import warnings
 
+import numpy as np
 from aiida import orm
 from aiida.common import datastructures, exceptions
 from aiida.common.warnings import AiidaDeprecationWarning
-import numpy
 
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
 from aiida_quantumespresso.calculations.pw import PwCalculation
@@ -19,9 +19,17 @@ class PhCalculation(CalcJob):
     """`CalcJob` implementation for the ph.x code of Quantum ESPRESSO."""
 
     # Keywords that cannot be set by the user but will be set by the plugin
-    _blocked_keywords = [('INPUTPH', 'outdir'), ('INPUTPH', 'verbosity'), ('INPUTPH', 'prefix'), ('INPUTPH', 'fildyn'),
-                         ('INPUTPH', 'ldisp'), ('INPUTPH', 'nq1'), ('INPUTPH', 'nq2'), ('INPUTPH', 'nq3'),
-                         ('INPUTPH', 'qplot')]
+    _blocked_keywords = [
+        ('INPUTPH', 'outdir'),
+        ('INPUTPH', 'verbosity'),
+        ('INPUTPH', 'prefix'),
+        ('INPUTPH', 'fildyn'),
+        ('INPUTPH', 'ldisp'),
+        ('INPUTPH', 'nq1'),
+        ('INPUTPH', 'nq2'),
+        ('INPUTPH', 'nq3'),
+        ('INPUTPH', 'qplot'),
+    ]
 
     _use_kpoints = True
 
@@ -48,7 +56,7 @@ class PhCalculation(CalcJob):
     @classmethod
     def define(cls, spec):
         """Define the process specification."""
-        # yapf: disable
+
         super().define(spec)
         spec.input('metadata.options.input_filename', valid_type=str, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=str, default=cls._DEFAULT_OUTPUT_FILE)
@@ -57,39 +65,52 @@ class PhCalculation(CalcJob):
         spec.input('qpoints', valid_type=orm.KpointsData, help='qpoint mesh')
         spec.input('parameters', valid_type=orm.Dict, help='')
         spec.input('settings', valid_type=orm.Dict, required=False, help='')
-        spec.input('parent_folder', valid_type=orm.RemoteData,
-            help='the folder of a completed `PwCalculation`')
+        spec.input('parent_folder', valid_type=orm.RemoteData, help='the folder of a completed `PwCalculation`')
         spec.output('output_parameters', valid_type=orm.Dict)
         spec.default_output_node = 'output_parameters'
 
         # Unrecoverable errors: required retrieved files could not be read, parsed or are otherwise incomplete
-        spec.exit_code(302, 'ERROR_OUTPUT_STDOUT_MISSING',
-            message='The retrieved folder did not contain the required stdout output file.')
-        spec.exit_code(305, 'ERROR_OUTPUT_FILES',
-            message='Both the stdout and XML output files could not be read or parsed.')
-        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
-            message='The stdout output file could not be read.')
-        spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE',
-            message='The stdout output file could not be parsed.')
-        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
-            message='The stdout output file was incomplete probably because the calculation got interrupted.')
-        spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
-            message='The parser raised an unexpected exception: {exception}')
-        spec.exit_code(360, 'ERROR_INCOMPATIBLE_FFT_GRID',
+        spec.exit_code(
+            302,
+            'ERROR_OUTPUT_STDOUT_MISSING',
+            message='The retrieved folder did not contain the required stdout output file.',
+        )
+        spec.exit_code(
+            305, 'ERROR_OUTPUT_FILES', message='Both the stdout and XML output files could not be read or parsed.'
+        )
+        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ', message='The stdout output file could not be read.')
+        spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE', message='The stdout output file could not be parsed.')
+        spec.exit_code(
+            312,
+            'ERROR_OUTPUT_STDOUT_INCOMPLETE',
+            message='The stdout output file was incomplete probably because the calculation got interrupted.',
+        )
+        spec.exit_code(
+            350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION', message='The parser raised an unexpected exception: {exception}'
+        )
+        spec.exit_code(
+            360,
+            'ERROR_INCOMPATIBLE_FFT_GRID',
             message='The FFT grid is incompatible with the detected symmetries. Try using the lattice-specific '
-                    '`ibrav` != 0 in the parent `pw.x` calculation.')
-        spec.exit_code(361, 'ERROR_WRONG_REPRESENTATION',
-            message=('The representation found seems to be wrong according to the detected symmetries. '
-                     'Try using the lattice-specific `ibrav` != 0 in the parent `pw.x` calculation.'))
+            '`ibrav` != 0 in the parent `pw.x` calculation.',
+        )
+        spec.exit_code(
+            361,
+            'ERROR_WRONG_REPRESENTATION',
+            message=(
+                'The representation found seems to be wrong according to the detected symmetries. '
+                'Try using the lattice-specific `ibrav` != 0 in the parent `pw.x` calculation.'
+            ),
+        )
 
         # Significant errors but calculation can be used to restart
-        spec.exit_code(400, 'ERROR_OUT_OF_WALLTIME',
-            message='The calculation stopped prematurely because it ran out of walltime.')
-        spec.exit_code(410, 'ERROR_CONVERGENCE_NOT_REACHED',
-            message='The minimization cycle did not reach self-consistency.')
-        spec.exit_code(462, 'ERROR_COMPUTING_CHOLESKY',
-            message='The code failed during the cholesky factorization.')
-        # yapf: enable
+        spec.exit_code(
+            400, 'ERROR_OUT_OF_WALLTIME', message='The calculation stopped prematurely because it ran out of walltime.'
+        )
+        spec.exit_code(
+            410, 'ERROR_CONVERGENCE_NOT_REACHED', message='The minimization cycle did not reach self-consistency.'
+        )
+        spec.exit_code(462, 'ERROR_COMPUTING_CHOLESKY', message='The code failed during the cholesky factorization.')
 
     def prepare_for_submission(self, folder):
         """Prepare the calculation job for submission by transforming input nodes into input files.
@@ -101,7 +122,6 @@ class PhCalculation(CalcJob):
         :param folder: a sandbox folder to temporarily write files on disk.
         :return: :py:class:`~aiida.common.datastructures.CalcInfo` instance.
         """
-        # pylint: disable=too-many-statements,too-many-branches
         local_copy_list = []
         remote_copy_list = []
         remote_symlink_list = []
@@ -112,7 +132,7 @@ class PhCalculation(CalcJob):
                 warnings.warn(
                     'The key `ADDITIONAL_RETRIEVE_LIST` in the settings input is deprecated and will be removed in '
                     'the future. Use the `CalcJob.metadata.options.additional_retrieve_list` input instead.',
-                    AiidaDeprecationWarning
+                    AiidaDeprecationWarning,
                 )
         else:
             settings = {}
@@ -122,7 +142,7 @@ class PhCalculation(CalcJob):
 
         if not parent_calcs:
             raise exceptions.NotExistent(f'parent_folder<{parent_folder.pk}> has no parent calculation')
-        elif len(parent_calcs) > 1:
+        if len(parent_calcs) > 1:
             raise exceptions.UniquenessError(f'parent_folder<{parent_folder.pk}> has multiple parent calculations')
 
         parent_calc = parent_calcs[0].node
@@ -139,10 +159,10 @@ class PhCalculation(CalcJob):
 
         # put by default, default_parent_output_folder = ./out
         try:
-            default_parent_output_folder = parent_calc.process_class._OUTPUT_SUBFOLDER  # pylint: disable=protected-access
+            default_parent_output_folder = parent_calc.process_class._OUTPUT_SUBFOLDER  # noqa: SLF001
         except AttributeError:
             try:
-                default_parent_output_folder = parent_calc._get_output_folder()  # pylint: disable=protected-access
+                default_parent_output_folder = parent_calc._get_output_folder()  # noqa: SLF001
             except AttributeError as exception:
                 msg = 'parent calculation does not have a default output subfolder'
                 raise exceptions.InputValidationError(msg) from exception
@@ -154,15 +174,18 @@ class PhCalculation(CalcJob):
 
         prepare_for_d3 = settings.pop('PREPARE_FOR_D3', False)
         if prepare_for_d3:
-            self._blocked_keywords += [('INPUTPH', 'fildrho'), ('INPUTPH', 'drho_star%open'),
-                                       ('INPUTPH', 'drho_star%ext'), ('INPUTPH', 'drho_star%dir')]
+            self._blocked_keywords += [
+                ('INPUTPH', 'fildrho'),
+                ('INPUTPH', 'drho_star%open'),
+                ('INPUTPH', 'drho_star%ext'),
+                ('INPUTPH', 'drho_star%dir'),
+            ]
 
         for namelist, flag in self._blocked_keywords:
-            if namelist in parameters:
-                if flag in parameters[namelist]:
-                    raise exceptions.InputValidationError(
-                        f"Cannot specify explicitly the '{flag}' flag in the '{namelist}' namelist or card."
-                    )
+            if namelist in parameters and flag in parameters[namelist]:
+                raise exceptions.InputValidationError(
+                    f"Cannot specify explicitly the '{flag}' flag in the '{namelist}' namelist or card."
+                )
 
         if 'INPUTPH' not in parameters:
             raise exceptions.InputValidationError('required namelist INPUTPH not specified')
@@ -186,7 +209,7 @@ class PhCalculation(CalcJob):
         try:
             mesh, offset = self.inputs.qpoints.get_kpoints_mesh()
 
-            if any(i != 0. for i in offset):
+            if any(i != 0.0 for i in offset):
                 raise NotImplementedError(
                     'Computation of phonons on a mesh with non zero offset is not implemented, at the level of ph.x'
                 )
@@ -208,8 +231,8 @@ class PhCalculation(CalcJob):
                 raise exceptions.InputValidationError(msg) from exception
 
             # change to 2pi/a coordinates
-            lattice_parameter = numpy.linalg.norm(self.inputs.qpoints.cell[0])
-            list_of_points *= lattice_parameter / (2. * numpy.pi)
+            lattice_parameter = np.linalg.norm(self.inputs.qpoints.cell[0])
+            list_of_points *= lattice_parameter / (2.0 * np.pi)
 
             # add here the list of point coordinates
             if len(list_of_points) > 1:
@@ -217,7 +240,7 @@ class PhCalculation(CalcJob):
                 parameters['INPUTPH']['ldisp'] = True
                 postpend_text = f'{len(list_of_points)}\n'
                 for points in list_of_points:
-                    postpend_text += '{0:18.10f} {1:18.10f} {2:18.10f}  1\n'.format(*points)  # pylint: disable=consider-using-f-string
+                    postpend_text += '{:18.10f} {:18.10f} {:18.10f}  1\n'.format(*points)
 
                 # Note: the weight is fixed to 1, because ph.x calls these
                 # things weights but they are not such. If they are going to
@@ -226,15 +249,14 @@ class PhCalculation(CalcJob):
                 parameters['INPUTPH']['ldisp'] = False
                 postpend_text = ''
                 for points in list_of_points:
-                    postpend_text += '{0:18.10f} {1:18.10f} {2:18.10f}\n'.format(*points)  # pylint: disable=consider-using-f-string
+                    postpend_text += '{:18.10f} {:18.10f} {:18.10f}\n'.format(*points)
 
         # customized namelists, otherwise not present in the distributed ph code
         try:
             namelists_toprint = settings.pop('NAMELISTS')
             if not isinstance(namelists_toprint, list):
                 raise exceptions.InputValidationError(
-                    "The 'NAMELISTS' value, if specified in the settings input "
-                    'node, must be a list of strings'
+                    "The 'NAMELISTS' value, if specified in the settings input " 'node, must be a list of strings'
                 )
         except KeyError:  # list of namelists not specified in the settings; do automatic detection
             namelists_toprint = self._compulsory_namelists
@@ -268,56 +290,89 @@ class PhCalculation(CalcJob):
             # I create a symlink to each file/folder in the parent ./out
             folder.get_subfolder(self._OUTPUT_SUBFOLDER, create=True)
 
-            remote_symlink_list.append((
-                parent_folder.computer.uuid,
-                os.path.join(parent_folder.get_remote_path(), parent_calc_out_subfolder, '*'), self._OUTPUT_SUBFOLDER
-            ))
+            remote_symlink_list.append(
+                (
+                    parent_folder.computer.uuid,
+                    os.path.join(parent_folder.get_remote_path(), parent_calc_out_subfolder, '*'),
+                    self._OUTPUT_SUBFOLDER,
+                )
+            )
 
             # I also create a symlink for the ./pseudo folder
             # Remove this when the recover option of QE will be fixed (bug when trying to find pseudo file)
-            remote_symlink_list.append((
-                parent_folder.computer.uuid, os.path.join(parent_folder.get_remote_path(),
-                                                          self._get_pseudo_folder()), self._get_pseudo_folder()
-            ))
+            remote_symlink_list.append(
+                (
+                    parent_folder.computer.uuid,
+                    os.path.join(parent_folder.get_remote_path(), self._get_pseudo_folder()),
+                    self._get_pseudo_folder(),
+                )
+            )
         else:
             # here I copy the whole folder ./out
-            remote_copy_list.append((
-                parent_folder.computer.uuid, os.path.join(parent_folder.get_remote_path(),
-                                                          parent_calc_out_subfolder), self._OUTPUT_SUBFOLDER
-            ))
+            remote_copy_list.append(
+                (
+                    parent_folder.computer.uuid,
+                    os.path.join(parent_folder.get_remote_path(), parent_calc_out_subfolder),
+                    self._OUTPUT_SUBFOLDER,
+                )
+            )
             # I also copy the ./pseudo folder
             # Remove this when the recover option of QE will be fixed (bug when trying to find pseudo file)
-            remote_copy_list.append((
-                parent_folder.computer.uuid, os.path.join(parent_folder.get_remote_path(),
-                                                          self._get_pseudo_folder()), self._get_pseudo_folder()
-            ))
+            remote_copy_list.append(
+                (
+                    parent_folder.computer.uuid,
+                    os.path.join(parent_folder.get_remote_path(), self._get_pseudo_folder()),
+                    self._get_pseudo_folder(),
+                )
+            )
 
         if restart_flag:  # in this case, copy in addition also the dynamical matrices
             if symlink:
-                remote_symlink_list.append((
-                    parent_folder.computer.uuid,
-                    os.path.join(parent_folder.get_remote_path(),
-                                 self._FOLDER_DYNAMICAL_MATRIX), self._FOLDER_DYNAMICAL_MATRIX
-                ))
-                if parameters['INPUTPH'].get('electron_phonon', None) is not None:
-                    remote_symlink_list.append((
+                remote_symlink_list.append(
+                    (
                         parent_folder.computer.uuid,
-                        os.path.join(parent_folder.get_remote_path(),
-                                     self._FOLDER_ELECTRON_PHONON), self._FOLDER_ELECTRON_PHONON
-                    ))
+                        os.path.join(
+                            parent_folder.get_remote_path(),
+                            self._FOLDER_DYNAMICAL_MATRIX,
+                        ),
+                        self._FOLDER_DYNAMICAL_MATRIX,
+                    )
+                )
+                if parameters['INPUTPH'].get('electron_phonon', None) is not None:
+                    remote_symlink_list.append(
+                        (
+                            parent_folder.computer.uuid,
+                            os.path.join(
+                                parent_folder.get_remote_path(),
+                                self._FOLDER_ELECTRON_PHONON,
+                            ),
+                            self._FOLDER_ELECTRON_PHONON,
+                        )
+                    )
             else:
                 # copy the dynamical matrices
                 # no need to copy the _ph0, since I copied already the whole ./out folder
-                remote_copy_list.append((
-                    parent_folder.computer.uuid,
-                    os.path.join(parent_folder.get_remote_path(), self._FOLDER_DYNAMICAL_MATRIX), '.'
-                ))
-                if parameters['INPUTPH'].get('electron_phonon', None) is not None:
-                    remote_copy_list.append((
+                remote_copy_list.append(
+                    (
                         parent_folder.computer.uuid,
-                        os.path.join(parent_folder.get_remote_path(),
-                                     self._FOLDER_ELECTRON_PHONON), self._FOLDER_ELECTRON_PHONON
-                    ))
+                        os.path.join(
+                            parent_folder.get_remote_path(),
+                            self._FOLDER_DYNAMICAL_MATRIX,
+                        ),
+                        '.',
+                    )
+                )
+                if parameters['INPUTPH'].get('electron_phonon', None) is not None:
+                    remote_copy_list.append(
+                        (
+                            parent_folder.computer.uuid,
+                            os.path.join(
+                                parent_folder.get_remote_path(),
+                                self._FOLDER_ELECTRON_PHONON,
+                            ),
+                            self._FOLDER_ELECTRON_PHONON,
+                        )
+                    )
 
         # Create an `.EXIT` file if `only_initialization` flag in `settings` is set to `True`
         if settings.pop('ONLY_INITIALIZATION', False):
@@ -325,7 +380,10 @@ class PhCalculation(CalcJob):
                 handle.write('\n')
 
         codeinfo = datastructures.CodeInfo()
-        codeinfo.cmdline_params = (list(settings.pop('CMDLINE', [])) + ['-in', self.metadata.options.input_filename])
+        codeinfo.cmdline_params = list(settings.pop('CMDLINE', [])) + [
+            '-in',
+            self.metadata.options.input_filename,
+        ]
         codeinfo.stdout_name = self.metadata.options.output_filename
         codeinfo.code_uuid = self.inputs.code.uuid
 
@@ -356,4 +414,4 @@ class PhCalculation(CalcJob):
 
         Default given by PwCalculation._PSEUDO_SUBFOLDER
         """
-        return PwCalculation._PSEUDO_SUBFOLDER  # pylint: disable=protected-access
+        return PwCalculation._PSEUDO_SUBFOLDER  # noqa: SLF001

@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the ``calculation launch neb`` command."""
+
 from aiida_quantumespresso.cli.calculations.neb import launch_calculation
 
 

@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
+import numpy as np
 from aiida import orm
-import numpy
 from qe_tools import CONSTANTS
 
 from aiida_quantumespresso.calculations import _uppercase_dict
@@ -25,11 +24,11 @@ class MatdynParser(BaseParser):
 
         self.out('output_parameters', orm.Dict(parsed_data))
 
-        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE'in logs.error:
+        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs.error:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE, logs)
 
-        filename_frequencies = MatdynCalculation._PHONON_FREQUENCIES_NAME
-        filename_dos = MatdynCalculation._PHONON_DOS_NAME
+        filename_frequencies = MatdynCalculation._PHONON_FREQUENCIES_NAME  # noqa: SLF001
+        filename_dos = MatdynCalculation._PHONON_DOS_NAME  # noqa: SLF001
 
         if filename_frequencies not in self.retrieved.base.repository.list_object_names():
             return self.exit(self.exit_codes.ERROR_OUTPUT_FREQUENCIES)
@@ -43,7 +42,9 @@ class MatdynParser(BaseParser):
             kpoints_for_bands = orm.KpointsData()
             kpoints_for_bands.set_kpoints(kpoints)
 
-        parsed_data = parse_raw_matdyn_phonon_file(self.retrieved.base.repository.get_object_content(filename_frequencies))
+        parsed_data = parse_raw_matdyn_phonon_file(
+            self.retrieved.base.repository.get_object_content(filename_frequencies)
+        )
 
         if 'parameters' in self.node.inputs:
             parameters = _uppercase_dict(self.node.inputs.parameters.get_dict(), dict_name='parameters')
@@ -51,14 +52,13 @@ class MatdynParser(BaseParser):
             parameters = {'INPUT': {}}
 
         if parameters['INPUT'].get('dos', False):
-
             if filename_dos not in self.retrieved.base.repository.list_object_names():
                 return self.exit(self.exit_codes.ERROR_OUTPUT_DOS)
 
             parsed_data.pop('phonon_bands', None)
 
             with self.retrieved.open(filename_dos) as handle:
-                dos_array = numpy.genfromtxt(handle)
+                dos_array = np.genfromtxt(handle)
 
             output_dos = orm.XyData()
             output_dos.set_x(dos_array[:, 0], 'frequency', 'cm^(-1)')
@@ -99,7 +99,7 @@ def parse_raw_matdyn_phonon_file(phonon_frequencies):
     """
     import re
 
-    import numpy
+    import numpy as np
 
     parsed_data = {}
     parsed_data['warnings'] = []
@@ -114,11 +114,11 @@ def parse_raw_matdyn_phonon_file(phonon_frequencies):
         return parsed_data
 
     # initialize array of frequencies
-    freq_matrix = numpy.zeros((num_kpoints, num_bands))
+    freq_matrix = np.zeros((num_kpoints, num_bands))
 
     split_data = phonon_frequencies.split()
     # discard the header of the file
-    raw_data = split_data[split_data.index('/') + 1:]
+    raw_data = split_data[split_data.index('/') + 1 :]
 
     # try to improve matdyn deficiencies
     corrected_data = []

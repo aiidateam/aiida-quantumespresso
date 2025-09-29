@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """`CalcJob` implementation for the bands.x code of Quantum ESPRESSO."""
 
 from aiida import orm
@@ -20,8 +19,8 @@ class BandsCalculation(NamelistsCalculation):
 
     _default_namelists = ['BANDS']
     _blocked_keywords = [
-        ('BANDS', 'outdir', NamelistsCalculation._OUTPUT_SUBFOLDER),  # pylint: disable=protected-access
-        ('BANDS', 'prefix', NamelistsCalculation._PREFIX),  # pylint: disable=protected-access
+        ('BANDS', 'outdir', NamelistsCalculation._OUTPUT_SUBFOLDER),  # noqa: SLF001
+        ('BANDS', 'prefix', NamelistsCalculation._PREFIX),  # noqa: SLF001
         ('BANDS', 'filband', _BANDS_NAME),
         ('BANDS', 'filp', _MOMENTUM_OPERATOR_NAME),  # Momentum operator
     ]
@@ -32,8 +31,7 @@ class BandsCalculation(NamelistsCalculation):
     @classmethod
     def define(cls, spec):
         """Define the process specification."""
-        # yapf: disable
+
         super().define(spec)
         spec.input('parent_folder', valid_type=(orm.RemoteData, orm.FolderData), required=True)
         spec.output('output_parameters', valid_type=orm.Dict)
-        # yapf: enable

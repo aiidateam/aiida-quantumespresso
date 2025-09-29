@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Code that was written to parse the legacy XML format of Quantum ESPRESSO, which was deprecated in version 6.4."""
+
 from xml.dom.minidom import parseString
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
@@ -38,7 +38,7 @@ def parse_cp_xml_output(data):
 
     parsed_data = {}
 
-    #CARD HEADER
+    # CARD HEADER
     parsed_data = copy.deepcopy(xml_card_header(parsed_data, dom))
 
     # CARD CONTROL
@@ -246,8 +246,9 @@ def parse_cp_xml_output(data):
                 third_tagname = 'cdmi'
                 third_tag = second_tag.getElementsByTagName(third_tagname)[0]
                 list_data = third_tag.childNodes[0].data.rstrip().split()
-                parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()
-                            ] = [float(i) for i in list_data]
+                parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = [
+                    float(i) for i in list_data
+                ]
             except:
                 pass
 
@@ -272,21 +273,25 @@ def parse_cp_xml_output(data):
             second_tag = tag.getElementsByTagName(second_tagname)[0]
             third_tagname = 'nhpcl'
             third_tag = second_tag.getElementsByTagName(third_tagname)[0]
-            parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()
-                        ] = float(third_tag.childNodes[0].data)
+            parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = float(
+                third_tag.childNodes[0].data
+            )
             third_tagname = 'nhpdim'
             third_tag = second_tag.getElementsByTagName(third_tagname)[0]
-            parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()
-                        ] = float(third_tag.childNodes[0].data)
+            parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = float(
+                third_tag.childNodes[0].data
+            )
             third_tagname = 'xnhp'
             third_tag = second_tag.getElementsByTagName(third_tagname)[0]
-            parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()
-                        ] = float(third_tag.childNodes[0].data)
+            parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = float(
+                third_tag.childNodes[0].data
+            )
             try:
                 third_tagname = 'vnhp'
                 third_tag = second_tag.getElementsByTagName(third_tagname)[0]
-                parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()
-                            ] = float(third_tag.childNodes[0].data)
+                parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = float(
+                    third_tag.childNodes[0].data
+                )
             except:
                 pass
 
@@ -302,15 +307,17 @@ def parse_cp_xml_output(data):
             try:
                 third_tagname = 'xnhe'
                 third_tag = second_tag.getElementsByTagName(third_tagname)[0]
-                parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()
-                            ] = float(third_tag.childNodes[0].data)
+                parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = float(
+                    third_tag.childNodes[0].data
+                )
             except:
                 pass
             try:
                 third_tagname = 'vnhe'
                 third_tag = second_tag.getElementsByTagName(third_tagname)[0]
-                parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()
-                            ] = float(third_tag.childNodes[0].data)
+                parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = float(
+                    third_tag.childNodes[0].data
+                )
             except:
                 pass
 
@@ -400,7 +407,7 @@ def parse_cp_xml_output(data):
                 parsed_data[(second_tagname + '_' + third_tagname).replace('-', '_').lower()] = mat
             except:
                 pass
-        except Exception as e:
+        except Exception:
             raise QEOutputParsingError(f'Error parsing CARD {cardname}')
 
     # CARD BAND_STRUCTURE_INFO

@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the ``workflows launch ph-base`` command."""
+
 from aiida_quantumespresso.cli.workflows.ph.base import launch_workflow
 
 

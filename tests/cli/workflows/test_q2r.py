@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for the ``workflows launch q2r-base`` command."""
 
 from aiida_quantumespresso.cli.workflows.q2r.base import launch_workflow

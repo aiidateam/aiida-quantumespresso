@@ -1,48 +1,13 @@
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.1.0
-    hooks:
-    -   id: double-quote-string-fixer
-    -   id: end-of-file-fixer
-    -   id: fix-encoding-pragma
-    -   id: mixed-line-ending
-    -   id: trailing-whitespace
-        exclude: >-
-            (?x)^(
-                tests/.*.*out|
-                tests/.*.in$
-            )$
-
--   repo: https://github.com/ikamensh/flynt/
-    rev: '0.76'
-    hooks:
-    -   id: flynt
-
--   repo: https://github.com/pycqa/isort
-    rev: '5.12.0'
-    hooks:
-    -   id: isort
-
--   repo: https://github.com/pre-commit/mirrors-yapf
-    rev: v0.32.0
-    hooks:
-    -   id: yapf
-        name: yapf
-        types: [python]
-        args: ['-i']
-        exclude: &exclude_files >
-            (?x)^(
-                src/aiida_quantumespresso/calculations/pwimmigrant.*|
-                src/aiida_quantumespresso/parsers/.*|
-                docs/.*|
-                tests/.*(?<!\.py)$
-            )$
-        additional_dependencies: ['toml']
-        language_version: python3.9
-
--   repo: https://github.com/PyCQA/pydocstyle
-    rev: '6.1.1'
-    hooks:
-    -   id: pydocstyle
-        exclude: *exclude_files
-        additional_dependencies: ['toml']
+- repo: local
+  hooks:
+  - id: format
+    name: Format with Ruff
+    entry: hatch fmt -f
+    language: system
+    types: [python]
+  - id: lint
+    name: Lint with Ruff
+    entry: hatch fmt -l
+    language: system
+    types: [python]

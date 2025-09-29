@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import enum
 import os
 
@@ -24,14 +23,14 @@ def get_xml_file_version(xml):
     """
     if is_valid_post_6_2_version(xml):
         return QeXmlVersion.POST_6_2
-    elif is_valid_pre_6_2_version(xml):
+    if is_valid_pre_6_2_version(xml):
         return QeXmlVersion.PRE_6_2
-    else:
-        raise XMLUnsupportedFormatError(
-            f'unrecognized XML file version: cannot find schema {get_schema_filename(xml)} in '
-            f"{os.path.join(os.path.dirname(os.path.abspath(__file__)), 'schemas')}. "
-            'You can look for it in https://github.com/QEF/qeschemas'
-        )
+
+    raise XMLUnsupportedFormatError(
+        f'unrecognized XML file version: cannot find schema {get_schema_filename(xml)} in '
+        f"{os.path.join(os.path.dirname(os.path.abspath(__file__)), 'schemas')}. "
+        'You can look for it in https://github.com/QEF/qeschemas'
+    )
 
 
 def get_schema_filepath(xml):
@@ -42,9 +41,7 @@ def get_schema_filepath(xml):
     """
     schema_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'schemas')
     schema_filename = get_schema_filename(xml)
-    schema_filepath = os.path.join(schema_directory, schema_filename)
-
-    return schema_filepath
+    return os.path.join(schema_directory, schema_filename)
 
 
 def get_default_schema_filepath():
@@ -55,9 +52,7 @@ def get_default_schema_filepath():
     """
     schema_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'schemas')
     schema_filename = DEFAULT_SCHEMA_FILENAME
-    schema_filepath = os.path.join(schema_directory, schema_filename)
-
-    return schema_filepath
+    return os.path.join(schema_directory, schema_filename)
 
 
 def get_schema_filename(xml):
@@ -88,9 +83,7 @@ def get_schema_filename(xml):
         return None
 
     schema_location = element_schema_location.split()[1]  # e.g. "http://www.quantum-espresso.org/ns/qes/qes-1.0.xsd"
-    schema_filename = schema_location.rpartition('/')[2]  # e.g. "qes-1.0.xsd"
-
-    return schema_filename
+    return schema_location.rpartition('/')[2]  # e.g. "qes-1.0.xsd"
 
 
 def get_available_xml_schemas():

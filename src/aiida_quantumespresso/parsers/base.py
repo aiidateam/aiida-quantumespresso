@@ -1,19 +1,21 @@
-# -*- coding: utf-8 -*-
 """Defines a `Parser` base class for `aiida-quantumespresso`.
 
 All `Parser` implementations in `aiida-quantumespresso` must use this base class, not `aiida.parsers.Parser`.
 """
+
 from __future__ import annotations
 
 import abc
 import re
-from typing import Optional, Tuple
+from typing import TYPE_CHECKING
 
-from aiida.common import AttributeDict
 from aiida.engine import ExitCode
 from aiida.parsers import Parser
 
 from aiida_quantumespresso.parsers.parse_raw.base import convert_qe_time_to_sec
+
+if TYPE_CHECKING:
+    from aiida.common import AttributeDict
 
 __all__ = ('BaseParser',)
 
@@ -47,7 +49,7 @@ class BaseParser(Parser, metaclass=abc.ABCMeta):
         warning_map.update(cls.class_warning_map)
         return warning_map
 
-    def parse_stdout_from_retrieved(self, logs: AttributeDict) -> Tuple[str, dict, AttributeDict]:
+    def parse_stdout_from_retrieved(self, logs: AttributeDict) -> tuple[str, dict, AttributeDict]:
         """Read and parse the ``stdout`` content of a Quantum ESPRESSO calculation.
 
         :param logs: Logging container that will be updated during parsing.
@@ -76,7 +78,11 @@ class BaseParser(Parser, metaclass=abc.ABCMeta):
 
         return stdout, parsed_data, logs
 
-    def emit_logs(self, logs: list[AttributeDict] | tuple[AttributeDict] | AttributeDict, ignore: list = None) -> None:
+    def emit_logs(
+        self,
+        logs_dict: list[AttributeDict] | tuple[AttributeDict] | AttributeDict,
+        ignore: list | None = None,
+    ) -> None:
         """Emit the messages in one or multiple "log dictionaries" through the logger of the parser.
 
         A log dictionary is expected to have the following structure: each key must correspond to a log level of the
@@ -86,22 +92,23 @@ class BaseParser(Parser, metaclass=abc.ABCMeta):
         Example log dictionary structure::
 
             logs = {
-                'warning': ['Could not parse the `etot_threshold` variable from the stdout.'],
-                'error': ['Self-consistency was not achieved']
+                'warning': [
+                    'Could not parse the `etot_threshold` variable from the stdout.'
+                ],
+                'error': ['Self-consistency was not achieved'],
             }
 
-        :param logs: log dictionaries
+        :param logs_dict: log dictionaries
         :param ignore: list of log messages to ignore
         """
         ignore = ignore or []
 
-        if not isinstance(logs, (list, tuple)):
-            logs = [logs]
+        if not isinstance(logs_dict, (list, tuple)):
+            logs_dict = [logs_dict]
 
-        for logs in logs:
+        for logs in logs_dict:
             for level, messages in logs.items():
                 for message in messages:
-
                     stripped = message.strip()
 
                     if stripped in ignore:
@@ -109,7 +116,7 @@ class BaseParser(Parser, metaclass=abc.ABCMeta):
 
                     getattr(self.logger, level)(stripped)
 
-    def check_base_errors(self, logs: AttributeDict) -> Optional[ExitCode]:
+    def check_base_errors(self, logs: AttributeDict) -> ExitCode | None:
         """Check the ``logs`` for the following "basic" parsing error and return a (formatted) version:
 
         * ``ERROR_OUTPUT_STDOUT_MISSING``
@@ -129,10 +136,7 @@ class BaseParser(Parser, metaclass=abc.ABCMeta):
                 return self.exit_codes.get(exit_code)
 
         # These exit codes have additional information that needs to be formatted in the message.
-        for exit_code in [
-            'ERROR_OUTPUT_STDOUT_READ',
-            'ERROR_OUTPUT_STDOUT_PARSE'
-        ]:
+        for exit_code in ['ERROR_OUTPUT_STDOUT_READ', 'ERROR_OUTPUT_STDOUT_PARSE']:
             if exit_code in logs.error:
                 exception = logs.error[logs.index(exit_code) + 1]
                 return self.exit_codes.get(exit_code).format(exception=exception)
@@ -164,7 +168,7 @@ class BaseParser(Parser, metaclass=abc.ABCMeta):
         return exit_code
 
     @classmethod
-    def _parse_stdout_base(cls, stdout: str, logs: AttributeDict) -> Tuple[dict, AttributeDict]:
+    def _parse_stdout_base(cls, stdout: str, logs: AttributeDict) -> tuple[dict, AttributeDict]:
         """Parse the ``stdout`` content of a Quantum ESPRESSO calculation.
 
         This function only checks for basic content like JOB DONE, errors with %%%%% etc, but can be overridden to
@@ -179,13 +183,17 @@ class BaseParser(Parser, metaclass=abc.ABCMeta):
             logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
 
         code_match = re.search(
-            r'Program\s(?P<code_name>[A-Z|a-z|\_|\d]+)\sv\.(?P<code_version>[\d\.|a-z|A-Z]+)\s', stdout
+            r'Program\s(?P<code_name>[A-Z|a-z|\_|\d]+)\sv\.(?P<code_version>[\d\.|a-z|A-Z]+)\s',
+            stdout,
         )
         if code_match:
             code_name = code_match.groupdict()['code_name']
             parsed_data['code_version'] = code_match.groupdict()['code_version']
 
-            wall_match = re.search(fr'{code_name}\s+:[\s\S]+CPU\s+(?P<wall_time>[\s.\d|s|m|d|h]+)\sWALL', stdout)
+            wall_match = re.search(
+                rf'{code_name}\s+:[\s\S]+CPU\s+(?P<wall_time>[\s.\d|s|m|d|h]+)\sWALL',
+                stdout,
+            )
 
             if wall_match:
                 try:
@@ -196,18 +204,20 @@ class BaseParser(Parser, metaclass=abc.ABCMeta):
         # Look for typical Quantum ESPRESSO error messages between %%%%%-lines that are not in our error map
         if re.search(r'\%\%\%\%\%', stdout):  # Note: using e.g. `\%{5}` is significantly slower
             for error_message in set(re.split(r'\%\%\%\%\%\n', stdout)[1::2]):
-
-                if not any(error_marker in error_message for error_marker in cls.get_error_map().keys()):
+                if not any(error_marker in error_message for error_marker in cls.get_error_map()):
                     logs.error.append(error_message.rstrip('\n%'))
 
         # Look for error messages in general
-        for error_marker, error, in cls.get_error_map().items():
-            if re.search(fr'{error_marker}', stdout):
+        for (
+            error_marker,
+            error,
+        ) in cls.get_error_map().items():
+            if re.search(rf'{error_marker}', stdout):
                 logs.error.append(error)
 
         # Look for lines with warnings from the `warning_map`
         for warning_marker, warning in cls.get_warning_map().items():
-            for warning_message in set(re.findall(fr'({warning_marker}.+)\n', stdout)):
+            for warning_message in set(re.findall(rf'({warning_marker}.+)\n', stdout)):
                 if warning is not None:
                     logs.warning.append(warning)
                 else:

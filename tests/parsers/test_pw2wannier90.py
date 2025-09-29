@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the `Pw2wannier90Parser`."""
+
 import os
 
 from aiida import orm
@@ -27,11 +27,7 @@ def generate_inputs():
         'parent_folder': orm.FolderData().store(),
         'nnkp_file': orm.SinglefileData(file=nnkp_filepath).store(),
         'parameters': orm.Dict(parameters),
-        'metadata': {
-            'options': {
-                'additional_retrieve_list': ['*.amn', '*.mmn', '*.eig']
-            }
-        }
+        'metadata': {'options': {'additional_retrieve_list': ['*.amn', '*.mmn', '*.eig']}},
     }
 
     return AttributeDict(inputs)

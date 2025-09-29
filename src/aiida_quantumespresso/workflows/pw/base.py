@@ -1,12 +1,20 @@
-# -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts."""
+
 from aiida import orm
 from aiida.common import AttributeDict, exceptions
 from aiida.common.lang import type_check
-from aiida.engine import BaseRestartWorkChain, ExitCode, ProcessHandlerReport, process_handler, while_
+from aiida.engine import (
+    BaseRestartWorkChain,
+    ExitCode,
+    ProcessHandlerReport,
+    process_handler,
+    while_,
+)
 from aiida.plugins import CalculationFactory, GroupFactory
 
-from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import create_kpoints_from_distance
+from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import (
+    create_kpoints_from_distance,
+)
 from aiida_quantumespresso.common.types import ElectronicType, RestartType, SpinType
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 
@@ -21,36 +29,48 @@ CutoffsPseudoPotentialFamily = GroupFactory('pseudo.family.cutoffs')
 class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts."""
 
-    # pylint: disable=too-many-public-methods, too-many-statements
-
     _process_class = PwCalculation
 
-    defaults = AttributeDict({
-        'qe': qe_defaults,
-        'delta_threshold_degauss': 30,
-        'delta_factor_degauss': 0.1,
-        'delta_factor_mixing_beta': 0.8,
-        'delta_factor_max_seconds': 0.95,
-        'delta_factor_nbnd': 0.05,
-        'delta_minimum_nbnd': 4,
-        'delta_factor_trust_radius_min': 0.1,
-    })
+    defaults = AttributeDict(
+        {
+            'qe': qe_defaults,
+            'delta_threshold_degauss': 30,
+            'delta_factor_degauss': 0.1,
+            'delta_factor_mixing_beta': 0.8,
+            'delta_factor_max_seconds': 0.95,
+            'delta_factor_nbnd': 0.05,
+            'delta_minimum_nbnd': 4,
+            'delta_factor_trust_radius_min': 0.1,
+        }
+    )
 
     @classmethod
     def define(cls, spec):
         """Define the process specification."""
-        # yapf: disable
+
         super().define(spec)
         spec.expose_inputs(PwCalculation, namespace='pw', exclude=('kpoints',))
-        spec.input('kpoints', valid_type=orm.KpointsData, required=False,
-            help='An explicit k-points list or mesh. Either this or `kpoints_distance` has to be provided.')
-        spec.input('kpoints_distance', valid_type=orm.Float, required=False,
+        spec.input(
+            'kpoints',
+            valid_type=orm.KpointsData,
+            required=False,
+            help='An explicit k-points list or mesh. Either this or `kpoints_distance` has to be provided.',
+        )
+        spec.input(
+            'kpoints_distance',
+            valid_type=orm.Float,
+            required=False,
             help='The minimum desired distance in 1/Å between k-points in reciprocal space. The explicit k-points will '
-                 'be generated automatically by a calculation function based on the input structure.')
-        spec.input('kpoints_force_parity', valid_type=orm.Bool, required=False,
+            'be generated automatically by a calculation function based on the input structure.',
+        )
+        spec.input(
+            'kpoints_force_parity',
+            valid_type=orm.Bool,
+            required=False,
             help='Optional input when constructing the k-points based on a desired `kpoints_distance`. Setting this to '
-                 '`True` will force the k-point mesh to have an even number of points along each lattice vector except '
-                 'for any non-periodic directions.')
+            '`True` will force the k-point mesh to have an even number of points along each lattice vector except '
+            'for any non-periodic directions.',
+        )
 
         spec.outline(
             cls.setup,
@@ -65,34 +85,60 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         spec.expose_outputs(PwCalculation)
 
-        spec.exit_code(201, 'ERROR_INVALID_INPUT_PSEUDO_POTENTIALS',
-            message='The explicit `pseudos` or `pseudo_family` could not be used to get the necessary pseudos.')
-        spec.exit_code(202, 'ERROR_INVALID_INPUT_KPOINTS',
-            message='Neither the `kpoints` nor the `kpoints_distance` input was specified.')
-        spec.exit_code(203, 'ERROR_INVALID_INPUT_RESOURCES',
+        spec.exit_code(
+            201,
+            'ERROR_INVALID_INPUT_PSEUDO_POTENTIALS',
+            message='The explicit `pseudos` or `pseudo_family` could not be used to get the necessary pseudos.',
+        )
+        spec.exit_code(
+            202,
+            'ERROR_INVALID_INPUT_KPOINTS',
+            message='Neither the `kpoints` nor the `kpoints_distance` input was specified.',
+        )
+        spec.exit_code(
+            203,
+            'ERROR_INVALID_INPUT_RESOURCES',
             message='Neither the `options` nor `automatic_parallelization` input was specified. '
-                    'This exit status has been deprecated as the check it corresponded to was incorrect.')
-        spec.exit_code(204, 'ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED',
+            'This exit status has been deprecated as the check it corresponded to was incorrect.',
+        )
+        spec.exit_code(
+            204,
+            'ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED',
             message='The `metadata.options` did not specify both `resources.num_machines` and `max_wallclock_seconds`. '
-                    'This exit status has been deprecated as the check it corresponded to was incorrect.')
-        spec.exit_code(210, 'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY',
+            'This exit status has been deprecated as the check it corresponded to was incorrect.',
+        )
+        spec.exit_code(
+            210,
+            'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_MISSING_KEY',
             message='Required key for `automatic_parallelization` was not specified.'
-                    'This exit status has been deprecated as the automatic parallellization feature was removed.')
-        spec.exit_code(211, 'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY',
+            'This exit status has been deprecated as the automatic parallellization feature was removed.',
+        )
+        spec.exit_code(
+            211,
+            'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY',
             message='Unrecognized keys were specified for `automatic_parallelization`.'
-                    'This exit status has been deprecated as the automatic parallellization feature was removed.')
-        spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
-            message='[deprecated] The calculation failed with an unidentified unrecoverable error.')
-        spec.exit_code(310, 'ERROR_KNOWN_UNRECOVERABLE_FAILURE',
-            message='The calculation failed with a known unrecoverable error.')
-        spec.exit_code(320, 'ERROR_INITIALIZATION_CALCULATION_FAILED',
-            message='The initialization calculation failed.')
-        spec.exit_code(501, 'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
-            message='Then ionic minimization cycle converged but the thresholds are exceeded in the final SCF.')
-        spec.exit_code(710, 'WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED',
+            'This exit status has been deprecated as the automatic parallellization feature was removed.',
+        )
+        spec.exit_code(
+            300,
+            'ERROR_UNRECOVERABLE_FAILURE',
+            message='[deprecated] The calculation failed with an unidentified unrecoverable error.',
+        )
+        spec.exit_code(
+            310, 'ERROR_KNOWN_UNRECOVERABLE_FAILURE', message='The calculation failed with a known unrecoverable error.'
+        )
+        spec.exit_code(320, 'ERROR_INITIALIZATION_CALCULATION_FAILED', message='The initialization calculation failed.')
+        spec.exit_code(
+            501,
+            'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
+            message='Then ionic minimization cycle converged but the thresholds are exceeded in the final SCF.',
+        )
+        spec.exit_code(
+            710,
+            'WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED',
             message='The electronic minimization cycle did not reach self-consistency, but `scf_must_converge` '
-                    'is `False` and/or `electron_maxstep` is 0.')
-        # yapf: enable
+            'is `False` and/or `electron_maxstep` is 0.',
+        )
 
     @classmethod
     def get_protocol_filepath(cls):
@@ -100,6 +146,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         from importlib_resources import files
 
         from ..protocols import pw as pw_protocols
+
         return files(pw_protocols) / 'base.yaml'
 
     @classmethod
@@ -113,7 +160,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         spin_type=SpinType.NONE,
         initial_magnetic_moments=None,
         options=None,
-        **_
+        **_,
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
@@ -131,7 +178,10 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             the ``CalcJobs`` that are nested in this work chain.
         :return: a process builder instance with all inputs defined ready for launch.
         """
-        from aiida_quantumespresso.workflows.protocols.utils import get_magnetization, recursive_merge
+        from aiida_quantumespresso.workflows.protocols.utils import (
+            get_magnetization,
+            recursive_merge,
+        )
 
         if isinstance(code, str):
             code = orm.load_code(code)
@@ -160,7 +210,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         parameters = inputs['pw']['parameters']
 
         if overrides and 'pseudos' in overrides.get('pw', {}):
-
             pseudos = overrides['pw']['pseudos']
 
             if sorted(pseudos.keys()) != sorted(structure.get_kind_names()):
@@ -176,7 +225,11 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         else:
             try:
-                pseudo_set = (PseudoDojoFamily, SsspFamily, CutoffsPseudoPotentialFamily)
+                pseudo_set = (
+                    PseudoDojoFamily,
+                    SsspFamily,
+                    CutoffsPseudoPotentialFamily,
+                )
                 pseudo_family = orm.QueryBuilder().append(pseudo_set, filters={'label': pseudo_family}).one()[0]
             except exceptions.NotExistent as exception:
                 raise ValueError(
@@ -185,8 +238,9 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 ) from exception
 
             try:
-                parameters['SYSTEM']['ecutwfc'], parameters['SYSTEM'][
-                    'ecutrho'] = pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
+                parameters['SYSTEM']['ecutwfc'], parameters['SYSTEM']['ecutrho'] = (
+                    pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
+                )
                 pseudos = pseudo_family.get_pseudos(structure=structure)
             except ValueError as exception:
                 raise ValueError(
@@ -240,7 +294,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         metadata['options'] = cls.set_default_resources(metadata['options'], code.computer.scheduler_type)
 
-        # pylint: disable=no-member
         builder = cls.get_builder()
         builder.pw['code'] = code
         builder.pw['pseudos'] = pseudos
@@ -258,7 +311,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
         builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
         builder.max_iterations = orm.Int(inputs['max_iterations'])
-        # pylint: enable=no-member
 
         return builder
 
@@ -305,11 +357,9 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 'structure': self.inputs.pw.structure,
                 'distance': self.inputs.kpoints_distance,
                 'force_parity': self.inputs.get('kpoints_force_parity', orm.Bool(False)),
-                'metadata': {
-                    'call_link_label': 'create_kpoints_from_distance'
-                }
+                'metadata': {'call_link_label': 'create_kpoints_from_distance'},
             }
-            kpoints = create_kpoints_from_distance(**inputs)  # pylint: disable=unexpected-keyword-arg
+            kpoints = create_kpoints_from_distance(**inputs)
 
         self.ctx.inputs.kpoints = kpoints
 
@@ -359,7 +409,12 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         :param calculation: the failed calculation node
         :param action: a string message with the action taken
         """
-        arguments = [calculation.process_label, calculation.pk, calculation.exit_status, calculation.exit_message]
+        arguments = [
+            calculation.process_label,
+            calculation.pk,
+            calculation.exit_status,
+            calculation.exit_message,
+        ]
         self.report('{}<{}> failed with exit status {}: {}'.format(*arguments))
         self.report(f'Action taken: {action}')
 
@@ -402,7 +457,10 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             self.report(f'{calculation.process_label}<{calculation.pk}> had insufficient bands')
 
             nbnd_cur = calculation.outputs.output_parameters.get_dict()['number_of_bands']
-            nbnd_new = nbnd_cur + max(int(nbnd_cur * self.defaults.delta_factor_nbnd), self.defaults.delta_minimum_nbnd)
+            nbnd_new = nbnd_cur + max(
+                int(nbnd_cur * self.defaults.delta_factor_nbnd),
+                self.defaults.delta_minimum_nbnd,
+            )
             self.ctx.inputs.parameters['SYSTEM']['nbnd'] = nbnd_new
 
             self.set_restart_type(RestartType.FROM_CHARGE_DENSITY, calculation.outputs.remote_folder)
@@ -432,7 +490,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             PwCalculation.exit_codes.ERROR_QR_FAILED,
             PwCalculation.exit_codes.ERROR_EIGENVECTOR_CONVERGENCE,
             PwCalculation.exit_codes.ERROR_BROYDEN_FACTORIZATION,
-        ]
+        ],
     )
     def handle_diagonalization_errors(self, calculation):
         """Handle known issues related to the diagonalization.
@@ -460,9 +518,12 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             self.report_error_handled(calculation, action)
             return ProcessHandlerReport(True, self.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE)
 
-    @process_handler(priority=580, exit_codes=[
-        PwCalculation.exit_codes.ERROR_OUT_OF_WALLTIME,
-    ])
+    @process_handler(
+        priority=580,
+        exit_codes=[
+            PwCalculation.exit_codes.ERROR_OUT_OF_WALLTIME,
+        ],
+    )
     def handle_out_of_walltime(self, calculation):
         """Handle `ERROR_OUT_OF_WALLTIME` exit code.
 
@@ -476,9 +537,12 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         return ProcessHandlerReport(True)
 
-    @process_handler(priority=575, exit_codes=[
-        PwCalculation.exit_codes.ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY,
-    ])
+    @process_handler(
+        priority=575,
+        exit_codes=[
+            PwCalculation.exit_codes.ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY,
+        ],
+    )
     def handle_ionic_interrupted_partial_trajectory(self, calculation):
         """Handle `ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY` exit code.
 
@@ -492,9 +556,10 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         return ProcessHandlerReport(True)
 
     @process_handler(
-        priority=570, exit_codes=[
+        priority=570,
+        exit_codes=[
             PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF,
-        ]
+        ],
     )
     def handle_vcrelax_converged_except_final_scf(self, calculation):
         """Handle `ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF` exit code.
@@ -512,7 +577,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         exit_codes=[
             PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE,
             PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE,
-        ]
+        ],
     )
     def handle_relax_recoverable_ionic_convergence_bfgs_history_error(self, calculation):
         """Handle failure of the ionic minimization algorithm (BFGS).
@@ -557,7 +622,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             PwCalculation.exit_codes.ERROR_IONIC_CYCLE_EXCEEDED_NSTEP,
             PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE,
             PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE,
-        ]
+        ],
     )
     def handle_relax_recoverable_ionic_convergence_error(self, calculation):
         """Handle various exit codes for recoverable `relax` calculations with failed ionic convergence.
@@ -573,9 +638,10 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         return ProcessHandlerReport(True)
 
     @process_handler(
-        priority=555, exit_codes=[
+        priority=555,
+        exit_codes=[
             PwCalculation.exit_codes.ERROR_RADIAL_FFT_SIGNIFICANT_VOLUME_CONTRACTION,
-        ]
+        ],
     )
     def handle_vcrelax_recoverable_fft_significant_volume_contraction_error(self, calculation):
         """Handle exit code for recoverable `vc-relax` calculations with significant volume contraction.
@@ -603,7 +669,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         exit_codes=[
             PwCalculation.exit_codes.ERROR_IONIC_CYCLE_ELECTRONIC_CONVERGENCE_NOT_REACHED,
             PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_FINAL_SCF_FAILED,
-        ]
+        ],
     )
     def handle_relax_recoverable_electronic_convergence_error(self, calculation):
         """Handle various exit codes for recoverable `relax` calculations with failed electronic convergence.
@@ -627,9 +693,12 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         self.report_error_handled(calculation, action)
         return ProcessHandlerReport(True)
 
-    @process_handler(priority=410, exit_codes=[
-        PwCalculation.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED,
-    ])
+    @process_handler(
+        priority=410,
+        exit_codes=[
+            PwCalculation.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED,
+        ],
+    )
     def handle_electronic_convergence_not_reached(self, calculation):
         """Handle `ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED` error.
 
@@ -646,9 +715,12 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         self.report_error_handled(calculation, action)
         return ProcessHandlerReport(True)
 
-    @process_handler(priority=420, exit_codes=[
-        PwCalculation.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED,
-    ])
+    @process_handler(
+        priority=420,
+        exit_codes=[
+            PwCalculation.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED,
+        ],
+    )
     def handle_electronic_convergence_warning(self, calculation):
         """Handle `WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED`: consider finished."""
         self.ctx.is_finished = True

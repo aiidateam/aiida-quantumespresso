@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Utilities for `BandsData` nodes."""
 
 
@@ -50,33 +49,37 @@ def get_highest_occupied_band(bands, threshold=0.005):
     else:
         raise ValueError('invalid shape for `occupations` array')
 
-    for l, spin_channel in enumerate(spin_channels):  # pylint: disable=invalid-name
+    for l, spin_channel in enumerate(spin_channels):  # noqa: E741
         for k, kpoint in enumerate(spin_channel):
-
             lumo_index = None
             lumo_occupation = None
 
-            for n, occupation in enumerate(kpoint):  # pylint: disable=invalid-name
+            for n, occupation in enumerate(kpoint):
                 if lumo_index is not None:
-
                     # If the occupation of this band exceeds twice that of the threshold, it is considered to be not
                     # empty and since it comes after the LUMO, we raise
                     if occupation > 2 * threshold:
-                        warning_args = [occupation, n, lumo_occupation, lumo_index, l, k]
-                        raise ValueError('Occupation of {} at n={} after lumo lkn<{},{},{}>'.format(*warning_args))
+                        warning_args = [
+                            occupation,
+                            n,
+                            lumo_occupation,
+                            lumo_index,
+                            l,
+                            k,
+                        ]
+                        msg = 'Occupation of {} at n={} after lumo lkn<{},{},{}>'.format(*warning_args)
+                        raise ValueError(msg)
 
                 elif occupation < threshold:
                     lumo_index = n
                     lumo_occupation = occupation
                     lumo_indices.append(lumo_index)
 
-            else:  # pylint: disable=useless-else-on-loop
-                if kpoint[-1] >= threshold:
-                    warning_args = [kpoint[-1], l, k, len(kpoint)]
-                    raise ValueError('Occupation of {} at last band lkn<{},{},{}>'.format(*warning_args))
+            if kpoint[-1] >= threshold:
+                warning_args = [kpoint[-1], l, k, len(kpoint)]
+                msg = 'Occupation of {} at last band lkn<{},{},{}>'.format(*warning_args)
+                raise ValueError(msg)
 
     # Note that the LUMO band indices are 0-indexed, so the actual band number is one higher, but the band number of the
     # HOMO is one lower than that, which therefore corresponds exactly to the 0-indexed LUMO index
-    homo = max(lumo_indices)
-
-    return homo
+    return max(lumo_indices)

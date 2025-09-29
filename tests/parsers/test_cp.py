@@ -1,14 +1,18 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=redefined-outer-name
 """Tests for the `CpParser`."""
+
+import pytest
 from aiida import orm
 from aiida.common import AttributeDict
-import pytest
 
 
 @pytest.mark.parametrize('version', ['default', '6.6_autopilot', '6.6_verlet', '6.6_cgstep', '6.6_cgsteps'])
 def test_cp_default(
-    fixture_localhost, generate_calc_job_node, generate_parser, data_regression, generate_structure, version
+    fixture_localhost,
+    generate_calc_job_node,
+    generate_parser,
+    data_regression,
+    generate_structure,
+    version,
 ):
     """Test a default `cp.x` calculation."""
     entry_point_calc_job = 'quantumespresso.cp'
@@ -16,17 +20,21 @@ def test_cp_default(
     if version == 'default':
 
         def generate_inputs():
-            return AttributeDict({
-                'structure': generate_structure(structure_id='silicon'),
-                'parameters': orm.Dict({}),
-            })
+            return AttributeDict(
+                {
+                    'structure': generate_structure(structure_id='silicon'),
+                    'parameters': orm.Dict({}),
+                }
+            )
     else:
 
         def generate_inputs():
-            return AttributeDict({
-                'structure': generate_structure(structure_id='water'),
-                'parameters': orm.Dict({}),
-            })
+            return AttributeDict(
+                {
+                    'structure': generate_structure(structure_id='water'),
+                    'parameters': orm.Dict({}),
+                }
+            )
 
     node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, version, generate_inputs())
     parser = generate_parser(entry_point_parser)

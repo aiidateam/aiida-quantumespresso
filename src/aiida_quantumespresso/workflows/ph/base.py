@@ -1,15 +1,24 @@
-# -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO ph.x calculation with automated error handling and restarts."""
-from typing import Mapping
+
+from collections.abc import Mapping
 
 from aiida import orm
 from aiida.common import AttributeDict
 from aiida.common.lang import type_check
-from aiida.engine import BaseRestartWorkChain, ProcessHandlerReport, process_handler, while_
+from aiida.engine import (
+    BaseRestartWorkChain,
+    ProcessHandlerReport,
+    process_handler,
+    while_,
+)
 from aiida.plugins import CalculationFactory
 
-from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import create_kpoints_from_distance
-from aiida_quantumespresso.calculations.functions.merge_ph_outputs import merge_ph_outputs
+from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import (
+    create_kpoints_from_distance,
+)
+from aiida_quantumespresso.calculations.functions.merge_ph_outputs import (
+    merge_ph_outputs,
+)
 from aiida_quantumespresso.common.types import ElectronicType
 from aiida_quantumespresso.workflows.protocols.utils import ProtocolMixin
 
@@ -22,29 +31,43 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
     _process_class = PhCalculation
 
-    defaults = AttributeDict({
-        'delta_factor_max_seconds': 0.95,
-        'delta_factor_alpha_mix': 0.5,
-        'nmix_ph': 4,
-        'alpha_mix': 0.7,
-    })
+    defaults = AttributeDict(
+        {
+            'delta_factor_max_seconds': 0.95,
+            'delta_factor_alpha_mix': 0.5,
+            'nmix_ph': 4,
+            'alpha_mix': 0.7,
+        }
+    )
 
     @classmethod
     def define(cls, spec):
         """Define the process specification."""
-        # yapf: disable
+
         super().define(spec)
-        spec.expose_inputs(PhCalculation, namespace='ph', exclude=('qpoints', ))
+        spec.expose_inputs(PhCalculation, namespace='ph', exclude=('qpoints',))
         spec.input('only_initialization', valid_type=orm.Bool, default=lambda: orm.Bool(False))
-        spec.input('qpoints', valid_type=orm.KpointsData, required=False,
-            help='An explicit qpoints list or mesh. Either this or `qpoints_distance` should to be provided.')
-        spec.input('qpoints_distance', valid_type=orm.Float, required=False,
+        spec.input(
+            'qpoints',
+            valid_type=orm.KpointsData,
+            required=False,
+            help='An explicit qpoints list or mesh. Either this or `qpoints_distance` should to be provided.',
+        )
+        spec.input(
+            'qpoints_distance',
+            valid_type=orm.Float,
+            required=False,
             help='The minimum desired distance in 1/Å between qpoints in reciprocal space. The explicit qpoints will '
-                 'be generated automatically by a calculation function based on the input structure.')
-        spec.input('qpoints_force_parity', valid_type=orm.Bool, required=False,
+            'be generated automatically by a calculation function based on the input structure.',
+        )
+        spec.input(
+            'qpoints_force_parity',
+            valid_type=orm.Bool,
+            required=False,
             help='Optional input when constructing the qpoints based on a desired `qpoints_distance`. Setting this to '
-                 '`True` will force the qpoint mesh to have an even number of points along each lattice vector except '
-                 'for any non-periodic directions.')
+            '`True` will force the qpoint mesh to have an even number of points along each lattice vector except '
+            'for any non-periodic directions.',
+        )
         spec.inputs.validator = cls.validate_inputs
         spec.outline(
             cls.setup,
@@ -59,22 +82,31 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             cls.results,
         )
         spec.expose_outputs(PhCalculation, exclude=('retrieved_folder',))
-        spec.exit_code(204, 'ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED',
+        spec.exit_code(
+            204,
+            'ERROR_INVALID_INPUT_RESOURCES_UNDERSPECIFIED',
             message='The `metadata.options` did not specify both `resources.num_machines` and `max_wallclock_seconds`. '
-                    'This exit status has been deprecated as the check it corresponded to was incorrect.')
-        spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
-            message='The calculation failed with an unrecoverable error.')
-        spec.exit_code(401, 'ERROR_MERGING_QPOINTS',
+            'This exit status has been deprecated as the check it corresponded to was incorrect.',
+        )
+        spec.exit_code(
+            300, 'ERROR_UNRECOVERABLE_FAILURE', message='The calculation failed with an unrecoverable error.'
+        )
+        spec.exit_code(
+            401,
+            'ERROR_MERGING_QPOINTS',
             message='The work chain failed to merge the q-points data from multiple `PhCalculation`s because not all '
-                    'q-points were parsed.')
-        # yapf: enable
+            'q-points were parsed.',
+        )
 
     @classmethod
-    def validate_inputs(cls, value, port_namespace):  # pylint: disable=unused-argument
+    def validate_inputs(cls, value, port_namespace):
         """Validate the top level namespace."""
 
-        if (('qpoints_distance' in port_namespace or 'qpoints' in port_namespace) and
-            'qpoints_distance' not in value and 'qpoints' not in value):
+        if (
+            ('qpoints_distance' in port_namespace or 'qpoints' in port_namespace)
+            and 'qpoints_distance' not in value
+            and 'qpoints' not in value
+        ):
             return 'Neither `qpoints` nor `qpoints_distance` were specified.'
 
     @classmethod
@@ -83,6 +115,7 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         from importlib_resources import files
 
         from ..protocols import ph as ph_protocols
+
         return files(ph_protocols) / 'base.yaml'
 
     @classmethod
@@ -94,7 +127,7 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         overrides=None,
         electronic_type=ElectronicType.METAL,
         options=None,
-        **_
+        **_,
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
@@ -129,7 +162,6 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         metadata['options'] = cls.set_default_resources(metadata['options'], code.computer.scheduler_type)
 
-        # pylint: disable=no-member
         builder = cls.get_builder()
         builder.ph['code'] = code
         if parent_folder is not None:
@@ -150,7 +182,6 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             builder.qpoints_force_parity = orm.Bool(inputs['qpoints_force_parity'])
 
         builder.max_iterations = orm.Int(inputs['max_iterations'])
-        # pylint: enable=no-member
 
         return builder
 
@@ -185,7 +216,6 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         try:
             qpoints = self.inputs.qpoints
         except AttributeError:
-
             try:
                 structure = self.ctx.inputs.parent_folder.creator.output.output_structure
             except AttributeError:
@@ -195,9 +225,7 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 'structure': structure,
                 'distance': self.inputs.qpoints_distance,
                 'force_parity': self.inputs.get('qpoints_force_parity', orm.Bool(False)),
-                'metadata': {
-                    'call_link_label': 'create_qpoints_from_distance'
-                }
+                'metadata': {'call_link_label': 'create_qpoints_from_distance'},
             }
             qpoints = create_kpoints_from_distance(**inputs)
 
@@ -236,13 +264,15 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             return
 
         output_dict = {
-            'output_' + str(index + 1): child.outputs.output_parameters
-            for index, child in enumerate(self.ctx.children)
+            'output_' + str(index + 1): child.outputs.output_parameters for index, child in enumerate(self.ctx.children)
         }
 
         num_qpoints = self.ctx.children[0].outputs.output_parameters['number_of_qpoints']
-        num_qpoints = self.ctx.inputs.parameters['INPUTPH'].get('last_q', num_qpoints) \
-            - self.ctx.inputs.parameters['INPUTPH'].get('start_q', 1) + 1
+        num_qpoints = (
+            self.ctx.inputs.parameters['INPUTPH'].get('last_q', num_qpoints)
+            - self.ctx.inputs.parameters['INPUTPH'].get('start_q', 1)
+            + 1
+        )
         num_qpoints_found = sum(
             len(output['number_of_irr_representations_for_each_q']) for output in output_dict.values()
         )
@@ -271,11 +301,19 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         :param calculation: the failed calculation node
         :param action: a string message with the action taken
         """
-        arguments = [calculation.process_label, calculation.pk, calculation.exit_status, calculation.exit_message]
+        arguments = [
+            calculation.process_label,
+            calculation.pk,
+            calculation.exit_status,
+            calculation.exit_message,
+        ]
         self.report('{}<{}> failed with exit status {}: {}'.format(*arguments))
         self.report(f'Action taken: {action}')
 
-    @process_handler(priority=610, exit_codes=PhCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME)
+    @process_handler(
+        priority=610,
+        exit_codes=PhCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME,
+    )
     def handle_scheduler_out_of_walltime(self, node):
         """Handle `ERROR_SCHEDULER_OUT_OF_WALLTIME` exit code: decrease the max_secondes and restart from scratch."""
 
@@ -284,9 +322,10 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         factor = 0.5
         max_seconds = self.ctx.inputs.parameters.get('INPUTPH', {}).get('max_seconds', None)
         if max_seconds is None:
-            max_seconds = self.ctx.inputs.metadata.options.get(
-                'max_wallclock_seconds', None
-            ) * self.defaults.delta_factor_max_seconds
+            max_seconds = (
+                self.ctx.inputs.metadata.options.get('max_wallclock_seconds', None)
+                * self.defaults.delta_factor_max_seconds
+            )
         max_seconds_new = max_seconds * factor
 
         self.ctx.restart_calc = node

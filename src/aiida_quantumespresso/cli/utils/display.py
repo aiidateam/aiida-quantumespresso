@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Module with display utitlies for the CLI."""
+
 import os
 
 import click

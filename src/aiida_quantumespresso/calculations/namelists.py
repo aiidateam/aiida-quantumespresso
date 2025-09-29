@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
 """Plugin to create a Quantum Espresso input file for a generic post-processing code.
 
 These codes typically only require a few namelists (plus possibly some text afterwards).
 """
+
 import pathlib
 import warnings
 
@@ -47,28 +47,43 @@ class NamelistsCalculation(CalcJob):
     @classmethod
     def define(cls, spec):
         """Define the process specification."""
-        # yapf: disable
+
         super().define(spec)
         spec.input('metadata.options.input_filename', valid_type=str, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=str, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)  # Override default value False
         if cls._default_parser is not None:
             spec.input('metadata.options.parser_name', valid_type=str, default=cls._default_parser)
-        spec.input('parameters', valid_type=Dict, required=False,
-            help='Parameters for the namelists in the input file.')
-        spec.input('settings', valid_type=Dict, required=False,
-            help='Use an additional node for special settings')
-        spec.input('parent_folder', valid_type=(RemoteData, FolderData, SinglefileData), required=False,
-            help='Use a local or remote folder as parent folder (for restarts and similar)')
-        spec.exit_code(302, 'ERROR_OUTPUT_STDOUT_MISSING',
-            message='The retrieved folder did not contain the required stdout output file.')
-        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ',
-            message='An exception was raised while reading the `stdout` file: {exception}')
-        spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE',
-            message='An exception was raised while parsing the `stdout` file: {exception}')
-        spec.exit_code(312, 'ERROR_OUTPUT_STDOUT_INCOMPLETE',
-            message='The stdout output file was incomplete probably because the calculation got interrupted.')
-        # yapf: enable
+        spec.input(
+            'parameters', valid_type=Dict, required=False, help='Parameters for the namelists in the input file.'
+        )
+        spec.input('settings', valid_type=Dict, required=False, help='Use an additional node for special settings')
+        spec.input(
+            'parent_folder',
+            valid_type=(RemoteData, FolderData, SinglefileData),
+            required=False,
+            help='Use a local or remote folder as parent folder (for restarts and similar)',
+        )
+        spec.exit_code(
+            302,
+            'ERROR_OUTPUT_STDOUT_MISSING',
+            message='The retrieved folder did not contain the required stdout output file.',
+        )
+        spec.exit_code(
+            310,
+            'ERROR_OUTPUT_STDOUT_READ',
+            message='An exception was raised while reading the `stdout` file: {exception}',
+        )
+        spec.exit_code(
+            311,
+            'ERROR_OUTPUT_STDOUT_PARSE',
+            message='An exception was raised while parsing the `stdout` file: {exception}',
+        )
+        spec.exit_code(
+            312,
+            'ERROR_OUTPUT_STDOUT_INCOMPLETE',
+            message='The stdout output file was incomplete probably because the calculation got interrupted.',
+        )
 
     @classmethod
     def set_blocked_keywords(cls, parameters):
@@ -142,14 +157,13 @@ class NamelistsCalculation(CalcJob):
         :param folder: a sandbox folder to temporarily write files on disk.
         :return: :class:`~aiida.common.datastructures.CalcInfo` instance.
         """
-        # pylint: disable=too-many-branches,too-many-statements
         if 'settings' in self.inputs:
             settings = _uppercase_dict(self.inputs.settings.get_dict(), dict_name='settings')
             if 'ADDITIONAL_RETRIEVE_LIST' in settings:
                 warnings.warn(
                     'The key `ADDITIONAL_RETRIEVE_LIST` in the settings input is deprecated and will be removed in '
                     'the future. Use the `CalcJob.metadata.options.additional_retrieve_list` input instead.',
-                    AiidaDeprecationWarning
+                    AiidaDeprecationWarning,
                 )
         else:
             settings = {}

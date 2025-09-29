@@ -1,12 +1,12 @@
-# -*- coding: utf-8 -*-
 """Command line scripts to launch a `PwCalculation` for testing and demonstration purposes."""
+
+import click
 from aiida.cmdline.params import options as options_core
 from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
-import click
 
-from . import cmd_launch
 from ..utils import defaults, launch, options, validate
+from . import cmd_launch
 
 CALCS_REQUIRING_PARENT = set(['nscf'])
 
@@ -36,20 +36,36 @@ CALCS_REQUIRING_PARENT = set(['nscf'])
     type=click.Choice(['scf', 'nscf', 'relax', 'vc-relax']),
     default='scf',
     show_default=True,
-    help='Select the calculation mode.'
+    help='Select the calculation mode.',
 )
 @click.option(
     '-u',
     '--unfolded-kpoints',
     'unfolded_kpoints',
     is_flag=True,
-    help='Unfold the k-points grid to the whole grid without reducing it by symmetry (useful mainly for NSCF).'
+    help='Unfold the k-points grid to the whole grid without reducing it by symmetry (useful mainly for NSCF).',
 )
 @decorators.with_dbenv()
 def launch_calculation(
-    code, structure, pseudo_family, kpoints_mesh, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file,
-    starting_magnetization, smearing, max_num_machines, max_wallclock_seconds, with_mpi, daemon, parent_folder, dry_run,
-    mode, unfolded_kpoints
+    code,
+    structure,
+    pseudo_family,
+    kpoints_mesh,
+    ecutwfc,
+    ecutrho,
+    hubbard_u,
+    hubbard_v,
+    hubbard_file,
+    starting_magnetization,
+    smearing,
+    max_num_machines,
+    max_wallclock_seconds,
+    with_mpi,
+    daemon,
+    parent_folder,
+    dry_run,
+    mode,
+    unfolded_kpoints,
 ):
     """Run a PwCalculation."""
     from aiida.orm import Dict, KpointsData
@@ -66,7 +82,7 @@ def launch_calculation(
         'SYSTEM': {
             'ecutwfc': ecutwfc or cutoff_wfc,
             'ecutrho': ecutrho or cutoff_rho,
-        }
+        },
     }
 
     if mode in CALCS_REQUIRING_PARENT and not parent_folder:
@@ -100,7 +116,7 @@ def launch_calculation(
         'parameters': Dict(parameters),
         'metadata': {
             'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
-        }
+        },
     }
 
     if parent_folder:

@@ -1,12 +1,11 @@
-# -*- coding: utf-8 -*-
 """Utility class for handling the :class:`aiida_quantumespresso.data.hubbard_structure.HubbardStructureData`."""
-# pylint: disable=no-name-in-module
-from itertools import product
-import os
-from typing import Dict, List, Tuple, Union
 
-from aiida.orm import StructureData
+import os
+from itertools import product
+from typing import Union
+
 import numpy as np
+from aiida.orm import StructureData
 
 from aiida_quantumespresso.common.hubbard import Hubbard
 from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
@@ -21,7 +20,7 @@ __all__ = (
     'max_number_of_neighbours',
 )
 
-QE_TRANSLATIONS = list(list(item) for item in product((-1, 0, 1), repeat=3))
+QE_TRANSLATIONS = [list(item) for item in product((-1, 0, 1), repeat=3)]
 first = QE_TRANSLATIONS.pop(13)
 QE_TRANSLATIONS.insert(0, first)
 QE_TRANSLATIONS = tuple(tuple(item) for item in QE_TRANSLATIONS)
@@ -67,7 +66,7 @@ class HubbardUtils:
                 raise ValueError(f'Hubbard formulation {hubbard.formulation} is not implemented.')
 
             if hubbard.formulation == 'liechtenstein':
-                line = f'{pre}\t{atom_i}-{man_i} \t{value}'
+                line = f'{pre}\t{atom_i}-{man_i} \t{value}'  # noqa: F821
 
             # This variable is to meet QE implementation. If intersite interactions
             # (+V) are present, onsite parameters might not be relabelled by the ``hp.x``
@@ -120,10 +119,9 @@ class HubbardUtils:
         # ['U', 'Co-3d', '6.0']
         # ['V', 'Co-3d', 'O-2p', '1', '4', '6.0']
         for data in hubbard_data:
-
             if data[0] == 'U':
                 manifold = data[1].split('-')
-                index = int(self.hubbard_structure._get_one_kind_index(manifold.pop(0))[0])  # pylint: disable=protected-access
+                index = int(self.hubbard_structure._get_one_kind_index(manifold.pop(0))[0])  # noqa: SLF001
                 manifold = '-'.join(manifold)
                 args = (index, manifold, index, manifold, float(data[2]), (0, 0, 0), 'U')
             else:
@@ -189,7 +187,7 @@ class HubbardUtils:
 
         sites = structure.sites
         indices = get_hubbard_indices(hubbard=hubbard)
-        hubbard_kinds = list(set(sites[index].kind_name for index in indices))
+        hubbard_kinds = list({sites[index].kind_name for index in indices})
         hubbard_kinds.sort(reverse=False)
 
         ordered_sites = []
@@ -200,10 +198,9 @@ class HubbardUtils:
         index_map = {index: site.get_raw() for index, site in enumerate(sites) if site.kind_name in hubbard_kinds}
 
         while hubbard_kinds:
-
             hubbard_kind = hubbard_kinds.pop()
             hubbard_sites = [s for s in sites if s.kind_name == hubbard_kind]
-            remaining_sites = [s for s in sites if not s.kind_name == hubbard_kind]
+            remaining_sites = [s for s in sites if s.kind_name != hubbard_kind]
 
             ordered_sites.extend(hubbard_sites)
             sites = remaining_sites
@@ -212,7 +209,6 @@ class HubbardUtils:
         ordered_sites.extend(sites)
 
         for site in ordered_sites:
-
             if site.kind_name not in reordered.get_kind_names():
                 kind = structure.get_kind(site.kind_name)
                 reordered.append_kind(kind)
@@ -314,12 +310,12 @@ class HubbardUtils:
 
         return HubbardStructureData.from_structure(structure=supercell, hubbard=new_hubbard)
 
-    def get_interacting_pairs(self) -> Dict[str, List[str]]:
+    def get_interacting_pairs(self) -> dict[str, list[str]]:
         """Return tuple of kind name interaction pairs.
 
         :returns: dictionary of onsite kinds with a list of V kinds
         """
-        pairs_dict = dict()
+        pairs_dict = {}
         sites = self.hubbard_structure.sites
         parameters = self.hubbard_structure.hubbard.parameters
 
@@ -334,20 +330,19 @@ class HubbardUtils:
             onsite_name = sites[parameter.atom_index].kind_name
             neigh_name = sites[parameter.neighbour_index].kind_name
 
-            if onsite_name in pairs_dict and onsite_name != neigh_name:
-                if not neigh_name in pairs_dict[onsite_name]:
-                    pairs_dict[onsite_name].append(neigh_name)
+            if onsite_name in pairs_dict and onsite_name != neigh_name and neigh_name not in pairs_dict[onsite_name]:
+                pairs_dict[onsite_name].append(neigh_name)
 
         return pairs_dict
 
     def get_pairs_radius(
         self,
         onsite_index: int,
-        neighbours_names: List[str],
+        neighbours_names: list[str],
         number_of_neighbours: int,
         radius_max: float = 7.0,
         thr: float = 1.0e-2,
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
         """Return the minimum and maximum radius of the first neighbours of the onsite site.
 
         :param onsite_index: index in the structure of the onsite Hubbard atom
@@ -366,7 +361,7 @@ class HubbardUtils:
         distances = distances[sort]
 
         count = 0
-        for i in range(len(neigh_indices)):  # pylint: disable=consider-using-enumerate
+        for i in range(len(neigh_indices)):
             index = i
             if self.hubbard_structure.sites[neigh_indices[i]].kind_name in neighbours_names:
                 rmin = max(rmin, distances[i])
@@ -383,7 +378,7 @@ class HubbardUtils:
     def get_intersites_radius(
         self,
         nn_finder: str = 'crystal',
-        nn_inputs: Union[Dict, None] = None,
+        nn_inputs: Union[dict, None] = None,
         radius_max: float = 7.0,
         thr: float = 1.0e-2,
         **_,
@@ -421,7 +416,7 @@ class HubbardUtils:
             if nn_finder == 'voronoi':
                 nn_inputs = {'tol': 0.1, 'cutoff': radius_max}
 
-        voronoi = CrystalNN(**nn_inputs) if nn_finder == 'crystal' else VoronoiNN(**nn_inputs)  # pylint: disable=unexpected-keyword-arg
+        voronoi = CrystalNN(**nn_inputs) if nn_finder == 'crystal' else VoronoiNN(**nn_inputs)
 
         sites = self.hubbard_structure.sites
         name_to_specie = {kind.name: kind.symbol for kind in self.hubbard_structure.kinds}
@@ -453,10 +448,10 @@ class HubbardUtils:
     def get_intersites_list(
         self,
         nn_finder: str = 'crystal',
-        nn_inputs: Union[Dict, None] = None,
+        nn_inputs: Union[dict, None] = None,
         radius_max: float = 7.0,
         **_,
-    ) -> List[Tuple[int, int, Tuple[int, int, int]]]:
+    ) -> list[tuple[int, int, tuple[int, int, int]]]:
         """Return the list of intersites from nearest neighbour finders.
 
         It peforms a nearest neighbour analysis (via pymatgen modules) to find the first inersite
@@ -484,7 +479,7 @@ class HubbardUtils:
             if nn_finder == 'voronoi':
                 nn_inputs = {'tol': 0.1, 'cutoff': radius_max}
 
-        voronoi = CrystalNN(**nn_inputs) if nn_finder == 'crystal' else VoronoiNN(**nn_inputs)  # pylint: disable=unexpected-keyword-arg
+        voronoi = CrystalNN(**nn_inputs) if nn_finder == 'crystal' else VoronoiNN(**nn_inputs)
 
         sites = self.hubbard_structure.sites
         name_to_specie = {kind.name: kind.symbol for kind in self.hubbard_structure.kinds}
@@ -492,7 +487,7 @@ class HubbardUtils:
         pairs = self.get_interacting_pairs()
         neigh_list = []
 
-        for i, site in enumerate(sites):  # pylint: disable=too-many-nested-blocks
+        for i, site in enumerate(sites):
             if site.kind_name in pairs:
                 neigh_species = voronoi.get_cn_dict(pymat, i)  # e.g. {'O': 4, 'S': 2, ...}
                 neigh_list.append([i, i, (0, 0, 0)])
@@ -513,11 +508,13 @@ class HubbardUtils:
 
                             for index, image in zip(neigh_indices, images):
                                 if pymat[index].specie.name == specie:
-                                    neigh_list.append([
-                                        i,
-                                        int(index),
-                                        tuple(np.array(image, dtype=np.int64).tolist()),
-                                    ])
+                                    neigh_list.append(
+                                        [
+                                            i,
+                                            int(index),
+                                            tuple(np.array(image, dtype=np.int64).tolist()),
+                                        ]
+                                    )
                                     count += 1
 
                                 if count >= neigh_species[specie]:
@@ -530,7 +527,7 @@ class HubbardUtils:
     def get_max_number_of_neighbours(
         self,
         nn_finder: str = 'crystal',
-        nn_inputs: Union[Dict, None] = None,
+        nn_inputs: Union[dict, None] = None,
         radius_max: float = 7.0,
         **_,
     ) -> list:
@@ -561,14 +558,14 @@ class HubbardUtils:
             if nn_finder == 'voronoi':
                 nn_inputs = {'tol': 0.1, 'cutoff': radius_max}
 
-        voronoi = CrystalNN(**nn_inputs) if nn_finder == 'crystal' else VoronoiNN(**nn_inputs)  # pylint: disable=unexpected-keyword-arg
+        voronoi = CrystalNN(**nn_inputs) if nn_finder == 'crystal' else VoronoiNN(**nn_inputs)
 
         sites = self.hubbard_structure.sites
         pymat = self.hubbard_structure.get_pymatgen_structure()
         pairs = self.get_interacting_pairs()
         max_num_of_neighs = 0
 
-        for i, site in enumerate(sites):  # pylint: disable=too-many-nested-blocks
+        for i, site in enumerate(sites):
             if site.kind_name in pairs:
                 neigh_species = voronoi.get_cn_dict(pymat, i)  # e.g. {'O': 4, 'S': 2, ...}
                 max_num_of_neighs = max(max_num_of_neighs, np.sum(list(neigh_species.values())))
@@ -578,9 +575,9 @@ class HubbardUtils:
 
 def initialize_hubbard_parameters(
     structure: StructureData,
-    pairs: Dict[str, Tuple[str, float, float, Dict[str, str]]],
+    pairs: dict[str, tuple[str, float, float, dict[str, str]]],
     nn_finder: str = 'crystal',
-    nn_inputs: Union[Dict, None] = None,
+    nn_inputs: Union[dict, None] = None,
     fold: bool = True,
     standardize: bool = False,
     radius_max: float = 7.0,
@@ -624,7 +621,7 @@ def initialize_hubbard_parameters(
         if nn_finder == 'voronoi':
             nn_inputs = {'tol': 0.1, 'cutoff': radius_max}
 
-    voronoi = CrystalNN(**nn_inputs) if nn_finder == 'crystal' else VoronoiNN(**nn_inputs)  # pylint: disable=unexpected-keyword-arg
+    voronoi = CrystalNN(**nn_inputs) if nn_finder == 'crystal' else VoronoiNN(**nn_inputs)
 
     if not standardize and not fold:
         hubbard_structure = HubbardStructureData.from_structure(structure=structure)
@@ -648,7 +645,7 @@ def initialize_hubbard_parameters(
     name_to_specie = {kind.name: kind.symbol for kind in hubbard_structure.kinds}
     pymat = hubbard_structure.get_pymatgen_structure()
 
-    for i, site in enumerate(sites):  # pylint: disable=too-many-nested-blocks
+    for i, site in enumerate(sites):
         site_name = site.kind_name if use_kinds else name_to_specie[site.kind_name]
         if site_name in pairs:
             neigh_species = voronoi.get_cn_dict(pymat, i)  # e.g. {'O': 4, 'S': 2, ...}
@@ -672,7 +669,7 @@ def initialize_hubbard_parameters(
                                 hubbard_structure.append_hubbard_parameter(
                                     atom_index=i,
                                     atom_manifold=onsite[0],
-                                    neighbour_index=int(index), # otherwise the validator complains
+                                    neighbour_index=int(index),  # otherwise the validator complains
                                     neighbour_manifold=onsite[3][neigh_name],
                                     value=onsite[2],
                                     translation=np.array(image, dtype=np.int64).tolist(),
@@ -688,7 +685,7 @@ def initialize_hubbard_parameters(
     return hubbard_structure
 
 
-def get_supercell_atomic_index(index: int, num_sites: int, translation: List[Tuple[int, int, int]]) -> int:
+def get_supercell_atomic_index(index: int, num_sites: int, translation: list[tuple[int, int, int]]) -> int:
     """Return the atomic index in 3x3x3 supercell.
 
     :param index: atomic index in unit cell
@@ -700,7 +697,7 @@ def get_supercell_atomic_index(index: int, num_sites: int, translation: List[Tup
     return index + QE_TRANSLATIONS.index(translation) * num_sites
 
 
-def get_index_and_translation(index: int, num_sites: int) -> Tuple[int, List[Tuple[int, int, int]]]:
+def get_index_and_translation(index: int, num_sites: int) -> tuple[int, list[tuple[int, int, int]]]:
     """Return the atomic index in unitcell and the associated translation from a 3x3x3 QuantumESPRESSO supercell index.
 
     :param index: atomic index
@@ -713,7 +710,7 @@ def get_index_and_translation(index: int, num_sites: int) -> Tuple[int, List[Tup
     return (index - num_sites * number, QE_TRANSLATIONS[number])
 
 
-def get_hubbard_indices(hubbard: Hubbard) -> List[int]:
+def get_hubbard_indices(hubbard: Hubbard) -> list[int]:
     """Return the set list of Hubbard indices."""
     atom_indices = {parameters.atom_index for parameters in hubbard.parameters}
     neigh_indices = {parameters.neighbour_index for parameters in hubbard.parameters}
@@ -727,7 +724,7 @@ def is_intersite_hubbard(hubbard: Hubbard) -> bool:
     return any(couples)
 
 
-def max_number_of_neighbours(intersites_list: List[Tuple[int, int]]) -> int:
+def max_number_of_neighbours(intersites_list: list[tuple[int, int]]) -> int:
     """Return the maximum number of neighbours found.
 
     .. note:: it assumes only one onsite parameter is defined per atom index,

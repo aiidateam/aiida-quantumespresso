@@ -1,18 +1,18 @@
-# -*- coding: utf-8 -*-
 """Base `CalcJob` for implementations for pw.x and cp.x of Quantum ESPRESSO."""
+
 import abc
 import copy
 import numbers
 import os
-from types import MappingProxyType
 import warnings
+from types import MappingProxyType
 
+import numpy as np
 from aiida import orm
-from aiida.common import AttributeDict, datastructures, exceptions
+from aiida.common import datastructures, exceptions
 from aiida.common.lang import classproperty
 from aiida.common.warnings import AiidaDeprecationWarning
 from aiida.plugins import DataFactory
-import numpy
 from qe_tools.converters import get_parameters_from_cell
 
 from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
@@ -45,7 +45,7 @@ class BasePwCpInputGenerator(CalcJob):
     # given code should be specified in the '_ENABLED_PARALLELIZATION_FLAGS'
     # tuple of each calculation subclass.
     _PARALLELIZATION_FLAGS = MappingProxyType(
-        dict(
+        dict(  # noqa: C408
             nimage="The number of 'images', each corresponding to a different self-consistent or "
             'linear-response calculation.',
             npool="The number of 'pools', each taking care of a group of k-points.",
@@ -54,20 +54,20 @@ class BasePwCpInputGenerator(CalcJob):
             ndiag="The number of 'linear algebra groups' used when parallelizing the subspace "
             'diagonalization / iterative orthonormalization. By default, no parameter is '
             'passed to Quantum ESPRESSO, meaning it will use its default.',
-            nhw="The 'nmany' FFT bands parallelization option."
+            nhw="The 'nmany' FFT bands parallelization option.",
         )
     )
 
-    _ENABLED_PARALLELIZATION_FLAGS = tuple()
+    _ENABLED_PARALLELIZATION_FLAGS = ()
 
     _PARALLELIZATION_FLAG_ALIASES = MappingProxyType(
-        dict(
+        dict(  # noqa: C408
             nimage=('ni', 'nimages', 'npot'),
             npool=('nk', 'npools'),
             nband=('nb', 'nbgrp', 'nband_group'),
             ntg=('nt', 'ntask_groups', 'nyfft'),
             ndiag=('northo', 'nd', 'nproc_diag', 'nproc_ortho'),
-            nhw=('nh', 'n_howmany', 'howmany')
+            nhw=('nh', 'n_howmany', 'howmany'),
         )
     )
 
@@ -100,63 +100,91 @@ class BasePwCpInputGenerator(CalcJob):
 
         Note that this includes all potential filenames across all known versions of Quantum ESPRESSO
         """
-        # pylint: disable=no-self-argument
         return [cls._DATAFILE_XML_POST_6_2, cls._DATAFILE_XML_PRE_6_2]
 
     @abc.abstractmethod
     @classproperty
-    def xml_filepaths(cls):  # pylint: disable=no-self-argument
+    def xml_filepaths(cls):
         """Return a list of XML output filepaths relative to the remote working directory that should be retrieved."""
 
     @classmethod
     def define(cls, spec):
         """Define the process specification."""
-        # yapf: disable
         super().define(spec)
         spec.input('metadata.options.input_filename', valid_type=str, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=str, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)  # Override default withmpi=False
-        spec.input('structure', valid_type=orm.StructureData,
-            help='The input structure.')
-        spec.input('parameters', valid_type=orm.Dict,
-            help='The input parameters that are to be used to construct the input file.')
-        spec.input('settings', valid_type=orm.Dict, required=False,
-            help='Optional parameters to affect the way the calculation job and the parsing are performed.')
-        spec.input('parent_folder', valid_type=orm.RemoteData, required=False,
-            help='An optional working directory of a previously completed calculation to restart from.')
-        spec.input('vdw_table', valid_type=orm.SinglefileData, required=False,
-            help='Optional van der Waals table contained in a `SinglefileData`.')
-        spec.input_namespace('pseudos', valid_type=(LegacyUpfData, UpfData), dynamic=True, required=True,
-            help='A mapping of `UpfData` nodes onto the kind name to which they should apply.')
-        # yapf: enable
+        spec.input('structure', valid_type=orm.StructureData, help='The input structure.')
+        spec.input(
+            'parameters',
+            valid_type=orm.Dict,
+            help='The input parameters that are to be used to construct the input file.',
+        )
+        spec.input(
+            'settings',
+            valid_type=orm.Dict,
+            required=False,
+            help='Optional parameters to affect the way the calculation job and the parsing are performed.',
+        )
+        spec.input(
+            'parent_folder',
+            valid_type=orm.RemoteData,
+            required=False,
+            help='An optional working directory of a previously completed calculation to restart from.',
+        )
+        spec.input(
+            'vdw_table',
+            valid_type=orm.SinglefileData,
+            required=False,
+            help='Optional van der Waals table contained in a `SinglefileData`.',
+        )
+        spec.input_namespace(
+            'pseudos',
+            valid_type=(LegacyUpfData, UpfData),
+            dynamic=True,
+            required=True,
+            help='A mapping of `UpfData` nodes onto the kind name to which they should apply.',
+        )
+
         spec.input(
             'parallelization',
             valid_type=orm.Dict,
             required=False,
             help=(
-                'Parallelization options. The following flags are allowed:\n' + '\n'.join(
+                'Parallelization options. The following flags are allowed:\n'
+                + '\n'.join(
                     f'{flag_name:<7}: {cls._PARALLELIZATION_FLAGS[flag_name]}'
                     for flag_name in cls._ENABLED_PARALLELIZATION_FLAGS
                 )
             ),
-            validator=cls.validate_parallelization
+            validator=cls.validate_parallelization,
         )
         spec.inputs.validator = cls.validate_inputs
 
         spec.exit_code(
             302,
             'ERROR_OUTPUT_STDOUT_MISSING',
-            message='The retrieved folder did not contain the required stdout output file.'
+            message='The retrieved folder did not contain the required stdout output file.',
         )
-        spec.exit_code(310, 'ERROR_OUTPUT_STDOUT_READ', message='The stdout output file could not be read.')
-        spec.exit_code(311, 'ERROR_OUTPUT_STDOUT_PARSE', message='The stdout output file could not be parsed.')
+        spec.exit_code(
+            310,
+            'ERROR_OUTPUT_STDOUT_READ',
+            message='The stdout output file could not be read.',
+        )
+        spec.exit_code(
+            311,
+            'ERROR_OUTPUT_STDOUT_PARSE',
+            message='The stdout output file could not be parsed.',
+        )
         spec.exit_code(
             312,
             'ERROR_OUTPUT_STDOUT_INCOMPLETE',
-            message='The stdout output file was incomplete probably because the calculation got interrupted.'
+            message='The stdout output file was incomplete probably because the calculation got interrupted.',
         )
         spec.exit_code(
-            400, 'ERROR_OUT_OF_WALLTIME', message='The calculation stopped prematurely because it ran out of walltime.'
+            400,
+            'ERROR_OUT_OF_WALLTIME',
+            message='The calculation stopped prematurely because it ran out of walltime.',
         )
 
     @classmethod
@@ -187,15 +215,14 @@ class BasePwCpInputGenerator(CalcJob):
                 warnings.warn(
                     'The key `ADDITIONAL_RETRIEVE_LIST` in the settings input is deprecated and will be removed in '
                     'the future. Use the `CalcJob.metadata.options.additional_retrieve_list` input instead.',
-                    AiidaDeprecationWarning
+                    AiidaDeprecationWarning,
                 )
 
             # Validate the FIXED_COORDS setting
             fixed_coords = settings.get('FIXED_COORDS', None)
 
             if fixed_coords is not None:
-
-                fixed_coords = numpy.array(fixed_coords)
+                fixed_coords = np.array(fixed_coords)
 
                 if len(fixed_coords.shape) != 2 or fixed_coords.shape[1] != 3:
                     return 'The `fixed_coords` setting must be a list of lists with length 3.'
@@ -230,7 +257,6 @@ class BasePwCpInputGenerator(CalcJob):
         :param folder: an `aiida.common.folders.Folder` to temporarily write files on disk
         :return: `aiida.common.datastructures.CalcInfo` instance
         """
-        # pylint: disable=too-many-branches,too-many-statements
         if 'settings' in self.inputs:
             settings = _uppercase_dict(self.inputs.settings.get_dict(), dict_name='settings')
         else:
@@ -267,7 +293,7 @@ class BasePwCpInputGenerator(CalcJob):
         ]
         if self._use_kpoints:
             arguments.append(self.inputs.kpoints)
-        input_filecontent, local_copy_pseudo_list = self._generate_PWCPinputdata(*arguments)
+        input_filecontent, local_copy_pseudo_list = self._generate_pwcp_inputdata(*arguments)
         local_copy_list += local_copy_pseudo_list
 
         with folder.open(self.metadata.options.input_filename, 'w') as handle:
@@ -278,19 +304,27 @@ class BasePwCpInputGenerator(CalcJob):
         if symlink:
             if 'parent_folder' in self.inputs:
                 # I put the symlink to the old parent ./out folder
-                remote_symlink_list.append((
+                remote_symlink_list.append(
+                    (
+                        self.inputs.parent_folder.computer.uuid,
+                        os.path.join(
+                            self.inputs.parent_folder.get_remote_path(),
+                            self._restart_copy_from,
+                        ),
+                        self._restart_copy_to,
+                    )
+                )
+        elif 'parent_folder' in self.inputs:
+            remote_copy_list.append(
+                (
                     self.inputs.parent_folder.computer.uuid,
-                    os.path.join(self.inputs.parent_folder.get_remote_path(),
-                                 self._restart_copy_from), self._restart_copy_to
-                ))
-        else:
-            # copy remote output dir, if specified
-            if 'parent_folder' in self.inputs:
-                remote_copy_list.append((
-                    self.inputs.parent_folder.computer.uuid,
-                    os.path.join(self.inputs.parent_folder.get_remote_path(),
-                                 self._restart_copy_from), self._restart_copy_to
-                ))
+                    os.path.join(
+                        self.inputs.parent_folder.get_remote_path(),
+                        self._restart_copy_from,
+                    ),
+                    self._restart_copy_to,
+                )
+            )
 
         # Create an `.EXIT` file if `only_initialization` flag in `settings` is set to `True`
         if settings.pop('ONLY_INITIALIZATION', False):
@@ -340,7 +374,10 @@ class BasePwCpInputGenerator(CalcJob):
         # in the scheduler, _get_run_line, if cmdline_params is empty, it
         # simply uses < calcinfo.stin_name
         codeinfo = datastructures.CodeInfo()
-        codeinfo.cmdline_params = (list(cmdline_params) + ['-in', self.metadata.options.input_filename])
+        codeinfo.cmdline_params = list(cmdline_params) + [
+            '-in',
+            self.metadata.options.input_filename,
+        ]
         codeinfo.stdout_name = self.metadata.options.output_filename
         codeinfo.code_uuid = self.inputs.code.uuid
         calcinfo.codes_info = [codeinfo]
@@ -362,7 +399,12 @@ class BasePwCpInputGenerator(CalcJob):
         # if and only if the 'no_bands' key was not set to true in the settings
         no_bands = settings.pop('NO_BANDS', False)
         if no_bands is False:
-            xmlpaths = os.path.join(self._OUTPUT_SUBFOLDER, self._PREFIX + '.save', 'K*[0-9]', 'eigenval*.xml')
+            xmlpaths = os.path.join(
+                self._OUTPUT_SUBFOLDER,
+                self._PREFIX + '.save',
+                'K*[0-9]',
+                'eigenval*.xml',
+            )
             calcinfo.retrieve_temporary_list = [[xmlpaths, '.', 2]]
 
         # We might still have parser options in the settings dictionary: pop them.
@@ -392,10 +434,7 @@ class BasePwCpInputGenerator(CalcJob):
         for param in cmdline_params:
             cmdline_params_normalized.extend(param.split())
 
-        if 'parallelization' in self.inputs:
-            parallelization_dict = self.inputs.parallelization.get_dict()
-        else:
-            parallelization_dict = {}
+        parallelization_dict = self.inputs.parallelization.get_dict() if 'parallelization' in self.inputs else {}
         # To make the order of flags consistent and "nice", we use the
         # ordering from the flag definition.
         for flag_name in self._ENABLED_PARALLELIZATION_FLAGS:
@@ -404,42 +443,48 @@ class BasePwCpInputGenerator(CalcJob):
             if aliases_in_cmdline:
                 if len(aliases_in_cmdline) > 1:
                     raise exceptions.InputValidationError(
-                        f'Conflicting parallelization flags {aliases_in_cmdline} '
-                        "in settings['CMDLINE']"
+                        f'Conflicting parallelization flags {aliases_in_cmdline} ' "in settings['CMDLINE']"
                     )
                 if flag_name in parallelization_dict:
                     raise exceptions.InputValidationError(
                         f"Parallelization flag '{aliases_in_cmdline[0]}' specified in settings['CMDLINE'] conflicts "
                         f"with '{flag_name}' in the 'parallelization' input."
                     )
-                else:
-                    warnings.warn(
-                        "Specifying the parallelization flags through settings['CMDLINE'] is "
-                        "deprecated, use the 'parallelization' input instead.", AiidaDeprecationWarning
-                    )
-                    continue
+                warnings.warn(
+                    "Specifying the parallelization flags through settings['CMDLINE'] is "
+                    "deprecated, use the 'parallelization' input instead.",
+                    AiidaDeprecationWarning,
+                )
+                continue
             if flag_name in parallelization_dict:
                 flag_value = parallelization_dict[flag_name]
                 cmdline_params_res += [f'-{flag_name}', str(flag_value)]
         return cmdline_params_res
 
     @staticmethod
-    def _generate_PWCP_input_tail(*args, **kwargs):
+    def _generate_pwcp_input_tail(*args, **kwargs):
         """Generate tail of input file.
 
         By default, nothing specific is generated.
         This method can be implemented again in derived classes, and it will be called by _generate_PWCPinputdata
         """
-        # pylint: disable=unused-argument,invalid-name
         return ''
 
     @classmethod
-    def _generate_PWCPinputdata(cls, parameters, settings, pseudos, structure, kpoints=None, use_fractional=False):  # pylint: disable=invalid-name
+    def _generate_pwcp_inputdata(
+        cls,
+        parameters,
+        settings,
+        pseudos,
+        structure,
+        kpoints=None,
+        use_fractional=False,
+    ):
         """Create the input file in string format for a pw.x or cp.x calculation for the given inputs."""
-        # pylint: disable=too-many-branches,too-many-statements
         import re
 
         from aiida.common.utils import get_unique_filename
+
         local_copy_list_to_append = []
 
         # I put the first-level keys as uppercase (i.e., namelist and card names)
@@ -458,7 +503,7 @@ class BasePwCpInputGenerator(CalcJob):
             if namelist in input_params:
                 # The following lines is meant to avoid putting in input the
                 # parameters like celldm(*)
-                stripped_inparams = [re.sub('[(0-9)]', '', _) for _ in input_params[namelist].keys()]
+                stripped_inparams = [re.sub('[(0-9)]', '', _) for _ in input_params[namelist]]
                 if flag in stripped_inparams:
                     raise exceptions.InputValidationError(
                         f"You cannot specify explicitly the '{flag}' flag in the '{namelist}' namelist or card."
@@ -483,7 +528,7 @@ class BasePwCpInputGenerator(CalcJob):
         if input_params.get('SYSTEM', {}).get('ibrav', cls._DEFAULT_IBRAV) == 0:
             cell_parameters_card = 'CELL_PARAMETERS angstrom\n'
             for vector in structure.cell:
-                cell_parameters_card += ('{0:18.10f} {1:18.10f} {2:18.10f}\n'.format(*vector))  # pylint: disable=consider-using-f-string
+                cell_parameters_card += '{:18.10f} {:18.10f} {:18.10f}\n'.format(*vector)
         else:
             cell_parameters_card = ''
 
@@ -516,7 +561,11 @@ class BasePwCpInputGenerator(CalcJob):
                 filename = get_unique_filename(pseudo.filename, list(pseudo_filenames.values()))
                 pseudo_filenames[pseudo.pk] = filename
                 local_copy_list_to_append.append(
-                    (pseudo.uuid, pseudo.filename, os.path.join(cls._PSEUDO_SUBFOLDER, filename))
+                    (
+                        pseudo.uuid,
+                        pseudo.filename,
+                        os.path.join(cls._PSEUDO_SUBFOLDER, filename),
+                    )
                 )
 
             kind_names.append(kind.name)
@@ -541,12 +590,12 @@ class BasePwCpInputGenerator(CalcJob):
         coordinates = [site.position for site in structure.sites]
         if use_fractional:
             atomic_positions_card_header = 'ATOMIC_POSITIONS crystal\n'
-            coordinates = numpy.dot(coordinates, numpy.linalg.inv(numpy.array(structure.cell))).tolist()
+            coordinates = np.dot(coordinates, np.linalg.inv(np.array(structure.cell))).tolist()
         else:
             atomic_positions_card_header = 'ATOMIC_POSITIONS angstrom\n'
 
         atomic_positions_card_list = [
-            '{0} {1:18.10f} {2:18.10f} {3:18.10f}'.format(site.kind_name.ljust(6), *site_coords)  # pylint: disable=consider-using-f-string
+            '{} {:18.10f} {:18.10f} {:18.10f}'.format(site.kind_name.ljust(6), *site_coords)
             for site, site_coords in zip(structure.sites, coordinates)
         ]
 
@@ -554,7 +603,7 @@ class BasePwCpInputGenerator(CalcJob):
 
         if fixed_coords is not None:
             fixed_coords_strings = [
-                ' {:d} {:d} {:d}'.format(*row) for row in numpy.int32(numpy.invert(fixed_coords)).tolist()  # pylint: disable=consider-using-f-string
+                ' {:d} {:d} {:d}'.format(*row) for row in np.int32(np.invert(fixed_coords)).tolist()
             ]
             atomic_positions_card_list = [
                 atomic_pos_str + fixed_coords_str
@@ -566,7 +615,6 @@ class BasePwCpInputGenerator(CalcJob):
         # Optional ATOMIC_FORCES card
         atomic_forces = settings.pop('ATOMIC_FORCES', None)
         if atomic_forces is not None:
-
             # Checking that there are as many forces defined as there are sites in the structure
             if len(atomic_forces) != len(structure.sites):
                 raise exceptions.InputValidationError(
@@ -576,12 +624,11 @@ class BasePwCpInputGenerator(CalcJob):
 
             lines = ['ATOMIC_FORCES\n']
             for site, vector in zip(structure.sites, atomic_forces):
-
                 # Checking that all 3 dimensions are specified:
                 if len(vector) != 3:
                     raise exceptions.InputValidationError(f'Forces({vector}) for {site} has not length three')
 
-                lines.append('{0} {1:18.10f} {2:18.10f} {3:18.10f}\n'.format(site.kind_name.ljust(6), *vector))  # pylint: disable=consider-using-f-string
+                lines.append('{} {:18.10f} {:18.10f} {:18.10f}\n'.format(site.kind_name.ljust(6), *vector))
 
             # Append to atomic_positions_card so that this card will be printed directly after
             atomic_positions_card += ''.join(lines)
@@ -590,7 +637,6 @@ class BasePwCpInputGenerator(CalcJob):
         # Optional ATOMIC_VELOCITIES card
         atomic_velocities = settings.pop('ATOMIC_VELOCITIES', None)
         if atomic_velocities is not None:
-
             # Checking that there are as many velocities defined as there are sites in the structure
             if len(atomic_velocities) != len(structure.sites):
                 raise exceptions.InputValidationError(
@@ -600,12 +646,11 @@ class BasePwCpInputGenerator(CalcJob):
 
             lines = ['ATOMIC_VELOCITIES\n']
             for site, vector in zip(structure.sites, atomic_velocities):
-
                 # Checking that all 3 dimensions are specified:
                 if len(vector) != 3:
                     raise exceptions.InputValidationError(f'Velocities({vector}) for {site} has not length three')
 
-                lines.append('{0} {1:18.10f} {2:18.10f} {3:18.10f}\n'.format(site.kind_name.ljust(6), *vector))  # pylint: disable=consider-using-f-string
+                lines.append('{} {:18.10f} {:18.10f} {:18.10f}\n'.format(site.kind_name.ljust(6), *vector))
 
             # Append to atomic_positions_card so that this card will be printed directly after
             atomic_positions_card += ''.join(lines)
@@ -622,7 +667,7 @@ class BasePwCpInputGenerator(CalcJob):
                 structure_parameters = get_parameters_from_cell(
                     ibrav=ibrav,
                     cell=structure.base.attributes.get('cell'),
-                    tolerance=settings.pop('IBRAV_CELL_TOLERANCE', 1e-6)
+                    tolerance=settings.pop('IBRAV_CELL_TOLERANCE', 1e-6),
                 )
             except ValueError as exc:
                 raise QEInputValidationError(f'Cannot get structure parameters from cell: {exc}') from exc
@@ -642,10 +687,9 @@ class BasePwCpInputGenerator(CalcJob):
                     kpoints_list = kpoints.get_kpoints_mesh(print_list=True)
                     num_kpoints = len(kpoints_list)
                     has_mesh = False
-                    weights = [1.] * num_kpoints
+                    weights = [1.0] * num_kpoints
 
             except AttributeError as exception:
-
                 try:
                     kpoints_list = kpoints.get_kpoints()
                     num_kpoints = len(kpoints_list)
@@ -660,24 +704,22 @@ class BasePwCpInputGenerator(CalcJob):
                 try:
                     _, weights = kpoints.get_kpoints(also_weights=True)
                 except AttributeError:
-                    weights = [1.] * num_kpoints
+                    weights = [1.0] * num_kpoints
 
             gamma_only = settings.pop('GAMMA_ONLY', False)
 
             if gamma_only:
                 if has_mesh:
-                    if tuple(mesh) != (1, 1, 1) or tuple(offset) != (0., 0., 0.):
+                    if tuple(mesh) != (1, 1, 1) or tuple(offset) != (0.0, 0.0, 0.0):
                         raise exceptions.InputValidationError(
                             'If a gamma_only calculation is requested, the '
                             'kpoint mesh must be (1,1,1),offset=(0.,0.,0.)'
                         )
 
-                else:
-                    if (len(kpoints_list) != 1 or tuple(kpoints_list[0]) != tuple(0., 0., 0.)):
-                        raise exceptions.InputValidationError(
-                            'If a gamma_only calculation is requested, the '
-                            'kpoints coordinates must only be (0.,0.,0.)'
-                        )
+                elif len(kpoints_list) != 1 or tuple(kpoints_list[0]) != tuple(0.0, 0.0, 0.0):
+                    raise exceptions.InputValidationError(
+                        'If a gamma_only calculation is requested, the ' 'kpoints coordinates must only be (0.,0.,0.)'
+                    )
 
                 kpoints_type = 'gamma'
 
@@ -692,9 +734,9 @@ class BasePwCpInputGenerator(CalcJob):
             if kpoints_type == 'automatic':
                 if any(i not in [0, 0.5] for i in offset):
                     raise exceptions.InputValidationError('offset list must only be made of 0 or 0.5 floats')
-                the_offset = [0 if i == 0. else 1 for i in offset]
+                the_offset = [0 if i == 0.0 else 1 for i in offset]
                 the_6_integers = list(mesh) + the_offset
-                kpoints_card_list.append('{:d} {:d} {:d} {:d} {:d} {:d}\n'.format(*the_6_integers))  # pylint: disable=consider-using-f-string
+                kpoints_card_list.append('{:d} {:d} {:d} {:d} {:d} {:d}\n'.format(*the_6_integers))
 
             elif kpoints_type == 'gamma':
                 # nothing to be written in this case
@@ -710,16 +752,16 @@ class BasePwCpInputGenerator(CalcJob):
             del kpoints_card_list
 
         # HUBBARD CARD
-        hubbard_card = HubbardUtils(structure).get_hubbard_card() if isinstance(structure, HubbardStructureData) \
-            else None
+        hubbard_card = (
+            HubbardUtils(structure).get_hubbard_card() if isinstance(structure, HubbardStructureData) else None
+        )
 
         # =================== NAMELISTS AND CARDS ========================
         try:
             namelists_toprint = settings.pop('NAMELISTS')
             if not isinstance(namelists_toprint, list):
                 raise exceptions.InputValidationError(
-                    "The 'NAMELISTS' value, if specified in the settings input "
-                    'node, must be a list of strings'
+                    "The 'NAMELISTS' value, if specified in the settings input " 'node, must be a list of strings'
                 )
         except KeyError:  # list of namelists not specified; do automatic detection
             try:
@@ -759,7 +801,7 @@ class BasePwCpInputGenerator(CalcJob):
             inputfile += hubbard_card
 
         # Generate additional cards bases on input parameters and settings that are subclass specific
-        tail = cls._generate_PWCP_input_tail(input_params=input_params, settings=settings)
+        tail = cls._generate_pwcp_input_tail(input_params=input_params, settings=settings)
         if tail:
             inputfile += f'\n{tail}'
 
@@ -785,9 +827,9 @@ def _case_transform_dict(dictionary, dict_name, func_name, transform):
 
     if not isinstance(dictionary, dict):
         raise TypeError(f'{func_name} accepts only dictionaries as argument, got {type(dictionary)}')
-    new_dict = dict((transform(str(k)), v) for k, v in dictionary.items())
+    new_dict = {transform(str(k)): v for k, v in dictionary.items()}
     if len(new_dict) != len(dictionary):
-        num_items = Counter(transform(str(k)) for k in dictionary.keys())
+        num_items = Counter(transform(str(k)) for k in dictionary)
         double_keys = ','.join([k for k, v in num_items if v > 1])
         raise exceptions.InputValidationError(
             f'Inside the dictionary `{dict_name}` there are the following keys that are repeated more than once when '
@@ -804,12 +846,13 @@ def _pop_parser_options(calc_job_instance, settings_dict, ignore_errors=True):
     """
     from aiida.common import EntryPointError
     from aiida.plugins import ParserFactory
+
     try:
         parser_name = calc_job_instance.inputs['metadata']['options']['parser_name']
         parser_class = ParserFactory(parser_name)
         parser_opts_key = parser_class.get_parser_settings_key().upper()
         return settings_dict.pop(parser_opts_key, None)
-    except (KeyError, EntryPointError, AttributeError) as exc:
+    except (KeyError, EntryPointError, AttributeError):
         # KeyError: input 'metadata.options.parser_name' is not defined;
         # EntryPointError: there was an error loading the parser class form its entry point
         #   (this will probably cause errors elsewhere too);
@@ -817,4 +860,4 @@ def _pop_parser_options(calc_job_instance, settings_dict, ignore_errors=True):
         if ignore_errors:
             pass
         else:
-            raise exc
+            raise

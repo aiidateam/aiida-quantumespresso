@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Workchain to run a Quantum ESPRESSO matdyn.x calculation with automated error handling and restarts."""
+
 from aiida.common import AttributeDict
 from aiida.engine import BaseRestartWorkChain, while_
 from aiida.plugins import CalculationFactory
@@ -15,7 +15,7 @@ class MatdynBaseWorkChain(BaseRestartWorkChain):
     @classmethod
     def define(cls, spec):
         """Define the process specification."""
-        # yapf: disable
+
         super().define(spec)
         spec.expose_inputs(MatdynCalculation, namespace='matdyn')
         spec.expose_outputs(MatdynCalculation)
@@ -27,9 +27,11 @@ class MatdynBaseWorkChain(BaseRestartWorkChain):
             ),
             cls.results,
         )
-        spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
-            message='[deprecated] The calculation failed with an unrecoverable error.')
-        # yapf: enable
+        spec.exit_code(
+            300,
+            'ERROR_UNRECOVERABLE_FAILURE',
+            message='[deprecated] The calculation failed with an unrecoverable error.',
+        )
 
     def setup(self):
         """Call the `setup` of the `BaseRestartWorkChain` and then create the inputs dictionary in `self.ctx.inputs`.
@@ -49,6 +51,11 @@ class MatdynBaseWorkChain(BaseRestartWorkChain):
         :param calculation: the failed calculation node
         :param action: a string message with the action taken
         """
-        arguments = [calculation.process_label, calculation.pk, calculation.exit_status, calculation.exit_message]
+        arguments = [
+            calculation.process_label,
+            calculation.pk,
+            calculation.exit_status,
+            calculation.exit_message,
+        ]
         self.report('{}<{}> failed with exit status {}: {}'.format(*arguments))
         self.report(f'Action taken: {action}')

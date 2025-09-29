@@ -1,12 +1,15 @@
-# -*- coding: utf-8 -*-
 """`Parser` implementation for the `PhCalculation` calculation job class."""
+
 import os
 import re
 
 from aiida import orm
 
 from aiida_quantumespresso.calculations.ph import PhCalculation
-from aiida_quantumespresso.parsers.parse_raw.ph import parse_initialization_qpoints, parse_raw_ph_output
+from aiida_quantumespresso.parsers.parse_raw.ph import (
+    parse_initialization_qpoints,
+    parse_raw_ph_output,
+)
 from aiida_quantumespresso.utils.mapping import get_logging_container
 
 from .base import BaseParser
@@ -47,9 +50,10 @@ class PhParser(BaseParser):
             try:
                 parameters = parse_initialization_qpoints(stdout)
                 self.out('output_parameters', orm.Dict(parameters))
-                return
-            except RuntimeError as exc:
+            except RuntimeError:
                 logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
+            else:
+                return
 
         # If the scheduler detected OOW, simply keep that exit code by not returning anything more specific.
         if self.node.exit_status == PhCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME:
@@ -59,7 +63,7 @@ class PhParser(BaseParser):
         if base_exit_code:
             return self.exit(base_exit_code, logs)
 
-        filename_tensor = self.node.process_class._OUTPUT_XML_TENSOR_FILE_NAME
+        filename_tensor = self.node.process_class._OUTPUT_XML_TENSOR_FILE_NAME  # noqa: SLF001
 
         try:
             with self.retrieved.base.repository.open(filename_tensor, 'r') as handle:
@@ -69,15 +73,22 @@ class PhParser(BaseParser):
 
         # Look for dynamical matrices
         dynmat_files = []
-        dynmat_folder = self.node.process_class._FOLDER_DYNAMICAL_MATRIX
-        dynmat_prefix = os.path.split(self.node.process_class._OUTPUT_DYNAMICAL_MATRIX_PREFIX)[1]
+        dynmat_folder = self.node.process_class._FOLDER_DYNAMICAL_MATRIX  # noqa: SLF001
+        dynmat_prefix = os.path.split(self.node.process_class._OUTPUT_DYNAMICAL_MATRIX_PREFIX)[1]  # noqa: SLF001
 
-        natural_sort = lambda string: [int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', string)]
-        for filename in sorted(self.retrieved.base.repository.list_object_names(dynmat_folder), key=natural_sort):
+        def natural_sort(string):
+            return [int(c) if c.isdigit() else c.lower() for c in re.split('(\\d+)', string)]
+
+        for filename in sorted(
+            self.retrieved.base.repository.list_object_names(dynmat_folder),
+            key=natural_sort,
+        ):
             if not filename.startswith(dynmat_prefix) or filename.endswith('.freq'):
                 continue
 
-            dynmat_files.append(self.retrieved.base.repository.get_object_content(os.path.join(dynmat_folder, filename)))
+            dynmat_files.append(
+                self.retrieved.base.repository.get_object_content(os.path.join(dynmat_folder, filename))
+            )
 
         parsed_ph_data, logs = parse_raw_ph_output(stdout, logs, tensor_file, dynmat_files)
         parsed_data.update(parsed_ph_data)

@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
 """Tests for the `PwCalculation` class."""
 
+import pytest
 from aiida import orm
 from aiida.common import datastructures
 from aiida.common.exceptions import InputValidationError
 from aiida.common.warnings import AiidaDeprecationWarning
-import pytest
 
 from aiida_quantumespresso.calculations.helpers import QEInputValidationError
 from aiida_quantumespresso.utils.resources import get_default_options
@@ -21,7 +20,12 @@ def test_pw_default(fixture_sandbox, generate_calc_job, generate_inputs_pw, file
 
     cmdline_params = ['-in', 'aiida.in']
     local_copy_list = [(upf.uuid, upf.filename, './pseudo/Si.upf')]
-    retrieve_list = ['aiida.out', './out/aiida.save/data-file-schema.xml', './out/aiida.save/data-file.xml', 'CRASH']
+    retrieve_list = [
+        'aiida.out',
+        './out/aiida.save/data-file-schema.xml',
+        './out/aiida.save/data-file.xml',
+        'CRASH',
+    ]
     retrieve_temporary_list = [['./out/aiida.save/K*[0-9]/eigenval*.xml', '.', 2]]
 
     # Check the attributes of the returned `CalcInfo`
@@ -42,19 +46,31 @@ def test_pw_default(fixture_sandbox, generate_calc_job, generate_inputs_pw, file
 
 
 def test_pw_ibrav(
-    fixture_sandbox, generate_calc_job, fixture_code, generate_kpoints_mesh, generate_upf_data, file_regression
+    fixture_sandbox,
+    generate_calc_job,
+    fixture_code,
+    generate_kpoints_mesh,
+    generate_upf_data,
+    file_regression,
 ):
     """Test a `PwCalculation` where `ibrav` is explicitly specified."""
     entry_point_name = 'quantumespresso.pw'
 
-    parameters = {'CONTROL': {'calculation': 'scf'}, 'SYSTEM': {'ecutrho': 240.0, 'ecutwfc': 30.0, 'ibrav': 2}}
+    parameters = {
+        'CONTROL': {'calculation': 'scf'},
+        'SYSTEM': {'ecutrho': 240.0, 'ecutwfc': 30.0, 'ibrav': 2},
+    }
 
     # The structure needs to be rotated in the same way QE does it for ibrav=2.
     param = 5.43
-    cell = [[-param / 2., 0, param / 2.], [0, param / 2., param / 2.], [-param / 2., param / 2., 0]]
+    cell = [
+        [-param / 2.0, 0, param / 2.0],
+        [0, param / 2.0, param / 2.0],
+        [-param / 2.0, param / 2.0, 0],
+    ]
     structure = orm.StructureData(cell=cell)
-    structure.append_atom(position=(0., 0., 0.), symbols='Si', name='Si')
-    structure.append_atom(position=(param / 4., param / 4., param / 4.), symbols='Si', name='Si')
+    structure.append_atom(position=(0.0, 0.0, 0.0), symbols='Si', name='Si')
+    structure.append_atom(position=(param / 4.0, param / 4.0, param / 4.0), symbols='Si', name='Si')
 
     upf = generate_upf_data('Si')
     inputs = {
@@ -62,19 +78,20 @@ def test_pw_ibrav(
         'structure': structure,
         'kpoints': generate_kpoints_mesh(2),
         'parameters': orm.Dict(parameters),
-        'pseudos': {
-            'Si': upf
-        },
-        'metadata': {
-            'options': get_default_options()
-        }
+        'pseudos': {'Si': upf},
+        'metadata': {'options': get_default_options()},
     }
 
     calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
     cmdline_params = ['-in', 'aiida.in']
     local_copy_list = [(upf.uuid, upf.filename, './pseudo/Si.upf')]
-    retrieve_list = ['aiida.out', './out/aiida.save/data-file-schema.xml', './out/aiida.save/data-file.xml', 'CRASH']
+    retrieve_list = [
+        'aiida.out',
+        './out/aiida.save/data-file-schema.xml',
+        './out/aiida.save/data-file.xml',
+        'CRASH',
+    ]
     retrieve_temporary_list = [['./out/aiida.save/K*[0-9]/eigenval*.xml', '.', 2]]
 
     # Check the attributes of the returned `CalcInfo`
@@ -94,18 +111,31 @@ def test_pw_ibrav(
     file_regression.check(input_written, encoding='utf-8', extension='.in')
 
 
-def test_pw_wrong_ibrav(fixture_sandbox, generate_calc_job, fixture_code, generate_kpoints_mesh, generate_upf_data):
+def test_pw_wrong_ibrav(
+    fixture_sandbox,
+    generate_calc_job,
+    fixture_code,
+    generate_kpoints_mesh,
+    generate_upf_data,
+):
     """Test that a `PwCalculation` with an incorrect `ibrav` raises."""
     entry_point_name = 'quantumespresso.pw'
 
-    parameters = {'CONTROL': {'calculation': 'scf'}, 'SYSTEM': {'ecutrho': 240.0, 'ecutwfc': 30.0, 'ibrav': 2}}
+    parameters = {
+        'CONTROL': {'calculation': 'scf'},
+        'SYSTEM': {'ecutrho': 240.0, 'ecutwfc': 30.0, 'ibrav': 2},
+    }
 
     # Here we use the wrong order of unit cell vectors on purpose.
     param = 5.43
-    cell = [[0, param / 2., param / 2.], [-param / 2., 0, param / 2.], [-param / 2., param / 2., 0]]
+    cell = [
+        [0, param / 2.0, param / 2.0],
+        [-param / 2.0, 0, param / 2.0],
+        [-param / 2.0, param / 2.0, 0],
+    ]
     structure = orm.StructureData(cell=cell)
-    structure.append_atom(position=(0., 0., 0.), symbols='Si', name='Si')
-    structure.append_atom(position=(param / 4., param / 4., param / 4.), symbols='Si', name='Si')
+    structure.append_atom(position=(0.0, 0.0, 0.0), symbols='Si', name='Si')
+    structure.append_atom(position=(param / 4.0, param / 4.0, param / 4.0), symbols='Si', name='Si')
 
     upf = generate_upf_data('Si')
     inputs = {
@@ -113,31 +143,40 @@ def test_pw_wrong_ibrav(fixture_sandbox, generate_calc_job, fixture_code, genera
         'structure': structure,
         'kpoints': generate_kpoints_mesh(2),
         'parameters': orm.Dict(parameters),
-        'pseudos': {
-            'Si': upf
-        },
-        'metadata': {
-            'options': get_default_options()
-        }
+        'pseudos': {'Si': upf},
+        'metadata': {'options': get_default_options()},
     }
 
     with pytest.raises(QEInputValidationError):
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
 
-def test_pw_ibrav_tol(fixture_sandbox, generate_calc_job, fixture_code, generate_kpoints_mesh, generate_upf_data):
+def test_pw_ibrav_tol(
+    fixture_sandbox,
+    generate_calc_job,
+    fixture_code,
+    generate_kpoints_mesh,
+    generate_upf_data,
+):
     """Test that `IBRAV_TOLERANCE` controls the tolerance when checking cell consistency."""
     entry_point_name = 'quantumespresso.pw'
 
-    parameters = {'CONTROL': {'calculation': 'scf'}, 'SYSTEM': {'ecutrho': 240.0, 'ecutwfc': 30.0, 'ibrav': 2}}
+    parameters = {
+        'CONTROL': {'calculation': 'scf'},
+        'SYSTEM': {'ecutrho': 240.0, 'ecutwfc': 30.0, 'ibrav': 2},
+    }
 
     # The structure needs to be rotated in the same way QE does it for ibrav=2.
     param = 5.43
     eps = 0.1
-    cell = [[-param / 2., eps, param / 2.], [-eps, param / 2. + eps, param / 2.], [-param / 2., param / 2., 0]]
+    cell = [
+        [-param / 2.0, eps, param / 2.0],
+        [-eps, param / 2.0 + eps, param / 2.0],
+        [-param / 2.0, param / 2.0, 0],
+    ]
     structure = orm.StructureData(cell=cell)
-    structure.append_atom(position=(0., 0., 0.), symbols='Si', name='Si')
-    structure.append_atom(position=(param / 4., param / 4., param / 4.), symbols='Si', name='Si')
+    structure.append_atom(position=(0.0, 0.0, 0.0), symbols='Si', name='Si')
+    structure.append_atom(position=(param / 4.0, param / 4.0, param / 4.0), symbols='Si', name='Si')
 
     upf = generate_upf_data('Si')
     inputs = {
@@ -145,12 +184,8 @@ def test_pw_ibrav_tol(fixture_sandbox, generate_calc_job, fixture_code, generate
         'structure': structure,
         'kpoints': generate_kpoints_mesh(2),
         'parameters': orm.Dict(parameters),
-        'pseudos': {
-            'Si': upf
-        },
-        'metadata': {
-            'options': get_default_options()
-        },
+        'pseudos': {'Si': upf},
+        'metadata': {'options': get_default_options()},
     }
     # Without adjusting the tolerance, the check fails.
     with pytest.raises(QEInputValidationError):
@@ -169,7 +204,18 @@ def test_pw_parallelization_inputs(fixture_sandbox, generate_calc_job, generate_
     inputs['parallelization'] = orm.Dict({'npool': 4, 'nband': 2, 'ntg': 3, 'ndiag': 12})
     calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
-    cmdline_params = ['-npool', '4', '-nband', '2', '-ntg', '3', '-ndiag', '12', '-in', 'aiida.in']
+    cmdline_params = [
+        '-npool',
+        '4',
+        '-nband',
+        '2',
+        '-ntg',
+        '3',
+        '-ndiag',
+        '12',
+        '-in',
+        'aiida.in',
+    ]
 
     # Check that the command-line parameters are as expected.
     assert calc_info.codes_info[0].cmdline_params == cmdline_params
@@ -189,7 +235,10 @@ def test_pw_parallelization_deprecation(fixture_sandbox, generate_calc_job, gene
     inputs['settings'] = orm.Dict({'CMDLINE': extra_cmdline_args})
     with pytest.warns(AiidaDeprecationWarning) as captured_warnings:
         calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
-        assert calc_info.codes_info[0].cmdline_params == extra_cmdline_args + ['-in', 'aiida.in']
+        assert calc_info.codes_info[0].cmdline_params == extra_cmdline_args + [
+            '-in',
+            'aiida.in',
+        ]
     assert any('parallelization flags' in str(warning.message) for warning in captured_warnings.list)
 
 
@@ -259,7 +308,10 @@ def test_pw_validate_pseudos_missing(fixture_sandbox, generate_calc_job, generat
     inputs = generate_inputs_pw()
     inputs.pop('pseudos', None)
 
-    with pytest.raises(ValueError, match=r'required value was not provided for the `pseudos` namespace\.'):
+    with pytest.raises(
+        ValueError,
+        match=r'required value was not provided for the `pseudos` namespace\.',
+    ):
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
 
@@ -276,7 +328,12 @@ def test_pw_validate_pseudos_incorrect_kinds(fixture_sandbox, generate_calc_job,
 
 @pytest.mark.parametrize('calculation', ['scf', 'relax', 'vc-relax'])
 def test_pw_validate_inputs_restart_base(
-    fixture_sandbox, generate_calc_job, generate_inputs_pw, fixture_localhost, generate_remote_data, calculation
+    fixture_sandbox,
+    generate_calc_job,
+    generate_inputs_pw,
+    fixture_localhost,
+    generate_remote_data,
+    calculation,
 ):
     """Test the input validation of restart settings for the ``PwCalculation``."""
     remote_data = generate_remote_data(computer=fixture_localhost, remote_path='/path/to/remote')
@@ -311,7 +368,12 @@ def test_pw_validate_inputs_restart_base(
 
 @pytest.mark.parametrize('calculation', ['nscf', 'bands'])
 def test_pw_validate_inputs_restart_nscf(
-    fixture_sandbox, generate_calc_job, generate_inputs_pw, fixture_localhost, generate_remote_data, calculation
+    fixture_sandbox,
+    generate_calc_job,
+    generate_inputs_pw,
+    fixture_localhost,
+    generate_remote_data,
+    calculation,
 ):
     """Test the input validation of restart settings for the ``PwCalculation``."""
     remote_data = generate_remote_data(computer=fixture_localhost, remote_path='/path/to/remote')
@@ -350,14 +412,25 @@ def test_fixed_coords(fixture_sandbox, generate_calc_job, generate_inputs_pw, fi
     file_regression.check(input_written, encoding='utf-8', extension='.in')
 
 
-@pytest.mark.parametrize(['fixed_coords', 'error_message'], [
-    ([[True, True], [False, True]], 'The `fixed_coords` setting must be a list of lists with length 3.'),
-    ([[True, True, 1], [False, True, False]
-      ], 'All elements in the `fixed_coords` setting lists must be either `True` or `False`.'),
-    ([
-        [True, True, False],
-    ], 'Input structure has 2 sites, but fixed_coords has length 1'),
-])
+@pytest.mark.parametrize(
+    ('fixed_coords', 'error_message'),
+    [
+        (
+            [[True, True], [False, True]],
+            'The `fixed_coords` setting must be a list of lists with length 3.',
+        ),
+        (
+            [[True, True, 1], [False, True, False]],
+            'All elements in the `fixed_coords` setting lists must be either `True` or `False`.',
+        ),
+        (
+            [
+                [True, True, False],
+            ],
+            'Input structure has 2 sites, but fixed_coords has length 1',
+        ),
+    ],
+)
 def test_fixed_coords_validation(fixture_sandbox, generate_calc_job, generate_inputs_pw, fixed_coords, error_message):
     """Test the validation of the ``fixed_coords`` setting for the ``PwCalculation``."""
     entry_point_name = 'quantumespresso.pw'

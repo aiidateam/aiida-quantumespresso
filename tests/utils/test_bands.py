@@ -1,6 +1,6 @@
-# -*- coding: utf-8 -*-
 """Unit tests for the :py:mod:`~aiida_quantumespresso.utils.bands` module."""
-import numpy
+
+import numpy as np
 import pytest
 
 from aiida_quantumespresso.utils.bands import get_highest_occupied_band
@@ -21,14 +21,14 @@ class TestGetHighestOccupiedBand:
 
         # The `occupations` array is missing
         node = BandsData()
-        node.set_array('not_occupations', numpy.array([]))
+        node.set_array('not_occupations', np.array([]))
         node.store()
         with pytest.raises(ValueError):
             get_highest_occupied_band(node)
 
         # The `occupations` array has incorrect shape
         node = BandsData()
-        node.set_array('occupations', numpy.array([1., 1.]))
+        node.set_array('occupations', np.array([1.0, 1.0]))
         node.store()
         with pytest.raises(ValueError):
             get_highest_occupied_band(node)
@@ -41,7 +41,7 @@ class TestGetHighestOccupiedBand:
         threshold = 0.002
 
         bands = BandsData()
-        bands.set_array('occupations', numpy.array([[2., 2., 2., 2., 0.001, 0.0015]]))
+        bands.set_array('occupations', np.array([[2.0, 2.0, 2.0, 2.0, 0.001, 0.0015]]))
         bands.store()
 
         # All bands above the LUMO (occupation of 0.001) are below `2 * threshold`
@@ -49,7 +49,7 @@ class TestGetHighestOccupiedBand:
         assert homo == 4
 
         bands = BandsData()
-        bands.set_array('occupations', numpy.array([[2., 2., 2., 2., 0.001, 0.003]]))
+        bands.set_array('occupations', np.array([[2.0, 2.0, 2.0, 2.0, 0.001, 0.003]]))
         bands.store()
 
         # A band above the LUMO (occupation of 0.001) has an occupation above `2 * threshold`
@@ -61,12 +61,14 @@ class TestGetHighestOccupiedBand:
         """Test the function for a non spin-polarized calculation meaning there will be a single spin channel."""
         from aiida.orm import BandsData
 
-        occupations = numpy.array([
-            [2., 2., 2., 2., 0.],
-            [2., 2., 2., 2., 0.],
-            [2., 2., 2., 2., 0.],
-            [2., 2., 2., 2., 0.],
-        ])
+        occupations = np.array(
+            [
+                [2.0, 2.0, 2.0, 2.0, 0.0],
+                [2.0, 2.0, 2.0, 2.0, 0.0],
+                [2.0, 2.0, 2.0, 2.0, 0.0],
+                [2.0, 2.0, 2.0, 2.0, 0.0],
+            ]
+        )
 
         bands = BandsData()
         bands.set_array('occupations', occupations)
@@ -79,13 +81,18 @@ class TestGetHighestOccupiedBand:
         """Test the function for a spin-polarized calculation meaning there will be two spin channels."""
         from aiida.orm import BandsData
 
-        occupations = numpy.array([[
-            [2., 2., 2., 2., 0.],
-            [2., 2., 2., 2., 0.],
-        ], [
-            [2., 2., 2., 2., 0.],
-            [2., 2., 2., 2., 0.],
-        ]])
+        occupations = np.array(
+            [
+                [
+                    [2.0, 2.0, 2.0, 2.0, 0.0],
+                    [2.0, 2.0, 2.0, 2.0, 0.0],
+                ],
+                [
+                    [2.0, 2.0, 2.0, 2.0, 0.0],
+                    [2.0, 2.0, 2.0, 2.0, 0.0],
+                ],
+            ]
+        )
 
         bands = BandsData()
         bands.set_array('occupations', occupations)

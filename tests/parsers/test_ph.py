@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
 """Tests for the `PhParser`."""
-from aiida import orm
+
 import pytest
+from aiida import orm
 
 
 def generate_inputs():

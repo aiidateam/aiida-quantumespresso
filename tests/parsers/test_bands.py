@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the `BandsParser`."""
+
 from aiida import orm
 
 

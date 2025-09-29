@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
 """Command for setting up codes for Quantum ESPRESSO executables."""
 
+import click
 from aiida import orm
 from aiida.cmdline.params import arguments
 from aiida.cmdline.utils import echo
 from aiida.common.exceptions import NotExistent
-import click
 
 from aiida_quantumespresso.tools.setup import get_code_label, get_executable_paths
 
@@ -22,7 +21,11 @@ PREPEND_APPEND_TEMPLATE = (
     nargs=-1,
     required=True,
 )
-@click.option('--directory', '-d', help='Absolute path to directory where the executable(s) is (are) located.')
+@click.option(
+    '--directory',
+    '-d',
+    help='Absolute path to directory where the executable(s) is (are) located.',
+)
 @click.option(
     '--label-template',
     '-l',
@@ -31,7 +34,7 @@ PREPEND_APPEND_TEMPLATE = (
         'the executable label, e.g. `qe-{}` will create a `Code` with label '
         '`qe-pw` for `pw.x`. Defaults to the executable name without `.x` suffix., e.g. `pw` for `pw.x`.'
     ),
-    default=''
+    default='',
 )
 @click.option(
     '--prepend-text',
@@ -59,7 +62,15 @@ PREPEND_APPEND_TEMPLATE = (
     is_flag=True,
     help='Open an editor to edit the prepend and append text.',
 )
-def setup_codes_cmd(computer, executables, directory, label_template, prepend_text, append_text, interactive):
+def setup_codes_cmd(
+    computer,
+    executables,
+    directory,
+    label_template,
+    prepend_text,
+    append_text,
+    interactive,
+):
     """Set up codes for Quantum ESPRESSO executables.
 
     Specify the target `orm.Computer` and a single executable or a list of Quantum ESPRESSO executables to
@@ -103,7 +114,7 @@ def setup_codes_cmd(computer, executables, directory, label_template, prepend_te
             filepath_executable=exec_path,
             default_calc_job_plugin=f"quantumespresso.{executable.split('.')[0]}",
             prepend_text=prepend_text,
-            append_text=append_text
+            append_text=append_text,
         )
         code.store()
         echo.echo_success(

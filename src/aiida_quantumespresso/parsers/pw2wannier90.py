@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from aiida.orm import Dict
 
 from aiida_quantumespresso.utils.mapping import get_logging_container
@@ -25,7 +24,7 @@ class Pw2wannier90Parser(BaseParser):
 
         self.out('output_parameters', Dict(parsed_data))
 
-        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE'in logs.error:
+        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs.error:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE, logs)
 
         return self.exit(logs=logs)
