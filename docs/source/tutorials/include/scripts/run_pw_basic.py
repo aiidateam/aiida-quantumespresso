@@ -1,5 +1,4 @@
 #!/usr/bin/env runaiida
-# -*- coding: utf-8 -*-
 from aiida.engine import run
 from aiida.orm import Dict, KpointsData, StructureData, load_code, load_group
 from ase.build import bulk
@@ -19,20 +18,17 @@ builder.pseudos = pseudo_family.get_pseudos(structure=structure)
 
 # Request the recommended wavefunction and charge density cutoffs
 # for the given structure and energy units.
-cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(
-    structure=structure,
-    unit='Ry'
-)
+cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
 
-parameters = Dict({
-    'CONTROL': {
-        'calculation': 'scf'
-    },
-    'SYSTEM': {
-        'ecutwfc': cutoff_wfc,
-        'ecutrho': cutoff_rho,
+parameters = Dict(
+    {
+        'CONTROL': {'calculation': 'scf'},
+        'SYSTEM': {
+            'ecutwfc': cutoff_wfc,
+            'ecutrho': cutoff_rho,
+        },
     }
-})
+)
 builder.parameters = parameters
 
 # Generate a 2x2x2 Monkhorst-Pack mesh

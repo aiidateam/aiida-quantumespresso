@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=no-member,redefined-outer-name
 """Tests for the ``PhBaseWorkChain.get_builder_from_protocol`` method."""
-from aiida.engine import ProcessBuilder
+
 import pytest
+from aiida.engine import ProcessBuilder
 
 from aiida_quantumespresso.common.types import ElectronicType
 from aiida_quantumespresso.workflows.ph.base import PhBaseWorkChain
@@ -43,11 +42,10 @@ def test_electronic_type(fixture_code):
     code = fixture_code('quantumespresso.ph')
 
     with pytest.raises(NotImplementedError):
-        for electronic_type in [ElectronicType.AUTOMATIC]:
-            PhBaseWorkChain.get_builder_from_protocol(code, electronic_type=electronic_type)
+        PhBaseWorkChain.get_builder_from_protocol(code, electronic_type=ElectronicType.AUTOMATIC)
 
     builder = PhBaseWorkChain.get_builder_from_protocol(code, electronic_type=ElectronicType.INSULATOR)
-    parameters = builder.ph.parameters.get_dict()  # pylint: disable=no-member
+    parameters = builder.ph.parameters.get_dict()
 
     assert parameters['INPUTPH']['epsil']
 
@@ -58,7 +56,7 @@ def test_parameter_overrides(fixture_code):
 
     overrides = {'ph': {'parameters': {'INPUTHP': {'nmix_ph': 20}}}}
     builder = PhBaseWorkChain.get_builder_from_protocol(code, overrides=overrides)
-    assert builder.ph.parameters['INPUTHP']['nmix_ph'] == 20  # pylint: disable=no-member
+    assert builder.ph.parameters['INPUTHP']['nmix_ph'] == 20
 
 
 def test_settings_overrides(fixture_code):
@@ -67,7 +65,7 @@ def test_settings_overrides(fixture_code):
 
     overrides = {'ph': {'settings': {'cmdline': ['--kickass-mode']}}}
     builder = PhBaseWorkChain.get_builder_from_protocol(code, overrides=overrides)
-    assert builder.ph.settings['cmdline'] == ['--kickass-mode']  # pylint: disable=no-member
+    assert builder.ph.settings['cmdline'] == ['--kickass-mode']
 
 
 def test_metadata_overrides(fixture_code):
@@ -76,7 +74,7 @@ def test_metadata_overrides(fixture_code):
 
     overrides = {'ph': {'metadata': {'options': {'resources': {'num_machines': 1e90}, 'max_wallclock_seconds': 1}}}}
     builder = PhBaseWorkChain.get_builder_from_protocol(code, overrides=overrides)
-    metadata = builder.ph.metadata  # pylint: disable=no-member
+    metadata = builder.ph.metadata
 
     assert metadata['options']['resources']['num_machines'] == 1e90
     assert metadata['options']['max_wallclock_seconds'] == 1
@@ -91,7 +89,7 @@ def test_options(fixture_code):
 
     options = {'queue_name': queue_name, 'withmpi': withmpi}
     builder = PhBaseWorkChain.get_builder_from_protocol(code, options=options)
-    metadata = builder.ph.metadata  # pylint: disable=no-member
+    metadata = builder.ph.metadata
 
     assert metadata['options']['queue_name'] == queue_name
     assert metadata['options']['withmpi'] == withmpi
@@ -104,4 +102,4 @@ def test_parent_folder(fixture_code, generate_remote_data, fixture_localhost, fi
 
     builder = PhBaseWorkChain.get_builder_from_protocol(code, parent_folder=remote_folder)
 
-    assert builder.ph.parent_folder == remote_folder  # pylint: disable=no-member
+    assert builder.ph.parent_folder == remote_folder

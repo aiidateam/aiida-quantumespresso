@@ -1,11 +1,12 @@
-# -*- coding: utf-8 -*-
 """`Parser` implementation for the `PwCalculation` calculation job class."""
+
+import contextlib
 import traceback
 
+import numpy as np
 from aiida import orm
 from aiida.common import exceptions
 from aiida.engine import ExitCode
-import numpy
 
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.utils.mapping import get_logging_container
@@ -24,7 +25,6 @@ class PwParser(BaseParser):
         permanently in the repository. The second required node is a filepath under the key `retrieved_temporary_files`
         which should contain the temporary retrieved files.
         """
-        # pylint: disable=too-many-statements
         dir_with_bands = None
         crash_file = None
         self.exit_code_xml = None
@@ -47,7 +47,7 @@ class PwParser(BaseParser):
                 return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
 
         # We check if the `CRASH` file was retrieved. If so, we parse its output
-        crash_file_filename = self.node.process_class._CRASH_FILE
+        crash_file_filename = self.node.process_class._CRASH_FILE  # noqa: SLF001
         if crash_file_filename in self.retrieved.base.repository.list_object_names():
             crash_file = self.retrieved.base.repository.get_object_content(crash_file_filename)
 
@@ -117,23 +117,20 @@ class PwParser(BaseParser):
         self.emit_logs([logs_stdout, logs_xml], ignore=ignore)
 
         # If either the stdout or XML were incomplete or corrupt investigate the potential cause
-        if self.exit_code_stdout or self.exit_code_xml:
-
+        if (self.exit_code_stdout or self.exit_code_xml) and self.node.exit_status is not None:
             # First check whether the scheduler already reported an exit code.
-            if self.node.exit_status is not None:
+            # The following scheduler errors should correspond to cases where we can simply restart the calculation
+            # and have a chance that the calculation will succeed as the error can be transient.
+            recoverable_scheduler_error = self.node.exit_status in [
+                PwCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME.status,
+                PwCalculation.exit_codes.ERROR_SCHEDULER_NODE_FAILURE.status,
+            ]
 
-                # The following scheduler errors should correspond to cases where we can simply restart the calculation
-                # and have a chance that the calculation will succeed as the error can be transient.
-                recoverable_scheduler_error = self.node.exit_status in [
-                    PwCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME.status,
-                    PwCalculation.exit_codes.ERROR_SCHEDULER_NODE_FAILURE.status,
-                ]
+            if self.get_calculation_type() in ['relax', 'vc-relax'] and recoverable_scheduler_error:
+                return PwCalculation.exit_codes.ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY
 
-                if self.get_calculation_type() in ['relax', 'vc-relax'] and recoverable_scheduler_error:
-                    return PwCalculation.exit_codes.ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY
-
-                # Now it is unlikely we can provide a more specific exit code so we keep the scheduler one.
-                return ExitCode(self.node.exit_status, self.node.exit_message)
+            # Now it is unlikely we can provide a more specific exit code so we keep the scheduler one.
+            return ExitCode(self.node.exit_status, self.node.exit_message)
 
         # Check for specific known problems that can cause a pre-mature termination of the calculation
         exit_code = self.validate_premature_exit(logs_stdout)
@@ -166,16 +163,29 @@ class PwParser(BaseParser):
         if 'trajectory' not in parsed_stdout:
             return
 
-        if self.get_calculation_type() in [
-            'relax', 'vc-relax'
-        ] and ('stress' not in parsed_trajectory or
-               len(parsed_trajectory['stress']) == 1) and 'stress' in parsed_stdout['trajectory']:
+        if (
+            self.get_calculation_type() in ['relax', 'vc-relax']
+            and ('stress' not in parsed_trajectory or len(parsed_trajectory['stress']) == 1)
+            and 'stress' in parsed_stdout['trajectory']
+        ):
             parsed_trajectory['stress'] = parsed_stdout['trajectory']['stress']
 
         for key in [
-            'energy_accuracy', 'energy_one_electron', 'energy_threshold', 'energy_smearing', 'energy_one_center_paw',
-            'energy_vdw', 'fermi_energy', 'scf_accuracy', 'steps', 'total_force', 'stress', 'total_magnetization',
-            'absolute_magnetization', 'atomic_magnetic_moments', 'atomic_charges'
+            'energy_accuracy',
+            'energy_one_electron',
+            'energy_threshold',
+            'energy_smearing',
+            'energy_one_center_paw',
+            'energy_vdw',
+            'fermi_energy',
+            'scf_accuracy',
+            'steps',
+            'total_force',
+            'stress',
+            'total_magnetization',
+            'absolute_magnetization',
+            'atomic_magnetic_moments',
+            'atomic_charges',
         ]:
             if key not in parsed_trajectory and key in parsed_stdout['trajectory']:
                 parsed_trajectory[key] = parsed_stdout['trajectory'][key]
@@ -241,15 +251,17 @@ class PwParser(BaseParser):
             return
 
         if 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED' in logs['error']:
-            scf_must_converge = self.node.inputs.parameters.base.attributes.get('ELECTRONS',
-                                                                                {}).get('scf_must_converge', True)
-            electron_maxstep = self.node.inputs.parameters.base.attributes.get('ELECTRONS',
-                                                                               {}).get('electron_maxstep', 1)
+            scf_must_converge = self.node.inputs.parameters.base.attributes.get('ELECTRONS', {}).get(
+                'scf_must_converge', True
+            )
+            electron_maxstep = self.node.inputs.parameters.base.attributes.get('ELECTRONS', {}).get(
+                'electron_maxstep', 1
+            )
 
             if electron_maxstep == 0 or not scf_must_converge:
                 return self.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED
-            else:
-                return self.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED
+
+            return self.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED
 
     def validate_dynamics(self, trajectory, parameters, logs):
         """Analyze problems that are specific to `dynamics` type calculations: i.e. `md` and `vc-md`."""
@@ -277,7 +289,6 @@ class PwParser(BaseParser):
 
         # BFGS fails twice in a row in which case QE will print that convergence is reached while it is not necessarily
         if bfgs_history_failure:
-
             # If electronic convergence was not reached, this had to have been a `vc-relax` where final SCF failed
             if not electronic_convergence_reached:
                 return self.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE
@@ -298,7 +309,6 @@ class PwParser(BaseParser):
         # Here we have no direct warnings from Quantum ESPRESSO that suggest something went wrong, but we better make
         # sure and double check manually that all forces (and optionally stresses) are converged.
         if not self.is_ionically_converged(trajectory):
-
             if self.is_ionically_converged(trajectory, except_final_scf=True):
                 # The forces and stresses of ionic cycle are below threshold, but those of the final SCF exceed them.
                 # This is not necessarily a problem since the calculation starts from scratch after the variable cell
@@ -385,7 +395,7 @@ class PwParser(BaseParser):
         try:
             with self.retrieved.base.repository.open(xml_files[0]) as xml_file:
                 parsed_data, logs = parse_xml(xml_file, dir_with_bands)
-        except IOError:
+        except OSError:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_READ
         except XMLParseError:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_PARSE
@@ -417,7 +427,7 @@ class PwParser(BaseParser):
 
         try:
             stdout = self.retrieved.base.repository.get_object_content(filename_stdout)
-        except IOError:
+        except OSError:
             self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_READ
             return parsed_data, logs
 
@@ -486,30 +496,30 @@ class PwParser(BaseParser):
         fractional = False
 
         if 'atomic_positions_relax' in parsed_trajectory:
-            positions = numpy.array(parsed_trajectory.pop('atomic_positions_relax'))
+            positions = np.array(parsed_trajectory.pop('atomic_positions_relax'))
         elif 'atomic_fractionals_relax' in parsed_trajectory:
             fractional = True
-            positions = numpy.array(parsed_trajectory.pop('atomic_fractionals_relax'))
+            positions = np.array(parsed_trajectory.pop('atomic_fractionals_relax'))
         else:
             # The positions were never printed, the calculation did not change the structure
-            positions = numpy.array([[site.position for site in structure.sites]])
+            positions = np.array([[site.position for site in structure.sites]])
 
         try:
-            cells = numpy.array(parsed_trajectory.pop('lattice_vectors_relax'))
+            cells = np.array(parsed_trajectory.pop('lattice_vectors_relax'))
         except KeyError:
             # The cell is never printed, the calculation was at fixed cell
-            cells = numpy.array([structure.cell])
+            cells = np.array([structure.cell])
 
         # Ensure there are as many frames for cell as positions, even when the calculation was done at fixed cell
         if len(cells) == 1 and len(positions) > 1:
-            cells = numpy.array([cells[0]] * len(positions))
+            cells = np.array([cells[0]] * len(positions))
 
         if fractional:
             # convert positions to cartesian
-            positions = numpy.einsum('ijk, ikm -> ijm', positions, cells)
+            positions = np.einsum('ijk, ikm -> ijm', positions, cells)
 
         symbols = [str(site.kind_name) for site in structure.sites]
-        stepids = numpy.arange(len(positions))
+        stepids = np.arange(len(positions))
 
         trajectory = orm.TrajectoryData()
         trajectory.set_trajectory(
@@ -520,7 +530,7 @@ class PwParser(BaseParser):
         )
 
         for key, value in parsed_trajectory.items():
-            trajectory.set_array(key, numpy.array(value))
+            trajectory.set_array(key, np.array(value))
 
         return trajectory
 
@@ -574,12 +584,9 @@ class PwParser(BaseParser):
         if len(parsed_bands['occupations']) > 1:
             occupations = parsed_bands['occupations']
         else:
-            occupations = 2. * numpy.array(parsed_bands['occupations'][0])
+            occupations = 2.0 * np.array(parsed_bands['occupations'][0])
 
-        if len(parsed_bands['bands']) > 1:
-            bands_energies = parsed_bands['bands']
-        else:
-            bands_energies = parsed_bands['bands'][0]
+        bands_energies = parsed_bands['bands'] if len(parsed_bands['bands']) > 1 else parsed_bands['bands'][0]
 
         bands = orm.BandsData()
         bands.set_kpointsdata(parsed_kpoints)
@@ -618,7 +625,6 @@ class PwParser(BaseParser):
         ]
 
         for property_key, property_values in parsed_trajectory.items():
-
             if property_key not in include_keys or not property_values:
                 continue
 
@@ -635,14 +641,11 @@ class PwParser(BaseParser):
         symmetries_reduced = parameters.get_dict()['symmetries']  # rimetti lo zero
 
         for element in symmetries_reduced:
-
             symmetry = {}
 
             for keys in ['t_rev', 'equivalent_ions', 'fractional_translation']:
-                try:
+                with contextlib.suppress(KeyError):
                     symmetry[keys] = element[keys]
-                except KeyError:
-                    pass
 
             # expand the rest
             symmetry['name'] = possible_symmetries[element['symmetry_number']]['name']

@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the :mod:`data.hubbard_structure` module."""
-# pylint: disable=redefined-outer-name,protected-access
+
 import pytest
 
 from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
@@ -12,6 +11,7 @@ def generate_hubbard():
 
     def _generate_hubbard():
         from aiida_quantumespresso.common.hubbard import Hubbard
+
         return Hubbard.from_list([(0, '1s', 0, '1s', 5.0, (0, 0, 0), 'Ueff')])
 
     return _generate_hubbard
@@ -23,6 +23,7 @@ def generate_hubbard_structure(generate_structure):
 
     def _generate_hubbard_structure():
         from aiida_quantumespresso.common.hubbard import Hubbard
+
         structure = generate_structure('silicon-kinds')
         hp_list = [(0, '1s', 0, '1s', 5.0, (0, 0, 0), 'Ueff')]
         hubbard = Hubbard.from_list(hp_list)
@@ -59,9 +60,10 @@ def test_from_structure(generate_structure, generate_hubbard):
     assert len(hubbard_structure.kinds) == 2
 
 
-@pytest.mark.parametrize('structure_name', ('silicon', '2D-xy-arsenic'))
+@pytest.mark.parametrize('structure_name', ['silicon', '2D-xy-arsenic'])
 @pytest.mark.parametrize(
-    'parameters', (
+    'parameters',
+    [
         ((0, '1s', 0, '1s', 5.0, (0, 0, 0), 'Ueff'),),
         ((0, '1s', 1, '1s', 5.0, None, 'V'),),
         (
@@ -72,7 +74,7 @@ def test_from_structure(generate_structure, generate_hubbard):
             (0, '1s', 0, '1s', 5.0, (0, 0, 0), 'Ueff'),
             (0, '1s', 1, '1s', 5.0, (0, 1, 0), 'V'),
         ),
-    )
+    ],
 )
 def test_append_hubbard_parameters(data_regression, generate_structure, structure_name, parameters):
     """Test the `append_hubbard_parameters` method."""
@@ -85,11 +87,14 @@ def test_append_hubbard_parameters(data_regression, generate_structure, structur
     assert len(hubbard_structure.hubbard.parameters) == len(set(parameters))
 
 
-@pytest.mark.parametrize('structure_name', ('cobalt-prim', '1D-x-carbon'))
-@pytest.mark.parametrize('parameter', (
-    (0, '1s', 1, '1s', 5.0, None, 'V'),
-    (0, '1s', 1, '1s', 5.0, (0, 0, 0), 'V'),
-))
+@pytest.mark.parametrize('structure_name', ['cobalt-prim', '1D-x-carbon'])
+@pytest.mark.parametrize(
+    'parameter',
+    [
+        (0, '1s', 1, '1s', 5.0, None, 'V'),
+        (0, '1s', 1, '1s', 5.0, (0, 0, 0), 'V'),
+    ],
+)
 def test_append_hubbard_parameters_invalid_index(generate_structure, structure_name, parameter):
     """Test the `append_hubbard_parameters` method with invalid index."""
     hubbard_structure = HubbardStructureData.from_structure(generate_structure(structure_name))

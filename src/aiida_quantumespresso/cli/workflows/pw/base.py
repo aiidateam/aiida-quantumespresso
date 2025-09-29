@@ -1,12 +1,12 @@
-# -*- coding: utf-8 -*-
 """Command line scripts to launch a `PwBaseWorkChain` for testing and demonstration purposes."""
+
+import click
 from aiida.cmdline.params import options as options_core
 from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
-import click
 
-from .. import cmd_launch
 from ...utils import defaults, launch, options, validate
+from .. import cmd_launch
 
 
 @cmd_launch.command('pw-base')
@@ -28,8 +28,22 @@ from ...utils import defaults, launch, options, validate
 @options.DAEMON()
 @decorators.with_dbenv()
 def launch_workflow(
-    code, structure, pseudo_family, kpoints_distance, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file,
-    starting_magnetization, smearing, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi, daemon
+    code,
+    structure,
+    pseudo_family,
+    kpoints_distance,
+    ecutwfc,
+    ecutrho,
+    hubbard_u,
+    hubbard_v,
+    hubbard_file,
+    starting_magnetization,
+    smearing,
+    clean_workdir,
+    max_num_machines,
+    max_wallclock_seconds,
+    with_mpi,
+    daemon,
 ):
     """Run a `PwBaseWorkChain`."""
     from aiida.orm import Bool, Dict, Float

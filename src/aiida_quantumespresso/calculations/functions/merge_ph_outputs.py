@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """merge data from mulitple ph runs called by one PhBase."""
+
 from aiida import orm
 from aiida.engine import calcfunction
 
@@ -9,7 +9,7 @@ def merge_ph_outputs(**kwargs):
     """Calcfunction to merge outputs from multiple `ph.x` calculations with different q-points."""
 
     # Get the outputs, sorted by label
-    outputs = [el[1].get_dict() for el in sorted(list(kwargs.items()), key=lambda l: l[0])]
+    outputs = [v.get_dict() for _, v in sorted(kwargs.items())]
 
     merged = {}
 
@@ -18,7 +18,6 @@ def merge_ph_outputs(**kwargs):
     number_irreps = []
 
     for output in outputs:
-
         num_irreps_per_q = output.pop('number_of_irr_representations_for_each_q', [])
         number_of_qpoints += len(num_irreps_per_q)
         number_irreps.extend(num_irreps_per_q)

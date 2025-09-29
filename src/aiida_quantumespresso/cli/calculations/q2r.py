@@ -1,12 +1,12 @@
-# -*- coding: utf-8 -*-
 """Command line scripts to launch a `Q2rCalculation` for testing and demonstration purposes."""
+
+import click
 from aiida.cmdline.params import options as options_core
 from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
-import click
 
-from . import cmd_launch
 from ..utils import launch, options
+from . import cmd_launch
 
 
 @cmd_launch.command('q2r')
@@ -37,7 +37,7 @@ def launch_calculation(code, calculation, max_num_machines, max_wallclock_second
         'parent_folder': calculation.outputs.remote_folder,
         'metadata': {
             'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
-        }
+        },
     }
 
     launch.launch_process(CalculationFactory('quantumespresso.q2r'), daemon, **inputs)

@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=redefined-outer-name
 """Tests for the :class:`aiida_quantumespresso.calculations.namelists.NamelistsCalculation` class."""
+
 from pathlib import Path
 
+import pytest
 from aiida import orm
 from aiida.common import datastructures
-import pytest
 
 from aiida_quantumespresso.calculations.namelists import NamelistsCalculation
 
@@ -21,9 +20,7 @@ def generate_inputs(fixture_localhost, fixture_code, generate_remote_data):
             'code': fixture_code('quantumespresso.namelists'),
             'parameters': orm.Dict(dict=parameters or {}),
             'settings': orm.Dict(dict=settings or {}),
-            'metadata': {
-                'options': get_default_options()
-            }
+            'metadata': {'options': get_default_options()},
         }
 
         if filepath_parent_folder is not None:
@@ -76,6 +73,10 @@ def test_namelists_parent_folder(tmp_path, fixture_sandbox, generate_calc_job, g
     remote_path = Path(remote.get_remote_path())
 
     remote_copy_list = [
-        (remote.computer.uuid, str(remote_path / cls._default_parent_output_folder), cls._OUTPUT_SUBFOLDER),  # pylint: disable=protected-access
+        (
+            remote.computer.uuid,
+            str(remote_path / cls._default_parent_output_folder),
+            cls._OUTPUT_SUBFOLDER,
+        ),
     ]
     assert sorted(calc_info.remote_copy_list) == remote_copy_list

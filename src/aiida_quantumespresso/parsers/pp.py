@@ -1,12 +1,11 @@
-# -*- coding: utf-8 -*-
 """`Parser` implementation for the `PpCalculation` calculation job class."""
+
 import os
 import re
-from typing import Tuple
 
+import numpy as np
 from aiida import orm
 from aiida.common import AttributeDict
-import numpy as np
 
 from aiida_quantumespresso.calculations.pp import PpCalculation
 from aiida_quantumespresso.utils.mapping import get_logging_container
@@ -31,7 +30,7 @@ class PpParser(BaseParser):
         5: 'states/bohr^3',  # Simulated STM images from LDOS
         6: 'e/bohr^3',  # Spin density
         7: 'e/bohr^3',  # WFN contribution to charge density, assuming collinear spins
-        8: '1',  # Electron localization function, dimensionless
+        8: '1',  # Electron localization function, dimensionless
         9: 'e/bohr^3',  # Charge density minus superposition of atomic densities
         10: 'states/bohr^3',  # Integrated local density of states (ILDOS)
         11: 'Ry',  # Bare + Hartree potential
@@ -40,9 +39,8 @@ class PpParser(BaseParser):
         17: 'e/bohr^3',  # All electron charge density
         18: 'T',  # The exchange and correlation magnetic field in the noncollinear case
         19: '1',  # Reduced density gradient - see dx.doi.org/10.1021/ct100641a, Eq.1 - dimensionless
-        20:
-        'e/bohr^5',  # Product of the electron density and the second eigenvalue of the electron-density Hessian matrix, see: dx.doi.org/10.1021/ct100641a, with sign of second eigenvalue
-        21: 'e/bohr^3',  # All electron charge density, PAW case
+        20: 'e/bohr^5',  # Product of the electron density and the second eigenvalue of the electron-density Hessian matrix, see: dx.doi.org/10.1021/ct100641a, with sign of second eigenvalue
+        21: 'e/bohr^3',  # All electron charge density, PAW case
         22: 'Ry/bohr^3',  # Kinetic energy density
     }
 
@@ -61,7 +59,7 @@ class PpParser(BaseParser):
 
         self.out('output_parameters', orm.Dict(parsed_data))
 
-        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE'in logs.error:
+        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs.error:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE, logs)
 
         retrieve_temporary_list = self.node.base.attributes.get('retrieve_temporary_list', None)
@@ -77,8 +75,8 @@ class PpParser(BaseParser):
         # prefix is the entire filename, but in the case of multiple files, there will be pairs of two files where the
         # first has the format '{filename_prefix}.{some_random_suffix' and the second has the same name but with the
         # `filename_suffix` appended.
-        filename_prefix = PpCalculation._FILPLOT
-        filename_suffix = PpCalculation._FILEOUT
+        filename_prefix = PpCalculation._FILPLOT  # noqa: SLF001
+        filename_suffix = PpCalculation._FILEOUT  # noqa: SLF001
 
         # How to get the output filenames and how to open them, depends on whether they will have been retrieved in the
         # `retrieved` output node, or in the `retrieved_temporary_folder`. Instead of having a conditional with almost
@@ -88,7 +86,7 @@ class PpParser(BaseParser):
         # temporary folder.
         if retrieve_temporary_list:
             filenames = os.listdir(retrieved_temporary_folder)
-            file_opener = lambda filename: open(os.path.join(retrieved_temporary_folder, filename))
+            file_opener = lambda filename: open(os.path.join(retrieved_temporary_folder, filename))  # noqa: SIM115, E731
         else:
             filenames = self.retrieved.base.repository.list_object_names()
             file_opener = self.retrieved.base.repository.open
@@ -101,9 +99,9 @@ class PpParser(BaseParser):
 
         data_parsed = []
         parsers = {
-            0: self.parse_gnuplot1D,
-            1: self.parse_gnuplot1D,
-            2: self.parse_gnuplot2D,
+            0: self.parse_gnuplot1d,
+            1: self.parse_gnuplot1d,
+            2: self.parse_gnuplot2d,
             3: self.parse_gaussian,
             4: self.parse_gnuplot_polar,
         }
@@ -119,7 +117,6 @@ class PpParser(BaseParser):
 
             if matches:
                 return matches.group(1).rstrip('_')
-
 
         if self.node.base.attributes.get('parse_data_files'):
             for filename in filenames:
@@ -137,8 +134,10 @@ class PpParser(BaseParser):
                         key = get_key_from_filename(filename)
                         data_parsed.append((key, parsers[iflag](data_raw, self.units_dict[parsed_data['plot_num']])))
                         del data_raw
-                    except Exception as exception:  # pylint: disable=broad-except
-                        return self.exit_codes.ERROR_OUTPUT_DATAFILE_PARSE.format(filename=filename, exception=exception)
+                    except Exception as exception:
+                        return self.exit_codes.ERROR_OUTPUT_DATAFILE_PARSE.format(
+                            filename=filename, exception=exception
+                        )
 
             # If we don't have any parsed files, we exit. Note that this will not catch the case where there should be more
             # than one file, but the engine did not retrieve all of them. Since often we anyway don't know how many files
@@ -153,7 +152,7 @@ class PpParser(BaseParser):
 
         return self.exit(logs=logs)
 
-    def parse_stdout(self, stdout: str, logs: AttributeDict) -> Tuple[dict, AttributeDict]:
+    def parse_stdout(self, stdout: str, logs: AttributeDict) -> tuple[dict, AttributeDict]:
         """Parse the ``stdout`` content of a Quantum ESPRESSO ``pp.x`` calculation."""
         parsed_data = {}
 
@@ -180,7 +179,7 @@ class PpParser(BaseParser):
         return parsed_data, logs
 
     @staticmethod
-    def parse_gnuplot1D(data_file_str, data_units):
+    def parse_gnuplot1d(data_file_str, data_units):
         """Parse 1D GNUPlot formatted output.
 
         :param data_file_str: the data file read in as a single string
@@ -235,9 +234,7 @@ class PpParser(BaseParser):
         data_lines = data_file_str.splitlines()
         data_lines.pop(0)  # First line is a header
 
-        data = []
-        for line in data_lines:
-            data.append(float(line))
+        data = [float(line) for line in data_lines]
 
         arraydata = orm.ArrayData()
         arraydata.set_array('data', np.array(data))
@@ -246,7 +243,7 @@ class PpParser(BaseParser):
         return arraydata
 
     @staticmethod
-    def parse_gnuplot2D(data_file_str, data_units):
+    def parse_gnuplot2d(data_file_str, data_units):
         """Parse 2D GNUPlot formatted output.
 
         :param data_file_str: the data file read in as a single string
@@ -260,10 +257,10 @@ class PpParser(BaseParser):
             stripped = line.strip()
             if stripped == '':
                 continue
-            else:
-                split_line = stripped.split()
-                coords.append([float(split_line[0]), float(split_line[1])])
-                data.append(float(split_line[2]))
+
+            split_line = stripped.split()
+            coords.append([float(split_line[0]), float(split_line[1])])
+            data.append(float(split_line[2]))
 
         coords_units = 'bohr'
         arraydata = orm.ArrayData()
@@ -284,10 +281,9 @@ class PpParser(BaseParser):
 
         atoms_line = lines[2].split()
         natoms = int(atoms_line[0])  # The number of atoms listed in the file
-        origin = np.array(atoms_line[1:], dtype=float)
 
-        header = lines[:6 + natoms]  # Header of the file: comments, the voxel, and the number of atoms and datapoints
-        data_lines = lines[6 + natoms:]  # The actual data: atoms and volumetric data
+        header = lines[: 6 + natoms]  # Header of the file: comments, the voxel, and the number of atoms and datapoints
+        data_lines = lines[6 + natoms :]  # The actual data: atoms and volumetric data
 
         # Parse the declared dimensions of the volumetric data
         x_line = header[3].split()
@@ -298,16 +294,17 @@ class PpParser(BaseParser):
         zdim = int(z_line[0])
 
         # Get the vectors describing the basis voxel
-        voxel_array = np.array([[x_line[1], x_line[2], x_line[3]], [y_line[1], y_line[2], y_line[3]],
-                                [z_line[1], z_line[2], z_line[3]]],
-                               dtype=np.float64)
+        voxel_array = np.array(
+            [[x_line[1], x_line[2], x_line[3]], [y_line[1], y_line[2], y_line[3]], [z_line[1], z_line[2], z_line[3]]],
+            dtype=np.float64,
+        )
 
         # Get the volumetric data
         data_array = np.empty(xdim * ydim * zdim, dtype=float)
         cursor = 0
         for line in data_lines:
             ls = line.split()
-            data_array[cursor:cursor + len(ls)] = ls
+            data_array[cursor : cursor + len(ls)] = ls
             cursor += len(ls)
         data_array = data_array.reshape((xdim, ydim, zdim))
 

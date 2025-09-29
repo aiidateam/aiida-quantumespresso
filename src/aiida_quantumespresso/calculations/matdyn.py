@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
 """`CalcJob` implementation for the matdyn.x code of Quantum ESPRESSO."""
-from pathlib import Path
+
 import warnings
+from pathlib import Path
 
 from aiida import orm
 
@@ -31,7 +31,7 @@ class MatdynCalculation(NamelistsCalculation):
     @classmethod
     def define(cls, spec):
         """Define the process specification."""
-        # yapf: disable
+
         super().define(spec)
         spec.input('force_constants', valid_type=ForceConstantsData, required=True)
         spec.input('kpoints', valid_type=orm.KpointsData, help='Kpoints on which to calculate the phonon frequencies.')
@@ -43,23 +43,25 @@ class MatdynCalculation(NamelistsCalculation):
         spec.output('output_phonon_dos', valid_type=orm.XyData, required=False)
         spec.default_output_node = 'output_parameters'
 
-        spec.exit_code(330, 'ERROR_OUTPUT_FREQUENCIES',
-            message='The output frequencies file could not be read from the retrieved folder.')
-        spec.exit_code(334, 'ERROR_OUTPUT_DOS',
-            message='The output DOS file could not be read from the retrieved folder.')
-        spec.exit_code(410, 'ERROR_OUTPUT_KPOINTS_MISSING',
-            message='Number of kpoints not found in the output data')
-        spec.exit_code(411, 'ERROR_OUTPUT_KPOINTS_INCOMMENSURATE',
-            message='Number of kpoints in the inputs is not commensurate with those in the output')
-        # yapf: enable
+        spec.exit_code(
+            330,
+            'ERROR_OUTPUT_FREQUENCIES',
+            message='The output frequencies file could not be read from the retrieved folder.',
+        )
+        spec.exit_code(
+            334, 'ERROR_OUTPUT_DOS', message='The output DOS file could not be read from the retrieved folder.'
+        )
+        spec.exit_code(410, 'ERROR_OUTPUT_KPOINTS_MISSING', message='Number of kpoints not found in the output data')
+        spec.exit_code(
+            411,
+            'ERROR_OUTPUT_KPOINTS_INCOMMENSURATE',
+            message='Number of kpoints in the inputs is not commensurate with those in the output',
+        )
 
     @staticmethod
     def _validate_inputs(value, _):
         """Validate the top level namespace."""
-        if 'parameters' in value:
-            parameters = value['parameters'].get_dict()
-        else:
-            parameters = {'INPUT': {}}
+        parameters = value['parameters'].get_dict() if 'parameters' in value else {'INPUT': {}}
 
         if 'INPUT' not in parameters:
             return 'Required namelist `INPUT` not in `parameters` input.'
@@ -81,7 +83,7 @@ class MatdynCalculation(NamelistsCalculation):
                 'to `.true.` in input `parameters`'
             )
 
-    def generate_input_file(self, parameters):  # pylint: disable=arguments-differ
+    def generate_input_file(self, parameters):
         """Generate namelist input_file content given a dict of parameters.
 
         :param parameters: 'dict' containing the fortran namelists and parameters to be used.
@@ -109,7 +111,7 @@ class MatdynCalculation(NamelistsCalculation):
 
             kpoints_string = [f'{len(kpoints_list)}']
             for kpoint in kpoints_list:
-                kpoints_string.append('{:18.10f} {:18.10f} {:18.10f}'.format(*kpoint))  # pylint: disable=consider-using-f-string
+                kpoints_string.append('{:18.10f} {:18.10f} {:18.10f}'.format(*kpoint))
             append_string = '\n'.join(kpoints_string) + '\n'
 
         file_content = super().generate_input_file(parameters)
@@ -148,10 +150,8 @@ class MatdynCalculation(NamelistsCalculation):
         source = self.inputs.get('parent_folder', None)
 
         if source is not None and parameters['INPUT'].get('la2F', False):
-
-            # pylint: disable=protected-access
-            dirpath = Path(source.get_remote_path()) / PhCalculation._FOLDER_ELECTRON_PHONON
-            remote_list = [(source.computer.uuid, str(dirpath), PhCalculation._FOLDER_ELECTRON_PHONON)]
+            dirpath = Path(source.get_remote_path()) / PhCalculation._FOLDER_ELECTRON_PHONON  # noqa: SLF001
+            remote_list = [(source.computer.uuid, str(dirpath), PhCalculation._FOLDER_ELECTRON_PHONON)]  # noqa: SLF001
 
             # For el-ph calculations, _only_ the `elph_dir` should be copied from the parent folder
             if settings.pop('PARENT_FOLDER_SYMLINK', False):

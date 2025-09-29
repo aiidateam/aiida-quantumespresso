@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=invalid-name,redefined-outer-name, too-many-lines
 """Tests for the `NebParser`."""
-from aiida import orm
-from aiida.common import AttributeDict
+
 import numpy as np
 import pytest
+from aiida import orm
+from aiida.common import AttributeDict
 
 from aiida_quantumespresso.calculations.neb import NebCalculation
 
@@ -17,13 +16,9 @@ def generate_inputs(generate_trajectory):
         """Return only those inputs that the parser will expect to be there."""
         inputs = {
             'images': generate_trajectory(),
-            'parameters': orm.Dict({'PATH': {
-                'num_of_images': 3
-            }}),
-            'pw': {
-                'parameters': orm.Dict()
-            },
-            'settings': orm.Dict({'parser_options': parser_options})
+            'parameters': orm.Dict({'PATH': {'num_of_images': 3}}),
+            'pw': {'parameters': orm.Dict()},
+            'settings': orm.Dict({'parser_options': parser_options}),
         }
         return AttributeDict(inputs)
 
@@ -49,7 +44,7 @@ def build_num_regression_dictionary(arrays, array_names):
     # Convert all arrays to floats, to get around this change that disallows diffent-sized arrays for non-float types:
     # https://github.com/ESSS/pytest-regressions/pull/18
     for key, val in result.items():
-        if not (np.issubdtype(val.dtype, np.floating) or np.issubdtype(val.dtype, np.complexfloating)):  # pylint: disable=no-member
+        if not (np.issubdtype(val.dtype, np.floating) or np.issubdtype(val.dtype, np.complexfloating)):
             result[key] = val.astype(np.float64)
 
     return result
@@ -72,7 +67,8 @@ def test_neb_default(
     assert calcfunction.is_finished_ok, calcfunction.exit_message
     assert not [log for log in orm.Log.collection.get_logs_for(node) if log.levelname == 'ERROR']
     assert not [
-        log for log in orm.Log.collection.get_logs_for(node)
+        log
+        for log in orm.Log.collection.get_logs_for(node)
         if 'DEPRECATED: symmetry with ibrav=0, use correct ibrav instead' not in log.message
     ]
     assert 'output_parameters' in results
@@ -88,7 +84,7 @@ def test_neb_default(
     data_regression.check(data)
 
     data = build_num_regression_dictionary([results['output_mep']], [['mep', 'interpolated_mep']])
-    num_regression.check(data, default_tolerance=dict(atol=0, rtol=1e-18))
+    num_regression.check(data, default_tolerance={'atol': 0, 'rtol': 1e-18})
 
 
 def test_neb_all_iterations(
@@ -116,11 +112,12 @@ def test_neb_all_iterations(
     data_regression.check(data)
 
     data = build_num_regression_dictionary([results['iteration_array']], [results['iteration_array'].get_arraynames()])
-    num_regression.check(data, default_tolerance=dict(atol=0, rtol=1e-18))
+    num_regression.check(data, default_tolerance={'atol': 0, 'rtol': 1e-18})
 
 
 @pytest.mark.parametrize(
-    'filename, exception', [
+    ('filename', 'exception'),
+    [
         ('failed_computing_cholesky', 'ERROR_COMPUTING_CHOLESKY'),
         ('failed_too_many_bands_not_converged', 'ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED'),
         ('failed_s_matrix_not_positive_definite', 'ERROR_S_MATRIX_NOT_POSITIVE_DEFINITE'),
@@ -129,7 +126,7 @@ def test_neb_all_iterations(
         ('failed_eigenvectors_convergence', 'ERROR_EIGENVECTOR_CONVERGENCE'),
         ('failed_broyden_factorization', 'ERROR_BROYDEN_FACTORIZATION'),
         ('failed_dexx_negative', 'ERROR_DEXX_IS_NEGATIVE'),
-    ]
+    ],
 )
 def test_failed_diagonalization(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename, exception
@@ -153,10 +150,11 @@ def test_failed_diagonalization(
 
 
 @pytest.mark.parametrize(
-    'test_case, expected_exit_code', (
+    ('test_case', 'expected_exit_code'),
+    [
         ('default', None),
         ('failed_interrupted', NebCalculation.exit_codes.ERROR_NEB_INTERRUPTED_PARTIAL_TRAJECTORY),
-    )
+    ],
 )
 def test_failed_interrupted_scheduler(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, test_case, expected_exit_code

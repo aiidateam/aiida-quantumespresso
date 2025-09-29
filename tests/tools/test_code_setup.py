@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=redefined-outer-name
 """Test the setup tools."""
+
 from contextlib import nullcontext
 
 import pytest
@@ -23,15 +22,24 @@ def create_pw_executable(tmp_path):
 
 
 @pytest.mark.parametrize(
-    'prepend_text,error,error_message', (
+    ('prepend_text', 'error', 'error_message'),
+    [
         ('export PATH={path}:$PATH', None, ''),
         ('echo lala\nexport PATH={path}:$PATH', None, ''),
         ('# Comment\nexport PATH={path}:$PATH', None, ''),
         ('', FileNotFoundError, 'Error: the `which` command returned an empty output.'),
-        ('echo lala', FileNotFoundError, 'Error: the `which` command returned an empty output.'),
+        (
+            'echo lala',
+            FileNotFoundError,
+            'Error: the `which` command returned an empty output.',
+        ),
         ('expoat PATH={path}:$PATH', FileNotFoundError, 'expoat: command not found'),
-        ('export PATH={path}WRONG:$PATH', FileNotFoundError, 'Error: the `which` command returned an empty output.'),
-    )
+        (
+            'export PATH={path}WRONG:$PATH',
+            FileNotFoundError,
+            'Error: the `which` command returned an empty output.',
+        ),
+    ],
 )
 def test_get_executable_paths_prepend_text(create_pw_executable, fixture_localhost, prepend_text, error, error_message):
     """Tests the `get_executable_paths` function for various prepend texts."""
@@ -67,7 +75,9 @@ def test_get_executable_paths_directory(create_pw_executable, fixture_localhost)
     """Tests the `get_executable_paths` function when the correct path is specified."""
     pw_executable = create_pw_executable()
     result = get_executable_paths(
-        executable_tuple=(pw_executable.name,), computer=fixture_localhost, directory=pw_executable.parent.as_posix()
+        executable_tuple=(pw_executable.name,),
+        computer=fixture_localhost,
+        directory=pw_executable.parent.as_posix(),
     )
     assert result == {pw_executable.name: pw_executable.as_posix()}
 
@@ -78,7 +88,9 @@ def test_get_executable_paths_directory_nonexist(create_pw_executable, fixture_l
 
     with pytest.warns(UserWarning, match='Could not find executable'):
         get_executable_paths(
-            executable_tuple=(pw_executable.name,), computer=fixture_localhost, directory='/wrong/path/to/executable'
+            executable_tuple=(pw_executable.name,),
+            computer=fixture_localhost,
+            directory='/wrong/path/to/executable',
         )
 
 

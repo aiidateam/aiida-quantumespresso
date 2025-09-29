@@ -1,11 +1,11 @@
-# -*- coding: utf-8 -*-
 """Command line scripts to launch a `PhBaseWorkChain` for testing and demonstration purposes."""
+
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
 
-from .. import cmd_launch
 from ...utils import launch
 from ...utils import options as options_qe
+from .. import cmd_launch
 
 
 @cmd_launch.command('ph-base')
@@ -35,7 +35,7 @@ def launch_workflow(
             'parameters': Dict({'INPUTPH': {}}),
             'metadata': {
                 'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
-            }
+            },
         }
     }
 

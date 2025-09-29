@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for immigrating `PwCalculation`s."""
+
 import os
 
 import numpy as np
@@ -45,18 +45,13 @@ def test_create_builder(fixture_sandbox, fixture_code, generate_upf_data, genera
     assert pseudo_hash is not None
     assert builder['pseudos']['Si'].store().base.caching.get_hash() == pseudo_hash
     assert builder['parameters'].get_dict() == {
-        'CONTROL': {
-            'calculation': 'scf',
-            'verbosity': 'high'
-        },
+        'CONTROL': {'calculation': 'scf', 'verbosity': 'high'},
         'SYSTEM': {
             'ecutrho': 240.0,
             'ecutwfc': 30.0,
             'ibrav': 0,
         },
-        'ELECTRONS': {
-            'electron_maxstep': 60
-        }
+        'ELECTRONS': {'electron_maxstep': 60},
     }
     assert 'kpoints' in builder
     assert 'structure' in builder
@@ -106,20 +101,19 @@ def test_create_builder_nonzero_ibrav(
     assert pseudo_hash is not None
     assert builder['pseudos']['Si'].store().base.caching.get_hash() == pseudo_hash
     assert builder['parameters'].get_dict() == {
-        'CONTROL': {
-            'calculation': 'scf',
-            'verbosity': 'high'
-        },
+        'CONTROL': {'calculation': 'scf', 'verbosity': 'high'},
         'SYSTEM': {
             'ecutrho': 240.0,
             'ecutwfc': 30.0,
             'ibrav': 2,
-        }
+        },
     }
     assert 'kpoints' in builder
     assert 'structure' in builder
     param = 5.43
-    np.testing.assert_allclose([[-param / 2., 0, param / 2.], [0, param / 2., param / 2.], [-param / 2., param / 2., 0]
-                                ], builder.structure.base.attributes.get('cell'))
+    np.testing.assert_allclose(
+        [[-param / 2.0, 0, param / 2.0], [0, param / 2.0, param / 2.0], [-param / 2.0, param / 2.0, 0]],
+        builder.structure.base.attributes.get('cell'),
+    )
 
     generate_calc_job(fixture_sandbox, entry_point_name, builder)

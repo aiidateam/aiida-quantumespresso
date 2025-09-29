@@ -1,10 +1,10 @@
-# -*- coding: utf-8 -*-
 """Data plugin that represents a crystal structure with Hubbard parameters."""
-import json
-from typing import List, Tuple, Union
 
-from aiida.orm import StructureData
+import json
+from typing import Optional, Union
+
 import numpy as np
+from aiida.orm import StructureData
 from pymatgen.core import Lattice, PeriodicSite
 
 from aiida_quantumespresso.common.hubbard import Hubbard, HubbardParameters
@@ -19,9 +19,9 @@ class HubbardStructureData(StructureData):
 
     def __init__(
         self,
-        cell: List[List[float]],
-        sites: List[Tuple[str, str, Tuple[float, float, float]]],
-        pbc: Tuple[bool, bool, bool] = (True, True, True),
+        cell: list[list[float]],
+        sites: list[tuple[str, str, tuple[float, float, float]]],
+        pbc: tuple[bool, bool, bool] = (True, True, True),
         hubbard: Hubbard = None,
         **kwargs,
     ):
@@ -44,7 +44,7 @@ class HubbardStructureData(StructureData):
         return super().sites
 
     @sites.setter
-    def sites(self, values: List[Tuple[str, str, Tuple[float, float, float]]]):
+    def sites(self, values: list[tuple[str, str, tuple[float, float, float]]]):
         """Set the :attr:`~aiida.orm.nodes.data.structure.StructureData.sites`.
 
         :param values: list of sites, each as [symbol, name, (3,) shape list of positions]
@@ -59,7 +59,6 @@ class HubbardStructureData(StructureData):
 
         :returns: a :class:`~aiida_quantumespresso.common.hubbard.Hubbard` instance.
         """
-        # pylint: disable=not-context-manager
         with self.base.repository.open(self._hubbard_filename, mode='rb') as handle:
             return Hubbard.model_validate_json(json.load(handle))
 
@@ -96,7 +95,7 @@ class HubbardStructureData(StructureData):
         neighbour_index: int,
         neighbour_manifold: str,
         value: float,
-        translation: Tuple[int, int, int] = None,
+        translation: Optional[tuple[int, int, int]] = None,
         hubbard_type: str = 'Ueff',
     ):
         """Append a :class:`~aiida_quantumespresso.common.hubbard.HubbardParameters`.
@@ -116,8 +115,9 @@ class HubbardStructureData(StructureData):
                 species=site.species,
                 coords=site.coords,
                 lattice=Lattice(self.cell, pbc=self.pbc),
-                coords_are_cartesian=True
-            ) for site in self.get_pymatgen().sites
+                coords_are_cartesian=True,
+            )
+            for site in self.get_pymatgen().sites
         ]
 
         if any((atom_index > len(sites) - 1, neighbour_index > len(sites) - 1)):
@@ -129,7 +129,15 @@ class HubbardStructureData(StructureData):
             _, translation = sites[atom_index].distance_and_image(sites[neighbour_index])
             translation = np.array(translation, dtype=np.int64).tolist()
 
-        hp_tuple = (atom_index, atom_manifold, neighbour_index, neighbour_manifold, value, translation, hubbard_type)
+        hp_tuple = (
+            atom_index,
+            atom_manifold,
+            neighbour_index,
+            neighbour_manifold,
+            value,
+            translation,
+            hubbard_type,
+        )
         parameters = HubbardParameters.from_tuple(hp_tuple)
         hubbard = self.hubbard
 
@@ -194,7 +202,13 @@ class HubbardStructureData(StructureData):
                 _, translation = sites[atom_index].distance_and_image(sites[neighbour_index])
                 translation = np.array(translation, dtype=np.int64).tolist()
                 args = (
-                    atom_index, atom_manifold, neighbour_index, neighbour_manifold, value, translation, hubbard_type
+                    atom_index,
+                    atom_manifold,
+                    neighbour_index,
+                    neighbour_manifold,
+                    value,
+                    translation,
+                    hubbard_type,
                 )
                 self.append_hubbard_parameter(*args)
 
@@ -223,16 +237,24 @@ class HubbardStructureData(StructureData):
             raise ValueError('species or kind names not in structure')
 
         for atom_index in atom_indices:
-            args = (atom_index, atom_manifold, atom_index, atom_manifold, value, [0, 0, 0], hubbard_type)
+            args = (
+                atom_index,
+                atom_manifold,
+                atom_index,
+                atom_manifold,
+                value,
+                [0, 0, 0],
+                hubbard_type,
+            )
             self.append_hubbard_parameter(*args)
 
-    def _get_one_kind_index(self, kind_name: str) -> List[int]:
+    def _get_one_kind_index(self, kind_name: str) -> list[int]:
         """Return the first site index matching with `kind_name`."""
         for i, site in enumerate(self.sites):
             if site.kind_name == kind_name:
                 return [i]
 
-    def _get_symbol_indices(self, symbol: str) -> List[int]:
+    def _get_symbol_indices(self, symbol: str) -> list[int]:
         """Return one site index for each kind name matching symbol."""
         site_kindnames = self.get_site_kindnames()
         matching_kinds = [kind.name for kind in self.kinds if symbol in kind.symbol]

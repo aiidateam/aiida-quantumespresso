@@ -1,7 +1,6 @@
 #!/usr/bin/env runaiida
-# -*- coding: utf-8 -*-
 from aiida.engine import run
-from aiida.orm import Dict, KpointsData, StructureData, load_code, load_group
+from aiida.orm import Dict, KpointsData, load_code
 
 # Load the code configured for ``ph.x``. Make sure to replace this string
 # with the label of a ``Code`` that you configured in your profile.

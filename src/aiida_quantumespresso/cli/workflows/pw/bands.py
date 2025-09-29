@@ -1,14 +1,14 @@
-# -*- coding: utf-8 -*-
 """Command line scripts to launch a `PwBandsWorkChain` for testing and demonstration purposes."""
+
+import click
 from aiida.cmdline.params import options as options_core
 from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
-import click
 
 from aiida_quantumespresso.workflows.pw.bands import PwBandsWorkChain
 
-from .. import cmd_launch
 from ...utils import launch, options, validate
+from .. import cmd_launch
 
 
 @cmd_launch.command('pw-bands')
@@ -30,11 +30,24 @@ from ...utils import launch, options, validate
 @options.DAEMON()
 @decorators.with_dbenv()
 def launch_workflow(
-    code, structure, pseudo_family, kpoints_distance, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file,
-    starting_magnetization, smearing, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi, daemon
+    code,
+    structure,
+    pseudo_family,
+    kpoints_distance,
+    ecutwfc,
+    ecutrho,
+    hubbard_u,
+    hubbard_v,
+    hubbard_file,
+    starting_magnetization,
+    smearing,
+    clean_workdir,
+    max_num_machines,
+    max_wallclock_seconds,
+    with_mpi,
+    daemon,
 ):
     """Run a `PwBandsWorkChain`."""
-    # pylint: disable=too-many-statements
     from aiida_quantumespresso.utils.resources import get_default_options
 
     cutoff_wfc, cutoff_rho = pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
@@ -67,11 +80,9 @@ def launch_workflow(
         'kpoints_distance': kpoints_distance,
         'pw': {
             'parameters': parameters,
-            'metadata': {
-                'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)
-            },
-            'hubbard_file': hubbard_file
-        }
+            'metadata': {'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)},
+            'hubbard_file': hubbard_file,
+        },
     }
     overrides = {'relax': base_overrides, 'scf': base_overrides, 'bands': base_overrides}
     builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)

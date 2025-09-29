@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Code that was written to parse the legacy XML format of Quantum ESPRESSO, which was deprecated in version 6.4."""
+
 import string
 from xml.dom.minidom import Element
 
@@ -21,7 +21,7 @@ def read_xml_card(dom, cardname):
     try:
         root_node = [_ for _ in dom.childNodes if isinstance(_, Element) and _.nodeName == 'Root'][0]
         the_card = [_ for _ in root_node.childNodes if _.nodeName == cardname][0]
-        #the_card = dom.getElementsByTagName(cardname)[0]
+        # the_card = dom.getElementsByTagName(cardname)[0]
         return the_card
     except Exception as e:
         print(e)
@@ -30,7 +30,7 @@ def read_xml_card(dom, cardname):
 
 def parse_xml_child_integer(tagname, target_tags):
     try:
-        #a=target_tags.getElementsByTagName(tagname)[0]
+        # a=target_tags.getElementsByTagName(tagname)[0]
         a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
         b = a.childNodes[0]
         return int(b.data)
@@ -40,7 +40,7 @@ def parse_xml_child_integer(tagname, target_tags):
 
 def parse_xml_child_float(tagname, target_tags):
     try:
-        #a=target_tags.getElementsByTagName(tagname)[0]
+        # a=target_tags.getElementsByTagName(tagname)[0]
         a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
         b = a.childNodes[0]
         return float(b.data)
@@ -50,7 +50,7 @@ def parse_xml_child_float(tagname, target_tags):
 
 def parse_xml_child_bool(tagname, target_tags):
     try:
-        #a=target_tags.getElementsByTagName(tagname)[0]
+        # a=target_tags.getElementsByTagName(tagname)[0]
         a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
         b = a.childNodes[0]
         return str2bool(b.data)
@@ -75,7 +75,7 @@ def str2bool(string):
 
 def parse_xml_child_str(tagname, target_tags):
     try:
-        #a=target_tags.getElementsByTagName(tagname)[0]
+        # a=target_tags.getElementsByTagName(tagname)[0]
         a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
         b = a.childNodes[0]
         return str(b.data).rstrip().replace('\n', '')
@@ -85,7 +85,7 @@ def parse_xml_child_str(tagname, target_tags):
 
 def parse_xml_child_attribute_str(tagname, attributename, target_tags):
     try:
-        #a=target_tags.getElementsByTagName(tagname)[0]
+        # a=target_tags.getElementsByTagName(tagname)[0]
         a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
         value = str(a.getAttribute(attributename))
         return value.rstrip().replace('\n', '').lower()
@@ -97,7 +97,7 @@ def parse_xml_child_attribute_str(tagname, attributename, target_tags):
 
 def parse_xml_child_attribute_int(tagname, attributename, target_tags):
     try:
-        #a=target_tags.getElementsByTagName(tagname)[0]
+        # a=target_tags.getElementsByTagName(tagname)[0]
         a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
         value = int(a.getAttribute(attributename))
         return value
@@ -109,11 +109,11 @@ def parse_xml_child_attribute_int(tagname, attributename, target_tags):
 
 def convert_list_to_matrix(in_matrix, n_rows, n_columns):
     """converts a list into a list of lists (a matrix like) with n_rows and n_columns."""
-    return [in_matrix[j:j + n_rows] for j in range(0, n_rows * n_columns, n_rows)]
+    return [in_matrix[j : j + n_rows] for j in range(0, n_rows * n_columns, n_rows)]
 
 
 def xml_card_cell(parsed_data, dom):
-    #CARD CELL of QE output
+    # CARD CELL of QE output
 
     cardname = 'CELL'
     target_tags = read_xml_card(dom, cardname)
@@ -136,7 +136,7 @@ def xml_card_cell(parsed_data, dom):
 
     tagname = 'CELL_DIMENSIONS'
     try:
-        #a=target_tags.getElementsByTagName(tagname)[0]
+        # a=target_tags.getElementsByTagName(tagname)[0]
         a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
         b = a.childNodes[0]
         c = b.data.replace('\n', '').split()
@@ -149,7 +149,7 @@ def xml_card_cell(parsed_data, dom):
     lattice_vectors = []
     try:
         second_tagname = 'UNITS_FOR_DIRECT_LATTICE_VECTORS'
-        #a=target_tags.getElementsByTagName(tagname)[0]
+        # a=target_tags.getElementsByTagName(tagname)[0]
         a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
         b = a.getElementsByTagName('UNITS_FOR_DIRECT_LATTICE_VECTORS')[0]
         value = str(b.getAttribute('UNITS')).lower()
@@ -163,7 +163,7 @@ def xml_card_cell(parsed_data, dom):
 
         lattice_vectors = []
         for second_tagname in ['a1', 'a2', 'a3']:
-            #b = a.getElementsByTagName(second_tagname)[0]
+            # b = a.getElementsByTagName(second_tagname)[0]
             b = [_ for _ in a.childNodes if _.nodeName == second_tagname][0]
             c = b.childNodes[0]
             d = c.data.replace('\n', '').split()
@@ -180,7 +180,7 @@ def xml_card_cell(parsed_data, dom):
 
     tagname = 'RECIPROCAL_LATTICE_VECTORS'
     try:
-        #a = target_tags.getElementsByTagName(tagname)[0]
+        # a = target_tags.getElementsByTagName(tagname)[0]
         a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
 
         second_tagname = 'UNITS_FOR_RECIPROCAL_LATTICE_VECTORS'
@@ -233,7 +233,7 @@ def xml_card_ions(parsed_data, dom, lattice_vectors, volume):
             tagname = 'SPECIE.' + str(i + 1)
             parsed_data['species']['index'].append(i + 1)
 
-            #a=target_tags.getElementsByTagName(tagname)[0]
+            # a=target_tags.getElementsByTagName(tagname)[0]
             a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
 
             tagname2 = 'ATOM_TYPE'
@@ -251,9 +251,8 @@ def xml_card_ions(parsed_data, dom, lattice_vectors, volume):
     except:
         raise QEOutputParsingError(f'Error parsing tag SPECIE.# inside {target_tags.tagName}.')
 
-
-# TODO convert the units
-# if parsed_data['units_for_atomic_positions'] not in ['alat','bohr','angstrom']:
+    # TODO convert the units
+    # if parsed_data['units_for_atomic_positions'] not in ['alat','bohr','angstrom']:
 
     try:
         atomlist = []
@@ -264,7 +263,7 @@ def xml_card_ions(parsed_data, dom, lattice_vectors, volume):
             tagname = 'ATOM.' + str(i + 1)
             # USELESS AT THE MOMENT, I DON'T SAVE IT
             # parsed_data['atoms']['list_index']=i
-            #a=target_tags.getElementsByTagName(tagname)[0]
+            # a=target_tags.getElementsByTagName(tagname)[0]
             a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
             tagname2 = 'INDEX'
             b = int(a.getAttribute(tagname2))
@@ -333,8 +332,9 @@ def xml_card_header(parsed_data, dom):
 
     for tagname in ['FORMAT', 'CREATOR']:
         for attrname in ['NAME', 'VERSION']:
-            parsed_data[(tagname + '_' + attrname).lower()
-                        ] = parse_xml_child_attribute_str(tagname, attrname, target_tags)
+            parsed_data[(tagname + '_' + attrname).lower()] = parse_xml_child_attribute_str(
+                tagname, attrname, target_tags
+            )
 
     return parsed_data
 
@@ -375,7 +375,6 @@ def xml_card_planewaves(parsed_data, dom, calctype):
         parsed_data[tagname.lower()] = grid
 
     if calctype == 'cp':
-
         for tagname in ['MAX_NUMBER_OF_GK-VECTORS', 'GVECT_NUMBER', 'SMOOTH_GVECT_NUMBER']:
             parsed_data[tagname.lower()] = parse_xml_child_integer(tagname, target_tags)
 
@@ -396,8 +395,7 @@ def xml_card_symmetries(parsed_data, dom):
     target_tags = read_xml_card(dom, cardname)
 
     for tagname in ['NUMBER_OF_SYMMETRIES', 'NUMBER_OF_BRAVAIS_SYMMETRIES']:
-        parsed_data[tagname.replace('-','_').lower()] = \
-            parse_xml_child_integer(tagname,target_tags)
+        parsed_data[tagname.replace('-', '_').lower()] = parse_xml_child_integer(tagname, target_tags)
 
     for tagname in ['INVERSION_SYMMETRY', 'DO_NOT_USE_TIME_REVERSAL', 'TIME_REVERSAL_FLAG', 'NO_TIME_REV_OPERATIONS']:
         parsed_data[tagname.lower()] = parse_xml_child_bool(tagname, target_tags)
@@ -406,9 +404,9 @@ def xml_card_symmetries(parsed_data, dom):
     attrname = 'UNITS'
     metric = parse_xml_child_attribute_str(tagname, attrname, target_tags)
     if metric not in ['crystal']:
-        raise QEOutputParsingError(f'Error parsing attribute {attrname},' + \
-                                   f' tag {tagname} inside ' + \
-                                   f'{target_tags.tagName}, units unknown' )
+        raise QEOutputParsingError(
+            f'Error parsing attribute {attrname},' + f' tag {tagname} inside ' + f'{target_tags.tagName}, units unknown'
+        )
     parsed_data['symmetries' + units_suffix] = metric
 
     # parse the symmetry matrices
@@ -420,7 +418,7 @@ def xml_card_symmetries(parsed_data, dom):
             i += 1
             current_sym = {}
             tagname = 'SYMM.' + str(i)
-            #a=target_tags.getElementsByTagName(tagname)[0]
+            # a=target_tags.getElementsByTagName(tagname)[0]
             a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
             tagname2 = 'INFO'
             b = a.getElementsByTagName(tagname2)[0]
@@ -463,8 +461,7 @@ def xml_card_exchangecorrelation(parsed_data, dom):
     target_tags = read_xml_card(dom, cardname)
 
     tagname = 'DFT'
-    parsed_data[(tagname+'_exchange_correlation').lower()] = \
-        parse_xml_child_str(tagname,target_tags)
+    parsed_data[(tagname + '_exchange_correlation').lower()] = parse_xml_child_str(tagname, target_tags)
 
     tagname = 'LDA_PLUS_U_CALCULATION'
     try:
@@ -475,27 +472,25 @@ def xml_card_exchangecorrelation(parsed_data, dom):
     if parsed_data[tagname.lower()]:  # if it is a plus U calculation, I expect more infos
         tagname = 'HUBBARD_L'
         try:
-            #a = target_tags.getElementsByTagName(tagname)[0]
+            # a = target_tags.getElementsByTagName(tagname)[0]
             a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
             b = a.childNodes[0]
             c = b.data.replace('\n', '').split()
             value = [int(i) for i in c]
             parsed_data[tagname.lower()] = value
         except Exception:
-            raise QEOutputParsingError('Error parsing tag '+\
-                                       f'{tagname} inside {target_tags.tagName}.' )
+            raise QEOutputParsingError('Error parsing tag ' + f'{tagname} inside {target_tags.tagName}.')
 
         for tagname in ['HUBBARD_U', 'HUBBARD_ALPHA', 'HUBBARD_BETA', 'HUBBARD_J0']:
             try:
-                #a = target_tags.getElementsByTagName(tagname)[0]
+                # a = target_tags.getElementsByTagName(tagname)[0]
                 a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
                 b = a.childNodes[0]
                 c = b.data.replace('\n', ' ').split()  # note the need of a white space!
                 value = [float(i) * CONSTANTS.ry_to_ev for i in c]
                 parsed_data[tagname.lower()] = value
             except Exception:
-                raise QEOutputParsingError('Error parsing tag '+\
-                                           f'{tagname} inside {target_tags.tagName}.')
+                raise QEOutputParsingError('Error parsing tag ' + f'{tagname} inside {target_tags.tagName}.')
 
         tagname = 'LDA_PLUS_U_KIND'
         try:
@@ -511,7 +506,7 @@ def xml_card_exchangecorrelation(parsed_data, dom):
 
         tagname = 'HUBBARD_J'
         try:
-            #a=target_tags.getElementsByTagName(tagname)[0]
+            # a=target_tags.getElementsByTagName(tagname)[0]
             a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
             b = a.childNodes[0]
             c = b.data.replace('\n', '').split()

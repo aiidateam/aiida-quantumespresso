@@ -1,12 +1,12 @@
-# -*- coding: utf-8 -*-
 """Command line scripts to launch a `Q2rBaseWorkChain` for testing and demonstration purposes."""
+
+import click
 from aiida.cmdline.params import options, types
 from aiida.cmdline.utils import decorators
-import click
 
-from .. import cmd_launch
 from ...utils import launch
 from ...utils import options as options_qe
+from .. import cmd_launch
 
 
 @cmd_launch.command('q2r-base')
@@ -37,7 +37,7 @@ def launch_workflow(code, calculation, clean_workdir, max_num_machines, max_wall
             'parent_folder': calculation.outputs.remote_folder,
             'metadata': {
                 'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
-            }
+            },
         }
     }
 

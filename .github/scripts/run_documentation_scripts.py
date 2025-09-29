@@ -1,11 +1,12 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """Run scripts from the documentation to verify they run without exceptions."""
+# ruff: noqa
+
 import pathlib
 import subprocess
 
-from aiida.cmdline.utils.decorators import with_dbenv
 import click
+from aiida.cmdline.utils.decorators import with_dbenv
 
 FILEPATH_DOCS = pathlib.Path(__file__).parent.parent.parent / 'docs' / 'source'
 
@@ -19,11 +20,12 @@ FILEPATH_SCRIPTS = (
 def get_pw_calculation_pk():
     """Return the pk of the first ``PwCalculation`` that is found."""
     from aiida.orm import CalcJobNode, QueryBuilder
-    return QueryBuilder().append(
-        CalcJobNode, filters={
-            'process_type': 'aiida.calculations:quantumespresso.pw'
-        }, project='id'
-    ).first(flat=True)
+
+    return (
+        QueryBuilder()
+        .append(CalcJobNode, filters={'process_type': 'aiida.calculations:quantumespresso.pw'}, project='id')
+        .first(flat=True)
+    )
 
 
 @with_dbenv()
@@ -36,7 +38,6 @@ def main():
     }
 
     for filepath in FILEPATH_SCRIPTS:
-
         filepath_content = filepath.read_text()
 
         for key, function in placeholder_replacement.items():

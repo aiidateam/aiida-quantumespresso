@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the ``calculation launch projwfc`` command."""
+
 from aiida_quantumespresso.cli.calculations.projwfc import launch_calculation
 
 

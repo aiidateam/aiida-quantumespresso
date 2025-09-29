@@ -1,12 +1,12 @@
-# -*- coding: utf-8 -*-
 """Command line scripts to launch a `NebCalculation` for testing and demonstration purposes."""
+
+import click
 from aiida.cmdline.params import options as options_core
 from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
-import click
 
-from . import cmd_launch
 from ..utils import launch, options, validate
+from . import cmd_launch
 
 
 @cmd_launch.command('neb')
@@ -47,8 +47,21 @@ from ..utils import launch, options, validate
 @options_core.DRY_RUN()
 @decorators.with_dbenv()
 def launch_calculation(
-    code, structures, num_images, num_steps, pseudo_family, kpoints_mesh, ecutwfc, ecutrho, smearing, max_num_machines,
-    max_wallclock_seconds, with_mpi, daemon, parent_folder, dry_run
+    code,
+    structures,
+    num_images,
+    num_steps,
+    pseudo_family,
+    kpoints_mesh,
+    ecutwfc,
+    ecutrho,
+    smearing,
+    max_num_machines,
+    max_wallclock_seconds,
+    with_mpi,
+    daemon,
+    parent_folder,
+    dry_run,
 ):
     """Run a NebCalculation.
 
@@ -65,10 +78,7 @@ def launch_calculation(
         'CONTROL': {
             'calculation': 'relax',
         },
-        'SYSTEM': {
-            'ecutwfc': ecutwfc or cutoff_wfc,
-            'ecutrho': ecutrho or cutoff_rho
-        }
+        'SYSTEM': {'ecutwfc': ecutwfc or cutoff_wfc, 'ecutrho': ecutrho or cutoff_rho},
     }
 
     neb_parameters = {
@@ -97,7 +107,7 @@ def launch_calculation(
         'parameters': Dict(neb_parameters),
         'metadata': {
             'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
-        }
+        },
     }
 
     if parent_folder:

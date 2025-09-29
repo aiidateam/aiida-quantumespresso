@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
 """`Parser` implementation for the `Pw2gwCalculation` calculation job class."""
+
 import io
 
-from aiida.orm import ArrayData, Dict
 import numpy as np
+from aiida.orm import ArrayData, Dict
 
 from aiida_quantumespresso.utils.mapping import get_logging_container
 
@@ -30,7 +30,7 @@ class Pw2gwParser(BaseParser):
 
         self.out('output_parameters', Dict(dict=parsed_data))
 
-        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE'in logs.error:
+        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs.error:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE, logs)
 
         self.exit_code_eps = None
@@ -48,14 +48,14 @@ class Pw2gwParser(BaseParser):
         retrieved = self.retrieved
         retrieved_names = retrieved.base.repository.list_object_names()
 
-        files = self.node.process_class._internal_retrieve_list
+        files = self.node.process_class._internal_retrieve_list  # noqa: SLF001
         if any(_ not in retrieved_names for _ in files):
             self.exit_code_eps = self.exit_codes.ERROR_OUTPUT_FILES
             return
 
         energy = None
         eps = ArrayData()
-        for name in self.node.process_class._internal_retrieve_list:
+        for name in self.node.process_class._internal_retrieve_list:  # noqa: SLF001
             content = retrieved.base.repository.get_object_content(name)
             base = name.split('.')[0]
 

@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
 """Tests for the ``data structure import`` command."""
-from pathlib import Path
+
 import re
+from pathlib import Path
 
 from aiida_quantumespresso.cli.data.structure import cmd_import
 

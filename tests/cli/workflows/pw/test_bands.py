@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the ``workflow launch pw-bands`` command."""
+
 from aiida_quantumespresso.cli.workflows.pw.bands import launch_workflow
 
 

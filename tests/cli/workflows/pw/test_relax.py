@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the ``workflow launch pw-relax`` command."""
+
 from aiida_quantumespresso.cli.workflows.pw.relax import launch_workflow
 
 

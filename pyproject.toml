@@ -147,68 +147,51 @@ dependencies = [
 scripts.install = 'pre-commit install'
 scripts.run = 'pre-commit run {args}'
 
-[tool.flynt]
-line-length = 120
-fail-on-change = true
-
-[tool.isort]
-force_sort_within_sections = true
-include_trailing_comma = true
-line_length = 120
-multi_line_output = 3  # this configuration is compatible with yapf
-
-[tool.pydocstyle]
-ignore = [
-    'D104',
-    'D202',
-    'D203',
-    'D213'
+[tool.ruff]
+lint.ignore = [
+    "ARG002",  # https://docs.astral.sh/ruff/rules/unused-method-argument/
+    "ARG004",  # https://docs.astral.sh/ruff/rules/unused-static-method-argument/
+    "B028",    # https://docs.astral.sh/ruff/rules/no-explicit-stacklevel/
+    "BLE001",  # https://docs.astral.sh/ruff/rules/blind-except/
+    "EM101",   # https://docs.astral.sh/ruff/rules/raw-string-in-exception/
+    "EM102",   # https://docs.astral.sh/ruff/rules/f-string-in-exception/
+    "EXE001",  # https://docs.astral.sh/ruff/rules/shebang-not-executable/
+    "FA100",   # https://docs.astral.sh/ruff/rules/future-rewritable-type-annotation/
+    "FBT001",  # https://docs.astral.sh/ruff/rules/boolean-type-hint-positional-argument/
+    "FBT002",  # https://docs.astral.sh/ruff/rules/boolean-default-value-positional-argument/
+    "G004",    # https://docs.astral.sh/ruff/rules/logging-f-string/
+    "N805",    # https://docs.astral.sh/ruff/rules/invalid-first-argument-name-for-method/
+    "PERF401", # https://docs.astral.sh/ruff/rules/manual-list-comprehension/
+    "PLR2004", # https://docs.astral.sh/ruff/rules/magic-value-comparison/
+    "RUF005",  # https://docs.astral.sh/ruff/rules/collection-literal-concatenation/
+    "RUF012",  # https://docs.astral.sh/ruff/rules/mutable-class-default/
+    "RET503",  # https://docs.astral.sh/ruff/rules/implicit-return/
+    "S110",    # https://docs.astral.sh/ruff/rules/try-except-pass/
+    "S318",    # https://docs.astral.sh/ruff/rules/suspicious-xml-mini-dom-usage/
+    "S314",    # https://docs.astral.sh/ruff/rules/suspicious-xml-element-tree-usage/
+    "TID252",  # https://docs.astral.sh/ruff/rules/relative-imports/
+    "TRY004",  # https://docs.astral.sh/ruff/rules/type-check-without-type-error/
+    "TRY003",  # https://docs.astral.sh/ruff/rules/raise-vanilla-args/
+    "TRY301",  # https://docs.astral.sh/ruff/rules/raise-within-try/
 ]
-
-[tool.pylint.master]
-load-plugins = ['pylint_aiida','pylint.extensions.no_self_use']
-
-[tool.pylint.format]
-max-line-length = 120
-
-[tool.pylint.tool-check]
-generated-members = 'self.exit_codes.*'
-
-[tool.pylint.messages_control]
-disable = [
-    'duplicate-code',
-    'fixme',
-    'inconsistent-return-statements',
-    'import-outside-toplevel',
-    'locally-disabled',
-    'logging-format-interpolation',
-    'no-else-raise',
-    'too-many-arguments',
-    'too-many-ancestors',
-    'too-many-branches',
-    'too-many-locals',
-    'too-many-return-statements',
-    'use-dict-literal',
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "INP001",  # https://docs.astral.sh/ruff/rules/implicit-namespace-package/
+    "PT009",   # https://docs.astral.sh/ruff/rules/pytest-unittest-assertion/
+    "PT011",   # https://docs.astral.sh/ruff/rules/pytest-raises-too-broad/
+    "PT027",   # https://docs.astral.sh/ruff/rules/pytest-unittest-raises-assertion/
+    "S101",    # https://docs.astral.sh/ruff/rules/assert/
+    "SLF001",  # https://docs.astral.sh/ruff/rules/private-member-access/
 ]
-
-[tool.pylint.basic]
-good-names = [
-    'i',
-    'j',
-    'k',
-    'SsspFamily',
-    'StructureData',
-    'SinglefileData',
-    'UpfData',
-    'HpCalculation',
-    'PwCalculation',
+"src/aiida_quantumespresso/parsers/**/*.py" = [
+    "B904",    # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except/
 ]
+"src/aiida_quantumespresso/cli/**/*.py" = ["ALL"]
+"docs/**/*.py" = ["ALL"]
+"src/aiida_quantumespresso/parsers/parse_xml/legacy.py" = ["ALL"]
+"src/aiida_quantumespresso/parsers/parse_xml/cp/legacy.py" = ["ALL"]
+"src/aiida_quantumespresso/parsers/parse_raw/__init__.py" = ["ALL"]
+"src/aiida_quantumespresso/calculations/helpers/__init__.py" = ["ALL"]
 
-[tool.yapf]
-align_closing_bracket_with_visual_indent = true
-based_on_style = 'google'
-coalesce_brackets = true
-column_limit = 120
-dedent_closing_brackets = true
-indent_dictionary_value = false
-split_arguments_when_comma_terminated = true
+[tool.ruff.format]
+quote-style = "single"

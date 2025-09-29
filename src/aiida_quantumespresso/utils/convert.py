@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Utilties to convert between python and fortran data types and formats."""
+
 import numbers
 
 
@@ -8,23 +8,17 @@ def conv_to_fortran(val, quote_strings=True):
 
     :param val: the value to be read and converted to a Fortran-friendly string.
     """
-    import numpy
+    import numpy as np
 
     # Note that bool should come before integer, because a boolean matches also isinstance(..., int)
-    if isinstance(val, (bool, numpy.bool_)):
-        if val:
-            val_str = '.true.'
-        else:
-            val_str = '.false.'
+    if isinstance(val, (bool, np.bool_)):
+        val_str = '.true.' if val else '.false.'
     elif isinstance(val, numbers.Integral):
         val_str = f'{val:d}'
     elif isinstance(val, numbers.Real):
         val_str = f'{val:18.10e}'.replace('e', 'd')
     elif isinstance(val, str):
-        if quote_strings:
-            val_str = f"'{val!s}'"
-        else:
-            val_str = f'{val!s}'
+        val_str = f"'{val!s}'" if quote_strings else f'{val!s}'
     else:
         raise ValueError(
             f"Invalid value '{val}' of type '{type(val)}' passed, accepts only bools, ints, floats and strings"
@@ -38,12 +32,9 @@ def conv_to_fortran_withlists(val, quote_strings=True):
 
     :param val: the value to be read and converted to a Fortran-friendly string.
     """
-    # pylint: disable=too-many-return-statements
-
     # Note that bool should come before integer, because a boolean matches also isinstance(..., int)
     if isinstance(val, (list, tuple)):
-        val_str = ', '.join(conv_to_fortran(thing, quote_strings=quote_strings) for thing in val)
-        return val_str
+        return ', '.join(conv_to_fortran(thing, quote_strings=quote_strings) for thing in val)
 
     if isinstance(val, bool):
         if val:
@@ -151,11 +142,9 @@ def convert_input_to_namelist_entry(key, val, mapping=None):
 
         This will map every occurrence of 'Fe' and 'O' in the values to the corresponding integer.
     """
-    # pylint: disable=too-many-branches,too-many-nested-blocks,no-else-return
     # I don't try to do iterator=iter(val) and catch TypeError because it would also match strings
     # I check first the dictionary, because it would also match hasattr(__iter__)
     if isinstance(val, dict):
-
         if mapping is None:
             raise ValueError("If 'val' is a dictionary, you must provide also the 'mapping' parameter")
 
@@ -177,18 +166,14 @@ def convert_input_to_namelist_entry(key, val, mapping=None):
         return ''.join(list_of_strings)
 
     # A list/tuple of values
-    elif isinstance(val, (list, tuple)):
-
+    if isinstance(val, (list, tuple)):
         list_of_strings = []
 
         for idx, itemval in enumerate(val):
-
             if isinstance(itemval, (list, tuple)):
-
                 values = []
 
                 for value in itemval[:-1]:
-
                     if not isinstance(value, (int, str)):
                         raise ValueError('values of double nested lists should be either integers or strings')
 
@@ -200,20 +185,19 @@ def convert_input_to_namelist_entry(key, val, mapping=None):
                             raise ValueError(
                                 f'the nested list contained string {value} but this is not a key in the mapping'
                             )
-                        else:
-                            values.append(str(mapping[value]))
+                        values.append(str(mapping[value]))
                     else:
                         values.append(str(value))
 
                 idx_string = ','.join(values)
-                itemval = itemval.pop()
+                item_value = itemval.pop()
             else:
                 idx_string = f'{idx + 1}'
+                item_value = itemval
 
-            list_of_strings.append(f'  {key}({idx_string}) = {conv_to_fortran(itemval)}\n')
+            list_of_strings.append(f'  {key}({idx_string}) = {conv_to_fortran(item_value)}\n')
 
         return ''.join(list_of_strings)
 
     # Single value
-    else:
-        return f'  {key} = {conv_to_fortran(val)}\n'
+    return f'  {key} = {conv_to_fortran(val)}\n'

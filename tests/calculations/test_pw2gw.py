@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=redefined-outer-name
 """Tests for the :class:`aiida_quantumespresso.calculations.pw2gw.Pw2gwCalculation` class."""
+
 import pathlib
 
+import pytest
 from aiida import orm
 from aiida.common import datastructures
-import pytest
 
 from aiida_quantumespresso.utils.resources import get_default_options
 
@@ -15,7 +14,6 @@ def generate_inputs(tmp_path, fixture_localhost, fixture_code, generate_remote_d
     """Fixture: inputs for `Pw2gwCalculation`."""
 
     def _factory(with_symlink=False, parameters=None):
-
         if parameters is None:
             parameters = {
                 'INPUTPP': {
@@ -28,21 +26,18 @@ def generate_inputs(tmp_path, fixture_localhost, fixture_code, generate_remote_d
                 }
             }
 
-        inputs = {
+        return {
             'code': fixture_code('quantumespresso.pw2gw'),
             'parent_folder': generate_remote_data(fixture_localhost, str(tmp_path), 'quantumespresso.pw'),
             'parameters': orm.Dict(parameters),
             'settings': orm.Dict({'PARENT_FOLDER_SYMLINK': with_symlink}),
-            'metadata': {
-                'options': get_default_options()
-            }
+            'metadata': {'options': get_default_options()},
         }
-        return inputs
 
     return _factory
 
 
-@pytest.mark.parametrize('with_symlink', (False, True))
+@pytest.mark.parametrize('with_symlink', [False, True])
 def test_pw2gw_default(fixture_sandbox, generate_calc_job, generate_inputs, file_regression, with_symlink):
     """Test a default `Pw2gwCalculation`."""
     entry_point_name = 'quantumespresso.pw2gw'

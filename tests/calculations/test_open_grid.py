@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=redefined-outer-name
 """Tests for the `OpenGridCalculation` class."""
+
+import pytest
 from aiida import orm
 from aiida.common import AttributeDict, datastructures
 from aiida.common.exceptions import InputValidationError
-import pytest
 
 
 @pytest.fixture
@@ -17,19 +16,17 @@ def generate_inputs(fixture_localhost, fixture_sandbox, fixture_code, generate_r
         if parameters is None:
             parameters = {'INPUTPP': {}}
 
-        return AttributeDict({
-            'code':
-            fixture_code('quantumespresso.open_grid'),
-            'parent_folder':
-            generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.open_grid'),
-            'parameters':
-            orm.Dict(dict=parameters),
-            'settings':
-            orm.Dict(dict=settings),
-            'metadata': {
-                'options': get_default_options()
+        return AttributeDict(
+            {
+                'code': fixture_code('quantumespresso.open_grid'),
+                'parent_folder': generate_remote_data(
+                    fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.open_grid'
+                ),
+                'parameters': orm.Dict(dict=parameters),
+                'settings': orm.Dict(dict=settings),
+                'metadata': {'options': get_default_options()},
             }
-        })
+        )
 
     return _generate_inputs
 
@@ -57,30 +54,25 @@ def test_open_grid_default(fixture_sandbox, generate_calc_job, generate_inputs, 
 
 @pytest.mark.parametrize(
     ('parameters', 'message'),
-    (
-        ({
-            'INPUTPP': {
-                'outdir': './out/'
-            }
-        }, r"You cannot specify explicitly the 'outdir' key in the 'INPUTPP' namelist"),
-        ({
-            'INPUTPP': {
-                'overwrite_prefix': True
-            }
-        }, r"You cannot specify explicitly the 'overwrite_prefix' key in the 'INPUTPP' namelist"),
-        ({
-            'INPUTPP': {
-                'prefix': 'aiida'
-            }
-        }, r"You cannot specify explicitly the 'prefix' key in the 'INPUTPP' namelist"),
-    ),
+    [
+        (
+            {'INPUTPP': {'outdir': './out/'}},
+            r"You cannot specify explicitly the 'outdir' key in the 'INPUTPP' namelist",
+        ),
+        (
+            {'INPUTPP': {'overwrite_prefix': True}},
+            r"You cannot specify explicitly the 'overwrite_prefix' key in the 'INPUTPP' namelist",
+        ),
+        ({'INPUTPP': {'prefix': 'aiida'}}, r"You cannot specify explicitly the 'prefix' key in the 'INPUTPP' namelist"),
+    ],
 )
 def test_open_grid_invalid_parameters(fixture_sandbox, generate_calc_job, generate_inputs, parameters, message):
     """Test that launching `OpenGridCalculation` fails for invalid parameters."""
     entry_point_name = 'quantumespresso.open_grid'
 
+    inputs = generate_inputs(parameters=parameters)
+
     with pytest.raises(InputValidationError, match=message) as exception:
-        inputs = generate_inputs(parameters=parameters)
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
     assert message in str(exception.value)

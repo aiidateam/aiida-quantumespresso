@@ -1,14 +1,14 @@
-# -*- coding: utf-8 -*-
 """Command line scripts to launch a `PwRelaxWorkChain` for testing and demonstration purposes."""
+
+import click
 from aiida.cmdline.params import options as options_core
 from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
-import click
 
 from aiida_quantumespresso.workflows.pw.relax import PwRelaxWorkChain
 
-from .. import cmd_launch
 from ...utils import launch, options, validate
+from .. import cmd_launch
 
 
 @cmd_launch.command('pw-relax')
@@ -33,13 +33,27 @@ from ...utils import launch, options, validate
     is_flag=True,
     default=True,
     show_default=True,
-    help='Run a initial relaxation with looser thresholds.'
+    help='Run a initial relaxation with looser thresholds.',
 )
 @decorators.with_dbenv()
 def launch_workflow(
-    code, structure, pseudo_family, kpoints_distance, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file,
-    starting_magnetization, smearing, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi, daemon,
-    initial_relax
+    code,
+    structure,
+    pseudo_family,
+    kpoints_distance,
+    ecutwfc,
+    ecutrho,
+    hubbard_u,
+    hubbard_v,
+    hubbard_file,
+    starting_magnetization,
+    smearing,
+    clean_workdir,
+    max_num_machines,
+    max_wallclock_seconds,
+    with_mpi,
+    daemon,
+    initial_relax,
 ):
     """Run a `PwRelaxWorkChain`."""
     from aiida_quantumespresso.utils.resources import get_default_options
@@ -56,28 +70,26 @@ def launch_workflow(
     try:
         validate.validate_hubbard_parameters(structure, parameters, hubbard_u, hubbard_v, hubbard_file)
     except ValueError as exception:
-        raise click.BadParameter(str(exception))
+        raise click.BadParameter(str(exception)) from exception
 
     try:
         validate.validate_starting_magnetization(structure, parameters, starting_magnetization)
     except ValueError as exception:
-        raise click.BadParameter(str(exception))
+        raise click.BadParameter(str(exception)) from exception
 
     try:
         validate.validate_smearing(parameters, smearing)
     except ValueError as exception:
-        raise click.BadParameter(str(exception))
+        raise click.BadParameter(str(exception)) from exception
 
     base_overrides = {
         'clean_workdir': clean_workdir,
         'pseudo_family': pseudo_family.label,
         'pw': {
             'parameters': parameters,
-            'metadata': {
-                'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)
-            },
-            'hubbard_file': hubbard_file
-        }
+            'metadata': {'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi)},
+            'hubbard_file': hubbard_file,
+        },
     }
     overrides = {
         'base_init_relax': base_overrides,
