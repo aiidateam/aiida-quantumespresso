@@ -1,8 +1,10 @@
-# -*- coding: utf-8 -*-
 """Tests for the `create_magnetic_configuration` calculation function."""
+
 from aiida.orm import Float, List
 
-from aiida_quantumespresso.calculations.functions.create_magnetic_configuration import create_magnetic_configuration
+from aiida_quantumespresso.calculations.functions.create_magnetic_configuration import (
+    create_magnetic_configuration,
+)
 
 
 def test_configuration_00(generate_structure_from_kinds):
@@ -95,19 +97,25 @@ def test_configuration_04(generate_structure_from_kinds):
     assert allotrope_magnetic_moments.get_dict() == {'Fe0': 0.0, 'Fe1': 0.5, 'Fe2': 0.4}
 
     # Increase atol to 0.1, again only two different kinds
-    allotrope, allotrope_magnetic_moments = create_magnetic_configuration(structure, magnetic_moments,
-                                                                          atol=Float(0.1)).values()
+    allotrope, allotrope_magnetic_moments = create_magnetic_configuration(
+        structure, magnetic_moments, atol=Float(0.1)
+    ).values()
     assert set(allotrope.get_kind_names()) == {'Fe0', 'Fe1'}
     assert [site.kind_name for site in allotrope.sites] == ['Fe0', 'Fe1', 'Fe1', 'Fe1']
     assert allotrope_magnetic_moments.get_dict() == {'Fe0': 0.0, 'Fe1': 0.5}
 
     # Really strict tolerance or atol = 0.01: All sites get different kinds
     allotrope, allotrope_magnetic_moments = create_magnetic_configuration(
-        structure, magnetic_moments, atol=Float(1E-2)
+        structure, magnetic_moments, atol=Float(1e-2)
     ).values()
     assert set(allotrope.get_kind_names()) == {'Fe0', 'Fe1', 'Fe2', 'Fe3'}
     assert [site.kind_name for site in allotrope.sites] == ['Fe0', 'Fe1', 'Fe2', 'Fe3']
-    assert allotrope_magnetic_moments.get_dict() == {'Fe0': 0.0, 'Fe1': 0.5, 'Fe2': 0.45, 'Fe3': 0.4}
+    assert allotrope_magnetic_moments.get_dict() == {
+        'Fe0': 0.0,
+        'Fe1': 0.5,
+        'Fe2': 0.45,
+        'Fe3': 0.4,
+    }
 
 
 def test_configuration_05(generate_structure_from_kinds):
@@ -125,7 +133,11 @@ def test_configuration_05(generate_structure_from_kinds):
     allotrope, allotrope_magnetic_moments = create_magnetic_configuration(structure, magnetic_moments).values()
     assert set(allotrope.get_kind_names()) == {'Fe0', 'Fe1', 'Fe2'}
     assert [site.kind_name for site in allotrope.sites] == ['Fe0', 'Fe1', 'Fe2', 'Fe2']
-    assert allotrope_magnetic_moments.get_dict() == {'Fe0': 0.0, 'Fe1': -1.5, 'Fe2': -0.6}
+    assert allotrope_magnetic_moments.get_dict() == {
+        'Fe0': 0.0,
+        'Fe1': -1.5,
+        'Fe2': -0.6,
+    }
 
     # Strict absolute tolerance, one zero site and three magnetic
     allotrope, allotrope_magnetic_moments = create_magnetic_configuration(
@@ -133,15 +145,25 @@ def test_configuration_05(generate_structure_from_kinds):
     ).values()
     assert set(allotrope.get_kind_names()) == {'Fe0', 'Fe1', 'Fe2', 'Fe3'}
     assert [site.kind_name for site in allotrope.sites] == ['Fe0', 'Fe1', 'Fe2', 'Fe3']
-    assert allotrope_magnetic_moments.get_dict() == {'Fe0': 0.0, 'Fe1': -1.5, 'Fe2': -0.6, 'Fe3': -0.5}
+    assert allotrope_magnetic_moments.get_dict() == {
+        'Fe0': 0.0,
+        'Fe1': -1.5,
+        'Fe2': -0.6,
+        'Fe3': -0.5,
+    }
 
     # Strict absolute and zero tolerance, four magnetic sites
     allotrope, allotrope_magnetic_moments = create_magnetic_configuration(
-        structure, magnetic_moments, atol=Float(0.05), ztol=Float(1E-3)
+        structure, magnetic_moments, atol=Float(0.05), ztol=Float(1e-3)
     ).values()
     assert set(allotrope.get_kind_names()) == {'Fe0', 'Fe1', 'Fe2', 'Fe3'}
     assert [site.kind_name for site in allotrope.sites] == ['Fe0', 'Fe1', 'Fe2', 'Fe3']
-    assert allotrope_magnetic_moments.get_dict() == {'Fe0': -1.5, 'Fe1': -0.6, 'Fe2': -0.5, 'Fe3': -0.01}
+    assert allotrope_magnetic_moments.get_dict() == {
+        'Fe0': -1.5,
+        'Fe1': -0.6,
+        'Fe2': -0.5,
+        'Fe3': -0.01,
+    }
 
 
 def test_configuration_06(generate_structure_from_kinds):
@@ -158,7 +180,12 @@ def test_configuration_06(generate_structure_from_kinds):
     # Default tolerance values, one zero and two magnetic sites for Fe, one magnetic site for Ni
     allotrope, allotrope_magnetic_moments = create_magnetic_configuration(structure, magnetic_moments).values()
     assert set(allotrope.get_kind_names()) == {'Fe0', 'Fe1', 'Fe2', 'Ni'}
-    assert allotrope_magnetic_moments.get_dict() == {'Fe0': 0.0, 'Fe1': 0.1, 'Fe2': -0.2, 'Ni': 0.25}
+    assert allotrope_magnetic_moments.get_dict() == {
+        'Fe0': 0.0,
+        'Fe1': 0.1,
+        'Fe2': -0.2,
+        'Ni': 0.25,
+    }
 
     # Very strict absolute tolerance, all different sites
     allotrope, allotrope_magnetic_moments = create_magnetic_configuration(
@@ -171,7 +198,7 @@ def test_configuration_06(generate_structure_from_kinds):
         'Fe2': -0.2,
         'Fe3': -0.1,
         'Ni0': 0.25,
-        'Ni1': 0.2
+        'Ni1': 0.2,
     }
 
 
@@ -192,7 +219,8 @@ def test_configuration_07(generate_structure_from_kinds):
     assert allotrope_magnetic_moments.get_dict() == {'Fe': 0.1}
 
     # Very loose zero tolerance, one kind with zero magnetic moment
-    allotrope, allotrope_magnetic_moments = create_magnetic_configuration(structure, magnetic_moments,
-                                                                          ztol=Float(0.2)).values()
+    allotrope, allotrope_magnetic_moments = create_magnetic_configuration(
+        structure, magnetic_moments, ztol=Float(0.2)
+    ).values()
     assert set(allotrope.get_kind_names()) == {'Fe'}
     assert allotrope_magnetic_moments.get_dict() == {'Fe': 0}

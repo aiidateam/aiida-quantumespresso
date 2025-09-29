@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
 """Utility functions for validation of command line interface parameter inputs."""
-from aiida.cmdline.utils import decorators
+
 import click
+from aiida.cmdline.utils import decorators
 
 
 @decorators.with_dbenv()
@@ -16,7 +16,6 @@ def validate_kpoints_mesh(ctx, param, value):
     :param value: a tuple of three positive integers
     :returns: a KpointsData instance
     """
-    # pylint: disable=unused-argument
     from aiida.orm import KpointsData
 
     if not value:
@@ -49,13 +48,11 @@ def validate_hubbard_parameters(structure, parameters, hubbard_u=None, hubbard_v
         raise ValueError('the hubbard_u, hubbard_v and hubbard_file options are mutually exclusive')
 
     if hubbard_file:
-
         parameters['SYSTEM']['lda_plus_u'] = True
         parameters['SYSTEM']['lda_plus_u_kind'] = 2
         parameters['SYSTEM']['hubbard_parameters'] = 'file'
 
     elif hubbard_v:
-
         parameters['SYSTEM']['lda_plus_u'] = True
         parameters['SYSTEM']['lda_plus_u_kind'] = 2
         parameters['SYSTEM']['hubbard_parameters'] = 'input'
@@ -65,7 +62,6 @@ def validate_hubbard_parameters(structure, parameters, hubbard_u=None, hubbard_v
             parameters['SYSTEM']['hubbard_v'].append(value)
 
     elif hubbard_u:
-
         structure_kinds = structure.get_kind_names()
         hubbard_kinds = [value[0] for value in hubbard_u]
 

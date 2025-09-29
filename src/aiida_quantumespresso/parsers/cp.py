@@ -1,6 +1,7 @@
-# -*- coding: utf-8 -*-
+import contextlib
+
+import numpy as np
 from aiida.orm import Dict, TrajectoryData
-import numpy
 from packaging.version import Version
 from qe_tools import CONSTANTS
 
@@ -35,7 +36,7 @@ class CpParser(BaseParser):
         xml_files = [xml_file for xml_file in self.node.process_class.xml_filenames if xml_file in list_of_files]
         if not xml_files:
             return self.exit(self.exit_codes.ERROR_MISSING_XML_FILE, logs)
-        elif len(xml_files) > 1:
+        if len(xml_files) > 1:
             return self.exit(self.exit_codes.ERROR_OUTPUT_XML_MULTIPLE, logs)
 
         # cp.x can produce, depending on the particular version of the code, a file called `print_counter.xml` or
@@ -46,8 +47,8 @@ class CpParser(BaseParser):
         print_counter_xml = True
         no_trajectory_output = False
 
-        filename_counter_txt = self.node.process_class._FILE_PRINT_COUNTER_BASENAME
-        filename_counter_xml = self.node.process_class._FILE_XML_PRINT_COUNTER_BASENAME
+        filename_counter_txt = self.node.process_class._FILE_PRINT_COUNTER_BASENAME  # noqa: SLF001
+        filename_counter_xml = self.node.process_class._FILE_XML_PRINT_COUNTER_BASENAME  # noqa: SLF001
 
         # The following can happen and is not an error!
         if filename_counter_xml not in list_of_files and filename_counter_txt not in list_of_files:
@@ -68,10 +69,10 @@ class CpParser(BaseParser):
                 filename_counter = filename_counter_xml
 
         output_xml = retrieved.base.repository.get_object_content(xml_files[0])
-        output_xml_counter = None if no_trajectory_output else retrieved.base.repository.get_object_content(filename_counter)
-        out_dict, _raw_successful = parse_cp_raw_output(
-            stdout, output_xml, output_xml_counter, print_counter_xml
+        output_xml_counter = (
+            None if no_trajectory_output else retrieved.base.repository.get_object_content(filename_counter)
         )
+        out_dict, _raw_successful = parse_cp_raw_output(stdout, output_xml, output_xml_counter, print_counter_xml)
         out_dict.pop('trajectory', None)
 
         if not no_trajectory_output:
@@ -79,15 +80,19 @@ class CpParser(BaseParser):
             # append everthing in the temporary dictionary raw_trajectory
             raw_trajectory = {}
             evp_keys = [
-                'electronic_kinetic_energy', 'cell_temperature', 'ionic_temperature', 'scf_total_energy', 'enthalpy',
-                'enthalpy_plus_kinetic', 'energy_constant_motion', 'volume', 'pressure'
+                'electronic_kinetic_energy',
+                'cell_temperature',
+                'ionic_temperature',
+                'scf_total_energy',
+                'enthalpy',
+                'enthalpy_plus_kinetic',
+                'energy_constant_motion',
+                'volume',
+                'pressure',
             ]
 
             # order of atom in the output trajectory changed somewhere after 6.5
-            if Version(out_dict['creator_version']) > Version('6.5'):
-                new_cp_ordering = True
-            else:
-                new_cp_ordering = False
+            new_cp_ordering = Version(out_dict['creator_version']) > Version('6.5')
 
             # Now prepare the reordering, as files in the xml are ordered
             if new_cp_ordering:
@@ -102,53 +107,67 @@ class CpParser(BaseParser):
                         out_dict['structure']['species'], out_dict['structure']['atoms']
                     )
 
-            pos_filename = f'{self.node.process_class._PREFIX}.pos'
+            pos_filename = f'{self.node.process_class._PREFIX}.pos'  # noqa: SLF001
             if pos_filename not in list_of_files:
                 out_dict['warnings'].append('Unable to open the POS file... skipping.')
                 return self.exit_codes.ERROR_READING_POS_FILE
             number_of_atoms = out_dict.get(
-                'number_of_atoms', out_dict['structure']['number_of_atoms'] if 'structure' in out_dict else None
+                'number_of_atoms',
+                out_dict['structure']['number_of_atoms'] if 'structure' in out_dict else None,
             )
             trajectories = [
                 ('positions', 'pos', CONSTANTS.bohr_to_ang, number_of_atoms),
                 ('cells', 'cel', CONSTANTS.bohr_to_ang, 3),
-                ('velocities', 'vel', CONSTANTS.bohr_to_ang / (CONSTANTS.timeau_to_sec * 10**12), number_of_atoms),
-                ('forces', 'for', CONSTANTS.hartree_to_ev / CONSTANTS.bohr_to_ang, number_of_atoms),
-                ('stresses', 'str', 1.0, 3) #stress in GPa
+                (
+                    'velocities',
+                    'vel',
+                    CONSTANTS.bohr_to_ang / (CONSTANTS.timeau_to_sec * 10**12),
+                    number_of_atoms,
+                ),
+                (
+                    'forces',
+                    'for',
+                    CONSTANTS.hartree_to_ev / CONSTANTS.bohr_to_ang,
+                    number_of_atoms,
+                ),
+                ('stresses', 'str', 1.0, 3),  # stress in GPa
             ]
 
             for name, extension, scale, elements in trajectories:
                 try:
-                    with retrieved.base.repository.open(f'{self.node.process_class._PREFIX}.{extension}') as datafile:
-                        data = [l.split() for l in datafile]
+                    with retrieved.base.repository.open(f'{self.node.process_class._PREFIX}.{extension}') as datafile:  # noqa: SLF001
+                        data = [line.split() for line in datafile]
                         # POSITIONS stored in angstrom
                     traj_data = parse_cp_traj_stanzas(
-                        num_elements=elements, splitlines=data, prepend_name=f'{name}_traj', rescale=scale
+                        num_elements=elements,
+                        splitlines=data,
+                        prepend_name=f'{name}_traj',
+                        rescale=scale,
                     )
                     # here initialize the dictionary.
                     if extension == 'cel':
                         # NOTE: the trajectory output has the cell matrix transposed!!
-                        raw_trajectory['cells'] = numpy.array(traj_data['cells_traj_data']).transpose((0, 2, 1))
+                        raw_trajectory['cells'] = np.array(traj_data['cells_traj_data']).transpose((0, 2, 1))
                     elif extension == 'str':
-                        raw_trajectory['stresses'] = numpy.array(traj_data['stresses_traj_data'])
+                        raw_trajectory['stresses'] = np.array(traj_data['stresses_traj_data'])
                     else:
                         raw_trajectory[f'{name}_ordered'] = self._get_reordered_array(
                             traj_data[f'{name}_traj_data'], reordering
                         )
                     if extension == 'pos':
-                        raw_trajectory['traj_times'] = numpy.array(traj_data[f'{name}_traj_times'])
-                except IOError:
+                        raw_trajectory['traj_times'] = np.array(traj_data[f'{name}_traj_times'])
+                except OSError:
                     out_dict['warnings'].append(f'Unable to open the {extension.upper()} file... skipping.')
 
             # =============== EVP trajectory ============================
             try:
-                with retrieved.base.repository.open(f'{self._node.process_class._PREFIX}.evp') as handle:
-                    matrix = numpy.genfromtxt(handle)
+                with retrieved.base.repository.open(f'{self._node.process_class._PREFIX}.evp') as handle:  # noqa: SLF001
+                    matrix = np.genfromtxt(handle)
                 # there might be a different format if the matrix has one row only
                 try:
                     matrix.shape[1]
                 except IndexError:
-                    matrix = numpy.array(numpy.matrix(matrix))
+                    matrix = np.array(np.matrix(matrix))
 
                 if Version(out_dict['creator_version']) > Version('5.1'):
                     # Between version 5.1 and 5.1.1, someone decided to change
@@ -156,8 +175,8 @@ class CpParser(BaseParser):
                     # happened... SVN commit 11158.
                     # I here use the version number to parse, plus some
                     # heuristics to check that I'm doing the right thing
-                    #print "New version"
-                    raw_trajectory['steps'] = numpy.array(matrix[:, 0], dtype=int)
+                    # print "New version"
+                    raw_trajectory['steps'] = np.array(matrix[:, 0], dtype=int)
                     raw_trajectory['times'] = matrix[:, 1]  # TPS, ps
                     raw_trajectory['electronic_kinetic_energy'] = matrix[:, 2] * CONSTANTS.hartree_to_ev  # EKINC, eV
                     raw_trajectory['cell_temperature'] = matrix[:, 3]  # TEMPH, K
@@ -169,8 +188,8 @@ class CpParser(BaseParser):
                     raw_trajectory['volume'] = matrix[:, 9] * (CONSTANTS.bohr_to_ang**3)  # volume, angstrom^3
                     raw_trajectory['pressure'] = matrix[:, 10]  # out_press, GPa
                 else:
-                    #print "Old version"
-                    raw_trajectory['steps'] = numpy.array(matrix[:, 0], dtype=int)
+                    # print "Old version"
+                    raw_trajectory['steps'] = np.array(matrix[:, 0], dtype=int)
                     raw_trajectory['electronic_kinetic_energy'] = matrix[:, 1] * CONSTANTS.hartree_to_ev  # EKINC, eV
                     raw_trajectory['cell_temperature'] = matrix[:, 2]  # TEMPH, K
                     raw_trajectory['ionic_temperature'] = matrix[:, 3]  # TEMPP, K
@@ -189,19 +208,19 @@ class CpParser(BaseParser):
                 # but I won't do it, as there may be also other columns swapped.
                 # Better to stop and ask the user to check what's going on.
 
-                #work around for 100ps format bug
-                mask = numpy.array(raw_trajectory['traj_times']) >= 0
-                len_bugged = len(numpy.array(raw_trajectory['times'])[mask == False])
-                len_ok = len(numpy.array(raw_trajectory['times'])[mask])
+                # work around for 100ps format bug
+                mask = np.array(raw_trajectory['traj_times']) >= 0
+                len_bugged = len(np.array(raw_trajectory['times'])[mask is False])
+                len_ok = len(np.array(raw_trajectory['times'])[mask])
                 if len_ok > 0:
                     max_time_difference = abs(
-                        numpy.array(raw_trajectory['times'])[mask] - numpy.array(raw_trajectory['traj_times'])[mask]
+                        np.array(raw_trajectory['times'])[mask] - np.array(raw_trajectory['traj_times'])[mask]
                     ).max()
                 else:
                     max_time_difference = 0.0
 
-                if max_time_difference > 1.e-4 or (
-                    len_bugged > 0 and numpy.array(raw_trajectory['times'])[mask == False].min() < 100.0
+                if max_time_difference > 1.0e-4 or (
+                    len_bugged > 0 and np.array(raw_trajectory['times'])[mask is False].min() < 100.0
                 ):  # It is typically ~1.e-7 due to roundoff errors
                     # If there is a large discrepancy
                     # it means there is something very weird going on...
@@ -211,9 +230,9 @@ class CpParser(BaseParser):
                 # so that the user can check them by himselves
                 if len_bugged > 0:
                     out_dict['warnings'].append(
-                        '100ps format bug detected: ignoring trajectory\'s printed time from 100ps on'
+                        "100ps format bug detected: ignoring trajectory's printed time from 100ps on"
                     )
-            except IOError:
+            except OSError:
                 out_dict['warnings'].append('Unable to open the EVP file... skipping.')
 
             # get the symbols from the input
@@ -239,22 +258,28 @@ class CpParser(BaseParser):
 
             # eventually set the stress
             if 'stresses' in raw_trajectory:
-                traj.set_array('stresses',raw_trajectory['stresses'])
+                traj.set_array('stresses', raw_trajectory['stresses'])
 
             for this_name in evp_keys:
-                try:
+                # Some columns may have not been parsed, skip
+                with contextlib.suppress(KeyError):
                     traj.set_array(this_name, raw_trajectory[this_name])
-                except KeyError:
-                    # Some columns may have not been parsed, skip
-                    pass
 
             self.out('output_trajectory', traj)
 
         # Remove big dictionaries that would be redundant
         # For atoms and cell, there is a small possibility that nothing is parsed but then probably nothing moved.
         for key in [
-            'atoms', 'cell', 'ions_positions_stau', 'ions_positions_svel', 'ions_positions_taui', 'atoms_index_list',
-            'atoms_if_pos_list', 'ions_positions_force', 'bands', 'structure'
+            'atoms',
+            'cell',
+            'ions_positions_stau',
+            'ions_positions_svel',
+            'ions_positions_taui',
+            'atoms_index_list',
+            'atoms_if_pos_list',
+            'ions_positions_force',
+            'bands',
+            'structure',
         ]:
             out_dict.pop(key, None)
 
@@ -311,8 +336,7 @@ class CpParser(BaseParser):
         # the second atom Ti in the input is atom 4 (the fifth) in the CP output,
         # and so on
         sorted_indexed_reordering = sorted([(_[1], _[0]) for _ in enumerate(reordering)])
-        reordering_inverse = [_[1] for _ in sorted_indexed_reordering]
-        return reordering_inverse
+        return [_[1] for _ in sorted_indexed_reordering]
 
     def _get_reordered_list(self, origlist, reordering):
         """Given a list to reorder, a list of integer positions with the new order, return the reordered list."""
@@ -320,6 +344,5 @@ class CpParser(BaseParser):
 
     def _get_reordered_array(self, _input, reordering):
         if reordering is not None:
-            return numpy.array([self._get_reordered_list(i, reordering) for i in _input])
-        else:
-            return numpy.array(_input)
+            return np.array([self._get_reordered_list(i, reordering) for i in _input])
+        return np.array(_input)

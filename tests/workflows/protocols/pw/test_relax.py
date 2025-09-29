@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
 """Tests for the ``PwRelaxWorkChain.get_builder_from_protocol`` method."""
-from aiida.engine import ProcessBuilder
+
 import pytest
+from aiida.engine import ProcessBuilder
 
 from aiida_quantumespresso.common.types import ElectronicType, RelaxType, SpinType
 from aiida_quantumespresso.workflows.pw.relax import PwRelaxWorkChain
@@ -37,8 +37,7 @@ def test_electronic_type(fixture_code, generate_structure):
     structure = generate_structure()
 
     with pytest.raises(NotImplementedError):
-        for electronic_type in [ElectronicType.AUTOMATIC]:
-            PwRelaxWorkChain.get_builder_from_protocol(code, structure, electronic_type=electronic_type)
+        PwRelaxWorkChain.get_builder_from_protocol(code, structure, electronic_type=ElectronicType.AUTOMATIC)
 
     builder = PwRelaxWorkChain.get_builder_from_protocol(code, structure, electronic_type=ElectronicType.INSULATOR)
 
@@ -135,13 +134,14 @@ def test_options(fixture_code, generate_structure):
 
 
 @pytest.mark.parametrize(
-    'struc_name,cell_dofree', (
+    ('struc_name', 'cell_dofree'),
+    [
         ('silicon', 'all'),
         ('2D-xy-arsenic', '2Dxy'),
         ('1D-x-carbon', 'x'),
         ('1D-y-carbon', 'y'),
         ('1D-z-carbon', 'z'),
-    )
+    ],
 )
 def test_pbc_cell(fixture_code, generate_structure, struc_name, cell_dofree):
     """Test structures with various ``pbc`` set the correct ``CELL`` parameters."""
@@ -153,39 +153,21 @@ def test_pbc_cell(fixture_code, generate_structure, struc_name, cell_dofree):
 
 
 @pytest.mark.parametrize(
-    'overrides,warning',
-    (
+    ('overrides', 'warning'),
+    [
         # CORRECT overrides for top-level process input
-        ({
-            'clean_workdir': True
-        }, None),
+        ({'clean_workdir': True}, None),
         # CORRECT overrides for nested process input
-        ({
-            'base': {
-                'kpoints_force_parity': True
-            }
-        }, None),
+        ({'base': {'kpoints_force_parity': True}}, None),
         # CORRECT overrides for nested protocol input
-        ({
-            'base': {
-                'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'
-            }
-        }, None),
+        ({'base': {'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'}}, None),
         # WRONG overrides with typo
-        ({
-            'clean_wokdir': True
-        }, UserWarning),
+        ({'clean_wokdir': True}, UserWarning),
         # WRONG overrides with process input at incorrect level
-        ({
-            'base': {
-                'clean_workdir': True
-            }
-        }, UserWarning),
+        ({'base': {'clean_workdir': True}}, UserWarning),
         # WRONG overrides with protocol input at incorrect level
-        ({
-            'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'
-        }, UserWarning),
-    )
+        ({'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'}, UserWarning),
+    ],
 )
 def test_overrides_key_check(fixture_code, generate_structure, overrides, warning):
     """Test that the `get_builder_from_protocol()` method warns for erroneous keys in the `overrides`."""

@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the ``calculation launch cp`` command."""
+
 from aiida_quantumespresso.cli.calculations.cp import launch_calculation
 
 

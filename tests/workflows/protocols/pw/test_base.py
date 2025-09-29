@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=no-member,redefined-outer-name
 """Tests for the ``PwBaseWorkChain.get_builder_from_protocol`` method."""
-from aiida.engine import ProcessBuilder
+
 import pytest
+from aiida.engine import ProcessBuilder
 
 from aiida_quantumespresso.common.types import ElectronicType, SpinType
 from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
@@ -32,10 +31,13 @@ def test_default(fixture_code, generate_structure, data_regression, serialize_bu
     data_regression.check(serialize_builder(builder))
 
 
-@pytest.mark.parametrize('old_protocol,new_protocol', (
-    ('moderate', 'balanced'),
-    ('precise', 'stringent'),
-))
+@pytest.mark.parametrize(
+    ('old_protocol', 'new_protocol'),
+    [
+        ('moderate', 'balanced'),
+        ('precise', 'stringent'),
+    ],
+)
 def test_old_protocol_names(fixture_code, generate_structure, serialize_builder, old_protocol, new_protocol):
     """Test that the old protocol names still work and produce the same builder contents."""
     code = fixture_code('quantumespresso.pw')
@@ -53,11 +55,10 @@ def test_electronic_type(fixture_code, generate_structure):
     structure = generate_structure('silicon')
 
     with pytest.raises(NotImplementedError):
-        for electronic_type in [ElectronicType.AUTOMATIC]:
-            PwBaseWorkChain.get_builder_from_protocol(code, structure, electronic_type=electronic_type)
+        PwBaseWorkChain.get_builder_from_protocol(code, structure, electronic_type=ElectronicType.AUTOMATIC)
 
     builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, electronic_type=ElectronicType.INSULATOR)
-    parameters = builder.pw.parameters.get_dict()  # pylint: disable=no-member
+    parameters = builder.pw.parameters.get_dict()
 
     assert parameters['SYSTEM']['occupations'] == 'fixed'
     assert 'degauss' not in parameters['SYSTEM']
@@ -71,17 +72,17 @@ def test_spin_type(fixture_code, generate_structure):
 
     # Test specifying no magnetic inputs
     builder = PwBaseWorkChain.get_builder_from_protocol(code, structure)
-    assert 'starting_magnetization' not in builder.pw.parameters['SYSTEM']  # pylint: disable=no-member
-    assert 'nspin' not in builder.pw.parameters['SYSTEM']  # pylint: disable=no-member
+    assert 'starting_magnetization' not in builder.pw.parameters['SYSTEM']
+    assert 'nspin' not in builder.pw.parameters['SYSTEM']
 
     builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, spin_type=SpinType.COLLINEAR)
-    parameters = builder.pw.parameters.get_dict()  # pylint: disable=no-member
+    parameters = builder.pw.parameters.get_dict()
 
     assert parameters['SYSTEM']['nspin'] == 2
     assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.1}
 
     builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, spin_type=SpinType.SPIN_ORBIT)
-    parameters = builder.pw.parameters.get_dict()  # pylint: disable=no-member
+    parameters = builder.pw.parameters.get_dict()
 
     assert parameters['SYSTEM']['noncolin'] is True
     assert parameters['SYSTEM']['lspinorb'] is True
@@ -89,13 +90,14 @@ def test_spin_type(fixture_code, generate_structure):
 
 
 @pytest.mark.parametrize(
-    'struc_name,assume_isolated', (
+    ('struc_name', 'assume_isolated'),
+    [
         ('silicon', None),
         ('2D-xy-arsenic', '2D'),
         ('1D-x-carbon', None),
         ('1D-y-carbon', None),
         ('1D-z-carbon', None),
-    )
+    ],
 )
 def test_pbc_assume_isolated(fixture_code, generate_structure, struc_name, assume_isolated):
     """Test structures with various ``pbc`` set the correct ``assume_isolated``."""
@@ -106,20 +108,24 @@ def test_pbc_assume_isolated(fixture_code, generate_structure, struc_name, assum
     assert builder.pw.parameters['SYSTEM'].get('assume_isolated', None) == assume_isolated
 
 
-@pytest.mark.parametrize('initial_magnetic_moments', ({}, {'Si1': 1.0, 'Si2': 2.0}))
+@pytest.mark.parametrize('initial_magnetic_moments', [{}, {'Si1': 1.0, 'Si2': 2.0}])
 def test_initial_magnetic_moments_invalid(fixture_code, generate_structure, initial_magnetic_moments):
     """Test ``PwBaseWorkChain.get_builder_from_protocol`` with invalid ``initial_magnetic_moments`` keyword."""
     code = fixture_code('quantumespresso.pw')
     structure = generate_structure('silicon')
 
     with pytest.raises(
-        ValueError, match=r'`initial_magnetic_moments` is specified but spin type `.*` is incompatible.'
+        ValueError,
+        match=r'`initial_magnetic_moments` is specified but spin type `.*` is incompatible.',
     ):
         PwBaseWorkChain.get_builder_from_protocol(code, structure, initial_magnetic_moments=initial_magnetic_moments)
 
     with pytest.raises(ValueError):
         PwBaseWorkChain.get_builder_from_protocol(
-            code, structure, initial_magnetic_moments=initial_magnetic_moments, spin_type=SpinType.COLLINEAR
+            code,
+            structure,
+            initial_magnetic_moments=initial_magnetic_moments,
+            spin_type=SpinType.COLLINEAR,
         )
 
 
@@ -130,9 +136,12 @@ def test_initial_magnetic_moments(fixture_code, generate_structure):
 
     initial_magnetic_moments = {'Si': 1.0}
     builder = PwBaseWorkChain.get_builder_from_protocol(
-        code, structure, initial_magnetic_moments=initial_magnetic_moments, spin_type=SpinType.COLLINEAR
+        code,
+        structure,
+        initial_magnetic_moments=initial_magnetic_moments,
+        spin_type=SpinType.COLLINEAR,
     )
-    parameters = builder.pw.parameters.get_dict()  # pylint: disable=no-member
+    parameters = builder.pw.parameters.get_dict()
     assert parameters['SYSTEM']['nspin'] == 2
     assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.25}
 
@@ -162,8 +171,8 @@ def test_magnetization_overrides(fixture_code, generate_structure):
     builder = PwBaseWorkChain.get_builder_from_protocol(
         code, structure, overrides=overrides, spin_type=SpinType.COLLINEAR
     )
-    assert builder.pw.parameters['SYSTEM']['starting_magnetization'] == initial_starting_magnetization  # pylint: disable=no-member
-    assert builder.pw.parameters['SYSTEM']['nspin'] == 2  # pylint: disable=no-member
+    assert builder.pw.parameters['SYSTEM']['starting_magnetization'] == initial_starting_magnetization
+    assert builder.pw.parameters['SYSTEM']['nspin'] == 2
 
     # Test that specifying `overrides` override the `initial_magnetic_moments`
     builder = PwBaseWorkChain.get_builder_from_protocol(
@@ -171,10 +180,10 @@ def test_magnetization_overrides(fixture_code, generate_structure):
         structure,
         overrides=overrides,
         spin_type=SpinType.COLLINEAR,
-        initial_magnetic_moments=initial_magnetic_moments
+        initial_magnetic_moments=initial_magnetic_moments,
     )
-    assert builder.pw.parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.5}  # pylint: disable=no-member
-    assert builder.pw.parameters['SYSTEM']['nspin'] == 2  # pylint: disable=no-member
+    assert builder.pw.parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.5}
+    assert builder.pw.parameters['SYSTEM']['nspin'] == 2
 
 
 def test_parameter_overrides(fixture_code, generate_structure):
@@ -184,7 +193,7 @@ def test_parameter_overrides(fixture_code, generate_structure):
 
     overrides = {'pw': {'parameters': {'SYSTEM': {'nbnd': 123}}}}
     builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)
-    assert builder.pw.parameters['SYSTEM']['nbnd'] == 123  # pylint: disable=no-member
+    assert builder.pw.parameters['SYSTEM']['nbnd'] == 123
 
 
 def test_settings_overrides(fixture_code, generate_structure):
@@ -194,7 +203,7 @@ def test_settings_overrides(fixture_code, generate_structure):
 
     overrides = {'pw': {'settings': {'cmdline': ['--kickass-mode']}}}
     builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)
-    assert builder.pw.settings['cmdline'] == ['--kickass-mode']  # pylint: disable=no-member
+    assert builder.pw.settings['cmdline'] == ['--kickass-mode']
 
 
 def test_metadata_overrides(fixture_code, generate_structure):
@@ -202,13 +211,22 @@ def test_metadata_overrides(fixture_code, generate_structure):
     code = fixture_code('quantumespresso.pw')
     structure = generate_structure('silicon')
 
-    overrides = {'pw': {'metadata': {'options': {'resources': {'num_machines': 1e90}, 'max_wallclock_seconds': 1}}}}
+    overrides = {
+        'pw': {
+            'metadata': {
+                'options': {
+                    'resources': {'num_machines': 1e90},
+                    'max_wallclock_seconds': 1,
+                }
+            }
+        }
+    }
     builder = PwBaseWorkChain.get_builder_from_protocol(
         code,
         structure,
         overrides=overrides,
     )
-    metadata = builder.pw.metadata  # pylint: disable=no-member
+    metadata = builder.pw.metadata
 
     assert metadata['options']['resources']['num_machines'] == 1e90
     assert metadata['options']['max_wallclock_seconds'] == 1
@@ -225,75 +243,35 @@ def test_parallelization_overrides(fixture_code, generate_structure):
         structure,
         overrides=overrides,
     )
-    parallelization = builder.pw.parallelization  # pylint: disable=no-member
+    parallelization = builder.pw.parallelization
 
     assert parallelization['npool'] == 4
     assert parallelization['ndiag'] == 12
 
 
 @pytest.mark.parametrize(
-    'overrides,warning',
-    (
+    ('overrides', 'warning'),
+    [
         # CORRECT overrides for top-level process input
-        ({
-            'clean_workdir': True
-        }, None),
+        ({'clean_workdir': True}, None),
         # CORRECT overrides for top-level protocol input
-        ({
-            'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'
-        }, None),
+        ({'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'}, None),
         # CORRECT overrides for nested process input
-        ({
-            'pw': {
-                'metadata': {
-                    'options': {
-                        'withmpi': False
-                    }
-                }
-            }
-        }, None),
+        ({'pw': {'metadata': {'options': {'withmpi': False}}}}, None),
         # CORRECT overrides for nested protocol input
-        ({
-            'meta_parameters': {
-                'conv_thr_per_atom': 0.2
-            }
-        }, None),
+        ({'meta_parameters': {'conv_thr_per_atom': 0.2}}, None),
         # CORRECT overrides for `Dict` node with correct keys
-        ({
-            'pw': {
-                'parameters': {
-                    'CONTROL': {
-                        'calculation': 'relax'
-                    }
-                }
-            }
-        }, None),
+        ({'pw': {'parameters': {'CONTROL': {'calculation': 'relax'}}}}, None),
         # CORRECT overrides for `Dict` node with incorrect keys
         # The key check should _not_ validate the inputs, that is the job of the port validator
-        ({
-            'pw': {
-                'parameters': {
-                    'NON-EXISTENT': 1
-                }
-            }
-        }, None),
+        ({'pw': {'parameters': {'NON-EXISTENT': 1}}}, None),
         # WRONG overrides with typo
-        ({
-            'clean_wokdir': True
-        }, UserWarning),
+        ({'clean_wokdir': True}, UserWarning),
         # WRONG overrides with process input at incorrect level
-        ({
-            'pw': {
-                'options': {}
-            }
-        }, UserWarning),
+        ({'pw': {'options': {}}}, UserWarning),
         # WRONG overrides with protocol input at incorrect level
-        ({
-            'pw': {
-                'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'
-            }
-        }, UserWarning),
-    )
+        ({'pw': {'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'}}, UserWarning),
+    ],
 )
 def test_overrides_key_check(fixture_code, generate_structure, overrides, warning):
     """Test that the `get_builder_from_protocol()` method warns for erroneous keys in the `overrides`."""
@@ -322,7 +300,7 @@ def test_pseudos_overrides(fixture_code, generate_structure, generate_upf_data):
                         'ecutrho': 123,
                         'ecutwfc': 456,
                     }
-                }
+                },
             }
         },
         {
@@ -336,17 +314,17 @@ def test_pseudos_overrides(fixture_code, generate_structure, generate_upf_data):
                         'ecutrho': 123,
                         'ecutwfc': 456,
                     }
-                }
-            }
+                },
+            },
         },
     ):
         builder = PwBaseWorkChain.get_builder_from_protocol(
             code=fixture_code('quantumespresso.pw'),
             structure=structure,
             overrides=overrides,
-            spin_type=SpinType.COLLINEAR
+            spin_type=SpinType.COLLINEAR,
         )
-        pseudos = builder.pw.pseudos  # pylint: disable=no-member
+        pseudos = builder.pw.pseudos
         parameters = builder.pw.parameters.get_dict()
 
         assert pseudos['Co'] == upf_data
@@ -365,42 +343,34 @@ def test_pseudos_overrides_raises(fixture_code, generate_structure, generate_upf
     upf_data = generate_upf_data('Co')
 
     for params in (
-        ({
-            'pw': {
-                'pseudos': {
-                    'Co': upf_data
-                }
-            }
-        }, ValueError, 'both `ecutwfc` and `ecutrho` cutoffs should be'),
-        ({
-            'pw': {
-                'pseudos': {
-                    'Si': upf_data
-                }
-            }
-        }, ValueError, '`pseudos` override needs one value'),
-        ({
-            'pseudo_family': None,
-            'pw': {
-                'pseudos': {
-                    'Co': upf_data
-                }
-            }
-        }, ValueError, 'both `ecutwfc` and `ecutrho` cutoffs should be'),
-        ({
-            'pseudo_family': None,
-            'pw': {
-                'pseudos': {
-                    'Si': upf_data
-                }
-            }
-        }, ValueError, '`pseudos` override needs one value'),
+        (
+            {'pw': {'pseudos': {'Co': upf_data}}},
+            ValueError,
+            'both `ecutwfc` and `ecutrho` cutoffs should be',
+        ),
+        (
+            {'pw': {'pseudos': {'Si': upf_data}}},
+            ValueError,
+            '`pseudos` override needs one value',
+        ),
+        (
+            {'pseudo_family': None, 'pw': {'pseudos': {'Co': upf_data}}},
+            ValueError,
+            'both `ecutwfc` and `ecutrho` cutoffs should be',
+        ),
+        (
+            {'pseudo_family': None, 'pw': {'pseudos': {'Si': upf_data}}},
+            ValueError,
+            '`pseudos` override needs one value',
+        ),
     ):
         overrides, error_type, error_msg = params
 
         with pytest.raises(error_type, match=error_msg):
             PwBaseWorkChain.get_builder_from_protocol(
-                code=fixture_code('quantumespresso.pw'), structure=structure, overrides=overrides
+                code=fixture_code('quantumespresso.pw'),
+                structure=structure,
+                overrides=overrides,
             )
 
 
@@ -426,31 +396,33 @@ def test_options(fixture_code, generate_structure):
 
     options = {'queue_name': queue_name, 'withmpi': withmpi}
     builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, options=options)
-    metadata = builder.pw.metadata  # pylint: disable=no-member
+    metadata = builder.pw.metadata
 
     assert metadata['options']['queue_name'] == queue_name
     assert metadata['options']['withmpi'] == withmpi
 
 
 @pytest.mark.parametrize(
-    'scheduler,expected_resources', (
-        ('core.direct', {
-            'num_machines': 1
-        }),
-        ('core.slurm', {
-            'num_machines': 1
-        }),
-        ('core.sge', {
-            'parallel_env': 'mpi',
-            'tot_num_mpiprocs': 1
-        }),
-    )
+    ('scheduler', 'expected_resources'),
+    [
+        ('core.direct', {'num_machines': 1}),
+        ('core.slurm', {'num_machines': 1}),
+        ('core.sge', {'parallel_env': 'mpi', 'tot_num_mpiprocs': 1}),
+    ],
 )
-def test_default_resources(aiida_computer, aiida_code_installed, generate_structure, scheduler, expected_resources):
+def test_default_resources(
+    aiida_computer,
+    aiida_code_installed,
+    generate_structure,
+    scheduler,
+    expected_resources,
+):
     """Test that the default resources are correctly specified."""
     computer = aiida_computer(label=f'local-{scheduler}', scheduler_type=scheduler)
     code = aiida_code_installed(
-        label=f'test.pw-{scheduler}', computer=computer, default_calc_job_plugin='quantumespresso.pw'
+        label=f'test.pw-{scheduler}',
+        computer=computer,
+        default_calc_job_plugin='quantumespresso.pw',
     )
 
     structure = generate_structure()

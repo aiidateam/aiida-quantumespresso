@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the `MatdynCalculation` class."""
-# pylint: disable=protected-access
+
 from pathlib import Path
 
 from aiida import orm
@@ -53,7 +52,13 @@ def test_matdyn_elph(fixture_sandbox, generate_calc_job, generate_inputs_matdyn,
     retrieve_list.append('lambda')
     parent_folder = inputs['parent_folder']
     dirpath = Path(parent_folder.get_remote_path()) / PhCalculation._FOLDER_ELECTRON_PHONON
-    remote_copy_list = [(parent_folder.computer.uuid, dirpath.as_posix(), PhCalculation._FOLDER_ELECTRON_PHONON)]
+    remote_copy_list = [
+        (
+            parent_folder.computer.uuid,
+            dirpath.as_posix(),
+            PhCalculation._FOLDER_ELECTRON_PHONON,
+        )
+    ]
 
     # Check the attributes of the returned `CalcInfo`
     assert isinstance(calc_info, datastructures.CalcInfo)

@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Calculation function to compute a k-point mesh for a structure with a guaranteed minimum k-point distance."""
+
 from aiida.engine import calcfunction
 
 
@@ -17,7 +17,7 @@ def create_kpoints_from_distance(structure, distance, force_parity):
     from aiida.orm import KpointsData
     from numpy import linalg
 
-    epsilon = 1E-5
+    epsilon = 1e-5
 
     kpoints = KpointsData()
     kpoints.set_cell_from_structure(structure)

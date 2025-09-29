@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Utilities to deal with various mapping data structures."""
+
 from collections.abc import Mapping
 
 from aiida.common import AttributeDict
@@ -15,13 +15,15 @@ def get_logging_container():
 
     :return: :py:class:`~aiida.common.extendeddicts.AttributeDict`
     """
-    return AttributeDict({
-        'debug': [],
-        'info': [],
-        'warning': [],
-        'error': [],
-        'critical': [],
-    })
+    return AttributeDict(
+        {
+            'debug': [],
+            'info': [],
+            'warning': [],
+            'error': [],
+            'critical': [],
+        }
+    )
 
 
 def update_mapping(original, source):
@@ -82,7 +84,6 @@ def wrap_bare_dict_inputs(port_namespace, inputs):
     wrapped = {}
 
     for key, value in inputs.items():
-
         if key not in port_namespace:
             wrapped[key] = value
             continue

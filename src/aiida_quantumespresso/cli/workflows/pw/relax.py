@@ -1,12 +1,13 @@
-# -*- coding: utf-8 -*-
 """Command line scripts to launch a `PwRelaxWorkChain` for testing and demonstration purposes."""
+
+import click
 from aiida.cmdline.params import options as options_core
 from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
-import click
 
 from .. import cmd_launch
 from ...utils import launch, options, validate
+from .. import cmd_launch
 
 
 @cmd_launch.command('pw-relax')
@@ -32,13 +33,27 @@ from ...utils import launch, options, validate
     is_flag=True,
     default=False,
     show_default=True,
-    help='Run a final scf calculation for the final relaxed structure.'
+    help='Run a final scf calculation for the final relaxed structure.',
 )
 @decorators.with_dbenv()
 def launch_workflow(
-    code, structure, pseudo_family, kpoints_distance, ecutwfc, ecutrho, hubbard_u, hubbard_v, hubbard_file,
-    starting_magnetization, smearing, clean_workdir, max_num_machines, max_wallclock_seconds, with_mpi, daemon,
-    final_scf
+    code,
+    structure,
+    pseudo_family,
+    kpoints_distance,
+    ecutwfc,
+    ecutrho,
+    hubbard_u,
+    hubbard_v,
+    hubbard_file,
+    starting_magnetization,
+    smearing,
+    clean_workdir,
+    max_num_machines,
+    max_wallclock_seconds,
+    with_mpi,
+    daemon,
+    final_scf,
 ):
     """Run a `PwRelaxWorkChain`."""
     from aiida.orm import Bool, Dict, Float, Str
@@ -63,17 +78,17 @@ def launch_workflow(
     try:
         validate.validate_hubbard_parameters(structure, parameters, hubbard_u, hubbard_v, hubbard_file)
     except ValueError as exception:
-        raise click.BadParameter(str(exception))
+        raise click.BadParameter(str(exception)) from exception
 
     try:
         validate.validate_starting_magnetization(structure, parameters, starting_magnetization)
     except ValueError as exception:
-        raise click.BadParameter(str(exception))
+        raise click.BadParameter(str(exception)) from exception
 
     try:
         validate.validate_smearing(parameters, smearing)
     except ValueError as exception:
-        raise click.BadParameter(str(exception))
+        raise click.BadParameter(str(exception)) from exception
 
     builder.structure = structure
     builder.base.kpoints_distance = Float(kpoints_distance)

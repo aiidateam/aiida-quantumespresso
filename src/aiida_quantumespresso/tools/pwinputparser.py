@@ -1,12 +1,12 @@
-# -*- coding: utf-8 -*-
 """Utilities to parse Quantum ESPRESSO pw.x input files into AiiDA nodes or builders."""
+
 import copy
 import re
 
+import numpy as np
 from aiida.common.folders import Folder
 from aiida.orm import Dict, load_code
 from aiida.plugins import CalculationFactory, DataFactory
-import numpy as np
 from qe_tools.parsers import PwInputFile as BasePwInputFile
 
 from .base import StructureParseMixin
@@ -47,9 +47,9 @@ class PwInputFile(StructureParseMixin, BasePwInputFile):
         elif self.k_points['type'] == 'tpiba':  # Cartesian; units of 2*pi/alat
             alat = np.linalg.norm(structure.cell[0])  # alat in Angstrom
             kpoints.set_kpoints(
-                np.array(self.k_points['points']) * (2. * np.pi / alat),
+                np.array(self.k_points['points']) * (2.0 * np.pi / alat),
                 weights=self.k_points['weights'],
-                cartesian=True
+                cartesian=True,
             )
         elif self.k_points['type'] == 'automatic':
             kpoints.set_kpoints_mesh(self.k_points['points'], offset=self.k_points['offset'])
@@ -77,7 +77,7 @@ def create_builder_from_file(input_folder, input_file_name, code, metadata, pseu
     :raises NotImplementedError: if the structure is not ibrav=0
     :return: a builder instance for PwCalculation
     """
-    PwCalculation = CalculationFactory('quantumespresso.pw')
+    PwCalculation = CalculationFactory('quantumespresso.pw')  # noqa: N806
 
     builder = PwCalculation.get_builder()
     builder.metadata = metadata
@@ -101,7 +101,7 @@ def create_builder_from_file(input_folder, input_file_name, code, metadata, pseu
     # units, that will be taken care of by the input parsing tools, and
     # we are safe to fake that they were never there in the first place.
     parameters_dict = copy.deepcopy(parsed_file.namelists)
-    for namelist, blocked_key in PwCalculation._blocked_keywords:  # pylint: disable=protected-access
+    for namelist, blocked_key in PwCalculation._blocked_keywords:  # noqa: SLF001
         for key in list(parameters_dict[namelist].keys()):
             # take into account that celldm and celldm(*) must be blocked
             if re.sub('[(0-9)]', '', key) == blocked_key:
@@ -133,7 +133,7 @@ def create_builder_from_file(input_folder, input_file_name, code, metadata, pseu
     # If there are any fixed coordinates (i.e. force modification) present in the input file, specify in settings
     fixed_coords = parsed_file.atomic_positions['fixed_coords']
     # Function ``any()`` only works for 1-dimensional lists so we have to call it twice manually.
-    if any((any(fc_xyz) for fc_xyz in fixed_coords)):
+    if any(any(fc_xyz) for fc_xyz in fixed_coords):
         settings_dict['FIXED_COORDS'] = fixed_coords
 
     if settings_dict:

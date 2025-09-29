@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=redefined-outer-name
 """Tests for the ``PdosWorkChain.get_builder_from_protocol`` method."""
+
+import pytest
 from aiida.engine import ProcessBuilder
 from aiida.plugins import WorkflowFactory
-import pytest
 
 from aiida_quantumespresso.common.types import ElectronicType, SpinType
 
@@ -19,7 +18,7 @@ def get_pdos_generator_inputs(fixture_code, generate_structure):
         'pw_code': fixture_code('quantumespresso.pw'),
         'dos_code': fixture_code('quantumespresso.dos'),
         'projwfc_code': fixture_code('quantumespresso.projwfc'),
-        'structure': generate_structure('silicon')
+        'structure': generate_structure('silicon'),
     }
 
 

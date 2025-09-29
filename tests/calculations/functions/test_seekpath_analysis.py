@@ -1,12 +1,11 @@
-# -*- coding: utf-8 -*-
 """Tests for the `seekpath_structure_analysis` function for HubbbardStructureData."""
+
 import pytest
 
 from aiida_quantumespresso.calculations.functions.seekpath_structure_analysis import seekpath_structure_analysis
 from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
 
 
-# pylint: disable=W0621
 def test_seekpath_analysis(data_regression):
     """Test the `seekpath_structure_analysis` calculation function for HubbardStructureData."""
     cell = [[5.43, 0.0, 0.0], [0.0, 5.43, 0.0], [0.0, 0.0, 5.43]]
@@ -32,32 +31,35 @@ def test_seekpath_analysis(data_regression):
     assert isinstance(prim_structure, HubbardStructureData), 'Primitive structure should be a HubbardStructureData'
     assert isinstance(conv_structure, HubbardStructureData), 'Conventional structure should be a HubbardStructureData'
 
-    assert prim_structure.hubbard.parameters != orig_structure.hubbard.parameters, \
-        'Primitive parameters should be different'
-    assert len(prim_structure.hubbard.parameters) == len(orig_structure.hubbard.parameters), \
-        'Primitive parameters should have the same length as original parameters'
+    assert (
+        prim_structure.hubbard.parameters != orig_structure.hubbard.parameters
+    ), 'Primitive parameters should be different'
+    assert len(prim_structure.hubbard.parameters) == len(
+        orig_structure.hubbard.parameters
+    ), 'Primitive parameters should have the same length as original parameters'
     assert all(
         prim_param.atom_manifold == orig_param.atom_manifold
         for prim_param, orig_param in zip(prim_structure.hubbard.parameters, orig_structure.hubbard.parameters)
     ), 'Primitive cell parameter atom manifolds should match the original'
 
-    data_regression.check({
-        'primitive': {
-            'cell': prim_structure.cell,
-            'kinds': prim_structure.get_site_kindnames(),
-            'positions': [site.position for site in prim_structure.sites],
-            'hubbard': prim_structure.hubbard.to_list(),
-        },
-        'conventional': {
-            'cell': conv_structure.cell,
-            'kinds': conv_structure.get_site_kindnames(),
-            'positions': [site.position for site in conv_structure.sites],
-            'hubbard': conv_structure.hubbard.to_list(),
+    data_regression.check(
+        {
+            'primitive': {
+                'cell': prim_structure.cell,
+                'kinds': prim_structure.get_site_kindnames(),
+                'positions': [site.position for site in prim_structure.sites],
+                'hubbard': prim_structure.hubbard.to_list(),
+            },
+            'conventional': {
+                'cell': conv_structure.cell,
+                'kinds': conv_structure.get_site_kindnames(),
+                'positions': [site.position for site in conv_structure.sites],
+                'hubbard': conv_structure.hubbard.to_list(),
+            },
         }
-    })
+    )
 
 
-# pylint: disable=W0621
 def test_seekpath_analysis_intersite(generate_structure):
     """Test that the `seekpath_structure_analysis` with intersite hubbard corrections fails."""
     orig_structure = HubbardStructureData.from_structure(generate_structure('silicon-kinds'))

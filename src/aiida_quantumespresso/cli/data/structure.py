@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
 """Command line utilities to create and inspect `StructureData` nodes."""
+
+import click
 from aiida.cmdline.params import options
 from aiida.cmdline.utils import decorators, echo
-import click
 
 from . import cmd_data
 

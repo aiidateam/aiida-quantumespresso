@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """A module defining hydrogen-like orbitals with non-collinear spin component."""
 
 from aiida.common.exceptions import ValidationError
@@ -36,10 +35,11 @@ class NoncollinearHydrogenOrbital(RealhydrogenOrbital):
     0 to 2L for L > 0 and from 0 to (-L) for L < 0.
     """
 
-    _base_fields_required = RealhydrogenOrbital._base_fields_required
+    _base_fields_required = RealhydrogenOrbital._base_fields_required  # noqa: SLF001
 
     _base_fields_optional = tuple(
-        list(filter(lambda x: x[0] != 'spin', RealhydrogenOrbital._base_fields_optional)) + [
+        list(filter(lambda x: x[0] != 'spin', RealhydrogenOrbital._base_fields_optional))  # noqa: SLF001
+        + [
             ('spin', validate_spin, 0.0),
         ]
     )

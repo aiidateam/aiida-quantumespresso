@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """`CalcJob` implementation for the q2r.x code of Quantum ESPRESSO."""
+
 from pathlib import Path
 
 from aiida import orm
@@ -14,13 +14,13 @@ class Q2rCalculation(NamelistsCalculation):
     """`CalcJob` implementation for the q2r.x code of Quantum ESPRESSO."""
 
     _FORCE_CONSTANTS_NAME = 'real_space_force_constants.dat'
-    _OUTPUT_SUBFOLDER = PhCalculation._FOLDER_DYNAMICAL_MATRIX  # pylint: disable=protected-access
-    _INPUT_SUBFOLDER = PhCalculation._FOLDER_DYNAMICAL_MATRIX  # pylint: disable=protected-access
-    _default_parent_output_folder = PhCalculation._FOLDER_DYNAMICAL_MATRIX  # pylint: disable=protected-access
+    _OUTPUT_SUBFOLDER = PhCalculation._FOLDER_DYNAMICAL_MATRIX  # noqa: SLF001
+    _INPUT_SUBFOLDER = PhCalculation._FOLDER_DYNAMICAL_MATRIX  # noqa: SLF001
+    _default_parent_output_folder = PhCalculation._FOLDER_DYNAMICAL_MATRIX  # noqa: SLF001
 
     _default_namelists = ['INPUT']
     _blocked_keywords = [
-        ('INPUT', 'fildyn', PhCalculation._OUTPUT_DYNAMICAL_MATRIX_PREFIX),  # pylint: disable=protected-access
+        ('INPUT', 'fildyn', PhCalculation._OUTPUT_DYNAMICAL_MATRIX_PREFIX),  # noqa: SLF001
         ('INPUT', 'flfrc', _FORCE_CONSTANTS_NAME),  # Real space force constants
     ]
 
@@ -30,14 +30,12 @@ class Q2rCalculation(NamelistsCalculation):
     @classmethod
     def define(cls, spec):
         """Define the process specification."""
-        # yapf: disable
+
         super().define(spec)
         spec.input('parent_folder', valid_type=(orm.RemoteData, orm.FolderData), required=True)
         spec.output('force_constants', valid_type=ForceConstantsData)
         spec.output('output_parameters', valid_type=orm.Dict)
-        spec.exit_code(330, 'ERROR_READING_FORCE_CONSTANTS_FILE',
-            message='The force constants file could not be read.')
-        # yapf: enable
+        spec.exit_code(330, 'ERROR_READING_FORCE_CONSTANTS_FILE', message='The force constants file could not be read.')
 
     def prepare_for_submission(self, folder):
         """Prepare the calculation job for submission by transforming input nodes into input files.
@@ -67,15 +65,11 @@ class Q2rCalculation(NamelistsCalculation):
 
         parent_folder = self.inputs.get('parent_folder', None)
 
-        if parent_folder is not None and 'parameters' in self.inputs:
+        if parent_folder is not None and 'parameters' in self.inputs and parameters.get('INPUT').get('la2F', False):
+            symlink = settings.pop('PARENT_FOLDER_SYMLINK', False)
+            remote_list = calcinfo.remote_symlink_list if symlink else calcinfo.remote_copy_list
 
-            if parameters.get('INPUT').get('la2F', False):
-
-                symlink = settings.pop('PARENT_FOLDER_SYMLINK', False)
-                remote_list = calcinfo.remote_symlink_list if symlink else calcinfo.remote_copy_list
-
-                # pylint: disable=protected-access
-                dirpath = Path(parent_folder.get_remote_path()) / PhCalculation._FOLDER_ELECTRON_PHONON
-                remote_list.append((parent_folder.computer.uuid, str(dirpath), PhCalculation._FOLDER_ELECTRON_PHONON))
+            dirpath = Path(parent_folder.get_remote_path()) / PhCalculation._FOLDER_ELECTRON_PHONON  # noqa: SLF001
+            remote_list.append((parent_folder.computer.uuid, str(dirpath), PhCalculation._FOLDER_ELECTRON_PHONON))  # noqa: SLF001
 
         return calcinfo

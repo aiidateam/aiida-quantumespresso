@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
 """Protocol definitions for workflow input generation."""
-from copy import deepcopy
+
 import json
 import os
+from copy import deepcopy
 
 
 def _load_pseudo_metadata(filename):
@@ -10,7 +10,10 @@ def _load_pseudo_metadata(filename):
 
     suggested cutoffs) for a library of pseudopotentials.
     """
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), filename), encoding='utf-8') as handle:
+    with open(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), filename),
+        encoding='utf-8',
+    ) as handle:
         return json.load(handle)
 
 
@@ -32,10 +35,10 @@ def _get_all_protocol_modifiers():
             'pseudo_default': 'SSSP-efficiency-1.1',
             'parameters': {
                 'fast': {
-                    'kpoints_mesh_offset': [0., 0., 0.],
+                    'kpoints_mesh_offset': [0.0, 0.0, 0.0],
                     'kpoints_mesh_density': 0.2,
                     'kpoints_distance_for_bands': 0.02,
-                    'convergence_threshold_per_atom': 2.E-06,
+                    'convergence_threshold_per_atom': 2.0e-06,
                     'smearing': 'marzari-vanderbilt',
                     'degauss': 0.02,
                     'occupations': 'smearing',
@@ -46,10 +49,10 @@ def _get_all_protocol_modifiers():
                     'num_bands_factor': None,  # number of bands wrt number of occupied bands
                 },
                 'default': {
-                    'kpoints_mesh_offset': [0., 0., 0.],
+                    'kpoints_mesh_offset': [0.0, 0.0, 0.0],
                     'kpoints_mesh_density': 0.2,
                     'kpoints_distance_for_bands': 0.01,
-                    'convergence_threshold_per_atom': 1.E-10,
+                    'convergence_threshold_per_atom': 1.0e-10,
                     'smearing': 'marzari-vanderbilt',
                     'degauss': 0.02,
                     'occupations': 'smearing',
@@ -60,7 +63,7 @@ def _get_all_protocol_modifiers():
                     'num_bands_factor': None,  # number of bands wrt number of occupied bands
                 },
             },
-            'parameters_default': 'default'
+            'parameters_default': 'default',
         }
     }
     protocols['theos-ht-1.0']['parameters']['scdm'] = deepcopy(protocols['theos-ht-1.0']['parameters']['default'])
@@ -147,7 +150,7 @@ class ProtocolManager:
         """Get all valid parameters modifier names."""
         return list(self.modifiers['parameters'].keys())
 
-    def get_default_parameters_modifier_name(self):  # pylint: disable=invalid-name
+    def get_default_parameters_modifier_name(self):
         """Return the default parameter modifier name (or None if no default is specified)."""
         return self.modifiers.get('parameters_default', None)
 
@@ -159,7 +162,7 @@ class ProtocolManager:
         """Get all valid pseudopotential modifier names."""
         return list(self.modifiers['pseudo'].keys())
 
-    def get_default_pseudo_modifier_name(self):  # pylint: disable=invalid-name
+    def get_default_pseudo_modifier_name(self):
         """Return the default pseudopotential modifier name (or None if no default is specified)."""
         return self.modifiers.get('pseudo_default', None)
 
@@ -184,7 +187,7 @@ class ProtocolManager:
         from aiida.orm import QueryBuilder
         from aiida.plugins import DataFactory
 
-        UpfData = DataFactory('core.upf')
+        UpfData = DataFactory('core.upf')  # noqa: N806
 
         if modifier_name is None:
             modifier_name = self.get_default_pseudo_modifier_name()
@@ -212,11 +215,15 @@ class ProtocolManager:
             md5 = this_pseudo_data['md5']
 
             builder = QueryBuilder()
-            builder.append(UpfData, filters={'attributes.md5': md5}, project=['uuid', 'attributes.element'])
+            builder.append(
+                UpfData,
+                filters={'attributes.md5': md5},
+                project=['uuid', 'attributes.element'],
+            )
             res = builder.all()
             if len(res) >= 1:
                 this_mismatch_elements = []
-                for this_uuid, this_element in res:  # pylint: disable=not-an-iterable
+                for this_uuid, this_element in res:
                     if element == this_element:
                         found[element] = this_uuid
                         break
@@ -232,5 +239,3 @@ class ProtocolManager:
 
 if __name__ == '__main__':
     MANAGER = ProtocolManager('theos-ht-1.0')
-    print(MANAGER.check_pseudos())
-    print(MANAGER.get_protocol_data())

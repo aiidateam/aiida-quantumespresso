@@ -1,10 +1,10 @@
-# -*- coding: utf-8 -*-
 """A collection of function that are used to parse the output of Quantum Espresso Neb.
 
 The function that needs to be called from outside is parse_raw_output_neb(). The functions mostly work without aiida
 specific functionalities. The parsing will try to convert whatever it can in some dictionary, which by operative
 decision doesn't have much structure encoded, [the values are simple ]
 """
+
 from qe_tools import CONSTANTS
 
 
@@ -59,7 +59,7 @@ def parse_neb_text_output(data):
     # set by default the calculation as not converged.
     parsed_data['converged'] = [False, 0]
 
-    for count, line in enumerate(data.split('\n')):
+    for line in data.split('\n'):
         if 'initial path length' in line:
             initial_path_length = float(line.split('=')[1].split('bohr')[0])
             parsed_data['initial_path_length'] = initial_path_length * CONSTANTS.bohr_to_ang
@@ -79,9 +79,9 @@ def parse_neb_text_output(data):
         elif 'CI_scheme' in line:
             parsed_data['ci_scheme'] = line.split('=')[1].strip()
         elif 'first_last_opt' in line:
-            parsed_data['first_last_opt'] = True if line.split('=')[1] == 'T' else False
+            parsed_data['first_last_opt'] = line.split('=')[1] == 'T'
         elif 'use_freezing' in line:
-            parsed_data['use_freezing'] = True if line.split('=')[1] == 'T' else False
+            parsed_data['use_freezing'] = line.split('=')[1] == 'T'
         elif ' ds ' in line:
             parsed_data['ds_au'] = float(line.split('=')[1].split('a.u.')[0])
         elif '   k_max' in line:
@@ -97,7 +97,10 @@ def parse_neb_text_output(data):
         elif 'list of climbing images' in line:
             parsed_data['climbing_images_manual'] = [int(_) for _ in line.split(':')[1].split(',')[:-1]]
         elif 'neb: convergence achieved in' in line:
-            parsed_data['converged'] = [True, int(line.split('iteration')[0].split()[-1])]
+            parsed_data['converged'] = [
+                True,
+                int(line.split('iteration')[0].split()[-1]),
+            ]
 
     num_images = parsed_data['num_of_images']
 
@@ -121,7 +124,7 @@ def parse_neb_text_output(data):
                         split_line = iteration[count + 2 + i].split()[1:]
                         energies.append(float(split_line[0]))
                         forces.append(float(split_line[1]))
-                        frozen.append(True if split_line[2] == 'T' else False)
+                        frozen.append(split_line[2] == 'T')
                     iteration_data['image_energies'].append(energies)
                     iteration_data['image_forces'].append(forces)
                     iteration_data['image_frozen'].append(frozen)

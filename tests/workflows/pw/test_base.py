@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=no-member,redefined-outer-name
 """Tests for the `PwBaseWorkChain` class."""
+
+import pytest
 from aiida.common import AttributeDict
 from aiida.engine import ExitCode, ProcessHandlerReport
 from aiida.orm import Dict
-import pytest
 
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
@@ -18,19 +17,26 @@ def test_setup(generate_workchain_pw):
     assert isinstance(process.ctx.inputs, AttributeDict)
 
 
-@pytest.mark.parametrize('structure_changed', (
-    True,
-    False,
-))
+@pytest.mark.parametrize(
+    'structure_changed',
+    [
+        True,
+        False,
+    ],
+)
 def test_handle_out_of_walltime(
-    generate_workchain_pw, fixture_localhost, generate_remote_data, generate_structure, structure_changed
+    generate_workchain_pw,
+    fixture_localhost,
+    generate_remote_data,
+    generate_structure,
+    structure_changed,
 ):
     """Test `PwBaseWorkChain.handle_out_of_walltime`."""
     generate_inputs = {
         'exit_code': PwCalculation.exit_codes.ERROR_OUT_OF_WALLTIME,
         'pw_outputs': {
             'remote_folder': generate_remote_data(computer=fixture_localhost, remote_path='/path/to/remote')
-        }
+        },
     }
     if structure_changed:
         output_structure = generate_structure()
@@ -58,7 +64,7 @@ def test_handle_electronic_convergence_not_reached(generate_workchain_pw, fixtur
 
     process = generate_workchain_pw(
         exit_code=PwCalculation.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED,
-        pw_outputs={'remote_folder': remote_data}
+        pw_outputs={'remote_folder': remote_data},
     )
     process.setup()
 
@@ -66,8 +72,7 @@ def test_handle_electronic_convergence_not_reached(generate_workchain_pw, fixtur
 
     result = process.handle_electronic_convergence_not_reached(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
-    assert process.ctx.inputs.parameters['ELECTRONS']['mixing_beta'] == \
-        process.defaults.delta_factor_mixing_beta * 0.5
+    assert process.ctx.inputs.parameters['ELECTRONS']['mixing_beta'] == process.defaults.delta_factor_mixing_beta * 0.5
     assert process.ctx.inputs.parameters['CONTROL']['restart_mode'] == 'restart'
     assert result.do_break
 
@@ -91,7 +96,8 @@ def test_handle_known_unrecoverable_failure(generate_workchain_pw):
 
 
 @pytest.mark.parametrize(
-    'exit_code', (
+    'exit_code',
+    [
         PwCalculation.exit_codes.ERROR_COMPUTING_CHOLESKY,
         PwCalculation.exit_codes.ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED,
         PwCalculation.exit_codes.ERROR_S_MATRIX_NOT_POSITIVE_DEFINITE,
@@ -99,7 +105,7 @@ def test_handle_known_unrecoverable_failure(generate_workchain_pw):
         PwCalculation.exit_codes.ERROR_QR_FAILED,
         PwCalculation.exit_codes.ERROR_EIGENVECTOR_CONVERGENCE,
         PwCalculation.exit_codes.ERROR_BROYDEN_FACTORIZATION,
-    )
+    ],
 )
 def test_handle_diagonalization_errors(generate_workchain_pw, exit_code):
     """Test `PwBaseWorkChain.handle_diagonalization_errors`."""
@@ -128,7 +134,8 @@ def test_handle_diagonalization_errors(generate_workchain_pw, exit_code):
 
 
 @pytest.mark.parametrize(
-    'exit_code', (
+    'exit_code',
+    [
         PwCalculation.exit_codes.ERROR_COMPUTING_CHOLESKY,
         PwCalculation.exit_codes.ERROR_DIAGONALIZATION_TOO_MANY_BANDS_NOT_CONVERGED,
         PwCalculation.exit_codes.ERROR_S_MATRIX_NOT_POSITIVE_DEFINITE,
@@ -136,7 +143,7 @@ def test_handle_diagonalization_errors(generate_workchain_pw, exit_code):
         PwCalculation.exit_codes.ERROR_QR_FAILED,
         PwCalculation.exit_codes.ERROR_EIGENVECTOR_CONVERGENCE,
         PwCalculation.exit_codes.ERROR_BROYDEN_FACTORIZATION,
-    )
+    ],
 )
 def test_handle_diagonalization_errors_not_from_david(generate_workchain_pw, exit_code):
     """Test `PwBaseWorkChain.handle_diagonalization_errors` starting from a different diagonalization."""
@@ -183,24 +190,27 @@ def test_handle_vcrelax_converged_except_final_scf(generate_workchain_pw):
 
 
 @pytest.mark.parametrize(
-    'exit_code', (
+    'exit_code',
+    [
         PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_NOT_REACHED,
         PwCalculation.exit_codes.ERROR_IONIC_CYCLE_EXCEEDED_NSTEP,
         PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE,
         PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE,
-    )
+    ],
 )
 def test_handle_relax_recoverable_ionic_convergence_error(
-    generate_workchain_pw, generate_structure, generate_remote_data, fixture_localhost, exit_code
+    generate_workchain_pw,
+    generate_structure,
+    generate_remote_data,
+    fixture_localhost,
+    exit_code,
 ):
     """Test `PwBaseWorkChain.handle_relax_recoverable_ionic_convergence_error`."""
     structure = generate_structure()
     remote_data = generate_remote_data(computer=fixture_localhost, remote_path='/path/to/remote')
     process = generate_workchain_pw(
-        pw_outputs={
-            'output_structure': structure,
-            'remote_folder': remote_data
-        }, exit_code=exit_code
+        pw_outputs={'output_structure': structure, 'remote_folder': remote_data},
+        exit_code=exit_code,
     )
     process.setup()
 
@@ -217,22 +227,25 @@ def test_handle_relax_recoverable_ionic_convergence_error(
 
 
 @pytest.mark.parametrize(
-    'exit_code', (
+    'exit_code',
+    [
         PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE,
         PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE,
-    )
+    ],
 )
 def test_handle_relax_recoverable_ionic_convergence_bfgs_history_error(
-    generate_workchain_pw, generate_structure, generate_remote_data, fixture_localhost, exit_code
+    generate_workchain_pw,
+    generate_structure,
+    generate_remote_data,
+    fixture_localhost,
+    exit_code,
 ):
     """Test `PwBaseWorkChain.handle_relax_recoverable_ionic_convergence_bfgs_history_error`."""
     structure = generate_structure()
     remote_data = generate_remote_data(computer=fixture_localhost, remote_path='/path/to/remote')
     process = generate_workchain_pw(
-        pw_outputs={
-            'output_structure': structure,
-            'remote_folder': remote_data
-        }, exit_code=exit_code
+        pw_outputs={'output_structure': structure, 'remote_folder': remote_data},
+        exit_code=exit_code,
     )
     process.setup()
 
@@ -295,7 +308,7 @@ def test_handle_electronic_convergence_warning(generate_workchain_pw, generate_s
     process = generate_workchain_pw(
         exit_code=PwBaseWorkChain.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED,
         inputs=inputs,
-        pw_outputs={'output_structure': structure}
+        pw_outputs={'output_structure': structure},
     )
     process.setup()
 
@@ -345,10 +358,13 @@ def test_set_max_seconds(generate_workchain_pw):
     assert process.ctx.inputs['parameters']['CONTROL']['max_seconds'] == max_seconds
 
 
-@pytest.mark.parametrize('restart_mode, expected', (
-    ('restart', 'restart'),
-    ('from_scratch', 'from_scratch'),
-))
+@pytest.mark.parametrize(
+    ('restart_mode', 'expected'),
+    [
+        ('restart', 'restart'),
+        ('from_scratch', 'from_scratch'),
+    ],
+)
 def test_restart_mode(generate_workchain_pw, generate_calc_job_node, restart_mode, expected):
     """Test that the ``CONTROL.restart_mode`` specified by the user is always respected."""
     node = generate_calc_job_node('pw', test_name='default')

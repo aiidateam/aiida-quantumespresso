@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for the utility functions for the protocols."""
 
 import pytest
@@ -23,46 +22,28 @@ def test_recursive_merge():
 # This can lead to some nonsensical magnetizations, but that is fine for testing
 # purposes.
 @pytest.mark.parametrize(
-    'structure_id,initial_magnetic_moments,spin_type,expected_magnetization',
-    (
+    ('structure_id', 'initial_magnetic_moments', 'spin_type', 'expected_magnetization'),
+    [
         (
             'silicon',
             None,
             SpinType.COLLINEAR,
-            {
-                'starting_magnetization': {
-                    'Si': 0.1
-                },
-                'angle1': None,
-                'angle2': None
-            },
+            {'starting_magnetization': {'Si': 0.1}, 'angle1': None, 'angle2': None},
         ),
         (
             'cobalt-prim',
             None,
             SpinType.COLLINEAR,
-            {
-                'starting_magnetization': {
-                    'Co': 1.25
-                },
-                'angle1': None,
-                'angle2': None
-            },
+            {'starting_magnetization': {'Co': 1.25}, 'angle1': None, 'angle2': None},
         ),
         (
             'cobalt-prim',
             None,
             SpinType.NON_COLLINEAR,
             {
-                'starting_magnetization': {
-                    'Co': 1.25
-                },
-                'angle1': {
-                    'Co': 0
-                },
-                'angle2': {
-                    'Co': 0
-                }
+                'starting_magnetization': {'Co': 1.25},
+                'angle1': {'Co': 0},
+                'angle2': {'Co': 0},
             },
         ),
         (
@@ -70,50 +51,28 @@ def test_recursive_merge():
             None,
             SpinType.SPIN_ORBIT,
             {
-                'starting_magnetization': {
-                    'Co': 1.25
-                },
-                'angle1': {
-                    'Co': 0
-                },
-                'angle2': {
-                    'Co': 0
-                }
+                'starting_magnetization': {'Co': 1.25},
+                'angle1': {'Co': 0},
+                'angle2': {'Co': 0},
             },
         ),
         (
             'cobalt-prim',
-            {
-                'Co': 3
-            },
+            {'Co': 3},
             SpinType.COLLINEAR,
-            {
-                'starting_magnetization': {
-                    'Co': 0.75
-                },
-                'angle1': None,
-                'angle2': None
-            },
+            {'starting_magnetization': {'Co': 0.75}, 'angle1': None, 'angle2': None},
         ),
         (
             'cobalt-prim',
-            {
-                'Co': (1, 2, 3)
-            },
+            {'Co': (1, 2, 3)},
             SpinType.NON_COLLINEAR,
             {
-                'starting_magnetization': {
-                    'Co': 0.25
-                },
-                'angle1': {
-                    'Co': 2
-                },
-                'angle2': {
-                    'Co': 3
-                }
+                'starting_magnetization': {'Co': 0.25},
+                'angle1': {'Co': 2},
+                'angle2': {'Co': 3},
             },
         ),
-    ),
+    ],
 )
 def test_get_magnetization(
     generate_structure,
@@ -124,6 +83,7 @@ def test_get_magnetization(
 ):
     """Test the `get_magnetization` function."""
     from aiida_quantumespresso.workflows.protocols.utils import get_magnetization
+
     structure = generate_structure(structure_id)
     z_valences = {kind: 4.0 for kind in structure.get_kind_names()}
 
@@ -133,34 +93,58 @@ def test_get_magnetization(
 
 
 @pytest.mark.parametrize(
-    'structure_id,z_valences,initial_magnetic_moments,spin_type,expected_error,error_message',
-    (
-        ('silicon', {}, {
-            'Si': 1.0
-        }, SpinType.COLLINEAR, ValueError, '`z_valences` needs one value for each of'),
+    ('structure_id', 'z_valences', 'initial_magnetic_moments', 'spin_type', 'expected_error', 'error_message'),
+    [
         (
-            'silicon', {
-                'Si': 4.0
-            }, {}, SpinType.COLLINEAR, ValueError, '`initial_magnetic_moments` needs one value for each of'
+            'silicon',
+            {},
+            {'Si': 1.0},
+            SpinType.COLLINEAR,
+            ValueError,
+            '`z_valences` needs one value for each of',
         ),
-        ('silicon', {
-            'Si': 4.0
-        }, {
-            'Si': (1, 2, 3)
-        }, SpinType.COLLINEAR, TypeError, 'Spin type is set to '),
         (
-            'silicon', {
-                'Si': 4.0
-            }, {
-                'Si': 'zero'
-            }, SpinType.COLLINEAR, TypeError, 'Unrecognised type for magnetic moment'
+            'silicon',
+            {'Si': 4.0},
+            {},
+            SpinType.COLLINEAR,
+            ValueError,
+            '`initial_magnetic_moments` needs one value for each of',
         ),
-    ),
+        (
+            'silicon',
+            {'Si': 4.0},
+            {'Si': (1, 2, 3)},
+            SpinType.COLLINEAR,
+            TypeError,
+            'Spin type is set to ',
+        ),
+        (
+            'silicon',
+            {'Si': 4.0},
+            {'Si': 'zero'},
+            SpinType.COLLINEAR,
+            TypeError,
+            'Unrecognised type for magnetic moment',
+        ),
+    ],
 )
 def test_get_magnetization_failure(
-    generate_structure, structure_id, z_valences, initial_magnetic_moments, spin_type, expected_error, error_message
+    generate_structure,
+    structure_id,
+    z_valences,
+    initial_magnetic_moments,
+    spin_type,
+    expected_error,
+    error_message,
 ):
     """Test the `get_magnetization` function."""
     from aiida_quantumespresso.workflows.protocols.utils import get_magnetization
+
     with pytest.raises(expected_error, match=error_message):
-        get_magnetization(generate_structure(structure_id), z_valences, initial_magnetic_moments, spin_type)
+        get_magnetization(
+            generate_structure(structure_id),
+            z_valences,
+            initial_magnetic_moments,
+            spin_type,
+        )

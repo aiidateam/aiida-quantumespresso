@@ -1,18 +1,19 @@
-# -*- coding: utf-8 -*-
 """General tests for workflows."""
+
+import pytest
 from aiida.engine import CalcJob
 from plumpy import ProcessState
-import pytest
 
 
 @pytest.mark.parametrize(
-    'entry_point', (
+    'entry_point',
+    [
         'quantumespresso.bands.base',
         'quantumespresso.matdyn.base',
         'quantumespresso.pw.base',
         'quantumespresso.q2r.base',
         'quantumespresso.xspectra.base',
-    )
+    ],
 )
 def test_base_unrecoverable_failure(generate_workchain, generate_calc_job_node, generate_inputs, entry_point):
     """Test that the `BaseRestartWorkChain` workflows handle generic unrecoverable failures properly."""
@@ -40,5 +41,6 @@ def test_base_unrecoverable_failure(generate_workchain, generate_calc_job_node, 
     process.ctx.children.append(node)
     process.ctx.iteration = 2
 
-    assert process.inspect_process() == process.exit_codes.ERROR_SECOND_CONSECUTIVE_UNHANDLED_FAILURE, \
-        'The second inspection should return the proper exit code, i.e. the `BaseRestartWorkChain` should stop'
+    assert (
+        process.inspect_process() == process.exit_codes.ERROR_SECOND_CONSECUTIVE_UNHANDLED_FAILURE
+    ), 'The second inspection should return the proper exit code, i.e. the `BaseRestartWorkChain` should stop'

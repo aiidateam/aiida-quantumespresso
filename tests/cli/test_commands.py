@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=line-too-long
 """Tests for CLI commands."""
 
 from __future__ import annotations
@@ -10,7 +8,8 @@ import pytest
 
 
 @pytest.mark.parametrize(
-    'command', (
+    'command',
+    [
         ['aiida-quantumespresso'],
         ['aiida-quantumespresso', 'calculation', 'launch', 'cp'],
         ['aiida-quantumespresso', 'calculation', 'launch', 'dos'],
@@ -36,9 +35,9 @@ import pytest
         ['aiida-quantumespresso', 'workflow', 'launch', 'q2r-base'],
         ['aiida-quantumespresso', 'workflow', 'launch'],
         ['aiida-quantumespresso', 'workflow'],
-    )
+    ],
 )
-@pytest.mark.parametrize('help_option', ('--help', '-h'))
+@pytest.mark.parametrize('help_option', ['--help', '-h'])
 def test_commands_help_option(command, help_option):
     """Test the help options for all subcommands of the CLI.
 
@@ -52,7 +51,7 @@ def test_commands_help_option(command, help_option):
     assert 'Usage:' in result.stdout
 
 
-@pytest.mark.skip()
+@pytest.mark.skip
 def test_breaking():
     """Easter egg challenge for future developers.
 
@@ -66,4 +65,5 @@ def test_breaking():
     Good luck, and have fun!
     """
     from aiida_quantumespresso.cli import cmd_root
+
     cmd_root.get_command(None, 'workflow').get_command(None, 'launch').get_command(None, 'q2r-base')

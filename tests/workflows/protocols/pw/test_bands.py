@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
 """Tests for the ``PwBandsWorkChain.get_builder_from_protocol`` method."""
-from aiida.engine import ProcessBuilder
+
 import pytest
+from aiida.engine import ProcessBuilder
 
 from aiida_quantumespresso.common.types import ElectronicType, RelaxType, SpinType
 from aiida_quantumespresso.workflows.pw.bands import PwBandsWorkChain
@@ -37,8 +37,7 @@ def test_electronic_type(fixture_code, generate_structure):
     structure = generate_structure()
 
     with pytest.raises(NotImplementedError):
-        for electronic_type in [ElectronicType.AUTOMATIC]:
-            PwBandsWorkChain.get_builder_from_protocol(code, structure, electronic_type=electronic_type)
+        PwBandsWorkChain.get_builder_from_protocol(code, structure, electronic_type=ElectronicType.AUTOMATIC)
 
     builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, electronic_type=ElectronicType.INSULATOR)
 
@@ -88,7 +87,7 @@ def test_bands_kpoints_overrides(fixture_code, generate_structure, generate_kpoi
     bands_kpoints = generate_kpoints_mesh(3)
     overrides = {'bands_kpoints': bands_kpoints}
     builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)
-    assert builder.bands_kpoints == bands_kpoints  # pylint: disable=no-member
+    assert builder.bands_kpoints == bands_kpoints
     assert 'bands_kpoints_distance' not in builder
 
 

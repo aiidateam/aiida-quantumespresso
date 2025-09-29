@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Workchain to relax a structure using Quantum ESPRESSO pw.x."""
+
 from aiida import orm
 from aiida.common import AttributeDict, exceptions
 from aiida.common.lang import type_check
@@ -29,24 +29,48 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
     @classmethod
     def define(cls, spec):
         """Define the process specification."""
-        # yapf: disable
         super().define(spec)
-        spec.expose_inputs(PwBaseWorkChain, namespace='base',
+        spec.expose_inputs(
+            PwBaseWorkChain,
+            namespace='base',
             exclude=('clean_workdir', 'pw.structure', 'pw.parent_folder'),
-            namespace_options={'help': 'Inputs for the `PwBaseWorkChain` for the main relax loop.'})
-        spec.expose_inputs(PwBaseWorkChain, namespace='base_final_scf',
+            namespace_options={'help': 'Inputs for the `PwBaseWorkChain` for the main relax loop.'},
+        )
+        spec.expose_inputs(
+            PwBaseWorkChain,
+            namespace='base_final_scf',
             exclude=('clean_workdir', 'pw.structure', 'pw.parent_folder'),
-            namespace_options={'required': False, 'populate_defaults': False,
-                'help': 'Inputs for the `PwBaseWorkChain` for the final scf.'})
+            namespace_options={
+                'required': False,
+                'populate_defaults': False,
+                'help': 'Inputs for the `PwBaseWorkChain` for the final scf.',
+            },
+        )
         spec.input('structure', valid_type=orm.StructureData, help='The inputs structure.')
-        spec.input('meta_convergence', valid_type=orm.Bool, default=lambda: orm.Bool(True),
-            help='If `True` the workchain will perform a meta-convergence on the cell volume.')
-        spec.input('max_meta_convergence_iterations', valid_type=orm.Int, default=lambda: orm.Int(5),
-            help='The maximum number of variable cell relax iterations in the meta convergence cycle.')
-        spec.input('volume_convergence', valid_type=orm.Float, default=lambda: orm.Float(0.01),
-            help='The volume difference threshold between two consecutive meta convergence iterations.')
-        spec.input('clean_workdir', valid_type=orm.Bool, default=lambda: orm.Bool(False),
-            help='If `True`, work directories of all called calculation will be cleaned at the end of execution.')
+        spec.input(
+            'meta_convergence',
+            valid_type=orm.Bool,
+            default=lambda: orm.Bool(True),
+            help='If `True` the workchain will perform a meta-convergence on the cell volume.',
+        )
+        spec.input(
+            'max_meta_convergence_iterations',
+            valid_type=orm.Int,
+            default=lambda: orm.Int(5),
+            help='The maximum number of variable cell relax iterations in the meta convergence cycle.',
+        )
+        spec.input(
+            'volume_convergence',
+            valid_type=orm.Float,
+            default=lambda: orm.Float(0.01),
+            help='The volume difference threshold between two consecutive meta convergence iterations.',
+        )
+        spec.input(
+            'clean_workdir',
+            valid_type=orm.Bool,
+            default=lambda: orm.Bool(False),
+            help='If `True`, work directories of all called calculation will be cleaned at the end of execution.',
+        )
         spec.inputs.validator = validate_inputs
         spec.outline(
             cls.setup,
@@ -60,14 +84,14 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
             ),
             cls.results,
         )
-        spec.exit_code(401, 'ERROR_SUB_PROCESS_FAILED_RELAX',
-            message='the relax PwBaseWorkChain sub process failed')
-        spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_FINAL_SCF',
-            message='the final scf PwBaseWorkChain sub process failed')
+        spec.exit_code(401, 'ERROR_SUB_PROCESS_FAILED_RELAX', message='the relax PwBaseWorkChain sub process failed')
+        spec.exit_code(
+            402, 'ERROR_SUB_PROCESS_FAILED_FINAL_SCF', message='the final scf PwBaseWorkChain sub process failed'
+        )
         spec.expose_outputs(PwBaseWorkChain, exclude=('output_structure',))
-        spec.output('output_structure', valid_type=orm.StructureData, required=False,
-            help='The successfully relaxed structure.')
-        # yapf: enable
+        spec.output(
+            'output_structure', valid_type=orm.StructureData, required=False, help='The successfully relaxed structure.'
+        )
 
     @classmethod
     def get_protocol_filepath(cls):
@@ -75,18 +99,12 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         from importlib_resources import files
 
         from ..protocols import pw as pw_protocols
+
         return files(pw_protocols) / 'relax.yaml'
 
     @classmethod
     def get_builder_from_protocol(
-        cls,
-        code,
-        structure,
-        protocol=None,
-        overrides=None,
-        relax_type=RelaxType.POSITIONS_CELL,
-        options=None,
-        **kwargs
+        cls, code, structure, protocol=None, overrides=None, relax_type=RelaxType.POSITIONS_CELL, options=None, **kwargs
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
@@ -143,7 +161,6 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
             base.pw.parameters['CELL']['cell_dofree'] = 'shape'
 
         if relax_type in (RelaxType.CELL, RelaxType.POSITIONS_CELL):
-
             pbc_cell_dofree_map = {
                 (True, True, True): 'all',
                 (True, False, False): 'x',
@@ -183,8 +200,8 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         # Set the meta_convergence and add it to the context
         self.ctx.meta_convergence = self.inputs.meta_convergence.value
         volume_cannot_change = (
-            self.ctx.relax_inputs.pw.parameters['CONTROL'].get('calculation', 'scf') in ('scf', 'relax') or
-            self.ctx.relax_inputs.pw.parameters.get('CELL', {}).get('cell_dofree', None) == 'shape'
+            self.ctx.relax_inputs.pw.parameters['CONTROL'].get('calculation', 'scf') in ('scf', 'relax')
+            or self.ctx.relax_inputs.pw.parameters.get('CELL', {}).get('cell_dofree', None) == 'shape'
         )
         if self.ctx.meta_convergence and volume_cannot_change:
             self.report(
@@ -365,9 +382,9 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         for called_descendant in self.node.called_descendants:
             if isinstance(called_descendant, orm.CalcJobNode):
                 try:
-                    called_descendant.outputs.remote_folder._clean()  # pylint: disable=protected-access
+                    called_descendant.outputs.remote_folder._clean()  # noqa: SLF001
                     cleaned_calcs.append(called_descendant.pk)
-                except (IOError, OSError, KeyError):
+                except (OSError, KeyError):
                     pass
 
         if cleaned_calcs:
@@ -376,10 +393,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
     @staticmethod
     def _fix_atomic_positions(structure, settings):
         """Fix the atomic positions, by setting the `FIXED_COORDS` key in the `settings` input node."""
-        if settings is not None:
-            settings = settings.get_dict()
-        else:
-            settings = {}
+        settings = settings.get_dict() if settings is not None else {}
 
         settings['FIXED_COORDS'] = [[True, True, True]] * len(structure.sites)
 

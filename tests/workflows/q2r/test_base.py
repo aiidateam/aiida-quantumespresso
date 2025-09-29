@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=no-member,redefined-outer-name
 """Tests for the `Q2rBaseWorkChain` class."""
+
+import pytest
 from aiida.common import AttributeDict
 from plumpy import ProcessState
-import pytest
 
 
 @pytest.fixture

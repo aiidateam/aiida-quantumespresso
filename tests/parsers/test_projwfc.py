@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=redefined-outer-name
 """Tests for the `ProjwfcParser`."""
 
 import pytest
@@ -19,19 +17,18 @@ def generate_projwfc_node(generate_calc_job_node, fixture_localhost, tmpdir):
         retrieve_temporary_list = ['data-file-schema.xml', '*.pdos*', '*.ldos_boxes']
         attributes = {'retrieve_temporary_list': retrieve_temporary_list}
 
-        node = generate_calc_job_node(
+        return generate_calc_job_node(
             entry_point_name=entry_point_calc_job,
             computer=fixture_localhost,
             test_name=test_name,
             attributes=attributes,
             retrieve_temporary=(tmpdir, retrieve_temporary_list),
         )
-        return node
 
     return _generate_projwfc_node
 
 
-@pytest.mark.parametrize('test_name', ('nonpolarised', 'noncollinear', 'spinorbit', 'numbered_kinds'))
+@pytest.mark.parametrize('test_name', ['nonpolarised', 'noncollinear', 'spinorbit', 'numbered_kinds'])
 def test_projwfc(generate_projwfc_node, generate_parser, data_regression, tmpdir, test_name):
     """Test ``ProjwfcParser`` on the results of a non-polarised ``projwfc.x`` calculation."""
     node = generate_projwfc_node(test_name)
@@ -44,13 +41,18 @@ def test_projwfc(generate_projwfc_node, generate_parser, data_regression, tmpdir
     for link_name in ['output_parameters', 'Dos', 'Pdos', 'bands', 'projections']:
         assert link_name in results, list(results.keys())
 
-    data_regression.check({
-        'Dos': results['Dos'].base.attributes.all,
-        'Pdos': results['Pdos'].base.attributes.all,
-        'bands': results['bands'].base.attributes.all,
-        'projections':
-        {k: v for k, v in results['projections'].base.attributes.all.items() if k not in ['reference_bandsdata_uuid']},
-    })
+    data_regression.check(
+        {
+            'Dos': results['Dos'].base.attributes.all,
+            'Pdos': results['Pdos'].base.attributes.all,
+            'bands': results['bands'].base.attributes.all,
+            'projections': {
+                k: v
+                for k, v in results['projections'].base.attributes.all.items()
+                if k not in ['reference_bandsdata_uuid']
+            },
+        }
+    )
 
 
 def test_projwfc_spinpolarised(generate_projwfc_node, generate_parser, data_regression, tmpdir):
@@ -73,27 +75,33 @@ def test_projwfc_spinpolarised(generate_projwfc_node, generate_parser, data_regr
     ]:
         assert link_name in results, list(results.keys())
 
-    data_regression.check({
-        'Dos':
-        {array_name: results['Dos'].get_array(array_name).tolist() for array_name in results['Dos'].get_arraynames()},
-        'Pdos':
-        {array_name: results['Pdos'].get_array(array_name).tolist() for array_name in results['Pdos'].get_arraynames()},
-        'bands_up': results['bands_up'].base.attributes.all,
-        'bands_down': results['bands_down'].base.attributes.all,
-        'projections_up': {
-            k: v
-            for k, v in results['projections_up'].base.attributes.all.items()
-            if k not in ['reference_bandsdata_uuid']
-        },
-        'projections_down': {
-            k: v
-            for k, v in results['projections_down'].base.attributes.all.items()
-            if k not in ['reference_bandsdata_uuid']
-        },
-    })
+    data_regression.check(
+        {
+            'Dos': {
+                array_name: results['Dos'].get_array(array_name).tolist()
+                for array_name in results['Dos'].get_arraynames()
+            },
+            'Pdos': {
+                array_name: results['Pdos'].get_array(array_name).tolist()
+                for array_name in results['Pdos'].get_arraynames()
+            },
+            'bands_up': results['bands_up'].base.attributes.all,
+            'bands_down': results['bands_down'].base.attributes.all,
+            'projections_up': {
+                k: v
+                for k, v in results['projections_up'].base.attributes.all.items()
+                if k not in ['reference_bandsdata_uuid']
+            },
+            'projections_down': {
+                k: v
+                for k, v in results['projections_down'].base.attributes.all.items()
+                if k not in ['reference_bandsdata_uuid']
+            },
+        }
+    )
 
 
-@pytest.mark.parametrize('test_name', ('tdosinboxes', 'tdosinboxes_polarized', 'tdosinboxes_noncollinear'))
+@pytest.mark.parametrize('test_name', ['tdosinboxes', 'tdosinboxes_polarized', 'tdosinboxes_noncollinear'])
 def test_projwfc_tdosinboxes(generate_projwfc_node, generate_parser, data_regression, tmpdir, test_name):
     """Test ``ProjwfcParser`` on the results of a ``projwfc.x`` calculation with tdosinboxes for LDOS calculation."""
     node = generate_projwfc_node(test_name)
@@ -106,11 +114,13 @@ def test_projwfc_tdosinboxes(generate_projwfc_node, generate_parser, data_regres
     for link_name in ['output_parameters', 'Dos', 'Pdos', 'Ldos']:
         assert link_name in results, list(results.keys())
 
-    data_regression.check({
-        'Dos': results['Dos'].base.attributes.all,
-        'Pdos': results['Pdos'].base.attributes.all,
-        'Ldos': results['Ldos'].base.attributes.all,
-    })
+    data_regression.check(
+        {
+            'Dos': results['Dos'].base.attributes.all,
+            'Pdos': results['Pdos'].base.attributes.all,
+            'Ldos': results['Ldos'].base.attributes.all,
+        }
+    )
 
 
 def test_projwfc_no_retrieved_temporary(generate_calc_job_node, fixture_localhost, generate_parser):
@@ -128,12 +138,12 @@ def test_projwfc_no_retrieved_temporary(generate_calc_job_node, fixture_localhos
 
 
 @pytest.mark.parametrize(
-    'test_name, exit_status',
-    (
-        ['xml_missing', 303],
-        ['xml_parse', 321],
-        ['xml_format', 322],
-    ),
+    ('test_name', 'exit_status'),
+    [
+        ('xml_missing', 303),
+        ('xml_parse', 321),
+        ('xml_format', 322),
+    ],
 )
 def test_projwfc_xml_failures(generate_projwfc_node, generate_parser, tmpdir, test_name, exit_status):
     """Test ``ProjwfcParser`` fails when the XML is missing."""

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """A module defining hydrogen-like orbitals.
 
 The orbitals are defined in the simultaneous eigen-basis of H, J^2, L^2, S^2
@@ -83,14 +82,21 @@ class SpinorbitHydrogenOrbital(Orbital):
     """
 
     _base_fields_required = tuple(
-        list(Orbital._base_fields_required) +
-        [('total_angular_momentum',
-          validate_j), ('angular_momentum', validate_l), ('magnetic_number', validate_mj), ('radial_nodes', validate_n)]
+        list(Orbital._base_fields_required)  # noqa: SLF001
+        + [
+            ('total_angular_momentum', validate_j),
+            ('angular_momentum', validate_l),
+            ('magnetic_number', validate_mj),
+            ('radial_nodes', validate_n),
+        ]
     )
 
-    _base_fields_optional = tuple(list(Orbital._base_fields_optional) + [
-        ('kind_name', validate_kind_name, None),
-    ])
+    _base_fields_optional = tuple(
+        list(Orbital._base_fields_optional)  # noqa: SLF001
+        + [
+            ('kind_name', validate_kind_name, None),
+        ]
+    )
 
     def __str__(self):
         """Printable representation of the orbital."""

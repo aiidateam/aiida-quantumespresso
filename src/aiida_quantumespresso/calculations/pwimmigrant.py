@@ -1,8 +1,9 @@
-# -*- coding: utf-8 -*-
 """Plugin to immigrate a Quantum Espresso pw.x job that was not run using AiiDa."""
+
+# ruff: noqa: N802
 # TODO: Document the current limitations (e.g. ibrav == 0)
-from copy import deepcopy
 import os
+from copy import deepcopy
 
 from aiida.common import FeatureNotAvailable, InputValidationError, InvalidOperation
 from aiida.common.folders import SandboxFolder
@@ -46,7 +47,6 @@ class PwimmigrantCalculation(PwCalculation):
     """
 
     def _init_internal_params(self):
-
         super()._init_internal_params()
 
     def create_input_nodes(self, open_transport, input_file_name=None, output_file_name=None, remote_workdir=None):
@@ -183,7 +183,7 @@ class PwimmigrantCalculation(PwCalculation):
             )
 
         # Check that open_transport is actually open.
-        if not open_transport._is_open:
+        if not open_transport._is_open:  # noqa: SLF001
             raise InvalidOperation(
                 'The transport passed as the `open_transport` parameter is '
                 "not open. Please execute the open the transport using it's "
@@ -194,7 +194,6 @@ class PwimmigrantCalculation(PwCalculation):
 
         # Copy the input file and psuedo files to a temp folder for parsing.
         with SandboxFolder() as folder:
-
             # Copy the input file to the temp folder.
             remote_path = os.path.join(self._get_remote_workdir(), self._INPUT_FILE_NAME)
             open_transport.get(remote_path, folder.abspath)
@@ -238,8 +237,7 @@ class PwimmigrantCalculation(PwCalculation):
             # else.
             if pwinputfile.namelists['SYSTEM']['ibrav'] != 0:
                 raise FeatureNotAvailable(
-                    'Found ibrav !=0 while parsing the input file. '
-                    'Currently, AiiDa only supports ibrav = 0.'
+                    'Found ibrav !=0 while parsing the input file. ' 'Currently, AiiDa only supports ibrav = 0.'
                 )
 
             # Create Dict node based on the namelist and link as input.
@@ -252,8 +250,7 @@ class PwimmigrantCalculation(PwCalculation):
             # we are safe to fake that they were never there in the first place.
             parameters_dict = deepcopy(pwinputfile.namelists)
             for namelist, blocked_key in self._blocked_keywords:
-                keys = list(parameters_dict[namelist].keys())
-                for this_key in parameters_dict[namelist].keys():
+                for this_key in parameters_dict[namelist]:
                     # take into account that celldm and celldm(*) must be blocked
                     if re.sub('[(0-9)]', '', this_key) == blocked_key:
                         parameters_dict[namelist].pop(this_key, None)
@@ -293,7 +290,7 @@ class PwimmigrantCalculation(PwCalculation):
         # special settings.
         fixed_coords = pwinputfile.atomic_positions['fixed_coords']
         # NOTE: any() only works for 1-dimensional lists.
-        if any((any(fc_xyz) for fc_xyz in fixed_coords)):
+        if any(any(fc_xyz) for fc_xyz in fixed_coords):
             settings_dict['FIXED_COORDS'] = fixed_coords
 
         # If the settings_dict has been filled in, create a Dict
@@ -367,8 +364,7 @@ class PwimmigrantCalculation(PwCalculation):
         # Check that the create_input_nodes method has run successfully.
         if not self.get_attr('input_nodes_created', False):
             raise InvalidOperation(
-                'You must run the create_input_nodes method before calling '
-                'prepare_for_retrieval_and_parsing!'
+                'You must run the create_input_nodes method before calling ' 'prepare_for_retrieval_and_parsing!'
             )
 
         # Check that open_transport is the correct transport type.
@@ -382,7 +378,7 @@ class PwimmigrantCalculation(PwCalculation):
             )
 
         # Check that open_transport is actually open.
-        if not open_transport._is_open:
+        if not open_transport._is_open:  # noqa: SLF001
             raise InvalidOperation(
                 'The transport passed as the `open_transport` parameter is '
                 "not open. Please execute the open the transport using it's "
