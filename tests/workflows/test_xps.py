@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the `XpsWorkChain` class."""
+
 from aiida import orm
 from aiida.common import LinkType
 from plumpy import ProcessState
@@ -32,6 +32,10 @@ def test_default(generate_workchain_xps):
     wkchain.results()
     wkchain.update_outputs()
     assert set(wkchain.node.base.links.get_outgoing().all_link_labels()) == {
-        'standardized_structure', 'supercell_structure', 'symmetry_analysis_data', 'output_parameters_ch_scf__site_0',
-        'chemical_shifts__Si_cls', 'final_spectra_cls__Si_cls_spectra'
+        'standardized_structure',
+        'supercell_structure',
+        'symmetry_analysis_data',
+        'output_parameters_ch_scf__site_0',
+        'chemical_shifts__Si_cls',
+        'final_spectra_cls__Si_cls_spectra',
     }

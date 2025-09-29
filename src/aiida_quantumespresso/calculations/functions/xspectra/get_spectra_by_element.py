@@ -1,14 +1,15 @@
-# -*- coding: utf-8 -*-
 """Calcfunction to compile a complete spectrum for each element from multiple powder sample spectra."""
+
 import warnings
 
+import numpy as np
 from aiida import orm
 from aiida.engine import calcfunction
-import numpy as np
 
 warnings.warn(
     'This module is deprecated and will be removed soon as part of migrating XAS and XPS workflows to a new repository.'
-    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.', FutureWarning
+    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.',
+    FutureWarning,
 )
 
 
@@ -47,7 +48,7 @@ def get_spectra_by_element(elements_list, equivalent_sites_data, **kwargs):
             'spectrum_node': incoming_spectra_nodes[key],
             'element': element,
             'multiplicity': multiplicity,
-            'energy_zero': energy_zero
+            'energy_zero': energy_zero,
         }
 
     spectra_by_element = {}
@@ -72,10 +73,12 @@ def get_spectra_by_element(elements_list, equivalent_sites_data, **kwargs):
             np.column_stack((entry[0][:, 0] - entry[1], entry[0][:, 1])) for entry in energy_zero_corrections
         ]
 
-        spectra_by_element[element] = np.column_stack((
-            sum(array[:, 0] for array in corrected_spectra) / len(corrected_spectra),
-            sum(array[:, 1] for array in corrected_spectra)
-        ))
+        spectra_by_element[element] = np.column_stack(
+            (
+                sum(array[:, 0] for array in corrected_spectra) / len(corrected_spectra),
+                sum(array[:, 1] for array in corrected_spectra),
+            )
+        )
 
     all_final_spectra = {}
     for element in elements:

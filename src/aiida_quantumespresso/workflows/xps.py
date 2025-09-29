@@ -3,6 +3,8 @@
 
 Uses QuantumESPRESSO pw.x.
 """
+# ruff: noqa
+
 import pathlib
 from typing import Optional, Union
 import warnings
@@ -29,7 +31,8 @@ with warnings.catch_warnings():
 
 warnings.warn(
     'This module is deprecated and will be removed soon as part of migrating XAS and XPS workflows to a new repository.'
-    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.', FutureWarning
+    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.',
+    FutureWarning,
 )
 
 
@@ -384,10 +387,20 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
 
     @classmethod
     def get_builder_from_protocol(
-        cls, code, structure, pseudos, core_hole_treatments=None, protocol=None,
-        overrides=None, elements_list=None, atoms_list=None, options=None,
-        structure_preparation_settings=None, correction_energies=None, **kwargs
-    ): # pylint: disable=too-many-statements
+        cls,
+        code,
+        structure,
+        pseudos,
+        core_hole_treatments=None,
+        protocol=None,
+        overrides=None,
+        elements_list=None,
+        atoms_list=None,
+        options=None,
+        structure_preparation_settings=None,
+        correction_energies=None,
+        **kwargs,
+    ):  # pylint: disable=too-many-statements
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
         :param code: the ``Code`` instance configured for the ``quantumespresso.pw`` plugin.
@@ -447,7 +460,7 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
                 raise ValueError(
                     f'The following elements: {elements_not_present} are not present in the'
                     f' structure ({elements_present}) provided.'
-                    )
+                )
             else:
                 builder.elements_list = orm.List(elements_list)
                 for element in elements_list:
@@ -473,16 +486,15 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         if structure_preparation_settings:
             builder.structure_preparation_settings = structure_preparation_settings
             if structure_preparation_settings.get('is_molecule_input').value:
-                builder.ch_scf.pw.parameters.base.attributes.all['SYSTEM']['assume_isolated']='mt'
-                builder.ch_scf.pw.settings=orm.Dict(dict={'gamma_only':True})
+                builder.ch_scf.pw.parameters.base.attributes.all['SYSTEM']['assume_isolated'] = 'mt'
+                builder.ch_scf.pw.settings = orm.Dict(dict={'gamma_only': True})
                 # To ensure compatibility with the gamma_only setting, the k-points must be configured to [1, 1, 1].
                 kpoints_mesh = DataFactory('core.array.kpoints')()
                 kpoints_mesh.set_kpoints_mesh([1, 1, 1])
                 builder.ch_scf.kpoints = kpoints_mesh
-                builder.relax.base.pw.settings=orm.Dict(dict={'gamma_only':True})
+                builder.relax.base.pw.settings = orm.Dict(dict={'gamma_only': True})
         # pylint: enable=no-member
         return builder
-
 
     def setup(self):
         """Init required context variables."""
@@ -497,8 +509,6 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         else:
             structure = self.inputs.structure
             self.ctx.elements_list = [Kind.symbol for Kind in structure.kinds]
-
-
 
     def should_run_relax(self):
         """If the 'relax' input namespace was specified, we relax the input structure."""
@@ -557,12 +567,10 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         if self.ctx.elements_list:
             elements_list = orm.List(self.ctx.elements_list)
             inputs = {
-                'absorbing_elements_list' : elements_list,
-                'absorbing_atom_marker' : self.inputs.abs_atom_marker,
-                'metadata' : {
-                    'call_link_label' : 'get_xspectra_structures'
-                }
-            } # populate this further once the schema for WorkChain options is figured out
+                'absorbing_elements_list': elements_list,
+                'absorbing_atom_marker': self.inputs.abs_atom_marker,
+                'metadata': {'call_link_label': 'get_xspectra_structures'},
+            }  # populate this further once the schema for WorkChain options is figured out
             if 'structure_preparation_settings' in self.inputs:
                 optional_cell_prep = self.inputs.structure_preparation_settings
                 for key, node in optional_cell_prep.items():
@@ -591,16 +599,14 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         elif self.ctx.atoms_list:
             atoms_list = orm.List(self.ctx.atoms_list)
             inputs = {
-                'atoms_list' : atoms_list,
-                'marker' : self.inputs.abs_atom_marker,
-                'metadata' : {
-                    'call_link_label' : 'get_marked_structures'
-                }
+                'atoms_list': atoms_list,
+                'marker': self.inputs.abs_atom_marker,
+                'metadata': {'call_link_label': 'get_marked_structures'},
             }
             result = get_marked_structures(input_structure, **inputs)
             self.ctx.supercell = input_structure
             self.ctx.equivalent_sites_data = result.pop('output_parameters').get_dict()
-        structures_to_process = {f'{Key.split("_")[0]}_{Key.split("_")[1]}' : Value for Key, Value in result.items()}
+        structures_to_process = {f'{Key.split("_")[0]}_{Key.split("_")[1]}': Value for Key, Value in result.items()}
         self.report(f'structures_to_process: {structures_to_process}')
         self.ctx.structures_to_process = structures_to_process
 
@@ -662,7 +668,6 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
             else:
                 ch_treatment = 'xch_smear'
 
-
             inputs.metadata.call_link_label = f'{site}_xps'
 
             # Get the given settings for the SCF inputs and then overwrite them with the
@@ -715,14 +720,14 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         import copy  # pylint: disable=unused-import
 
         site_labels = list(self.ctx.structures_to_process.keys())
-        output_params_ch_scf = {label : self.ctx[label].outputs.output_parameters for label in site_labels}
+        output_params_ch_scf = {label: self.ctx[label].outputs.output_parameters for label in site_labels}
         self.out('output_parameters_ch_scf', output_params_ch_scf)
 
         kwargs = output_params_ch_scf.copy()
         if self.inputs.calc_binding_energy:
             kwargs['ground_state'] = self.ctx['ground_state'].outputs.output_parameters
             kwargs['correction_energies'] = self.inputs.correction_energies
-        kwargs['metadata'] = {'call_link_label' : 'compile_final_spectra'}
+        kwargs['metadata'] = {'call_link_label': 'compile_final_spectra'}
 
         if self.ctx.elements_list:
             elements_list = orm.List(list=self.ctx.elements_list)
@@ -733,13 +738,7 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         voight_sigma = self.inputs.voight_sigma
 
         equivalent_sites_data = orm.Dict(dict=self.ctx.equivalent_sites_data)
-        result = get_spectra_by_element(
-            elements_list,
-            equivalent_sites_data,
-            voight_gamma,
-            voight_sigma,
-            **kwargs
-        )
+        result = get_spectra_by_element(elements_list, equivalent_sites_data, voight_gamma, voight_sigma, **kwargs)
         final_spectra_cls = {}
         final_spectra_be = {}
         chemical_shifts = {}
@@ -758,7 +757,6 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         if self.inputs.calc_binding_energy:
             self.out('binding_energies', binding_energies)
             self.out('final_spectra_be', final_spectra_be)
-
 
     def on_terminated(self):
         """Clean the working directories of all child calculations if ``clean_workdir=True`` in the inputs."""

@@ -1,14 +1,15 @@
-# -*- coding: utf-8 -*-
 """CalcFunction to compute the spectrum from ``XpsWorkchain``."""
+
 import warnings
 
+import numpy as np
 from aiida import orm
 from aiida.engine import calcfunction
-import numpy as np
 
 warnings.warn(
     'This module is deprecated and will be removed soon as part of migrating XAS and XPS workflows to a new repository.'
-    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.', FutureWarning
+    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.',
+    FutureWarning,
 )
 
 
@@ -65,8 +66,10 @@ def get_spectra_by_element(elements_list, equivalent_sites_data, voight_gamma, v
         result[f'{element}_cls'] = orm.Dict(dict={entry[2]: entry[1] for entry in core_level_shift})
 
         if group_state_energy is not None:
-            binding_energy = [(entry[0], entry[1] - group_state_energy + correction_energies[element], entry[2])
-                              for entry in spectra_list]
+            binding_energy = [
+                (entry[0], entry[1] - group_state_energy + correction_energies[element], entry[2])
+                for entry in spectra_list
+            ]
             binding_energies[element] = binding_energy
             result[f'{element}_be'] = orm.Dict(dict={entry[2]: entry[1] for entry in binding_energy})
 
@@ -97,8 +100,9 @@ def get_spectra_by_element(elements_list, equivalent_sites_data, voight_gamma, v
                 final_spectra_y_labels.append(f'{element}{index}_xps')
                 final_spectra_y_units.append('sigma')
                 final_spectra_y_arrays.append(
-                    intensity * voigt_profile(x_energy_range - relative_peak_position, sigma, gamma) /
-                    total_multiplicity
+                    intensity
+                    * voigt_profile(x_energy_range - relative_peak_position, sigma, gamma)
+                    / total_multiplicity
                 )
 
             final_spectra_y_labels.append(f'{element}_total_xps')

@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=redefined-outer-name
 """Tests for the ``XspectraBaseWorkChain.get_builder_from_protocol`` method."""
+
+# ruff: noqa
+
 import io
 
 from aiida.common import LinkType
@@ -46,20 +49,16 @@ def get_xspectra_generator_inputs(fixture_code, generate_xspectra_calc_job_node)
     parent_calc = generate_xspectra_calc_job_node()
 
     return {
-        'code':
-        fixture_code('quantumespresso.xspectra'),
-        'parent_folder':
-        parent_calc.outputs.remote_folder,
-        'core_wfc_data':
-        SinglefileData(
+        'code': fixture_code('quantumespresso.xspectra'),
+        'parent_folder': parent_calc.outputs.remote_folder,
+        'core_wfc_data': SinglefileData(
             io.StringIO(
                 '# number of core states 3 =  1 0;  2 0;'
                 '\n6.51344e-05 6.615743462459999e-3'
                 '\n6.59537e-05 6.698882211449999e-3'
             )
         ),
-        'abs_atom_marker':
-        'Si',
+        'abs_atom_marker': 'Si',
     }
 
 

@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the ``XspectraCoreWorkChain.get_builder_from_protocol`` method."""
+
 import io
 
 from aiida.engine import ProcessBuilder
@@ -40,17 +40,8 @@ def test_overrides(fixture_code, generate_structure):
     protocol = 'balanced'
     treatment_type = 'full'  # default treatment, sets `tot_charge` = 1
     overrides = {
-        'scf': {
-            'pw': {
-                'parameters': {
-                    'SYSTEM': {
-                        'tot_charge': 0
-                    }
-                }
-            },
-            'kpoints_distance': 0.25
-        },
-        'abs_atom_marker': 'Si'
+        'scf': {'pw': {'parameters': {'SYSTEM': {'tot_charge': 0}}}, 'kpoints_distance': 0.25},
+        'abs_atom_marker': 'Si',
     }
     core_wfc_data = SinglefileData(
         io.StringIO(
@@ -66,7 +57,7 @@ def test_overrides(fixture_code, generate_structure):
         core_hole_treatment=treatment_type,
         overrides=overrides,
         protocol=protocol,
-        core_wfc_data=core_wfc_data
+        core_wfc_data=core_wfc_data,
     )
 
     assert builder.scf.pw.parameters['SYSTEM']['tot_charge'] == 0

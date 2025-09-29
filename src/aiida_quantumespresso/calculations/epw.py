@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """Plugin to create a Quantum Espresso epw.x input file."""
+# ruff: noqa
+
 import os
 import warnings
 
@@ -18,9 +20,19 @@ class EpwCalculation(CalcJob):
     """`CalcJob` implementation for the epw.x code of Quantum ESPRESSO."""
 
     # Keywords that cannot be set by the user but will be set by the plugin
-    _blocked_keywords = [('INPUTEPW', 'outdir'), ('INPUTEPW', 'verbosity'), ('INPUTEPW', 'prefix'),
-                         ('INPUTEPW', 'dvscf_dir'), ('INPUTEPW', 'amass'), ('INPUTEPW', 'nq1'), ('INPUTEPW', 'nq2'),
-                         ('INPUTEPW', 'nq3'), ('INPUTEPW', 'nk1'), ('INPUTEPW', 'nk2'), ('INPUTEPW', 'nk3')]
+    _blocked_keywords = [
+        ('INPUTEPW', 'outdir'),
+        ('INPUTEPW', 'verbosity'),
+        ('INPUTEPW', 'prefix'),
+        ('INPUTEPW', 'dvscf_dir'),
+        ('INPUTEPW', 'amass'),
+        ('INPUTEPW', 'nq1'),
+        ('INPUTEPW', 'nq2'),
+        ('INPUTEPW', 'nq3'),
+        ('INPUTEPW', 'nk1'),
+        ('INPUTEPW', 'nk2'),
+        ('INPUTEPW', 'nk3'),
+    ]
 
     _use_kpoints = True
 
@@ -74,7 +86,7 @@ class EpwCalculation(CalcJob):
 
         def test_offset(offset):
             """Check if the grid has an offset."""
-            if any(i != 0. for i in offset):
+            if any(i != 0.0 for i in offset):
                 raise NotImplementedError(
                     'Computation of electron-phonon on a mesh with non zero offset is not implemented, '
                     'at the level of epw.x'
@@ -90,7 +102,7 @@ class EpwCalculation(CalcJob):
                 warnings.warn(
                     'The key `ADDITIONAL_RETRIEVE_LIST` in the settings input is deprecated and will be removed in '
                     'the future. Use the `CalcJob.metadata.options.additional_retrieve_list` input instead.',
-                    AiidaDeprecationWarning
+                    AiidaDeprecationWarning,
                 )
         else:
             settings = {}
@@ -179,8 +191,7 @@ class EpwCalculation(CalcJob):
             namelists_toprint = settings.pop('NAMELISTS')
             if not isinstance(namelists_toprint, list):
                 raise exceptions.InputValidationError(
-                    "The 'NAMELISTS' value, if specified in the settings input "
-                    'node, must be a list of strings'
+                    "The 'NAMELISTS' value, if specified in the settings input " 'node, must be a list of strings'
                 )
         except KeyError:  # list of namelists not specified in the settings; do automatic detection
             namelists_toprint = self._compulsory_namelists
@@ -232,56 +243,76 @@ class EpwCalculation(CalcJob):
             # I create a symlink to each file/folder in the parent ./out
             folder.get_subfolder(self._OUTPUT_SUBFOLDER, create=True)
 
-            remote_symlink_list.append((
-                parent_folder_nscf.computer.uuid,
-                os.path.join(parent_folder_nscf.get_remote_path(), parent_calc_out_subfolder_nscf,
-                             '*'), self._OUTPUT_SUBFOLDER
-            ))
+            remote_symlink_list.append(
+                (
+                    parent_folder_nscf.computer.uuid,
+                    os.path.join(parent_folder_nscf.get_remote_path(), parent_calc_out_subfolder_nscf, '*'),
+                    self._OUTPUT_SUBFOLDER,
+                )
+            )
 
         else:
             # here I copy the whole folder ./out
-            remote_copy_list.append((
-                parent_folder_nscf.computer.uuid,
-                os.path.join(parent_folder_nscf.get_remote_path(),
-                             parent_calc_out_subfolder_nscf), self._OUTPUT_SUBFOLDER
-            ))
+            remote_copy_list.append(
+                (
+                    parent_folder_nscf.computer.uuid,
+                    os.path.join(parent_folder_nscf.get_remote_path(), parent_calc_out_subfolder_nscf),
+                    self._OUTPUT_SUBFOLDER,
+                )
+            )
 
         prefix = self._PREFIX
 
         for iqpt in range(1, nqpt + 1):
             label = str(iqpt)
             tmp_path = os.path.join(self._FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-0')
-            remote_copy_list.append((
-                parent_folder_ph.computer.uuid, os.path.join(parent_folder_ph.get_remote_path(),
-                                                             tmp_path), 'save/' + prefix + '.dyn_q0'
-            ))
+            remote_copy_list.append(
+                (
+                    parent_folder_ph.computer.uuid,
+                    os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
+                    'save/' + prefix + '.dyn_q0',
+                )
+            )
             tmp_path = os.path.join(self._FOLDER_DYNAMICAL_MATRIX, 'dynamical-matrix-' + label)
-            remote_copy_list.append((
-                parent_folder_ph.computer.uuid, os.path.join(parent_folder_ph.get_remote_path(),
-                                                             tmp_path), 'save/' + prefix + '.dyn_q' + label
-            ))
+            remote_copy_list.append(
+                (
+                    parent_folder_ph.computer.uuid,
+                    os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
+                    'save/' + prefix + '.dyn_q' + label,
+                )
+            )
 
             if iqpt == 1:
                 tmp_path = os.path.join(self._OUTPUT_SUBFOLDER, '_ph0/' + prefix + '.dvscf*')
-                remote_copy_list.append((
-                    parent_folder_ph.computer.uuid, os.path.join(parent_folder_ph.get_remote_path(),
-                                                                 tmp_path), 'save/' + prefix + '.dvscf_q' + label
-                ))
+                remote_copy_list.append(
+                    (
+                        parent_folder_ph.computer.uuid,
+                        os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
+                        'save/' + prefix + '.dvscf_q' + label,
+                    )
+                )
                 tmp_path = os.path.join(self._OUTPUT_SUBFOLDER, '_ph0/' + prefix + '.phsave')
-                remote_copy_list.append((
-                    parent_folder_ph.computer.uuid, os.path.join(parent_folder_ph.get_remote_path(), tmp_path), 'save/'
-                ))
+                remote_copy_list.append(
+                    (
+                        parent_folder_ph.computer.uuid,
+                        os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
+                        'save/',
+                    )
+                )
             else:
                 tmp_path = os.path.join(
                     self._OUTPUT_SUBFOLDER, '_ph0/' + prefix + '.q_' + label + '/' + prefix + '.dvscf*'
                 )
-                remote_copy_list.append((
-                    parent_folder_ph.computer.uuid, os.path.join(parent_folder_ph.get_remote_path(),
-                                                                 tmp_path), 'save/' + prefix + '.dvscf_q' + label
-                ))
+                remote_copy_list.append(
+                    (
+                        parent_folder_ph.computer.uuid,
+                        os.path.join(parent_folder_ph.get_remote_path(), tmp_path),
+                        'save/' + prefix + '.dvscf_q' + label,
+                    )
+                )
 
         codeinfo = datastructures.CodeInfo()
-        codeinfo.cmdline_params = (list(settings.pop('CMDLINE', [])) + ['-in', self.metadata.options.input_filename])
+        codeinfo.cmdline_params = list(settings.pop('CMDLINE', [])) + ['-in', self.metadata.options.input_filename]
         codeinfo.stdout_name = self.metadata.options.output_filename
         codeinfo.code_uuid = self.inputs.code.uuid
 

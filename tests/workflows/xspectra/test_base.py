@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for the XspectraBaseWorkChain."""
 
 from aiida.common import AttributeDict

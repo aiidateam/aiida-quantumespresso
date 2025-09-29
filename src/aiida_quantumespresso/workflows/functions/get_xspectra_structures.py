@@ -3,6 +3,9 @@
 
 Returns a supercell with a marked absorbing atom for each symmetrically non-equivalent site in the system.
 """
+
+# ruff: noqa
+
 import warnings
 
 from aiida import orm
@@ -18,7 +21,8 @@ from aiida_quantumespresso.utils.hubbard import HubbardStructureData, HubbardUti
 
 warnings.warn(
     'This module is deprecated and will be removed soon as part of migrating XAS and XPS workflows to a new repository.'
-    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.', FutureWarning
+    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.',
+    FutureWarning,
 )
 
 
@@ -86,7 +90,7 @@ def process_molecule_input(structure, **kwargs):  # pylint: disable=too-many-sta
     box_c = max((high_z - low_z) * 2, supercell_min_parameter)
 
     new_supercell = StructureData()
-    new_supercell.set_cell(value=([box_a, 0., 0.], [0., box_b, 0.], [0., 0., box_c]))
+    new_supercell.set_cell(value=([box_a, 0.0, 0.0], [0.0, box_b, 0.0], [0.0, 0.0, box_c]))
 
     for kind in structure.kinds:
         new_supercell.append_kind(kind)
@@ -119,7 +123,7 @@ def get_spglib_equivalency_dict(equivalent_atoms_array, abs_elements_list, eleme
                     'kind_name': type_mapping_dict[str(element_type)].name,
                     'symbol': type_mapping_dict[str(element_type)].symbol,
                     'site_index': symmetry_value,
-                    'equivalent_sites_list': [symmetry_value]
+                    'equivalent_sites_list': [symmetry_value],
                 }
 
     return equivalency_dict
@@ -255,8 +259,7 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
         supercell_min_parameter = unwrapped_kwargs.pop('supercell_min_parameter').value
         if supercell_min_parameter < 0:
             raise ValueError(
-                f'The requested minimum supercell parameter ({supercell_min_parameter}) should not be'
-                ' less than 0.'
+                f'The requested minimum supercell parameter ({supercell_min_parameter}) should not be' ' less than 0.'
             )
         elif supercell_min_parameter == 0:  # useful if no core-hole treatment is required
             scale_unit_cell = False

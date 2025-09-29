@@ -3,6 +3,9 @@
 
 Uses QuantumESPRESSO pw.x and xspectra.x, requires ``aiida-shell`` to run ``upf2plotcore.sh``.
 """
+
+# ruff: noqa
+
 import pathlib
 from typing import Optional, Union
 import warnings
@@ -23,13 +26,15 @@ with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     from aiida_quantumespresso.calculations.functions.xspectra.get_powder_spectrum import get_powder_spectrum
     from aiida_quantumespresso.calculations.functions.xspectra.merge_spectra import merge_spectra
+
     XspectraBaseWorkChain = WorkflowFactory('quantumespresso.xspectra.base')
 
 HubbardStructureData = DataFactory('quantumespresso.hubbard_structure')
 
 warnings.warn(
     'This module is deprecated and will be removed soon as part of migrating XAS and XPS workflows to a new repository.'
-    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.', FutureWarning
+    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.',
+    FutureWarning,
 )
 
 
@@ -87,16 +92,15 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
             namespace_options={
                 'help': ('Input parameters for the `pw.x` calculation.'),
                 'validator': cls.validate_scf,
-            }
+            },
         )
         spec.expose_inputs(
             XspectraBaseWorkChain,
             namespace='xs_prod',
             exclude=('clean_workdir', 'xspectra.parent_folder', 'xspectra.core_wfc_data'),
             namespace_options={
-                'help': ('Input parameters for the `xspectra.x` calculation'
-                         ' to compute the Lanczos.')
-            }
+                'help': ('Input parameters for the `xspectra.x` calculation' ' to compute the Lanczos.')
+            },
         )
         spec.expose_inputs(
             XspectraBaseWorkChain,
@@ -105,8 +109,8 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
             namespace_options={
                 'help': ('Input parameters for the re-plot `xspectra.x` calculation of the Lanczos.'),
                 'required': False,
-                'populate_defaults': False
-            }
+                'populate_defaults': False,
+            },
         )
         spec.inputs.validator = cls.validate_inputs
         spec.input(
@@ -115,7 +119,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
             help=(
                 'Structure to be used for calculation, with at least one site containing the `abs_atom_marker` '
                 'as the kind label.'
-            )
+            ),
         )
         spec.input(
             'eps_vectors',
@@ -147,7 +151,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
             'core_wfc_data',
             valid_type=orm.SinglefileData,
             required=False,
-            help='The core wavefunction data file extracted from the ground-state pseudo for the absorbing atom.'
+            help='The core wavefunction data file extracted from the ground-state pseudo for the absorbing atom.',
         )
         spec.input(
             'run_replot',
@@ -160,7 +164,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
             valid_type=orm.AbstractCode,
             required=False,
             help='The code node required for upf2plotcore.sh configured for ``aiida-shell``. '
-            'Must be provided if `core_wfc_data` is not provided.'
+            'Must be provided if `core_wfc_data` is not provided.',
         )
         spec.input(
             'clean_workdir',
@@ -174,7 +178,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
             valid_type=orm.Bool,
             serializer=to_aiida_type,
             required=False,
-            help='Terminate workchain steps before submitting calculations (test purposes only).'
+            help='Terminate workchain steps before submitting calculations (test purposes only).',
         )
         spec.outline(
             cls.setup,
@@ -198,23 +202,21 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         spec.exit_code(
             403,
             'ERROR_NO_GIPAW_INFO_FOUND',
-            message='The pseudo for the absorbing element contains no'
-            ' GIPAW information.'
+            message='The pseudo for the absorbing element contains no' ' GIPAW information.',
         )
         spec.output(
-            'parameters_scf', valid_type=orm.Dict, help='The output parameters of the SCF'
-            ' `PwBaseWorkChain`.'
+            'parameters_scf', valid_type=orm.Dict, help='The output parameters of the SCF' ' `PwBaseWorkChain`.'
         )
         spec.output_namespace(
             'parameters_xspectra',
             valid_type=orm.Dict,
             help='The output dictionaries of each `XspectraBaseWorkChain` performed',
-            dynamic=True
+            dynamic=True,
         )
         spec.output(
             'spectra',
             valid_type=orm.XyData,
-            help='An XyData node containing all the final spectra produced by the WorkChain.'
+            help='An XyData node containing all the final spectra produced by the WorkChain.',
         )
         spec.output('powder_spectrum', valid_type=orm.XyData, required=False, help='The simulated powder spectrum')
 
@@ -224,6 +226,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         from importlib_resources import files
 
         from ..protocols import xspectra as protocols
+
         return files(protocols) / 'core.yaml'
 
     @classmethod
@@ -232,6 +235,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         from importlib_resources import files
 
         from .. import protocols
+
         return files(protocols) / 'core_hole_treatments.yaml'
 
     @classmethod
@@ -311,7 +315,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         protocol=None,
         overrides=None,
         options=None,
-        **kwargs
+        **kwargs,
     ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
@@ -354,7 +358,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
             left=pw_params,
             right=cls.get_treatment_inputs(
                 treatment=core_hole_treatment, overrides=inputs.get('scf', {}).get('pw', {}).get('parameters', None)
-            )
+            ),
         )
 
         pw_inputs['pw']['parameters'] = pw_params
@@ -451,8 +455,8 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
                 abs_atom_found = True
         if not abs_atom_found:
             return (
-                f'Error: the marker given for the absorbing atom ("{inputs["abs_atom_marker"].value}") ' +
-                'does not appear in the structure provided.'
+                f'Error: the marker given for the absorbing atom ("{inputs["abs_atom_marker"].value}") '
+                + 'does not appear in the structure provided.'
             )
 
     def setup(self):
@@ -580,8 +584,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
             future_xspectra = self.submit(XspectraBaseWorkChain, **xspectra_inputs)
             self.to_context(xspectra_prod_calculations=append_(future_xspectra))
             self.report(
-                f'launching XspectraWorkChain<{future_xspectra.pk}> for epsilon vector {vector}'
-                ' (Lanczos production)'
+                f'launching XspectraWorkChain<{future_xspectra.pk}> for epsilon vector {vector}' ' (Lanczos production)'
             )
 
     def inspect_all_xspectra_prod(self):
@@ -593,8 +596,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         for calculation in calculations:
             vector = calculation.outputs.output_parameters.get_dict()['xepsilon']
             if not calculation.is_finished_ok:
-                self.report(f'XspectraBaseWorkChain <{vector}>'
-                            ' failed with exit status {calculation.exit_status}.')
+                self.report(f'XspectraBaseWorkChain <{vector}>' ' failed with exit status {calculation.exit_status}.')
                 unrecoverable_failures = True
             else:
                 self.report(f'XspectraBaseWorkChain <{vector}> finished successfully.')
@@ -701,13 +703,13 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
                 plot_vector = out_params['xepsilon']
                 spectrum_node = plot_calc.outputs.spectra
                 if plot_vector in eps_powder_vectors:
-                    if plot_vector == [1., 0., 0.]:
+                    if plot_vector == [1.0, 0.0, 0.0]:
                         eps_basis_calcs['eps_100'] = spectrum_node
                         a_vector_present = True
-                    if plot_vector == [0., 1., 0.]:
+                    if plot_vector == [0.0, 1.0, 0.0]:
                         eps_basis_calcs['eps_010'] = spectrum_node
                         b_vector_present = True
-                    if plot_vector == [0., 0., 1.]:
+                    if plot_vector == [0.0, 0.0, 1.0]:
                         eps_basis_calcs['eps_001'] = spectrum_node
                         c_vector_present = True
 

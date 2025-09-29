@@ -1,8 +1,10 @@
-# -*- coding: utf-8 -*-
 """Workchain to compute all X-ray absorption spectra for a given structure.
 
 Uses QuantumESPRESSO pw.x and xspectra.x.
 """
+
+# ruff: noqa
+
 import warnings
 
 from aiida import orm
@@ -23,12 +25,14 @@ XyData = DataFactory('core.array.xy')
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     from aiida_quantumespresso.calculations.functions.xspectra.get_spectra_by_element import get_spectra_by_element
+
     XspectraBaseWorkChain = WorkflowFactory('quantumespresso.xspectra.base')
     XspectraCoreWorkChain = WorkflowFactory('quantumespresso.xspectra.core')
 
 warnings.warn(
     'This module is deprecated and will be removed soon as part of migrating XAS and XPS workflows to a new repository.'
-    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.', FutureWarning
+    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-qe-xspec.',
+    FutureWarning,
 )
 
 
@@ -280,14 +284,25 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
         from importlib_resources import files
 
         from ..protocols import xspectra as protocols
+
         return files(protocols) / 'crystal.yaml'
 
     @classmethod
-    def get_builder_from_protocol( # pylint: disable=too-many-statements
-        cls, pw_code, xs_code, structure, pseudos, upf2plotcore_code=None, core_wfc_data=None,
-        core_hole_treatments=None, protocol=None, overrides=None, elements_list=None,
-        options=None, **kwargs
-    ): # pylint: enable:too-many-statments
+    def get_builder_from_protocol(  # pylint: disable=too-many-statements
+        cls,
+        pw_code,
+        xs_code,
+        structure,
+        pseudos,
+        upf2plotcore_code=None,
+        core_wfc_data=None,
+        core_hole_treatments=None,
+        protocol=None,
+        overrides=None,
+        elements_list=None,
+        options=None,
+        **kwargs,
+    ):  # pylint: enable:too-many-statments
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
         :param pw_code: the ``Code`` instance configured for the ``quantumespresso.pw``
@@ -320,14 +335,12 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             *pw_args, overrides=inputs.get('core', {}).get('scf'), options=options, **kwargs
         )
         core_xspectra = XspectraBaseWorkChain.get_protocol_inputs(
-            protocol,
-            overrides=inputs.get('core', {}).get('xs_prod')
+            protocol, overrides=inputs.get('core', {}).get('xs_prod')
         )
 
         if options:
             core_xspectra['xspectra']['metadata']['options'] = recursive_merge(
-                core_xspectra['xspectra']['metadata']['options'],
-                options
+                core_xspectra['xspectra']['metadata']['options'], options
             )
 
         relax.pop('clean_workdir', None)
@@ -361,7 +374,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
                 raise ValueError(
                     f'The following elements: {elements_not_present} are not present in the'
                     f' structure ({elements_present}) provided.'
-                    )
+                )
             else:
                 builder.elements_list = orm.List(elements_list)
                 for element in pseudos:
@@ -384,15 +397,12 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
         elif upf2plotcore_code:
             builder.upf2plotcore_code = upf2plotcore_code
         else:
-            raise ValueError(
-                'No code node for upf2plotcore.sh or core wavefunction data were provided.'
-            )
+            raise ValueError('No code node for upf2plotcore.sh or core wavefunction data were provided.')
         # pylint: enable=no-member
         return builder
 
-
     @staticmethod
-    def validate_inputs(inputs, _): # pylint: disable=too-many-return-statements
+    def validate_inputs(inputs, _):  # pylint: disable=too-many-return-statements
         """Validate the inputs before launching the WorkChain."""
         structure = inputs['structure']
         kinds_present = [kind.name for kind in structure.kinds]
@@ -417,14 +427,10 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             )
 
         if not inputs['core']['get_powder_spectrum'].value:
-            return (
-                'The ``get_powder_spectrum`` input for the XspectraCoreWorkChain namespace must be ``True``.'
-            )
+            return 'The ``get_powder_spectrum`` input for the XspectraCoreWorkChain namespace must be ``True``.'
 
         if 'upf2plotcore_code' not in inputs and 'core_wfc_data' not in inputs:
-            return (
-                'Neither a ``Code`` node for upf2plotcore.sh or a set of ``core_wfc_data`` were provided.'
-            )
+            return 'Neither a ``Code`` node for upf2plotcore.sh or a set of ``core_wfc_data`` were provided.'
 
         if 'core_wfc_data' in inputs:
             core_wfc_data_list = sorted(inputs['core_wfc_data'].keys())
@@ -438,10 +444,8 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
                 header_line = value.get_content()[:40]
                 try:
                     num_core_states = int(header_line.split(' ')[5])
-                except: # pylint: disable=bare-except
-                    return (
-                        'The core wavefunction data file is not of the correct format'
-                    ) # pylint: enable=bare-except
+                except:  # pylint: disable=bare-except
+                    return 'The core wavefunction data file is not of the correct format'  # pylint: enable=bare-except
                 if num_core_states == 0:
                     empty_core_wfc_data.append(key)
             if len(empty_core_wfc_data) > 0:
@@ -454,9 +458,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             spacegroup_number = inputs['symmetry_data']['spacegroup_number'].value
             equivalent_sites_data = inputs['symmetry_data']['equivalent_sites_data'].get_dict()
             if spacegroup_number <= 0 or spacegroup_number >= 231:
-                return (
-                    f'Input spacegroup number ({spacegroup_number}) outside of valid range (1-230).'
-                )
+                return f'Input spacegroup number ({spacegroup_number}) outside of valid range (1-230).'
 
             input_elements = []
             required_keys = sorted(['symbol', 'multiplicity', 'kind_name', 'site_index'])
@@ -468,7 +470,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             # We assume otherwise that the user knows what they're doing and has set everything else
             # to their preferences correctly.
             for site_label, value in equivalent_sites_data.items():
-                if not set(required_keys).issubset(set(value.keys())) :
+                if not set(required_keys).issubset(set(value.keys())):
                     invalid_entries.append(site_label)
                 elif value['symbol'] not in input_elements:
                     input_elements.append(value['symbol'])
@@ -479,22 +481,20 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
                         )
 
             if len(invalid_entries) != 0:
-                return (
-                    f'The required keys ({required_keys}) were not found in the following entries: {invalid_entries}'
-                )
+                return f'The required keys ({required_keys}) were not found in the following entries: {invalid_entries}'
 
             sorted_input_elements = sorted(input_elements)
             if sorted_input_elements != absorbing_elements_list:
-                return (f'Elements defined for sites in `equivalent_sites_data` ({sorted_input_elements}) '
-                 f'do not match the list of absorbing elements ({absorbing_elements_list})')
-
+                return (
+                    f'Elements defined for sites in `equivalent_sites_data` ({sorted_input_elements}) '
+                    f'do not match the list of absorbing elements ({absorbing_elements_list})'
+                )
 
     # pylint: enable=too-many-return-statements
     def setup(self):
         """Set required context variables."""
         if 'core_wfc_data' in self.inputs.keys():
             self.ctx.core_wfc_data = self.inputs.core_wfc_data
-
 
     def should_run_relax(self):
         """If the 'relax' input namespace was specified, we relax the input structure."""
@@ -531,11 +531,9 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
         elements_list = self.inputs.elements_list
 
         inputs = {
-            'absorbing_elements_list' : elements_list,
-            'absorbing_atom_marker' : self.inputs.abs_atom_marker,
-            'metadata' : {
-                'call_link_label' : 'get_xspectra_structures'
-            }
+            'absorbing_elements_list': elements_list,
+            'absorbing_atom_marker': self.inputs.abs_atom_marker,
+            'metadata': {'call_link_label': 'get_xspectra_structures'},
         }
         if 'structure_preparation_settings' in self.inputs:
             optional_cell_prep = self.inputs.structure_preparation_settings
@@ -566,14 +564,14 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
         if out_params.get_dict()['structure_is_standardized']:
             standardized = result.pop('standardized_structure')
             self.out('standardized_structure', standardized)
-        if spacegroup_number in range(1, 75): # trichoric system
-            self.ctx.eps_vectors = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]
-        if spacegroup_number in range(75, 195): # dichoric system
-            self.ctx.eps_vectors = [[1., 0., 0.], [0., 0., 1.]]
-        if spacegroup_number in range(195, 231): # isochoric system
-            self.ctx.eps_vectors = [[1., 0., 0.]]
+        if spacegroup_number in range(1, 75):  # trichoric system
+            self.ctx.eps_vectors = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+        if spacegroup_number in range(75, 195):  # dichoric system
+            self.ctx.eps_vectors = [[1.0, 0.0, 0.0], [0.0, 0.0, 1.0]]
+        if spacegroup_number in range(195, 231):  # isochoric system
+            self.ctx.eps_vectors = [[1.0, 0.0, 0.0]]
 
-        structures_to_process = {f'{Key.split("_")[0]}_{Key.split("_")[1]}' : Value for Key, Value in result.items()}
+        structures_to_process = {f'{Key.split("_")[0]}_{Key.split("_")[1]}': Value for Key, Value in result.items()}
         self.ctx.structures_to_process = structures_to_process
         self.ctx.equivalent_sites_data = out_params['equivalent_sites_data']
 
@@ -587,7 +585,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
     def run_upf2plotcore(self):
         """Run the upf2plotcore.sh utility script for each element and return the core-wavefunction data."""
 
-        ShellJob = CalculationFactory('core.shell') # pylint: disable=invalid-name
+        ShellJob = CalculationFactory('core.shell')  # pylint: disable=invalid-name
         elements_list = self.inputs.elements_list.get_list()
 
         shelljobs = {}
@@ -600,13 +598,10 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             shell_inputs['nodes'] = {'upf': upf}
             shell_inputs['metadata'] = {
                 'call_link_label': f'upf2plotcore_{element}',
-                'options' : {
-                    'filename_stdin' : upf.filename,
-                    'resources' : {
-                        'num_machines' : 1,
-                        'num_mpiprocs_per_machine' : 1
-                    }
-                }
+                'options': {
+                    'filename_stdin': upf.filename,
+                    'resources': {'num_machines': 1, 'num_mpiprocs_per_machine': 1},
+                },
             }
 
             future_shelljob = self.submit(ShellJob, **shell_inputs)
@@ -614,7 +609,6 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             shelljobs[f'upf2plotcore_{element}'] = future_shelljob
 
         return ToContext(**shelljobs)
-
 
     def inspect_upf2plotcore(self):
         """Check that the outputs from the upf2plotcore step have yielded meaningful results.
@@ -632,7 +626,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             if num_core_states == 0:
                 return self.exit_codes.ERROR_NO_GIPAW_INFO_FOUND
 
-    def run_all_xspectra_core(self): # pylint: disable=too-many-statements
+    def run_all_xspectra_core(self):  # pylint: disable=too-many-statements
         """Call all XspectraCoreWorkChains required to compute all requested spectra."""
 
         structures_to_process = self.ctx.structures_to_process
@@ -683,16 +677,15 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             # in order to avoid the need for fudges like these and set these at
             # submission rather than inside the WorkChain itself.
             if 'starting_magnetization' in new_scf_params['SYSTEM']:
-                inherited_mag =  new_scf_params['SYSTEM']['starting_magnetization'][abs_atom_kind]
+                inherited_mag = new_scf_params['SYSTEM']['starting_magnetization'][abs_atom_kind]
                 if ch_treatment not in ['xch_smear', 'xch_fixed']:
                     new_scf_params['SYSTEM']['starting_magnetization'][abs_atom_marker] = inherited_mag
-                else: # if there is meant to be an unpaired electron, give it to the absorbing atom.
-                    if inherited_mag == 0: # set it to 1, if it would be neutral in the ground-state.
-                        new_scf_params['SYSTEM']['starting_magnetization'][abs_atom_marker] =  1
-                    else: # assume that it takes the same magnetic configuration as the kind that it replaces.
-                        new_scf_params['SYSTEM']['starting_magnetization'][abs_atom_marker] =  inherited_mag
+                elif inherited_mag == 0:  # set it to 1, if it would be neutral in the ground-state.
+                    new_scf_params['SYSTEM']['starting_magnetization'][abs_atom_marker] = 1
+                else:  # assume that it takes the same magnetic configuration as the kind that it replaces.
+                    new_scf_params['SYSTEM']['starting_magnetization'][abs_atom_marker] = inherited_mag
             elif ch_treatment in ['xch_smear', 'xch_fixed']:
-                new_scf_params['SYSTEM']['starting_magnetization'] = {abs_atom_marker : 1}
+                new_scf_params['SYSTEM']['starting_magnetization'] = {abs_atom_marker: 1}
 
             # remove any duplicates created from the "core_hole_treatments.yaml" defaults
             for key in new_scf_params['SYSTEM'].keys():
@@ -711,7 +704,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             if len(abs_element_kinds) > 0:
                 for kind_name in abs_element_kinds:
                     scf_inputs['pseudos'][kind_name] = gipaw_pseudo
-            else: # if there is only one atom of the absorbing element, pop the GIPAW pseudo to avoid a crash
+            else:  # if there is only one atom of the absorbing element, pop the GIPAW pseudo to avoid a crash
                 scf_inputs['pseudos'].pop(abs_element, None)
 
             scf_inputs.parameters = orm.Dict(new_scf_params)
@@ -724,15 +717,13 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             xspectra_core_workchains[site] = future
             self.report(f'launched XspectraCoreWorkChain for {site}<{future.pk}>')
 
-        return ToContext(**xspectra_core_workchains) # pylint: enable=too-many-statements
+        return ToContext(**xspectra_core_workchains)  # pylint: enable=too-many-statements
 
     def inspect_all_xspectra_core(self):
         """Check that all the XspectraCoreWorkChain sub-processes finished sucessfully."""
 
         labels = self.ctx.structures_to_process.keys()
-        work_chain_nodes = {
-            label : self.ctx[label] for label in labels
-        }
+        work_chain_nodes = {label: self.ctx[label] for label in labels}
         failed_work_chains = []
         for label, work_chain in work_chain_nodes.items():
             if not work_chain.is_finished_ok:
@@ -745,10 +736,8 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
         """Compile all output spectra, organise and post-process all computed spectra, and send to outputs."""
 
         labels = self.ctx.structures_to_process.keys()
-        spectra_nodes = {
-            label : self.ctx[label].outputs.powder_spectrum for label in labels
-        }
-        spectra_nodes['metadata'] = {'call_link_label' : 'compile_final_spectra'}
+        spectra_nodes = {label: self.ctx[label].outputs.powder_spectrum for label in labels}
+        spectra_nodes['metadata'] = {'call_link_label': 'compile_final_spectra'}
 
         equivalent_sites_data = self.ctx.equivalent_sites_data
         elements_list = self.inputs.elements_list
@@ -776,7 +765,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
                 try:
                     called_descendant.outputs.remote_folder._clean()  # pylint: disable=protected-access
                     cleaned_calcs.append(called_descendant.pk)
-                except (IOError, OSError, KeyError):
+                except (OSError, KeyError):
                     pass
 
         if cleaned_calcs:

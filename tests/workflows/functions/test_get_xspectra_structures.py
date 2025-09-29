@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
 """Tests for the `get_marked_structure` class."""
-from aiida.orm import Bool, Dict, Int
+
 import pytest
+from aiida.orm import Bool, Dict, Int
 
 from aiida_quantumespresso.utils.hubbard import HubbardStructureData, HubbardUtils
 from aiida_quantumespresso.workflows.functions.get_xspectra_structures import get_xspectra_structures
@@ -13,6 +13,7 @@ def generate_hubbard():
 
     def _generate_hubbard():
         from aiida_quantumespresso.common.hubbard import Hubbard
+
         return Hubbard.from_list([(0, '1s', 0, '1s', 5.0, (0, 0, 0), 'Ueff')])
 
     return _generate_hubbard
@@ -24,6 +25,7 @@ def generate_hubbard_structure(generate_structure):
 
     def _generate_hubbard_structure():
         from aiida_quantumespresso.common.hubbard import Hubbard
+
         structure = generate_structure('silicon-kinds')
         hp_list = [(0, '1s', 0, '1s', 5.0, (0, 0, 0), 'Ueff')]
         hubbard = Hubbard.from_list(hp_list)
@@ -57,7 +59,7 @@ def test_use_element_types(generate_structure):
         'structure': c_si_kinds,
         'use_element_types': Bool(False),
         'spglib_options': spglib_settings,
-        'standardize_structure': Bool(False)
+        'standardize_structure': Bool(False),
     }
 
     result_bare = get_xspectra_structures(**inputs_bare)
