@@ -1,6 +1,7 @@
 """Script for automatically updating the `CHANGELOG.md` based on the commits since the latest release tag."""
 
-# ruff: noqa
+# ruff: noqa: INP001, T201, S607
+
 import re
 import subprocess
 from pathlib import Path
@@ -56,7 +57,7 @@ def update_changelog():
 
     print(f'🔄 Comparing with latest tag `{latest_tag}`.')
     commits = subprocess.run(
-        ['git', 'log', "--pretty=format:'%h|%H|%s'", f'{latest_tag}..origin/main'],
+        ['git', 'log', "--pretty=format:'%h|%H|%s'", f'{latest_tag}..HEAD'],
         capture_output=True,
         check=True,
         encoding='utf-8',
@@ -73,6 +74,8 @@ def update_changelog():
         if pr_match is not None:
             pr_number = pr_match.groupdict()['pr_number']
             commit = commit_line.replace(rf'(#{pr_number})', '')
+        else:
+            commit = commit_line
 
         # Add the commit hash (short) to link to the changelog
         commit = commit.strip("'")
