@@ -289,7 +289,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         # If the last work chain still found Pulay stresses in the final SCF, continue
         pulay_exit_status = PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF.status
         if base_relax_workchain.exit_status == pulay_exit_status:
-            self.report('Pulay stresses still present, running another geometry optimizatio.')
+            self.report('Pulay stresses still present, running another geometry optimization.')
             return True
 
         # If the kpoints are defined as a density, make sure the kpoints mesh is the same for the new structur
@@ -338,11 +338,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         return ToContext(base_relax_workchains=append_(base_wc))
 
     def inspect_relax(self):
-        """Inspect the results of the last `PwBaseWorkChain`.
-
-        Compare the cell volume of the relaxed structure of the last completed workchain with the previous. If the
-        difference ratio is less than the volume convergence threshold we consider the cell relaxation converged.
-        """
+        """Inspect the results of the last `PwBaseWorkChain`."""
         workchain = self.ctx.base_relax_workchains[-1]
 
         if workchain.is_excepted or workchain.is_killed:
