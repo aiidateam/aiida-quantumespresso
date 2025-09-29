@@ -1,3 +1,51 @@
+## v4.15.0
+
+This support release for v4.X provides several new features, important improvements and bug fixes.
+
+The new features include support for electron-phonon calculations, DOS interpolations with `matdyn.x` and LDOS and total PDOS parsing from the `projwfc.x` code.
+The `pw.x` parser now also parsed the electric field output from the XML.
+
+After [switching to largely parsing from the `pw.x` XML](https://github.com/aiidateam/aiida-quantumespresso/commit/bdfa61e7d98064c1df50032218f55fa147be5a6c) in the previous release, we noted that the units of the parsed forces and stresses no longer matched those described in the `output_parameters`, because of a discrepancy between units in the `stdout` and XML of Quantum ESPRESSO `pw.x`.
+This is fixed in this release.
+We also make sure the final total and absolute cell magnetic moments (aka magnetization in QE XML outputs) are obtained from the XML and not the `stdout`, since these values are reported with much more decimal numbers in the XML.
+Finally we also improve the number of bands selection in the `PwBandsWorkChain` for non-collinear calculations, by correctly assuming that in this case there is only one electron in each band of the SCF calculation.
+
+The `setup_codes` command, exposed in the CLI via `aiida-quantumespresso setup codes`, is also improved to consider the prepend text of the computer, and raise a warning in case the directory is provided but the constructed path to the executable does not exist. The latter is important for some edge cases where the prepend text is not sufficient to obtain access to the executable, such as when using [`uenv`](https://github.com/eth-cscs/uenv2), which prefers environment loading via Slurm `#SBATCH` directives.
+
+### ✨ New features
+
+* `matdyn.x`: add DOS support [[dfcc77a3](https://github.com/aiidateam/aiida-quantumespresso/commit/dfcc77a31ecefd57b7d8ba4fd964eab40a216e0e)]
+* `ph`/`q2r`/`matdyn.x`: add electron-phonon support [[bd98f48c](https://github.com/aiidateam/aiida-quantumespresso/commit/bd98f48c9f2b40b1dbb05537385b820aaeb4950d)]
+* `projwfc.x`: add support for projections onto boxes and total PDOS [[bd260239](https://github.com/aiidateam/aiida-quantumespresso/commit/bd2602399f6281e3af8109e0d36a4b8b9078c0a2)]
+* `pw.x`: parse electric field [[3c2bb4d8](https://github.com/aiidateam/aiida-quantumespresso/commit/3c2bb4d8405ffc3f4b64f900c110bbc8781fd8be)]
+
+### 👌 Improvements
+
+* `PwParser`: Parse total/absolute magnetization from XML [[1fd3c8f8](https://github.com/aiidateam/aiida-quantumespresso/commit/1fd3c8f8c6df38b4d8be2069d763bf9ced9f73fb)]
+* `matdyn.x`: improve input validation of blocked keywords [[89d0f21d](https://github.com/aiidateam/aiida-quantumespresso/commit/89d0f21db4aa925758950e265953d6cb13db148c)]
+* `setup_codes`: warn when executable does not exist with `directory` [[a558220f](https://github.com/aiidateam/aiida-quantumespresso/commit/a558220f4fbed75cb92c5b402ab936daa5928a74)]
+* `PwBands`: improve `nbnd` for non-collinear calculations [[6b5c9e2a](https://github.com/aiidateam/aiida-quantumespresso/commit/6b5c9e2a0fc867631c57722486bfad70a5708371)]
+
+### 🐛 Bug fixes
+
+* `setup_codes`: use computer prepend text [[2276de39](https://github.com/aiidateam/aiida-quantumespresso/commit/2276de392281af5305af4532359227d69cceab37)]
+* `pw.x`: fix units for XML stress/forces parsing [[eff30d2e](https://github.com/aiidateam/aiida-quantumespresso/commit/eff30d2e3b274bfb6082ac4d7e9701d79a2269af)]
+
+### 📚 Documentation
+
+* Add developer notes on documentation [[5bc6f812](https://github.com/aiidateam/aiida-quantumespresso/commit/5bc6f8126727a1a00d034d7ae1190451d8fd7b24)]
+
+### 🔧 Maintenance
+
+* CI: Move integration job to nightly build [[23cc72c3](https://github.com/aiidateam/aiida-quantumespresso/commit/23cc72c3b029c5116b8381062fbfe7fb8cbe3957)]
+* Build: Update build/devops envs to Hatch [[89d3d413](https://github.com/aiidateam/aiida-quantumespresso/commit/89d3d413202a6cb94af9e8fab988d82bd5cf765d)]
+* pre-commit: Switch to Ruff [[1bd3d132](https://github.com/aiidateam/aiida-quantumespresso/commit/1bd3d1323ded41a415eb66cc95f261297470bddd)]
+* pre-commit: Run on deprecated modules: set `noqa` [[be8ce1ee](https://github.com/aiidateam/aiida-quantumespresso/commit/be8ce1ee5b5fa4d9d369d2e2b64f3ed654cc8f59)]
+
+### 🧪 Tests
+
+* `pw.x`: rename rvv10 test [[b2b28466](https://github.com/aiidateam/aiida-quantumespresso/commit/b2b28466c9be395ddcf680601a500f27ab99cb23)]
+
 ## v4.14.0
 
 This support release for v4.X provides several new features, critical bug fixes for the `PdosWorkChain` and a large number of improvments that are currently on the `main` branch.
