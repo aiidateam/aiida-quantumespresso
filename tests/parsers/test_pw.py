@@ -907,7 +907,7 @@ def test_pw_vcrelax_success_fractional(
     )
 
 
-def test_pw_scf_success_rvv10(
+def test_pw_scf_success_rvv(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
     """Test a `scf` rVV10 run that successfully converges."""
