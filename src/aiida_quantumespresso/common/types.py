@@ -40,3 +40,10 @@ class RestartType(enum.Enum):
     FROM_SCRATCH = 'from_scratch'
     FROM_CHARGE_DENSITY = 'from_charge_density'
     FROM_WAVE_FUNCTIONS = 'from_wave_functions'
+
+
+class PostProcessQuantity(enum.Enum):
+    """Enumeration of known post-processing quantities."""
+
+    POTENTIAL = 'potential'
+    CHARGE_DENSITY = 'charge_density'
