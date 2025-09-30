@@ -140,9 +140,7 @@ scripts.view = 'make -C docs view'
 
 [tool.hatch.envs.pre-commit]
 dependencies = [
-    'pre-commit',
-    'pylint==2.15.10',
-    'pylint-aiida==0.1.1'
+    'pre-commit>=4.3.0',
 ]
 scripts.install = 'pre-commit install'
 scripts.run = 'pre-commit run {args}'
