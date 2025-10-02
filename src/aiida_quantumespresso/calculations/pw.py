@@ -66,7 +66,7 @@ class PwCalculation(BasePwCpInputGenerator):
             'metadata.options.without_xml',
             valid_type=bool,
             required=False,
-            help='If set to `True` the parser ' 'will not fail if the XML file is missing in the retrieved folder.',
+            help='If set to `True` the parser will not fail if the XML file is missing in the retrieved folder.',
         )
         spec.input('kpoints', valid_type=orm.KpointsData, help='kpoint mesh or kpoint path')
         spec.input(

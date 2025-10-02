@@ -290,7 +290,7 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
                 alat = header_dict['celldm'][0] * CONSTANTS.bohr_to_ang
                 if abs(alat) < 1.0e-5:
                     raise QEOutputParsingError(
-                        'Lattice constant=0! Probably you are using an ' 'old Quantum ESPRESSO version?'
+                        'Lattice constant=0! Probably you are using an old Quantum ESPRESSO version?'
                     )
                 header_dict['alat'] = alat
                 header_dict['alat_units'] = 'angstrom'

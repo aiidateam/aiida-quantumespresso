@@ -490,7 +490,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
             # as it was not generated in this workchain and might be used for other calculations
             cleaned_calcs = clean_workchain_calcs(self.ctx.workchain_scf)
             if cleaned_calcs:
-                self.report(f"cleaned remote folders of SCF calculations: {' '.join(map(str, cleaned_calcs))}")
+                self.report(f'cleaned remote folders of SCF calculations: {" ".join(map(str, cleaned_calcs))}')
 
         self.ctx.nscf_emin = workchain.outputs.output_band.get_array('bands').min()
         self.ctx.nscf_emax = workchain.outputs.output_band.get_array('bands').max()
@@ -637,4 +637,4 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         cleaned_calcs = clean_workchain_calcs(self.node)
 
         if cleaned_calcs:
-            self.report(f"cleaned remote folders of calculations: {' '.join(map(str, cleaned_calcs))}")
+            self.report(f'cleaned remote folders of calculations: {" ".join(map(str, cleaned_calcs))}')

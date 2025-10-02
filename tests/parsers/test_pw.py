@@ -615,7 +615,7 @@ def test_fixed_coords(
 
     The output files of this test were generated for a calculation of a FCC Si supercell where
     """
-    name = f"fixed_coords_{calculation.replace('-', '')}"
+    name = f'fixed_coords_{calculation.replace("-", "")}'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 

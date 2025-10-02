@@ -443,7 +443,7 @@ class BasePwCpInputGenerator(CalcJob):
             if aliases_in_cmdline:
                 if len(aliases_in_cmdline) > 1:
                     raise exceptions.InputValidationError(
-                        f'Conflicting parallelization flags {aliases_in_cmdline} ' "in settings['CMDLINE']"
+                        f"Conflicting parallelization flags {aliases_in_cmdline} in settings['CMDLINE']"
                     )
                 if flag_name in parallelization_dict:
                     raise exceptions.InputValidationError(
@@ -718,7 +718,7 @@ class BasePwCpInputGenerator(CalcJob):
 
                 elif len(kpoints_list) != 1 or tuple(kpoints_list[0]) != tuple(0.0, 0.0, 0.0):
                     raise exceptions.InputValidationError(
-                        'If a gamma_only calculation is requested, the ' 'kpoints coordinates must only be (0.,0.,0.)'
+                        'If a gamma_only calculation is requested, the kpoints coordinates must only be (0.,0.,0.)'
                     )
 
                 kpoints_type = 'gamma'
@@ -761,7 +761,7 @@ class BasePwCpInputGenerator(CalcJob):
             namelists_toprint = settings.pop('NAMELISTS')
             if not isinstance(namelists_toprint, list):
                 raise exceptions.InputValidationError(
-                    "The 'NAMELISTS' value, if specified in the settings input " 'node, must be a list of strings'
+                    "The 'NAMELISTS' value, if specified in the settings input node, must be a list of strings"
                 )
         except KeyError:  # list of namelists not specified; do automatic detection
             try:
@@ -808,7 +808,7 @@ class BasePwCpInputGenerator(CalcJob):
         if input_params:
             raise exceptions.InputValidationError(
                 'The following namelists are specified in input_params, but are not valid namelists for the current '
-                f"type of calculation: {', '.join(list(input_params.keys()))}"
+                f'type of calculation: {", ".join(list(input_params.keys()))}'
             )
 
         return inputfile, local_copy_list_to_append

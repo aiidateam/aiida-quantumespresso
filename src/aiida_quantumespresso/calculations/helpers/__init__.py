@@ -203,7 +203,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
         else:
             add_str = f' (the older, closest version you can use is {strictversions[pos - 1]})'
         raise QEInputValidationError(
-            f"Unknown Quantum Espresso version: {version}. Available versions: {', '.join(versions)};{add_str}"
+            f'Unknown Quantum Espresso version: {version}. Available versions: {", ".join(versions)};{add_str}'
         ) from exception
 
     # ========== List of known PW variables (from XML file) ===============
@@ -337,7 +337,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
     except KeyError as exception:
         raise QEInputValidationError(
             'Error, you need to specify at least the calculation type (among '
-            f"{', '.join(list(valid_calculations_and_opt_namelists.keys()))})"
+            f'{", ".join(list(valid_calculations_and_opt_namelists.keys()))})'
         ) from exception
 
     try:
@@ -345,7 +345,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
     except KeyError as exception:
         raise QEInputValidationError(
             f'Error, {calculation_type} is not a valid value for '
-            f"the calculation type (valid values: {', '.join(list(valid_calculations_and_opt_namelists.keys()))}"
+            f'the calculation type (valid values: {", ".join(list(valid_calculations_and_opt_namelists.keys()))}'
         ) from exception
 
     internal_dict = {i: {} for i in compulsory_namelists + opt_namelists}
@@ -586,7 +586,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
             if len(similar_kws) == 1:
                 err_str += f'Maybe you wanted to specify {similar_kws[0]}?'
             elif len(similar_kws) > 1:
-                err_str += f"Maybe you wanted to specify one of these: {', '.join(similar_kws)}?"
+                err_str += f'Maybe you wanted to specify one of these: {", ".join(similar_kws)}?'
             else:
                 err_str += '(No similar keywords found...)'
             if stop_at_first_error:
@@ -600,7 +600,7 @@ def pw_input_helper(input_params, structure, stop_at_first_error=False, flat_mod
     # ============== I check here compulsory variables ===========
     missing_kws = compulsory_kws - set(inserted_kws)
     if missing_kws:
-        err_str = f"Missing compulsory variables: {', '.join(missing_kws)}."
+        err_str = f'Missing compulsory variables: {", ".join(missing_kws)}.'
         if stop_at_first_error:
             raise QEInputValidationError(err_str)
 

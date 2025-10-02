@@ -154,7 +154,7 @@ class CpCalculation(BasePwCpInputGenerator):
                 if isinstance(event['newvalue'], str):
                     autopilot_card += f"ON_STEP = {event['onstep']} : '{event['what']}' = {event['newvalue']}\n"
                 else:
-                    autopilot_card += f"ON_STEP = {event['onstep']} : {event['what']} = {event['newvalue']}\n"
+                    autopilot_card += f'ON_STEP = {event["onstep"]} : {event["what"]} = {event["newvalue"]}\n'
         except KeyError as exception:
             raise exceptions.InputValidationError(
                 f"""AUTOPILOT input: you must specify a list of dictionaries like the following:

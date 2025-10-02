@@ -237,7 +237,7 @@ class PwimmigrantCalculation(PwCalculation):
             # else.
             if pwinputfile.namelists['SYSTEM']['ibrav'] != 0:
                 raise FeatureNotAvailable(
-                    'Found ibrav !=0 while parsing the input file. ' 'Currently, AiiDa only supports ibrav = 0.'
+                    'Found ibrav !=0 while parsing the input file. Currently, AiiDa only supports ibrav = 0.'
                 )
 
             # Create Dict node based on the namelist and link as input.
@@ -364,7 +364,7 @@ class PwimmigrantCalculation(PwCalculation):
         # Check that the create_input_nodes method has run successfully.
         if not self.get_attr('input_nodes_created', False):
             raise InvalidOperation(
-                'You must run the create_input_nodes method before calling ' 'prepare_for_retrieval_and_parsing!'
+                'You must run the create_input_nodes method before calling prepare_for_retrieval_and_parsing!'
             )
 
         # Check that open_transport is the correct transport type.

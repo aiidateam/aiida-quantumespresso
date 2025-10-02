@@ -212,7 +212,7 @@ def parse_pw_xml_pre_6_2(xml_file, dir_with_bands):
     attrname = 'UNITS'
     units = parse_xml_child_attribute_str(tagname, attrname, target_tags)
     if units not in ['hartree']:
-        raise QEOutputParsingError(f"Expected energy units in Hartree. Got instead {parsed_data['energy_units']}")
+        raise QEOutputParsingError(f'Expected energy units in Hartree. Got instead {parsed_data["energy_units"]}')
 
     try:
         tagname = 'TWO_FERMI_ENERGIES'

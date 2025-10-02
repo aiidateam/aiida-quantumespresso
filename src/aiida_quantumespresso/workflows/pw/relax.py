@@ -399,7 +399,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
                     pass
 
         if cleaned_calcs:
-            self.report(f"cleaned remote folders of calculations: {' '.join(map(str, cleaned_calcs))}")
+            self.report(f'cleaned remote folders of calculations: {" ".join(map(str, cleaned_calcs))}')
 
     @staticmethod
     def _fix_atomic_positions(structure, settings):

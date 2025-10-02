@@ -65,7 +65,7 @@ def setup_codes(
             label=label,
             computer=computer,
             filepath_executable=exec_path,
-            default_calc_job_plugin=f"quantumespresso.{executable.split('.')[0]}",
+            default_calc_job_plugin=f'quantumespresso.{executable.split(".")[0]}',
             prepend_text=prepend_text,
             append_text=append_text,
         )
@@ -160,6 +160,6 @@ def get_code_label(
 
     if n_existing_codes > 0:
         existing_label = label
-        label = f'{label}-{n_existing_codes+1}'
+        label = f'{label}-{n_existing_codes + 1}'
 
     return existing_label, label

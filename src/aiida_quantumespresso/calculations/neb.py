@@ -190,15 +190,15 @@ class NebCalculation(CalcJob):
         for image_idx, structure in enumerate(structure_list[1:]):
             # Check that all images have the same cell
             if abs(np.array(structure_list[0].cell) - np.array(structure.cell)).max() > 1.0e-4:
-                return f'Different cell in the first and image {image_idx+1}'
+                return f'Different cell in the first and image {image_idx + 1}'
 
             # Check that all images have the same number of sites
             if len(structure_list[0].sites) != len(structure.sites):
-                return f'Different number of sites in the first and image {image_idx+1}'
+                return f'Different number of sites in the first and image {image_idx + 1}'
 
             # Check that all images have the same kinds
             if structure_list[0].get_site_kindnames() != structure.get_site_kindnames():
-                return f'Mismatch between the kind names and/or order between the first and image {image_idx+1}'
+                return f'Mismatch between the kind names and/or order between the first and image {image_idx + 1}'
 
             # Check that a pseudo potential was specified for each kind present in the `StructureData`
             # self.inputs.pw.pseudos is a plumpy.utils.AttributesFrozendict
@@ -254,7 +254,7 @@ class NebCalculation(CalcJob):
             num_of_images = input_params['PATH'].get('num_of_images', 2)
             if any((i < 2 or i >= num_of_images) for i in climbing_image_list):
                 raise InputValidationError(
-                    'The climbing images should be in the range between the first ' 'and the last image (excluded).'
+                    'The climbing images should be in the range between the first and the last image (excluded).'
                 )
             climbing_image_card = 'CLIMBING_IMAGES\n'
             climbing_image_card += ', '.join([str(_) for _ in climbing_image_list]) + '\n'
@@ -277,7 +277,7 @@ class NebCalculation(CalcJob):
         if input_params:
             raise InputValidationError(
                 'The following namelists are specified in input_params, but are not valid namelists for the current '
-                f"type of calculation: {', '.join(list(input_params.keys()))}"
+                f'type of calculation: {", ".join(list(input_params.keys()))}'
             )
 
         return input_data, namelist
