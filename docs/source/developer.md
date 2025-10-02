@@ -268,3 +268,109 @@ Originally discussed in [this issue](https://github.com/aiidateam/aiida-quantume
 
 In the majority of real use cases, `submit` is the preferred engine command, and the documentation should reflect that.
 Hence, we limit using the `run` commando to the quick start documentation, and perhaps showing other use cases such as testing calculation setups or workflows (with caching).
+
+## Release
+
+Creating a new release consists of the steps outlined below.
+In the following, we assume that the latest release was `v3.2.1`.
+Furthermore, we assume the following naming conventions for remotes:
+
+* `origin`: remote pointing to `aiidateam/aiida-quantumespresso`
+* `fork`: remote pointing to personal fork, e.g. `mbercx/aiida-quantumespresso`
+
+Check how your remotes are configured with `git remote -v`
+
+### Preparing the release branch
+
+#### Deciding the type of release
+
+We use [semantic versioning](https://semver.org/), i.e. version labels have the form `v<major>.<minor>.<patch>`
+
+* Patch release: `v3.2.1` to `v3.2.2`, only bug fixes
+* Minor release: `v3.2.1` to `v3.3.0`, bug fixes and new features that **maintain** backwards compatibility
+* Major release: `v3.2.1` to `v4.0.0`, bug fixes and new features that **break** backwards compatibility
+
+#### Creating the release branch
+
+We use the [GitHub Flow](https://www.flagship.io/git-branching-strategies/) branching model. In short: new features, bug fixes, etc are added by opening a pull request to `main`, and the `main` branch is tagged after doing a pull request that updates the `CHANGELOG.md`. Doing so will trigger an automated deployment to PyPI.
+
+For most releases, we assume that all the changes in the current `main` branch have to be included in the release. As such, branch off the new release branch directly from `main`:
+
+    git fetch --all --prune
+    git checkout origin/main -b release/3.3.0
+
+#### Updating the `CHANGELOG.md`, version and compatibilities
+
+The next step is to update the `CHANGELOG.md` with all the changes made since the last release.
+First, update the source code `__version__` in the following file by hand:
+
+- `src/aiida_quantumespresso/__init__.py` 
+
+Then, run the `update_changelog.py` script:
+
+```console
+python .github/workflows/update_changelog.py
+```
+
+This will automatically add:
+
+1. The header for the new release and the sub-headers in which the commits should be sorted.
+2. The list of commits since the previous release, with links to them.
+
+Sort the commit items into the correct subsection of the change log.
+Ideally, the main changes or new features are also described at the top of the change log message, providing code snippets where it's useful.
+
+Some final checks you should perform:
+
+* If a certain commit introduces or changes functionality, it should be documented.
+  If the documentation was not introduced during review (which should always be requested), ask the author of the changes to provide it.
+
+* Also check the [compatibility matrix in `README.md`](https://github.com/aiidateam/aiida-quantumespresso?tab=readme-ov-file#compatibility-matrix) to see if any changes have to be made.
+
+Once you've prepared the release branch locally, commit with the message 'Release `v3.3.0`' and push it to Github. For our major/minor release example:
+
+    git commit -am 'Release `v3.3.0`'
+    git push origin release/3.3.0
+
+Your branch is now ready to be released!
+
+### Updating `main`
+
+#### Merge release branch into `main`
+
+Now that the release branch is ready, merge it into `main` via a pull request.
+Make sure the remote `release/3.3.0` branch is up to date by pushing the local changes, then go to Github and create a pull request to the `main` branch of the official repository.
+
+After the pull request has been approved, merge the PR using the "Squash and Merge", and make sure the commit is simply named e.g. 'Release `v3.3.0`'.
+
+Once this is complete, fetch all the changes locally, checkout the `main` branch and make sure it's up to date with the remote:
+
+    git fetch --all
+    git checkout main
+    git pull origin
+
+Next, tag the final release commit:
+
+    git tag -a v3.3.0 -m 'Release `v3.3.0`'
+
+:::{warning}
+Once you push the tag to GitHub, a workflow will start that automatically publishes a release on PyPI.
+Double check that the tag is correct, and that the `main` branch looks in good shape.
+:::
+
+If you accidentally tagged the wrong commit, you can delete the local tag using the following command:
+
+    git tag -d v3.3.0
+
+Once you're confident that the tag and `main` branch are in good shape, push both to the remote:
+
+    git push origin main --tags
+
+With the release tag created, the new release is automatically built and published on PyPI via our continuous deployment (CD) GitHub workflow!
+
+:::{important}
+In case you did push with the wrong tag, the CD should fail since we [validate the tag](https://github.com/aiidateam/aiida-quantumespresso/blob/main/.github/workflows/validate_release_tag.py) as part of the workflow.
+You can then delete the tag both locally and remotely, make the correct tag locally and push it again.
+However, if you changed the `__version__` to an incorrect one that isn't on PyPI, and the tag matches that one, it will likely be published.
+**So look carefully before you leap, and monitor the CD!**
+:::
