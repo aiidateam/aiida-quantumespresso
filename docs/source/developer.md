@@ -302,7 +302,7 @@ For most releases, we assume that all the changes in the current `main` branch h
 #### Updating the `CHANGELOG.md`, version and compatibilities
 
 The next step is to update the `CHANGELOG.md` with all the changes made since the last release.
-First, update the source code version in the following file by hand:
+First, update the source code `__version__` in the following file by hand:
 
 - `src/aiida_quantumespresso/__init__.py` 
 
@@ -353,8 +353,10 @@ Next, tag the final release commit:
 
     git tag -a v3.3.0 -m 'Release `v3.3.0`'
 
-**IMPORTANT**: once you push the tag to GitHub, a workflow will start that automatically publishes a release on PyPI.
+:::{warning}
+Once you push the tag to GitHub, a workflow will start that automatically publishes a release on PyPI.
 Double check that the tag is correct, and that the `main` branch looks in good shape.
+:::
 
 If you accidentally tagged the wrong commit, you can delete the local tag using the following command:
 
@@ -365,3 +367,10 @@ Once you're confident that the tag and `main` branch are in good shape, push bot
     git push origin main --tags
 
 With the release tag created, the new release is automatically built and published on PyPI via our continuous deployment (CD) GitHub workflow!
+
+:::{important}
+In case you did push with the wrong tag, the CD should fail since we [validate the tag](https://github.com/aiidateam/aiida-quantumespresso/blob/main/.github/workflows/validate_release_tag.py) as part of the workflow.
+You can then delete the tag both locally and remotely, make the correct tag locally and push it again.
+However, if you changed the `__version__` to an incorrect one that isn't on PyPI, and the tag matches that one, it will likely be published.
+**So look carefully before you leap, and monitor the CD!**
+:::
