@@ -1,5 +1,7 @@
 """Tests for the ``PwRelaxWorkChain.get_builder_from_protocol`` method."""
 
+from contextlib import nullcontext
+
 import pytest
 from aiida.engine import ProcessBuilder
 
@@ -172,7 +174,9 @@ def test_pbc_cell(fixture_code, generate_structure, struc_name, cell_dofree):
 def test_overrides_key_check(fixture_code, generate_structure, overrides, warning):
     """Test that the `get_builder_from_protocol()` method warns for erroneous keys in the `overrides`."""
 
-    with pytest.warns(warning):
+    context = pytest.warns(UserWarning) if warning else nullcontext()
+
+    with context:
         PwRelaxWorkChain.get_builder_from_protocol(
             fixture_code('quantumespresso.pw'),
             generate_structure('silicon'),

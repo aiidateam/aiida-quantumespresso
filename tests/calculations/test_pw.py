@@ -328,6 +328,7 @@ def test_pw_validate_pseudos_incorrect_kinds(fixture_sandbox, generate_calc_job,
 
 @pytest.mark.parametrize('calculation', ['scf', 'relax', 'vc-relax'])
 def test_pw_validate_inputs_restart_base(
+    recwarn,
     fixture_sandbox,
     generate_calc_job,
     generate_inputs_pw,
@@ -351,18 +352,18 @@ def test_pw_validate_inputs_restart_base(
     # Set `restart_mode` to `'restart'` -> no warning
     parameters['CONTROL']['restart_mode'] = 'restart'
     inputs['parameters'] = orm.Dict(parameters)
-    with pytest.warns(None) as warnings:
-        generate_calc_job(fixture_sandbox, entry_point_name, inputs)
-    assert len([w for w in warnings.list if w.category is UserWarning]) == 0, [w.message for w in warnings.list]
+    recwarn.clear  # noqa: B018
+    generate_calc_job(fixture_sandbox, entry_point_name, inputs)
+    assert len([w for w in recwarn.list if w.category is UserWarning]) == 0, [w.message for w in recwarn.list]
     parameters['CONTROL'].pop('restart_mode')
 
     # Set `startingwfc` or `startingpot` to `'file'` -> no warning
     for restart_setting in ('startingpot', 'startingwfc'):
         parameters['ELECTRONS'][restart_setting] = 'file'
         inputs['parameters'] = orm.Dict(parameters)
-        with pytest.warns(None) as warnings:
-            generate_calc_job(fixture_sandbox, entry_point_name, inputs)
-        assert len([w for w in warnings.list if w.category is UserWarning]) == 0
+        recwarn.clear  # noqa: B018
+        generate_calc_job(fixture_sandbox, entry_point_name, inputs)
+        assert len([w for w in recwarn.list if w.category is UserWarning]) == 0, [w.message for w in recwarn.list]
         parameters['ELECTRONS'].pop(restart_setting)
 
 
