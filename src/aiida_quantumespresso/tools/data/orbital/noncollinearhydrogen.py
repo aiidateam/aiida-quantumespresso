@@ -53,8 +53,8 @@ class NoncollinearHydrogenOrbital(RealhydrogenOrbital):
             )
             pos = orb_dict['position']
             pos_string = f'{pos[0]:.4f},{pos[1]:.4f},{pos[2]:.4f}'
-            orb = f"for kind {orb_dict['kind_name']}" if orb_dict['kind_name'] else ''
-            out_string = f"r{orb_dict['radial_nodes']} {orb_name} (s_z={orb_dict['spin']}) orbital {orb} @ {pos_string}"
+            orb = f'for kind {orb_dict["kind_name"]}' if orb_dict['kind_name'] else ''
+            out_string = f'r{orb_dict["radial_nodes"]} {orb_name} (s_z={orb_dict["spin"]}) orbital {orb} @ {pos_string}'
         except KeyError:
             # Should not happen, but we want it not to crash in __str__
             out_string = '(not all parameters properly set)'

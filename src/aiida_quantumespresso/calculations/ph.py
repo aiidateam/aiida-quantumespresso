@@ -256,7 +256,7 @@ class PhCalculation(CalcJob):
             namelists_toprint = settings.pop('NAMELISTS')
             if not isinstance(namelists_toprint, list):
                 raise exceptions.InputValidationError(
-                    "The 'NAMELISTS' value, if specified in the settings input " 'node, must be a list of strings'
+                    "The 'NAMELISTS' value, if specified in the settings input node, must be a list of strings"
                 )
         except KeyError:  # list of namelists not specified in the settings; do automatic detection
             namelists_toprint = self._compulsory_namelists
@@ -281,7 +281,7 @@ class PhCalculation(CalcJob):
         if parameters:
             raise exceptions.InputValidationError(
                 'The following namelists are specified in parameters, but are not valid namelists for the current type '
-                f"of calculation: {', '.join(list(parameters.keys()))}"
+                f'of calculation: {", ".join(list(parameters.keys()))}'
             )
 
         # copy the parent scratch

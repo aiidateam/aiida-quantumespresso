@@ -310,7 +310,7 @@ def get_starting_magnetization(
     :returns: dictionary of starting magnetizations.
     """
     warnings.warn(
-        '`get_starting_magnetization` is deprecated, ' 'use `get_magnetization` instead.',
+        '`get_starting_magnetization` is deprecated, use `get_magnetization` instead.',
         AiidaDeprecationWarning,
     )
 

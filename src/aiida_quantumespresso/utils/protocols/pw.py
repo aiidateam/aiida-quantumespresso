@@ -139,7 +139,7 @@ class ProtocolManager:
 
         # Check that there are no unknown modifiers
         if modifiers_copy:
-            raise ValueError(f"Unknown modifiers specified: {','.join(sorted(modifiers_copy))}")
+            raise ValueError(f'Unknown modifiers specified: {",".join(sorted(modifiers_copy))}')
 
         retdata = self.get_parameters_data(parameters_modifier_name)
         retdata['pseudo_data'] = pseudo_data

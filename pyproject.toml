@@ -153,6 +153,7 @@ scripts.install = 'pre-commit install'
 scripts.run = 'pre-commit run {args}'
 
 [tool.ruff]
+line-length = 120
 lint.ignore = [
     "ARG002",  # https://docs.astral.sh/ruff/rules/unused-method-argument/
     "ARG004",  # https://docs.astral.sh/ruff/rules/unused-static-method-argument/
