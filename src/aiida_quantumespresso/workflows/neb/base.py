@@ -292,3 +292,20 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         self.set_restart_type(RestartType.FULL, calculation.outputs.remote_folder)
         self.report_error_handled(calculation, action)
         return ProcessHandlerReport(True)
+
+    @process_handler(
+        priority=400, exit_codes=[
+            NebCalculation.exit_codes.ERROR_NEB_INTERRUPTED_WITHOUT_PARTIAL_TRAJECTORY,
+        ]
+    )
+    def handle_neb_interrupted_without_partial_trajectory(self, calculation):
+        """Handle `ERROR_NEB_INTERRUPTED_WITHOUT_PARTIAL_TRAJECTORY` error.
+
+        In this case the calculation was interrupted before completing the first NEB minimization step,
+        so we cannot retrieve any partial trajectory, no way to restart the calculation.
+        Probably the walltime was too short.
+        """
+        action = 'Calculation was interrupted before completing the first NEB minimization step.'
+        action += 'An increase of the walltime is probably needed. Aborting...'
+        self.report_error_handled(calculation, action)
+        return ProcessHandlerReport(True, self.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE)

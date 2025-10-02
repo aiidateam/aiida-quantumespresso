@@ -100,6 +100,9 @@ class NebCalculation(CalcJob):
             message='The XML output file could not be parsed.')
         spec.exit_code(322, 'ERROR_OUTPUT_XML_FORMAT',
             message='The XML output file has an unsupported format.')
+        spec.exit_code(340, 'ERROR_NEB_INTERRUPTED_WITHOUT_PARTIAL_TRAJECTORY',
+            message='The calculation was interrupted during first NEB minimization steps,'
+            'no partial trajectory can be parsed.')
         spec.exit_code(350, 'ERROR_UNEXPECTED_PARSER_EXCEPTION',
             message='The parser raised an unexpected exception: {exception}')
 

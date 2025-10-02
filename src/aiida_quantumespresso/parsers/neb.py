@@ -63,7 +63,16 @@ class NebParser(BaseParser):
         if base_exit_code:
             return self.exit(base_exit_code, logs)
 
-        neb_out_dict, iteration_data = parse_raw_output_neb(stdout)
+        try:
+            neb_out_dict, iteration_data = parse_raw_output_neb(stdout)
+        except:
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
+
+        # If iteration_data is empty, it means that the calculation was interrupted before completing
+        # the first NEB minimization step, so we cannot retrieve any partial trajectory.
+        if len(iteration_data) == 0:
+            return self.exit(self.exit_codes.ERROR_NEB_INTERRUPTED_WITHOUT_PARTIAL_TRAJECTORY)
+
         parsed_data.update(neb_out_dict)
 
         num_images = parsed_data['num_of_images']
@@ -112,6 +121,9 @@ class NebParser(BaseParser):
             parsed_structure = parsed_data_stdout.pop('structure', {})
             parsed_trajectory = parsed_data_xml.pop('trajectory', {})
             parsed_parameters = parsed_data_xml
+
+            if len(parsed_structure) == 0:
+                return self.exit(self.exit_codes.ERROR_OUTPUT_XML_PARSE)
             PwParser.backwards_compatibility_parameters(parsed_parameters, parsed_data_stdout)
 
             # Explicit information about k-points does not need to be queryable so we remove it from the parameters

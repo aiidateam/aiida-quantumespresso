@@ -1,0 +1,46 @@
+
+     Program NEB v.6.4.1 starts on  9Sep2019 at 21: 3:57
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+          URL http://www.quantum-espresso.org",
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI), running on     1 processors
+
+     MPI processes distributed on     1 nodes
+
+     No input file found, assuming nothing to parse
+     Searching argument -input_images or --input_images
+     Reading input from pw_1.in
+     Reading input from pw_2.in
+
+     initial path length           =  4.2553 bohr
+     initial inter-image distance  =  2.1276 bohr
+
+     string_method                 =    neb
+     restart_mode                  =    from_scratch
+     opt_scheme                    =    broyden
+     num_of_images                 =    3
+     nstep_path                    =    20
+     CI_scheme                     =    auto
+     first_last_opt                =    F
+     use_freezing                  =    F
+     ds                            =    2.0000 a.u.
+     k_max                         =    0.3000 a.u.
+     k_min                         =    0.2000 a.u.
+     suggested k_max               =    0.1542 a.u.
+     suggested k_min               =    0.1028 a.u.
+     path_thr                      =    0.0500 eV / A
+
+     ------------------------------ iteration   1 ------------------------------
+
+     tcpu =      0.2    self-consistency for image   1
+     Message from routine setup:
+     DEPRECATED: symmetry with ibrav=0, use correct ibrav instead
+     tcpu =      0.9    self-consistency for image   2
+     Message from routine setup:
+     DEPRECATED: symmetry with ibrav=0, use correct ibrav instead

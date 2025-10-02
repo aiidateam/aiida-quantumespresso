@@ -204,3 +204,44 @@ def test_failed_cycle_exceeded_nstep(
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_failed, calcfunction.exit_status
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_NEB_CYCLE_EXCEEDED_NSTEP.status
+
+
+def test_failed_empty_stdout(
+    fixture_localhost,
+    generate_calc_job_node,
+    generate_parser,
+    generate_inputs,
+):
+    """Test the parsing of a calculation that stopped producing an empty stdout."""
+    name = 'failed_empty_stdout'
+    entry_point_calc_job = 'quantumespresso.neb'
+    entry_point_parser = 'quantumespresso.neb'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_STDOUT_READ.status
+
+
+def test_failed_first_step_interrupted(
+    fixture_localhost,
+    generate_calc_job_node,
+    generate_parser,
+    generate_inputs,
+):
+    """Test the parsing of a calculation that stopped because it was interrupted during the first step."""
+    name = 'failed_first_step_interrupted'
+    entry_point_calc_job = 'quantumespresso.neb'
+    entry_point_parser = 'quantumespresso.neb'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    exit_status = node.process_class.exit_codes.ERROR_NEB_INTERRUPTED_WITHOUT_PARTIAL_TRAJECTORY.status
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == exit_status
