@@ -1,13 +1,11 @@
 repos:
-- repo: local
-  hooks:
-  - id: format
-    name: Format with Ruff
-    entry: hatch fmt -f
-    language: system
-    types: [python]
-  - id: lint
-    name: Lint with Ruff
-    entry: hatch fmt -l
-    language: system
-    types: [python]
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.13.2
+    hooks:
+      - id: ruff-check
+        name: Lint with Ruff
+        types_or: [ python, pyi ]
+        args: [ --fix ]
+      - id: ruff-format
+        name: Format with Ruff
+        types_or: [ python, pyi ]

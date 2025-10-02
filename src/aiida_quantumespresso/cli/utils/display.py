@@ -35,8 +35,8 @@ def echo_process_results(node):
         click.echo(f'{class_name}<{node.pk}> registered no outputs')
         return
 
-    click.echo(f"\n{'Output link':25s} Node pk and type")
-    click.echo(f"{'-' * 60}")
+    click.echo(f'\n{"Output link":25s} Node pk and type')
+    click.echo(f'{"-" * 60}')
 
     for triple in sorted(outputs, key=lambda triple: triple.link_label):
         click.echo(f'{triple.link_label:25s} {triple.node.__class__.__name__}<{triple.node.pk}> ')

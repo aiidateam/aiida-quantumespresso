@@ -31,12 +31,12 @@ def test_seekpath_analysis(data_regression):
     assert isinstance(prim_structure, HubbardStructureData), 'Primitive structure should be a HubbardStructureData'
     assert isinstance(conv_structure, HubbardStructureData), 'Conventional structure should be a HubbardStructureData'
 
-    assert (
-        prim_structure.hubbard.parameters != orig_structure.hubbard.parameters
-    ), 'Primitive parameters should be different'
-    assert len(prim_structure.hubbard.parameters) == len(
-        orig_structure.hubbard.parameters
-    ), 'Primitive parameters should have the same length as original parameters'
+    assert prim_structure.hubbard.parameters != orig_structure.hubbard.parameters, (
+        'Primitive parameters should be different'
+    )
+    assert len(prim_structure.hubbard.parameters) == len(orig_structure.hubbard.parameters), (
+        'Primitive parameters should have the same length as original parameters'
+    )
     assert all(
         prim_param.atom_manifold == orig_param.atom_manifold
         for prim_param, orig_param in zip(prim_structure.hubbard.parameters, orig_structure.hubbard.parameters)
