@@ -1,0 +1,11 @@
+&PROJWFC
+  deltae =   1.0000000000d-00
+  emax =   7.5920000000d-01
+  emin =  -9.2408000000d+00
+  kresolveddos = .true.
+  lbinary_data = .false.
+  lsym = .true.
+  lwrite_overlaps = .false.
+  outdir = './out/'
+  prefix = 'aiida'
+/
