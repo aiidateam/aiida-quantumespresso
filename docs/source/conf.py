@@ -42,7 +42,7 @@ extensions = [
     'sphinx_design',
     'myst_parser',
     'aiida.sphinxext',
-    'autoapi.extension',
+    # 'autoapi.extension',
 ]
 
 # Setting the intersphinx mapping to other readthedocs
@@ -55,14 +55,14 @@ intersphinx_mapping = {
 }
 
 # Settings for the `autoapi.extenstion` automatically generating API docs
-filepath_docs = pathlib.Path(__file__).parent.parent
-filepath_src = filepath_docs.parent / 'src'
-autoapi_type = 'python'
-autoapi_dirs = [filepath_src]
-autoapi_ignore = [filepath_src / 'aiida_quantumespresso' / '*cli*']
-autoapi_root = str(filepath_docs / 'source' / 'reference' / 'api' / 'auto')
-autoapi_keep_files = True
-autoapi_add_toctree_entry = False
+# filepath_docs = pathlib.Path(__file__).parent.parent
+# filepath_src = filepath_docs.parent / 'src'
+# autoapi_type = 'python'
+# autoapi_dirs = [filepath_src]
+# autoapi_ignore = [filepath_src / 'aiida_quantumespresso' / '*cli*']
+# autoapi_root = str(filepath_docs / 'source' / 'reference' / 'api' / 'auto')
+# autoapi_keep_files = True
+# autoapi_add_toctree_entry = False
 
 # Settings for the `sphinx_copybutton` extension
 copybutton_selector = 'div:not(.no-copy)>div.highlight pre'
@@ -182,6 +182,7 @@ nitpick_ignore_regex = [
     (r'py:class', r'tuple\[.*\]'),
     (r'py:class', r'Annotated(\[.*\])?'),
     (r'py:class', r'Field(\[.*\])?'),
+    (r'py:.*', r'aiida_quantumespresso.*'),
 ]
 nitpick_ignore = [
     ('py:class', 'numpy.typing.ArrayLike'),
