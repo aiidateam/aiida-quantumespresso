@@ -36,7 +36,6 @@ topics/workflows/index
 ```{toctree}
 :hidden: true
 :caption: Reference
-reference/api/index
 reference/cli/index
 ```
 
