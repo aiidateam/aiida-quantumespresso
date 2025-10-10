@@ -285,7 +285,7 @@ class ProjwfcParser(BaseParser):
 
         # Parse the bands energies
         energy_pattern = re.compile(r'====\se\(\s*\d+\)\s=\s*(\S+)\seV\s====')
-        bands = np.array([energy_pattern.findall(block) for block in kpoint_blocks])
+        bands = np.array([energy_pattern.findall(block) for block in kpoint_blocks], dtype=float)
 
         # Parse the projection arrays
         energy_pattern = re.compile(r'\n====.+==== \n')

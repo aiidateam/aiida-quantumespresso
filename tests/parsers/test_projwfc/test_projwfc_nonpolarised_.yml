@@ -45,6 +45,17 @@ bands:
   pbc2: true
   pbc3: true
   units: eV
+bands_values:
+- - -5.79862
+  - 6.02858
+  - 6.02858
+  - 6.02858
+  - 8.56508
+- - -3.51752
+  - -0.85516
+  - 4.84298
+  - 4.84299
+  - 7.4854
 projections:
   array|energy_array_0:
   - 11

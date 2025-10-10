@@ -30,7 +30,7 @@ def generate_projwfc_node(generate_calc_job_node, fixture_localhost, tmpdir):
 
 @pytest.mark.parametrize('test_name', ['nonpolarised', 'noncollinear', 'spinorbit', 'numbered_kinds'])
 def test_projwfc(generate_projwfc_node, generate_parser, data_regression, tmpdir, test_name):
-    """Test ``ProjwfcParser`` on the results of a non-polarised ``projwfc.x`` calculation."""
+    """Test `ProjwfcParser` for various spin types."""
     node = generate_projwfc_node(test_name)
     parser = generate_parser('quantumespresso.projwfc')
     results, calcfunction = parser.parse_from_node(node, store_provenance=False, retrieved_temporary_folder=tmpdir)
@@ -46,6 +46,7 @@ def test_projwfc(generate_projwfc_node, generate_parser, data_regression, tmpdir
             'Dos': results['Dos'].base.attributes.all,
             'Pdos': results['Pdos'].base.attributes.all,
             'bands': results['bands'].base.attributes.all,
+            'bands_values': results['bands'].get_array('bands')[:, :5].tolist(),
             'projections': {
                 k: v
                 for k, v in results['projections'].base.attributes.all.items()
