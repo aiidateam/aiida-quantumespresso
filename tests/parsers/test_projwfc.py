@@ -124,6 +124,71 @@ def test_projwfc_tdosinboxes(generate_projwfc_node, generate_parser, data_regres
     )
 
 
+@pytest.mark.parametrize('test_name', ['kresolveddos', 'kresolveddos_ldos'])
+def test_projwfc_kresolveddos(generate_projwfc_node, generate_parser, data_regression, tmpdir, test_name):
+    """Test ``ProjwfcParser`` on the results of a non-polarised ``projwfc.x`` calculation."""
+    node = generate_projwfc_node(test_name)
+    parser = generate_parser('quantumespresso.projwfc')
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False, retrieved_temporary_folder=tmpdir)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+
+    if test_name == 'kresolveddos':
+        link_names = ['output_parameters', 'Dos', 'Pdos', 'bands', 'projections']
+    else:
+        link_names = ['output_parameters', 'Dos', 'Pdos', 'Ldos']
+
+    for link_name in link_names:
+        assert link_name in results, list(results.keys())
+
+    if test_name == 'kresolveddos':
+        data_regression.check(
+            {
+                'Dos': results['Dos'].base.attributes.all,
+                'Dos_arrays': {
+                    array_name: results['Dos'].get_array(array_name).tolist()
+                    for array_name in results['Dos'].get_arraynames()
+                },
+                'Pdos': results['Pdos'].base.attributes.all,
+                'Pdos_arrays': {
+                    array_name: results['Pdos'].get_array(array_name).tolist()
+                    for array_name in results['Pdos'].get_arraynames()
+                },
+                'bands': results['bands'].base.attributes.all,
+                'projections': {
+                    k: v
+                    for k, v in results['projections'].base.attributes.all.items()
+                    if k not in ['reference_bandsdata_uuid']
+                },
+                'projections_arrays': {
+                    array_name: results['projections'].get_array(array_name).tolist()
+                    for array_name in results['projections'].get_arraynames()
+                },
+            }
+        )
+    else:
+        data_regression.check(
+            {
+                'Dos': results['Dos'].base.attributes.all,
+                'Dos_arrays': {
+                    array_name: results['Dos'].get_array(array_name).tolist()
+                    for array_name in results['Dos'].get_arraynames()
+                },
+                'Pdos': results['Pdos'].base.attributes.all,
+                'Pdos_arrays': {
+                    array_name: results['Pdos'].get_array(array_name).tolist()
+                    for array_name in results['Pdos'].get_arraynames()
+                },
+                'Ldos': results['Ldos'].base.attributes.all,
+                'Ldos_arrays': {
+                    array_name: results['Ldos'].get_array(array_name).tolist()
+                    for array_name in results['Ldos'].get_arraynames()
+                },
+            }
+        )
+
+
 def test_projwfc_no_retrieved_temporary(generate_calc_job_node, fixture_localhost, generate_parser):
     """Test ``ProjwfcParser`` fails when the retrieved temporary folder is missing."""
     node = generate_calc_job_node(
