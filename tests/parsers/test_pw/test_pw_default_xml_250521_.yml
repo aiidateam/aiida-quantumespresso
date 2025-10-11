@@ -1,0 +1,310 @@
+forces:
+- - - -1.7635124848354649
+    - 0.4538352545138214
+    - 0.5050764976654352
+  - - 0.9976935525491031
+    - 0.9029767260684454
+    - 0.5633609087742726
+  - - 0.7724799049268872
+    - 0.3328066668500087
+    - -0.2812757713250584
+  - - -0.004472175341169529
+    - -1.1800622443672626
+    - -0.517255076541777
+  - - -0.5599927051068567
+    - -0.6851517344777295
+    - -0.42285374660915226
+  - - 0.4589018467578794
+    - 0.6561221347049845
+    - 0.2442242918426406
+  - - -0.019290778668467956
+    - 0.031554433164722034
+    - -0.16353203694402424
+  - - 0.11819283971808975
+    - -0.5120812364569893
+    - 0.07225493313766373
+output_band:
+  array|bands:
+  - 2
+  - 24
+  array|kpoints:
+  - 2
+  - 3
+  array|occupations:
+  - 2
+  - 24
+  array|weights:
+  - 2
+  cell:
+  - - 2.715
+    - 2.715
+    - 0.0
+  - - 2.715
+    - 0.0
+    - 2.715
+  - - 0.0
+    - 2.715
+    - 2.715
+  label_numbers: []
+  labels: []
+  pbc1: true
+  pbc2: true
+  pbc3: true
+  units: eV
+output_parameters:
+  absolute_magnetization: 0.0
+  beta_real_space: false
+  charge_density: ./charge-density.dat
+  constraint_mag: 0
+  convergence_info:
+    scf_conv:
+      convergence_achieved: true
+      n_scf_steps: 10
+      scf_error: 7.313810584351885e-10
+  creator_name: pwscf
+  creator_version: '7.5'
+  degauss: 0.37415652244575
+  dft_exchange_correlation: PBESOL
+  do_magnetization: false
+  do_not_use_time_reversal: false
+  energy: -3437.983896407087
+  energy_accuracy: 2.040853758795e-08
+  energy_accuracy_units: eV
+  energy_ewald: -2209.0495914243174
+  energy_ewald_units: eV
+  energy_hartree: 961.5241720338215
+  energy_hartree_units: eV
+  energy_one_electron: -1501.6242777836615
+  energy_one_electron_units: eV
+  energy_smearing: 0.0
+  energy_smearing_units: eV
+  energy_threshold: 1.05e-11
+  energy_units: eV
+  energy_xc: -688.8341992806874
+  energy_xc_units: eV
+  estimated_ram_per_process: 83.15
+  estimated_ram_per_process_units: MB
+  fermi_energy: 3.6126
+  fermi_energy_units: eV
+  fft_grid:
+  - 45
+  - 45
+  - 45
+  forces_units: ev / angstrom
+  format_name: QEXSD
+  format_version: 25.05.21
+  has_dipole_correction: false
+  has_electric_field: false
+  init_wall_time_seconds: 0.3
+  inversion_symmetry: false
+  lattice_symmetries:
+  - symmetry_number: 1
+    t_rev: '0'
+  - symmetry_number: 2
+    t_rev: '0'
+  - symmetry_number: 3
+    t_rev: '0'
+  - symmetry_number: 4
+    t_rev: '0'
+  - symmetry_number: 5
+    t_rev: '0'
+  - symmetry_number: 6
+    t_rev: '0'
+  - symmetry_number: 7
+    t_rev: '0'
+  - symmetry_number: 8
+    t_rev: '0'
+  - symmetry_number: 9
+    t_rev: '0'
+  - symmetry_number: 10
+    t_rev: '0'
+  - symmetry_number: 11
+    t_rev: '0'
+  - symmetry_number: 12
+    t_rev: '0'
+  - symmetry_number: 13
+    t_rev: '0'
+  - symmetry_number: 14
+    t_rev: '0'
+  - symmetry_number: 15
+    t_rev: '0'
+  - symmetry_number: 16
+    t_rev: '0'
+  - symmetry_number: 17
+    t_rev: '0'
+  - symmetry_number: 18
+    t_rev: '0'
+  - symmetry_number: 19
+    t_rev: '0'
+  - symmetry_number: 20
+    t_rev: '0'
+  - symmetry_number: 21
+    t_rev: '0'
+  - symmetry_number: 22
+    t_rev: '0'
+  - symmetry_number: 23
+    t_rev: '0'
+  - symmetry_number: 32
+    t_rev: '0'
+  - symmetry_number: 33
+    t_rev: '0'
+  - symmetry_number: 34
+    t_rev: '0'
+  - symmetry_number: 35
+    t_rev: '0'
+  - symmetry_number: 36
+    t_rev: '0'
+  - symmetry_number: 37
+    t_rev: '0'
+  - symmetry_number: 38
+    t_rev: '0'
+  - symmetry_number: 39
+    t_rev: '0'
+  - symmetry_number: 40
+    t_rev: '0'
+  - symmetry_number: 41
+    t_rev: '0'
+  - symmetry_number: 42
+    t_rev: '0'
+  - symmetry_number: 43
+    t_rev: '0'
+  - symmetry_number: 44
+    t_rev: '0'
+  - symmetry_number: 45
+    t_rev: '0'
+  - symmetry_number: 46
+    t_rev: '0'
+  - symmetry_number: 47
+    t_rev: '0'
+  - symmetry_number: 48
+    t_rev: '0'
+  - symmetry_number: 49
+    t_rev: '0'
+  - symmetry_number: 50
+    t_rev: '0'
+  - symmetry_number: 51
+    t_rev: '0'
+  - symmetry_number: 52
+    t_rev: '0'
+  - symmetry_number: 53
+    t_rev: '0'
+  - symmetry_number: 54
+    t_rev: '0'
+  - symmetry_number: 55
+    t_rev: '0'
+  lda_plus_u_calculation: false
+  lkpoint_dir: false
+  lsda: false
+  magnetization_angle1:
+  - 0.0
+  - 0.0
+  magnetization_angle2:
+  - 0.0
+  - 0.0
+  monkhorst_pack_grid:
+  - 2
+  - 1
+  - 1
+  monkhorst_pack_offset:
+  - 0
+  - 0
+  - 0
+  no_time_rev_operations: false
+  non_colinear_calculation: false
+  number_of_atomic_wfc: 36
+  number_of_atoms: 8
+  number_of_bands: 24
+  number_of_bravais_symmetries: 48
+  number_of_electrons: 40.0
+  number_of_k_points: 2
+  number_of_species: 2
+  number_of_spin_components: 1
+  number_of_symmetries: 1
+  occupations: smearing
+  q_real_space: false
+  rho_cutoff: 4898.049021108
+  rho_cutoff_units: eV
+  scf_iterations: 10
+  smearing_type: mv
+  smooth_fft_grid:
+  - 36
+  - 36
+  - 36
+  spin_orbit_calculation: false
+  spin_orbit_domag: false
+  starting_magnetization:
+  - 0.0
+  - 0.0
+  stress_units: GPascal
+  symmetries:
+  - symmetry_number: 0
+    t_rev: '0'
+  symmetries_units: crystal
+  time_reversal_flag: true
+  total_force: 3.1808916481191574
+  total_force_units: ev / angstrom
+  total_magnetization: 0.0
+  total_number_of_scf_iterations: 10
+  volume: 65.45082614175575
+  wall_time: '      2.33s '
+  wall_time_seconds: 2.326436996459961
+  wfc_cutoff: 612.2561276385
+  wfc_cutoff_units: eV
+output_trajectory:
+  array|atomic_species_name:
+  - 8
+  array|cells:
+  - 1
+  - 3
+  - 3
+  array|energy:
+  - 1
+  array|energy_accuracy:
+  - 1
+  array|energy_ewald:
+  - 1
+  array|energy_hartree:
+  - 1
+  array|energy_one_electron:
+  - 1
+  array|energy_smearing:
+  - 1
+  array|energy_threshold:
+  - 1
+  array|energy_xc:
+  - 1
+  array|fermi_energy:
+  - 1
+  array|forces:
+  - 1
+  - 8
+  - 3
+  array|positions:
+  - 1
+  - 2
+  - 3
+  array|scf_accuracy:
+  - 10
+  array|scf_iterations:
+  - 1
+  array|steps:
+  - 1
+  array|stress:
+  - 1
+  - 3
+  - 3
+  array|total_force:
+  - 1
+  symbols:
+  - Si
+  - Si
+stress:
+- - - 3.345625870189871
+    - 0.6180019560502391
+    - 0.28374658488611
+  - - 0.6180019560502391
+    - -9.091235822554259
+    - 0.11487668113987909
+  - - 0.28374658488611
+    - 0.11487668113987909
+    - -8.625603969936906
