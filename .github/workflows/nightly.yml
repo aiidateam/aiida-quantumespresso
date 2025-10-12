@@ -23,7 +23,7 @@ jobs:
 
         strategy:
             matrix:
-                python-version: ['3.9', '3.12']
+                python-version: ['3.10', '3.14']
 
         services:
             postgres:
@@ -101,7 +101,7 @@ jobs:
           uses: astral-sh/setup-uv@v6
           with:
               activate-environment: true
-              python-version: '3.9'
+              python-version: '3.10'
 
         -   name: Install system dependencies
             run: sudo apt update && sudo apt install --no-install-recommends libfftw3-dev quantum-espresso
