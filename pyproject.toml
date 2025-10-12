@@ -14,13 +14,14 @@ classifiers = [
     'Framework :: AiiDA',
     'License :: OSI Approved :: MIT License',
     'Programming Language :: Python',
-    'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3.14',
 ]
 keywords = ['aiida', 'workflows']
-requires-python = '>=3.9'
+requires-python = '>=3.10'
 dependencies = [
     'aiida_core[atomic_tools]~=2.3',
     'aiida-pseudo>=1.7.2,<2',
