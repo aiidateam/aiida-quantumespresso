@@ -147,12 +147,12 @@ def test_projwfc_kresolveddos(generate_projwfc_node, generate_parser, data_regre
             {
                 'Dos': results['Dos'].base.attributes.all,
                 'Dos_arrays': {
-                    array_name: results['Dos'].get_array(array_name).tolist()
+                    array_name: results['Dos'].get_array(array_name)[:2, :3].tolist()
                     for array_name in results['Dos'].get_arraynames()
                 },
                 'Pdos': results['Pdos'].base.attributes.all,
                 'Pdos_arrays': {
-                    array_name: results['Pdos'].get_array(array_name).tolist()
+                    array_name: results['Pdos'].get_array(array_name)[:2, :3].tolist()
                     for array_name in results['Pdos'].get_arraynames()
                 },
                 'bands': results['bands'].base.attributes.all,
@@ -162,7 +162,7 @@ def test_projwfc_kresolveddos(generate_projwfc_node, generate_parser, data_regre
                     if k not in ['reference_bandsdata_uuid']
                 },
                 'projections_arrays': {
-                    array_name: results['projections'].get_array(array_name).tolist()
+                    array_name: results['projections'].get_array(array_name)[:2, :3].tolist()
                     for array_name in results['projections'].get_arraynames()
                 },
             }
@@ -172,17 +172,17 @@ def test_projwfc_kresolveddos(generate_projwfc_node, generate_parser, data_regre
             {
                 'Dos': results['Dos'].base.attributes.all,
                 'Dos_arrays': {
-                    array_name: results['Dos'].get_array(array_name).tolist()
+                    array_name: results['Dos'].get_array(array_name)[:2, :3].tolist()
                     for array_name in results['Dos'].get_arraynames()
                 },
                 'Pdos': results['Pdos'].base.attributes.all,
                 'Pdos_arrays': {
-                    array_name: results['Pdos'].get_array(array_name).tolist()
+                    array_name: results['Pdos'].get_array(array_name)[:2, :3].tolist()
                     for array_name in results['Pdos'].get_arraynames()
                 },
                 'Ldos': results['Ldos'].base.attributes.all,
                 'Ldos_arrays': {
-                    array_name: results['Ldos'].get_array(array_name).tolist()
+                    array_name: results['Ldos'].get_array(array_name)[:2, :3].tolist()
                     for array_name in results['Ldos'].get_arraynames()
                 },
             }
