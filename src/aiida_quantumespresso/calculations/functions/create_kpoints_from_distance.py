@@ -32,6 +32,7 @@ def create_kpoints_from_distance(structure, distance, force_parity):
     # If the vectors of the cell all have the same length, the kpoint mesh should be isotropic as well
     if is_symmetric_cell and not is_symmetric_mesh:
         nkpoints = max(lengths_kpoint)
-        kpoints.set_kpoints_mesh([nkpoints, nkpoints, nkpoints])
+        # In case the cell is not periodic in a direction, set to 1
+        kpoints.set_kpoints_mesh([nkpoints if pbc else 1 for pbc in structure.pbc])
 
     return kpoints
