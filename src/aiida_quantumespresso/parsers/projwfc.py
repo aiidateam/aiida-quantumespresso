@@ -387,7 +387,6 @@ class ProjwfcParser(BaseParser):
         # For spin-polarised calculations the total DOS and the total PDOS are split up in spin up and down
         if nspin == 2:
             dos_node.set_y(
-                # (pdostot_array[:, 1], pdostot_array[:, 2]),
                 (pdostot_array[Ellipsis, index_offset + 1], pdostot_array[Ellipsis, index_offset + 2]),
                 ('dos_up', 'dos_down'),
                 ('states/eV', 'states/eV'),
