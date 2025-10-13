@@ -5,7 +5,6 @@ You can obtain a fully populated builder for each `WorkChain` by providing one o
 
 - `fast`: low precision calculations at minimal computational cost for testing purposes.
 - `balanced`: normal precision calculations at moderate computational cost.
-  Always recommended for insulators.
 - `stringent`: high precision calculations at higher computational cost.
   Recommended for metals with lanthanides/actinides
 
@@ -29,7 +28,7 @@ These values correspond to the extensively tested `balanced` protocol described 
 
 Pseudopotentials are taken from the [Standard Solid-state Pseudopotential SSSP](https://www.materialscloud.org/discover/sssp/table/efficiency) library, which collects pseudopotentials from a number of libraries.
 The SSSP provides a set of rigorously tested values for the recommended wave function and charge density energy cutoffs for each pseudopotential.
-For each structure, the highest value among those recommended for the elements in the composition of the material is selected.
+For every structure, [`ecutwfc`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id51) and [`ecutrho`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id52) are set to the maximum of the SSSP-recommended values over the elements in its composition.
 
 | Protocol name | Pseudos & Cutoffs            |
 |---------------|------------------------------|
@@ -38,18 +37,18 @@ For each structure, the highest value among those recommended for the elements i
 | `stringent`   | [`SSSP/1.3/PBEsol/precision`](https://www.materialscloud.org/discover/sssp/table/precision)    |
 
 ```{note}
-As by default in Quantum ESPRESSO the exchange-correlation function is taken from the pseudopotential files, this also means all protocols use PBEsol.
+As by default in Quantum ESPRESSO the exchange-correlation functional is taken from the pseudopotential files, this also means all protocols use PBEsol.
 ```
 
 ## Thresholds
 
 The thresholds for electronic and ionic convergence are the following:
 
-- SCF energy: the energy threshold for self-consistency in the SCF cycle, see [`conv_thr`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#idm814).
+- SCF energy: the energy threshold for self-consistency in the SCF cycle, see [`conv_thr`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id149).
   The protocol is defined in terms of Ry/atom, i.e. the value of `conv_thr` is calculated by multiplying the protocol value with the number of atoms.
-- Ionic energy: the energy threshold for convergence in the ionic optimization, see [`forc_conv_thr`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#idm118).
+- Ionic energy: the energy threshold for convergence in the ionic optimization, see [`etot_conv_thr`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id18).
   The protocol is defined in terms of Ry/atom, i.e. the value of `etot_conv_thr` is calculated by multiplying the protocol value with the number of atoms.
-- Forces: the threshold for convergence of the force components, see [`forc_conv_thr`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#idm124).
+- Forces: the threshold for convergence of the force components, see [`forc_conv_thr`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id19).
 
 | Protocol name | SCF energy [Ry/atom] | Ionic energy [Ry/atom]  | Forces [Ry/bohr]  |
 |---------------|:--------------------:|:-----------------------:|:-----------------:|
@@ -65,10 +64,13 @@ See the [tutorial on magnetic calculations](tutorials-magnetic-configurations) f
 
 The `get_builder_from_protocol()` method supports defining the type of magnetic calculation via the `spin_type` input:
 
-- `SpinType.NONE`: Non-spin-polarised calculation ([`nspin`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#idm414) = 1).
-- `SpinType.COLLINEAR`: Spin-polarised calculation ([`nspin`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#idm414) = 2).
+- `SpinType.NONE`: Non-spin-polarised calculation ([`nspin`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id73) = 1).
+- `SpinType.COLLINEAR`: Spin-polarised calculation ([`nspin`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id73) = 2).
   Each kind is initialized in a high-spin ferromagnetic configuration, where elements with partially occupied $d$ or $f$ orbitals are assigned a magnetic moment of 5 $\mu_B$ or 7 $\mu_B$, respectively.
-  For all other elements, the electrons are initialized to have a 10% surplus in the spin-up channel ([`starting_magnetization`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#idm301) = 0.1).
-- `SpinType.NON_COLLINEAR`: Non-collinear spin-polarised calculation ([`nspin`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#idm414) = 4).
-  The size of the magnetic vector ([`starting_magnetization`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#idm301)) is set to the same value as the collinear case, both 
-  We also the fully relativistic PBEsol pseudopotentials from [the Pseudo Dojo](https://www.pseudo-dojo.org/) (`PseudoDojo/0.4/PBEsol/FR/standard/upf` family).
+  For all other elements, the electrons are initialized to have a 10% surplus in the spin-up channel ([`starting_magnetization`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id50) = 0.1).
+- `SpinType.NON_COLLINEAR`: Non-collinear spin-polarised calculation ([`noncolin`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id79) = `True`, [`nspin`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id73) = 4).
+  The size of the magnetic vector ([`starting_magnetization`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id50)) is set to the same value as the collinear case, and both angles ([`angle1`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id104) and [`angle2`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id105)) are set to zero. 
+  We also use the fully relativistic PBEsol pseudopotentials from [the Pseudo Dojo](https://www.pseudo-dojo.org/) (`PseudoDojo/0.4/PBEsol/FR/standard/upf` family).
+- `SpinType.SPIN_ORBIT`: Non-collinear spin-polarised calculation including spin-orbit [`lspinorb`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id111).
+  The ([`starting_magnetization`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id50)) and angles are initialised using the same approach as for `SpinType.NON_COLLINEAR`.
+  
