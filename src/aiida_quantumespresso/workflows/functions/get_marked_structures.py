@@ -26,7 +26,7 @@ def get_marked_structures(structure, atoms_list, marker='X'):
     elements_present = [kind.symbol for kind in structure.kinds]
     if marker in elements_present:
         raise ValidationError(
-            f'The marker ("{marker}") should not match an existing Kind in ' f'the input structure ({elements_present}.'
+            f'The marker ("{marker}") should not match an existing Kind in the input structure ({elements_present}.'
         )
 
     output_params = {}

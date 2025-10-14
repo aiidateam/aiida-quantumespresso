@@ -65,7 +65,7 @@ class XspectraCalculation(NamelistsCalculation):
             'gamma_file',
             valid_type=SinglefileData,
             required=False,
-            help='An optional file containing the data for the broadening function used when' ' `gamma_mode=file`',
+            help='An optional file containing the data for the broadening function used when `gamma_mode=file`',
         )
 
         spec.output('output_parameters', valid_type=Dict)

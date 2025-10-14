@@ -259,7 +259,7 @@ def get_xspectra_structures(structure, **kwargs):  # pylint: disable=too-many-st
         supercell_min_parameter = unwrapped_kwargs.pop('supercell_min_parameter').value
         if supercell_min_parameter < 0:
             raise ValueError(
-                f'The requested minimum supercell parameter ({supercell_min_parameter}) should not be' ' less than 0.'
+                f'The requested minimum supercell parameter ({supercell_min_parameter}) should not be less than 0.'
             )
         elif supercell_min_parameter == 0:  # useful if no core-hole treatment is required
             scale_unit_cell = False

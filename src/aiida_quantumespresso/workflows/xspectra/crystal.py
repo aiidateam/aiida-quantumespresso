@@ -477,7 +477,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
                     if value['site_index'] < 0 or value['site_index'] >= len(structure.sites):
                         return (
                             f'The site index for {site_label} ({value["site_index"]}) is outside the range of '
-                            + f'sites within the structure (0-{len(structure.sites) -1}).'
+                            + f'sites within the structure (0-{len(structure.sites) - 1}).'
                         )
 
             if len(invalid_entries) != 0:
@@ -769,4 +769,4 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
                     pass
 
         if cleaned_calcs:
-            self.report(f"cleaned remote folders of calculations: {' '.join(map(str, cleaned_calcs))}")
+            self.report(f'cleaned remote folders of calculations: {" ".join(map(str, cleaned_calcs))}')

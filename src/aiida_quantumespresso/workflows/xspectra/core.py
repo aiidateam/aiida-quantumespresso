@@ -98,9 +98,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
             XspectraBaseWorkChain,
             namespace='xs_prod',
             exclude=('clean_workdir', 'xspectra.parent_folder', 'xspectra.core_wfc_data'),
-            namespace_options={
-                'help': ('Input parameters for the `xspectra.x` calculation' ' to compute the Lanczos.')
-            },
+            namespace_options={'help': ('Input parameters for the `xspectra.x` calculation to compute the Lanczos.')},
         )
         spec.expose_inputs(
             XspectraBaseWorkChain,
@@ -202,11 +200,9 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         spec.exit_code(
             403,
             'ERROR_NO_GIPAW_INFO_FOUND',
-            message='The pseudo for the absorbing element contains no' ' GIPAW information.',
+            message='The pseudo for the absorbing element contains no GIPAW information.',
         )
-        spec.output(
-            'parameters_scf', valid_type=orm.Dict, help='The output parameters of the SCF' ' `PwBaseWorkChain`.'
-        )
+        spec.output('parameters_scf', valid_type=orm.Dict, help='The output parameters of the SCF `PwBaseWorkChain`.')
         spec.output_namespace(
             'parameters_xspectra',
             valid_type=orm.Dict,
@@ -407,8 +403,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
             builder.core_wfc_data = core_wfc_data
         else:
             raise ValueError(
-                'Either a code node for upf2plotcore.sh or an already-generated core-wavefunction'
-                ' file must be given.'
+                'Either a code node for upf2plotcore.sh or an already-generated core-wavefunction file must be given.'
             )
 
         builder.structure = structure
@@ -584,7 +579,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
             future_xspectra = self.submit(XspectraBaseWorkChain, **xspectra_inputs)
             self.to_context(xspectra_prod_calculations=append_(future_xspectra))
             self.report(
-                f'launching XspectraWorkChain<{future_xspectra.pk}> for epsilon vector {vector}' ' (Lanczos production)'
+                f'launching XspectraWorkChain<{future_xspectra.pk}> for epsilon vector {vector} (Lanczos production)'
             )
 
     def inspect_all_xspectra_prod(self):
@@ -596,7 +591,7 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
         for calculation in calculations:
             vector = calculation.outputs.output_parameters.get_dict()['xepsilon']
             if not calculation.is_finished_ok:
-                self.report(f'XspectraBaseWorkChain <{vector}>' ' failed with exit status {calculation.exit_status}.')
+                self.report(f'XspectraBaseWorkChain <{vector}> failed with exit status {{calculation.exit_status}}.')
                 unrecoverable_failures = True
             else:
                 self.report(f'XspectraBaseWorkChain <{vector}> finished successfully.')
@@ -773,4 +768,4 @@ class XspectraCoreWorkChain(ProtocolMixin, WorkChain):
                     pass
 
         if cleaned_calcs:
-            self.report(f"cleaned remote folders of calculations: {' '.join(map(str, cleaned_calcs))}")
+            self.report(f'cleaned remote folders of calculations: {" ".join(map(str, cleaned_calcs))}')
