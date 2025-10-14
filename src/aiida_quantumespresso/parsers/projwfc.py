@@ -354,7 +354,9 @@ class ProjwfcParser(BaseParser):
         try:
             pdostot_filepath = next(retrieved_temporary_folder.glob('*pdos_tot*'))
             with pdostot_filepath.open('r') as pdostot_file:
-                # Columns: Energy(eV), Ldos, Pdos
+                # Columns: Energy(eV), Ldos, Pdos if not kresolved
+                # Columns: ik, Energy(eV), Ldos, Pdos if kresolved
+                labels = pdostot_file.readline().strip()
                 pdostot_array = np.atleast_2d(np.genfromtxt(pdostot_file))
         except (OSError, KeyError):
             logs.error.append('ERROR_READING_PDOSTOT_FILE')
@@ -363,7 +365,18 @@ class ProjwfcParser(BaseParser):
             logs.error.append('ERROR_MISSING_PDOSTOT_FILE')
             return np.array([]), XyData(), np.array([])
 
-        energy = pdostot_array[:, 0]
+        is_kresolved = re.search(r'ik', labels) is not None
+        index_offset = 1 if is_kresolved else 0
+
+        # Change from 1D arrays to 2D arrays for each column if k-resolved
+        if is_kresolved:
+            unique_iks = np.unique(pdostot_array[:, 0]).astype(int)  # Unique k-points indices (starting from 1)
+            unique_energies = np.unique(pdostot_array[:, 1])  # Unique energy values
+            pdostot_array = pdostot_array.reshape(
+                len(unique_iks), len(unique_energies), -1
+            )  # Reshape to (num_kpoints, num_energies, num_columns)
+
+        energy = pdostot_array[Ellipsis, index_offset]
 
         dos_node = XyData()  # Total DOS
         dos_node.set_x(energy, 'Energy', 'eV')
@@ -374,27 +387,32 @@ class ProjwfcParser(BaseParser):
         # For spin-polarised calculations the total DOS and the total PDOS are split up in spin up and down
         if nspin == 2:
             dos_node.set_y(
-                (pdostot_array[:, 1], pdostot_array[:, 2]),
+                (pdostot_array[Ellipsis, index_offset + 1], pdostot_array[Ellipsis, index_offset + 2]),
                 ('dos_up', 'dos_down'),
                 ('states/eV', 'states/eV'),
             )
             pdos_node.set_y(
-                (pdostot_array[:, 3], pdostot_array[:, 4]),
+                (pdostot_array[Ellipsis, index_offset + 3], pdostot_array[Ellipsis, index_offset + 4]),
                 ('pdos_up', 'pdos_down'),
                 ('states/eV', 'states/eV'),
             )
         else:
-            dos_node.set_y(pdostot_array[:, 1], 'Dos', 'states/eV')
-            pdos_node.set_y(pdostot_array[:, 2], 'Pdos', 'states/eV')
+            dos_node.set_y(pdostot_array[Ellipsis, index_offset + 1], 'Dos', 'states/eV')
+            pdos_node.set_y(pdostot_array[Ellipsis, index_offset + 2], 'Pdos', 'states/eV')
 
         # We're only interested in the PDOS, so we skip the first columns corresponding to the energy and LDOS
         first_pdos_column = 2 if nspin == 1 or spinorbit else 3
+        first_pdos_column += index_offset  # Add offset when k-resolved
 
         # Read the `pdos_atm` files
         pdos_atm_array_dict = {}
         for path in retrieved_temporary_folder.glob('*pdos_atm*'):
             with path.open('r') as pdosatm_file:
-                pdos_atm_array_dict[path.name] = np.atleast_2d(np.genfromtxt(pdosatm_file))[:, first_pdos_column:]
+                pdos_atm_array = np.atleast_2d(np.genfromtxt(pdosatm_file))
+                if is_kresolved:
+                    # Reshape to (num_kpoints, num_energies, num_columns)
+                    pdos_atm_array = pdos_atm_array.reshape(len(unique_iks), len(unique_energies), -1)
+                pdos_atm_array_dict[path.name] = pdos_atm_array[Ellipsis, first_pdos_column:]
 
         # Keep the pdos in sync with the orbitals by properly sorting the filenames
         pdos_file_names = list(pdos_atm_array_dict)
@@ -403,20 +421,22 @@ class ProjwfcParser(BaseParser):
         # Make sure the order of the PDOS columns matches with the orbitals
         if nspin != 4 or spinorbit:
             # Simply concatenate the PDOS columns as they are ordered by the filenames
-            pdos_array = np.concatenate([pdos_atm_array_dict[name] for name in pdos_file_names], axis=1)
+            pdos_array = np.concatenate([pdos_atm_array_dict[name] for name in pdos_file_names], axis=-1)
             if nspin == 2:
                 # Reorder the columns so the 'up' spin columns are first
-                pdos_array = np.concatenate([pdos_array[:, 0::2], pdos_array[:, 1::2]], axis=1)
+                pdos_array = np.concatenate([pdos_array[Ellipsis, 0::2], pdos_array[Ellipsis, 1::2]], axis=-1)
             if nspin == 4:
                 # Reorder the columns like the order of orbitals for spin-orbit
-                pdos_array = np.concatenate([pdos_array[:, 1::2], pdos_array[:, 0::2]], axis=1)
+                pdos_array = np.concatenate([pdos_array[Ellipsis, 1::2], pdos_array[Ellipsis, 0::2]], axis=-1)
         else:
             # Here all the 'up' orbitals for each l number come first, so the PDOS columns must be sorted accordingly
             pdos_list = []
             for wfc_pdos_array in [pdos_atm_array_dict[name] for name in pdos_file_names]:
                 # Reorder the columns so the 'up' spin columns _for this l number_ come first
-                pdos_list.append(np.concatenate([wfc_pdos_array[:, 0::2], wfc_pdos_array[:, 1::2]], axis=1))
-            pdos_array = np.concatenate(pdos_list, axis=1)
+                pdos_list.append(
+                    np.concatenate([wfc_pdos_array[Ellipsis, 0::2], wfc_pdos_array[Ellipsis, 1::2]], axis=-1)
+                )
+            pdos_array = np.concatenate(pdos_list, axis=-1)
 
         return energy, dos_node, pdos_node, pdos_array
 
@@ -436,7 +456,9 @@ class ProjwfcParser(BaseParser):
         try:
             ldosboxes_filepath = next(retrieved_temporary_folder.glob('*ldos_boxes*'))
             with ldosboxes_filepath.open('r') as ldosboxes_file:
-                # Columns: Energy(eV), Dos, Ldos_total, Ldos_box1, Ldos_box2, ...
+                # Columns: Energy(eV), Dos, Ldos_total, Ldos_box1, Ldos_box2, ... if not kresolved
+                # Columns: ik, Energy(eV), Dos, Ldos_total, Ldos_box1, Ldos_box2, ... if kresolved
+                labels = ldosboxes_file.readline().strip()
                 ldosboxes_array = np.atleast_2d(np.genfromtxt(ldosboxes_file))
         except (OSError, KeyError):
             logs.error.append('ERROR_READING_LDOSBOXES_FILE')
@@ -445,7 +467,18 @@ class ProjwfcParser(BaseParser):
             logs.error.append('ERROR_MISSING_LDOSBOXES_FILE')
             return np.array([]), XyData(), XyData()
 
-        energy = ldosboxes_array[:, 0]
+        is_kresolved = re.search(r'ik', labels) is not None
+        index_offset = 1 if is_kresolved else 0
+
+        # Change from 1D arrays to 2D arrays for each column if k-resolved
+        if is_kresolved:
+            unique_iks = np.unique(ldosboxes_array[:, 0]).astype(int)  # Unique k-points indices (starting from 1)
+            unique_energies = np.unique(ldosboxes_array[:, 1])  # Unique energy values
+            ldosboxes_array = ldosboxes_array.reshape(
+                len(unique_iks), len(unique_energies), -1
+            )  # Reshape to (num_kpoints, num_energies, num_columns)
+
+        energy = ldosboxes_array[Ellipsis, index_offset]
 
         dos_node = XyData()  # Total DOS
         dos_node.set_x(energy, 'Energy', 'eV')
@@ -456,37 +489,37 @@ class ProjwfcParser(BaseParser):
         # For spin-polarized calculations the total DOS and the total PDOS are split up in spin up and down and so are the LDOS for each box
         if nspin == 2:
             dos_node.set_y(
-                (ldosboxes_array[:, 1], ldosboxes_array[:, 2]),
+                (ldosboxes_array[Ellipsis, index_offset + 1], ldosboxes_array[Ellipsis, index_offset + 2]),
                 ('dos_up', 'dos_down'),
                 ('states/eV', 'states/eV'),
             )
             pdos_node.set_y(
-                (ldosboxes_array[:, 3], ldosboxes_array[:, 4]),
+                (ldosboxes_array[Ellipsis, index_offset + 3], ldosboxes_array[Ellipsis, index_offset + 4]),
                 ('pdos_up', 'pdos_down'),
                 ('states/eV', 'states/eV'),
             )
         else:
             # For unpolarized or non-collinear (with or without SOC) calculations, the total DOS and the total PDOS are not split, and neither are the LDOS
-            dos_node.set_y(ldosboxes_array[:, 1], 'Dos', 'states/eV')
-            pdos_node.set_y(ldosboxes_array[:, 2], 'Pdos', 'states/eV')
+            dos_node.set_y(ldosboxes_array[Ellipsis, index_offset + 1], 'Dos', 'states/eV')
+            pdos_node.set_y(ldosboxes_array[Ellipsis, index_offset + 2], 'Pdos', 'states/eV')
 
         ldos_node = XyData()
         ldos_node.set_x(energy, 'Energy', 'eV')
 
-        num_boxes = (ldosboxes_array.shape[1] - (1 + nspin * 2)) // nspin  # for nspin = 1 or 2
+        num_boxes = (ldosboxes_array.shape[-1] - (index_offset + 1 + nspin * 2)) // nspin  # for nspin = 1 or 2
 
         if nspin == 2:
-            num_boxes = (ldosboxes_array.shape[1] - 5) // 2
+            num_boxes = (ldosboxes_array.shape[-1] - (index_offset + 5)) // 2
             ldos_node.set_y(
-                [ldosboxes_array[:, i * 2 + 5] for i in range(num_boxes)]
-                + [ldosboxes_array[:, i * 2 + 6] for i in range(num_boxes)],
+                [ldosboxes_array[Ellipsis, index_offset + i * 2 + 5] for i in range(num_boxes)]
+                + [ldosboxes_array[Ellipsis, index_offset + i * 2 + 6] for i in range(num_boxes)],
                 [f'ldos_up_box{i + 1}' for i in range(num_boxes)] + [f'ldos_down_box{i + 1}' for i in range(num_boxes)],
                 ['states/eV'] * (num_boxes * 2),
             )
         else:
-            num_boxes = ldosboxes_array.shape[1] - 3
+            num_boxes = ldosboxes_array.shape[-1] - (index_offset + 3)
             ldos_node.set_y(
-                [ldosboxes_array[:, i + 3] for i in range(num_boxes)],
+                [ldosboxes_array[Ellipsis, index_offset + i + 3] for i in range(num_boxes)],
                 [f'ldos_box{i + 1}' for i in range(num_boxes)],
                 ['states/eV'] * num_boxes,
             )
@@ -524,7 +557,7 @@ class ProjwfcParser(BaseParser):
             energy,
             orbitals,
             projections[:num_kpoints, :, :],
-            pdos_array[:, :num_orbitals],
+            pdos_array[Ellipsis, :num_orbitals],
         )
         if nspin == 2:
             # For collinear spin-polarised calculations, each orbital has an 'up' and 'down' projection.
@@ -545,7 +578,7 @@ class ProjwfcParser(BaseParser):
                 energy,
                 orbitals,
                 projections[num_kpoints:, :, :],
-                pdos_array[:, num_orbitals:],
+                pdos_array[Ellipsis, num_orbitals:],
             )
             return {
                 'bands_up': bands_data,
@@ -587,7 +620,7 @@ class ProjwfcParser(BaseParser):
             orbitals,
             list_of_projections=[projections[:, :, i] for i in range(len(orbitals))],
             list_of_energy=energy_arrays,
-            list_of_pdos=[pdos_array[:, i] for i in range(len(orbitals))],
+            list_of_pdos=[pdos_array[Ellipsis, i] for i in range(len(orbitals))],
             bands_check=False,
         )
         return bands_data, projection_data
