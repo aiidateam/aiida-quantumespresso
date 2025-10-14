@@ -26,7 +26,7 @@ These values correspond to the extensively tested `balanced` protocol described 
 
 ## Pseudopotentials
 
-Pseudopotentials are taken from the [Standard Solid-state Pseudopotential SSSP](https://www.materialscloud.org/discover/sssp/table/efficiency) library, which collects pseudopotentials from a number of libraries.
+Pseudopotentials are taken from the [Standard Solid-state Pseudopotential (SSSP)](https://www.materialscloud.org/discover/sssp/table/efficiency) library, which collects pseudopotentials from a number of libraries.
 The SSSP provides a set of rigorously tested values for the recommended wave function and charge density energy cutoffs for each pseudopotential.
 For every structure, [`ecutwfc`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id51) and [`ecutrho`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id52) are set to the maximum of the SSSP-recommended values over the elements in its composition.
 
@@ -53,7 +53,7 @@ The thresholds for electronic and ionic convergence are the following:
 | Protocol name | SCF energy [Ry/atom] | Ionic energy [Ry/atom]  | Forces [Ry/bohr]  |
 |---------------|:--------------------:|:-----------------------:|:-----------------:|
 | `fast`        | 4e-10                | 1e-4                    | 1e-3              |
-| `balanced`    | 2e-10                | 1e-5                    | 1e-3              |
+| `balanced`    | 2e-10                | 1e-5                    | 1e-4              |
 | `stringent`   | 1e-10                | 5e-6                    | 5e-5              |
 
 ## Magnetism 
