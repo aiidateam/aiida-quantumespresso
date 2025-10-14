@@ -5,12 +5,16 @@
 [![Docs status](https://readthedocs.org/projects/aiida-quantumespresso/badge)](http://aiida-quantumespresso.readthedocs.io/)
 
 This is the official AiiDA plugin for [Quantum ESPRESSO](https://www.quantum-espresso.org/).
-To get started:
 
-- 💾 Install the package following [the instructions in the documentation](https://aiida-quantumespresso.readthedocs.io/en/stable/get_started/installation.html).
-- 🚀 Go through [the quick start tutorial](https://aiida-quantumespresso.readthedocs.io/en/stable/get_started/quick_start.html) to understand the basics.
+## 💾 Installation
 
-## Compatibility with other codes
+Install the package following [the instructions in the documentation](https://aiida-quantumespresso.readthedocs.io/en/stable/get_started/installation.html).
+
+## 🚀 Get started/Tutorials
+
+Go through [the quick start tutorial](https://aiida-quantumespresso.readthedocs.io/en/stable/get_started/quick_start.html) to understand the basics.
+
+## 🤝 Compatibility with other codes
 
 The matrix below assumes the user always install the latest patch release of the specified minor version, which is recommended.
 
@@ -29,16 +33,16 @@ The matrix below assumes the user always install the latest patch release of the
 
 For the compatibility of older `aiida-quantumespresso` versions, we refer to [the documentation](https://aiida-quantumespresso.readthedocs.io/en/latest/get_started/installation.html#compatibility-with-other-codes).
 
-## Contributing
+## 🙌 Contributing
 
-Great that you want to contribute! 🙏
+Great that you want to contribute!
 See the [developer guide in the documentation](https://aiida-quantumespresso.readthedocs.io/en/latest/developer.html) for instructions.
 
-## License
+## 📜 License
 The `aiida-quantumespresso` plugin package is released under the MIT license.
 See the `LICENSE.txt` file for more details.
 
-## Acknowledgements
+## 🙏 Acknowledgements
 
 We acknowledge support from:
 
