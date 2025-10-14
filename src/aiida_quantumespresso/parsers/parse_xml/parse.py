@@ -1,6 +1,8 @@
 import collections
 import contextlib
 from urllib.error import URLError
+from xml.etree import ElementTree
+from xml.dom.minidom import Element
 
 import numpy as np
 from packaging.version import Version
@@ -8,6 +10,7 @@ from qe_tools import CONSTANTS
 from xmlschema import XMLSchema
 
 from aiida_quantumespresso.utils.mapping import get_logging_container
+from aiida_quantumespresso.parsers import QEOutputParsingError
 
 from .exceptions import XMLParseError
 from .versions import get_default_schema_filepath, get_schema_filepath
@@ -40,7 +43,53 @@ def cell_volume(a1, a2, a3):
     return abs(float(a1[0] * a_mid_0 + a1[1] * a_mid_1 + a1[2] * a_mid_2))
 
 
-def parse_xml_post_6_2(xml):
+def read_xml_card(dom, cardname):
+    try:
+        root_node = [_ for _ in dom.childNodes if isinstance(_, Element) and _.nodeName == 'Root'][0]
+        the_card = [_ for _ in root_node.childNodes if _.nodeName == cardname][0]
+        # the_card = dom.getElementsByTagName(cardname)[0]
+        return the_card
+    except Exception as e:
+        print(e)
+        raise QEOutputParsingError(f'Error parsing tag {cardname}')
+
+
+def parse_xml_child_integer(tagname, target_tags):
+    try:
+        # a=target_tags.getElementsByTagName(tagname)[0]
+        a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
+        b = a.childNodes[0]
+        return int(b.data)
+    except Exception:
+        raise QEOutputParsingError(f'Error parsing tag {tagname} inside {target_tags.tagName}')
+
+
+def parse_xml_child_bool(tagname, target_tags):
+    try:
+        # a=target_tags.getElementsByTagName(tagname)[0]
+        a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
+        b = a.childNodes[0]
+        return str2bool(b.data)
+    except Exception:
+        raise QEOutputParsingError(f'Error parsing tag {tagname} inside {target_tags.tagName}')
+
+
+def str2bool(string):
+    try:
+        false_items = ['f', '0', 'false', 'no']
+        true_items = ['t', '1', 'true', 'yes']
+        string = str(string.lower().strip())
+        if string in false_items:
+            return False
+        if string in true_items:
+            return True
+        else:
+            raise QEOutputParsingError(f'Error converting string {string} to boolean value.')
+    except Exception:
+        raise QEOutputParsingError('Error converting string to boolean.')
+
+
+def parse_xml(xml_file):
     """Parse the content of XML output file written by `pw.x` and `cp.x` with the new schema-based XML format.
 
     :param xml: parsed XML
@@ -50,7 +99,12 @@ def parse_xml_post_6_2(xml):
 
     logs = get_logging_container()
 
-    schema_filepath = get_schema_filepath(xml)
+    try:
+        xml_parsed = ElementTree.parse(xml_file)
+    except ElementTree.ParseError as exception:
+        raise XMLParseError('error while parsing XML file') from exception
+
+    schema_filepath = get_schema_filepath(xml_parsed)
 
     try:
         xsd = XMLSchema(schema_filepath)
@@ -75,7 +129,7 @@ def parse_xml_post_6_2(xml):
     #  xml_dictionary['key']['@attr'] returns its attribute 'attr'
     #  xml_dictionary['key']['nested_key'] goes one level deeper.
 
-    xml_dictionary, errors = xsd.to_dict(xml, validation='lax')
+    xml_dictionary, errors = xsd.to_dict(xml_parsed, validation='lax')
     if errors:
         logs.error.append(f'{len(errors)} XML schema validation error(s) schema: {schema_filepath}:')
         for err in errors:

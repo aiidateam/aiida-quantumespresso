@@ -208,7 +208,6 @@ def test_projwfc_no_retrieved_temporary(generate_calc_job_node, fixture_localhos
     [
         ('xml_missing', 303),
         ('xml_parse', 321),
-        ('xml_format', 322),
     ],
 )
 def test_projwfc_xml_failures(generate_projwfc_node, generate_parser, tmpdir, test_name, exit_status):

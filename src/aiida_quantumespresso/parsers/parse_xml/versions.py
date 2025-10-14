@@ -1,36 +1,8 @@
-import enum
 import os
-
-from aiida_quantumespresso.parsers.parse_xml.exceptions import XMLUnsupportedFormatError
 
 DEFAULT_SCHEMA_FILENAME = 'qes-1.0.xsd'
 DIRNAME_SCHEMAS = 'schemas'
 DIRPATH_SCHEMAS = os.path.join(os.path.dirname(os.path.abspath(__file__)), DIRNAME_SCHEMAS)
-
-
-class QeXmlVersion(enum.Enum):
-    """An enum with the versions of XML output file known to exist for Quantum ESPRESSO."""
-
-    PRE_6_2 = 0
-    POST_6_2 = 1
-
-
-def get_xml_file_version(xml):
-    """Return the version of the Quantum ESPRESSO pw.x and cp.x XML output file.
-
-    :param xml: the pre-parsed XML object
-    :raises XMLUnsupportedFormatError: if the file cannot be read, parsed or if the version cannot be determined
-    """
-    if is_valid_post_6_2_version(xml):
-        return QeXmlVersion.POST_6_2
-    if is_valid_pre_6_2_version(xml):
-        return QeXmlVersion.PRE_6_2
-
-    raise XMLUnsupportedFormatError(
-        f'unrecognized XML file version: cannot find schema {get_schema_filename(xml)} in '
-        f'{os.path.join(os.path.dirname(os.path.abspath(__file__)), "schemas")}. '
-        'You can look for it in https://github.com/QEF/qeschemas'
-    )
 
 
 def get_schema_filepath(xml):

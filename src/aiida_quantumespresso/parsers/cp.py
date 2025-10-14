@@ -72,7 +72,7 @@ class CpParser(BaseParser):
         output_xml_counter = (
             None if no_trajectory_output else retrieved.base.repository.get_object_content(filename_counter)
         )
-        out_dict, _raw_successful = parse_cp_raw_output(stdout, output_xml, output_xml_counter, print_counter_xml)
+        out_dict, _ = parse_cp_raw_output(stdout, output_xml, output_xml_counter, print_counter_xml)
         out_dict.pop('trajectory', None)
 
         if not no_trajectory_output:
