@@ -16,6 +16,13 @@ from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 from .base import CalcJob
 
 
+warnings.warn(
+    'This module is deprecated and will be removed soon as part of migrating EPW components to a new repository.'
+    '\nThe new repository can be found at: https://github.com/aiidaplugins/aiida-epw.',
+    AiidaDeprecationWarning,
+)
+
+
 class EpwCalculation(CalcJob):
     """`CalcJob` implementation for the epw.x code of Quantum ESPRESSO."""
 
@@ -191,7 +198,7 @@ class EpwCalculation(CalcJob):
             namelists_toprint = settings.pop('NAMELISTS')
             if not isinstance(namelists_toprint, list):
                 raise exceptions.InputValidationError(
-                    "The 'NAMELISTS' value, if specified in the settings input " 'node, must be a list of strings'
+                    "The 'NAMELISTS' value, if specified in the settings input node, must be a list of strings"
                 )
         except KeyError:  # list of namelists not specified in the settings; do automatic detection
             namelists_toprint = self._compulsory_namelists
