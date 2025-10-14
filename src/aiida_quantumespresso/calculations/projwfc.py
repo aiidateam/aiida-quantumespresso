@@ -23,7 +23,6 @@ class ProjwfcCalculation(NamelistsCalculation):
         ('PROJWFC', 'lsym', True),
         ('PROJWFC', 'lwrite_overlaps', False),
         ('PROJWFC', 'lbinary_data', False),
-        ('PROJWFC', 'kresolveddos', False),
     ]
     _default_parser = 'quantumespresso.projwfc'
 

@@ -1,0 +1,436 @@
+Dos:
+  array|x_array:
+  - 3
+  - 7
+  array|y_array_0:
+  - 3
+  - 7
+  x_name: Energy
+  x_units: eV
+  y_names:
+  - Dos
+  y_units:
+  - states/eV
+Dos_arrays:
+  x_array:
+  - - -8.844
+    - -6.844
+    - -4.844
+  - - -8.844
+    - -6.844
+    - -4.844
+  y_array_0:
+  - - 0.398
+    - 0.259
+    - 0.0
+  - - 0.207
+    - 0.181
+    - 0.0199
+Pdos:
+  array|x_array:
+  - 3
+  - 7
+  array|y_array_0:
+  - 3
+  - 7
+  x_name: Energy
+  x_units: eV
+  y_names:
+  - Pdos
+  y_units:
+  - states/eV
+Pdos_arrays:
+  x_array:
+  - - -8.844
+    - -6.844
+    - -4.844
+  - - -8.844
+    - -6.844
+    - -4.844
+  y_array_0:
+  - - 0.397
+    - 0.258
+    - 0.0
+  - - 0.206
+    - 0.18
+    - 0.0197
+bands:
+  array|bands:
+  - 3
+  - 8
+  array|kpoints:
+  - 3
+  - 3
+  array|weights:
+  - 3
+  cell:
+  - - 2.4664957758191033
+    - 0.0
+    - 0.0
+  - - -1.2332478879095514
+    - 2.1360480001865025
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 14.999999805435952
+  label_numbers: []
+  labels: []
+  pbc1: true
+  pbc2: true
+  pbc3: true
+  units: eV
+projections:
+  array|energy_array_0:
+  - 3
+  - 7
+  array|energy_array_1:
+  - 3
+  - 7
+  array|energy_array_2:
+  - 3
+  - 7
+  array|energy_array_3:
+  - 3
+  - 7
+  array|energy_array_4:
+  - 3
+  - 7
+  array|energy_array_5:
+  - 3
+  - 7
+  array|energy_array_6:
+  - 3
+  - 7
+  array|energy_array_7:
+  - 3
+  - 7
+  array|pdos_array_0:
+  - 3
+  - 7
+  array|pdos_array_1:
+  - 3
+  - 7
+  array|pdos_array_2:
+  - 3
+  - 7
+  array|pdos_array_3:
+  - 3
+  - 7
+  array|pdos_array_4:
+  - 3
+  - 7
+  array|pdos_array_5:
+  - 3
+  - 7
+  array|pdos_array_6:
+  - 3
+  - 7
+  array|pdos_array_7:
+  - 3
+  - 7
+  array|proj_array_0:
+  - 3
+  - 8
+  array|proj_array_1:
+  - 3
+  - 8
+  array|proj_array_2:
+  - 3
+  - 8
+  array|proj_array_3:
+  - 3
+  - 8
+  array|proj_array_4:
+  - 3
+  - 8
+  array|proj_array_5:
+  - 3
+  - 8
+  array|proj_array_6:
+  - 3
+  - 8
+  array|proj_array_7:
+  - 3
+  - 8
+  orbital_dicts:
+  - _orbital_type: core.realhydrogen
+    angular_momentum: 0
+    diffusivity: null
+    kind_name: C
+    magnetic_number: 0
+    position:
+    - 0.0
+    - 0.0
+    - 7.499999904117978
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: core.realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: C
+    magnetic_number: 0
+    position:
+    - 0.0
+    - 0.0
+    - 7.499999904117978
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: core.realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: C
+    magnetic_number: 1
+    position:
+    - 0.0
+    - 0.0
+    - 7.499999904117978
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: core.realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: C
+    magnetic_number: 2
+    position:
+    - 0.0
+    - 0.0
+    - 7.499999904117978
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: core.realhydrogen
+    angular_momentum: 0
+    diffusivity: null
+    kind_name: C
+    magnetic_number: 0
+    position:
+    - 1.2332478990095515
+    - 0.7120160101878232
+    - 7.499999901617975
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: core.realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: C
+    magnetic_number: 0
+    position:
+    - 1.2332478990095515
+    - 0.7120160101878232
+    - 7.499999901617975
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: core.realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: C
+    magnetic_number: 1
+    position:
+    - 1.2332478990095515
+    - 0.7120160101878232
+    - 7.499999901617975
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+  - _orbital_type: core.realhydrogen
+    angular_momentum: 1
+    diffusivity: null
+    kind_name: C
+    magnetic_number: 2
+    position:
+    - 1.2332478990095515
+    - 0.7120160101878232
+    - 7.499999901617975
+    radial_nodes: 0
+    spin: 0
+    spin_orientation: null
+    x_orientation: null
+    z_orientation: null
+projections_arrays:
+  energy_array_0:
+  - - -8.844
+    - -6.844
+    - -4.844
+  - - -8.844
+    - -6.844
+    - -4.844
+  energy_array_1:
+  - - -8.844
+    - -6.844
+    - -4.844
+  - - -8.844
+    - -6.844
+    - -4.844
+  energy_array_2:
+  - - -8.844
+    - -6.844
+    - -4.844
+  - - -8.844
+    - -6.844
+    - -4.844
+  energy_array_3:
+  - - -8.844
+    - -6.844
+    - -4.844
+  - - -8.844
+    - -6.844
+    - -4.844
+  energy_array_4:
+  - - -8.844
+    - -6.844
+    - -4.844
+  - - -8.844
+    - -6.844
+    - -4.844
+  energy_array_5:
+  - - -8.844
+    - -6.844
+    - -4.844
+  - - -8.844
+    - -6.844
+    - -4.844
+  energy_array_6:
+  - - -8.844
+    - -6.844
+    - -4.844
+  - - -8.844
+    - -6.844
+    - -4.844
+  energy_array_7:
+  - - -8.844
+    - -6.844
+    - -4.844
+  - - -8.844
+    - -6.844
+    - -4.844
+  pdos_array_0:
+  - - 3.47e-16
+    - 2.13e-16
+    - 0.0
+  - - 8.84e-17
+    - 1.49e-18
+    - 1.42e-19
+  pdos_array_1:
+  - - 3.67e-19
+    - 7.15e-19
+    - 0.0
+  - - 3.63e-20
+    - 0.0897
+    - 0.00987
+  pdos_array_2:
+  - - 0.0991
+    - 0.0645
+    - 0.0
+  - - 0.0516
+    - 0.000116
+    - 4.65e-19
+  pdos_array_3:
+  - - 0.0991
+    - 0.0645
+    - 0.0
+  - - 0.0516
+    - 0.000116
+    - 4.65e-19
+  pdos_array_4:
+  - - 3.47e-16
+    - 2.13e-16
+    - 0.0
+  - - 8.84e-17
+    - 1.49e-18
+    - 1.42e-19
+  pdos_array_5:
+  - - 3.67e-19
+    - 7.15e-19
+    - 0.0
+  - - 3.63e-20
+    - 0.0897
+    - 0.00987
+  pdos_array_6:
+  - - 0.0991
+    - 0.0645
+    - 0.0
+  - - 0.0516
+    - 0.000116
+    - 4.65e-19
+  pdos_array_7:
+  - - 0.0991
+    - 0.0645
+    - 0.0
+  - - 0.0516
+    - 0.000116
+    - 4.65e-19
+  proj_array_0:
+  - - 0.493
+    - 0.0
+    - 0.0
+  - - 0.302
+    - 0.128
+    - 0.0
+  proj_array_1:
+  - - 0.0
+    - 0.475
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+  proj_array_2:
+  - - 0.0
+    - 0.0
+    - 0.249
+  - - 0.095
+    - 0.184
+    - 0.249
+  proj_array_3:
+  - - 0.0
+    - 0.0
+    - 0.249
+  - - 0.095
+    - 0.184
+    - 0.249
+  proj_array_4:
+  - - 0.493
+    - 0.0
+    - 0.0
+  - - 0.302
+    - 0.128
+    - 0.0
+  proj_array_5:
+  - - 0.0
+    - 0.475
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+  proj_array_6:
+  - - 0.0
+    - 0.0
+    - 0.249
+  - - 0.095
+    - 0.184
+    - 0.249
+  proj_array_7:
+  - - 0.0
+    - 0.0
+    - 0.249
+  - - 0.095
+    - 0.184
+    - 0.249
