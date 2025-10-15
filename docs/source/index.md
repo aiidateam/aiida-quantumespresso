@@ -29,6 +29,7 @@ howto/customize_inputs
 ```{toctree}
 :hidden: true
 :caption: Topic guides
+topics/protocol
 topics/calculations/index
 topics/workflows/index
 ```
