@@ -44,11 +44,11 @@ As by default in Quantum ESPRESSO the exchange-correlation functional is taken f
 
 The thresholds for electronic and ionic convergence are the following:
 
-- SCF energy: the energy threshold for self-consistency in the SCF cycle, see [`conv_thr`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id149).
+- **SCF energy**: the energy threshold for self-consistency in the SCF cycle, see [`conv_thr`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id149).
   The protocol is defined in terms of Ry/atom, i.e. the value of `conv_thr` is calculated by multiplying the protocol value with the number of atoms.
-- Ionic energy: the energy threshold for convergence in the ionic optimization, see [`etot_conv_thr`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id18).
+- **Ionic energy**: the energy threshold for convergence in the ionic optimization, see [`etot_conv_thr`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id18).
   The protocol is defined in terms of Ry/atom, i.e. the value of `etot_conv_thr` is calculated by multiplying the protocol value with the number of atoms.
-- Forces: the threshold for convergence of the force components, see [`forc_conv_thr`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id19).
+- **Forces**: the threshold for convergence of the force components, see [`forc_conv_thr`](https://www.quantum-espresso.org/Doc/INPUT_PW.html#id19).
 
 | Protocol name | SCF energy [Ry/atom] | Ionic energy [Ry/atom]  | Forces [Ry/bohr]  |
 |---------------|:--------------------:|:-----------------------:|:-----------------:|
