@@ -1,10 +1,8 @@
-(topics-workflows-pw-relax)=
+# Workflow logic
 
-# `PwRelaxWorkChain`
 
+## `PwRelaxWorkChain`
 **Purpose:** Obtain the geometric ground state of a structure.
-
-## Logic
 
 The `PwRelaxWorkChain` consist of two main components:
 
@@ -24,10 +22,3 @@ The full relaxation step is repeated until the following two conditions are met:
 * **Sufficient k-mesh density:** The k-point mesh corresponds to a lower density than the one dictated by the protocol.
   Since the unit cell can change during the optimization, it is possible that, towards the end of the optimization cycle, the initial k-point mesh no longer satisfies the minimum required k-point density specified by the input protocol.
   In this case, a new k-point mesh is generated and another geometry optimization is performed.
-
-## Input schema
-
-```{eval-rst}
-.. aiida-workchain:: PwRelaxWorkChain
-    :module: aiida_quantumespresso.workflows.pw.relax
-```
