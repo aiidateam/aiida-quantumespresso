@@ -577,6 +577,35 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             else:
                 self.report('{}<{}> ran {} steps. This trajectory will be DISCARDED!'.format(node.process_label, node.pk, nsteps_run_last_calc))
 
+    def results(self):  # pylint: disable=inconsistent-return-statements
+        """Concatenate the trajectories and attach the outputs."""
+        if self.ctx.inputs.parameters['CONTROL']['calculation'] not in ['md', 'vc-md']: 
+            ## If not an MD calculation, use the default results function from BaseRestart class
+            return super().results()
+        
+        # get the concatenated trajectory, even if the max number of iterations have been reached
+        if self.inputs.get('previous_trajectory'):
+            traj = get_total_trajectory(self, self.ctx.previous_trajectory, store=True)
+        else:
+            traj = get_total_trajectory(self, store=True)
+        if traj:
+            self.out('total_trajectory', traj)
+        else:
+            self.report('No trajectories were produced in the MD simulation!')
+            # it may not be a good idea to add a specific exit code here
+        try:
+            node = self.ctx.children[self.ctx.iteration - 1]
+            # We check the `is_finished` attribute of the work chain and not the successfulness of the last process
+            # because the error handlers in the last iteration can have qualified a "failed" process as satisfactory
+            # for the outcome of the work chain and so have marked it as `is_finished=True`.
+            if not self.ctx.is_finished and self.ctx.iteration >= self.inputs.max_iterations.value:
+                self.report(f'reached the maximum number of iterations {self.inputs.max_iterations.value}: last ran {self.ctx.process_name}<{node.pk}>')
+                return self.exit_codes.ERROR_MAXIMUM_ITERATIONS_EXCEEDED  # pylint: disable=no-member
+        except AttributeError:
+            self.report(f'MD WorkChain did not run since a previous trajectory<{self.ctx.previous_trajectory}> already had the required number of nsteps')
+
+        self.report(f'MD WorkChain completed after {self.ctx.iteration} iterations')
+
     def report_error_handled(self, calculation, action):
         """Report an action taken for a calculation that has failed.
 
