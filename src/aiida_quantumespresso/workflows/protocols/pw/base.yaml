@@ -55,3 +55,28 @@ protocols:
                     forc_conv_thr: 1.e-3
                 SYSTEM:
                     degauss: 0.0275
+    fpmd:
+        description: 'Protocol to perform long first-principles MD at low precision at high computational cost.'
+        max_iterations: 25 # FPMD will take a long time to finish
+        kpoints_distance: 0.60 # low dense mesh since we should be using supercells
+        meta_parameters:
+            conv_thr_per_atom: 0.4e-9
+            etot_conv_thr_per_atom: 1.e-4
+        pw:
+            parameters:
+                CONTROL:
+                    calculation: md
+                    nstep: 1.e+5
+                    dt: 30 # 1.44 femto seconds
+                    forc_conv_thr: 1.e-3
+                    nosym: True # gives better stability for long runs
+                ELECTRONS:
+                    mixing_beta: 0.2 # lower mixing factor since we will be extrapolating wavefunctions anyway
+                SYSTEM:
+                    degauss: 0.0275
+                IONS:
+                    wfc_extrapolation: 'second_order' # extrapolation when running FPMD
+                    pot_extrapolation: 'second_order'
+                    ion_temperature: 'svr' # thermostat
+                    tempw: 500 
+                    nraise: 100
