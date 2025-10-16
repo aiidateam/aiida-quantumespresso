@@ -10,12 +10,13 @@ from aiida.engine import (
     process_handler,
     while_,
 )
-from aiida.plugins import CalculationFactory, GroupFactory
+from aiida.plugins import CalculationFactory, GroupFactory, WorkflowFactory
 
 from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import (
     create_kpoints_from_distance,
 )
 from aiida_quantumespresso.calculations.functions.md.get_structure_from_trajectory import get_structure_from_trajectory
+from aiida_quantumespresso.calculations.functions.md.md_utils import get_completed_number_of_steps, get_total_trajectory
 from aiida_quantumespresso.common.types import ElectronicType, RestartType, SpinType
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 
@@ -25,7 +26,6 @@ PwCalculation = CalculationFactory('quantumespresso.pw')
 SsspFamily = GroupFactory('pseudo.family.sssp')
 PseudoDojoFamily = GroupFactory('pseudo.family.pseudo_dojo')
 CutoffsPseudoPotentialFamily = GroupFactory('pseudo.family.cutoffs')
-
 
 class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts."""
@@ -485,10 +485,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if self.ctx.inputs.parameters['CONTROL']['calculation'] not in ['md', 'vc-md']: 
             return
 
-        # TODO: implement dirty restart, i.e. if wavefunctions are not salvageable or if the user doesn't want to 
-        # restart from a previous calculation's wavefunctions, extract positions and velocities of previous
-        # calculation and restart from therefore
-
         if self.inputs.get('previous_trajectory'):
             self.ctx.inputs.parameters['IONS']['ion_velocities'] = 'from_input'
             kwargs = {'trajectory': self.ctx.previous_trajectory,
@@ -519,7 +515,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if self.ctx.inputs.parameters['CONTROL']['calculation'] not in ['md', 'vc-md']: 
             return not self.ctx.is_finished and self.ctx.iteration < max_iterations
         else:
-            return not self.ctx.is_finished and self.ctx.iteration < max_iterations #and (self.ctx.mdsteps_todo > 0)
+            return not self.ctx.is_finished and self.ctx.iteration < max_iterations and (self.ctx.mdsteps_todo > 0)
 
     # Adding MD specific function checks
     def check_energy_fluctuations(self):
