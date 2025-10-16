@@ -531,7 +531,22 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
     # (cell, initial positions, kpoints, ...) and I skip them.
     # In case, parse for them before this point.
     # Put everything in a trajectory_data dictionary
-    relax_steps = stdout.split('Self-consistent Calculation')[1:]
+    
+    # For MD calculations, I now skip the data calculated for the 0th step i.e. for the
+    # input structure. And nothing is calculated for the final structure, so in the trajectory
+    # I pop out the final structure from `positions` as no other data is available for this configuration
+
+    if input_parameters.get('CONTROL', {}).get('calculation', 'scf') in ['md', 'vc-md']:
+        # For MD calculation it is better to check for the following keyword
+        # Using this keyword I am dropping the forces and energy information of the initial
+        # structure, which is printed in `.out` file before the parsing starts 
+        relax_steps = stdout.split('Entering Dynamics:')[1:]
+    else:
+        # For eveything else, I continue as before
+        relax_steps = stdout.split('Self-consistent Calculation')[1:]
+        # For sirius calculations only following keyword works
+        # relax_steps = stdout.split('* running SCF ground state *')[1:]
+        
     relax_steps = [i.split('\n') for i in relax_steps]
 
     # now I create a bunch of arrays for every step.
@@ -694,6 +709,10 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
                     pass
 
             # grep energy and possibly, magnetization
+            # It might be worthwhile to add an extra space to distinguish from SIRIUS calculations,
+            # which prints multiple '!' during its self-consistent loop.
+            # so ' !' instead of '!', but I don't want to break compatibility with other use-cases
+            # that I may not have considered, and I leave this as a note for future.
             elif '!' in line:
                 try:
                     energy = float(line.split('=')[1].split('Ry')[0]) * CONSTANTS.ry_to_ev
@@ -821,9 +840,17 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
                 try:
                     stress = []
                     count2 = None
+                    # If we use the above way of dividing the steps, then a frame finishes after 8 to 10 lines of 
+                    # 'Computing stress' line, so it's better to break the loop once 'P=' line is found,
+                    # this might be a bad idea if there are multiple separate pressure values. 
+                    # This is the case for MD calculations and the loop needs to be broken, otherwise it 
+                    # tries to parse that which should be present in the next MD step, and throws an error
+                    # indicating the same.
+                    # Of course this is a non-issue for other calculations like relax, vc-relax, etc.
                     for k in range(15):  # Up to 15 lines later - more than 10 are needed if vdW is turned on
                         if 'P=' in data_step[count + k + 1]:
                             count2 = count + k + 1
+                            break
                     if count2 is None:
                         logs.warning.append(
                             'Error while parsing stress tensor: '
@@ -932,11 +959,19 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
     # Ionic calculations and BFGS algorithm did not print that calculation is converged
     if 'atomic_positions_relax' in trajectory_data and not marker_bfgs_converged:
         logs.error.append('ERROR_IONIC_CONVERGENCE_NOT_REACHED')
+        # this error makes no sense for md calculation
+        # TODO: add option to skip this test for MD calculation
 
     # Ionic calculation that hit the maximum number of ionic steps. Note: does not necessarily mean that convergence was
     # not reached as it could have occurred in the last step.
     if maximum_ionic_steps is not None and maximum_ionic_steps == parsed_data.get('number_ionic_steps'):
         logs.warning.append('ERROR_MAXIMUM_IONIC_STEPS_REACHED')
+
+    # Adding the parameters to trajectory data to extract dt and iprint information later
+    if input_parameters.get('CONTROL', {}).get('calculation', 'scf') in ['md', 'vc-md']:
+        trajectory_data['md_parameters'] = input_parameters.get('CONTROL', {'dt': 20, 'iprint':1})
+    else:
+        trajectory_data['md_parameters'] = False
 
     parsed_data['bands'] = bands_data
     parsed_data['structure'] = structure_data
