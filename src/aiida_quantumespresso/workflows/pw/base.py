@@ -15,6 +15,7 @@ from aiida.plugins import CalculationFactory, GroupFactory
 from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import (
     create_kpoints_from_distance,
 )
+from aiida_quantumespresso.calculations.functions.md.get_structure_from_trajectory import get_structure_from_trajectory
 from aiida_quantumespresso.common.types import ElectronicType, RestartType, SpinType
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 
@@ -71,14 +72,26 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             '`True` will force the k-point mesh to have an even number of points along each lattice vector except '
             'for any non-periodic directions.',
         )
+        spec.input('total_energy_max_fluctuation', 
+            valid_type=orm.Float, 
+            required=False,
+            help='The maximum total energy fluctuation allowed (eV). If the total energy has varied more than this '
+                 'threshold, the workchain will fail.')
+        spec.input('previous_trajectory', 
+            valid_type=orm.TrajectoryData, 
+            required=False,
+            help='Trajectory of previous calculation, needed to pickup from last MD run (otherwise we do a normal start from flipper compatible structure).')
 
         spec.outline(
             cls.setup,
             cls.validate_kpoints,
+            cls.validate_md_parameters,
             while_(cls.should_run_process)(
                 cls.prepare_process,
                 cls.run_process,
                 cls.inspect_process,
+                cls.check_energy_fluctuations,
+                cls.update_mdsteps,
             ),
             cls.results,
         )
@@ -156,6 +169,8 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         structure,
         protocol=None,
         overrides=None,
+        total_energy_max_fluctuation=None,
+        previous_trajectory=None,
         electronic_type=ElectronicType.METAL,
         spin_type=SpinType.NONE,
         initial_magnetic_moments=None,
@@ -168,6 +183,9 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         :param structure: the ``StructureData`` instance to use.
         :param protocol: protocol to use, if not specified, the default will be used.
         :param overrides: optional dictionary of inputs to override the defaults of the protocol.
+        :param total_energy_max_fluctuation: If the total energy exceeds this threshold I will stop the workchain
+        :param previous_trajectory: if provided I will start the calculation from the positions and velocities of
+            that trajectory
         :param electronic_type: indicate the electronic character of the system through ``ElectronicType`` instance.
         :param spin_type: indicate the spin polarization type to use through a ``SpinType`` instance.
         :param initial_magnetic_moments: optional dictionary that maps the initial magnetic moment of each kind to a
@@ -312,6 +330,13 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
         builder.max_iterations = orm.Int(inputs['max_iterations'])
 
+        # MD specific options
+        if total_energy_max_fluctuation: 
+            builder['total_energy_max_fluctuation'] = total_energy_max_fluctuation
+        else: 
+            builder['total_energy_max_fluctuation'] = orm.Float(0.5 * 1.e4 * natoms * meta_parameters['etot_conv_thr_per_atom'])
+        if previous_trajectory: builder['previous_trajectory'] = previous_trajectory
+
         return builder
 
     def setup(self):
@@ -339,6 +364,8 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             self.ctx.inputs.parameters.setdefault('CELL', {})
 
         self.ctx.inputs.settings = self.ctx.inputs.settings.get_dict() if 'settings' in self.ctx.inputs else {}
+        # To keep track of how many MD steps are remaining
+        self.ctx.mdsteps_done = 0
 
     def validate_kpoints(self):
         """Validate the inputs related to k-points.
@@ -363,6 +390,54 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         self.ctx.inputs.kpoints = kpoints
 
+    def validate_md_parameters(self):
+        """Validate MD specific inputs that might depend on each other and cannot be validated by the spec.
+
+        Also define dictionary `inputs` in the context, that will contain the inputs for the calculation that will be
+        launched in the `run_calculation` step.
+        """
+        if self.ctx.inputs.parameters['CONTROL']['calculation'] not in ['md', 'vc-md']: 
+            ## If not an MD calculation, nothing to check
+            return
+        self.ctx.mdsteps_todo = self.ctx.inputs.parameters['CONTROL'].get('nstep', None)
+        if self.inputs.get('previous_trajectory'):
+
+            self.ctx.previous_trajectory = self.inputs.get('previous_trajectory')
+            qb = orm.QueryBuilder()
+            qb.append(orm.TrajectoryData, filters={'id':{'==':self.ctx.previous_trajectory.pk}}, tag='traj')
+            qb.append(CalculationFactory('quantumespresso.pw'), with_outgoing='traj', tag='pw')
+            qb.append(WorkflowFactory('quantumespresso.pw.base'), with_outgoing='pw')
+            if qb.count():
+                wc, = qb.first()
+                param_d = wc.inputs.pw['parameters'].get_dict()
+                struct = wc.inputs.pw['structure']
+                if struct.pk != self.ctx.inputs.structure.pk: 
+                    if struct.get_formula() != self.ctx.inputs.structure.get_formula():
+                        raise Exception(f'Structure <{struct.pk}> of previous trajectory <{self.ctx.previous_trajectory.pk}> not matching with input structure <{self.ctx.inputs.structure.pk}>, please provide right trajectory.')
+            else:
+                self.report('WorkChain of previous trajectory not found, trying preceding concatenating calcfunction')
+                qb = orm.QueryBuilder()
+                qb.append(orm.TrajectoryData, filters={'id':{'==':self.ctx.previous_trajectory.pk}}, tag='traj')
+                qb.append(orm.CalcFunctionNode, with_outgoing='traj', tag='calcfunc')
+                qb.append(orm.TrajectoryData, with_outgoing='calcfunc', tag='old_traj')
+                qb.append(WorkflowFactory('quantumespresso.pw.base'), with_outgoing='old_traj', tag='replay')
+                if qb.count():
+                    wc, = qb.first()
+                    param_d = wc.inputs['pw']['parameters'].get_dict()
+                    struct = wc.inputs['pw']['structure']
+                    if struct.pk != self.ctx.inputs.structure.pk: 
+                        if struct.get_formula() != self.ctx.inputs.structure.get_formula():
+                            raise Exception(f'Structure <{struct.pk}> of previous trajectory <{self.ctx.previous_trajectory.pk}> not matching with input structure <{self.ctx.inputs.structure.pk}>, please provide right trajectory.')
+                else:
+                    self.report('Calcfunction associated with previous trajectory not found; continuing nonetheless')
+                
+            # I update the mdsteps_todo here
+            nsteps_of_previous_trajectory = self.ctx.inputs.parameters['CONTROL']['iprint'] * (self.ctx.previous_trajectory.attributes['array|positions'][0] - 1)
+            self.ctx.mdsteps_todo -= nsteps_of_previous_trajectory
+            # Even if the previous trajectory is longer than the required nsteps, I don't care, 
+            # mdsteps_todo will be -ve in that case and the replaymdwc will not be launched
+            self.ctx.mdsteps_done += nsteps_of_previous_trajectory
+
     def set_restart_type(self, restart_type, parent_folder=None):
         """Set the restart type for the next iteration."""
 
@@ -377,8 +452,13 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         elif restart_type == RestartType.FULL:
             self.ctx.inputs.parameters['CONTROL']['restart_mode'] = 'restart'
-            self.ctx.inputs.parameters['ELECTRONS'].pop('startingpot', None)
-            self.ctx.inputs.parameters['ELECTRONS'].pop('startingwfc', None)
+            # For MD calculations, we always need to restart both density and wavefunction
+            if self.ctx.inputs.parameters['CONTROL'].get('calculation', 'scf') == 'md':
+                self.ctx.inputs.parameters['ELECTRONS']['startingpot'] = 'file'
+                self.ctx.inputs.parameters['ELECTRONS']['startingwfc'] = 'file'
+            else:
+                self.ctx.inputs.parameters['ELECTRONS'].pop('startingpot', None)
+                self.ctx.inputs.parameters['ELECTRONS'].pop('startingwfc', None)
             self.ctx.inputs.parent_folder = parent_folder
 
         elif restart_type == RestartType.FROM_CHARGE_DENSITY:
@@ -400,6 +480,106 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if max_wallclock_seconds is not None and 'max_seconds' not in self.ctx.inputs.parameters['CONTROL']:
             max_seconds = max_wallclock_seconds * self.defaults.delta_factor_max_seconds
             self.ctx.inputs.parameters['CONTROL']['max_seconds'] = max_seconds
+        
+        # MD specific preparations
+        if self.ctx.inputs.parameters['CONTROL']['calculation'] not in ['md', 'vc-md']: 
+            return
+
+        # TODO: implement dirty restart, i.e. if wavefunctions are not salvageable or if the user doesn't want to 
+        # restart from a previous calculation's wavefunctions, extract positions and velocities of previous
+        # calculation and restart from therefore
+
+        if self.inputs.get('previous_trajectory'):
+            self.ctx.inputs.parameters['IONS']['ion_velocities'] = 'from_input'
+            kwargs = {'trajectory': self.ctx.previous_trajectory,
+                      'parameters': orm.Dict(dict=
+                          dict(step_index=-1,
+                               recenter=False,
+                               create_settings=True,
+                               complete_missing=True)),
+                      'structure': self.ctx.inputs.structure,
+                      'metadata': {'call_link_label': 'get_structure'}}
+            if self.ctx.inputs.settings:
+                kwargs['settings'] = orm.Dict(dict=self.ctx.inputs.settings)
+
+            res = get_structure_from_trajectory(**kwargs)
+
+            self.ctx.inputs.structure = res['structure']
+            self.ctx.inputs.settings = res['settings'].get_dict()
+
+            self.report(f'launching WorkChain from a previous trajectory <{self.ctx.previous_trajectory.pk}>')
+
+    def should_run_process(self) -> bool:
+        """Return whether a new process should be run.
+
+        This is the case as long as the last process has not finished successfully and the maximum number of restarts
+        has not yet been exceeded and the number of desired MD steps has not been reached in case of MD calculation.
+        """
+        max_iterations = self.inputs.max_iterations.value
+        if self.ctx.inputs.parameters['CONTROL']['calculation'] not in ['md', 'vc-md']: 
+            return not self.ctx.is_finished and self.ctx.iteration < max_iterations
+        else:
+            return not self.ctx.is_finished and self.ctx.iteration < max_iterations #and (self.ctx.mdsteps_todo > 0)
+
+    # Adding MD specific function checks
+    def check_energy_fluctuations(self):
+        """Check the fluctuations of the total energy of the total trajectory so far.
+        If they are higher of the threshold, abort.
+        """
+        if self.ctx.inputs.parameters['CONTROL']['calculation'] not in ['md', 'vc-md']: 
+            ## If not an MD calculation, nothing to check
+            return
+
+        total_energy_max_fluctuation = self.inputs.get('total_energy_max_fluctuation', None)
+        if total_energy_max_fluctuation:
+            calculation = self.ctx.children[self.ctx.iteration - 1]
+            try:
+                traj = calculation.outputs.output_trajectory
+            except exceptions.NotExistent:
+                self.report(f'{calculation.process_label}><{calculation.pk}> [check_energy_fluctuations]: Trajectory not found. Skipping test.')
+            else:
+                traj = get_total_trajectory(self, store=False)
+                total_energies = traj.get_array('total_energies')
+                diff = total_energies.max() - total_energies.min()  
+                if (diff > total_energy_max_fluctuation):
+                    self.report(
+                        f'{calculation.process_label}<{calculation.pk}> [check_energy_fluctuations]: Total energy fluctuations = {diff} EXCEEDED THRESHOLD {total_energy_max_fluctuation} !!'
+                        ' Stopping now...')
+                    return self.exit_codes.ERROR_TOTAL_ENERGY_FLUCTUATIONS
+                else:
+                    self.report(f'{calculation.process_label}<{calculation.pk}> [check_energy_fluctuations]: Total energy fluctuations = {diff} < threshold ({total_energy_max_fluctuation}) OK')
+    
+    # Adding MD specific function checks
+    def update_mdsteps(self):
+        """Get the number of steps of the last trajectory and update the counters. If there are more MD steps to do,
+        set `restart_calc` and set the state to not finished.
+        """
+        if self.ctx.inputs.parameters['CONTROL']['calculation'] not in ['md', 'vc-md']: 
+            ## If not an MD calculation, nothing to check
+            return
+            
+        # If the calculation was successfull, there will be a trajectory
+        # In this case we we shall restart from this calculation, otherwise restart_calc is not modified, such that we
+        # will restart from the previous one.
+        node = self.ctx.children[self.ctx.iteration - 1]
+        try:
+            traj = node.outputs.output_trajectory
+        except (KeyError, exceptions.NotExistent):
+            self.report('No output_trajectory was generated by {}<{}>.'.format(node.label, node.pk))
+            # restart_calc is not updated, so we will restart from the last calculation (i.e. we retry the same thing)
+        else:
+            nsteps_run_last_calc = get_completed_number_of_steps(node)
+            if not traj.get_extra('discard_trajectory', False):
+                self.ctx.mdsteps_todo -= nsteps_run_last_calc
+                self.ctx.mdsteps_done += nsteps_run_last_calc
+                self.report('{}<{}> ran {} steps ({} done - {} to go).'.format(node.process_label, node.pk, nsteps_run_last_calc, self.ctx.mdsteps_done, self.ctx.mdsteps_todo))
+
+                # if there are more MD steps to do, set the restart_calc to the last calculation
+                if self.ctx.mdsteps_todo > 0:
+                    self.ctx.restart_calc = node
+                    self.ctx.is_finished = False
+            else:
+                self.report('{}<{}> ran {} steps. This trajectory will be DISCARDED!'.format(node.process_label, node.pk, nsteps_run_last_calc))
 
     def report_error_handled(self, calculation, action):
         """Report an action taken for a calculation that has failed.
@@ -528,7 +708,17 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         """Handle `ERROR_OUT_OF_WALLTIME` exit code.
 
         In this case the calculation shut down cleanly and we can do a full restart.
+        In case of `md` simulations where the output structure will always be different,
+           so for that we do a restart from previous wavefunctions and update the `nsteps`
         """
+        if self.ctx.inputs.parameters['CONTROL'].get('calculation', 'scf') == 'md':
+            # no need to change the input structure as it will not be used, but still
+            self.ctx.inputs.structure = calculation.outputs.output_structure
+            self.set_restart_type(RestartType.FULL, calculation.outputs.remote_folder)
+            self.report_error_handled(calculation, 'MD calculation so restarting from the previous wavefunctions and charge densities')
+            # TODO: add option to restart not from charge densities but using the last positions and velocites
+            return ProcessHandlerReport(True)
+        
         if 'output_structure' in calculation.outputs:
             self.ctx.inputs.structure = calculation.outputs.output_structure
 
