@@ -339,13 +339,20 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
         builder.max_iterations = orm.Int(inputs['max_iterations'])
 
-        # MD specific options
-        if total_energy_max_fluctuation: 
-            builder['total_energy_max_fluctuation'] = total_energy_max_fluctuation
-        else: 
-            builder['total_energy_max_fluctuation'] = orm.Float(0.5 * 1.e4 * natoms * meta_parameters['etot_conv_thr_per_atom'])
-        if previous_trajectory: builder['previous_trajectory'] = previous_trajectory
-        if thermalised_trajectory: builder['thermalised_trajectory'] = thermalised_trajectory
+        # MD specific options - only add if this is an MD calculation or if explicitly requested
+        calculation_type = parameters.get('CONTROL', {}).get('calculation', 'scf')
+        is_md_calculation = calculation_type in ['md', 'vc-md']
+        
+        if is_md_calculation or total_energy_max_fluctuation is not None:
+            if total_energy_max_fluctuation: 
+                builder['total_energy_max_fluctuation'] = total_energy_max_fluctuation
+            else: 
+                builder['total_energy_max_fluctuation'] = orm.Float(0.5 * 1.e4 * natoms * meta_parameters['etot_conv_thr_per_atom'])
+                
+        if previous_trajectory: 
+            builder['previous_trajectory'] = previous_trajectory
+        if thermalised_trajectory: 
+            builder['thermalised_trajectory'] = thermalised_trajectory
 
         return builder
 
@@ -419,7 +426,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             qb.append(WorkflowFactory('quantumespresso.pw.base'), with_outgoing='pw')
             if qb.count():
                 wc, = qb.first()
-                param_d = wc.inputs.pw['parameters'].get_dict()
+                _param_d = wc.inputs.pw['parameters'].get_dict()
                 struct = wc.inputs.pw['structure']
                 if struct.pk != self.ctx.inputs.structure.pk: 
                     if struct.get_formula() != self.ctx.inputs.structure.get_formula():
@@ -433,7 +440,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 qb.append(WorkflowFactory('quantumespresso.pw.base'), with_outgoing='old_traj', tag='replay')
                 if qb.count():
                     wc, = qb.first()
-                    param_d = wc.inputs['pw']['parameters'].get_dict()
+                    _param_d = wc.inputs['pw']['parameters'].get_dict()
                     struct = wc.inputs['pw']['structure']
                     if struct.pk != self.ctx.inputs.structure.pk: 
                         if struct.get_formula() != self.ctx.inputs.structure.get_formula():

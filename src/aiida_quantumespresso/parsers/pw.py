@@ -528,7 +528,7 @@ class PwParser(BaseParser):
 
         trajectory = orm.TrajectoryData()
 
-        md_parameters =  parsed_trajectory.pop('md_parameters')
+        md_parameters = parsed_trajectory.pop('md_parameters', False)
 
         if not md_parameters: 
             # continue as before
@@ -548,13 +548,17 @@ class PwParser(BaseParser):
             # velocity is defined as vel = (tau_new - tau_old) / 2dt for some bizzare reason in QE
             # First this `md_parameters` object needs to be popped which contains the timestep, read from
             # input parameters, whose `CONTROL` part is now stored in the `parsed_trajectory` dicitonary
-            dt = md_parameters['dt']
+            if not md_parameters or not isinstance(md_parameters, dict):
+                # If md_parameters is False or not a dict, use default dt
+                dt = 20.0  # Default dt in QE in atomic units
+            else:
+                dt = md_parameters.get('dt', 20.0)
             # iprint = md_parameters['iprint']
             
             # Then, we must check that the forces exist
             try:
                 # Converting forces back to atomic units for easier calculation of velocities
-                forces_au = np.array(parsed_trajectory['forces']) * CONSTANTS.bohr_to_ang / CONSTANTS.ry_to_ev
+                _forces_au = np.array(parsed_trajectory['forces']) * CONSTANTS.bohr_to_ang / CONSTANTS.ry_to_ev
                 calculate_velocities = True
             except KeyError:
                 # If forces don't exist, the calculation failed at the first step of MD
@@ -569,7 +573,7 @@ class PwParser(BaseParser):
 
                 # Using reverse velocity verlet algorythm
                 # Storing mass of individual atom according to their position
-                masses = np.array([structure.get_kind(symbol).mass for symbol in symbols]).reshape(-1,1)  
+                _masses = np.array([structure.get_kind(symbol).mass for symbol in symbols]).reshape(-1, 1)
                 # Converting positions back to atomic units for easier calculation of velocities
                 # the parsing with `Entering Dynamics:` does not count the initial positions
                 positions_au = positions / CONSTANTS.bohr_to_ang
@@ -606,7 +610,7 @@ class PwParser(BaseParser):
                     velocities=velocities_au_complete
                 )
 
-                # trajectory.set_array('forces', forces_au[:-1])
+                # trajectory.set_array('forces', _forces_au[:-1])
                 trajectory.set_attribute('units|forces', 'eV/A')
                 trajectory.set_attribute('units|velocities', 'atomic')
                 trajectory.set_attribute('sim_time_fs', stepids[:-1].shape[0] * CONSTANTS.timeau_to_sec * 2 * 2e15 * dt)
