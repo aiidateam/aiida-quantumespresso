@@ -16,6 +16,7 @@ from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance i
     create_kpoints_from_distance,
 )
 from aiida_quantumespresso.calculations.functions.md.get_structure_from_trajectory import get_structure_from_trajectory
+from aiida_quantumespresso.calculations.functions.md.get_last_step_from_trajectory import get_last_step_from_trajectory
 from aiida_quantumespresso.calculations.functions.md.md_utils import get_completed_number_of_steps, get_total_trajectory
 from aiida_quantumespresso.common.types import ElectronicType, RestartType, SpinType
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
@@ -81,6 +82,11 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             valid_type=orm.TrajectoryData, 
             required=False,
             help='Trajectory of previous calculation, needed to pickup from last MD run (otherwise we do a normal start from flipper compatible structure).')
+        spec.input('thermalised_trajectory', 
+            valid_type=orm.TrajectoryData, 
+            required=False,
+            help='Trajectory of a short equilibriation MD run, it will be used as a thermalisation step, but will not be concatanated to the final trajectory.'
+            'It is useful to have a separate thermalisation trajectory from which other microcanonical runs can be started.')
 
         spec.outline(
             cls.setup,
@@ -171,6 +177,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         overrides=None,
         total_energy_max_fluctuation=None,
         previous_trajectory=None,
+        thermalised_trajectory=None,
         electronic_type=ElectronicType.METAL,
         spin_type=SpinType.NONE,
         initial_magnetic_moments=None,
@@ -186,6 +193,8 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         :param total_energy_max_fluctuation: If the total energy exceeds this threshold I will stop the workchain
         :param previous_trajectory: if provided I will start the calculation from the positions and velocities of
             that trajectory
+        :param thermalised_trajectory: if provided I will start the MD calculation from the positions and velocities 
+            of this trajectory, but will not concatanate this trajectory to the final output trajectory
         :param electronic_type: indicate the electronic character of the system through ``ElectronicType`` instance.
         :param spin_type: indicate the spin polarization type to use through a ``SpinType`` instance.
         :param initial_magnetic_moments: optional dictionary that maps the initial magnetic moment of each kind to a
@@ -336,6 +345,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         else: 
             builder['total_energy_max_fluctuation'] = orm.Float(0.5 * 1.e4 * natoms * meta_parameters['etot_conv_thr_per_atom'])
         if previous_trajectory: builder['previous_trajectory'] = previous_trajectory
+        if thermalised_trajectory: builder['thermalised_trajectory'] = thermalised_trajectory
 
         return builder
 
@@ -438,6 +448,12 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             # mdsteps_todo will be -ve in that case and the replaymdwc will not be launched
             self.ctx.mdsteps_done += nsteps_of_previous_trajectory
 
+        # I check for a thermalised trajectory first, then for a previous trajectory
+        if self.inputs.get('thermalised_trajectory'):
+            self.ctx.thermalised_trajectory = get_last_step_from_trajectory(self.inputs.get('thermalised_trajectory'))['last_step_trajectory']
+        elif not self.inputs.get('previous_trajectory'):
+            self.report('No trajectory found for thermalisation, which is recommended if this is a first MD iteration')
+
     def set_restart_type(self, restart_type, parent_folder=None):
         """Set the restart type for the next iteration."""
 
@@ -503,7 +519,27 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             self.ctx.inputs.structure = res['structure']
             self.ctx.inputs.settings = res['settings'].get_dict()
 
-            self.report(f'launching WorkChain from a previous trajectory <{self.ctx.previous_trajectory.pk}>')
+            self.report(f'launching MD WorkChain from a previous trajectory <{self.ctx.previous_trajectory.pk}>')
+
+        elif self.inputs.get('thermalised_trajectory'):
+            self.ctx.inputs.parameters['IONS']['ion_velocities'] = 'from_input'
+            kwargs = {'trajectory': self.ctx.thermalised_trajectory,
+                      'parameters': orm.Dict(dict=
+                            dict(step_index=-1,
+                               recenter=False,
+                               create_settings=True,
+                               complete_missing=True)),
+                      'structure': self.ctx.inputs.structure,
+                      'metadata': {'call_link_label': 'get_structure'}}
+            if self.ctx.inputs.settings:
+                kwargs['settings'] = orm.Dict(dict=self.ctx.inputs.settings)
+
+            res = get_structure_from_trajectory(**kwargs)
+
+            self.ctx.inputs.structure = res['structure']
+            self.ctx.inputs.settings = res['settings'].get_dict()
+
+            self.report(f'launching MD WorkChain from a thermalised trajectory <{self.ctx.thermalised_trajectory.pk}>')
 
     def should_run_process(self) -> bool:
         """Return whether a new process should be run.
