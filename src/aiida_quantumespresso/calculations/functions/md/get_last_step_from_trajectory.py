@@ -2,11 +2,11 @@ from aiida import orm
 from aiida.engine import calcfunction
 import numpy as np
 
+
 @calcfunction
 def get_last_step_from_trajectory(trajectory):
-
-    """The last step of a trajectory is extracted and used as a thermalised trajectory 
-    from which a subsequent calculation can be performed. This is useful to separate 
+    """The last step of a trajectory is extracted and used as a thermalised trajectory
+    from which a subsequent calculation can be performed. This is useful to separate
     the equilibration phase from the production phase in an MD simulation.
     """
 

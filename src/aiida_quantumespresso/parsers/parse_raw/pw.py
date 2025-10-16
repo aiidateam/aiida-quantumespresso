@@ -531,7 +531,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
     # (cell, initial positions, kpoints, ...) and I skip them.
     # In case, parse for them before this point.
     # Put everything in a trajectory_data dictionary
-    
+
     # For MD calculations, I now skip the data calculated for the 0th step i.e. for the
     # input structure. And nothing is calculated for the final structure, so in the trajectory
     # I pop out the final structure from `positions` as no other data is available for this configuration
@@ -539,14 +539,14 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
     if input_parameters.get('CONTROL', {}).get('calculation', 'scf') in ['md', 'vc-md']:
         # For MD calculation it is better to check for the following keyword
         # Using this keyword I am dropping the forces and energy information of the initial
-        # structure, which is printed in `.out` file before the parsing starts 
+        # structure, which is printed in `.out` file before the parsing starts
         relax_steps = stdout.split('Entering Dynamics:')[1:]
     else:
         # For eveything else, I continue as before
         relax_steps = stdout.split('Self-consistent Calculation')[1:]
         # For sirius calculations only following keyword works
         # relax_steps = stdout.split('* running SCF ground state *')[1:]
-        
+
     relax_steps = [i.split('\n') for i in relax_steps]
 
     # now I create a bunch of arrays for every step.
@@ -840,10 +840,10 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
                 try:
                     stress = []
                     count2 = None
-                    # If we use the above way of dividing the steps, then a frame finishes after 8 to 10 lines of 
+                    # If we use the above way of dividing the steps, then a frame finishes after 8 to 10 lines of
                     # 'Computing stress' line, so it's better to break the loop once 'P=' line is found,
-                    # this might be a bad idea if there are multiple separate pressure values. 
-                    # This is the case for MD calculations and the loop needs to be broken, otherwise it 
+                    # this might be a bad idea if there are multiple separate pressure values.
+                    # This is the case for MD calculations and the loop needs to be broken, otherwise it
                     # tries to parse that which should be present in the next MD step, and throws an error
                     # indicating the same.
                     # Of course this is a non-issue for other calculations like relax, vc-relax, etc.
@@ -969,7 +969,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
 
     # Adding the parameters to trajectory data to extract dt and iprint information later
     if input_parameters.get('CONTROL', {}).get('calculation', 'scf') in ['md', 'vc-md']:
-        trajectory_data['md_parameters'] = input_parameters.get('CONTROL', {'dt': 20, 'iprint':1})
+        trajectory_data['md_parameters'] = input_parameters.get('CONTROL', {'dt': 20, 'iprint': 1})
     else:
         trajectory_data['md_parameters'] = False
 

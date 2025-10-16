@@ -3,6 +3,7 @@ from aiida.engine import calcfunction
 from qe_tools import CONSTANTS
 import numpy as np
 
+
 @calcfunction
 def get_structure_from_trajectory(trajectory, parameters, structure=None, settings=None):
     """
@@ -17,7 +18,6 @@ def get_structure_from_trajectory(trajectory, parameters, structure=None, settin
             i.e. certain atoms were excluded. This will use the structure to complete these atoms.
             An example is the optimized pinball parser, which only stores the positions/velocities of the pinballs.
             Another example: if the cell trajectory is not found, the structure's cell will be used.
-        * missing_velocities: The velocities to give, if complete_missing and create_settings are both set to True. By default [0,0,0]
         * recenter: When true, set the center of mass momentum to 0 (when restarting from a trajectory that doesn't preserve the center of mass.
     :param structure: If comlete_missing is True, I need a structure
     :param  : If create_settings is True, I can (if provided) just update the dictionary of this instance.
@@ -28,12 +28,11 @@ def get_structure_from_trajectory(trajectory, parameters, structure=None, settin
     recenter = parameters.get_attribute('recenter', False)
     create_settings = parameters.get_attribute('create_settings', False)
     complete_missing = parameters.get_attribute('complete_missing', False)
-    missing_velocities = parameters.get_attribute('missing_velocities', [0, 0, 0])
 
     if complete_missing and structure is None:
-            raise InputValidationError('You need to pass a structure when completing missing atoms.')
+        raise InputValidationError('You need to pass a structure when completing missing atoms.')
     if create_settings and settings is None:
-            raise InputValidationError('You need to pass settings when creating settings.')
+        raise InputValidationError('You need to pass settings when creating settings.')
 
     pos_units = trajectory.get_attribute('units|positions', 'angstrom')
     atoms = trajectory.get_step_structure(step_index).get_ase()
@@ -60,7 +59,7 @@ def get_structure_from_trajectory(trajectory, parameters, structure=None, settin
         velocities = trajectory.get_step_data(step_index)[-1]
         if recenter:
             com = np.zeros(3)
-            M = 0.
+            M = 0.0
             # Calculate the center of mass displacement:
             for atom, vel in zip(atoms, velocities):
                 com = com + atom.mass * vel
@@ -79,10 +78,10 @@ def get_structure_from_trajectory(trajectory, parameters, structure=None, settin
             raise Exception(f"Can't deal with units of velocities {vel_units}")
 
     if complete_missing:
-        for atom in structure.get_ase()[len(atoms):]:
+        for atom in structure.get_ase()[len(atoms) :]:
             atoms.append(atom)
             if create_settings:
-                velocities.append([0., 0., 0.])
+                velocities.append([0.0, 0.0, 0.0])
 
     newstruc = orm.StructureData(ase=atoms)
     newstruc.label = newstruc.get_formula(mode='count')
