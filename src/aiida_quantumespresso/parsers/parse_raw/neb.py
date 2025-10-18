@@ -7,7 +7,26 @@ decision doesn't have much structure encoded, [the values are simple ]
 """
 from qe_tools import CONSTANTS
 
+def detect_important_message(logs, line):
+    message_map = {
+        'error': {'invalid number of pools, out of range': 'ERROR_NPOOLS_TOO_HIGH',
+                  'invalid number of images, out of range': 'ERROR_NIMAGE_HIGHER_THAN_NPROC',
+                  'n. of images must be divisor of nproc': 'ERROR_NIMAGE_NOT_DIVISOR_OF_NPROC',
+                  'nimage is larger than the available number of images': 'ERROR_NIMAGE_HIGHER_THAN_IMAGES'},
+    }
 
+    for marker, message in message_map['error'].items():
+        if hasattr(marker, 'search'):
+            if marker.match(line):
+                if message is None:
+                    message = line
+                logs['errors'].append(message)
+        else:
+            if marker in line:
+                if message is None:
+                    message = line
+                logs['errors'].append(message)
+    
 def parse_raw_output_neb(stdout):
     """Parses the output of a neb calculation Receives in input the paths to the output file.
 
@@ -54,12 +73,15 @@ def parse_neb_text_output(data):
 
     parsed_data = {}
     parsed_data['warnings'] = []
+    parsed_data['errors'] = []
     iteration_data = defaultdict(list)
 
     # set by default the calculation as not converged.
     parsed_data['converged'] = [False, 0]
 
     for count, line in enumerate(data.split('\n')):
+        detect_important_message(parsed_data, line)
+
         if 'initial path length' in line:
             initial_path_length = float(line.split('=')[1].split('bohr')[0])
             parsed_data['initial_path_length'] = initial_path_length * CONSTANTS.bohr_to_ang
@@ -99,7 +121,7 @@ def parse_neb_text_output(data):
         elif 'neb: convergence achieved in' in line:
             parsed_data['converged'] = [True, int(line.split('iteration')[0].split()[-1])]
 
-    num_images = parsed_data['num_of_images']
+    num_images = parsed_data['num_of_images'] if 'num_of_images' in parsed_data else None
 
     iteration_lines = data.split('-- iteration')[1:]
     iteration_lines = [i.split('\n') for i in iteration_lines]
@@ -107,10 +129,16 @@ def parse_neb_text_output(data):
     for iteration in iteration_lines:
         for count, line in enumerate(iteration):
             if 'activation energy (->)' in line:
-                activ_energy = float(line.split('=')[1].split('eV')[0])
+                try:
+                    activ_energy = float(line.split('=')[1].split('eV')[0])
+                except Exception:
+                    activ_energy = None
                 iteration_data['forward_activation_energy'].append(activ_energy)
             elif 'activation energy (<-)' in line:
-                activ_energy = float(line.split('=')[1].split('eV')[0])
+                try:
+                    activ_energy = float(line.split('=')[1].split('eV')[0])
+                except Exception:
+                    activ_energy = None
                 iteration_data['backward_activation_energy'].append(activ_energy)
             elif 'image        energy (eV)        error (eV/A)        frozen' in line:
                 energies = []

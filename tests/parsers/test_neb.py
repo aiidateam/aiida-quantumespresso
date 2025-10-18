@@ -245,3 +245,31 @@ def test_failed_first_step_interrupted(
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_failed, calcfunction.exit_status
     assert calcfunction.exit_status == exit_status
+
+@pytest.mark.parametrize(
+    'filename, exception', [
+        ('failed_npools_too_high', 'ERROR_NPOOLS_TOO_HIGH'),
+        ('failed_nimage_higher_than_nproc', 'ERROR_NIMAGE_HIGHER_THAN_NPROC'),
+        ('failed_nimage_higher_than_images', 'ERROR_NIMAGE_HIGHER_THAN_IMAGES'),
+        ('failed_nimage_not_divisor_of_nproc', 'ERROR_NIMAGE_NOT_DIVISOR_OF_NPROC')
+    ]
+)
+def test_failed_parallelization(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename, exception
+):
+    """Test the parsing of a calculation that failed with parallelization exceptions.
+
+    In this test the stdout is incomplete, and the XML is missing completely. The stdout contains
+    the relevant error message.
+    """
+
+    entry_point_calc_job = 'quantumespresso.neb'
+    entry_point_parser = 'quantumespresso.neb'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, filename, generate_inputs())
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == node.process_class.exit_codes.get(exception).status

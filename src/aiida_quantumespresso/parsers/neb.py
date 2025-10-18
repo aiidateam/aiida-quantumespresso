@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+from sys import stdout
 
 from aiida.common import AttributeDict, NotExistent
 from aiida.engine import ExitCode
@@ -67,6 +68,9 @@ class NebParser(BaseParser):
             neb_out_dict, iteration_data = parse_raw_output_neb(stdout)
         except:
             return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_READ)
+
+        if len(neb_out_dict['errors']) > 0:
+            return self.exit(self.exit_codes[neb_out_dict['errors'][0]])
 
         # If iteration_data is empty, it means that the calculation was interrupted before completing
         # the first NEB minimization step, so we cannot retrieve any partial trajectory.
