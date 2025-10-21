@@ -169,7 +169,7 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         except AttributeError:
             structure = self.inputs.neb.images.get_step_structure(-1)
             if 'pbc' in self.inputs.neb.images.get_arraynames():
-                structure.set_pbc(self.inputs.neb.images.get_array('pbc')[-1])
+                structure.set_pbc(self.inputs.neb.images.get_array('pbc'))
             inputs = {
                 'structure': structure,
                 'distance': self.inputs.kpoints_distance,
