@@ -967,12 +967,6 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
     if maximum_ionic_steps is not None and maximum_ionic_steps == parsed_data.get('number_ionic_steps'):
         logs.warning.append('ERROR_MAXIMUM_IONIC_STEPS_REACHED')
 
-    # Adding the parameters to trajectory data to extract dt and iprint information later
-    if input_parameters.get('CONTROL', {}).get('calculation', 'scf') in ['md', 'vc-md']:
-        trajectory_data['md_parameters'] = input_parameters.get('CONTROL', {'dt': 20, 'iprint': 1})
-    else:
-        trajectory_data['md_parameters'] = False
-
     parsed_data['bands'] = bands_data
     parsed_data['structure'] = structure_data
     parsed_data['trajectory'] = trajectory_data

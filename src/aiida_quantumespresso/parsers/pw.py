@@ -75,10 +75,18 @@ class PwParser(BaseParser):
         if not all_symmetries and 'cell' in parsed_structure:
             reduce_symmetries(parsed_parameters, parsed_structure, self.logger)
 
+        # If MD calculation, adding the MD parameters like timestep and stride
+        # to the input of `build_output_trajectory` function
+        if parameters.get('CONTROL', {}).get('calculation', 'scf') in ['md', 'vc-md']:
+            control_parameters = parameters.get('CONTROL', {})
+            md_parameters = {'dt': control_parameters.get('dt', 20), 'iprint': control_parameters.get('iprint', 1)}
+        else:
+            md_parameters = False
+
         structure = self.build_output_structure(parsed_structure)
         kpoints = self.build_output_kpoints(parsed_parameters, structure)
         bands = self.build_output_bands(parsed_bands, kpoints)
-        trajectory = self.build_output_trajectory(parsed_trajectory, structure)
+        trajectory = self.build_output_trajectory(parsed_trajectory, structure, md_parameters)
 
         # Determine whether the input kpoints were defined as a mesh or as an explicit list
         try:
@@ -492,7 +500,7 @@ class PwParser(BaseParser):
         return convert_qe_to_aiida_structure(parsed_structure, self.node.inputs.structure)
 
     @staticmethod
-    def build_output_trajectory(parsed_trajectory, structure):
+    def build_output_trajectory(parsed_trajectory, structure, md_parameters=False):
         """Build the output trajectory from the raw parsed trajectory data.
 
         :param parsed_trajectory: the raw parsed trajectory data
@@ -528,8 +536,6 @@ class PwParser(BaseParser):
 
         trajectory = orm.TrajectoryData()
 
-        md_parameters = parsed_trajectory.pop('md_parameters', False)
-
         if not md_parameters:
             # continue as before
             trajectory.set_trajectory(
@@ -546,39 +552,20 @@ class PwParser(BaseParser):
             # Computing velocities at each step, since QE uses velocity-verlet-algorythm, velocities can be
             # calculated from positions and forces at each step or a simpler definition can be used where
             # velocity is defined as vel = (tau_new - tau_old) / 2dt for some bizzare reason in QE
-            # First this `md_parameters` object needs to be popped which contains the timestep, read from
-            # input parameters, whose `CONTROL` part is now stored in the `parsed_trajectory` dicitonary
-            if not md_parameters or not isinstance(md_parameters, dict):
-                # If md_parameters is False or not a dict, use default dt
-                dt = 20.0  # Default dt in QE in atomic units
-            else:
-                dt = md_parameters.get('dt', 20.0)
-            # iprint = md_parameters['iprint']
 
-            # Then, we must check that the forces exist
-            try:
-                # Converting forces back to atomic units for easier calculation of velocities
-                _forces_au = np.array(parsed_trajectory['forces']) * CONSTANTS.bohr_to_ang / CONSTANTS.ry_to_ev
-                calculate_velocities = True
-            except KeyError:
-                # If forces don't exist, the calculation failed at the first step of MD
-                # so no need to calculate velocities
-                calculate_velocities = False
+            dt = md_parameters.get('dt', 20.0)
 
             # If there are too few datapoints, it's best to discard the trajectory for future concatenation
-            if positions.shape[0] < 20:
-                calculate_velocities = False
-
-            if calculate_velocities:
+            if positions.shape[0] < 10:
                 # Using reverse velocity verlet algorythm
-                # Storing mass of individual atom according to their position
-                _masses = np.array([structure.get_kind(symbol).mass for symbol in symbols]).reshape(-1, 1)
                 # Converting positions back to atomic units for easier calculation of velocities
                 # the parsing with `Entering Dynamics:` does not count the initial positions
                 positions_au = positions / CONSTANTS.bohr_to_ang
 
                 # I do not use the following method
                 """
+                masses = np.array([structure.get_kind(symbol).mass for symbol in symbols]).reshape(-1, 1)
+                forces_au = np.array(parsed_trajectory['forces']) * CONSTANTS.bohr_to_ang / CONSTANTS.ry_to_ev
                 accelerations = forces_au / masses / 1.e3 # 1000 is unit conversion factor
 
                 velocities_au = np.diff(positions_au[1:], axis=0) / dt - 0.5 * accelerations[:-1] * dt 
@@ -589,7 +576,7 @@ class PwParser(BaseParser):
                 # Using the simple subtraction that QE uses
                 velocities_au = (positions_au[2:] - positions_au[:-2]) / (2 * dt)
                 # Prepending zeros as first velocities because who cares about the initialised velocities
-                velocities_au_complete = np.insert(velocities_au, 0, np.zeros(velocities_au[0].shape), axis=0)
+                velocities_au_complete = np.insert(velocities_au, 0, np.zeros((1,) + velocities_au.shape[1:]), axis=0)
 
                 # Now one can either calculate the velocity of last step like previous implementation, but
                 # if one is using the simplified definition of velocity it doesn't make sense to use accelerations
