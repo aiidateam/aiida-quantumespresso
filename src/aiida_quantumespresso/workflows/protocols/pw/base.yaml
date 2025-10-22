@@ -68,12 +68,13 @@ protocols:
                     calculation: md
                     nstep: 1.e+5
                     dt: 30 # 1.44 femto seconds
+                    iprint: 1
                     forc_conv_thr: 1.e-3
-                    nosym: True # gives better stability for long runs
                 ELECTRONS:
                     mixing_beta: 0.2 # lower mixing factor since we will be extrapolating wavefunctions anyway
                 SYSTEM:
                     degauss: 0.0275
+                    nosym: True # gives better stability for long runs
                 IONS:
                     wfc_extrapolation: 'second_order' # extrapolation when running FPMD
                     pot_extrapolation: 'second_order'

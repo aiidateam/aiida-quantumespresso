@@ -31,8 +31,6 @@ def get_structure_from_trajectory(trajectory, parameters, structure=None, settin
 
     if complete_missing and structure is None:
         raise InputValidationError('You need to pass a structure when completing missing atoms.')
-    if create_settings and settings is None:
-        raise InputValidationError('You need to pass settings when creating settings.')
 
     pos_units = trajectory.get_attribute('units|positions', 'angstrom')
     atoms = trajectory.get_step_structure(step_index).get_ase()

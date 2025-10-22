@@ -595,8 +595,10 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                     f'{calculation.process_label}><{calculation.pk}> [check_energy_fluctuations]: Trajectory not found. Skipping test.'
                 )
             else:
-                traj = get_total_trajectory(self, store=False)
-                total_energies = traj.get_array('total_energies')
+                # The last step of the previous trajectory will become the starting structure of the new MD,
+                # so it needs to be removed during concatenation to avoid repeating that configuration
+                traj = get_total_trajectory(self, remove_repeated_last_step=True)
+                total_energies = traj.get_array('energy')
                 diff = total_energies.max() - total_energies.min()
                 if diff > total_energy_max_fluctuation:
                     self.report(
@@ -661,7 +663,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         else:
             traj = get_total_trajectory(self, store=True)
         if traj:
-            self.out('total_trajectory', traj)
+            self.out('output_trajectory', traj)
         else:
             self.report('No trajectories were produced in the MD simulation!')
             # it may not be a good idea to add a specific exit code here
@@ -813,8 +815,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
            so for that we do a restart from previous wavefunctions and update the `nsteps`
         """
         if self.ctx.inputs.parameters['CONTROL'].get('calculation', 'scf') == 'md':
-            # no need to change the input structure as it will not be used, but still
-            self.ctx.inputs.structure = calculation.outputs.output_structure
+            # no need to update the input structure as it will not be used
             self.set_restart_type(RestartType.FULL, calculation.outputs.remote_folder)
             self.report_error_handled(
                 calculation, 'MD calculation so restarting from the previous wavefunctions and charge densities'
