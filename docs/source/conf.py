@@ -183,6 +183,7 @@ nitpick_ignore_regex = [
     (r'py:class', r'Annotated(\[.*\])?'),
     (r'py:class', r'Field(\[.*\])?'),
     (r'py:.*', r'aiida_quantumespresso.*'),
+    (r'py:.*', r'aiida.*'),
 ]
 nitpick_ignore = [
     ('py:class', 't.IO'),
