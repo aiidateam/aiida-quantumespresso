@@ -1,7 +1,25 @@
+"""XML version detection and schema management for Quantum ESPRESSO XML output files.
+
+.. deprecated:: 4.6
+    This entire module is deprecated and will be removed in v5.0.
+    The only functionality that is still needed (get_schema_filepath) has been moved to parse_xml.parse.
+    Support for legacy XML formats (QE < v6.2) is being dropped.
+"""
+
 import enum
 import os
+import warnings
+
+from aiida.common.warnings import AiidaDeprecationWarning
 
 from aiida_quantumespresso.parsers.parse_xml.exceptions import XMLUnsupportedFormatError
+
+warnings.warn(
+    'The parse_xml.versions module is deprecated and will be removed in aiida-quantumespresso v5.0.\n'
+    'Use get_schema_filepath() from parse_xml.parse instead.',
+    AiidaDeprecationWarning,
+    stacklevel=2,
+)
 
 DEFAULT_SCHEMA_FILENAME = 'qes-1.0.xsd'
 DIRNAME_SCHEMAS = 'schemas'
@@ -39,9 +57,9 @@ def get_schema_filepath(xml):
     :param xml: the pre-parsed XML object
     :return: the XSD absolute filepath
     """
-    schema_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'schemas')
-    schema_filename = get_schema_filename(xml)
-    return os.path.join(schema_directory, schema_filename)
+    from .parse import get_schema_filepath as _get_schema_filepath
+
+    return _get_schema_filepath(xml)
 
 
 def get_default_schema_filepath():

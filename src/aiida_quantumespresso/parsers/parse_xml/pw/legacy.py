@@ -1,8 +1,10 @@
 """Code that was written to parse the legacy XML format of Quantum ESPRESSO, which was deprecated in version 6.4."""
 
 import os
+import warnings
 from xml.dom.minidom import parse, parseString
 
+from aiida.common.warnings import AiidaDeprecationWarning
 from qe_tools import CONSTANTS
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
@@ -21,6 +23,12 @@ from aiida_quantumespresso.parsers.parse_xml.legacy import (
     xml_card_symmetries,
 )
 from aiida_quantumespresso.utils.mapping import get_logging_container
+
+warnings.warn(
+    'This module has been deprecated and will be removed in aiida-quantumespresso v5.0.\n'
+    'If you are seeing this warning, you will have to update your Quantum ESPRESSO version (v6.6 or above).',
+    AiidaDeprecationWarning,
+)
 
 units_suffix = '_units'
 default_energy_units = 'eV'

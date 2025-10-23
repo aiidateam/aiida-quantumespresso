@@ -3,8 +3,7 @@ from xml.dom.minidom import parseString
 from xml.etree import ElementTree
 
 from aiida_quantumespresso.parsers.parse_xml.cp.legacy import parse_cp_xml_output
-from aiida_quantumespresso.parsers.parse_xml.parse import parse_xml_post_6_2
-from aiida_quantumespresso.parsers.parse_xml.pw.legacy import parse_xml_child_integer
+from aiida_quantumespresso.parsers.parse_xml.parse import parse_xml_child_integer, parse_xml_post_6_2
 from aiida_quantumespresso.parsers.parse_xml.versions import QeXmlVersion, get_xml_file_version
 
 
