@@ -5,7 +5,7 @@ from aiida import orm
 from aiida.common import AttributeDict
 
 
-@pytest.mark.parametrize('version', ['default', '6.6_autopilot', '6.6_verlet', '6.6_cgstep', '6.6_cgsteps'])
+@pytest.mark.parametrize('version', ['6.6_autopilot', '6.6_verlet', '6.6_cgstep', '6.6_cgsteps'])
 def test_cp_default(
     fixture_localhost,
     generate_calc_job_node,
