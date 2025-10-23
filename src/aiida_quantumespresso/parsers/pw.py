@@ -25,7 +25,6 @@ class PwParser(BaseParser):
         permanently in the repository. The second required node is a filepath under the key `retrieved_temporary_files`
         which should contain the temporary retrieved files.
         """
-        dir_with_bands = None
         crash_file = None
         self.exit_code_xml = None
         self.exit_code_stdout = None
@@ -39,20 +38,13 @@ class PwParser(BaseParser):
         # Look for optional settings input node and potential 'parser_options' dictionary within it
         parser_options = settings.get(self.get_parser_settings_key(), None)
 
-        # Verify that the retrieved_temporary_folder is within the arguments if temporary files were specified
-        if self.node.base.attributes.get('retrieve_temporary_list', None):
-            try:
-                dir_with_bands = kwargs['retrieved_temporary_folder']
-            except KeyError:
-                return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
-
         # We check if the `CRASH` file was retrieved. If so, we parse its output
         crash_file_filename = self.node.process_class._CRASH_FILE  # noqa: SLF001
         if crash_file_filename in self.retrieved.base.repository.list_object_names():
             crash_file = self.retrieved.base.repository.get_object_content(crash_file_filename)
 
         parameters = self.node.inputs.parameters.get_dict()
-        parsed_xml, logs_xml = self.parse_xml(dir_with_bands, parser_options)
+        parsed_xml, logs_xml = self.parse_xml()
         parsed_stdout, logs_stdout = self.parse_stdout(parameters, parser_options, crash_file)
 
         if not parsed_xml and self.node.get_option('without_xml'):
@@ -367,15 +359,13 @@ class PwParser(BaseParser):
 
         raise RuntimeError(f'unknown relax_type: {relax_type}')
 
-    def parse_xml(self, dir_with_bands=None, parser_options=None):
+    def parse_xml(self):
         """Parse the XML output file.
 
-        :param dir_with_bands: absolute path to directory containing individual k-point XML files for old XML format.
-        :param parser_options: optional dictionary with parser options
         :return: tuple of two dictionaries, first with raw parsed data and second with log messages
         """
         from .parse_xml.exceptions import XMLParseError, XMLUnsupportedFormatError
-        from .parse_xml.pw.parse import parse_xml
+        from .parse_xml.parse import parse_xml
 
         logs = get_logging_container()
         parsed_data = {}
@@ -394,7 +384,7 @@ class PwParser(BaseParser):
 
         try:
             with self.retrieved.base.repository.open(xml_files[0]) as xml_file:
-                parsed_data, logs = parse_xml(xml_file, dir_with_bands)
+                parsed_data, logs = parse_xml(xml_file)
         except OSError:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_READ
         except XMLParseError:
