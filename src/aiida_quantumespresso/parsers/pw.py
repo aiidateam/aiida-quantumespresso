@@ -555,71 +555,68 @@ class PwParser(BaseParser):
 
             dt = md_parameters.get('dt', 20.0)
 
-            # If there are too few datapoints, it's best to discard the trajectory for future concatenation
-            if positions.shape[0] < 10:
-                # Using reverse velocity verlet algorythm
-                # Converting positions back to atomic units for easier calculation of velocities
-                # the parsing with `Entering Dynamics:` does not count the initial positions
-                positions_au = positions / CONSTANTS.bohr_to_ang
+            # Following keys which are coming from the xml file and not the stdout are overwritten in the code:
+            # `for key, value in parsed_trajectory.items(): trajectory.set_array(key, np.array(value))`
+            # So instead of using the values that are generated from the first few lines of the
+            # `build_output_trajectory` function, which are subsequently overwritten, I pop them out here
+            # to get the correct arrays earlier.
+            # This is only a problem with MD calculations, which require velocities to be calculated.
+            # For now, I am making this bandaid fix here only in case of MD calculations, but in future
+            # we need to have a look into why the xml and stdout parsing are giving different results for these arrays.
+            if 'steps' in parsed_trajectory:
+                stepids = np.array(parsed_trajectory.pop('steps'))
+            if 'cells' in parsed_trajectory:
+                cells = np.array(parsed_trajectory.pop('cells'))
+            if 'positions' in parsed_trajectory:
+                positions = np.array(parsed_trajectory.pop('positions'))
 
-                # I do not use the following method
-                """
-                masses = np.array([structure.get_kind(symbol).mass for symbol in symbols]).reshape(-1, 1)
-                forces_au = np.array(parsed_trajectory['forces']) * CONSTANTS.bohr_to_ang / CONSTANTS.ry_to_ev
-                accelerations = forces_au / masses / 1.e3 # 1000 is unit conversion factor
+            # Using reverse velocity verlet algorythm
+            # Converting positions back to atomic units for easier calculation of velocities
+            # the parsing with `Entering Dynamics:` does not count the initial positions
+            positions_au = positions / CONSTANTS.bohr_to_ang
 
-                velocities_au = np.diff(positions_au[1:], axis=0) / dt - 0.5 * accelerations[:-1] * dt 
-                last_step_velocity = velocities_au[-1] + 0.5 * (accelerations[-2] + accelerations[-1]) * dt
-                velocities_au_complete = np.append(velocities_au, [last_step_velocity], axis=0)
-                """
+            # I do not use the following method
+            """
+            masses = np.array([structure.get_kind(symbol).mass for symbol in symbols]).reshape(-1, 1)
+            forces_au = np.array(parsed_trajectory['forces']) * CONSTANTS.bohr_to_ang / CONSTANTS.ry_to_ev
+            accelerations = forces_au / masses / 1.e3 # 1000 is unit conversion factor
 
-                # Using the simple subtraction that QE uses
-                velocities_au = (positions_au[2:] - positions_au[:-2]) / (2 * dt)
-                # Prepending zeros as first velocities because who cares about the initialised velocities
-                velocities_au_complete = np.insert(velocities_au, 0, np.zeros((1,) + velocities_au.shape[1:]), axis=0)
+            velocities_au = np.diff(positions_au[1:], axis=0) / dt - 0.5 * accelerations[:-1] * dt 
+            last_step_velocity = velocities_au[-1] + 0.5 * (accelerations[-2] + accelerations[-1]) * dt
+            velocities_au_complete = np.append(velocities_au, [last_step_velocity], axis=0)
+            """
 
-                # Now one can either calculate the velocity of last step like previous implementation, but
-                # if one is using the simplified definition of velocity it doesn't make sense to use accelerations
-                # for the last step which is the most important velocity as this will be used for `dirty` restart,
-                # so it's best to drop the last positions and redo one more MD step
+            # Using the simple subtraction that QE uses
+            velocities_au = (positions_au[2:] - positions_au[:-2]) / (2 * dt)
+            # Prepending zeros as first velocities because who cares about the initialised velocities
+            velocities_au_complete = np.insert(velocities_au, 0, np.zeros((1,) + velocities_au.shape[1:]), axis=0)
 
-                # QE prints everything after every step so no need to worry about strides
-                # TODO add strides option at the plugin level without using the `iprint` variable at QE level.
-                # This is essential to not waste space on redundant information.
+            # Now one can either calculate the velocity of last step like previous implementation, but
+            # if one is using the simplified definition of velocity it doesn't make sense to use accelerations
+            # for the last step which is the most important velocity as this will be used for `dirty` restart,
+            # so it's best to drop the last positions and redo one more MD step
 
-                # Dropping last element of each array
-                trajectory.set_trajectory(
-                    stepids=stepids[:-1],
-                    cells=cells[:-1],
-                    symbols=symbols,
-                    positions=positions[:-1],
-                    velocities=velocities_au_complete,
-                )
+            # QE prints everything after every step so no need to worry about strides
+            # TODO add strides option at the plugin level without using the `iprint` variable at QE level.
+            # This is essential to not waste space on redundant information.
 
-                # trajectory.set_array('forces', _forces_au[:-1])
-                trajectory.set_attribute('units|forces', 'eV/A')
-                trajectory.set_attribute('units|velocities', 'atomic')
-                trajectory.set_attribute('sim_time_fs', stepids[:-1].shape[0] * CONSTANTS.timeau_to_sec * 2 * 2e15 * dt)
+            # Dropping last element of each array
+            trajectory.set_trajectory(
+                stepids=stepids[:-1],
+                cells=cells[:-1],
+                symbols=symbols,
+                positions=positions[:-1],
+                velocities=velocities_au_complete,
+            )
 
-                # following can also be made to lose the last element like above
-                for key, value in parsed_trajectory.items():
-                    trajectory.set_array(key, np.array(value)[:-1])
+            # trajectory.set_array('forces', _forces_au[:-1])
+            trajectory.set_attribute('units|forces', 'eV/A')
+            trajectory.set_attribute('units|velocities', 'atomic')
+            trajectory.set_attribute('sim_time_fs', stepids[:-1].shape[0] * CONSTANTS.timeau_to_sec * 2 * 2e15 * dt)
 
-            else:
-                trajectory.set_trajectory(
-                    stepids=stepids,
-                    cells=cells,
-                    symbols=symbols,
-                    positions=positions,
-                )
-                # it is important to keep track of trajectories which are empty so that they are not
-                # mistakenly concatenated at some future point. While this test can be performed by
-                # looking at the shape of any asrray or by realising that velocities are missing, having
-                # an explicit attribute may serve as a more robust solution against commiting this mistake
-                trajectory.set_attribute('never_concatenate', True)
-
-                for key, value in parsed_trajectory.items():
-                    trajectory.set_array(key, np.array(value))
+            # following can also be made to lose the last element like above
+            for key, value in parsed_trajectory.items():
+                trajectory.set_array(key, np.array(value)[:-1])
 
         return trajectory
 
