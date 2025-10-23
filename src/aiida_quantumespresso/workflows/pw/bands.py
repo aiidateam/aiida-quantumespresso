@@ -1,8 +1,10 @@
 """Workchain to compute a band structure for a given structure using Quantum ESPRESSO pw.x."""
 
+import warnings
 from aiida import orm
 from aiida.common import AttributeDict
 from aiida.engine import ToContext, WorkChain, if_
+from aiida.common.warnings import AiidaDeprecationWarning
 
 from aiida_quantumespresso.calculations.functions.seekpath_structure_analysis import seekpath_structure_analysis
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
@@ -20,6 +22,14 @@ def validate_inputs(inputs, _):
     # Cannot specify both `bands_kpoints` and `bands_kpoints_distance`
     if all(key in inputs for key in ['bands_kpoints', 'bands_kpoints_distance']):
         return PwBandsWorkChain.exit_codes.ERROR_INVALID_INPUT_KPOINTS.message
+
+    if 'relax' in inputs:
+        warnings.warn(
+            'The `relax` namespace of `PwBandsWorkChain` is deprecated and will be removed in v5.0.\n'
+            'Please optimize your geometry using the `PwRelaxWorkChain` separately and then run the '
+            '`PwBandsWorkChain` on the relaxed structure.',
+            AiidaDeprecationWarning,
+        )
 
 
 class PwBandsWorkChain(ProtocolMixin, WorkChain):
@@ -57,7 +67,10 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
             namespace_options={
                 'required': False,
                 'populate_defaults': False,
-                'help': 'Inputs for the `PwRelaxWorkChain`, if not specified at all, the relaxation step is skipped.',
+                'help': (
+                    'DEPRECATED: Inputs for the `PwRelaxWorkChain`. This namespace is deprecated and will be '
+                    'removed in v5.0. Use `PwRelaxWorkChain` separately and pass the relaxed structure to this workflow.'
+                ),
             },
         )
         spec.expose_inputs(
@@ -171,9 +184,6 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         inputs = cls.get_protocol_inputs(protocol, overrides)
 
         args = (code, structure, protocol)
-        relax = PwRelaxWorkChain.get_builder_from_protocol(
-            *args, overrides=inputs.get('relax', None), options=options, **kwargs
-        )
         scf = PwBaseWorkChain.get_builder_from_protocol(
             *args, overrides=inputs.get('scf', None), options=options, **kwargs
         )
@@ -181,9 +191,6 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
             *args, overrides=inputs.get('bands', None), options=options, **kwargs
         )
 
-        relax.pop('structure', None)
-        relax.pop('clean_workdir', None)
-        relax.pop('base_final_scf', None)
         scf['pw'].pop('structure', None)
         scf.pop('clean_workdir', None)
         bands['pw'].pop('structure', None)
@@ -192,8 +199,8 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         bands.pop('kpoints_force_parity', None)
 
         builder = cls.get_builder()
+        builder.pop('relax')
         builder.structure = structure
-        builder.relax = relax
         builder.scf = scf
         builder.bands = bands
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
