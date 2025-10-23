@@ -217,7 +217,7 @@ class NebParser(BaseParser):
             XMLParseError,
             XMLUnsupportedFormatError,
         )
-        from aiida_quantumespresso.parsers.parse_xml.pw.parse import (
+        from aiida_quantumespresso.parsers.parse_xml.parse import (
             parse_xml as parse_pw_xml,
         )
 
@@ -246,7 +246,7 @@ class NebParser(BaseParser):
 
         try:
             with self.retrieved.base.repository.open(xml_filenames[0]) as xml_file:
-                parsed_data, logs = parse_pw_xml(xml_file, None)
+                parsed_data, logs = parse_pw_xml(xml_file)
         except OSError:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_READ
         except XMLParseError:

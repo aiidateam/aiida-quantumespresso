@@ -10,7 +10,7 @@ import numpy as np
 from qe_tools import CONSTANTS
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers.parse_xml.pw.legacy import parse_xml_child_bool, read_xml_card
+from aiida_quantumespresso.parsers.parse_xml.parse import parse_xml_child_bool, read_xml_card
 
 
 def parse_raw_ph_output(stdout, logs, tensors=None, dynamical_matrices=None):

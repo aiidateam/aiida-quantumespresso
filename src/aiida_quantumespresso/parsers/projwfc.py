@@ -128,7 +128,7 @@ class ProjwfcParser(BaseParser):
         :return: tuple with the parsed_xml and parsing logs.
         """
         from .parse_xml.exceptions import XMLParseError, XMLUnsupportedFormatError
-        from .parse_xml.pw.parse import parse_xml
+        from .parse_xml.parse import parse_xml
 
         logs = get_logging_container()
 
@@ -139,7 +139,7 @@ class ProjwfcParser(BaseParser):
 
         try:
             with xml_filepath.open('r') as handle:
-                parsed_xml, logs = parse_xml(handle, None)
+                parsed_xml, logs = parse_xml(handle)
         except OSError:
             return {}, logs, self.exit(self.exit_codes.ERROR_OUTPUT_XML_READ)
         except XMLParseError:
