@@ -1,6 +1,9 @@
 """Code that was written to parse the legacy XML format of Quantum ESPRESSO, which was deprecated in version 6.4."""
 
+import warnings
 from xml.dom.minidom import parseString
+
+from aiida.common.warnings import AiidaDeprecationWarning
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.parsers.parse_xml.legacy import (
@@ -22,6 +25,13 @@ units_suffix = '_units'
 default_energy_units = 'eV'
 default_k_points_units = '1 / angstrom'
 default_length_units = 'Angstrom'
+
+
+warnings.warn(
+    'This module has been deprecated and will be removed in aiida-quantumespresso v5.0.\n'
+    'If you are seeing this warning, you will have to update your Quantum ESPRESSO version (v6.6 or above).',
+    AiidaDeprecationWarning,
+)
 
 
 # TODO: the xml has a lot in common with pw, maybe I should avoid duplication of code

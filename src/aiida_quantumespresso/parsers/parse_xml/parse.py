@@ -1,16 +1,18 @@
 import collections
 import contextlib
-from urllib.error import URLError
+from pathlib import Path
+from xml.dom.minidom import Element
+from xml.etree import ElementTree
 
 import numpy as np
 from packaging.version import Version
 from qe_tools import CONSTANTS
 from xmlschema import XMLSchema
 
+from aiida_quantumespresso.parsers import QEOutputParsingError
 from aiida_quantumespresso.utils.mapping import get_logging_container
 
-from .exceptions import XMLParseError
-from .versions import get_default_schema_filepath, get_schema_filepath
+from .exceptions import XMLParseError, XMLUnsupportedFormatError
 
 
 def raise_parsing_error(message):
@@ -40,32 +42,110 @@ def cell_volume(a1, a2, a3):
     return abs(float(a1[0] * a_mid_0 + a1[1] * a_mid_1 + a1[2] * a_mid_2))
 
 
-def parse_xml_post_6_2(xml):
+def read_xml_card(dom, cardname):
+    """Read an XML card from a DOM object (used for legacy XML parsing)."""
+    try:
+        root_node = [_ for _ in dom.childNodes if isinstance(_, Element) and _.nodeName == 'Root'][0]
+        the_card = [_ for _ in root_node.childNodes if _.nodeName == cardname][0]
+        return the_card
+    except Exception as e:
+        print(e)
+        raise QEOutputParsingError(f'Error parsing tag {cardname}')
+
+
+def parse_xml_child_integer(tagname, target_tags):
+    """Parse an XML child tag as an integer (used for legacy XML parsing)."""
+    try:
+        a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
+        b = a.childNodes[0]
+        return int(b.data)
+    except Exception:
+        raise QEOutputParsingError(f'Error parsing tag {tagname} inside {target_tags.tagName}')
+
+
+def parse_xml_child_bool(tagname, target_tags):
+    """Parse an XML child tag as a boolean (used for legacy XML parsing)."""
+    try:
+        a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
+        b = a.childNodes[0]
+        return str2bool(b.data)
+    except Exception:
+        raise QEOutputParsingError(f'Error parsing tag {tagname} inside {target_tags.tagName}')
+
+
+def str2bool(string):
+    """Convert a string to a boolean value (used for legacy XML parsing)."""
+    try:
+        false_items = ['f', '0', 'false', 'no']
+        true_items = ['t', '1', 'true', 'yes']
+        string = str(string.lower().strip())
+        if string in false_items:
+            return False
+        if string in true_items:
+            return True
+        else:
+            raise QEOutputParsingError(f'Error converting string {string} to boolean value.')
+    except Exception:
+        raise QEOutputParsingError('Error converting string to boolean.')
+
+
+def get_schema_filepath(xml):
+    """Return the absolute filepath to the XML schema file that can be used to parse the given XML.
+
+    :param xml: the pre-parsed XML object
+    :return: the XSD absolute filepath
+    """
+    xml_schema_location_key = '{http://www.w3.org/2001/XMLSchema-instance}schemaLocation'
+    # The part in curly brackets is an expanded namespace
+    dir_path_schemas = Path(__file__).resolve().parent / 'schemas'
+
+    element_root = xml.getroot()
+
+    if element_root is None:
+        raise XMLParseError('Could not find the XML root!')
+
+    # Patch for QE v7.0: The scheme file name was not updated in the `xsi.schemaLocation` element
+    with contextlib.suppress(AttributeError):
+        if element_root.find('general_info').find('creator').get('VERSION') == '7.0':
+            return dir_path_schemas / 'qes_211101.xsd'
+
+    element_schema_location = element_root.get(xml_schema_location_key)
+    # e.g. "http://www.quantum-espresso.org/ns/qes/qes-1.0 http://www.quantum-espresso.org/ns/qes/qes-1.0.xsd"
+
+    if element_schema_location is None:
+        raise XMLParseError('Could not find the schema location!')
+
+    schema_location = element_schema_location.split()[1]  # e.g. "http://www.quantum-espresso.org/ns/qes/qes-1.0.xsd"
+    schema_filename = schema_location.rpartition('/')[2]  # e.g. "qes-1.0.xsd"
+
+    schema_filepath = dir_path_schemas / schema_filename
+
+    if not schema_filepath.exists():
+        raise XMLUnsupportedFormatError(
+            f'Cannot find schema {schema_filepath.name} in {dir_path_schemas}.\n'
+            'Make sure you are running a supported Quantum ESPRESSO version.'
+        )
+
+    return schema_filepath
+
+
+def parse_xml(xml_file):
     """Parse the content of XML output file written by `pw.x` and `cp.x` with the new schema-based XML format.
 
-    :param xml: parsed XML
+    :param xml_file: file-like object containing the XML
     :returns: tuple of two dictionaries, with the parsed data and log messages, respectively
     """
     e_bohr2_to_coulomb_m2 = 57.214766  # e/a0^2 to C/m^2 (electric polarization) from Wolfram Alpha
 
     logs = get_logging_container()
 
-    schema_filepath = get_schema_filepath(xml)
-
     try:
-        xsd = XMLSchema(schema_filepath)
-    except URLError:
-        # If loading the XSD file specified in the XML file fails, we try the default
-        schema_filepath_default = get_default_schema_filepath()
+        xml_parsed = ElementTree.parse(xml_file)
+    except ElementTree.ParseError as exception:
+        raise XMLParseError('error while parsing XML file') from exception
 
-        try:
-            xsd = XMLSchema(schema_filepath_default)
-        except URLError:
-            raise XMLParseError(
-                f'Could not open or parse the XSD files {schema_filepath} and {schema_filepath_default}'
-            )
-        else:
-            schema_filepath = schema_filepath_default
+    schema_filepath = get_schema_filepath(xml_parsed)
+    xsd = XMLSchema(schema_filepath)
 
     # Validate XML document against the schema
     # Returned dictionary has a structure where, if tag ['key'] is "simple", xml_dictionary['key'] returns its content.
@@ -75,7 +155,7 @@ def parse_xml_post_6_2(xml):
     #  xml_dictionary['key']['@attr'] returns its attribute 'attr'
     #  xml_dictionary['key']['nested_key'] goes one level deeper.
 
-    xml_dictionary, errors = xsd.to_dict(xml, validation='lax')
+    xml_dictionary, errors = xsd.to_dict(xml_parsed, validation='lax')
     if errors:
         logs.error.append(f'{len(errors)} XML schema validation error(s) schema: {schema_filepath}:')
         for err in errors:
@@ -559,6 +639,32 @@ def parse_xml_post_6_2(xml):
     xml_data['total_number_of_scf_iterations'] = sum(xml_data['trajectory']['scf_iterations'])
 
     return xml_data, logs
+
+
+def parse_xml_post_6_2(xml):
+    """DEPRECATED: Use parse_xml() instead.
+
+    This function is kept for backward compatibility but will be removed in v5.0.
+
+    :param xml: parsed XML ElementTree object
+    :returns: tuple of two dictionaries, with the parsed data and log messages, respectively
+    """
+    import warnings
+    import io
+    from aiida.common.warnings import AiidaDeprecationWarning
+
+    warnings.warn(
+        'parse_xml_post_6_2() is deprecated. Use parse_xml() instead which takes a file-like object.\n'
+        'This function will be removed in aiida-quantumespresso v5.0.',
+        AiidaDeprecationWarning,
+        stacklevel=2,
+    )
+
+    # Convert the ElementTree object back to XML string and create a file-like object
+    xml_string = ElementTree.tostring(xml.getroot(), encoding='unicode')
+    xml_file = io.StringIO(xml_string)
+
+    return parse_xml(xml_file)
 
 
 def parse_step_to_trajectory(trajectory, data, skip_structure=False):
