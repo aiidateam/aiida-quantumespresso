@@ -7,7 +7,6 @@ from aiida.engine import ToContext, WorkChain, if_
 from aiida_quantumespresso.calculations.functions.seekpath_structure_analysis import seekpath_structure_analysis
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
-from aiida_quantumespresso.workflows.pw.relax import PwRelaxWorkChain
 
 from ..protocols.utils import ProtocolMixin
 
@@ -51,16 +50,6 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
 
         super().define(spec)
         spec.expose_inputs(
-            PwRelaxWorkChain,
-            namespace='relax',
-            exclude=('clean_workdir', 'structure'),
-            namespace_options={
-                'required': False,
-                'populate_defaults': False,
-                'help': 'Inputs for the `PwRelaxWorkChain`, if not specified at all, the relaxation step is skipped.',
-            },
-        )
-        spec.expose_inputs(
             PwBaseWorkChain,
             namespace='scf',
             exclude=('clean_workdir', 'pw.structure'),
@@ -101,10 +90,6 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         spec.inputs.validator = validate_inputs
         spec.outline(
             cls.setup,
-            if_(cls.should_run_relax)(
-                cls.run_relax,
-                cls.inspect_relax,
-            ),
             if_(cls.should_run_seekpath)(
                 cls.run_seekpath,
             ),
@@ -124,7 +109,9 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
             'ERROR_INVALID_INPUT_KPOINTS',
             message='Cannot specify both `bands_kpoints` and `bands_kpoints_distance`.',
         )
-        spec.exit_code(401, 'ERROR_SUB_PROCESS_FAILED_RELAX', message='The PwRelaxWorkChain sub process failed')
+        spec.exit_code(
+            401, 'ERROR_SUB_PROCESS_FAILED_RELAX', message='[deprecated] The PwRelaxWorkChain sub process failed'
+        )
         spec.exit_code(402, 'ERROR_SUB_PROCESS_FAILED_SCF', message='The scf PwBasexWorkChain sub process failed')
         spec.exit_code(403, 'ERROR_SUB_PROCESS_FAILED_BANDS', message='The bands PwBasexWorkChain sub process failed')
         spec.output(
@@ -171,9 +158,6 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         inputs = cls.get_protocol_inputs(protocol, overrides)
 
         args = (code, structure, protocol)
-        relax = PwRelaxWorkChain.get_builder_from_protocol(
-            *args, overrides=inputs.get('relax', None), options=options, **kwargs
-        )
         scf = PwBaseWorkChain.get_builder_from_protocol(
             *args, overrides=inputs.get('scf', None), options=options, **kwargs
         )
@@ -181,8 +165,6 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
             *args, overrides=inputs.get('bands', None), options=options, **kwargs
         )
 
-        relax.pop('structure', None)
-        relax.pop('clean_workdir', None)
         scf['pw'].pop('structure', None)
         scf.pop('clean_workdir', None)
         bands['pw'].pop('structure', None)
@@ -192,7 +174,6 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
 
         builder = cls.get_builder()
         builder.structure = structure
-        builder.relax = relax
         builder.scf = scf
         builder.bands = bands
         builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
@@ -210,36 +191,9 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         self.ctx.current_number_of_bands = None
         self.ctx.bands_kpoints = self.inputs.get('bands_kpoints', None)
 
-    def should_run_relax(self):
-        """If the 'relax' input namespace was specified, we relax the input structure."""
-        return 'relax' in self.inputs
-
     def should_run_seekpath(self):
         """Seekpath should only be run if the `bands_kpoints` input is not specified."""
         return 'bands_kpoints' not in self.inputs
-
-    def run_relax(self):
-        """Run the PwRelaxWorkChain to run a relax PwCalculation."""
-        inputs = AttributeDict(self.exposed_inputs(PwRelaxWorkChain, namespace='relax'))
-        inputs.metadata.call_link_label = 'relax'
-        inputs.structure = self.ctx.current_structure
-
-        running = self.submit(PwRelaxWorkChain, **inputs)
-
-        self.report(f'launching PwRelaxWorkChain<{running.pk}>')
-
-        return ToContext(workchain_relax=running)
-
-    def inspect_relax(self):
-        """Verify that the PwRelaxWorkChain finished successfully."""
-        workchain = self.ctx.workchain_relax
-
-        if not workchain.is_finished_ok:
-            self.report(f'PwRelaxWorkChain failed with exit status {workchain.exit_status}')
-            return self.exit_codes.ERROR_SUB_PROCESS_FAILED_RELAX
-
-        self.ctx.current_structure = workchain.outputs.output_structure
-        self.ctx.current_number_of_bands = workchain.outputs.output_parameters.base.attributes.get('number_of_bands')
 
     def run_seekpath(self):
         """Run the structure through SeeKpath to get the normalized structure and path along high-symmetry k-points .
@@ -258,17 +212,10 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         self.out('seekpath_parameters', result['parameters'])
 
     def run_scf(self):
-        """Run the PwBaseWorkChain in scf mode on the primitive cell of (optionally relaxed) input structure."""
+        """Run the PwBaseWorkChain in scf mode on the primitive cell of the input structure."""
         inputs = AttributeDict(self.exposed_inputs(PwBaseWorkChain, namespace='scf'))
         inputs.metadata.call_link_label = 'scf'
         inputs.pw.structure = self.ctx.current_structure
-
-        # Make sure to carry the number of bands from the relax workchain if it was run and it wasn't explicitly defined
-        # in the inputs. One of the base workchains in the relax workchain may have changed the number automatically in
-        #  the sanity checks on band occupations.
-        if self.ctx.current_number_of_bands:
-            inputs.pw.parameters = inputs.pw.parameters.get_dict()
-            inputs.pw.parameters.setdefault('SYSTEM', {}).setdefault('nbnd', self.ctx.current_number_of_bands)
 
         inputs = prepare_process_inputs(PwBaseWorkChain, inputs)
         running = self.submit(PwBaseWorkChain, **inputs)
