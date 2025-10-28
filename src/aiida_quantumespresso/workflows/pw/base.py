@@ -226,7 +226,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             z_valences={kind.name: pseudos[kind.name].z_valence for kind in structure.kinds},
             initial_magnetic_moments=initial_magnetic_moments,
             spin_type=spin_type,
-        )
+        ) if spin_type != SpinType.NONE else {}
         if spin_type is SpinType.COLLINEAR:
             parameters['SYSTEM']['starting_magnetization'] = magnetization['starting_magnetization']
             parameters['SYSTEM']['nspin'] = 2
