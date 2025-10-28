@@ -72,15 +72,15 @@ class NebParser(BaseParser):
         if len(neb_out_dict['errors']) > 0:
             return self.exit(self.exit_codes[neb_out_dict['errors'][0]])
 
-        # If iteration_data is empty, it means that the calculation was interrupted before completing
-        # the first NEB minimization step, so we cannot retrieve any partial trajectory.
-        if len(iteration_data) == 0:
-            return self.exit(self.exit_codes.ERROR_NEB_INTERRUPTED_WITHOUT_PARTIAL_TRAJECTORY)
-
         parsed_data.update(neb_out_dict)
 
-        num_images = parsed_data['num_of_images']
-
+        # If num_images is empty, it means that the calculation was interrupted before completing
+        # the first NEB minimization step, so we cannot retrieve any partial trajectory.
+        try:
+            num_images = parsed_data['num_of_images']
+        except:
+            return self.exit(self.exit_codes.ERROR_NEB_INTERRUPTED_WITHOUT_PARTIAL_TRAJECTORY)
+        
         # Now parse the information from the individual pw calculations for the different images
         image_data = {}
         positions = []

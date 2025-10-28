@@ -158,10 +158,16 @@ def parse_neb_text_output(data):
             elif 'climbing image' in line:
                 iteration_data['climbing_image_auto'].append([int(_) for _ in line.split('=')[1].split(',')])
             elif 'path length' in line:
-                path_length = float(line.split('=')[1].split('bohr')[0])
-                iteration_data['path_length'].append(path_length * CONSTANTS.bohr_to_ang)
+                try:
+                    path_length = float(line.split('=')[1].split('bohr')[0])
+                    iteration_data['path_length'].append(path_length * CONSTANTS.bohr_to_ang)
+                except Exception:
+                    iteration_data['path_length'].append(None)
             elif 'inter-image distance' in line:
-                image_dist = float(line.split('=')[1].split('bohr')[0])
-                iteration_data['image_dist'].append(image_dist * CONSTANTS.bohr_to_ang)
+                try:
+                    image_dist = float(line.split('=')[1].split('bohr')[0])
+                    iteration_data['image_dist'].append(image_dist * CONSTANTS.bohr_to_ang)
+                except Exception:
+                    iteration_data['image_dist'].append(None)
 
     return parsed_data, dict(iteration_data)

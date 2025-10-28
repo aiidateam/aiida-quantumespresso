@@ -392,7 +392,7 @@ class NebCalculation(CalcJob):
         calcinfo.uuid = self.uuid
 
         inputs_parallelization = lambda: None
-        inputs_parallelization.inputs = AttributeDict({'parallelization':self.inputs.parallelization})
+        inputs_parallelization.inputs = AttributeDict({'parallelization':self.inputs.get('parallelization', orm.Dict({}))})
         inputs_parallelization._ENABLED_PARALLELIZATION_FLAGS = self._ENABLED_PARALLELIZATION_FLAGS
         inputs_parallelization._PARALLELIZATION_FLAG_ALIASES = BasePwCpInputGenerator._PARALLELIZATION_FLAG_ALIASES
         cmdline_params = BasePwCpInputGenerator._add_parallelization_flags_to_cmdline_params(inputs_parallelization, cmdline_params=settings_dict.pop('CMDLINE', []))
