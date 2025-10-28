@@ -16,6 +16,7 @@ PwCalculation = CalculationFactory('quantumespresso.pw')
 SsspFamily = GroupFactory('pseudo.family.sssp')
 PseudoDojoFamily = GroupFactory('pseudo.family.pseudo_dojo')
 CutoffsPseudoPotentialFamily = GroupFactory('pseudo.family.cutoffs')
+PseudoPotentialFamily = GroupFactory('pseudo.family')
 
 
 class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
@@ -176,8 +177,22 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         else:
             try:
-                pseudo_set = (PseudoDojoFamily, SsspFamily, CutoffsPseudoPotentialFamily)
-                pseudo_family = orm.QueryBuilder().append(pseudo_set, filters={'label': pseudo_family}).one()[0]
+                try:
+                    pseudo_has_cutoff = True
+                    pseudo_set = (PseudoDojoFamily, SsspFamily, CutoffsPseudoPotentialFamily)
+                    pseudo_family = orm.QueryBuilder().append(pseudo_set, filters={'label': pseudo_family}).one()[0]
+                except exceptions.NotExistent:
+                    pseudo_has_cutoff = False
+                    #try, as fallback, to load from the generic PseudoPotentialFamily and check that the cutoffs are defined
+                    pseudo_family = orm.QueryBuilder().append(PseudoPotentialFamily, filters={'label': pseudo_family}).one()[0]
+                    #check that cutoffs are defined in the overrides
+                    system_overrides = overrides.get('pw', {}).get('parameters', {}).get('SYSTEM', {}) if overrides else {}
+                    if not all(key in system_overrides for key in ('ecutwfc', 'ecutrho')):
+                        raise ValueError(
+                            'When overriding the pseudo potentials from a generic `PseudoPotentialFamily`, both '
+                            '`ecutwfc` and `ecutrho` cutoffs should be provided in the `overrides`: '
+                            f'{overrides}'
+                        )
             except exceptions.NotExistent as exception:
                 raise ValueError(
                     f'required pseudo family `{pseudo_family}` is not installed. Please use `aiida-pseudo install` to'
@@ -185,8 +200,9 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 ) from exception
 
             try:
-                parameters['SYSTEM']['ecutwfc'], parameters['SYSTEM'][
-                    'ecutrho'] = pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
+                if pseudo_has_cutoff:
+                    parameters['SYSTEM']['ecutwfc'], parameters['SYSTEM'][
+                        'ecutrho'] = pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
                 pseudos = pseudo_family.get_pseudos(structure=structure)
             except ValueError as exception:
                 raise ValueError(
@@ -210,7 +226,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             z_valences={kind.name: pseudos[kind.name].z_valence for kind in structure.kinds},
             initial_magnetic_moments=initial_magnetic_moments,
             spin_type=spin_type,
-        )
+        ) if spin_type != SpinType.NONE else {}
         if spin_type is SpinType.COLLINEAR:
             parameters['SYSTEM']['starting_magnetization'] = magnetization['starting_magnetization']
             parameters['SYSTEM']['nspin'] = 2
