@@ -8,9 +8,10 @@ from aiida import orm
 from aiida.common import datastructures, exceptions
 from aiida.common.warnings import AiidaDeprecationWarning
 
-from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
+from aiida_quantumespresso.calculations import _uppercase_dict
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+from aiida_quantumespresso.utils.validation.parameters import validate_parameters
 
 from .base import CalcJob
 
@@ -63,7 +64,7 @@ class PhCalculation(CalcJob):
         spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.ph')
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)
         spec.input('qpoints', valid_type=orm.KpointsData, help='qpoint mesh')
-        spec.input('parameters', valid_type=orm.Dict, help='')
+        spec.input('parameters', valid_type=orm.Dict, help='', validator=validate_parameters)
         spec.input('settings', valid_type=orm.Dict, required=False, help='')
         spec.input('parent_folder', valid_type=orm.RemoteData, help='the folder of a completed `PwCalculation`')
         spec.output('output_parameters', valid_type=orm.Dict)
@@ -168,9 +169,7 @@ class PhCalculation(CalcJob):
                 raise exceptions.InputValidationError(msg) from exception
         parent_calc_out_subfolder = settings.pop('PARENT_CALC_OUT_SUBFOLDER', default_parent_output_folder)
 
-        # I put the first-level keys as uppercase (i.e., namelist and card names) and the second-level keys as lowercase
-        parameters = _uppercase_dict(self.inputs.parameters.get_dict(), dict_name='parameters')
-        parameters = {k: _lowercase_dict(v, dict_name=k) for k, v in parameters.items()}
+        parameters = self.inputs.parameters.get_dict()
 
         prepare_for_d3 = settings.pop('PREPARE_FOR_D3', False)
         if prepare_for_d3:

@@ -76,3 +76,20 @@ def test_serialize_builder(generate_inputs_ph, data_regression, serialize_builde
     builder = PhCalculation.get_builder()
     builder._update(**generate_inputs_ph())
     data_regression.check(serialize_builder(builder))
+
+
+def test_parameters_validation():
+    """Test the validation of the `parameters` input."""
+    import pytest
+
+    builder = PhCalculation.get_builder()
+
+    parameters = {'inputph': {'tr2_ph': 1.0e-8}}
+
+    with pytest.warns(UserWarning, match="'inputph' should be UPPERCASE"):
+        builder.parameters = parameters
+
+    assert builder.parameters.get_dict() == {'INPUTPH': {'tr2_ph': 1.0e-8}}
+
+    with pytest.raises(ValueError, match="'inputph' should be UPPERCASE"):
+        builder.parameters = orm.Dict(parameters).store()
