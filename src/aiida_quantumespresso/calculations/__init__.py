@@ -18,6 +18,7 @@ from qe_tools.converters import get_parameters_from_cell
 from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 from aiida_quantumespresso.utils.hubbard import HubbardUtils
+from aiida_quantumespresso.utils.validation.parameters import validate_parameters
 
 from .base import CalcJob
 from .helpers import QEInputValidationError
@@ -119,6 +120,7 @@ class BasePwCpInputGenerator(CalcJob):
             'parameters',
             valid_type=orm.Dict,
             help='The input parameters that are to be used to construct the input file.',
+            validator=validate_parameters,
         )
         spec.input(
             'settings',
@@ -487,11 +489,7 @@ class BasePwCpInputGenerator(CalcJob):
 
         local_copy_list_to_append = []
 
-        # I put the first-level keys as uppercase (i.e., namelist and card names)
-        # and the second-level keys as lowercase
-        # (deeper levels are unchanged)
-        input_params = _uppercase_dict(parameters.get_dict(), dict_name='parameters')
-        input_params = {k: _lowercase_dict(v, dict_name=k) for k, v in input_params.items()}
+        input_params = parameters.get_dict()
 
         # I remove unwanted elements (for the moment, instead, I stop; to change when we setup a reasonable logging)
         for blocked in cls._blocked_keywords:
@@ -812,10 +810,6 @@ class BasePwCpInputGenerator(CalcJob):
             )
 
         return inputfile, local_copy_list_to_append
-
-
-def _lowercase_dict(dictionary, dict_name):
-    return _case_transform_dict(dictionary, dict_name, '_lowercase_dict', str.lower)
 
 
 def _uppercase_dict(dictionary, dict_name):

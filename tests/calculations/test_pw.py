@@ -6,6 +6,7 @@ from aiida.common import datastructures
 from aiida.common.exceptions import InputValidationError
 from aiida.common.warnings import AiidaDeprecationWarning
 
+from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.calculations.helpers import QEInputValidationError
 from aiida_quantumespresso.utils.resources import get_default_options
 
@@ -440,3 +441,18 @@ def test_fixed_coords_validation(fixture_sandbox, generate_calc_job, generate_in
     inputs['settings'] = orm.Dict(dict={'FIXED_COORDS': fixed_coords})
     with pytest.raises(ValueError, match=error_message):
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)
+
+
+def test_parameters_validation():
+    """Test the validation of the `parameters` input."""
+
+    builder = PwCalculation.get_builder()
+
+    parameters = {'control': {'calculation': 'scf'}}
+    with pytest.warns(UserWarning, match="'control' should be UPPERCASE"):
+        builder.parameters = parameters
+
+    assert builder.parameters.get_dict() == {'CONTROL': {'calculation': 'scf'}}
+
+    with pytest.raises(ValueError, match="'control' should be UPPERCASE"):
+        builder.parameters = orm.Dict(parameters).store()

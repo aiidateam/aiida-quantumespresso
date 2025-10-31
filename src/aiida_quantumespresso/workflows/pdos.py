@@ -62,12 +62,12 @@ def get_parameter_schema():
     return {
         '$schema': 'http://json-schema.org/draft-07/schema',
         'type': 'object',
-        'required': ['DeltaE'],
+        'required': ['deltae'],
         'additionalProperties': False,
         'properties': {
-            'Emin': {'description': 'min energy (eV) for DOS plot', 'type': 'number'},
-            'Emax': {'description': 'max energy (eV) for DOS plot', 'type': 'number'},
-            'DeltaE': {'description': 'energy grid step (eV)', 'type': 'number', 'minimum': 0},
+            'emin': {'description': 'min energy (eV) for DOS plot', 'type': 'number'},
+            'emax': {'description': 'max energy (eV) for DOS plot', 'type': 'number'},
+            'deltae': {'description': 'energy grid step (eV)', 'type': 'number', 'minimum': 0},
             'ngauss': {'description': 'Type of gaussian broadening.', 'type': 'integer', 'enum': [0, 1, -1, -99]},
             'degauss': {'description': 'gaussian broadening, Ry (not eV!)', 'type': 'number', 'minimum': 0},
         },
@@ -78,8 +78,8 @@ def validate_inputs(value, _):
     """Validate the top level namespace.
 
     - Check that either the `scf` or `nscf.pw.parent_folder` inputs is provided.
-    - Check that the `Emin`, `Emax` and `DeltaE` inputs are the same for the `dos` and `projwfc` namespaces.
-    - Warn the user when both `energy_range_vs_fermi` and `Emin` and `Emax` are specified.
+    - Check that the `emin`, `emax` and `deltae` inputs are the same for the `dos` and `projwfc` namespaces.
+    - Warn the user when both `energy_range_vs_fermi` and `emin` and `emax` are specified.
     - Raise error when `nbands_factor` is specified and `nscf.pw.parameters.SYSTEM.nbnd` is also specified.
     """
     # Check that either the `scf` input or `nscf.pw.parent_folder` is provided.
@@ -93,12 +93,12 @@ def validate_inputs(value, _):
     elif 'scf' not in value and 'parent_folder' not in value['nscf']['pw']:
         return 'Specifying either the `scf` or `nscf.pw.parent_folder` input is required.'
 
-    for par in ['Emin', 'Emax', 'DeltaE']:
+    for par in ['emin', 'emax', 'deltae']:
         if value['dos']['parameters']['DOS'].get(par, None) != value['projwfc']['parameters']['PROJWFC'].get(par, None):
             return f'The `{par}`` parameter has to be equal for the `dos` and `projwfc` inputs.'
 
     if value.get('energy_range_vs_fermi', False):
-        for par in ['Emin', 'Emax']:
+        for par in ['emin', 'emax']:
             if value['dos']['parameters']['DOS'].get(par, None):
                 warnings.warn(
                     f'The `{par}` parameter and `energy_range_vs_fermi` were specified.'
@@ -127,7 +127,7 @@ def validate_nscf(value, _):
 def validate_dos(value, _):
     """Validate DOS parameters.
 
-    - shared: Emin | Emax | DeltaE
+    - shared: emin | emax | deltae
     - dos.x only: ngauss | degauss | bz_sum
     - projwfc.x only: ngauss | degauss | pawproj | n_proj_boxes | irmin(3,n_proj_boxes) | irmax(3,n_proj_boxes)
 
@@ -138,7 +138,7 @@ def validate_dos(value, _):
 def validate_projwfc(value, _):
     """Validate DOS parameters.
 
-    - shared: Emin | Emax | DeltaE
+    - shared: emin | emax | deltae
     - dos.x only: ngauss | degauss | bz_sum
     - projwfc.x only: ngauss | degauss | pawproj | n_proj_boxes | irmin(3,n_proj_boxes) | irmax(3,n_proj_boxes)
 
@@ -224,7 +224,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
             validator=validate_energy_range_vs_fermi,
             help=(
                 'Energy range with respect to the Fermi level that should be covered in DOS and PROJWFC calculation.'
-                'If not specified but Emin and Emax are specified in the input parameters, these values will be used.'
+                'If not specified but emin and emax are specified in the input parameters, these values will be used.'
                 'Otherwise, the default values are extracted from the NSCF calculation.'
             ),
         )
@@ -261,7 +261,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
             exclude=('parent_folder',),
             namespace_options={
                 'help': (
-                    'Input parameters for the `dos.x` calculation. Note that the `Emin`, `Emax` and `DeltaE` '
+                    'Input parameters for the `dos.x` calculation. Note that the `emin`, `emax` and `deltae` '
                     'values have to match with those in the `projwfc` inputs.'
                 ),
                 'validator': validate_dos,
@@ -273,7 +273,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
             exclude=('parent_folder',),
             namespace_options={
                 'help': (
-                    'Input parameters for the `projwfc.x` calculation. Note that the `Emin`, `Emax` and `DeltaE` '
+                    'Input parameters for the `projwfc.x` calculation. Note that the `emin`, `emax` and `deltae` '
                     'values have to match with those in the `dos` inputs.'
                 ),
                 'validator': validate_projwfc,
@@ -510,11 +510,11 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         energy_range_vs_fermi = self.inputs.get('energy_range_vs_fermi')
 
         if energy_range_vs_fermi:
-            dos_parameters['DOS']['Emin'] = energy_range_vs_fermi[0] + self.ctx.nscf_fermi
-            dos_parameters['DOS']['Emax'] = energy_range_vs_fermi[1] + self.ctx.nscf_fermi
+            dos_parameters['DOS']['emin'] = energy_range_vs_fermi[0] + self.ctx.nscf_fermi
+            dos_parameters['DOS']['emax'] = energy_range_vs_fermi[1] + self.ctx.nscf_fermi
         else:
-            dos_parameters['DOS'].setdefault('Emin', self.ctx.nscf_emin)
-            dos_parameters['DOS'].setdefault('Emax', self.ctx.nscf_emax)
+            dos_parameters['DOS'].setdefault('emin', self.ctx.nscf_emin)
+            dos_parameters['DOS'].setdefault('emax', self.ctx.nscf_emax)
 
         dos_inputs.parameters = orm.Dict(dos_parameters)
         dos_inputs['metadata']['call_link_label'] = 'dos'
@@ -528,11 +528,11 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         energy_range_vs_fermi = self.inputs.get('energy_range_vs_fermi')
 
         if energy_range_vs_fermi:
-            projwfc_parameters['PROJWFC']['Emin'] = energy_range_vs_fermi[0] + self.ctx.nscf_fermi
-            projwfc_parameters['PROJWFC']['Emax'] = energy_range_vs_fermi[1] + self.ctx.nscf_fermi
+            projwfc_parameters['PROJWFC']['emin'] = energy_range_vs_fermi[0] + self.ctx.nscf_fermi
+            projwfc_parameters['PROJWFC']['emax'] = energy_range_vs_fermi[1] + self.ctx.nscf_fermi
         else:
-            projwfc_parameters['PROJWFC'].setdefault('Emin', self.ctx.nscf_emin)
-            projwfc_parameters['PROJWFC'].setdefault('Emax', self.ctx.nscf_emax)
+            projwfc_parameters['PROJWFC'].setdefault('emin', self.ctx.nscf_emin)
+            projwfc_parameters['PROJWFC'].setdefault('emax', self.ctx.nscf_emax)
 
         projwfc_inputs.parameters = orm.Dict(projwfc_parameters)
         projwfc_inputs['metadata']['call_link_label'] = 'projwfc'

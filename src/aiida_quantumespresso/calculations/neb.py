@@ -10,13 +10,10 @@ from aiida.common import AttributeDict, CalcInfo, CodeInfo, InputValidationError
 from aiida.common.lang import classproperty
 from aiida.common.warnings import AiidaDeprecationWarning
 
-from aiida_quantumespresso.calculations import (
-    _lowercase_dict,
-    _pop_parser_options,
-    _uppercase_dict,
-)
+from aiida_quantumespresso.calculations import _pop_parser_options, _uppercase_dict
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+from aiida_quantumespresso.utils.validation.parameters import validate_parameters
 
 from .base import CalcJob
 
@@ -79,7 +76,9 @@ class NebCalculation(CalcJob):
             help='Ordered trajectory of all NEB images along the reaction path, including'
             'initial, intermediate, and final configurations.',
         )
-        spec.input('parameters', valid_type=orm.Dict, help='NEB-specific input parameters')
+        spec.input(
+            'parameters', valid_type=orm.Dict, help='NEB-specific input parameters', validator=validate_parameters
+        )
         spec.input(
             'settings',
             valid_type=orm.Dict,
@@ -216,11 +215,7 @@ class NebCalculation(CalcJob):
     @classmethod
     def _generate_input_files(cls, neb_parameters, settings_dict):
         """Generate the input data for the NEB part of the calculation."""
-        # I put the first-level keys as uppercase (i.e., namelist and card names)
-        # and the second-level keys as lowercase
-        # (deeper levels are unchanged)
-        input_params = _uppercase_dict(neb_parameters.get_dict(), dict_name='parameters')
-        input_params = {k: _lowercase_dict(v, dict_name=k) for k, v in input_params.items()}
+        input_params = neb_parameters.get_dict()
 
         # Force default values for blocked keywords. NOTE: this is different from PW/CP
         for blocked in cls._blocked_keywords:

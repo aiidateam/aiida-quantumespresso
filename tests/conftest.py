@@ -977,14 +977,14 @@ def generate_workchain_pdos(generate_workchain, generate_inputs_pw, fixture_code
 
         dos_params = {
             'DOS': {
-                'DeltaE': 0.01,
+                'deltae': 0.01,
             }
         }
-        projwfc_params = {'PROJWFC': {'DeltaE': 0.01, 'ngauss': 0, 'degauss': 0.01}}
+        projwfc_params = {'PROJWFC': {'deltae': 0.01, 'ngauss': 0, 'degauss': 0.01}}
 
         if emin and emax:
-            dos_params['DOS'].update({'Emin': emin, 'Emax': emax})
-            projwfc_params['PROJWFC'].update({'Emin': emin, 'Emax': emax})
+            dos_params['DOS'].update({'emin': emin, 'emax': emax})
+            projwfc_params['PROJWFC'].update({'emin': emin, 'emax': emax})
 
         dos = {
             'code': fixture_code('quantumespresso.dos'),
