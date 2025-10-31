@@ -31,10 +31,10 @@ def check_pdos_energy_range(dos_inputs, projwfc_inputs, expected_p_dos_inputs):
     dos_params = dos_inputs.parameters.get_dict()
     projwfc_params = projwfc_inputs.parameters.get_dict()
 
-    assert np.isclose(dos_params['DOS']['Emin'], expected_p_dos_inputs[0])
-    assert np.isclose(dos_params['DOS']['Emax'], expected_p_dos_inputs[1])
-    assert np.isclose(projwfc_params['PROJWFC']['Emin'], expected_p_dos_inputs[0])
-    assert np.isclose(projwfc_params['PROJWFC']['Emax'], expected_p_dos_inputs[1])
+    assert np.isclose(dos_params['DOS']['emin'], expected_p_dos_inputs[0])
+    assert np.isclose(dos_params['DOS']['emax'], expected_p_dos_inputs[1])
+    assert np.isclose(projwfc_params['PROJWFC']['emin'], expected_p_dos_inputs[0])
+    assert np.isclose(projwfc_params['PROJWFC']['emax'], expected_p_dos_inputs[1])
 
 
 @pytest.mark.parametrize(

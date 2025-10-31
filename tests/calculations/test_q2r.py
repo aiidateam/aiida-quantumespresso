@@ -44,11 +44,11 @@ def test_q2r_default(fixture_sandbox, generate_calc_job, generate_inputs_q2r, fi
 @pytest.mark.parametrize(
     ('key', 'value'),
     [
-        ('la2F', True),
+        ('la2f', True),
         ('zasr', 'simple'),
     ],
 )
-def test_q2r_parameters(fixture_sandbox, generate_calc_job, generate_inputs_q2r, file_regression, key, value):
+def test_parameters(fixture_sandbox, generate_calc_job, generate_inputs_q2r, file_regression, key, value):
     """Test the ``parameters`` input for the ``Q2rCalculation`` plugin."""
     entry_point_name = 'quantumespresso.q2r'
 
@@ -68,7 +68,7 @@ def test_q2r_parameters(fixture_sandbox, generate_calc_job, generate_inputs_q2r,
     retrieve_list = [Q2rCalculation._DEFAULT_OUTPUT_FILE] + Q2rCalculation._internal_retrieve_list
 
     # Test that `elph_dir` is added properly to the remote_copy_list
-    if inputs['parameters']['INPUT'].get('la2F', None) is True:
+    if inputs['parameters']['INPUT'].get('la2f', None) is True:
         dirpath = Path(parent_folder.get_remote_path()) / PhCalculation._FOLDER_ELECTRON_PHONON
         remote_copy_list.append(
             (

@@ -10,8 +10,9 @@ from aiida.common import datastructures, exceptions
 from aiida.common.warnings import AiidaDeprecationWarning
 from aiida.orm import Dict, FolderData, RemoteData, SinglefileData
 
-from aiida_quantumespresso.calculations import _lowercase_dict, _pop_parser_options, _uppercase_dict
+from aiida_quantumespresso.calculations import _pop_parser_options, _uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+from aiida_quantumespresso.utils.validation.parameters import validate_parameters
 
 from .base import CalcJob
 
@@ -55,7 +56,11 @@ class NamelistsCalculation(CalcJob):
         if cls._default_parser is not None:
             spec.input('metadata.options.parser_name', valid_type=str, default=cls._default_parser)
         spec.input(
-            'parameters', valid_type=Dict, required=False, help='Parameters for the namelists in the input file.'
+            'parameters',
+            valid_type=Dict,
+            required=False,
+            help='Parameters for the namelists in the input file.',
+            validator=validate_parameters,
         )
         spec.input('settings', valid_type=Dict, required=False, help='Use an additional node for special settings')
         spec.input(
@@ -89,8 +94,8 @@ class NamelistsCalculation(CalcJob):
     def set_blocked_keywords(cls, parameters):
         """Force default values for blocked keywords. NOTE: this is different from PW/CP."""
         for blocked in cls._blocked_keywords:
-            namelist = blocked[0].upper()
-            key = blocked[1].lower()
+            namelist = blocked[0]
+            key = blocked[1]
             value = blocked[2]
             if namelist in parameters:
                 if key in parameters[namelist]:
@@ -168,10 +173,8 @@ class NamelistsCalculation(CalcJob):
         else:
             settings = {}
 
-        # Put the first-level keys as uppercase (i.e., namelist and card names) and the second-level keys as lowercase
         if 'parameters' in self.inputs:
-            parameters = _uppercase_dict(self.inputs.parameters.get_dict(), dict_name='parameters')
-            parameters = {k: _lowercase_dict(v, dict_name=k) for k, v in parameters.items()}
+            parameters = self.inputs.parameters.get_dict()
         else:
             parameters = {}
 

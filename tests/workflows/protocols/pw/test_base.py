@@ -266,7 +266,7 @@ def test_parallelization_overrides(fixture_code, generate_structure):
         ({'pw': {'parameters': {'CONTROL': {'calculation': 'relax'}}}}, None),
         # CORRECT overrides for `Dict` node with incorrect keys
         # The key check should _not_ validate the inputs, that is the job of the port validator
-        ({'pw': {'parameters': {'NON-EXISTENT': 1}}}, None),
+        ({'pw': {'parameters': {'NON-EXISTENT': {'param': 1}}}}, None),
         # WRONG overrides with typo
         ({'clean_wokdir': True}, UserWarning),
         # WRONG overrides with process input at incorrect level

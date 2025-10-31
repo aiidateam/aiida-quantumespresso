@@ -7,14 +7,22 @@ from aiida import orm
 from aiida.common import datastructures, exceptions
 from aiida.common.warnings import AiidaDeprecationWarning
 
-from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
+from aiida_quantumespresso.calculations import _uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+from aiida_quantumespresso.utils.validation.parameters import validate_parameters as validate_parameters_base
 
 from .base import CalcJob
 
 
 def validate_parameters(value, _):
-    """Validate 'parameters' dict."""
+    """Validate 'parameters' dict.
+
+    First does basic validation, then checks pp.x-specific requirements.
+    """
+    error = validate_parameters_base(value, _)
+    if error:
+        return error
+
     parameters = value.get_dict()
 
     try:
@@ -167,9 +175,7 @@ class PpCalculation(CalcJob):
         :return: :class:`~aiida.common.datastructures.CalcInfo` instance.
         """
 
-        # Put the first-level keys as uppercase (i.e., namelist and card names) and the second-level keys as lowercase
-        parameters = _uppercase_dict(self.inputs.parameters.get_dict(), dict_name='parameters')
-        parameters = {k: _lowercase_dict(v, dict_name=k) for k, v in parameters.items()}
+        parameters = self.inputs.parameters.get_dict()
 
         # Same for settings.
         if 'settings' in self.inputs:
