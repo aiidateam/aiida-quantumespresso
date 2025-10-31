@@ -145,3 +145,20 @@ def test_pp_invalid_parameters(fixture_sandbox, generate_calc_job, generate_inpu
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
     assert message in str(exception.value)
+
+
+def test_parameters_validation():
+    """Test the validation of the `parameters` input."""
+    from aiida_quantumespresso.calculations.pp import PpCalculation
+
+    builder = PpCalculation.get_builder()
+
+    parameters = {'inputpp': {'plot_num': 1}, 'plot': {'iflag': 3}}
+
+    with pytest.warns(UserWarning, match="'inputpp' should be UPPERCASE"):
+        builder.parameters = parameters
+
+    assert builder.parameters.get_dict() == {'INPUTPP': {'plot_num': 1}, 'PLOT': {'iflag': 3}}
+
+    with pytest.raises(ValueError, match="'inputpp' should be UPPERCASE"):
+        builder.parameters = orm.Dict(parameters).store()

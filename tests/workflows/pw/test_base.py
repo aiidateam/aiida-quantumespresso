@@ -300,8 +300,8 @@ def test_handle_vcrelax_recoverable_fft_significant_volume_contraction_error(gen
 def test_handle_electronic_convergence_warning(generate_workchain_pw, generate_structure):
     """Test `PwBaseWorkChain.handle_electronic_convergence_warning`."""
     inputs = generate_workchain_pw(return_inputs=True)
-    inputs['pw']['parameters']['scf_maxstep'] = 0
-    inputs['pw']['parameters']['scf_must_converge'] = False
+    inputs['pw']['parameters']['ELECTRONS']['electron_maxstep'] = 0
+    inputs['pw']['parameters']['ELECTRONS']['scf_must_converge'] = False
 
     structure = generate_structure()
 
