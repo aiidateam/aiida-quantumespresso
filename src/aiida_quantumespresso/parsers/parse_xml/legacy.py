@@ -1,41 +1,29 @@
 """Code that was written to parse the legacy XML format of Quantum ESPRESSO, which was deprecated in version 6.4."""
 
 import string
-from xml.dom.minidom import Element
+import warnings
 
+from aiida.common.warnings import AiidaDeprecationWarning
 from qe_tools import CONSTANTS
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
 
-from .parse import cell_volume
+from .parse import cell_volume, parse_xml_child_bool, parse_xml_child_integer, read_xml_card
 
 units_suffix = '_units'
 default_energy_units = 'eV'
 default_k_points_units = '1 / angstrom'
 default_length_units = 'Angstrom'
 
+warnings.warn(
+    'This module has been deprecated and will be removed in aiida-quantumespresso v5.0.\n'
+    'If you are seeing this warning, you will have to update your Quantum ESPRESSO version (v6.6 or above).',
+    AiidaDeprecationWarning,
+)
+
 
 # In the following, some functions that helps the parsing of
 # the xml file of QE v5.0.x (version below not tested)
-def read_xml_card(dom, cardname):
-    try:
-        root_node = [_ for _ in dom.childNodes if isinstance(_, Element) and _.nodeName == 'Root'][0]
-        the_card = [_ for _ in root_node.childNodes if _.nodeName == cardname][0]
-        # the_card = dom.getElementsByTagName(cardname)[0]
-        return the_card
-    except Exception as e:
-        print(e)
-        raise QEOutputParsingError(f'Error parsing tag {cardname}')
-
-
-def parse_xml_child_integer(tagname, target_tags):
-    try:
-        # a=target_tags.getElementsByTagName(tagname)[0]
-        a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
-        b = a.childNodes[0]
-        return int(b.data)
-    except Exception:
-        raise QEOutputParsingError(f'Error parsing tag {tagname} inside {target_tags.tagName}')
 
 
 def parse_xml_child_float(tagname, target_tags):
@@ -46,31 +34,6 @@ def parse_xml_child_float(tagname, target_tags):
         return float(b.data)
     except Exception:
         raise QEOutputParsingError(f'Error parsing tag {tagname} inside {target_tags.tagName}')
-
-
-def parse_xml_child_bool(tagname, target_tags):
-    try:
-        # a=target_tags.getElementsByTagName(tagname)[0]
-        a = [_ for _ in target_tags.childNodes if _.nodeName == tagname][0]
-        b = a.childNodes[0]
-        return str2bool(b.data)
-    except Exception:
-        raise QEOutputParsingError(f'Error parsing tag {tagname} inside {target_tags.tagName}')
-
-
-def str2bool(string):
-    try:
-        false_items = ['f', '0', 'false', 'no']
-        true_items = ['t', '1', 'true', 'yes']
-        string = str(string.lower().strip())
-        if string in false_items:
-            return False
-        if string in true_items:
-            return True
-        else:
-            raise QEOutputParsingError(f'Error converting string {string} to boolean value.')
-    except Exception:
-        raise QEOutputParsingError('Error converting string to boolean.')
 
 
 def parse_xml_child_str(tagname, target_tags):
