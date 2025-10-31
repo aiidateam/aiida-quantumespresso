@@ -1,11 +1,8 @@
 import contextlib
+from io import StringIO
 from xml.dom.minidom import parseString
-from xml.etree import ElementTree
 
-from aiida_quantumespresso.parsers.parse_xml.cp.legacy import parse_cp_xml_output
-from aiida_quantumespresso.parsers.parse_xml.parse import parse_xml_post_6_2
-from aiida_quantumespresso.parsers.parse_xml.pw.legacy import parse_xml_child_integer
-from aiida_quantumespresso.parsers.parse_xml.versions import QeXmlVersion, get_xml_file_version
+from aiida_quantumespresso.parsers.parse_xml.parse import parse_xml, parse_xml_child_integer
 
 
 def parse_cp_traj_stanzas(num_elements, splitlines, prepend_name, rescale=1.0):
@@ -148,12 +145,7 @@ def parse_cp_raw_output(stdout, output_xml=None, xml_counter_file=None, print_co
 
     # analyze the xml
     if output_xml is not None:
-        xml_parsed = ElementTree.ElementTree(element=ElementTree.fromstring(output_xml))
-        xml_file_version = get_xml_file_version(xml_parsed)
-        if xml_file_version == QeXmlVersion.POST_6_2:
-            xml_data, logs = parse_xml_post_6_2(xml_parsed)
-        elif xml_file_version == QeXmlVersion.PRE_6_2:
-            xml_data = parse_cp_xml_output(output_xml)
+        xml_data, _ = parse_xml(StringIO(output_xml))
     else:
         parser_warnings.append('Skipping the parsing of the xml file.')
         xml_data = {}
