@@ -23,6 +23,7 @@ howto/run_pw
 howto/error_handling
 howto/relax_structure
 howto/run_ph
+howto/run_pwbands
 howto/customize_inputs
 ```
 
