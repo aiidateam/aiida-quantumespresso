@@ -1,3 +1,4 @@
+(protocols)=
 # Protocol
 
 In the context of this package, a _protocol_ is a set of input parameters used to run a workflow.
