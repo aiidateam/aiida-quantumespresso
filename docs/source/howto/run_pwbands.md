@@ -30,7 +30,7 @@ structure = orm.StructureData(ase=bulk('Si', 'diamond', 5.4))
 builder = PwBandsWorkChain.get_builder_from_protocol(
     code=code,
     structure=structure,
-    protocol="moderate",  # choose from: fast, moderate, precise
+    protocol="balanced",  # choose from: fast, balanced, stringent
     options={
         "account": "your_account", # Change to your account if needed by your HPC provider. Otherwise, remove this line.
         "queue_name": "debug",
