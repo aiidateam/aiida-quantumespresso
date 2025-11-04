@@ -24,6 +24,7 @@ howto/error_handling
 howto/relax_structure
 howto/run_ph
 howto/run_pwbands
+howto/run_pdos
 howto/customize_inputs
 ```
 
