@@ -2,7 +2,7 @@
 
 ## Interacting with the workchain builder
 
-Workchain builder is a dictionary that specifies all the inputs of the workflow and all called calculations. It is the main object to interact with in order to change the default settings/parameters. Every workchain class includes `get_builder()` method to initialize an empty builder with the correct namespaces as well as `get_builder_from_protocol()` method returning a builder, prepopulated with default parameters defined in the simulation protocols ('fast', 'balanced' or 'stringent', cite Gabriel's paper: https://arxiv.org/pdf/2504.03962). 
+Workchain builder is a dictionary that specifies all the inputs of the workflow and all called calculations. It is the main object to interact with in order to change the default settings/parameters. Every workchain class includes `get_builder()` method to initialize an empty builder with the correct namespaces as well as `get_builder_from_protocol()` method returning a builder, prepopulated with default parameters defined in the simulation protocols ('fast', 'balanced' or 'stringent' as defined in https://arxiv.org/pdf/2504.03962).
 
 To check the builder structure in the interactive shell use the following commands for the relevant WorkChain:
 
@@ -67,7 +67,31 @@ builder.pw.parameters["SYSTEM"]["ecutwfc"] = 40.0
 
 **Crystal structure** needs to be provided using AiiDA StructureData. More information on the relevant [documentation page](https://aiida.readthedocs.io/projects/aiida-core/en/stable/topics/data_types.html#topics-data-types-materials-structure).
 
-**Pseudopotentials** have to be provided as [UpfData](https://aiida.readthedocs.io/projects/aiida-core/en/stable/topics/data_types.html#upfdata) data type. Usually they would be installed as part of the pseudopotential family via [aiida-pseudo](https://github.com/aiidateam/aiida-pseudo) package. As explained in [the package documentation](https://aiida-pseudo.readthedocs.io/en/latest/), pseudopotential families can be installed via a command line interface, either from the provided libraries ([SSSP](https://www.materialscloud.org/discover/sssp/table/efficiency) and [PseudoDojo](http://www.pseudo-dojo.org/)) or by importing from a custom archive or folder.
+**Pseudopotentials**
+
+Pseudopotentials are provided as [UpfData](https://aiida.readthedocs.io/projects/aiida-core/en/stable/topics/data_types.html#upfdata) data type. Usually they would be installed as part of the pseudopotential family via [aiida-pseudo](https://github.com/aiidateam/aiida-pseudo) package. As explained in [the package documentation](https://aiida-pseudo.readthedocs.io/en/latest/), pseudopotential families can be installed via a command line interface, either from the provided libraries ([SSSP](https://www.materialscloud.org/discover/sssp/table/efficiency) and [PseudoDojo](http://www.pseudo-dojo.org/)) or by importing from a custom archive or folder.
+
+- By default, AiiDA-QuantumESPRESSO workchains are using pseudopotentials from SSSP v1.3 Efficiency
+
+- To use a different pseudopotential family installed via AiiDA-Pseudo, pass the requred label with the `pseudo_family` keyword of `get_builder_from_protocol()`:
+
+```python
+from aiida import orm
+from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
+
+from ase.build import bulk
+
+builder = PwBaseWorkChain.get_builder_from_protocol(
+    code = orm.load_code('pw@localhost'),
+    structure = orm.StructureData(ase=bulk('Si', 'fcc', 5.43)),
+    pseudo_family = "PseudoDojo/0.4/PBEsol/SR/standard/upf"
+)
+```
+
+#TODO:
+
+- how to change cutoffs
+- setting the pseudos via family.get_pseudos https://github.com/mikibonacci/tutorials-aiida-yambo/blob/main/prerequisites/0_2_QE_starting_point.ipynb 
 
 **K-points** are specified through [KpointsData](https://aiida.readthedocs.io/projects/aiida-core/en/stable/topics/data_types.html#kpointsdata) that supports k-point meshes as well as custom k-point lists, and also features symmetry-based automatic calculation of k-point paths for electronic band structure calculation.
 
@@ -99,6 +123,44 @@ builder.metadata["options"]["resources"]["tot_num_mpiprocs"] = 12
 ```
 
 Full list of metadata available can be found at [AiiDA documentation page](link to this section of the real-world tips and tricks)
+
+## Overrides
+
+If many default inputs need to be overwritten, it is convenient to use the `overrides` keyword, provided by `get_builder_from_protocol()` function of the required workchain.
+It is necessary to arrange the custom parameters into a dictionary respecting the structure of the builder of the workchain.
+
+```python
+from aiida import orm
+from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
+
+from ase.build import bulk
+
+overrides = {
+  "pw": {
+    "parameters": {
+      "SYSTEM": {
+        "ecutrho": 300.0,
+        "ecutwfc": 40.0
+      }
+    }
+  },
+  "metadata": {
+    "options": {
+      "queue_name": "normal",
+      "resources": {
+        "num_machines": 1,
+        "tot_num_mpiprocs": 12
+      }
+    }
+  }
+}
+
+builder = PwBaseWorkChain.get_builder_from_protocol(
+    code = orm.load_code('pw@localhost'),
+    structure = orm.StructureData(ase=bulk('Si', 'fcc', 5.43)),
+    protocol='balanced'
+)
+```
 
 ## Accessing the simulation directory and all files
 
