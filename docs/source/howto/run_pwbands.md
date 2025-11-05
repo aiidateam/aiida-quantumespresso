@@ -55,7 +55,7 @@ The workchain will automatically:
 
 ### Specifying custom k-points list
 
-You can provide your own k-points instead of using SeeKpath:
+You can provide your own list of k-points instead of using SeeKpath:
 
 ```python
 from aiida import orm
