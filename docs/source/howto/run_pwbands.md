@@ -53,7 +53,7 @@ The workchain will automatically:
 
 ## Customizing the workflow
 
-### Specifying custom k-points path
+### Specifying custom k-points list
 
 You can provide your own k-points instead of using SeeKpath:
 
