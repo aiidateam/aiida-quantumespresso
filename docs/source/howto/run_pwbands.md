@@ -60,17 +60,17 @@ You can provide your own list of k-points instead of using SeeKpath:
 ```python
 from aiida import orm
 
-# Create a custom KpointsData. For example, a list of high-symmetry points:
+# Create a custom KpointsData. For example, a list of points:
 kpoints = orm.KpointsData()
 kpoints.set_kpoints([
-    [0.0, 0.0, 0.0],  # Gamma
-    [0.5, 0.0, 0.5],  # X
-    [0.5, 0.25, 0.75],  # W
+    [0.0, 0.0, 0.0],
+    [0.1, 0.0, 0.0],
+    [0.2, 0.0, 0.0],
     # ... more k-points
 ])
 
 builder.bands_kpoints = kpoints
-del builder.bands_kpoints_distance # Remove the distance input if previously set
+builder.pop('bands_kpoints_distance', None) # Remove the distance input
 ```
 In that case, you need to remove the `bands_kpoints_distance` input that was set by default by the protocol.
 
@@ -88,9 +88,9 @@ Alternatively, set the number of bands directly:
 ```python
 builder.bands.pw.parameters['SYSTEM']['nbnd'] = 50
 ```
-
-**Note:** You cannot specify both `nbands_factor` and `bands.pw.parameters.SYSTEM.nbnd`.
-
+```{note}
+You cannot specify both `nbands_factor` and `bands.pw.parameters.SYSTEM.nbnd`.
+```
 
 ---
 
