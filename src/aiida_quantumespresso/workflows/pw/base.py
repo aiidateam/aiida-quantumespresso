@@ -3,14 +3,8 @@
 from aiida import orm
 from aiida.common import AttributeDict, exceptions
 from aiida.common.lang import type_check
-from aiida.engine import (
-    BaseRestartWorkChain,
-    ExitCode,
-    ProcessHandlerReport,
-    process_handler,
-    while_,
-)
-from aiida.plugins import CalculationFactory, GroupFactory
+from aiida.engine import BaseRestartWorkChain, ExitCode, ProcessHandlerReport, process_handler, while_
+from aiida.plugins import CalculationFactory, DataFactory, GroupFactory
 
 from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import (
     create_kpoints_from_distance,
@@ -24,6 +18,12 @@ PwCalculation = CalculationFactory('quantumespresso.pw')
 SsspFamily = GroupFactory('pseudo.family.sssp')
 PseudoDojoFamily = GroupFactory('pseudo.family.pseudo_dojo')
 CutoffsPseudoPotentialFamily = GroupFactory('pseudo.family.cutoffs')
+
+try:
+    StructureData = DataFactory('atomistic.structure')
+    HAS_ATOMISTIC = True
+except exceptions.MissingEntryPointError:
+    HAS_ATOMISTIC = False
 
 
 class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
@@ -117,25 +117,16 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             211,
             'ERROR_INVALID_INPUT_AUTOMATIC_PARALLELIZATION_UNRECOGNIZED_KEY',
             message='Unrecognized keys were specified for `automatic_parallelization`.'
-            'This exit status has been deprecated as the automatic parallellization feature was removed.',
-        )
-        spec.exit_code(
-            300,
-            'ERROR_UNRECOVERABLE_FAILURE',
-            message='[deprecated] The calculation failed with an unidentified unrecoverable error.',
-        )
-        spec.exit_code(
-            310, 'ERROR_KNOWN_UNRECOVERABLE_FAILURE', message='The calculation failed with a known unrecoverable error.'
-        )
-        spec.exit_code(320, 'ERROR_INITIALIZATION_CALCULATION_FAILED', message='The initialization calculation failed.')
-        spec.exit_code(
-            501,
-            'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
-            message='Then ionic minimization cycle converged but the thresholds are exceeded in the final SCF.',
-        )
-        spec.exit_code(
-            710,
-            'WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED',
+                    'This exit status has been deprecated as the automatic parallellization feature was removed.')
+        spec.exit_code(300, 'ERROR_UNRECOVERABLE_FAILURE',
+            message='[deprecated] The calculation failed with an unidentified unrecoverable error.')
+        spec.exit_code(310, 'ERROR_KNOWN_UNRECOVERABLE_FAILURE',
+            message='The calculation failed with a known unrecoverable error.')
+        spec.exit_code(320, 'ERROR_INITIALIZATION_CALCULATION_FAILED',
+            message='The initialization calculation failed.')
+        spec.exit_code(501, 'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
+            message='Then ionic minimization cycle converged but the thresholds are exceeded in the final SCF.')
+        spec.exit_code(710, 'WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED',
             message='The electronic minimization cycle did not reach self-consistency, but `scf_must_converge` '
             'is `False` and/or `electron_maxstep` is 0.',
         )
@@ -210,6 +201,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         parameters = inputs['pw']['parameters']
 
         if overrides and 'pseudos' in overrides.get('pw', {}):
+
             pseudos = overrides['pw']['pseudos']
 
             if sorted(pseudos.keys()) != sorted(structure.get_kind_names()):
@@ -225,11 +217,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         else:
             try:
-                pseudo_set = (
-                    PseudoDojoFamily,
-                    SsspFamily,
-                    CutoffsPseudoPotentialFamily,
-                )
+                pseudo_set = (PseudoDojoFamily, SsspFamily, CutoffsPseudoPotentialFamily)
                 pseudo_family = orm.QueryBuilder().append(pseudo_set, filters={'label': pseudo_family}).one()[0]
             except exceptions.NotExistent as exception:
                 raise ValueError(
@@ -238,9 +226,8 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 ) from exception
 
             try:
-                parameters['SYSTEM']['ecutwfc'], parameters['SYSTEM']['ecutrho'] = (
-                    pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
-                )
+                parameters['SYSTEM']['ecutwfc'], parameters['SYSTEM'][
+                    'ecutrho'] = pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
                 pseudos = pseudo_family.get_pseudos(structure=structure)
             except ValueError as exception:
                 raise ValueError(
@@ -362,6 +349,26 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             kpoints = create_kpoints_from_distance(**inputs)
 
         self.ctx.inputs.kpoints = kpoints
+
+    def validate_structure(self,):
+        """Validate the structure input for the workflow.
+
+        This method checks if the structure has atomistic properties and if it is supported by the PwCalculation plugin.
+        If the structure contains unsupported properties, a new structure is generated without those properties.
+
+        Modifies:
+            self.inputs.pw.structure: Updates the structure to a new one without unsupported properties if necessary.
+        """
+        if HAS_ATOMISTIC:
+            # do we want to do this, or return a warning, or except?
+            from aiida_atomistic.data.structure.utils import \
+                check_plugin_unsupported_props  # pylint: disable=import-error
+            plugin_check = check_plugin_unsupported_props(self.inputs.pw.structure, PwCalculation.supported_properties)
+            if len(plugin_check) > 0:
+                raise NotImplementedError(
+                    f'The input structure has properties that are not supported by the PwCalculation plugin: '
+                    f'{plugin_check}. Please remove these properties or use a StructureData without them.'
+                )
 
     def set_restart_type(self, restart_type, parent_folder=None):
         """Set the restart type for the next iteration."""

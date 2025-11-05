@@ -18,12 +18,22 @@ from qe_tools.converters import get_parameters_from_cell
 from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 from aiida_quantumespresso.utils.hubbard import HubbardUtils
+from aiida_quantumespresso.utils.magnetic import MagneticUtils
 
 from .base import CalcJob
 from .helpers import QEInputValidationError
 
 LegacyUpfData = DataFactory('core.upf')
 UpfData = DataFactory('pseudo.upf')
+
+LegacyStructureData = DataFactory('core.structure')  # pylint: disable=invalid-name
+
+try:
+    StructureData = DataFactory('atomistic.structure')
+except exceptions.MissingEntryPointError:
+    structures_classes = (LegacyStructureData,)
+else:
+    structures_classes = (LegacyStructureData, StructureData)
 
 
 class BasePwCpInputGenerator(CalcJob):
@@ -94,6 +104,10 @@ class BasePwCpInputGenerator(CalcJob):
 
     _use_kpoints = False
 
+    supported_properties = [
+        'cell', 'pbc', 'sites', 'symbols', 'positions', 'kind_names', 'masses', 'weights', 'hubbard', 'tot_charge'
+    ]
+
     @classproperty
     def xml_filenames(cls):
         """Return a list of XML output filenames that can be written by a calculation.
@@ -114,38 +128,19 @@ class BasePwCpInputGenerator(CalcJob):
         spec.input('metadata.options.input_filename', valid_type=str, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=str, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)  # Override default withmpi=False
-        spec.input('structure', valid_type=orm.StructureData, help='The input structure.')
-        spec.input(
-            'parameters',
-            valid_type=orm.Dict,
-            help='The input parameters that are to be used to construct the input file.',
-        )
-        spec.input(
-            'settings',
-            valid_type=orm.Dict,
-            required=False,
-            help='Optional parameters to affect the way the calculation job and the parsing are performed.',
-        )
-        spec.input(
-            'parent_folder',
-            valid_type=orm.RemoteData,
-            required=False,
-            help='An optional working directory of a previously completed calculation to restart from.',
-        )
-        spec.input(
-            'vdw_table',
-            valid_type=orm.SinglefileData,
-            required=False,
-            help='Optional van der Waals table contained in a `SinglefileData`.',
-        )
-        spec.input_namespace(
-            'pseudos',
-            valid_type=(LegacyUpfData, UpfData),
-            dynamic=True,
-            required=True,
-            help='A mapping of `UpfData` nodes onto the kind name to which they should apply.',
-        )
-
+        spec.input('structure', valid_type=structures_classes,
+            help='The input structure.')
+        spec.input('parameters', valid_type=orm.Dict,
+            help='The input parameters that are to be used to construct the input file.')
+        spec.input('settings', valid_type=orm.Dict, required=False,
+            help='Optional parameters to affect the way the calculation job and the parsing are performed.')
+        spec.input('parent_folder', valid_type=orm.RemoteData, required=False,
+            help='An optional working directory of a previously completed calculation to restart from.')
+        spec.input('vdw_table', valid_type=orm.SinglefileData, required=False,
+            help='Optional van der Waals table contained in a `SinglefileData`.')
+        spec.input_namespace('pseudos', valid_type=(LegacyUpfData, UpfData), dynamic=True, required=True,
+            help='A mapping of `UpfData` nodes onto the kind name to which they should apply.')
+        # yapf: enable
         spec.input(
             'parallelization',
             valid_type=orm.Dict,
@@ -195,6 +190,22 @@ class BasePwCpInputGenerator(CalcJob):
         # have been excluded, and so are no longer part of the ``port_namespace``, skip the validation.
         if any(key not in port_namespace for key in ('pseudos', 'structure')):
             return
+
+        if not isinstance(value['structure'], LegacyStructureData):
+            # we have the atomistic StructureData, so we need to check if all the defined properties are supported
+            from aiida_atomistic.data.structure.utils import check_plugin_unsupported_props
+            plugin_check = check_plugin_unsupported_props(value['structure'], cls.supported_properties)
+            if len(plugin_check) > 0:
+                raise NotImplementedError(
+                    f'The input structure contains one or more unsupported properties \
+                    for this process: {plugin_check}'
+                )
+
+        if value['structure'].is_alloy or value['structure'].has_vacancies:
+            raise exceptions.InputValidationError(
+                'The structure is an alloy or has vacancies. This is not allowed for \
+                aiida-quantumespresso input structures.'
+            )
 
         # At this point, both ports are part of the namespace, and both are required so return an error message if any
         # of the two is missing.
@@ -751,10 +762,17 @@ class BasePwCpInputGenerator(CalcJob):
             kpoints_card = ''.join(kpoints_card_list)
             del kpoints_card_list
 
-        # HUBBARD CARD
-        hubbard_card = (
-            HubbardUtils(structure).get_hubbard_card() if isinstance(structure, HubbardStructureData) else None
-        )
+        # HUBBARD CARD and tot_charge
+        hubbard_card = None
+        if isinstance(structure, HubbardStructureData):
+            hubbard_card = HubbardUtils(structure).get_hubbard_card()
+        elif len(structures_classes) == 2 and not isinstance(structure, LegacyStructureData):
+            # this means that we have the atomistic StructureData.
+            hubbard_card = HubbardUtils(structure).get_hubbard_card() if 'hubbard' \
+                in structure.get_defined_properties() else None
+            if 'tot_charge' in structure.get_defined_properties():
+                tot_charge = structure.properties.tot_charge
+                input_params['SYSTEM']['tot_charge'] = tot_charge
 
         # =================== NAMELISTS AND CARDS ========================
         try:

@@ -4,10 +4,19 @@ import os
 import warnings
 
 from aiida import orm
+from aiida.common import exceptions
 from aiida.common.lang import classproperty
+from aiida.orm import StructureData as LegacyStructureData
 from aiida.plugins import factories
 
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
+
+try:
+    StructureData = factories.DataFactory('atomistic.structure')
+except exceptions.MissingEntryPointError:
+    structures_classes = (LegacyStructureData,)
+else:
+    structures_classes = (LegacyStructureData, StructureData)
 
 
 class PwCalculation(BasePwCpInputGenerator):
@@ -62,32 +71,18 @@ class PwCalculation(BasePwCpInputGenerator):
         """Define the process specification."""
         super().define(spec)
         spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.pw')
-        spec.input(
-            'metadata.options.without_xml',
-            valid_type=bool,
-            required=False,
-            help='If set to `True` the parser will not fail if the XML file is missing in the retrieved folder.',
-        )
-        spec.input('kpoints', valid_type=orm.KpointsData, help='kpoint mesh or kpoint path')
-        spec.input(
-            'hubbard_file',
-            valid_type=orm.SinglefileData,
-            required=False,
-            help='SinglefileData node containing the output Hubbard parameters from a HpCalculation',
-        )
+        spec.input('metadata.options.without_xml', valid_type=bool, required=False, help='If set to `True` the parser '
+            'will not fail if the XML file is missing in the retrieved folder.')
+        spec.input('kpoints', valid_type=orm.KpointsData,
+            help='kpoint mesh or kpoint path')
+        spec.input('hubbard_file', valid_type=structures_classes, required=False,
+            help='SinglefileData node containing the output Hubbard parameters from a HpCalculation')
         spec.inputs.validator = cls.validate_inputs
 
-        spec.output(
-            'output_parameters',
-            valid_type=orm.Dict,
-            help='The `output_parameters` output node of the successful calculation.',
-        )
-        spec.output(
-            'output_structure',
-            valid_type=orm.StructureData,
-            required=False,
-            help='The `output_structure` output node of the successful calculation if present.',
-        )
+        spec.output('output_parameters', valid_type=orm.Dict,
+            help='The `output_parameters` output node of the successful calculation.')
+        spec.output('output_structure', valid_type=structures_classes, required=False,
+            help='The `output_structure` output node of the successful calculation if present.')
         spec.output('output_trajectory', valid_type=orm.TrajectoryData, required=False)
         spec.output(
             'output_band',
