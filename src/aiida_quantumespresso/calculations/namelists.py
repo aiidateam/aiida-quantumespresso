@@ -12,6 +12,7 @@ from aiida.orm import Dict, FolderData, RemoteData, SinglefileData
 
 from aiida_quantumespresso.calculations import _lowercase_dict, _pop_parser_options, _uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+from aiida_quantumespresso.utils.validation.parameters import validate_parameters
 
 from .base import CalcJob
 
@@ -55,7 +56,11 @@ class NamelistsCalculation(CalcJob):
         if cls._default_parser is not None:
             spec.input('metadata.options.parser_name', valid_type=str, default=cls._default_parser)
         spec.input(
-            'parameters', valid_type=Dict, required=False, help='Parameters for the namelists in the input file.'
+            'parameters',
+            valid_type=Dict,
+            required=False,
+            help='Parameters for the namelists in the input file.',
+            validator=validate_parameters,
         )
         spec.input('settings', valid_type=Dict, required=False, help='Use an additional node for special settings')
         spec.input(

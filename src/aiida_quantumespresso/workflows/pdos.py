@@ -58,16 +58,26 @@ from .protocols.utils import ProtocolMixin
 
 
 def get_parameter_schema():
-    """Return the ``PdosWorkChain`` input parameter schema."""
+    """Return the ``PdosWorkChain`` input parameter schema.
+
+    Note: Both lowercase (deltae, emin, emax) and uppercase (DeltaE, Emin, Emax) are accepted
+    during the deprecation period. In v5.0, only lowercase will be accepted.
+    """
     return {
         '$schema': 'http://json-schema.org/draft-07/schema',
         'type': 'object',
-        'required': ['DeltaE'],
         'additionalProperties': False,
+        'anyOf': [
+            {'required': ['deltae']},
+            {'required': ['DeltaE']},
+        ],
         'properties': {
-            'Emin': {'description': 'min energy (eV) for DOS plot', 'type': 'number'},
-            'Emax': {'description': 'max energy (eV) for DOS plot', 'type': 'number'},
-            'DeltaE': {'description': 'energy grid step (eV)', 'type': 'number', 'minimum': 0},
+            'emin': {'description': 'min energy (eV) for DOS plot', 'type': 'number'},
+            'Emin': {'description': 'min energy (eV) for DOS plot (DEPRECATED: use emin)', 'type': 'number'},
+            'emax': {'description': 'max energy (eV) for DOS plot', 'type': 'number'},
+            'Emax': {'description': 'max energy (eV) for DOS plot (DEPRECATED: use emax)', 'type': 'number'},
+            'deltae': {'description': 'energy grid step (eV)', 'type': 'number', 'minimum': 0},
+            'DeltaE': {'description': 'energy grid step (eV) (DEPRECATED: use deltae)', 'type': 'number', 'minimum': 0},
             'ngauss': {'description': 'Type of gaussian broadening.', 'type': 'integer', 'enum': [0, 1, -1, -99]},
             'degauss': {'description': 'gaussian broadening, Ry (not eV!)', 'type': 'number', 'minimum': 0},
         },
@@ -78,12 +88,13 @@ def validate_inputs(value, _):
     """Validate the top level namespace.
 
     - Check that either the `scf` or `nscf.pw.parent_folder` inputs is provided.
-    - Check that the `Emin`, `Emax` and `DeltaE` inputs are the same for the `dos` and `projwfc` namespaces.
-    - Warn the user when both `energy_range_vs_fermi` and `Emin` and `Emax` are specified.
+    - Check that the `emin`/`Emin`, `emax`/`Emax` and `deltae`/`DeltaE` inputs are the same for the `dos` and `projwfc` namespaces.
+    - Warn the user when both `energy_range_vs_fermi` and `emin`/`Emin` and `emax`/`Emax` are specified.
     - Raise error when `nbands_factor` is specified and `nscf.pw.parameters.SYSTEM.nbnd` is also specified.
     """
     # Check that either the `scf` input or `nscf.pw.parent_folder` is provided.
     import warnings
+    from aiida.common.warnings import AiidaDeprecationWarning
 
     if 'scf' in value and 'parent_folder' in value['nscf']['pw']:
         warnings.warn(
@@ -93,15 +104,38 @@ def validate_inputs(value, _):
     elif 'scf' not in value and 'parent_folder' not in value['nscf']['pw']:
         return 'Specifying either the `scf` or `nscf.pw.parent_folder` input is required.'
 
-    for par in ['Emin', 'Emax', 'DeltaE']:
-        if value['dos']['parameters']['DOS'].get(par, None) != value['projwfc']['parameters']['PROJWFC'].get(par, None):
-            return f'The `{par}`` parameter has to be equal for the `dos` and `projwfc` inputs.'
+    # Check that energy parameters match between dos and projwfc (support both casings)
+    for par_lower, par_upper in [('emin', 'Emin'), ('emax', 'Emax'), ('deltae', 'DeltaE')]:
+        dos_params = value['dos']['parameters']['DOS']
+        projwfc_params = value['projwfc']['parameters']['PROJWFC']
+
+        # Get values, preferring lowercase but accepting uppercase
+        dos_val = dos_params.get(par_lower) or dos_params.get(par_upper)
+        projwfc_val = projwfc_params.get(par_lower) or projwfc_params.get(par_upper)
+
+        # Emit deprecation warning if uppercase is used
+        if par_upper in dos_params:
+            warnings.warn(
+                f'Using uppercase parameter `{par_upper}` in `dos.parameters.DOS` is deprecated. '
+                f'Please use lowercase `{par_lower}` instead. This will be enforced in v5.0.',
+                AiidaDeprecationWarning,
+            )
+        if par_upper in projwfc_params:
+            warnings.warn(
+                f'Using uppercase parameter `{par_upper}` in `projwfc.parameters.PROJWFC` is deprecated. '
+                f'Please use lowercase `{par_lower}` instead. This will be enforced in v5.0.',
+                AiidaDeprecationWarning,
+            )
+
+        if dos_val != projwfc_val:
+            return f'The `{par_lower}` parameter has to be equal for the `dos` and `projwfc` inputs.'
 
     if value.get('energy_range_vs_fermi', False):
-        for par in ['Emin', 'Emax']:
-            if value['dos']['parameters']['DOS'].get(par, None):
+        for par_lower, par_upper in [('emin', 'Emin'), ('emax', 'Emax')]:
+            dos_params = value['dos']['parameters']['DOS']
+            if dos_params.get(par_lower) or dos_params.get(par_upper):
                 warnings.warn(
-                    f'The `{par}` parameter and `energy_range_vs_fermi` were specified.'
+                    f'The `{par_lower}` parameter and `energy_range_vs_fermi` were specified.'
                     'The value in `energy_range_vs_fermi` will be used.'
                 )
     if 'nbands_factor' in value and 'nbnd' in value['nscf']['pw']['parameters'].base.attributes.get('SYSTEM', {}):
@@ -510,11 +544,17 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         energy_range_vs_fermi = self.inputs.get('energy_range_vs_fermi')
 
         if energy_range_vs_fermi:
-            dos_parameters['DOS']['Emin'] = energy_range_vs_fermi[0] + self.ctx.nscf_fermi
-            dos_parameters['DOS']['Emax'] = energy_range_vs_fermi[1] + self.ctx.nscf_fermi
+            # Prefer lowercase, but use uppercase if that's what was provided (for backward compatibility)
+            emin_key = 'emin' if 'emin' in dos_parameters['DOS'] or 'Emin' not in dos_parameters['DOS'] else 'Emin'
+            emax_key = 'emax' if 'emax' in dos_parameters['DOS'] or 'Emax' not in dos_parameters['DOS'] else 'Emax'
+            dos_parameters['DOS'][emin_key] = energy_range_vs_fermi[0] + self.ctx.nscf_fermi
+            dos_parameters['DOS'][emax_key] = energy_range_vs_fermi[1] + self.ctx.nscf_fermi
         else:
-            dos_parameters['DOS'].setdefault('Emin', self.ctx.nscf_emin)
-            dos_parameters['DOS'].setdefault('Emax', self.ctx.nscf_emax)
+            # Support both casings during deprecation period, prefer lowercase
+            if 'emin' not in dos_parameters['DOS'] and 'Emin' not in dos_parameters['DOS']:
+                dos_parameters['DOS']['emin'] = self.ctx.nscf_emin
+            if 'emax' not in dos_parameters['DOS'] and 'Emax' not in dos_parameters['DOS']:
+                dos_parameters['DOS']['emax'] = self.ctx.nscf_emax
 
         dos_inputs.parameters = orm.Dict(dos_parameters)
         dos_inputs['metadata']['call_link_label'] = 'dos'
@@ -528,11 +568,25 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         energy_range_vs_fermi = self.inputs.get('energy_range_vs_fermi')
 
         if energy_range_vs_fermi:
-            projwfc_parameters['PROJWFC']['Emin'] = energy_range_vs_fermi[0] + self.ctx.nscf_fermi
-            projwfc_parameters['PROJWFC']['Emax'] = energy_range_vs_fermi[1] + self.ctx.nscf_fermi
+            # Prefer lowercase, but use uppercase if that's what was provided (for backward compatibility)
+            emin_key = (
+                'emin'
+                if 'emin' in projwfc_parameters['PROJWFC'] or 'Emin' not in projwfc_parameters['PROJWFC']
+                else 'Emin'
+            )
+            emax_key = (
+                'emax'
+                if 'emax' in projwfc_parameters['PROJWFC'] or 'Emax' not in projwfc_parameters['PROJWFC']
+                else 'Emax'
+            )
+            projwfc_parameters['PROJWFC'][emin_key] = energy_range_vs_fermi[0] + self.ctx.nscf_fermi
+            projwfc_parameters['PROJWFC'][emax_key] = energy_range_vs_fermi[1] + self.ctx.nscf_fermi
         else:
-            projwfc_parameters['PROJWFC'].setdefault('Emin', self.ctx.nscf_emin)
-            projwfc_parameters['PROJWFC'].setdefault('Emax', self.ctx.nscf_emax)
+            # Support both casings during deprecation period, prefer lowercase
+            if 'emin' not in projwfc_parameters['PROJWFC'] and 'Emin' not in projwfc_parameters['PROJWFC']:
+                projwfc_parameters['PROJWFC']['emin'] = self.ctx.nscf_emin
+            if 'emax' not in projwfc_parameters['PROJWFC'] and 'Emax' not in projwfc_parameters['PROJWFC']:
+                projwfc_parameters['PROJWFC']['emax'] = self.ctx.nscf_emax
 
         projwfc_inputs.parameters = orm.Dict(projwfc_parameters)
         projwfc_inputs['metadata']['call_link_label'] = 'projwfc'

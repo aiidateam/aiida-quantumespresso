@@ -38,7 +38,7 @@ def test_matdyn_elph(fixture_sandbox, generate_calc_job, generate_inputs_matdyn,
     entry_point_name = 'quantumespresso.matdyn'
 
     inputs = generate_inputs_matdyn(parent_folder=True)
-    inputs['parameters'] = orm.Dict({'INPUT': {'la2F': True, 'dos': True}})
+    inputs['parameters'] = orm.Dict({'INPUT': {'la2f': True, 'dos': True}})
     kpoints = orm.KpointsData()
     kpoints.set_kpoints_mesh([2, 2, 2])
     inputs['kpoints'] = kpoints

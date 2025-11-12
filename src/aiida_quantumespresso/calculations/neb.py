@@ -17,6 +17,7 @@ from aiida_quantumespresso.calculations import (
 )
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+from aiida_quantumespresso.utils.validation.parameters import validate_parameters
 
 from .base import CalcJob
 
@@ -79,7 +80,9 @@ class NebCalculation(CalcJob):
             help='Ordered trajectory of all NEB images along the reaction path, including'
             'initial, intermediate, and final configurations.',
         )
-        spec.input('parameters', valid_type=orm.Dict, help='NEB-specific input parameters')
+        spec.input(
+            'parameters', valid_type=orm.Dict, help='NEB-specific input parameters', validator=validate_parameters
+        )
         spec.input(
             'settings',
             valid_type=orm.Dict,

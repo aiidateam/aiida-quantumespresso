@@ -20,9 +20,9 @@ def generate_inputs(tmp_path, fixture_localhost, fixture_code, generate_remote_d
                     'qplda': False,
                     'vxcdiag': False,
                     'vkb': False,
-                    'Emin': 0.0,
-                    'Emax': 15.0,
-                    'DeltaE': 0.001,
+                    'emin': 0.0,
+                    'emax': 15.0,
+                    'deltae': 0.001,
                 }
             }
 

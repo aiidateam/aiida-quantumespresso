@@ -18,6 +18,7 @@ from qe_tools.converters import get_parameters_from_cell
 from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
 from aiida_quantumespresso.utils.hubbard import HubbardUtils
+from aiida_quantumespresso.utils.validation.parameters import validate_parameters
 
 from .base import CalcJob
 from .helpers import QEInputValidationError
@@ -119,6 +120,7 @@ class BasePwCpInputGenerator(CalcJob):
             'parameters',
             valid_type=orm.Dict,
             help='The input parameters that are to be used to construct the input file.',
+            validator=validate_parameters,
         )
         spec.input(
             'settings',

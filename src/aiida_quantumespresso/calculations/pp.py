@@ -9,12 +9,20 @@ from aiida.common.warnings import AiidaDeprecationWarning
 
 from aiida_quantumespresso.calculations import _lowercase_dict, _uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+from aiida_quantumespresso.utils.validation.parameters import validate_parameters as validate_parameters_base
 
 from .base import CalcJob
 
 
 def validate_parameters(value, _):
-    """Validate 'parameters' dict."""
+    """Validate 'parameters' dict.
+
+    First does basic validation, then checks pp.x-specific requirements.
+    """
+    error = validate_parameters_base(value, _)
+    if error:
+        return error
+
     parameters = value.get_dict()
 
     try:

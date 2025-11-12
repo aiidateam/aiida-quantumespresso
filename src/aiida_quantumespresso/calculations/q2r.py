@@ -45,7 +45,7 @@ class Q2rCalculation(NamelistsCalculation):
         lists that are to be retrieved after job completion.
 
         After calling the method of the parent `NamelistsCalculation` class, the input parameters are checked to see
-        if the `la2F` tag is set to true. In this case the electron-phonon directory is added to the remote symlink or
+        if the `la2f` tag is set to true. In this case the electron-phonon directory is added to the remote symlink or
         copy list, depending on the settings.
 
         :param folder: a sandbox folder to temporarily write files on disk.
@@ -65,7 +65,9 @@ class Q2rCalculation(NamelistsCalculation):
 
         parent_folder = self.inputs.get('parent_folder', None)
 
-        if parent_folder is not None and 'parameters' in self.inputs and parameters.get('INPUT').get('la2F', False):
+        # Support both la2f (new) and la2F (deprecated) for deprecation
+        la2f_value = parameters.get('INPUT', {}).get('la2f', False) or parameters.get('INPUT', {}).get('la2F', False)
+        if parent_folder is not None and 'parameters' in self.inputs and la2f_value:
             symlink = settings.pop('PARENT_FOLDER_SYMLINK', False)
             remote_list = calcinfo.remote_symlink_list if symlink else calcinfo.remote_copy_list
 

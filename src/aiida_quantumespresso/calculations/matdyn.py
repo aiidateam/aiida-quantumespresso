@@ -77,10 +77,12 @@ class MatdynCalculation(NamelistsCalculation):
                 'There is no need to specify this input, and its value will be overridden.'
             )
 
-        if 'parent_folder' in value and not parameters['INPUT'].get('la2F', False):
+        # Support both la2f (new) and la2F (deprecated) during deprecation period
+        la2f_value = parameters['INPUT'].get('la2f', False) or parameters['INPUT'].get('la2F', False)
+        if 'parent_folder' in value and not la2f_value:
             return (
-                'The `parent_folder` input is only used to calculate the el-ph coefficients but `la2F` is not set '
-                'to `.true.` in input `parameters`'
+                'The `parent_folder` input is only used to calculate the el-ph coefficients but `la2f` is not set '
+                'to true in input `parameters`'
             )
 
     def generate_input_file(self, parameters):
@@ -126,7 +128,7 @@ class MatdynCalculation(NamelistsCalculation):
         lists that are to be retrieved after job completion.
 
         After calling the method of the parent `NamelistsCalculation` class, the input parameters are checked to see
-        if the `la2F` tag is set to true. In this case the remote symlink or copy list is set to the electron-phonon
+        if the `la2f` tag is set to true. In this case the remote symlink or copy list is set to the electron-phonon
         directory, depending on the settings.
 
         :param folder: a sandbox folder to temporarily write files on disk.
@@ -143,13 +145,15 @@ class MatdynCalculation(NamelistsCalculation):
             settings = {}
 
         if 'parameters' in self.inputs:
-            parameters = _uppercase_dict(self.inputs.parameters.get_dict(), dict_name='parameters')
+            parameters = self.inputs.parameters.get_dict()
         else:
             parameters = {'INPUT': {}}
 
         source = self.inputs.get('parent_folder', None)
 
-        if source is not None and parameters['INPUT'].get('la2F', False):
+        # Support both la2f (new) and la2F (deprecated) during deprecation period
+        la2f_value = parameters['INPUT'].get('la2f', False) or parameters['INPUT'].get('la2F', False)
+        if source is not None and la2f_value:
             dirpath = Path(source.get_remote_path()) / PhCalculation._FOLDER_ELECTRON_PHONON  # noqa: SLF001
             remote_list = [(source.computer.uuid, str(dirpath), PhCalculation._FOLDER_ELECTRON_PHONON)]  # noqa: SLF001
 
