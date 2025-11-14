@@ -31,13 +31,14 @@ howto/customize_inputs
 :hidden: true
 :caption: Topic guides
 topics/protocol
-topics/calculations/index
-topics/workflows/index
+topics/workflow_logic
 ```
 
 ```{toctree}
 :hidden: true
 :caption: Reference
+reference/calculations/index
+reference/workflows/index
 reference/cli/index
 ```
 
