@@ -1,6 +1,6 @@
 (howto-workflows-pdos)=
 
-# Compute Density of States (DOS) and Projected Density of States (PDOS)
+# Calculate the (projected) DOS
 
 The `PdosWorkChain` is designed to compute the total and projected density of states (DOS and PDOS) for a given structure using Quantum ESPRESSO.
 This workflow automates the sequence of calculations required and provides built-in error handling and memory management options.
