@@ -141,6 +141,6 @@ After the work chain finishes successfully, the main outputs are:
 
 
 :::{warning}
-The `Emin`, `Emax`, and `DeltaE` values in the `dos` and `projwfc` inputs must match for the workflow to run correctly.
+The `emin`, `emax`, and `deltae` values in the `dos` and `projwfc` inputs must match for the workflow to run correctly.
 :::
 
