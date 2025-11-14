@@ -1,3 +1,42 @@
+## v4.16.0
+
+### ✨ New features
+
+* `PwParser`: Add XML schema for Quantum ESPRESSO v7.5 [[9b4d3038](https://github.com/aiidateam/aiida-quantumespresso/commit/9b4d30380b4359ae018324abf9487640c8464d52)]
+* `projwfc.x`: add support for `kresolveddos` [[2d40f734](https://github.com/aiidateam/aiida-quantumespresso/commit/2d40f7341263a6ec6fbc3a2690f55bd6d27e5561)]
+
+### ❌ Deprecations
+
+* `epw.x`: add deprecation warning [[75413f17](https://github.com/aiidateam/aiida-quantumespresso/commit/75413f17df25d0a194a8b9b6fdd8b98245efa5ee)]
+* `PwBandsWorkChain`: deprecate `relax` namespace [[8fc8e9b1](https://github.com/aiidateam/aiida-quantumespresso/commit/8fc8e9b129b4bb017d1db3f40c221bf797afbff8)]
+* Parsers: deprecate legacy XML modules [[177a0ecb](https://github.com/aiidateam/aiida-quantumespresso/commit/177a0ecba31686a05c8f7cf2266110cb4555f169)]
+
+### 🐛 Bug fixes
+
+* `ProjwfcParser`: convert `bands` array into floats [[edeb4871](https://github.com/aiidateam/aiida-quantumespresso/commit/edeb4871ff476d32ce28bfa438c3489cae5c85ae)]
+* `create_kpoints_from_distance`: respect `pbc` [[a5fe348f](https://github.com/aiidateam/aiida-quantumespresso/commit/a5fe348fbd73b87fd04d9da13b79796c817ba64f)]
+
+### 📚 Documentation
+
+* Developer: add release instructions [[bfb4ccbc](https://github.com/aiidateam/aiida-quantumespresso/commit/bfb4ccbc76140b8d0fcb96202573a5e2a66d7898)]
+* AutoAPI: remove/disable (temporarily?) [[f34aaee2](https://github.com/aiidateam/aiida-quantumespresso/commit/f34aaee2c58def56821f6c72ed814464d4ac8c4b)]
+* Navbar: fix icon sizes [[bf045ab4](https://github.com/aiidateam/aiida-quantumespresso/commit/bf045ab4d4635e18a9b5caf5352520a06e31b909)]
+* Installation: add compatibility matrix [[b34df908](https://github.com/aiidateam/aiida-quantumespresso/commit/b34df9085cfcd3e0edfbd7c54ccb4327fef249db)]
+* `conf.py`: ignore missing `aiida-core` references [[2a8473f7](https://github.com/aiidateam/aiida-quantumespresso/commit/2a8473f7f926297d90f07ad9fe1af12d0d971cca)]
+
+### 🔧 Maintenance
+
+* pre-commit: switch to Ruff hook from repo [[66011756](https://github.com/aiidateam/aiida-quantumespresso/commit/66011756342144e350f5401f9e7ae08e031b2aec)]
+* tools: diversify options for developers [[236db01d](https://github.com/aiidateam/aiida-quantumespresso/commit/236db01d10710db5a0bf6fbe2d7ff8a797514565)]
+* Hatch: clean up `pre-commit` environment [[981a1c51](https://github.com/aiidateam/aiida-quantumespresso/commit/981a1c5151f382ac76ccaeb17049b77b2278ed9f)]
+* Python: support 3.13, 3.14; drop 3.9 [[ba6e081b](https://github.com/aiidateam/aiida-quantumespresso/commit/ba6e081b303e81ccbe3676555b2797ecf1d4b706)]
+* pre-commit: run on deprecated modules [[7033696a](https://github.com/aiidateam/aiida-quantumespresso/commit/7033696a1333bf73252c1cf981758cb9074a2b39)]
+
+### 🧪 Tests
+
+* Warnings: Update `pytest` and correct tests [[9376e6f4](https://github.com/aiidateam/aiida-quantumespresso/commit/9376e6f4cb7fa74f58d4b9d051546c0a0099ff41)]
+
+
 ## v4.15.0
 
 This support release for v4.X provides several new features, important improvements and bug fixes.
