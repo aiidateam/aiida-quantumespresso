@@ -14,7 +14,7 @@ pytestmark = pytest.mark.usefixtures('pseudo_family')
 def test_get_available_protocols():
     """Test ``PwBaseWorkChain.get_available_protocols``."""
     protocols = PwBaseWorkChain.get_available_protocols()
-    assert sorted(protocols.keys()) == ['balanced', 'fast', 'stringent']
+    assert sorted(protocols.keys()) == ['balanced', 'fast', 'fpmd', 'stringent']
     assert all('description' in protocol for protocol in protocols.values())
 
 
