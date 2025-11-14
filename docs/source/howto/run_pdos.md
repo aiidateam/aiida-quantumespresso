@@ -3,7 +3,7 @@
 # Calculate the (projected) DOS
 
 The `PdosWorkChain` is designed to compute the total and projected density of states (DOS and PDOS) for a given structure using Quantum ESPRESSO.
-This workflow automates the sequence of calculations required and provides built-in error handling and memory management options.
+This workflow automates the sequence of calculations required and provides built-in error handling.
 
 |                     |                                                               |
 |---------------------|---------------------------------------------------------------|
@@ -21,7 +21,7 @@ Computing DOS and PDOS requires a sequence of four calculations:
 3. **DOS calculation** (`dos.x`): Generates the total density of states from the NSCF results.
 4. **PDOS calculation** (`projwfc.x`): Computes the projected density of states by projecting wavefunctions onto atomic orbitals.
 
-The `PdosWorkChain` handles this sequence automatically and provides options for memory management when dealing with large wavefunction files.
+The `PdosWorkChain` handles this sequence automatically.
 
 ---
 
@@ -89,7 +89,7 @@ builder = PdosWorkChain.get_builder_from_protocol(
     protocol="moderate"
 )
 
-del builder.scf
+builder.pop('scf', None)
 # Provide the parent folder from the completed SCF
 builder.nscf.pw.parent_folder = scf_calc.outputs.remote_folder
 
