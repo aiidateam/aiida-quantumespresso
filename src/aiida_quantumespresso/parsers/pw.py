@@ -7,6 +7,7 @@ import numpy as np
 from aiida import orm
 from aiida.common import exceptions
 from aiida.engine import ExitCode
+from qe_tools import CONSTANTS
 
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.utils.mapping import get_logging_container
@@ -66,10 +67,18 @@ class PwParser(BaseParser):
         if not all_symmetries and 'cell' in parsed_structure:
             reduce_symmetries(parsed_parameters, parsed_structure, self.logger)
 
+        # If MD calculation, adding the MD parameters like timestep and stride
+        # to the input of `build_output_trajectory` function
+        if parameters.get('CONTROL', {}).get('calculation', 'scf') in ['md', 'vc-md']:
+            control_parameters = parameters.get('CONTROL', {})
+            md_parameters = {'dt': control_parameters.get('dt', 20), 'iprint': control_parameters.get('iprint', 1)}
+        else:
+            md_parameters = False
+
         structure = self.build_output_structure(parsed_structure)
         kpoints = self.build_output_kpoints(parsed_parameters, structure)
         bands = self.build_output_bands(parsed_bands, kpoints)
-        trajectory = self.build_output_trajectory(parsed_trajectory, structure)
+        trajectory = self.build_output_trajectory(parsed_trajectory, structure, md_parameters)
 
         # Determine whether the input kpoints were defined as a mesh or as an explicit list
         try:
@@ -428,9 +437,13 @@ class PwParser(BaseParser):
             self.exit_code_stdout = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc)
 
         # If the stdout was incomplete, most likely the job was interrupted before it could cleanly finish, so the
-        # output files are most likely corrupt and cannot be restarted from
+        # output files are most likely corrupt and cannot be restarted from except in case of MD simulations, where
+        # an output trajectory can still be extracted and the last configuration can be used to restart the
+        # calculation, although the charge densities are most likely unsalvagable
         if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs['error']:
-            self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
+            if self.get_calculation_type() not in ['md', 'vc-md']:
+                self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
+            # Not sure if I need to do something else here or just carry on
 
         # Under certain conditions, such as the XML missing or being incorrect, the structure data might be incomplete.
         # Since following code depends on it, we replace missing information taken from the input structure.
@@ -477,7 +490,7 @@ class PwParser(BaseParser):
         return convert_qe_to_aiida_structure(parsed_structure, self.node.inputs.structure)
 
     @staticmethod
-    def build_output_trajectory(parsed_trajectory, structure):
+    def build_output_trajectory(parsed_trajectory, structure, md_parameters=False):
         """Build the output trajectory from the raw parsed trajectory data.
 
         :param parsed_trajectory: the raw parsed trajectory data
@@ -512,15 +525,88 @@ class PwParser(BaseParser):
         stepids = np.arange(len(positions))
 
         trajectory = orm.TrajectoryData()
-        trajectory.set_trajectory(
-            stepids=stepids,
-            cells=cells,
-            symbols=symbols,
-            positions=positions,
-        )
 
-        for key, value in parsed_trajectory.items():
-            trajectory.set_array(key, np.array(value))
+        if not md_parameters:
+            # continue as before
+            trajectory.set_trajectory(
+                stepids=stepids,
+                cells=cells,
+                symbols=symbols,
+                positions=positions,
+            )
+
+            for key, value in parsed_trajectory.items():
+                trajectory.set_array(key, np.array(value))
+
+        else:
+            # Computing velocities at each step, since QE uses velocity-verlet-algorythm, velocities can be
+            # calculated from positions and forces at each step or a simpler definition can be used where
+            # velocity is defined as vel = (tau_new - tau_old) / 2dt for some bizzare reason in QE
+
+            dt = md_parameters.get('dt', 20.0)
+
+            # Following keys which are coming from the xml file and not the stdout are overwritten in the code:
+            # `for key, value in parsed_trajectory.items(): trajectory.set_array(key, np.array(value))`
+            # So instead of using the values that are generated from the first few lines of the
+            # `build_output_trajectory` function, which are subsequently overwritten, I pop them out here
+            # to get the correct arrays earlier.
+            # This is only a problem with MD calculations, which require velocities to be calculated.
+            # For now, I am making this bandaid fix here only in case of MD calculations, but in future
+            # we need to have a look into why the xml and stdout parsing are giving different results for these arrays.
+            if 'steps' in parsed_trajectory:
+                stepids = np.array(parsed_trajectory.pop('steps'))
+            if 'cells' in parsed_trajectory:
+                cells = np.array(parsed_trajectory.pop('cells'))
+            if 'positions' in parsed_trajectory:
+                positions = np.array(parsed_trajectory.pop('positions'))
+
+            # Using reverse velocity verlet algorythm
+            # Converting positions back to atomic units for easier calculation of velocities
+            # the parsing with `Entering Dynamics:` does not count the initial positions
+            positions_au = positions / CONSTANTS.bohr_to_ang
+
+            # I do not use the following method
+            """
+            masses = np.array([structure.get_kind(symbol).mass for symbol in symbols]).reshape(-1, 1)
+            forces_au = np.array(parsed_trajectory['forces']) * CONSTANTS.bohr_to_ang / CONSTANTS.ry_to_ev
+            accelerations = forces_au / masses / 1.e3 # 1000 is unit conversion factor
+
+            velocities_au = np.diff(positions_au[1:], axis=0) / dt - 0.5 * accelerations[:-1] * dt 
+            last_step_velocity = velocities_au[-1] + 0.5 * (accelerations[-2] + accelerations[-1]) * dt
+            velocities_au_complete = np.append(velocities_au, [last_step_velocity], axis=0)
+            """
+
+            # Using the simple subtraction that QE uses
+            velocities_au = (positions_au[2:] - positions_au[:-2]) / (2 * dt)
+            # Prepending zeros as first velocities because who cares about the initialised velocities
+            velocities_au_complete = np.insert(velocities_au, 0, np.zeros((1,) + velocities_au.shape[1:]), axis=0)
+
+            # Now one can either calculate the velocity of last step like previous implementation, but
+            # if one is using the simplified definition of velocity it doesn't make sense to use accelerations
+            # for the last step which is the most important velocity as this will be used for `dirty` restart,
+            # so it's best to drop the last positions and redo one more MD step
+
+            # QE prints everything after every step so no need to worry about strides
+            # TODO add strides option at the plugin level without using the `iprint` variable at QE level.
+            # This is essential to not waste space on redundant information.
+
+            # Dropping last element of each array
+            trajectory.set_trajectory(
+                stepids=stepids[:-1],
+                cells=cells[:-1],
+                symbols=symbols,
+                positions=positions[:-1],
+                velocities=velocities_au_complete,
+            )
+
+            # trajectory.set_array('forces', _forces_au[:-1])
+            trajectory.set_attribute('units|forces', 'eV/A')
+            trajectory.set_attribute('units|velocities', 'atomic')
+            trajectory.set_attribute('sim_time_fs', stepids[:-1].shape[0] * CONSTANTS.timeau_to_sec * 2 * 2e15 * dt)
+
+            # following can also be made to lose the last element like above
+            for key, value in parsed_trajectory.items():
+                trajectory.set_array(key, np.array(value)[:-1])
 
         return trajectory
 
