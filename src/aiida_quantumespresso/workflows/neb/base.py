@@ -167,11 +167,8 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         try:
             kpoints = self.inputs.kpoints
         except AttributeError:
-            structure = self.inputs.neb.images.get_step_structure(-1)
-            if 'pbc' in self.inputs.neb.images.get_arraynames():
-                structure.set_pbc(self.inputs.neb.images.get_array('pbc'))
             inputs = {
-                'structure': structure,
+                'structure': self.inputs.neb.images.get_step_structure(-1),
                 'distance': self.inputs.kpoints_distance,
                 'force_parity': self.inputs.get('kpoints_force_parity', orm.Bool(False)),
                 'metadata': {
