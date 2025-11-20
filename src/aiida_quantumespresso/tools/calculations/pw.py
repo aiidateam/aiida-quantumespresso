@@ -1,9 +1,15 @@
 """Tools for nodes created by running the `PwCalculation` class."""
+import numpy as np
 
 from aiida.common import AttributeDict, exceptions
 from aiida.tools.calculations.base import CalculationTools
+from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
 
 from aiida_quantumespresso.calculations.functions.create_magnetic_configuration import create_magnetic_configuration
+
+from xmlschema import XMLSchema
+from xml.etree import ElementTree
+from aiida_quantumespresso.parsers.parse_xml.parse import get_schema_filepath
 
 
 class PwCalculationTools(CalculationTools):
@@ -92,3 +98,46 @@ class PwCalculationTools(CalculationTools):
         return AttributeDict(
             {'structure': structure, 'magnetic_moments': None if non_magnetic else results['magnetic_moments']}
         )
+
+    def get_occupations_dict(self) -> dict:
+        """Return the occupations for a PwCalculation/PwBaseWorkChain node as a standard python dictionary."""
+
+        # assert first that this is a Hubbard calculation
+        try:
+            type(self._node.inputs.structure) == HubbardStructureData
+        except exceptions.NotExistent as exc:
+            raise ValueError('The input structure is not a HubbardStructureData node.') from exc
+
+        
+        try: 
+            with self._node.outputs.retrieved.base.repository.open('data-file-schema.xml') as xml_file:
+                xml_parsed = ElementTree.parse(xml_file)
+
+                schema_filepath = get_schema_filepath(xml_parsed)
+                xsd = XMLSchema(schema_filepath)
+                xml_dictionary = xsd.to_dict(xml_parsed, validation='skip')
+
+                output_matrices = {}
+                for  ientry, atom_dict in enumerate(xml_dictionary['output']['dft']['dftU']['Hubbard_ns']):
+                    atom_specie = atom_dict['@specie']
+                    shell_label = atom_dict['@label']
+                    spin = 'up' if atom_dict['@spin'] == 1 else 'down'
+                    shell_dims = atom_dict['@dims']
+                    atom_index = atom_dict['@index']
+                    occ_matrix = np.array(atom_dict['$']).reshape(shell_dims)
+
+                    atom_label = f'Atom_{atom_index}'
+
+                    if atom_label not in output_matrices:
+                        output_matrices[atom_label] = {}
+                        output_matrices[atom_label]['specie'] = atom_specie
+                        output_matrices[atom_label]['shell'] = shell_label
+                        output_matrices[atom_label]['occupation_matrix'] = {'up': {}, 'down': {}}
+                    
+                    output_matrices[atom_label]['occupation_matrix'][spin] = occ_matrix
+        except Exception as exc:
+            # raise just a warning and return None
+            print(f'Warning: could not parse occupation matrices from XML file: {exc}')
+            return None
+
+        return output_matrices
