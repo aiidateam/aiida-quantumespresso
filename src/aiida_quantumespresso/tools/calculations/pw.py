@@ -99,7 +99,7 @@ class PwCalculationTools(CalculationTools):
             {'structure': structure, 'magnetic_moments': None if non_magnetic else results['magnetic_moments']}
         )
 
-    def get_occupations_dict(self) -> dict:
+    def get_occupations(self, reshape=False) -> dict:
         """Return the occupations for a PwCalculation/PwBaseWorkChain node as a standard python dictionary."""
 
         # assert first that this is a Hubbard calculation
@@ -124,7 +124,9 @@ class PwCalculationTools(CalculationTools):
                     spin = 'up' if atom_dict['@spin'] == 1 else 'down'
                     shell_dims = atom_dict['@dims']
                     atom_index = atom_dict['@index']
-                    occ_matrix = np.array(atom_dict['$']).reshape(shell_dims)
+                    occ_matrix = np.array(atom_dict['$'])
+                    if reshape:
+                        occ_matrix = occ_matrix.reshape(shell_dims)
 
                     atom_label = f'Atom_{atom_index}'
 
@@ -139,5 +141,19 @@ class PwCalculationTools(CalculationTools):
             # raise just a warning and return None
             print(f'Warning: could not parse occupation matrices from XML file: {exc}')
             return None
+        
+        # --- Transformation to List of Dicts ---
+        final_list = []
+        for atom_label, data in output_matrices.items():
+            # Create a new dictionary for each atom in the desired format
+            atom_dict = {
+                'atom_label': atom_label,
+                # Use 'specie' key from intermediate dict, and name the output key 'atom_specie'
+                'atom_specie': data['specie'], 
+                'shell': data['shell'],
+                'occupation_matrix': data['occupation_matrix']
+            }
+            final_list.append(atom_dict)
 
-        return output_matrices
+
+        return final_list
