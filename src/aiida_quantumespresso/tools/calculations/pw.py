@@ -99,8 +99,8 @@ class PwCalculationTools(CalculationTools):
             {'structure': structure, 'magnetic_moments': None if non_magnetic else results['magnetic_moments']}
         )
 
-    def get_occupations(self, reshape=False) -> dict:
-        """Return the occupations for a PwCalculation/PwBaseWorkChain node as a standard python dictionary."""
+    def get_occupations(self, reshape=False) -> list[dict]:
+        """Return the occupations for a PwCalculation/PwBaseWorkChain node as a list of python dictionaries."""
 
         # assert first that this is a Hubbard calculation
         try:
