@@ -127,6 +127,9 @@ class NebParser(BaseParser):
             parsed_parameters = parsed_data_xml
 
             if len(parsed_structure) == 0:
+                # Before exiting with xml parse error, check if scheduler already reported an exit code.
+                if self.node.exit_status is not None:
+                    return ExitCode(self.node.exit_status, self.node.exit_message)
                 return self.exit(self.exit_codes.ERROR_OUTPUT_XML_PARSE)
             PwParser.backwards_compatibility_parameters(parsed_parameters, parsed_data_stdout)
 
