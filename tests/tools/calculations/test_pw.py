@@ -155,7 +155,7 @@ def test_get_occupations(fixture_localhost, generate_calc_job_node):
         },
     ]
 
-# --- 2. Setup Structure FIRST ---
+    # --- 2. Setup Structure  ---
     base_structure = orm.StructureData(cell=[[10, 0, 0], [0, 10, 0], [0, 0, 10]])
     base_structure.append_atom(position=(0, 0, 0), symbols='Fe')
     
@@ -187,7 +187,7 @@ def test_get_occupations(fixture_localhost, generate_calc_job_node):
     assert_nested_almost_equal(result, expected)
     
 
-# 1. Helper for Numpy comparison 
+# Helper for Numpy comparison 
 def assert_nested_almost_equal(actual, expected):
     if isinstance(expected, dict):
         assert actual.keys() == expected.keys()
