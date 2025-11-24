@@ -128,7 +128,7 @@ class PwCalculationTools(CalculationTools):
                     if reshape:
                         occ_matrix = occ_matrix.reshape(shell_dims)
 
-                    atom_label = f'Atom_{atom_index}'
+                    atom_label = atom_index
 
                     if atom_label not in output_matrices:
                         output_matrices[atom_label] = {}
