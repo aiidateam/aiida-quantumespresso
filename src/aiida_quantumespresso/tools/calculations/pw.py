@@ -146,10 +146,10 @@ class PwCalculationTools(CalculationTools):
                 # Initialize container if new
                 if atom_index not in aggregated_data:
                     aggregated_data[atom_index] = {
-                        'atom_label': atom_index,
-                        'atom_specie': entry['@specie'],
-                        'shell': entry['@label'],
-                        'occupation_matrix': {} 
+                        'atom_index': atom_index,
+                        'kind_name': entry['@specie'],
+                        'manifold': entry['@label'],
+                        'occupations': {} 
                     }
 
                 # --- LOGIC FOR THE 3 CASES ---
@@ -157,7 +157,7 @@ class PwCalculationTools(CalculationTools):
                 # Case 3: Hubbard_ns_nc 
                 # (@spin is always 1, but we treat it as a single full block)
                 if is_non_collinear:
-                    aggregated_data[atom_index]['occupation_matrix']['up-down'] = occ_matrix
+                    aggregated_data[atom_index]['occupations']['up-down'] = occ_matrix
 
                 # Case 1 & 2: Hubbard_ns
                 else:
@@ -166,12 +166,12 @@ class PwCalculationTools(CalculationTools):
                     if spin_val is None:
                         # Case 1: Hubbard_ns with no polarization (No @spin)
                         # Treat as single matrix
-                        aggregated_data[atom_index]['occupation_matrix']['up-down'] = occ_matrix
+                        aggregated_data[atom_index]['occupations']['up-down'] = occ_matrix
                     else:
                         # Case 2: Hubbard_ns with polarization (@spin is 1 or 2)
                         # Treat as dictionary with 'up'/'down'
                         spin_label = 'up' if spin_val == 1 else 'down'
                              
-                        aggregated_data[atom_index]['occupation_matrix'][spin_label] = occ_matrix
+                        aggregated_data[atom_index]['occupations'][spin_label] = occ_matrix
 
         return list(aggregated_data.values()) 

@@ -122,13 +122,13 @@ def test_get_occupations(fixture_localhost, generate_calc_job_node, data_regress
     
     for i, item in enumerate(result):
         metadata.append({
-            'atom_label': item['atom_label'],
-            'atom_specie': item['atom_specie'],
-            'shell': item['shell'],
+            'atom_index': item['atom_index'],
+            'kind_name': item['kind_name'],
+            'manifold': item['manifold'],
         })
         
         # Handle different occupation_matrix structures
-        occ_matrix = item['occupation_matrix']
+        occ_matrix = item['occupations']
         for key, val in occ_matrix.items():
             numeric_data[f'atom_{i}_{key}'] = val
     
