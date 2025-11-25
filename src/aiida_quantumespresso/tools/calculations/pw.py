@@ -100,7 +100,41 @@ class PwCalculationTools(CalculationTools):
         )
 
     def get_occupations(self, reshape=False) -> list[dict]:
-        """Return the occupations for a PwCalculation/PwBaseWorkChain node as a list of python dictionaries."""
+        """Return the occupations for a PwCalculation/PwBaseWorkChain node as a list of python dictionaries.
+        Output depends on the type of calculation (unpolarized, collinear spin-polarized, non-collinear spin-polarized).
+
+        Example of an entry in the returned list:
+        
+        Unpolarized:
+        {
+            'atom_index': 1,
+            'kind_name': 'Fe',
+            'manifold': 'd',
+            'occupations': {
+                'up-down': np.array([[...], [...], ...])
+            }
+        }
+        Collinear spin-polarized:
+        {
+            'atom_index': 1,
+            'kind_name': 'Fe',
+            'manifold': 'd',
+            'occupations': {
+                'up': np.array([[...], [...], ...]),
+                'down': np.array([[...], [...], ...])
+            }
+        }
+        Non-collinear spin-polarized:
+        {
+            'atom_index': 1,
+            'kind_name': 'Fe',
+            'manifold': 'd',
+            'occupations': {
+                'up-down': np.array([[...], [...], ...])
+            }
+        }   
+        
+        """
 
         # assert first that this is a Hubbard calculation
         # so for instance if you try to call this method on a normal pw calculation it raises a ValueError
