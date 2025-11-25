@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<qes:espresso xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:qes="http://www.quantum-espresso.org/ns/qes/qes-1.0" xsi:schemaLocation="http://www.quantum-espresso.org/ns/qes/qes-1.0 http://www.quantum-espresso.org/ns/qes/qes_250412.xsd" Units="Hartree atomic units">
+<qes:espresso xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:qes="http://www.quantum-espresso.org/ns/qes/qes-1.0" xsi:schemaLocation="http://www.quantum-espresso.org/ns/qes/qes-1.0 http://www.quantum-espresso.org/ns/qes/qes_250521.xsd" Units="Hartree atomic units">
 <!-- All quantities are in Hartree atomic units unless otherwise specified -->
   <general_info>
     <xml_format NAME="QEXSD" VERSION="24.11.04">QEXSD_24.11.04</xml_format>
