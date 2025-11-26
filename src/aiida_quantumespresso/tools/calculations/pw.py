@@ -172,10 +172,21 @@ class PwCalculationTools(CalculationTools):
             for entry in entries:
                 atom_index = entry['@index']
                 
+                # The quantum espresso matrices are always as big as the biggest shell 
+                # so if we have a d and a p orbital, the p shell matrix will also be 5x5 with zeros padding
+                # same, if we have f and d, the d will be 7x7 with zeros padding
+                # the @dims attribute for now does not reflect this
+                # so we can for now extract a dimension based on the name of the manifold
+                # 
+                #
+                # this will need to be done more intelligently (if we have Wannier orbitals there is no
+                # guarantee for the dimension of the underlying shell) or QE should made print the
+                # correct dimensions in the @dims attribute
+                actual_dim_map = {'s': 1, 'p': 3, 'd': 5, 'f': 7}
+
+
                 # Parse matrix
                 occ_matrix = np.array(entry['$'])
-                if reshape:
-                    occ_matrix = occ_matrix.reshape(entry['@dims'])
 
                 # Initialize container if new
                 if atom_index not in aggregated_data:
@@ -185,6 +196,24 @@ class PwCalculationTools(CalculationTools):
                         'manifold': entry['@label'],
                         'occupations': {} 
                     }
+                # strip the number in the manifold label to get the actual dimension
+                manifold_type = ''.join(filter(str.isalpha, entry['@label']))
+                if manifold_type in actual_dim_map.keys():
+                    actual_dim = actual_dim_map[manifold_type]
+                    if is_non_collinear:
+
+                        actual_dim *= 2  # Non-collinear has double size
+                        # print(f"Non-collinear manifold detected, doubling actual_dim to {actual_dim}")
+                else:
+                    actual_dim = entry['@dims'][0]  # Fallback to reported dimension
+                
+                # reshape to @dims get the actual_dim x actual_dim block and reshape back to linear
+                occ_matrix = occ_matrix.reshape(entry['@dims'])[:actual_dim, :actual_dim].reshape(-1)
+
+                if reshape:
+                    occ_matrix = occ_matrix.reshape((actual_dim, actual_dim))
+
+                
 
                 # --- LOGIC FOR THE 3 CASES ---
 
