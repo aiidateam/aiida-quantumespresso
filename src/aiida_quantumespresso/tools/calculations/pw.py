@@ -180,7 +180,7 @@ class PwCalculationTools(CalculationTools):
                 # 
                 #
                 # this will need to be done more intelligently (if we have Wannier orbitals there is no
-                # guarantee for the dimension of the underlying shell) or QE should made print the
+                # guarantee for the dimension of the underlying shell) or QE should made to print the
                 # correct dimensions in the @dims attribute
                 actual_dim_map = {'s': 1, 'p': 3, 'd': 5, 'f': 7}
 
@@ -212,8 +212,6 @@ class PwCalculationTools(CalculationTools):
 
                 if reshape:
                     occ_matrix = occ_matrix.reshape((actual_dim, actual_dim))
-
-                
 
                 # --- LOGIC FOR THE 3 CASES ---
 
