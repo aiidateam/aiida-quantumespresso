@@ -1,0 +1,13 @@
+occupations_metadata:
+- atom_index: 1
+  kind_name: Fe1
+  manifold: 3d
+- atom_index: 2
+  kind_name: Fe2
+  manifold: 3d
+- atom_index: 3
+  kind_name: O1
+  manifold: 2p
+- atom_index: 4
+  kind_name: O1
+  manifold: 2p
