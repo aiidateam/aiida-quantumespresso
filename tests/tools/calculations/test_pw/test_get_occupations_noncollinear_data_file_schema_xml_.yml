@@ -1,0 +1,7 @@
+occupations_metadata:
+- atom_index: 1
+  kind_name: Ni1
+  manifold: 3d
+- atom_index: 2
+  kind_name: Ni2
+  manifold: 3d
