@@ -178,19 +178,20 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
                 namespace.pw.parameters['CELL']['cell_dofree'] = 'shape'
 
             if relax_type in (RelaxType.CELL, RelaxType.POSITIONS_CELL):
-                pbc_cell_dofree_map = {
-                    (True, True, True): 'all',
-                    (True, False, False): 'x',
-                    (False, True, False): 'y',
-                    (False, False, True): 'z',
-                    (True, True, False): '2Dxy',
-                }
-                if structure.pbc in pbc_cell_dofree_map:
-                    namespace.pw.parameters['CELL']['cell_dofree'] = pbc_cell_dofree_map[structure.pbc]
-                else:
-                    raise ValueError(
-                        f'Structures with periodic boundary conditions `{structure.pbc}` are not supported.'
-                    )
+                if 'cell_dofree' not in namespace.pw.parameters.get('CELL', {}):
+                    pbc_cell_dofree_map = {
+                        (True, True, True): 'all',
+                        (True, False, False): 'x',
+                        (False, True, False): 'y',
+                        (False, False, True): 'z',
+                        (True, True, False): '2Dxy',
+                    }
+                    if structure.pbc in pbc_cell_dofree_map:
+                        namespace.pw.parameters['CELL']['cell_dofree'] = pbc_cell_dofree_map[structure.pbc]
+                    else:
+                        raise ValueError(
+                            f'Structures with periodic boundary conditions `{structure.pbc}` are not supported.'
+                        )
 
         builder = cls.get_builder()
         builder.base_relax = base_relax
@@ -405,7 +406,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
     def _fix_atomic_positions(structure, settings):
         """Fix the atomic positions, by setting the `FIXED_COORDS` key in the `settings` input node."""
         settings = settings.get_dict() if settings is not None else {}
-
-        settings['FIXED_COORDS'] = [[True, True, True]] * len(structure.sites)
+        if 'FIXED_COORDS' not in settings:
+            settings['FIXED_COORDS'] = [[True, True, True]] * len(structure.sites)
 
         return settings
