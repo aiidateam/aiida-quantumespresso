@@ -8,9 +8,9 @@ from typing import Union
 from aiida import orm
 
 VALID_QE_EXECUTABLES = [
+    'bands.x',
     'cp.x',
     'dos.x',
-    'epw.x',
     'matdyn.x',
     'neb.x',
     'ph.x',
@@ -18,6 +18,8 @@ VALID_QE_EXECUTABLES = [
     'projwfc.x',
     'pw.x',
     'pw2gw.x',
+    'pw2wannier90.x',
+    'q2r.x',
 ]
 
 
