@@ -7,6 +7,32 @@ from typing import Union
 
 from aiida import orm
 
+VALID_QE_EXECUTABLES = [
+    'cp.x',
+    'dos.x',
+    'epw.x',
+    'matdyn.x',
+    'neb.x',
+    'ph.x',
+    'pp.x',
+    'projwfc.x',
+    'pw.x',
+    'pw2gw.x',
+]
+
+
+def validate_executable_names(executables: tuple[str]) -> list[str]:
+    """Validate that the provided executable names are recognized Quantum ESPRESSO executables.
+
+    :param executables: single executable name or list of executable names
+    :return: list of invalid executable names, empty list if all are valid
+    """
+    if isinstance(executables, str):
+        executables = [executables]
+
+    invalid_executables = [exe for exe in executables if exe not in VALID_QE_EXECUTABLES]
+    return invalid_executables
+
 
 def setup_codes(
     computer: orm.Computer,
@@ -80,12 +106,23 @@ def get_executable_paths(
     computer: orm.Computer,
     prepend_text: str = '',
     directory: Union[str, None] = None,
+    ignore_missing: bool = False,
 ) -> dict:
     """Return a mapping from executable names to absolute paths on the given computer.
 
     If `directory` is provided, each path is constructed as `directory`/`executable`.
     Otherwise, the `prepend_text` is combined with `which` to locate executables in the PATH.
     """
+    if directory is not None:
+        directory = PurePosixPath(directory)
+
+        if not directory.is_absolute():
+            raise ValueError(f'Directory<{directory}> is not an absolute path.')
+
+    invalid_executables = validate_executable_names(executable_tuple)
+    if invalid_executables:
+        raise ValueError(f'Invalid Quantum ESPRESSO executables: {invalid_executables}')
+
     executable_paths = {}
 
     with computer.get_transport() as transport:
@@ -106,15 +143,12 @@ def get_executable_paths(
                         '\nDouble-check the `prepend_text` and executables and/or specify the full path with the '
                         '`directory` input.'
                     )
+                    if ignore_missing:
+                        continue
                     raise FileNotFoundError(msg)
 
                 executable_paths[executable] = PurePosixPath(stdout.strip()).as_posix()
             else:
-                directory = PurePosixPath(directory)
-
-                if not directory.is_absolute():
-                    raise ValueError(f'Directory<{directory}> is not an absolute path.')
-
                 exec_path = (directory / executable).as_posix()
 
                 if not transport.path_exists(exec_path):
