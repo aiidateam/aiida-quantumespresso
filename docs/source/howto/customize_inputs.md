@@ -141,7 +141,7 @@ from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
 
 from ase.build import bulk
 
-overrides = {
+my_overrides = {
   "pseudo_family": "PseudoDojo/0.4/PBEsol/SR/standard/upf",
   "pw": {
     "parameters": {
@@ -165,7 +165,8 @@ overrides = {
 builder = PwBaseWorkChain.get_builder_from_protocol(
     code = orm.load_code('pw@localhost'),
     structure = orm.StructureData(ase=bulk('Si', 'fcc', 5.43)),
-    protocol='balanced'
+    protocol='balanced',
+    overrides=my_overrides
 )
 ```
 
