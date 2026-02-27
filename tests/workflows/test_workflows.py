@@ -31,15 +31,6 @@ def test_base_unrecoverable_failure(generate_workchain, generate_calc_job_node, 
     process.ctx.iteration = 1
 
     result = process.inspect_process()
-    assert result is None, 'The first inspection should return `None`, i.e. the `BaseRestartWorkChain` should continue'
-
-    node = generate_calc_job_node()
-    node.set_process_state(ProcessState.FINISHED)
-    node.set_exit_status(exit_code.status)
-
-    process.ctx.children.append(node)
-    process.ctx.iteration = 2
-
-    assert process.inspect_process() == process.exit_codes.ERROR_SECOND_CONSECUTIVE_UNHANDLED_FAILURE, (
-        'The second inspection should return the proper exit code, i.e. the `BaseRestartWorkChain` should stop'
+    assert result == process.exit_codes.ERROR_UNHANDLED_FAILURE, (
+        'The inspection should return the proper exit code, i.e. the `BaseRestartWorkChain` should abort'
     )

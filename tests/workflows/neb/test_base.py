@@ -37,7 +37,7 @@ def test_handle_electronic_convergence_not_reached(generate_workchain_neb, fixtu
     assert result.do_break
 
     result = process.inspect_process()
-    assert result.status == 0
+    assert result is None
 
 
 @pytest.mark.parametrize(
@@ -137,7 +137,7 @@ def test_handle_neb_interrupted_partial_trajectory(
     assert process.ctx.inputs.parameters['PATH']['restart_mode'] == 'restart'
 
     result = process.inspect_process()
-    assert result.status == 0
+    assert result is None
 
 
 @pytest.mark.parametrize(
@@ -165,4 +165,4 @@ def test_handle_neb_cycle_exceeded_nstep_error(
     assert process.ctx.inputs.parameters['PATH']['restart_mode'] == 'restart'
     assert process.ctx.inputs.parameters['PATH']['nstep_path'] == input_nsteps * 2
     result = process.inspect_process()
-    assert result.status == 0
+    assert result is None
