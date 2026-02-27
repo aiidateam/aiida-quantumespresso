@@ -138,6 +138,10 @@ trajectory:
   - 3
   array|volume:
   - 3
+  pbc:
+  - true
+  - true
+  - true
   symbols:
   - H
   - H

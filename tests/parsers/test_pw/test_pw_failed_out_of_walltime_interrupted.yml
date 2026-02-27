@@ -212,6 +212,10 @@ output_trajectory:
   - 1
   array|steps:
   - 1
+  pbc:
+  - true
+  - true
+  - true
   symbols:
   - Si
   - Si
