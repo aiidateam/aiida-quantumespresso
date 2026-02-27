@@ -56,3 +56,7 @@ jobs:
             env:
                 AIIDA_WARN_v3: 1
             run: hatch test -v -- -s
+
+        -   name: SSH debug on failure
+            if: failure()
+            uses: mxschmitt/action-tmate@v3
