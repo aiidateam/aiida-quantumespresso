@@ -1,6 +1,7 @@
 """Utilities to manipulate the workflow input protocols."""
 
 import copy
+import inspect
 import pathlib
 import warnings
 from typing import Optional, Union
@@ -8,6 +9,7 @@ from typing import Optional, Union
 import yaml
 from aiida.common.warnings import AiidaDeprecationWarning
 from aiida.orm import StructureData
+from aiida.engine import WorkChain
 from aiida_pseudo.groups.family import PseudoPotentialFamily
 from plumpy import PortNamespace
 
@@ -130,6 +132,19 @@ class ProtocolMixin:
         Recursively checks the `overrides` dictionary against the input port namespace of the work chain, extended
         with protocol inputs, and emits warnings for any unrecognised keys.
         """
+        # Avoid duplicate warnings when calling `get_builder_from_protocol` within another `get_builder_from_protocol`
+        try:
+            caller_frame = inspect.stack(context=0)[3]  # Check the frame where `get_builder_from_protocol` is called
+            caller_class = caller_frame.frame.f_locals.get('cls')
+            # Skip the validation when
+            if (
+                caller_frame.function == 'get_builder_from_protocol'  # It is a parent `get_builder_from_protocol` call
+                and caller_class not in (None, cls)  # The caller is a different class
+                and issubclass(caller_class, WorkChain)  # The caller is a WorkChain
+            ):
+                return
+        except (IndexError, TypeError):
+            pass
 
         def port_namespace_to_dict(namespace: PortNamespace):
             """Recursively convert a PortNamespace into a nested dict structure."""
