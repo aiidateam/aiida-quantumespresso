@@ -27,3 +27,11 @@ protocols:
         description: 'Protocol to perform a relaxation at high precision at higher computational cost.'
     fast:
         description: 'Protocol to perform a relaxation at low precision at minimal computational cost for testing purposes.'
+# List of "meta inputs", which are not direct inputs of the process. Used for validation of the overrides
+meta_inputs_schema:
+    base_relax: &pw_base_meta
+        meta_parameters:
+            conv_thr_per_atom:
+            etot_conv_thr_per_atom:
+        pseudo_family:
+    base_init_relax: *pw_base_meta
