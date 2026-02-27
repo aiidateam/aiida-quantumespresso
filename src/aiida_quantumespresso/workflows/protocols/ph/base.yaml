@@ -32,3 +32,5 @@ protocols:
             parameters:
                 INPUTPH:
                     tr2_ph: 1.0e-16
+# List of "meta inputs", which are not direct inputs of the process. Used for validation of the overrides
+meta_inputs_schema: {}

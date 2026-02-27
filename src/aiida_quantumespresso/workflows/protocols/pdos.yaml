@@ -59,3 +59,11 @@ protocols:
                     deltae: 0.1
         nscf:
             kpoints_distance: 0.5
+# List of "meta inputs", which are not direct inputs of the process. Used for validation of the overrides
+meta_inputs_schema:
+    scf: &pw_base_meta
+        meta_parameters:
+            conv_thr_per_atom:
+            etot_conv_thr_per_atom:
+        pseudo_family:
+    nscf: *pw_base_meta
