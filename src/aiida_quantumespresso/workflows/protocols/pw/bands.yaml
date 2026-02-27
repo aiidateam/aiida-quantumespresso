@@ -27,3 +27,11 @@ protocols:
     fast:
         description: 'Protocol to perform a band structure calculation at low precision at minimal computational cost for testing purposes.'
         bands_kpoints_distance: 0.1
+# List of "meta inputs", which are not direct inputs of the process. Used for validation of the overrides
+meta_inputs_schema:
+    scf: &pw_base_meta
+        meta_parameters:
+            conv_thr_per_atom:
+            etot_conv_thr_per_atom:
+        pseudo_family:
+    bands: *pw_base_meta
