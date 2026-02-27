@@ -164,7 +164,14 @@ class ProtocolMixin:
                 if isinstance(value, dict) and isinstance(inputs_mapping.get(key), dict):
                     recursive_key_check(inputs_mapping[key], value, full_key)
 
-        inputs_mapping = recursive_merge(cls.get_protocol_inputs(), port_namespace_to_dict(cls.spec().inputs))
+        meta_inputs_schema = cls._load_protocol_file().get('meta_inputs_schema')
+
+        if meta_inputs_schema is None:
+            return  # We cannot validate the overrides if we don't understand the full protocol schema
+
+        # Full protocol schema = meta inputs + process inputs
+        inputs_mapping = recursive_merge(meta_inputs_schema, port_namespace_to_dict(cls.spec().inputs))
+
         recursive_key_check(inputs_mapping, overrides)
 
 

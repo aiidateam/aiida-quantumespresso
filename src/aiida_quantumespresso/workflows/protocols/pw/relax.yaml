@@ -23,3 +23,11 @@ protocols:
     fast:
         description: 'Protocol to perform a relaxation at low precision at minimal computational cost for testing purposes.'
         volume_convergence: 0.05
+# List of "meta inputs", which are not direct inputs of the process. Used for validation of the overrides
+meta_inputs_schema:
+    base: &pw_base_meta
+        meta_parameters:
+            conv_thr_per_atom:
+            etot_conv_thr_per_atom:
+        pseudo_family:
+    base_final_scf: *pw_base_meta
