@@ -52,7 +52,7 @@ def test_handle_out_of_walltime(
     assert result.do_break
 
     result = process.inspect_process()
-    assert result is None
+    assert result.status == 0
 
     if structure_changed:
         assert process.ctx.inputs.structure == output_structure
@@ -77,7 +77,7 @@ def test_handle_electronic_convergence_not_reached(generate_workchain_pw, fixtur
     assert result.do_break
 
     result = process.inspect_process()
-    assert result is None
+    assert result.status == 0
 
 
 @pytest.mark.skip('Reactivate once we have an unrecoverable failure once again.')
@@ -223,7 +223,7 @@ def test_handle_relax_recoverable_ionic_convergence_error(
     assert process.ctx.inputs.parameters['CONTROL']['restart_mode'] == 'from_scratch'
 
     result = process.inspect_process()
-    assert result is None
+    assert result.status == 0
 
 
 @pytest.mark.parametrize(
@@ -294,7 +294,7 @@ def test_handle_vcrelax_recoverable_fft_significant_volume_contraction_error(gen
     assert process.ctx.inputs.parameters['CELL']['cell_factor'] == 4
 
     result = process.inspect_process()
-    assert result is None
+    assert result.status == 0
 
 
 def test_handle_electronic_convergence_warning(generate_workchain_pw, generate_structure):

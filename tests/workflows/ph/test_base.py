@@ -91,7 +91,7 @@ def test_handle_out_of_walltime(generate_workchain_ph):
     assert result.do_break
 
     result = process.inspect_process()
-    assert result is None
+    assert result.status == 0
 
 
 def test_handle_scheduler_out_of_walltime(generate_workchain_ph):
@@ -114,7 +114,7 @@ def test_handle_scheduler_out_of_walltime(generate_workchain_ph):
     assert not process.ctx.inputs.parameters['INPUTPH']['recover']
 
     result = process.inspect_process()
-    assert result is None
+    assert result.status == 0
 
 
 def test_handle_convergence_not_reached(generate_workchain_ph):
