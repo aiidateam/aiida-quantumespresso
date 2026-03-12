@@ -45,19 +45,16 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
             'meta_convergence',
             valid_type=orm.Bool,
             default=lambda: orm.Bool(True),
-            help='If `True` the workchain will perform a meta-convergence on the cell volume.',
+            help=(
+                'If `True` the workchain will perform a meta-convergence, checking for Pulay stresses and k-point mesh'
+                ' density after each relaxation.'
+            ),
         )
         spec.input(
             'max_meta_convergence_iterations',
             valid_type=orm.Int,
             default=lambda: orm.Int(5),
             help='The maximum number of variable cell relax iterations in the meta convergence cycle.',
-        )
-        spec.input(
-            'volume_convergence',
-            valid_type=orm.Float,
-            default=lambda: orm.Float(0.01),
-            help='The volume difference threshold between two consecutive meta convergence iterations.',
         )
         spec.input(
             'clean_workdir',
