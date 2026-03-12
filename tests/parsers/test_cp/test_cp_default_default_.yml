@@ -233,6 +233,10 @@ trajectory:
   - 3
   array|volume:
   - 10
+  pbc:
+  - true
+  - true
+  - true
   symbols:
   - Si
   - Si
