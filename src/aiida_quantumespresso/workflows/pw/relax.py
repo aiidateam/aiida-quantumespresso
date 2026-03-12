@@ -155,7 +155,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
 
             if relax_type in (RelaxType.VOLUME, RelaxType.SHAPE, RelaxType.CELL):
                 namespace.pw.settings = orm.Dict(
-                    PwRelaxWorkChain._fix_atomic_positions(structure, base_relax.pw.settings)
+                    PwRelaxWorkChain._fix_atomic_positions(structure, namespace.pw.settings)
                 )
 
             if relax_type is RelaxType.NONE:
