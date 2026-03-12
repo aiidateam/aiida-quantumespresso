@@ -105,6 +105,10 @@ output_trajectory:
   - 1
   array|total_force:
   - 1
+  pbc:
+  - true
+  - true
+  - true
   symbols:
   - Si
   - Si
