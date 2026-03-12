@@ -246,7 +246,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         workchain = self.ctx.base_init_relax_workchain
 
         if not workchain.is_finished_ok:
-            self.report(f'final scf PwBaseWorkChain failed with exit status {workchain.exit_status}')
+            self.report(f'initial relax PwBaseWorkChain failed with exit status {workchain.exit_status}')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_INIT_RELAX
 
         self.ctx.current_structure = workchain.outputs.output_structure
