@@ -40,6 +40,7 @@ class BasePwCpInputGenerator(CalcJob):
     _DATAFILE_XML_POST_6_2 = 'data-file-schema.xml'
     _ENVIRON_INPUT_FILE_NAME = 'environ.in'
     _DEFAULT_IBRAV = 0
+    _ALLOWED_CONSTRAINTS = ('distance', 'angle', 'dihedral')
 
     # A mapping {flag_name: help_string} of parallelization flags
     # possible in QE codes. The flags that are actually implemented in a
@@ -220,6 +221,13 @@ class BasePwCpInputGenerator(CalcJob):
                     AiidaDeprecationWarning,
                 )
 
+            # Validate the CONSTRAINTS setting
+            constraints = settings.get('CONSTRAINTS', None)
+            for constraint in constraints['list']:
+                constraint_type = constraint.split()[0]
+                if constraint_type not in cls._ALLOWED_CONSTRAINTS:
+                    return f'Constraint {constraint_type} not allowed. Allowed constraints: {cls._ALLOWED_CONSTRAINTS}'
+            
             # Validate the FIXED_COORDS setting
             fixed_coords = settings.get('FIXED_COORDS', None)
 
@@ -749,6 +757,17 @@ class BasePwCpInputGenerator(CalcJob):
             kpoints_card = ''.join(kpoints_card_list)
             del kpoints_card_list
 
+        # ============ I prepare the CONSTRAINTS card =============
+        constraints = settings.pop('CONSTRAINTS', None)
+        if constraints is not None:
+            input_params['IONS']['ion_dynamics'] = 'fire'
+            constraints_card_list = ['CONSTRAINTS\n']
+            constraints_card_list += [f"{constraints['number']} {constraints['tolerance']}\n"]
+            for constraint in constraints['list']:
+                constraints_card_list += [f"{constraint}\n"]
+            constraints_card = ''.join(constraints_card_list)
+            del constraints_card_list
+
         # HUBBARD CARD
         hubbard_card = (
             HubbardUtils(structure).get_hubbard_card() if isinstance(structure, HubbardStructureData) else None
@@ -794,6 +813,7 @@ class BasePwCpInputGenerator(CalcJob):
         inputfile += atomic_species_card
         inputfile += atomic_positions_card
         inputfile += kpoints_card
+        inputfile += constraints_card
         inputfile += cell_parameters_card
         if hubbard_card is not None:
             inputfile += hubbard_card
