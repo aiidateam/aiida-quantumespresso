@@ -93,7 +93,8 @@ def get_executable_paths(
             if directory is None:
                 combined_prepend_text = f'{computer.get_prepend_text()}\n{prepend_text}'
                 return_value, stdout, stderr = transport.exec_command_wait(
-                    command=f'. /dev/stdin > /dev/null && which {executable}', stdin=combined_prepend_text
+                    command=f'. /dev/stdin > /dev/null && which {executable}',
+                    stdin=combined_prepend_text,
                 )
 
                 if return_value != 0 or not stdout.strip():
