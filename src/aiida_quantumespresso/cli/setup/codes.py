@@ -97,9 +97,10 @@ def setup_codes_cmd(
         echo.echo_critical(f'Computer<{computer.label}> is not yet configured for user<{user.email}>')
 
     try:
-        echo.echo_report(
-            'Locating executables on the remote computer. Depending on the connection, this may take a while...'
-        )
+        if computer.transport_type != 'core.local':
+            echo.echo_info(
+                'Locating executables on the remote computer. Depending on the connection, this may take a while...'
+            )
         executable_path_mapping = get_executable_paths(executables, computer, prepend_text, directory)
     except (FileNotFoundError, ValueError) as exc:
         echo.echo_critical(exc)
