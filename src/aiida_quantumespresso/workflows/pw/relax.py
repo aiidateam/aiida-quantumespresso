@@ -45,19 +45,16 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
             'meta_convergence',
             valid_type=orm.Bool,
             default=lambda: orm.Bool(True),
-            help='If `True` the workchain will perform a meta-convergence on the cell volume.',
+            help=(
+                'If `True` the workchain will perform a meta-convergence, checking for Pulay stresses and k-point mesh'
+                ' density after each relaxation.'
+            ),
         )
         spec.input(
             'max_meta_convergence_iterations',
             valid_type=orm.Int,
             default=lambda: orm.Int(5),
             help='The maximum number of variable cell relax iterations in the meta convergence cycle.',
-        )
-        spec.input(
-            'volume_convergence',
-            valid_type=orm.Float,
-            default=lambda: orm.Float(0.01),
-            help='The volume difference threshold between two consecutive meta convergence iterations.',
         )
         spec.input(
             'clean_workdir',
@@ -158,7 +155,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
 
             if relax_type in (RelaxType.VOLUME, RelaxType.SHAPE, RelaxType.CELL):
                 namespace.pw.settings = orm.Dict(
-                    PwRelaxWorkChain._fix_atomic_positions(structure, base_relax.pw.settings)
+                    PwRelaxWorkChain._fix_atomic_positions(structure, namespace.pw.settings)
                 )
 
             if relax_type is RelaxType.NONE:
@@ -249,7 +246,7 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         workchain = self.ctx.base_init_relax_workchain
 
         if not workchain.is_finished_ok:
-            self.report(f'final scf PwBaseWorkChain failed with exit status {workchain.exit_status}')
+            self.report(f'initial relax PwBaseWorkChain failed with exit status {workchain.exit_status}')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_INIT_RELAX
 
         self.ctx.current_structure = workchain.outputs.output_structure
