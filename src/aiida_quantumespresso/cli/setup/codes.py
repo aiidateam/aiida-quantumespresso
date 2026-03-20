@@ -6,7 +6,7 @@ from aiida.cmdline.params import arguments
 from aiida.cmdline.utils import echo
 from aiida.common.exceptions import NotExistent
 
-from aiida_quantumespresso.tools.setup import get_code_label, get_executable_paths
+from aiida_quantumespresso.tools.setup import get_code_label, get_executable_paths, VALID_QE_EXECUTABLES
 
 PREPEND_APPEND_TEMPLATE = (
     '#==========================================================================\n'
@@ -19,7 +19,7 @@ PREPEND_APPEND_TEMPLATE = (
 @click.argument(
     'executables',
     nargs=-1,
-    required=True,
+    required=False,
 )
 @click.option(
     '--directory',
@@ -62,6 +62,24 @@ PREPEND_APPEND_TEMPLATE = (
     is_flag=True,
     help='Open an editor to edit the prepend and append text.',
 )
+@click.option(
+    '--all',
+    '-a',
+    'setup_all',
+    is_flag=True,
+    help='Set up codes for all supported Quantum ESPRESSO executables.',
+)
+@click.option(
+    '--ignore-missing',
+    is_flag=True,
+    help='Ignore missing executables and do not raise an error.',
+)
+@click.option(
+    '--skip-existing',
+    '-s',
+    is_flag=True,
+    help='Skip creating codes if they already exist on the computer.',
+)
 def setup_codes_cmd(
     computer,
     executables,
@@ -70,12 +88,15 @@ def setup_codes_cmd(
     prepend_text,
     append_text,
     interactive,
+    setup_all,
+    ignore_missing,
+    skip_existing,
 ):
     """Set up codes for Quantum ESPRESSO executables.
 
     Specify the target `orm.Computer` and a single executable or a list of Quantum ESPRESSO executables to
     create codes for. You can provide multiple executables separated by a
-    space, e.g. `pw.x dos.x`.
+    space, e.g. `pw.x dos.x`. To set up codes for all supported Quantum ESPRESSO executables, use the `--all`/`-a` option.
 
     Use `--directory`/`-d` to point to the directory containing the executables.
     If not provided, the command will try to find the executables in
@@ -83,6 +104,11 @@ def setup_codes_cmd(
     need to be loaded to find the executables. This can also be done with an editor via
     the `--interactive` option.
     """
+    if bool(executables) == setup_all:
+        if setup_all:
+            echo.echo_critical('Please provide either executables or use the `--all/-a` option, not both.')
+        echo.echo_critical('Please provide at least one executable or use the `--all/-a` option to set up all codes.')
+
     if interactive:
         prepend_text = click.edit(prepend_text or PREPEND_APPEND_TEMPLATE.format('PREPEND')) or prepend_text
         prepend_text = '\n'.join([line for line in prepend_text.splitlines() if not line.strip().startswith('#=')])
@@ -96,14 +122,35 @@ def setup_codes_cmd(
     except NotExistent:
         echo.echo_critical(f'Computer<{computer.label}> is not yet configured for user<{user.email}>')
 
+    if setup_all:
+        ignore_missing = True
+        executables = VALID_QE_EXECUTABLES
+
     try:
-        executable_path_mapping = get_executable_paths(executables, computer, prepend_text, directory)
+        executable_path_mapping = get_executable_paths(executables, computer, prepend_text, directory, ignore_missing)
     except (FileNotFoundError, ValueError) as exc:
         echo.echo_critical(exc)
+
+    if ignore_missing:
+        missing = False
+        for exe in executables:
+            if exe not in executable_path_mapping:
+                echo.echo_warning(
+                    f'Executable<{exe}> not found on Computer<{computer.label}>. Skipping setup for this executable.'
+                )
+                missing = True
+        if missing:
+            echo.echo('')
 
     for executable, exec_path in executable_path_mapping.items():
         existing_label, label = get_code_label(label_template=label_template, executable=executable, computer=computer)
         if existing_label:
+            if skip_existing:
+                echo.echo_warning(
+                    f'Code<{existing_label}> for {executable} already exists on Computer<{computer.label}>. '
+                    'Skipping setup for this executable.'
+                )
+                continue
             echo.echo_warning(f'Code with label<{existing_label}> already exists on Computer<{computer.label}>.')
             if not click.confirm(f'Do you want to add another instance with label {label}?'):
                 continue
