@@ -7,10 +7,8 @@ import warnings
 from typing import Optional, Union
 
 import yaml
-from aiida.common.warnings import AiidaDeprecationWarning
 from aiida.orm import StructureData
 from aiida.engine import WorkChain
-from aiida_pseudo.groups.family import PseudoPotentialFamily
 from plumpy import PortNamespace
 
 from aiida_quantumespresso.common.types import SpinType
@@ -317,59 +315,3 @@ def get_magnetization(
             magnetization['angle2'][kind.name] = 0.0
 
     return magnetization
-
-
-def get_starting_magnetization(
-    structure: StructureData,
-    pseudo_family: PseudoPotentialFamily,
-    initial_magnetic_moments: Optional[dict] = None,
-) -> dict:
-    """Return the dictionary with starting magnetization for each kind in the structure.
-
-    :param structure: the structure.
-    :param pseudo_family: pseudopotential family.
-    :param initial_magnetic_moments: dictionary mapping each kind in the structure to its magnetic moment.
-    :returns: dictionary of starting magnetizations.
-    """
-    warnings.warn(
-        '`get_starting_magnetization` is deprecated, use `get_magnetization` instead.',
-        AiidaDeprecationWarning,
-    )
-
-    if initial_magnetic_moments is not None:
-        nkinds = len(structure.kinds)
-
-        if sorted(initial_magnetic_moments.keys()) != sorted(structure.get_kind_names()):
-            raise ValueError(f'`initial_magnetic_moments` needs one value for each of the {nkinds} kinds.')
-
-        return {
-            kind.name: initial_magnetic_moments[kind.name] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
-            for kind in structure.kinds
-        }
-
-    starting_magnetization = {}
-    try:
-        structure.has_magmom()
-    except AttributeError:
-        # Normal StructureData, no magmom in structure
-        magnetic_parameters = get_magnetization_parameters()
-
-        for kind in structure.kinds:
-            magnetic_moment = magnetic_parameters[kind.symbol]['magmom']
-
-            if magnetic_moment == 0:
-                magnetization = magnetic_parameters['default_magnetization']
-            else:
-                z_valence = pseudo_family.get_pseudo(element=kind.symbol).z_valence
-                magnetization = magnetic_moment / float(z_valence)
-
-            starting_magnetization[kind.name] = magnetization
-    else:
-        # MagneticStructureData, currently implemented in aiida_wannier90_workflows.
-        # Read magmom from structure<MagneticStructureData>
-        collinear = structure.is_collin_mag()
-        for kind in structure.kinds:
-            magmom = kind.get_magmom_coord()[0] if collinear else kind.get_magmom_coord(coord='cartesian')[2]
-            starting_magnetization[kind.name] = magmom / pseudo_family.get_pseudo(element=kind.symbol).z_valence
-
-    return starting_magnetization
