@@ -2,13 +2,10 @@
 
 import copy
 import os
-import warnings
-
 import numpy as np
 from aiida import orm
 from aiida.common import AttributeDict, CalcInfo, CodeInfo, InputValidationError
 from aiida.common.lang import classproperty
-from aiida.common.warnings import AiidaDeprecationWarning
 
 from aiida_quantumespresso.calculations import _pop_parser_options, _uppercase_dict
 from aiida_quantumespresso.calculations.pw import PwCalculation
@@ -67,8 +64,6 @@ class NebCalculation(CalcJob):
         spec.input('metadata.options.input_filename', valid_type=str, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=str, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.neb')
-        spec.input('first_structure', valid_type=orm.StructureData, help='Initial structure', required=False)
-        spec.input('last_structure', valid_type=orm.StructureData, help='Final structure', required=False)
         spec.input(
             'images',
             valid_type=orm.TrajectoryData,
@@ -172,17 +167,7 @@ class NebCalculation(CalcJob):
             return result
 
         if 'images' not in value:
-            if 'first_structure' not in value or 'last_structure' not in value:
-                return 'Either the `images` input or both `first_structure` and `last_structure` must be provided.'
-            warnings.warn(
-                'The `first_structure` and `last_structure` inputs input are deprecated'
-                'and will be removed in a future release. Use `images` instead.',
-                AiidaDeprecationWarning,
-            )
-            value['images'] = orm.TrajectoryData([value['first_structure'], value['last_structure']])
-
-        elif 'first_structure' in value or 'last_structure' in value:
-            return 'Specify either `images` or both `first_structure` and `last_structure`, but not both.'
+            return 'The `images` input is required.'
 
         num_images = len(value['images'].get_stepids())
         structure_list = [value['images'].get_step_structure(i) for i in range(num_images)]

@@ -12,6 +12,17 @@ The `ADDITIONAL_RETRIEVE_LIST` key in the `settings` has been removed, in favor 
 inputs['metadata']['options']['additional_retrieve_list'] = ['file1', 'file2']
 ```
 
+**`NebCalculation` - `first_structure` and `last_structure`**
+
+The deprecated `first_structure` and `last_structure` inputs of the `NebCalculation` have been removed.
+Pass the initial and final structures via the `images` input as a `TrajectoryData` node instead:
+
+```python
+from aiida.orm import TrajectoryData
+
+inputs['images'] = TrajectoryData([initial_structure, final_structure])
+```
+
 ## v5.0.0a1
 
 > ⚠️ This is an alpha release with several breaking changes in the API and removal of deprecated code.

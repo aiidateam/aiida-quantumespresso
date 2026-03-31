@@ -30,7 +30,7 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         """Define the process specification."""
 
         super().define(spec)
-        spec.expose_inputs(NebCalculation, namespace='neb', exclude=('pw.kpoints', 'first_structure', 'last_structure'))
+        spec.expose_inputs(NebCalculation, namespace='neb', exclude=('pw.kpoints',))
         spec.input(
             'kpoints',
             valid_type=orm.KpointsData,
