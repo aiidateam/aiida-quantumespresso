@@ -1,11 +1,8 @@
 """`CalcJob` implementation for the pp.x code of Quantum ESPRESSO."""
 
 import os
-import warnings
-
 from aiida import orm
 from aiida.common import datastructures, exceptions
-from aiida.common.warnings import AiidaDeprecationWarning
 
 from aiida_quantumespresso.calculations import _uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
@@ -112,7 +109,6 @@ class PpCalculation(CalcJob):
         spec.input('metadata.options.output_filename', valid_type=str, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.parser_name', valid_type=str, default='quantumespresso.pp')
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)
-        spec.input('metadata.options.keep_plot_file', valid_type=bool, required=False)
         spec.input('metadata.options.keep_data_files', valid_type=bool, default=False)
         spec.input('metadata.options.parse_data_files', valid_type=bool, default=True)
 
@@ -261,13 +257,6 @@ class PpCalculation(CalcJob):
         # distinguish them from one another. The `fileout` filename will be the full data filename with the `fileout`
         # value as a suffix.
         retrieve_tuples = [self._FILEOUT, (f'{self._FILPLOT}*{self._FILEOUT}', '.', 0)]
-        if 'keep_plot_file' in self.inputs.metadata.options:
-            self.inputs.metadata.options.keep_data_files = self.inputs.metadata.options.keep_plot_file
-            warnings.warn(
-                "The input parameter 'keep_plot_file' is deprecated and will be removed in version 5.0.0. "
-                "Please use 'keep_data_files' instead.",
-                AiidaDeprecationWarning,
-            )
         if self.inputs.metadata.options.keep_data_files:
             calcinfo.retrieve_list.extend(retrieve_tuples)
         # If we do not want to parse the retrieved files, temporary retrieval is meaningless

@@ -12,6 +12,15 @@ The `ADDITIONAL_RETRIEVE_LIST` key in the `settings` has been removed, in favor 
 inputs['metadata']['options']['additional_retrieve_list'] = ['file1', 'file2']
 ```
 
+**`PpCalculation` - `keep_plot_file`**
+
+The deprecated `keep_plot_file` metadata option of `PpCalculation` has been removed.
+Use `keep_data_files` instead:
+
+```python
+inputs['metadata']['options']['keep_data_files'] = True
+```
+
 **`NebCalculation` - `first_structure` and `last_structure`**
 
 The deprecated `first_structure` and `last_structure` inputs of the `NebCalculation` have been removed.
