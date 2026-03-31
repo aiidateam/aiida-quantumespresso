@@ -1,6 +1,7 @@
 """Command line scripts to launch a `NebCalculation` for testing and demonstration purposes."""
 
 import click
+from aiida import orm
 from aiida.cmdline.params import options as options_core
 from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
@@ -97,8 +98,7 @@ def launch_calculation(
 
     inputs = {
         'code': code,
-        'first_structure': structures[0],
-        'last_structure': structures[1],
+        'images': orm.TrajectoryData([structures[0], structures[1]]),
         'pw': {
             'pseudos': pseudo_family.get_pseudos(structure=structures[0]),
             'kpoints': kpoints_mesh,
