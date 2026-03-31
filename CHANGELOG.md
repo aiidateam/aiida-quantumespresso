@@ -32,6 +32,35 @@ from aiida.orm import TrajectoryData
 inputs['images'] = TrajectoryData([initial_structure, final_structure])
 ```
 
+**`get_starting_magnetization`**
+
+> [!NOTE]
+> Both `get_starting_magnetization` and `get_magnetization` were never intended to be public API, but used as utility methods for the (public) `.get_builder_from_protocol()` methods.
+> However, since we have not strictly defined our public API yet, a deprecation warning was added for `get_starting_magnetization`, and we add a migration guide here.
+
+The deprecated `get_starting_magnetization` function has been removed, use `get_magnetization` instead.
+Note that the interface has changed: rather than a `PseudoPotentialFamily` object, `get_magnetization` takes a `z_valences` dictionary mapping element symbols to their valence:
+
+```python
+from aiida_quantumespresso.workflows.protocols.utils import get_magnetization
+
+z_valences = {"Si": 4, "O": 6, ...}
+
+magnetization = get_magnetization(structure, z_valences, initial_magnetic_moments)
+```
+
+You can still construct the `z_valences` from a `PseudoPotentialFamily` group, for example:
+
+
+```python
+pseudo_family = orm.load_group('SSSP/1.3/PBEsol/efficiency')
+
+z_valences = {
+    kind.symbol: pseudo_family.get_pseudo(element=kind.symbol).z_valence
+    for kind in structure.kinds
+}
+```
+
 ## v5.0.0a1
 
 > ⚠️ This is an alpha release with several breaking changes in the API and removal of deprecated code.
