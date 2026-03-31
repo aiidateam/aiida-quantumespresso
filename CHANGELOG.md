@@ -1,3 +1,22 @@
+## v4.17.0
+
+### ✨ New features
+
+* PwTools: add method to parse and return occupation matrices  [[91e08d5](https://github.com/aiidateam/aiida-quantumespresso/commit/91e08d54daf22e0c45de86e95db60377760f2d04)]
+
+### 👌 Improvements
+
+* CLI: add note for remote computers to `setup codes` [[336d5aa](https://github.com/aiidateam/aiida-quantumespresso/commit/336d5aaca37b6c7ab2fa4e5ce45f18d52fcb5ead)]
+
+### 🐛 Bug fixes
+
+* Protocols: fix spurious validation for meta inputs in `overrides` [[1e23bde](https://github.com/aiidateam/aiida-quantumespresso/commit/1e23bde21f08a48b95133d84da9c12a1b434092b)]
+* Protocols: prevent duplicate validation warnings [[f2770e8](https://github.com/aiidateam/aiida-quantumespresso/commit/f2770e8ca95cc7863d8c76fa15246bee45aa3907)]
+
+### 🧪 Tests
+
+* Tests: update fixtures for `aiida-core` v2.8 breaking changes [[086050f](https://github.com/aiidateam/aiida-quantumespresso/commit/086050f2bd8543d8686ec21d4aece2b7e33ce80d)]
+
 ## v4.16.0
 
 ### ✨ New features
