@@ -4,10 +4,8 @@ These codes typically only require a few namelists (plus possibly some text afte
 """
 
 import pathlib
-import warnings
 
 from aiida.common import datastructures, exceptions
-from aiida.common.warnings import AiidaDeprecationWarning
 from aiida.orm import Dict, FolderData, RemoteData, SinglefileData
 
 from aiida_quantumespresso.calculations import _pop_parser_options, _uppercase_dict
@@ -164,12 +162,6 @@ class NamelistsCalculation(CalcJob):
         """
         if 'settings' in self.inputs:
             settings = _uppercase_dict(self.inputs.settings.get_dict(), dict_name='settings')
-            if 'ADDITIONAL_RETRIEVE_LIST' in settings:
-                warnings.warn(
-                    'The key `ADDITIONAL_RETRIEVE_LIST` in the settings input is deprecated and will be removed in '
-                    'the future. Use the `CalcJob.metadata.options.additional_retrieve_list` input instead.',
-                    AiidaDeprecationWarning,
-                )
         else:
             settings = {}
 
@@ -230,7 +222,6 @@ class NamelistsCalculation(CalcJob):
         # Retrieve by default the output file and the xml file
         calcinfo.retrieve_list = []
         calcinfo.retrieve_list.append(self.inputs.metadata.options.output_filename)
-        calcinfo.retrieve_list += settings.pop('ADDITIONAL_RETRIEVE_LIST', [])
         calcinfo.retrieve_list += self._internal_retrieve_list
 
         calcinfo.retrieve_temporary_list = self._retrieve_temporary_list

@@ -294,12 +294,6 @@ class NebCalculation(CalcJob):
         # Convert settings dictionary to have uppercase keys, or create an empty one if none was given.
         if 'settings' in self.inputs:
             settings_dict = _uppercase_dict(self.inputs.settings.get_dict(), dict_name='settings')
-            if 'ADDITIONAL_RETRIEVE_LIST' in settings_dict:
-                warnings.warn(
-                    'The key `ADDITIONAL_RETRIEVE_LIST` in the settings input is deprecated and will be removed in '
-                    'the future. Use the `CalcJob.metadata.options.additional_retrieve_list` input instead.',
-                    AiidaDeprecationWarning,
-                )
         else:
             settings_dict = {}
 
@@ -441,7 +435,6 @@ class NebCalculation(CalcJob):
         for xml_filepath in self.xml_filepaths:
             calcinfo.retrieve_list.append([xml_filepath, '.', 3])
 
-        calcinfo.retrieve_list += settings_dict.pop('ADDITIONAL_RETRIEVE_LIST', [])
         calcinfo.retrieve_list += self._internal_retrieve_list
 
         # We might still have parser options in the settings dictionary: pop them.

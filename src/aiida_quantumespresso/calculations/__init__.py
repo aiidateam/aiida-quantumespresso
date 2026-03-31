@@ -213,13 +213,6 @@ class BasePwCpInputGenerator(CalcJob):
         if 'settings' in value:
             settings = _uppercase_dict(value['settings'].get_dict(), dict_name='settings')
 
-            if 'ADDITIONAL_RETRIEVE_LIST' in settings:
-                warnings.warn(
-                    'The key `ADDITIONAL_RETRIEVE_LIST` in the settings input is deprecated and will be removed in '
-                    'the future. Use the `CalcJob.metadata.options.additional_retrieve_list` input instead.',
-                    AiidaDeprecationWarning,
-                )
-
             # Validate the FIXED_COORDS setting
             fixed_coords = settings.get('FIXED_COORDS', None)
 
@@ -393,7 +386,6 @@ class BasePwCpInputGenerator(CalcJob):
         calcinfo.retrieve_list.append(self.metadata.options.output_filename)
         calcinfo.retrieve_list.append(self._CRASH_FILE)
         calcinfo.retrieve_list.extend(self.xml_filepaths)
-        calcinfo.retrieve_list += settings.pop('ADDITIONAL_RETRIEVE_LIST', [])
         calcinfo.retrieve_list += self._internal_retrieve_list
 
         # Retrieve the k-point directories with the xml files to the temporary folder

@@ -1,12 +1,10 @@
 """Plugin to create a Quantum Espresso ph.x input file."""
 
 import os
-import warnings
 
 import numpy as np
 from aiida import orm
 from aiida.common import datastructures, exceptions
-from aiida.common.warnings import AiidaDeprecationWarning
 
 from aiida_quantumespresso.calculations import _uppercase_dict
 from aiida_quantumespresso.calculations.pw import PwCalculation
@@ -129,12 +127,6 @@ class PhCalculation(CalcJob):
 
         if 'settings' in self.inputs:
             settings = _uppercase_dict(self.inputs.settings.get_dict(), dict_name='settings')
-            if 'ADDITIONAL_RETRIEVE_LIST' in settings:
-                warnings.warn(
-                    'The key `ADDITIONAL_RETRIEVE_LIST` in the settings input is deprecated and will be removed in '
-                    'the future. Use the `CalcJob.metadata.options.additional_retrieve_list` input instead.',
-                    AiidaDeprecationWarning,
-                )
         else:
             settings = {}
 
@@ -399,8 +391,6 @@ class PhCalculation(CalcJob):
         calcinfo.retrieve_list.append(self.metadata.options.output_filename)
         calcinfo.retrieve_list.append(self._FOLDER_DYNAMICAL_MATRIX)
         calcinfo.retrieve_list.append(os.path.join(filepath_xml_tensor, self._OUTPUT_XML_TENSOR_FILE_NAME))
-        calcinfo.retrieve_list += settings.pop('ADDITIONAL_RETRIEVE_LIST', [])
-
         if settings:
             unknown_keys = ', '.join(list(settings.keys()))
             raise exceptions.InputValidationError(f'`settings` contained unexpected keys: {unknown_keys}')
