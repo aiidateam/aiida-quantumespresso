@@ -1,3 +1,17 @@
+## Unreleased
+
+### Migration guide
+
+#### Deprecations
+
+**`ADDITIONAL_RETRIEVE_LIST`**
+
+The `ADDITIONAL_RETRIEVE_LIST` key in the `settings` has been removed, in favor of the `additional_retrieve_list` option for all `CalcJob` classes in `aiida-core`:
+
+```python
+inputs['metadata']['options']['additional_retrieve_list'] = ['file1', 'file2']
+```
+
 ## v5.0.0a1
 
 > ⚠️ This is an alpha release with several breaking changes in the API and removal of deprecated code.
