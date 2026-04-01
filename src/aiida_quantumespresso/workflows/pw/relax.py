@@ -9,6 +9,7 @@ from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance i
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.common.types import RelaxType
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
+from aiida_quantumespresso.utils.validation.trajectory import verify_convergence_stress
 from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
 
 from ..protocols.utils import ProtocolMixin
@@ -283,9 +284,21 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
 
         base_relax_workchain = self.ctx.base_relax_workchains[-1]
 
-        # If the last work chain still found Pulay stresses in the final SCF, continue
-        pulay_exit_status = PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF.status
-        if base_relax_workchain.exit_status == pulay_exit_status:
+        if (
+            base_relax_workchain.exit_status
+            == PwCalculation.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF.status
+        ):
+            # Check whether the pressure overshoot is within a 10% tolerance of the threshold
+            if verify_convergence_stress(
+                trajectory=base_relax_workchain.outputs.output_trajectory,
+                threshold=self.ctx.relax_inputs.pw.parameters.get('CELL', {}).get('press_conv_thr', 0.5) * 1.1,
+                reference_pressure=self.ctx.relax_inputs.pw.parameters.get('CELL', {}).get('press', 0.0),
+            ):
+                self.report(
+                    'Final SCF pressure exceeded but within 10% tolerance of threshold, considering structure converged.'
+                )
+                return False
+
             self.report('Pulay stresses still present, running another geometry optimization.')
             return True
 
