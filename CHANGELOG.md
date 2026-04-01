@@ -1,20 +1,54 @@
-## v5.0.0a1
+## v5.0.0rc1
 
-> ⚠️ This is an alpha release with several breaking changes in the API and removal of deprecated code.
-  A full changelog with a migration guide will be provided once we're ready with the stable release.
+> [!WARNING]
+> This is a release candidate with several breaking changes.
 
-### ‼️ Breaking changes
+This major release adapts the `PwRelaxWorkChain`, removes relaxation from the `PwBandsWorkChain`, enforces consistent `parameters` casing, moves XSpectra/XPS and EPW to dedicated packages, and removes all previously deprecated API.
+It also adds significant new documentation, including how-to guides for the main work chains.
+See the [migration guide](https://aiida-quantumespresso.readthedocs.io/en/latest/reference/migration.html) for details on how to update your code.
 
-* ‼️ `PwRelaxWorkChain`: Revisit work chain logic [[830aef3](https://github.com/aiidateam/aiida-quantumespresso/commit/830aef35445e8c6d596e54651c9a891ce6b4b77e)]
-* ‼️ Remove all code related to XSpectra & XPS [[1e3ea1e](https://github.com/aiidateam/aiida-quantumespresso/commit/1e3ea1e1ea67dff5d781e86a1afea41e4ec7ac3d)]
+### 💥 Breaking changes
 
-### 🧪 Tests
+* `PwRelaxWorkChain`: Revisit work chain logic [[830aef3](https://github.com/aiidateam/aiida-quantumespresso/commit/830aef35445e8c6d596e54651c9a891ce6b4b77e)]
+* Remove all code related to XSpectra & XPS [[1e3ea1e](https://github.com/aiidateam/aiida-quantumespresso/commit/1e3ea1e1ea67dff5d781e86a1afea41e4ec7ac3d)]
+* Remove EPW-related content [[63fee4d](https://github.com/aiidateam/aiida-quantumespresso/commit/63fee4db01cc25ad7ecaec0b958ee661d2ec3de6)]
+* `PwRelaxWorkChain`: remove `volume_convergence` input [[a31934e](https://github.com/aiidateam/aiida-quantumespresso/commit/a31934eda0d0fa2867f4fa6c5fe1c10ff97821b6)]
+* `PwBandsWorkChain`: remove relaxation [[6450d7c](https://github.com/aiidateam/aiida-quantumespresso/commit/6450d7c52c84521ff8d44ad219fff40501e2035b)]
+* `parameters`: enforce consistent casing [[10e10f6](https://github.com/aiidateam/aiida-quantumespresso/commit/10e10f6c17a053da2f9e8b6629fe611fdb69ebab)]
+* Parsers: Remove legacy code [[661cda4](https://github.com/aiidateam/aiida-quantumespresso/commit/661cda4cd911019d13d8a16450c89d0e895bdd0f)]
+* Calculations: Remove `ADDITIONAL_RETRIEVE_LIST` setting [[23072e1](https://github.com/aiidateam/aiida-quantumespresso/commit/23072e17b66ff3918553a59974e1cf3302f8227a)]
+* `PpCalculation`: Remove `keep_plot_file` option [[25e7dcc](https://github.com/aiidateam/aiida-quantumespresso/commit/25e7dccf9c1585b6d43a5ee0be3d65ca71f9972d)]
+* `NebCalculation`: Remove `first_structure`/`last_structure` inputs [[c4da42a](https://github.com/aiidateam/aiida-quantumespresso/commit/c4da42ac8d875dcd8272c56c0e531c570a5542e9)]
+* Protocols: Remove `get_starting_magnetization` function [[673a970](https://github.com/aiidateam/aiida-quantumespresso/commit/673a970f2094d38b44036be4849fa5242d17c513)]
+* XPS: remove leftover protocol file [[f3c9f44](https://github.com/aiidateam/aiida-quantumespresso/commit/f3c9f44e3d8ab33921ab837102975bbbd363871a)]
 
-* 🧪 Update `PwParser` fixtures to QE 6.6 XML output [[a5637b3](https://github.com/aiidateam/aiida-quantumespresso/commit/a5637b3abafd88a770ec01687adff05f9ca07505)]
+### 🐛 Bug fixes
 
-### ♻️ Refactor
+* `PwRelaxWorkChain`: Fix meta-convergence [[e54465b](https://github.com/aiidateam/aiida-quantumespresso/commit/e54465bd68f84ffc145683d21da4ee9e3dc30616)]
+* `PwRelaxWorkChain`: fix incorrect report in `inspect_init_relax` [[1c8df78](https://github.com/aiidateam/aiida-quantumespresso/commit/1c8df780aff931d8a0f3d37b94e0e6dbced41e01)]
+* `PwRelaxWorkChain`: fix settings passed to `_fix_atomic_positions` [[287c71c](https://github.com/aiidateam/aiida-quantumespresso/commit/287c71c3be52ee8af610cba3c2eafb9e1ceac980)]
 
-* ♻️ `PwParser`: primarily parse from XML instead of `stdout` [[fdb03d1](https://github.com/aiidateam/aiida-quantumespresso/commit/fdb03d1cd9618a59da545c4e2eb85e3e09f18361)]
+### 📚 Documentation
+
+* Docs: Add v5.0.0 migration guide [[1b80920](https://github.com/aiidateam/aiida-quantumespresso/commit/1b809205560dbcefc3dbe49c451872c96a73c0ee)]
+* Workflow logic: add `PwBaseWorkChain` error handlers [[ef0b7ae](https://github.com/aiidateam/aiida-quantumespresso/commit/ef0b7aea92a780ba7cd1e46b02b9c730dd9b5434)]
+* Add how-to documentation for `PwRelaxWorkChain` [[a92d556](https://github.com/aiidateam/aiida-quantumespresso/commit/a92d5564b578f1322adb1b46452630bac33acc82)]
+* `PwBandsWorkChain`: add how-to section [[9412e50](https://github.com/aiidateam/aiida-quantumespresso/commit/9412e503f43be32fa747f58e253a4c1ab975d251)]
+* `PdosWorkChain`: add how-to section [[1341c41](https://github.com/aiidateam/aiida-quantumespresso/commit/1341c4181280aae906ac944a284947f4c30459e5)]
+* Add basic `PwBaseWorkChain` documentation [[75223dc](https://github.com/aiidateam/aiida-quantumespresso/commit/75223dc319f0743bea5472c93cfee80888539ba9)]
+* Topics: add first version of "protocols" page [[b4773c7](https://github.com/aiidateam/aiida-quantumespresso/commit/b4773c7065b6f7835875c33ceaca6228f09b0cec)]
+* Topics/Reference: reorganise content [[9e2498b](https://github.com/aiidateam/aiida-quantumespresso/commit/9e2498b6092e1537ede56ad5fcf0a056a59b79cf)]
+* Reorganise How-to sections [[13a8c23](https://github.com/aiidateam/aiida-quantumespresso/commit/13a8c23887c1b7d37f9460c991bce2d5c31d308a)]
+* `README.md`: trim down and refer to documentation [[f1aba6a](https://github.com/aiidateam/aiida-quantumespresso/commit/f1aba6afe34a1e6fb68e37dbff38584e6a4f73d3)]
+* Add `t.IO` to `nitpick_ignore` [[6e385c8](https://github.com/aiidateam/aiida-quantumespresso/commit/6e385c819aad825c332b658eb60311eacc0e3936)]
+
+### 🔧 Maintenance
+
+* CD: Update workflow to use Hatch and trusted publishing [[946f9ca](https://github.com/aiidateam/aiida-quantumespresso/commit/946f9ca947b951cddd7eb956af14441908643a8c)]
+* CI: use Hatch for nightly build [[f6aa347](https://github.com/aiidateam/aiida-quantumespresso/commit/f6aa3473481258ec8f229cc72464ee99e1387292)]
+* `nightly`: switch from Hatch to `uv` for test installation [[d0e5a27](https://github.com/aiidateam/aiida-quantumespresso/commit/d0e5a2793dc5b5567e9d4fa930a1a6adfe062bd5)]
+* Add `.git-blame-ignore-revs` file [[3467d99](https://github.com/aiidateam/aiida-quantumespresso/commit/3467d99ff08c1f948e37226dcc41a25973ae15f9)]
+* `PwRelaxWorkChain`: minor fixes to (doc)strings [[9befc48](https://github.com/aiidateam/aiida-quantumespresso/commit/9befc48f403b38fa844eb5faec8e9d7752fe3793)]
 
 ## v4.17.0
 
