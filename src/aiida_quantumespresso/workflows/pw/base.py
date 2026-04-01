@@ -567,7 +567,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         Convergence reached in `vc-relax` except thresholds exceeded in final scf: consider as converged.
         """
         self.ctx.is_finished = True
-        action = 'ionic convergence thresholds met except in final scf: consider structure relaxed.'
+        action = 'consider structure final, but report exit code.'
         self.report_error_handled(calculation, action)
         self.results()  # Call the results method to attach the output nodes
         return ProcessHandlerReport(True, self.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF)

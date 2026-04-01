@@ -162,7 +162,7 @@ class PwCalculation(BasePwCpInputGenerator):
         spec.exit_code(
             501,
             'ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF',
-            message='Then ionic minimization cycle converged but the thresholds are exceeded in the final SCF.',
+            message='The ionic minimization cycle converged but the thresholds are exceeded in the final SCF.',
         )
         spec.exit_code(
             502,
