@@ -250,9 +250,20 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         parameters['CONTROL']['etot_conv_thr'] = natoms * meta_parameters['etot_conv_thr_per_atom']
         parameters['ELECTRONS']['conv_thr'] = natoms * meta_parameters['conv_thr_per_atom']
 
-        # If the structure is 2D periodic in the x-y plane, we set assume_isolate to `2D`
-        if structure.pbc == (True, True, False):
-            parameters['SYSTEM']['assume_isolated'] = '2D'
+        pbc_assume_isolated_map = {
+            (True, True, True): None,
+            (True, True, False): '2D',
+        }
+        if structure.pbc not in pbc_assume_isolated_map:
+            raise ValueError(
+                f'Structures with periodic boundary conditions `{structure.pbc}` are not '
+                'supported. `PwBaseWorkChain` only supports fully periodic '
+                '`(True, True, True)` structures and 2D structures periodic in the '
+                'x-y plane `(True, True, False)`'
+            )
+        assume_isolated = pbc_assume_isolated_map[structure.pbc]
+        if assume_isolated is not None:
+            parameters['SYSTEM']['assume_isolated'] = assume_isolated
 
         if electronic_type is ElectronicType.INSULATOR:
             parameters['SYSTEM']['occupations'] = 'fixed'
