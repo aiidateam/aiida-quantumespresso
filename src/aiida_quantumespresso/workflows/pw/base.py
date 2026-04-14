@@ -1,4 +1,5 @@
 """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts."""
+import warnings
 
 from aiida import orm
 from aiida.common import AttributeDict, exceptions
@@ -250,9 +251,23 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         parameters['CONTROL']['etot_conv_thr'] = natoms * meta_parameters['etot_conv_thr_per_atom']
         parameters['ELECTRONS']['conv_thr'] = natoms * meta_parameters['conv_thr_per_atom']
 
-        # If the structure is 2D periodic in the x-y plane, we set assume_isolate to `2D`
-        if structure.pbc == (True, True, False):
-            parameters['SYSTEM']['assume_isolated'] = '2D'
+        pbc_parameter_overrides = {
+            (True, True, False): {'SYSTEM': {'assume_isolated': '2D'}},
+        }
+        if structure.pbc.count(True) == 3:
+            # 3D
+            pass
+        else:
+            # OD, 1D, or 2D
+            if structure.pbc.count(True) == 2 and structure.pbc not in pbc_parameter_overrides:
+                raise ValueError(
+                    f'2D-periodic structures must be periodic in the x-y plane, got `{structure.pbc}`.'
+                )
+            warnings.warn(
+                f'This protocol was developed for fully periodic (i.e. 3D) systems. Use `overrides` to provide '
+                'any relevant keywords for handling aperiodicity, and proceed with caution.'
+            )
+        parameters = recursive_merge(parameters, pbc_parameter_overrides.get(structure.pbc, {}))
 
         if electronic_type is ElectronicType.INSULATOR:
             parameters['SYSTEM']['occupations'] = 'fixed'
