@@ -1,4 +1,5 @@
 """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts."""
+import warnings
 
 from aiida import orm
 from aiida.common import AttributeDict, exceptions
@@ -250,20 +251,23 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         parameters['CONTROL']['etot_conv_thr'] = natoms * meta_parameters['etot_conv_thr_per_atom']
         parameters['ELECTRONS']['conv_thr'] = natoms * meta_parameters['conv_thr_per_atom']
 
-        pbc_assume_isolated_map = {
-            (True, True, True): None,
-            (True, True, False): '2D',
+        pbc_parameter_overrides = {
+            (True, True, False): {'SYSTEM': {'assume_isolated': '2D'}},
         }
-        if structure.pbc not in pbc_assume_isolated_map:
-            raise ValueError(
-                f'Structures with periodic boundary conditions `{structure.pbc}` are not '
-                'supported. `PwBaseWorkChain` only supports fully periodic '
-                '`(True, True, True)` structures and 2D structures periodic in the '
-                'x-y plane `(True, True, False)`'
+        if structure.pbc.count(True) == 3:
+            # 3D
+            pass
+        else:
+            # OD, 1D, or 2D
+            if structure.pbc.count(True) == 2 and structure.pbc not in pbc_parameter_overrides:
+                raise ValueError(
+                    f'2D-periodic structures must be periodic in the x-y plane, got `{structure.pbc}`.'
+                )
+            warnings.warn(
+                f'This protocol was developed for fully periodic (i.e. 3D) systems. Use `overrides` to provide '
+                'any relevant keywords for handling aperiodicity, and proceed with caution.'
             )
-        assume_isolated = pbc_assume_isolated_map[structure.pbc]
-        if assume_isolated is not None:
-            parameters['SYSTEM']['assume_isolated'] = assume_isolated
+        parameters = recursive_merge(parameters, pbc_parameter_overrides.get(structure.pbc, {}))
 
         if electronic_type is ElectronicType.INSULATOR:
             parameters['SYSTEM']['occupations'] = 'fixed'
