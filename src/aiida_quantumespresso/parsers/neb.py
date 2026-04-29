@@ -155,6 +155,7 @@ class NebParser(BaseParser):
             cells=np.array(cells),
             symbols=symbols,
             positions=np.array(positions),
+            pbc=structure_data.pbc,
         )
         self.out('output_trajectory', trajectory)
 
