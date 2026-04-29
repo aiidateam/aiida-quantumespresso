@@ -259,23 +259,25 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             parameters['SYSTEM'].pop('degauss')
             parameters['SYSTEM'].pop('smearing')
 
-        magnetization = get_magnetization(
-            structure=structure,
-            z_valences={kind.name: pseudos[kind.name].z_valence for kind in structure.kinds},
-            initial_magnetic_moments=initial_magnetic_moments,
-            spin_type=spin_type,
-        )
-        if spin_type is SpinType.COLLINEAR:
+        if spin_type in [SpinType.COLLINEAR, SpinType.SPIN_ORBIT, SpinType.NON_COLLINEAR]:
+            magnetization = get_magnetization(
+                structure=structure,
+                z_valences={kind.name: pseudos[kind.name].z_valence for kind in structure.kinds},
+                initial_magnetic_moments=initial_magnetic_moments,
+                spin_type=spin_type,
+            )
             parameters['SYSTEM']['starting_magnetization'] = magnetization['starting_magnetization']
-            parameters['SYSTEM']['nspin'] = 2
 
-        if spin_type in [SpinType.SPIN_ORBIT, SpinType.NON_COLLINEAR]:
-            parameters['SYSTEM']['starting_magnetization'] = magnetization['starting_magnetization']
-            parameters['SYSTEM']['angle1'] = magnetization['angle1']
-            parameters['SYSTEM']['angle2'] = magnetization['angle2']
-            parameters['SYSTEM']['noncolin'] = True
-            parameters['SYSTEM']['nspin'] = 4
-            if spin_type == SpinType.SPIN_ORBIT:
+            if spin_type is SpinType.COLLINEAR:
+                parameters['SYSTEM']['nspin'] = 2
+
+            if spin_type in [SpinType.SPIN_ORBIT, SpinType.NON_COLLINEAR]:
+                parameters['SYSTEM']['angle1'] = magnetization['angle1']
+                parameters['SYSTEM']['angle2'] = magnetization['angle2']
+                parameters['SYSTEM']['noncolin'] = True
+                parameters['SYSTEM']['nspin'] = 4
+
+            if spin_type is SpinType.SPIN_ORBIT:
                 parameters['SYSTEM']['lspinorb'] = True
 
         # If overrides are provided, they are considered absolute
