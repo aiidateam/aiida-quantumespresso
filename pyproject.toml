@@ -86,6 +86,9 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 [project.entry-points.'aiida.tools.calculations']
 'quantumespresso.pw' = 'aiida_quantumespresso.tools.calculations.pw:PwCalculationTools'
 
+[project.entry-points.'aiida.calculations.monitors']
+'quantumespresso.accuracy_stuck' = 'aiida_quantumespresso.tools.monitors.accuracy_stuck:monitor'
+
 [project.entry-points.'aiida.tools.data.orbitals']
 'spinorbithydrogen' = 'aiida_quantumespresso.tools.data.orbital.spinorbithydrogen:SpinorbitHydrogenOrbital'
 'noncollinearhydrogen' = 'aiida_quantumespresso.tools.data.orbital.noncollinearhydrogen:NoncollinearHydrogenOrbital'
