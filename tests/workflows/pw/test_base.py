@@ -116,17 +116,12 @@ def test_handle_diagonalization_errors(generate_workchain_pw, exit_code):
 
     result = process.handle_diagonalization_errors(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
-    assert process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] == 'ppcg'
+    assert process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] == 'cg'
     assert result.do_break
 
     result = process.handle_diagonalization_errors(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
     assert process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] == 'paro'
-    assert result.do_break
-
-    result = process.handle_diagonalization_errors(process.ctx.children[-1])
-    assert isinstance(result, ProcessHandlerReport)
-    assert process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] == 'cg'
     assert result.do_break
 
     result = process.inspect_process()
@@ -150,12 +145,7 @@ def test_handle_diagonalization_errors_not_from_david(generate_workchain_pw, exi
     process = generate_workchain_pw(exit_code=exit_code)
     process.setup()
 
-    process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = 'ppcg'
-
-    result = process.handle_diagonalization_errors(process.ctx.children[-1])
-    assert isinstance(result, ProcessHandlerReport)
-    assert process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] == 'david'
-    assert result.do_break
+    process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] = 'cg'
 
     result = process.handle_diagonalization_errors(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
@@ -164,7 +154,7 @@ def test_handle_diagonalization_errors_not_from_david(generate_workchain_pw, exi
 
     result = process.handle_diagonalization_errors(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
-    assert process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] == 'cg'
+    assert process.ctx.inputs.parameters['ELECTRONS']['diagonalization'] == 'david'
     assert result.do_break
 
     result = process.inspect_process()
