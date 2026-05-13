@@ -243,7 +243,7 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         if 'diagonalizations' not in self.ctx:
             # Initialize a list to track diagonalisations that haven't been tried in reverse order or preference
-            self.ctx.diagonalizations = [value for value in ['cg', 'paro', 'ppcg', 'david'] if value != current.lower()]
+            self.ctx.diagonalizations = [value for value in ['cg', 'paro', 'david'] if value != current.lower()]
 
         try:
             new = self.ctx.diagonalizations.pop()
