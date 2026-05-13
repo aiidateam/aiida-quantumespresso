@@ -49,6 +49,11 @@ jobs:
             with:
                 python-version: ${{ matrix.python-version }}
 
+        -   name: Install Python dependencies (with aiida-core@main)
+            id: install
+            run: |
+                python -m pip  install -e .[tests] aiida-core[atomic_tools]@git+https://github.com/edan-bainglass/aiida-core.git@fix-node-serialization
+
         -   name: Install Hatch
             run: python -m pip install hatch
 
