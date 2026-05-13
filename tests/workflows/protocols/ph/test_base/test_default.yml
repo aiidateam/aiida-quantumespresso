@@ -1,7 +1,7 @@
 clean_workdir: false
 max_iterations: 5
 ph:
-  code: test.quantumespresso.ph@localhost
+  code: test.quantumespresso.ph
   metadata:
     options:
       max_wallclock_seconds: 43200
