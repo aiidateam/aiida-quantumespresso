@@ -87,7 +87,7 @@ class MatdynParser(BaseParser):
         return self.exit(logs=logs)
 
 
-def parse_raw_matdyn_phonon_file(phonon_frequencies):
+def parse_raw_matdyn_phonon_file(phonon_frequencies: str) -> dict:
     """Parses the phonon frequencies file.
 
     :param phonon_frequencies: phonon frequencies file from the matdyn calculation
@@ -98,57 +98,78 @@ def parse_raw_matdyn_phonon_file(phonon_frequencies):
          * phonon_bands: BandsData object with the bands for each kpoint
     """
     import re
-
     import numpy as np
 
     parsed_data = {}
     parsed_data['warnings'] = []
 
-    # extract numbere of bands and kpoints
-    try:
-        num_bands = int(phonon_frequencies.split('=')[1].split(',')[0])
-        num_kpoints = int(phonon_frequencies.split('=')[2].split('/')[0])
-        parsed_data['num_kpoints'] = num_kpoints
-    except (ValueError, IndexError):
+    lines = phonon_frequencies.splitlines()
+
+    # extract number of bands and kpoints from the header
+    # example header line: " &plot nbnd=   6, nks=   1 /"
+    header_pattern = re.compile(r'\s*&plot\s+nbnd=\s*(\d+),\s+nks=\s*(\d+)\s*/')
+    header_match = re.match(header_pattern, lines.pop(0))
+    if not header_match:
         parsed_data['warnings'].append('Number of bands or kpoints unreadable in phonon frequencies file')
         return parsed_data
+    num_bands = int(header_match.group(1))
+    num_kpoints = int(header_match.group(2))
+    parsed_data['num_kpoints'] = num_kpoints
 
     # initialize array of frequencies
     freq_matrix = np.zeros((num_kpoints, num_bands))
 
-    split_data = phonon_frequencies.split()
-    # discard the header of the file
-    raw_data = split_data[split_data.index('/') + 1 :]
+    # In the file, each kpoint block consists of:
+    # 1 line with kpoint coordinates (optionally followed by weight)
+    # one or more lines with frequencies
+    # (maybe up to 6 frequencies per line but it can vary so won't assume that)
 
-    # try to improve matdyn deficiencies
-    corrected_data = []
-    for b in raw_data:
-        try:
-            corrected_data.append(float(b))
-        except ValueError:
-            # case in which there are two frequencies attached like -1204.1234-1020.536
-            if '-' in b:
-                c = re.split('(-)', b)
-                d = [i for i in c if i != '']
-                for i in range(0, len(d), 2):  # d should have an even number of elements
-                    corrected_data.append(float(d[i] + d[i + 1]))
-            else:
-                # I don't know what to do
-                parsed_data['warnings'].append('Bad formatting of frequencies')
+    # The blocks will be processed in a loop over the number of kpoints
+    # and frequencies will be gradually extracted until the expected number of bands is reached.
+
+    # regex patterns
+    # kpoint line ex: "            0.000000  0.000000  0.000000"
+    # or with weight: "            0.500000  0.288675  0.000000  0.000000"
+    kpoint_pattern = re.compile(r'\s+([-+]?\d+\.\d+)\s+([-+]?\d+\.\d+)\s+([-+]?\d+\.\d+)(?:\s+([-+]?\d+\.\d+))?')
+    # frequency line ex: " -148.6347 -124.2795   46.3694  100.8722  110.9098  132.1670"
+    # or with attached signs: " -148.70828-124.2696   46.2846  100.8707  110.9253  132.1867"
+    frequency_pattern = re.compile(r'\s*([-+]?\d+\.\d+)')
+
+    for kpt_index in range(num_kpoints):
+        if not lines:
+            parsed_data['warnings'].append('Unexpected end of file while reading kpoints')
+            return parsed_data
+
+        kpt_line = lines.pop(0)
+        if not re.match(kpoint_pattern, kpt_line):
+            parsed_data['warnings'].append(f'Invalid kpoint line format: "{kpt_line}"')
+            return parsed_data
+
+        freq_count = 0
+        while freq_count < num_bands:
+            if not lines:
+                parsed_data['warnings'].append('Unexpected end of file while reading frequencies')
                 return parsed_data
 
-    counter = 3
-    for i in range(num_kpoints):
-        for j in range(num_bands):
-            try:
-                freq_matrix[i, j] = corrected_data[counter] * CONSTANTS.invcm_to_THz  # from cm-1 to THz
-            except ValueError:
-                parsed_data['warnings'].append('Error while parsing the frequencies')
-            except IndexError:
-                parsed_data['warnings'].append('Error while parsing the frequencies, dimension exceeded')
+            freq_line = lines.pop(0)
+            freq_matches = re.findall(frequency_pattern, freq_line)
+            if not freq_matches:
+                parsed_data['warnings'].append(f'Invalid frequency line format: "{freq_line}"')
                 return parsed_data
-            counter += 1
-        counter += 3  # move past the kpoint coordinates
+
+            for freq_str in freq_matches:
+                if freq_count < num_bands:
+                    try:
+                        freq_matrix[kpt_index, freq_count] = (
+                            float(freq_str) * CONSTANTS.invcm_to_THz
+                        )  # from cm-1 to THz
+                    except ValueError:
+                        parsed_data['warnings'].append('Error while parsing the frequencies')
+                        return parsed_data
+                    freq_count += 1
+                else:
+                    parsed_data['warnings'].append('More frequencies than expected for a kpoint')
+                    break
 
     parsed_data['phonon_bands'] = freq_matrix
 
