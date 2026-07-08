@@ -100,6 +100,9 @@ class ProtocolMixin:
             'core.slurm',
             'core.pbspro',
             'core.torque',
+            # HyperQueueJobResource accepts the num_machines/num_mpiprocs_per_machine
+            # backward-compatibility shape and derives num_cpus from it.
+            'hyperqueue',
         ):
             new_options.setdefault('resources', {}).setdefault('num_machines', 1)
         if scheduler_type in ('core.sge',):
