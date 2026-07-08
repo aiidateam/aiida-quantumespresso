@@ -87,7 +87,7 @@ def serialize_builder():
             return data.value
 
         if isinstance(data, AbstractCode):
-            return data.full_label
+            return data.label
 
         if isinstance(data, Dict):
             return data.get_dict()

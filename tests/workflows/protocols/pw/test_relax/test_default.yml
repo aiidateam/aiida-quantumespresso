@@ -3,7 +3,7 @@ base_init_relax:
   kpoints_force_parity: false
   max_iterations: 5
   pw:
-    code: test.quantumespresso.pw@localhost
+    code: test.quantumespresso.pw
     metadata:
       options:
         max_wallclock_seconds: 43200
@@ -39,7 +39,7 @@ base_relax:
   kpoints_force_parity: false
   max_iterations: 5
   pw:
-    code: test.quantumespresso.pw@localhost
+    code: test.quantumespresso.pw
     metadata:
       options:
         max_wallclock_seconds: 43200

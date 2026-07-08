@@ -248,6 +248,7 @@ class CpParser(BaseParser):
                 positions=raw_trajectory['positions_ordered'],
                 times=raw_trajectory['times'],
                 velocities=raw_trajectory['velocities_ordered'],
+                pbc=input_structure.pbc,
             )
 
             # eventually set the forces
