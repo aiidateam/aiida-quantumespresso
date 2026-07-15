@@ -30,10 +30,19 @@ def test_matdyn_default(fixture_localhost, generate_calc_job_node, generate_pars
     assert not orm.Log.collection.get_logs_for(node)
     assert 'output_parameters' in results
     assert 'output_phonon_bands' in results
+
+    # Pop `pbc{1,2,3}` attributes that aiida-core >=2.9 adds to `BandsData.base.attributes.all`
+    # (see aiida-core commit f4560285, unreleased at the time of writing). Assert they are
+    # `False`/`None` so both aiida-core versions pass.
+    bands_attrs = dict(results['output_phonon_bands'].base.attributes.all)
+
+    for key in ('pbc1', 'pbc2', 'pbc3'):
+        assert bands_attrs.pop(key, None) in (False, None)
+
     data_regression.check(
         {
             'output_parameters': results['output_parameters'].get_dict(),
-            'output_phonon_bands': results['output_phonon_bands'].base.attributes.all,
+            'output_phonon_bands': bands_attrs,
         }
     )
 
