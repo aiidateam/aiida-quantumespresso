@@ -254,17 +254,14 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         pbc_parameter_overrides = {
             (True, True, False): {'SYSTEM': {'assume_isolated': '2D'}},
         }
-        if structure.pbc.count(True) == 3:
-            # 3D
-            pass
-        else:
-            # OD, 1D, or 2D
+        if structure.pbc != (True, True, True):
+            # 0D, 1D, or 2D
             if structure.pbc.count(True) == 2 and structure.pbc not in pbc_parameter_overrides:
                 raise ValueError(
                     f'2D-periodic structures must be periodic in the x-y plane, got `{structure.pbc}`.'
                 )
             warnings.warn(
-                f'This protocol was developed for fully periodic (i.e. 3D) systems. Use `overrides` to provide '
+                'This protocol was developed for fully periodic (i.e. 3D) systems. Use `overrides` to provide '
                 'any relevant keywords for handling aperiodicity, and proceed with caution.'
             )
         parameters = recursive_merge(parameters, pbc_parameter_overrides.get(structure.pbc, {}))
