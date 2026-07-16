@@ -202,7 +202,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         meta_parameters = inputs.pop('meta_parameters')
         pseudo_family = inputs.pop('pseudo_family')
 
-        if spin_type is SpinType.SPIN_ORBIT and overrides is not None and 'pseudo_family' not in overrides:
+        if spin_type is SpinType.SPIN_ORBIT and 'pseudo_family' not in (overrides or {}):
             pseudo_family = 'PseudoDojo/0.4/PBEsol/FR/standard/upf'
 
         natoms = len(structure.sites)
