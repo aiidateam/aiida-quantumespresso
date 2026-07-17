@@ -100,6 +100,7 @@ class ProtocolMixin:
             'core.slurm',
             'core.pbspro',
             'core.torque',
+            'hyperqueue',
         ):
             new_options.setdefault('resources', {}).setdefault('num_machines', 1)
         if scheduler_type in ('core.sge',):

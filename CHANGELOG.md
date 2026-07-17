@@ -1,9 +1,9 @@
-## v5.0.0rc1
+## v5.0.0
 
 > [!WARNING]
-> This is a release candidate with several breaking changes.
+> This is a major release with several breaking changes.
 
-This major release adapts the `PwRelaxWorkChain`, removes relaxation from the `PwBandsWorkChain`, enforces consistent `parameters` casing, moves XSpectra/XPS and EPW to dedicated packages, and removes all previously deprecated API.
+This release adapts the `PwRelaxWorkChain`, removes relaxation from the `PwBandsWorkChain`, enforces consistent `parameters` casing, moves XSpectra/XPS and EPW to dedicated packages, and removes all previously deprecated API.
 It also adds significant new documentation, including how-to guides for the main work chains.
 See the [migration guide](https://aiida-quantumespresso.readthedocs.io/en/latest/reference/migration.html) for details on how to update your code.
 
@@ -22,8 +22,15 @@ See the [migration guide](https://aiida-quantumespresso.readthedocs.io/en/latest
 * Protocols: Remove `get_starting_magnetization` function [[673a970](https://github.com/aiidateam/aiida-quantumespresso/commit/673a970f2094d38b44036be4849fa5242d17c513)]
 * XPS: remove leftover protocol file [[f3c9f44](https://github.com/aiidateam/aiida-quantumespresso/commit/f3c9f44e3d8ab33921ab837102975bbbd363871a)]
 
+### 📦 Dependencies
+
+* Bump `aiida-core` lower bound to `~=2.8` [[70f5e745](https://github.com/aiidateam/aiida-quantumespresso/commit/70f5e74529ca7e42b68adfdaa22179fda67bcaf4)]
+
 ### 🐛 Bug fixes
 
+* `Pw/NebBaseWorkChain`: drop `ppcg` from fallback list [[aa437739](https://github.com/aiidateam/aiida-quantumespresso/commit/aa437739ef243a5e2a5b44bf006ba81a4ef5a5b2)]
+* `PwBaseWorkChain`: only build magnetization for spin cases [[7a6c1204](https://github.com/aiidateam/aiida-quantumespresso/commit/7a6c1204b8ce1c69fb3804a911fae6886f63fd60)]
+* Parsers: pass `pbc` to `TrajectoryData.set_trajectory` [[2d26c649](https://github.com/aiidateam/aiida-quantumespresso/commit/2d26c649f459f1c6f54b4de9995309103f9be771)]
 * `PwRelaxWorkChain`: Fix meta-convergence [[e54465b](https://github.com/aiidateam/aiida-quantumespresso/commit/e54465bd68f84ffc145683d21da4ee9e3dc30616)]
 * `PwRelaxWorkChain`: fix incorrect report in `inspect_init_relax` [[1c8df78](https://github.com/aiidateam/aiida-quantumespresso/commit/1c8df780aff931d8a0f3d37b94e0e6dbced41e01)]
 * `PwRelaxWorkChain`: fix settings passed to `_fix_atomic_positions` [[287c71c](https://github.com/aiidateam/aiida-quantumespresso/commit/287c71c3be52ee8af610cba3c2eafb9e1ceac980)]
@@ -58,6 +65,8 @@ See the [migration guide](https://aiida-quantumespresso.readthedocs.io/en/latest
 
 ### 👌 Improvements
 
+* `PwRelaxWorkChain`: tolerate Pulay failure in initial relax [[eade0544](https://github.com/aiidateam/aiida-quantumespresso/commit/eade05441d11c16532e378579ddb76aa55abf758)]
+* `PwRelaxWorkChain`: check if final SCF pressure is within tolerance [[adea97b2](https://github.com/aiidateam/aiida-quantumespresso/commit/adea97b236e141860b6acc987dc2fee064d18735)]
 * CLI: add note for remote computers to `setup codes` [[336d5aa](https://github.com/aiidateam/aiida-quantumespresso/commit/336d5aaca37b6c7ab2fa4e5ce45f18d52fcb5ead)]
 
 ### 🐛 Bug fixes

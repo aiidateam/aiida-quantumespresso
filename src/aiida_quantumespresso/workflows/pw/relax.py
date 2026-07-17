@@ -246,7 +246,10 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
         """Inspect the result of the initial relax `PwBaseWorkChain`."""
         workchain = self.ctx.base_init_relax_workchain
 
-        if not workchain.is_finished_ok:
+        # The following list of `PwBaseWorkChain` exit status should not interrupt the work chain
+        acceptable_statuses = ['ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF']
+
+        if workchain.is_failed and workchain.exit_status not in PwBaseWorkChain.get_exit_statuses(acceptable_statuses):
             self.report(f'initial relax PwBaseWorkChain failed with exit status {workchain.exit_status}')
             return self.exit_codes.ERROR_SUB_PROCESS_FAILED_INIT_RELAX
 
