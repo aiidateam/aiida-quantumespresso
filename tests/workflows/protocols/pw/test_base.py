@@ -454,3 +454,28 @@ def test_default_resources(
 
     builder = PwBaseWorkChain.get_builder_from_protocol(code, structure)
     assert builder.pw.metadata.options['resources'] == expected_resources
+
+
+def test_spin_orbit_pseudo_family(fixture_code, generate_structure):
+    """Test that ``SpinType.SPIN_ORBIT`` selects the fully-relativistic pseudo family by default."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure('silicon')
+
+    # No overrides at all -> FR family cutoffs
+    builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, spin_type=SpinType.SPIN_ORBIT)
+    assert builder.pw.parameters['SYSTEM']['ecutwfc'] == 60.0
+    assert builder.pw.parameters['SYSTEM']['ecutrho'] == 400.0
+
+    # Overrides present but without ``pseudo_family`` -> FR family
+    builder = PwBaseWorkChain.get_builder_from_protocol(
+        code, structure, spin_type=SpinType.SPIN_ORBIT, overrides={'clean_workdir': True}
+    )
+    assert builder.pw.parameters['SYSTEM']['ecutwfc'] == 60.0
+    assert builder.pw.parameters['SYSTEM']['ecutrho'] == 400.0
+
+    # Explicit ``pseudo_family`` in overrides always wins
+    builder = PwBaseWorkChain.get_builder_from_protocol(
+        code, structure, spin_type=SpinType.SPIN_ORBIT, overrides={'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'}
+    )
+    assert builder.pw.parameters['SYSTEM']['ecutwfc'] == 30.0
+    assert builder.pw.parameters['SYSTEM']['ecutrho'] == 240.0
