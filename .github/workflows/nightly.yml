@@ -24,6 +24,7 @@ jobs:
         strategy:
             matrix:
                 python-version: ['3.10', '3.14']
+                broker: ['rmq', 'zmq']
 
         services:
             postgres:
@@ -51,7 +52,7 @@ jobs:
             id: tests
             env:
                 AIIDA_WARN_v3: 1
-            run: pytest -sv tests
+            run: pytest -sv tests --broker-backend ${{ matrix.broker }}
 
         -   name: Slack notification
             if: always() && (steps.install.outcome == 'failure' || steps.tests.outcome == 'failure') && env.SLACK_WEBHOOK != null
