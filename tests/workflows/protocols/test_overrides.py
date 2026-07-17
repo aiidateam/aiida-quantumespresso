@@ -19,8 +19,13 @@ comparison and reports which direction drifted.
 
 from typing import Iterable
 
+from aiida.plugins import CalculationFactory
+
 from aiida_quantumespresso.workflows.protocols.overrides import (
+    PwBandsBandsOverrides,
+    PwBandsCalculationOverrides,
     PwBandsOverrides,
+    PwBandsScfOverrides,
     PwBaseOverrides,
     PwCalculationOverrides,
     PwMetaParameters,
@@ -29,8 +34,14 @@ from aiida_quantumespresso.workflows.protocols.overrides import (
 from aiida_quantumespresso.workflows.pw.bands import PwBandsWorkChain
 from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
 
-# The complete set of Quantum ESPRESSO ``pw.x`` input namelists. Any of these may be merged into the
-# ``pw.parameters`` ``Dict`` through the overrides, so ``PwParametersOverrides`` enumerates them all.
+PwCalculation = CalculationFactory('quantumespresso.pw')
+
+# The complete set of Quantum ESPRESSO ``pw.x`` input namelists that ``PwParametersOverrides``
+# enumerates. There is no authoritative in-repo list of *all* ``pw.x`` namelists to tie this to
+# (``PwCalculation._automatic_namelists`` only covers the geometry/electronic ones dispatched by
+# calculation type; ``FCP``/``RISM`` are QE features aiida-quantumespresso does not reference
+# elsewhere). This constant is therefore a second hand-written copy: the equality guard below only
+# protects the two declarations against drifting apart, not against QE's real namelist set.
 PW_NAMELISTS = {'CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', 'CELL', 'FCP', 'RISM'}
 
 
@@ -58,8 +69,27 @@ def assert_overrides_match_spec(
 
 
 def test_pw_parameters_overrides_match_namelists():
-    """The ``pw.parameters`` overrides keys must be exactly the Quantum ESPRESSO ``pw.x`` namelists."""
+    """The ``pw.parameters`` overrides keys must equal the hand-maintained ``PW_NAMELISTS`` copy.
+
+    Both sides are hand-written, so this only guards the two declarations against drifting apart, not
+    against Quantum ESPRESSO's real ``pw.x`` namelist set (there is no authoritative in-repo source
+    for the latter; see the ``PW_NAMELISTS`` comment). The ``_automatic_namelists`` check below adds a
+    partial guard tied to actual plugin code.
+    """
     assert_overrides_match_spec(PwParametersOverrides, PW_NAMELISTS)
+
+
+def test_pw_parameters_overrides_cover_automatic_namelists():
+    """Every namelist ``PwCalculation`` dispatches by calculation type must be a typed override key.
+
+    Unlike ``PW_NAMELISTS`` (a second hand-written copy), ``PwCalculation._automatic_namelists`` is
+    real plugin code, so this is a genuine one-directional guard: if a calculation type gains a
+    namelist that ``PwParametersOverrides`` lacks, this fails. It cannot cover ``FCP``/``RISM``, which
+    are not referenced there.
+    """
+    automatic = set().union(*PwCalculation._automatic_namelists.values())  # noqa: SLF001
+    typed = set(PwParametersOverrides.__annotations__)
+    assert automatic <= typed, f'namelists dispatched by PwCalculation but not typed: {sorted(automatic - typed)}'
 
 
 def test_pw_meta_parameters_match_protocol():
@@ -91,10 +121,46 @@ def test_pw_base_overrides_match_spec():
 
 
 def test_pw_bands_overrides_match_spec():
-    """The ``PwBandsWorkChain`` overrides keys must equal spec ports (nested ``scf``/``bands`` recurse)."""
+    """The ``PwBandsWorkChain`` top-level overrides keys must equal its spec ports (bar builder-set)."""
     ports = PwBandsWorkChain.spec().inputs.keys()
     # Ports the builder always sets from its own arguments, so an override would be ignored.
     intentionally_untyped = {
         'structure',  # set unconditionally from the ``structure`` argument
     }
     assert_overrides_match_spec(PwBandsOverrides, ports, intentionally_untyped=intentionally_untyped)
+
+
+# Protocol keys the nested ``PwBaseWorkChain`` builder consumes directly (they are not input ports).
+# The ``scf``/``bands`` overrides are forwarded verbatim to ``PwBaseWorkChain.get_builder_from_protocol``.
+_BASE_BUILDER_CONSUMED = {'meta_parameters', 'pseudo_family'}
+
+
+def test_pw_bands_scf_overrides_match_spec():
+    """The ``scf`` overrides keys must equal the ``scf`` namespace ports (which exclude ``clean_workdir``)."""
+    ports = PwBandsWorkChain.spec().inputs['scf'].keys()
+    assert_overrides_match_spec(PwBandsScfOverrides, ports, builder_consumed=_BASE_BUILDER_CONSUMED)
+
+
+def test_pw_bands_scf_pw_overrides_match_spec():
+    """The ``scf.pw`` overrides keys must equal the ``scf.pw`` namespace ports (bar builder-set ones)."""
+    ports = PwBandsWorkChain.spec().inputs['scf']['pw'].keys()
+    # ``structure`` is already excluded from the ``scf`` namespace; ``code`` is set by the builder.
+    assert_overrides_match_spec(PwCalculationOverrides, ports, intentionally_untyped={'code'})
+
+
+def test_pw_bands_bands_overrides_match_spec():
+    """The ``bands`` overrides keys must equal the ``bands`` namespace ports (which exclude ``clean_workdir``)."""
+    ports = PwBandsWorkChain.spec().inputs['bands'].keys()
+    assert_overrides_match_spec(PwBandsBandsOverrides, ports, builder_consumed=_BASE_BUILDER_CONSUMED)
+
+
+def test_pw_bands_bands_pw_overrides_match_spec():
+    """The ``bands.pw`` overrides keys must equal the ``bands.pw`` namespace ports (bar builder-set ones).
+
+    ``PwBandsWorkChain`` excludes ``pw.parent_folder`` (and ``pw.structure``) from its ``bands``
+    namespace, so ``PwBandsCalculationOverrides`` must omit ``parent_folder`` where the general
+    ``PwCalculationOverrides`` keeps it.
+    """
+    ports = PwBandsWorkChain.spec().inputs['bands']['pw'].keys()
+    # ``structure``/``parent_folder`` are already excluded from the ``bands`` namespace; ``code`` is builder-set.
+    assert_overrides_match_spec(PwBandsCalculationOverrides, ports, intentionally_untyped={'code'})

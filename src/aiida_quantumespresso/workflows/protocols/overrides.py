@@ -12,6 +12,14 @@ input ports, minus an explicit set of ports the builder always overwrites from i
 ``tests/workflows/protocols/test_overrides.py``. Equality (rather than a one-sided subset) means the
 guard fires in both directions: an orphaned typed key *and* a newly added upstream port that the
 ``TypedDict`` is missing both break the test.
+
+``PwBandsWorkChain`` exposes ``PwBaseWorkChain`` under its ``scf`` and ``bands`` namespaces but
+``exclude``s some ports (``clean_workdir`` from both, and ``pw.parent_folder`` from ``bands`` since
+the builder wires it from the SCF remote folder). The ``scf``/``bands`` overrides therefore use
+*narrowed* ``TypedDict``\\ s (``PwBandsScfOverrides``/``PwBandsBandsOverrides`` and the narrowed
+``PwBandsCalculationOverrides``) rather than the full ``PwBaseOverrides``, so autocomplete never
+suggests a key the namespace does not expose. The drift guards check each nested namespace against
+its own sub-spec so this narrowing cannot silently rot either.
 """
 
 from __future__ import annotations
@@ -36,12 +44,13 @@ class PwParametersOverrides(TypedDict, total=False):
     RISM: dict[str, Any]
 
 
-class PwCalculationOverrides(TypedDict, total=False):
-    """Overrides for the ``pw`` namespace of ``PwBaseWorkChain`` (the ``PwCalculation`` inputs).
+class _PwCalculationCommonOverrides(TypedDict, total=False):
+    """The ``pw`` (``PwCalculation``) override keys shared by every ``PwBaseWorkChain`` namespace.
 
-    ``code`` and ``structure`` are deliberately omitted: the builder always sets them from its own
-    ``code``/``structure`` arguments, so an override there would be ignored (see the drift-guard's
-    ``INTENTIONALLY_UNTYPED`` set).
+    ``code`` and ``structure`` are absent throughout: the builder always sets them from its own
+    ``code``/``structure`` arguments, so an override there would be ignored (they are listed in the
+    drift guard's ``intentionally_untyped`` set). ``parent_folder`` is *not* here because the
+    ``bands`` namespace of ``PwBandsWorkChain`` excludes it; it is added by ``PwCalculationOverrides``.
     """
 
     parameters: PwParametersOverrides
@@ -51,9 +60,23 @@ class PwCalculationOverrides(TypedDict, total=False):
     parallelization: dict[str, Any]
     monitors: dict[str, Any]
     hubbard_file: Any
-    parent_folder: Any
     remote_folder: Any
     vdw_table: Any
+
+
+class PwCalculationOverrides(_PwCalculationCommonOverrides, total=False):
+    """Overrides for the ``pw`` namespace of ``PwBaseWorkChain`` (the ``PwCalculation`` inputs)."""
+
+    parent_folder: Any
+
+
+class PwBandsCalculationOverrides(_PwCalculationCommonOverrides, total=False):
+    """Overrides for the ``bands.pw`` namespace of ``PwBandsWorkChain``.
+
+    Identical to ``PwCalculationOverrides`` but without ``parent_folder``: ``PwBandsWorkChain``
+    excludes ``pw.parent_folder`` from its ``bands`` namespace (the builder sets it from the SCF
+    remote folder), so exposing it here would suggest a key the namespace does not accept.
+    """
 
 
 class PwMetaParameters(TypedDict, total=False):
@@ -63,15 +86,15 @@ class PwMetaParameters(TypedDict, total=False):
     etot_conv_thr_per_atom: float
 
 
-class PwBaseOverrides(TypedDict, total=False):
-    """Overrides accepted by ``PwBaseWorkChain.get_builder_from_protocol``.
+class _PwBaseCommonOverrides(TypedDict, total=False):
+    """The ``PwBaseWorkChain`` override keys shared by the full work chain and its exposed namespaces.
 
+    ``clean_workdir`` and ``pw`` are declared by each concrete subclass: ``PwBandsWorkChain`` excludes
+    ``clean_workdir`` from its ``scf``/``bands`` namespaces, and narrows ``pw`` for ``bands``.
     ``meta_parameters`` and ``pseudo_family`` are protocol keys the builder consumes directly (they
-    are not input ports); every other key is a ``PwBaseWorkChain`` input port.
+    are not input ports); every other key here is a ``PwBaseWorkChain`` input port.
     """
 
-    pw: PwCalculationOverrides
-    clean_workdir: bool
     kpoints: Any
     kpoints_distance: float
     kpoints_force_parity: bool
@@ -84,15 +107,43 @@ class PwBaseOverrides(TypedDict, total=False):
     pseudo_family: str
 
 
+class PwBaseOverrides(_PwBaseCommonOverrides, total=False):
+    """Overrides accepted by ``PwBaseWorkChain.get_builder_from_protocol``."""
+
+    pw: PwCalculationOverrides
+    clean_workdir: bool
+
+
+class PwBandsScfOverrides(_PwBaseCommonOverrides, total=False):
+    """Overrides for the ``scf`` namespace of ``PwBandsWorkChain``.
+
+    Same as ``PwBaseOverrides`` but without ``clean_workdir``, which ``PwBandsWorkChain`` excludes
+    from its ``scf`` namespace (cleanup is driven by the parent work chain's own ``clean_workdir``).
+    """
+
+    pw: PwCalculationOverrides
+
+
+class PwBandsBandsOverrides(_PwBaseCommonOverrides, total=False):
+    """Overrides for the ``bands`` namespace of ``PwBandsWorkChain``.
+
+    Same as ``PwBandsScfOverrides`` (no ``clean_workdir``) but with ``pw`` further narrowed to
+    ``PwBandsCalculationOverrides`` (no ``parent_folder``), matching the ports the ``bands`` namespace
+    exposes.
+    """
+
+    pw: PwBandsCalculationOverrides
+
+
 class PwBandsOverrides(TypedDict, total=False):
     """Overrides accepted by ``PwBandsWorkChain.get_builder_from_protocol``.
 
     ``structure`` is deliberately omitted: the builder always sets it from its own ``structure``
-    argument, so an override there would be ignored (see the drift-guard's ``INTENTIONALLY_UNTYPED``).
+    argument, so an override there would be ignored (see the drift guard's ``intentionally_untyped``).
     """
 
-    scf: PwBaseOverrides
-    bands: PwBaseOverrides
+    scf: PwBandsScfOverrides
+    bands: PwBandsBandsOverrides
     clean_workdir: bool
     nbands_factor: float
     bands_kpoints: Any
