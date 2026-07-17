@@ -256,6 +256,10 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         }
         if structure.pbc != (True, True, True):
             # 0D, 1D, or 2D
+            if structure.pbc.count(True) == 2 and structure.pbc not in pbc_parameter_overrides:
+                raise ValueError(
+                    f'2D-periodic structures must be periodic in the x-y plane, got `{structure.pbc}`.'
+                )
             warnings.warn(
                 'This protocol was developed for fully periodic (i.e. 3D) systems. Use `overrides` to provide '
                 'any relevant keywords for handling aperiodicity, and proceed with caution.'
