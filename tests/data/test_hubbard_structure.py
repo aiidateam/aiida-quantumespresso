@@ -1,5 +1,7 @@
 """Tests for the :mod:`data.hubbard_structure` module."""
 
+import json
+
 import pytest
 
 from aiida_quantumespresso.data.hubbard_structure import HubbardStructureData
@@ -171,3 +173,29 @@ def test_get_symbol_indices(generate_hubbard_structure):
     """Test the `_get_symbol_indices` method."""
     hubbard_structure = generate_hubbard_structure()
     assert hubbard_structure._get_symbol_indices('Si') == [0, 1]
+
+
+def test_stored_hubbard_json_is_plain_object(generate_hubbard_structure):
+    """Test that the stored ``hubbard.json`` is a plain JSON object, not a double-encoded string."""
+    hubbard_structure = generate_hubbard_structure()
+
+    with hubbard_structure.base.repository.open('hubbard.json', mode='r') as handle:
+        raw = handle.read()
+
+    parsed = json.loads(raw)
+    assert isinstance(parsed, dict), f'Expected a JSON object (dict), got {type(parsed).__name__}'
+
+
+def test_hubbard_getter_backwards_compat_double_encoded(generate_hubbard_structure):
+    """Test that the ``hubbard`` getter can read the old double-encoded JSON format."""
+    hubbard_structure = generate_hubbard_structure()
+    original = hubbard_structure.hubbard
+
+    # Simulate the old double-encoded format: json.dumps(hubbard.model_dump_json())
+    double_encoded = json.dumps(original.model_dump_json())
+    hubbard_structure.base.repository.put_object_from_bytes(
+        double_encoded.encode('utf-8'), 'hubbard.json'
+    )
+
+    restored = hubbard_structure.hubbard
+    assert restored == original
