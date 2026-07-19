@@ -66,13 +66,13 @@ class HubbardStructureData(StructureData):
         try:
             # Try normal case first
             return Hubbard.model_validate_json(content)
-        except Exception:
+        except pydantic.ValidationError:
             # Fallback: old double-encoded format
             try:
                 decoded = json.loads(content)  # unwrap string
                 return Hubbard.model_validate_json(decoded)
-            except Exception as exc:
-                raise ValueError(f'Invalid Hubbard JSON format: {exc}')
+            except (json.JSONDecodeError, pydantic.ValidationError) as exc:
+                raise ValueError(f'Invalid Hubbard JSON format: {exc}') from exc
 
 
     @hubbard.setter
