@@ -199,3 +199,28 @@ def test_hubbard_getter_backwards_compat_double_encoded(generate_hubbard_structu
 
     restored = hubbard_structure.hubbard
     assert restored == original
+
+
+def test_hubbard_getter_invalid_json_raises_value_error(generate_hubbard_structure):
+    """Test that unparsable content raises a `ValueError`, exercising the `json.JSONDecodeError` fallback."""
+    hubbard_structure = generate_hubbard_structure()
+    hubbard_structure.base.repository.put_object_from_bytes(b'not even json', 'hubbard.json')
+
+    with pytest.raises(ValueError, match='Invalid Hubbard JSON format'):
+        hubbard_structure.hubbard  # pylint: disable=pointless-statement
+
+
+def test_hubbard_getter_propagates_unexpected_errors(generate_hubbard_structure, monkeypatch):
+    """Test that errors unrelated to (legacy) JSON parsing are not silently swallowed."""
+    from aiida_quantumespresso.common.hubbard import Hubbard
+
+    hubbard_structure = generate_hubbard_structure()
+
+    def _raise(*args, **kwargs):
+        raise RuntimeError('unexpected failure')
+
+    monkeypatch.setattr(Hubbard, 'model_validate_json', _raise)
+
+    with pytest.raises(RuntimeError, match='unexpected failure'):
+        hubbard_structure.hubbard  # pylint: disable=pointless-statement
+
