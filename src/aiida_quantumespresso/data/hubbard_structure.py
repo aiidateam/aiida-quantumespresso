@@ -4,6 +4,7 @@ import json
 from typing import Optional, Union
 
 import numpy as np
+import pydantic
 from aiida.orm import StructureData
 from pymatgen.core import Lattice, PeriodicSite
 
