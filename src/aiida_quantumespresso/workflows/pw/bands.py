@@ -8,6 +8,7 @@ from aiida_quantumespresso.calculations.functions.seekpath_structure_analysis im
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
 
+from ..protocols.overrides import PwBandsOverrides
 from ..protocols.utils import ProtocolMixin
 
 
@@ -142,7 +143,9 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         return files(pw_protocols) / 'bands.yaml'
 
     @classmethod
-    def get_builder_from_protocol(cls, code, structure, protocol=None, overrides=None, options=None, **kwargs):
+    def get_builder_from_protocol(
+        cls, code, structure, protocol=None, overrides: PwBandsOverrides | None = None, options=None, **kwargs
+    ):
         """Return a builder prepopulated with inputs selected according to the chosen protocol.
 
         :param code: the ``Code`` instance configured for the ``quantumespresso.pw`` plugin.

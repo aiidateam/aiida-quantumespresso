@@ -19,6 +19,7 @@ from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance i
 from aiida_quantumespresso.common.types import ElectronicType, RestartType, SpinType
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 
+from ..protocols.overrides import PwBaseOverrides
 from ..protocols.utils import ProtocolMixin
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
@@ -156,7 +157,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         code,
         structure,
         protocol=None,
-        overrides=None,
+        overrides: PwBaseOverrides | None = None,
         electronic_type=ElectronicType.METAL,
         spin_type=SpinType.NONE,
         initial_magnetic_moments=None,
