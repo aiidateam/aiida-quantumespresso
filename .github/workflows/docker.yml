@@ -1,0 +1,81 @@
+---
+name: Build, test and push Docker Images
+
+on:
+    pull_request:
+        paths-ignore:
+            - "docs/**"
+            - "tests/**"
+    push:
+        branches:
+            - main
+        tags:
+            - "v*"
+        paths-ignore:
+            - "docs/**"
+            - "tests/**"
+    workflow_dispatch:
+
+# https://docs.github.com/en/actions/using-jobs/using-concurrency
+concurrency:
+    # only cancel in-progress jobs or runs for the current workflow - matches against branch & tags
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    amd64-build:
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+              shell: bash
+              working-directory: .docker
+
+        steps:
+            - name: Checkout Repo ⚡️
+              uses: actions/checkout@v3
+            - name: Set Up Python 🐍
+              uses: actions/setup-python@v4
+              with:
+                  python-version: 3.x
+
+            - name: Install Dev Dependencies 📦
+              run: |
+                  pip install --upgrade pip
+                  pip install --upgrade -r requirements.txt
+
+            - name: Build image
+              run: docker buildx bake -f docker-bake.hcl --set *.platform=linux/amd64 --load
+              env:
+                  # Full logs for CI build
+                  BUILDKIT_PROGRESS: plain
+
+            - name: Run tests ✅
+              run: TAG=newly-baked python -m pytest -s tests
+
+            - name: Docker meta 📝
+              id: meta
+              uses: docker/metadata-action@v4
+              with:
+                  images: |
+                      name=ghcr.io/aiidateam/aiida-quantumespresso
+                  tags: |
+                      type=edge,enable={{is_default_branch}}
+                      type=sha,enable=${{ github.ref_type != 'tag' }}
+                      type=ref,event=pr
+                      type=match,pattern=v(\d+\.\d+.\d+),group=1
+                      type=raw,value={{tag}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+            - name: Login to Container Registry 🔑
+              uses: docker/login-action@v2
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Set tags for image and push 🏷️📤💾
+              run: |
+                  declare -a arr=(${{ steps.meta.outputs.tags }})
+                  for tag in "${arr[@]}"; do
+                      docker tag aiidateam/aiida-quantumespresso:newly-baked ${tag}
+                      docker push ${tag}
+                  done
