@@ -66,7 +66,7 @@ class HubbardUtils:
                 raise ValueError(f'Hubbard formulation {hubbard.formulation} is not implemented.')
 
             if hubbard.formulation == 'liechtenstein':
-                line = f'{pre}\t{atom_i}-{man_i} \t{value}'  # noqa: F821
+                line = f'{param.hubbard_type}\t{atom_i}-{man_i} \t{value}'  # noqa: F821
 
             # This variable is to meet QE implementation. If intersite interactions
             # (+V) are present, onsite parameters might not be relabelled by the ``hp.x``
@@ -74,14 +74,14 @@ class HubbardUtils:
             # we need to avoid writing "U Co-3d 5.0", but instead "V Co-3d Co-3d 1 1 5.0".
             is_intersite = is_intersite_hubbard(hubbard=hubbard)
             if hubbard.formulation == 'dudarev':
-                if param.hubbard_type == 'J':
-                    pre = 'J'
+                if param.hubbard_type in ['J', 'ALPHA']:
+                    pre = param.hubbard_type
                 elif not is_intersite and atom_i == atom_j and param.atom_manifold == param.neighbour_manifold:
                     pre = 'U'
                 else:
                     pre = 'V'
 
-                if pre in ['U', 'J']:
+                if pre in ['U', 'J', 'ALPHA']:
                     line = f'{pre}\t{atom_i}-{man_i}\t{value}'
                 else:
                     line = f'{pre}\t{atom_i}-{man_i}\t{atom_j}-{man_j}\t{index_i}\t{index_j}\t{value}'

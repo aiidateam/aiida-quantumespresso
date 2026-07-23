@@ -113,7 +113,7 @@ def test_valid_hubbard_parameters(get_hubbard_parameters, overrides):
         ),
         (
             {'hubbard_type': 'L'},
-            r"Input should be 'Ueff', 'U', 'V', 'J', 'B', 'E2' or 'E3'",
+            r"Input should be 'Ueff', 'U', 'V', 'J', 'B', 'E2', 'E3' or 'ALPHA'",
         ),
     ],
 )
