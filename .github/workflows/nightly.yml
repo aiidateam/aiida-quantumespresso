@@ -46,7 +46,7 @@ jobs:
         -   name: Install Python dependencies (with aiida-core@main)
             id: install
             run: |
-                uv pip install -e .[tests] aiida-core[atomic_tools]@git+https://github.com/aiidateam/aiida-core@main
+                uv pip install -e .[tests] aiida-core[atomic_tools]@git+https://github.com/agoscinski/aiida-core@fix/datetime-serialize
 
         -   name: Run pytest
             id: tests
