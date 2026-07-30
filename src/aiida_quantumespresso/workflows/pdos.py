@@ -383,9 +383,13 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         builder.dos.code = dos_code
         builder.dos.parameters = orm.Dict(inputs.get('dos', {}).get('parameters'))
         builder.dos.metadata = metadata_dos
+        if inputs.get('dos', {}).get('settings'):
+            builder.dos.settings = orm.Dict(inputs['dos']['settings'])
         builder.projwfc.code = projwfc_code
         builder.projwfc.parameters = orm.Dict(inputs.get('projwfc', {}).get('parameters'))
         builder.projwfc.metadata = metadata_projwfc
+        if inputs.get('projwfc', {}).get('settings'):
+            builder.projwfc.settings = orm.Dict(inputs['projwfc']['settings'])
 
         return builder
 

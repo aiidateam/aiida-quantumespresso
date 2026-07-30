@@ -4,6 +4,7 @@ import json
 from typing import Optional, Union
 
 import numpy as np
+import pydantic
 from aiida.orm import StructureData
 from pymatgen.core import Lattice, PeriodicSite
 
@@ -59,8 +60,21 @@ class HubbardStructureData(StructureData):
 
         :returns: a :class:`~aiida_quantumespresso.common.hubbard.Hubbard` instance.
         """
-        with self.base.repository.open(self._hubbard_filename, mode='rb') as handle:
-            return Hubbard.model_validate_json(json.load(handle))
+
+        with self.base.repository.open(self._hubbard_filename, mode='r') as handle:
+            content = handle.read()
+
+        try:
+            # Try normal case first
+            return Hubbard.model_validate_json(content)
+        except pydantic.ValidationError:
+            # Fallback: old double-encoded format
+            try:
+                decoded = json.loads(content)  # unwrap string
+                return Hubbard.model_validate_json(decoded)
+            except (json.JSONDecodeError, pydantic.ValidationError) as exc:
+                raise ValueError(f'Invalid Hubbard JSON format: {exc}') from exc
+
 
     @hubbard.setter
     def hubbard(self, hubbard: Hubbard):
@@ -68,7 +82,7 @@ class HubbardStructureData(StructureData):
         if not isinstance(hubbard, Hubbard):
             raise ValueError('the input is not of type `Hubbard`')
 
-        serialized = json.dumps(hubbard.model_dump_json())
+        serialized = hubbard.model_dump_json() 
         self.base.repository.put_object_from_bytes(serialized.encode('utf-8'), self._hubbard_filename)
 
     @staticmethod

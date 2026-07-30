@@ -90,3 +90,15 @@ def test_options(get_pdos_generator_inputs):
         builder.projwfc.metadata,
     ):
         assert subspace['options']['queue_name'] == queue_name, subspace
+
+
+def test_settings_overrides(get_pdos_generator_inputs):
+    """Test that ``settings`` overrides are threaded onto the ``dos`` and ``projwfc`` namespaces."""
+    overrides = {
+        'dos': {'settings': {'CMDLINE': ['-npool', '4']}},
+        'projwfc': {'settings': {'CMDLINE': ['-npool', '4']}},
+    }
+    builder = PdosWorkChain.get_builder_from_protocol(**get_pdos_generator_inputs, overrides=overrides)
+
+    assert builder.dos.settings.get_dict() == {'CMDLINE': ['-npool', '4']}
+    assert builder.projwfc.settings.get_dict() == {'CMDLINE': ['-npool', '4']}

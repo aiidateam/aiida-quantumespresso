@@ -1,4 +1,5 @@
 """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts."""
+import warnings
 
 from aiida import orm
 from aiida.common import AttributeDict, exceptions
@@ -201,7 +202,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         meta_parameters = inputs.pop('meta_parameters')
         pseudo_family = inputs.pop('pseudo_family')
 
-        if spin_type is SpinType.SPIN_ORBIT and overrides is not None and 'pseudo_family' not in overrides:
+        if spin_type is SpinType.SPIN_ORBIT and 'pseudo_family' not in (overrides or {}):
             pseudo_family = 'PseudoDojo/0.4/PBEsol/FR/standard/upf'
 
         natoms = len(structure.sites)
@@ -250,32 +251,45 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         parameters['CONTROL']['etot_conv_thr'] = natoms * meta_parameters['etot_conv_thr_per_atom']
         parameters['ELECTRONS']['conv_thr'] = natoms * meta_parameters['conv_thr_per_atom']
 
-        # If the structure is 2D periodic in the x-y plane, we set assume_isolate to `2D`
-        if structure.pbc == (True, True, False):
-            parameters['SYSTEM']['assume_isolated'] = '2D'
+        pbc_parameter_overrides = {
+            (True, True, False): {'SYSTEM': {'assume_isolated': '2D'}},
+        }
+        if structure.pbc != (True, True, True):
+            # 0D, 1D, or 2D
+            if structure.pbc.count(True) == 2 and structure.pbc not in pbc_parameter_overrides:
+                raise ValueError(
+                    f'2D-periodic structures must be periodic in the x-y plane, got `{structure.pbc}`.'
+                )
+            warnings.warn(
+                'This protocol was developed for fully periodic (i.e. 3D) systems. Use `overrides` to provide '
+                'any relevant keywords for handling aperiodicity, and proceed with caution.'
+            )
+        parameters = recursive_merge(parameters, pbc_parameter_overrides.get(structure.pbc, {}))
 
         if electronic_type is ElectronicType.INSULATOR:
             parameters['SYSTEM']['occupations'] = 'fixed'
             parameters['SYSTEM'].pop('degauss')
             parameters['SYSTEM'].pop('smearing')
 
-        magnetization = get_magnetization(
-            structure=structure,
-            z_valences={kind.name: pseudos[kind.name].z_valence for kind in structure.kinds},
-            initial_magnetic_moments=initial_magnetic_moments,
-            spin_type=spin_type,
-        )
-        if spin_type is SpinType.COLLINEAR:
+        if spin_type in [SpinType.COLLINEAR, SpinType.SPIN_ORBIT, SpinType.NON_COLLINEAR]:
+            magnetization = get_magnetization(
+                structure=structure,
+                z_valences={kind.name: pseudos[kind.name].z_valence for kind in structure.kinds},
+                initial_magnetic_moments=initial_magnetic_moments,
+                spin_type=spin_type,
+            )
             parameters['SYSTEM']['starting_magnetization'] = magnetization['starting_magnetization']
-            parameters['SYSTEM']['nspin'] = 2
 
-        if spin_type in [SpinType.SPIN_ORBIT, SpinType.NON_COLLINEAR]:
-            parameters['SYSTEM']['starting_magnetization'] = magnetization['starting_magnetization']
-            parameters['SYSTEM']['angle1'] = magnetization['angle1']
-            parameters['SYSTEM']['angle2'] = magnetization['angle2']
-            parameters['SYSTEM']['noncolin'] = True
-            parameters['SYSTEM']['nspin'] = 4
-            if spin_type == SpinType.SPIN_ORBIT:
+            if spin_type is SpinType.COLLINEAR:
+                parameters['SYSTEM']['nspin'] = 2
+
+            if spin_type in [SpinType.SPIN_ORBIT, SpinType.NON_COLLINEAR]:
+                parameters['SYSTEM']['angle1'] = magnetization['angle1']
+                parameters['SYSTEM']['angle2'] = magnetization['angle2']
+                parameters['SYSTEM']['noncolin'] = True
+                parameters['SYSTEM']['nspin'] = 4
+
+            if spin_type is SpinType.SPIN_ORBIT:
                 parameters['SYSTEM']['lspinorb'] = True
 
         # If overrides are provided, they are considered absolute
@@ -505,7 +519,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         if 'diagonalizations' not in self.ctx:
             # Initialize a list to track diagonalisations that haven't been tried in reverse order or preference
-            self.ctx.diagonalizations = [value for value in ['cg', 'paro', 'ppcg', 'david'] if value != current.lower()]
+            self.ctx.diagonalizations = [value for value in ['cg', 'paro', 'david'] if value != current.lower()]
 
         try:
             new = self.ctx.diagonalizations.pop()

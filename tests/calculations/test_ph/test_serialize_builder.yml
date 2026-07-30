@@ -1,4 +1,4 @@
-code: test.quantumespresso.ph@localhost
+code: test.quantumespresso.ph
 metadata:
   options:
     max_wallclock_seconds: 1800
