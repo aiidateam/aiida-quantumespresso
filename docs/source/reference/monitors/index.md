@@ -27,30 +27,32 @@ termination (the string is used as the message stored in the process report).
 
 `monitor` fetches the output file of the running calculation, scans every line
 that contains the word **accuracy** (case-insensitive), and extracts the last
-numerical value on that line.  If the last five parsed values are all equal
-*and* consecutive, the job is considered stuck and a kill message is returned.
+numerical value on that line.  If the last `min_repeats` parsed values are all
+equal *and* consecutive, the job is considered stuck and a kill message is
+returned. `min_repeats` defaults to `5`.
 
 ### Usage
 
 ```python
-from aiida_quantumespresso.tools.monitors import monitor as accuracy_stuck_monitor
-
 builder.monitors = {"accuracy_stuck": Dict({"entry_point": "quantumespresso.accuracy_stuck"})}
+```
+
+To require a longer (or shorter) plateau before the job is killed, pass
+`min_repeats` as a keyword argument to the monitor. As described in the
+`aiida-core` how-to on
+[assigning a monitor](https://aiida.readthedocs.io/projects/aiida-core/en/stable/howto/run_codes.html#how-to-assign-a-monitor),
+extra keyword arguments are declared explicitly on the monitor's function
+signature (never via a `**kwargs` catch-all) and are supplied through the
+`kwargs` key of the settings `Dict`:
+
+```python
+builder.monitors = {
+    "accuracy_stuck": Dict({
+        "entry_point": "quantumespresso.accuracy_stuck",
+        "kwargs": {"min_repeats": 10},
+    })
+}
 ```
 
 Or, when writing your own `BaseRestartWorkChain`, register the monitor via its
 entry point (see `setup.cfg` / `pyproject.toml` for the registered name).
-
-### API reference
-
-```{eval-rst}
-.. autofunction:: aiida_quantumespresso.tools.monitors.accuracy_stuck.monitor
-```
-
-```{eval-rst}
-.. autofunction:: aiida_quantumespresso.tools.monitors.utils.parse_accuracy_lines
-```
-
-```{eval-rst}
-.. autofunction:: aiida_quantumespresso.tools.monitors.utils.is_stuck
-```

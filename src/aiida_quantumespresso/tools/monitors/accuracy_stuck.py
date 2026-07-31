@@ -14,7 +14,7 @@ def _fetch_output_content(node: CalcJobNode, transport: Transport) -> Optional[s
     Returns None if the output filename cannot be determined or the file cannot
     be retrieved.
     """
-    outfile = node.attributes.get("output_filename", None)
+    outfile = node.attributes.get('output_filename', None)
     if not outfile:
         return None
 
@@ -23,7 +23,7 @@ def _fetch_output_content(node: CalcJobNode, transport: Transport) -> Optional[s
     content = None
     try:
         transport.getfile(outfile, tmpname)
-        with open(tmpname, "r", encoding="utf-8", errors="replace") as fh:
+        with open(tmpname, 'r', encoding='utf-8', errors='replace') as fh:
             content = fh.read()
     except Exception:
         pass
@@ -35,7 +35,7 @@ def _fetch_output_content(node: CalcJobNode, transport: Transport) -> Optional[s
     return content
 
 
-def monitor(node: CalcJobNode, transport: Transport) -> Optional[str]:
+def monitor(node: CalcJobNode, transport: Transport, min_repeats: int = 5) -> Optional[str]:
     """Monitor a running calculation for a stuck accuracy metric.
 
     Fetches the output file from the remote working directory, extracts all
@@ -48,7 +48,7 @@ def monitor(node: CalcJobNode, transport: Transport) -> Optional[str]:
         return None
 
     nums = parse_accuracy_lines(content)
-    if nums is not None and is_stuck(nums, threshold=5):
-        return "Job appears stuck: accuracy has not improved in the last 5 occurrences."
+    if nums is not None and is_stuck(nums, min_repeats=min_repeats):
+        return f'Job appears stuck: accuracy has not improved in the last {min_repeats} occurrences.'
 
     return None
