@@ -1,17 +1,22 @@
 """Calculation function to apply random displacements to the atomic positions of a structure."""
 
-from aiida import orm
+import numpy as np
 from aiida.engine import calcfunction
 
 
 @calcfunction
 def rattle_structure(structure, stdev):
-    """Return a copy of the structure with normally distributed random displacements applied to all positions.
+    """Return a clone of the structure with normally distributed random displacements applied to all positions.
+
+    The node is cloned rather than reconstructed, so any ``StructureData`` subclass (e.g.
+    ``HubbardStructureData``) keeps its type, kind names and additional attributes.
 
     :param structure: the ``StructureData`` instance to rattle.
     :param stdev: ``Float`` with the standard deviation of the displacements in Angstrom.
-    :returns: the rattled ``StructureData`` instance.
+    :returns: the rattled structure node.
     """
-    atoms = structure.get_ase()
-    atoms.rattle(stdev=stdev.value)
-    return orm.StructureData(ase=atoms)
+    rattled = structure.clone()
+    positions = np.array([site.position for site in structure.sites])
+    rng = np.random.RandomState(seed=42)  # same default seed as ``ase.Atoms.rattle``
+    rattled.reset_sites_positions((positions + rng.normal(scale=stdev.value, size=positions.shape)).tolist())
+    return rattled
