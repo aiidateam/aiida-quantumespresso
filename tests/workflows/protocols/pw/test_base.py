@@ -110,6 +110,27 @@ def test_pbc_assume_isolated(fixture_code, generate_structure, struc_name, assum
     assert builder.pw.parameters['SYSTEM'].get('assume_isolated', None) == assume_isolated
 
 
+@pytest.mark.parametrize('struc_name', ['2D-xy-arsenic', '1D-x-carbon', '1D-y-carbon', '1D-z-carbon'])
+def test_pbc_aperiodic_warning(fixture_code, generate_structure, struc_name):
+    """Test that a warning is raised for structures that are not fully periodic."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure(struc_name)
+
+    with pytest.warns(UserWarning, match='This protocol was developed for fully periodic'):
+        PwBaseWorkChain.get_builder_from_protocol(code, structure)
+
+
+@pytest.mark.parametrize('pbc', [(True, False, True), (False, True, True)])
+def test_pbc_invalid_2d(fixture_code, generate_structure, pbc):
+    """Test that 2D structures that are not periodic in the x-y plane raise a ``ValueError``."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure('silicon')
+    structure.pbc = pbc
+
+    with pytest.raises(ValueError, match='2D-periodic structures must be periodic in the x-y plane'):
+        PwBaseWorkChain.get_builder_from_protocol(code, structure)
+
+
 @pytest.mark.parametrize('initial_magnetic_moments', [{}, {'Si1': 1.0, 'Si2': 2.0}])
 def test_initial_magnetic_moments_invalid(fixture_code, generate_structure, initial_magnetic_moments):
     """Test ``PwBaseWorkChain.get_builder_from_protocol`` with invalid ``initial_magnetic_moments`` keyword."""

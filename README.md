@@ -37,7 +37,7 @@ For the compatibility of older `aiida-quantumespresso` versions, we refer to [th
 ## 🙌 Contributing
 
 Great that you want to contribute!
-See the [developer guide in the documentation](https://aiida-quantumespresso.readthedocs.io/en/latest/developer.html) for instructions.
+See the [developer guide in the documentation](https://aiida-quantumespresso.readthedocs.io/en/latest/reference/developer.html) for instructions.
 
 ## 📜 License
 The `aiida-quantumespresso` plugin package is released under the MIT license.
