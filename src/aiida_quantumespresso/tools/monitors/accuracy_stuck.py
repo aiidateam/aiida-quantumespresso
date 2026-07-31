@@ -7,6 +7,11 @@ from aiida.transports import Transport
 
 from .utils import parse_accuracy_lines, is_stuck
 
+# Message prefix identifying this monitor as the cause of a `STOPPED_BY_MONITOR` exit code, since that exit code is
+# shared by all monitors. Error handlers (e.g. in `PwBaseWorkChain`) match on this prefix, as the full message
+# depends on the configurable `min_repeats`.
+ACCURACY_STUCK_MESSAGE_PREFIX = 'Job appears stuck: accuracy has not improved'
+
 
 def _fetch_output_content(node: CalcJobNode, transport: Transport) -> Optional[str]:
     """Fetch the output file of a running calculation and return its text content.
@@ -49,6 +54,6 @@ def monitor(node: CalcJobNode, transport: Transport, min_repeats: int = 5) -> Op
 
     nums = parse_accuracy_lines(content)
     if nums is not None and is_stuck(nums, min_repeats=min_repeats):
-        return f'Job appears stuck: accuracy has not improved in the last {min_repeats} occurrences.'
+        return f'{ACCURACY_STUCK_MESSAGE_PREFIX} in the last {min_repeats} occurrences.'
 
     return None
