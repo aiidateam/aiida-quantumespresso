@@ -19,12 +19,10 @@ def parse_accuracy_lines(content):
         >>> parse_accuracy_lines("Final accuracy: 98.5 %\\nTest accuracy: 0.965 units")
         array([98.5 , 0.965])
     """
-    word_pat = re.compile(r"\baccuracy\b", flags=re.IGNORECASE)
+    word_pat = re.compile(r'\baccuracy\b', flags=re.IGNORECASE)
 
     # Match a number followed by a non-space token (the unit)
-    num_unit_pat = re.compile(
-        r"([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s+(\S+)[\.,;:]*$"
-    )
+    num_unit_pat = re.compile(r'([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s+(\S+)[\.,;:]*$')
 
     results = []
     for line in content.splitlines():
@@ -35,12 +33,12 @@ def parse_accuracy_lines(content):
             num_s = m.group(1)
         else:
             # Fallback: take the last number on the line
-            pairs = re.findall(r"([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s+(\S+)", line)
+            pairs = re.findall(r'([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s+(\S+)', line)
             if not pairs:
                 continue
             num_s = pairs[-1][0]
 
-        num_s = num_s.replace(",", "")  # allow thousands separators
+        num_s = num_s.replace(',', '')  # allow thousands separators
         try:
             results.append(float(num_s))
         except ValueError:
@@ -67,4 +65,4 @@ def is_stuck(nums, threshold=5):
     indices = np.where(nums == nums[-1])[0]
     if len(indices) < threshold:
         return False
-    return indices[-threshold] == len(nums) - threshold
+    return bool(indices[-threshold] == len(nums) - threshold)
