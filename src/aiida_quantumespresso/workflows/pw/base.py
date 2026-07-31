@@ -1,4 +1,5 @@
 """Workchain to run a Quantum ESPRESSO pw.x calculation with automated error handling and restarts."""
+
 import warnings
 
 from aiida import orm
@@ -257,9 +258,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if structure.pbc != (True, True, True):
             # 0D, 1D, or 2D
             if structure.pbc.count(True) == 2 and structure.pbc not in pbc_parameter_overrides:
-                raise ValueError(
-                    f'2D-periodic structures must be periodic in the x-y plane, got `{structure.pbc}`.'
-                )
+                raise ValueError(f'2D-periodic structures must be periodic in the x-y plane, got `{structure.pbc}`.')
             warnings.warn(
                 'This protocol was developed for fully periodic (i.e. 3D) systems. Use `overrides` to provide '
                 'any relevant keywords for handling aperiodicity, and proceed with caution.'
@@ -339,6 +338,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         """
         super().setup()
         self.ctx.inputs = AttributeDict(self.exposed_inputs(PwCalculation, 'pw'))
+        self.ctx.initial_parameters = AttributeDict(self.exposed_inputs(PwCalculation, 'pw'))
 
         self.ctx.inputs.parameters = self.ctx.inputs.parameters.get_dict()
         self.ctx.inputs.parameters.setdefault('CONTROL', {})
@@ -587,7 +587,41 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         return ProcessHandlerReport(True, self.exit_codes.ERROR_IONIC_CONVERGENCE_REACHED_EXCEPT_IN_FINAL_SCF)
 
     @process_handler(
-        priority=561,
+        priority=602,
+        exit_codes=[
+            PwCalculation.exit_codes.STOPPED_BY_MONITOR,
+        ],
+    )
+    def handle_electronic_convergence_stuck(self, calculation):
+        """Handle `STOPPED_BY_MONITOR` error.
+
+        This is needed when the scf convergence is stuck during a relax calculation, i.e. when the algorithm in
+        Quantum ESPRESSO tries to decrease the `conv_thr` during the ionic minimization, to ensure that forces are
+        small enough. To solve it, we restart by reducing the `IONS.upscale` parameter (by default, it is 100).
+        """
+        self.report(f'Handling {calculation.exit_status}<{calculation.exit_message}>')
+
+        if calculation.exit_message == 'Job appears stuck: accuracy has not improved in the last 5 occurrences.':
+            ions_namelist = self.ctx.inputs.parameters.get('IONS', {})
+            upscale = ions_namelist.get('upscale', 100)
+
+            if upscale > 1:
+                new_upscale = max(int(upscale * 0.3), 1)
+                ions_namelist['upscale'] = new_upscale
+                self.ctx.inputs.parameters['IONS'] = ions_namelist
+
+                action = f'reduced upscale from {upscale} to {new_upscale} and restarting from the last calculation'
+                self.set_restart_type(RestartType.FULL, calculation.outputs.remote_folder)
+            else:
+                return ProcessHandlerReport(True, self.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE)
+        else:
+            return ProcessHandlerReport(True, self.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE)
+
+        self.report_error_handled(calculation, action)
+        return ProcessHandlerReport(True)
+
+    @process_handler(
+        priority=601,
         exit_codes=[
             PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_FAILURE,
             PwCalculation.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE,
@@ -596,16 +630,47 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
     def handle_relax_recoverable_ionic_convergence_bfgs_history_error(self, calculation):
         """Handle failure of the ionic minimization algorithm (BFGS).
 
-        When BFGS history fails, this can mean two things: the structure is close to the global minimum,
-        but the moves the algorithm wants to do are smaller than `trust_radius_min`, or the structure is
-        close to a local minimum (hard to detect). For the first, we restart with lowered trust_radius_min.
-        For the first case, one can lower the trust radius; for the second one, one can exploit a different
-        algorithm, e.g. `damp` (and `damp-w` for vc-relax).
+        When BFGS history fails, this can mean two things: the structure is close to the global minimum, but the
+        moves the algorithm wants to do are smaller than `trust_radius_min`, or the structure is close to a local
+        minimum (hard to detect). For the first case, one can lower the trust radius; for the second one, one can
+        exploit a different algorithm, e.g. `damp` (and `damp-w` for vc-relax). Additionally, in the case of a `relax`
+        calculation with few symmetries, the structure is rattled once (with a 0.01 Angstrom standard deviation) to
+        escape from a possible (hard) local minimum. A second occurrence of the same failure after the rattle is
+        considered unrecoverable.
         """
+        if not hasattr(self.ctx, 'rattled'):
+            self.ctx.rattled = False
+
         trust_radius_min = self.ctx.inputs.parameters['IONS'].get('trust_radius_min', qe_defaults.trust_radius_min)
         calculation_type = self.ctx.inputs.parameters['CONTROL'].get('calculation', 'relax')
 
         if calculation_type == 'relax':
+            symmetries = calculation.outputs.output_parameters.get_dict().get('symmetries', [])
+            if len(symmetries) < 5:
+                # Handle the case of a 'hard' local minimum by rattling the structure once, then a second
+                # occurrence is considered unrecoverable. Restore the original upscale value (i.e. from the
+                # initial input parameters, not from the possibly reduced value set by the handler dealing with
+                # the `electronic_convergence_stuck` error), since the structure is no longer close to the
+                # global minimum. Otherwise, the reduced upscale would make it impossible to reach convergence.
+                if not self.ctx.rattled:
+                    self.ctx.rattled = True
+                    atoms = calculation.outputs.output_structure.get_ase()
+                    atoms.rattle(stdev=0.01)
+                    self.ctx.inputs.structure = orm.StructureData(ase=atoms)
+                    self.ctx.inputs.parameters['IONS']['upscale'] = (
+                        self.ctx.initial_parameters['parameters'].get_dict().get('IONS', {}).get('upscale', 100)
+                    )
+                    action = (
+                        'bfgs history (ionic only) failure: rattling the structure once to escape from a '
+                        'possible (hard) local minimum.'
+                    )
+                else:
+                    return ProcessHandlerReport(True, self.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE)
+
+                self.set_restart_type(RestartType.FROM_CHARGE_DENSITY, calculation.outputs.remote_folder)
+                self.report_error_handled(calculation, action)
+                return ProcessHandlerReport(True)
+
             self.ctx.inputs.parameters['IONS']['ion_dynamics'] = 'damp'
             action = 'bfgs history (ionic only) failure: restarting with `damp` dynamics.'
 

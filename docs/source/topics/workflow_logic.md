@@ -66,7 +66,8 @@ This information is then used by the `PwRelaxWorkChain`, whose job is to remove 
   - `ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE` (521)
 
 Handles failures in the BFGS ionic minimization where the history is reset twice consecutively.
-For `relax` calculations, switches to `damp` dynamics; for `vc-relax`, either reduces `trust_radius_min` by 90% (if above 1.0e-4) or switches to `damp`/`damp-w` dynamics.
+For `relax` calculations, if the output structure has few symmetries, the structure is rattled once (with a 0.01 Angstrom standard deviation) to escape from a possible hard local minimum, and a second occurrence of the same failure is considered unrecoverable.
+Otherwise, it switches to `damp` dynamics; for `vc-relax`, it either reduces `trust_radius_min` by 90% (if above 1.0e-4) or switches to `damp`/`damp-w` dynamics.
 All cases restart from the previous charge density using the output structure.
 
 ### Ionic convergence failures
@@ -117,6 +118,16 @@ Reduces `mixing_beta` by 20% and performs a full restart from the previous calcu
 
 Handles cases where electronic convergence was not reached but the input parameters indicate this is acceptable (e.g., `scf_must_converge = False` or `electron_maxstep = 0`).
 Marks the workchain as finished and returns the outputs with a warning exit code.
+
+### Electronic convergence stuck in relaxations
+
+- **Handler:** `handle_electronic_convergence_stuck`
+- **Exit codes handled:**
+  - `STOPPED_BY_MONITOR` (150)
+
+Handles cases where the electronic convergence is stuck during a `relax` calculation, i.e. when the algorithm in Quantum ESPRESSO tries to decrease the `conv_thr` during the ionic minimization to ensure that forces are small enough.
+Reduces the `IONS.upscale` parameter by 70% (with a minimum of 1) and performs a full restart from the last calculation.
+If `upscale` is already at its minimum of 1, or if the exit message does not correspond to the expected one, the failure is considered unrecoverable.
 
 
 ## `PwRelaxWorkChain`

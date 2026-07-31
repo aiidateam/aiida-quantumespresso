@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### 🐛 Bug fixes
+
+* `PwBaseWorkChain`: add `handle_electronic_convergence_stuck` to recover from `STOPPED_BY_MONITOR` failures in `relax` calculations by reducing `IONS.upscale`, and rattle the structure once in `handle_relax_recoverable_ionic_convergence_bfgs_history_error` for `relax` calculations with few symmetries
+
 ## v5.0.0
 
 > [!WARNING]
