@@ -127,7 +127,8 @@ Marks the workchain as finished and returns the outputs with a warning exit code
 
 Handles cases where the electronic convergence is stuck during a `relax` calculation, i.e. when the algorithm in Quantum ESPRESSO tries to decrease the `conv_thr` during the ionic minimization to ensure that forces are small enough.
 Reduces the `IONS.upscale` parameter by 70% (with a minimum of 1) and performs a full restart from the last calculation.
-If `upscale` is already at its minimum of 1, or if the exit message does not correspond to the expected one, the failure is considered unrecoverable.
+If `upscale` is already at its minimum of 1, the failure is considered unrecoverable.
+Since the `STOPPED_BY_MONITOR` exit code is shared by all monitors, the handler identifies the relevant condition through the exit message: if the message does not match, the handler does not intervene and the failure is treated as unhandled by the work chain.
 
 
 ## `PwRelaxWorkChain`

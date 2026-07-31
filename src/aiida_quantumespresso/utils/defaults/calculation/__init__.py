@@ -23,5 +23,6 @@ pw = AttributeDict(
         'wf_collect': True,
         'trust_radius_min': 1.0e-3,
         'ion_dynamics': 'bfgs',
+        'upscale': 100,
     }
 )

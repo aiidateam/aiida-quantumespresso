@@ -17,7 +17,9 @@ from aiida.plugins import CalculationFactory, GroupFactory
 from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import (
     create_kpoints_from_distance,
 )
+from aiida_quantumespresso.calculations.functions.rattle_structure import rattle_structure
 from aiida_quantumespresso.common.types import ElectronicType, RestartType, SpinType
+from aiida_quantumespresso.tools.monitors.accuracy_stuck import ACCURACY_STUCK_MESSAGE_PREFIX
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 
 from ..protocols.utils import ProtocolMixin
@@ -43,6 +45,9 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             'delta_factor_nbnd': 0.05,
             'delta_minimum_nbnd': 4,
             'delta_factor_trust_radius_min': 0.1,
+            'delta_factor_upscale': 0.3,
+            'rattle_stdev': 0.01,
+            'rattle_symmetry_threshold': 5,
         }
     )
 
@@ -338,7 +343,6 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         """
         super().setup()
         self.ctx.inputs = AttributeDict(self.exposed_inputs(PwCalculation, 'pw'))
-        self.ctx.initial_parameters = AttributeDict(self.exposed_inputs(PwCalculation, 'pw'))
 
         self.ctx.inputs.parameters = self.ctx.inputs.parameters.get_dict()
         self.ctx.inputs.parameters.setdefault('CONTROL', {})
@@ -599,24 +603,31 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         Quantum ESPRESSO tries to decrease the `conv_thr` during the ionic minimization, to ensure that forces are
         small enough. To solve it, we restart by reducing the `IONS.upscale` parameter (by default, it is 100).
         """
-        self.report(f'Handling {calculation.exit_status}<{calculation.exit_message}>')
+        if calculation.exit_message is None or not calculation.exit_message.startswith(ACCURACY_STUCK_MESSAGE_PREFIX):
+            # The exit code is shared by all monitors, so the message identifies the accuracy-stuck monitor. Any
+            # other message comes from an unrelated monitor: return `None` so the failure counts as unhandled.
+            return None
 
-        if calculation.exit_message == 'Job appears stuck: accuracy has not improved in the last 5 occurrences.':
+        calculation_type = self.ctx.inputs.parameters['CONTROL'].get('calculation', 'scf')
+
+        if calculation_type in ('relax', 'vc-relax'):
             ions_namelist = self.ctx.inputs.parameters.get('IONS', {})
-            upscale = ions_namelist.get('upscale', 100)
+            upscale = ions_namelist.get('upscale', qe_defaults.upscale)
 
-            if upscale > 1:
-                new_upscale = max(int(upscale * 0.3), 1)
-                ions_namelist['upscale'] = new_upscale
-                self.ctx.inputs.parameters['IONS'] = ions_namelist
-
-                action = f'reduced upscale from {upscale} to {new_upscale} and restarting from the last calculation'
-                self.set_restart_type(RestartType.FULL, calculation.outputs.remote_folder)
-            else:
+            if upscale <= 1:
+                self.report_error_handled(
+                    calculation, 'electronic convergence stuck but `upscale` already at its minimum, aborting...'
+                )
                 return ProcessHandlerReport(True, self.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE)
-        else:
-            return ProcessHandlerReport(True, self.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE)
 
+            new_upscale = max(int(upscale * self.defaults.delta_factor_upscale), 1)
+            ions_namelist['upscale'] = new_upscale
+            self.ctx.inputs.parameters['IONS'] = ions_namelist
+            action = f'reduced upscale from {upscale} to {new_upscale} and restarting from the last calculation'
+        else:
+            action = 'restarting from the last calculation'
+
+        self.set_restart_type(RestartType.FULL, calculation.outputs.remote_folder)
         self.report_error_handled(calculation, action)
         return ProcessHandlerReport(True)
 
@@ -645,8 +656,8 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         calculation_type = self.ctx.inputs.parameters['CONTROL'].get('calculation', 'relax')
 
         if calculation_type == 'relax':
-            symmetries = calculation.outputs.output_parameters.get_dict().get('symmetries', [])
-            if len(symmetries) < 5:
+            n_symmetries = calculation.outputs.output_parameters.get_dict().get('number_of_symmetries')
+            if n_symmetries is not None and n_symmetries < self.defaults.rattle_symmetry_threshold:
                 # Handle the case of a 'hard' local minimum by rattling the structure once, then a second
                 # occurrence is considered unrecoverable. Restore the original upscale value (i.e. from the
                 # initial input parameters, not from the possibly reduced value set by the handler dealing with
@@ -654,17 +665,20 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 # global minimum. Otherwise, the reduced upscale would make it impossible to reach convergence.
                 if not self.ctx.rattled:
                     self.ctx.rattled = True
-                    atoms = calculation.outputs.output_structure.get_ase()
-                    atoms.rattle(stdev=0.01)
-                    self.ctx.inputs.structure = orm.StructureData(ase=atoms)
+                    self.ctx.inputs.structure = rattle_structure(
+                        calculation.outputs.output_structure, orm.Float(self.defaults.rattle_stdev)
+                    )
                     self.ctx.inputs.parameters['IONS']['upscale'] = (
-                        self.ctx.initial_parameters['parameters'].get_dict().get('IONS', {}).get('upscale', 100)
+                        self.inputs.pw.parameters.get_dict().get('IONS', {}).get('upscale', qe_defaults.upscale)
                     )
                     action = (
                         'bfgs history (ionic only) failure: rattling the structure once to escape from a '
                         'possible (hard) local minimum.'
                     )
                 else:
+                    self.report_error_handled(
+                        calculation, 'bfgs history failure after the structure was already rattled once, aborting...'
+                    )
                     return ProcessHandlerReport(True, self.exit_codes.ERROR_KNOWN_UNRECOVERABLE_FAILURE)
 
                 self.set_restart_type(RestartType.FROM_CHARGE_DENSITY, calculation.outputs.remote_folder)
