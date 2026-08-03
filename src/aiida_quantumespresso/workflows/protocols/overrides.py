@@ -17,7 +17,7 @@ guard fires in both directions: an orphaned typed key *and* a newly added upstre
 ``exclude``s some ports (``clean_workdir`` from both, and ``pw.parent_folder`` from ``bands`` since
 the builder wires it from the SCF remote folder). The ``scf``/``bands`` overrides therefore use
 *narrowed* ``TypedDict``\\ s (``PwBandsScfOverrides``/``PwBandsBandsOverrides`` and the narrowed
-``PwBandsCalculationOverrides``) rather than the full ``PwBaseOverrides``, so autocomplete never
+``PwBandsCalculationOverrides``) rather than the full ``PwBaseProtocolOverrides``, so autocomplete never
 suggests a key the namespace does not expose. The drift guards check each nested namespace against
 its own sub-spec so this narrowing cannot silently rot either.
 """
@@ -107,7 +107,7 @@ class _PwBaseCommonOverrides(TypedDict, total=False):
     pseudo_family: str
 
 
-class PwBaseOverrides(_PwBaseCommonOverrides, total=False):
+class PwBaseProtocolOverrides(_PwBaseCommonOverrides, total=False):
     """Overrides accepted by ``PwBaseWorkChain.get_builder_from_protocol``."""
 
     pw: PwCalculationOverrides
@@ -117,7 +117,7 @@ class PwBaseOverrides(_PwBaseCommonOverrides, total=False):
 class PwBandsScfOverrides(_PwBaseCommonOverrides, total=False):
     """Overrides for the ``scf`` namespace of ``PwBandsWorkChain``.
 
-    Same as ``PwBaseOverrides`` but without ``clean_workdir``, which ``PwBandsWorkChain`` excludes
+    Same as ``PwBaseProtocolOverrides`` but without ``clean_workdir``, which ``PwBandsWorkChain`` excludes
     from its ``scf`` namespace (cleanup is driven by the parent work chain's own ``clean_workdir``).
     """
 
@@ -135,7 +135,7 @@ class PwBandsBandsOverrides(_PwBaseCommonOverrides, total=False):
     pw: PwBandsCalculationOverrides
 
 
-class PwBandsOverrides(TypedDict, total=False):
+class PwBandsProtocolOverrides(TypedDict, total=False):
     """Overrides accepted by ``PwBandsWorkChain.get_builder_from_protocol``.
 
     ``structure`` is deliberately omitted: the builder always sets it from its own ``structure``

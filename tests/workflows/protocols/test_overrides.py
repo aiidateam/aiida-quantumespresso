@@ -17,16 +17,17 @@ overwrites from its own arguments. The shared :func:`assert_overrides_match_spec
 comparison and reports which direction drifted.
 """
 
-from typing import Iterable
+from typing import Callable, Iterable
 
+import pytest
 from aiida.plugins import CalculationFactory
 
 from aiida_quantumespresso.workflows.protocols.overrides import (
     PwBandsBandsOverrides,
     PwBandsCalculationOverrides,
-    PwBandsOverrides,
+    PwBandsProtocolOverrides,
     PwBandsScfOverrides,
-    PwBaseOverrides,
+    PwBaseProtocolOverrides,
     PwCalculationOverrides,
     PwMetaParameters,
     PwParametersOverrides,
@@ -43,6 +44,11 @@ PwCalculation = CalculationFactory('quantumespresso.pw')
 # elsewhere). This constant is therefore a second hand-written copy: the equality guard below only
 # protects the two declarations against drifting apart, not against QE's real namelist set.
 PW_NAMELISTS = {'CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', 'CELL', 'FCP', 'RISM'}
+
+# Protocol keys the ``PwBaseWorkChain`` builder pops directly (``inputs.pop(...)``) without exposing
+# them as input ports. The ``scf``/``bands`` overrides of ``PwBandsWorkChain`` are forwarded verbatim
+# to that builder, so they carry the same keys.
+_BASE_BUILDER_CONSUMED = {'meta_parameters', 'pseudo_family'}
 
 
 def assert_overrides_match_spec(
@@ -68,6 +74,100 @@ def assert_overrides_match_spec(
     )
 
 
+# One case per typed namespace, in the argument order of ``assert_overrides_match_spec``: the
+# ``TypedDict``, a callable returning the key names it must mirror (called inside the test to keep
+# ``spec()`` off the collection path), the builder-consumed keys, and the intentionally untyped ones.
+OVERRIDES_CASES = [
+    pytest.param(
+        PwBaseProtocolOverrides,
+        lambda: PwBaseWorkChain.spec().inputs.keys(),
+        _BASE_BUILDER_CONSUMED,
+        # ``code``/``structure`` land in the nested ``pw`` namespace, so no top-level port is builder-set.
+        frozenset(),
+        id='base',
+    ),
+    pytest.param(
+        PwCalculationOverrides,
+        lambda: PwBaseWorkChain.spec().inputs['pw'].keys(),
+        frozenset(),
+        {
+            'code',  # set unconditionally from the ``code`` argument
+            'structure',  # set unconditionally from the ``structure`` argument
+        },
+        id='base.pw',
+    ),
+    pytest.param(
+        PwBandsProtocolOverrides,
+        lambda: PwBandsWorkChain.spec().inputs.keys(),
+        frozenset(),
+        {
+            'structure',  # set unconditionally from the ``structure`` argument
+        },
+        id='bands',
+    ),
+    pytest.param(
+        PwBandsScfOverrides,
+        # The ``scf`` namespace excludes ``clean_workdir``, so the type must not declare it.
+        lambda: PwBandsWorkChain.spec().inputs['scf'].keys(),
+        _BASE_BUILDER_CONSUMED,
+        frozenset(),
+        id='bands.scf',
+    ),
+    pytest.param(
+        PwCalculationOverrides,
+        lambda: PwBandsWorkChain.spec().inputs['scf']['pw'].keys(),
+        frozenset(),
+        {
+            'code',  # set by the builder (``structure`` is already excluded from the ``scf`` namespace)
+        },
+        id='bands.scf.pw',
+    ),
+    pytest.param(
+        PwBandsBandsOverrides,
+        # The ``bands`` namespace excludes ``clean_workdir``, so the type must not declare it.
+        lambda: PwBandsWorkChain.spec().inputs['bands'].keys(),
+        _BASE_BUILDER_CONSUMED,
+        frozenset(),
+        id='bands.bands',
+    ),
+    pytest.param(
+        PwBandsCalculationOverrides,
+        # ``PwBandsWorkChain`` excludes ``pw.parent_folder`` (and ``pw.structure``) from its ``bands``
+        # namespace, so this type must omit ``parent_folder`` where ``PwCalculationOverrides`` keeps it.
+        lambda: PwBandsWorkChain.spec().inputs['bands']['pw'].keys(),
+        frozenset(),
+        {
+            'code',  # set by the builder (``structure``/``parent_folder`` are excluded from the namespace)
+        },
+        id='bands.bands.pw',
+    ),
+    pytest.param(
+        PwMetaParameters,
+        lambda: PwBaseWorkChain.get_protocol_inputs()['meta_parameters'],
+        frozenset(),
+        # The builder reads every ``meta_parameters`` key, so all of them are override surface.
+        frozenset(),
+        id='meta_parameters',
+    ),
+]
+
+
+@pytest.mark.parametrize('overrides_cls, port_names, builder_consumed, intentionally_untyped', OVERRIDES_CASES)
+def test_overrides_match_spec(
+    overrides_cls: type,
+    port_names: Callable[[], Iterable[str]],
+    builder_consumed: Iterable[str],
+    intentionally_untyped: Iterable[str],
+):
+    """The typed overrides keys must equal the override surface of the namespace they mirror."""
+    assert_overrides_match_spec(
+        overrides_cls,
+        port_names(),
+        builder_consumed=builder_consumed,
+        intentionally_untyped=intentionally_untyped,
+    )
+
+
 def test_pw_parameters_overrides_match_namelists():
     """The ``pw.parameters`` overrides keys must equal the hand-maintained ``PW_NAMELISTS`` copy.
 
@@ -90,77 +190,3 @@ def test_pw_parameters_overrides_cover_automatic_namelists():
     automatic = set().union(*PwCalculation._automatic_namelists.values())  # noqa: SLF001
     typed = set(PwParametersOverrides.__annotations__)
     assert automatic <= typed, f'namelists dispatched by PwCalculation but not typed: {sorted(automatic - typed)}'
-
-
-def test_pw_meta_parameters_match_protocol():
-    """The ``meta_parameters`` overrides keys must match the protocol ``meta_parameters`` schema."""
-    protocol_meta = PwBaseWorkChain.get_protocol_inputs()['meta_parameters']
-    # No exclusions: the builder reads every ``meta_parameters`` key, so all are override surface.
-    assert_overrides_match_spec(PwMetaParameters, protocol_meta)
-
-
-def test_pw_calculation_overrides_match_spec():
-    """The ``pw`` overrides keys must equal the ``pw`` input namespace ports (bar builder-set ones)."""
-    ports = PwBaseWorkChain.spec().inputs['pw'].keys()
-    # Ports the builder always sets from its own arguments, so an override would be ignored.
-    intentionally_untyped = {
-        'code',  # set unconditionally from the ``code`` argument
-        'structure',  # set unconditionally from the ``structure`` argument
-    }
-    assert_overrides_match_spec(PwCalculationOverrides, ports, intentionally_untyped=intentionally_untyped)
-
-
-def test_pw_base_overrides_match_spec():
-    """The ``PwBaseWorkChain`` overrides keys must equal spec ports plus builder-consumed keys."""
-    ports = PwBaseWorkChain.spec().inputs.keys()
-    # Protocol keys the builder pops directly (``inputs.pop(...)``) without exposing as input ports.
-    builder_consumed = {'meta_parameters', 'pseudo_family'}
-    # Nothing at this level is set from the builder's own arguments (``code``/``structure`` land in
-    # the nested ``pw`` namespace), so no port is excluded.
-    assert_overrides_match_spec(PwBaseOverrides, ports, builder_consumed=builder_consumed)
-
-
-def test_pw_bands_overrides_match_spec():
-    """The ``PwBandsWorkChain`` top-level overrides keys must equal its spec ports (bar builder-set)."""
-    ports = PwBandsWorkChain.spec().inputs.keys()
-    # Ports the builder always sets from its own arguments, so an override would be ignored.
-    intentionally_untyped = {
-        'structure',  # set unconditionally from the ``structure`` argument
-    }
-    assert_overrides_match_spec(PwBandsOverrides, ports, intentionally_untyped=intentionally_untyped)
-
-
-# Protocol keys the nested ``PwBaseWorkChain`` builder consumes directly (they are not input ports).
-# The ``scf``/``bands`` overrides are forwarded verbatim to ``PwBaseWorkChain.get_builder_from_protocol``.
-_BASE_BUILDER_CONSUMED = {'meta_parameters', 'pseudo_family'}
-
-
-def test_pw_bands_scf_overrides_match_spec():
-    """The ``scf`` overrides keys must equal the ``scf`` namespace ports (which exclude ``clean_workdir``)."""
-    ports = PwBandsWorkChain.spec().inputs['scf'].keys()
-    assert_overrides_match_spec(PwBandsScfOverrides, ports, builder_consumed=_BASE_BUILDER_CONSUMED)
-
-
-def test_pw_bands_scf_pw_overrides_match_spec():
-    """The ``scf.pw`` overrides keys must equal the ``scf.pw`` namespace ports (bar builder-set ones)."""
-    ports = PwBandsWorkChain.spec().inputs['scf']['pw'].keys()
-    # ``structure`` is already excluded from the ``scf`` namespace; ``code`` is set by the builder.
-    assert_overrides_match_spec(PwCalculationOverrides, ports, intentionally_untyped={'code'})
-
-
-def test_pw_bands_bands_overrides_match_spec():
-    """The ``bands`` overrides keys must equal the ``bands`` namespace ports (which exclude ``clean_workdir``)."""
-    ports = PwBandsWorkChain.spec().inputs['bands'].keys()
-    assert_overrides_match_spec(PwBandsBandsOverrides, ports, builder_consumed=_BASE_BUILDER_CONSUMED)
-
-
-def test_pw_bands_bands_pw_overrides_match_spec():
-    """The ``bands.pw`` overrides keys must equal the ``bands.pw`` namespace ports (bar builder-set ones).
-
-    ``PwBandsWorkChain`` excludes ``pw.parent_folder`` (and ``pw.structure``) from its ``bands``
-    namespace, so ``PwBandsCalculationOverrides`` must omit ``parent_folder`` where the general
-    ``PwCalculationOverrides`` keeps it.
-    """
-    ports = PwBandsWorkChain.spec().inputs['bands']['pw'].keys()
-    # ``structure``/``parent_folder`` are already excluded from the ``bands`` namespace; ``code`` is builder-set.
-    assert_overrides_match_spec(PwBandsCalculationOverrides, ports, intentionally_untyped={'code'})

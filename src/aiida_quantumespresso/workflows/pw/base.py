@@ -22,7 +22,7 @@ from aiida_quantumespresso.common.types import ElectronicType, RestartType, Spin
 from aiida_quantumespresso.tools.monitors.accuracy_stuck import ACCURACY_STUCK_MESSAGE_PREFIX
 from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 
-from ..protocols.overrides import PwBaseOverrides
+from ..protocols.overrides import PwBaseProtocolOverrides
 from ..protocols.utils import ProtocolMixin
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
@@ -163,7 +163,7 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         code,
         structure,
         protocol=None,
-        overrides: PwBaseOverrides | None = None,
+        overrides: PwBaseProtocolOverrides | None = None,
         electronic_type=ElectronicType.METAL,
         spin_type=SpinType.NONE,
         initial_magnetic_moments=None,
