@@ -1,6 +1,6 @@
 """Tests for the ``PwBaseWorkChain.get_builder_from_protocol`` method."""
 
-from contextlib import nullcontext
+import warnings
 
 import pytest
 from aiida.engine import ProcessBuilder
@@ -304,9 +304,12 @@ def test_parallelization_overrides(fixture_code, generate_structure):
 def test_overrides_key_check(fixture_code, generate_structure, overrides, warning):
     """Test that the `get_builder_from_protocol()` method warns for erroneous keys in the `overrides`."""
 
-    context = pytest.warns(UserWarning) if warning else nullcontext()
+    context = pytest.warns(UserWarning) if warning else warnings.catch_warnings()
 
     with context:
+        if not warning:
+            warnings.simplefilter('error', UserWarning)
+
         PwBaseWorkChain.get_builder_from_protocol(
             fixture_code('quantumespresso.pw'),
             generate_structure('silicon'),
