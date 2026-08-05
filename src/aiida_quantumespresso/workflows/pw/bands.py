@@ -172,16 +172,21 @@ class PwBandsWorkChain(ProtocolMixin, WorkChain):
         bands.pop('kpoints_distance', None)
         bands.pop('kpoints_force_parity', None)
 
+        # `scf`/`bands` are already fully constructed builders, so assign them directly rather than merging as dicts.
+        inputs.pop('scf', None)
+        inputs.pop('bands', None)
+
+        # `bands_kpoints` and `bands_kpoints_distance` are mutually exclusive: only pass on the one that should be used.
+        if 'bands_kpoints' in inputs:
+            inputs.pop('bands_kpoints_distance', None)
+        else:
+            inputs.pop('bands_kpoints', None)
+
         builder = cls.get_builder()
         builder.structure = structure
         builder.scf = scf
         builder.bands = bands
-        builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
-        builder.nbands_factor = orm.Float(inputs['nbands_factor'])
-        if 'bands_kpoints' in inputs:
-            builder.bands_kpoints = inputs['bands_kpoints']
-        else:
-            builder.bands_kpoints_distance = orm.Float(inputs['bands_kpoints_distance'])
+        builder._update(inputs)
 
         return builder
 

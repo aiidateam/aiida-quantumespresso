@@ -190,13 +190,16 @@ class PwRelaxWorkChain(ProtocolMixin, WorkChain):
                         f'Structures with periodic boundary conditions `{structure.pbc}` are not supported.'
                     )
 
+        # `base_relax`/`base_init_relax` are already fully constructed builders, so assign them directly rather than
+        # merging as dicts.
+        inputs.pop('base_relax', None)
+        inputs.pop('base_init_relax', None)
+
         builder = cls.get_builder()
         builder.base_relax = base_relax
         builder.base_init_relax = base_init_relax
         builder.structure = structure
-        builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
-        builder.max_meta_convergence_iterations = orm.Int(inputs['max_meta_convergence_iterations'])
-        builder.meta_convergence = orm.Bool(inputs['meta_convergence'])
+        builder._update(inputs)
 
         return builder
 

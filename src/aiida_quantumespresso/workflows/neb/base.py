@@ -130,19 +130,28 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             options=options,
             **kargs,
         )
-        builder = cls.get_builder()
-        builder.neb.code = code
-        builder.neb.images = images
-        builder.neb.pw.pseudos = pw_base.pw.pseudos
-        builder.neb.pw.parameters = pw_base.pw.parameters
-        builder.neb.metadata.options = pw_base.pw.metadata.options
+        inputs = {
+            'neb': {
+                'code': code,
+                'images': images,
+                'pw': {
+                    'pseudos': pw_base.pw.pseudos,
+                    'parameters': pw_base.pw.parameters,
+                },
+                'metadata': {'options': pw_base.pw.metadata.options},
+            },
+            'kpoints_force_parity': pw_base['kpoints_force_parity'],
+            'max_iterations': pw_base['max_iterations'],
+        }
 
         if 'kpoints' in pw_base:
-            builder.kpoints = pw_base['kpoints']
+            inputs['kpoints'] = pw_base['kpoints']
         else:
-            builder.kpoints_distance = orm.Float(pw_base['kpoints_distance'])
-        builder.kpoints_force_parity = orm.Bool(pw_base['kpoints_force_parity'])
-        builder.max_iterations = orm.Int(pw_base['max_iterations'])
+            inputs['kpoints_distance'] = pw_base['kpoints_distance']
+
+        builder = cls.get_builder()
+        builder._update(inputs)
+
         return builder
 
     def setup(self):

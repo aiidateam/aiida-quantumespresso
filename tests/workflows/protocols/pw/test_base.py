@@ -288,11 +288,10 @@ def test_parallelization_overrides(fixture_code, generate_structure):
         # CORRECT overrides for `Dict` node with incorrect keys
         # The key check should _not_ validate the inputs, that is the job of the port validator
         ({'pw': {'parameters': {'NON-EXISTENT': {'param': 1}}}}, None),
-        # WRONG overrides with typo
-        ({'clean_wokdir': True}, UserWarning),
-        # WRONG overrides with process input at incorrect level
+        # WRONG overrides with process input at incorrect level, nested inside the dynamic `pw` namespace: the
+        # namespace itself cannot reject unknown keys, so this is only caught with a warning.
         ({'pw': {'options': {}}}, UserWarning),
-        # WRONG overrides with protocol input at incorrect level
+        # WRONG overrides with protocol input at incorrect level, same reasoning as above.
         ({'pw': {'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'}}, UserWarning),
     ],
 )
@@ -306,6 +305,20 @@ def test_overrides_key_check(fixture_code, generate_structure, overrides, warnin
             fixture_code('quantumespresso.pw'),
             generate_structure('silicon'),
             overrides=overrides,
+        )
+
+
+def test_overrides_key_check_raises(fixture_code, generate_structure):
+    """Test that a typo in a top-level override key raises, instead of being silently ignored.
+
+    Unlike keys nested inside a dynamic namespace (see ``test_overrides_key_check``), the work chain's own root
+    namespace is not dynamic, so the builder itself rejects an unknown top-level key.
+    """
+    with pytest.warns(UserWarning), pytest.raises(AttributeError):
+        PwBaseWorkChain.get_builder_from_protocol(
+            fixture_code('quantumespresso.pw'),
+            generate_structure('silicon'),
+            overrides={'clean_wokdir': True},
         )
 
 

@@ -312,23 +312,20 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         metadata['options'] = cls.set_default_resources(metadata['options'], code.computer.scheduler_type)
 
-        builder = cls.get_builder()
-        builder.pw['code'] = code
-        builder.pw['pseudos'] = pseudos
-        builder.pw['structure'] = structure
-        builder.pw['parameters'] = orm.Dict(parameters)
-        builder.pw['metadata'] = metadata
-        if 'settings' in inputs['pw']:
-            builder.pw['settings'] = orm.Dict(inputs['pw']['settings'])
-        if 'parallelization' in inputs['pw']:
-            builder.pw['parallelization'] = orm.Dict(inputs['pw']['parallelization'])
-        builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
+        inputs['pw']['code'] = code
+        inputs['pw']['structure'] = structure
+        inputs['pw']['pseudos'] = pseudos
+        inputs['pw']['parameters'] = parameters
+        inputs['pw']['metadata'] = metadata
+
+        # `kpoints` and `kpoints_distance` are mutually exclusive: only pass on the one that should be used.
         if 'kpoints' in inputs:
-            builder.kpoints = inputs['kpoints']
+            inputs.pop('kpoints_distance', None)
         else:
-            builder.kpoints_distance = orm.Float(inputs['kpoints_distance'])
-        builder.kpoints_force_parity = orm.Bool(inputs['kpoints_force_parity'])
-        builder.max_iterations = orm.Int(inputs['max_iterations'])
+            inputs.pop('kpoints', None)
+
+        builder = cls.get_builder()
+        builder._update(inputs)
 
         return builder
 

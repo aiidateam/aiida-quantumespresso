@@ -163,12 +163,9 @@ def test_pbc_cell(fixture_code, generate_structure, struc_name, cell_dofree):
         ({'base_relax': {'kpoints_force_parity': True}}, None),
         # CORRECT overrides for nested protocol input
         ({'base_relax': {'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'}}, None),
-        # WRONG overrides with typo
-        ({'clean_wokdir': True}, UserWarning),
-        # WRONG overrides with process input at incorrect level
+        # WRONG overrides with process input at incorrect level, nested inside the dynamic `base_relax` namespace:
+        # the namespace itself cannot reject unknown keys, so this is only caught with a warning.
         ({'base_relax': {'clean_workdir': True}}, UserWarning),
-        # WRONG overrides with protocol input at incorrect level
-        ({'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'}, UserWarning),
     ],
 )
 def test_overrides_key_check(fixture_code, generate_structure, overrides, warning):
@@ -177,6 +174,29 @@ def test_overrides_key_check(fixture_code, generate_structure, overrides, warnin
     context = pytest.warns(UserWarning) if warning else nullcontext()
 
     with context:
+        PwRelaxWorkChain.get_builder_from_protocol(
+            fixture_code('quantumespresso.pw'),
+            generate_structure('silicon'),
+            overrides=overrides,
+        )
+
+
+@pytest.mark.parametrize(
+    'overrides',
+    [
+        # WRONG overrides with typo at the (non-dynamic) root level.
+        {'clean_wokdir': True},
+        # WRONG overrides with protocol input at the (non-dynamic) root level.
+        {'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'},
+    ],
+)
+def test_overrides_key_check_raises(fixture_code, generate_structure, overrides):
+    """Test that a typo in a top-level override key raises, instead of being silently ignored.
+
+    Unlike keys nested inside a dynamic namespace (see ``test_overrides_key_check``), the work chain's own root
+    namespace is not dynamic, so the builder itself rejects an unknown top-level key.
+    """
+    with pytest.warns(UserWarning), pytest.raises(AttributeError):
         PwRelaxWorkChain.get_builder_from_protocol(
             fixture_code('quantumespresso.pw'),
             generate_structure('silicon'),
