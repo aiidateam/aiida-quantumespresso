@@ -84,7 +84,7 @@ def launch_workflow(
             'hubbard_file': hubbard_file,
         },
     }
-    overrides = {'relax': base_overrides, 'scf': base_overrides, 'bands': base_overrides}
+    overrides = {'scf': base_overrides, 'bands': base_overrides}
     builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)
 
     launch.launch_process(builder, daemon)

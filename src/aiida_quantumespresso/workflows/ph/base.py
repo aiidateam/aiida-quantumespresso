@@ -162,26 +162,21 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
 
         metadata['options'] = cls.set_default_resources(metadata['options'], code.computer.scheduler_type)
 
-        builder = cls.get_builder()
-        builder.ph['code'] = code
+        inputs['ph']['code'] = code
         if parent_folder is not None:
-            builder.ph['parent_folder'] = parent_folder
-        builder.ph['parameters'] = orm.Dict(inputs['ph']['parameters'])
-        builder.ph['metadata'] = metadata
-        if 'settings' in inputs['ph']:
-            builder.ph['settings'] = orm.Dict(inputs['ph']['settings'])
-        builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
+            inputs['ph']['parent_folder'] = parent_folder
+        inputs['ph']['metadata'] = metadata
 
         if 'qpoints' in inputs:
-            qpoints_mesh = inputs['qpoints']
+            qpoints_mesh = inputs.pop('qpoints')
             qpoints = orm.KpointsData()
             qpoints.set_kpoints_mesh(qpoints_mesh)
-            builder.qpoints = qpoints
-        else:
-            builder.qpoints_distance = orm.Float(inputs['qpoints_distance'])
-            builder.qpoints_force_parity = orm.Bool(inputs['qpoints_force_parity'])
+            inputs['qpoints'] = qpoints
+            inputs.pop('qpoints_distance', None)
+            inputs.pop('qpoints_force_parity', None)
 
-        builder.max_iterations = orm.Int(inputs['max_iterations'])
+        builder = cls.get_builder()
+        builder._update(inputs)
 
         return builder
 

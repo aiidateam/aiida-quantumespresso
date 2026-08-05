@@ -363,8 +363,11 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
         nscf['pw']['parameters']['SYSTEM'].pop('degauss', None)
         nscf.pop('clean_workdir', None)
 
-        metadata_dos = inputs.get('dos', {}).get('metadata', {'options': {}})
-        metadata_projwfc = inputs.get('projwfc', {}).get('metadata', {'options': {}})
+        dos_inputs = inputs.setdefault('dos', {})
+        projwfc_inputs = inputs.setdefault('projwfc', {})
+
+        metadata_dos = dos_inputs.setdefault('metadata', {'options': {}})
+        metadata_projwfc = projwfc_inputs.setdefault('metadata', {'options': {}})
 
         if options:
             metadata_dos['options'] = recursive_merge(metadata_dos['options'], options)
@@ -375,21 +378,20 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
             metadata_projwfc['options'], projwfc_code.computer.scheduler_type
         )
 
+        dos_inputs['code'] = dos_code
+        dos_inputs['metadata'] = metadata_dos
+        projwfc_inputs['code'] = projwfc_code
+        projwfc_inputs['metadata'] = metadata_projwfc
+
+        # `scf`/`nscf` are already fully constructed builders, so assign them directly rather than merging as dicts.
+        inputs.pop('scf', None)
+        inputs.pop('nscf', None)
+
         builder = cls.get_builder()
         builder.structure = structure
-        builder.clean_workdir = orm.Bool(inputs['clean_workdir'])
         builder.scf = scf
         builder.nscf = nscf
-        builder.dos.code = dos_code
-        builder.dos.parameters = orm.Dict(inputs.get('dos', {}).get('parameters'))
-        builder.dos.metadata = metadata_dos
-        if inputs.get('dos', {}).get('settings'):
-            builder.dos.settings = orm.Dict(inputs['dos']['settings'])
-        builder.projwfc.code = projwfc_code
-        builder.projwfc.parameters = orm.Dict(inputs.get('projwfc', {}).get('parameters'))
-        builder.projwfc.metadata = metadata_projwfc
-        if inputs.get('projwfc', {}).get('settings'):
-            builder.projwfc.settings = orm.Dict(inputs['projwfc']['settings'])
+        builder._update(inputs)
 
         return builder
 
