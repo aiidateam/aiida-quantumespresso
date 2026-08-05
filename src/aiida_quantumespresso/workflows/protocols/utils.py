@@ -145,12 +145,28 @@ class ProtocolMixin:
         except (IndexError, TypeError):
             pass
 
+        # Sentinel key marking whether a namespace-dict below accepts arbitrary keys beyond its declared
+        # children (e.g. the dynamic ``monitors`` namespace). An `object()` is used rather than a string
+        # so it can never collide with an actual port or override name.
+        dynamic_marker = object()
+
         def port_namespace_to_dict(namespace: PortNamespace):
-            """Recursively convert a PortNamespace into a nested dict structure."""
-            return {
+            """Recursively convert a PortNamespace into a nested dict structure.
+
+            Each resulting dict carries a `dynamic_marker` entry recording whether the namespace is
+            genuinely open-ended (dynamic with no statically declared children, e.g. ``monitors`` or
+            ``pseudos``), so `recursive_key_check` can skip validating keys nested under it. Many
+            namespaces (e.g. `pw`, from ``expose_inputs``) are also `dynamic` for unrelated internal
+            reasons despite declaring a full, fixed set of children, so `dynamic` alone is not a
+            reliable signal: only an *empty* dynamic namespace unambiguously means "arbitrary keys are
+            expected here".
+            """
+            mapping = {
                 key: port_namespace_to_dict(port) if isinstance(port, PortNamespace) else None
                 for key, port in namespace.items()
             }
+            mapping[dynamic_marker] = namespace.dynamic and not mapping
+            return mapping
 
         def recursive_key_check(inputs_mapping: dict, overrides: dict, path=''):
             """Recursively check that all the provided keys in the `overrides` are in the `inputs_mapping`."""
@@ -158,7 +174,8 @@ class ProtocolMixin:
             for key, value in overrides.items():
                 full_key = f'{path}.{key}' if path else key
                 if key not in inputs_mapping:
-                    warnings.warn(f'Found unrecognised key in overrides: {full_key}')
+                    if not inputs_mapping.get(dynamic_marker, False):
+                        warnings.warn(f'Found unrecognised key in overrides: {full_key}')
                     continue
                 if isinstance(value, dict) and isinstance(inputs_mapping.get(key), dict):
                     recursive_key_check(inputs_mapping[key], value, full_key)

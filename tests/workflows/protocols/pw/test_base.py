@@ -1,6 +1,6 @@
 """Tests for the ``PwBaseWorkChain.get_builder_from_protocol`` method."""
 
-from contextlib import nullcontext
+import warnings
 
 import pytest
 from aiida.engine import ProcessBuilder
@@ -288,9 +288,14 @@ def test_parallelization_overrides(fixture_code, generate_structure):
         # CORRECT overrides for `Dict` node with incorrect keys
         # The key check should _not_ validate the inputs, that is the job of the port validator
         ({'pw': {'parameters': {'NON-EXISTENT': {'param': 1}}}}, None),
+        # CORRECT overrides for a key in a dynamic namespace with no declared children (`monitors`):
+        # its keys cannot be statically enumerated, so any key should be accepted. `pseudos` is the same
+        # shape (dynamic, no declared children) and is therefore covered by this same code path.
+        ({'pw': {'monitors': {'monitor1': {'entry_point': 'quantumespresso.accuracy_stuck'}}}}, None),
         # WRONG overrides with typo
         ({'clean_wokdir': True}, UserWarning),
-        # WRONG overrides with process input at incorrect level
+        # WRONG overrides with process input at incorrect level: `pw` is also a dynamic namespace, but
+        # (unlike `monitors`) has declared children, so an undeclared key here must still warn
         ({'pw': {'options': {}}}, UserWarning),
         # WRONG overrides with protocol input at incorrect level
         ({'pw': {'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'}}, UserWarning),
@@ -299,9 +304,12 @@ def test_parallelization_overrides(fixture_code, generate_structure):
 def test_overrides_key_check(fixture_code, generate_structure, overrides, warning):
     """Test that the `get_builder_from_protocol()` method warns for erroneous keys in the `overrides`."""
 
-    context = pytest.warns(UserWarning) if warning else nullcontext()
+    context = pytest.warns(UserWarning) if warning else warnings.catch_warnings()
 
     with context:
+        if not warning:
+            warnings.simplefilter('error', UserWarning)
+
         PwBaseWorkChain.get_builder_from_protocol(
             fixture_code('quantumespresso.pw'),
             generate_structure('silicon'),
