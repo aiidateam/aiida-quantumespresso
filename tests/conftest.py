@@ -6,6 +6,7 @@ import os
 import pathlib
 import shutil
 import tempfile
+import time
 from collections.abc import Mapping
 from pathlib import Path
 
@@ -13,6 +14,39 @@ import pytest
 
 pytest_plugins = ['aiida.tools.pytest_fixtures']
 
+BROKER_BACKENDS = {
+    'rmq': 'core.rabbitmq',
+    'zmq': 'core.zeromq',
+}
+
+
+def pytest_addoption(parser):
+    """Register the ``--broker-backend`` option to select the message broker used by the test profile."""
+    parser.addoption(
+        '--broker-backend',
+        action='store',
+        default='rmq',
+        choices=tuple(BROKER_BACKENDS),
+        help='Broker backend for the test profile: `rmq` (RabbitMQ, default) or `zmq` (ZeroMQ).',
+    )
+
+@pytest.fixture(scope='session', autouse=True)
+def aiida_profile(pytestconfig, aiida_config, aiida_profile_factory, run_aiida_broker_service_for_profile):
+    """Load a temporary profile whose broker backend is selected through the ``--broker-backend`` option.
+
+    This overrides the ``aiida_profile`` fixture provided by ``aiida-core``, which loads a profile without any broker.
+    The broker backend defaults to RabbitMQ (``core.rabbitmq``) and can be switched to ZeroMQ (``core.zeromq``), which
+    requires no external service, via the ``--broker-backend`` command line option.
+
+    Several tests build an in-process runner that requires a communicator connected to the broker. Unlike RabbitMQ,
+    the ZeroMQ broker is not an external service but is launched by the daemon (through ``circus``). The daemon is
+    therefore started for the duration of the session when the ZeroMQ backend is selected, so that the broker is
+    available to the in-process runner, and stopped again at the end.
+    """
+    broker_backend = BROKER_BACKENDS[pytestconfig.getoption('--broker-backend')]
+
+    with aiida_profile_factory(aiida_config, broker_backend=broker_backend) as profile:
+        yield profile
 
 @pytest.fixture(scope='session', autouse=True)
 def clean_asyncio_tasks():
