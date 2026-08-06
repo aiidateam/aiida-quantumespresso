@@ -11,8 +11,8 @@ This is the only place in aiida-quantumespresso allowed to import
 ``aiida_agents``: it loads only during aiida-agents' discovery, so aiida-agents
 stays an optional extra, never a runtime dependency of the core.
 
-Real: :func:`rag_corpora`. Stubbed with TODOs: :func:`tools`,
-:func:`prompt_fragment`.
+Real: :func:`rag_corpora`, :func:`prompt_fragment`. Stubbed with a TODO:
+:func:`tools`.
 """
 
 from __future__ import annotations
@@ -95,18 +95,43 @@ def tools() -> list[AgentTool]:
     return []
 
 
-def prompt_fragment() -> str | None:
-    """Return domain guidance appended to the agent's system prompt.
+#: Quantum ESPRESSO guidance appended to the agent's system prompt under a
+#: '### quantumespresso' heading. Conventions and physics the code-agnostic core
+#: cannot know; well within ``discovery.MAX_PROMPT_FRAGMENT_CHARS`` (2000).
+_PROMPT_FRAGMENT = """\
+Quantum ESPRESSO here means the pw.x code, driven through aiida-quantumespresso \
+work chains rather than bare calculations, so restarts and error handling apply.
 
-    :return: Currently ``None``.
+Choosing a work chain:
+- PwBaseWorkChain: a single pw.x run (scf, relax, vc-relax, bands or nscf) with \
+automatic restart on the common failures.
+- PwRelaxWorkChain: geometry optimisation, re-running vc-relax until the cell is \
+self-consistent.
+- PwBandsWorkChain: scf then a bands run (optionally preceded by a relax).
+- PdosWorkChain: scf, nscf, then projwfc for a projected density of states.
 
-    .. todo::
+Setting up inputs:
+- Prefer get_builder_from_protocol(code, structure, protocol=...), with a \
+protocol of 'fast', 'moderate' or 'precise', over setting parameters by hand; \
+it also selects pseudopotentials and cutoffs.
+- Pseudopotentials come from an aiida-pseudo family (SSSP or PseudoDojo). Take \
+ecutwfc and ecutrho from that family's recommended cutoffs for the elements \
+present; do not invent them.
 
-        Return a short fragment stating what only this plugin knows: Quantum
-        ESPRESSO conventions and physics (SCF convergence remedies, when a
-        larger ``electron_maxstep`` helps versus when mixing or smearing is the
-        real fix, how a relax runs one SCF cycle per ionic step). Keep it within
-        ``discovery.MAX_PROMPT_FRAGMENT_CHARS`` and do not restate the agent's
-        own workflow; the core prompt wins on any conflict.
+When SCF will not converge it is usually mixing or smearing, not too few steps: \
+lower mixing_beta (around 0.2 to 0.3), and for metals use smearing occupations \
+with a small degauss (about 0.01 to 0.02 Ry). Raising electron_maxstep alone \
+rarely fixes an oscillating run.
+"""
+
+
+def prompt_fragment() -> str:
+    """Return Quantum ESPRESSO guidance appended to the agent's system prompt.
+
+    Conventions and physics only this plugin knows: which work chain to run,
+    that protocols and pseudo families supply cutoffs, and the usual SCF
+    convergence remedies. Kept well within ``discovery.MAX_PROMPT_FRAGMENT_CHARS``.
+
+    :return: The guidance fragment.
     """
-    return None
+    return _PROMPT_FRAGMENT
