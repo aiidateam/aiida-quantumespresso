@@ -137,7 +137,7 @@ def parse_raw_matdyn_phonon_file(phonon_frequencies):
                 parsed_data['warnings'].append('Bad formatting of frequencies')
                 return parsed_data
 
-    counter = 3
+    counter = 4
     for i in range(num_kpoints):
         for j in range(num_bands):
             try:
@@ -148,7 +148,7 @@ def parse_raw_matdyn_phonon_file(phonon_frequencies):
                 parsed_data['warnings'].append('Error while parsing the frequencies, dimension exceeded')
                 return parsed_data
             counter += 1
-        counter += 3  # move past the kpoint coordinates
+        counter += 4
 
     parsed_data['phonon_bands'] = freq_matrix
 
