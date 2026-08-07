@@ -216,15 +216,16 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         # Update the parameters based on the protocol inputs
         parameters = inputs['pw']['parameters']
 
+        system_overrides = (overrides or {}).get('pw', {}).get('parameters', {}).get('SYSTEM', {})
+        cutoffs_in_overrides = all(key in system_overrides for key in ('ecutwfc', 'ecutrho'))
+
         if overrides and 'pseudos' in overrides.get('pw', {}):
             pseudos = overrides['pw']['pseudos']
 
             if sorted(pseudos.keys()) != sorted(structure.get_kind_names()):
                 raise ValueError(f'`pseudos` override needs one value for each of the {len(structure.kinds)} kinds.')
 
-            system_overrides = overrides['pw'].get('parameters', {}).get('SYSTEM', {})
-
-            if not all(key in system_overrides for key in ('ecutwfc', 'ecutrho')):
+            if not cutoffs_in_overrides:
                 raise ValueError(
                     'When overriding the pseudo potentials, both `ecutwfc` and `ecutrho` cutoffs should be '
                     f'provided in the `overrides`: {overrides}'
@@ -244,15 +245,20 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                     'install it.'
                 ) from exception
 
-            try:
-                parameters['SYSTEM']['ecutwfc'], parameters['SYSTEM']['ecutrho'] = (
-                    pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
-                )
-                pseudos = pseudo_family.get_pseudos(structure=structure)
-            except ValueError as exception:
-                raise ValueError(
-                    f'failed to obtain recommended cutoffs for pseudo family `{pseudo_family}`: {exception}'
-                ) from exception
+            # Families that do not define recommended cutoffs can still be used, as long as the `overrides` provide
+            # both cutoffs themselves, since these are applied further down and take precedence anyway.
+            if not cutoffs_in_overrides:
+                try:
+                    parameters['SYSTEM']['ecutwfc'], parameters['SYSTEM']['ecutrho'] = (
+                        pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
+                    )
+                except ValueError as exception:
+                    raise ValueError(
+                        f'failed to obtain recommended cutoffs for pseudo family `{pseudo_family}`: {exception} '
+                        'If the family does not define any, specify both `ecutwfc` and `ecutrho` in the `overrides`.'
+                    ) from exception
+
+            pseudos = pseudo_family.get_pseudos(structure=structure)
 
         parameters['CONTROL']['etot_conv_thr'] = natoms * meta_parameters['etot_conv_thr_per_atom']
         parameters['ELECTRONS']['conv_thr'] = natoms * meta_parameters['conv_thr_per_atom']

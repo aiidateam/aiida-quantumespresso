@@ -182,6 +182,21 @@ def test_overrides_pseudo_family(fixture_code, generate_structure):
     assert parameters['SYSTEM']['ecutrho'] == 400.0
 
 
+def test_overrides_cutoffs(fixture_code, generate_structure):
+    """Test cutoffs in the ``overrides`` take precedence over those recommended by the ``pseudo_family``."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure('silicon')
+
+    # The default family recommends 30 Ry and 240 Ry, see ``test_default``
+    overrides = {'pw': {'parameters': {'SYSTEM': {'ecutwfc': 45.0, 'ecutrho': 180.0}}}}
+
+    builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)
+    parameters = builder.pw.parameters.get_dict()
+    assert parameters['SYSTEM']['ecutwfc'] == 45.0
+    assert parameters['SYSTEM']['ecutrho'] == 180.0
+    assert 'Si' in builder.pw.pseudos
+
+
 def test_magnetization_overrides(fixture_code, generate_structure):
     """Test magnetization ``overrides`` for the ``PwBaseWorkChain.get_builder_from_protocol`` method."""
     code = fixture_code('quantumespresso.pw')
@@ -416,6 +431,55 @@ def test_pseudos_family_structure_fail(fixture_code, generate_structure):
         PwBaseWorkChain.get_builder_from_protocol(
             code,
             structure,
+        )
+
+    # If the cutoffs are specified in the ``overrides``, the family is only asked for the pseudo potentials
+    with pytest.raises(ValueError, match=r'does not contain pseudo for element `U`') as exception:
+        PwBaseWorkChain.get_builder_from_protocol(
+            code,
+            structure,
+            overrides={'pw': {'parameters': {'SYSTEM': {'ecutwfc': 30.0, 'ecutrho': 240.0}}}},
+        )
+
+    assert 'recommended cutoffs' not in str(exception.value)
+
+
+def test_pseudo_family_without_cutoffs(fixture_code, generate_structure, pseudo_family_without_cutoffs):
+    """Test a ``pseudo_family`` without recommended cutoffs, where the cutoffs are specified in the ``overrides``."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure('silicon')
+
+    builder = PwBaseWorkChain.get_builder_from_protocol(
+        code,
+        structure,
+        overrides={
+            'pseudo_family': pseudo_family_without_cutoffs.label,
+            'pw': {'parameters': {'SYSTEM': {'ecutwfc': 30.0, 'ecutrho': 240.0}}},
+        },
+    )
+    parameters = builder.pw.parameters.get_dict()
+
+    assert builder.pw.pseudos['Si'].uuid == pseudo_family_without_cutoffs.get_pseudo(element='Si').uuid
+    assert parameters['SYSTEM']['ecutwfc'] == 30.0
+    assert parameters['SYSTEM']['ecutrho'] == 240.0
+
+
+@pytest.mark.parametrize('system_overrides', ({}, {'ecutwfc': 30.0}, {'ecutrho': 240.0}))
+def test_pseudo_family_without_cutoffs_fail(
+    fixture_code, generate_structure, pseudo_family_without_cutoffs, system_overrides
+):
+    """Test a ``pseudo_family`` without recommended cutoffs fails if the ``overrides`` do not specify both cutoffs."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure('silicon')
+
+    with pytest.raises(ValueError, match=r'specify both `ecutwfc` and `ecutrho` in the `overrides`'):
+        PwBaseWorkChain.get_builder_from_protocol(
+            code,
+            structure,
+            overrides={
+                'pseudo_family': pseudo_family_without_cutoffs.label,
+                'pw': {'parameters': {'SYSTEM': system_overrides}},
+            },
         )
 
 

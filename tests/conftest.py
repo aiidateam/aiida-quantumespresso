@@ -172,6 +172,25 @@ def pseudo_family(generate_upf_data):
     return family
 
 
+@pytest.fixture(scope='session')
+def pseudo_family_without_cutoffs(generate_upf_data):
+    """Create a silicon pseudo potential family for which no recommended cutoffs are defined."""
+    from aiida_pseudo.data.pseudo.upf import UpfData
+    from aiida_pseudo.groups.family import CutoffsPseudoPotentialFamily
+
+    label = 'custom/no-cutoffs'
+    upf = generate_upf_data('Si')
+
+    with tempfile.TemporaryDirectory() as directory:
+        dirpath = pathlib.Path(directory)
+
+        with open(dirpath / 'Si.upf', 'w+b') as handle, upf.open(mode='rb') as source:
+            handle.write(source.read())
+            handle.flush()
+
+        return CutoffsPseudoPotentialFamily.create_from_folder(dirpath, label, pseudo_type=UpfData)
+
+
 @pytest.fixture
 def generate_calc_job():
     """Fixture to construct a new `CalcJob` instance and call `prepare_for_submission` for testing `CalcJob` classes.
