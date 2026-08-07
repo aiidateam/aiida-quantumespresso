@@ -444,40 +444,43 @@ def test_pseudos_family_structure_fail(fixture_code, generate_structure):
     assert 'recommended cutoffs' not in str(exception.value)
 
 
-def test_pseudo_family_without_cutoffs(fixture_code, generate_structure, pseudo_family_without_cutoffs):
+@pytest.mark.parametrize('family_type', ('PseudoPotentialFamily', 'CutoffsPseudoPotentialFamily'))
+def test_pseudo_family_without_cutoffs(fixture_code, generate_structure, pseudo_families_without_cutoffs, family_type):
     """Test a ``pseudo_family`` without recommended cutoffs, where the cutoffs are specified in the ``overrides``."""
     code = fixture_code('quantumespresso.pw')
     structure = generate_structure('silicon')
+    family = pseudo_families_without_cutoffs[family_type]
 
     builder = PwBaseWorkChain.get_builder_from_protocol(
         code,
         structure,
         overrides={
-            'pseudo_family': pseudo_family_without_cutoffs.label,
+            'pseudo_family': family.label,
             'pw': {'parameters': {'SYSTEM': {'ecutwfc': 30.0, 'ecutrho': 240.0}}},
         },
     )
     parameters = builder.pw.parameters.get_dict()
 
-    assert builder.pw.pseudos['Si'].uuid == pseudo_family_without_cutoffs.get_pseudo(element='Si').uuid
+    assert builder.pw.pseudos['Si'].uuid == family.get_pseudo(element='Si').uuid
     assert parameters['SYSTEM']['ecutwfc'] == 30.0
     assert parameters['SYSTEM']['ecutrho'] == 240.0
 
 
+@pytest.mark.parametrize('family_type', ('PseudoPotentialFamily', 'CutoffsPseudoPotentialFamily'))
 @pytest.mark.parametrize('system_overrides', ({}, {'ecutwfc': 30.0}, {'ecutrho': 240.0}))
 def test_pseudo_family_without_cutoffs_fail(
-    fixture_code, generate_structure, pseudo_family_without_cutoffs, system_overrides
+    fixture_code, generate_structure, pseudo_families_without_cutoffs, system_overrides, family_type
 ):
     """Test a ``pseudo_family`` without recommended cutoffs fails if the ``overrides`` do not specify both cutoffs."""
     code = fixture_code('quantumespresso.pw')
     structure = generate_structure('silicon')
 
-    with pytest.raises(ValueError, match=r'specify both `ecutwfc` and `ecutrho` in the `overrides`'):
+    with pytest.raises(ValueError, match=r'both `ecutwfc` and `ecutrho` in the `overrides`'):
         PwBaseWorkChain.get_builder_from_protocol(
             code,
             structure,
             overrides={
-                'pseudo_family': pseudo_family_without_cutoffs.label,
+                'pseudo_family': pseudo_families_without_cutoffs[family_type].label,
                 'pw': {'parameters': {'SYSTEM': system_overrides}},
             },
         )
