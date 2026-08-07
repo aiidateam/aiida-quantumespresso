@@ -172,6 +172,33 @@ def pseudo_family(generate_upf_data):
     return family
 
 
+@pytest.fixture(scope='session')
+def pseudo_families_without_cutoffs(generate_upf_data):
+    """Create the silicon pseudo potential families that recommend no cutoffs, keyed on their class name.
+
+    A ``CutoffsPseudoPotentialFamily`` can recommend cutoffs but has none set here. A ``PseudoPotentialFamily``, the
+    class that ``aiida-pseudo install family`` installs by default, cannot recommend them at all.
+    """
+    from aiida_pseudo.data.pseudo.upf import UpfData
+    from aiida_pseudo.groups.family import CutoffsPseudoPotentialFamily, PseudoPotentialFamily
+
+    families = {}
+    upf = generate_upf_data('Si')
+
+    for family_type in (PseudoPotentialFamily, CutoffsPseudoPotentialFamily):
+        with tempfile.TemporaryDirectory() as directory:
+            dirpath = pathlib.Path(directory)
+
+            with open(dirpath / 'Si.upf', 'w+b') as handle, upf.open(mode='rb') as source:
+                handle.write(source.read())
+                handle.flush()
+
+            label = f'custom/{family_type.__name__}'
+            families[family_type.__name__] = family_type.create_from_folder(dirpath, label, pseudo_type=UpfData)
+
+    return families
+
+
 @pytest.fixture
 def generate_calc_job():
     """Fixture to construct a new `CalcJob` instance and call `prepare_for_submission` for testing `CalcJob` classes.
