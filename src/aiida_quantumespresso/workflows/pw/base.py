@@ -231,14 +231,20 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 )
 
         else:
+            query = orm.QueryBuilder().append(PseudoPotentialFamily, filters={'label': pseudo_family})
+
             try:
-                pseudo_family = (
-                    orm.QueryBuilder().append(PseudoPotentialFamily, filters={'label': pseudo_family}).one()[0]
-                )
+                pseudo_family = query.one()[0]
             except exceptions.NotExistent as exception:
                 raise ValueError(
                     f'required pseudo family `{pseudo_family}` is not installed. Please use `aiida-pseudo install` to'
                     'install it.'
+                ) from exception
+            except exceptions.MultipleObjectsError as exception:
+                matches = ', '.join(f'`{family}`' for family in query.all(flat=True))
+                raise ValueError(
+                    f'the label `{pseudo_family}` matches more than one installed pseudo family: {matches}. Please '
+                    'delete or relabel all but one, or pass the `pseudos` in the `overrides` instead.'
                 ) from exception
 
             # Families that do not define recommended cutoffs can still be used, as long as the `overrides` provide

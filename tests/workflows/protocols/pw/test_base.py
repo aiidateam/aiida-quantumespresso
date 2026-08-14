@@ -486,6 +486,40 @@ def test_pseudo_family_without_cutoffs_fail(
         )
 
 
+def test_pseudo_family_shared_label_fail(fixture_code, generate_structure, pseudo_families_shared_label):
+    """Test a ``pseudo_family`` label that is shared by families of different types is refused."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure('silicon')
+
+    with pytest.raises(ValueError, match=r'matches more than one installed pseudo family') as exception:
+        PwBaseWorkChain.get_builder_from_protocol(
+            code,
+            structure,
+            overrides={
+                'pseudo_family': pseudo_families_shared_label,
+                'pw': {'parameters': {'SYSTEM': {'ecutwfc': 30.0, 'ecutrho': 240.0}}},
+            },
+        )
+
+    for family_type in ('PseudoPotentialFamily', 'CutoffsPseudoPotentialFamily'):
+        assert f'`{family_type}<{pseudo_families_shared_label}>`' in str(exception.value)
+
+
+@pytest.mark.usefixtures('pseudo_families_shared_label')
+def test_pseudo_family_unique_label(fixture_code, generate_structure):
+    """Test a uniquely labelled ``pseudo_family`` still resolves while a shared label is installed."""
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure('silicon')
+
+    builder = PwBaseWorkChain.get_builder_from_protocol(
+        code, structure, overrides={'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'}
+    )
+    parameters = builder.pw.parameters.get_dict()
+
+    assert parameters['SYSTEM']['ecutwfc'] == 30.0
+    assert parameters['SYSTEM']['ecutrho'] == 240.0
+
+
 def test_options(fixture_code, generate_structure):
     """Test specifying ``options`` for the ``get_builder_from_protocol()`` method."""
     code = fixture_code('quantumespresso.pw')
