@@ -120,6 +120,80 @@ def test_invertibility(generate_hubbard_utils, filepath_hubbard, filename, proje
 
 
 @pytest.mark.parametrize(
+    ('formulation', 'parameters', 'expected'),
+    [
+        (
+            'liechtenstein',
+            [
+                (0, '3d', 0, '3d', 5.0, (0, 0, 0), 'U'),
+                (0, '3d', 0, '3d', 1.0, (0, 0, 0), 'J'),
+                (0, '3d', 0, '3d', 0.5, (0, 0, 0), 'B'),
+            ],
+            [
+                ['U', 'Co-3d', '5.0'],
+                ['J', 'Co-3d', '1.0'],
+                ['B', 'Co-3d', '0.5'],
+            ],
+        ),
+        (
+            'liechtenstein',
+            [
+                (0, '3d', 0, '3d', 5.0, (0, 0, 0), 'U'),
+                (0, '3d', 0, '3d', 1.0, (0, 0, 0), 'J'),
+                (0, '3d', 0, '3d', 0.5, (0, 0, 0), 'E2'),
+                (0, '3d', 0, '3d', 0.2, (0, 0, 0), 'E3'),
+            ],
+            [
+                ['U', 'Co-3d', '5.0'],
+                ['J', 'Co-3d', '1.0'],
+                ['E2', 'Co-3d', '0.5'],
+                ['E3', 'Co-3d', '0.2'],
+            ],
+        ),
+        (  # Onsite only: ``U``, ``J0`` and ``ALPHA`` are all written as onsite lines
+            'dudarev',
+            [
+                (0, '3d', 0, '3d', 5.0, (0, 0, 0), 'U'),
+                (0, '3d', 0, '3d', 1.0, (0, 0, 0), 'J0'),
+                (0, '3d', 0, '3d', 0.1, (0, 0, 0), 'ALPHA'),
+            ],
+            [
+                ['U', 'Co-3d', '5.0'],
+                ['J0', 'Co-3d', '1.0'],
+                ['ALPHA', 'Co-3d', '0.1'],
+            ],
+        ),
+        (  # With intersite interactions, only ``U`` is relabelled to ``V``
+            'dudarev',
+            [
+                (0, '3d', 0, '3d', 5.0, (0, 0, 0), 'U'),
+                (0, '3d', 1, '2p', 1.0, (0, 0, 0), 'V'),
+                (0, '3d', 0, '3d', 1.0, (0, 0, 0), 'J0'),
+                (0, '3d', 0, '3d', 0.1, (0, 0, 0), 'ALPHA'),
+            ],
+            [
+                ['V', 'Co-3d', 'Co-3d', '1', '1', '5.0'],
+                ['V', 'Co-3d', 'O-2p', '1', '2', '1.0'],
+                ['J0', 'Co-3d', '1.0'],
+                ['ALPHA', 'Co-3d', '0.1'],
+            ],
+        ),
+    ],
+)
+def test_get_hubbard_card(generate_hubbard_utils, formulation, parameters, expected):
+    """Test the `get_hubbard_card` method for both supported formulations.
+
+    .. note:: the manifolds are not meant to be physically sound, as only the
+        formatting of the ``HUBBARD`` card is tested here.
+    """
+    hubbard_utils = generate_hubbard_utils(parameters=parameters, formulation=formulation)
+    card = hubbard_utils.get_hubbard_card().splitlines()
+
+    assert card[0].split() == ['HUBBARD', 'ortho-atomic']
+    assert [line.split() for line in card[1:]] == expected
+
+
+@pytest.mark.parametrize(
     ('parameters', 'values'),
     [
         (

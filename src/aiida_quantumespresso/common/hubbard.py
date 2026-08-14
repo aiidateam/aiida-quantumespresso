@@ -55,8 +55,8 @@ class HubbardParameters(BaseModel):
     value: float
     """Value of the Hubbard parameter, expessed in eV."""
 
-    hubbard_type: Literal['Ueff', 'U', 'V', 'J', 'B', 'E2', 'E3']
-    """Type of the Hubbard parameters used (`Ueff`, `U`, `V`, `J`, `B`, `E2`, `E3`)."""
+    hubbard_type: Literal['Ueff', 'U', 'V', 'J', 'J0', 'B', 'E2', 'E3', 'ALPHA']
+    """Type of the Hubbard parameters used (`Ueff`, `U`, `V`, `J`, `J0`, `B`, `E2`, `E3`, `ALPHA`)."""
 
     @field_validator('atom_manifold', 'neighbour_manifold')  # cls is mandatory to use
     def check_manifolds(cls, value):
