@@ -256,6 +256,9 @@ class PhCalculation(CalcJob):
         if not restart_flag:  # if it is a restart, it will be copied over
             folder.get_subfolder(self._FOLDER_DYNAMICAL_MATRIX, create=True)
 
+        # Determine this before writing the input file, since the namelists are popped from `parameters` there
+        electron_phonon = parameters['INPUTPH'].get('electron_phonon', None)
+
         with folder.open(self.metadata.options.input_filename, 'w') as infile:
             for namelist_name in namelists_toprint:
                 infile.write(f'&{namelist_name}\n')
@@ -329,7 +332,7 @@ class PhCalculation(CalcJob):
                         self._FOLDER_DYNAMICAL_MATRIX,
                     )
                 )
-                if parameters['INPUTPH'].get('electron_phonon', None) is not None:
+                if electron_phonon is not None:
                     remote_symlink_list.append(
                         (
                             parent_folder.computer.uuid,
@@ -353,7 +356,7 @@ class PhCalculation(CalcJob):
                         '.',
                     )
                 )
-                if parameters['INPUTPH'].get('electron_phonon', None) is not None:
+                if electron_phonon is not None:
                     remote_copy_list.append(
                         (
                             parent_folder.computer.uuid,
