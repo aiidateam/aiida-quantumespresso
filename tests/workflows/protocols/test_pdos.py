@@ -102,3 +102,25 @@ def test_settings_overrides(get_pdos_generator_inputs):
 
     assert builder.dos.settings.get_dict() == {'CMDLINE': ['-npool', '4']}
     assert builder.projwfc.settings.get_dict() == {'CMDLINE': ['-npool', '4']}
+
+
+def test_overrides_merged(get_pdos_generator_inputs):
+    """Test that ``overrides`` are merged onto the builder, also for dict-valued ports.
+
+    A dict-valued input port such as ``scf.handler_overrides`` is not a namespace, so it has to be serialised to a
+    ``Dict`` rather than being recursed into. This pins that these overrides land instead of being dropped or raising.
+    """
+    overrides = {
+        'nbands_factor': 3.0,
+        'clean_workdir': True,
+        'scf': {'handler_overrides': {'handle_out_of_walltime': {'enabled': False}}},
+        'dos': {'settings': {'cmdline': ['-nk', '4']}},
+        'projwfc': {'parameters': {'PROJWFC': {'deltae': 0.02}}},
+    }
+    builder = PdosWorkChain.get_builder_from_protocol(**get_pdos_generator_inputs, overrides=overrides)
+
+    assert builder.nbands_factor == 3.0
+    assert builder.clean_workdir
+    assert builder.scf.handler_overrides.get_dict() == {'handle_out_of_walltime': {'enabled': False}}
+    assert builder.dos.settings.get_dict() == {'cmdline': ['-nk', '4']}
+    assert builder.projwfc.parameters['PROJWFC']['deltae'] == 0.02
