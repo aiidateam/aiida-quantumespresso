@@ -168,7 +168,7 @@ Older versions are supported up to a maximum of two years.
 
 | Plugin | AiiDA | Python | Quantum ESPRESSO |
 |-|-|-|-|
-| `v5.1 < v6.0` | ![Compatibility for v5.0][AiiDA v5.0] |  [![PyPI pyversions][Python v3.10-v3.14]](https://pypi.org/project/aiida-quantumespresso/5.0.0/) | ![Quantum ESPRESSO compatibility][QE v6.6-7.6] |
+| `v5.1 < v6.0` | ![Compatibility for v5.0][AiiDA v5.0] |  [![PyPI pyversions][Python v3.10-v3.14]](https://pypi.org/project/aiida-quantumespresso/5.1.0/) | ![Quantum ESPRESSO compatibility][QE v6.6-7.6] |
 | `v5.0 < v5.1` | ![Compatibility for v5.0][AiiDA v5.0] |  [![PyPI pyversions][Python v3.10-v3.14]](https://pypi.org/project/aiida-quantumespresso/5.0.0/) | ![Quantum ESPRESSO compatibility][QE v6.6-7.5] |
 | `v4.16 < v5.0` | ![Compatibility for v4.0][AiiDA v4.0-pydantic2] |  [![PyPI pyversions][Python v3.10-v3.14]](https://pypi.org/project/aiida-quantumespresso/4.16.0/) | ![Quantum ESPRESSO compatibility][QE v6.6-7.5] |
 | `v4.11 < v4.16` | ![Compatibility for v4.0][AiiDA v4.0-pydantic2] |  [![PyPI pyversions][Python v3.9-v3.12]](https://pypi.org/project/aiida-quantumespresso/4.11.0/) | ![Quantum ESPRESSO compatibility][QE v6.6-7.4.1] |
