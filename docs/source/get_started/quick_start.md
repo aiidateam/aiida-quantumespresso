@@ -54,8 +54,10 @@ builder
 ```
 
 :::{note}
-The protocols run `pw.x` with MPI.
-If your Quantum ESPRESSO installation was compiled without MPI support, set `builder.pw.metadata.options.withmpi = False` before running, otherwise the calculation fails while parsing an empty output file.
+The protocols set `withmpi = True`, so AiiDA launches `pw.x` through the MPI command configured for your computer (by default `mpirun -np <N>`, with `<N>` taken from the computer's default number of MPI processes per machine).
+A `pw.x` compiled without MPI support still works this way as long as `mpirun` is available and `<N>` is 1. With more processes you get independent serial copies writing to the same files.
+If `mpirun` is not installed at all, the job fails before `pw.x` starts and the parser reports an empty output file.
+For a `pw.x` compiled without MPI support, the safest option is to set `builder.pw.metadata.options.withmpi = False` before running.
 :::
 
 In short, the [Process Builder](https://aiida.readthedocs.io/projects/aiida-core/en/stable/topics/processes/usage.html#process-builder) is an AiiDA tool that allows you to set up the inputs for a process.
