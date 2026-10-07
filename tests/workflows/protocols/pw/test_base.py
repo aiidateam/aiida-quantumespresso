@@ -1,9 +1,10 @@
 """Tests for the ``PwBaseWorkChain.get_builder_from_protocol`` method."""
 
-import warnings
+import re
 
 import pytest
 from aiida.engine import ProcessBuilder
+from aiida.orm import Dict
 
 from aiida_quantumespresso.common.types import ElectronicType, SpinType
 from aiida_quantumespresso.workflows.pw.base import PwBaseWorkChain
@@ -288,48 +289,75 @@ def test_parallelization_overrides(fixture_code, generate_structure):
 
 
 @pytest.mark.parametrize(
-    ('overrides', 'warning'),
+    'overrides',
     [
         # CORRECT overrides for top-level process input
-        ({'clean_workdir': True}, None),
+        {'clean_workdir': True},
         # CORRECT overrides for top-level protocol input
-        ({'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'}, None),
+        {'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'},
         # CORRECT overrides for nested process input
-        ({'pw': {'metadata': {'options': {'withmpi': False}}}}, None),
+        {'pw': {'metadata': {'options': {'withmpi': False}}}},
         # CORRECT overrides for nested protocol input
-        ({'meta_parameters': {'conv_thr_per_atom': 0.2}}, None),
+        {'meta_parameters': {'conv_thr_per_atom': 0.2}},
         # CORRECT overrides for `Dict` node with correct keys
-        ({'pw': {'parameters': {'CONTROL': {'calculation': 'relax'}}}}, None),
+        {'pw': {'parameters': {'CONTROL': {'calculation': 'relax'}}}},
         # CORRECT overrides for `Dict` node with incorrect keys
         # The key check should _not_ validate the inputs, that is the job of the port validator
-        ({'pw': {'parameters': {'NON-EXISTENT': {'param': 1}}}}, None),
-        # CORRECT overrides for a key in a dynamic namespace with no declared children (`monitors`):
-        # its keys cannot be statically enumerated, so any key should be accepted. `pseudos` is the same
-        # shape (dynamic, no declared children) and is therefore covered by this same code path.
-        ({'pw': {'monitors': {'monitor1': {'entry_point': 'quantumespresso.accuracy_stuck'}}}}, None),
-        # WRONG overrides with typo
-        ({'clean_wokdir': True}, UserWarning),
-        # WRONG overrides with process input at incorrect level: `pw` is also a dynamic namespace, but
-        # (unlike `monitors`) has declared children, so an undeclared key here must still warn
-        ({'pw': {'options': {}}}, UserWarning),
-        # WRONG overrides with protocol input at incorrect level
-        ({'pw': {'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'}}, UserWarning),
+        {'pw': {'parameters': {'NON-EXISTENT': {'param': 1}}}},
     ],
 )
-def test_overrides_key_check(fixture_code, generate_structure, overrides, warning):
-    """Test that the `get_builder_from_protocol()` method warns for erroneous keys in the `overrides`."""
+def test_overrides_key_check(fixture_code, generate_structure, overrides):
+    """Test that the `get_builder_from_protocol()` method accepts valid keys in the `overrides`."""
+    PwBaseWorkChain.get_builder_from_protocol(
+        fixture_code('quantumespresso.pw'),
+        generate_structure('silicon'),
+        overrides=overrides,
+    )
 
-    context = pytest.warns(UserWarning) if warning else warnings.catch_warnings()
 
-    with context:
-        if not warning:
-            warnings.simplefilter('error', UserWarning)
+@pytest.mark.parametrize(
+    ('overrides', 'match'),
+    [
+        # WRONG overrides with typo at the (non-dynamic) root level.
+        ({'clean_wokdir': True}, '`clean_wokdir`'),
+        # WRONG overrides with process input at incorrect level, nested inside the dynamic `pw` namespace. The
+        # namespace itself cannot reject unknown keys, so this can only be caught by the key check.
+        ({'pw': {'options': {}}}, '`pw.options`'),
+        # WRONG overrides with protocol input at incorrect level, same reasoning as above.
+        ({'pw': {'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'}}, '`pw.pseudo_family`'),
+        # Multiple unrecognised keys are reported in a single error.
+        ({'clean_wokdir': True, 'pw': {'options': {}}}, '`clean_wokdir`, `pw.options`'),
+    ],
+)
+def test_overrides_key_check_raises(fixture_code, generate_structure, overrides, match):
+    """Test that an unrecognised key in the `overrides` raises, instead of being silently ignored.
 
+    This holds regardless of whether the enclosing namespace is dynamic: a key nested inside the dynamic ``pw``
+    namespace would otherwise be accepted by the builder and only fail at submission with a cryptic type error.
+    """
+    with pytest.raises(ValueError, match=re.escape(match)):
         PwBaseWorkChain.get_builder_from_protocol(
             fixture_code('quantumespresso.pw'),
             generate_structure('silicon'),
             overrides=overrides,
         )
+
+
+def test_monitors_overrides(fixture_code, generate_structure):
+    """Test specifying ``pw.monitors`` ``overrides`` for the ``get_builder_from_protocol()`` method.
+
+    The ``pw.monitors`` namespace is dynamic and declares no ports of its own, so its keys are chosen by the caller
+    and cannot be validated by the key check. This pins that such keys land on the builder rather than being
+    rejected as unrecognised.
+    """
+    monitors = {'accuracy_stuck': Dict({'entry_point': 'quantumespresso.accuracy_stuck'})}
+    builder = PwBaseWorkChain.get_builder_from_protocol(
+        fixture_code('quantumespresso.pw'),
+        generate_structure('silicon'),
+        overrides={'pw': {'monitors': monitors}},
+    )
+
+    assert builder.pw.monitors['accuracy_stuck'].get_dict() == {'entry_point': 'quantumespresso.accuracy_stuck'}
 
 
 def test_pseudos_overrides(fixture_code, generate_structure, generate_upf_data):

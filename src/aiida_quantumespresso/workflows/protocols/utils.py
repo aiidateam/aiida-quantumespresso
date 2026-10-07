@@ -1,14 +1,11 @@
 """Utilities to manipulate the workflow input protocols."""
 
 import copy
-import inspect
 import pathlib
-import warnings
 from typing import Optional, Union
 
 import yaml
 from aiida.orm import StructureData
-from aiida.engine import WorkChain
 from plumpy import PortNamespace
 
 from aiida_quantumespresso.common.types import SpinType
@@ -128,57 +125,45 @@ class ProtocolMixin:
     def _validate_override_keys(cls, overrides):
         """Validate that override keys match either the process spec or protocol inputs.
 
-        Recursively checks the `overrides` dictionary against the input port namespace of the work chain, extended
-        with protocol inputs, and emits warnings for any unrecognised keys.
-        """
-        # Avoid duplicate warnings when calling `get_builder_from_protocol` within another `get_builder_from_protocol`
-        try:
-            caller_frame = inspect.stack(context=0)[3]  # Check the frame where `get_builder_from_protocol` is called
-            caller_class = caller_frame.frame.f_locals.get('cls')
-            # Skip the validation when
-            if (
-                caller_frame.function == 'get_builder_from_protocol'  # It is a parent `get_builder_from_protocol` call
-                and caller_class not in (None, cls)  # The caller is a different class
-                and issubclass(caller_class, WorkChain)  # The caller is a WorkChain
-            ):
-                return
-        except (IndexError, TypeError):
-            pass
+        Recursively checks the `overrides` dictionary against the input port namespace of the `WorkChain`, extended
+        with protocol inputs, and raises for any unrecognised keys.
 
-        # Sentinel key marking whether a namespace-dict below accepts arbitrary keys beyond its declared
-        # children (e.g. the dynamic ``monitors`` namespace). An `object()` is used rather than a string
-        # so it can never collide with an actual port or override name.
-        dynamic_marker = object()
+        :raises ValueError: if the `overrides` contain a key that corresponds neither to an input port nor to a
+            protocol input of the `WorkChain`.
+        """
+
+        def has_undeclared_keys(port) -> bool:
+            """Return whether the keys of the `port` are not declared by the spec, but provided by the caller.
+
+            This is the case for a dynamic namespace that declares no ports of its own, such as `pw.pseudos`, whose
+            keys are the kind names of the structure, or `pw.monitors`. Note that a dynamic namespace that _does_
+            declare ports, such as `pw`, is still validated against those, since a key that is not among them is
+            virtually always a mistake rather than an intentional addition.
+            """
+            return isinstance(port, PortNamespace) and port.dynamic and len(port) == 0
 
         def port_namespace_to_dict(namespace: PortNamespace):
-            """Recursively convert a PortNamespace into a nested dict structure.
-
-            Each resulting dict carries a `dynamic_marker` entry recording whether the namespace is
-            genuinely open-ended (dynamic with no statically declared children, e.g. ``monitors`` or
-            ``pseudos``), so `recursive_key_check` can skip validating keys nested under it. Many
-            namespaces (e.g. `pw`, from ``expose_inputs``) are also `dynamic` for unrelated internal
-            reasons despite declaring a full, fixed set of children, so `dynamic` alone is not a
-            reliable signal: only an *empty* dynamic namespace unambiguously means "arbitrary keys are
-            expected here".
-            """
-            mapping = {
-                key: port_namespace_to_dict(port) if isinstance(port, PortNamespace) else None
+            """Recursively convert a PortNamespace into a nested dict structure."""
+            return {
+                key: port_namespace_to_dict(port)
+                if isinstance(port, PortNamespace) and not has_undeclared_keys(port)
+                else None
                 for key, port in namespace.items()
             }
-            mapping[dynamic_marker] = namespace.dynamic and not mapping
-            return mapping
 
         def recursive_key_check(inputs_mapping: dict, overrides: dict, path=''):
-            """Recursively check that all the provided keys in the `overrides` are in the `inputs_mapping`."""
+            """Recursively collect the keys of the `overrides` that are not in the `inputs_mapping`."""
+            unrecognised = []
 
             for key, value in overrides.items():
                 full_key = f'{path}.{key}' if path else key
                 if key not in inputs_mapping:
-                    if not inputs_mapping.get(dynamic_marker, False):
-                        warnings.warn(f'Found unrecognised key in overrides: {full_key}')
+                    unrecognised.append(full_key)
                     continue
                 if isinstance(value, dict) and isinstance(inputs_mapping.get(key), dict):
-                    recursive_key_check(inputs_mapping[key], value, full_key)
+                    unrecognised.extend(recursive_key_check(inputs_mapping[key], value, full_key))
+
+            return unrecognised
 
         meta_inputs_schema = cls._load_protocol_file().get('meta_inputs_schema')
 
@@ -188,7 +173,14 @@ class ProtocolMixin:
         # Full protocol schema = meta inputs + process inputs
         inputs_mapping = recursive_merge(meta_inputs_schema, port_namespace_to_dict(cls.spec().inputs))
 
-        recursive_key_check(inputs_mapping, overrides)
+        unrecognised = recursive_key_check(inputs_mapping, overrides)
+
+        if unrecognised:
+            formatted = ', '.join(f'`{key}`' for key in unrecognised)
+            raise ValueError(
+                f'Found unrecognised key(s) in the `overrides` of `{cls.__name__}`: {formatted}. Note that the '
+                '`overrides` have to mirror the nesting of the input port namespace of the `WorkChain`.'
+            )
 
 
 def recursive_merge(left: dict, right: dict) -> dict:

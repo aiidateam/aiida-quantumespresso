@@ -103,3 +103,22 @@ def test_parent_folder(fixture_code, generate_remote_data, fixture_localhost, fi
     builder = PhBaseWorkChain.get_builder_from_protocol(code, parent_folder=remote_folder)
 
     assert builder.ph.parent_folder == remote_folder
+
+
+def test_overrides_merged(fixture_code):
+    """Test that ``overrides`` are merged onto the builder, also for dict-valued ports.
+
+    A dict-valued input port such as ``handler_overrides`` is not a namespace, so it has to be serialised to a ``Dict``
+    rather than being recursed into. This pins that these overrides land instead of being dropped or raising.
+    """
+    code = fixture_code('quantumespresso.ph')
+    overrides = {
+        'handler_overrides': {'handle_out_of_walltime': {'enabled': False}},
+        'max_iterations': 3,
+        'ph': {'settings': {'cmdline': ['-nk', '4']}},
+    }
+    builder = PhBaseWorkChain.get_builder_from_protocol(code, overrides=overrides)
+
+    assert builder.handler_overrides.get_dict() == {'handle_out_of_walltime': {'enabled': False}}
+    assert builder.max_iterations == 3
+    assert builder.ph.settings.get_dict() == {'cmdline': ['-nk', '4']}

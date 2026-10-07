@@ -83,7 +83,6 @@ def launch_workflow(
         raise click.BadParameter(str(exception)) from exception
 
     base_overrides = {
-        'clean_workdir': clean_workdir,
         'pseudo_family': pseudo_family.label,
         'pw': {
             'parameters': parameters,
@@ -91,7 +90,10 @@ def launch_workflow(
             'hubbard_file': hubbard_file,
         },
     }
+    # `clean_workdir` is excluded from the exposed `base_relax`/`base_init_relax` namespaces, so it has to be set at
+    # the root.
     overrides = {
+        'clean_workdir': clean_workdir,
         'base_init_relax': base_overrides,
         'base_relax': base_overrides,
     }

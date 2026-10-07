@@ -1,6 +1,6 @@
 """Tests for the ``PwRelaxWorkChain.get_builder_from_protocol`` method."""
 
-from contextlib import nullcontext
+import re
 
 import pytest
 from aiida.engine import ProcessBuilder
@@ -155,28 +155,44 @@ def test_pbc_cell(fixture_code, generate_structure, struc_name, cell_dofree):
 
 
 @pytest.mark.parametrize(
-    ('overrides', 'warning'),
+    'overrides',
     [
         # CORRECT overrides for top-level process input
-        ({'clean_workdir': True}, None),
+        {'clean_workdir': True},
         # CORRECT overrides for nested process input
-        ({'base_relax': {'kpoints_force_parity': True}}, None),
+        {'base_relax': {'kpoints_force_parity': True}},
         # CORRECT overrides for nested protocol input
-        ({'base_relax': {'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'}}, None),
-        # WRONG overrides with typo
-        ({'clean_wokdir': True}, UserWarning),
-        # WRONG overrides with process input at incorrect level
-        ({'base_relax': {'clean_workdir': True}}, UserWarning),
-        # WRONG overrides with protocol input at incorrect level
-        ({'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'}, UserWarning),
+        {'base_relax': {'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'}},
     ],
 )
-def test_overrides_key_check(fixture_code, generate_structure, overrides, warning):
-    """Test that the `get_builder_from_protocol()` method warns for erroneous keys in the `overrides`."""
+def test_overrides_key_check(fixture_code, generate_structure, overrides):
+    """Test that the `get_builder_from_protocol()` method accepts valid keys in the `overrides`."""
+    PwRelaxWorkChain.get_builder_from_protocol(
+        fixture_code('quantumespresso.pw'),
+        generate_structure('silicon'),
+        overrides=overrides,
+    )
 
-    context = pytest.warns(UserWarning) if warning else nullcontext()
 
-    with context:
+@pytest.mark.parametrize(
+    ('overrides', 'match'),
+    [
+        # WRONG overrides with typo at the (non-dynamic) root level.
+        ({'clean_wokdir': True}, '`clean_wokdir`'),
+        # WRONG overrides with protocol input at the (non-dynamic) root level.
+        ({'pseudo_family': 'SSSP/1.3/PBEsol/efficiency'}, '`pseudo_family`'),
+        # WRONG overrides with process input at incorrect level, nested inside the dynamic `base_relax` namespace.
+        # The namespace itself cannot reject unknown keys, so this can only be caught by the key check.
+        ({'base_relax': {'clean_workdir': True}}, '`base_relax.clean_workdir`'),
+    ],
+)
+def test_overrides_key_check_raises(fixture_code, generate_structure, overrides, match):
+    """Test that an unrecognised key in the `overrides` raises, instead of being silently ignored.
+
+    This holds regardless of whether the enclosing namespace is dynamic: a key nested inside the dynamic
+    ``base_relax`` namespace would otherwise be accepted by the builder and only fail at submission.
+    """
+    with pytest.raises(ValueError, match=re.escape(match)):
         PwRelaxWorkChain.get_builder_from_protocol(
             fixture_code('quantumespresso.pw'),
             generate_structure('silicon'),
