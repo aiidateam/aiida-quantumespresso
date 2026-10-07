@@ -104,6 +104,13 @@ aiida-quantumespresso = 'aiida_quantumespresso.cli:cmd_root'
 'quantumespresso.bands.base' = 'aiida_quantumespresso.workflows.bands.base:BandsBaseWorkChain'
 'quantumespresso.neb.base' = 'aiida_quantumespresso.workflows.neb.base:NebBaseWorkChain'
 
+# Extends the aiida-agents LLM agent with a QE docs RAG corpus (and, later, QE
+# tools and prompt guidance). Only loaded when aiida-agents runs its own plugin
+# discovery, so the plugin's core never depends on aiida-agents. See the 'agent'
+# optional extra below.
+[project.entry-points.'aiida_agents.plugins']
+'quantumespresso' = 'aiida_quantumespresso.agent'
+
 [project.optional-dependencies]
 docs = [
     'sphinx~=6.2.1',
@@ -123,6 +130,14 @@ tests = [
 pre-commit = [
     'pre-commit>=4.3.0',
 ]
+# Pulls in aiida-agents so the 'aiida_agents.plugins' entry point above can be
+# discovered. aiida-agents is not on PyPI yet, so for now this tracks its main
+# branch directly ('pip install -e .[agent]' resolves it from GitHub). This is a
+# PEP 508 direct reference, which PyPI rejects in uploaded metadata, so before a
+# real release it must become a version pin against a published aiida-agents.
+agent = [
+    'aiida-agents @ git+https://github.com/GeigerJ2/aiida-agents.git@main',
+]
 
 [dependency-groups]
 dev = [
@@ -137,6 +152,12 @@ exclude = [
   'docs/',
   'tests/',
 ]
+
+# Transient: needed only because the 'agent' extra pins aiida-agents by git URL
+# while it is not on PyPI. Drop this together with that direct reference once
+# aiida-agents is published and the extra becomes a normal version pin.
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.version]
 path = 'src/aiida_quantumespresso/__init__.py'
