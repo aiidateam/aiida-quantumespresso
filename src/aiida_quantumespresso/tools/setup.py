@@ -84,7 +84,8 @@ def get_executable_paths(
     """Return a mapping from executable names to absolute paths on the given computer.
 
     If `directory` is provided, each path is constructed as `directory`/`executable`.
-    Otherwise, the `prepend_text` is combined with `which` to locate executables in the PATH.
+    Otherwise, the `prepend_text` is combined with `command -v` to locate executables in the PATH. The POSIX-compliant
+    `command -v` is used instead of `which`, since the latter is not guaranteed to be available on all systems.
     """
     executable_paths = {}
 
@@ -93,22 +94,30 @@ def get_executable_paths(
             if directory is None:
                 combined_prepend_text = f'{computer.get_prepend_text()}\n{prepend_text}'
                 return_value, stdout, stderr = transport.exec_command_wait(
-                    command=f'. /dev/stdin > /dev/null && which {executable}', stdin=combined_prepend_text
+                    command=f'. /dev/stdin > /dev/null && command -v {executable}', stdin=combined_prepend_text
                 )
 
-                if return_value != 0 or not stdout.strip():
+                resolved_path = PurePosixPath(stdout.strip())
+
+                if return_value != 0 or not stdout.strip() or not resolved_path.is_absolute():
                     msg = f'Failed to determine the path of executable<{executable}> on computer<{computer.label}>.\n'
                     if stderr:
                         msg += f'Error: {stderr}'
                     elif not stdout.strip():
-                        msg += 'Error: the `which` command returned an empty output.\n'
+                        msg += 'Error: the `command -v` command returned an empty output.\n'
+                    else:
+                        # Unlike `which`, `command -v` also resolves shell functions and aliases, returning their name
+                        # instead of a path. A relative entry in the `PATH` equally yields a relative path. Since
+                        # `orm.InstalledCode` skips its existence check for non-absolute paths, such a code would be
+                        # stored successfully but only fail once a calculation is submitted.
+                        msg += f'Error: the `command -v` command did not return an absolute path: {stdout.strip()}\n'
                     msg += (
                         '\nDouble-check the `prepend_text` and executables and/or specify the full path with the '
                         '`directory` input.'
                     )
                     raise FileNotFoundError(msg)
 
-                executable_paths[executable] = PurePosixPath(stdout.strip()).as_posix()
+                executable_paths[executable] = resolved_path.as_posix()
             else:
                 directory = PurePosixPath(directory)
 

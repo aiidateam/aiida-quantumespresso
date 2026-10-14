@@ -43,7 +43,7 @@ $ aiida-quantumespresso setup codes localhost pw.x projwfc.x dos.x
 
 :::{important}
 
-The command will look for the executables in your `PATH` using the `which` UNIX command.
+The command will look for the executables in your `PATH` using the `command -v` shell builtin.
 This can fail, or you may wish to specify a different executable.
 In this case, have a look at the dropdown below.
 
@@ -52,7 +52,7 @@ In this case, have a look at the dropdown below.
 You can find out the absolute path to e.g. the first `pw.x` executable in the `PATH` using:
 
 ```console
-which pw.x
+command -v pw.x
 ```
 
 If this returns nothing or a Quantum ESPRESSO version you don't want to run, you have a few options:
