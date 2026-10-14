@@ -172,6 +172,57 @@ def pseudo_family(generate_upf_data):
     return family
 
 
+@pytest.fixture(scope='session')
+def generate_silicon_pseudo_family(generate_upf_data):
+    """Return a factory that creates a silicon-only pseudo potential family of a given type and label."""
+    from aiida_pseudo.data.pseudo.upf import UpfData
+
+    def _generate_silicon_pseudo_family(family_type, label):
+        upf = generate_upf_data('Si')
+
+        with tempfile.TemporaryDirectory() as directory:
+            dirpath = pathlib.Path(directory)
+
+            with open(dirpath / 'Si.upf', 'w+b') as handle, upf.open(mode='rb') as source:
+                handle.write(source.read())
+                handle.flush()
+
+            return family_type.create_from_folder(dirpath, label, pseudo_type=UpfData)
+
+    return _generate_silicon_pseudo_family
+
+
+@pytest.fixture(scope='session')
+def pseudo_families_without_cutoffs(generate_silicon_pseudo_family):
+    """Create the silicon pseudo potential families that recommend no cutoffs, keyed on their class name.
+
+    A ``CutoffsPseudoPotentialFamily`` can recommend cutoffs but has none set here. A ``PseudoPotentialFamily``, the
+    class that ``aiida-pseudo install family`` installs by default, cannot recommend them at all.
+    """
+    from aiida_pseudo.groups.family import CutoffsPseudoPotentialFamily, PseudoPotentialFamily
+
+    return {
+        family_type.__name__: generate_silicon_pseudo_family(family_type, f'custom/{family_type.__name__}')
+        for family_type in (PseudoPotentialFamily, CutoffsPseudoPotentialFamily)
+    }
+
+
+@pytest.fixture(scope='session')
+def pseudo_families_shared_label(generate_silicon_pseudo_family):
+    """Create two silicon pseudo potential families of different types under one label, and return that label.
+
+    Group labels are unique per type string, so families of different types can share one.
+    """
+    from aiida_pseudo.groups.family import CutoffsPseudoPotentialFamily, PseudoPotentialFamily
+
+    label = 'custom/shared-label'
+
+    for family_type in (PseudoPotentialFamily, CutoffsPseudoPotentialFamily):
+        generate_silicon_pseudo_family(family_type, label)
+
+    return label
+
+
 @pytest.fixture
 def generate_calc_job():
     """Fixture to construct a new `CalcJob` instance and call `prepare_for_submission` for testing `CalcJob` classes.

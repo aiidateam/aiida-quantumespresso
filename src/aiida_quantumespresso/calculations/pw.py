@@ -2,10 +2,10 @@
 
 import os
 import warnings
+from typing import ClassVar
 
 from aiida import orm
 from aiida.common.lang import classproperty
-from aiida.plugins import factories
 
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 
@@ -45,6 +45,9 @@ class PwCalculation(BasePwCpInputGenerator):
     _default_symlink_usage = False
 
     _ENABLED_PARALLELIZATION_FLAGS = ('npool', 'nband', 'ntg', 'ndiag')
+
+    # Input filename for Hubbard parameters read from a file in Quantum ESPRESSO versions below 7.1.
+    filename_input_hubbard_parameters: ClassVar[str] = 'parameters.in'
 
     @classproperty
     def xml_filepaths(cls):
@@ -287,22 +290,6 @@ class PwCalculation(BasePwCpInputGenerator):
                 'inputs of the `PwCalculation`.',
                 UserWarning,
             )
-
-    @classproperty
-    def filename_input_hubbard_parameters(cls):
-        """Return the relative file name of the file containing the Hubbard parameters.
-
-        .. note:: This only applies if they should be read from file instead of specified in the input file cards.
-        .. warning:: Requires the aiida-quantumespresso-hp plugin to be installed
-        """
-        try:
-            HpCalculation = factories.CalculationFactory('quantumespresso.hp')  # noqa: N806
-        except Exception as exc:
-            raise RuntimeError(
-                'this is determined by the aiida-quantumespresso-hp plugin but it is not installed'
-            ) from exc
-
-        return HpCalculation.filename_input_hubbard_parameters
 
     @classmethod
     def input_helper(cls, *args, **kwargs):

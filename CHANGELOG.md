@@ -1,8 +1,52 @@
-## [Unreleased]
+## v5.1.0
+
+This release adds support for Quantum ESPRESSO v7.6 and introduces the first calculation monitor, `accuracy_stuck`, which kills a `PwCalculation` whose SCF accuracy has plateaued.
+The `PwBaseWorkChain` now recovers from such stopped calculations, reducing `IONS.upscale` for relaxations, and rattles the structure once to escape BFGS history failures in low-symmetry relaxations.
+To enable the monitor:
+
+```python
+builder.pw.monitors = {'accuracy_stuck': Dict({'entry_point': 'quantumespresso.accuracy_stuck'})}
+```
+
+See the [monitors reference](https://aiida-quantumespresso.readthedocs.io/en/stable/reference/monitors/index.html) for configuring the plateau length via `min_repeats`.
+
+Note that `get_builder_from_protocol` now warns for structures that are not periodic in all three directions, and raises a `ValueError` for 2D structures that are not periodic in the x-y plane.
+See the ["Periodicity" section of the protocols page](https://aiida-quantumespresso.readthedocs.io/en/stable/topics/protocol.html#periodicity) for details.
+
+### ✨ New features
+
+* `PwParser`: Add XML schema for Quantum ESPRESSO v7.6 [[d155ceb5](https://github.com/aiidateam/aiida-quantumespresso/commit/d155ceb53e412bb674249969e2f7405acca83872)]
+* Add `accuracy_stuck` monitor for `PwCalculation` [[f99bebd9](https://github.com/aiidateam/aiida-quantumespresso/commit/f99bebd922d2c7b069b434e23b640166896961e1)]
+* `PwParser`: Add `qes_260128` XML schema [[b37f45a6](https://github.com/aiidateam/aiida-quantumespresso/commit/b37f45a6c01509301b0591d7bb720f4c8a4a869f)]
 
 ### 👌 Improvements
 
-* `PwBaseWorkChain`: add `handle_electronic_convergence_stuck` to recover from `STOPPED_BY_MONITOR` failures in `relax` calculations by reducing `IONS.upscale`, and rattle the structure once in `handle_relax_recoverable_ionic_convergence_bfgs_history_error` for `relax` calculations with few symmetries
+* Protocols: support pseudo families without recommended cutoffs [[d3df9add](https://github.com/aiidateam/aiida-quantumespresso/commit/d3df9add75916d1780bfb89c5d56b670b7cdbef5)]
+* `PwBaseWorkChain`: add `handle_electronic_convergence_stuck` to recover from `STOPPED_BY_MONITOR` failures in `relax` calculations by reducing `IONS.upscale`, and rattle the structure once in `handle_relax_recoverable_ionic_convergence_bfgs_history_error` for `relax` calculations with few symmetries [[d890a83e](https://github.com/aiidateam/aiida-quantumespresso/commit/d890a83e1305c773b8816a78ffc230ce7421cf19)]
+* `PwBaseWorkChain`: warn for non-periodic structures and raise for 2D structures not periodic in x-y [[9fa84b7f](https://github.com/aiidateam/aiida-quantumespresso/commit/9fa84b7f6b2167004058f7f7615e75051766857b)]
+* Add `hyperqueue` to the schedulers receiving default resources [[633c24cd](https://github.com/aiidateam/aiida-quantumespresso/commit/633c24cdce00aa6dc2eb6e526d819f0d4653a56f)]
+
+### 🐛 Bug fixes
+
+* `HubbardUtils`: fix the `HUBBARD` card for the `liechtenstein` formulation [[c84362d4](https://github.com/aiidateam/aiida-quantumespresso/commit/c84362d47480292bc3e309e5cea61ea4d5da6a55)]
+* Protocols: fix spurious warning for dynamic namespace overrides [[e90b9ad8](https://github.com/aiidateam/aiida-quantumespresso/commit/e90b9ad8d1a857421a1dcf742597bcb48a8ac991)]
+* `PdosWorkChain`: thread `settings` overrides to dos/projwfc [[0a15b8ac](https://github.com/aiidateam/aiida-quantumespresso/commit/0a15b8ac63d35f1422ba0b2184f420c177bd2d70)]
+* `HubbardStructureData`: fix double encoding of the Hubbard JSON [[63a86596](https://github.com/aiidateam/aiida-quantumespresso/commit/63a86596fab5b45bd510b7f795f3e9338d1ccf75)]
+* `PwBaseWorkChain`: use FR pseudo family for `SPIN_ORBIT` without overrides [[394f174e](https://github.com/aiidateam/aiida-quantumespresso/commit/394f174e751adf216374f3c6d62b6ed195b088be)]
+
+### 📚 Documentation
+
+* Protocols: document non-3D structures and cutoff-less pseudo families [[3721f437](https://github.com/aiidateam/aiida-quantumespresso/commit/3721f437e8287887178ff3ec342acbb83810606f)]
+* Compatibility matrix: link `5.1` row to the `v5.1.0` PyPI release [[ef7c359e](https://github.com/aiidateam/aiida-quantumespresso/commit/ef7c359e05453ca3e30919db89544b277111b584)]
+* Fix the developer guide URL in `README.md` [[877fa5a1](https://github.com/aiidateam/aiida-quantumespresso/commit/877fa5a199b35eecc8b5768a13e2941b68df96fd)]
+
+### 🔧 Maintenance
+
+* Nightly: adapt code fixtures for change in aiida-core [[8c6bb9fa](https://github.com/aiidateam/aiida-quantumespresso/commit/8c6bb9fa30bc7793ab71822f9f4dd51a758b945e)]
+
+### 🧪 Tests
+
+* `test_matdyn.py`: strip `pbc{1,2,3}` in `default` to fix nightly [[203bf4e0](https://github.com/aiidateam/aiida-quantumespresso/commit/203bf4e02615f7e1e32c25b1025f8e2ab7c53eb1)]
 
 ## v5.0.0
 

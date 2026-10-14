@@ -1,13 +1,17 @@
 """Tests for the `PwCalculation` class."""
 
+import inspect
+from unittest.mock import Mock
+
 import pytest
 from aiida import orm
 from aiida.common import datastructures
-from aiida.common.exceptions import InputValidationError
+from aiida.common.exceptions import InputValidationError, MissingEntryPointError
 from aiida.common.warnings import AiidaDeprecationWarning
+from aiida.plugins import factories
 
-from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.calculations.helpers import QEInputValidationError
+from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.utils.resources import get_default_options
 
 
@@ -456,3 +460,14 @@ def test_parameters_validation():
 
     with pytest.raises(ValueError, match="'control' should be UPPERCASE"):
         builder.parameters = orm.Dict(parameters).store()
+
+
+def test_class_inspection_without_hp(monkeypatch):
+    """Inspect `PwCalculation` without loading the optional HP plugin."""
+    calculation_factory: Mock = Mock(side_effect=MissingEntryPointError('HP plugin is unavailable'))
+    monkeypatch.setattr(factories, 'CalculationFactory', calculation_factory)
+
+    members: dict[str, object] = dict(inspect.getmembers(PwCalculation))
+
+    assert members['filename_input_hubbard_parameters'] == 'parameters.in'
+    calculation_factory.assert_not_called()
