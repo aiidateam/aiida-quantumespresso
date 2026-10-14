@@ -207,11 +207,11 @@ from ase.build import bulk
 from aiida.orm import StructureData, load_code, load_group
 
 # Load the pseudopotential family whose pseudos to use
-family = load_group('SSSP/1.3/PBEsol/effiency')
+family = load_group('SSSP/1.3/PBEsol/efficiency')
 structure = StructureData(ase=bulk('GaAs', 'fcc', 5.4))
 
 builder = load_code('pw').get_builder()
-builder.pseudos = family.get_pseudos_from_structure(structure=structure)
+builder.pseudos = family.get_pseudos(structure=structure)
 ```
 
 The {meth}`~aiida_pseudo.groups.family.pseudo.PseudoPotentialFamily.get_pseudos` method will automatically return a dictionary with the pseudos necessary for the specified `structure` that can be immediately assigned to the `pseudos` input of the builder.
@@ -226,7 +226,7 @@ from ase.build import bulk
 from aiida.orm import StructureData, load_code, load_group
 
 # Load the pseudopotential family whose pseudos to use
-family = load_group('SSSP/1.3/PBEsol/effiency')
+family = load_group('SSSP/1.3/PBEsol/efficiency')
 structure = StructureData(ase=bulk('GaAs', 'fcc', 5.4))
 
 builder = load_code('pw').get_builder()

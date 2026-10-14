@@ -13,6 +13,7 @@ from aiida.engine import (
     while_,
 )
 from aiida.plugins import CalculationFactory, GroupFactory
+from aiida_pseudo.groups.mixins import RecommendedCutoffMixin
 
 from aiida_quantumespresso.calculations.functions.create_kpoints_from_distance import (
     create_kpoints_from_distance,
@@ -25,9 +26,7 @@ from aiida_quantumespresso.utils.defaults.calculation import pw as qe_defaults
 from ..protocols.utils import ProtocolMixin
 
 PwCalculation = CalculationFactory('quantumespresso.pw')
-SsspFamily = GroupFactory('pseudo.family.sssp')
-PseudoDojoFamily = GroupFactory('pseudo.family.pseudo_dojo')
-CutoffsPseudoPotentialFamily = GroupFactory('pseudo.family.cutoffs')
+PseudoPotentialFamily = GroupFactory('pseudo.family')
 
 
 class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
@@ -216,43 +215,58 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         # Update the parameters based on the protocol inputs
         parameters = inputs['pw']['parameters']
 
+        system_overrides = (overrides or {}).get('pw', {}).get('parameters', {}).get('SYSTEM', {})
+        cutoffs_in_overrides = all(key in system_overrides for key in ('ecutwfc', 'ecutrho'))
+
         if overrides and 'pseudos' in overrides.get('pw', {}):
             pseudos = overrides['pw']['pseudos']
 
             if sorted(pseudos.keys()) != sorted(structure.get_kind_names()):
                 raise ValueError(f'`pseudos` override needs one value for each of the {len(structure.kinds)} kinds.')
 
-            system_overrides = overrides['pw'].get('parameters', {}).get('SYSTEM', {})
-
-            if not all(key in system_overrides for key in ('ecutwfc', 'ecutrho')):
+            if not cutoffs_in_overrides:
                 raise ValueError(
                     'When overriding the pseudo potentials, both `ecutwfc` and `ecutrho` cutoffs should be '
                     f'provided in the `overrides`: {overrides}'
                 )
 
         else:
+            query = orm.QueryBuilder().append(PseudoPotentialFamily, filters={'label': pseudo_family})
+
             try:
-                pseudo_set = (
-                    PseudoDojoFamily,
-                    SsspFamily,
-                    CutoffsPseudoPotentialFamily,
-                )
-                pseudo_family = orm.QueryBuilder().append(pseudo_set, filters={'label': pseudo_family}).one()[0]
+                pseudo_family = query.one()[0]
             except exceptions.NotExistent as exception:
                 raise ValueError(
                     f'required pseudo family `{pseudo_family}` is not installed. Please use `aiida-pseudo install` to'
                     'install it.'
                 ) from exception
-
-            try:
-                parameters['SYSTEM']['ecutwfc'], parameters['SYSTEM']['ecutrho'] = (
-                    pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
-                )
-                pseudos = pseudo_family.get_pseudos(structure=structure)
-            except ValueError as exception:
+            except exceptions.MultipleObjectsError as exception:
+                matches = ', '.join(f'`{family}`' for family in query.all(flat=True))
                 raise ValueError(
-                    f'failed to obtain recommended cutoffs for pseudo family `{pseudo_family}`: {exception}'
+                    f'the label `{pseudo_family}` matches more than one installed pseudo family: {matches}. Please '
+                    'delete or relabel all but one, or pass the `pseudos` in the `overrides` instead.'
                 ) from exception
+
+            # Families that do not define recommended cutoffs can still be used, as long as the `overrides` provide
+            # both cutoffs themselves, since these are applied further down and take precedence anyway.
+            if not cutoffs_in_overrides:
+                if not isinstance(pseudo_family, RecommendedCutoffMixin):
+                    raise ValueError(
+                        f'pseudo family `{pseudo_family}` cannot recommend cutoffs. Provide both `ecutwfc` and '
+                        '`ecutrho` in the `overrides`, or use a family that recommends them.'
+                    )
+
+                try:
+                    parameters['SYSTEM']['ecutwfc'], parameters['SYSTEM']['ecutrho'] = (
+                        pseudo_family.get_recommended_cutoffs(structure=structure, unit='Ry')
+                    )
+                except ValueError as exception:
+                    raise ValueError(
+                        f'failed to obtain recommended cutoffs for pseudo family `{pseudo_family}`: {exception} '
+                        'If the family does not define any, specify both `ecutwfc` and `ecutrho` in the `overrides`.'
+                    ) from exception
+
+            pseudos = pseudo_family.get_pseudos(structure=structure)
 
         parameters['CONTROL']['etot_conv_thr'] = natoms * meta_parameters['etot_conv_thr_per_atom']
         parameters['ELECTRONS']['conv_thr'] = natoms * meta_parameters['conv_thr_per_atom']

@@ -115,6 +115,7 @@ def test_pw_default_no_xml(
         '241104',
         '250521',
         '260128',
+        '260226',
     ],
 )
 def test_pw_default_xml(

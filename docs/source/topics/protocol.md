@@ -41,6 +41,16 @@ For every structure, [`ecutwfc`](https://www.quantum-espresso.org/Doc/INPUT_PW.h
 As by default in Quantum ESPRESSO the exchange-correlation functional is taken from the pseudopotential files, this also means all protocols use PBEsol.
 ```
 
+Any other pseudopotential family installed with [`aiida-pseudo`](https://aiida-pseudo.readthedocs.io/) can be selected with the `pseudo_family` key of the `overrides`.
+If the family does not recommend cutoffs (e.g. a plain `PseudoPotentialFamily`, as installed by `aiida-pseudo install family`), both `ecutwfc` and `ecutrho` must be provided in the `overrides` as well, as shown for the `PwBaseWorkChain` below:
+
+```python
+overrides = {
+    'pseudo_family': 'MyPseudos',
+    'pw': {'parameters': {'SYSTEM': {'ecutwfc': 50, 'ecutrho': 400}}},
+}
+```
+
 ## Thresholds
 
 The thresholds for electronic and ionic convergence are the following:
@@ -56,6 +66,14 @@ The thresholds for electronic and ionic convergence are the following:
 | `fast`        | 4e-10                | 1e-4                    | 1e-3              |
 | `balanced`    | 2e-10                | 1e-5                    | 1e-4              |
 | `stringent`   | 1e-10                | 5e-6                    | 5e-5              |
+
+## Periodicity
+
+The protocols were developed for fully periodic (3D) systems.
+For structures that are not periodic in all three directions, `get_builder_from_protocol()` issues a warning: check the parameters carefully and use the `overrides` to set any keywords needed to handle the non-periodicity.
+
+2D systems must be periodic in the x-y plane, i.e. `pbc = (True, True, False)`, for which [`assume_isolated`](https://www.quantum-espresso.org/Doc/INPUT_PW.html) is set to `'2D'`.
+Any other 2D orientation raises a `ValueError`: rotate the structure such that the vacuum is along the z-axis.
 
 ## Magnetism 
 
