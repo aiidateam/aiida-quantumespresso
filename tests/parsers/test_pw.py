@@ -611,6 +611,25 @@ def test_pw_failed_interrupted_relax(fixture_localhost, generate_calc_job_node, 
     assert 'output_trajectory' in results
 
 
+def test_pw_vcrelax_failed_crash_unknown(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
+    """Test a `vc-relax` that wrote a `CRASH` file with an error message that the parser does not recognise.
+
+    The run was aborted while writing the charge density after the ionic steps. Since a `CRASH` file is present, the
+    calculation should fail with ``ERROR_OUTPUT_STDOUT_INCOMPLETE`` instead of being judged on the partial trajectory.
+    """
+    name = 'vcrelax_failed_crash_unknown'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    inputs = generate_inputs(calculation_type='vc-relax')
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_failed
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE.status
+
+
 @pytest.mark.parametrize('filename', ['', '_stdout'])
 def test_pw_npools_too_high_error(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
