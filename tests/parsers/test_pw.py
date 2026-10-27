@@ -429,6 +429,27 @@ def test_pw_failed_missing(fixture_localhost, generate_calc_job_node, generate_p
     assert orm.Log.collection.get_logs_for(node)
 
 
+def test_pw_failed_stdout_truncated(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
+    """Test the parsing of a calculation whose stdout was truncated before the basic information was printed.
+
+    In this test the XML is missing, the stdout only contains the header and a ``CRASH`` file was written with an error
+    that the parser does not recognize, e.g. because ``pw.x`` aborted at startup. The stdout cannot be parsed, which is
+    an expected failure: no traceback should be logged as a critical message.
+    """
+    name = 'failed_stdout_truncated'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_FILES.status
+    assert not [log for log in orm.Log.collection.get_logs_for(node) if log.levelname == 'CRITICAL']
+
+
 def test_pw_failed_interrupted(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
