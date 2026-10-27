@@ -1,8 +1,9 @@
 clean_workdir: false
 kpoints_distance: 0.15
 kpoints_force_parity: false
+max_iterations: 5
 pw:
-  code: test.quantumespresso.pw@localhost
+  code: test.quantumespresso.pw
   metadata:
     options:
       max_wallclock_seconds: 43200
@@ -21,7 +22,7 @@ pw:
       electron_maxstep: 80
       mixing_beta: 0.4
     SYSTEM:
-      degauss: 0.01
+      degauss: 0.02
       ecutrho: 240.0
       ecutwfc: 30.0
       nosym: false

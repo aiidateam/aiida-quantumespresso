@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Utility functions to return process builders ready to be submitted for restarting a Quantum ESPRESSO calculation."""
+
 from aiida_quantumespresso.calculations.cp import CpCalculation
 from aiida_quantumespresso.calculations.neb import NebCalculation
 from aiida_quantumespresso.calculations.ph import PhCalculation
@@ -13,6 +13,7 @@ def get_builder_restart(node, from_scratch=False, use_symlink=False):
     To launch the restart calculation, simply run or submit it like you would normally::
 
         from aiida.engine import submit
+
         builder = get_builder_restart(node)
         submit(builder)
 
@@ -47,7 +48,10 @@ def get_builder_restart(node, from_scratch=False, use_symlink=False):
 
     # If it was not already set, use the value passed as an argument or fallback to the class default
     settings = builder.settings.get_dict()
-    settings.setdefault('PARENT_FOLDER_SYMLINK', use_symlink or node.process_class._default_symlink_usage)  # pylint: disable=protected-access
+    settings.setdefault(
+        'PARENT_FOLDER_SYMLINK',
+        use_symlink or node.process_class._default_symlink_usage,  # noqa: SLF001
+    )
 
     builder.parameters = Dict(parameters)
     builder.settings = Dict(settings)

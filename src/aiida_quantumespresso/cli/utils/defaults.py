@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Module with utitlies for the CLI to generate default values."""
 
 
@@ -17,13 +16,9 @@ def get_structure():
 
     # Filters that will match any elemental Silicon structure with 2 or less sites in total
     filters = {
-        'attributes.sites': {
-            'of_length': 2
-        },
-        'attributes.kinds': {
-            'of_length': 1
-        },
-        'attributes.kinds.0.symbols.0': 'Si'
+        'attributes.sites': {'of_length': 2},
+        'attributes.kinds': {'of_length': 1},
+        'attributes.kinds.0.symbols.0': 'Si',
     }
 
     builder = QueryBuilder().append(StructureData, filters=filters)

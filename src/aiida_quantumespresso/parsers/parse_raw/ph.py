@@ -1,19 +1,19 @@
-# -*- coding: utf-8 -*-
 """A collection of function that are used to parse the output of Quantum Espresso PHonon.
 
 The function that needs to be called from outside is parse_raw_ph_output(). Ideally, the functions should work even
 without aiida and will return a dictionary with parsed keys.
 """
-import numpy
+
+from __future__ import annotations
+
+import numpy as np
 from qe_tools import CONSTANTS
 
 from aiida_quantumespresso.parsers import QEOutputParsingError
-from aiida_quantumespresso.parsers.parse_raw.base import convert_qe_time_to_sec
-from aiida_quantumespresso.parsers.parse_xml.pw.legacy import parse_xml_child_bool, read_xml_card
-from aiida_quantumespresso.utils.mapping import get_logging_container
+from aiida_quantumespresso.parsers.parse_xml.parse import parse_xml_child_bool, read_xml_card
 
 
-def parse_raw_ph_output(stdout, tensors=None, dynamical_matrices=None):
+def parse_raw_ph_output(stdout, logs, tensors=None, dynamical_matrices=None):
     """Parses the raw output of a Quantum ESPRESSO `ph.x` calculation.
 
     :param stdout: the content of the stdout file as a string
@@ -21,15 +21,7 @@ def parse_raw_ph_output(stdout, tensors=None, dynamical_matrices=None):
     :param dynamical_matrices: a list of the content of the dynamical matrix files as a string
     :returns: tuple of two dictionaries, with the parsed data and log messages, respectively
     """
-    logs = get_logging_container()
     data_lines = stdout.split('\n')
-
-    # First check whether the `JOB DONE` message was written, otherwise the job was interrupted
-    for line in data_lines:
-        if 'JOB DONE' in line:
-            break
-    else:
-        logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
 
     # Parse tensors, if present
     tensor_data = {}
@@ -46,7 +38,6 @@ def parse_raw_ph_output(stdout, tensors=None, dynamical_matrices=None):
     if dynamical_matrices:
         # find lattice parameter
         for dynmat_counter, dynmat in enumerate(dynamical_matrices):
-
             lines = dynmat.split('\n')
 
             # check if the file contains frequencies (i.e. is useful) or not
@@ -69,7 +60,7 @@ def parse_raw_ph_output(stdout, tensors=None, dynamical_matrices=None):
             # TODO: use the bands format?
 
     # join dictionaries, there should not be any twice repeated key
-    for key in out_data.keys():
+    for key in out_data:
         if key in list(tensor_data.keys()):
             raise AssertionError(f'{key} found in two dictionaries')
         if key in list(dynmat_data.keys()):
@@ -109,7 +100,7 @@ def parse_ph_tensor(data):
         try:
             second_tagname = 'DIELECTRIC_CONSTANT'
             parsed_data[second_tagname.lower()] = parse_xml_matrices(second_tagname, target_tags)
-        except:
+        except Exception:
             raise QEOutputParsingError('Failed to parse Dielectric constant')
 
     tagname = 'DONE_EFFECTIVE_CHARGE_EU'
@@ -129,7 +120,7 @@ def parse_ph_tensor(data):
                     this_at = []
 
             parsed_data[second_tagname.lower()] = new_matrix
-        except:
+        except Exception:
             raise QEOutputParsingError('Failed to parse effective charges eu')
 
     return parsed_data
@@ -147,38 +138,11 @@ def parse_xml_matrices(tagname, target_tags):
 
 
 def parse_ph_text_output(lines, logs):
-    """Parses the stdout of Quantum ESPRESSO ph.x.
+    """Parses the stdout of Quantum ESPRESSO ``ph.x``.
 
     :param lines: list of strings, the file as read by readlines()
     :return: dictionary with parsed values
     """
-
-    def detect_important_message(logs, line):
-
-        message_map = {
-            'error': {
-                'Maximum CPU time exceeded': 'ERROR_OUT_OF_WALLTIME',
-                'No convergence has been achieved': 'ERROR_CONVERGENCE_NOT_REACHED',
-                'problems computing cholesky': 'ERROR_COMPUTING_CHOLESKY',
-            },
-            'warning': {
-                'Warning:': None,
-                'DEPRECATED:': None,
-            }
-        }
-
-        # Match any known error and warning messages
-        for marker, message in message_map['error'].items():
-            if marker in line:
-                if message is None:
-                    message = line
-                logs.error.append(message)
-
-        for marker, message in message_map['warning'].items():
-            if marker in line:
-                if message is None:
-                    message = line
-                logs.warning.append(message)
 
     def parse_qpoints(lines):
         """Parse the q-points from the corresponding lines in the stdout."""
@@ -194,7 +158,6 @@ def parse_ph_text_output(lines, logs):
         q_data['mode_symmetry'] = []
 
         for line in lines:
-
             if 'Mode symmetry' in line:
                 q_data['point_group'] = line.split('Mode symmetry,')[1].split('point group:')[0].strip()
 
@@ -202,10 +165,7 @@ def parse_ph_text_output(lines, logs):
                 freq_start = int(line.split('(')[1].split(')')[0].split('-')[0])
                 freq_end = int(line.split('(')[1].split(')')[0].split('-')[1])
 
-                if line.split()[-1] == 'I':
-                    symm_label = line.split()[-2]
-                else:
-                    symm_label = line.split()[-1]
+                symm_label = line.split()[-2] if line.split()[-1] == 'I' else line.split()[-1]
 
                 q_data['mode_symmetry'].extend([symm_label] * (freq_end - freq_start + 1))
 
@@ -218,26 +178,14 @@ def parse_ph_text_output(lines, logs):
 
     parsed_data = {}
 
-    # Parse time, starting from the end because the time is written multiple times
-    for line in reversed(lines):
-        if 'PHONON' in line and 'WALL' in line:
-            try:
-                parsed_data['wall_time_seconds'] = \
-                    convert_qe_time_to_sec(line.split('CPU')[1].split('WALL')[0])
-            except (ValueError, IndexError):
-                raise QEOutputParsingError('Error during parsing of walltime.')
-            break
-
     parsed_data['num_q_found'] = 0
 
+    # Parse number of q-points and number of atoms
     for count, line in enumerate(lines):
-
-        detect_important_message(logs, line)
-
         if 'q-points for this run' in line:
             try:
                 parsed_data['number_of_qpoints'] = int(line.split('/')[1].split('q-points')[0])
-                parsed_data['q_points'] = parse_qpoints(lines[count + 2:count + parsed_data['number_of_qpoints'] + 2])
+                parsed_data['q_points'] = parse_qpoints(lines[count + 2 : count + parsed_data['number_of_qpoints'] + 2])
 
             except Exception as exc:
                 logs.warning.append(f'Error while parsing number of q points: {exc}')
@@ -246,7 +194,7 @@ def parse_ph_text_output(lines, logs):
             # case of a 'only_wfc' calculation
             try:
                 parsed_data['number_of_qpoints'] = int(line.split('q-points')[0].split('(')[1])
-                parsed_data['q_points'] = parse_qpoints(lines[count + 2:count + parsed_data['number_of_qpoints'] + 2])
+                parsed_data['q_points'] = parse_qpoints(lines[count + 2 : count + parsed_data['number_of_qpoints'] + 2])
 
             except Exception as exc:
                 logs.warning.append(f'Error while parsing number of q points: {exc}')
@@ -274,18 +222,15 @@ def parse_ph_text_output(lines, logs):
                 pass
 
         elif 'Diagonalizing the dynamical matrix' in line:
-
             mode_count = count
 
-            while not 'Calculation' in lines[mode_count] and not 'CPU' in lines[mode_count]:
+            while 'Calculation' not in lines[mode_count] and 'CPU' not in lines[mode_count]:
                 mode_count += 1
 
-            symlabel_q_point, q_data = parse_mode_symmetries(lines[count: mode_count], num_atoms)
+            symlabel_q_point, q_data = parse_mode_symmetries(lines[count:mode_count], num_atoms)
 
             for q_index, q_point in parsed_data['q_points'].items():
-                if numpy.isclose(
-                    numpy.array(q_point), numpy.array(symlabel_q_point), rtol=0, atol=1e-7
-                ).all():
+                if np.isclose(np.array(q_point), np.array(symlabel_q_point), rtol=0, atol=1e-7).all():
                     parsed_data.setdefault('symmetry_labels', {})
                     parsed_data['symmetry_labels'][q_index] = q_data
 
@@ -297,7 +242,7 @@ def parse_ph_text_output(lines, logs):
     # Trim the number of irreps to the number of q-points finished in this run
     parsed_data['number_of_irr_representations_for_each_q'] = parsed_data.get(
         'number_of_irr_representations_for_each_q', []
-    )[:parsed_data.pop('num_q_found')]
+    )[: parsed_data.pop('num_q_found')]
 
     return parsed_data
 
@@ -343,10 +288,9 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
                 header_dict['celldm'] = [float(i) for i in pieces[3:]]
                 # In angstrom
                 alat = header_dict['celldm'][0] * CONSTANTS.bohr_to_ang
-                if abs(alat) < 1.e-5:
+                if abs(alat) < 1.0e-5:
                     raise QEOutputParsingError(
-                        'Lattice constant=0! Probably you are using an '
-                        'old Quantum ESPRESSO version?'
+                        'Lattice constant=0! Probably you are using an old Quantum ESPRESSO version?'
                     )
                 header_dict['alat'] = alat
                 header_dict['alat_units'] = 'angstrom'
@@ -369,9 +313,8 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
                     raise QEOutputParsingError('Wrong data for basis vectors')
                 starting_line += 4
 
-            species_info = {}
             species = []
-            for idx, sp_line in enumerate(data[starting_line:starting_line + num_species], start=1):
+            for idx, sp_line in enumerate(data[starting_line : starting_line + num_species], start=1):
                 pieces = sp_line.split("'")
                 if len(pieces) != 3:
                     raise QEOutputParsingError('Wrong # of elements for one of the species')
@@ -388,7 +331,7 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
             atoms_coords = []
             atoms_labels = []
             starting_line += num_species
-            for idx, atom_line in enumerate(data[starting_line:starting_line + num_atoms], start=1):
+            for idx, atom_line in enumerate(data[starting_line : starting_line + num_atoms], start=1):
                 pieces = atom_line.split()
                 if len(pieces) != 5:
                     raise QEOutputParsingError(
@@ -420,8 +363,8 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
 
         except QEOutputParsingError as e:
             logs.warning.append(
-                'Problem parsing the header of the matdyn file! (msg: {}). '
-                'Storing only the information I managed to retrieve'.format(e.message)
+                f'Problem parsing the header of the matdyn file! (msg: {e.message}). '
+                'Storing only the information I managed to retrieve'
             )
             header_dict['warnings'].append(
                 'There was some parsing error and this dictionary is '
@@ -432,17 +375,16 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
         parsed_data['header'] = header_dict
 
     for line_counter, line in enumerate(data[starting_line:], start=starting_line):
-        if 'q = ' in line:
+        if 'q = ' in line and 'q_point' not in parsed_data:
             # q point is written several times, because it can also be rotated.
             # I consider only the first point, which is the one computed
-            if 'q_point' not in parsed_data:
-                q_point = [float(i) for i in line.split('(')[1].split(')')[0].split()]
-                if lattice_parameter:
-                    parsed_data['q_point'] = [e * 2 * numpy.pi / lattice_parameter for e in q_point]
-                    parsed_data['q_point_units'] = 'angstrom-1'
-                else:
-                    parsed_data['q_point'] = q_point
-                    parsed_data['q_point_units'] = '2pi/lattice_parameter'
+            q_point = [float(i) for i in line.split('(')[1].split(')')[0].split()]
+            if lattice_parameter:
+                parsed_data['q_point'] = [e * 2 * np.pi / lattice_parameter for e in q_point]
+                parsed_data['q_point_units'] = 'angstrom-1'
+            else:
+                parsed_data['q_point'] = q_point
+                parsed_data['q_point_units'] = '2pi/lattice_parameter'
 
         if 'freq' in line or 'omega' in line:
             this_freq = line.split('[cm-1]')[0].split('=')[-1]
@@ -455,10 +397,11 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
                 frequencies.append(float(this_freq))
 
             this_eigenvectors = []
-            for new_line in data[line_counter + 1:]:
+            for new_line in data[line_counter + 1 :]:
                 if (
-                    'freq' in new_line or 'omega' in new_line or
-                    '************************************************' in new_line
+                    'freq' in new_line
+                    or 'omega' in new_line
+                    or '************************************************' in new_line
                 ):
                     break
                 this_things = new_line.split('(')[1].split(')')[0].split()
@@ -485,3 +428,47 @@ def parse_ph_dynmat(data, logs, lattice_parameter=None, also_eigenvectors=False,
         parsed_data['eigenvectors'] = eigenvectors
 
     return parsed_data
+
+
+def parse_initialization_qpoints(stdout: str) -> dict:
+    """Return the number of q-points from an initialization run.
+
+    Here, the initialization run refers to the one performed by specifying
+    `start_irr` and `last_irr` to 0 in the inputs.
+
+    :return: parsed dictionary
+
+    :raise: `RuntimeError` if the number of q-points cannot be parsed or it
+        differs from the number of q-points in the stdout list.
+    """
+    import re
+
+    parameters = {}
+
+    # Regular expression to match `N` in `(  N q-points)`
+    pattern = r'\(\s*(\d+)\s*q-points\)'
+    match = re.search(pattern, stdout)
+    if match:
+        parameters.update({'number_of_qpoints': int(match.group(1))})
+    else:
+        raise RuntimeError('the number of q-points cannot be parsed')
+
+    # Regular expression pattern to match the q-points section
+    pattern = r'\(\s*\d+\s*q-points\):\s*\n\s*N\s*xq\(1\)\s*xq\(2\)\s*xq\(3\)\s*\n((?:\s*\d+\s*[\d\.\-\s]+\n?)*)'
+    match = re.search(pattern, stdout)
+
+    if match:
+        q_points_block = match.group(1)
+
+        # Regular expression to match each line of coordinates
+        coord_pattern = r'\s*\d+\s*([\d\.\-]+)\s*([\d\.\-]+)\s*([\d\.\-]+)'
+
+        coords = re.findall(coord_pattern, q_points_block)  # Find all coordinates in the block
+        q_points = [list(map(float, coord)) for coord in coords]
+    else:
+        raise RuntimeError('the list of q-points cannot be parsed')
+
+    if parameters['number_of_qpoints'] != len(q_points):
+        raise RuntimeError('the number of q-points do not coincde with the number of listed q-points')
+
+    return parameters

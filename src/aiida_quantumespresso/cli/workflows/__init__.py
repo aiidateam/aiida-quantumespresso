@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=cyclic-import,reimported,unused-import,wrong-import-position
 """Module with CLI commands for the various work chain implementations."""
+
 from .. import cmd_root
 
 

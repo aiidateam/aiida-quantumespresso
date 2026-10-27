@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=redefined-outer-name
 """Tests for the `PpCalculation` class."""
+
+import pytest
 from aiida import orm
 from aiida.common import AttributeDict, datastructures
-import pytest
 
 
 @pytest.fixture
@@ -16,19 +15,15 @@ def generate_inputs(fixture_localhost, fixture_sandbox, fixture_code, generate_r
         if parameters is None:
             parameters = {'INPUTPP': {'plot_num': 1}, 'PLOT': {'iflag': 3}}
 
-        return AttributeDict({
-            'code':
-            fixture_code('quantumespresso.pp'),
-            'parent_folder':
-            generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.pw'),
-            'parameters':
-            orm.Dict(parameters),
-            'settings':
-            orm.Dict(settings),
-            'metadata': {
-                'options': get_default_options()
+        return AttributeDict(
+            {
+                'code': fixture_code('quantumespresso.pp'),
+                'parent_folder': generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.pw'),
+                'parameters': orm.Dict(parameters),
+                'settings': orm.Dict(settings),
+                'metadata': {'options': get_default_options()},
             }
-        })
+        )
 
     return _generate_inputs
 
@@ -41,7 +36,7 @@ def test_pp_default(fixture_sandbox, generate_calc_job, generate_inputs, file_re
     calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
     retrieve_list = ['aiida.out']
-    retrieve_temporary_list = ['aiida.fileout', ('aiida.filplot_*aiida.fileout', '.', 0)]
+    retrieve_temporary_list = ['aiida.fileout', ('aiida.filplot*aiida.fileout', '.', 0)]
     local_copy_list = []
 
     # Check the attributes of the returned `CalcInfo`
@@ -60,14 +55,18 @@ def test_pp_default(fixture_sandbox, generate_calc_job, generate_inputs, file_re
     file_regression.check(input_written, encoding='utf-8', extension='.in')
 
 
-def test_pp_keep_plot_file(fixture_sandbox, generate_calc_job, generate_inputs):
+def test_pp_keep_data_files(fixture_sandbox, generate_calc_job, generate_inputs):
     """Test a `PpCalculation` where we want to retrieve the plot file."""
     entry_point_name = 'quantumespresso.pp'
     inputs = generate_inputs()
-    inputs.metadata.options.keep_plot_file = True
+    inputs.metadata.options.keep_data_files = True
 
     calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
-    retrieve_list = ['aiida.out', 'aiida.fileout', ('aiida.filplot_*aiida.fileout', '.', 0)]
+    retrieve_list = [
+        'aiida.out',
+        'aiida.fileout',
+        ('aiida.filplot*aiida.fileout', '.', 0),
+    ]
     retrieve_temporary_list = []
     local_copy_list = []
 
@@ -76,6 +75,26 @@ def test_pp_keep_plot_file(fixture_sandbox, generate_calc_job, generate_inputs):
     assert sorted(calc_info.local_copy_list) == sorted(local_copy_list)
     assert sorted(calc_info.retrieve_temporary_list) == sorted(retrieve_temporary_list)
     assert len(calc_info.retrieve_list) == 3
+    for element in retrieve_list:
+        assert element in calc_info.retrieve_list
+
+
+def test_pp_parse_data_files(fixture_sandbox, generate_calc_job, generate_inputs):
+    """Test a `PpCalculation` where we want to retrieve the plot file."""
+    entry_point_name = 'quantumespresso.pp'
+    inputs = generate_inputs()
+    inputs.metadata.options.parse_data_files = False
+
+    calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
+    retrieve_list = ['aiida.out']
+    retrieve_temporary_list = []
+    local_copy_list = []
+
+    # When both `keep_data_files` (default) and `parse_data_files` are set to False, the data files won't be pulled.
+    assert isinstance(calc_info, datastructures.CalcInfo)
+    assert sorted(calc_info.local_copy_list) == sorted(local_copy_list)
+    assert sorted(calc_info.retrieve_temporary_list) == sorted(retrieve_temporary_list)
+    assert len(calc_info.retrieve_list) == 1
     for element in retrieve_list:
         assert element in calc_info.retrieve_list
 
@@ -90,56 +109,56 @@ def test_pp_cmdline_setting(fixture_sandbox, generate_calc_job, generate_inputs)
 
 @pytest.mark.parametrize(
     ('parameters', 'message'),
-    (
+    [
         ({}, 'parameter `INPUTPP.plot_num` must be explicitly set'),
-        ({
-            'INPUTPP': {}
-        }, 'parameter `INPUTPP.plot_num` must be explicitly set'),
-        ({
-            'INPUTPP': {
-                'plot_num': 'str'
-            }
-        }, '`INTPUTPP.plot_num` must be an integer in the range'),
-        ({
-            'INPUTPP': {
-                'plot_num': 14
-            }
-        }, '`INTPUTPP.plot_num` must be an integer in the range'),
-        ({
-            'INPUTPP': {
-                'plot_num': 1
-            }
-        }, 'parameter `PLOT.iflag` must be explicitly set'),
-        ({
-            'INPUTPP': {
-                'plot_num': 1
-            },
-            'PLOT': {}
-        }, 'parameter `PLOT.iflag` must be explicitly set'),
-        ({
-            'INPUTPP': {
-                'plot_num': 1
-            },
-            'PLOT': {
-                'iflag': 'str'
-            }
-        }, '`PLOT.iflag` must be an integer in the range 0-4'),
-        ({
-            'INPUTPP': {
-                'plot_num': 1
-            },
-            'PLOT': {
-                'iflag': 5
-            }
-        }, '`PLOT.iflag` must be an integer in the range 0-4'),
-    ),
+        ({'INPUTPP': {}}, 'parameter `INPUTPP.plot_num` must be explicitly set'),
+        (
+            {'INPUTPP': {'plot_num': 'str'}},
+            '`INTPUTPP.plot_num` must be an integer in the range',
+        ),
+        (
+            {'INPUTPP': {'plot_num': 14}},
+            '`INTPUTPP.plot_num` must be an integer in the range',
+        ),
+        ({'INPUTPP': {'plot_num': 1}}, 'parameter `PLOT.iflag` must be explicitly set'),
+        (
+            {'INPUTPP': {'plot_num': 1}, 'PLOT': {}},
+            'parameter `PLOT.iflag` must be explicitly set',
+        ),
+        (
+            {'INPUTPP': {'plot_num': 1}, 'PLOT': {'iflag': 'str'}},
+            '`PLOT.iflag` must be an integer in the range 0-4',
+        ),
+        (
+            {'INPUTPP': {'plot_num': 1}, 'PLOT': {'iflag': 5}},
+            '`PLOT.iflag` must be an integer in the range 0-4',
+        ),
+    ],
 )
 def test_pp_invalid_parameters(fixture_sandbox, generate_calc_job, generate_inputs, parameters, message):
     """Test that launching `PpCalculation` fails for invalid parameters."""
     entry_point_name = 'quantumespresso.pp'
 
+    inputs = generate_inputs(parameters=parameters)
+
     with pytest.raises(ValueError) as exception:
-        inputs = generate_inputs(parameters=parameters)
         generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
     assert message in str(exception.value)
+
+
+def test_parameters_validation():
+    """Test the validation of the `parameters` input."""
+    from aiida_quantumespresso.calculations.pp import PpCalculation
+
+    builder = PpCalculation.get_builder()
+
+    parameters = {'inputpp': {'plot_num': 1}, 'plot': {'iflag': 3}}
+
+    with pytest.warns(UserWarning, match="'inputpp' should be UPPERCASE"):
+        builder.parameters = parameters
+
+    assert builder.parameters.get_dict() == {'INPUTPP': {'plot_num': 1}, 'PLOT': {'iflag': 3}}
+
+    with pytest.raises(ValueError, match="'inputpp' should be UPPERCASE"):
+        builder.parameters = orm.Dict(parameters).store()

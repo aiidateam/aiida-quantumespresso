@@ -1,0 +1,184 @@
+
+     Program PROJWFC v.7.2 starts on 11Oct2025 at 16:25:58 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+         "P. Giannozzi et al., J. Chem. Phys. 152 154105 (2020);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI), running on    16 processors
+
+     MPI processes distributed on     1 nodes
+     R & G space division:  proc/nbgrp/npool/nimage =      16
+     78516 MiB available memory on the printing compute node when the environment starts
+ 
+
+     Reading xml data from directory:
+
+     ./out/aiida.save/
+     file C.pbe-n-kjpaw_psl.1.0.0.UPF: wavefunction(s)  2S 2P renormalized
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation= PBE
+                           (   1   4   3   4   0   0   0)
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+ 
+     Parallelization info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Min          34      16      5                 3840     1346     241
+     Max          35      18      6                 3851     1361     264
+     Sum         547     265     85                61509    21649    3993
+ 
+     Using Slab Decomposition
+ 
+ ----2D----2D----2D----2D----2D----2D----2D----2D----2D----2D----2D----2D
+  The code is running with the 2D cutoff
+  Please refer to:
+  Sohier, T., Calandra, M., & Mauri, F. (2017), 
+  Density functional perturbation theory for gated two-dimensional heterostructu
+ res:
+  Theoretical developments and application to flexural phonons in graphene.
+  Physical Review B, 96(7), 75448. https://doi.org/10.1103/PhysRevB.96.075448
+ ----2D----2D----2D----2D----2D----2D----2D----2D----2D----2D----2D----2D
+
+     Check: negative core charge=   -0.000005
+
+     negative rho (up, down):  2.255E-04 0.000E+00
+
+     Linear tetrahedron method (read from file) 
+     [opt_tetra]  Linear tetrahedron method is used.
+
+     Calling projwave .... 
+     Subspace diagonalization in iterative solution of the eigenvalue problem:
+     a serial algorithm will be used
+
+ 
+  Problem Sizes 
+  natomwfc =            8
+  nbnd     =            8
+  nkstot   =            3
+  npwx     =          174
+  nkb      =           16
+ 
+
+     Atomic states used for projection
+     (read from pseudopotential files):
+
+     state #   1: atom   1 (C  ), wfc  1 (l=0 m= 1)
+     state #   2: atom   1 (C  ), wfc  2 (l=1 m= 1)
+     state #   3: atom   1 (C  ), wfc  2 (l=1 m= 2)
+     state #   4: atom   1 (C  ), wfc  2 (l=1 m= 3)
+     state #   5: atom   2 (C  ), wfc  1 (l=0 m= 1)
+     state #   6: atom   2 (C  ), wfc  2 (l=1 m= 1)
+     state #   7: atom   2 (C  ), wfc  2 (l=1 m= 2)
+     state #   8: atom   2 (C  ), wfc  2 (l=1 m= 3)
+
+ k =   0.0000000000  0.0000000000  0.0000000000
+==== e(   1) =   -23.31804 eV ==== 
+     psi = 0.493*[#   1]+0.493*[#   5]
+    |psi|^2 = 0.985
+==== e(   2) =   -11.50145 eV ==== 
+     psi = 0.475*[#   2]+0.475*[#   6]
+    |psi|^2 = 0.950
+==== e(   3) =    -6.74475 eV ==== 
+     psi = 0.249*[#   3]+0.249*[#   4]+0.249*[#   7]+0.249*[#   8]
+    |psi|^2 = 0.997
+==== e(   4) =    -6.74475 eV ==== 
+     psi = 0.249*[#   3]+0.249*[#   4]+0.249*[#   7]+0.249*[#   8]
+    |psi|^2 = 0.997
+==== e(   5) =    -0.96676 eV ==== 
+     psi = 0.003*[#   1]+0.003*[#   5]
+    |psi|^2 = 0.006
+==== e(   6) =    -0.18298 eV ==== 
+     psi = 0.011*[#   2]+0.011*[#   6]
+    |psi|^2 = 0.022
+==== e(   7) =     1.36723 eV ==== 
+     psi = 0.001*[#   1]+0.001*[#   5]
+    |psi|^2 = 0.003
+==== e(   8) =     2.33889 eV ==== 
+     psi = 0.008*[#   2]+0.008*[#   6]
+    |psi|^2 = 0.016
+
+ k =   0.0000000000  0.3849001795  0.0000000000
+==== e(   1) =   -20.72530 eV ==== 
+     psi = 0.302*[#   1]+0.302*[#   5]+0.095*[#   3]+0.095*[#   4]+0.095*[#   7]
+          +0.095*[#   8]
+    |psi|^2 = 0.983
+==== e(   2) =   -13.39332 eV ==== 
+     psi = 0.184*[#   3]+0.184*[#   4]+0.184*[#   7]+0.184*[#   8]+0.128*[#   1]
+          +0.128*[#   5]
+    |psi|^2 = 0.991
+==== e(   3) =    -9.51590 eV ==== 
+     psi = 0.249*[#   3]+0.249*[#   4]+0.249*[#   7]+0.249*[#   8]
+    |psi|^2 = 0.997
+==== e(   4) =    -8.49475 eV ==== 
+     psi = 0.496*[#   2]+0.496*[#   6]
+    |psi|^2 = 0.992
+==== e(   5) =     1.07782 eV ==== 
+     psi = 0.465*[#   2]+0.465*[#   6]
+    |psi|^2 = 0.930
+==== e(   6) =     2.58984 eV ==== 
+     psi = 0.003*[#   3]+0.003*[#   4]+0.003*[#   7]+0.003*[#   8]+0.001*[#   1]
+          +0.001*[#   5]
+    |psi|^2 = 0.015
+==== e(   7) =     3.43382 eV ==== 
+     psi = 0.008*[#   2]+0.008*[#   6]
+    |psi|^2 = 0.015
+==== e(   8) =     3.90496 eV ==== 
+     psi = 0.281*[#   1]+0.281*[#   5]+0.078*[#   3]+0.078*[#   4]+0.078*[#   7]
+          +0.078*[#   8]
+    |psi|^2 = 0.873
+
+ k =   0.3333333333  0.5773502692  0.0000000000
+==== e(   1) =   -16.36434 eV ==== 
+     psi = 0.234*[#   1]+0.234*[#   5]+0.131*[#   3]+0.131*[#   4]+0.131*[#   7]
+          +0.131*[#   8]
+    |psi|^2 = 0.994
+==== e(   2) =   -16.36434 eV ==== 
+     psi = 0.234*[#   1]+0.234*[#   5]+0.131*[#   3]+0.131*[#   4]+0.131*[#   7]
+          +0.131*[#   8]
+    |psi|^2 = 0.994
+==== e(   3) =   -14.34207 eV ==== 
+     psi = 0.246*[#   3]+0.246*[#   4]+0.246*[#   7]+0.246*[#   8]
+    |psi|^2 = 0.982
+==== e(   4) =    -3.84420 eV ==== 
+     psi = 0.496*[#   2]+0.496*[#   6]
+    |psi|^2 = 0.993
+==== e(   5) =    -3.84420 eV ==== 
+     psi = 0.496*[#   2]+0.496*[#   6]
+    |psi|^2 = 0.993
+==== e(   6) =     6.62455 eV ==== 
+ 
+    |psi|^2 = 0.000
+==== e(   7) =     8.84167 eV ==== 
+     psi = 0.080*[#   1]+0.080*[#   5]+0.025*[#   3]+0.025*[#   4]+0.025*[#   7]
+          +0.025*[#   8]
+    |psi|^2 = 0.258
+==== e(   8) =     8.84167 eV ==== 
+     psi = 0.080*[#   1]+0.080*[#   5]+0.025*[#   3]+0.025*[#   4]+0.025*[#   7]
+          +0.025*[#   8]
+    |psi|^2 = 0.258
+
+Lowdin Charges: 
+
+     Atom #   1: total charge =   3.9592, s =  0.8909, 
+     Atom #   1: total charge =   3.9592, p =  3.0683, pz=  0.9878, px=  1.0403, py=  1.0403, 
+     Atom #   2: total charge =   3.9592, s =  0.8909, 
+     Atom #   2: total charge =   3.9592, p =  3.0683, pz=  0.9878, px=  1.0403, py=  1.0403, 
+     Spilling Parameter:   0.0102
+ 
+     PROJWFC      :      9.76s CPU     31.50s WALL
+
+ 
+   This run was terminated on:  16:26:29  11Oct2025            
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=

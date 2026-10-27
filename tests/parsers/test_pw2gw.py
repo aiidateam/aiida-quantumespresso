@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=invalid-name,redefined-outer-name
 """Tests for the `Pw2gwParser`."""
+
 from aiida import orm
 
 
@@ -20,8 +19,9 @@ def test_pw2gw_default(fixture_localhost, generate_parser, generate_calc_job_nod
     assert calcfunction.is_finished_ok, calcfunction.exit_message
     assert not orm.Log.collection.get_logs_for(node)
 
-    data_regression.check({'output_parameters': results['output_parameters'].get_dict()},
-                          basename='test_pw2gw_default_data')
+    data_regression.check(
+        {'output_parameters': results['output_parameters'].get_dict()}, basename='test_pw2gw_default_data'
+    )
 
     num_regression.check(dict(results['eps'].get_iterarrays()), basename='test_pw2gw_default_eps')
 

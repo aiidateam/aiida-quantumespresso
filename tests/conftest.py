@@ -1,16 +1,24 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=redefined-outer-name,too-many-statements
 """Initialise a text database and profile for pytest."""
-from collections.abc import Mapping
+
+import asyncio
 import io
 import os
 import pathlib
 import shutil
 import tempfile
+from collections.abc import Mapping
+from pathlib import Path
 
 import pytest
 
-pytest_plugins = ['aiida.manage.tests.pytest_fixtures']  # pylint: disable=invalid-name
+pytest_plugins = ['aiida.tools.pytest_fixtures']
+
+
+@pytest.fixture(scope='session', autouse=True)
+def clean_asyncio_tasks():
+    """Ensure clean shutdown of asyncio tasks at the end of the test session."""
+    yield
+    asyncio.run(asyncio.sleep(0))
 
 
 @pytest.fixture(scope='session')
@@ -30,10 +38,11 @@ def filepath_fixtures(filepath_tests):
     return os.path.join(filepath_tests, 'fixtures')
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def fixture_sandbox():
     """Return a `SandboxFolder`."""
     from aiida.common.folders import SandboxFolder
+
     with SandboxFolder() as folder:
         yield folder
 
@@ -47,24 +56,11 @@ def fixture_localhost(aiida_localhost):
 
 
 @pytest.fixture
-def fixture_code(fixture_localhost):
+def fixture_code(aiida_code_installed):
     """Return an ``InstalledCode`` instance configured to run calculations of given entry point on localhost."""
 
     def _fixture_code(entry_point_name):
-        from aiida.common import exceptions
-        from aiida.orm import InstalledCode, load_code
-
-        label = f'test.{entry_point_name}'
-
-        try:
-            return load_code(label=label)
-        except exceptions.NotExistent:
-            return InstalledCode(
-                label=label,
-                computer=fixture_localhost,
-                filepath_executable='/bin/true',
-                default_calc_job_plugin=entry_point_name,
-            )
+        return aiida_code_installed(label=f'test.{entry_point_name}', default_calc_job_plugin=entry_point_name)
 
     return _fixture_code
 
@@ -78,12 +74,11 @@ def serialize_builder():
     """
 
     def serialize_data(data):
-        # pylint: disable=too-many-return-statements
         from aiida.orm import AbstractCode, BaseType, Data, Dict, KpointsData, List, RemoteData, SinglefileData
         from aiida.plugins import DataFactory
 
-        StructureData = DataFactory('core.structure')
-        UpfData = DataFactory('pseudo.upf')
+        StructureData = DataFactory('core.structure')  # noqa: N806
+        UpfData = DataFactory('pseudo.upf')  # noqa: N806
 
         if isinstance(data, dict):
             return {key: serialize_data(value) for key, value in data.items()}
@@ -92,7 +87,7 @@ def serialize_builder():
             return data.value
 
         if isinstance(data, AbstractCode):
-            return data.full_label
+            return data.label
 
         if isinstance(data, Dict):
             return data.get_dict()
@@ -121,59 +116,111 @@ def serialize_builder():
             return data.get_content()
 
         if isinstance(data, Data):
-            return data.base.caching._get_hash()  # pylint: disable=protected-access
+            return data.base.caching._get_hash()
 
         return data
 
     def _serialize_builder(builder):
-        return serialize_data(builder._inputs(prune=True))  # pylint: disable=protected-access
+        return serialize_data(builder._inputs(prune=True))
 
     return _serialize_builder
 
 
-@pytest.fixture(scope='session', autouse=True)
-def sssp(aiida_profile, generate_upf_data):
-    """Create an SSSP pseudo potential family from scratch."""
+@pytest.fixture(scope='session')
+def pseudo_family(generate_upf_data):
+    """Create the SSSP pseudo potential families from scratch."""
     from aiida.common.constants import elements
-    from aiida.plugins import GroupFactory
-
-    aiida_profile.clear_profile()
-
-    SsspFamily = GroupFactory('pseudo.family.sssp')
+    from aiida_pseudo.data.pseudo.upf import UpfData
+    from aiida_pseudo.groups.family import PseudoDojoFamily, SsspFamily
 
     cutoffs = {}
     stringency = 'standard'
 
-    with tempfile.TemporaryDirectory() as dirpath:
-        for values in elements.values():
+    for label, cutoff_values in zip(
+        ('SSSP/1.3/PBEsol/precision', 'SSSP/1.3/PBEsol/efficiency', 'PseudoDojo/0.4/PBEsol/FR/standard/upf'),
+        ((40.0, 320.0), (30.0, 240.0), (60.0, 400.0)),
+    ):
+        with tempfile.TemporaryDirectory() as directory:
+            for values in elements.values():
+                element = values['symbol']
 
-            element = values['symbol']
+                actinides = ('Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr')
 
-            actinides = ('Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr')
+                if element in actinides:
+                    continue
 
-            if element in actinides:
-                continue
+                upf = generate_upf_data(element)
+                dirpath = pathlib.Path(directory)
+                filename = dirpath / f'{element}.upf'
 
-            upf = generate_upf_data(element)
-            dirpath = pathlib.Path(dirpath)
-            filename = dirpath / f'{element}.upf'
-
-            with open(filename, 'w+b') as handle:
-                with upf.open(mode='rb') as source:
+                with open(filename, 'w+b') as handle, upf.open(mode='rb') as source:
                     handle.write(source.read())
                     handle.flush()
 
-            cutoffs[element] = {
-                'cutoff_wfc': 30.0,
-                'cutoff_rho': 240.0,
-            }
+                cutoffs[element] = {
+                    'cutoff_wfc': cutoff_values[0],
+                    'cutoff_rho': cutoff_values[1],
+                }
 
-        label = 'SSSP/1.2/PBEsol/efficiency'
-        family = SsspFamily.create_from_folder(dirpath, label)
+            if label.startswith('SSSP'):
+                family = SsspFamily.create_from_folder(dirpath, label)
+            elif label.startswith('PseudoDojo'):
+                family = PseudoDojoFamily.create_from_folder(dirpath, label, pseudo_type=UpfData)
 
-    family.set_cutoffs(cutoffs, stringency, unit='Ry')
+        family.set_cutoffs(cutoffs, stringency, unit='Ry')
 
     return family
+
+
+@pytest.fixture(scope='session')
+def generate_silicon_pseudo_family(generate_upf_data):
+    """Return a factory that creates a silicon-only pseudo potential family of a given type and label."""
+    from aiida_pseudo.data.pseudo.upf import UpfData
+
+    def _generate_silicon_pseudo_family(family_type, label):
+        upf = generate_upf_data('Si')
+
+        with tempfile.TemporaryDirectory() as directory:
+            dirpath = pathlib.Path(directory)
+
+            with open(dirpath / 'Si.upf', 'w+b') as handle, upf.open(mode='rb') as source:
+                handle.write(source.read())
+                handle.flush()
+
+            return family_type.create_from_folder(dirpath, label, pseudo_type=UpfData)
+
+    return _generate_silicon_pseudo_family
+
+
+@pytest.fixture(scope='session')
+def pseudo_families_without_cutoffs(generate_silicon_pseudo_family):
+    """Create the silicon pseudo potential families that recommend no cutoffs, keyed on their class name.
+
+    A ``CutoffsPseudoPotentialFamily`` can recommend cutoffs but has none set here. A ``PseudoPotentialFamily``, the
+    class that ``aiida-pseudo install family`` installs by default, cannot recommend them at all.
+    """
+    from aiida_pseudo.groups.family import CutoffsPseudoPotentialFamily, PseudoPotentialFamily
+
+    return {
+        family_type.__name__: generate_silicon_pseudo_family(family_type, f'custom/{family_type.__name__}')
+        for family_type in (PseudoPotentialFamily, CutoffsPseudoPotentialFamily)
+    }
+
+
+@pytest.fixture(scope='session')
+def pseudo_families_shared_label(generate_silicon_pseudo_family):
+    """Create two silicon pseudo potential families of different types under one label, and return that label.
+
+    Group labels are unique per type string, so families of different types can share one.
+    """
+    from aiida_pseudo.groups.family import CutoffsPseudoPotentialFamily, PseudoPotentialFamily
+
+    label = 'custom/shared-label'
+
+    for family_type in (PseudoPotentialFamily, CutoffsPseudoPotentialFamily):
+        generate_silicon_pseudo_family(family_type, label)
+
+    return label
 
 
 @pytest.fixture
@@ -196,15 +243,13 @@ def generate_calc_job():
         process_class = CalculationFactory(entry_point_name)
         process = instantiate_process(runner, process_class, **inputs)
 
-        calc_info = process.prepare_for_submission(folder)
-
-        return calc_info
+        return process.prepare_for_submission(folder)
 
     return _generate_calc_job
 
 
 @pytest.fixture
-def generate_calc_job_node(fixture_localhost):
+def generate_calc_job_node(fixture_localhost, tmp_path_factory):
     """Fixture to generate a mock `CalcJobNode` for testing parsers."""
 
     def flatten_inputs(inputs, prefix=''):
@@ -243,7 +288,7 @@ def generate_calc_job_node(fixture_localhost):
 
         if test_name is not None:
             basepath = os.path.dirname(os.path.abspath(__file__))
-            filename = os.path.join(entry_point_name[len('quantumespresso.'):], test_name)
+            filename = os.path.join(entry_point_name[len('quantumespresso.') :], test_name)
             filepath_folder = os.path.join(basepath, 'parsers', 'fixtures', filename)
             filepath_input = os.path.join(filepath_folder, 'aiida.in')
 
@@ -263,8 +308,9 @@ def generate_calc_job_node(fixture_localhost):
             from qe_tools.exceptions import ParsingError
 
             from aiida_quantumespresso.tools.pwinputparser import PwInputFile
+
             try:
-                with open(filepath_input, 'r', encoding='utf-8') as input_file:
+                with open(filepath_input, encoding='utf-8') as input_file:
                     parsed_input = PwInputFile(input_file.read())
             except (ParsingError, FileNotFoundError):
                 pass
@@ -287,11 +333,13 @@ def generate_calc_job_node(fixture_localhost):
 
         if retrieve_temporary:
             dirpath, filenames = retrieve_temporary
+            dirpath = Path(dirpath)
+            filepaths = []
             for filename in filenames:
-                try:
-                    shutil.copy(os.path.join(filepath_folder, filename), os.path.join(dirpath, filename))
-                except FileNotFoundError:
-                    pass  # To test the absence of files in the retrieve_temporary folder
+                filepaths.extend(Path(filepath_folder).glob(filename))
+
+            for filepath in filepaths:
+                shutil.copy(filepath, dirpath / filepath.name)
 
         if filepath_folder:
             retrieved = orm.FolderData()
@@ -299,16 +347,13 @@ def generate_calc_job_node(fixture_localhost):
 
             # Remove files that are supposed to be only present in the retrieved temporary folder
             if retrieve_temporary:
-                for filename in filenames:
-                    try:
-                        retrieved.base.repository.delete_object(filename)
-                    except OSError:
-                        pass  # To test the absence of files in the retrieve_temporary folder
+                for filepath in filepaths:
+                    retrieved.delete_object(filepath.name)
 
             retrieved.base.links.add_incoming(node, link_type=LinkType.CREATE, link_label='retrieved')
             retrieved.store()
 
-            remote_folder = orm.RemoteData(computer=computer, remote_path='/tmp')
+            remote_folder = orm.RemoteData(computer=computer, remote_path=tmp_path_factory.mktemp('cj-tmp').as_posix())
             remote_folder.base.links.add_incoming(node, link_type=LinkType.CREATE, link_label='remote_folder')
             remote_folder.store()
 
@@ -321,10 +366,11 @@ def generate_calc_job_node(fixture_localhost):
 def generate_upf_data():
     """Return a `UpfData` instance for the given element a file for which should exist in `tests/fixtures/pseudos`."""
 
-    def _generate_upf_data(element):
-        """Return `UpfData` node."""
-        from aiida_pseudo.data.pseudo import UpfData
-        content = f'<UPF version="2.0.1"><PP_HEADER\nelement="{element}"\nz_valence="4.0"\n/></UPF>\n'
+    from aiida_pseudo.data.pseudo import UpfData
+
+    def _generate_upf_data(element: str, z_valence: float = 4.0) -> UpfData:
+        """Return a `UpfData` node."""
+        content = f'<UPF version="2.0.1"><PP_HEADER\nelement="{element}"\nz_valence="{z_valence}"\n/></UPF>\n'
         stream = io.BytesIO(content.encode('utf-8'))
         return UpfData(stream, filename=f'{element}.upf')
 
@@ -337,8 +383,8 @@ def generate_xy_data():
 
     def _generate_xy_data():
         """Return an ``XyData`` node."""
-        from aiida.orm import XyData
         import numpy as np
+        from aiida.orm import XyData
 
         xvals = [1, 2, 3]
         yvals = [10, 20, 30]
@@ -371,21 +417,25 @@ def generate_structure():
             name1 = 'Si0' if structure_id.endswith('kinds') else 'Si'
             name2 = 'Si1' if structure_id.endswith('kinds') else 'Si'
             param = 5.43
-            cell = [[param / 2., param / 2., 0], [param / 2., 0, param / 2.], [0, param / 2., param / 2.]]
+            cell = [[param / 2.0, param / 2.0, 0], [param / 2.0, 0, param / 2.0], [0, param / 2.0, param / 2.0]]
             structure = StructureData(cell=cell)
-            structure.append_atom(position=(0., 0., 0.), symbols='Si', name=name1)
-            structure.append_atom(position=(param / 4., param / 4., param / 4.), symbols='Si', name=name2)
+            structure.append_atom(position=(0.0, 0.0, 0.0), symbols='Si', name=name1)
+            structure.append_atom(position=(param / 4.0, param / 4.0, param / 4.0), symbols='Si', name=name2)
+        elif structure_id == 'cobalt-prim':
+            cell = [[0.0, 2.715, 2.715], [2.715, 0.0, 2.715], [2.715, 2.715, 0.0]]
+            structure = StructureData(cell=cell)
+            structure.append_atom(position=(0.0, 0.0, 0.0), symbols='Co', name='Co')
         elif structure_id == 'water':
-            structure = StructureData(cell=[[5.29177209, 0., 0.], [0., 5.29177209, 0.], [0., 0., 5.29177209]])
+            structure = StructureData(cell=[[5.29177209, 0.0, 0.0], [0.0, 5.29177209, 0.0], [0.0, 0.0, 5.29177209]])
             structure.append_atom(position=[12.73464656, 16.7741411, 24.35076238], symbols='H', name='H')
             structure.append_atom(position=[-29.3865565, 9.51707929, -4.02515904], symbols='H', name='H')
             structure.append_atom(position=[1.04074437, -1.64320127, -1.27035021], symbols='O', name='O')
         elif structure_id == 'uranium':
             param = 5.43
-            cell = [[param / 2., param / 2., 0], [param / 2., 0, param / 2.], [0, param / 2., param / 2.]]
+            cell = [[param / 2.0, param / 2.0, 0], [param / 2.0, 0, param / 2.0], [0, param / 2.0, param / 2.0]]
             structure = StructureData(cell=cell)
-            structure.append_atom(position=(0., 0., 0.), symbols='U', name='U')
-            structure.append_atom(position=(param / 4., param / 4., param / 4.), symbols='U', name='U')
+            structure.append_atom(position=(0.0, 0.0, 0.0), symbols='U', name='U')
+            structure.append_atom(position=(param / 4.0, param / 4.0, param / 4.0), symbols='U', name='U')
         elif structure_id == '2D-xy-arsenic':
             cell = [[3.61, 0, 0], [-1.80, 3.13, 0], [0, 0, 21.3]]
             structure = StructureData(cell=cell, pbc=(True, True, False))
@@ -408,6 +458,60 @@ def generate_structure():
         return structure
 
     return _generate_structure
+
+
+@pytest.fixture
+def generate_trajectory():
+    """Return a ``TrajectoryData`` representing H2-H."""
+
+    def _generate_trajectory(trajectory_id='hydrogen'):
+        """Return a ``TrajectoryData`` representing H2-H.
+
+        :param trajectory_id: identifies the ``TrajectoryData`` you want to generate. Accepted values are 'hydrogen'.
+        """
+        from aiida.orm import StructureData, TrajectoryData
+
+        if trajectory_id.startswith('hydrogen'):
+            cell = [[6, 0, 0], [0, 2.5, 0], [0, 0, 2.5]]
+            structure_1 = StructureData(cell=cell)
+            structure_1.append_atom(position=(-2.4166, 0.0, 0.0), symbols='H', name='H')
+            structure_1.append_atom(position=(0, 0, 0), symbols='H', name='H')
+            structure_1.append_atom(position=(0.8243, 0, 0), symbols='H', name='H')
+
+            structure_2 = StructureData(cell=cell)
+            structure_2.append_atom(position=(-0.8243, 0.0, 0.0), symbols='H', name='H')
+            structure_2.append_atom(position=(0, 0, 0), symbols='H', name='H')
+            structure_2.append_atom(position=(2.4166, 0, 0), symbols='H', name='H')
+
+            trajectory = TrajectoryData([structure_1, structure_2])
+        else:
+            raise KeyError(f'Unknown trajectory_id="{trajectory_id}"')
+        return trajectory
+
+    return _generate_trajectory
+
+
+@pytest.fixture
+def generate_structure_from_kinds():
+    """Return a dummy `StructureData` instance with the specified kind names."""
+
+    def _generate_structure_from_kinds(site_kind_names):
+        """Return a dummy `StructureData` instance with the specified kind names."""
+        import re
+
+        from aiida import orm
+
+        if not isinstance(site_kind_names, (list, tuple)):
+            site_kind_names = (site_kind_names,)
+
+        structure = orm.StructureData(cell=[[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+
+        for kind_name in site_kind_names:
+            structure.append_atom(name=kind_name, symbols=re.sub('[0-9]', '', kind_name), position=(0.0, 0.0, 0.0))
+
+        return structure
+
+    return _generate_structure_from_kinds
 
 
 @pytest.fixture
@@ -437,6 +541,7 @@ def generate_parser():
         :return: the `Parser` sub class
         """
         from aiida.plugins import ParserFactory
+
         return ParserFactory(entry_point_name)
 
     return _generate_parser
@@ -447,7 +552,7 @@ def generate_remote_data():
     """Return a `RemoteData` node."""
 
     def _generate_remote_data(computer, remote_path, entry_point_name=None):
-        """Return a `KpointsData` with a mesh of npoints in each direction."""
+        """Return a `RemoteData` node."""
         from aiida.common.links import LinkType
         from aiida.orm import CalcJobNode, RemoteData
         from aiida.plugins.entry_point import format_entry_point_string
@@ -474,17 +579,22 @@ def generate_bands_data():
 
     def _generate_bands_data():
         """Return a `BandsData` instance with some basic `kpoints` and `bands` arrays."""
+        import numpy as np
         from aiida.plugins import DataFactory
-        import numpy
-        BandsData = DataFactory('core.array.bands')  #pylint: disable=invalid-name
+
+        BandsData = DataFactory('core.array.bands')  # noqa: N806
         bands_data = BandsData()
 
-        bands_data.set_kpoints(numpy.array([[0., 0., 0.], [0.625, 0.25, 0.625]]))
+        bands_data.set_kpoints(np.array([[0.0, 0.0, 0.0], [0.625, 0.25, 0.625]]))
 
         bands_data.set_bands(
-            numpy.array([[-5.64024889, 6.66929678, 6.66929678, 6.66929678, 8.91047649],
-                         [-1.71354964, -0.74425095, 1.82242466, 3.98697455, 7.37979746]]),
-            units='eV'
+            np.array(
+                [
+                    [-5.64024889, 6.66929678, 6.66929678, 6.66929678, 8.91047649],
+                    [-1.71354964, -0.74425095, 1.82242466, 3.98697455, 7.37979746],
+                ]
+            ),
+            units='eV',
         )
 
         return bands_data
@@ -509,9 +619,7 @@ def generate_workchain():
 
         process_class = WorkflowFactory(entry_point)
         runner = get_manager().get_runner()
-        process = instantiate_process(runner, process_class, **inputs)
-
-        return process
+        return instantiate_process(runner, process_class, **inputs)
 
     return _generate_workchain
 
@@ -520,15 +628,58 @@ def generate_workchain():
 def generate_force_constants_data(filepath_tests):
     """Generate a ``ForceConstantsData`` node."""
     from aiida_quantumespresso.data.force_constants import ForceConstantsData
+
     filepath = os.path.join(filepath_tests, 'calculations', 'fixtures', 'matdyn', 'default', 'force_constants.dat')
     return ForceConstantsData(filepath)
 
 
 @pytest.fixture
-def generate_inputs_matdyn(fixture_code, generate_kpoints_mesh, generate_force_constants_data):
+def generate_inputs(
+    generate_inputs_bands,
+    generate_inputs_cp,
+    generate_inputs_matdyn,
+    generate_inputs_ph,
+    generate_inputs_pw,
+    generate_inputs_q2r,
+    generate_inputs_neb,
+):
+    """Generate the inputs for a process."""
+
+    entry_point_to_fixture = {
+        'quantumespresso.bands': generate_inputs_bands,
+        'quantumespresso.cp': generate_inputs_cp,
+        'quantumespresso.pw': generate_inputs_pw,
+        'quantumespresso.ph': generate_inputs_ph,
+        'quantumespresso.matdyn': generate_inputs_matdyn,
+        'quantumespresso.q2r': generate_inputs_q2r,
+        'quantumespresso.neb': generate_inputs_neb,
+    }
+
+    def _generate_inputs(entry_point: str):
+        try:
+            return entry_point_to_fixture[entry_point]()
+        except KeyError as exc:
+            available_entry_points = '\n\t'.join(entry_point_to_fixture.keys())
+            raise ValueError(
+                f'Unsupported entry point: {entry_point!r}\n\n'
+                f'List of supported entry points: \n\n\t{available_entry_points}'
+            ) from exc
+
+    return _generate_inputs
+
+
+@pytest.fixture
+def generate_inputs_matdyn(
+    fixture_code,
+    generate_kpoints_mesh,
+    generate_force_constants_data,
+    fixture_sandbox,
+    fixture_localhost,
+    generate_remote_data,
+):
     """Generate default inputs for a `MatdynCalculation."""
 
-    def _generate_inputs_matdyn():
+    def _generate_inputs_matdyn(parent_folder=False):
         """Generate default inputs for a `MatdynCalculation."""
         from aiida_quantumespresso.utils.resources import get_default_options
 
@@ -536,10 +687,12 @@ def generate_inputs_matdyn(fixture_code, generate_kpoints_mesh, generate_force_c
             'code': fixture_code('quantumespresso.matdyn'),
             'force_constants': generate_force_constants_data,
             'kpoints': generate_kpoints_mesh(2),
-            'metadata': {
-                'options': get_default_options()
-            }
+            'metadata': {'options': get_default_options()},
         }
+        if parent_folder:
+            inputs['parent_folder'] = generate_remote_data(
+                fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.q2r'
+            )
 
         return inputs
 
@@ -554,40 +707,71 @@ def generate_inputs_q2r(fixture_sandbox, fixture_localhost, fixture_code, genera
         """Generate default inputs for a `Q2rCalculation."""
         from aiida_quantumespresso.utils.resources import get_default_options
 
-        inputs = {
+        return {
             'code': fixture_code('quantumespresso.q2r'),
             'parent_folder': generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.ph'),
-            'metadata': {
-                'options': get_default_options()
-            }
+            'metadata': {'options': get_default_options()},
         }
-
-        return inputs
 
     return _generate_inputs_q2r
 
 
 @pytest.fixture
-def generate_inputs_ph(fixture_sandbox, fixture_localhost, fixture_code, generate_remote_data, generate_kpoints_mesh):
+def generate_inputs_bands(fixture_sandbox, fixture_localhost, fixture_code, generate_remote_data):
+    """Generate default inputs for a `BandsCalculation."""
+
+    def _generate_inputs_bands():
+        """Generate default inputs for a `BandsCalculation."""
+        from aiida_quantumespresso.utils.resources import get_default_options
+
+        return {
+            'code': fixture_code('quantumespresso.bands'),
+            'parent_folder': generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.pw'),
+            'metadata': {'options': get_default_options()},
+        }
+
+    return _generate_inputs_bands
+
+
+@pytest.fixture
+def generate_inputs_ph(
+    generate_calc_job_node, generate_structure, fixture_localhost, fixture_code, generate_kpoints_mesh, tmp_path_factory
+):
     """Generate default inputs for a `PhCalculation."""
 
-    def _generate_inputs_ph():
-        """Generate default inputs for a `PhCalculation."""
-        from aiida.orm import Dict
+    def _generate_inputs_ph(with_output_structure=False):
+        """Generate default inputs for a `PhCalculation.
+
+        :param with_output_structure: whether the PwCalculation has a StructureData in its outputs.
+            This is needed to test some PhBaseWorkChain logics.
+        """
+        from aiida.common import LinkType
+        from aiida.orm import Dict, RemoteData
 
         from aiida_quantumespresso.utils.resources import get_default_options
 
-        inputs = {
+        pw_node = generate_calc_job_node(
+            entry_point_name='quantumespresso.pw', inputs={'parameters': Dict(), 'structure': generate_structure()}
+        )
+        remote_folder = RemoteData(
+            computer=fixture_localhost, remote_path=tmp_path_factory.mktemp('ph-remote').as_posix()
+        )
+        remote_folder.base.links.add_incoming(pw_node, link_type=LinkType.CREATE, link_label='remote_folder')
+        remote_folder.store()
+        parent_folder = pw_node.outputs.remote_folder
+
+        if with_output_structure:
+            structure = generate_structure()
+            structure.base.links.add_incoming(pw_node, link_type=LinkType.CREATE, link_label='output_structure')
+            structure.store()
+
+        return {
             'code': fixture_code('quantumespresso.ph'),
-            'parent_folder': generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.pw'),
+            'parent_folder': parent_folder,
             'qpoints': generate_kpoints_mesh(2),
             'parameters': Dict({'INPUTPH': {}}),
-            'metadata': {
-                'options': get_default_options()
-            }
+            'metadata': {'options': get_default_options()},
         }
-
-        return inputs
 
     return _generate_inputs_ph
 
@@ -602,32 +786,61 @@ def generate_inputs_pw(fixture_code, generate_structure, generate_kpoints_mesh, 
 
         from aiida_quantumespresso.utils.resources import get_default_options
 
-        parameters = Dict({
-            'CONTROL': {
-                'calculation': 'scf'
-            },
-            'SYSTEM': {
-                'ecutrho': 240.0,
-                'ecutwfc': 30.0
-            },
-            'ELECTRONS': {
-                'electron_maxstep': 60,
+        parameters = Dict(
+            {
+                'CONTROL': {'calculation': 'scf'},
+                'SYSTEM': {'ecutrho': 240.0, 'ecutwfc': 30.0},
+                'ELECTRONS': {
+                    'electron_maxstep': 60,
+                },
             }
-        })
+        )
         structure = generate_structure()
-        inputs = {
+        return {
             'code': fixture_code('quantumespresso.pw'),
             'structure': generate_structure(),
             'kpoints': generate_kpoints_mesh(2),
             'parameters': parameters,
             'pseudos': {kind: generate_upf_data(kind) for kind in structure.get_kind_names()},
-            'metadata': {
-                'options': get_default_options()
-            }
+            'metadata': {'options': get_default_options()},
         }
-        return inputs
 
     return _generate_inputs_pw
+
+
+@pytest.fixture
+def generate_inputs_neb(fixture_code, generate_trajectory, generate_kpoints_mesh, generate_upf_data):
+    """Generate default inputs for a `NebCalculation."""
+
+    def _generate_inputs_neb():
+        """Generate default inputs for a `NebCalculation."""
+        from aiida.orm import Dict
+
+        pw_parameters = Dict(
+            {
+                'CONTROL': {'calculation': 'scf'},
+                'SYSTEM': {'ecutrho': 240.0, 'ecutwfc': 30.0},
+                'ELECTRONS': {
+                    'electron_maxstep': 60,
+                },
+            }
+        )
+        neb_parameters = Dict({'PATH': {'nstep_path': 50, 'num_of_images': 7}})
+        trajectory = generate_trajectory()
+        return {
+            'code': fixture_code('quantumespresso.neb'),
+            'images': trajectory,
+            'parameters': neb_parameters,
+            'pw': {
+                'kpoints': generate_kpoints_mesh(1),
+                'parameters': pw_parameters,
+                'pseudos': {
+                    kind: generate_upf_data(kind) for kind in trajectory.get_step_structure(-1).get_kind_names()
+                },
+            },
+        }
+
+    return _generate_inputs_neb
 
 
 @pytest.fixture
@@ -643,86 +856,23 @@ def generate_inputs_cp(fixture_code, generate_structure, generate_upf_data):
         inputs = {
             'code': fixture_code('quantumespresso.cp'),
             'structure': generate_structure(),
-            'parameters': Dict({
-                'CONTROL': {
-                    'calculation': 'cp'
-                },
-                'SYSTEM': {
-                    'ecutrho': 240.0,
-                    'ecutwfc': 30.0
-                }
-            }),
-            'pseudos': {
-                'Si': generate_upf_data('Si')
-            },
-            'metadata': {
-                'options': get_default_options()
-            }
+            'parameters': Dict({'CONTROL': {'calculation': 'cp'}, 'SYSTEM': {'ecutrho': 240.0, 'ecutwfc': 30.0}}),
+            'pseudos': {'Si': generate_upf_data('Si')},
+            'metadata': {'options': get_default_options()},
         }
         if autopilot:
-            inputs['settings'] = Dict({
-                'AUTOPILOT': [{
-                    'onstep': 2,
-                    'what': 'dt',
-                    'newvalue': 42.0
-                }, {
-                    'onstep': 3,
-                    'what': 'dt',
-                    'newvalue': 42.42
-                }]
-            })
+            inputs['settings'] = Dict(
+                {
+                    'AUTOPILOT': [
+                        {'onstep': 2, 'what': 'dt', 'newvalue': 42.0},
+                        {'onstep': 3, 'what': 'dt', 'newvalue': 42.42},
+                    ]
+                }
+            )
 
         return inputs
 
     return _generate_inputs_cp
-
-
-@pytest.fixture
-def generate_inputs_xspectra(
-    fixture_sandbox,
-    fixture_localhost,
-    fixture_code,
-    generate_remote_data,
-    generate_kpoints_mesh,
-):
-    """Generate inputs for an ``XspectraCalculation``."""
-
-    def _generate_inputs_xspectra():
-        from aiida.orm import Dict, SinglefileData
-
-        from aiida_quantumespresso.utils.resources import get_default_options
-
-        parameters = {
-            'INPUT_XSPECTRA': {
-                'calculation': 'xanes_dipole',
-            },
-        }
-
-        inputs = {
-            'code':
-            fixture_code('quantumespresso.xspectra'),
-            'parameters':
-            Dict(parameters),
-            'parent_folder':
-            generate_remote_data(fixture_localhost, fixture_sandbox.abspath, 'quantumespresso.pw'),
-            'core_wfc_data':
-            SinglefileData(
-                io.StringIO(
-                    '# number of core states 3 =  1 0;  2 0;'
-                    '\n6.51344e-05 6.615743462459999e-3'
-                    '\n6.59537e-05 6.698882211449999e-3'
-                )
-            ),
-            'kpoints':
-            generate_kpoints_mesh(2),
-            'metadata': {
-                'options': get_default_options()
-            }
-        }
-
-        return inputs
-
-    return _generate_inputs_xspectra
 
 
 @pytest.fixture
@@ -773,6 +923,53 @@ def generate_workchain_pw(generate_workchain, generate_inputs_pw, generate_calc_
 
 
 @pytest.fixture
+def generate_workchain_neb(generate_workchain, generate_inputs_neb, generate_calc_job_node):
+    """Generate an instance of a ``NebBaseWorkChain``."""
+
+    def _generate_workchain_neb(exit_code=None, inputs=None, return_inputs=False, neb_outputs=None):
+        """Generate an instance of a ``NebBaseWorkChain``.
+
+        :param exit_code: exit code for the ``NebCalculation``.
+        :param inputs: inputs for the ``NebBaseWorkChain``.
+        :param return_inputs: return the inputs of the ``NebBaseWorkChain``.
+        :param neb_outputs: ``dict`` of outputs for the ``NebCalculation``. The keys must correspond to the link labels
+            and the values to the output nodes.
+        """
+        from aiida.common import LinkType
+        from aiida.orm import Dict
+        from plumpy import ProcessState
+
+        entry_point = 'quantumespresso.neb.base'
+
+        if inputs is None:
+            neb_inputs = generate_inputs_neb()
+            kpoints = neb_inputs['pw'].pop('kpoints')
+            inputs = {'neb': neb_inputs, 'kpoints': kpoints}
+
+        if return_inputs:
+            return inputs
+
+        process = generate_workchain(entry_point, inputs)
+
+        neb_node = generate_calc_job_node(inputs={'parameters': Dict()})
+        process.ctx.iteration = 1
+        process.ctx.children = [neb_node]
+
+        if neb_outputs is not None:
+            for link_label, output_node in neb_outputs.items():
+                output_node.base.links.add_incoming(neb_node, link_type=LinkType.CREATE, link_label=link_label)
+                output_node.store()
+
+        if exit_code is not None:
+            neb_node.set_process_state(ProcessState.FINISHED)
+            neb_node.set_exit_status(exit_code.status)
+
+        return process
+
+    return _generate_workchain_neb
+
+
+@pytest.fixture
 def generate_workchain_ph(generate_workchain, generate_inputs_ph, generate_calc_job_node):
     """Generate an instance of a `PhBaseWorkChain`."""
 
@@ -782,7 +979,9 @@ def generate_workchain_ph(generate_workchain, generate_inputs_ph, generate_calc_
         entry_point = 'quantumespresso.ph.base'
 
         if inputs is None:
-            inputs = {'ph': generate_inputs_ph()}
+            ph_inputs = generate_inputs_ph()
+            qpoints = ph_inputs.pop('qpoints')
+            inputs = {'ph': ph_inputs, 'qpoints': qpoints}
 
         if return_inputs:
             return inputs
@@ -806,8 +1005,8 @@ def generate_workchain_ph(generate_workchain, generate_inputs_ph, generate_calc_
 def generate_workchain_pdos(generate_workchain, generate_inputs_pw, fixture_code):
     """Generate an instance of a `PdosWorkChain`."""
 
-    def _generate_workchain_pdos():
-        from aiida.orm import Bool, Dict
+    def _generate_workchain_pdos(emin=None, emax=None, energy_range_vs_fermi=None):
+        from aiida.orm import Bool, Dict, List
 
         from aiida_quantumespresso.utils.resources import get_default_options
 
@@ -829,25 +1028,24 @@ def generate_workchain_pdos(generate_workchain, generate_inputs_pw, fixture_code
 
         dos_params = {
             'DOS': {
-                'Emin': -10,
-                'Emax': 10,
-                'DeltaE': 0.01,
+                'deltae': 0.01,
             }
         }
-        projwfc_params = {'PROJWFC': {'Emin': -10, 'Emax': 10, 'DeltaE': 0.01, 'ngauss': 0, 'degauss': 0.01}}
+        projwfc_params = {'PROJWFC': {'deltae': 0.01, 'ngauss': 0, 'degauss': 0.01}}
+
+        if emin and emax:
+            dos_params['DOS'].update({'emin': emin, 'emax': emax})
+            projwfc_params['PROJWFC'].update({'emin': emin, 'emax': emax})
+
         dos = {
             'code': fixture_code('quantumespresso.dos'),
             'parameters': Dict(dos_params),
-            'metadata': {
-                'options': get_default_options()
-            }
+            'metadata': {'options': get_default_options()},
         }
         projwfc = {
             'code': fixture_code('quantumespresso.projwfc'),
             'parameters': Dict(projwfc_params),
-            'metadata': {
-                'options': get_default_options()
-            }
+            'metadata': {'options': get_default_options()},
         }
         inputs = {
             'structure': structure,
@@ -855,80 +1053,11 @@ def generate_workchain_pdos(generate_workchain, generate_inputs_pw, fixture_code
             'nscf': nscf,
             'dos': dos,
             'projwfc': projwfc,
-            'align_to_fermi': Bool(True),
-            'dry_run': Bool(True)
+            'dry_run': Bool(True),
         }
+        if energy_range_vs_fermi:
+            inputs.update({'energy_range_vs_fermi': List(energy_range_vs_fermi)})
 
         return generate_workchain(entry_point, inputs)
 
     return _generate_workchain_pdos
-
-
-@pytest.fixture
-def generate_workchain_xspectra(generate_workchain, generate_inputs_xspectra, generate_calc_job_node):
-    """Generate an instance of a `XspectraBaseWorkChain`."""
-
-    def _generate_workchain_xspectra(exit_code=None, inputs=None, return_inputs=False, xspectra_outputs=None):
-        from aiida.common import LinkType
-        from plumpy import ProcessState
-
-        entry_point = 'quantumespresso.xspectra.base'
-
-        if inputs is None:
-            inputs_xspectra = generate_inputs_xspectra()
-            kpoints = inputs_xspectra.pop('kpoints')
-            inputs = {'xspectra': inputs_xspectra, 'kpoints': kpoints}
-
-        if return_inputs:
-            return inputs
-
-        process = generate_workchain(entry_point, inputs)
-        xspectra_node = generate_calc_job_node()
-        process.ctx.iteration = 1
-        process.ctx.children = [xspectra_node]
-
-        if xspectra_outputs is not None:
-            for link_label, output_node in xspectra_outputs.items():
-                output_node.base.links.add_incoming(xspectra_node, link_type=LinkType.CREATE, link_label=link_label)
-                output_node.store()
-
-        if exit_code is not None:
-            xspectra_node.set_process_state(ProcessState.FINISHED)
-            xspectra_node.set_exit_status(exit_code.status)
-
-        return process
-
-    return _generate_workchain_xspectra
-
-
-@pytest.fixture
-def generate_workchain_xps(generate_inputs_pw, generate_workchain, generate_upf_data):
-    """Generate an instance of a `XpsWorkChain`."""
-
-    def _generate_workchain_xps():
-        from aiida.orm import Bool, List, Str
-
-        entry_point = 'quantumespresso.xps'
-
-        scf_pw_inputs = generate_inputs_pw()
-        kpoints = scf_pw_inputs.pop('kpoints')
-        structure = scf_pw_inputs.pop('structure')
-        ch_scf = {'pw': scf_pw_inputs, 'kpoints': kpoints}
-
-        inputs = {
-            'structure': structure,
-            'ch_scf': ch_scf,
-            'dry_run': Bool(True),
-            'elements_list': List(['Si']),
-            'abs_atom_marker': Str('X'),
-            'core_hole_pseudos': {
-                'Si': generate_upf_data('Si')
-            },
-            'gipaw_pseudos': {
-                'Si': generate_upf_data('Si')
-            },
-        }
-
-        return generate_workchain(entry_point, inputs)
-
-    return _generate_workchain_xps

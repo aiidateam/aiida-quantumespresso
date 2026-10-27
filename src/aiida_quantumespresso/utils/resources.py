@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Utilities for calculation job resources."""
 
 
@@ -21,7 +20,7 @@ def create_scheduler_resources(scheduler, base, goal):
 
     resources = {}
     for key, value in base.items():
-        if key in scheduler._job_resource_class.get_valid_keys():  # pylint: disable=protected-access
+        if key in scheduler._job_resource_class.get_valid_keys():  # noqa: SLF001
             resources[key] = value
 
     try:
@@ -46,7 +45,8 @@ def cmdline_remove_npools(cmdline):
     :return: the new cmdline setting
     """
     return [
-        e for i, e in enumerate(cmdline)
+        e
+        for i, e in enumerate(cmdline)
         if (e not in ('-npools', '-npool', '-nk') and cmdline[i - 1] not in ('-npools', '-npool', '-nk'))
     ]
 
@@ -59,9 +59,7 @@ def get_default_options(max_num_machines=1, max_wallclock_seconds=1800, with_mpi
     :param with_mpi: whether to run the calculation with MPI enabled
     """
     return {
-        'resources': {
-            'num_machines': int(max_num_machines)
-        },
+        'resources': {'num_machines': int(max_num_machines)},
         'max_wallclock_seconds': int(max_wallclock_seconds),
         'withmpi': with_mpi,
     }

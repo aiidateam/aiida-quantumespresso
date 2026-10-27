@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Base class for parser of Quantum ESPRESSO pw.x and cp.x input files based on generic parser of `qe-tools` package."""
+
 import re
 
 from aiida.common import InputValidationError
@@ -7,8 +7,6 @@ from aiida.common import InputValidationError
 
 class StructureParseMixin:
     """Mixin that extends ``~qe_tools.parsers.qeinputparser.QeInputFile`` to parse a ``StructureData``."""
-
-    # pylint: disable=too-few-public-methods
 
     def get_structuredata(self):
         """Return a StructureData object based on the data in the input file.
@@ -39,7 +37,8 @@ class StructureParseMixin:
             )
             [^a-z]  # Any specification of an element is followed by some number
                     # or capital letter or special character.
-        """, re.X | re.I
+        """,
+            re.X | re.I,
         )
 
         data = self.structure

@@ -1,0 +1,14 @@
+output_parameters:
+  code_version: '7.0'
+  wall_time_seconds: 0.14
+output_phonon_dos:
+  array|x_array:
+  - 20
+  array|y_array_0:
+  - 20
+  x_name: frequency
+  x_units: cm^(-1)
+  y_names:
+  - dos
+  y_units:
+  - states * cm

@@ -1,0 +1,132 @@
+Dos:
+  array|x_array:
+  - 3
+  - 7
+  array|y_array_0:
+  - 3
+  - 7
+  x_name: Energy
+  x_units: eV
+  y_names:
+  - Dos
+  y_units:
+  - states/eV
+Dos_arrays:
+  x_array:
+  - - -9.241
+    - -7.241
+    - -5.241
+  - - -9.241
+    - -7.241
+    - -5.241
+  y_array_0:
+  - - 7.21e-85
+    - 3.24e-26
+    - -6.72e-85
+  - - -0.000455
+    - -7.96e-85
+    - 0.0
+Ldos:
+  array|x_array:
+  - 3
+  - 7
+  array|y_array_0:
+  - 3
+  - 7
+  array|y_array_1:
+  - 3
+  - 7
+  array|y_array_2:
+  - 3
+  - 7
+  array|y_array_3:
+  - 3
+  - 7
+  array|y_array_4:
+  - 3
+  - 7
+  x_name: Energy
+  x_units: eV
+  y_names:
+  - ldos_box1
+  - ldos_box2
+  - ldos_box3
+  - ldos_box4
+  - ldos_box5
+  y_units:
+  - states/eV
+  - states/eV
+  - states/eV
+  - states/eV
+  - states/eV
+Ldos_arrays:
+  x_array:
+  - - -9.241
+    - -7.241
+    - -5.241
+  - - -9.241
+    - -7.241
+    - -5.241
+  y_array_0:
+  - - 9.38e-86
+    - 3.51e-27
+    - -7.27e-86
+  - - -4.9e-05
+    - -7.92e-86
+    - 0.0
+  y_array_1:
+  - - -1.45e-86
+    - 8.93e-29
+    - -1.85e-87
+  - - -1.4e-06
+    - -1.12e-86
+    - 0.0
+  y_array_2:
+  - - -1.5e-87
+    - 5.85e-31
+    - -1.21e-89
+  - - -1.15e-08
+    - -7.38e-88
+    - 0.0
+  y_array_3:
+  - - -1.04e-88
+    - 3.12e-33
+    - -6.48e-92
+  - - -8.28e-11
+    - -4.44e-89
+    - 0.0
+  y_array_4:
+  - - -6.41e-90
+    - 5.55e-35
+    - -1.15e-93
+  - - -7.87e-13
+    - -2.48e-90
+    - 0.0
+Pdos:
+  array|x_array:
+  - 3
+  - 7
+  array|y_array_0:
+  - 3
+  - 7
+  x_name: Energy
+  x_units: eV
+  y_names:
+  - Pdos
+  y_units:
+  - states/eV
+Pdos_arrays:
+  x_array:
+  - - -9.241
+    - -7.241
+    - -5.241
+  - - -9.241
+    - -7.241
+    - -5.241
+  y_array_0:
+  - - 7.77e-86
+    - 3.6e-27
+    - -7.46e-86
+  - - -5.04e-05
+    - -9.12e-86
+    - 0.0

@@ -9,6 +9,17 @@ Dos:
   - Dos
   y_units:
   - states/eV
+Pdos:
+  array|x_array:
+  - 6
+  array|y_array_0:
+  - 6
+  x_name: Energy
+  x_units: eV
+  y_names:
+  - Pdos
+  y_units:
+  - states/eV
 bands:
   array|bands:
   - 1
@@ -34,6 +45,12 @@ bands:
   pbc2: true
   pbc3: true
   units: eV
+bands_values:
+- - -5.79865
+  - 6.02855
+  - 6.02855
+  - 6.02855
+  - 8.56504
 projections:
   array|energy_array_0:
   - 6

@@ -1,21 +1,24 @@
-# -*- coding: utf-8 -*-
 """`Parser` implementation for the `PpCalculation` calculation job class."""
+
 import os
 import re
-import traceback
 
-from aiida import orm
-from aiida.common import exceptions
 import numpy as np
+from aiida import orm
+from aiida.common import AttributeDict
 
 from aiida_quantumespresso.calculations.pp import PpCalculation
 from aiida_quantumespresso.utils.mapping import get_logging_container
 
-from .base import Parser
+from .base import BaseParser
 
 
-class PpParser(Parser):
-    """`Parser` implementation for the `PpCalculation` calculation job class."""
+class PpParser(BaseParser):
+    """``Parser`` implementation for the ``PpCalculation`` calculation job class."""
+
+    class_error_map = {
+        'xml data file not found': 'ERROR_PARENT_XML_MISSING',
+    }
 
     # Lookup: plot_num --> units
     units_dict = {
@@ -27,7 +30,7 @@ class PpParser(Parser):
         5: 'states/bohr^3',  # Simulated STM images from LDOS
         6: 'e/bohr^3',  # Spin density
         7: 'e/bohr^3',  # WFN contribution to charge density, assuming collinear spins
-        8: '1',  # Electron localization function, dimensionless
+        8: '1',  # Electron localization function, dimensionless
         9: 'e/bohr^3',  # Charge density minus superposition of atomic densities
         10: 'states/bohr^3',  # Integrated local density of states (ILDOS)
         11: 'Ry',  # Bare + Hartree potential
@@ -36,19 +39,30 @@ class PpParser(Parser):
         17: 'e/bohr^3',  # All electron charge density
         18: 'T',  # The exchange and correlation magnetic field in the noncollinear case
         19: '1',  # Reduced density gradient - see dx.doi.org/10.1021/ct100641a, Eq.1 - dimensionless
-        20:
-        'e/bohr^5',  # Product of the electron density and the second eigenvalue of the electron-density Hessian matrix, see: dx.doi.org/10.1021/ct100641a, with sign of second eigenvalue
-        21: 'e/bohr^3',  # All electron charge density, PAW case
+        20: 'e/bohr^5',  # Product of the electron density and the second eigenvalue of the electron-density Hessian matrix, see: dx.doi.org/10.1021/ct100641a, with sign of second eigenvalue
+        21: 'e/bohr^3',  # All electron charge density, PAW case
         22: 'Ry/bohr^3',  # Kinetic energy density
     }
 
     def parse(self, **kwargs):
-        """
-        Parse raw files retrieved from remote dir
-        """
-        retrieved = self.retrieved
+        """Parse the retrieved files of a ``PpCalculation`` into output nodes."""
+        logs = get_logging_container()
+
+        stdout, parsed_data, logs = self.parse_stdout_from_retrieved(logs)
+
+        base_exit_code = self.check_base_errors(logs)
+        if base_exit_code:
+            return self.exit(base_exit_code, logs)
+
+        parsed_pp, logs = self.parse_stdout(stdout, logs)
+        parsed_data.update(parsed_pp)
+
+        self.out('output_parameters', orm.Dict(parsed_data))
+
+        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs.error:
+            return self.exit(self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE, logs)
+
         retrieve_temporary_list = self.node.base.attributes.get('retrieve_temporary_list', None)
-        filename_stdout = self.node.get_option('output_filename')
 
         # If temporary files were specified, check that we have them
         if retrieve_temporary_list:
@@ -57,21 +71,12 @@ class PpParser(Parser):
             except KeyError:
                 return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
 
-        # The stdout is required for parsing
-        if filename_stdout not in retrieved.base.repository.list_object_names():
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_MISSING
-
-        try:
-            stdout_raw = retrieved.base.repository.get_object_content(filename_stdout)
-        except (IOError, OSError):
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_READ
-
         # Currently all plot output files should start with the `filplot` as prefix. If only one file was produced the
         # prefix is the entire filename, but in the case of multiple files, there will be pairs of two files where the
         # first has the format '{filename_prefix}.{some_random_suffix' and the second has the same name but with the
         # `filename_suffix` appended.
-        filename_prefix = PpCalculation._FILPLOT
-        filename_suffix = PpCalculation._FILEOUT
+        filename_prefix = PpCalculation._FILPLOT  # noqa: SLF001
+        filename_suffix = PpCalculation._FILEOUT  # noqa: SLF001
 
         # How to get the output filenames and how to open them, depends on whether they will have been retrieved in the
         # `retrieved` output node, or in the `retrieved_temporary_folder`. Instead of having a conditional with almost
@@ -81,24 +86,10 @@ class PpParser(Parser):
         # temporary folder.
         if retrieve_temporary_list:
             filenames = os.listdir(retrieved_temporary_folder)
-            file_opener = lambda filename: open(os.path.join(retrieved_temporary_folder, filename))
+            file_opener = lambda filename: open(os.path.join(retrieved_temporary_folder, filename))  # noqa: SIM115, E731
         else:
-            filenames = retrieved.base.repository.list_object_names()
-            file_opener = retrieved.base.repository.open
-
-        try:
-            logs, self.output_parameters = self.parse_stdout(stdout_raw)
-        except Exception as exc:
-            self.logger.error(traceback.format_exc())
-            return self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc)
-
-        self.emit_logs(logs)
-
-        # Scan logs for known errors
-        if 'ERROR_PARENT_XML_MISSING' in logs['error']:
-            return self.exit_codes.ERROR_PARENT_XML_MISSING
-        if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs['error']:
-            return self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
+            filenames = self.retrieved.base.repository.list_object_names()
+            file_opener = self.retrieved.base.repository.open
 
         # The following check should in principle always succeed since the iflag should in principle be set by the
         # `PpCalculation` plugin which only ever sets 0 - 4, but we check in order for the code not to except.
@@ -108,9 +99,9 @@ class PpParser(Parser):
 
         data_parsed = []
         parsers = {
-            0: self.parse_gnuplot1D,
-            1: self.parse_gnuplot1D,
-            2: self.parse_gnuplot2D,
+            0: self.parse_gnuplot1d,
+            1: self.parse_gnuplot1d,
+            2: self.parse_gnuplot2d,
             3: self.parse_gaussian,
             4: self.parse_gnuplot_polar,
         }
@@ -120,117 +111,75 @@ class PpParser(Parser):
             if filename == filename_suffix:
                 return filename
 
-            pattern = r'{}_(.*){}'.format(filename_prefix, filename_suffix)
+            # Pattern to match both "aiida.filplot_XXXaiida.fileout" and "aiida.filplotXXXaiida.fileout"
+            pattern = rf'{re.escape(filename_prefix)}_?(.*?){re.escape(filename_suffix)}'
             matches = re.search(pattern, filename)
-            return matches.group(1)
 
-        for filename in filenames:
-            # Directly parse the retrieved files after reading them to memory (`data_raw`). The raw data
-            # of each file is released from memory after parsing, to improve memory usage.
-            if filename.endswith(filename_suffix):
-                # Read the file to memory
-                try:
-                    with file_opener(filename) as handle:
-                        data_raw = handle.read()
-                except OSError:
-                    return self.exit_codes.ERROR_OUTPUT_DATAFILE_READ.format(filename=filename)
-                # Parse the file
-                try:
-                    key = get_key_from_filename(filename)
-                    data_parsed.append((key, parsers[iflag](data_raw)))
-                    del data_raw
-                except Exception:  # pylint: disable=broad-except
-                    return self.exit_codes.ERROR_OUTPUT_DATAFILE_PARSE.format(filename=filename)
+            if matches:
+                return matches.group(1).rstrip('_')
 
-        # If we don't have any parsed files, we exit. Note that this will not catch the case where there should be more
-        # than one file, but the engine did not retrieve all of them. Since often we anyway don't know how many files
-        # should be retrieved there really is no way to check this explicitly.
-        if not data_parsed:
-            return self.exit_codes.ERROR_OUTPUT_DATAFILE_MISSING.format(filename=filename_prefix)
+        if self.node.base.attributes.get('parse_data_files'):
+            for filename in filenames:
+                # Directly parse the retrieved files after reading them to memory (`data_raw`). The raw data
+                # of each file is released from memory after parsing, to improve memory usage.
+                if filename.endswith(filename_suffix):
+                    # Read the file to memory
+                    try:
+                        with file_opener(filename) as handle:
+                            data_raw = handle.read()
+                    except OSError:
+                        return self.exit_codes.ERROR_OUTPUT_DATAFILE_READ.format(filename=filename)
+                    # Parse the file
+                    try:
+                        key = get_key_from_filename(filename)
+                        data_parsed.append((key, parsers[iflag](data_raw, self.units_dict[parsed_data['plot_num']])))
+                        del data_raw
+                    except Exception as exception:
+                        return self.exit_codes.ERROR_OUTPUT_DATAFILE_PARSE.format(
+                            filename=filename, exception=exception
+                        )
 
-        # Create output nodes
-        if len(data_parsed) == 1:
-            self.out('output_data', data_parsed[0][1])
-        else:
-            self.out('output_data_multiple', dict(data_parsed))
+            # If we don't have any parsed files, we exit. Note that this will not catch the case where there should be more
+            # than one file, but the engine did not retrieve all of them. Since often we anyway don't know how many files
+            # should be retrieved there really is no way to check this explicitly.
+            if not data_parsed:
+                return self.exit_codes.ERROR_OUTPUT_DATAFILE_MISSING.format(filename=filename_prefix)
 
-        self.out('output_parameters', orm.Dict(self.output_parameters))
+            if len(data_parsed) == 1:
+                self.out('output_data', data_parsed[0][1])
+            else:
+                self.out('output_data_multiple', dict(data_parsed))
 
-    def parse_stdout(self, stdout_str):
-        """
-        Parses the output written to StdOut to retrieve basic information about the post processing
+        return self.exit(logs=logs)
 
-        :param stdout_str: the stdout file read in as a single string
-        """
-
-        def detect_important_message(logs, line):
-            """
-            Detect know errors and warnings printed in the stdout
-
-            :param logs:
-            :param line: a line from the stdout as a string
-            """
-            message_map = {
-                'error': {
-                    'xml data file not found': 'ERROR_PARENT_XML_MISSING'
-                },
-                'warning': {
-                    'Warning:': None,
-                    'DEPRECATED:': None,
-                }
-            }
-
-            # Match any known error and warning messages
-            for marker, message in message_map['error'].items():
-                if marker in line:
-                    if message is None:
-                        message = line
-                    logs.error.append(message)
-
-            for marker, message in message_map['warning'].items():
-                if marker in line:
-                    if message is None:
-                        message = line
-                    logs.warning.append(message)
-
-        stdout_lines = stdout_str.splitlines()
-        logs = get_logging_container()
-        output_dict = {}
-
-        # Check for job completion, indicating that pp.x exited without interruption, even if there was an error.
-        for line in stdout_lines:
-            if 'JOB DONE' in line:
-                break
-        else:
-            logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
-
-        # Detect any issues and detect job completion
-        for line in stdout_lines:
-            detect_important_message(logs, line)
+    def parse_stdout(self, stdout: str, logs: AttributeDict) -> tuple[dict, AttributeDict]:
+        """Parse the ``stdout`` content of a Quantum ESPRESSO ``pp.x`` calculation."""
+        parsed_data = {}
 
         # Parse useful data from stdout
-        for line in stdout_lines:
+        for line in stdout.splitlines():
             if 'Check:' in line:  # QE < 6.5
                 split_line = line.split('=')
                 if 'negative/imaginary' in line:  # QE6.1-6.3
-                    output_dict['negative_core_charge'] = float(split_line[-1].split()[0])
-                    output_dict['imaginary_core_charge'] = float(split_line[-1].split()[-1])
+                    parsed_data['negative_core_charge'] = float(split_line[-1].split()[0])
+                    parsed_data['imaginary_core_charge'] = float(split_line[-1].split()[-1])
                 else:  # QE6.4
-                    output_dict['negative_core_charge'] = float(split_line[1])
+                    parsed_data['negative_core_charge'] = float(split_line[1])
             if 'Min, Max, imaginary charge:' in line:
                 split_line = line.split()
-                output_dict['charge_min'] = float(split_line[-3])
-                output_dict['charge_max'] = float(split_line[-2])
-                output_dict['charge_img'] = float(split_line[-1])
+                parsed_data['charge_min'] = float(split_line[-3])
+                parsed_data['charge_max'] = float(split_line[-2])
+                parsed_data['charge_img'] = float(split_line[-1])
             if 'plot_num = ' in line:
-                output_dict['plot_num'] = int(line.split('=')[1])
+                parsed_data['plot_num'] = int(line.split('=')[1])
             if 'Plot Type:' in line:
-                output_dict['plot_type'] = line.split('Output format')[0].split(':')[-1].strip()
-                output_dict['output_format'] = line.split(':')[-1].strip()
+                parsed_data['plot_type'] = line.split('Output format')[0].split(':')[-1].strip()
+                parsed_data['output_format'] = line.split(':')[-1].strip()
 
-        return logs, output_dict
+        return parsed_data, logs
 
-    def parse_gnuplot1D(self, data_file_str):
+    @staticmethod
+    def parse_gnuplot1d(data_file_str, data_units):
         """Parse 1D GNUPlot formatted output.
 
         :param data_file_str: the data file read in as a single string
@@ -250,7 +199,7 @@ class PpParser(Parser):
                 data.append(float(split_line[1]))
             y_data = [data]
             y_names = ['data']
-            y_units = [self.units_dict[self.output_parameters['plot_num']]]
+            y_units = [data_units]
 
         # 1D case with spherical averaging
         if n_col == 3:
@@ -264,8 +213,7 @@ class PpParser(Parser):
                 data_integral.append(float(split_line[2]))
             y_data = [data, data_integral]
             y_names = ['data', 'integrated_data']
-            unit = self.units_dict[self.output_parameters['plot_num']]
-            y_units = [unit, unit.replace('bohr^3', 'bohr')]
+            y_units = [data_units, data_units.replace('bohr^3', 'bohr')]
 
         x_units = 'bohr'
         arraydata = orm.ArrayData()
@@ -277,7 +225,8 @@ class PpParser(Parser):
 
         return arraydata
 
-    def parse_gnuplot_polar(self, data_file_str):
+    @staticmethod
+    def parse_gnuplot_polar(data_file_str, data_units):
         """Parse 2D Polar GNUPlot formatted, single column output.
 
         :param data_file_str: the data file read in as a single string
@@ -285,18 +234,16 @@ class PpParser(Parser):
         data_lines = data_file_str.splitlines()
         data_lines.pop(0)  # First line is a header
 
-        data = []
-        for line in data_lines:
-            data.append(float(line))
-        data_units = [self.units_dict[self.output_parameters['plot_num']]]
+        data = [float(line) for line in data_lines]
 
         arraydata = orm.ArrayData()
         arraydata.set_array('data', np.array(data))
-        arraydata.set_array('data_units', np.array(data_units))
+        arraydata.set_array('data_units', np.array([data_units]))
 
         return arraydata
 
-    def parse_gnuplot2D(self, data_file_str):
+    @staticmethod
+    def parse_gnuplot2d(data_file_str, data_units):
         """Parse 2D GNUPlot formatted output.
 
         :param data_file_str: the data file read in as a single string
@@ -310,13 +257,12 @@ class PpParser(Parser):
             stripped = line.strip()
             if stripped == '':
                 continue
-            else:
-                split_line = stripped.split()
-                coords.append([float(split_line[0]), float(split_line[1])])
-                data.append(float(split_line[2]))
+
+            split_line = stripped.split()
+            coords.append([float(split_line[0]), float(split_line[1])])
+            data.append(float(split_line[2]))
 
         coords_units = 'bohr'
-        data_units = self.units_dict[self.output_parameters['plot_num']]
         arraydata = orm.ArrayData()
         arraydata.set_array('xy_coordinates', np.array(coords))
         arraydata.set_array('data', np.array(data))
@@ -325,7 +271,8 @@ class PpParser(Parser):
 
         return arraydata
 
-    def parse_gaussian(self, data_file_str):
+    @staticmethod
+    def parse_gaussian(data_file_str, data_units):
         """Parse Gaussian Cube formatted output.
 
         :param data_file_str: the data file read in as a single string
@@ -334,10 +281,9 @@ class PpParser(Parser):
 
         atoms_line = lines[2].split()
         natoms = int(atoms_line[0])  # The number of atoms listed in the file
-        origin = np.array(atoms_line[1:], dtype=float)
 
-        header = lines[:6 + natoms]  # Header of the file: comments, the voxel, and the number of atoms and datapoints
-        data_lines = lines[6 + natoms:]  # The actual data: atoms and volumetric data
+        header = lines[: 6 + natoms]  # Header of the file: comments, the voxel, and the number of atoms and datapoints
+        data_lines = lines[6 + natoms :]  # The actual data: atoms and volumetric data
 
         # Parse the declared dimensions of the volumetric data
         x_line = header[3].split()
@@ -348,21 +294,21 @@ class PpParser(Parser):
         zdim = int(z_line[0])
 
         # Get the vectors describing the basis voxel
-        voxel_array = np.array([[x_line[1], x_line[2], x_line[3]], [y_line[1], y_line[2], y_line[3]],
-                                [z_line[1], z_line[2], z_line[3]]],
-                               dtype=np.float64)
+        voxel_array = np.array(
+            [[x_line[1], x_line[2], x_line[3]], [y_line[1], y_line[2], y_line[3]], [z_line[1], z_line[2], z_line[3]]],
+            dtype=np.float64,
+        )
 
         # Get the volumetric data
         data_array = np.empty(xdim * ydim * zdim, dtype=float)
         cursor = 0
         for line in data_lines:
             ls = line.split()
-            data_array[cursor:cursor + len(ls)] = ls
+            data_array[cursor : cursor + len(ls)] = ls
             cursor += len(ls)
         data_array = data_array.reshape((xdim, ydim, zdim))
 
         coordinates_units = 'bohr'
-        data_units = self.units_dict[self.output_parameters['plot_num']]
 
         arraydata = orm.ArrayData()
         arraydata.set_array('voxel', voxel_array)

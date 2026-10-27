@@ -1,22 +1,24 @@
-# -*- coding: utf-8 -*-
 """Tests for the ``PwBandsWorkChain.get_builder_from_protocol`` method."""
-from aiida.engine import ProcessBuilder
-import pytest
 
-from aiida_quantumespresso.common.types import ElectronicType, RelaxType, SpinType
+import pytest
+from aiida.engine import ProcessBuilder
+
+from aiida_quantumespresso.common.types import ElectronicType, SpinType
 from aiida_quantumespresso.workflows.pw.bands import PwBandsWorkChain
+
+pytestmark = pytest.mark.usefixtures('pseudo_family')
 
 
 def test_get_available_protocols():
     """Test ``PwBandsWorkChain.get_available_protocols``."""
     protocols = PwBandsWorkChain.get_available_protocols()
-    assert sorted(protocols.keys()) == ['fast', 'moderate', 'precise']
+    assert sorted(protocols.keys()) == ['balanced', 'fast', 'stringent']
     assert all('description' in protocol for protocol in protocols.values())
 
 
 def test_get_default_protocol():
     """Test ``PwBandsWorkChain.get_default_protocol``."""
-    assert PwBandsWorkChain.get_default_protocol() == 'moderate'
+    assert PwBandsWorkChain.get_default_protocol() == 'balanced'
 
 
 def test_default(fixture_code, generate_structure, data_regression, serialize_builder):
@@ -35,12 +37,11 @@ def test_electronic_type(fixture_code, generate_structure):
     structure = generate_structure()
 
     with pytest.raises(NotImplementedError):
-        for electronic_type in [ElectronicType.AUTOMATIC]:
-            PwBandsWorkChain.get_builder_from_protocol(code, structure, electronic_type=electronic_type)
+        PwBandsWorkChain.get_builder_from_protocol(code, structure, electronic_type=ElectronicType.AUTOMATIC)
 
     builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, electronic_type=ElectronicType.INSULATOR)
 
-    for namespace in [builder.relax['base'], builder.scf, builder.bands]:
+    for namespace in [builder.scf, builder.bands]:
         parameters = namespace['pw']['parameters'].get_dict()
         assert parameters['SYSTEM']['occupations'] == 'fixed'
         assert 'degauss' not in parameters['SYSTEM']
@@ -52,26 +53,32 @@ def test_spin_type(fixture_code, generate_structure):
     code = fixture_code('quantumespresso.pw')
     structure = generate_structure()
 
-    with pytest.raises(NotImplementedError):
-        for spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT]:
-            PwBandsWorkChain.get_builder_from_protocol(code, structure, spin_type=spin_type)
-
     builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, spin_type=SpinType.COLLINEAR)
 
-    for namespace in [builder.relax['base'], builder.scf, builder.bands]:
+    for namespace in [builder.scf, builder.bands]:
         parameters = namespace['pw']['parameters'].get_dict()
         assert parameters['SYSTEM']['nspin'] == 2
         assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.1}
 
+    builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, spin_type=SpinType.SPIN_ORBIT)
 
-def test_relax_type(fixture_code, generate_structure):
-    """Test ``PwBandsWorkChain.get_builder_from_protocol`` setting the ``relax_type`` input."""
+    for namespace in [builder.scf, builder.bands]:
+        parameters = namespace['pw']['parameters'].get_dict()
+        assert parameters['SYSTEM']['noncolin'] is True
+        assert parameters['SYSTEM']['lspinorb'] is True
+        assert parameters['SYSTEM']['starting_magnetization'] == {'Si': 0.1}
+
+
+def test_bands_kpoints_overrides(fixture_code, generate_structure, generate_kpoints_mesh):
+    """Test specifying bands kpoints ``overrides`` for the ``get_builder_from_protocol()`` method."""
     code = fixture_code('quantumespresso.pw')
-    structure = generate_structure()
+    structure = generate_structure('silicon')
 
-    builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, relax_type=RelaxType.NONE)
-    assert builder.relax['base']['pw']['parameters']['CONTROL']['calculation'] == 'scf'
-    assert 'CELL' not in builder.relax['base']['pw']['parameters'].get_dict()
+    bands_kpoints = generate_kpoints_mesh(3)
+    overrides = {'bands_kpoints': bands_kpoints}
+    builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)
+    assert builder.bands_kpoints == bands_kpoints
+    assert 'bands_kpoints_distance' not in builder
 
 
 def test_options(fixture_code, generate_structure):
@@ -86,8 +93,7 @@ def test_options(fixture_code, generate_structure):
     builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, options=options)
 
     for subspace in (
-        builder.relax.base.pw.metadata,
-        builder.scf.pw.metadata,  # pylint: disable=no-member
-        builder.bands.pw.metadata,  # pylint: disable=no-member
+        builder.scf.pw.metadata,
+        builder.bands.pw.metadata,
     ):
         assert subspace['options']['queue_name'] == queue_name, subspace

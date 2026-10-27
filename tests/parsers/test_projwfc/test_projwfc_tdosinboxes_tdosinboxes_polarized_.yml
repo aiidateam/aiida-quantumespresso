@@ -1,0 +1,77 @@
+Dos:
+  array|x_array:
+  - 22
+  array|y_array_0:
+  - 22
+  array|y_array_1:
+  - 22
+  x_name: Energy
+  x_units: eV
+  y_names:
+  - dos_up
+  - dos_down
+  y_units:
+  - states/eV
+  - states/eV
+Ldos:
+  array|x_array:
+  - 22
+  array|y_array_0:
+  - 22
+  array|y_array_1:
+  - 22
+  array|y_array_2:
+  - 22
+  array|y_array_3:
+  - 22
+  array|y_array_4:
+  - 22
+  array|y_array_5:
+  - 22
+  array|y_array_6:
+  - 22
+  array|y_array_7:
+  - 22
+  array|y_array_8:
+  - 22
+  array|y_array_9:
+  - 22
+  x_name: Energy
+  x_units: eV
+  y_names:
+  - ldos_up_box1
+  - ldos_up_box2
+  - ldos_up_box3
+  - ldos_up_box4
+  - ldos_up_box5
+  - ldos_down_box1
+  - ldos_down_box2
+  - ldos_down_box3
+  - ldos_down_box4
+  - ldos_down_box5
+  y_units:
+  - states/eV
+  - states/eV
+  - states/eV
+  - states/eV
+  - states/eV
+  - states/eV
+  - states/eV
+  - states/eV
+  - states/eV
+  - states/eV
+Pdos:
+  array|x_array:
+  - 22
+  array|y_array_0:
+  - 22
+  array|y_array_1:
+  - 22
+  x_name: Energy
+  x_units: eV
+  y_names:
+  - pdos_up
+  - pdos_down
+  y_units:
+  - states/eV
+  - states/eV

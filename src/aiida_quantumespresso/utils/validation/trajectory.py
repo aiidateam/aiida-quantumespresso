@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
 """Utilities for the validation of `TrajectoryData` content."""
-from typing import List, Optional
 
+from typing import Optional
+
+import numpy as np
 from aiida.orm import TrajectoryData
-import numpy
 
 
 def verify_convergence_trajectory(
@@ -12,7 +12,7 @@ def verify_convergence_trajectory(
     threshold_forces: Optional[float] = None,
     threshold_stress: Optional[float] = None,
     reference_pressure: float = 0,
-    fixed_coords: Optional[List[List[bool]]] = None
+    fixed_coords: Optional[list[list[bool]]] = None,
 ) -> bool:
     """Verify that the data of the given ``TrajectoryData`` is converged with respect to the given thresholds.
 
@@ -52,7 +52,7 @@ def verify_convergence_forces(
     trajectory: TrajectoryData,
     index: int = -1,
     threshold: Optional[float] = None,
-    fixed_coords: Optional[List[List[bool]]] = None
+    fixed_coords: Optional[list[list[bool]]] = None,
 ) -> bool:
     """Verify that the `forces` of the given `TrajectoryData` are converged with respect to given threshold.
 
@@ -74,18 +74,18 @@ def verify_convergence_forces(
     threshold *= CONSTANTS.ry_to_ev / CONSTANTS.bohr_to_ang  # Convert to eV / Å
 
     try:
-        abs_forces = numpy.abs(trajectory.get_array('forces')[index])
+        abs_forces = np.abs(trajectory.get_array('forces')[index])
     except (KeyError, IndexError) as exception:
         raise ValueError('the `forces` array does not exist or the given index exceeds the length.') from exception
 
     if fixed_coords is not None:
-        fixed_coords = numpy.array(fixed_coords)
+        fixed_coords = np.array(fixed_coords)
         # Set the forces corresponding to fixed coordinates to zero, as they should not be checked versus threshold
         # Since `fixed_coords` is a list of lists of booleans, where `True` indicates that a coordinate is fixed, we can
         # invert this array and multiply it with the forces to set all fixed coordinates to zero.
-        abs_forces *= numpy.invert(fixed_coords)
+        abs_forces *= np.invert(fixed_coords)
 
-    return numpy.all(abs_forces < threshold)
+    return np.all(abs_forces < threshold)
 
 
 def verify_convergence_stress(
@@ -109,14 +109,14 @@ def verify_convergence_stress(
     if threshold is None:
         return None
 
-    threshold /= 10.  # Convert to GPa
-    reference_pressure /= 10.  # Convert to GPa
+    threshold /= 10.0  # Convert to GPa
+    reference_pressure /= 10.0  # Convert to GPa
 
     try:
         stress = trajectory.get_array('stress')[index]
     except (KeyError, IndexError) as exception:
         raise ValueError('the `stress` array does not exist or the given index exceeds the length.') from exception
 
-    pressure = numpy.trace(stress) / 3.
+    pressure = np.trace(stress) / 3.0
 
     return abs(pressure - reference_pressure) < threshold

@@ -1,13 +1,17 @@
-# -*- coding: utf-8 -*-
 """Utilities to manipulate the workflow input protocols."""
+
+import copy
+import inspect
 import pathlib
+import warnings
 from typing import Optional, Union
 
-from aiida.plugins import DataFactory, GroupFactory
 import yaml
+from aiida.orm import StructureData
+from aiida.engine import WorkChain
+from plumpy import PortNamespace
 
-StructureData = DataFactory('core.structure')
-PseudoPotentialFamily = GroupFactory('pseudo.family')
+from aiida_quantumespresso.common.types import SpinType
 
 
 class ProtocolMixin:
@@ -58,9 +62,14 @@ class ProtocolMixin:
         try:
             protocol_inputs = data['protocols'][protocol]
         except KeyError as exception:
-            raise ValueError(
-                f'`{protocol}` is not a valid protocol. Call ``get_available_protocols`` to show available protocols.'
-            ) from exception
+            alias_protocol = cls._check_if_alias(protocol)
+            if alias_protocol is not None:
+                protocol_inputs = data['protocols'][alias_protocol]
+            else:
+                raise ValueError(
+                    f'`{protocol}` is not a valid protocol. Call ``get_available_protocols`` to show available '
+                    'protocols.'
+                ) from exception
         inputs = recursive_merge(data['default_inputs'], protocol_inputs)
         inputs.pop('description')
 
@@ -69,15 +78,117 @@ class ProtocolMixin:
                 overrides = yaml.safe_load(file)
 
         if overrides:
+            cls._validate_override_keys(overrides)
             return recursive_merge(inputs, overrides)
 
         return inputs
+
+    @staticmethod
+    def set_default_resources(options: dict, scheduler_type: str) -> dict:
+        """Set default resources based on the scheduler type of a computer.
+
+        Temporary workaround to keep the default resources for the direct and Slurm schedulers until defaults can be
+        properly configured on computers, see https://github.com/aiidateam/aiida-quantumespresso/pull/1011
+
+        :param options: the options dictionary.
+        :param scheduler_type: the scheduler type, e.g. `core.slurm`.
+        """
+        new_options = copy.deepcopy(options)
+
+        if scheduler_type in (
+            'core.direct',
+            'core.slurm',
+            'core.pbspro',
+            'core.torque',
+            'hyperqueue',
+        ):
+            new_options.setdefault('resources', {}).setdefault('num_machines', 1)
+        if scheduler_type in ('core.sge',):
+            new_options.setdefault('resources', {}).setdefault('parallel_env', 'mpi')
+            new_options.setdefault('resources', {}).setdefault('tot_num_mpiprocs', 1)
+
+        return new_options
 
     @classmethod
     def _load_protocol_file(cls) -> dict:
         """Return the contents of the protocol file for workflow class."""
         with cls.get_protocol_filepath().open() as file:
             return yaml.safe_load(file)
+
+    @staticmethod
+    def _check_if_alias(alias: str):
+        """Check if a given alias corresponds to a valid protocol."""
+        aliases_dict = {
+            'moderate': 'balanced',
+            'precise': 'stringent',
+        }
+        return aliases_dict.get(alias)
+
+    @classmethod
+    def _validate_override_keys(cls, overrides):
+        """Validate that override keys match either the process spec or protocol inputs.
+
+        Recursively checks the `overrides` dictionary against the input port namespace of the work chain, extended
+        with protocol inputs, and emits warnings for any unrecognised keys.
+        """
+        # Avoid duplicate warnings when calling `get_builder_from_protocol` within another `get_builder_from_protocol`
+        try:
+            caller_frame = inspect.stack(context=0)[3]  # Check the frame where `get_builder_from_protocol` is called
+            caller_class = caller_frame.frame.f_locals.get('cls')
+            # Skip the validation when
+            if (
+                caller_frame.function == 'get_builder_from_protocol'  # It is a parent `get_builder_from_protocol` call
+                and caller_class not in (None, cls)  # The caller is a different class
+                and issubclass(caller_class, WorkChain)  # The caller is a WorkChain
+            ):
+                return
+        except (IndexError, TypeError):
+            pass
+
+        # Sentinel key marking whether a namespace-dict below accepts arbitrary keys beyond its declared
+        # children (e.g. the dynamic ``monitors`` namespace). An `object()` is used rather than a string
+        # so it can never collide with an actual port or override name.
+        dynamic_marker = object()
+
+        def port_namespace_to_dict(namespace: PortNamespace):
+            """Recursively convert a PortNamespace into a nested dict structure.
+
+            Each resulting dict carries a `dynamic_marker` entry recording whether the namespace is
+            genuinely open-ended (dynamic with no statically declared children, e.g. ``monitors`` or
+            ``pseudos``), so `recursive_key_check` can skip validating keys nested under it. Many
+            namespaces (e.g. `pw`, from ``expose_inputs``) are also `dynamic` for unrelated internal
+            reasons despite declaring a full, fixed set of children, so `dynamic` alone is not a
+            reliable signal: only an *empty* dynamic namespace unambiguously means "arbitrary keys are
+            expected here".
+            """
+            mapping = {
+                key: port_namespace_to_dict(port) if isinstance(port, PortNamespace) else None
+                for key, port in namespace.items()
+            }
+            mapping[dynamic_marker] = namespace.dynamic and not mapping
+            return mapping
+
+        def recursive_key_check(inputs_mapping: dict, overrides: dict, path=''):
+            """Recursively check that all the provided keys in the `overrides` are in the `inputs_mapping`."""
+
+            for key, value in overrides.items():
+                full_key = f'{path}.{key}' if path else key
+                if key not in inputs_mapping:
+                    if not inputs_mapping.get(dynamic_marker, False):
+                        warnings.warn(f'Found unrecognised key in overrides: {full_key}')
+                    continue
+                if isinstance(value, dict) and isinstance(inputs_mapping.get(key), dict):
+                    recursive_key_check(inputs_mapping[key], value, full_key)
+
+        meta_inputs_schema = cls._load_protocol_file().get('meta_inputs_schema')
+
+        if meta_inputs_schema is None:
+            return  # We cannot validate the overrides if we don't understand the full protocol schema
+
+        # Full protocol schema = meta inputs + process inputs
+        inputs_mapping = recursive_merge(meta_inputs_schema, port_namespace_to_dict(cls.spec().inputs))
+
+        recursive_key_check(inputs_mapping, overrides)
 
 
 def recursive_merge(left: dict, right: dict) -> dict:
@@ -96,9 +207,12 @@ def recursive_merge(left: dict, right: dict) -> dict:
     right = right.copy()
 
     for key, value in left.items():
-        if key in right:
-            if isinstance(value, collections.abc.Mapping) and isinstance(right[key], collections.abc.Mapping):
-                right[key] = recursive_merge(value, right[key])
+        if (
+            key in right
+            and isinstance(value, collections.abc.Mapping)
+            and isinstance(right[key], collections.abc.Mapping)
+        ):
+            right[key] = recursive_merge(value, right[key])
 
     merged = left.copy()
     merged.update(right)
@@ -115,42 +229,107 @@ def get_magnetization_parameters() -> dict:
         return yaml.safe_load(handle)
 
 
-def get_starting_magnetization(
+def get_magnetization(
     structure: StructureData,
-    pseudo_family: PseudoPotentialFamily,
-    initial_magnetic_moments: Optional[dict] = None
+    z_valences: dict,
+    initial_magnetic_moments: Optional[dict] = None,
+    spin_type: SpinType = SpinType.COLLINEAR,
 ) -> dict:
-    """Return the dictionary with starting magnetization for each kind in the structure.
+    """Return a magnetization dictionary with for each kind in the structure.
+
+    The returned dictionary always has three keys, corresponding to the Quantum ESPRESSO inputs:
+
+    * `starting_magnetization`
+    * `angle1`
+    * `angle2`
+
+    In case the `spin_type` is set to `SpinType.COLLINEAR`, the values for `angle1` and `angle2` will be set to `None`.
 
     :param structure: the structure.
-    :param pseudo_family: pseudopotential family.
+    :param z_valences: dictionary mapping each kind in the structure to the number of valence electrons in the pseudo
+        potential.
     :param initial_magnetic_moments: dictionary mapping each kind in the structure to its magnetic moment.
-    :returns: dictionary of starting magnetizations.
+    :param spin_type: the `SpinType` of the calculation.
+    :returns: dictionary of the magnetization.
     """
+    magnetization = {
+        'starting_magnetization': {},
+        'angle1': {} if spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT] else None,
+        'angle2': {} if spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT] else None,
+    }
+    if sorted(z_valences.keys()) != sorted(structure.get_kind_names()):
+        raise ValueError(f'`z_valences` needs one value for each of the {len(structure.kinds)} kinds.')
+
     if initial_magnetic_moments is not None:
-
-        nkinds = len(structure.kinds)
-
         if sorted(initial_magnetic_moments.keys()) != sorted(structure.get_kind_names()):
-            raise ValueError(f'`initial_magnetic_moments` needs one value for each of the {nkinds} kinds.')
+            raise ValueError(
+                f'`initial_magnetic_moments` needs one value for each of the {len(structure.kinds)} kinds.'
+            )
 
-        return {
-            kind.name: initial_magnetic_moments[kind.name] / pseudo_family.get_pseudo(element=kind.symbol).z_valence
-            for kind in structure.kinds
-        }
+        for kind in structure.kinds:
+            magmom = initial_magnetic_moments[kind.name]
+
+            if isinstance(magmom, (int, float)):
+                scaled_magmom = magmom / z_valences[kind.name]
+                magnetization['starting_magnetization'][kind.name] = scaled_magmom
+
+                if spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT]:
+                    magnetization['angle1'][kind.name] = 0.0
+                    magnetization['angle2'][kind.name] = 0.0
+
+            elif isinstance(magmom, (list, tuple)):
+                if spin_type not in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT]:
+                    raise TypeError(
+                        f'Spin type is set to `{spin_type}` but a `{type(magmom)}` is provided for the magnetic '
+                        f'moment of kind `{kind.name}`.'
+                    )
+
+                scaled_magmom = magmom[0] / z_valences[kind.name]
+                magnetization['starting_magnetization'][kind.name] = scaled_magmom
+                magnetization['angle1'][kind.name] = magmom[1]
+                magnetization['angle2'][kind.name] = magmom[2]
+            else:
+                raise TypeError(f'Unrecognised type for magnetic moment of kind `{kind.name}`: {type(magmom)}.')
+
+        return magnetization
+
+    # The following block deals with the case where the input `structure` is a `MagneticStructureData`, which is
+    # implemented in aiida_wannier90_workflows. Here we can read the magnetic moment from the structure.
+    # TODO: Deprecate/Remove this block when we provide support for the new `StructureData` instead.
+    if hasattr(structure, 'has_magmom'):
+        collinear = structure.is_collin_mag()
+
+        if not collinear and spin_type == SpinType.COLLINEAR:
+            raise ValueError(
+                'Input `MagneticStructureData` has non-collinear magnetism defined but `spin_type` is set to COLLINEAR.'
+            )
+
+        for kind in structure.kinds:
+            magmom = kind.get_magmom_coord()
+
+            scaled_magmom = magmom[0] / z_valences[kind.name]
+            magnetization['starting_magnetization'][kind.name] = scaled_magmom
+
+            if spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT]:
+                magnetization['angle1'][kind.name] = magmom[1]
+                magnetization['angle2'][kind.name] = magmom[2]
+
+        return magnetization
+
+    # End of `MagneticStructureData` block
 
     magnetic_parameters = get_magnetization_parameters()
-    starting_magnetization = {}
 
     for kind in structure.kinds:
         magnetic_moment = magnetic_parameters[kind.symbol]['magmom']
 
-        if magnetic_moment == 0:
-            magnetization = magnetic_parameters['default_magnetization']
-        else:
-            z_valence = pseudo_family.get_pseudo(element=kind.symbol).z_valence
-            magnetization = magnetic_moment / float(z_valence)
+        magnetization['starting_magnetization'][kind.name] = (
+            magnetic_parameters['default_magnetization']
+            if magnetic_moment == 0
+            else magnetic_moment / z_valences[kind.name]
+        )
+        if spin_type in [SpinType.NON_COLLINEAR, SpinType.SPIN_ORBIT]:
+            magnetization['angle1'][kind.name] = 0.0
+            magnetization['angle2'][kind.name] = 0.0
 
-        starting_magnetization[kind.name] = magnetization
-
-    return starting_magnetization
+    return magnetization

@@ -1,11 +1,11 @@
-# -*- coding: utf-8 -*-
 """Utilities to parse Quantum ESPRESSO cp.x input files into AiiDA nodes or builders."""
+
 from qe_tools.parsers import CpInputFile as BaseCpInputFile
 
 from .base import StructureParseMixin
 
 
-class CpInputFile(StructureParseMixin, BaseCpInputFile):  # pylint: disable=too-few-public-methods
+class CpInputFile(StructureParseMixin, BaseCpInputFile):
     """Parser of Quantum ESPRESSO cp.x input file into AiiDA nodes.
 
     .. note:: This mixes in :class:`~aiida_quantumespresso.tools.base.StructureParseMixin` which adds the functionality

@@ -1,9 +1,10 @@
-#!/bin/bash
-# -*- coding: utf-8 -*-
 """Script for automatically updating the `CHANGELOG.md` based on the commits since the latest release tag."""
-from pathlib import Path
+
+# ruff: noqa: INP001, T201, S607
+
 import re
 import subprocess
+from pathlib import Path
 
 DEFAULT_CHANGELOG_SECTIONS = """
 ### ‼️ Breaking changes
@@ -30,6 +31,9 @@ DEFAULT_CHANGELOG_SECTIONS = """
 ### ⬆️ Update dependencies
 
 
+### 🧪 Tests
+
+
 ### ♻️ Refactor
 
 """
@@ -49,31 +53,34 @@ def update_changelog():
 
     print('⬆️ Found updated version number, adapting `CHANGELOG.md`.')
     tags = subprocess.run(['git', 'tag', '--sort=v:refname'], capture_output=True, check=True, encoding='utf-8').stdout
-    latest_tag = re.findall(r'(v\d\.\d\.\d)\n', tags)[-1]
+    latest_tag = re.findall(r'(v\d+\.\d+\.\d+)\n', tags)[-1]
 
     print(f'🔄 Comparing with latest tag `{latest_tag}`.')
-    commits = subprocess.run(['git', 'log', "--pretty=format:'%h|%H|%s'", f'{latest_tag}..origin/main'],
-                             capture_output=True,
-                             check=True,
-                             encoding='utf-8').stdout
+    commits = subprocess.run(
+        ['git', 'log', "--pretty=format:'%h|%H|%s'", f'{latest_tag}..HEAD'],
+        capture_output=True,
+        check=True,
+        encoding='utf-8',
+    ).stdout
 
     pr_pattern = re.compile(r'\(\S(?P<pr_number>\d+)\)')
 
     changelog_message = f'## v{__version__}\n' + DEFAULT_CHANGELOG_SECTIONS
 
-    for commit in commits.splitlines():
-
+    for commit_line in commits.splitlines():
         # Remove the PR number from the commit message
-        pr_match = pr_pattern.search(commit)
+        pr_match = pr_pattern.search(commit_line)
 
         if pr_match is not None:
             pr_number = pr_match.groupdict()['pr_number']
-            commit = commit.replace(fr'(#{pr_number})', '')
+            commit = commit_line.replace(rf'(#{pr_number})', '')
+        else:
+            commit = commit_line
 
         # Add the commit hash (short) to link to the changelog
         commit = commit.strip("'")
         hash_short, hash_long, message = commit.split('|', maxsplit=2)
-        message += f'[[{hash_short}](https://github.com/aiidateam/aiida-quantumespresso/commit/{hash_long})]'
+        message += f' [[{hash_short}](https://github.com/aiidateam/aiida-quantumespresso/commit/{hash_long})]'
         changelog_message += f'\n* {message}'
 
     with Path('CHANGELOG.md').open('w', encoding='utf8') as handle:

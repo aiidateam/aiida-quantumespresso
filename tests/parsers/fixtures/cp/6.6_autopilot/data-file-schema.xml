@@ -15,6 +15,30 @@
     <npool>1</npool>
     <ndiag>1</ndiag>
   </parallel_info>
+  <input>
+    <atomic_species ntyp="1">
+      <species name="H">
+        <mass>1.0e0</mass>
+        <pseudo_file>H_HSCV_PBE-1.0.upf</pseudo_file>
+      </species>
+      <species name="O">
+        <mass>8.0e0</mass>
+        <pseudo_file>O_HSCV_PBE-1.0.upf</pseudo_file>
+      </species>
+    </atomic_species>
+    <atomic_structure nat="3" alat="7.255773194184e0">
+      <atomic_positions>
+        <atom name="H" index="1">0.000000000000000e0 0.000000000000000e0 0.000000000000000e0</atom>
+        <atom name="H" index="2">2.565303214179483e0 2.565303214179483e0 2.565303214179483e0</atom>
+        <atom name="O" index="3">2.565303214179483e0 2.565303214179483e0 2.565303214179483e0</atom>
+      </atomic_positions>
+      <cell>
+        <a1>0.000000000000000e0 5.130606428358965e0 5.130606428358965e0</a1>
+        <a2>5.130606428358965e0 0.000000000000000e0 5.130606428358965e0</a2>
+        <a3>5.130606428358965e0 5.130606428358965e0 0.000000000000000e0</a3>
+      </cell>
+    </atomic_structure>
+  </input>
   <output>
     <algorithmic_info>
       <real_space_q>false</real_space_q>

@@ -1,11 +1,13 @@
-# -*- coding: utf-8 -*-
 """Defines a `CalcJob` base class for `aiida-quantumespresso`.
 
 The custom `CalcJob` base class automatically sets the `invalidates_cache` attribute of exit codes based on the status
 integer. All `CalcJob` implementations in `aiida-quantumespresso` must use this base class, not `aiida.engine.CalcJob`.
 """
+
 from aiida.engine import CalcJob as _BaseCalcJob
-from aiida.engine.processes.process_spec import CalcJobProcessSpec as _BaseCalcJobProcessSpec
+from aiida.engine.processes.process_spec import (
+    CalcJobProcessSpec as _BaseCalcJobProcessSpec,
+)
 
 __all__ = ('CalcJob',)
 
@@ -29,12 +31,17 @@ class CalcJobProcessSpec(_BaseCalcJobProcessSpec):
             caching
         """
         if invalidates_cache is None:
-            invalidates_cache = (isinstance(status, int) and status < 400)
+            invalidates_cache = isinstance(status, int) and status < 400
 
-        super().exit_code(status=status, label=label, message=message, invalidates_cache=invalidates_cache)
+        super().exit_code(
+            status=status,
+            label=label,
+            message=message,
+            invalidates_cache=invalidates_cache,
+        )
 
 
-class CalcJob(_BaseCalcJob):  # pylint: disable=abstract-method
+class CalcJob(_BaseCalcJob):
     """Custom `CalcJob` class for `aiida-quantumespresso` calculations."""
 
     _spec_class = CalcJobProcessSpec
@@ -42,7 +49,6 @@ class CalcJob(_BaseCalcJob):  # pylint: disable=abstract-method
     @classmethod
     def define(cls, spec):
         """Define the process specification."""
-        # yapf: disable
+
         super().define(spec)
         spec.inputs['metadata']['options']['resources'].default = lambda: {'num_machines': 1}
-        # yapf: enable

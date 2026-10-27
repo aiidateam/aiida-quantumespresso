@@ -811,7 +811,7 @@
       <cpu>1.316427000000000e0</cpu>
       <wall>1.728860139846802e0</wall>
     </total>
-    <partial label="PWSCF" calls="0">
+    <partial label="PWSCF" calls="1">
       <cpu>1.316431000000000e0</cpu>
       <wall>1.728865146636963e0</wall>
     </partial>

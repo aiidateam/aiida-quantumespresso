@@ -1,0 +1,65 @@
+
+     Program POST-PROC v.7.2 starts on 31Mar2025 at  7:48:51 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+         "P. Giannozzi et al., J. Chem. Phys. 152 154105 (2020);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI & OpenMP), running on       1 processor cores
+     Number of MPI processes:                 1
+     Threads/MPI process:                     1
+
+     MPI processes distributed on     1 nodes
+     5407 MiB available memory on the printing compute node when the environment starts
+
+
+     Reading xml data from directory:
+
+     ./out/aiida.save/
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation= PBESOL
+                           (   1   4  10   8   0   0   0)
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum         859     433    139                16889     5985    1067
+
+     Using Slab Decomposition
+
+
+     Calling punch_plot, plot_num =   3
+
+     Energy =   6.46045 eV, broadening =   0.01000eV
+     Writing data to file  aiida.filplot001
+
+     Calling punch_plot, plot_num =   3
+
+     Energy =   6.56045 eV, broadening =   0.01000eV
+     Writing data to file  aiida.filplot002
+     Reading data from file  aiida.filplot001
+
+     Writing data to be plotted to file aiida.filplot001aiida.fileout
+     Plot Type: 3D                     Output format: Gaussian cube
+     Reading data from file  aiida.filplot002
+
+     Writing data to be plotted to file aiida.filplot002aiida.fileout
+     Plot Type: 3D                     Output format: Gaussian cube
+
+     POST-PROC    :      0.46s CPU      0.49s WALL
+
+
+   This run was terminated on:   7:48:51  31Mar2025            
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=

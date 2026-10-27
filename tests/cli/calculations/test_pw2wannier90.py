@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the ``calculation launch pw2wannier90`` command."""
+
 import io
 
 from aiida.orm import SinglefileData

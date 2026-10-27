@@ -1,7 +1,8 @@
-# -*- coding: utf-8 -*-
 """Tests for the `PhCalculation` class."""
+
 from pathlib import Path
 
+import pytest
 from aiida import orm
 from aiida.common import datastructures
 from aiida.plugins import CalculationFactory
@@ -36,7 +37,12 @@ def test_ph_default(fixture_sandbox, generate_inputs_ph, generate_calc_job, file
 
 
 def test_ph_qpoint_list(
-    fixture_sandbox, generate_inputs_ph, generate_calc_job, generate_structure, generate_kpoints_mesh, file_regression
+    fixture_sandbox,
+    generate_inputs_ph,
+    generate_calc_job,
+    generate_structure,
+    generate_kpoints_mesh,
+    file_regression,
 ):
     """Test a `PhCalculation` with a qpoint list instead of a mesh."""
     entry_point_name = 'quantumespresso.ph'
@@ -63,12 +69,64 @@ def test_ph_initialization_only(fixture_sandbox, generate_inputs_ph, generate_ca
     inputs = generate_inputs_ph()
     inputs['settings'] = orm.Dict({'only_initialization': True})
     generate_calc_job(fixture_sandbox, entry_point_name, inputs)
-    assert (Path(fixture_sandbox.abspath) / f'{PhCalculation._PREFIX}.EXIT').exists()  # pylint: disable=protected-access
+    assert (Path(fixture_sandbox.abspath) / f'{PhCalculation._PREFIX}.EXIT').exists()
 
 
-def test_serialize_builder(fixture_code, generate_inputs_ph, data_regression, serialize_builder):
+@pytest.mark.parametrize('symlink', (True, False))
+@pytest.mark.parametrize('electron_phonon', (None, 'interpolated'))
+def test_ph_restart(
+    fixture_sandbox,
+    fixture_localhost,
+    generate_inputs_ph,
+    generate_calc_job,
+    generate_remote_data,
+    tmp_path,
+    symlink,
+    electron_phonon,
+):
+    """Test a ``PhCalculation`` that restarts from the ``parent_folder`` of another ``PhCalculation``.
+
+    The ``elph_dir`` folder should only be copied or symlinked if ``electron_phonon`` is set in the ``INPUTPH``
+    namelist.
+    """
+    entry_point_name = 'quantumespresso.ph'
+
+    inputs = generate_inputs_ph()
+    inputs['parent_folder'] = generate_remote_data(fixture_localhost, str(tmp_path), entry_point_name)
+    inputs['settings'] = orm.Dict({'parent_folder_symlink': symlink})
+
+    parameters = {'INPUTPH': {}}
+    if electron_phonon is not None:
+        parameters['INPUTPH']['electron_phonon'] = electron_phonon
+    inputs['parameters'] = orm.Dict(parameters)
+
+    calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
+
+    remote_list = calc_info.remote_symlink_list if symlink else calc_info.remote_copy_list
+    targets = [target for _, _, target in remote_list]
+
+    assert (PhCalculation._FOLDER_ELECTRON_PHONON in targets) is (electron_phonon is not None)
+
+
+def test_serialize_builder(generate_inputs_ph, data_regression, serialize_builder):
     """Test the ``serialize_builder`` fixture using a process builder for the ``PhCalculation``."""
-    code = fixture_code('quantumespresso.ph')
-    builder = code.get_builder()
-    builder._update(**generate_inputs_ph())  # pylint: disable=protected-access
+    builder = PhCalculation.get_builder()
+    builder._update(**generate_inputs_ph())
     data_regression.check(serialize_builder(builder))
+
+
+def test_parameters_validation():
+    """Test the validation of the `parameters` input."""
+    import pytest
+
+    builder = PhCalculation.get_builder()
+
+    parameters = {'inputph': {'tr2_ph': 1.0e-8}}
+
+    with pytest.warns(UserWarning, match="'inputph' should be UPPERCASE"):
+        builder.parameters = parameters
+
+    assert builder.parameters.get_dict() == {'INPUTPH': {'tr2_ph': 1.0e-8}}
+
+    with pytest.raises(ValueError, match="'inputph' should be UPPERCASE"):
+        builder.parameters = orm.Dict(parameters).store()

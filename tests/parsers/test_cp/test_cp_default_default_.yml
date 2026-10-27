@@ -69,6 +69,7 @@ parameters:
   - - 0.0
     - 0.0
     - 0.0
+  code_version: '6.0'
   creator_name: cp
   creator_version: '6.0'
   dft_exchange_correlation: PBE
@@ -185,7 +186,7 @@ parameters:
   - 0.0
   vnhp:
   - 0.0
-  wall_time: '         5.64s '
+  wall_time_seconds: 5.64
   warnings: []
   wfc_cutoff: 408.170751759
   wfc_cutoff_units: eV

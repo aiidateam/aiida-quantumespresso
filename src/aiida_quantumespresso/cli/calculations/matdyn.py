@@ -1,11 +1,11 @@
-# -*- coding: utf-8 -*-
 """Command line scripts to launch a `MatdynCalculation` for testing and demonstration purposes."""
+
 from aiida.cmdline.params import options as options_core
 from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
 
-from . import cmd_launch
 from ..utils import launch, options
+from . import cmd_launch
 
 
 @cmd_launch.command('matdyn')
@@ -13,7 +13,7 @@ from ..utils import launch, options
 @options_core.DATUM(
     required=True,
     type=types.DataParamType(sub_classes=('aiida.data:quantumespresso.force_constants',)),
-    help='A ForceConstantsData node produced by a `Q2rCalculation`'
+    help='A ForceConstantsData node produced by a `Q2rCalculation`',
 )
 @options.KPOINTS_MESH(default=[1, 1, 1])
 @options.MAX_NUM_MACHINES()
@@ -33,7 +33,7 @@ def launch_calculation(code, datum, kpoints_mesh, max_num_machines, max_wallcloc
         'force_constants': datum,
         'metadata': {
             'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
-        }
+        },
     }
 
     launch.launch_process(CalculationFactory('quantumespresso.matdyn'), daemon, **inputs)

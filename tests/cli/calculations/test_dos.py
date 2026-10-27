@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the ``calculation launch dos`` command."""
+
 from aiida_quantumespresso.cli.calculations.dos import launch_calculation
 
 

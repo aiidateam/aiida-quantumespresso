@@ -1,6 +1,6 @@
 clean_workdir: false
 dos:
-  code: test.quantumespresso.dos@localhost
+  code: test.quantumespresso.dos
   metadata:
     options:
       max_wallclock_seconds: 43200
@@ -9,17 +9,19 @@ dos:
       withmpi: true
   parameters:
     DOS:
-      DeltaE: 0.02
+      deltae: 0.01
 nscf:
   kpoints_distance: 0.1
   kpoints_force_parity: false
+  max_iterations: 5
   pw:
-    code: test.quantumespresso.pw@localhost
+    code: test.quantumespresso.pw
     metadata:
       options:
         max_wallclock_seconds: 43200
         resources:
           num_machines: 1
+          num_mpiprocs_per_machine: 1
         withmpi: true
     parameters:
       CONTROL:
@@ -37,11 +39,11 @@ nscf:
         ecutrho: 240.0
         ecutwfc: 30.0
         nosym: true
-        occupations: tetrahedra
+        occupations: tetrahedra_opt
     pseudos:
       Si: Si<md5=57fa15d98af99972c7b7aa5c179b0bb8>
 projwfc:
-  code: test.quantumespresso.projwfc@localhost
+  code: test.quantumespresso.projwfc
   metadata:
     options:
       max_wallclock_seconds: 43200
@@ -50,17 +52,19 @@ projwfc:
       withmpi: true
   parameters:
     PROJWFC:
-      DeltaE: 0.02
+      deltae: 0.01
 scf:
   kpoints_distance: 0.15
   kpoints_force_parity: false
+  max_iterations: 5
   pw:
-    code: test.quantumespresso.pw@localhost
+    code: test.quantumespresso.pw
     metadata:
       options:
         max_wallclock_seconds: 43200
         resources:
           num_machines: 1
+          num_mpiprocs_per_machine: 1
         withmpi: true
     parameters:
       CONTROL:
@@ -75,7 +79,7 @@ scf:
         electron_maxstep: 80
         mixing_beta: 0.4
       SYSTEM:
-        degauss: 0.01
+        degauss: 0.02
         ecutrho: 240.0
         ecutwfc: 30.0
         nosym: false

@@ -2,15 +2,14 @@ default_inputs:
     clean_workdir: False
     kpoints_distance: 0.15
     kpoints_force_parity: False
+    max_iterations: 5
     meta_parameters:
         conv_thr_per_atom: 0.2e-9
         etot_conv_thr_per_atom: 1.e-5
-    pseudo_family: 'SSSP/1.2/PBEsol/efficiency'
+    pseudo_family: 'SSSP/1.3/PBEsol/efficiency'
     pw:
         metadata:
             options:
-                resources:
-                    num_machines: 1
                 max_wallclock_seconds: 43200  # Twelve hours
                 withmpi: True
         parameters:
@@ -23,28 +22,30 @@ default_inputs:
                 nosym: False
                 occupations: smearing
                 smearing: cold
-                degauss: 0.01
+                degauss: 0.02
             ELECTRONS:
                 electron_maxstep: 80
                 mixing_beta: 0.4
-default_protocol: moderate
+default_protocol: balanced
 protocols:
-    moderate:
+    balanced:
         description: 'Protocol to perform the computation at normal precision at moderate computational cost.'
-    precise:
+    stringent:
         description: 'Protocol to perform the computation at high precision at higher computational cost.'
         kpoints_distance: 0.10
         meta_parameters:
             conv_thr_per_atom: 0.1e-9
             etot_conv_thr_per_atom: 0.5e-5
-        pseudo_family: 'SSSP/1.2/PBEsol/precision'
+        pseudo_family: 'SSSP/1.3/PBEsol/precision'
         pw:
             parameters:
                 CONTROL:
                     forc_conv_thr: 0.5e-4
+                SYSTEM:
+                    degauss: 0.0125
     fast:
         description: 'Protocol to perform the computation at low precision at minimal computational cost for testing purposes.'
-        kpoints_distance: 0.50
+        kpoints_distance: 0.30
         meta_parameters:
             conv_thr_per_atom: 0.4e-9
             etot_conv_thr_per_atom: 1.e-4
@@ -52,3 +53,11 @@ protocols:
             parameters:
                 CONTROL:
                     forc_conv_thr: 1.e-3
+                SYSTEM:
+                    degauss: 0.0275
+# List of "meta inputs", which are not direct inputs of the process. Used for validation of the overrides
+meta_inputs_schema:
+    meta_parameters:
+        conv_thr_per_atom:
+        etot_conv_thr_per_atom:
+    pseudo_family:

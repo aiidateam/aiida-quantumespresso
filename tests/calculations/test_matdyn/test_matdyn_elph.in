@@ -1,0 +1,11 @@
+&INPUT
+  dos = .true.
+  fldos = 'phonon_dos.dat'
+  flfrc = 'force_constants.dat'
+  flfrq = 'phonon_frequencies.dat'
+  flvec = 'phonon_displacements.dat'
+  la2f = .true.
+  nk1 = 2
+  nk2 = 2
+  nk3 = 2
+/

@@ -8,33 +8,43 @@ myst:
 
 ```{toctree}
 :hidden: true
-:maxdepth: 2
+:caption: Getting Started
 
-installation/index
+get_started/installation
+get_started/quick_start
 tutorials/index
-howto/index
-topics/index
-reference/index
 ```
 
-::::{grid}
-:reverse:
-:gutter: 2 3 3 3
-:margin: 1 2 1 2
+```{toctree}
+:hidden: true
+:caption: How to
 
-:::{grid-item}
-:columns: 12 4 4 4
-
-```{image} images/logo_aiida_quantumespresso.png
-:width: 200px
-:class: sd-m-auto
+howto/run_pw
+howto/error_handling
+howto/relax_structure
+howto/run_ph
+howto/run_pwbands
+howto/run_pdos
+howto/customize_inputs
 ```
-:::
 
-:::{grid-item}
-:columns: 12 8 8 8
-:child-align: justify
-:class: sd-fs-5
+```{toctree}
+:hidden: true
+:caption: Topic guides
+topics/protocol
+topics/workflow_logic
+```
+
+```{toctree}
+:hidden: true
+:caption: Reference
+reference/calculations/index
+reference/workflows/index
+reference/monitors/index
+reference/cli/index
+reference/developer
+reference/migration
+```
 
 # AiiDA Quantum ESPRESSO
 
@@ -42,11 +52,10 @@ An AiiDA plugin package to integrate the [Quantum ESPRESSO](http://www.quantumes
 Compute a variety of material properties with the popular open source DFT code with automatic data provenance provided by AiiDA.
 Geometry optimizations, ground-state electronic structure, band structures, phonons, and much more.
 
-**aiida-quantumespresso version:** {{ release }}
-
-:::
-
-::::
+[![PyPI version](https://badge.fury.io/py/aiida-quantumespresso.svg)](https://badge.fury.io/py/aiida-quantumespresso)
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/aiida-quantumespresso.svg)](https://pypi.python.org/pypi/aiida-quantumespresso)
+[![Build Status](https://github.com/aiidateam/aiida-quantumespresso/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/aiidateam/aiida-quantumespresso/actions)
+[![Docs status](https://readthedocs.org/projects/aiida-quantumespresso/badge)](http://aiida-quantumespresso.readthedocs.io/)
 
 ______________________________________________________________________
 
@@ -54,7 +63,7 @@ ______________________________________________________________________
 ::::{grid} 1 2 2 2
 :gutter: 3
 
-:::{grid-item-card} {fa}`rocket;mr-1` Get started
+:::{grid-item-card} {fa}`info-circle;mr-1` Installation
 :text-align: center
 :shadow: md
 
@@ -62,7 +71,7 @@ Instructions to install, configure and setup the plugin package.
 
 +++
 
-```{button-ref} installation/index
+```{button-ref} get_started/installation
 :ref-type: doc
 :click-parent:
 :expand:
@@ -73,7 +82,7 @@ To the installation guides
 ```
 :::
 
-:::{grid-item-card} {fa}`info-circle;mr-1` Tutorials
+:::{grid-item-card} {fa}`rocket;mr-1` Get started
 :text-align: center
 :shadow: md
 
@@ -81,77 +90,20 @@ Easy examples to take the first steps with the plugin package.
 
 +++
 
-```{button-ref} tutorials/index
+```{button-ref} get_started/quick_start
 :ref-type: doc
 :click-parent:
 :expand:
 :color: primary
 :outline:
 
-To the tutorials
-```
-:::
-
-:::{grid-item-card} {fa}`question-circle;mr-1` How-to guides
-:text-align: center
-:shadow: md
-
-Hands-on guides to achieve specific goals.
-
-+++
-
-```{button-ref} howto/index
-:ref-type: doc
-:click-parent:
-:expand:
-:color: primary
-:outline:
-
-To the how-to guides
-```
-:::
-
-:::{grid-item-card} {fa}`bookmark;mr-1` Topic guides
-:text-align: center
-:shadow: md
-
-Detailed background information on various concepts.
-
-+++
-
-```{button-ref} topics/index
-:ref-type: doc
-:click-parent:
-:expand:
-:color: primary
-:outline:
-
-To the topic guides
-```
-:::
-
-:::{grid-item-card} {fa}`cogs;mr-1` Reference guides
-:text-align: center
-:shadow: md
-
-Detailed reference guides on the application programming and command line interfaces.
-
-+++
-
-```{button-ref} reference/api/aiida_quantumespresso/index
-:ref-type: doc
-:click-parent:
-:expand:
-:color: primary
-:outline:
-
-To the reference guides
+To the tutorial
 ```
 :::
 ::::
 
 
-# How to cite
+## How to cite
 
 If you use this plugin for your research, please cite the following work:
 
@@ -161,7 +113,7 @@ If you use this plugin for your research, please cite the following work:
 > Martin Uhrin, Sebastiaan. P. Huber, Jusong Yu, Nicola Marzari, and Giovanni Pizzi, [*Workflows in AiiDA: Engineering a high-throughput, event-based
     engine for robust and modular computational workflows*](https://doi.org/10.1016/j.commatsci.2020.110086), Computational Materials Science **187**, 110086 (2021)
 
-# Acknowledgements
+## Acknowledgements
 
 We acknowledge support from:
 

@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
 """Command line utilities to create and inspect `StructureData` nodes."""
+
+import click
 from aiida.cmdline.params import options
 from aiida.cmdline.utils import decorators, echo
-import click
 
 from . import cmd_data
 
@@ -20,8 +20,7 @@ def cmd_import(filename, dry_run):
     """Import a `StructureData` from a Quantum ESPRESSO input file."""
     from aiida_quantumespresso.tools.pwinputparser import PwInputFile
 
-    with open(filename, 'r', encoding='utf-8') as input_file:
-        parser = PwInputFile(input_file.read())
+    parser = PwInputFile(filename.read())
     structure = parser.get_structuredata()
     formula = structure.get_formula()
 

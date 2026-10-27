@@ -1,23 +1,29 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=no-member,redefined-outer-name
 """Tests for the `PhBaseWorkChain` class."""
+
+import pytest
 from aiida import orm
 from aiida.common import AttributeDict, LinkType
-from aiida.engine import ProcessHandlerReport
-import pytest
+from aiida.engine import ProcessHandlerReport, WorkChain
 
 from aiida_quantumespresso.calculations.ph import PhCalculation
 from aiida_quantumespresso.workflows.ph.base import PhBaseWorkChain
 
 
+def generate_inputs():
+    """Return only those inputs that the parser will expect to be there."""
+    return {'parameters': orm.Dict({'INPUTPH': {}})}
+
+
 @pytest.fixture
-def generate_ph_calc_job_node(generate_calc_job_node, fixture_localhost):
+def generate_ph_calc_job_node(generate_calc_job_node, fixture_localhost, tmp_path_factory):
     """Generate a ``CalcJobNode`` that would have been created by a ``PhCalculation``."""
 
     def _generate_ph_calc_job_node():
         node = generate_calc_job_node()
 
-        remote_folder = orm.RemoteData(computer=fixture_localhost, remote_path='/tmp')
+        remote_folder = orm.RemoteData(
+            computer=fixture_localhost, remote_path=tmp_path_factory.mktemp('ph-remote').as_posix()
+        )
         remote_folder.base.links.add_incoming(node, link_type=LinkType.CREATE, link_label='remote_folder')
         remote_folder.store()
 
@@ -34,6 +40,14 @@ def generate_ph_calc_job_node(generate_calc_job_node, fixture_localhost):
     return _generate_ph_calc_job_node
 
 
+def test_invalid_inputs(generate_workchain_ph, generate_inputs_ph):
+    """Test `PhBaseWorkChain` validation methods."""
+    inputs = {'ph': generate_inputs_ph()}
+    message = r'Neither `qpoints` nor `qpoints_distance` were specified.'
+    with pytest.raises(ValueError, match=message):
+        generate_workchain_ph(inputs=inputs)
+
+
 def test_setup(generate_workchain_ph):
     """Test `PhBaseWorkChain.setup`."""
     process = generate_workchain_ph()
@@ -43,18 +57,28 @@ def test_setup(generate_workchain_ph):
     assert isinstance(process.ctx.inputs, AttributeDict)
 
 
-def test_handle_unrecoverable_failure(generate_workchain_ph):
-    """Test `PhBaseWorkChain.handle_unrecoverable_failure`."""
-    process = generate_workchain_ph(exit_code=PhCalculation.exit_codes.ERROR_NO_RETRIEVED_FOLDER)
+@pytest.mark.parametrize(
+    ('with_output_structure', 'with_qpoints_distance'),
+    [(False, False), (False, True), (True, True)],
+)
+def test_set_qpoints(generate_workchain_ph, generate_inputs_ph, with_output_structure, with_qpoints_distance):
+    """Test `PhBaseWorkChain.set_qpoints`."""
+    inputs = {'ph': generate_inputs_ph(with_output_structure=with_output_structure)}
+    inputs['qpoints'] = inputs['ph'].pop('qpoints')
+
+    if with_qpoints_distance:
+        inputs.pop('qpoints')
+        inputs['qpoints_distance'] = orm.Float(0.5)
+
+    process = generate_workchain_ph(inputs=inputs)
     process.setup()
+    process.set_qpoints()
 
-    result = process.handle_unrecoverable_failure(process.ctx.children[-1])
-    assert isinstance(result, ProcessHandlerReport)
-    assert result.do_break
-    assert result.exit_code == PhBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE
+    assert 'qpoints' in process.ctx.inputs
+    assert isinstance(process.ctx.inputs['qpoints'], orm.KpointsData)
 
-    result = process.inspect_process()
-    assert result == PhBaseWorkChain.exit_codes.ERROR_UNRECOVERABLE_FAILURE
+    if not with_qpoints_distance:
+        assert process.ctx.inputs['qpoints'] == inputs['qpoints']
 
 
 def test_handle_out_of_walltime(generate_workchain_ph):
@@ -99,15 +123,28 @@ def test_handle_convergence_not_reached(generate_workchain_ph):
     process.setup()
     process.validate_parameters()
 
+    result = process.handle_convergence_not_reached(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert result.do_break
+    assert process.ctx.inputs.parameters['INPUTPH']['nmix_ph'] == 8
+
     alpha_new = PhBaseWorkChain.defaults.alpha_mix * PhBaseWorkChain.defaults.delta_factor_alpha_mix
+
+    for _ in range(2):  # this is dependent on PhBaseWorkChain.defaults.delta_factor_alpha_mix
+        result = process.handle_convergence_not_reached(process.ctx.children[-1])
+        assert isinstance(result, ProcessHandlerReport)
+        assert result.do_break
+        assert process.ctx.inputs.parameters['INPUTPH']['alpha_mix(1)'] == alpha_new
+        alpha_new = alpha_new * PhBaseWorkChain.defaults.delta_factor_alpha_mix
 
     result = process.handle_convergence_not_reached(process.ctx.children[-1])
     assert isinstance(result, ProcessHandlerReport)
     assert result.do_break
-    assert process.ctx.inputs.parameters['INPUTPH']['alpha_mix(1)'] == alpha_new
+    assert process.ctx.inputs.parameters['INPUTPH']['alpha_mix(20)'] == 0.4
 
-    result = process.inspect_process()
-    assert result.status == 0
+    result = process.handle_convergence_not_reached(process.ctx.children[-1])
+    assert isinstance(result, ProcessHandlerReport)
+    assert not result.do_break
 
 
 def test_handle_diagonalization_errors(generate_workchain_ph):
@@ -171,11 +208,14 @@ def test_results(generate_workchain_ph, generate_ph_calc_job_node):
     process.results()
     process.update_outputs()
 
-    assert sorted(process.node.base.links.get_outgoing().all_link_labels()
-                  ) == ['output_parameters', 'remote_folder', 'retrieved']
+    assert sorted(process.node.base.links.get_outgoing().all_link_labels()) == [
+        'output_parameters',
+        'remote_folder',
+        'retrieved',
+    ]
 
 
-@pytest.mark.parametrize('name', ('merge_outputs', 'merge_outputs_singleq'))
+@pytest.mark.parametrize('name', ['merge_outputs', 'merge_outputs_singleq'])
 def test_merge_outputs(
     generate_calc_job_node,
     fixture_localhost,
@@ -188,9 +228,10 @@ def test_merge_outputs(
 
     entry_point_calc_job = 'quantumespresso.ph'
     parser = generate_parser('quantumespresso.ph')
+    inputs = generate_inputs()
 
     node_1 = generate_calc_job_node(
-        entry_point_name=entry_point_calc_job, computer=fixture_localhost, test_name=f'{name}_1'
+        entry_point_name=entry_point_calc_job, computer=fixture_localhost, test_name=f'{name}_1', inputs=inputs
     )
     results_1, calcjob_1 = parser.parse_from_node(node_1, store_provenance=False)
 
@@ -202,8 +243,9 @@ def test_merge_outputs(
     assert calcjob_1.is_finished, calcjob_1.exception
     assert calcjob_1.exit_status == PhCalculation.exit_codes.ERROR_OUT_OF_WALLTIME.status
 
+    inputs_2 = {'parameters': orm.Dict({'INPUTPH': {'recover': True}}), 'parent_folder': node_1.outputs.remote_folder}
     node_2 = generate_calc_job_node(
-        entry_point_name=entry_point_calc_job, computer=fixture_localhost, test_name=f'{name}_2'
+        entry_point_name=entry_point_calc_job, computer=fixture_localhost, test_name=f'{name}_2', inputs=inputs_2
     )
     results_2, calcjob_2 = parser.parse_from_node(node_2, store_provenance=False)
 
@@ -224,3 +266,62 @@ def test_merge_outputs(
     outputs = ph_base.get_outputs(node_2)
 
     data_regression.check(outputs['output_parameters'].get_dict())
+
+
+def test_merge_outputs_restart_from_scratch(
+    generate_calc_job_node, fixture_localhost, generate_parser, generate_workchain_ph
+):
+    """Test the ``create_merged_output`` step when the last calculation was restarted from scratch.
+
+    This happens e.g. after an unhandled failure, in which case the last calculation recomputes all q-points and its
+    outputs should not be merged with those of the previous calculation.
+    """
+    entry_point_calc_job = 'quantumespresso.ph'
+    parser = generate_parser('quantumespresso.ph')
+
+    nodes = []
+
+    for _ in range(2):
+        node = generate_calc_job_node(
+            entry_point_name=entry_point_calc_job,
+            computer=fixture_localhost,
+            test_name='merge_outputs_singleq_2',
+            inputs=generate_inputs(),
+        )
+        results, calcjob = parser.parse_from_node(node, store_provenance=False)
+
+        results['output_parameters'].base.links.add_incoming(
+            node, link_type=LinkType.CREATE, link_label='output_parameters'
+        )
+        results['output_parameters'].store()
+
+        assert calcjob.is_finished_ok, calcjob.exception
+        nodes.append(node)
+
+    ph_base = generate_workchain_ph()
+    ph_base.ctx.children = nodes
+    ph_base.ctx.inputs = AttributeDict()
+    ph_base.ctx.inputs.parameters = {'INPUTPH': {}}
+
+    assert ph_base.create_merged_output() is None
+    assert 'merged_output_parameters' not in ph_base.ctx
+    assert ph_base.get_outputs(nodes[-1])['output_parameters'].uuid == nodes[-1].outputs.output_parameters.uuid
+
+
+def test_validate_inputs_excluded_qpoints_distance(generate_inputs_ph):
+    """Test that q-points validation passes in case the ports are excluded in a parent work chain."""
+    from aiida.engine.utils import instantiate_process
+    from aiida.manage.manager import get_manager
+
+    class WrapPhBaseWorkChain(WorkChain):
+        """Minimal work chain that wraps a ``PhBaseWorkChain`` for testing excluding q-points inputs."""
+
+        @classmethod
+        def define(cls, spec):
+            super().define(spec)
+            spec.expose_inputs(PhBaseWorkChain, exclude=('qpoints', 'qpoints_distance'))
+
+    inputs = {'ph': generate_inputs_ph()}
+    inputs['ph'].pop('qpoints', None)
+    runner = get_manager().get_runner()
+    instantiate_process(runner, WrapPhBaseWorkChain, **inputs)

@@ -1,7 +1,8 @@
-#!/usr/bin/env runaiida
-# -*- coding: utf-8 -*-
+from aiida import load_profile
 from aiida.engine import run
-from aiida.orm import Dict, KpointsData, StructureData, load_code, load_group
+from aiida.orm import Dict, KpointsData, load_code, load_node
+
+load_profile()
 
 # Load the code configured for ``ph.x``. Make sure to replace this string
 # with the label of a ``Code`` that you configured in your profile.
@@ -9,7 +10,7 @@ code = load_code('ph@localhost')
 builder = code.get_builder()
 
 # Replace ``IDENTIFIER_PW_CALCULATION`` with the pk of the completed ``PwCalculation``
-builder.parent_folder = load_code(IDENTIFIER_PW_CALCULATION).outputs.remote_folder
+builder.parent_folder = load_node(IDENTIFIER_PW_CALCULATION).outputs.remote_folder
 builder.parameters = Dict({'INPUTPH': {}})
 
 # Generate a 1x1x1 q-point mesh

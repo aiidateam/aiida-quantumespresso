@@ -1,20 +1,21 @@
-# -*- coding: utf-8 -*-
 """`Parser` implementation for the `PwCalculation` calculation job class."""
+
+import contextlib
 import traceback
 
+import numpy as np
 from aiida import orm
 from aiida.common import exceptions
 from aiida.engine import ExitCode
-import numpy
 
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.utils.mapping import get_logging_container
 
-from .base import Parser
+from .base import BaseParser
 from .parse_raw.pw import reduce_symmetries
 
 
-class PwParser(Parser):
+class PwParser(BaseParser):
     """`Parser` implementation for the `PwCalculation` calculation job class."""
 
     def parse(self, **kwargs):
@@ -24,8 +25,6 @@ class PwParser(Parser):
         permanently in the repository. The second required node is a filepath under the key `retrieved_temporary_files`
         which should contain the temporary retrieved files.
         """
-        # pylint: disable=too-many-statements
-        dir_with_bands = None
         crash_file = None
         self.exit_code_xml = None
         self.exit_code_stdout = None
@@ -39,26 +38,25 @@ class PwParser(Parser):
         # Look for optional settings input node and potential 'parser_options' dictionary within it
         parser_options = settings.get(self.get_parser_settings_key(), None)
 
-        # Verify that the retrieved_temporary_folder is within the arguments if temporary files were specified
-        if self.node.base.attributes.get('retrieve_temporary_list', None):
-            try:
-                dir_with_bands = kwargs['retrieved_temporary_folder']
-            except KeyError:
-                return self.exit(self.exit_codes.ERROR_NO_RETRIEVED_TEMPORARY_FOLDER)
-
         # We check if the `CRASH` file was retrieved. If so, we parse its output
-        crash_file_filename = self.node.process_class._CRASH_FILE
+        crash_file_filename = self.node.process_class._CRASH_FILE  # noqa: SLF001
         if crash_file_filename in self.retrieved.base.repository.list_object_names():
             crash_file = self.retrieved.base.repository.get_object_content(crash_file_filename)
 
         parameters = self.node.inputs.parameters.get_dict()
-        parsed_xml, logs_xml = self.parse_xml(dir_with_bands, parser_options)
-        parsed_stdout, logs_stdout = self.parse_stdout(parameters, parser_options, parsed_xml, crash_file)
+        parsed_xml, logs_xml = self.parse_xml()
+        parsed_stdout, logs_stdout = self.parse_stdout(parameters, parser_options, crash_file)
 
-        parsed_bands = parsed_stdout.pop('bands', {})
-        parsed_structure = parsed_stdout.pop('structure', {})
-        parsed_trajectory = parsed_stdout.pop('trajectory', {})
+        if not parsed_xml and self.node.get_option('without_xml'):
+            parsed_xml = parsed_stdout
+
+        parsed_bands = parsed_xml.pop('bands', {})
+        parsed_structure = parsed_xml.pop('structure', {})
+        parsed_trajectory = parsed_xml.pop('trajectory', {})
+        self.backwards_compatibility_trajectory(parsed_trajectory, parsed_stdout)
+
         parsed_parameters = self.build_output_parameters(parsed_stdout, parsed_xml)
+        self.backwards_compatibility_parameters(parsed_parameters, parsed_stdout)
 
         # Append the last frame of some of the smaller trajectory arrays to the parameters for easy querying
         self.final_trajectory_frame_to_parameters(parsed_parameters, parsed_trajectory)
@@ -111,23 +109,20 @@ class PwParser(Parser):
         self.emit_logs([logs_stdout, logs_xml], ignore=ignore)
 
         # If either the stdout or XML were incomplete or corrupt investigate the potential cause
-        if self.exit_code_stdout or self.exit_code_xml:
-
+        if (self.exit_code_stdout or self.exit_code_xml) and self.node.exit_status is not None:
             # First check whether the scheduler already reported an exit code.
-            if self.node.exit_status is not None:
+            # The following scheduler errors should correspond to cases where we can simply restart the calculation
+            # and have a chance that the calculation will succeed as the error can be transient.
+            recoverable_scheduler_error = self.node.exit_status in [
+                PwCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME.status,
+                PwCalculation.exit_codes.ERROR_SCHEDULER_NODE_FAILURE.status,
+            ]
 
-                # The following scheduler errors should correspond to cases where we can simply restart the calculation
-                # and have a chance that the calculation will succeed as the error can be transient.
-                recoverable_scheduler_error = self.node.exit_status in [
-                    PwCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME.status,
-                    PwCalculation.exit_codes.ERROR_SCHEDULER_NODE_FAILURE.status,
-                ]
+            if self.get_calculation_type() in ['relax', 'vc-relax'] and recoverable_scheduler_error:
+                return PwCalculation.exit_codes.ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY
 
-                if self.get_calculation_type() in ['relax', 'vc-relax'] and recoverable_scheduler_error:
-                    return PwCalculation.exit_codes.ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY
-
-                # Now it is unlikely we can provide a more specific exit code so we keep the scheduler one.
-                return ExitCode(self.node.exit_status, self.node.exit_message)
+            # Now it is unlikely we can provide a more specific exit code so we keep the scheduler one.
+            return ExitCode(self.node.exit_status, self.node.exit_message)
 
         # Check for specific known problems that can cause a pre-mature termination of the calculation
         exit_code = self.validate_premature_exit(logs_stdout)
@@ -151,6 +146,68 @@ class PwParser(Parser):
             exit_code = validator(trajectory, parsed_parameters, logs_stdout)
             if exit_code:
                 return self.exit(exit_code)
+
+    def backwards_compatibility_trajectory(self, parsed_trajectory, parsed_stdout):
+        """Updated the `parsed_trajectory` dictionary with data from the `stdout` to preserve backwards compatibility."""
+        # For QE v7.0 and lower, the stress is not reported in the trajectory steps in the XML. The XML parsing will
+        # therefore only add the stress of the last SCF to the trajectory. We need to replace this with the trajectory
+        # parsed from the SCF to have the data of all frames.
+        if 'trajectory' not in parsed_stdout:
+            return
+
+        if (
+            self.get_calculation_type() in ['relax', 'vc-relax']
+            and ('stress' not in parsed_trajectory or len(parsed_trajectory['stress']) == 1)
+            and 'stress' in parsed_stdout['trajectory']
+        ):
+            parsed_trajectory['stress'] = parsed_stdout['trajectory']['stress']
+
+        for key in [
+            'energy_accuracy',
+            'energy_one_electron',
+            'energy_threshold',
+            'energy_smearing',
+            'energy_one_center_paw',
+            'energy_vdw',
+            'fermi_energy',
+            'scf_accuracy',
+            'steps',
+            'total_force',
+            'stress',
+            'total_magnetization',
+            'absolute_magnetization',
+            'atomic_magnetic_moments',
+            'atomic_charges',
+        ]:
+            if key not in parsed_trajectory and key in parsed_stdout['trajectory']:
+                parsed_trajectory[key] = parsed_stdout['trajectory'][key]
+
+    @staticmethod
+    def backwards_compatibility_parameters(parsed_parameters, parsed_stdout):
+        """Updated the `parsed_parameters` dictionary with data from the `stdout` to preserve backwards compatibility."""
+        keys = [
+            'energy_smearing_units',
+            'energy_one_center_paw_units',
+            'init_wall_time_seconds',
+            'stress_units',
+            'wall_time',
+            'wall_time_seconds',
+            'number_ionic_steps',
+            'estimated_ram_per_process',
+            'estimated_ram_per_process_units',
+            'estimated_ram_total',
+            'estimated_ram_total_units',
+            'forces_units',
+            'total_force_units',
+            'forces_units',
+            'number_of_bands',
+            'number_of_k_points',
+            'final_scf',
+        ]
+
+        for key in keys:
+            if key not in parsed_parameters and key in parsed_stdout:
+                parsed_parameters[key] = parsed_stdout[key]
 
     def get_calculation_type(self):
         """Return the type of the calculation."""
@@ -186,14 +243,17 @@ class PwParser(Parser):
             return
 
         if 'ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED' in logs['error']:
-            scf_must_converge = self.node.inputs.parameters.base.attributes.get('ELECTRONS',
-                                                                          {}).get('scf_must_converge', True)
-            electron_maxstep = self.node.inputs.parameters.base.attributes.get('ELECTRONS', {}).get('electron_maxstep', 1)
+            scf_must_converge = self.node.inputs.parameters.base.attributes.get('ELECTRONS', {}).get(
+                'scf_must_converge', True
+            )
+            electron_maxstep = self.node.inputs.parameters.base.attributes.get('ELECTRONS', {}).get(
+                'electron_maxstep', 1
+            )
 
             if electron_maxstep == 0 or not scf_must_converge:
                 return self.exit_codes.WARNING_ELECTRONIC_CONVERGENCE_NOT_REACHED
-            else:
-                return self.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED
+
+            return self.exit_codes.ERROR_ELECTRONIC_CONVERGENCE_NOT_REACHED
 
     def validate_dynamics(self, trajectory, parameters, logs):
         """Analyze problems that are specific to `dynamics` type calculations: i.e. `md` and `vc-md`."""
@@ -221,7 +281,6 @@ class PwParser(Parser):
 
         # BFGS fails twice in a row in which case QE will print that convergence is reached while it is not necessarily
         if bfgs_history_failure:
-
             # If electronic convergence was not reached, this had to have been a `vc-relax` where final SCF failed
             if not electronic_convergence_reached:
                 return self.exit_codes.ERROR_IONIC_CYCLE_BFGS_HISTORY_AND_FINAL_SCF_FAILURE
@@ -242,7 +301,6 @@ class PwParser(Parser):
         # Here we have no direct warnings from Quantum ESPRESSO that suggest something went wrong, but we better make
         # sure and double check manually that all forces (and optionally stresses) are converged.
         if not self.is_ionically_converged(trajectory):
-
             if self.is_ionically_converged(trajectory, except_final_scf=True):
                 # The forces and stresses of ionic cycle are below threshold, but those of the final SCF exceed them.
                 # This is not necessarily a problem since the calculation starts from scratch after the variable cell
@@ -274,6 +332,8 @@ class PwParser(Parser):
 
         if 'settings' in self.node.inputs:
             settings = _uppercase_dict(self.node.inputs.settings.get_dict(), dict_name='settings')
+        else:
+            settings = {}
 
         fixed_coords = settings.get('FIXED_COORDS', None)
 
@@ -287,10 +347,7 @@ class PwParser(Parser):
 
         if relax_type == 'relax':
             return verify_convergence_trajectory(
-                trajectory=trajectory,
-                index=-1,
-                threshold_forces=threshold_forces,
-                fixed_coords=fixed_coords
+                trajectory=trajectory, index=-1, threshold_forces=threshold_forces, fixed_coords=fixed_coords
             )
 
         if relax_type == 'vc-relax':
@@ -302,15 +359,13 @@ class PwParser(Parser):
 
         raise RuntimeError(f'unknown relax_type: {relax_type}')
 
-    def parse_xml(self, dir_with_bands=None, parser_options=None):
+    def parse_xml(self):
         """Parse the XML output file.
 
-        :param dir_with_bands: absolute path to directory containing individual k-point XML files for old XML format.
-        :param parser_options: optional dictionary with parser options
         :return: tuple of two dictionaries, first with raw parsed data and second with log messages
         """
         from .parse_xml.exceptions import XMLParseError, XMLUnsupportedFormatError
-        from .parse_xml.pw.parse import parse_xml
+        from .parse_xml.parse import parse_xml
 
         logs = get_logging_container()
         parsed_data = {}
@@ -329,8 +384,8 @@ class PwParser(Parser):
 
         try:
             with self.retrieved.base.repository.open(xml_files[0]) as xml_file:
-                parsed_data, logs = parse_xml(xml_file, dir_with_bands)
-        except IOError:
+                parsed_data, logs = parse_xml(xml_file)
+        except OSError:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_READ
         except XMLParseError:
             self.exit_code_xml = self.exit_codes.ERROR_OUTPUT_XML_PARSE
@@ -342,12 +397,11 @@ class PwParser(Parser):
 
         return parsed_data, logs
 
-    def parse_stdout(self, parameters, parser_options=None, parsed_xml=None, crash_file=None):
+    def parse_stdout(self, parameters, parser_options=None, crash_file=None):
         """Parse the stdout output file.
 
         :param parameters: the input parameters dictionary
         :param parser_options: optional dictionary with parser options
-        :param parsed_xml: the raw parsed data from the XML output
         :return: tuple of two dictionaries, first with raw parsed data and second with log messages
         """
         from aiida_quantumespresso.parsers.parse_raw.pw import parse_stdout
@@ -363,15 +417,18 @@ class PwParser(Parser):
 
         try:
             stdout = self.retrieved.base.repository.get_object_content(filename_stdout)
-        except IOError:
+        except OSError:
             self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_READ
             return parsed_data, logs
 
         try:
-            parsed_data, logs = parse_stdout(stdout, parameters, parser_options, parsed_xml, crash_file)
+            parsed_data, logs = parse_stdout(stdout, parameters, parser_options, crash_file=crash_file)
         except Exception as exc:
             logs.critical.append(traceback.format_exc())
             self.exit_code_stdout = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc)
+
+        if 'ERROR_OUTPUT_STDOUT_PARSE' in logs['error']:
+            self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_PARSE
 
         # If the stdout was incomplete, most likely the job was interrupted before it could cleanly finish, so the
         # output files are most likely corrupt and cannot be restarted from
@@ -404,18 +461,7 @@ class PwParser(Parser):
         :param parsed_xml: the raw parsed data dictionary from the XML output file
         :return: the union of the two raw parsed data dictionaries
         """
-        for key in list(parsed_stdout.keys()):
-            if key in list(parsed_xml.keys()):
-                if parsed_stdout[key] != parsed_xml[key]:
-                    raise AssertionError(
-                        '{} found in both dictionaries with different values: {} vs. {}'.format(
-                            key, parsed_stdout[key], parsed_xml[key]
-                        )
-                    )
-
-        parameters = dict(list(parsed_xml.items()) + list(parsed_stdout.items()))
-
-        return parameters
+        return parsed_xml
 
     def build_output_structure(self, parsed_structure):
         """Build the output structure from the raw parsed data.
@@ -443,30 +489,30 @@ class PwParser(Parser):
         fractional = False
 
         if 'atomic_positions_relax' in parsed_trajectory:
-            positions = numpy.array(parsed_trajectory.pop('atomic_positions_relax'))
+            positions = np.array(parsed_trajectory.pop('atomic_positions_relax'))
         elif 'atomic_fractionals_relax' in parsed_trajectory:
             fractional = True
-            positions = numpy.array(parsed_trajectory.pop('atomic_fractionals_relax'))
+            positions = np.array(parsed_trajectory.pop('atomic_fractionals_relax'))
         else:
             # The positions were never printed, the calculation did not change the structure
-            positions = numpy.array([[site.position for site in structure.sites]])
+            positions = np.array([[site.position for site in structure.sites]])
 
         try:
-            cells = numpy.array(parsed_trajectory.pop('lattice_vectors_relax'))
+            cells = np.array(parsed_trajectory.pop('lattice_vectors_relax'))
         except KeyError:
             # The cell is never printed, the calculation was at fixed cell
-            cells = numpy.array([structure.cell])
+            cells = np.array([structure.cell])
 
         # Ensure there are as many frames for cell as positions, even when the calculation was done at fixed cell
         if len(cells) == 1 and len(positions) > 1:
-            cells = numpy.array([cells[0]] * len(positions))
+            cells = np.array([cells[0]] * len(positions))
 
         if fractional:
             # convert positions to cartesian
-            positions = numpy.einsum('ijk, ikm -> ijm', positions, cells)
+            positions = np.einsum('ijk, ikm -> ijm', positions, cells)
 
         symbols = [str(site.kind_name) for site in structure.sites]
-        stepids = numpy.arange(len(positions))
+        stepids = np.arange(len(positions))
 
         trajectory = orm.TrajectoryData()
         trajectory.set_trajectory(
@@ -474,10 +520,11 @@ class PwParser(Parser):
             cells=cells,
             symbols=symbols,
             positions=positions,
+            pbc=structure.pbc,
         )
 
         for key, value in parsed_trajectory.items():
-            trajectory.set_array(key, numpy.array(value))
+            trajectory.set_array(key, np.array(value))
 
         return trajectory
 
@@ -531,12 +578,9 @@ class PwParser(Parser):
         if len(parsed_bands['occupations']) > 1:
             occupations = parsed_bands['occupations']
         else:
-            occupations = 2. * numpy.array(parsed_bands['occupations'][0])
+            occupations = 2.0 * np.array(parsed_bands['occupations'][0])
 
-        if len(parsed_bands['bands']) > 1:
-            bands_energies = parsed_bands['bands']
-        else:
-            bands_energies = parsed_bands['bands'][0]
+        bands_energies = parsed_bands['bands'] if len(parsed_bands['bands']) > 1 else parsed_bands['bands'][0]
 
         bands = orm.BandsData()
         bands.set_kpointsdata(parsed_kpoints)
@@ -572,13 +616,10 @@ class PwParser(Parser):
             'scf_iterations',
             'fermi_energy',
             'total_force',
-            'total_magnetization',
-            'absolute_magnetization',
         ]
 
         for property_key, property_values in parsed_trajectory.items():
-
-            if property_key not in include_keys:
+            if property_key not in include_keys or not property_values:
                 continue
 
             parameters[property_key] = property_values[-1]
@@ -594,14 +635,11 @@ class PwParser(Parser):
         symmetries_reduced = parameters.get_dict()['symmetries']  # rimetti lo zero
 
         for element in symmetries_reduced:
-
             symmetry = {}
 
             for keys in ['t_rev', 'equivalent_ions', 'fractional_translation']:
-                try:
+                with contextlib.suppress(KeyError):
                     symmetry[keys] = element[keys]
-                except KeyError:
-                    pass
 
             # expand the rest
             symmetry['name'] = possible_symmetries[element['symmetry_number']]['name']

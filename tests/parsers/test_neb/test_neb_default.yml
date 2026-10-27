@@ -16,6 +16,10 @@ output_trajectory:
   - 3
   array|steps:
   - 3
+  pbc:
+  - true
+  - true
+  - true
   symbols:
   - H
   - H
@@ -25,6 +29,7 @@ parameters:
   ci_scheme: auto
   climbing_image_auto:
   - 1
+  code_version: 6.4.1
   converged:
   - true
   - 13
@@ -54,6 +59,7 @@ parameters:
   path_length: 2.95757141880951
   path_thr: 0.05
   pw_output_image_1:
+    absolute_magnetization: 0.5057831966102975
     beta_real_space: false
     charge_density: ./charge-density.dat
     constraint_mag: 0
@@ -72,6 +78,12 @@ parameters:
     dft_exchange_correlation: PBE
     do_magnetization: false
     do_not_use_time_reversal: false
+    energy_accuracy_units: eV
+    energy_ewald_units: eV
+    energy_hartree_units: eV
+    energy_one_electron_units: eV
+    energy_units: eV
+    energy_xc_units: eV
     exit_status: 0
     fermi_energy: -4.881992893994388
     fermi_energy_units: eV
@@ -161,11 +173,14 @@ parameters:
       t_rev: '0'
     symmetries_units: crystal
     time_reversal_flag: true
-    total_number_of_scf_iterations: 9
+    total_magnetization: 0.5000000000000021
+    total_number_of_scf_iterations: 0
     volume: 44.45541285717334
+    wall_time_seconds: 0.7156929969787598
     wfc_cutoff: 272.113834506
     wfc_cutoff_units: eV
   pw_output_image_2:
+    absolute_magnetization: 0.5423121387882865
     beta_real_space: false
     charge_density: ./charge-density.dat
     constraint_mag: 0
@@ -184,6 +199,12 @@ parameters:
     dft_exchange_correlation: PBE
     do_magnetization: false
     do_not_use_time_reversal: false
+    energy_accuracy_units: eV
+    energy_ewald_units: eV
+    energy_hartree_units: eV
+    energy_one_electron_units: eV
+    energy_units: eV
+    energy_xc_units: eV
     exit_status: 0
     fermi_energy: -3.164074384828897
     fermi_energy_units: eV
@@ -273,11 +294,14 @@ parameters:
       t_rev: '0'
     symmetries_units: crystal
     time_reversal_flag: true
-    total_number_of_scf_iterations: 110
+    total_magnetization: 0.4999999999999995
+    total_number_of_scf_iterations: 0
     volume: 44.45541285717334
+    wall_time_seconds: 11.15338492393494
     wfc_cutoff: 272.113834506
     wfc_cutoff_units: eV
   pw_output_image_3:
+    absolute_magnetization: 0.5057831998906718
     beta_real_space: false
     charge_density: ./charge-density.dat
     constraint_mag: 0
@@ -296,6 +320,12 @@ parameters:
     dft_exchange_correlation: PBE
     do_magnetization: false
     do_not_use_time_reversal: false
+    energy_accuracy_units: eV
+    energy_ewald_units: eV
+    energy_hartree_units: eV
+    energy_one_electron_units: eV
+    energy_units: eV
+    energy_xc_units: eV
     exit_status: 0
     fermi_energy: -4.881971815620302
     fermi_energy_units: eV
@@ -385,8 +415,10 @@ parameters:
       t_rev: '0'
     symmetries_units: crystal
     time_reversal_flag: true
-    total_number_of_scf_iterations: 9
+    total_magnetization: 0.5000000000000001
+    total_number_of_scf_iterations: 0
     volume: 44.45541285717334
+    wall_time_seconds: 2.380792856216431
     wfc_cutoff: 272.113834506
     wfc_cutoff_units: eV
   restart_mode: from_scratch
@@ -394,7 +426,5 @@ parameters:
   suggested_k_max_au: 0.1542
   suggested_k_min_au: 0.1028
   use_freezing: false
-  wall_time: 11.44s
   wall_time_seconds: 11.44
-  warnings:
-  - 'error: ERROR_OUTPUT_STDOUT_INCOMPLETE'
+  warnings: []

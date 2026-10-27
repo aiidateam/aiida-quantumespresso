@@ -1,56 +1,11 @@
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.1.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.13.2
     hooks:
-    -   id: double-quote-string-fixer
-    -   id: end-of-file-fixer
-    -   id: fix-encoding-pragma
-    -   id: mixed-line-ending
-    -   id: trailing-whitespace
-        exclude: >-
-            (?x)^(
-                tests/.*.*out|
-                tests/.*.in$
-            )$
-
--   repo: https://github.com/ikamensh/flynt/
-    rev: '0.76'
-    hooks:
-    -   id: flynt
-
--   repo: https://github.com/pycqa/isort
-    rev: '5.12.0'
-    hooks:
-    -   id: isort
-
--   repo: https://github.com/pre-commit/mirrors-yapf
-    rev: v0.32.0
-    hooks:
-    -   id: yapf
-        name: yapf
-        types: [python]
-        args: ['-i']
-        exclude: &exclude_files >
-            (?x)^(
-                src/aiida_quantumespresso/calculations/pwimmigrant.*|
-                src/aiida_quantumespresso/parsers/.*|
-                docs/.*|
-                tests/.*(?<!\.py)$
-            )$
-        additional_dependencies: ['toml']
-
--   repo: local
-    hooks:
-    -   id: pylint
-        name: pylint
-        entry: pylint
-        language: system
-        types: [python]
-        exclude: *exclude_files
-
--   repo: https://github.com/PyCQA/pydocstyle
-    rev: '6.1.1'
-    hooks:
-    -   id: pydocstyle
-        exclude: *exclude_files
-        additional_dependencies: ['toml']
+      - id: ruff-check
+        name: Lint with Ruff
+        types_or: [ python, pyi ]
+        args: [ --fix ]
+      - id: ruff-format
+        name: Format with Ruff
+        types_or: [ python, pyi ]

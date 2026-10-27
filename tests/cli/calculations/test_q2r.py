@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the ``calculation launch q2r`` command."""
+
 from aiida_quantumespresso.cli.calculations.q2r import launch_calculation
 
 

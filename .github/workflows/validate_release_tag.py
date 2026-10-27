@@ -1,5 +1,6 @@
-# -*- coding: utf-8 -*-
 """Validate that the version in the tag label matches the version of the package."""
+
+# ruff: noqa
 import argparse
 import ast
 from pathlib import Path
@@ -13,15 +14,18 @@ def get_version_from_module(content: str) -> str:
     try:
         module = ast.parse(content)
     except SyntaxError as exception:
-        raise IOError('Unable to parse module.') from exception
+        raise OSError('Unable to parse module.') from exception
 
     try:
         return next(
-            ast.literal_eval(statement.value) for statement in module.body if isinstance(statement, ast.Assign)
-            for target in statement.targets if isinstance(target, ast.Name) and target.id == '__version__'
+            ast.literal_eval(statement.value)
+            for statement in module.body
+            if isinstance(statement, ast.Assign)
+            for target in statement.targets
+            if isinstance(target, ast.Name) and target.id == '__version__'
         )
     except StopIteration as exception:
-        raise IOError('Unable to find the `__version__` attribute in the module.') from exception
+        raise OSError('Unable to find the `__version__` attribute in the module.') from exception
 
 
 if __name__ == '__main__':

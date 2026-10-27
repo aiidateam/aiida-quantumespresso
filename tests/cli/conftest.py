@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=redefined-outer-name
 """Fixtures for the command line interface."""
+
 import pytest
 
 
 def mock_launch_process(*_, **__):
-    """Mock the :meth:`~aiida_quantumespresso.cli.utilslaunch.launch_process` to be a no-op."""
+    """Mock the :meth:`~aiida_quantumespresso.cli.utils.launch.launch_process` to be a no-op."""
     return
 
 
@@ -58,6 +57,7 @@ def run_cli_process_launch_command(run_cli_command, monkeypatch):
     def _inner(command, options=None, raises=None):
         """Run the command and check the result."""
         from aiida_quantumespresso.cli.utils import launch
+
         monkeypatch.setattr(launch, 'launch_process', mock_launch_process)
         return run_cli_command(command, options, raises)
 

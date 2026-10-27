@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """A module defining hydrogen-like orbitals.
 
 The orbitals are defined in the simultaneous eigen-basis of H, J^2, L^2, S^2
@@ -83,23 +82,30 @@ class SpinorbitHydrogenOrbital(Orbital):
     """
 
     _base_fields_required = tuple(
-        list(Orbital._base_fields_required) +
-        [('total_angular_momentum',
-          validate_j), ('angular_momentum', validate_l), ('magnetic_number', validate_mj), ('radial_nodes', validate_n)]
+        list(Orbital._base_fields_required)  # noqa: SLF001
+        + [
+            ('total_angular_momentum', validate_j),
+            ('angular_momentum', validate_l),
+            ('magnetic_number', validate_mj),
+            ('radial_nodes', validate_n),
+        ]
     )
 
-    _base_fields_optional = tuple(list(Orbital._base_fields_optional) + [
-        ('kind_name', validate_kind_name, None),
-    ])
+    _base_fields_optional = tuple(
+        list(Orbital._base_fields_optional)  # noqa: SLF001
+        + [
+            ('kind_name', validate_kind_name, None),
+        ]
+    )
 
     def __str__(self):
         """Printable representation of the orbital."""
         orb = self.get_orbital_dict()
         try:
-            orb_name = f"j={orb['total_angular_momentum']},l={orb['angular_momentum']},m_j={orb['magnetic_number']}"
-            position_string = f"{orb['position'][0]:.4f},{orb['position'][1]:.4f},{orb['position'][2]:.4f}"
-            orbital = f"for kind {orb['kind_name']}" if orb['kind_name'] else ''
-            out_string = f"r{orb['radial_nodes']} {orb_name} orbital {orbital} @ {position_string}"
+            orb_name = f'j={orb["total_angular_momentum"]},l={orb["angular_momentum"]},m_j={orb["magnetic_number"]}'
+            position_string = f'{orb["position"][0]:.4f},{orb["position"][1]:.4f},{orb["position"][2]:.4f}'
+            orbital = f'for kind {orb["kind_name"]}' if orb['kind_name'] else ''
+            out_string = f'r{orb["radial_nodes"]} {orb_name} orbital {orbital} @ {position_string}'
         except KeyError:
             # Should not happen, but we want it not to crash in __str__
             out_string = '(not all parameters properly set)'

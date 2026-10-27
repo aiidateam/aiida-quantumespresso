@@ -1,15 +1,16 @@
-# -*- coding: utf-8 -*-
 """Plugin to create a Quantum Espresso input file for a generic post-processing code.
 
 These codes typically only require a few namelists (plus possibly some text afterwards).
 """
+
 import pathlib
 
 from aiida.common import datastructures, exceptions
 from aiida.orm import Dict, FolderData, RemoteData, SinglefileData
 
-from aiida_quantumespresso.calculations import _lowercase_dict, _pop_parser_options, _uppercase_dict
+from aiida_quantumespresso.calculations import _pop_parser_options, _uppercase_dict
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry
+from aiida_quantumespresso.utils.validation.parameters import validate_parameters
 
 from .base import CalcJob
 
@@ -45,27 +46,54 @@ class NamelistsCalculation(CalcJob):
     @classmethod
     def define(cls, spec):
         """Define the process specification."""
-        # yapf: disable
+
         super().define(spec)
         spec.input('metadata.options.input_filename', valid_type=str, default=cls._DEFAULT_INPUT_FILE)
         spec.input('metadata.options.output_filename', valid_type=str, default=cls._DEFAULT_OUTPUT_FILE)
         spec.input('metadata.options.withmpi', valid_type=bool, default=True)  # Override default value False
         if cls._default_parser is not None:
             spec.input('metadata.options.parser_name', valid_type=str, default=cls._default_parser)
-        spec.input('parameters', valid_type=Dict, required=False,
-            help='Parameters for the namelists in the input file.')
-        spec.input('settings', valid_type=Dict, required=False,
-            help='Use an additional node for special settings')
-        spec.input('parent_folder', valid_type=(RemoteData, FolderData, SinglefileData), required=False,
-            help='Use a local or remote folder as parent folder (for restarts and similar)')
-        # yapf: enable
+        spec.input(
+            'parameters',
+            valid_type=Dict,
+            required=False,
+            help='Parameters for the namelists in the input file.',
+            validator=validate_parameters,
+        )
+        spec.input('settings', valid_type=Dict, required=False, help='Use an additional node for special settings')
+        spec.input(
+            'parent_folder',
+            valid_type=(RemoteData, FolderData, SinglefileData),
+            required=False,
+            help='Use a local or remote folder as parent folder (for restarts and similar)',
+        )
+        spec.exit_code(
+            302,
+            'ERROR_OUTPUT_STDOUT_MISSING',
+            message='The retrieved folder did not contain the required stdout output file.',
+        )
+        spec.exit_code(
+            310,
+            'ERROR_OUTPUT_STDOUT_READ',
+            message='An exception was raised while reading the `stdout` file: {exception}',
+        )
+        spec.exit_code(
+            311,
+            'ERROR_OUTPUT_STDOUT_PARSE',
+            message='An exception was raised while parsing the `stdout` file: {exception}',
+        )
+        spec.exit_code(
+            312,
+            'ERROR_OUTPUT_STDOUT_INCOMPLETE',
+            message='The stdout output file was incomplete probably because the calculation got interrupted.',
+        )
 
     @classmethod
     def set_blocked_keywords(cls, parameters):
         """Force default values for blocked keywords. NOTE: this is different from PW/CP."""
         for blocked in cls._blocked_keywords:
-            namelist = blocked[0].upper()
-            key = blocked[1].lower()
+            namelist = blocked[0]
+            key = blocked[1]
             value = blocked[2]
             if namelist in parameters:
                 if key in parameters[namelist]:
@@ -132,16 +160,13 @@ class NamelistsCalculation(CalcJob):
         :param folder: a sandbox folder to temporarily write files on disk.
         :return: :class:`~aiida.common.datastructures.CalcInfo` instance.
         """
-        # pylint: disable=too-many-branches,too-many-statements
         if 'settings' in self.inputs:
             settings = _uppercase_dict(self.inputs.settings.get_dict(), dict_name='settings')
         else:
             settings = {}
 
-        # Put the first-level keys as uppercase (i.e., namelist and card names) and the second-level keys as lowercase
         if 'parameters' in self.inputs:
-            parameters = _uppercase_dict(self.inputs.parameters.get_dict(), dict_name='parameters')
-            parameters = {k: _lowercase_dict(v, dict_name=k) for k, v in parameters.items()}
+            parameters = self.inputs.parameters.get_dict()
         else:
             parameters = {}
 
@@ -197,7 +222,6 @@ class NamelistsCalculation(CalcJob):
         # Retrieve by default the output file and the xml file
         calcinfo.retrieve_list = []
         calcinfo.retrieve_list.append(self.inputs.metadata.options.output_filename)
-        calcinfo.retrieve_list += settings.pop('ADDITIONAL_RETRIEVE_LIST', [])
         calcinfo.retrieve_list += self._internal_retrieve_list
 
         calcinfo.retrieve_temporary_list = self._retrieve_temporary_list

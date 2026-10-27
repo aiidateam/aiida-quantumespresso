@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=invalid-name,redefined-outer-name, too-many-lines
 """Tests for the `PwParser`."""
+
+import pytest
 from aiida import orm
 from aiida.common import AttributeDict
-import pytest
 
 from aiida_quantumespresso.calculations.pw import PwCalculation
 
@@ -19,13 +18,16 @@ def generate_inputs(generate_structure):
         kpoints.set_cell_from_structure(structure)
         kpoints.set_kpoints_mesh_from_density(0.15)
 
-        return AttributeDict({
+        inputs = {
             'structure': generate_structure(),
             'kpoints': kpoints,
             'parameters': orm.Dict(parameters),
-            'settings': orm.Dict(settings),
-            'metadata': metadata or {}
-        })
+            'metadata': metadata or {},
+        }
+        if settings:
+            inputs['settings'] = orm.Dict(settings)
+
+        return AttributeDict(inputs)
 
     return _generate_inputs
 
@@ -47,15 +49,17 @@ def test_pw_default(fixture_localhost, generate_calc_job_node, generate_parser, 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
     assert not orm.Log.collection.get_logs_for(node), [log.message for log in orm.Log.collection.get_logs_for(node)]
-    assert 'output_kpoints' in results
+    assert 'output_band' in results
     assert 'output_parameters' in results
     assert 'output_trajectory' in results
 
-    data_regression.check({
-        'output_kpoints': results['output_kpoints'].base.attributes.all,
-        'output_parameters': results['output_parameters'].get_dict(),
-        'output_trajectory': results['output_trajectory'].base.attributes.all,
-    })
+    data_regression.check(
+        {
+            'output_band': results['output_band'].base.attributes.all,
+            'output_parameters': results['output_parameters'].get_dict(),
+            'output_trajectory': results['output_trajectory'].base.attributes.all,
+        }
+    )
 
 
 def test_pw_default_no_xml(
@@ -87,22 +91,33 @@ def test_pw_default_no_xml(
     assert 'output_structure' in results
     assert 'output_trajectory' in results
 
-    data_regression.check({
-        'output_parameters': results['output_parameters'].get_dict(),
-        'output_structure': results['output_structure'].base.attributes.all,
-        'output_trajectory': results['output_trajectory'].base.attributes.all,
-    })
+    data_regression.check(
+        {
+            'output_parameters': results['output_parameters'].get_dict(),
+            'output_structure': results['output_structure'].base.attributes.all,
+            'output_trajectory': results['output_trajectory'].base.attributes.all,
+        }
+    )
 
 
-@pytest.mark.parametrize('xml_format', [
-    '190304',
-    '191206',
-    '200420',
-    '210716',
-    '211101',
-    '220603',
-    '230310',
-])
+@pytest.mark.parametrize(
+    'xml_format',
+    [
+        '190304',
+        '191206',
+        '200420',
+        '210716',
+        '211101',
+        '220603',
+        '230310',
+        '240411',
+        '241015',
+        '241104',
+        '250521',
+        '260128',
+        '260226',
+    ],
+)
 def test_pw_default_xml(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression, xml_format
 ):
@@ -126,11 +141,16 @@ def test_pw_default_xml(
     assert 'output_parameters' in results
     assert 'output_trajectory' in results
 
-    data_regression.check({
+    data_to_check = {
         'output_band': results['output_band'].base.attributes.all,
         'output_parameters': results['output_parameters'].get_dict(),
         'output_trajectory': results['output_trajectory'].base.attributes.all,
-    })
+    }
+    if 'forces' in results['output_trajectory'].get_arraynames():
+        data_to_check['forces'] = results['output_trajectory'].get_array('forces').tolist()
+        data_to_check['stress'] = results['output_trajectory'].get_array('stress').tolist()
+
+    data_regression.check(data_to_check)
 
 
 def test_pw_initialization_xml_new(
@@ -153,10 +173,12 @@ def test_pw_initialization_xml_new(
     assert 'output_kpoints' not in results
     assert 'output_parameters' in results
     assert 'output_trajectory' in results
-    data_regression.check({
-        'output_parameters': results['output_parameters'].get_dict(),
-        'output_trajectory': results['output_trajectory'].base.attributes.all,
-    })
+    data_regression.check(
+        {
+            'output_parameters': results['output_parameters'].get_dict(),
+            'output_trajectory': results['output_trajectory'].base.attributes.all,
+        }
+    )
 
 
 def test_pw_failed_base_exception(
@@ -194,7 +216,7 @@ def test_pw_failed_base_exception(
     assert exception in calcfunction.exit_message
 
 
-@pytest.mark.parametrize('filename', ('', '_stdout'))
+@pytest.mark.parametrize('filename', ['', '_stdout'])
 def test_pw_failed_computing_cholesky(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
 ):
@@ -216,7 +238,7 @@ def test_pw_failed_computing_cholesky(
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_COMPUTING_CHOLESKY.status
 
 
-@pytest.mark.parametrize('filename', ('', '_stdout'))
+@pytest.mark.parametrize('filename', ['', '_stdout'])
 def test_failed_too_many_bands_not_converged(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
 ):
@@ -239,7 +261,7 @@ def test_failed_too_many_bands_not_converged(
     assert calcfunction.exit_status == desired_exit_status
 
 
-@pytest.mark.parametrize('filename', ('', '_stdout'))
+@pytest.mark.parametrize('filename', ['', '_stdout'])
 def test_pw_failed_dexx_negative(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename):
     """Test the parsing of a calculation that failed due to negative dexx.
 
@@ -259,7 +281,7 @@ def test_pw_failed_dexx_negative(fixture_localhost, generate_calc_job_node, gene
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_DEXX_IS_NEGATIVE.status
 
 
-@pytest.mark.parametrize('filename', ('', '_stdout'))
+@pytest.mark.parametrize('filename', ['', '_stdout'])
 def test_failed_s_matrix_not_positive_definite(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
 ):
@@ -281,7 +303,7 @@ def test_failed_s_matrix_not_positive_definite(
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_S_MATRIX_NOT_POSITIVE_DEFINITE.status
 
 
-@pytest.mark.parametrize('filename', ('', '_stdout'))
+@pytest.mark.parametrize('filename', ['', '_stdout'])
 def test_failed_zhegvd(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename):
     """Test the parsing of a calculation for which the ``zhegvd`` failed (PPCG).
 
@@ -301,7 +323,7 @@ def test_failed_zhegvd(fixture_localhost, generate_calc_job_node, generate_parse
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_ZHEGVD_FAILED.status
 
 
-@pytest.mark.parametrize('filename', ('', '_stdout'))
+@pytest.mark.parametrize('filename', ['', '_stdout'])
 def test_failed_qr(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename):
     """Test the parsing of a calculation for which the ``[Q, R] = qr(X, 0)``failed (PPCG).
 
@@ -321,7 +343,7 @@ def test_failed_qr(fixture_localhost, generate_calc_job_node, generate_parser, g
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_QR_FAILED.status
 
 
-@pytest.mark.parametrize('filename', ('', '_stdout'))
+@pytest.mark.parametrize('filename', ['', '_stdout'])
 def test_failed_eigenvectors_convergence(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
 ):
@@ -343,7 +365,7 @@ def test_failed_eigenvectors_convergence(
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_EIGENVECTOR_CONVERGENCE.status
 
 
-@pytest.mark.parametrize('filename', ('', '_stdout'))
+@pytest.mark.parametrize('filename', ['', '_stdout'])
 def test_failed_broyden_factorization(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
 ):
@@ -365,7 +387,7 @@ def test_failed_broyden_factorization(
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_BROYDEN_FACTORIZATION.status
 
 
-@pytest.mark.parametrize('filename', ('', '_stdout'))
+@pytest.mark.parametrize('filename', ['', '_stdout'])
 def test_failed_g_par(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename):
     """Test the parsing of a calculation that failed to find unique G vector (finite electric field routine).
 
@@ -405,6 +427,38 @@ def test_pw_failed_missing(fixture_localhost, generate_calc_job_node, generate_p
     assert calcfunction.is_failed, calcfunction.exit_status
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_FILES.status
     assert orm.Log.collection.get_logs_for(node)
+
+
+@pytest.mark.parametrize(
+    ('name', 'exit_code'),
+    (
+        ('failed_stdout_truncated', 'ERROR_OUTPUT_FILES'),
+        ('failed_stdout_truncated_xml', 'ERROR_OUTPUT_STDOUT_PARSE'),
+    ),
+)
+def test_pw_failed_stdout_truncated(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, name, exit_code
+):
+    """Test the parsing of a calculation whose stdout was truncated before the basic information was printed.
+
+    In these tests the stdout only contains the header and a ``CRASH`` file was written with an error that the parser
+    does not recognize, e.g. because ``pw.x`` aborted at startup. The stdout cannot be parsed, which is an expected
+    failure: no traceback should be logged as a critical message. If the XML is missing as well, the exit code is
+    ``ERROR_OUTPUT_FILES``, otherwise it is ``ERROR_OUTPUT_STDOUT_PARSE``.
+    """
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+    logs = orm.Log.collection.get_logs_for(node)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == node.process_class.exit_codes.get(exit_code).status
+    assert 'Parser cannot load basic info.' in [log.message for log in logs]
+    assert not [log for log in logs if log.levelname == 'CRITICAL']
 
 
 def test_pw_failed_interrupted(
@@ -462,7 +516,7 @@ def test_pw_failed_interrupted_stdout(
     assert calcfunction.is_failed, calcfunction.exit_status
     assert calcfunction.exit_status == node.process_class.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE.status
     assert orm.Log.collection.get_logs_for(node)
-    assert 'output_kpoints' in results
+    assert 'output_band' in results
     assert 'output_parameters' in results
     assert 'output_trajectory' in results
     data_regression.check(results['output_parameters'].get_dict())
@@ -499,10 +553,11 @@ def test_pw_failed_interrupted_xml(
 
 
 @pytest.mark.parametrize(
-    'test_case, expected_exit_code', (
+    ('test_case', 'expected_exit_code'),
+    [
         ('default', None),
         ('failed_interrupted', PwCalculation.exit_codes.ERROR_SCHEDULER_OUT_OF_WALLTIME),
-    )
+    ],
 )
 def test_pw_failed_interrupted_scheduler(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, test_case, expected_exit_code
@@ -556,7 +611,7 @@ def test_pw_failed_interrupted_relax(fixture_localhost, generate_calc_job_node, 
     assert 'output_trajectory' in results
 
 
-@pytest.mark.parametrize('filename', ('', '_stdout'))
+@pytest.mark.parametrize('filename', ['', '_stdout'])
 def test_pw_npools_too_high_error(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
 ):
@@ -598,8 +653,8 @@ def test_pw_npools_too_high_not_error(fixture_localhost, generate_calc_job_node,
     assert 'output_parameters' in results
 
 
-@pytest.mark.parametrize('calculation', ('relax', 'vc-relax'))
-@pytest.mark.parametrize('settings_key', ('fixed_coords', 'FIXED_COORDS'))
+@pytest.mark.parametrize('calculation', ['relax', 'vc-relax'])
+@pytest.mark.parametrize('settings_key', ['fixed_coords', 'FIXED_COORDS'])
 def test_fixed_coords(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, calculation, settings_key
 ):
@@ -607,7 +662,7 @@ def test_fixed_coords(
 
     The output files of this test were generated for a calculation of a FCC Si supercell where
     """
-    name = f"fixed_coords_{calculation.replace('-', '')}"
+    name = f'fixed_coords_{calculation.replace("-", "")}'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
@@ -643,10 +698,12 @@ def test_tot_magnetization(
     assert calcfunction.is_finished_ok, calcfunction.exit_status
     assert 'output_parameters' in results
     output_parameters = results['output_parameters'].get_dict()
-    data_regression.check({
-        'fermi_energy_up': output_parameters['fermi_energy_up'],
-        'fermi_energy_down': output_parameters['fermi_energy_down']
-    })
+    data_regression.check(
+        {
+            'fermi_energy_up': output_parameters['fermi_energy_up'],
+            'fermi_energy_down': output_parameters['fermi_energy_down'],
+        }
+    )
 
 
 def test_pw_failed_out_of_walltime(
@@ -667,10 +724,12 @@ def test_pw_failed_out_of_walltime(
     assert orm.Log.collection.get_logs_for(node)
     assert 'output_parameters' in results
     assert 'output_trajectory' in results
-    data_regression.check({
-        'output_parameters': results['output_parameters'].get_dict(),
-        'output_trajectory': results['output_trajectory'].base.attributes.all,
-    })
+    data_regression.check(
+        {
+            'output_parameters': results['output_parameters'].get_dict(),
+            'output_trajectory': results['output_trajectory'].base.attributes.all,
+        }
+    )
 
 
 def test_pw_failed_out_of_walltime_interrupted(
@@ -696,10 +755,12 @@ def test_pw_failed_out_of_walltime_interrupted(
     assert orm.Log.collection.get_logs_for(node)
     assert 'output_parameters' in results
     assert 'output_trajectory' in results
-    data_regression.check({
-        'output_parameters': results['output_parameters'].get_dict(),
-        'output_trajectory': results['output_trajectory'].base.attributes.all,
-    })
+    data_regression.check(
+        {
+            'output_parameters': results['output_parameters'].get_dict(),
+            'output_trajectory': results['output_trajectory'].base.attributes.all,
+        }
+    )
 
 
 def test_pw_failed_scf_not_converged(
@@ -720,17 +781,22 @@ def test_pw_failed_scf_not_converged(
     assert orm.Log.collection.get_logs_for(node)
     assert 'output_parameters' in results
     assert 'output_trajectory' in results
-    data_regression.check({
-        'output_parameters': results['output_parameters'].get_dict(),
-        'output_trajectory': results['output_trajectory'].base.attributes.all,
-    })
+    data_regression.check(
+        {
+            'output_parameters': results['output_parameters'].get_dict(),
+            'output_trajectory': results['output_trajectory'].base.attributes.all,
+        }
+    )
 
 
-@pytest.mark.parametrize('parameters', (  # yapf:disable
-    {'ELECTRONS': {'scf_must_converge': False}},
-    {'ELECTRONS': {'electron_maxstep': 0}},
-    {'ELECTRONS': {'scf_must_converge': False, 'electron_maxstep': 0}}
-))  # yapf:enable
+@pytest.mark.parametrize(
+    'parameters',
+    [
+        {'ELECTRONS': {'scf_must_converge': False}},
+        {'ELECTRONS': {'electron_maxstep': 0}},
+        {'ELECTRONS': {'scf_must_converge': False, 'electron_maxstep': 0}},
+    ],
+)
 def test_pw_failed_scf_not_converged_intentional(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, parameters
 ):
@@ -768,16 +834,18 @@ def test_pw_relax_success(fixture_localhost, generate_calc_job_node, generate_pa
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
     assert not orm.Log.collection.get_logs_for(node), [log.message for log in orm.Log.collection.get_logs_for(node)]
-    assert 'output_kpoints' in results
+    assert 'output_band' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
     assert 'output_trajectory' in results
-    data_regression.check({
-        'output_kpoints': results['output_kpoints'].base.attributes.all,
-        'output_parameters': results['output_parameters'].get_dict(),
-        'output_structure': results['output_structure'].base.attributes.all,
-        'output_trajectory': results['output_trajectory'].base.attributes.all,
-    })
+    data_regression.check(
+        {
+            'output_band': results['output_band'].base.attributes.all,
+            'output_parameters': results['output_parameters'].get_dict(),
+            'output_structure': results['output_structure'].base.attributes.all,
+            'output_trajectory': results['output_trajectory'].base.attributes.all,
+        }
+    )
 
 
 def test_pw_relax_failed_electronic(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
@@ -795,7 +863,7 @@ def test_pw_relax_failed_electronic(fixture_localhost, generate_calc_job_node, g
     assert calcfunction.is_failed
     assert calcfunction.exit_status == expected_exit_status
     assert orm.Log.collection.get_logs_for(node)
-    assert 'output_kpoints' in results
+    assert 'output_band' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
     assert 'output_trajectory' in results
@@ -818,7 +886,7 @@ def test_pw_relax_failed_not_converged_nstep(
     assert calcfunction.is_failed
     assert calcfunction.exit_status == expected_exit_status
     assert orm.Log.collection.get_logs_for(node)
-    assert 'output_kpoints' in results
+    assert 'output_band' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
     assert 'output_trajectory' in results
@@ -840,16 +908,18 @@ def test_pw_vcrelax_success(
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
     assert not orm.Log.collection.get_logs_for(node), [log.message for log in orm.Log.collection.get_logs_for(node)]
-    assert 'output_kpoints' in results
+    assert 'output_band' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
     assert 'output_trajectory' in results
-    data_regression.check({
-        'output_kpoints': results['output_kpoints'].base.attributes.all,
-        'output_parameters': results['output_parameters'].get_dict(),
-        'output_structure': results['output_structure'].base.attributes.all,
-        'output_trajectory': results['output_trajectory'].base.attributes.all,
-    })
+    data_regression.check(
+        {
+            'output_band': results['output_band'].base.attributes.all,
+            'output_parameters': results['output_parameters'].get_dict(),
+            'output_structure': results['output_structure'].base.attributes.all,
+            'output_trajectory': results['output_trajectory'].base.attributes.all,
+        }
+    )
 
 
 def test_pw_vcrelax_success_fractional(
@@ -870,28 +940,29 @@ def test_pw_vcrelax_success_fractional(
 
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
-    assert not orm.Log.collection.get_logs_for(node), [log.message for log in orm.Log.collection.get_logs_for(node)]
-    assert 'output_kpoints' in results
+    assert 'output_band' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
     assert 'output_trajectory' in results
-    data_regression.check({
-        'output_kpoints': results['output_kpoints'].base.attributes.all,
-        'output_parameters': results['output_parameters'].get_dict(),
-        'output_structure': results['output_structure'].base.attributes.all,
-        'output_trajectory': results['output_trajectory'].base.attributes.all,
-    })
+    data_regression.check(
+        {
+            'output_band': results['output_band'].base.attributes.all,
+            'output_parameters': results['output_parameters'].get_dict(),
+            'output_structure': results['output_structure'].base.attributes.all,
+            'output_trajectory': results['output_trajectory'].base.attributes.all,
+        }
+    )
 
 
-def test_pw_vcrelax_success_rVV10(
+def test_pw_scf_success_rvv(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
-    """Test a `vc-relax` rVV10 run that successfully converges."""
-    name = 'vcrelax_success_rVV10'
+    """Test a `scf` rVV10 run that successfully converges."""
+    name = 'scf_success_rVV10'
     entry_point_calc_job = 'quantumespresso.pw'
     entry_point_parser = 'quantumespresso.pw'
 
-    inputs = generate_inputs(calculation_type='vc-relax')
+    inputs = generate_inputs(calculation_type='scf')
     node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
@@ -901,10 +972,11 @@ def test_pw_vcrelax_success_rVV10(
     assert not orm.Log.collection.get_logs_for(node), [log.message for log in orm.Log.collection.get_logs_for(node)]
     assert 'output_parameters' in results
     assert 'output_trajectory' in results
-    data_regression.check({
-        'energy_vdw': results['output_parameters']['energy_vdw'],
-        'array|stress': results['output_trajectory'].base.attributes.all['array|stress'],
-    })
+    data_regression.check(
+        {
+            'energy_vdw': results['output_parameters']['energy_vdw'],
+        }
+    )
 
 
 def test_pw_vcrelax_success_external_pressure(
@@ -923,7 +995,7 @@ def test_pw_vcrelax_success_external_pressure(
     assert calcfunction.is_finished, calcfunction.exception
     assert calcfunction.is_finished_ok, calcfunction.exit_message
     assert not orm.Log.collection.get_logs_for(node), [log.message for log in orm.Log.collection.get_logs_for(node)]
-    assert 'output_kpoints' in results
+    assert 'output_band' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
     assert 'output_trajectory' in results
@@ -951,7 +1023,7 @@ def test_pw_vcrelax_success_atoms_shape(fixture_localhost, generate_calc_job_nod
     assert 'output_trajectory' in results
 
 
-@pytest.mark.parametrize('filename', ('', '_stdout'))
+@pytest.mark.parametrize('filename', ['', '_stdout'])
 def test_pw_vcrelax_failed_charge_wrong(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
 ):
@@ -973,7 +1045,7 @@ def test_pw_vcrelax_failed_charge_wrong(
     assert 'output_parameters' in results
 
 
-@pytest.mark.parametrize('filename', ('', '_stdout'))
+@pytest.mark.parametrize('filename', ['', '_stdout'])
 def test_pw_vcrelax_failed_symmetry_not_orthogonal(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
 ):
@@ -1010,34 +1082,7 @@ def test_pw_vcrelax_failed_bfgs_history(fixture_localhost, generate_calc_job_nod
     assert calcfunction.is_failed
     assert calcfunction.exit_status == expected_exit_status
     assert orm.Log.collection.get_logs_for(node)
-    assert 'output_kpoints' in results
-    assert 'output_parameters' in results
-    assert 'output_structure' in results
-    assert 'output_trajectory' in results
-
-
-def test_pw_vcrelax_failed_bfgs_history_already_converged(
-    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs
-):
-    """Test a `vc-relax` that stops due to two consecutive failures of BFGS but is actually converged.
-
-    Quantum ESPRESSO can stop with the BFGS history reset error even when all forces and stresses are already below the
-    thresholds. This happens when the structure is already relaxed at the beginning of the calculation. For some reason
-    QE will still enter the optimization loop and often BFGS will struggle and eventually fail and stop. In this case,
-    the parser should just consider the structure as relaxed and return `0`.
-    """
-    name = 'vcrelax_failed_bfgs_history_already_converged'
-    entry_point_calc_job = 'quantumespresso.pw'
-    entry_point_parser = 'quantumespresso.pw'
-
-    inputs = generate_inputs(calculation_type='vc-relax')
-    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
-    parser = generate_parser(entry_point_parser)
-    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
-
-    assert calcfunction.is_finished_ok, calcfunction.exit_status
-    assert not orm.Log.collection.get_logs_for(node), [log.message for log in orm.Log.collection.get_logs_for(node)]
-    assert 'output_kpoints' in results
+    assert 'output_band' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
     assert 'output_trajectory' in results
@@ -1060,7 +1105,7 @@ def test_pw_vcrelax_failed_bfgs_history_final_scf(
     assert calcfunction.is_failed
     assert calcfunction.exit_status == expected_exit_status
     assert orm.Log.collection.get_logs_for(node)
-    assert 'output_kpoints' in results
+    assert 'output_band' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
     assert 'output_trajectory' in results
@@ -1081,7 +1126,7 @@ def test_pw_vcrelax_failed_electronic(fixture_localhost, generate_calc_job_node,
     assert calcfunction.is_failed
     assert calcfunction.exit_status == expected_exit_status
     assert orm.Log.collection.get_logs_for(node)
-    assert 'output_kpoints' in results
+    assert 'output_band' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
     assert 'output_trajectory' in results
@@ -1104,7 +1149,7 @@ def test_pw_vcrelax_failed_electronic_final_scf(
     assert calcfunction.is_failed
     assert calcfunction.exit_status == expected_exit_status
     assert orm.Log.collection.get_logs_for(node)
-    assert 'output_kpoints' in results
+    assert 'output_band' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
     assert 'output_trajectory' in results
@@ -1127,7 +1172,7 @@ def test_pw_vcrelax_failed_not_converged_final_scf(
     assert calcfunction.is_failed
     assert calcfunction.exit_status == expected_exit_status
     assert orm.Log.collection.get_logs_for(node)
-    assert 'output_kpoints' in results
+    assert 'output_band' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
     assert 'output_trajectory' in results
@@ -1150,12 +1195,12 @@ def test_pw_vcrelax_failed_not_converged_nstep(
     assert calcfunction.is_failed
     assert calcfunction.exit_status == expected_exit_status
     assert orm.Log.collection.get_logs_for(node)
-    assert 'output_kpoints' in results
+    assert 'output_band' in results
     assert 'output_parameters' in results
     assert 'output_structure' in results
 
 
-@pytest.mark.parametrize('filename', ('', '_stdout'))
+@pytest.mark.parametrize('filename', ['', '_stdout'])
 def test_pw_vcrelax_failed_fft_significant_volume_contraction(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
 ):
@@ -1193,9 +1238,63 @@ def test_magnetic_moments_v68(
     assert calcfunction.is_finished_ok, calcfunction.exit_message
     assert 'output_trajectory' in results
 
-    data_regression.check({
-        'atomic_charges':
-        results['output_trajectory'].get_array('atomic_charges').tolist(),
-        'atomic_magnetic_moments':
-        results['output_trajectory'].get_array('atomic_magnetic_moments').tolist(),
-    })
+    data_regression.check(
+        {
+            'atomic_charges': results['output_trajectory'].get_array('atomic_charges').tolist(),
+            'atomic_magnetic_moments': results['output_trajectory'].get_array('atomic_magnetic_moments').tolist(),
+        }
+    )
+
+
+def test_diff_total_abs_mag(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+):
+    """Test that the parsing of total and absolute magnetic moments is from the XML and is distinct."""
+    name = 'diff_total_abs_mag'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    inputs = generate_inputs()
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_parameters' in results
+    output_parameters = results['output_parameters']
+    assert output_parameters['total_magnetization'] != output_parameters['absolute_magnetization']
+
+    data_regression.check(
+        {
+            'total_magnetization': output_parameters['total_magnetization'],
+            'absolute_magnetization': output_parameters['absolute_magnetization'],
+        }
+    )
+
+
+def test_scf_electric_field(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
+):
+    """Test that the parsing of total and absolute magnetic moments is from the XML and is distinct."""
+    name = 'scf_electric_field'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    inputs = generate_inputs()
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_finished_ok, calcfunction.exit_message
+    assert 'output_trajectory' in results
+
+    output_trajectory = results['output_trajectory']
+
+    data_regression.check(
+        {
+            'electronic_dipole_cartesian_axes': output_trajectory.get_array(
+                'electronic_dipole_cartesian_axes'
+            ).tolist(),
+            'ionic_dipole_cartesian_axes': output_trajectory.get_array('ionic_dipole_cartesian_axes').tolist(),
+        }
+    )

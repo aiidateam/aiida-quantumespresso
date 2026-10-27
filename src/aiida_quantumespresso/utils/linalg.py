@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
 """Utilities related to linear algebra operations."""
-import numpy
+
+import numpy as np
 
 
-def are_matrices_equal(matrix_a, matrix_b, swap_sign_matrix_b=False, tolerance=1E-5):
+def are_matrices_equal(matrix_a, matrix_b, swap_sign_matrix_b=False, tolerance=1e-5):
     """Return whether matrix_a and matrix_b can be considered equal.
 
     The matrices will be cast to a numpy array and the difference will then be defined as the
@@ -18,4 +18,4 @@ def are_matrices_equal(matrix_a, matrix_b, swap_sign_matrix_b=False, tolerance=1
     """
     sign = -1 if swap_sign_matrix_b else 1
 
-    return abs(numpy.array(matrix_a) - numpy.array(matrix_b) * sign).sum() < tolerance
+    return abs(np.array(matrix_a) - np.array(matrix_b) * sign).sum() < tolerance

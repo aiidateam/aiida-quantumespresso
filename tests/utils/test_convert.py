@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for :py:mod:`~aiida_quantumespresso.utils.convert`."""
+
 import unittest
 
 from aiida_quantumespresso.utils.convert import convert_input_to_namelist_entry

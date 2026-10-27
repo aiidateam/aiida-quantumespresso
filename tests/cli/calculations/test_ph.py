@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the ``calculation launch ph`` command."""
+
 from aiida_quantumespresso.cli.calculations.ph import launch_calculation
 
 

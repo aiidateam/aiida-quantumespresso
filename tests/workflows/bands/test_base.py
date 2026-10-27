@@ -1,0 +1,35 @@
+"""Tests for the `BandsBaseWorkChain` class."""
+
+import pytest
+from aiida.common import AttributeDict
+from plumpy import ProcessState
+
+
+@pytest.fixture
+def generate_workchain_bands(generate_workchain, generate_inputs_bands, generate_calc_job_node):
+    """Generate an instance of a `BandsBaseWorkChain`."""
+
+    def _generate_workchain_bands(exit_code=None):
+        entry_point = 'quantumespresso.bands.base'
+        process = generate_workchain(entry_point, {'bands': generate_inputs_bands()})
+
+        if exit_code is not None:
+            node = generate_calc_job_node()
+            node.set_process_state(ProcessState.FINISHED)
+            node.set_exit_status(exit_code.status)
+
+            process.ctx.iteration = 1
+            process.ctx.children = [node]
+
+        return process
+
+    return _generate_workchain_bands
+
+
+def test_setup(generate_workchain_bands):
+    """Test `BandsBaseWorkChain.setup`."""
+    process = generate_workchain_bands()
+    process.setup()
+
+    assert process.ctx.restart_calc is None
+    assert isinstance(process.ctx.inputs, AttributeDict)

@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests for the `Q2rParser`."""
+
 from aiida import orm
 
 

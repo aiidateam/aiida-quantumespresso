@@ -1,12 +1,12 @@
-# -*- coding: utf-8 -*-
 """Command line scripts to launch a `DosCalculation` for testing and demonstration purposes."""
+
+import click
 from aiida.cmdline.params import options as options_core
 from aiida.cmdline.params import types
 from aiida.cmdline.utils import decorators
-import click
 
-from . import cmd_launch
 from ..utils import launch, options
+from . import cmd_launch
 
 
 @cmd_launch.command('dos')
@@ -32,15 +32,16 @@ def launch_calculation(code, calculation, max_num_machines, max_wallclock_second
         raise click.BadParameter(
             f'input calculation node has process_type: {calculation.process_type}; should be {expected_process_type}'
         )
-    parent_folder = calculation.base.links.get_outgoing(node_class=RemoteData,
-                                                        link_label_filter='remote_folder').one().node
+    parent_folder = (
+        calculation.base.links.get_outgoing(node_class=RemoteData, link_label_filter='remote_folder').one().node
+    )
 
     inputs = {
         'code': code,
         'parent_folder': parent_folder,
         'metadata': {
             'options': get_default_options(max_num_machines, max_wallclock_seconds, with_mpi),
-        }
+        },
     }
 
     launch.launch_process(CalculationFactory('quantumespresso.dos'), daemon, **inputs)

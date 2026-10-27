@@ -1,3 +1,16 @@
+forces:
+- - - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 5.35218353163836e-16
+    - -0.6955670660871802
+  - - 0.0
+    - 0.0
+    - 0.6955670660871802
+  - - 0.0
+    - 9.008856055736822e-25
+    - -3.12669022280311e-25
 output_band:
   array|bands:
   - 13
@@ -27,6 +40,7 @@ output_band:
   pbc3: true
   units: eV
 output_parameters:
+  absolute_magnetization: 0.0
   beta_real_space: false
   charge_density: ./charge-density.dat
   constraint_mag: 0
@@ -40,22 +54,20 @@ output_parameters:
   dft_exchange_correlation: PBE
   do_magnetization: false
   do_not_use_time_reversal: false
-  energy: -5389.18165070053
+  energy: -5389.181650709915
   energy_accuracy: 1.904796841542e-09
   energy_accuracy_units: eV
-  energy_ewald: -2871.643067443084
+  energy_ewald: -2871.643067420251
   energy_ewald_units: eV
-  energy_hartree: 2004.5207643671479
+  energy_hartree: 2004.5207643468418
   energy_hartree_units: eV
-  energy_hubbard: 2.348695187373217
-  energy_hubbard_units: eV
   energy_one_center_paw: -259.01286986126746
   energy_one_center_paw_units: eV
   energy_one_electron: -3570.764777984203
   energy_one_electron_units: eV
   energy_threshold: 1.62e-11
   energy_units: eV
-  energy_xc: -694.6303949664962
+  energy_xc: -694.630394975526
   energy_xc_units: eV
   estimated_ram_per_process: 12.95
   estimated_ram_per_process_units: MB
@@ -150,10 +162,11 @@ output_parameters:
   time_reversal_flag: true
   total_force: 0.9836783430360488
   total_force_units: ev / angstrom
+  total_magnetization: 0.0
   total_number_of_scf_iterations: 25
   volume: 32.172251504341325
   wall_time: '   1m40.44s '
-  wall_time_seconds: 100.44
+  wall_time_seconds: 100.4280431270599
   wfc_cutoff: 408.170751759
   wfc_cutoff_units: eV
 output_trajectory:
@@ -170,8 +183,6 @@ output_trajectory:
   array|energy_ewald:
   - 1
   array|energy_hartree:
-  - 1
-  array|energy_hubbard:
   - 1
   array|energy_one_center_paw:
   - 1
@@ -201,6 +212,20 @@ output_trajectory:
   - 3
   array|total_force:
   - 1
+  pbc:
+  - true
+  - true
+  - true
   symbols:
   - Si
   - Si
+stress:
+- - - -62.88281405555692
+    - -2.551866364254089e-14
+    - 9.569498865952834e-15
+  - - -2.232883068722328e-14
+    - -62.88281405798721
+    - -4.474386661006401e-10
+  - - 2.551866364254089e-14
+    - -4.474059703128484e-10
+    - -64.86202242723162

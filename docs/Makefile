@@ -24,16 +24,16 @@ I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) source
 customdefault:
 	$(SPHINXBUILD) -b html -nW --keep-going $(ALLSPHINXOPTS) $(BUILDDIR)/html
 
-all: html view
+all: clean html view
 
 clean:
 	rm -rf $(BUILDDIR)
+	rm -rf $(shell find . -type d -wholename "*/reference/api/auto")
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
-
 
 view:
 	open $(BUILDDIR)/html/index.html

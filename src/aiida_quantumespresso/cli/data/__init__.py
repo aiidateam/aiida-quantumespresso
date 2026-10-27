@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
-# pylint: disable=cyclic-import,unused-import,wrong-import-position
 """Module with CLI commands for various data types."""
+
 from .. import cmd_root
 
 

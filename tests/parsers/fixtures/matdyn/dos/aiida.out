@@ -1,0 +1,31 @@
+
+     Program MATDYN v.7.0 starts on 15Apr2023 at 15:36:18 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+         "P. Giannozzi et al., J. Chem. Phys. 152 154105 (2020);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI & OpenMP), running on       1 processor cores
+     Number of MPI processes:                 1
+     Threads/MPI process:                     1
+
+     MPI processes distributed on     1 nodes
+     502117 MiB available memory on the printing compute node when the environment starts
+ 
+ mass for atomic type   1 not given; uses mass from file real_space_force_constants.dat                                                                                                                                                                                                                                  
+     Message from routine matdyn:
+     Z* not found in file real_space_force_constants.dat, TO-LO splitting at q=0 will be absent!
+ 
+     MATDYN       :      0.00s CPU      0.14s WALL
+
+ 
+   This run was terminated on:  15:36:19  15Apr2023            
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=
