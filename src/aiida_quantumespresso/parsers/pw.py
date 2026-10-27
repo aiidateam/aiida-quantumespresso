@@ -69,7 +69,7 @@ class PwParser(BaseParser):
         structure = self.build_output_structure(parsed_structure)
         kpoints = self.build_output_kpoints(parsed_parameters, structure)
         bands = self.build_output_bands(parsed_bands, kpoints)
-        trajectory = self.build_output_trajectory(parsed_trajectory, structure)
+        trajectory = self.build_output_trajectory(parsed_trajectory, structure, self.node.inputs.structure)
 
         # Determine whether the input kpoints were defined as a mesh or as an explicit list
         try:
@@ -480,13 +480,16 @@ class PwParser(BaseParser):
         return convert_qe_to_aiida_structure(parsed_structure, self.node.inputs.structure)
 
     @staticmethod
-    def build_output_trajectory(parsed_trajectory, structure):
+    def build_output_trajectory(parsed_trajectory, structure, input_structure):
         """Build the output trajectory from the raw parsed trajectory data.
 
         :param parsed_trajectory: the raw parsed trajectory data
+        :param structure: the output structure
+        :param input_structure: the input structure
         :return: a `TrajectoryData` or None
         """
         fractional = False
+        from_stdout = True
 
         if 'atomic_positions_relax' in parsed_trajectory:
             positions = np.array(parsed_trajectory.pop('atomic_positions_relax'))
@@ -495,6 +498,7 @@ class PwParser(BaseParser):
             positions = np.array(parsed_trajectory.pop('atomic_fractionals_relax'))
         else:
             # The positions were never printed, the calculation did not change the structure
+            from_stdout = False
             positions = np.array([[site.position for site in structure.sites]])
 
         try:
@@ -510,6 +514,18 @@ class PwParser(BaseParser):
         if fractional:
             # convert positions to cartesian
             positions = np.einsum('ijk, ikm -> ijm', positions, cells)
+
+        if from_stdout:
+            # The stdout only prints the structure obtained *after* each ionic step, and repeats the final structure
+            # once more at the end. Prepend the input structure so that each frame is the structure for which the
+            # energy, forces, ... with the same index were computed, and keep only as many frames as there are
+            # completed ionic steps, i.e. force evaluations. This drops the repeated final structure of a `relax`, as
+            # well as the structure printed after the last step of a calculation that did not converge. For a converged
+            # `vc-relax` the repeated final structure is kept, as it is the structure of the final SCF.
+            positions = np.concatenate([[[site.position for site in input_structure.sites]], positions])
+            cells = np.concatenate([[input_structure.cell], cells])
+            num_frames = len(parsed_trajectory.get('forces', positions))
+            positions, cells = positions[:num_frames], cells[:num_frames]
 
         symbols = [str(site.kind_name) for site in structure.sites]
         stepids = np.arange(len(positions))

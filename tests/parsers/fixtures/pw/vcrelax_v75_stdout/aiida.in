@@ -1,0 +1,36 @@
+&CONTROL
+  calculation = 'vc-relax'
+  prefix = 'aiida'
+  outdir = './out'
+  pseudo_dir = '../pseudo'
+  tprnfor = .true.
+  tstress = .true.
+  forc_conv_thr = 1.0d-4
+/
+&SYSTEM
+  ibrav = 0
+  nat = 2
+  ntyp = 1
+  ecutwfc = 20.0
+  input_dft = 'pbe'
+/
+&ELECTRONS
+  conv_thr = 1.0d-8
+/
+&IONS
+  ion_dynamics = 'bfgs'
+/
+&CELL
+  cell_dynamics = 'bfgs'
+/
+ATOMIC_SPECIES
+Si 28.0855 Si_ONCV_PBE-1.1.upf
+CELL_PARAMETERS angstrom
+  0.000000  2.800000  2.800000
+  2.800000  0.000000  2.800000
+  2.800000  2.800000  0.000000
+ATOMIC_POSITIONS crystal
+Si 0.00 0.00 0.00
+Si 0.27 0.25 0.23
+K_POINTS automatic
+2 2 2 0 0 0

@@ -625,15 +625,29 @@ def parse_xml(xml_file):
 
     calculation_type = inputs.get('control_variables', {}).get('calculation', 'scf')
 
-    # In case of an SCF calculation, there are no trajectory steps so parse from the final outputs. For a vc-relax, the
-    # code performs a final SCF, the results of which are not added as a step but are part of the final outputs.
-    if calculation_type in ['scf', 'vc-relax']:
+    # In case of an SCF calculation, there are no trajectory steps so parse from the final outputs.
+    if calculation_type == 'scf':
         parse_step_to_trajectory(xml_data['trajectory'], outputs, skip_structure=True)
+
+    # For a vc-relax that converged, the code performs a final SCF at the relaxed structure, the results of which are
+    # not added as a step but are part of the final outputs. Add it as a frame, including its structure, so that all
+    # arrays of the trajectory have one entry per SCF calculation. If the vc-relax did not converge, no final SCF was
+    # performed and the final outputs merely repeat the results of the last step, unless no steps were written at all,
+    # e.g. because the calculation was interrupted, in which case the final outputs are the only results available.
+    num_frames = len(xml_dictionary.get('step', []))
+
+    if calculation_type == 'vc-relax':
+        opt_conv = outputs.get('convergence_info', {}).get('opt_conv', {})
+        if num_frames == 0:
+            parse_step_to_trajectory(xml_data['trajectory'], outputs, skip_structure=True)
+        elif opt_conv.get('convergence_achieved', False):
+            parse_step_to_trajectory(xml_data['trajectory'], outputs)
+            num_frames += 1
 
     # For some reason, the legacy trajectory structure contained a key `steps` which was a list of integers from 0 to
     # N - 1 where N is the number steps in the trajectory.
     if 'step' in xml_dictionary:
-        xml_data['trajectory']['steps'] = list(range(len(xml_dictionary['step'])))
+        xml_data['trajectory']['steps'] = list(range(num_frames))
 
     xml_data['total_number_of_scf_iterations'] = sum(xml_data['trajectory']['scf_iterations'])
 
