@@ -11,7 +11,6 @@ from aiida.engine import ExitCode
 from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.utils.mapping import get_logging_container
 
-from . import QEOutputParsingError
 from .base import BaseParser
 from .parse_raw.pw import reduce_symmetries
 
@@ -424,12 +423,12 @@ class PwParser(BaseParser):
 
         try:
             parsed_data, logs = parse_stdout(stdout, parameters, parser_options, crash_file=crash_file)
-        except QEOutputParsingError as exc:
-            logs.error.append(f'Failed to parse the stdout: {exc}')
-            self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_PARSE
         except Exception as exc:
             logs.critical.append(traceback.format_exc())
             self.exit_code_stdout = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc)
+
+        if 'ERROR_OUTPUT_STDOUT_PARSE' in logs['error']:
+            self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_PARSE
 
         # If the stdout was incomplete, most likely the job was interrupted before it could cleanly finish, so the
         # output files are most likely corrupt and cannot be restarted from
