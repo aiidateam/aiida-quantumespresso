@@ -395,12 +395,12 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
                 # Compare the line to the known set of error and warning messages and add them to the log container
                 detect_important_message(logs, line)
 
-            if len(logs.error) or len(logs.warning) > 0:
-                parsed_data['trajectory'] = trajectory_data
-                return parsed_data, logs
+            # If none of the known error messages were found, the stdout simply cannot be parsed
+            if not logs.error and not logs.warning:
+                logs.error.extend(['ERROR_OUTPUT_STDOUT_PARSE', 'Parser cannot load basic info.'])
 
-            # did not find any error message -> raise an Error and do not return anything
-            raise QEOutputParsingError('Parser cannot load basic info.')
+            parsed_data['trajectory'] = trajectory_data
+            return parsed_data, logs
     else:
         nat = structure_data['number_of_atoms']
         ntyp = structure_data['number_of_species']
@@ -949,7 +949,7 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
             detect_important_message(logs, line)
 
         if len(logs.error) == len(logs.warning) == 0:
-            raise QEOutputParsingError('Parser cannot load basic info.')
+            logs.error.extend(['ERROR_OUTPUT_STDOUT_PARSE', 'Parser cannot load basic info.'])
 
     # Remove duplicate log messages by turning it into a set. Then convert back to list as that is what is expected
     logs.error = list(set(logs.error))

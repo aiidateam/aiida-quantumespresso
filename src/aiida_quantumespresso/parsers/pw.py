@@ -427,6 +427,9 @@ class PwParser(BaseParser):
             logs.critical.append(traceback.format_exc())
             self.exit_code_stdout = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc)
 
+        if 'ERROR_OUTPUT_STDOUT_PARSE' in logs['error']:
+            self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_PARSE
+
         # If the stdout was incomplete, most likely the job was interrupted before it could cleanly finish, so the
         # output files are most likely corrupt and cannot be restarted from
         if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs['error']:
