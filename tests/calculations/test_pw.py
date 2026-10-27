@@ -404,6 +404,28 @@ def test_pw_validate_inputs_restart_nscf(
     generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
 
+def test_pw_validate_inputs_parameters_excluded(generate_inputs_pw):
+    """Test the input validation when the ``parameters`` port is excluded by a wrapping work chain.
+
+    Such a work chain only provides the ``parameters`` at a later step in the outline, so the validator of the exposed
+    ``PwCalculation`` namespace should not try to access them.
+    """
+    from aiida.engine import WorkChain
+
+    class WrapperWorkChain(WorkChain):
+        """Work chain that exposes the ``PwCalculation`` inputs, excluding the ``parameters``."""
+
+        @classmethod
+        def define(cls, spec):
+            super().define(spec)
+            spec.expose_inputs(PwCalculation, namespace='pw', exclude=('parameters',))
+
+    inputs = generate_inputs_pw()
+    inputs.pop('parameters')
+
+    assert WrapperWorkChain.spec().inputs.validate({'pw': inputs}) is None
+
+
 def test_fixed_coords(fixture_sandbox, generate_calc_job, generate_inputs_pw, file_regression):
     """Test a ``PwCalculation`` where the ``fixed_coords`` setting was provided."""
     entry_point_name = 'quantumespresso.pw'
