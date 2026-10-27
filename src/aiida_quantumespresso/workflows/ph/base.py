@@ -260,14 +260,16 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         if self.inputs.only_initialization.value:
             return
 
-        if len(self.ctx.children) == 1:
+        children = self._get_recover_chain()
+
+        if len(children) == 1:
             return
 
         output_dict = {
-            'output_' + str(index + 1): child.outputs.output_parameters for index, child in enumerate(self.ctx.children)
+            'output_' + str(index + 1): child.outputs.output_parameters for index, child in enumerate(children)
         }
 
-        num_qpoints = self.ctx.children[0].outputs.output_parameters['number_of_qpoints']
+        num_qpoints = children[0].outputs.output_parameters['number_of_qpoints']
         num_qpoints = (
             self.ctx.inputs.parameters['INPUTPH'].get('last_q', num_qpoints)
             - self.ctx.inputs.parameters['INPUTPH'].get('start_q', 1)
@@ -283,6 +285,31 @@ class PhBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         else:
             self.report(f'Only {num_qpoints_found} of {num_qpoints} q-points were parsed.')
             return self.exit_codes.ERROR_MERGING_QPOINTS
+
+    def _get_recover_chain(self):
+        """Return the ``PhCalculation``s whose outputs together cover all q-points, in the order they were run.
+
+        Starting from the last calculation, follow the ``parent_folder`` of each calculation that was run with
+        ``recover = True`` back to the calculation it recovered from. Calculations outside of this chain, e.g. one that
+        was restarted from scratch after an unhandled failure, recomputed their q-points and should not be merged.
+        """
+        children_pks = {child.pk for child in self.ctx.children}
+
+        current = self.ctx.children[-1]
+        chain = [current]
+
+        while current.inputs.parameters['INPUTPH'].get('recover', False):
+            # The calculation that created the folder that ``current`` recovered from
+            previous = current.inputs.parent_folder.creator
+
+            # Stop if that folder was not created by one of our calculations, e.g. it comes from the ``pw.x`` run
+            if previous is None or previous.pk not in children_pks:
+                break
+
+            chain.insert(0, previous)
+            current = previous
+
+        return chain
 
     def get_outputs(self, node) -> Mapping[str, orm.Node]:
         """Return a mapping of the outputs that should be attached as outputs to the work chain."""
