@@ -1,5 +1,6 @@
 """Tests for the `PwParser`."""
 
+import numpy as np
 import pytest
 from aiida import orm
 from aiida.common import AttributeDict
@@ -919,6 +920,36 @@ def test_pw_vcrelax_success(
             'output_structure': results['output_structure'].base.attributes.all,
             'output_trajectory': results['output_trajectory'].base.attributes.all,
         }
+    )
+
+
+def test_pw_vcrelax_success_no_xml(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
+    """Test that the output structure of a `vc-relax` parsed from the stdout is the same as the one from the XML.
+
+    The ``vcrelax_success_stdout`` fixture contains the stdout of ``vcrelax_success`` without the XML. With the
+    ``without_xml`` option the output structure should be the final structure printed in the stdout, and not the input
+    structure.
+    """
+    name = 'vcrelax_success'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+    structures = {}
+
+    for suffix, metadata in (('', None), ('_stdout', {'options': {'without_xml': True}})):
+        inputs = generate_inputs(calculation_type='vc-relax', metadata=metadata)
+        node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name + suffix, inputs)
+        parser = generate_parser(entry_point_parser)
+        results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+        assert calcfunction.is_finished_ok, calcfunction.exit_message
+        structures[suffix] = results['output_structure']
+
+    input_structure, xml_structure, stdout_structure = node.inputs.structure, structures[''], structures['_stdout']
+
+    assert not np.allclose(xml_structure.cell, input_structure.cell, atol=1e-3)
+    assert np.allclose(stdout_structure.cell, xml_structure.cell, atol=1e-5)
+    assert np.allclose(
+        [site.position for site in stdout_structure.sites], [site.position for site in xml_structure.sites], atol=1e-5
     )
 
 

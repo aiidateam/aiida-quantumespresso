@@ -436,16 +436,29 @@ class PwParser(BaseParser):
             self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
 
         # Under certain conditions, such as the XML missing or being incorrect, the structure data might be incomplete.
-        # Since following code depends on it, we replace missing information taken from the input structure.
+        # Since following code depends on it, we replace missing information with the last structure printed in the
+        # stdout, which is the final structure of an ionic calculation, or else with the input structure.
         structure = self.node.inputs.structure
+        trajectory = parsed_data.get('trajectory', {})
         parsed_data.setdefault('structure', {}).setdefault('cell', {})
 
         if 'lattice_vectors' not in parsed_data['structure']['cell']:
-            parsed_data['structure']['cell']['lattice_vectors'] = structure.cell
+            cell = trajectory.get('lattice_vectors_relax', [structure.cell])[-1]
+            parsed_data['structure']['cell']['lattice_vectors'] = cell
 
         if 'atoms' not in parsed_data['structure']['cell']:
+            if 'atomic_positions_relax' in trajectory:
+                positions = trajectory['atomic_positions_relax'][-1]
+            elif 'atomic_fractionals_relax' in trajectory:
+                cell = parsed_data['structure']['cell']['lattice_vectors']
+                positions = np.dot(trajectory['atomic_fractionals_relax'][-1], cell).tolist()
+            else:
+                positions = [site.position for site in structure.sites]
+
             symbols = {s.kind_name: structure.get_kind(s.kind_name).symbol for s in structure.sites}
-            parsed_data['structure']['cell']['atoms'] = [(symbols[s.kind_name], s.position) for s in structure.sites]
+            parsed_data['structure']['cell']['atoms'] = [
+                (symbols[site.kind_name], position) for site, position in zip(structure.sites, positions)
+            ]
 
         return parsed_data, logs
 
