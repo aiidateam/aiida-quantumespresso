@@ -944,12 +944,19 @@ def parse_stdout(stdout, input_parameters, parser_options=None, parsed_xml=None,
 
     # Double check to detect error messages if CRASH is found
     if crash_file is not None:
+        logs_crash = get_logging_container()
+
         for line in crash_file.split('\n'):
             # Compare the line to the known set of error and warning messages and add them to the log container
-            detect_important_message(logs, line)
+            detect_important_message(logs_crash, line)
 
-        if len(logs.error) == len(logs.warning) == 0:
-            logs.error.extend(['ERROR_OUTPUT_STDOUT_PARSE', 'Parser cannot load basic info.'])
+        logs.error.extend(logs_crash.error)
+        logs.warning.extend(logs_crash.warning)
+
+        # A `CRASH` file means the run was aborted. If the error is not one we know, flag the output as incomplete so
+        # the calculation does not pass as successful or get mistaken for e.g. an unconverged ionic minimization.
+        if not logs_crash.error:
+            logs.error.append('ERROR_OUTPUT_STDOUT_INCOMPLETE')
 
     # Remove duplicate log messages by turning it into a set. Then convert back to list as that is what is expected
     logs.error = list(set(logs.error))

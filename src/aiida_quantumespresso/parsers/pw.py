@@ -129,6 +129,16 @@ class PwParser(BaseParser):
         if exit_code:
             return self.exit(exit_code)
 
+        # A `CRASH` file with an unrecognised error means `pw.x` aborted for an unknown reason. For ionic calculations
+        # we can still restart from the partial trajectory, but not from the charge density or wave functions.
+        if (
+            crash_file is not None
+            and 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs_stdout.error
+            and self.get_calculation_type() in ['relax', 'vc-relax']
+            and 'output_structure' in self.outputs
+        ):
+            return self.exit(self.exit_codes.ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY)
+
         # If the both stdout and xml exit codes are set, there was a basic problem with both output files and there
         # is no need to investigate any further.
         if self.exit_code_stdout and self.exit_code_xml:

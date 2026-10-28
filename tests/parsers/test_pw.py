@@ -612,6 +612,44 @@ def test_pw_failed_interrupted_relax(fixture_localhost, generate_calc_job_node, 
     assert 'output_trajectory' in results
 
 
+@pytest.mark.parametrize(
+    ('name', 'calculation_type', 'exit_code'),
+    [
+        ('vcrelax_failed_crash_unknown', 'vc-relax', 'ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY'),
+        ('vcrelax_failed_crash_unknown', 'scf', 'ERROR_OUTPUT_STDOUT_INCOMPLETE'),
+        ('vcrelax_failed_crash_unknown_stdout', 'vc-relax', 'ERROR_OUTPUT_FILES'),
+        ('bands_failed_crash_unknown', 'bands', 'ERROR_OUTPUT_STDOUT_INCOMPLETE'),
+    ],
+)
+def test_pw_failed_crash_unknown(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, name, calculation_type, exit_code
+):
+    """Test a calculation that wrote a `CRASH` file with an error message that the parser does not recognise.
+
+    The `vc-relax` run was aborted while writing the charge density after the ionic steps, so it should fail instead of
+    being judged on the partial output. For ionic calculations with an output structure, the more specific
+    ``ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY`` is returned so the work chain can restart from it. Without the XML
+    there is no output structure, and the generic ``ERROR_OUTPUT_FILES`` is returned instead.
+
+    The `bands` run was aborted while writing the wave functions to a full scratch disk (#1076). Its stdout contains an
+    unrelated MPI warning, which used to suppress the error, and the retrieved XML is the one of the parent `scf` that
+    was copied into the output folder, so it parses without problems.
+    """
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    inputs = generate_inputs(calculation_type=calculation_type)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_failed
+    assert calcfunction.exit_status == node.process_class.exit_codes.get(exit_code).status
+
+    if exit_code == 'ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY':
+        assert 'output_structure' in results
+
+
 @pytest.mark.parametrize('filename', ['', '_stdout'])
 def test_pw_npools_too_high_error(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, filename
