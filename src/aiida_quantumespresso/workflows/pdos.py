@@ -633,8 +633,7 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
     def results(self):
         """Attach the desired output nodes directly as outputs of the workchain."""
         self.report('workchain successfully completed')
-        # If the SCF calculation was run, expose its outputs.
-        if 'workchain_scf' in self.ctx:
+        if self.should_run_scf():
             self.out_many(self.exposed_outputs(self.ctx.workchain_scf, PwBaseWorkChain, namespace='scf'))
         self.out_many(self.exposed_outputs(self.ctx.workchain_nscf, PwBaseWorkChain, namespace='nscf'))
         self.out_many(self.exposed_outputs(self.ctx.calc_dos, DosCalculation, namespace='dos'))
