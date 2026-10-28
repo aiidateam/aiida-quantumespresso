@@ -314,6 +314,14 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
             message='Cannot specify both `nbands_factor` and `nscf.pw.parameters.SYSTEM.nbnd`.',
         )
 
+        spec.expose_outputs(
+            PwBaseWorkChain,
+            namespace='scf',
+            namespace_options={
+                'required': False,
+                'help': 'Outputs of the `PwBaseWorkChain` of the `scf` calculation, only present if it was run.',
+            },
+        )
         spec.expose_outputs(PwBaseWorkChain, namespace='nscf')
         spec.expose_outputs(DosCalculation, namespace='dos')
         spec.expose_outputs(ProjwfcCalculation, namespace='projwfc')
@@ -625,7 +633,8 @@ class PdosWorkChain(ProtocolMixin, WorkChain):
     def results(self):
         """Attach the desired output nodes directly as outputs of the workchain."""
         self.report('workchain successfully completed')
-
+        if self.should_run_scf():
+            self.out_many(self.exposed_outputs(self.ctx.workchain_scf, PwBaseWorkChain, namespace='scf'))
         self.out_many(self.exposed_outputs(self.ctx.workchain_nscf, PwBaseWorkChain, namespace='nscf'))
         self.out_many(self.exposed_outputs(self.ctx.calc_dos, DosCalculation, namespace='dos'))
         self.out_many(self.exposed_outputs(self.ctx.calc_projwfc, ProjwfcCalculation, namespace='projwfc'))
