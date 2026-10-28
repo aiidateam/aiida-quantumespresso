@@ -9,9 +9,13 @@ def generate_inputs():
     return {'parameters': orm.Dict({'INPUTPH': {}})}
 
 
-@pytest.mark.parametrize('test_name', ['default', 'single_qpoint', 'no_modes_printed'])
+@pytest.mark.parametrize('test_name', ['default', 'single_qpoint', 'no_modes_printed', 'default_ir_raman'])
 def test_ph_default(test_name, fixture_localhost, generate_calc_job_node, generate_parser, data_regression):
-    """Default tests for the `ph.x` parser."""
+    """Default tests for the `ph.x` parser.
+
+    The ``default_ir_raman`` fixture is a Gamma-point calculation of cubic BN, for which all modes are both infrared and
+    Raman active. The ``I+R`` activity flag printed after the mode symmetry label should not be parsed as the label.
+    """
     name = test_name
     entry_point_calc_job = 'quantumespresso.ph'
     entry_point_parser = 'quantumespresso.ph'
