@@ -148,9 +148,13 @@ def test_pw_relax_trajectory_consistency(
     for key in ('positions', 'cells', 'energy', 'forces', 'stress'):
         assert np.allclose(trajectories[''].get_array(key), trajectories['_stdout'].get_array(key), atol=1e-4), key
 
+    # Round to avoid spurious differences in the last digits between platforms and linear algebra libraries.
     trajectory = trajectories['_stdout']
     data_regression.check(
-        {'positions': trajectory.get_array('positions').tolist(), 'cells': trajectory.get_array('cells').tolist()}
+        {
+            'positions': np.round(trajectory.get_array('positions'), 6).tolist(),
+            'cells': np.round(trajectory.get_array('cells'), 6).tolist(),
+        }
     )
 
 
