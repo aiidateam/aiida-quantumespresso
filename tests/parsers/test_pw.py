@@ -979,6 +979,15 @@ def test_pw_relax_failed_not_converged_nstep(
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
     expected_exit_status = node.process_class.exit_codes.ERROR_IONIC_CYCLE_EXCEEDED_NSTEP.status
 
+    # The calculation ran `nstep = 1` ionic step so there is exactly one frame and the structure obtained after the
+    # last step, i.e. the output structure, is not repeated as a frame of the trajectory.
+    trajectory = results['output_trajectory']
+    for key in ['positions', 'cells', 'energy', 'forces']:
+        assert trajectory.get_shape(key)[0] == 1, key
+    assert not np.allclose(
+        trajectory.get_array('positions')[-1], [site.position for site in results['output_structure'].sites]
+    )
+
     assert calcfunction.is_failed
     assert calcfunction.exit_status == expected_exit_status
     assert orm.Log.collection.get_logs_for(node)
@@ -1287,7 +1296,14 @@ def test_pw_vcrelax_failed_not_converged_nstep(
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
     expected_exit_status = node.process_class.exit_codes.ERROR_IONIC_CYCLE_EXCEEDED_NSTEP.status
-
+    # The calculation ran `nstep = 1` ionic step so there is exactly one frame and the structure obtained after the
+    # last step, i.e. the output structure is not repeated as a frame of the trajectory.
+    trajectory = results['output_trajectory']
+    for key in ['positions', 'cells', 'energy', 'forces']:
+        assert trajectory.get_shape(key)[0] == 1, key
+    assert not np.allclose(
+        trajectory.get_array('positions')[-1], [site.position for site in results['output_structure'].sites]
+    )
     assert calcfunction.is_failed
     assert calcfunction.exit_status == expected_exit_status
     assert orm.Log.collection.get_logs_for(node)
