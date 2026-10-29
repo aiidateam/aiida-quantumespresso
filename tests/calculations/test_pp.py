@@ -55,6 +55,21 @@ def test_pp_default(fixture_sandbox, generate_calc_job, generate_inputs, file_re
     file_regression.check(input_written, encoding='utf-8', extension='.in')
 
 
+@pytest.mark.parametrize('symlink', (False, True))
+def test_pp_parent_folder_symlink(fixture_sandbox, generate_calc_job, generate_inputs, symlink):
+    """Test the `PARENT_FOLDER_SYMLINK` setting moves the parent subfolders from the copy list to the symlink list."""
+    entry_point_name = 'quantumespresso.pp'
+    inputs = generate_inputs(settings={'PARENT_FOLDER_SYMLINK': symlink})
+
+    calc_info = generate_calc_job(fixture_sandbox, entry_point_name, inputs)
+
+    full = calc_info.remote_symlink_list if symlink else calc_info.remote_copy_list
+    empty = calc_info.remote_copy_list if symlink else calc_info.remote_symlink_list
+
+    assert [entry[-1] for entry in full] == ['./out/', './pseudo/']
+    assert empty == []
+
+
 def test_pp_keep_data_files(fixture_sandbox, generate_calc_job, generate_inputs):
     """Test a `PpCalculation` where we want to retrieve the plot file."""
     entry_point_name = 'quantumespresso.pp'
