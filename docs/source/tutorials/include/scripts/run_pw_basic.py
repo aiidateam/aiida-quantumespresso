@@ -1,7 +1,9 @@
-#!/usr/bin/env runaiida
+from aiida import load_profile
 from aiida.engine import run
 from aiida.orm import Dict, KpointsData, StructureData, load_code, load_group
 from ase.build import bulk
+
+load_profile()
 
 # Load the code configured for ``pw.x``. Make sure to replace this string
 # with the label of a ``Code`` that you configured in your profile.
@@ -13,7 +15,7 @@ structure = StructureData(ase=bulk('Si', 'fcc', 5.43))
 builder.structure = structure
 
 # Load the pseudopotential family.
-pseudo_family = load_group('SSSP/1.2/PBEsol/efficiency')
+pseudo_family = load_group('SSSP/1.3/PBEsol/efficiency')
 builder.pseudos = pseudo_family.get_pseudos(structure=structure)
 
 # Request the recommended wavefunction and charge density cutoffs

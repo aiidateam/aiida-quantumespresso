@@ -1,13 +1,17 @@
 """Tests for the `PwCalculation` class."""
 
+import inspect
+from unittest.mock import Mock
+
 import pytest
 from aiida import orm
 from aiida.common import datastructures
-from aiida.common.exceptions import InputValidationError
+from aiida.common.exceptions import InputValidationError, MissingEntryPointError
 from aiida.common.warnings import AiidaDeprecationWarning
+from aiida.plugins import factories
 
-from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.calculations.helpers import QEInputValidationError
+from aiida_quantumespresso.calculations.pw import PwCalculation
 from aiida_quantumespresso.utils.resources import get_default_options
 
 
@@ -400,6 +404,28 @@ def test_pw_validate_inputs_restart_nscf(
     generate_calc_job(fixture_sandbox, entry_point_name, inputs)
 
 
+def test_pw_validate_inputs_parameters_excluded(generate_inputs_pw):
+    """Test the input validation when the ``parameters`` port is excluded by a wrapping work chain.
+
+    Such a work chain only provides the ``parameters`` at a later step in the outline, so the validator of the exposed
+    ``PwCalculation`` namespace should not try to access them.
+    """
+    from aiida.engine import WorkChain
+
+    class WrapperWorkChain(WorkChain):
+        """Work chain that exposes the ``PwCalculation`` inputs, excluding the ``parameters``."""
+
+        @classmethod
+        def define(cls, spec):
+            super().define(spec)
+            spec.expose_inputs(PwCalculation, namespace='pw', exclude=('parameters',))
+
+    inputs = generate_inputs_pw()
+    inputs.pop('parameters')
+
+    assert WrapperWorkChain.spec().inputs.validate({'pw': inputs}) is None
+
+
 def test_fixed_coords(fixture_sandbox, generate_calc_job, generate_inputs_pw, file_regression):
     """Test a ``PwCalculation`` where the ``fixed_coords`` setting was provided."""
     entry_point_name = 'quantumespresso.pw'
@@ -456,3 +482,14 @@ def test_parameters_validation():
 
     with pytest.raises(ValueError, match="'control' should be UPPERCASE"):
         builder.parameters = orm.Dict(parameters).store()
+
+
+def test_class_inspection_without_hp(monkeypatch):
+    """Inspect `PwCalculation` without loading the optional HP plugin."""
+    calculation_factory: Mock = Mock(side_effect=MissingEntryPointError('HP plugin is unavailable'))
+    monkeypatch.setattr(factories, 'CalculationFactory', calculation_factory)
+
+    members: dict[str, object] = dict(inspect.getmembers(PwCalculation))
+
+    assert members['filename_input_hubbard_parameters'] == 'parameters.in'
+    calculation_factory.assert_not_called()

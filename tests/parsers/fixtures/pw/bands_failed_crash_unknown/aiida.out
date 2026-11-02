@@ -1,0 +1,257 @@
+MPI startup(): Warning: I_MPI_PMI_LIBRARY will be ignored since the hydra process manager was found
+
+     Program PWSCF v.7.2 starts on 27Feb2025 at 22:30:18 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 29 465901 (2017);
+         "P. Giannozzi et al., J. Chem. Phys. 152 154105 (2020);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI), running on    32 processors
+
+     MPI processes distributed on     1 nodes
+     378989 MiB available memory on the printing compute node when the environment starts
+ 
+     Reading input from aiida.in
+
+     Current dimensions of program PWSCF are:
+     Max number of different atomic species (ntypx) = 10
+     Max number of k-points (npk) =  40000
+     Max angular momentum in pseudopotentials (lmaxx) =  4
+
+     Atomic positions and unit cell read from directory:
+     ./out/aiida.save/
+     Atomic positions from file used, from input discarded
+ 
+     file O.pbesol-n-kjpaw_psl.0.1.UPF: wavefunction(s)  2P renormalized
+     Message from routine setup:
+     using ibrav=0 with symmetry is DISCOURAGED, use correct ibrav instead
+ 
+     K-points division:     npool     =       8
+     R & G space division:  proc/nbgrp/npool/nimage =       4
+     Subspace diagonalization in iterative solution of the eigenvalue problem:
+     one sub-group per band group will be used
+     scalapack distributed-memory algorithm (size of sub-group:  2*  2 procs)
+
+ 
+     Parallelization info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Min        1428     712    196               298524   105531   15198
+     Max        1429     714    198               298535   105534   15201
+     Sum        5715    2853    787              1194127   422129   60799
+ 
+     Using Slab Decomposition
+ 
+
+
+     bravais-lattice index     =            0
+     lattice parameter (alat)  =      10.4676  a.u.
+     unit-cell volume          =    6723.3363 (a.u.)^3
+     number of atoms/cell      =           12
+     number of atomic types    =            4
+     number of electrons       =       100.00
+     number of Kohn-Sham states=          150
+     kinetic-energy cutoff     =      60.0000  Ry
+     charge density cutoff     =     480.0000  Ry
+     Exchange-correlation= SLA  PW   PSX  PSC
+                           (   1   4  10   8   0   0   0)
+
+     celldm(1)=  10.467645  celldm(2)=   0.000000  celldm(3)=   0.000000
+     celldm(4)=   0.000000  celldm(5)=   0.000000  celldm(6)=   0.000000
+
+     crystal axes: (cart. coord. in units of alat)
+               a(1) = (   1.000000  -0.000028   0.000000 )  
+               a(2) = (  -0.000039   1.365613   0.000000 )  
+               a(3) = (   0.000000   0.000000   4.292499 )  
+
+     reciprocal axes: (cart. coord. in units 2 pi/alat)
+               b(1) = (  1.000000  0.000028  0.000000 )  
+               b(2) = (  0.000021  0.732272  0.000000 )  
+               b(3) = (  0.000000  0.000000  0.232965 )  
+
+
+     PseudoPot. # 1 for Hg read from file:
+     ./pseudo/Hg_ONCV_PBEsol-1.0.upf
+     MD5 check sum: 9b18bbaf32e5d8994dbbbf1f0a8e2d63
+     Pseudo is Norm-conserving, Zval = 20.0
+     Generated using ONCVPSP code by D. R. Hamann
+     Using radial grid of 1246 points,  8 beta functions with: 
+                l(1) =   0
+                l(2) =   0
+                l(3) =   1
+                l(4) =   1
+                l(5) =   2
+                l(6) =   2
+                l(7) =   3
+                l(8) =   3
+
+     PseudoPot. # 2 for I  read from file:
+     ./pseudo/I.pbesol-n-kjpaw_psl.0.2.UPF
+     MD5 check sum: cecf1a22a184a0b1ae701638a037a48d
+     Pseudo is Projector augmented-wave + core cor, Zval =  7.0
+     Generated using "atomic" code by A. Dal Corso  v.6.0 svn rev. 13079
+     Shape of augmentation charge: PSQ
+     Using radial grid of 1247 points,  4 beta functions with: 
+                l(1) =   0
+                l(2) =   0
+                l(3) =   1
+                l(4) =   1
+     Q(r) pseudized with 0 coefficients 
+
+
+     PseudoPot. # 3 for N  read from file:
+     ./pseudo/N.pbesol-theos.UPF
+     MD5 check sum: 1b64827339d390a5a22afef3ff345c9d
+     Pseudo is Ultrasoft + core correction, Zval =  5.0
+     Generated using "atomic" code by A. Dal Corso  v.5.1
+     Using radial grid of 1085 points,  4 beta functions with: 
+                l(1) =   0
+                l(2) =   0
+                l(3) =   1
+                l(4) =   1
+     Q(r) pseudized with 0 coefficients 
+
+
+     PseudoPot. # 4 for O  read from file:
+     ./pseudo/O.pbesol-n-kjpaw_psl.0.1.UPF
+     MD5 check sum: 81d73d1479e654e5638b0319f0d6c2c7
+     Pseudo is Projector augmented-wave + core cor, Zval =  6.0
+     Generated using "atomic" code by A. Dal Corso  v.6.0 svn rev. 13079
+     Shape of augmentation charge: BESSEL
+     Using radial grid of 1095 points,  4 beta functions with: 
+                l(1) =   0
+                l(2) =   0
+                l(3) =   1
+                l(4) =   1
+     Q(r) pseudized with 0 coefficients 
+
+
+     atomic species   valence    mass     pseudopotential
+        Hg            20.00   200.59000     Hg( 1.00)
+        I              7.00   126.90450     I ( 1.00)
+        N              5.00    14.00670     N ( 1.00)
+        O              6.00    15.99940     O ( 1.00)
+
+      2 Sym. Ops. (no inversion) found ( 1 have fractional translation)
+
+--- SYMMETRIES REMOVED ---
+
+   Cartesian axes
+
+     site n.     atom                  positions (alat units)
+         1           Hg  tau(   1) = (   0.2499742   0.5930161   2.2472579  )
+         2           Hg  tau(   2) = (   0.2499548   1.2758226   2.0452416  )
+         3           I   tau(   3) = (   0.2499987   0.1562797   2.4780601  )
+         4           I   tau(   4) = (   0.2499793   0.8390861   1.8144393  )
+         5           N   tau(   5) = (   0.7499812   0.7648013   2.4007506  )
+         6           O   tau(   6) = (   0.5521357   0.8501356   2.4776242  )
+         7           O   tau(   7) = (   0.9478210   0.8501337   2.4776288  )
+         8           O   tau(   8) = (   0.7499810   0.5947443   2.2479721  )
+         9           O   tau(   9) = (   0.7499616   1.2775508   2.0445273  )
+        10           N   tau(  10) = (   0.7500006   0.0819948   1.8917488  )
+        11           O   tau(  11) = (   0.9478404   0.1673273   1.8148707  )
+        12           O   tau(  12) = (   0.5521551   0.1673292   1.8148752  )
+
+   Crystallographic axes
+
+     site n.     atom                  positions (cryst. coord.)
+         1           Hg  tau(   1) = (  0.2499910  0.4342542  0.5235313  )
+         2           Hg  tau(   2) = (  0.2499910  0.9342542  0.4764687  )
+         3           I   tau(   3) = (  0.2500031  0.1144444  0.5773000  )
+         4           I   tau(   4) = (  0.2500031  0.6144444  0.4227000  )
+         5           N   tau(   5) = (  0.7500029  0.5600580  0.5592897  )
+         6           O   tau(   6) = (  0.5521599  0.6225419  0.5771985  )
+         7           O   tau(   7) = (  0.9478451  0.6225486  0.5771996  )
+         8           O   tau(   8) = (  0.7499979  0.4355301  0.5236977  )
+         9           O   tau(   9) = (  0.7499979  0.9355301  0.4763023  )
+        10           N   tau(  10) = (  0.7500029  0.0600580  0.4407103  )
+        11           O   tau(  11) = (  0.9478451  0.1225486  0.4228004  )
+        12           O   tau(  12) = (  0.5521599  0.1225419  0.4228015  )
+
+     number of k points=   197  Marzari-Vanderbilt smearing, width (Ry)=  0.0100
+
+--- K-POINTS REMOVED ---
+
+     Dense  grid:  1194127 G-vectors     FFT dimensions: (  75, 100, 320)
+
+     Smooth grid:   422129 G-vectors     FFT dimensions: (  54,  72, 225)
+
+     Dynamical RAM for                 wfc:      30.19 MB
+
+     Dynamical RAM for     wfc (w. buffer):      30.19 MB
+
+     Dynamical RAM for           str. fact:      18.22 MB
+
+     Dynamical RAM for           local pot:       0.00 MB
+
+     Dynamical RAM for          nlocal pot:      28.98 MB
+
+     Dynamical RAM for                qrad:      16.87 MB
+
+     Dynamical RAM for          rho,v,vnew:      27.40 MB
+
+     Dynamical RAM for           G-vectors:      17.89 MB
+
+     Dynamical RAM for          h,s,v(r/c):       0.26 MB
+
+     Dynamical RAM for          <psi|beta>:       0.33 MB
+
+     Dynamical RAM for      wfcinit/wfcrot:      60.90 MB
+
+     Dynamical RAM for           addusdens:      43.27 MB
+
+     Estimated static dynamical RAM per process >     185.22 MB
+
+     Estimated max dynamical RAM per process >     246.12 MB
+
+     Estimated total dynamical RAM >       7.69 GB
+ ----2D----2D----2D----2D----2D----2D----2D----2D----2D----2D----2D----2D
+  The code is running with the 2D cutoff
+  Please refer to:
+  Sohier, T., Calandra, M., & Mauri, F. (2017), 
+  Density functional perturbation theory for gated two-dimensional heterostructu
+ res:
+  Theoretical developments and application to flexural phonons in graphene.
+  Physical Review B, 96(7), 75448. https://doi.org/10.1103/PhysRevB.96.075448
+ ----2D----2D----2D----2D----2D----2D----2D----2D----2D----2D----2D----2D
+
+     The potential is recalculated from file :
+     ./out/aiida.save/charge-density
+
+
+     negative rho (up, down):  8.452E-04 0.000E+00
+     Starting wfcs are   60 randomized atomic wfcs +   90 random wfcs
+     Checking if some PAW data can be deallocated... 
+       PAW data deallocated on   26 nodes for type:  2
+       PAW data deallocated on   17 nodes for type:  4
+
+     Band Structure Calculation
+     ParO style diagonalization
+
+     Computing kpt #:     1  of    25 on this pool
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine davcio (10):
+     error writing file "/path/to/scratch/./out/aiida.wfc18"
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine davcio (10):
+     error writing file "/path/to/scratch/./out/aiida.wfc19"
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     Error in routine davcio (10):
+     error writing file "/path/to/scratch/./out/aiida.wfc20"
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     stopping ...

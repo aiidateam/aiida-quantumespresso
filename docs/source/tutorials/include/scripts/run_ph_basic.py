@@ -1,6 +1,8 @@
-#!/usr/bin/env runaiida
+from aiida import load_profile
 from aiida.engine import run
-from aiida.orm import Dict, KpointsData, load_code
+from aiida.orm import Dict, KpointsData, load_code, load_node
+
+load_profile()
 
 # Load the code configured for ``ph.x``. Make sure to replace this string
 # with the label of a ``Code`` that you configured in your profile.

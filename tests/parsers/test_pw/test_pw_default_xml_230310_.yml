@@ -87,7 +87,7 @@ output_parameters:
   init_wall_time_seconds: 33.0
   inversion_symmetry: true
   lattice_symmetries: []
-  lda_plus_u_calculation: false
+  lda_plus_u_calculation: true
   lkpoint_dir: false
   lsda: false
   magnetization_angle1:

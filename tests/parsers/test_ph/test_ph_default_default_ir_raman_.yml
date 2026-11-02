@@ -1,0 +1,28 @@
+code_version: '7.5'
+dynamical_matrix_1:
+  frequencies:
+  - 32.674964
+  - 32.674964
+  - 32.674964
+  - 1107.668909
+  - 1107.668909
+  - 1107.668909
+  frequencies_units: cm-1
+  mode_symmetry:
+  - P_4
+  - P_4
+  - P_4
+  - P_4
+  - P_4
+  - P_4
+  point_group: T_d (-43m)
+  q_point:
+  - 0.0
+  - 0.0
+  - 0.0
+  q_point_units: 2pi/lattice_parameter
+number_of_atoms: 2
+number_of_irr_representations_for_each_q:
+- 2
+number_of_qpoints: 1
+wall_time_seconds: 1.1

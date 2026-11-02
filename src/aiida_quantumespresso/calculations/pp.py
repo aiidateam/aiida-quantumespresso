@@ -222,17 +222,20 @@ class PpCalculation(CalcJob):
                 'The following namelists are specified in parameters, but are not valid namelists for the current type '
                 f'of calculation: {", ".join(list(parameters.keys()))}'
             )
+        symlink = settings.pop('PARENT_FOLDER_SYMLINK', False)
 
         remote_copy_list = []
         local_copy_list = []
+        remote_symlink_list = []
+        remote_list = remote_symlink_list if symlink else remote_copy_list
 
         source = self.inputs.get('parent_folder', None)
 
         if isinstance(source, orm.RemoteData):
             dirpath = os.path.join(source.get_remote_path(), self._INPUT_SUBFOLDER)
-            remote_copy_list.append((source.computer.uuid, dirpath, self._OUTPUT_SUBFOLDER))
+            remote_list.append((source.computer.uuid, dirpath, self._OUTPUT_SUBFOLDER))
             dirpath = os.path.join(source.get_remote_path(), self._PSEUDO_SUBFOLDER)
-            remote_copy_list.append((source.computer.uuid, dirpath, self._PSEUDO_SUBFOLDER))
+            remote_list.append((source.computer.uuid, dirpath, self._PSEUDO_SUBFOLDER))
         elif isinstance(source, orm.FolderData):
             local_copy_list.append((source.uuid, self._OUTPUT_SUBFOLDER, self._OUTPUT_SUBFOLDER))
             local_copy_list.append((source.uuid, self._PSEUDO_SUBFOLDER, self._PSEUDO_SUBFOLDER))
@@ -247,6 +250,7 @@ class PpCalculation(CalcJob):
         calcinfo.codes_info = [codeinfo]
         calcinfo.local_copy_list = local_copy_list
         calcinfo.remote_copy_list = remote_copy_list
+        calcinfo.remote_symlink_list = remote_symlink_list
 
         # Retrieve by default the output file
         calcinfo.retrieve_list = [self.inputs.metadata.options.output_filename]

@@ -69,7 +69,7 @@ class PwParser(BaseParser):
         structure = self.build_output_structure(parsed_structure)
         kpoints = self.build_output_kpoints(parsed_parameters, structure)
         bands = self.build_output_bands(parsed_bands, kpoints)
-        trajectory = self.build_output_trajectory(parsed_trajectory, structure)
+        trajectory = self.build_output_trajectory(parsed_trajectory, structure, self.node.inputs.structure)
 
         # Determine whether the input kpoints were defined as a mesh or as an explicit list
         try:
@@ -128,6 +128,16 @@ class PwParser(BaseParser):
         exit_code = self.validate_premature_exit(logs_stdout)
         if exit_code:
             return self.exit(exit_code)
+
+        # A `CRASH` file with an unrecognised error means `pw.x` aborted for an unknown reason. For ionic calculations
+        # we can still restart from the partial trajectory, but not from the charge density or wave functions.
+        if (
+            crash_file is not None
+            and 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs_stdout.error
+            and self.get_calculation_type() in ['relax', 'vc-relax']
+            and 'output_structure' in self.outputs
+        ):
+            return self.exit(self.exit_codes.ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY)
 
         # If the both stdout and xml exit codes are set, there was a basic problem with both output files and there
         # is no need to investigate any further.
@@ -427,22 +437,38 @@ class PwParser(BaseParser):
             logs.critical.append(traceback.format_exc())
             self.exit_code_stdout = self.exit_codes.ERROR_UNEXPECTED_PARSER_EXCEPTION.format(exception=exc)
 
+        if 'ERROR_OUTPUT_STDOUT_PARSE' in logs['error']:
+            self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_PARSE
+
         # If the stdout was incomplete, most likely the job was interrupted before it could cleanly finish, so the
         # output files are most likely corrupt and cannot be restarted from
         if 'ERROR_OUTPUT_STDOUT_INCOMPLETE' in logs['error']:
             self.exit_code_stdout = self.exit_codes.ERROR_OUTPUT_STDOUT_INCOMPLETE
 
         # Under certain conditions, such as the XML missing or being incorrect, the structure data might be incomplete.
-        # Since following code depends on it, we replace missing information taken from the input structure.
+        # Since following code depends on it, we replace missing information with the last structure printed in the
+        # stdout, which is the final structure of an ionic calculation, or else with the input structure.
         structure = self.node.inputs.structure
+        trajectory = parsed_data.get('trajectory', {})
         parsed_data.setdefault('structure', {}).setdefault('cell', {})
 
         if 'lattice_vectors' not in parsed_data['structure']['cell']:
-            parsed_data['structure']['cell']['lattice_vectors'] = structure.cell
+            cell = trajectory.get('lattice_vectors_relax', [structure.cell])[-1]
+            parsed_data['structure']['cell']['lattice_vectors'] = cell
 
         if 'atoms' not in parsed_data['structure']['cell']:
+            if 'atomic_positions_relax' in trajectory:
+                positions = trajectory['atomic_positions_relax'][-1]
+            elif 'atomic_fractionals_relax' in trajectory:
+                cell = parsed_data['structure']['cell']['lattice_vectors']
+                positions = np.dot(trajectory['atomic_fractionals_relax'][-1], cell).tolist()
+            else:
+                positions = [site.position for site in structure.sites]
+
             symbols = {s.kind_name: structure.get_kind(s.kind_name).symbol for s in structure.sites}
-            parsed_data['structure']['cell']['atoms'] = [(symbols[s.kind_name], s.position) for s in structure.sites]
+            parsed_data['structure']['cell']['atoms'] = [
+                (symbols[site.kind_name], position) for site, position in zip(structure.sites, positions)
+            ]
 
         return parsed_data, logs
 
@@ -477,13 +503,16 @@ class PwParser(BaseParser):
         return convert_qe_to_aiida_structure(parsed_structure, self.node.inputs.structure)
 
     @staticmethod
-    def build_output_trajectory(parsed_trajectory, structure):
+    def build_output_trajectory(parsed_trajectory, structure, input_structure):
         """Build the output trajectory from the raw parsed trajectory data.
 
         :param parsed_trajectory: the raw parsed trajectory data
+        :param structure: the output structure
+        :param input_structure: the input structure
         :return: a `TrajectoryData` or None
         """
         fractional = False
+        from_stdout = True
 
         if 'atomic_positions_relax' in parsed_trajectory:
             positions = np.array(parsed_trajectory.pop('atomic_positions_relax'))
@@ -492,6 +521,7 @@ class PwParser(BaseParser):
             positions = np.array(parsed_trajectory.pop('atomic_fractionals_relax'))
         else:
             # The positions were never printed, the calculation did not change the structure
+            from_stdout = False
             positions = np.array([[site.position for site in structure.sites]])
 
         try:
@@ -507,6 +537,18 @@ class PwParser(BaseParser):
         if fractional:
             # convert positions to cartesian
             positions = np.einsum('ijk, ikm -> ijm', positions, cells)
+
+        if from_stdout:
+            # The stdout only prints the structure obtained *after* each ionic step, and repeats the final structure
+            # once more at the end. Prepend the input structure so that each frame is the structure for which the
+            # energy, forces, ... with the same index were computed, and keep only as many frames as there are
+            # completed ionic steps, i.e. force evaluations. This drops the repeated final structure of a `relax`, as
+            # well as the structure printed after the last step of a calculation that did not converge. For a converged
+            # `vc-relax` the repeated final structure is kept, as it is the structure of the final SCF.
+            positions = np.concatenate([[[site.position for site in input_structure.sites]], positions])
+            cells = np.concatenate([[input_structure.cell], cells])
+            num_frames = len(parsed_trajectory.get('forces', positions))
+            positions, cells = positions[:num_frames], cells[:num_frames]
 
         symbols = [str(site.kind_name) for site in structure.sites]
         stepids = np.arange(len(positions))

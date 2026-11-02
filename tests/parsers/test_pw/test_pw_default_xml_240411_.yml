@@ -181,7 +181,7 @@ output_trajectory:
   array|atomic_species_name:
   - 2
   array|cells:
-  - 3
+  - 4
   - 3
   - 3
   array|energy:
@@ -207,7 +207,7 @@ output_trajectory:
   - 2
   - 3
   array|positions:
-  - 3
+  - 4
   - 2
   - 3
   array|scf_accuracy:
@@ -215,7 +215,7 @@ output_trajectory:
   array|scf_iterations:
   - 4
   array|steps:
-  - 3
+  - 4
   array|stress:
   - 4
   - 3

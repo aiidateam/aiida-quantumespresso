@@ -24,9 +24,9 @@ dynamical_matrix_1:
   - G_4-
   - G_4-
   - G_4-
-  - R
-  - R
-  - R
+  - G_5+
+  - G_5+
+  - G_5+
   point_group: O_h (m-3m)
   q_point:
   - 0.0

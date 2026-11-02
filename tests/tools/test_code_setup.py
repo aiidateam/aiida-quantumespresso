@@ -15,7 +15,7 @@ def create_pw_executable(tmp_path):
         executable_path = tmp_path / subdir / 'pw.x'
         executable_path.parent.mkdir(parents=True, exist_ok=True)
         executable_path.touch()
-        executable_path.chmod(0o755)  # Needs to be executable for `which` to find it
+        executable_path.chmod(0o755)  # Needs to be executable for `command -v` to find it
         return executable_path
 
     return _factory
@@ -27,17 +27,17 @@ def create_pw_executable(tmp_path):
         ('export PATH={path}:$PATH', None, ''),
         ('echo lala\nexport PATH={path}:$PATH', None, ''),
         ('# Comment\nexport PATH={path}:$PATH', None, ''),
-        ('', FileNotFoundError, 'Error: the `which` command returned an empty output.'),
+        ('', FileNotFoundError, 'Error: the `command -v` command returned an empty output.'),
         (
             'echo lala',
             FileNotFoundError,
-            'Error: the `which` command returned an empty output.',
+            'Error: the `command -v` command returned an empty output.',
         ),
         ('expoat PATH={path}:$PATH', FileNotFoundError, 'expoat: command not found'),
         (
             'export PATH={path}WRONG:$PATH',
             FileNotFoundError,
-            'Error: the `which` command returned an empty output.',
+            'Error: the `command -v` command returned an empty output.',
         ),
     ],
 )
@@ -69,6 +69,24 @@ def test_get_executable_paths_with_quoted_path(create_pw_executable, fixture_loc
         prepend_text=prepend_text,
     )
     assert result == {pw_executable.name: pw_executable.as_posix()}
+
+
+def test_get_executable_paths_not_absolute(create_pw_executable, fixture_localhost):
+    """Tests that the `get_executable_paths` function rejects a result that is not an absolute path.
+
+    In contrast to `which`, `command -v` also resolves shell functions and aliases, for which it returns the name
+    instead of a path. Such a code would be stored successfully but only fail once a calculation is submitted.
+    """
+    pw_executable = create_pw_executable()
+    # Define a shell function that shadows the executable, even though the latter can be found in the `PATH`
+    prepend_text = f'export PATH={pw_executable.parent.as_posix()}:$PATH\n{pw_executable.name}() {{ echo mock; }}'
+
+    with pytest.raises(FileNotFoundError, match=f'did not return an absolute path: {pw_executable.name}'):
+        get_executable_paths(
+            executable_tuple=(pw_executable.name,),
+            computer=fixture_localhost,
+            prepend_text=prepend_text,
+        )
 
 
 def test_get_executable_paths_directory(create_pw_executable, fixture_localhost):

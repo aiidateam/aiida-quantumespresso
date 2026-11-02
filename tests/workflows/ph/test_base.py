@@ -243,8 +243,9 @@ def test_merge_outputs(
     assert calcjob_1.is_finished, calcjob_1.exception
     assert calcjob_1.exit_status == PhCalculation.exit_codes.ERROR_OUT_OF_WALLTIME.status
 
+    inputs_2 = {'parameters': orm.Dict({'INPUTPH': {'recover': True}}), 'parent_folder': node_1.outputs.remote_folder}
     node_2 = generate_calc_job_node(
-        entry_point_name=entry_point_calc_job, computer=fixture_localhost, test_name=f'{name}_2', inputs=inputs
+        entry_point_name=entry_point_calc_job, computer=fixture_localhost, test_name=f'{name}_2', inputs=inputs_2
     )
     results_2, calcjob_2 = parser.parse_from_node(node_2, store_provenance=False)
 
@@ -265,6 +266,46 @@ def test_merge_outputs(
     outputs = ph_base.get_outputs(node_2)
 
     data_regression.check(outputs['output_parameters'].get_dict())
+
+
+def test_merge_outputs_restart_from_scratch(
+    generate_calc_job_node, fixture_localhost, generate_parser, generate_workchain_ph
+):
+    """Test the ``create_merged_output`` step when the last calculation was restarted from scratch.
+
+    This happens e.g. after an unhandled failure, in which case the last calculation recomputes all q-points and its
+    outputs should not be merged with those of the previous calculation.
+    """
+    entry_point_calc_job = 'quantumespresso.ph'
+    parser = generate_parser('quantumespresso.ph')
+
+    nodes = []
+
+    for _ in range(2):
+        node = generate_calc_job_node(
+            entry_point_name=entry_point_calc_job,
+            computer=fixture_localhost,
+            test_name='merge_outputs_singleq_2',
+            inputs=generate_inputs(),
+        )
+        results, calcjob = parser.parse_from_node(node, store_provenance=False)
+
+        results['output_parameters'].base.links.add_incoming(
+            node, link_type=LinkType.CREATE, link_label='output_parameters'
+        )
+        results['output_parameters'].store()
+
+        assert calcjob.is_finished_ok, calcjob.exception
+        nodes.append(node)
+
+    ph_base = generate_workchain_ph()
+    ph_base.ctx.children = nodes
+    ph_base.ctx.inputs = AttributeDict()
+    ph_base.ctx.inputs.parameters = {'INPUTPH': {}}
+
+    assert ph_base.create_merged_output() is None
+    assert 'merged_output_parameters' not in ph_base.ctx
+    assert ph_base.get_outputs(nodes[-1])['output_parameters'].uuid == nodes[-1].outputs.output_parameters.uuid
 
 
 def test_validate_inputs_excluded_qpoints_distance(generate_inputs_ph):

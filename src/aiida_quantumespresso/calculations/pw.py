@@ -2,10 +2,10 @@
 
 import os
 import warnings
+from typing import ClassVar
 
 from aiida import orm
 from aiida.common.lang import classproperty
-from aiida.plugins import factories
 
 from aiida_quantumespresso.calculations import BasePwCpInputGenerator
 
@@ -45,6 +45,9 @@ class PwCalculation(BasePwCpInputGenerator):
     _default_symlink_usage = False
 
     _ENABLED_PARALLELIZATION_FLAGS = ('npool', 'nband', 'ntg', 'ndiag')
+
+    # Input filename for Hubbard parameters read from a file in Quantum ESPRESSO versions below 7.1.
+    filename_input_hubbard_parameters: ClassVar[str] = 'parameters.in'
 
     @classproperty
     def xml_filepaths(cls):
@@ -235,10 +238,10 @@ class PwCalculation(BasePwCpInputGenerator):
         means ``parent_folder`` is provided. For other calculations, if the ``parent_folder`` is provided, the restart
         settings must be set to use some of the outputs.
 
-        Note that the validator will only check the logic in case the ``parent_folder`` is a port in the
-        ``port_namespace``. This is because the ``PwCalculation`` can be wrapped inside a work chain that only provides
-        the ``parent_folder`` input at a later step in the outline. To avoid raising any warnings, such a work chain
-        must exclude the ``parent_folder`` port when exposing the inputs of the ``PwCalculation``.
+        Note that the validator will only check the logic in case both the ``parameters`` and ``parent_folder`` are ports
+        in the ``port_namespace``. This is because the ``PwCalculation`` can be wrapped inside a work chain that only
+        provides these inputs at a later step in the outline. To avoid raising any warnings or exceptions, such a work
+        chain must exclude the corresponding ports when exposing the inputs of the ``PwCalculation``.
         """
         from aiida.engine.processes.calcjobs.calcjob import validate_calc_job
 
@@ -252,11 +255,11 @@ class PwCalculation(BasePwCpInputGenerator):
         if result is not None:
             return result
 
+        if any(key not in port_namespace for key in ('parameters', 'parent_folder')):
+            return
+
         parameters = value['parameters'].get_dict()
         calculation_type = parameters.get('CONTROL', {}).get('calculation', 'scf')
-
-        if 'parent_folder' not in port_namespace:
-            return
 
         # If a `parent_folder` input is provided, make sure the inputs are set to restart
         if (
@@ -287,22 +290,6 @@ class PwCalculation(BasePwCpInputGenerator):
                 'inputs of the `PwCalculation`.',
                 UserWarning,
             )
-
-    @classproperty
-    def filename_input_hubbard_parameters(cls):
-        """Return the relative file name of the file containing the Hubbard parameters.
-
-        .. note:: This only applies if they should be read from file instead of specified in the input file cards.
-        .. warning:: Requires the aiida-quantumespresso-hp plugin to be installed
-        """
-        try:
-            HpCalculation = factories.CalculationFactory('quantumespresso.hp')  # noqa: N806
-        except Exception as exc:
-            raise RuntimeError(
-                'this is determined by the aiida-quantumespresso-hp plugin but it is not installed'
-            ) from exc
-
-        return HpCalculation.filename_input_hubbard_parameters
 
     @classmethod
     def input_helper(cls, *args, **kwargs):

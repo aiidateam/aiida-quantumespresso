@@ -165,7 +165,10 @@ def parse_ph_text_output(lines, logs):
                 freq_start = int(line.split('(')[1].split(')')[0].split('-')[0])
                 freq_end = int(line.split('(')[1].split(')')[0].split('-')[1])
 
-                symm_label = line.split()[-2] if line.split()[-1] == 'I' else line.split()[-1]
+                words = line.split('-->')[-1].split()
+                if words[-1] in ('I', 'R', 'I+R'):
+                    words.pop()
+                symm_label = words[-1]
 
                 q_data['mode_symmetry'].extend([symm_label] * (freq_end - freq_start + 1))
 

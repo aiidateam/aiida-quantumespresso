@@ -1,5 +1,6 @@
 """Tests for the `PwParser`."""
 
+import numpy as np
 import pytest
 from aiida import orm
 from aiida.common import AttributeDict
@@ -101,6 +102,63 @@ def test_pw_default_no_xml(
 
 
 @pytest.mark.parametrize(
+    ('name', 'calculation_type', 'num_frames'), (('relax_v75', 'relax', 5), ('vcrelax_v75', 'vc-relax', 7))
+)
+def test_pw_relax_trajectory_consistency(
+    fixture_localhost,
+    generate_calc_job_node,
+    generate_parser,
+    generate_inputs,
+    data_regression,
+    name,
+    calculation_type,
+    num_frames,
+):
+    """Test that the trajectory of a relaxation is consistent, whether parsed from the XML or from the stdout.
+
+    Each frame should contain the structure for which the energy, forces and stress of that frame were computed, so all
+    arrays have one entry per SCF calculation and the first frame is the input structure. For a converged ``vc-relax``
+    the last frame is the final SCF, which is computed at the same structure as the last ionic step.
+
+    The stdout only prints the structure obtained *after* each ionic step, and prints the final structure twice. The
+    trajectory parsed from the stdout, when the XML is missing and the ``without_xml`` option is set, should still be
+    identical to the one parsed from the XML. The ``{name}_stdout`` fixture contains the same calculation without XML.
+    """
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+    trajectories = {}
+
+    for suffix, metadata in (('', None), ('_stdout', {'options': {'without_xml': True}})):
+        inputs = generate_inputs(calculation_type=calculation_type, metadata=metadata)
+        node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name + suffix, inputs)
+        parser = generate_parser(entry_point_parser)
+        results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+        assert calcfunction.is_finished_ok, calcfunction.exit_message
+        trajectories[suffix] = results['output_trajectory']
+
+    for trajectory in trajectories.values():
+        for key in ('positions', 'cells', 'energy', 'forces', 'stress'):
+            assert trajectory.get_shape(key)[0] == num_frames, key
+
+        assert np.allclose(
+            trajectory.get_array('positions')[0], [site.position for site in node.inputs.structure.sites]
+        )
+
+    for key in ('positions', 'cells', 'energy', 'forces', 'stress'):
+        assert np.allclose(trajectories[''].get_array(key), trajectories['_stdout'].get_array(key), atol=1e-4), key
+
+    # Round to avoid spurious differences in the last digits between platforms and linear algebra libraries.
+    trajectory = trajectories['_stdout']
+    data_regression.check(
+        {
+            'positions': np.round(trajectory.get_array('positions'), 6).tolist(),
+            'cells': np.round(trajectory.get_array('cells'), 6).tolist(),
+        }
+    )
+
+
+@pytest.mark.parametrize(
     'xml_format',
     [
         '190304',
@@ -115,6 +173,7 @@ def test_pw_default_no_xml(
         '241104',
         '250521',
         '260128',
+        '260226',
     ],
 )
 def test_pw_default_xml(
@@ -428,6 +487,38 @@ def test_pw_failed_missing(fixture_localhost, generate_calc_job_node, generate_p
     assert orm.Log.collection.get_logs_for(node)
 
 
+@pytest.mark.parametrize(
+    ('name', 'exit_code'),
+    (
+        ('failed_stdout_truncated', 'ERROR_OUTPUT_FILES'),
+        ('failed_stdout_truncated_xml', 'ERROR_OUTPUT_STDOUT_PARSE'),
+    ),
+)
+def test_pw_failed_stdout_truncated(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, name, exit_code
+):
+    """Test the parsing of a calculation whose stdout was truncated before the basic information was printed.
+
+    In these tests the stdout only contains the header and a ``CRASH`` file was written with an error that the parser
+    does not recognize, e.g. because ``pw.x`` aborted at startup. The stdout cannot be parsed, which is an expected
+    failure: no traceback should be logged as a critical message. If the XML is missing as well, the exit code is
+    ``ERROR_OUTPUT_FILES``, otherwise it is ``ERROR_OUTPUT_STDOUT_PARSE``.
+    """
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, generate_inputs())
+    parser = generate_parser(entry_point_parser)
+    _, calcfunction = parser.parse_from_node(node, store_provenance=False)
+    logs = orm.Log.collection.get_logs_for(node)
+
+    assert calcfunction.is_finished, calcfunction.exception
+    assert calcfunction.is_failed, calcfunction.exit_status
+    assert calcfunction.exit_status == node.process_class.exit_codes.get(exit_code).status
+    assert 'Parser cannot load basic info.' in [log.message for log in logs]
+    assert not [log for log in logs if log.levelname == 'CRITICAL']
+
+
 def test_pw_failed_interrupted(
     fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, data_regression
 ):
@@ -576,6 +667,44 @@ def test_pw_failed_interrupted_relax(fixture_localhost, generate_calc_job_node, 
     assert 'output_parameters' in results
     assert 'output_structure' in results
     assert 'output_trajectory' in results
+
+
+@pytest.mark.parametrize(
+    ('name', 'calculation_type', 'exit_code'),
+    [
+        ('vcrelax_failed_crash_unknown', 'vc-relax', 'ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY'),
+        ('vcrelax_failed_crash_unknown', 'scf', 'ERROR_OUTPUT_STDOUT_INCOMPLETE'),
+        ('vcrelax_failed_crash_unknown_stdout', 'vc-relax', 'ERROR_OUTPUT_FILES'),
+        ('bands_failed_crash_unknown', 'bands', 'ERROR_OUTPUT_STDOUT_INCOMPLETE'),
+    ],
+)
+def test_pw_failed_crash_unknown(
+    fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs, name, calculation_type, exit_code
+):
+    """Test a calculation that wrote a `CRASH` file with an error message that the parser does not recognise.
+
+    The `vc-relax` run was aborted while writing the charge density after the ionic steps, so it should fail instead of
+    being judged on the partial output. For ionic calculations with an output structure, the more specific
+    ``ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY`` is returned so the work chain can restart from it. Without the XML
+    there is no output structure, and the generic ``ERROR_OUTPUT_FILES`` is returned instead.
+
+    The `bands` run was aborted while writing the wave functions to a full scratch disk (#1076). Its stdout contains an
+    unrelated MPI warning, which used to suppress the error, and the retrieved XML is the one of the parent `scf` that
+    was copied into the output folder, so it parses without problems.
+    """
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+
+    inputs = generate_inputs(calculation_type=calculation_type)
+    node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name, inputs)
+    parser = generate_parser(entry_point_parser)
+    results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+    assert calcfunction.is_failed
+    assert calcfunction.exit_status == node.process_class.exit_codes.get(exit_code).status
+
+    if exit_code == 'ERROR_IONIC_INTERRUPTED_PARTIAL_TRAJECTORY':
+        assert 'output_structure' in results
 
 
 @pytest.mark.parametrize('filename', ['', '_stdout'])
@@ -850,6 +979,15 @@ def test_pw_relax_failed_not_converged_nstep(
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
     expected_exit_status = node.process_class.exit_codes.ERROR_IONIC_CYCLE_EXCEEDED_NSTEP.status
 
+    # The calculation ran `nstep = 1` ionic step so there is exactly one frame and the structure obtained after the
+    # last step, i.e. the output structure, is not repeated as a frame of the trajectory.
+    trajectory = results['output_trajectory']
+    for key in ['positions', 'cells', 'energy', 'forces']:
+        assert trajectory.get_shape(key)[0] == 1, key
+    assert not np.allclose(
+        trajectory.get_array('positions')[-1], [site.position for site in results['output_structure'].sites]
+    )
+
     assert calcfunction.is_failed
     assert calcfunction.exit_status == expected_exit_status
     assert orm.Log.collection.get_logs_for(node)
@@ -886,6 +1024,36 @@ def test_pw_vcrelax_success(
             'output_structure': results['output_structure'].base.attributes.all,
             'output_trajectory': results['output_trajectory'].base.attributes.all,
         }
+    )
+
+
+def test_pw_vcrelax_success_no_xml(fixture_localhost, generate_calc_job_node, generate_parser, generate_inputs):
+    """Test that the output structure of a `vc-relax` parsed from the stdout is the same as the one from the XML.
+
+    The ``vcrelax_success_stdout`` fixture contains the stdout of ``vcrelax_success`` without the XML. With the
+    ``without_xml`` option the output structure should be the final structure printed in the stdout, and not the input
+    structure.
+    """
+    name = 'vcrelax_success'
+    entry_point_calc_job = 'quantumespresso.pw'
+    entry_point_parser = 'quantumespresso.pw'
+    structures = {}
+
+    for suffix, metadata in (('', None), ('_stdout', {'options': {'without_xml': True}})):
+        inputs = generate_inputs(calculation_type='vc-relax', metadata=metadata)
+        node = generate_calc_job_node(entry_point_calc_job, fixture_localhost, name + suffix, inputs)
+        parser = generate_parser(entry_point_parser)
+        results, calcfunction = parser.parse_from_node(node, store_provenance=False)
+
+        assert calcfunction.is_finished_ok, calcfunction.exit_message
+        structures[suffix] = results['output_structure']
+
+    input_structure, xml_structure, stdout_structure = node.inputs.structure, structures[''], structures['_stdout']
+
+    assert not np.allclose(xml_structure.cell, input_structure.cell, atol=1e-3)
+    assert np.allclose(stdout_structure.cell, xml_structure.cell, atol=1e-5)
+    assert np.allclose(
+        [site.position for site in stdout_structure.sites], [site.position for site in xml_structure.sites], atol=1e-5
     )
 
 
@@ -1158,7 +1326,14 @@ def test_pw_vcrelax_failed_not_converged_nstep(
     parser = generate_parser(entry_point_parser)
     results, calcfunction = parser.parse_from_node(node, store_provenance=False)
     expected_exit_status = node.process_class.exit_codes.ERROR_IONIC_CYCLE_EXCEEDED_NSTEP.status
-
+    # The calculation ran `nstep = 1` ionic step so there is exactly one frame and the structure obtained after the
+    # last step, i.e. the output structure is not repeated as a frame of the trajectory.
+    trajectory = results['output_trajectory']
+    for key in ['positions', 'cells', 'energy', 'forces']:
+        assert trajectory.get_shape(key)[0] == 1, key
+    assert not np.allclose(
+        trajectory.get_array('positions')[-1], [site.position for site in results['output_structure'].sites]
+    )
     assert calcfunction.is_failed
     assert calcfunction.exit_status == expected_exit_status
     assert orm.Log.collection.get_logs_for(node)
