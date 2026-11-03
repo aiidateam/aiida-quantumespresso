@@ -13,7 +13,7 @@ from aiida_quantumespresso.utils.mapping import get_logging_container
 
 from .base import BaseParser
 
-AverageCalculation = CalculationFactory("average")
+AverageCalculation = CalculationFactory("quantumespresso.average")
 
 
 class AverageParser(BaseParser):
