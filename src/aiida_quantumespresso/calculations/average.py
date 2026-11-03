@@ -191,14 +191,16 @@ z in Ang, p(z) in eV, m(z) in eV. Code outputs are in Bohr and Rydberg. Conversi
         """
         parent_folder = self.inputs.parent_folder
 
-        remote_copy_list = (
-            str(parent_folder.computer.uuid),
-            str(path.join(
-                parent_folder.get_remote_path(),
-                self._DEFAULT_INPUT_DATA_FILE,
-            )),
-            str(self._DEFAULT_INPUT_DATA_FILE),
-        )
+        remote_copy_list = [
+            (
+                parent_folder.computer.uuid,
+                path.join(
+                    parent_folder.get_remote_path(),
+                    self._DEFAULT_INPUT_DATA_FILE,
+                ),
+                str(self._DEFAULT_INPUT_DATA_FILE),
+            ),
+        ]
         local_copy_list = []
 
         # Code information
