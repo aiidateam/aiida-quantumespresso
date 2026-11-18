@@ -16,6 +16,31 @@ def test_setup(generate_workchain_neb):
     assert isinstance(process.ctx.inputs, AttributeDict)
 
 
+def test_validate_kpoints_distance_custom_kinds(generate_workchain_neb, generate_inputs_neb, generate_upf_data):
+    """Test `NebBaseWorkChain.validate_kpoints` with `kpoints_distance` for images with custom kind names."""
+    from aiida import orm
+
+    cell = [[2.87, 0, 0], [0, 2.87, 0], [0, 0, 2.87]]
+    structures = []
+    for shift in (0.0, 0.1):
+        structure = orm.StructureData(cell=cell)
+        structure.append_atom(position=(shift, 0.0, 0.0), symbols='Fe', name='Fe1')
+        structure.append_atom(position=(1.435, 1.435, 1.435), symbols='Fe', name='Fe2')
+        structures.append(structure)
+
+    neb_inputs = generate_inputs_neb()
+    neb_inputs['pw'].pop('kpoints')
+    neb_inputs['images'] = orm.TrajectoryData(structures)
+    pseudo = generate_upf_data('Fe')
+    neb_inputs['pw']['pseudos'] = {'Fe1': pseudo, 'Fe2': pseudo}
+
+    process = generate_workchain_neb(inputs={'neb': neb_inputs, 'kpoints_distance': orm.Float(0.5)})
+    process.setup()
+    process.validate_kpoints()
+
+    assert isinstance(process.ctx.inputs.pw.kpoints, orm.KpointsData)
+
+
 def test_handle_electronic_convergence_not_reached(generate_workchain_neb, fixture_localhost, generate_remote_data):
     """Test `NebBaseWorkChain.handle_electronic_convergence_not_reached`."""
     remote_data = generate_remote_data(computer=fixture_localhost, remote_path='/path/to/remote')

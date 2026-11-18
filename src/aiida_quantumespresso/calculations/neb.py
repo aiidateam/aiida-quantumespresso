@@ -34,6 +34,22 @@ class NebCalculation(CalcJob):
 
     _use_kpoints = True
 
+    @staticmethod
+    def _get_kinds_from_pseudos(pseudos):
+        """Return the list of ``Kind`` objects defined by the ``pseudos``, one for each kind name.
+
+        The ``images`` ``TrajectoryData`` only stores the kind name of each site, so turning an image back into a
+        ``StructureData`` requires the corresponding ``Kind`` objects to be passed explicitly. Otherwise, the kind names
+        are interpreted as chemical symbols, which fails for custom kind names such as ``Fe1`` and ``Fe2``, as used e.g.
+        for magnetic sublattices. Each kind takes the element of its pseudopotential.
+
+        :param pseudos: mapping of kind names onto pseudopotential nodes.
+        :return: list of ``Kind`` objects.
+        """
+        from aiida.orm.nodes.data.structure import Kind
+
+        return [Kind(name=name, symbols=pseudo.element) for name, pseudo in pseudos.items()]
+
     @classproperty
     def _internal_retrieve_list(cls):
         # I retrieve them all, even if I don't parse all of them
@@ -169,8 +185,21 @@ class NebCalculation(CalcJob):
         if 'images' not in value:
             return 'The `images` input is required.'
 
+        # Check that a pseudo potential was specified for each kind present in the `images`. This has to happen before
+        # the images are turned back into `StructureData`, since that requires exactly one pseudo per kind name.
+        # value['pw']['pseudos'] is a plumpy.utils.AttributesFrozendict
+        kindnames = list(dict.fromkeys(value['images'].symbols))
+        if set(kindnames) != set(value['pw']['pseudos'].keys()):
+            formatted_pseudos = ', '.join(list(value['pw']['pseudos'].keys()))
+            formatted_kinds = ', '.join(kindnames)
+            return (
+                'Mismatch between the defined pseudos and the list of kinds of the structure.\n'
+                f'Pseudos: {formatted_pseudos};\nKinds: {formatted_kinds}'
+            )
+
         num_images = len(value['images'].get_stepids())
-        structure_list = [value['images'].get_step_structure(i) for i in range(num_images)]
+        kinds = cls._get_kinds_from_pseudos(value['pw']['pseudos'])
+        structure_list = [value['images'].get_step_structure(i, custom_kinds=kinds) for i in range(num_images)]
         for image_idx, structure in enumerate(structure_list[1:]):
             # Check that all images have the same cell
             if abs(np.array(structure_list[0].cell) - np.array(structure.cell)).max() > 1.0e-4:
@@ -183,17 +212,6 @@ class NebCalculation(CalcJob):
             # Check that all images have the same kinds
             if structure_list[0].get_site_kindnames() != structure.get_site_kindnames():
                 return f'Mismatch between the kind names and/or order between the first and image {image_idx + 1}'
-
-            # Check that a pseudo potential was specified for each kind present in the `StructureData`
-            # self.inputs.pw.pseudos is a plumpy.utils.AttributesFrozendict
-            kindnames = [kind.name for kind in structure_list[0].kinds]
-            if set(kindnames) != set(value['pw']['pseudos'].keys()):
-                formatted_pseudos = ', '.join(list(value['pw']['pseudos'].keys()))
-                formatted_kinds = ', '.join(list(kindnames))
-                return (
-                    'Mismatch between the defined pseudos and the list of kinds of the structure.\n'
-                    f'Pseudos: {formatted_pseudos};\nKinds: {formatted_kinds}'
-                )
 
         cls.inputs = AttributeDict(value)
 
@@ -283,7 +301,8 @@ class NebCalculation(CalcJob):
             settings_dict = {}
 
         num_images = len(self.inputs.images.get_stepids())
-        structure_list = [self.inputs.images.get_step_structure(i) for i in range(num_images)]
+        kinds = self._get_kinds_from_pseudos(self.inputs.pw.pseudos)
+        structure_list = [self.inputs.images.get_step_structure(i, custom_kinds=kinds) for i in range(num_images)]
 
         # Create the subfolder that will contain the pseudopotentials
         folder.get_subfolder(self._PSEUDO_SUBFOLDER, create=True)

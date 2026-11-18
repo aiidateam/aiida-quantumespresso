@@ -182,8 +182,9 @@ class NebBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
         try:
             kpoints = self.inputs.kpoints
         except AttributeError:
+            kinds = NebCalculation._get_kinds_from_pseudos(self.inputs.neb.pw.pseudos)  # noqa: SLF001
             inputs = {
-                'structure': self.inputs.neb.images.get_step_structure(-1),
+                'structure': self.inputs.neb.images.get_step_structure(-1, custom_kinds=kinds),
                 'distance': self.inputs.kpoints_distance,
                 'force_parity': self.inputs.get('kpoints_force_parity', orm.Bool(False)),
                 'metadata': {'call_link_label': 'create_kpoints_from_distance'},
