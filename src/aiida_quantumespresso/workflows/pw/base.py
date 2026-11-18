@@ -290,20 +290,26 @@ class PwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             parameters['SYSTEM'].pop('smearing')
 
         if spin_type in [SpinType.COLLINEAR, SpinType.SPIN_ORBIT, SpinType.NON_COLLINEAR]:
-            magnetization = get_magnetization(
-                structure=structure,
-                z_valences={kind.name: pseudos[kind.name].z_valence for kind in structure.kinds},
-                initial_magnetic_moments=initial_magnetic_moments,
-                spin_type=spin_type,
-            )
-            parameters['SYSTEM']['starting_magnetization'] = magnetization['starting_magnetization']
+            # A `tot_magnetization` in the `overrides` replaces the `starting_magnetization` (see below), so only
+            # determine the initial magnetic moments when it is not fixed. Otherwise, this could fail unnecessarily,
+            # e.g. for elements that have no default magnetic moment.
+            if system_overrides.get('tot_magnetization') is None:
+                magnetization = get_magnetization(
+                    structure=structure,
+                    z_valences={kind.name: pseudos[kind.name].z_valence for kind in structure.kinds},
+                    initial_magnetic_moments=initial_magnetic_moments,
+                    spin_type=spin_type,
+                )
+                parameters['SYSTEM']['starting_magnetization'] = magnetization['starting_magnetization']
+
+                if spin_type in [SpinType.SPIN_ORBIT, SpinType.NON_COLLINEAR]:
+                    parameters['SYSTEM']['angle1'] = magnetization['angle1']
+                    parameters['SYSTEM']['angle2'] = magnetization['angle2']
 
             if spin_type is SpinType.COLLINEAR:
                 parameters['SYSTEM']['nspin'] = 2
 
             if spin_type in [SpinType.SPIN_ORBIT, SpinType.NON_COLLINEAR]:
-                parameters['SYSTEM']['angle1'] = magnetization['angle1']
-                parameters['SYSTEM']['angle2'] = magnetization['angle2']
                 parameters['SYSTEM']['noncolin'] = True
                 parameters['SYSTEM']['nspin'] = 4
 

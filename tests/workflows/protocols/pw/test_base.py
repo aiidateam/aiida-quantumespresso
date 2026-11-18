@@ -224,6 +224,30 @@ def test_magnetization_overrides(fixture_code, generate_structure):
     assert builder.pw.parameters['SYSTEM']['nspin'] == 2
 
 
+@pytest.mark.parametrize('spin_type', (SpinType.COLLINEAR, SpinType.NON_COLLINEAR))
+def test_tot_magnetization_overrides(fixture_code, generate_structure, monkeypatch, spin_type):
+    """Test ``tot_magnetization`` ``overrides`` for the ``PwBaseWorkChain.get_builder_from_protocol`` method.
+
+    In this case the ``starting_magnetization`` is not needed, so the default magnetic moments should not be required.
+    """
+    from aiida_quantumespresso.workflows.protocols import utils
+
+    monkeypatch.setattr(utils, 'get_magnetization_parameters', lambda: {})
+
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure('silicon')
+    overrides = {'pw': {'parameters': {'SYSTEM': {'tot_magnetization': 1.0}}}}
+
+    with pytest.raises(KeyError):
+        PwBaseWorkChain.get_builder_from_protocol(code, structure, spin_type=spin_type)
+
+    builder = PwBaseWorkChain.get_builder_from_protocol(code, structure, overrides=overrides, spin_type=spin_type)
+    parameters = builder.pw.parameters.get_dict()
+    assert parameters['SYSTEM']['tot_magnetization'] == 1.0
+    assert parameters['SYSTEM']['nspin'] == (2 if spin_type is SpinType.COLLINEAR else 4)
+    assert 'starting_magnetization' not in parameters['SYSTEM']
+
+
 def test_parameter_overrides(fixture_code, generate_structure):
     """Test specifying parameter ``overrides`` for the ``get_builder_from_protocol()`` method."""
     code = fixture_code('quantumespresso.pw')
