@@ -704,7 +704,14 @@ def get_index_and_translation(index: int, num_sites: int) -> tuple[int, list[tup
     from math import floor
 
     number = floor(index / num_sites)  # associated supercell number
-    return (index - num_sites * number, QE_TRANSLATIONS[number])
+    sc_size = 1
+    while (2 * sc_size + 1) ** 3 <= number:
+        sc_size += 1
+    cells = [tuple(item) for item in product(range(-sc_size, sc_size + 1), repeat=3)]
+    origin = (0, 0, 0)
+    cells.remove(origin)
+    cells.insert(0, origin)
+    return (index - num_sites * number, cells[number])
 
 
 def get_hubbard_indices(hubbard: Hubbard) -> list[int]:
