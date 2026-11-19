@@ -97,3 +97,25 @@ def test_options(fixture_code, generate_structure):
         builder.bands.pw.metadata,
     ):
         assert subspace['options']['queue_name'] == queue_name, subspace
+
+
+def test_overrides_merged(fixture_code, generate_structure):
+    """Test that ``overrides`` are merged onto the builder, also for dict-valued ports.
+
+    A dict-valued input port such as ``scf.handler_overrides`` is not a namespace, so it has to be serialised to a
+    ``Dict`` rather than being recursed into. This pins that these overrides land instead of being dropped or raising.
+    """
+    code = fixture_code('quantumespresso.pw')
+    structure = generate_structure('silicon')
+    overrides = {
+        'nbands_factor': 5.0,
+        'clean_workdir': True,
+        'scf': {'handler_overrides': {'handle_out_of_walltime': {'enabled': False}}},
+        'bands': {'pw': {'settings': {'cmdline': ['-nk', '4']}}},
+    }
+    builder = PwBandsWorkChain.get_builder_from_protocol(code, structure, overrides=overrides)
+
+    assert builder.nbands_factor == 5.0
+    assert builder.clean_workdir
+    assert builder.scf.handler_overrides.get_dict() == {'handle_out_of_walltime': {'enabled': False}}
+    assert builder.bands.pw.settings.get_dict() == {'cmdline': ['-nk', '4']}
