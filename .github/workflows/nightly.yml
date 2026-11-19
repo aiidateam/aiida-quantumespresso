@@ -24,6 +24,7 @@ jobs:
         strategy:
             matrix:
                 python-version: ['3.10', '3.14']
+                broker: ['rmq', 'zmq']
 
         services:
             postgres:
@@ -45,13 +46,13 @@ jobs:
         -   name: Install Python dependencies (with aiida-core@main)
             id: install
             run: |
-                uv pip install -e .[tests] aiida-core[atomic_tools]@git+https://github.com/aiidateam/aiida-core@main
+                uv pip install -e .[tests] aiida-core[atomic_tools]@git+https://github.com/agoscinski/aiida-core@fix/datetime-serialize
 
         -   name: Run pytest
             id: tests
             env:
                 AIIDA_WARN_v3: 1
-            run: pytest -sv tests
+            run: pytest -sv tests --broker-backend ${{ matrix.broker }}
 
         -   name: Slack notification
             if: always() && (steps.install.outcome == 'failure' || steps.tests.outcome == 'failure') && env.SLACK_WEBHOOK != null
